@@ -14,7 +14,7 @@ module Skx_module
   contains
 
   !-----------------------------------------------------------------------------
-  function Skx_func(  gr, xp2, xp3, x_tol )  &
+  function Skx_func( gr, xp2, xp3, x_tol )  &
   result( Skx )
 
     ! Description:

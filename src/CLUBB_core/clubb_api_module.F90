@@ -117,7 +117,7 @@ module clubb_api_module
       clubb_fatal_error
 
   use grid_class, only : &
-        gr
+    gr
 
   use hydromet_pdf_parameter_module, only : &
     hydromet_pdf_parameter, &
@@ -571,7 +571,6 @@ contains
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
-    use grid_class, only: gr
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type(s)
@@ -584,7 +583,6 @@ contains
       clubb_config_flags_type
 
     implicit none
-
       !!! Input Variables
     logical, intent(in) ::  &
       l_implemented ! Is this part of a larger host model (T/F) ?
@@ -770,7 +768,7 @@ contains
       RH_crit  ! critical relative humidity for droplet and ice nucleation
     logical, intent(in)                 ::  do_liquid_only_in_clubb
 #endif
-    call advance_clubb_core( gr,  &
+    call advance_clubb_core( gr, &
       l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
       thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
       sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
@@ -846,7 +844,6 @@ contains
     err_code_api )                                        ! intent(out) 
 
     use advance_clubb_core_module, only : setup_clubb_core
-    use grid_class, only: gr
 
     use parameter_indices, only:  &
       nparams ! Variable(s)
@@ -860,7 +857,6 @@ contains
 !     setup_model_flags    ! Subroutine
 
       implicit none
-
 
     ! Input Variables
 
@@ -961,7 +957,7 @@ contains
     err_code_api   ! Diagnostic for a problem with the setup 
 
     call setup_clubb_core &
-      (  gr, nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
+      ( gr, nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
       hydromet_dim_in, sclr_dim_in,                         & ! intent(in)
       sclr_tol_in, edsclr_dim_in, params,                   & ! intent(in)
       l_host_applies_sfc_fluxes,                            & ! intent(in)
@@ -1168,7 +1164,6 @@ contains
     thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
 
     use fill_holes, only : fill_holes_driver
-    use grid_class, only: grid
 
     implicit none
 
@@ -1197,7 +1192,7 @@ contains
       rvm_mc,  & ! Microphysics contributions to vapor water            [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp. [K/s]
 
-    call fill_holes_driver( gr,  &
+    call fill_holes_driver( gr, &
       nz, dt, hydromet_dim,        & ! Intent(in)
       l_fill_holes_hm,             & ! Intent(in)
       rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
@@ -1214,7 +1209,6 @@ contains
     field )
 
     use fill_holes, only : fill_holes_vertical
-    use grid_class, only: gr
 
     implicit none
 
@@ -1238,7 +1232,7 @@ contains
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
 
-    call fill_holes_vertical( gr,  &
+    call fill_holes_vertical( gr, &
       num_pts, threshold, field_grid, &
       rho_ds, rho_ds_zm, &
       field )
@@ -1322,7 +1316,6 @@ contains
         clubb_fatal_error       ! Constant
 
     implicit none
-
 
     ! Input Variables
 
@@ -1468,8 +1461,6 @@ contains
     use parameters_tunable, only: &
       setup_parameters
 
-    use grid_class, only: gr
-
     use parameter_indices, only:  &
       nparams ! Variable(s)
 
@@ -1516,7 +1507,7 @@ contains
     integer, intent(out) ::  & 	 	      
       err_code_api ! Error condition 
 
-    call setup_parameters( gr,  &
+    call setup_parameters( gr, &
       deltaz, params, nzmax, &
       grid_type, momentum_heights, thermodynamic_heights, &
       l_prescribed_avg_deltaz, &
@@ -1534,7 +1525,6 @@ contains
     l_prescribed_avg_deltaz )  ! Intent(in)
 
     use parameters_tunable, only : adj_low_res_nu
-    use grid_class, only: gr
 
     implicit none
 
@@ -1573,7 +1563,7 @@ contains
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
-    call adj_low_res_nu( gr,  &
+    call adj_low_res_nu( gr, &
       nzmax, grid_type, deltaz, & ! Intent(in)
       momentum_heights, thermodynamic_heights, & ! Intent(in)
       l_prescribed_avg_deltaz )  ! Intent(in)
@@ -1899,8 +1889,6 @@ contains
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
     precip_fracs,  &                            ! Intent(out)
     hydromet_pdf_params )                       ! Intent(out)
-    
-   use grid_class, only: gr
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
@@ -2037,7 +2025,7 @@ contains
     hydromet_col(1,:,:) = hydromet
     wphydrometp_col(1,:,:) = wphydrometp
 
-    call setup_pdf_parameters( gr,  &
+    call setup_pdf_parameters( gr, &
       nz, 1, pdf_dim, dt, &                                   ! Intent(in)
       Nc_in_cloud_col, rcm_col, cloud_frac_col, Kh_zm_col, &  ! Intent(in)
       ice_supersat_frac_col, hydromet_col, wphydrometp_col, & ! Intent(in)
@@ -2074,7 +2062,6 @@ contains
     end if
 
   end subroutine setup_pdf_parameters_api_single_col
-!==============================================================================!
   
   subroutine setup_pdf_parameters_api_multi_col( &
     nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
@@ -2096,8 +2083,6 @@ contains
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
     precip_fracs, &                             ! Intent(out)
     hydromet_pdf_params )                       ! Intent(out)
-    
-    use grid_class, only: gr
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
@@ -2190,7 +2175,7 @@ contains
     type(precipitation_fractions), intent(inout) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    call setup_pdf_parameters( gr,  &
+    call setup_pdf_parameters( gr, &
       nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
       Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
@@ -2370,8 +2355,6 @@ contains
     hydromet, rho_ds_zt )
 
     use stats_clubb_utilities, only : stats_accumulate_hydromet
-    
-    use grid_class, only: gr
 
     implicit none
 
@@ -2382,7 +2365,7 @@ contains
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       rho_ds_zt ! Dry, static density (thermo. levs.)      [kg/m^3]
 
-    call stats_accumulate_hydromet( gr,  &
+    call stats_accumulate_hydromet( gr, &
       hydromet, rho_ds_zt )
   end subroutine stats_accumulate_hydromet_api
 
@@ -3451,8 +3434,6 @@ contains
         sponge_damp_settings,       & ! Variable(s)
         sponge_damp_profile,        &
         initialize_tau_sponge_damp    ! Procedure(s)
-    
-    use grid_class, only: gr
 
     implicit none
 

@@ -291,7 +291,7 @@ module advance_helper_module
       lambda0_stability
 
     !------------ Begin Code --------------
-    call calc_brunt_vaisala_freq_sqd( gr,   thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+    call calc_brunt_vaisala_freq_sqd( gr,  thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &                     ! intent(in)
                                       l_brunt_vaisala_freq_moist, &            ! intent(in)
                                       l_use_thvm_in_bv_freq, &                 ! intent(in)
@@ -592,7 +592,7 @@ module advance_helper_module
 
     !----- Begin Code -----
 
-    call calc_brunt_vaisala_freq_sqd( gr,  thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+    call calc_brunt_vaisala_freq_sqd( gr, thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &                    ! intent(in)
                                       l_brunt_vaisala_freq_moist, &           ! intent(in)
                                       l_use_thvm_in_bv_freq, &                ! intent(in)
@@ -638,7 +638,7 @@ module advance_helper_module
       ! Clip below-min values of Richardson_num
       Richardson_num = max( Richardson_num, Richardson_num_min )
 
-      Richardson_num = Lscale_width_vert_avg( gr,  Richardson_num, Lscale_zm, rho_ds_zm, &
+      Richardson_num = Lscale_width_vert_avg( gr, Richardson_num, Lscale_zm, rho_ds_zm, &
                                               Richardson_num_max )
     end if
 
@@ -650,7 +650,7 @@ module advance_helper_module
                     - Richardson_num_min )  * invrs_min_max_diff, Cx_max, Cx_min )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
-      Cx_fnc_Richardson = Lscale_width_vert_avg( gr,  Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
+      Cx_fnc_Richardson = Lscale_width_vert_avg( gr, Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
                                                  Cx_fnc_Richardson_below_ground_value )
     end if
 

@@ -166,7 +166,7 @@ module clip_explicit
     endif
 
     ! Clip w'r_t'
-    call clip_covar( gr,  clip_wprtp, l_first_clip_ts,   & ! intent(in) 
+    call clip_covar( gr, clip_wprtp, l_first_clip_ts,   & ! intent(in) 
                      l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
                      l_predict_upwp_vpwp,           & ! intent(in)
                      wprtp, wprtp_chnge )             ! intent(inout)
@@ -204,7 +204,7 @@ module clip_explicit
     endif
 
     ! Clip w'th_l'
-    call clip_covar( gr,  clip_wpthlp, l_first_clip_ts,   & ! intent(in)
+    call clip_covar( gr, clip_wpthlp, l_first_clip_ts,   & ! intent(in)
                      l_last_clip_ts, dt, wp2, thlp2, & ! intent(in)
                      l_predict_upwp_vpwp,            & ! intent(in)
                      wpthlp, wpthlp_chnge )            ! intent(inout)
@@ -243,7 +243,7 @@ module clip_explicit
 
     ! Clip w'sclr'
     do i = 1, sclr_dim, 1
-      call clip_covar( gr,  clip_wpsclrp, l_first_clip_ts,           & ! intent(in)
+      call clip_covar( gr, clip_wpsclrp, l_first_clip_ts,           & ! intent(in)
                        l_last_clip_ts, dt, wp2(:), sclrp2(:,i), & ! intent(in)
                        l_predict_upwp_vpwp,                     & ! intent(in)
                        wpsclrp(:,i), wpsclrp_chnge(:,i) )         ! intent(inout)
@@ -283,13 +283,13 @@ module clip_explicit
 
     ! Clip u'w'
     if ( l_tke_aniso ) then
-      call clip_covar( gr,  clip_upwp, l_first_clip_ts,   & ! intent(in)
+      call clip_covar( gr, clip_upwp, l_first_clip_ts,   & ! intent(in)
                        l_last_clip_ts, dt, wp2, up2, & ! intent(in)
                        l_predict_upwp_vpwp,          & ! intent(in)
                        upwp, upwp_chnge )              ! intent(inout)
     else
       ! In this case, up2 = wp2, and the variable `up2' does not interact
-      call clip_covar( gr,  clip_upwp, l_first_clip_ts,   & ! intent(in)
+      call clip_covar( gr, clip_upwp, l_first_clip_ts,   & ! intent(in)
                        l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
                        l_predict_upwp_vpwp,          & ! intent(in)
                        upwp, upwp_chnge )              ! intent(inout)
@@ -329,13 +329,13 @@ module clip_explicit
     endif
 
     if ( l_tke_aniso ) then
-      call clip_covar( gr,  clip_vpwp, l_first_clip_ts,   & ! intent(in)
+      call clip_covar( gr, clip_vpwp, l_first_clip_ts,   & ! intent(in)
                        l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
                        l_predict_upwp_vpwp,          & ! intent(in)
                        vpwp, vpwp_chnge )              ! intent(inout)
     else
       ! In this case, vp2 = wp2, and the variable `vp2' does not interact
-      call clip_covar( gr,  clip_vpwp, l_first_clip_ts,   & ! intent(in)
+      call clip_covar( gr, clip_vpwp, l_first_clip_ts,   & ! intent(in)
                        l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
                        l_predict_upwp_vpwp,          & ! intent(in)
                        vpwp, vpwp_chnge )              ! intent(inout)
@@ -487,9 +487,9 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( l_first_clip_ts ) then
-        call stat_begin_update( gr,  ixpyp_cl, xpyp / dt, stats_zm )
+        call stat_begin_update( gr, ixpyp_cl, xpyp / dt, stats_zm )
       else
-        call stat_modify( gr,  ixpyp_cl, -xpyp / dt, stats_zm )
+        call stat_modify( gr, ixpyp_cl, -xpyp / dt, stats_zm )
       endif
     endif
 
@@ -544,9 +544,9 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( l_last_clip_ts ) then
-        call stat_end_update( gr,  ixpyp_cl, xpyp / dt, stats_zm )
+        call stat_end_update( gr, ixpyp_cl, xpyp / dt, stats_zm )
       else
-        call stat_modify( gr,  ixpyp_cl, xpyp / dt, stats_zm )
+        call stat_modify( gr, ixpyp_cl, xpyp / dt, stats_zm )
       endif
     endif
 
@@ -833,7 +833,7 @@ module clip_explicit
 
 
     if ( l_stats_samp ) then
-      call stat_begin_update( gr,  ixp2_cl, xp2 / dt, stats_zm )
+      call stat_begin_update( gr, ixp2_cl, xp2 / dt, stats_zm )
     endif
 
     ! Limit the value of x'^2 at threshold.
@@ -854,7 +854,7 @@ module clip_explicit
     enddo
 
     if ( l_stats_samp ) then
-      call stat_end_update( gr,  ixp2_cl, xp2 / dt, stats_zm )
+      call stat_end_update( gr, ixp2_cl, xp2 / dt, stats_zm )
     endif
 
 
@@ -1037,13 +1037,13 @@ module clip_explicit
     ! ---- Begin Code ----
 
     if ( l_stats_samp ) then
-      call stat_begin_update( gr,  iwp3_cl, wp3 / dt, stats_zt )
+      call stat_begin_update( gr, iwp3_cl, wp3 / dt, stats_zt )
     endif
 
-    call clip_skewness_core( gr,  sfc_elevation, wp2_zt, wp3 )
+    call clip_skewness_core( gr, sfc_elevation, wp2_zt, wp3 )
 
     if ( l_stats_samp ) then
-      call stat_end_update( gr,  iwp3_cl, wp3 / dt, stats_zt )
+      call stat_end_update( gr, iwp3_cl, wp3 / dt, stats_zt )
     endif
 
     return

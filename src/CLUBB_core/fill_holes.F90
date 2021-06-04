@@ -905,7 +905,7 @@ module fill_holes
                                     ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                     max_velocity )                 ! Intent(inout)
 
-          call stat_begin_update( gr,  ixrm_hf, hydromet(:,i) &
+          call stat_begin_update( gr, ixrm_hf, hydromet(:,i) &
                                            / dt, stats_zt )
 
        enddo ! i = 1, hydromet_dim
@@ -966,7 +966,7 @@ module fill_holes
          if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
 
             ! Apply the hole filling algorithm
-            call fill_holes_vertical( gr,  2, zero_threshold, "zt", &
+            call fill_holes_vertical( gr, 2, zero_threshold, "zt", &
                                       rho_ds_zt, rho_ds_zm, &
                                       hydromet(:,i) )
 
@@ -977,14 +977,14 @@ module fill_holes
       ! Enter the new value of the hydrometeor for the effect of the
       ! hole-filling scheme.
       if ( l_stats_samp ) then
-         call stat_end_update( gr,  ixrm_hf, hydromet(:,i) &
+         call stat_end_update( gr, ixrm_hf, hydromet(:,i) &
                                         / dt, stats_zt )
       endif
 
       ! Store the previous value of the hydrometeor for the effect of the water
       ! vapor hole-filling scheme.
       if ( l_stats_samp ) then
-         call stat_begin_update( gr,  ixrm_wvhf, hydromet(:,i) &
+         call stat_begin_update( gr, ixrm_wvhf, hydromet(:,i) &
                                             / dt, stats_zt )
       endif
 
@@ -1006,7 +1006,7 @@ module fill_holes
       ! Enter the new value of the hydrometeor for the effect of the water vapor
       ! hole-filling scheme.
       if ( l_stats_samp ) then
-         call stat_end_update( gr,  ixrm_wvhf, hydromet(:,i) &
+         call stat_end_update( gr, ixrm_wvhf, hydromet(:,i) &
                                           / dt, stats_zt )
       endif
 
@@ -1016,7 +1016,7 @@ module fill_holes
          ! Store the previous value of the hydrometeor for the effect of
          ! clipping.
          if ( l_stats_samp ) then
-            call stat_begin_update( gr,  ixrm_cl, &
+            call stat_begin_update( gr, ixrm_cl, &
                                     hydromet(:,i) &
                                     / dt, &
                                     stats_zt )
@@ -1069,7 +1069,7 @@ module fill_holes
 
          ! Enter the new value of the hydrometeor for the effect of clipping.
          if ( l_stats_samp ) then
-            call stat_end_update( gr,  ixrm_cl, hydromet(:,i) &
+            call stat_end_update( gr, ixrm_cl, hydromet(:,i) &
                                            / dt, stats_zt )
          endif
 
@@ -1078,7 +1078,7 @@ module fill_holes
     enddo ! i = 1, hydromet_dim, 1
 
     ! Calculate clipping for hydrometeor concentrations.
-    call clip_hydromet_conc_mvr( gr,  hydromet_dim, hydromet, & ! Intent(in)
+    call clip_hydromet_conc_mvr( gr, hydromet_dim, hydromet, & ! Intent(in)
                                  hydromet_clipped )        ! Intent(out)
 
     ! Clip hydrometeor concentrations and output stats.
@@ -1096,7 +1096,7 @@ module fill_holes
 
              ! Store the previous value of the hydrometeor for the effect of
              ! clipping.
-             call stat_begin_update( gr,  ixrm_cl, hydromet(:,i) / dt, stats_zt )
+             call stat_begin_update( gr, ixrm_cl, hydromet(:,i) / dt, stats_zt )
 
           endif ! l_stats_samp
 
@@ -1105,7 +1105,7 @@ module fill_holes
 
           ! Enter the new value of the hydrometeor for the effect of clipping.
           if ( l_stats_samp ) then
-             call stat_end_update( gr,  ixrm_cl, hydromet(:,i) / dt, stats_zt )
+             call stat_end_update( gr, ixrm_cl, hydromet(:,i) / dt, stats_zt )
           endif
 
        endif ! .not. l_mix_rat_hm(i)

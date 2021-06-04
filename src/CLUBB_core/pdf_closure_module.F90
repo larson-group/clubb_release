@@ -502,7 +502,7 @@ module pdf_closure_module
     ! theta-l, and passive scalar variables.
     if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
 
-       call ADG1_pdf_driver( gr,  wm, rtm, thlm, um, vm,                             & ! In
+       call ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,                             & ! In
                              wp2, rtp2, thlp2, up2, vp2,                        & ! In
                              Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,          & ! In
                              sigma_sqd_w, mixt_frac_max_mag,                    & ! In
@@ -524,7 +524,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
 
-       call ADG2_pdf_driver( gr,  wm, rtm, thlm, wp2, rtp2, thlp2,                   & ! In
+       call ADG2_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,                   & ! In
                              Skw, wprtp, wpthlp, sqrt_wp2,                      & ! In
                              sclrm, sclrp2, wpsclrp, l_scalar_calc,             & ! In
                              pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
@@ -540,7 +540,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_3D_Luhar ) then ! use 3D Luhar
 
-       call Luhar_3D_pdf_driver( gr,  &
+       call Luhar_3D_pdf_driver( gr, &
                            wm, rtm, thlm, wp2, rtp2, thlp2,                             & ! In
                            Skw, Skrt, Skthl, wprtp, wpthlp,                             & ! In
                            pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
@@ -553,7 +553,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
 
-       call new_pdf_driver( gr,  wm, rtm, thlm, wp2, rtp2, thlp2, Skw,               & ! In
+       call new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,               & ! In
                             wprtp, wpthlp, rtpthlp,                             & ! In
                             Skrt, Skthl,                                        & ! In/Out
                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),                     & ! Out
@@ -569,7 +569,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_TSDADG ) then
 
-       call tsdadg_pdf_driver( gr,  &
+       call tsdadg_pdf_driver( gr, &
                           wm, rtm, thlm, wp2, rtp2, thlp2,                                & ! In
                           Skw, Skrt, Skthl, wprtp, wpthlp,                                & ! In
                           pdf_params%w_1(1,:), pdf_params%w_2(1,:),                       & ! Out
@@ -582,7 +582,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_LY93 ) then ! use LY93
 
-       call LY93_driver( gr,  wm, rtm, thlm, wp2, rtp2,                          & ! In
+       call LY93_driver( gr, wm, rtm, thlm, wp2, rtp2,                          & ! In
                          thlp2, Skw, Skrt, Skthl,                           & ! In
                          pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
                          pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                  & ! Out
@@ -594,7 +594,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
 
-       call new_hybrid_pdf_driver( gr,  wm, rtm, thlm, um, vm,              & ! In
+       call new_hybrid_pdf_driver( gr, wm, rtm, thlm, um, vm,              & ! In
                                    wp2, rtp2, thlp2, up2, vp2,         & ! In
                                    Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
                                    sclrm, sclrp2, wpsclrp,             & ! In
@@ -729,14 +729,14 @@ endif
 
 
     ! Compute higher order moments (these are interactive)
-    wp2rtp = calc_wp2xp_pdf( gr,  wm, rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),           &
+    wp2rtp = calc_wp2xp_pdf( gr, wm, rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),           &
                              pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                  &
                              pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),      &
                              pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),    &
                              pdf_params%corr_w_rt_1(1,:), pdf_params%corr_w_rt_2(1,:),    &
                              pdf_params%mixt_frac(1,:) )
 
-    wp2thlp = calc_wp2xp_pdf( gr,  wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),             &
+    wp2thlp = calc_wp2xp_pdf( gr, wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),             &
                               pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                   &
                               pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),         &
                               pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),     &
@@ -744,26 +744,26 @@ endif
                               pdf_params%mixt_frac(1,:) )
 
     ! Compute higher order moments (these may be interactive)
-    wp2up2 = calc_wp2xp2_pdf( gr,  wm, um, pdf_params%w_1, pdf_params%w_2, &
+    wp2up2 = calc_wp2xp2_pdf( gr, wm, um, pdf_params%w_1, pdf_params%w_2, &
                               u_1, u_2, &
                               pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
                               varnce_u_1, varnce_u_2, &
                               corr_u_w_1, corr_u_w_2, &
                               pdf_params%mixt_frac )
 
-    wp2vp2 = calc_wp2xp2_pdf( gr,  wm, vm, pdf_params%w_1, pdf_params%w_2, &
+    wp2vp2 = calc_wp2xp2_pdf( gr, wm, vm, pdf_params%w_1, pdf_params%w_2, &
                               v_1, v_2, &
                               pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
                               varnce_v_1, varnce_v_2, &
                               corr_v_w_1, corr_v_w_2, &
                               pdf_params%mixt_frac )
 
-    wp4 = calc_wp4_pdf( gr,  wm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),              &
+    wp4 = calc_wp4_pdf( gr, wm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),              &
                         pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),    &
                         pdf_params%mixt_frac(1,:) )
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwprtp2 > 0 ) then
-       wprtp2 = calc_wpxp2_pdf( gr,  wm, rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),        &
+       wprtp2 = calc_wpxp2_pdf( gr, wm, rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),        &
                                 pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),               &
                                 pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),   &
                                 pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:), &
@@ -772,7 +772,7 @@ endif
     endif
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwpthlp2 > 0 ) then
-       wpthlp2 = calc_wpxp2_pdf( gr,  wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),          &
+       wpthlp2 = calc_wpxp2_pdf( gr, wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),          &
                                  pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                &
                                  pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),      &
                                  pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),  &
@@ -781,7 +781,7 @@ endif
     endif
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwprtpthlp > 0 ) then
-       wprtpthlp = calc_wpxpyp_pdf( gr,  wm, rtm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),      &
+       wprtpthlp = calc_wpxpyp_pdf( gr, wm, rtm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),      &
                                     pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                   &
                                     pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                 &
                                     pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),       &
@@ -800,7 +800,7 @@ endif
        do i = 1, sclr_dim
 
           wp2sclrp(:,i) &
-          = calc_wp2xp_pdf( gr,  wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:),             &
+          = calc_wp2xp_pdf( gr, wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:),             &
                             sclr1(:,i), sclr2(:,i),                                     &
                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),               &
                             varnce_sclr1(:,i), varnce_sclr2(:,i),                       &
@@ -808,7 +808,7 @@ endif
                             pdf_params%mixt_frac(1,:) )
 
           wpsclrp2(:,i) &
-          = calc_wpxp2_pdf( gr,  wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
+          = calc_wpxp2_pdf( gr, wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
                             sclr1(:,i), sclr2(:,i),                         &
                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),   &
                             varnce_sclr1(:,i), varnce_sclr2(:,i),           &
@@ -816,7 +816,7 @@ endif
                             pdf_params%mixt_frac(1,:) )
 
           wpsclrprtp(:,i) &
-          = calc_wpxpyp_pdf( gr,  wm, sclrm(:,i), rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),       &
+          = calc_wpxpyp_pdf( gr, wm, sclrm(:,i), rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),       &
                              sclr1(:,i), sclr2(:,i),                                    &
                              pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                          &
                              pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),              &
@@ -828,7 +828,7 @@ endif
                              pdf_params%mixt_frac(1,:) )
 
           wpsclrpthlp(:,i) &
-          = calc_wpxpyp_pdf( gr,  wm, sclrm(:,i), thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),  &
+          = calc_wpxpyp_pdf( gr, wm, sclrm(:,i), thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),  &
                              sclr1(:,i), sclr2(:,i),                                &
                              pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                    &
                              pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),          &
@@ -910,7 +910,7 @@ endif
 #endif
 
 
-    call transform_pdf_chi_eta_component( gr,  &
+    call transform_pdf_chi_eta_component( gr, &
                               tl1, pdf_params%rsatl_1(1,:), pdf_params%rt_1(1,:), exner,  & ! In
                               pdf_params%varnce_thl_1(1,:), pdf_params%varnce_rt_1(1,:),  & ! In
                               pdf_params%corr_rt_thl_1(1,:), pdf_params%chi_1(1,:),       & ! In
@@ -920,7 +920,7 @@ endif
                               pdf_params%corr_chi_eta_1(1,:) )                              ! Out
     
     ! Calculate cloud fraction component for pdf 1
-    call calc_liquid_cloud_frac_component( gr,  &
+    call calc_liquid_cloud_frac_component( gr, &
                                 pdf_params%chi_1(1,:), pdf_params%stdev_chi_1(1,:),    & ! In
                                 pdf_params%cloud_frac_1(1,:), pdf_params%rc_1(1,:) )     ! Out
 
@@ -953,7 +953,7 @@ endif
     end if
 
     
-    call transform_pdf_chi_eta_component( gr,  &
+    call transform_pdf_chi_eta_component( gr, &
                                 tl2, pdf_params%rsatl_2(1,:), pdf_params%rt_2(1,:), exner,  & ! In
                                 pdf_params%varnce_thl_2(1,:), pdf_params%varnce_rt_2(1,:),  & ! In
                                 pdf_params%corr_rt_thl_2(1,:), pdf_params%chi_2(1,:),       & ! In
@@ -964,7 +964,7 @@ endif
 
     
     ! Calculate cloud fraction component for pdf 2
-    call calc_liquid_cloud_frac_component( gr,  &
+    call calc_liquid_cloud_frac_component( gr, &
                                     pdf_params%chi_2(1,:), pdf_params%stdev_chi_2(1,:),    & ! In
                                     pdf_params%cloud_frac_2(1,:), pdf_params%rc_2(1,:) )     ! Out
 

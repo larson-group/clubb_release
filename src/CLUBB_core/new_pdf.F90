@@ -495,7 +495,7 @@ module new_pdf
 
 
     ! Calculate the mixture fraction.
-    mixt_frac = calc_mixture_fraction( gr,  Skx, F_x, zeta_x, sgn_wpxp )
+    mixt_frac = calc_mixture_fraction( gr, Skx, F_x, zeta_x, sgn_wpxp )
 
     ! Calculate the mean of x in the 1st PDF component.
     mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 ) &
@@ -1013,7 +1013,7 @@ module new_pdf
     ! uses sqrt_F_x_roots_1_sorted already factors the appropriate roots to use
     ! into account.
     sqrt_F_x_roots_1_sorted &
-    = sort_roots( gr,  real( sqrt_F_x_roots_1, kind = core_rknd ) )
+    = sort_roots( gr, real( sqrt_F_x_roots_1, kind = core_rknd ) )
 
     ! Set up the coefficients in the equation for the limit of sqrt(F_x) based
     ! on the 2nd PDF component standard deviation (sigma_x_2) being greater than
@@ -1033,7 +1033,7 @@ module new_pdf
     ! uses sqrt_F_x_roots_2_sorted already factors the appropriate roots to use
     ! into account.
     sqrt_F_x_roots_2_sorted &
-    = sort_roots( gr,  real( sqrt_F_x_roots_2, kind = core_rknd ) )
+    = sort_roots( gr, real( sqrt_F_x_roots_2, kind = core_rknd ) )
 
 
     ! Find the minimum and maximum allowable values of sqrt(F_x) based on Skx

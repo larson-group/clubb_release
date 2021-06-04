@@ -1024,12 +1024,12 @@ module mixing_length
          mu_pert_2   = newmu * Lscale_mu_coef
 
 
-         call compute_mixing_length( gr,  thvm, thlm_pert_1,                   &!intent(in)
+         call compute_mixing_length( gr, thvm, thlm_pert_1,                   &!intent(in)
                               rtm_pert_1, em, Lscale_max, p_in_Pa,        & !intent(in)
                               exner, thv_ds_zt, mu_pert_1, l_implemented, & !intent(in)
                               Lscale_pert_1, Lscale_up, Lscale_down ) !intent(out)
 
-         call compute_mixing_length( gr,  thvm, thlm_pert_2,                   & !intent(in)
+         call compute_mixing_length( gr, thvm, thlm_pert_2,                   & !intent(in)
                               rtm_pert_2, em, Lscale_max, p_in_Pa,        & !intent(in)
                               exner, thv_ds_zt, mu_pert_2, l_implemented, & !intent(in)
                               Lscale_pert_2, Lscale_up, Lscale_down ) !intent(out)
@@ -1067,12 +1067,12 @@ module mixing_length
         mu_pert_neg_rt  = newmu * Lscale_mu_coef
 
         ! Call length with perturbed values of thl and rt
-        call compute_mixing_length( gr,  thvm, thlm_pert_pos_rt,                    & !intent(in)
+        call compute_mixing_length( gr, thvm, thlm_pert_pos_rt,                    & !intent(in)
                            rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
                            exner, thv_ds_zt, mu_pert_pos_rt, l_implemented,    & !intent(in)
                            Lscale_pert_1, Lscale_up, Lscale_down ) !intent(out)
 
-        call compute_mixing_length( gr,  thvm, thlm_pert_neg_rt,                    & !intent(in)
+        call compute_mixing_length( gr, thvm, thlm_pert_neg_rt,                    & !intent(in)
                            rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
                            exner, thv_ds_zt, mu_pert_neg_rt, l_implemented,    & !intent(in)
                            Lscale_pert_2, Lscale_up, Lscale_down ) !intent(out)
@@ -1098,7 +1098,7 @@ module mixing_length
       ! rather than the mean length scale.
 
       ! Diagnose CLUBB's turbulent mixing length scale.
-      call compute_mixing_length( gr,  thvm, thlm,                         & !intent(in)
+      call compute_mixing_length( gr, thvm, thlm,                         & !intent(in)
                            rtm, em, Lscale_max, p_in_Pa,              & !intent(in)
                            exner, thv_ds_zt, newmu, l_implemented,    & !intent(in)
                            Lscale, Lscale_up, Lscale_down ) !intent(out)
@@ -1262,7 +1262,7 @@ module mixing_length
 
 
 !-----------------------------------Begin Code---------------------------------------------------!
-  call calc_brunt_vaisala_freq_sqd( gr,  zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
+  call calc_brunt_vaisala_freq_sqd( gr, zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
                                           ice_supersat_frac, &
                                           l_brunt_vaisala_freq_moist, &
                                           l_use_thvm_in_bv_freq, &

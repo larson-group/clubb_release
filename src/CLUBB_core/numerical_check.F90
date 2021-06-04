@@ -40,7 +40,7 @@ module numerical_check
 
   contains
 !---------------------------------------------------------------------------------
-  subroutine length_check( gr, Lscale, Lscale_up, Lscale_down )
+  subroutine length_check(  gr, Lscale, Lscale_up, Lscale_down )
 !
 !        Description: This subroutine determines if any of the output
 !        variables for the length_new subroutine carry values that
@@ -77,7 +77,7 @@ module numerical_check
   end subroutine length_check
 
 !---------------------------------------------------------------------------
-  subroutine pdf_closure_check( gr, wp4, wprtp2, wp2rtp, wpthlp2, & 
+  subroutine pdf_closure_check(  gr, wp4, wprtp2, wp2rtp, wpthlp2, & 
                                 wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
                                 rtpthvp, thlpthvp, wprcp, wp2rcp, & 
                                 rtprcp, thlprcp, rcp2, wprtpthlp, & 
@@ -280,7 +280,7 @@ module numerical_check
 
 !-------------------------------------------------------------------------------
   subroutine parameterization_check & 
-             ( gr, thlm_forcing, rtm_forcing, um_forcing,                       & ! intent(in)
+             (  gr, thlm_forcing, rtm_forcing, um_forcing,                       & ! intent(in)
                vm_forcing, wm_zm, wm_zt, p_in_Pa,                           & ! intent(in)
                rho_zm, rho, exner, rho_ds_zm,                               & ! intent(in)
                rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! intent(in)
@@ -577,7 +577,7 @@ module numerical_check
   end subroutine sfc_varnce_check
 
 !-----------------------------------------------------------------------
-  subroutine rad_check( gr, thlm, rcm, rtm, rim,  & 
+  subroutine rad_check(  gr, thlm, rcm, rtm, rim,  & 
                         cloud_frac, p_in_Pa, exner, rho_zm )
 ! Description:
 !   Checks radiation input variables. If they are < 0 it reports
@@ -631,7 +631,7 @@ module numerical_check
   end subroutine rad_check
 
 !-----------------------------------------------------------------------
-  logical function invalid_model_arrays( gr, um, vm, rtm, wprtp, thlm, wpthlp, &
+  logical function invalid_model_arrays(  gr, um, vm, rtm, wprtp, thlm, wpthlp, &
                                          rtp2, thlp2, rtpthlp, wp2, wp3, &
                                          wp2thvp, rtpthvp, thlpthvp, &
                                          hydromet, sclrm, edsclrm )

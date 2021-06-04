@@ -469,10 +469,10 @@ module advance_xm_wpxp_module
        endif
 
        ! Damp C6 as a function of Lscale in stably stratified regions
-       C6rt_Skw_fnc = damp_coefficient( gr,  C6rt, C6rt_Skw_fnc, &
+       C6rt_Skw_fnc = damp_coefficient( gr, C6rt, C6rt_Skw_fnc, &
                                         C6rt_Lscale0, wpxp_L_thresh, Lscale )
 
-       C6thl_Skw_fnc = damp_coefficient( gr,  C6thl, C6thl_Skw_fnc, &
+       C6thl_Skw_fnc = damp_coefficient( gr, C6thl, C6thl_Skw_fnc, &
                                          C6thl_Lscale0, wpxp_L_thresh, Lscale )
 
     else ! l_diag_Lscale_from_tau
@@ -495,7 +495,7 @@ module advance_xm_wpxp_module
       endif
 
       ! Damp C7 as a function of Lscale in stably stratified regions
-      C7_Skw_fnc = damp_coefficient( gr,  C7, C7_Skw_fnc, &
+      C7_Skw_fnc = damp_coefficient( gr, C7, C7_Skw_fnc, &
                                      C7_Lscale0, wpxp_L_thresh, Lscale )
     end if ! l_use_C7_Richardson
 
@@ -532,12 +532,12 @@ module advance_xm_wpxp_module
     ! have an effect on the central thermodynamic level during the course of
     ! one time step due to turbulent advection.  This is used as part of the
     ! monotonic turbulent advection scheme.
-    call calc_turb_adv_range( gr,  dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
+    call calc_turb_adv_range( gr, dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
                               mixt_frac_zm, &  ! intent(in)
                               low_lev_effect, high_lev_effect ) ! intent(out)
 
     ! Calculate 1st pressure terms for w'r_t', w'thl', and w'sclr'. 
-    call wpxp_term_pr1_lhs( gr,  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,        & ! Intent(in)
+    call wpxp_term_pr1_lhs( gr, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,        & ! Intent(in)
                             invrs_tau_C6_zm, l_scalar_calc,                 & ! Intent(in)
                             lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp  ) ! Intent(out)
                                 
@@ -549,7 +549,7 @@ module advance_xm_wpxp_module
     end if
 
                     
-    call  calc_xm_wpxp_ta_terms( gr,  wprtp, wp2rtp, wpthlp, wp2thlp, wpsclrp, wp2sclrp, & ! intent(in)
+    call  calc_xm_wpxp_ta_terms( gr, wprtp, wp2rtp, wpthlp, wp2thlp, wpsclrp, wp2sclrp, & ! intent(in)
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, & ! intent(in)
                                  sigma_sqd_w, wp3_on_wp2, wp3_on_wp2_zt, & ! intent(in)
                                  pdf_implicit_coefs_terms, & ! intent(in)
@@ -565,7 +565,7 @@ module advance_xm_wpxp_module
 
 
     ! Calculate various terms that are the same between all LHS matricies
-    call calc_xm_wpxp_lhs_terms( gr,  Kh_zm, wm_zm, wm_zt, wp2,                         & ! In
+    call calc_xm_wpxp_lhs_terms( gr, Kh_zm, wm_zm, wm_zt, wp2,                         & ! In
                                  Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                 & ! In
                                  rho_ds_zm, l_implemented, em,                     & ! In
                                  Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
@@ -585,7 +585,7 @@ module advance_xm_wpxp_module
                 .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) ) then
 
       ! LHS matrices are unique, multiple band solves required
-      call solve_xm_wpxp_with_multiple_lhs( gr,  dt, l_iter, nrhs, wm_zt, wp2,                   & ! In
+      call solve_xm_wpxp_with_multiple_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2,                   & ! In
                                             l_clip_semi_implicit,                           & ! In
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,  & ! In
                                             thlm_forcing,   wpthlp_forcing, rho_ds_zm,      & ! In
@@ -607,7 +607,7 @@ module advance_xm_wpxp_module
     else
       
       ! LHS matrices are equivalent, only one solve required
-      call solve_xm_wpxp_with_single_lhs( gr,  dt, l_iter, nrhs, wm_zt, wp2,                     & ! In 
+      call solve_xm_wpxp_with_single_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2,                     & ! In 
                                           invrs_tau_C6_zm, tau_max_zm,                      & ! In
                                           rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,    & ! In
                                           thlm_forcing, wpthlp_forcing, rho_ds_zm,          & ! In
@@ -654,7 +654,7 @@ module advance_xm_wpxp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
-        call error_prints_xm_wpxp( gr,  dt, sigma_sqd_w, wm_zm, wm_zt, wp2, & ! intent(in)
+        call error_prints_xm_wpxp( gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, & ! intent(in)
                                    Lscale, wp3_on_wp2, wp3_on_wp2_zt, & ! intent(in)
                                    Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, & ! intent(in)
                                    wp2rtp, rtpthvp, rtm_forcing, & ! intent(in)
@@ -685,15 +685,15 @@ module advance_xm_wpxp_module
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
 
        if ( l_stats_samp ) then
-          call stat_begin_update( gr,  irtm_sdmp, rtm / dt, & ! intent(in)
+          call stat_begin_update( gr, irtm_sdmp, rtm / dt, & ! intent(in)
                                   stats_zt )             ! intent(inout)
        endif
 
-       rtm(1:gr%nz) = sponge_damp_xm( gr,  dt, gr%zt, rtm_ref(1:gr%nz), &
+       rtm(1:gr%nz) = sponge_damp_xm( gr, dt, gr%zt, rtm_ref(1:gr%nz), &
                                       rtm(1:gr%nz), rtm_sponge_damp_profile )
 
        if ( l_stats_samp ) then
-          call stat_end_update( gr,  irtm_sdmp, rtm / dt, & ! intent(in)
+          call stat_end_update( gr, irtm_sdmp, rtm / dt, & ! intent(in)
                                 stats_zt )             ! intent(inout)
        endif
 
@@ -702,15 +702,15 @@ module advance_xm_wpxp_module
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
 
        if ( l_stats_samp ) then
-          call stat_begin_update( gr,  ithlm_sdmp, thlm / dt, & ! intent(in)
+          call stat_begin_update( gr, ithlm_sdmp, thlm / dt, & ! intent(in)
                                   stats_zt )               ! intent(inout)
        endif
 
-       thlm(1:gr%nz) = sponge_damp_xm( gr,  dt, gr%zt, thlm_ref(1:gr%nz), &
+       thlm(1:gr%nz) = sponge_damp_xm( gr, dt, gr%zt, thlm_ref(1:gr%nz), &
                                        thlm(1:gr%nz), thlm_sponge_damp_profile )
 
        if ( l_stats_samp ) then
-          call stat_end_update( gr,  ithlm_sdmp, thlm / dt, & ! intent(in)
+          call stat_end_update( gr, ithlm_sdmp, thlm / dt, & ! intent(in)
                                 stats_zt )               ! intent(inout)
        endif
 
@@ -721,22 +721,22 @@ module advance_xm_wpxp_module
        if ( uv_sponge_damp_settings%l_sponge_damping ) then
 
           if ( l_stats_samp ) then
-             call stat_begin_update( gr,  ium_sdmp, um / dt, & ! intent(in)
+             call stat_begin_update( gr, ium_sdmp, um / dt, & ! intent(in)
                                      stats_zt )           ! intent(inout)
-             call stat_begin_update( gr,  ivm_sdmp, vm / dt, & ! intent(in)
+             call stat_begin_update( gr, ivm_sdmp, vm / dt, & ! intent(in)
                                      stats_zt )           ! intent(inout)
           endif
 
-          um(1:gr%nz) = sponge_damp_xm( gr,  dt, gr%zt, um_ref(1:gr%nz), &
+          um(1:gr%nz) = sponge_damp_xm( gr, dt, gr%zt, um_ref(1:gr%nz), &
                                         um(1:gr%nz), uv_sponge_damp_profile )
 
-          vm(1:gr%nz) = sponge_damp_xm( gr,  dt, gr%zt, vm_ref(1:gr%nz), &
+          vm(1:gr%nz) = sponge_damp_xm( gr, dt, gr%zt, vm_ref(1:gr%nz), &
                                         vm(1:gr%nz), uv_sponge_damp_profile )
 
           if ( l_stats_samp ) then
-             call stat_end_update( gr,  ium_sdmp, um / dt, & ! intent(in)
+             call stat_end_update( gr, ium_sdmp, um / dt, & ! intent(in)
                                    stats_zt )           ! intent(inout)
-             call stat_end_update( gr,  ivm_sdmp, vm / dt, & ! intent(in)
+             call stat_end_update( gr, ivm_sdmp, vm / dt, & ! intent(in)
                                    stats_zt )           ! intent(inout)
           endif
 
@@ -747,9 +747,9 @@ module advance_xm_wpxp_module
 
           ! Reflect nudging in budget
           if ( l_stats_samp ) then
-             call stat_begin_update( gr,  ium_ndg, um / dt, & ! intent(in)
+             call stat_begin_update( gr, ium_ndg, um / dt, & ! intent(in)
                                      stats_zt )          ! intent(inout)
-             call stat_begin_update( gr,  ivm_ndg, vm / dt, & ! intent(in)
+             call stat_begin_update( gr, ivm_ndg, vm / dt, & ! intent(in)
                                      stats_zt )          ! intent(inout)
           endif
       
@@ -760,9 +760,9 @@ module advance_xm_wpxp_module
 
           ! Reflect nudging in budget
           if ( l_stats_samp ) then
-             call stat_end_update( gr,  ium_ndg, um / dt, & ! intent(in)
+             call stat_end_update( gr, ium_ndg, um / dt, & ! intent(in)
                                    stats_zt )          ! intent(inout)
-             call stat_end_update( gr,  ivm_ndg, vm / dt, & ! intent(in)
+             call stat_end_update( gr, ivm_ndg, vm / dt, & ! intent(in)
                                    stats_zt )          ! intent(inout)
           endif
 
@@ -1134,7 +1134,7 @@ module advance_xm_wpxp_module
            ! Note:  To find the contribution of w'x' term ac,
            !        substitute 0 for the C_7 skewness function input
            !        to function wpxp_terms_ac_pr2_lhs.
-           call wpxp_terms_ac_pr2_lhs( gr,  zero_vector, wm_zt, gr%invrs_dzm, & ! intent(in)
+           call wpxp_terms_ac_pr2_lhs( gr, zero_vector, wm_zt, gr%invrs_dzm, & ! intent(in)
                                        zmscr09 ) ! intent(out)
            zmscr09 = - zmscr09
         endif
@@ -1155,7 +1155,7 @@ module advance_xm_wpxp_module
            ! Note:  To find the contribution of w'x' term pr2,
            !        add 1 to the C_7 skewness function input
            !        to function wpxp_terms_ac_pr2_lhs.
-           call wpxp_terms_ac_pr2_lhs( gr,  (one+C7_Skw_fnc), wm_zt, gr%invrs_dzm, & ! intent(in)
+           call wpxp_terms_ac_pr2_lhs( gr, (one+C7_Skw_fnc), wm_zt, gr%invrs_dzm, & ! intent(in)
                                        zmscr11 ) ! intent(out)
            zmscr11 = - zmscr11
         endif
@@ -1324,35 +1324,35 @@ module advance_xm_wpxp_module
     constant_nu  = 0.1_core_rknd
     
     ! Calculate turbulent advection terms of xm for all grid levels
-    call xm_term_ta_lhs( gr,  rho_ds_zm(:),       & ! Intent(in)
+    call xm_term_ta_lhs( gr, rho_ds_zm(:),       & ! Intent(in)
                          invrs_rho_ds_zt(:), & ! Intent(in)
                          gr%invrs_dzt(:),    & ! Intent(in)
                          lhs_ta_xm(:,:)      ) ! Intent(out)         
     
                                    
     ! Calculate turbulent production terms of w'x' for all grid level
-    call wpxp_term_tp_lhs( gr,  wp2(:), gr%invrs_dzm(:), & ! Intent(in)
+    call wpxp_term_tp_lhs( gr, wp2(:), gr%invrs_dzm(:), & ! Intent(in)
                            lhs_tp(:,:) )              ! Intent(out)
 
     ! Calculate accumulation of w'x' and w'x' pressure term 2 of w'x' for all grid level
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wpxp_pr
-    call wpxp_terms_ac_pr2_lhs( gr,  C7_Skw_fnc, wm_zt, gr%invrs_dzm, & ! Intent(in)
+    call wpxp_terms_ac_pr2_lhs( gr, C7_Skw_fnc, wm_zt, gr%invrs_dzm, & ! Intent(in)
                                 lhs_ac_pr2                       ) ! Intent(out)
 
     ! Calculate diffusion terms for all momentum grid level
-    call diffusion_zm_lhs( gr,  Kw6(:), nu6_vert_res_dep(:),      & ! Intent(in)
+    call diffusion_zm_lhs( gr, Kw6(:), nu6_vert_res_dep(:),      & ! Intent(in)
                            gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
                            lhs_diff_zm(:,:)                  ) ! Intent(out)    
                               
     ! Calculate mean advection terms for all momentum grid level
-    call term_ma_zm_lhs( gr,  wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
+    call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
                          lhs_ma_zm(:,:)             ) ! Intent(out) 
                                
     ! Calculate diffusion terms for all thermodynamic grid level
     if ( l_diffuse_rtm_and_thlm ) then
         
         if ( l_stability_correct_Kh_N2_zm ) then
-          Kh_N2_zm = Kh_zm / calc_stability_correction( gr,  thlm, Lscale, em, exner, rtm, rcm, &
+          Kh_N2_zm = Kh_zm / calc_stability_correction( gr, thlm, Lscale, em, exner, rtm, rcm, &
                                                         p_in_Pa, thvm, ice_supersat_frac, &
                                                         l_brunt_vaisala_freq_moist, &
                                                         l_use_thvm_in_bv_freq )
@@ -1363,7 +1363,7 @@ module advance_xm_wpxp_module
         K_zm(:) = rho_ds_zm(:) * ( Kh_N2_zm(:) + constant_nu )
         zero_nu(:) = 0.0_core_rknd
 
-        call diffusion_zt_lhs( gr,  K_zm(:), zero_nu(:),              & ! Intent(in)
+        call diffusion_zt_lhs( gr, K_zm(:), zero_nu(:),              & ! Intent(in)
                                gr%invrs_dzm(:), gr%invrs_dzt(:), & ! Intent(in)
                                lhs_diff_zt(:,:)                  ) ! Intent(out)
         
@@ -1372,7 +1372,7 @@ module advance_xm_wpxp_module
     ! Calculate mean advection terms for all thermodynamic grid level
     if ( .not. l_implemented ) then
 
-        call term_ma_zt_lhs( gr,  wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
+        call term_ma_zt_lhs( gr, wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
                              l_upwind_xm_ma,                             & ! Intent(in)
                              lhs_ma_zt(:,:)                              ) ! Intent(out)
     endif    
@@ -1544,7 +1544,7 @@ module advance_xm_wpxp_module
     invrs_dt = 1.0_core_rknd / dt    
                                   
     ! Calculate buoyancy production of w'x' and w'x' pressure term 3
-    call wpxp_terms_bp_pr3_rhs( gr,  C7_Skw_fnc(:), thv_ds_zm(:), xpthvp(:), & ! intent(in)
+    call wpxp_terms_bp_pr3_rhs( gr, C7_Skw_fnc(:), thv_ds_zm(:), xpthvp(:), & ! intent(in)
                                 rhs_bp_pr3(:) )                           ! intent(out)
                             
     ! Set lower boundary for xm
@@ -1658,7 +1658,7 @@ module advance_xm_wpxp_module
         ! w'x' term bp is completely explicit; call stat_update_var.
         ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
         !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
-        call wpxp_terms_bp_pr3_rhs( gr,  zero_vector, thv_ds_zm, xpthvp, & ! intent(in)
+        call wpxp_terms_bp_pr3_rhs( gr, zero_vector, thv_ds_zm, xpthvp, & ! intent(in)
                                     rhs_bp )                          ! intent(out)
         call stat_update_var( iwpxp_bp, rhs_bp, & ! intent(in)
                               stats_zm )          ! intent(inout)
@@ -1666,7 +1666,7 @@ module advance_xm_wpxp_module
         ! w'x' term pr3 is completely explicit; call stat_update_var.
         ! Note:  To find the contribution of w'x' term pr3, add 1 to the
         !        C_7 skewness function input to function wpxp_terms_bp_pr2_rhs.
-        call wpxp_terms_bp_pr3_rhs( gr,  (one+C7_Skw_fnc), thv_ds_zm, xpthvp, & ! intent(in)
+        call wpxp_terms_bp_pr3_rhs( gr, (one+C7_Skw_fnc), thv_ds_zm, xpthvp, & ! intent(in)
                                     rhs_pr3 ) ! intent(out)
         call stat_update_var( iwpxp_pr3, rhs_pr3, & ! intent(in)
                               stats_zm )            ! intent(inout)
@@ -1952,11 +1952,11 @@ module advance_xm_wpxp_module
       ! Interpolate wp2rtp to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_wpxp_ta ) then
         term_wp2rtp_explicit_zm = zt2zm( wp2rtp )
-        sgn_t_vel_wprtp = sgn_turbulent_velocity( gr,  term_wp2rtp_explicit_zm, wprtp )
+        sgn_t_vel_wprtp = sgn_turbulent_velocity( gr, term_wp2rtp_explicit_zm, wprtp )
       endif ! l_upwind_wpxp_ta
 
       ! Calculate the RHS turbulent advection term for <w'r_t'>
-      call xpyp_term_ta_pdf_rhs( gr,  term_wp2rtp_explicit(:),       & ! Intent(in)
+      call xpyp_term_ta_pdf_rhs( gr, term_wp2rtp_explicit(:),       & ! Intent(in)
                                  rho_ds_zt(:),                  & ! Intent(in)
                                  invrs_rho_ds_zm(:),            & ! Intent(in)
                                  gr%invrs_dzm(:),               & ! Intent(in)
@@ -1970,11 +1970,11 @@ module advance_xm_wpxp_module
       ! Interpolate wp2thlp to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_wpxp_ta ) then
         term_wp2thlp_explicit_zm = zt2zm( wp2thlp )
-        sgn_t_vel_wpthlp = sgn_turbulent_velocity( gr,  term_wp2thlp_explicit_zm, wpthlp )
+        sgn_t_vel_wpthlp = sgn_turbulent_velocity( gr, term_wp2thlp_explicit_zm, wpthlp )
       endif ! l_upwind_wpxp_ta
        
       ! Calculate the RHS turbulent advection term for <w'thl'>
-      call xpyp_term_ta_pdf_rhs( gr,  term_wp2thlp_explicit(:),      & ! Intent(in)
+      call xpyp_term_ta_pdf_rhs( gr, term_wp2thlp_explicit(:),      & ! Intent(in)
                                  rho_ds_zt(:),                  & ! Intent(in)
                                  invrs_rho_ds_zm(:),            & ! Intent(in)
                                  gr%invrs_dzm(:),               & ! Intent(in)
@@ -1991,7 +1991,7 @@ module advance_xm_wpxp_module
         ! l_upwind_wpxp_ta, otherwise just use wp2sclrp
         if ( l_upwind_wpxp_ta ) then
           term_wp2sclrp_explicit_zm(:) = zt2zm( wp2sclrp(:,i) )
-          sgn_t_vel_wpsclrp(:) = sgn_turbulent_velocity( gr,  term_wp2sclrp_explicit_zm(:), &
+          sgn_t_vel_wpsclrp(:) = sgn_turbulent_velocity( gr, term_wp2sclrp_explicit_zm(:), &
                                                             wpsclrp(:,i) )
         else 
            
@@ -2000,7 +2000,7 @@ module advance_xm_wpxp_module
         endif ! l_upwind_wpxp_ta
         
         ! Calculate the RHS turbulent advection term for <w'thl'>
-        call xpyp_term_ta_pdf_rhs( gr,  term_wp2sclrp_explicit(:),     & ! Intent(in)
+        call xpyp_term_ta_pdf_rhs( gr, term_wp2sclrp_explicit(:),     & ! Intent(in)
                                    rho_ds_zt(:),                  & ! Intent(in)
                                    invrs_rho_ds_zm(:),            & ! Intent(in)
                                    gr%invrs_dzm(:),               & ! Intent(in)
@@ -2050,7 +2050,7 @@ module advance_xm_wpxp_module
         if ( .not. l_godunov_upwind_wpxp_ta ) then
  
           ! Calculate the LHS turbulent advection term for <w'r_t'>
-          call xpyp_term_ta_pdf_lhs( gr,  coef_wp2rtp_implicit(:),     & ! Intent(in)
+          call xpyp_term_ta_pdf_lhs( gr, coef_wp2rtp_implicit(:),     & ! Intent(in)
                                      rho_ds_zt(:),                & ! Intent(in)
                                      invrs_rho_ds_zm(:),          & ! Intent(in)
                                      gr%invrs_dzm(:),             & ! Intent(in)
@@ -2067,7 +2067,7 @@ module advance_xm_wpxp_module
            coef_wp2rtp_implicit = a1_zt * wp3_on_wp2_zt
            coef_wp2thlp_implicit = coef_wp2rtp_implicit
 
-           call xpyp_term_ta_pdf_lhs_godunov( gr,  coef_wp2rtp_implicit(:),     & ! Intent(in)
+           call xpyp_term_ta_pdf_lhs_godunov( gr, coef_wp2rtp_implicit(:),     & ! Intent(in)
                                                   invrs_rho_ds_zm(:),          & ! Intent(in)
                                                   gr%invrs_dzm(:),             & ! Intent(in)
                                                   rho_ds_zm(:),                & ! Intent(in)
@@ -2139,13 +2139,13 @@ module advance_xm_wpxp_module
 
            ! Calculate the sign of the turbulent velocity for <w'rt'>.
            sgn_t_vel_wprtp &
-           = sgn_turbulent_velocity( gr,  coef_wp2rtp_implicit_zm * wprtp &
+           = sgn_turbulent_velocity( gr, coef_wp2rtp_implicit_zm * wprtp &
                                      + term_wp2rtp_explicit_zm, wprtp )
 
         endif ! l_upwind_wpxp_ta
 
         ! Calculate the LHS turbulent advection term for <w'rt'>
-        call xpyp_term_ta_pdf_lhs( gr,  coef_wp2rtp_implicit(:),      & ! Intent(in)
+        call xpyp_term_ta_pdf_lhs( gr, coef_wp2rtp_implicit(:),      & ! Intent(in)
                                    rho_ds_zt(:),                 & ! Intent(in)
                                    invrs_rho_ds_zm(:),           & ! Intent(in)
                                    gr%invrs_dzm(:),              & ! Intent(in)
@@ -2157,7 +2157,7 @@ module advance_xm_wpxp_module
                                    lhs_ta_wprtp(:,:)             ) ! Intent(out) 
                                        
         ! Calculate the RHS turbulent advection term for <w'rt'>
-        call xpyp_term_ta_pdf_rhs( gr,  term_wp2rtp_explicit(:),      & ! Intent(in)
+        call xpyp_term_ta_pdf_rhs( gr, term_wp2rtp_explicit(:),      & ! Intent(in)
                                    rho_ds_zt(:),                 & ! Intent(in)
                                    invrs_rho_ds_zm(:),           & ! Intent(in)
                                    gr%invrs_dzm(:),              & ! Intent(in)
@@ -2178,13 +2178,13 @@ module advance_xm_wpxp_module
 
            ! Calculate the sign of the turbulent velocity for <w'thl'>.
            sgn_t_vel_wpthlp &
-           = sgn_turbulent_velocity( gr,  coef_wp2thlp_implicit_zm * wpthlp &
+           = sgn_turbulent_velocity( gr, coef_wp2thlp_implicit_zm * wpthlp &
                                      + term_wp2thlp_explicit_zm, wpthlp )
 
         endif ! l_upwind_wpxp_ta
         
         ! Calculate the LHS turbulent advection term for <w'thl'>
-        call xpyp_term_ta_pdf_lhs( gr,  coef_wp2thlp_implicit(:),      & ! Intent(in)
+        call xpyp_term_ta_pdf_lhs( gr, coef_wp2thlp_implicit(:),      & ! Intent(in)
                                    rho_ds_zt(:),                  & ! Intent(in)
                                    invrs_rho_ds_zm(:),            & ! Intent(in)
                                    gr%invrs_dzm(:),               & ! Intent(in)
@@ -2196,7 +2196,7 @@ module advance_xm_wpxp_module
                                    lhs_ta_wpthlp(:,:)             ) ! Intent(out) 
       
         ! Calculate the RHS turbulent advection term for <w'thl'>
-        call xpyp_term_ta_pdf_rhs( gr,  term_wp2thlp_explicit(:),      & ! Intent(in)
+        call xpyp_term_ta_pdf_rhs( gr, term_wp2thlp_explicit(:),      & ! Intent(in)
                                    rho_ds_zt(:),                  & ! Intent(in)
                                    invrs_rho_ds_zm(:),            & ! Intent(in)
                                    gr%invrs_dzm(:),               & ! Intent(in)
@@ -2238,12 +2238,12 @@ module advance_xm_wpxp_module
 
            ! Calculate the sign of the turbulent velocity for <w'rt'>.
            sgn_t_vel_wprtp &
-           = sgn_turbulent_velocity( gr,  coef_wp2rtp_implicit_zm * wprtp, wprtp )
+           = sgn_turbulent_velocity( gr, coef_wp2rtp_implicit_zm * wprtp, wprtp )
 
         endif ! l_upwind_wpxp_ta
 
         ! Calculate the LHS turbulent advection term for <w'rt'>
-        call xpyp_term_ta_pdf_lhs( gr,  coef_wp2rtp_implicit(:),      & ! Intent(in)
+        call xpyp_term_ta_pdf_lhs( gr, coef_wp2rtp_implicit(:),      & ! Intent(in)
                                    rho_ds_zt(:),                 & ! Intent(in)
                                    invrs_rho_ds_zm(:),           & ! Intent(in)
                                    gr%invrs_dzm(:),              & ! Intent(in)
@@ -2573,7 +2573,7 @@ module advance_xm_wpxp_module
     ! used, l_explicit_turbulent_adv_wpxp is enabled.
       
     ! Create the lhs once
-    call xm_wpxp_lhs( gr,  l_iter, dt, zeros_vector, wm_zt, C7_Skw_fnc,    & ! In
+    call xm_wpxp_lhs( gr, l_iter, dt, zeros_vector, wm_zt, C7_Skw_fnc,    & ! In
                       invrs_rho_ds_zt, zeros_vector, zeros_vector,    & ! In
                       l_implemented, lhs_diff_zm, lhs_diff_zt,        & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wpxp, lhs_ta_xm,   & ! In
@@ -2583,7 +2583,7 @@ module advance_xm_wpxp_module
 
     ! Compute the explicit portion of the r_t and w'r_t' equations.
     ! Build the right-hand side vector.
-    call xm_wpxp_rhs( gr,  xm_wpxp_rtm, l_iter, dt, rtm, wprtp,      & ! In
+    call xm_wpxp_rhs( gr, xm_wpxp_rtm, l_iter, dt, rtm, wprtp,      & ! In
                       rtm_forcing, wprtp_forcing, C7_Skw_fnc,   & ! In
                       rtpthvp, rhs_ta_wprtp, thv_ds_zm,         & ! In
                       zeros_vector, zeros_vector,               & ! In
@@ -2592,7 +2592,7 @@ module advance_xm_wpxp_module
                       
     ! Compute the explicit portion of the th_l and w'th_l' equations.
     ! Build the right-hand side vector.
-    call xm_wpxp_rhs( gr,  xm_wpxp_thlm, l_iter, dt, thlm, wpthlp,     & ! In
+    call xm_wpxp_rhs( gr, xm_wpxp_thlm, l_iter, dt, thlm, wpthlp,     & ! In
                       thlm_forcing, wpthlp_forcing, C7_Skw_fnc,   & ! In
                       thlpthvp, rhs_ta_wpthlp, thv_ds_zm,         & ! In
                       zeros_vector, zeros_vector,                 & ! In
@@ -2613,7 +2613,7 @@ module advance_xm_wpxp_module
       ! using wprtp or wpthlp (then use wprtp_forcing or wpthlp_forcing).
       wpsclrp_forcing(:,i) = zero
 
-      call xm_wpxp_rhs( gr,  xm_wpxp_scalar, l_iter, dt, sclrm(:,i),         & ! In
+      call xm_wpxp_rhs( gr, xm_wpxp_scalar, l_iter, dt, sclrm(:,i),         & ! In
                         wpsclrp(:,i), sclrm_forcing(:,i),               & ! In
                         wpsclrp_forcing(:,i), C7_Skw_fnc,               & ! In
                         sclrpthvp(:,i), rhs_ta_wpsclrp(:,i), thv_ds_zm, & ! In
@@ -2681,16 +2681,16 @@ module advance_xm_wpxp_module
        ! need tau_C6_zm for these calls
        tau_C6_zm = min ( one / invrs_tau_C6_zm, tau_max_zm )
 
-       call diagnose_upxp( gr,  upwp, thlm, wpthlp, um, &               ! Intent(in)
+       call diagnose_upxp( gr, upwp, thlm, wpthlp, um, &               ! Intent(in)
                            C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
                            upthlp )                                ! Intent(out)
-       call diagnose_upxp( gr,  upwp, rtm, wprtp, um, &                ! Intent(in)
+       call diagnose_upxp( gr, upwp, rtm, wprtp, um, &                ! Intent(in)
                            C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
                            uprtp )                                ! Intent(out)
-       call diagnose_upxp( gr,  vpwp, thlm, wpthlp, vm, &               ! Intent(in)
+       call diagnose_upxp( gr, vpwp, thlm, wpthlp, vm, &               ! Intent(in)
                            C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
                            vpthlp )                                ! Intent(out)
-       call diagnose_upxp( gr,  vpwp, rtm, wprtp, vm, &                ! Intent(in)
+       call diagnose_upxp( gr, vpwp, rtm, wprtp, vm, &                ! Intent(in)
                            C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
                            vprtp )                                ! Intent(out)
 
@@ -2723,14 +2723,14 @@ module advance_xm_wpxp_module
                                 stats_zm )         ! intent(inout)
        endif ! l_stats_samp
 
-       call xm_wpxp_rhs( gr,  xm_wpxp_um, l_iter, dt, um, upwp,    & ! In
+       call xm_wpxp_rhs( gr, xm_wpxp_um, l_iter, dt, um, upwp,    & ! In
                          um_tndcy, upwp_forcing, C7_Skw_fnc,  & ! In
                          upthvp, rhs_ta_wpup, thv_ds_zm,      & ! In
                          zeros_vector, zeros_vector,          & ! In
                          lhs_pr1_wprtp, lhs_ta_wpxp,          & ! In
                          rhs(:,3+sclr_dim) )                    ! Out
 
-       call xm_wpxp_rhs( gr,  xm_wpxp_vm, l_iter, dt, vm, vpwp,    & ! In
+       call xm_wpxp_rhs( gr, xm_wpxp_vm, l_iter, dt, vm, vpwp,    & ! In
                          vm_tndcy, vpwp_forcing, C7_Skw_fnc,  & ! In
                          vpthvp, rhs_ta_wpvp, thv_ds_zm,      & ! In
                          zeros_vector, zeros_vector,          & ! In
@@ -2746,11 +2746,11 @@ module advance_xm_wpxp_module
     ! Solve for all fields
     if ( l_stats_samp &
          .and. ithlm_matrix_condt_num + irtm_matrix_condt_num > 0 ) then
-       call xm_wpxp_solve( gr,  nrhs, &                     ! Intent(in)
+       call xm_wpxp_solve( gr, nrhs, &                     ! Intent(in)
                            lhs, rhs, &                 ! Intent(inout)
                            solution, rcond )           ! Intent(out)
     else
-       call xm_wpxp_solve( gr,  nrhs, &              ! Intent(in)
+       call xm_wpxp_solve( gr, nrhs, &              ! Intent(in)
                            lhs, rhs, &          ! Intent(inout)
                            solution )           ! Intent(out)
     endif
@@ -3127,7 +3127,7 @@ module advance_xm_wpxp_module
 
     ! Compute the implicit portion of the r_t and w'r_t' equations.
     ! Build the left-hand side matrix.                    
-    call xm_wpxp_lhs( gr,  l_iter, dt, wprtp, wm_zt, C7_Skw_fnc,               & ! In
+    call xm_wpxp_lhs( gr, l_iter, dt, wprtp, wm_zt, C7_Skw_fnc,               & ! In
                       invrs_rho_ds_zt, wpxp_upper_lim, wpxp_lower_lim,    & ! In
                       l_implemented, lhs_diff_zm, lhs_diff_zt,            & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wprtp, lhs_ta_xm,      & ! In
@@ -3137,7 +3137,7 @@ module advance_xm_wpxp_module
 
     ! Compute the explicit portion of the r_t and w'r_t' equations.
     ! Build the right-hand side vector.
-    call xm_wpxp_rhs( gr,  xm_wpxp_rtm, l_iter, dt, rtm, wprtp,      & ! In
+    call xm_wpxp_rhs( gr, xm_wpxp_rtm, l_iter, dt, rtm, wprtp,      & ! In
                       rtm_forcing, wprtp_forcing, C7_Skw_fnc,   & ! In
                       rtpthvp, rhs_ta_wprtp, thv_ds_zm,         & ! In
                       wpxp_upper_lim, wpxp_lower_lim,           & ! In
@@ -3150,11 +3150,11 @@ module advance_xm_wpxp_module
 
     ! Solve r_t / w'r_t'
     if ( l_stats_samp .and. irtm_matrix_condt_num > 0 ) then
-      call xm_wpxp_solve( gr,  nrhs, &                     ! Intent(in)
+      call xm_wpxp_solve( gr, nrhs, &                     ! Intent(in)
                           lhs, rhs, &                 ! Intent(inout)
                           solution, rcond )           ! Intent(out)
     else
-      call xm_wpxp_solve( gr,  nrhs, &              ! Intent(in)
+      call xm_wpxp_solve( gr, nrhs, &              ! Intent(in)
                           lhs, rhs, &          ! Intent(inout)
                           solution )           ! Intent(out)
     endif
@@ -3210,7 +3210,7 @@ module advance_xm_wpxp_module
     
     ! Compute the implicit portion of the th_l and w'th_l' equations.
     ! Build the left-hand side matrix.
-    call xm_wpxp_lhs( gr,  l_iter, dt, wpthlp, wm_zt, C7_Skw_fnc,              & ! In
+    call xm_wpxp_lhs( gr, l_iter, dt, wpthlp, wm_zt, C7_Skw_fnc,              & ! In
                       invrs_rho_ds_zt, wpxp_upper_lim, wpxp_lower_lim,    & ! In
                       l_implemented, lhs_diff_zm, lhs_diff_zt,            & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wpthlp, lhs_ta_xm,     & ! In
@@ -3220,7 +3220,7 @@ module advance_xm_wpxp_module
 
     ! Compute the explicit portion of the th_l and w'th_l' equations.
     ! Build the right-hand side vector.
-    call xm_wpxp_rhs( gr,  xm_wpxp_thlm, l_iter, dt, thlm, wpthlp,     & ! In
+    call xm_wpxp_rhs( gr, xm_wpxp_thlm, l_iter, dt, thlm, wpthlp,     & ! In
                       thlm_forcing, wpthlp_forcing, C7_Skw_fnc,   & ! In
                       thlpthvp, rhs_ta_wpthlp, thv_ds_zm,         & ! In
                       wpxp_upper_lim, wpxp_lower_lim,             & ! In
@@ -3233,11 +3233,11 @@ module advance_xm_wpxp_module
 
     ! Solve for th_l / w'th_l'
     if ( l_stats_samp .and. ithlm_matrix_condt_num > 0 ) then
-      call xm_wpxp_solve( gr,  nrhs, &                     ! Intent(in)
+      call xm_wpxp_solve( gr, nrhs, &                     ! Intent(in)
                           lhs, rhs, &                 ! Intent(inout)
                           solution, rcond )           ! Intent(out)
     else
-      call xm_wpxp_solve( gr,  nrhs, &              ! Intent(in)
+      call xm_wpxp_solve( gr, nrhs, &              ! Intent(in)
                           lhs, rhs, &          ! Intent(inout)
                           solution )           ! Intent(out)
     endif
@@ -3309,7 +3309,7 @@ module advance_xm_wpxp_module
       
       ! Compute the implicit portion of the sclr and w'sclr' equations.
       ! Build the left-hand side matrix.
-      call xm_wpxp_lhs( gr,  l_iter, dt, wpsclrp(:,i), wm_zt, C7_Skw_fnc,              & ! In
+      call xm_wpxp_lhs( gr, l_iter, dt, wpsclrp(:,i), wm_zt, C7_Skw_fnc,              & ! In
                         invrs_rho_ds_zt, wpxp_upper_lim, wpxp_lower_lim,          & ! In
                         l_implemented, lhs_diff_zm, lhs_diff_zt,                  & ! In
                         lhs_ma_zm, lhs_ma_zt, lhs_ta_wpsclrp(:,:,i), lhs_ta_xm,   & ! In
@@ -3319,7 +3319,7 @@ module advance_xm_wpxp_module
 
       ! Compute the explicit portion of the sclrm and w'sclr' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( gr,  xm_wpxp_scalar, l_iter, dt, sclrm(:,i),           & ! In
+      call xm_wpxp_rhs( gr, xm_wpxp_scalar, l_iter, dt, sclrm(:,i),           & ! In
                         wpsclrp(:,i), sclrm_forcing(:,i),                 & ! In
                         wpsclrp_forcing(:,i), C7_Skw_fnc,                 & ! In
                         sclrpthvp(:,i), rhs_ta_wpsclrp(:,i), thv_ds_zm,   & ! In
@@ -3332,7 +3332,7 @@ module advance_xm_wpxp_module
       rhs_save = rhs
 
       ! Solve for sclrm / w'sclr'
-      call xm_wpxp_solve( gr,  nrhs, &              ! Intent(in)
+      call xm_wpxp_solve( gr, nrhs, &              ! Intent(in)
                           lhs, rhs, &          ! Intent(inout)
                           solution )           ! Intent(out)
 
@@ -3927,7 +3927,7 @@ module advance_xm_wpxp_module
 
     ! Apply a monotonic turbulent flux limiter to xm/w'x'.
     if ( l_mono_flux_lim ) then
-      call monotonic_turbulent_flux_limit( gr,  solve_type, dt, xm_n, & ! intent(in)
+      call monotonic_turbulent_flux_limit( gr, solve_type, dt, xm_n, & ! intent(in)
                                            xp2, wm_zt, xm_forcing, & ! intent(in)
                                            rho_ds_zm, rho_ds_zt, & ! intent(in)
                                            invrs_rho_ds_zm, invrs_rho_ds_zt, & ! intent(in)
@@ -3941,7 +3941,7 @@ module advance_xm_wpxp_module
     ! for the mean field is negative and we're determining total water
     if ( solve_type == xm_wpxp_rtm .and. l_pos_def .and. any( xm < zero ) ) then
 
-      call pos_definite_adj( gr,  dt, "zt", xm, & ! intent(in) 
+      call pos_definite_adj( gr, dt, "zt", xm, & ! intent(in) 
                              wpxp, xm_n, & ! intent(inout)
                              xm_pd, wpxp_pd ) ! intent(out)
 
@@ -3964,7 +3964,7 @@ module advance_xm_wpxp_module
 
     ! Computed value before clipping
     if ( l_stats_samp ) then
-      call stat_begin_update( gr,  ixm_cl, xm / dt, & ! Intent(in)
+      call stat_begin_update( gr, ixm_cl, xm / dt, & ! Intent(in)
                               stats_zt )                       ! Intent(inout)
     end if
 
@@ -3989,7 +3989,7 @@ module advance_xm_wpxp_module
         end do
       end if
 
-      call fill_holes_vertical( gr,  2, xm_threshold, "zt", & ! intent(in)
+      call fill_holes_vertical( gr, 2, xm_threshold, "zt", & ! intent(in)
                                 rho_ds_zt, rho_ds_zm, & ! intent(in)
                                 xm ) ! intent(inout)
 
@@ -4001,7 +4001,7 @@ module advance_xm_wpxp_module
           ! .and. solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
 
     if ( l_stats_samp ) then
-      call stat_end_update( gr,  ixm_cl, xm / dt, & ! Intent(in) 
+      call stat_end_update( gr, ixm_cl, xm / dt, & ! Intent(in) 
                             stats_zt )                       ! Intent(inout)
     end if
 
@@ -4054,7 +4054,7 @@ module advance_xm_wpxp_module
 
     if ( solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm ) then
 
-       call clip_covar( gr,  solve_type_cl, l_first_clip_ts, &  ! In
+       call clip_covar( gr, solve_type_cl, l_first_clip_ts, &  ! In
                         l_last_clip_ts, dt, wp2, xp2_relaxed, &  ! In
                         l_predict_upwp_vpwp, & ! In
                         wpxp, wpxp_chnge ) ! In/Out
@@ -4063,14 +4063,14 @@ module advance_xm_wpxp_module
 
        if ( l_tke_aniso ) then
 
-          call clip_covar( gr,  solve_type_cl, l_first_clip_ts, &  ! In
+          call clip_covar( gr, solve_type_cl, l_first_clip_ts, &  ! In
                            l_last_clip_ts, dt, wp2, xp2, &  ! In
                            l_predict_upwp_vpwp, & ! In
                            wpxp, wpxp_chnge ) ! In/Out
 
        else
 
-          call clip_covar( gr,  solve_type_cl, l_first_clip_ts, &  ! In
+          call clip_covar( gr, solve_type_cl, l_first_clip_ts, &  ! In
                            l_last_clip_ts, dt, wp2, wp2, &  ! In
                            l_predict_upwp_vpwp, & ! In
                            wpxp, wpxp_chnge ) ! In/Out
@@ -4081,7 +4081,7 @@ module advance_xm_wpxp_module
 
     ! Adjusting xm based on clipping for w'x'.
     if ( any( abs(wpxp_chnge) > eps ) .and. l_clip_turb_adv ) then
-      call xm_correction_wpxp_cl( gr,  solve_type, dt, wpxp_chnge, gr%invrs_dzt, & ! intent(in)
+      call xm_correction_wpxp_cl( gr, solve_type, dt, wpxp_chnge, gr%invrs_dzt, & ! intent(in)
                                   xm ) ! intent(inout)
     endif
 

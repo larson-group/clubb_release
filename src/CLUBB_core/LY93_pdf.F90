@@ -87,20 +87,20 @@ module LY93_pdf
     Sk_max = max( abs( Skw ), abs( Skrt ), abs( Skthl ) )
 
     ! Calculate mixture fraction.
-    mixt_frac = calc_mixt_frac_LY93( gr,  Sk_max )
+    mixt_frac = calc_mixt_frac_LY93( gr, Sk_max )
 
     ! Calculate the PDF parameters for w.
-    call calc_params_LY93( gr,  wm, wp2, Skw, mixt_frac,     & ! In
+    call calc_params_LY93( gr, wm, wp2, Skw, mixt_frac,     & ! In
                            mu_w_1, mu_w_2,              & ! Out
                            sigma_w_1_sqd, sigma_w_2_sqd ) ! Out
 
     ! Calculate the PDF parameters for rt.
-    call calc_params_LY93( gr,  rtm, rtp2, Skrt, mixt_frac,    & ! In
+    call calc_params_LY93( gr, rtm, rtp2, Skrt, mixt_frac,    & ! In
                            mu_rt_1, mu_rt_2,              & ! Out
                            sigma_rt_1_sqd, sigma_rt_2_sqd ) ! Out
 
     ! Calculate the PDF parameters for thl.
-    call calc_params_LY93( gr,  thlm, thlp2, Skthl, mixt_frac,   & ! In
+    call calc_params_LY93( gr, thlm, thlp2, Skthl, mixt_frac,   & ! In
                            mu_thl_1, mu_thl_2,              & ! Out
                            sigma_thl_1_sqd, sigma_thl_2_sqd ) ! Out
 
