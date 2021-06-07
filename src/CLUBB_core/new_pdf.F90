@@ -1181,7 +1181,7 @@ module new_pdf
                                    coef_sigma_w_1_sqd, &
                                    coef_sigma_w_2_sqd ) &
     result( coef_wp4_implicit )
-  
+
       ! Description:
       ! The predictive equation for <w'^3> contains a turbulent advection term of
       ! the form:
@@ -1255,35 +1255,35 @@ module new_pdf
       ! the <w'^2> predictive equation, the <w'^3> and <w'^2> predictive equations
       ! are solved together.  This allows the term containing <w'^4> to be solved
       ! implicitly.
-  
+
       ! References:
       !-----------------------------------------------------------------------
-  
+
       use grid_class, only: &
           gr    ! Variable type(s)
-  
+
       use constants_clubb, only: &
           six,   & ! Variable(s)
           three, &
           one
-  
+
       use clubb_precision, only: &
           core_rknd    ! Procedure(s)
-  
+
       implicit none
-  
+
       ! Input Variables
       real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
         mixt_frac,          & ! Mixture fraction                               [-]
         F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
         coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
         coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
-  
+
       ! Return Variable
       real ( kind = core_rknd ), dimension(gr%nz) :: &
         coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
-  
-  
+
+
       ! Calculate coef_wp4_implicit.
       coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
                           + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
@@ -1291,10 +1291,10 @@ module new_pdf
                           + three * ( one - mixt_frac ) * coef_sigma_w_2_sqd**2 &
                           + six * F_w * mixt_frac * coef_sigma_w_2_sqd &
                           + F_w**2 * mixt_frac**2 / ( one - mixt_frac )
-  
-  
+
+
     return
-  
+
   end function calc_coef_wp4_implicit
 
   !=============================================================================
@@ -1305,7 +1305,7 @@ module new_pdf
                                      coef_sigma_x_1_sqd, &
                                      coef_sigma_x_2_sqd  ) &
     result( coef_wpxp2_implicit )
-  
+
       ! Description:
       ! The predictive equation for <x'^2> contains a turbulent advection term of
       ! the form:
@@ -1483,23 +1483,23 @@ module new_pdf
       !   * ( F_x * ( ( 1 - mixt_frac ) / mixt_frac
       !               - mixt_frac / ( 1 - mixt_frac ) )
       !       + ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ) ).
-  
+
       ! References:
       !-----------------------------------------------------------------------
-  
+
       use grid_class, only: &
           gr    ! Variable type(s)
-  
+
       use constants_clubb, only: &
           two,  & ! Variable(s)
           one,  &
           zero
-  
+
       use clubb_precision, only: &
           core_rknd    ! Procedure(s)
-  
+
       implicit none
-  
+
       ! Input Variables
       real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
         wp2,                & ! Variance of w (overall)                  [m^2/s^2]
@@ -1513,28 +1513,28 @@ module new_pdf
         coef_sigma_w_2_sqd, & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
         coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
         coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
-  
+
       ! Return Variable
       real ( kind = core_rknd ), dimension(gr%nz) :: &
         coef_wpxp2_implicit ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> [m/s]
-  
+
       ! Local Variable
       real ( kind = core_rknd ), dimension(gr%nz) :: &
         coefs_factor    ! Factor involving coef_sigma_... coefficients         [-]
-  
-  
+
+
       ! Calculate coef_wpxp2_implicit.
       where ( ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero &
                 .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) &
               .and. ( wp2 * xp2 > zero ) )
-  
+
          coefs_factor &
          = ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &
              - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) &
            / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &
                + ( one - mixt_frac ) &
                  * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
-  
+
          coef_wpxp2_implicit &
          = sqrt( mixt_frac * ( one - mixt_frac ) ) * sqrt( wp2 ) &
            * ( sqrt( F_w ) * F_x &
@@ -1544,22 +1544,22 @@ module new_pdf
                + two * sqrt( F_x ) * coefs_factor * sgn_wpxp * wpxp &
                  / ( sqrt( wp2 ) * sqrt( xp2 ) ) &
                - two * sqrt( F_w ) * F_x * coefs_factor )
-  
+
       elsewhere ! ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0
                 !   and coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0 )
                 ! or wp2 * xp2 = 0
-  
+
          coef_wpxp2_implicit &
          = sqrt( mixt_frac * ( one - mixt_frac ) ) * sqrt( wp2 ) * sqrt( F_w ) &
            * ( F_x * ( ( one - mixt_frac ) / mixt_frac &
                        - mixt_frac / ( one - mixt_frac ) ) &
                + ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ) )
-  
+
     endwhere
-  
-  
+
+
     return
-  
+
   end function calc_coef_wpxp2_implicit
 
   !=============================================================================

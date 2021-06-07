@@ -723,7 +723,7 @@ module new_hybrid_pdf
                                                   coef_sigma_w_1_sqd, &
                                                   coef_sigma_w_2_sqd ) &
     result( coef_wp4_implicit )
-  
+
       ! Description:
       ! The predictive equation for <w'^3> contains a turbulent advection term of
       ! the form:
@@ -785,32 +785,32 @@ module new_hybrid_pdf
       ! the <w'^2> predictive equation, the <w'^3> and <w'^2> predictive equations
       ! are solved together.  This allows the term containing <w'^4> to be solved
       ! implicitly.
-  
+
       ! References:
       !-----------------------------------------------------------------------
-  
+
       use constants_clubb, only: &
           six,   & ! Variable(s)
           three, &
           one
-  
+
       use clubb_precision, only: &
           core_rknd    ! Procedure(s)
-  
+
       implicit none
-  
+
       ! Input Variables
       real ( kind = core_rknd ), intent(in) :: &
         mixt_frac,          & ! Mixture fraction                               [-]
         F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
         coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
         coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
-  
+
       ! Return Variable
       real ( kind = core_rknd ) :: &
         coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
-  
-  
+
+
       ! Calculate coef_wp4_implicit.
       coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
                           + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
@@ -818,10 +818,10 @@ module new_hybrid_pdf
                           + three * ( one - mixt_frac ) * coef_sigma_w_2_sqd**2 &
                           + six * F_w * mixt_frac * coef_sigma_w_2_sqd &
                           + F_w**2 * mixt_frac**2 / ( one - mixt_frac )
-  
-  
+
+
     return
-  
+
   end function calculate_coef_wp4_implicit
 
   !=============================================================================
@@ -829,7 +829,7 @@ module new_hybrid_pdf
                                                coef_sigma_w_1_sqd,  &
                                                coef_sigma_w_2_sqd   ) &
     result( coef_wp2xp_implicit )
-  
+
       ! Description:
       ! The predictive equation for <w'x'> contains a turbulent advection term of
       ! the form:
@@ -927,19 +927,19 @@ module new_hybrid_pdf
       !                       * sqrt( F_w * <w'^2> );
       !
       ! and since F_w = 0, coef_wp2xp_implicit = 0.
-  
+
       ! References:
       !-----------------------------------------------------------------------
-  
+
       use constants_clubb, only: &
           one,  & ! Variable(s)
           zero
-  
+
       use clubb_precision, only: &
           core_rknd    ! Procedure(s)
-  
+
       implicit none
-  
+
       ! Input Variables
       real ( kind = core_rknd ), intent(in) :: &
         wp2,                & ! Variance of w (overall)                  [m^2/s^2]
@@ -947,32 +947,32 @@ module new_hybrid_pdf
         F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
         coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
         coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
-  
+
       ! Return Variable
       ! Coefficient: <w'^2 x'> = coef_wp2xp_implicit * <w'x'>
       real ( kind = core_rknd ) :: &
         coef_wp2xp_implicit    ! Coefficient that is multiplied by <w'x'>    [m/s]
-  
-  
+
+
       ! Calculate coef_wp2xp_implicit.
       if ( F_w > 0 ) then
-  
+
          coef_wp2xp_implicit &
          = sqrt( mixt_frac * ( one - mixt_frac ) ) &
            * ( F_w * ( ( one - mixt_frac ) / mixt_frac &
                        - mixt_frac / ( one - mixt_frac ) ) &
                + coef_sigma_w_1_sqd - coef_sigma_w_2_sqd ) &
            * sqrt( wp2 / F_w )
-  
+
       else ! F_w = 0
-  
+
          coef_wp2xp_implicit = zero
-  
+
     endif
-  
-  
+
+
     return
-  
+
   end function calc_coef_wp2xp_implicit
 
   !=============================================================================

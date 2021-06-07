@@ -963,29 +963,29 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1          ! Units vary
-  
+
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = min( input_var1, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
-  
+
     return
   end function smooth_min_zm_sclr_array
 
@@ -1003,29 +1003,29 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1          ! Units vary
-  
+
     real ( kind = core_rknd ), intent(in) :: &
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = min( input_var2, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
-  
+
     return
   end function smooth_min_zm_array_sclr
 
@@ -1043,27 +1043,27 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = zt2zm( zm2zt( min( input_var1 , input_var2 )))
-  
+
     return
   end function smooth_min_zm_arrays
 
@@ -1081,29 +1081,29 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1          ! Units vary
-  
+
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = min( input_var1, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
-  
+
     return
   end function smooth_min_zt_sclr_array
 
@@ -1121,29 +1121,29 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1          ! Units vary
-  
+
     real ( kind = core_rknd ), intent(in) :: &
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = min( input_var2, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
-  
+
     return
   end function smooth_min_zt_array_sclr
 
@@ -1161,27 +1161,27 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = zm2zt( zt2zm( min( input_var1 , input_var2 )))
-  
+
     return
   end function smooth_min_zt_arrays
 
@@ -1199,29 +1199,29 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1          ! Units vary
-  
+
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = max( input_var1, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
-    
+  
     return
   end function smooth_max_zm_sclr_array
 
@@ -1239,29 +1239,29 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1          ! Units vary
-  
+
     real ( kind = core_rknd ), intent(in) :: &
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = max( input_var2, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
-  
+
     return
   end function smooth_max_zm_array_sclr
 
@@ -1279,27 +1279,27 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = zt2zm( zm2zt( max( input_var1 , input_var2 )))
-  
+
     return
   end function smooth_max_zm_arrays
 
@@ -1317,29 +1317,29 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1          ! Units vary
-  
+
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = max( input_var1, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
-  
+
     return
   end function smooth_max_zt_sclr_array
 
@@ -1357,29 +1357,29 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1          ! Units vary
-  
+
     real ( kind = core_rknd ), intent(in) :: &
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = max( input_var2, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
-  
+
     return
   end function smooth_max_zt_array_sclr
 
@@ -1397,27 +1397,27 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-  
+
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-  
+
     implicit none
-  
+
     ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
-  
+
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
-  
+
     !----------------------------------------------------------------------
-  
+
       output_var = zm2zt( zt2zm( max( input_var1 , input_var2 )))
-  
+
     return
   end function smooth_max_zt_arrays
 
