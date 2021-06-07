@@ -1,7 +1,7 @@
 !--------------------------------------------------------------------------------------------------
-! $Id$
+                  ! $Id$
 !==================================================================================================
-!
+                            !
 !       ########  ###       ###    ### #########  #########           ###     ######### ###########
 !     ###    ### ###       ###    ### ###    ### ###    ###        ### ###   ###    ###    ###
 !    ###        ###       ###    ### ###    ### ###    ###       ###   ###  ###    ###    ###
@@ -851,8 +851,8 @@ contains
     use model_flags, only: &
         clubb_config_flags_type  ! Type
 
-  ! TODO: This should be called from the api, but all the host models appear to call
-  !       it directly or not at all.
+        ! TODO: This should be called from the api, but all the host models appear to call
+        !       it directly or not at all.
 !   use model_flags, only: &
 !     setup_model_flags    ! Subroutine
 
@@ -2671,31 +2671,31 @@ contains
                   ( nz, rcm_zm, thlprcp, radht_zm, &      ! Intent(in)
                     thlp2_forcing )                       ! Intent(inout)
 
-    use clubb_precision, only: &
-        core_rknd                     ! Constant(s)
-  
-    use advance_clubb_core_module, only: &
-        calculate_thlp2_rad
-  
-    implicit none
-  
-    ! Input Variables
-    integer, intent(in) :: &
-      nz                    ! Number of vertical levels                      [-]
-  
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
-      thlprcp, &            ! thl'rc'                                        [K kg/kg]
-      radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
-  
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
-      thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
-    !----------------------------------------------------------------------
-  
-      call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, &
-                      thlp2_forcing )
-  
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use advance_clubb_core_module, only: &
+    calculate_thlp2_rad
+
+  implicit none
+
+  ! Input Variables
+  integer, intent(in) :: &
+    nz                    ! Number of vertical levels                      [-]
+
+  real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+    thlprcp, &            ! thl'rc'                                        [K kg/kg]
+    radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+
+  ! Input/Output Variables
+  real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
+  !----------------------------------------------------------------------
+
+    call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, &
+                    thlp2_forcing )
+
     return
   end subroutine calculate_thlp2_rad_api
 

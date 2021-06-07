@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-!  $Id$
+                                !  $Id$
 !===============================================================================
-module stats_clubb_utilities
+                                                                                module stats_clubb_utilities
 
   implicit none
 
@@ -3250,65 +3250,65 @@ subroutine stats_check_num_samples( stats_grid, l_error )
 !   None
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        fstderr ! Constant
-  
-    use stats_type, only: &
-        stats ! Type
-  
-    use stats_variables, only: &
-        stats_tsamp, & ! Variable(s)
-        stats_tout
-  
-    use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
-  
-    implicit none
-  
-    ! Input Variables
-    type (stats), intent(in) :: &
-      stats_grid               ! Grid type              [grid]
-  
-    ! Input/Output Variables
-    logical, intent(inout) :: &
-      l_error                  ! Indicates an error     [boolean]
-  
-    ! Local Variables
-    integer :: ivar, kvar      ! Loop variable          [index]
-  
-    logical :: l_proper_sample
-  
-  !-----------------------------------------------------------------------
-  
-    !----- Begin Code -----
-  
-    ! Look for errors by checking the number of sampling points
-    ! for each variable in the statistics grid at each vertical level.
-    do ivar = 1, stats_grid%num_output_fields
-      do kvar = 1, stats_grid%kk
-  
-        l_proper_sample = ( stats_grid%accum_num_samples(1,1,kvar,ivar) == 0 .or. &
-                            stats_grid%accum_num_samples(1,1,kvar,ivar) == &
-                              floor(stats_tout/stats_tsamp) )
-  
-        if ( .not. l_proper_sample ) then
-  
-          l_error = .true.  ! This will stop the run
-  
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(stats_grid%file%grid_avg_var(ivar)%name), ' in stats_grid ',  &
-                             'at k = ', kvar,  &
-                             '; stats_grid%accum_num_samples(',kvar,',',ivar,') = ', &
-                              stats_grid%accum_num_samples(1,1,kvar,ivar)
+  use constants_clubb, only: &
+    fstderr ! Constant
+
+  use stats_type, only: &
+    stats ! Type
+
+  use stats_variables, only: &
+    stats_tsamp, & ! Variable(s)
+    stats_tout
+
+  use error_code, only: &
+    clubb_at_least_debug_level   ! Procedure
+
+  implicit none
+
+  ! Input Variables
+  type (stats), intent(in) :: &
+    stats_grid               ! Grid type              [grid]
+
+  ! Input/Output Variables
+  logical, intent(inout) :: &
+    l_error                  ! Indicates an error     [boolean]
+
+  ! Local Variables
+  integer :: ivar, kvar      ! Loop variable          [index]
+
+  logical :: l_proper_sample
+
+!-----------------------------------------------------------------------
+
+  !----- Begin Code -----
+
+  ! Look for errors by checking the number of sampling points
+  ! for each variable in the statistics grid at each vertical level.
+  do ivar = 1, stats_grid%num_output_fields
+    do kvar = 1, stats_grid%kk
+
+      l_proper_sample = ( stats_grid%accum_num_samples(1,1,kvar,ivar) == 0 .or. &
+                          stats_grid%accum_num_samples(1,1,kvar,ivar) == &
+                            floor(stats_tout/stats_tsamp) )
+
+      if ( .not. l_proper_sample ) then
+
+        l_error = .true.  ! This will stop the run
+
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,*) 'Possible sampling error for variable ',  &
+                           trim(stats_grid%file%grid_avg_var(ivar)%name), ' in stats_grid ',  &
+                           'at k = ', kvar,  &
+                           '; stats_grid%accum_num_samples(',kvar,',',ivar,') = ', &
+                            stats_grid%accum_num_samples(1,1,kvar,ivar)
         end if ! clubb_at_lest_debug_level 1
-  
-  
+
+
       end if ! .not. l_proper_sample
-  
+
     end do ! kvar = 1 .. stats_grid%kk
   end do ! ivar = 1 .. stats_grid%num_output_fields
-  
+
   return
 end subroutine stats_check_num_samples
 !-----------------------------------------------------------------------
