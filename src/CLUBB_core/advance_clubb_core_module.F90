@@ -4489,28 +4489,28 @@ module advance_clubb_core_module
     integer, intent(in) :: &
       nz                    ! Number of vertical levels                      [-]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
-      thlprcp, &            ! thl'rc'                                        [K kg/kg]
-      radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+  real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+    thlprcp, &            ! thl'rc'                                        [K kg/kg]
+    radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
 
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
-      thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
+  ! Input/Output Variables
+  real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
 
-    ! Local Variables
-    integer :: &
-      k                     ! Loop iterator                                  [-]
+  ! Local Variables
+  integer :: &
+    k                     ! Loop iterator                                  [-]
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
 
-      do k = 1, nz
+    do k = 1, nz
 
-         if ( rcm_zm(k) > rc_tol ) then
+       if ( rcm_zm(k) > rc_tol ) then
 
-            thlp2_forcing(k) = thlp2_forcing(k) + &
-                      thlp2_rad_coef * ( two ) * radht_zm(k) / rcm_zm(k) * thlprcp(k)
+          thlp2_forcing(k) = thlp2_forcing(k) + &
+                    thlp2_rad_coef * ( two ) * radht_zm(k) / rcm_zm(k) * thlprcp(k)
 
        end if
 

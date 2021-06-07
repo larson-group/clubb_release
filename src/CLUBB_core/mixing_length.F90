@@ -1217,158 +1217,158 @@ module mixing_length
     logical, intent(in) :: &
       l_e3sm_config,              &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
-                                    ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
+                                  ! saturated atmospheres (from Durran and Klemp, 1982)
+    l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      brunt_vaisala_freq_sqd,       &
-      brunt_vaisala_freq_sqd_mixed, &
-      brunt_vaisala_freq_sqd_dry,   &
-      brunt_vaisala_freq_sqd_moist, &
-      brunt_vaisala_freq_sqd_plus,  &
-      sqrt_Ri_zm,                   &
-      invrs_tau_zt,                 &
-      invrs_tau_zm,                 &
-      invrs_tau_sfc,                &
-      invrs_tau_no_N2_zm,           &
-      invrs_tau_bkgnd,              &
-      invrs_tau_shear,              &
-      invrs_tau_wp2_zm,             &
-      invrs_tau_xp2_zm,             &
-      invrs_tau_wp3_zm,             &
-      invrs_tau_wp3_zt,             &
-      invrs_tau_wpxp_zm,            &
-      tau_max_zm,                   &
-      tau_max_zt,                   &
-      tau_zm,                       &
-      tau_zt,                       &
-      Lscale,                       &
-      Lscale_up,                    &
-      Lscale_down
+  real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    brunt_vaisala_freq_sqd,       &
+    brunt_vaisala_freq_sqd_mixed, &
+    brunt_vaisala_freq_sqd_dry,   &
+    brunt_vaisala_freq_sqd_moist, &
+    brunt_vaisala_freq_sqd_plus,  &
+    sqrt_Ri_zm,                   &
+    invrs_tau_zt,                 &
+    invrs_tau_zm,                 &
+    invrs_tau_sfc,                &
+    invrs_tau_no_N2_zm,           &
+    invrs_tau_bkgnd,              &
+    invrs_tau_shear,              &
+    invrs_tau_wp2_zm,             &
+    invrs_tau_xp2_zm,             &
+    invrs_tau_wp3_zm,             &
+    invrs_tau_wp3_zt,             &
+    invrs_tau_wpxp_zm,            &
+    tau_max_zm,                   &
+    tau_max_zt,                   &
+    tau_zm,                       &
+    tau_zt,                       &
+    Lscale,                       &
+    Lscale_up,                    &
+    Lscale_down
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      brunt_freq_pos,               &
-      brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
-      brunt_freq_out_cloud
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    brunt_freq_pos,               &
+    brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
+    brunt_freq_out_cloud
 
-   real( kind = core_rknd ) :: &
-      ustar
-
-
-  !-----------------------------------Begin Code---------------------------------------------------!
-    call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
-                                            ice_supersat_frac, &
-                                            l_brunt_vaisala_freq_moist, &
-                                            l_use_thvm_in_bv_freq, &
-                                            brunt_vaisala_freq_sqd, &
-                                            brunt_vaisala_freq_sqd_mixed,&
-                                            brunt_vaisala_freq_sqd_dry, &
-                                            brunt_vaisala_freq_sqd_moist, &
-                                            brunt_vaisala_freq_sqd_plus )
+ real( kind = core_rknd ) :: &
+    ustar
 
 
-          ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
+!-----------------------------------Begin Code---------------------------------------------------!
+  call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
+                                          ice_supersat_frac, &
+                                          l_brunt_vaisala_freq_moist, &
+                                          l_use_thvm_in_bv_freq, &
+                                          brunt_vaisala_freq_sqd, &
+                                          brunt_vaisala_freq_sqd_mixed,&
+                                          brunt_vaisala_freq_sqd_dry, &
+                                          brunt_vaisala_freq_sqd_moist, &
+                                          brunt_vaisala_freq_sqd_plus )
 
-          invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
 
-          invrs_tau_shear &
-          = C_invrs_tau_shear &
-            * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
+        ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
-          invrs_tau_sfc &
-          = C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace )
-           !C_invrs_tau_sfc * ( wp2 / vonk /ustar ) / ( gr%zm -sfc_elevation + z_displace )
+        invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
 
-          invrs_tau_no_N2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear
+        invrs_tau_shear &
+        = C_invrs_tau_shear &
+          * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
 
-          !brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
-          !The min function below smooths the slope discontinuity in brunt freq
-          !  and thereby allows tau to remain large in Sc layers in which thlm may
-          !  be slightly stably stratified.
+        invrs_tau_sfc &
+        = C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace )
+         !C_invrs_tau_sfc * ( wp2 / vonk /ustar ) / ( gr%zm -sfc_elevation + z_displace )
 
-          brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
-                min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
+        invrs_tau_no_N2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear
 
-          sqrt_Ri_zm &
-          = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
-                  / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd ) )
+        !brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
+        !The min function below smooths the slope discontinuity in brunt freq
+        !  and thereby allows tau to remain large in Sc layers in which thlm may
+        !  be slightly stably stratified.
 
-          brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
+        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
+              min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
 
-          brunt_freq_out_cloud =  brunt_freq_pos &
-                * min(one, max(zero_threshold,&
-                one - ( (zt2zm(ice_supersat_frac) / 0.007_core_rknd) )))
+        sqrt_Ri_zm &
+        = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
+                / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd ) )
 
-          where ( gr%zt < altitude_threshold )
-             brunt_freq_out_cloud = 0.0_core_rknd
+        brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
+
+        brunt_freq_out_cloud =  brunt_freq_pos &
+              * min(one, max(zero_threshold,&
+              one - ( (zt2zm(ice_supersat_frac) / 0.007_core_rknd) )))
+
+        where ( gr%zt < altitude_threshold )
+           brunt_freq_out_cloud = 0.0_core_rknd
         end where
 
-          invrs_tau_wp2_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2_wp2 * brunt_freq_pos
+        invrs_tau_wp2_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2_wp2 * brunt_freq_pos
 
-          invrs_tau_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos
+        invrs_tau_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos
 
 
-          if ( l_e3sm_config ) then
+        if ( l_e3sm_config ) then
 
-            invrs_tau_zm = 0.5_core_rknd * invrs_tau_zm
+          invrs_tau_zm = 0.5_core_rknd * invrs_tau_zm
 
-            invrs_tau_xp2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear &
-                              + C_invrs_tau_N2_xp2 * brunt_freq_pos & ! 0
-                              + C_invrs_tau_sfc * 2.0_core_rknd &
-                              * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
+          invrs_tau_xp2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear &
+                            + C_invrs_tau_N2_xp2 * brunt_freq_pos & ! 0
+                            + C_invrs_tau_sfc * 2.0_core_rknd &
+                            * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
 
-            invrs_tau_xp2_zm = min( max( sqrt( ( ddzt(um)**2 + ddzt(vm)**2 ) &
-                              / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
-                              0.3_core_rknd ), 1.0_core_rknd ) * invrs_tau_xp2_zm
+          invrs_tau_xp2_zm = min( max( sqrt( ( ddzt(um)**2 + ddzt(vm)**2 ) &
+                            / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
+                            0.3_core_rknd ), 1.0_core_rknd ) * invrs_tau_xp2_zm
 
-            invrs_tau_wpxp_zm = 2.0_core_rknd * invrs_tau_zm &
-                               + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
+          invrs_tau_wpxp_zm = 2.0_core_rknd * invrs_tau_zm &
+                             + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
 
-          else ! l_e3sm_config = false
+        else ! l_e3sm_config = false
 
-            invrs_tau_xp2_zm =  0.1_core_rknd * invrs_tau_bkgnd + invrs_tau_sfc &
-                  + invrs_tau_shear + C_invrs_tau_N2_xp2 * brunt_freq_pos
+          invrs_tau_xp2_zm =  0.1_core_rknd * invrs_tau_bkgnd + invrs_tau_sfc &
+                + invrs_tau_shear + C_invrs_tau_N2_xp2 * brunt_freq_pos
 
-            invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
-                  zt2zm(ice_supersat_frac) <= 0.01_core_rknd &
-                  .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
+          invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
+                zt2zm(ice_supersat_frac) <= 0.01_core_rknd &
+                .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
 
-            invrs_tau_wpxp_zm = invrs_tau_zm + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
+          invrs_tau_wpxp_zm = invrs_tau_zm + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
 
         end if ! l_e3sm_config
 
 
-          where( gr%zt > altitude_threshold &
-                 .and. brunt_vaisala_freq_sqd_smth > C_invrs_tau_wpxp_N2_thresh )
-             invrs_tau_wpxp_zm &
-             = invrs_tau_wpxp_zm &
-               * ( 1.0_core_rknd &
-                   + C_invrs_tau_wpxp_Ri * min( max( sqrt_Ri_zm, 0.0_core_rknd ), &
-                                        12.0_core_rknd ) )
+        where( gr%zt > altitude_threshold &
+               .and. brunt_vaisala_freq_sqd_smth > C_invrs_tau_wpxp_N2_thresh )
+           invrs_tau_wpxp_zm &
+           = invrs_tau_wpxp_zm &
+             * ( 1.0_core_rknd &
+                 + C_invrs_tau_wpxp_Ri * min( max( sqrt_Ri_zm, 0.0_core_rknd ), &
+                                      12.0_core_rknd ) )
         end where
 
-          invrs_tau_wp3_zm = invrs_tau_wp2_zm + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
+        invrs_tau_wp3_zm = invrs_tau_wp2_zm + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
 
-          if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
-               error stop  "Lowest zm grid level is below ground in CLUBB."
+        if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
+             error stop  "Lowest zm grid level is below ground in CLUBB."
         end if
 
-          ! Calculate the maximum allowable value of time-scale tau,
+        ! Calculate the maximum allowable value of time-scale tau,
         ! which depends of the value of Lscale_max.
-          tau_max_zt = Lscale_max / sqrt_em_zt
-          tau_max_zm = Lscale_max / sqrt( max( em, em_min ) )
+        tau_max_zt = Lscale_max / sqrt_em_zt
+        tau_max_zm = Lscale_max / sqrt( max( em, em_min ) )
 
-          tau_zm           = min( one / invrs_tau_zm, tau_max_zm )
-          tau_zt           = min( zm2zt( tau_zm ), tau_max_zt )
-          invrs_tau_zt     = zm2zt( invrs_tau_zm )
-          invrs_tau_wp3_zt = zm2zt( invrs_tau_wp3_zm )
+        tau_zm           = min( one / invrs_tau_zm, tau_max_zm )
+        tau_zt           = min( zm2zt( tau_zm ), tau_max_zt )
+        invrs_tau_zt     = zm2zt( invrs_tau_zm )
+        invrs_tau_wp3_zt = zm2zt( invrs_tau_wp3_zm )
 
-          Lscale = tau_zt * sqrt_em_zt
+        Lscale = tau_zt * sqrt_em_zt
 
-          ! Lscale_up and Lscale_down aren't calculated with this option.
-          ! They are set to 0 for stats output.
-          Lscale_up = zero
-          Lscale_down = zero
+        ! Lscale_up and Lscale_down aren't calculated with this option.
+        ! They are set to 0 for stats output.
+        Lscale_up = zero
+        Lscale_down = zero
   end subroutine diagnose_Lscale_from_tau
 
 end module mixing_length

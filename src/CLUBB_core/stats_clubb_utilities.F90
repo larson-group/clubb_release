@@ -3270,37 +3270,37 @@ subroutine stats_check_num_samples( stats_grid, l_error )
       stats_grid               ! Grid type              [grid]
 
     ! Input/Output Variables
-    logical, intent(inout) :: &
-      l_error                  ! Indicates an error     [boolean]
+  logical, intent(inout) :: &
+    l_error                  ! Indicates an error     [boolean]
 
-    ! Local Variables
-    integer :: ivar, kvar      ! Loop variable          [index]
+  ! Local Variables
+  integer :: ivar, kvar      ! Loop variable          [index]
 
-    logical :: l_proper_sample
+  logical :: l_proper_sample
 
-  !-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
-    !----- Begin Code -----
+  !----- Begin Code -----
 
-    ! Look for errors by checking the number of sampling points
-    ! for each variable in the statistics grid at each vertical level.
-    do ivar = 1, stats_grid%num_output_fields
-      do kvar = 1, stats_grid%kk
+  ! Look for errors by checking the number of sampling points
+  ! for each variable in the statistics grid at each vertical level.
+  do ivar = 1, stats_grid%num_output_fields
+    do kvar = 1, stats_grid%kk
 
-        l_proper_sample = ( stats_grid%accum_num_samples(1,1,kvar,ivar) == 0 .or. &
-                            stats_grid%accum_num_samples(1,1,kvar,ivar) == &
-                              floor(stats_tout/stats_tsamp) )
+      l_proper_sample = ( stats_grid%accum_num_samples(1,1,kvar,ivar) == 0 .or. &
+                          stats_grid%accum_num_samples(1,1,kvar,ivar) == &
+                            floor(stats_tout/stats_tsamp) )
 
-        if ( .not. l_proper_sample ) then
+      if ( .not. l_proper_sample ) then
 
-          l_error = .true.  ! This will stop the run
+        l_error = .true.  ! This will stop the run
 
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(stats_grid%file%grid_avg_var(ivar)%name), ' in stats_grid ',  &
-                             'at k = ', kvar,  &
-                             '; stats_grid%accum_num_samples(',kvar,',',ivar,') = ', &
-                              stats_grid%accum_num_samples(1,1,kvar,ivar)
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,*) 'Possible sampling error for variable ',  &
+                           trim(stats_grid%file%grid_avg_var(ivar)%name), ' in stats_grid ',  &
+                           'at k = ', kvar,  &
+                           '; stats_grid%accum_num_samples(',kvar,',',ivar,') = ', &
+                            stats_grid%accum_num_samples(1,1,kvar,ivar)
         end if ! clubb_at_lest_debug_level 1
 
 
