@@ -1,7 +1,7 @@
 ! $Id$
-    !===============================================================================
+!===============================================================================
 module new_hybrid_pdf
-                                                                                                                
+
   ! Description:
   ! The portion of CLUBB's multivariate, two-component PDF that is the
   ! multivariate, two-component normal PDF of vertical velocity (w), total water
@@ -722,257 +722,257 @@ module new_hybrid_pdf
   elemental function calculate_coef_wp4_implicit( mixt_frac, F_w, &
                                                   coef_sigma_w_1_sqd, &
                                                   coef_sigma_w_2_sqd ) &
-  result( coef_wp4_implicit )
-
-    ! Description:
-    ! The predictive equation for <w'^3> contains a turbulent advection term of
-    ! the form:
-    !
-    ! - ( 1 / rho_ds ) * d ( rho_ds * <w'^4> ) / dz;
-    !
-    ! where z is height, rho_ds is the dry, base-state density, and <w'^4> is
-    ! calculated by integrating over the PDF.  The equation for <w'^4> is:
-    !
-    ! <w'^4> = mixt_frac * ( 3 * sigma_w_1^4
-    !                        + 6 * ( mu_w_1 - <w> )^2 * sigma_w_1^2
-    !                        + ( mu_w_1 - <w> )^4 )
-    !          + ( 1 - mixt_frac ) * ( 3 * sigma_w_2^4
-    !                                  + 6 * ( mu_w_2 - <w> )^2 * sigma_w_2^2
-    !                                  + ( mu_w_2 - <w> )^4 ).
-    !
-    ! The following substitutions are made into the above equation:
-    !
-    ! mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
-    !                * sqrt( <w'^2> );
-    !
-    ! mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
-    !                  * sqrt( <w'^2> );
-    !
-    ! sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> ); and
-    !
-    ! sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> ).
-    !
-    ! The equations for coef_sigma_w_1_sqd and coef_sigma_w_2_sqd are:
-    !
-    ! coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
-    !                      / ( ( zeta_w + 2 ) * mixt_frac ); and
-    !
-    ! coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
-    !
-    ! The equation for <w'4> becomes:
-    !
-    ! <w'^4> = ( 3 * mixt_frac * coef_sigma_w_1_sqd^2
-    !            + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
-    !            + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
-    !            + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
-    !            + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
-    !            + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ) ) * <w'^2>^2.
-    !
-    ! This equation is of the form:
-    !
-    ! <w'^4> = coef_wp4_implicit * <w'^2>^2;
-    !
-    ! where:
-    !
-    ! coef_wp4_implicit = 3 * mixt_frac * coef_sigma_w_1_sqd^2
-    !                     + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
-    !                     + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
-    !                     + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
-    !                     + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
-    !                     + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ).
-    !
-    ! While the <w'^4> term is found in the <w'^3> predictive equation and not
-    ! the <w'^2> predictive equation, the <w'^3> and <w'^2> predictive equations
-    ! are solved together.  This allows the term containing <w'^4> to be solved
-    ! implicitly.
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        six,   & ! Variable(s)
-        three, &
-        one
-
-    use clubb_precision, only: &
-        core_rknd    ! Procedure(s)
-
-    implicit none
-
-    ! Input Variables
-    real ( kind = core_rknd ), intent(in) :: &
-      mixt_frac,          & ! Mixture fraction                               [-]
-      F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
-      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
-      coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
-
-    ! Return Variable
-    real ( kind = core_rknd ) :: &
-      coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
-
-
-    ! Calculate coef_wp4_implicit.
-    coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
-                        + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
-                        + F_w**2 * ( one - mixt_frac )**2 / mixt_frac &
-                        + three * ( one - mixt_frac ) * coef_sigma_w_2_sqd**2 &
-                        + six * F_w * mixt_frac * coef_sigma_w_2_sqd &
-                        + F_w**2 * mixt_frac**2 / ( one - mixt_frac )
-
-
+    result( coef_wp4_implicit )
+  
+      ! Description:
+      ! The predictive equation for <w'^3> contains a turbulent advection term of
+      ! the form:
+      !
+      ! - ( 1 / rho_ds ) * d ( rho_ds * <w'^4> ) / dz;
+      !
+      ! where z is height, rho_ds is the dry, base-state density, and <w'^4> is
+      ! calculated by integrating over the PDF.  The equation for <w'^4> is:
+      !
+      ! <w'^4> = mixt_frac * ( 3 * sigma_w_1^4
+      !                        + 6 * ( mu_w_1 - <w> )^2 * sigma_w_1^2
+      !                        + ( mu_w_1 - <w> )^4 )
+      !          + ( 1 - mixt_frac ) * ( 3 * sigma_w_2^4
+      !                                  + 6 * ( mu_w_2 - <w> )^2 * sigma_w_2^2
+      !                                  + ( mu_w_2 - <w> )^4 ).
+      !
+      ! The following substitutions are made into the above equation:
+      !
+      ! mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+      !                * sqrt( <w'^2> );
+      !
+      ! mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+      !                  * sqrt( <w'^2> );
+      !
+      ! sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> ); and
+      !
+      ! sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> ).
+      !
+      ! The equations for coef_sigma_w_1_sqd and coef_sigma_w_2_sqd are:
+      !
+      ! coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
+      !                      / ( ( zeta_w + 2 ) * mixt_frac ); and
+      !
+      ! coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
+      !
+      ! The equation for <w'4> becomes:
+      !
+      ! <w'^4> = ( 3 * mixt_frac * coef_sigma_w_1_sqd^2
+      !            + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
+      !            + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
+      !            + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
+      !            + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
+      !            + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ) ) * <w'^2>^2.
+      !
+      ! This equation is of the form:
+      !
+      ! <w'^4> = coef_wp4_implicit * <w'^2>^2;
+      !
+      ! where:
+      !
+      ! coef_wp4_implicit = 3 * mixt_frac * coef_sigma_w_1_sqd^2
+      !                     + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
+      !                     + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
+      !                     + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
+      !                     + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
+      !                     + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ).
+      !
+      ! While the <w'^4> term is found in the <w'^3> predictive equation and not
+      ! the <w'^2> predictive equation, the <w'^3> and <w'^2> predictive equations
+      ! are solved together.  This allows the term containing <w'^4> to be solved
+      ! implicitly.
+  
+      ! References:
+      !-----------------------------------------------------------------------
+  
+      use constants_clubb, only: &
+          six,   & ! Variable(s)
+          three, &
+          one
+  
+      use clubb_precision, only: &
+          core_rknd    ! Procedure(s)
+  
+      implicit none
+  
+      ! Input Variables
+      real ( kind = core_rknd ), intent(in) :: &
+        mixt_frac,          & ! Mixture fraction                               [-]
+        F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+        coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+        coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+  
+      ! Return Variable
+      real ( kind = core_rknd ) :: &
+        coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
+  
+  
+      ! Calculate coef_wp4_implicit.
+      coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
+                          + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
+                          + F_w**2 * ( one - mixt_frac )**2 / mixt_frac &
+                          + three * ( one - mixt_frac ) * coef_sigma_w_2_sqd**2 &
+                          + six * F_w * mixt_frac * coef_sigma_w_2_sqd &
+                          + F_w**2 * mixt_frac**2 / ( one - mixt_frac )
+  
+  
     return
-
+  
   end function calculate_coef_wp4_implicit
 
   !=============================================================================
   elemental function calc_coef_wp2xp_implicit( wp2, mixt_frac, F_w, &
                                                coef_sigma_w_1_sqd,  &
                                                coef_sigma_w_2_sqd   ) &
-  result( coef_wp2xp_implicit )
-
-    ! Description:
-    ! The predictive equation for <w'x'> contains a turbulent advection term of
-    ! the form:
-    !
-    ! - ( 1 / rho_ds ) * d ( rho_ds * <w'^2 x'> ) / dz;
-    !
-    ! where z is height, rho_ds is the dry, base-state density, and <w'^2 x'> is
-    ! calculated by integrating over the PDF.  The equation for <w'^2 x'> is:
-    !
-    ! <w'^2 x'>
-    ! = mixt_frac * ( ( mu_x_1 - <x> ) * ( ( mu_w_1 - <w> )^2 + sigma_w_1^2 )
-    !                 + 2 * corr_w_x_1 * sigma_w_1 * sigma_x_1
-    !                   * ( mu_w_1 - <w> ) )
-    !   + ( 1 - mixt_frac ) * ( ( mu_x_2 - <x> )
-    !                           * ( ( mu_w_2 - <w> )^2 + sigma_w_2^2 )
-    !                           + 2 * corr_w_x_2 * sigma_w_2 * sigma_x_2
-    !                             * ( mu_w_2 - <w> ) ).
-    !
-    ! The following substitutions are made into the above equation:
-    !
-    ! mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
-    !                * sqrt( <w'^2> );
-    !
-    ! mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
-    !                  * sqrt( <w'^2> );
-    !
-    ! mu_x_1 - <x> = sqrt( ( 1 - mixt_frac ) / mixt_frac )
-    !                * <w'x'> / sqrt( F_w * <w'^2> );
-    !
-    ! mu_x_2 - <x> = - sqrt( mixt_frac / ( 1 - mixt_frac ) )
-    !                  * <w'x'> / sqrt( F_w * <w'^2> );
-    !
-    ! sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> );
-    !
-    ! sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> );
-    !
-    ! sigma_x_1 = sqrt( coef_sigma_x_1_sqd * <x'^2> ); and
-    !
-    ! sigma_x_2 = sqrt( coef_sigma_x_2_sqd * <x'^2> ).
-    !
-    ! The equations for coef_sigma_w_1_sqd and coef_sigma_w_2_sqd are:
-    !
-    ! coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
-    !                      / ( ( zeta_w + 2 ) * mixt_frac ); and
-    !
-    ! coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
-    !
-    ! The equations for coef_sigma_x_1_sqd and coef_sigma_x_2_sqd are:
-    !
-    ! coef_sigma_x_1_sqd
-    ! = 1 + sqrt( ( 1 - mixt_frac ) / mixt_frac )
-    !       * Skx * sqrt( F_w * <w'^2> * <x'^2> ) / ( 3 * <w'x'> )
-    !   - ( ( 1 + mixt_frac ) / mixt_frac )
-    !     * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> ); and
-    !
-    ! coef_sigma_x_2_sqd
-    ! = 1 - sqrt( mixt_frac / ( 1 - mixt_frac ) )
-    !       * Skx * sqrt( F_w * <w'^2> * <x'^2> ) / ( 3 * <w'x'> )
-    !   + ( ( mixt_frac - 2 ) / ( 1 - mixt_frac ) )
-    !     * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> ).
-    !
-    ! Additionally, corr_w_x_1 = corr_w_x_2 = 0.
-    !
-    ! The equation for <w'^2 x'> becomes:
-    !
-    ! <w'^2 x'> = sqrt( mixt_frac * ( 1 - mixt_frac ) )
-    !             * ( F_w * ( ( 1 - mixt_frac ) / mixt_frac
-    !                         - mixt_frac / ( 1 - mixt_frac ) )
-    !                 + coef_sigma_w_1_sqd - coef_sigma_w_2_sqd )
-    !             * sqrt( <w'^2> / F_w ) * <w'x'>.
-    !
-    ! This equation is of the form:
-    !
-    ! <w'^2 x'> = coef_wp2xp_implicit * <w'x'>;
-    !
-    ! where:
-    !
-    ! coef_wp2xp_implicit = sqrt( mixt_frac * ( 1 - mixt_frac ) )
-    !                       * ( F_w * ( ( 1 - mixt_frac ) / mixt_frac
-    !                                   - mixt_frac / ( 1 - mixt_frac ) )
-    !                           + coef_sigma_w_1_sqd - coef_sigma_w_2_sqd )
-    !                       * sqrt( <w'^2> / F_w ).
-    !
-    ! In the special case that F_w = 0, <w'x'> must have a value of 0, in which
-    ! case mu_x_1 - <x> = mu_x_2 - <x> = 0, and <w'^2 x'> = 0.  The value of
-    ! coef_wp2xp_implicit when F_w = 0 and <w'x'> = 0 can be calculated since
-    ! Skw must also have a value of 0 when F_w = 0.  When F_w = 0 and Skw = 0,
-    ! mixt_frac = ( zeta_w + 1 ) / ( zeta_w + 2 ).  When this happens,
-    ! coef_sigma_w_1_sqd - coef_sigma_w_2_sqd = 0.  The equation for
-    ! coef_wp2xp_implicit becomes:
-    !
-    ! coef_wp2xp_implicit = sqrt( mixt_frac * ( 1 - mixt_frac ) )
-    !                       * ( ( 1 - mixt_frac ) / mixt_frac
-    !                           - mixt_frac / ( 1 - mixt_frac ) )
-    !                       * sqrt( F_w * <w'^2> );
-    !
-    ! and since F_w = 0, coef_wp2xp_implicit = 0.
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        one,  & ! Variable(s)
-        zero
-
-    use clubb_precision, only: &
-        core_rknd    ! Procedure(s)
-
-    implicit none
-
-    ! Input Variables
-    real ( kind = core_rknd ), intent(in) :: &
-      wp2,                & ! Variance of w (overall)                  [m^2/s^2]
-      mixt_frac,          & ! Mixture fraction                               [-]
-      F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
-      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
-      coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
-
-    ! Return Variable
-    ! Coefficient: <w'^2 x'> = coef_wp2xp_implicit * <w'x'>
-    real ( kind = core_rknd ) :: &
-      coef_wp2xp_implicit    ! Coefficient that is multiplied by <w'x'>    [m/s]
-
-
-    ! Calculate coef_wp2xp_implicit.
-    if ( F_w > 0 ) then
-
-       coef_wp2xp_implicit &
-       = sqrt( mixt_frac * ( one - mixt_frac ) ) &
-         * ( F_w * ( ( one - mixt_frac ) / mixt_frac &
-                     - mixt_frac / ( one - mixt_frac ) ) &
-             + coef_sigma_w_1_sqd - coef_sigma_w_2_sqd ) &
-         * sqrt( wp2 / F_w )
-
-    else ! F_w = 0
-
-       coef_wp2xp_implicit = zero
-
+    result( coef_wp2xp_implicit )
+  
+      ! Description:
+      ! The predictive equation for <w'x'> contains a turbulent advection term of
+      ! the form:
+      !
+      ! - ( 1 / rho_ds ) * d ( rho_ds * <w'^2 x'> ) / dz;
+      !
+      ! where z is height, rho_ds is the dry, base-state density, and <w'^2 x'> is
+      ! calculated by integrating over the PDF.  The equation for <w'^2 x'> is:
+      !
+      ! <w'^2 x'>
+      ! = mixt_frac * ( ( mu_x_1 - <x> ) * ( ( mu_w_1 - <w> )^2 + sigma_w_1^2 )
+      !                 + 2 * corr_w_x_1 * sigma_w_1 * sigma_x_1
+      !                   * ( mu_w_1 - <w> ) )
+      !   + ( 1 - mixt_frac ) * ( ( mu_x_2 - <x> )
+      !                           * ( ( mu_w_2 - <w> )^2 + sigma_w_2^2 )
+      !                           + 2 * corr_w_x_2 * sigma_w_2 * sigma_x_2
+      !                             * ( mu_w_2 - <w> ) ).
+      !
+      ! The following substitutions are made into the above equation:
+      !
+      ! mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+      !                * sqrt( <w'^2> );
+      !
+      ! mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+      !                  * sqrt( <w'^2> );
+      !
+      ! mu_x_1 - <x> = sqrt( ( 1 - mixt_frac ) / mixt_frac )
+      !                * <w'x'> / sqrt( F_w * <w'^2> );
+      !
+      ! mu_x_2 - <x> = - sqrt( mixt_frac / ( 1 - mixt_frac ) )
+      !                  * <w'x'> / sqrt( F_w * <w'^2> );
+      !
+      ! sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> );
+      !
+      ! sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> );
+      !
+      ! sigma_x_1 = sqrt( coef_sigma_x_1_sqd * <x'^2> ); and
+      !
+      ! sigma_x_2 = sqrt( coef_sigma_x_2_sqd * <x'^2> ).
+      !
+      ! The equations for coef_sigma_w_1_sqd and coef_sigma_w_2_sqd are:
+      !
+      ! coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
+      !                      / ( ( zeta_w + 2 ) * mixt_frac ); and
+      !
+      ! coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
+      !
+      ! The equations for coef_sigma_x_1_sqd and coef_sigma_x_2_sqd are:
+      !
+      ! coef_sigma_x_1_sqd
+      ! = 1 + sqrt( ( 1 - mixt_frac ) / mixt_frac )
+      !       * Skx * sqrt( F_w * <w'^2> * <x'^2> ) / ( 3 * <w'x'> )
+      !   - ( ( 1 + mixt_frac ) / mixt_frac )
+      !     * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> ); and
+      !
+      ! coef_sigma_x_2_sqd
+      ! = 1 - sqrt( mixt_frac / ( 1 - mixt_frac ) )
+      !       * Skx * sqrt( F_w * <w'^2> * <x'^2> ) / ( 3 * <w'x'> )
+      !   + ( ( mixt_frac - 2 ) / ( 1 - mixt_frac ) )
+      !     * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> ).
+      !
+      ! Additionally, corr_w_x_1 = corr_w_x_2 = 0.
+      !
+      ! The equation for <w'^2 x'> becomes:
+      !
+      ! <w'^2 x'> = sqrt( mixt_frac * ( 1 - mixt_frac ) )
+      !             * ( F_w * ( ( 1 - mixt_frac ) / mixt_frac
+      !                         - mixt_frac / ( 1 - mixt_frac ) )
+      !                 + coef_sigma_w_1_sqd - coef_sigma_w_2_sqd )
+      !             * sqrt( <w'^2> / F_w ) * <w'x'>.
+      !
+      ! This equation is of the form:
+      !
+      ! <w'^2 x'> = coef_wp2xp_implicit * <w'x'>;
+      !
+      ! where:
+      !
+      ! coef_wp2xp_implicit = sqrt( mixt_frac * ( 1 - mixt_frac ) )
+      !                       * ( F_w * ( ( 1 - mixt_frac ) / mixt_frac
+      !                                   - mixt_frac / ( 1 - mixt_frac ) )
+      !                           + coef_sigma_w_1_sqd - coef_sigma_w_2_sqd )
+      !                       * sqrt( <w'^2> / F_w ).
+      !
+      ! In the special case that F_w = 0, <w'x'> must have a value of 0, in which
+      ! case mu_x_1 - <x> = mu_x_2 - <x> = 0, and <w'^2 x'> = 0.  The value of
+      ! coef_wp2xp_implicit when F_w = 0 and <w'x'> = 0 can be calculated since
+      ! Skw must also have a value of 0 when F_w = 0.  When F_w = 0 and Skw = 0,
+      ! mixt_frac = ( zeta_w + 1 ) / ( zeta_w + 2 ).  When this happens,
+      ! coef_sigma_w_1_sqd - coef_sigma_w_2_sqd = 0.  The equation for
+      ! coef_wp2xp_implicit becomes:
+      !
+      ! coef_wp2xp_implicit = sqrt( mixt_frac * ( 1 - mixt_frac ) )
+      !                       * ( ( 1 - mixt_frac ) / mixt_frac
+      !                           - mixt_frac / ( 1 - mixt_frac ) )
+      !                       * sqrt( F_w * <w'^2> );
+      !
+      ! and since F_w = 0, coef_wp2xp_implicit = 0.
+  
+      ! References:
+      !-----------------------------------------------------------------------
+  
+      use constants_clubb, only: &
+          one,  & ! Variable(s)
+          zero
+  
+      use clubb_precision, only: &
+          core_rknd    ! Procedure(s)
+  
+      implicit none
+  
+      ! Input Variables
+      real ( kind = core_rknd ), intent(in) :: &
+        wp2,                & ! Variance of w (overall)                  [m^2/s^2]
+        mixt_frac,          & ! Mixture fraction                               [-]
+        F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+        coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+        coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+  
+      ! Return Variable
+      ! Coefficient: <w'^2 x'> = coef_wp2xp_implicit * <w'x'>
+      real ( kind = core_rknd ) :: &
+        coef_wp2xp_implicit    ! Coefficient that is multiplied by <w'x'>    [m/s]
+  
+  
+      ! Calculate coef_wp2xp_implicit.
+      if ( F_w > 0 ) then
+  
+         coef_wp2xp_implicit &
+         = sqrt( mixt_frac * ( one - mixt_frac ) ) &
+           * ( F_w * ( ( one - mixt_frac ) / mixt_frac &
+                       - mixt_frac / ( one - mixt_frac ) ) &
+               + coef_sigma_w_1_sqd - coef_sigma_w_2_sqd ) &
+           * sqrt( wp2 / F_w )
+  
+      else ! F_w = 0
+  
+         coef_wp2xp_implicit = zero
+  
     endif
-
-
+  
+  
     return
-
+  
   end function calc_coef_wp2xp_implicit
 
   !=============================================================================

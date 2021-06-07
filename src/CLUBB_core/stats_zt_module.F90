@@ -232,7 +232,7 @@ module stats_zt_module
         ithlp3_ac, &
         ithlp3_dp
 
-        ! Monotonic flux limiter diagnostic variables
+      ! Monotonic flux limiter diagnostic variables
     use stats_variables, only: &
         ithlm_mfl_min, &
         ithlm_mfl_max, &

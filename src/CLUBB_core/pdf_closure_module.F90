@@ -1,7 +1,7 @@
 !---------------------------------------------------------------------------
-                        ! $Id$
+! $Id$
 !===============================================================================
-                                                            module pdf_closure_module
+module pdf_closure_module
 
   ! Options for the two component normal (double Gaussian) PDF type to use for
   ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,
@@ -2936,73 +2936,73 @@ endif
   ! References
   !-----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd           ! Constant
-
-  implicit none
-
-  ! Input Variables
-  integer, intent(in) :: &
-    n_points, & ! Number of points to interpolate to (must be odd and >= 3)
-    nz,       & ! Total number of vertical levels
-    k           ! Center of interpolation array
-
-  real( kind = core_rknd ), dimension(nz), intent(in) :: &
-    z_vals, &         ! Height at each vertical level           [m]
-    var               ! Variable values on grid                 [units vary]
-
-  ! Output Variables
-  real( kind = core_rknd ), dimension(n_points) :: &
-    interp_var_array  ! Interpolated values of variable         [units vary]
-
-  ! Local Variables
-  real( kind = core_rknd ) :: &
-    dz    ! Distance between vertical levels
-
-  real( kind = core_rknd ) :: &
-    z_val             ! Height at some sub-grid level
-
-  integer :: &
-    i, &                      ! Loop iterator
-
-    subgrid_lev_count         ! Number of refined grid points located between
-                              ! two defined grid levels
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    ! Place a point at each of k-1, k, and k+1.
-    interp_var_array(1) = var_value_integer_height( nz, k-1, z_vals, var )
-    interp_var_array((n_points+1)/2) = var_value_integer_height( nz, k, z_vals, var )
-    interp_var_array(n_points) = var_value_integer_height( nz, k+1, z_vals, var )
-
-    subgrid_lev_count = (n_points - 3) / 2
-
-    ! Lower half
-    if ( k == 1 ) then
-      dz = (z_vals(2) - z_vals(1)) / real( subgrid_lev_count+1, kind=core_rknd )
-    else
-      dz = (z_vals(k) - z_vals(k-1)) / real( subgrid_lev_count+1, kind=core_rknd )
+    use clubb_precision, only: &
+        core_rknd           ! Constant
+  
+    implicit none
+  
+    ! Input Variables
+    integer, intent(in) :: &
+      n_points, & ! Number of points to interpolate to (must be odd and >= 3)
+      nz,       & ! Total number of vertical levels
+      k           ! Center of interpolation array
+  
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      z_vals, &         ! Height at each vertical level           [m]
+      var               ! Variable values on grid                 [units vary]
+  
+    ! Output Variables
+    real( kind = core_rknd ), dimension(n_points) :: &
+      interp_var_array  ! Interpolated values of variable         [units vary]
+  
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      dz    ! Distance between vertical levels
+  
+    real( kind = core_rknd ) :: &
+      z_val             ! Height at some sub-grid level
+  
+    integer :: &
+      i, &                      ! Loop iterator
+  
+      subgrid_lev_count         ! Number of refined grid points located between
+                                ! two defined grid levels
+  
+    !-----------------------------------------------------------------------
+  
+      !----- Begin Code -----
+  
+      ! Place a point at each of k-1, k, and k+1.
+      interp_var_array(1) = var_value_integer_height( nz, k-1, z_vals, var )
+      interp_var_array((n_points+1)/2) = var_value_integer_height( nz, k, z_vals, var )
+      interp_var_array(n_points) = var_value_integer_height( nz, k+1, z_vals, var )
+  
+      subgrid_lev_count = (n_points - 3) / 2
+  
+      ! Lower half
+      if ( k == 1 ) then
+        dz = (z_vals(2) - z_vals(1)) / real( subgrid_lev_count+1, kind=core_rknd )
+      else
+        dz = (z_vals(k) - z_vals(k-1)) / real( subgrid_lev_count+1, kind=core_rknd )
     end if
-    do i=1, subgrid_lev_count
-      z_val = z_vals(k) - real( i, kind=core_rknd ) * dz
-      interp_var_array(1+i) &
-      = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.true. )
+      do i=1, subgrid_lev_count
+        z_val = z_vals(k) - real( i, kind=core_rknd ) * dz
+        interp_var_array(1+i) &
+        = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.true. )
     end do
-
-    ! Upper half
-    if ( k == nz ) then
-      dz = ( z_vals(nz) - z_vals(nz-1) ) / real( subgrid_lev_count+1, kind=core_rknd )
-    else
-      dz = ( z_vals(k+1) - z_vals(k) ) / real( subgrid_lev_count+1, kind=core_rknd )
+  
+      ! Upper half
+      if ( k == nz ) then
+        dz = ( z_vals(nz) - z_vals(nz-1) ) / real( subgrid_lev_count+1, kind=core_rknd )
+      else
+        dz = ( z_vals(k+1) - z_vals(k) ) / real( subgrid_lev_count+1, kind=core_rknd )
     end if
-    do i=1, (n_points-3)/2
-      z_val = z_vals(k) + real( i, kind=core_rknd ) * dz
-      interp_var_array((n_points+1)/2+i) &
-      = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.false. )
+      do i=1, (n_points-3)/2
+        z_val = z_vals(k) + real( i, kind=core_rknd ) * dz
+        interp_var_array((n_points+1)/2+i) &
+        = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.false. )
     end do
-
+  
     return
   end function interp_var_array
 
