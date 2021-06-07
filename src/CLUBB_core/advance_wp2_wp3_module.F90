@@ -527,7 +527,9 @@ module advance_wp2_wp3_module
     !------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr,  & 
+        gr  ! Variable(s) 
+
+    use grid_class, only:  & 
         zm2zt, & ! Function(s)
         zt2zm, & 
         ddzt
@@ -1886,8 +1888,9 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr, & 
-        zm2zt, & ! Variables
+        gr, zm2zt ! Variable
+
+    use grid_class, only:  & 
         ddzt ! Procedure
 
     use parameters_tunable, only:  & 
@@ -4420,8 +4423,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr, &
-        zm2zt    ! Variable type(s)
+        gr, zm2zt    ! Variable type(s)
 
     use constants_clubb, only: & ! Constant(s) 
         grav, & ! Gravitational acceleration [m/s^2]

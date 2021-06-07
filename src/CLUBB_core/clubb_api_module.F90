@@ -853,133 +853,133 @@ contains
 
   ! TODO: This should be called from the api, but all the host models appear to call
   !       it directly or not at all.
-  !   use model_flags, only: &
-  !     setup_model_flags    ! Subroutine
-  
-        implicit none
-  
-      ! Input Variables
-  
+!   use model_flags, only: &
+!     setup_model_flags    ! Subroutine
+
+      implicit none
+
+    ! Input Variables
+
     integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
-  
-      real( kind = core_rknd ), intent(in) ::  &
-        sfc_elevation  ! Elevation of ground level    [m AMSL]
-  
-      logical, intent(in) :: l_implemented   ! (T/F) CLUBB implemented in host model?
-  
-      ! If CLUBB is running on it's own, this option determines
-      ! if it is using:
-      ! 1) an evenly-spaced grid,
-      ! 2) a stretched (unevenly-spaced) grid entered on the
-      !    thermodynamic grid levels (with momentum levels set
-      !    halfway between thermodynamic levels), or
-      ! 3) a stretched (unevenly-spaced) grid entered on the
-      !    momentum grid levels (with thermodynamic levels set
-      !    halfway between momentum levels).
-      integer, intent(in) :: grid_type
-  
-      ! If the CLUBB model is running by itself, and is using an
-      ! evenly-spaced grid (grid_type = 1), it needs the vertical
-      ! grid spacing, momentum-level starting altitude, and maximum
-      ! altitude as input.
-      real( kind = core_rknd ), intent(in) :: &
-        deltaz,   & ! Change in altitude per level           [m]
-        zm_init,  & ! Initial grid altitude (momentum level) [m]
-        zm_top      ! Maximum grid altitude (momentum level) [m]
-  
-      ! If the CLUBB parameterization is implemented in a host model,
-      ! it needs to use the host model's momentum level altitudes
-      ! and thermodynamic level altitudes.
-      ! If the CLUBB model is running by itself, but is using a
-      ! stretched grid entered on thermodynamic levels (grid_type = 2),
-      ! it needs to use the thermodynamic level altitudes as input.
-      ! If the CLUBB model is running by itself, but is using a
-      ! stretched grid entered on momentum levels (grid_type = 3),
-      ! it needs to use the momentum level altitudes as input.
-      real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
-        momentum_heights,      & ! Momentum level altitudes (input)      [m]
-        thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
-  
-      ! Model parameters
-      real( kind = core_rknd ), intent(in) ::  &
-        T0_in, ts_nudge_in
-  
-      integer, intent(in) :: &
-        hydromet_dim_in,  & ! Number of hydrometeor species
-        sclr_dim_in,      & ! Number of passive scalars
-        edsclr_dim_in       ! Number of eddy-diff. passive scalars
-  
-      real( kind = core_rknd ), intent(in), dimension(sclr_dim_in) :: &
-        sclr_tol_in    ! Thresholds for passive scalars
-  
-      real( kind = core_rknd ), intent(in), dimension(nparams) :: &
-        params  ! Including C1, nu1, nu2, etc.
-  
-      ! Flags
-      logical, intent(in) ::  &
-        l_host_applies_sfc_fluxes ! Whether to apply for the surface flux
-  
-      character(len=*), intent(in) :: &
-        saturation_formula ! Approximation for saturation vapor pressure
-  
-      logical, intent(in) ::  &
-        l_input_fields    ! Flag for whether LES input fields are used
-  
-      integer, intent(in) :: &
-        iiPDF_type,          & ! Selected option for the two-component normal
-                               ! (double Gaussian) PDF type to use for the w,
-                               ! rt, and theta-l (or w, chi, and eta) portion of
-                               ! CLUBB's multivariate, two-component PDF.
-        ipdf_call_placement    ! Selected option for the placement of the call to
-                               ! CLUBB's PDF.
-  
-      logical, intent(in) :: &
-        l_predict_upwp_vpwp,     & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                   ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
-                                   ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
-                                   ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
-                                   ! diffusivity when <u> and <v> are advanced in subroutine
-                                   ! advance_windm_edsclrm.
-        l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-        l_damp_wp2_using_em,     &
-        l_stability_correct_tau_zm
-  
+
+    real( kind = core_rknd ), intent(in) ::  &
+      sfc_elevation  ! Elevation of ground level    [m AMSL]
+
+    logical, intent(in) :: l_implemented   ! (T/F) CLUBB implemented in host model?
+
+    ! If CLUBB is running on it's own, this option determines
+    ! if it is using:
+    ! 1) an evenly-spaced grid,
+    ! 2) a stretched (unevenly-spaced) grid entered on the
+    !    thermodynamic grid levels (with momentum levels set
+    !    halfway between thermodynamic levels), or
+    ! 3) a stretched (unevenly-spaced) grid entered on the
+    !    momentum grid levels (with thermodynamic levels set
+    !    halfway between momentum levels).
+    integer, intent(in) :: grid_type
+
+    ! If the CLUBB model is running by itself, and is using an
+    ! evenly-spaced grid (grid_type = 1), it needs the vertical
+    ! grid spacing, momentum-level starting altitude, and maximum
+    ! altitude as input.
+    real( kind = core_rknd ), intent(in) :: &
+      deltaz,   & ! Change in altitude per level           [m]
+      zm_init,  & ! Initial grid altitude (momentum level) [m]
+      zm_top      ! Maximum grid altitude (momentum level) [m]
+
+    ! If the CLUBB parameterization is implemented in a host model,
+    ! it needs to use the host model's momentum level altitudes
+    ! and thermodynamic level altitudes.
+    ! If the CLUBB model is running by itself, but is using a
+    ! stretched grid entered on thermodynamic levels (grid_type = 2),
+    ! it needs to use the thermodynamic level altitudes as input.
+    ! If the CLUBB model is running by itself, but is using a
+    ! stretched grid entered on momentum levels (grid_type = 3),
+    ! it needs to use the momentum level altitudes as input.
+    real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
+      momentum_heights,      & ! Momentum level altitudes (input)      [m]
+      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
+
+    ! Model parameters
+    real( kind = core_rknd ), intent(in) ::  &
+      T0_in, ts_nudge_in
+
+    integer, intent(in) :: &
+      hydromet_dim_in,  & ! Number of hydrometeor species
+      sclr_dim_in,      & ! Number of passive scalars
+      edsclr_dim_in       ! Number of eddy-diff. passive scalars
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim_in) :: &
+      sclr_tol_in    ! Thresholds for passive scalars
+
+    real( kind = core_rknd ), intent(in), dimension(nparams) :: &
+      params  ! Including C1, nu1, nu2, etc.
+
+    ! Flags
+    logical, intent(in) ::  &
+      l_host_applies_sfc_fluxes ! Whether to apply for the surface flux
+
+    character(len=*), intent(in) :: &
+      saturation_formula ! Approximation for saturation vapor pressure
+
+    logical, intent(in) ::  &
+      l_input_fields    ! Flag for whether LES input fields are used
+
+    integer, intent(in) :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w,
+                             ! rt, and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
+
+    logical, intent(in) :: &
+      l_predict_upwp_vpwp,     & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                 ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
+                                 ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
+                                 ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
+                                 ! diffusivity when <u> and <v> are advanced in subroutine
+                                 ! advance_windm_edsclrm.
+      l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_damp_wp2_using_em,     &
+      l_stability_correct_tau_zm
+
 #ifdef GFDL
-        logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
-           I_sat_sphum
-  
-        real( kind = core_rknd ), intent(in) :: &
+      logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
+         I_sat_sphum
+
+      real( kind = core_rknd ), intent(in) :: &
          cloud_frac_min         ! h1g, 2010-06-16 end mod
 #endif
-  
-      ! Output variables 
-      integer, intent(out) :: & 
-      err_code_api   ! Diagnostic for a problem with the setup 
-  
-      call setup_clubb_core &
-        ( nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
-        hydromet_dim_in, sclr_dim_in,                         & ! intent(in)
-        sclr_tol_in, edsclr_dim_in, params,                   & ! intent(in)
-        l_host_applies_sfc_fluxes,                            & ! intent(in)
-        saturation_formula,                                   & ! intent(in)
-        l_input_fields,                                       & ! intent(in)
+
+    ! Output variables 
+    integer, intent(out) :: & 
+    err_code_api   ! Diagnostic for a problem with the setup 
+
+    call setup_clubb_core &
+      ( nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
+      hydromet_dim_in, sclr_dim_in,                         & ! intent(in)
+      sclr_tol_in, edsclr_dim_in, params,                   & ! intent(in)
+      l_host_applies_sfc_fluxes,                            & ! intent(in)
+      saturation_formula,                                   & ! intent(in)
+      l_input_fields,                                       & ! intent(in)
 #ifdef GFDL
-        I_sat_sphum,                                          & ! intent(in)  h1g, 2010-06-16
+      I_sat_sphum,                                          & ! intent(in)  h1g, 2010-06-16
 #endif
-        l_implemented, grid_type, deltaz, zm_init, zm_top,    & ! intent(in)
-        momentum_heights, thermodynamic_heights,              & ! intent(in)
-        sfc_elevation,                                        & ! intent(in)
-        iiPDF_type,                                           & ! intent(in)
-        ipdf_call_placement,                                  & ! intent(in)
-        l_predict_upwp_vpwp,                                  & ! intent(in)
-        l_prescribed_avg_deltaz,                              & ! intent(in)
-        l_damp_wp2_using_em,                                  & ! intent(in)
-        l_stability_correct_tau_zm,                           & ! intent(in)
+      l_implemented, grid_type, deltaz, zm_init, zm_top,    & ! intent(in)
+      momentum_heights, thermodynamic_heights,              & ! intent(in)
+      sfc_elevation,                                        & ! intent(in)
+      iiPDF_type,                                           & ! intent(in)
+      ipdf_call_placement,                                  & ! intent(in)
+      l_predict_upwp_vpwp,                                  & ! intent(in)
+      l_prescribed_avg_deltaz,                              & ! intent(in)
+      l_damp_wp2_using_em,                                  & ! intent(in)
+      l_stability_correct_tau_zm,                           & ! intent(in)
 #ifdef GFDL
-        , cloud_frac_min                                      & ! intent(in)  h1g, 2010-06-16
+      , cloud_frac_min                                      & ! intent(in)  h1g, 2010-06-16
 #endif
-        err_code_api )                                          ! intent(out)
-  
+      err_code_api )                                          ! intent(out)
+
   end subroutine setup_clubb_core_api
 
   !================================================================================================

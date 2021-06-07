@@ -497,15 +497,15 @@ module interpolation
 !          ( var_src(k) - var_src(km1) ) / &
 !          ( grid_src(k) - grid_src(km1) ) &
 !            * ( grid_out(kint) - grid_src(km1) ) + var_src(km1) &
-  !            Changed to use a standard function for interpolation
-  
+!            Changed to use a standard function for interpolation
+
       !! Note this ends up changing the results slightly because
-        !the placement of variables has been changed.
-  
-  !            Joshua Fasching April 2008
-  
+      !the placement of variables has been changed.
+
+!            Joshua Fasching April 2008
+
     end do ! kint = 1..dim_out
-  
+
     return
   end function zlinterp_fnc
 

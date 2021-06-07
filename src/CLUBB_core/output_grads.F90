@@ -494,164 +494,164 @@ module output_grads
     use stat_file_module, only: & 
         stat_file ! Type
 
-  !   use stat_file_module, only: &
-  !     clubb_i, clubb_j ! Variable(s)
-  
-      implicit none
-  
-      ! External
-      intrinsic :: selected_real_kind
-  
-      ! Constant parameters
-      integer, parameter :: &
-        r4 = selected_real_kind( p=5 ) ! Specify 5 decimal digits of precision
-  
-      ! Input Variables
-      type (stat_file), intent(inout) :: &
-        grads_file ! Contains all information on the files to be written to
-  
-      ! Local Variables
-      integer ::  & 
-        ivar, & ! Loop indices
-        ios     ! I/O status indicator
-  
-      character(len=15) :: date
-  
-      integer :: dtwrite_ctl ! Time increment for the ctl file
-      character(len=2) :: dtwrite_units ! Units on dtwrite_ctl
-  
-      ! ---- Begin Code ----
-      ! Check number of variables and write nothing if less than 1
-  
+!   use stat_file_module, only: &
+!     clubb_i, clubb_j ! Variable(s)
+
+    implicit none
+
+    ! External
+    intrinsic :: selected_real_kind
+
+    ! Constant parameters
+    integer, parameter :: &
+      r4 = selected_real_kind( p=5 ) ! Specify 5 decimal digits of precision
+
+    ! Input Variables
+    type (stat_file), intent(inout) :: &
+      grads_file ! Contains all information on the files to be written to
+
+    ! Local Variables
+    integer ::  & 
+      ivar, & ! Loop indices
+      ios     ! I/O status indicator
+
+    character(len=15) :: date
+
+    integer :: dtwrite_ctl ! Time increment for the ctl file
+    character(len=2) :: dtwrite_units ! Units on dtwrite_ctl
+
+    ! ---- Begin Code ----
+    ! Check number of variables and write nothing if less than 1
+
     if ( grads_file%nvar < 1 ) return
-  
+
 #include "recl.inc"
-  
-      ! Output data to file
-      open( unit=grads_file%iounit, & 
-            file=trim( grads_file%fdir )//trim( grads_file%fname )//'.dat', & 
-            form='unformatted', access='direct', & 
-            recl=F_RECL*abs( grads_file%iz-grads_file%ia+1 )*grads_file%nlon*grads_file%nlat, & 
-            status='unknown', iostat=ios )
-      if ( ios /= 0 ) then
-        write(unit=fstderr,fmt=*)  & 
-          "write_grads: error opening binary file"
-        write(unit=fstderr,fmt=*) "iostat = ", ios
-        error stop
+
+    ! Output data to file
+    open( unit=grads_file%iounit, & 
+          file=trim( grads_file%fdir )//trim( grads_file%fname )//'.dat', & 
+          form='unformatted', access='direct', & 
+          recl=F_RECL*abs( grads_file%iz-grads_file%ia+1 )*grads_file%nlon*grads_file%nlat, & 
+          status='unknown', iostat=ios )
+    if ( ios /= 0 ) then
+      write(unit=fstderr,fmt=*)  & 
+        "write_grads: error opening binary file"
+      write(unit=fstderr,fmt=*) "iostat = ", ios
+      error stop
     end if
-  
-      if ( grads_file%ia <= grads_file%iz ) then
-        do ivar=1,grads_file%nvar
-          write(grads_file%iounit,rec=grads_file%nrecord)  &
-            real( grads_file%grid_avg_var(ivar)%ptr(1:grads_file%nlon, &
-                                           1:grads_file%nlat,grads_file%ia:grads_file%iz), kind=r4)
-          grads_file%nrecord = grads_file%nrecord + 1
+
+    if ( grads_file%ia <= grads_file%iz ) then
+      do ivar=1,grads_file%nvar
+        write(grads_file%iounit,rec=grads_file%nrecord)  &
+          real( grads_file%grid_avg_var(ivar)%ptr(1:grads_file%nlon, &
+                                         1:grads_file%nlat,grads_file%ia:grads_file%iz), kind=r4)
+        grads_file%nrecord = grads_file%nrecord + 1
       end do
-  
-      else
-        do ivar=1, grads_file%nvar
-          write(grads_file%iounit,rec=grads_file%nrecord) & 
-            real( grads_file%grid_avg_var(ivar)%ptr(1:grads_file%nlon, &
-                                           1:grads_file%nlat,grads_file%ia:grads_file%iz:-1), kind=r4)
-          grads_file%nrecord = grads_file%nrecord + 1
+
+    else
+      do ivar=1, grads_file%nvar
+        write(grads_file%iounit,rec=grads_file%nrecord) & 
+          real( grads_file%grid_avg_var(ivar)%ptr(1:grads_file%nlon, &
+                                         1:grads_file%nlat,grads_file%ia:grads_file%iz:-1), kind=r4)
+        grads_file%nrecord = grads_file%nrecord + 1
       end do
-  
+
     end if ! grads_file%ia <= grads_file%iz
-  
-      close( unit=grads_file%iounit, iostat = ios )
-  
-      if ( ios /= 0 ) then
-        write(unit=fstderr,fmt=*)  & 
-          "write_grads: error closing binary file"
-        write(unit=fstderr,fmt=*) "iostat = ", ios
-        error stop
+
+    close( unit=grads_file%iounit, iostat = ios )
+
+    if ( ios /= 0 ) then
+      write(unit=fstderr,fmt=*)  & 
+        "write_grads: error closing binary file"
+      write(unit=fstderr,fmt=*) "iostat = ", ios
+      error stop
     end if
-  
-      grads_file%ntimes = grads_file%ntimes + 1
-  
-      ! Write control file
-  
-      open(unit=grads_file%iounit, & 
-           file=trim( grads_file%fdir )//trim( grads_file%fname )//'.ctl', & 
-           status='unknown', iostat=ios)
-      if ( ios > 0 ) then
-        write(unit=fstderr,fmt=*)  & 
-          "write_grads: error opening control file"
-        write(unit=fstderr,fmt=*) "iostat = ", ios
-        error stop
+
+    grads_file%ntimes = grads_file%ntimes + 1
+
+    ! Write control file
+
+    open(unit=grads_file%iounit, & 
+         file=trim( grads_file%fdir )//trim( grads_file%fname )//'.ctl', & 
+         status='unknown', iostat=ios)
+    if ( ios > 0 ) then
+      write(unit=fstderr,fmt=*)  & 
+        "write_grads: error opening control file"
+      write(unit=fstderr,fmt=*) "iostat = ", ios
+      error stop
     end if
-  
-      ! Write file header
+
+    ! Write file header
     if ( ( big_endian .and. .not. l_byteswap_io ) &
       .or. ( little_endian .and. l_byteswap_io ) ) then
-        write(unit=grads_file%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
-  
-      else
-        write(unit=grads_file%iounit,fmt='(a)') 'OPTIONS LITTLE_ENDIAN'
-  
+      write(unit=grads_file%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
+
+    else
+      write(unit=grads_file%iounit,fmt='(a)') 'OPTIONS LITTLE_ENDIAN'
+
     end if
-  
-      write(unit=grads_file%iounit,fmt='(a)') 'DSET ^'//trim( grads_file%fname )//'.dat'
-      write(unit=grads_file%iounit,fmt='(a,e12.5)') 'UNDEF ',undef
-  
-      if ( grads_file%nlon == 1 ) then ! Use linear for a singleton X dimesion
-        write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'XDEF    1 LINEAR ', grads_file%lon_vals, ' 1.'
-      else
-        write(unit=grads_file%iounit,fmt='(a,i5,a)') 'XDEF', grads_file%nlon,' LEVELS '
-        write(unit=grads_file%iounit,fmt='(6f13.4)') grads_file%lon_vals
+
+    write(unit=grads_file%iounit,fmt='(a)') 'DSET ^'//trim( grads_file%fname )//'.dat'
+    write(unit=grads_file%iounit,fmt='(a,e12.5)') 'UNDEF ',undef
+
+    if ( grads_file%nlon == 1 ) then ! Use linear for a singleton X dimesion
+      write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'XDEF    1 LINEAR ', grads_file%lon_vals, ' 1.'
+    else
+      write(unit=grads_file%iounit,fmt='(a,i5,a)') 'XDEF', grads_file%nlon,' LEVELS '
+      write(unit=grads_file%iounit,fmt='(6f13.4)') grads_file%lon_vals
     end if
-  
-      if ( grads_file%nlat == 1 ) then ! Use linear for a singleton Y dimension
-        write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'YDEF    1 LINEAR ', grads_file%lat_vals, ' 1.'
-      else
-        write(unit=grads_file%iounit,fmt='(a,i5,a)') 'YDEF', grads_file%nlat,' LEVELS '
-        write(unit=grads_file%iounit,fmt='(6f13.4)') grads_file%lat_vals
+
+    if ( grads_file%nlat == 1 ) then ! Use linear for a singleton Y dimension
+      write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'YDEF    1 LINEAR ', grads_file%lat_vals, ' 1.'
+    else
+      write(unit=grads_file%iounit,fmt='(a,i5,a)') 'YDEF', grads_file%nlat,' LEVELS '
+      write(unit=grads_file%iounit,fmt='(6f13.4)') grads_file%lat_vals
     end if
-  
-      if ( grads_file%ia == grads_file%iz ) then ! If ia == iz, then Z is also singleton
-        write(unit=grads_file%iounit,fmt='(a)') 'ZDEF    1 LEVELS 0.'
-      else if ( grads_file%ia < grads_file%iz ) then
-        write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
-          'ZDEF', abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
-        write(unit=grads_file%iounit,fmt='(6f13.4)')  & 
-          (grads_file%z(ivar-grads_file%ia+1),ivar=grads_file%ia,grads_file%iz)
-      else
-        write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
-          'ZDEF',abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
-        write(grads_file%iounit,'(6f13.4)') (grads_file%z(grads_file%ia-ivar+1), &
-          ivar=grads_file%ia,grads_file%iz,-1)
+
+    if ( grads_file%ia == grads_file%iz ) then ! If ia == iz, then Z is also singleton
+      write(unit=grads_file%iounit,fmt='(a)') 'ZDEF    1 LEVELS 0.'
+    else if ( grads_file%ia < grads_file%iz ) then
+      write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
+        'ZDEF', abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
+      write(unit=grads_file%iounit,fmt='(6f13.4)')  & 
+        (grads_file%z(ivar-grads_file%ia+1),ivar=grads_file%ia,grads_file%iz)
+    else
+      write(unit=grads_file%iounit,fmt='(a,i5,a)')  & 
+        'ZDEF',abs(grads_file%iz-grads_file%ia)+1,' LEVELS '
+      write(grads_file%iounit,'(6f13.4)') (grads_file%z(grads_file%ia-ivar+1), &
+        ivar=grads_file%ia,grads_file%iz,-1)
     end if
-  
-      call format_date( grads_file%day, grads_file%month, grads_file%year, grads_file%time, & ! In
-                        date ) ! Out
-  
-      call determine_time_inc( grads_file%dtwrite, & ! In
-                               dtwrite_ctl, dtwrite_units ) ! Out
-  
-      write(unit=grads_file%iounit,fmt='(a,i6,a,a,i5,a)') 'TDEF    ', & 
-        grads_file%ntimes, ' LINEAR ', date, dtwrite_ctl, dtwrite_units
-  
-      ! Variables description
-      write(unit=grads_file%iounit,fmt='(a,i5)') 'VARS', grads_file%nvar
-  
-      do ivar=1, grads_file%nvar, 1
-        write(unit=grads_file%iounit,fmt='(a,i5,a,a)') & 
-          grads_file%grid_avg_var(ivar)%name(1:len_trim(grads_file%grid_avg_var(ivar)%name)), &
-          abs(grads_file%iz-grads_file%ia)+1,' 99 ', & 
-          grads_file%grid_avg_var(ivar)%description( &
-                                     1:len_trim(grads_file%grid_avg_var(ivar)%description))
+
+    call format_date( grads_file%day, grads_file%month, grads_file%year, grads_file%time, & ! In
+                      date ) ! Out
+
+    call determine_time_inc( grads_file%dtwrite, & ! In
+                             dtwrite_ctl, dtwrite_units ) ! Out
+
+    write(unit=grads_file%iounit,fmt='(a,i6,a,a,i5,a)') 'TDEF    ', & 
+      grads_file%ntimes, ' LINEAR ', date, dtwrite_ctl, dtwrite_units
+
+    ! Variables description
+    write(unit=grads_file%iounit,fmt='(a,i5)') 'VARS', grads_file%nvar
+
+    do ivar=1, grads_file%nvar, 1
+      write(unit=grads_file%iounit,fmt='(a,i5,a,a)') & 
+        grads_file%grid_avg_var(ivar)%name(1:len_trim(grads_file%grid_avg_var(ivar)%name)), &
+        abs(grads_file%iz-grads_file%ia)+1,' 99 ', & 
+        grads_file%grid_avg_var(ivar)%description( &
+                                   1:len_trim(grads_file%grid_avg_var(ivar)%description))
     end do
-  
-      write(unit=grads_file%iounit,fmt='(a)') 'ENDVARS'
-  
-      close( unit=grads_file%iounit, iostat=ios )
-      if ( ios > 0 ) then
-        write(unit=fstderr,fmt=*)  & 
-          "write_grads: error closing control file"
-        write(unit=fstderr,fmt=*) "iostat = ",ios
-        error stop
+
+    write(unit=grads_file%iounit,fmt='(a)') 'ENDVARS'
+
+    close( unit=grads_file%iounit, iostat=ios )
+    if ( ios > 0 ) then
+      write(unit=fstderr,fmt=*)  & 
+        "write_grads: error closing control file"
+      write(unit=fstderr,fmt=*) "iostat = ",ios
+      error stop
     end if
-  
+
     return
   end subroutine write_grads
 

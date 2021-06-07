@@ -36,66 +36,66 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-  !    use array_index, only: &
-  !        iiPDF_w ! Variable(s)
-  
-      use constants_clubb, only: &
-          zero
-  
-      implicit none
-  
-      intrinsic :: max, sqrt, transpose
-  
-      ! Input Variables
-      integer, intent(in) :: &
-        pdf_dim  ! number of diagnosed correlations
-  
-      real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
-        corr_array_pre   ! Prescribed correlations
-  
-      logical, intent(in) :: &
-        l_calc_w_corr ! Calculate the correlations between w and the hydrometeors
-  
-      ! Output variables
-      real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
-        corr_array
-  
-      ! Local Variables
-      real( kind = core_rknd ), dimension(pdf_dim, pdf_dim) :: &
-        corr_array_pre_swapped, &
-        corr_array_swapped
-  
-      ! We actually don't need this right now
-      real( kind = core_rknd ), dimension(pdf_dim) :: &
-        sigma2_on_mu2_ip_array  ! Ratios: sigma_x^2/mu_x^2 (ith PDF comp.) ip [-]
-  
-      integer :: i ! Loop iterator
-  
-      !-------------------- Begin code --------------------
-  
-      ! Initialize sigma2_on_mu2_ip_array
-      do i = 1, pdf_dim
-         sigma2_on_mu2_ip_array(i) = zero
+!    use array_index, only: &
+!        iiPDF_w ! Variable(s)
+
+    use constants_clubb, only: &
+        zero
+
+    implicit none
+
+    intrinsic :: max, sqrt, transpose
+
+    ! Input Variables
+    integer, intent(in) :: &
+      pdf_dim  ! number of diagnosed correlations
+
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
+      corr_array_pre   ! Prescribed correlations
+
+    logical, intent(in) :: &
+      l_calc_w_corr ! Calculate the correlations between w and the hydrometeors
+
+    ! Output variables
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
+      corr_array
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim) :: &
+      corr_array_pre_swapped, &
+      corr_array_swapped
+
+    ! We actually don't need this right now
+    real( kind = core_rknd ), dimension(pdf_dim) :: &
+      sigma2_on_mu2_ip_array  ! Ratios: sigma_x^2/mu_x^2 (ith PDF comp.) ip [-]
+
+    integer :: i ! Loop iterator
+
+    !-------------------- Begin code --------------------
+
+    ! Initialize sigma2_on_mu2_ip_array
+    do i = 1, pdf_dim
+       sigma2_on_mu2_ip_array(i) = zero
     end do 
-  
-      ! Swap the w-correlations to the first row for the prescribed correlations
-      call rearrange_corr_array( pdf_dim, corr_array_pre, & ! Intent(in)
-                                 corr_array_pre_swapped)        ! Intent(inout)
-  
-      ! diagnose correlations
-      
-      if ( .not. l_calc_w_corr ) then
-         corr_array_swapped = corr_array_pre_swapped
+
+    ! Swap the w-correlations to the first row for the prescribed correlations
+    call rearrange_corr_array( pdf_dim, corr_array_pre, & ! Intent(in)
+                               corr_array_pre_swapped)        ! Intent(inout)
+
+    ! diagnose correlations
+    
+    if ( .not. l_calc_w_corr ) then
+       corr_array_swapped = corr_array_pre_swapped
     endif
-  
-      call diagnose_corr( pdf_dim, sqrt(sigma2_on_mu2_ip_array), &
-                          corr_array_pre_swapped, &
-                          corr_array_swapped )
-  
-      ! Swap rows back
-      call rearrange_corr_array( pdf_dim, corr_array_swapped, & ! Intent(in)
-                                 corr_array)        ! Intent(out)
-  
+
+    call diagnose_corr( pdf_dim, sqrt(sigma2_on_mu2_ip_array), &
+                        corr_array_pre_swapped, &
+                        corr_array_swapped )
+
+    ! Swap rows back
+    call rearrange_corr_array( pdf_dim, corr_array_swapped, & ! Intent(in)
+                               corr_array)        ! Intent(out)
+
   end subroutine diagnose_correlations
 
 
@@ -115,93 +115,93 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-  !    use parameters_tunable, only:  &
-  !        alpha_corr ! Constant(s)
-  
-      use constants_clubb, only: &
-          max_mag_correlation
-  
-      implicit none
-  
-      intrinsic :: &
-        sqrt, abs, sign
-  
-      ! Input Variables
-      integer, intent(in) :: &
-        n_variables  ! number of variables in the correlation matrix [-]
-      
-      real( kind = core_rknd ), dimension(n_variables), intent(in) :: & 
-        sqrt_sigma2_on_mu2_ip  ! sqrt of sigma_x^2/mu_x^2 (ith PDF comp.) ip [-]
-  
-      real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
-        corr_matrix_prescribed ! correlation matrix [-]
-  
-      ! Input/Output Variables
-      real( kind = core_rknd ), dimension(n_variables,n_variables), intent(inout) :: &
-        corr_matrix_approx ! correlation matrix [-]
-  
-  
-      ! Local Variables
-      integer :: i, j ! Loop iterator
-  
-      real( kind = core_rknd ) :: &
-        f_ij
-  !      f_ij_o
-  
-      real( kind = core_rknd ), dimension(n_variables) :: &
-        s_1j ! s_1j = sqrt(1-c_1j^2)
-  
-  
-      !-------------------- Begin code --------------------
-  
-      ! Remove compiler warnings about unused variables.
-      if ( .false. ) then
-         print *, "sqrt_sigma2_on_mu2_ip = ", sqrt_sigma2_on_mu2_ip
+!    use parameters_tunable, only:  &
+!        alpha_corr ! Constant(s)
+
+    use constants_clubb, only: &
+        max_mag_correlation
+
+    implicit none
+
+    intrinsic :: &
+      sqrt, abs, sign
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_variables  ! number of variables in the correlation matrix [-]
+    
+    real( kind = core_rknd ), dimension(n_variables), intent(in) :: & 
+      sqrt_sigma2_on_mu2_ip  ! sqrt of sigma_x^2/mu_x^2 (ith PDF comp.) ip [-]
+
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
+      corr_matrix_prescribed ! correlation matrix [-]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(inout) :: &
+      corr_matrix_approx ! correlation matrix [-]
+
+
+    ! Local Variables
+    integer :: i, j ! Loop iterator
+
+    real( kind = core_rknd ) :: &
+      f_ij
+!      f_ij_o
+
+    real( kind = core_rknd ), dimension(n_variables) :: &
+      s_1j ! s_1j = sqrt(1-c_1j^2)
+
+
+    !-------------------- Begin code --------------------
+
+    ! Remove compiler warnings about unused variables.
+    if ( .false. ) then
+       print *, "sqrt_sigma2_on_mu2_ip = ", sqrt_sigma2_on_mu2_ip
     endif
-  
-      ! calculate all square roots
-      do i = 1, n_variables
-  
-         s_1j(i) = sqrt(1._core_rknd-corr_matrix_approx(i,1)**2)
-  
+
+    ! calculate all square roots
+    do i = 1, n_variables
+
+       s_1j(i) = sqrt(1._core_rknd-corr_matrix_approx(i,1)**2)
+
     end do
-  
-  
-      ! Diagnose the missing correlations (upper triangle)
-      do j = 2, (n_variables-1)
-        do i = (j+1), n_variables
-  
-          ! formula (16) in the ref. paper (Larson et al. (2011))
-          !f_ij = alpha_corr * sqrt_sigma2_on_mu2_ip(i) * sqrt_sigma2_on_mu2_ip(j) &
-          !        * sign(1.0_core_rknd,corr_matrix_approx(1,i)*corr_matrix_approx(1,j))
-  
-          ! If the predicting c1i's are small then cij will be closer to the prescribed value. If
-          ! the c1i's are bigger, then cij will be closer to formular (15) from the ref. paper. See
-          ! clubb:ticket:514:comment:61 for details.
-        !f_ij = (1-abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j)))*corr_matrix_prescribed(i,j) &
-        !       + abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j))*f_ij_o
-  
-          f_ij = corr_matrix_prescribed(i,j)
-  
-          ! make sure -1 < f_ij < 1
-          if ( f_ij < -max_mag_correlation ) then
-  
-             f_ij = -max_mag_correlation
-  
-          else if ( f_ij > max_mag_correlation ) then
-  
-             f_ij = max_mag_correlation
-  
+
+
+    ! Diagnose the missing correlations (upper triangle)
+    do j = 2, (n_variables-1)
+      do i = (j+1), n_variables
+
+        ! formula (16) in the ref. paper (Larson et al. (2011))
+        !f_ij = alpha_corr * sqrt_sigma2_on_mu2_ip(i) * sqrt_sigma2_on_mu2_ip(j) &
+        !        * sign(1.0_core_rknd,corr_matrix_approx(1,i)*corr_matrix_approx(1,j))
+
+        ! If the predicting c1i's are small then cij will be closer to the prescribed value. If
+        ! the c1i's are bigger, then cij will be closer to formular (15) from the ref. paper. See
+        ! clubb:ticket:514:comment:61 for details.
+      !f_ij = (1-abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j)))*corr_matrix_prescribed(i,j) &
+      !       + abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j))*f_ij_o
+
+        f_ij = corr_matrix_prescribed(i,j)
+
+        ! make sure -1 < f_ij < 1
+        if ( f_ij < -max_mag_correlation ) then
+
+           f_ij = -max_mag_correlation
+
+        else if ( f_ij > max_mag_correlation ) then
+
+           f_ij = max_mag_correlation
+
         end if
-  
-  
-          ! formula (15) in the ref. paper (Larson et al. (2011))
-          corr_matrix_approx(i,j) = corr_matrix_approx(i,1) * corr_matrix_approx(j,1) &
-          + f_ij * s_1j(i) * s_1j(j)
-  
+
+
+        ! formula (15) in the ref. paper (Larson et al. (2011))
+        corr_matrix_approx(i,j) = corr_matrix_approx(i,1) * corr_matrix_approx(j,1) &
+        + f_ij * s_1j(i) * s_1j(j)
+
       end do ! do j
     end do ! do i
-      
+    
   end subroutine diagnose_corr 
 
 

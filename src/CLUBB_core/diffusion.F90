@@ -344,9 +344,9 @@ module diffusion
   !   concentration).  This code should be considered experimental and may
   !   contain bugs.
   ! References:
-    !   This algorithm uses equations derived from Guo, et al. 2009.
-    !-----------------------------------------------------------------------------
-  
+  !   This algorithm uses equations derived from Guo, et al. 2009.
+  !-----------------------------------------------------------------------------
+
      use grid_class, only: & 
          gr ! Variable(s)
   

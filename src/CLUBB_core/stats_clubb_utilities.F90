@@ -2038,7 +2038,9 @@ module stats_clubb_utilities
         ircm_in_cloud
 
     use grid_class, only: & 
-        gr, &
+        gr ! Variable
+
+    use grid_class, only: & 
         zt2zm ! Procedure(s)
 
     use pdf_parameter_module, only: & 
