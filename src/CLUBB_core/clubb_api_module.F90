@@ -851,8 +851,8 @@ contains
     use model_flags, only: &
         clubb_config_flags_type  ! Type
 
-  ! TODO: This should be called from the api, but all the host models appear to call
-  !       it directly or not at all.
+! TODO: This should be called from the api, but all the host models appear to call
+!       it directly or not at all.
 !   use model_flags, only: &
 !     setup_model_flags    ! Subroutine
 
@@ -2679,7 +2679,7 @@ contains
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     integer, intent(in) :: &
       nz                    ! Number of vertical levels                      [-]
 

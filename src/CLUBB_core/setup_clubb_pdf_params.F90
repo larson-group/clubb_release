@@ -149,7 +149,7 @@ module setup_clubb_pdf_params
         Cholesky_factor  ! Procedure(s)
 
     use stats_type_utilities, only: &
-  !        stat_update_var,    & ! Procedure(s)
+!        stat_update_var,    & ! Procedure(s)
         stat_update_var_pt
 
     use stats_variables, only: &
@@ -3838,7 +3838,7 @@ module setup_clubb_pdf_params
         core_rknd   ! Variable(s)
 
     use stats_type_utilities, only: &
-  !        stat_update_var  ! Procedure(s)
+!        stat_update_var  ! Procedure(s)
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &
@@ -4399,7 +4399,7 @@ module setup_clubb_pdf_params
         core_rknd   ! Variable(s)
 
     use stats_type_utilities, only: &
-  !        stat_update_var  ! Procedure(s)
+!        stat_update_var  ! Procedure(s)
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &

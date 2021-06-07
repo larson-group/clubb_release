@@ -1893,7 +1893,7 @@ module advance_xp2_xpyp_module
     use lapack_wrap, only:  & 
         tridag_solve,  & ! Variable(s)
         tridag_solvex !, &
-  !        band_solve
+!        band_solve
 
     use grid_class, only: & 
         gr ! Variable(s)

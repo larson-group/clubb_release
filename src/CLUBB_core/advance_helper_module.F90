@@ -503,7 +503,7 @@ module advance_helper_module
         zt2zm
 
     use constants_clubb, only: &
-  !      one_third,  & ! Constant(s)
+!      one_third,  & ! Constant(s)
         one
 
     use interpolation, only: &
@@ -971,18 +971,18 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1          ! Units vary
 
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = min( input_var1, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
 
@@ -1011,18 +1011,18 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1          ! Units vary
 
     real ( kind = core_rknd ), intent(in) :: &
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = min( input_var2, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
 
@@ -1051,16 +1051,16 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = zt2zm( zm2zt( min( input_var1 , input_var2 )))
 
@@ -1089,18 +1089,18 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1          ! Units vary
 
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = min( input_var1, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
 
@@ -1129,18 +1129,18 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1          ! Units vary
 
     real ( kind = core_rknd ), intent(in) :: &
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = min( input_var2, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
 
@@ -1169,16 +1169,16 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = zm2zt( zt2zm( min( input_var1 , input_var2 )))
 
@@ -1207,18 +1207,18 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1          ! Units vary
 
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = max( input_var1, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
   
@@ -1247,18 +1247,18 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1          ! Units vary
 
     real ( kind = core_rknd ), intent(in) :: &
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = max( input_var2, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
 
@@ -1287,16 +1287,16 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = zt2zm( zm2zt( max( input_var1 , input_var2 )))
 
@@ -1325,18 +1325,18 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1          ! Units vary
 
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = max( input_var1, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
 
@@ -1365,18 +1365,18 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1          ! Units vary
 
     real ( kind = core_rknd ), intent(in) :: &
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = max( input_var2, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
 
@@ -1405,16 +1405,16 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
 
-    ! Output Variables
+  ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
 
-    !----------------------------------------------------------------------
+  !----------------------------------------------------------------------
 
     output_var = zm2zt( zt2zm( max( input_var1 , input_var2 )))
 

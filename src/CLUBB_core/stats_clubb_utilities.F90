@@ -3265,11 +3265,11 @@ subroutine stats_check_num_samples( stats_grid, l_error )
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     type (stats), intent(in) :: &
       stats_grid               ! Grid type              [grid]
 
-    ! Input/Output Variables
+  ! Input/Output Variables
   logical, intent(inout) :: &
     l_error                  ! Indicates an error     [boolean]
 

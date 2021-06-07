@@ -1182,8 +1182,8 @@ module new_pdf
                                    coef_sigma_w_2_sqd ) &
     result( coef_wp4_implicit )
 
-      ! Description:
-      ! The predictive equation for <w'^3> contains a turbulent advection term of
+    ! Description:
+    ! The predictive equation for <w'^3> contains a turbulent advection term of
     ! the form:
     !
     ! - ( 1 / rho_ds ) * d ( rho_ds * <w'^4> ) / dz;
@@ -1306,8 +1306,8 @@ module new_pdf
                                      coef_sigma_x_2_sqd  ) &
     result( coef_wpxp2_implicit )
 
-      ! Description:
-      ! The predictive equation for <x'^2> contains a turbulent advection term of
+    ! Description:
+    ! The predictive equation for <x'^2> contains a turbulent advection term of
     ! the form:
     !
     ! - ( 1 / rho_ds ) * d ( rho_ds * <w'x'^2> ) / dz;

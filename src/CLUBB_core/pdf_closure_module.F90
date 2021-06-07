@@ -2941,7 +2941,7 @@ endif
 
     implicit none
 
-    ! Input Variables
+  ! Input Variables
     integer, intent(in) :: &
       n_points, & ! Number of points to interpolate to (must be odd and >= 3)
     nz,       & ! Total number of vertical levels

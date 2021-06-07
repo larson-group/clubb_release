@@ -4739,7 +4739,7 @@ module advance_xm_wpxp_module
     use grid_class, only: & 
         gr    ! Variable type(s)
 
-      ! Added to prevent large damping at low altitudes where Lscale is small
+    ! Added to prevent large damping at low altitudes where Lscale is small
     use parameters_tunable, only: &
         altitude_threshold    ! Variable(s)
 

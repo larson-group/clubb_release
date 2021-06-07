@@ -11,7 +11,7 @@ module file_functions
 
     contains
 
-  !===============================================================================
+!===============================================================================
   subroutine file_read_1d( file_unit, path_and_filename,  & 
                            num_datapts, entries_per_line, variable )
 

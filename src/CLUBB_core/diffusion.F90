@@ -355,10 +355,10 @@ module diffusion
 
       implicit none
 
-      ! External
+    ! External
       intrinsic :: min
 
-      ! Constant parameters
+    ! Constant parameters
       real( kind = core_rknd ), parameter :: &
         cf_ratio = 10._core_rknd ! Maximum cloud-fraction coefficient applied to Kh_zm
 
