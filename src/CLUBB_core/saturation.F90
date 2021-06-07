@@ -86,11 +86,11 @@ module saturation
 !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
-      ep    ! Variable
-
+        ep    ! Variable
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variables
@@ -148,11 +148,11 @@ module saturation
 !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
-      ep    ! Variable
-
+        ep    ! Variable
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variables
@@ -207,14 +207,14 @@ module saturation
 !   None
 
     use model_flags, only: &
-      saturation_formula, & ! Variable
-      saturation_bolton, &
-      saturation_gfdl, &
-      saturation_flatau
-
+        saturation_formula, & ! Variable
+        saturation_bolton, &
+        saturation_gfdl, &
+        saturation_flatau
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variables
@@ -306,10 +306,10 @@ module saturation
 !------------------------------------------------------------------------
 
     use constants_clubb, only: T_freeze_K
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Constant parameters
@@ -402,10 +402,10 @@ module saturation
 !------------------------------------------------------------------------
 
     use constants_clubb, only: T_freeze_K
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! External
@@ -439,8 +439,8 @@ module saturation
 !------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variables
@@ -487,10 +487,10 @@ module saturation
 
     use constants_clubb, only: & 
         ep ! Variable(s)
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! External
@@ -550,14 +550,14 @@ module saturation
 !------------------------------------------------------------------------
  
     use model_flags, only: &
-      saturation_formula, & ! Variable(s)
-      saturation_bolton, &
-      saturation_gfdl, &
-      saturation_flatau
-
+        saturation_formula, & ! Variable(s)
+        saturation_bolton, &
+        saturation_gfdl, &
+        saturation_flatau
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variable
@@ -605,10 +605,10 @@ module saturation
 !     pp. 1507--1513
 !------------------------------------------------------------------------
     use constants_clubb, only: T_freeze_K
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! External
@@ -668,8 +668,8 @@ module saturation
 !------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! External
@@ -703,8 +703,8 @@ module saturation
 !------------------------------------------------------------------------
  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variables
@@ -751,13 +751,13 @@ module saturation
     !-------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     use constants_clubb, only: & 
         Cp,            & ! Variable(s)
         Lv,            &
         zero_threshold
-
+  
     implicit none
 
     ! Local Constant(s)

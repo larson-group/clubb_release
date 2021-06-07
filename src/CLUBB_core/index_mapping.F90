@@ -352,10 +352,10 @@ contains
         mvr_snow_max,    &
         mvr_graupel_max, &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variable

@@ -85,7 +85,7 @@ module advance_wp2_wp3_module
         gr,     & ! Variable(s)
         zt2zm,  & ! Procedure(s)
         zm2zt
-
+  
     use parameters_tunable, only:  & 
         C11c,  & ! Variable(s)
         C11b,  & 
@@ -95,7 +95,7 @@ module advance_wp2_wp3_module
         C1,  & 
         c_K1,  & 
         c_K8
-
+  
     use sponge_layer_damping, only: &
         wp2_sponge_damp_settings, & ! Variable(s)
         wp3_sponge_damp_settings, &
@@ -103,12 +103,12 @@ module advance_wp2_wp3_module
         wp3_sponge_damp_profile,  &
         sponge_damp_xp2, & ! Procedure(s)
         sponge_damp_xp3
-
+  
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
         stat_end_update, &
         stat_update_var
-
+  
     use stats_variables, only: &
         iC1_Skw_fnc, &  ! Variable(s)
         iC11_Skw_fnc, &
@@ -117,7 +117,7 @@ module advance_wp2_wp3_module
         stats_zm, &
         stats_zt, &
         l_stats_samp
-
+  
     use constants_clubb, only:  & 
         fstderr,   & ! Variables
         one,       &
@@ -125,18 +125,18 @@ module advance_wp2_wp3_module
         one_third, &
         w_tol_sqd, &
         eps
-
+  
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-
+  
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-
+  
     implicit none
 
     intrinsic :: exp
@@ -527,13 +527,11 @@ module advance_wp2_wp3_module
     !------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr  ! Variable(s) 
-
-    use grid_class, only:  & 
+        gr,  & 
         zm2zt, & ! Function(s)
         zt2zm, & 
         ddzt
-
+  
     use constants_clubb, only: & 
         w_tol_sqd,                & ! Variables(s)
         max_mag_correlation_flux, &
@@ -541,34 +539,34 @@ module advance_wp2_wp3_module
         zero,                     &
         zero_threshold,           &
         fstderr
-
+  
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
-
+  
     use model_flags, only:  & 
         iiPDF_ADG1,                   & ! Variable(s)
         iiPDF_new,                    &
         iiPDF_new_hybrid,             &
         l_hole_fill,                  &
         l_explicit_turbulent_adv_wp3
-
+  
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-
+  
     use lapack_wrap, only:  & 
         band_solve,  & ! Procedure(s) 
         band_solvex
-
+  
     use fill_holes, only: & 
         fill_holes_vertical
-
+  
     use clip_explicit, only: &
         clip_variance, & ! Procedure(s)
         clip_variance_level, &
         clip_skewness
-
+  
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
@@ -578,7 +576,7 @@ module advance_wp2_wp3_module
         stat_update_var_pt, &
         stat_end_update, &
         stat_end_update_pt
-
+  
     use stats_variables, only:  & 
         stats_zm, & ! Variable(s)
         stats_zt, & 
@@ -618,7 +616,7 @@ module advance_wp2_wp3_module
         zmscr12, &
         ztscr01, &
         ztscr02
-
+  
     use stats_variables, only: &
         ztscr03, &
         ztscr04, &
@@ -634,7 +632,7 @@ module advance_wp2_wp3_module
         ztscr14, &
         ztscr15, &
         ztscr16
-
+  
     implicit none
 
     ! External
@@ -1236,7 +1234,7 @@ module advance_wp2_wp3_module
 
     use grid_class, only:  & 
         gr ! Variable
-
+  
     use parameters_tunable, only:  & 
         C4,  & ! Variables
         C_uu_shr,  & 
@@ -1245,7 +1243,7 @@ module advance_wp2_wp3_module
         C12, & 
         nu1_vert_res_dep, & 
         nu8_vert_res_dep
-
+  
     use constants_clubb, only:  & 
         one, & ! Constant(s)
         zero, &
@@ -1261,14 +1259,14 @@ module advance_wp2_wp3_module
     use diffusion, only: & 
         diffusion_zm_lhs, & ! Procedures
         diffusion_zt_lhs
-
+  
     use mean_adv, only: & 
         term_ma_zm_lhs, & ! Procedures
         term_ma_zt_lhs
-
+  
     use clubb_precision, only: &
         core_rknd
-
+  
     use stats_variables, only: & 
         zmscr01,    &
         zmscr02,    &
@@ -1284,7 +1282,7 @@ module advance_wp2_wp3_module
         zmscr12,    &
         ztscr01,    &
         ztscr02
-
+  
     use stats_variables, only: &
         ztscr03,    &
         ztscr04,    &
@@ -1300,7 +1298,7 @@ module advance_wp2_wp3_module
         ztscr14,    &
         ztscr15,    &
         ztscr16
-
+  
     use stats_variables, only: & 
         l_stats_samp, & 
         iwp2_dp1, & 
@@ -1317,9 +1315,9 @@ module advance_wp2_wp3_module
         iwp3_pr2, & 
         iwp3_pr1, & 
         iwp3_dp1
-
+  
     use advance_helper_module, only: set_boundary_conditions_lhs ! Procedure(s)
-
+  
     implicit none
 
 
@@ -1888,11 +1886,10 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr, zm2zt ! Variable
-
-    use grid_class, only:  & 
+        gr, & 
+        zm2zt, & ! Variables
         ddzt ! Procedure
-
+  
     use parameters_tunable, only:  & 
         C4,  & ! Variables
         C_uu_shr,  &
@@ -1904,7 +1901,7 @@ module advance_wp2_wp3_module
         C_wp3_pr_dfsn, & 
         nu1_vert_res_dep, & 
         nu8_vert_res_dep
-
+  
     use constants_clubb, only: & 
         w_tol_sqd,     & ! Variable(s)
         one,           &
@@ -1922,10 +1919,10 @@ module advance_wp2_wp3_module
     use diffusion, only: & 
         diffusion_zm_lhs,  & ! Procedures
         diffusion_zt_lhs
-
+  
     use clubb_precision, only:  & 
         core_rknd ! Variable
-
+  
     use stats_variables, only:  & 
         l_stats_samp, iwp2_dp1, iwp2_dp2, stats_zm, iwp2_bp,   & ! Variable(s)
         iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_splat, iwp3_splat, &
@@ -1937,10 +1934,10 @@ module advance_wp2_wp3_module
         stat_update_var_pt,  & ! Procedure(s)
         stat_begin_update_pt,  &
         stat_modify_pt
-
+  
     use advance_helper_module, only: set_boundary_conditions_rhs
-
-
+  
+  
     implicit none
 
     ! Constant parameters
@@ -2723,13 +2720,13 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: &
         zero    ! Constant(s)
-
+  
     use grid_class, only: & 
         gr    ! Variable Type(s)
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters
@@ -2836,15 +2833,15 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Variable types(s)
-
+  
     use constants_clubb, only: &
         two,  & ! Variable(s)
         one,  &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -2921,13 +2918,13 @@ module advance_wp2_wp3_module
 
     use grid_class, only:  & 
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         zero    ! Constant(s) 
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -3003,15 +3000,15 @@ module advance_wp2_wp3_module
 
     use grid_class, only:  &
         gr      ! Variable type(s)
-
+  
     use constants_clubb, only: &
         three, & ! Variable(s)
         two,   &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -3079,16 +3076,16 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only:  & ! Variable(s)        
         grav, & ! Gravitational acceleration [m/s^2]
         two,  &
         one,  &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -3164,13 +3161,13 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         zero    ! Constant(s)
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -3263,16 +3260,16 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: & ! Variables 
         grav,           & ! Gravitational acceleration [m/s^2]
         two_thirds,     &
         zero,           &
         zero_threshold
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -3371,14 +3368,14 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         three, & ! Constant9(s)
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -3500,13 +3497,13 @@ module advance_wp2_wp3_module
 
     use grid_class, only:  &
         gr    ! Variable Type(s)
-
+  
     use constants_clubb, only: &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters
@@ -3655,13 +3652,13 @@ module advance_wp2_wp3_module
 
     use grid_class, only:  &
         gr ! Variable gr%weights_zt2zm
-
+  
     use constants_clubb, only: &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters
@@ -3944,15 +3941,15 @@ module advance_wp2_wp3_module
 
     use grid_class, only:  & 
         gr       ! Variable(s)
-
+  
     use constants_clubb, only:  &
         three,        & ! Constant(s)
         three_halves, &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters
@@ -4062,15 +4059,15 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Grid types(s)
-
+  
     use constants_clubb, only: &
         three, & ! Variable(s)
         one,   &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -4158,16 +4155,16 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Variable types(s)
-
+  
     use constants_clubb, only: &
         one, & ! Variable(s)
         three, &
         five, &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -4280,13 +4277,13 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Variable types(s)
-
+  
     use constants_clubb, only: &
         zero    ! Constant(s)
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -4352,16 +4349,16 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Grid type(s)
-
+  
     use constants_clubb, only: & ! Constant(s) 
         grav,  & ! Gravitational acceleration [m/s^2]
         three, &
         one,   &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -4423,15 +4420,16 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr, zm2zt    ! Variable type(s)
-
+        gr, &
+        zm2zt    ! Variable type(s)
+  
     use constants_clubb, only: & ! Constant(s) 
         grav, & ! Gravitational acceleration [m/s^2]
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -4519,13 +4517,13 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -4617,15 +4615,15 @@ module advance_wp2_wp3_module
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         two,  & ! Constant(s)
         four, &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables

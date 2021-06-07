@@ -29,7 +29,7 @@ module stats_zm_module
 
     use constants_clubb, only: &
         fstderr ! Constant(s)
-
+  
     use stats_variables, only: &
         stats_zm, &
         iwp2, &
@@ -69,7 +69,7 @@ module stats_zm_module
         iinvrs_tau_sfc, &
         iinvrs_tau_shear, &
         iC6_term
-
+  
     use stats_variables, only: &
         iupwp, &
         ivpwp, &
@@ -99,7 +99,7 @@ module stats_zm_module
         iFprec, &
         iFcsed, &
         istability_correction
-
+  
     use stats_variables, only: &
         iup2, &
         ivp2, &
@@ -129,13 +129,13 @@ module stats_zm_module
         ivp2_cl, &
         ivp2_sf, &
         ivp2_splat
-
+  
     use stats_variables, only: &
         icoef_wp4_implicit
 
     use stats_variables, only: &
         iwpNcp
-
+  
     use stats_variables, only: &
         iVNr,  &
         iVrr, &
@@ -150,7 +150,7 @@ module stats_zm_module
         iVNrpNrp, &
         iVrrprrp_expcalc, &
         iVNrpNrp_expcalc
-
+  
     use stats_variables, only: &
         iwp2_bt, &
         iwp2_ma, &
@@ -167,7 +167,7 @@ module stats_zm_module
         iwp2_cl, &
         iwp2_sf, &
         iwp2_splat
-
+  
     use stats_variables, only: &
         iwprtp_bt, &
         iwprtp_ma, &
@@ -188,7 +188,7 @@ module stats_zm_module
         iwpthlp_bt, &
         iwpthlp_ma, &
         iwpthlp_ta
-
+  
     use stats_variables, only: &
         iwpthlp_tp, &
         iwpthlp_ac, &
@@ -202,7 +202,7 @@ module stats_zm_module
         iwpthlp_sicl, &
         iwpthlp_forcing, &
         iwpthlp_mc
-
+  
     use stats_variables, only: &
         iupwp_bt,  &
         iupwp_ma,  &
@@ -230,7 +230,7 @@ module stats_zm_module
         ivpwp_dp1, &
         ivpwp_mfl, &
         ivpwp_cl
-
+  
     use stats_variables, only: &
         irtp2_bt, &
         irtp2_ma, &
@@ -251,7 +251,7 @@ module stats_zm_module
         ithlp2_dp2, &
         ithlp2_cl, &
         ithlp2_pd
-
+  
     use stats_variables, only: &
         ithlp2_sf, &
         ithlp2_forcing, &
@@ -267,7 +267,7 @@ module stats_zm_module
         irtpthlp_sf, &
         irtpthlp_forcing, &
         irtpthlp_mc
-
+  
     use stats_variables, only: &
         iwpthlp_entermfl, & ! Variable(s)
         iwpthlp_exit_mfl, &
@@ -277,7 +277,7 @@ module stats_zm_module
         iwprtp_exit_mfl, &
         iwprtp_mfl_min, &
         iwprtp_mfl_max
-
+  
     use stats_variables, only: &
         iwm_zm,  &  ! Variable
         icloud_frac_zm, &
@@ -285,14 +285,14 @@ module stats_zm_module
         ircm_zm, &
         irtm_zm, &
         ithlm_zm
-
+  
     use stats_variables, only: &
         iw_1_zm, & ! Variable(s)
         iw_2_zm, &
         ivarnce_w_1_zm, &
         ivarnce_w_2_zm, &
         imixt_frac_zm
-
+  
     use stats_variables, only: &
         isclrprtp, &
         isclrp2, &
@@ -305,7 +305,7 @@ module stats_zm_module
         iwpsclrprtp, &
         iwpsclrpthlp, &
         iwpedsclrp
-
+  
     use stats_variables, only: &
         ia3_coef, &
         iwp3_on_wp2, &
@@ -323,29 +323,29 @@ module stats_zm_module
         irtphmp, &
         ithlphmp, &
         ihmxphmyp
-
+  
     use stats_variables, only: &
         irtp2_from_chi
-
+  
     use stats_variables, only: &
         ilh_rtp2_mc, &
         ilh_thlp2_mc, &
         ilh_wprtp_mc, &
         ilh_wpthlp_mc, &
         ilh_rtpthlp_mc
-
+  
     use stats_type_utilities, only: &
         stat_assign ! Procedure
-
+  
     use parameters_model, only: &
         hydromet_dim, & ! Variable(s)
         sclr_dim,     &
         edsclr_dim
-
+  
     use array_index, only: &
         hydromet_list, & ! Variable(s)
         l_mix_rat_hm
-
+  
     implicit none
 
     ! External

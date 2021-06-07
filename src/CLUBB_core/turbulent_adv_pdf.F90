@@ -317,13 +317,13 @@ module turbulent_adv_pdf
 
     use grid_class, only:  & ! gr%weights_zm2zt
         gr    ! Variable Type
-
+  
     use constants_clubb, only: &
         zero    ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters
@@ -471,10 +471,10 @@ module turbulent_adv_pdf
 
         use grid_class, only:  & ! for gr%weights_zm2zt
             gr    ! Variable Type
-
+  
         use clubb_precision, only: &
             core_rknd    ! Variable(s)
-
+  
         implicit none
 
         !------------------- Input Variables -------------------
@@ -784,13 +784,13 @@ module turbulent_adv_pdf
 
     use grid_class, only:  &
         gr    ! Variable Type
-
+  
     use constants_clubb, only: &
         zero    ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -893,10 +893,10 @@ module turbulent_adv_pdf
      !--------------------------------------------------------------------------------------------
          use clubb_precision, only: &
              core_rknd ! Variable(s)
-
+  
          use grid_class, only: &
              gr    ! Variable type
-
+  
          implicit none
 
          !------------------- Input Variables -------------------
@@ -973,14 +973,14 @@ module turbulent_adv_pdf
 
     use grid_class, only: &
         gr    ! Variable type
-
+  
     use constants_clubb, only: &
         one,  & ! Variable(s)
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables

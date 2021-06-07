@@ -33,157 +33,157 @@ module output_netcdf
                           nsamp) ! optional
 
 ! Description:
-!   Defines the structure used to reference the file `ncf'
-
-! References:
-!   None
-!-------------------------------------------------------------------------------
-    use netcdf, only: & 
-      NF90_CLOBBER, & ! Variable(s)
-      NF90_NOERR,   & 
-      nf90_create,  & ! Procedure
-      nf90_strerror
-
-    use stat_file_module, only: & 
-      stat_file ! Type
-
-    use clubb_precision, only:  & 
-      time_precision, & ! Variable(s)
-      core_rknd
-
-    use constants_clubb, only:  & 
-      fstderr ! Variable(s)
-
-    use error_code, only: &
-      err_code, &           ! Error Indicator
-      clubb_fatal_error     ! Constant
-
-    implicit none
-
-    ! Input Variables
-    character(len=*), intent(in) ::  & 
-      fdir,   & ! Directory name of file
-      fname     ! File name
-
-    integer, intent(in) ::  & 
-      nlat, nlon,       & ! Number of points in the X and Y
-      day, month, year, & ! Time
-      ia, iz,           & ! First and last grid point
-      nvar                ! Number of variables
-
-    real( kind = core_rknd ), dimension(nlat), intent(in) ::  & 
-      lat_vals ! Latitudes   [degrees_E]
-
-    real( kind = core_rknd ), dimension(nlon), intent(in) ::  & 
-      lon_vals ! Longitudes  [degrees_N]
-
-    real( kind = core_rknd ), intent(in) :: & 
-      dtwrite ! Time between write intervals   [s]
-
-    real( kind = time_precision ), intent(in) ::  & 
-     time   ! Current time                    [s]
-
-    real( kind = core_rknd ), dimension(:), intent(in) ::  & 
-      zgrid  ! The model grid                  [m]
-
-    ! Input/output Variables
-    type (stat_file), intent(inout) :: ncf
-
-    ! Number of SILHS samples, used only for SILHS sample outputting
-    integer, optional, intent(in) :: nsamp
-
-    ! Local Variables
-    integer :: stat  ! Error status
-    integer :: k     ! Array index
-
-    ! ---- Begin Code ----
-
-    ncf%nvar    = nvar
-
+  !   Defines the structure used to reference the file `ncf'
+  
+  ! References:
+  !   None
+  !-------------------------------------------------------------------------------
+      use netcdf, only: & 
+          NF90_CLOBBER, & ! Variable(s)
+          NF90_NOERR,   & 
+          nf90_create,  & ! Procedure
+          nf90_strerror
+    
+      use stat_file_module, only: & 
+          stat_file ! Type
+    
+      use clubb_precision, only:  & 
+          time_precision, & ! Variable(s)
+          core_rknd
+    
+      use constants_clubb, only:  & 
+          fstderr ! Variable(s)
+    
+      use error_code, only: &
+          err_code, &           ! Error Indicator
+          clubb_fatal_error     ! Constant
+    
+      implicit none
+  
+      ! Input Variables
+      character(len=*), intent(in) ::  & 
+        fdir,   & ! Directory name of file
+        fname     ! File name
+  
+      integer, intent(in) ::  & 
+        nlat, nlon,       & ! Number of points in the X and Y
+        day, month, year, & ! Time
+        ia, iz,           & ! First and last grid point
+        nvar                ! Number of variables
+  
+      real( kind = core_rknd ), dimension(nlat), intent(in) ::  & 
+        lat_vals ! Latitudes   [degrees_E]
+  
+      real( kind = core_rknd ), dimension(nlon), intent(in) ::  & 
+        lon_vals ! Longitudes  [degrees_N]
+  
+      real( kind = core_rknd ), intent(in) :: & 
+        dtwrite ! Time between write intervals   [s]
+  
+      real( kind = time_precision ), intent(in) ::  & 
+       time   ! Current time                    [s]
+  
+      real( kind = core_rknd ), dimension(:), intent(in) ::  & 
+        zgrid  ! The model grid                  [m]
+  
+      ! Input/output Variables
+      type (stat_file), intent(inout) :: ncf
+  
+      ! Number of SILHS samples, used only for SILHS sample outputting
+      integer, optional, intent(in) :: nsamp
+  
+      ! Local Variables
+      integer :: stat  ! Error status
+      integer :: k     ! Array index
+  
+      ! ---- Begin Code ----
+  
+      ncf%nvar    = nvar
+  
     ! If there is no data to write, then return
-    if ( ncf%nvar == 0 ) then
+      if ( ncf%nvar == 0 ) then
       return
     end if
-
-    ! Initialization for NetCDF
-    ncf%l_defined = .false.
-
-    ! Define file (compatability with GrADS writing)
-    ncf%fdir   = fdir
-    ncf%fname  = fname
-    ncf%ia     = ia
-    ncf%iz     = iz
-    ncf%day    = day
-    ncf%month  = month
-    ncf%year   = year
-    ncf%nlat   = nlat
-    ncf%nlon   = nlon
-    ncf%time   = time
-
-    ncf%dtwrite = dtwrite
-    ncf%ntimes = 0
-
-! According to Chris Vogl, netcdf can handle time steps < 1 min.  So this check is unneeded.
-!    ! Check to make sure the timestep is appropriate. The GrADS program does not support an
-!    ! output timestep less than 1 minute.  Other programs can read netCDF files like this
-!    if ( dtwrite < sec_per_min ) then
-!      write(fstderr,*) "Warning: GrADS program requires an output timestep of at least &
-!                       &one minute, but the requested output timestep &
-!                       &(stats_tout) is less than one minute."
-!      if ( .not. l_allow_small_stats_tout ) then
-!        write(fstderr,*) "To override this warning, set l_allow_small_stats_tout = &
-!                         &.true. in the stats_setting namelist in the &
-!                         &appropriate *_model.in file."
-!        write(fstderr,*) "Fatal error in open_netcdf_for_writing"
-!        err_code = clubb_fatal_error
+  
+      ! Initialization for NetCDF
+      ncf%l_defined = .false.
+  
+      ! Define file (compatability with GrADS writing)
+      ncf%fdir   = fdir
+      ncf%fname  = fname
+      ncf%ia     = ia
+      ncf%iz     = iz
+      ncf%day    = day
+      ncf%month  = month
+      ncf%year   = year
+      ncf%nlat   = nlat
+      ncf%nlon   = nlon
+      ncf%time   = time
+  
+      ncf%dtwrite = dtwrite
+      ncf%ntimes = 0
+  
+  ! According to Chris Vogl, netcdf can handle time steps < 1 min.  So this check is unneeded.
+  !    ! Check to make sure the timestep is appropriate. The GrADS program does not support an
+  !    ! output timestep less than 1 minute.  Other programs can read netCDF files like this
+  !    if ( dtwrite < sec_per_min ) then
+  !      write(fstderr,*) "Warning: GrADS program requires an output timestep of at least &
+  !                       &one minute, but the requested output timestep &
+  !                       &(stats_tout) is less than one minute."
+  !      if ( .not. l_allow_small_stats_tout ) then
+  !        write(fstderr,*) "To override this warning, set l_allow_small_stats_tout = &
+  !                         &.true. in the stats_setting namelist in the &
+  !                         &appropriate *_model.in file."
+  !        write(fstderr,*) "Fatal error in open_netcdf_for_writing"
+  !        err_code = clubb_fatal_error
 !        return
 !      end if
 !    end if ! dtwrite < sec_per_min
-
-    ! From open_grads.
-    ! This probably for the case of a reversed grid as in COAMPS
-    if ( ia <= iz ) then
-      do k=1,iz-ia+1
-        ncf%z(k) = zgrid(ia+k-1)
+  
+      ! From open_grads.
+      ! This probably for the case of a reversed grid as in COAMPS
+      if ( ia <= iz ) then
+        do k=1,iz-ia+1
+          ncf%z(k) = zgrid(ia+k-1)
       end do
-    else ! Always this for CLUBB
-      do k=1,ia-iz+1
-        ncf%z(k) = zgrid(ia-k+1)
+      else ! Always this for CLUBB
+        do k=1,ia-iz+1
+          ncf%z(k) = zgrid(ia-k+1)
       end do
     end if
-
-    allocate( ncf%lat_vals(1:nlat), ncf%lon_vals(1:nlon) )
-
-    ncf%lat_vals = lat_vals
-    ncf%lon_vals = lon_vals
-
-    ! If nsamp is present, SILHS samples are being handled.  Therefore set
-    ! ncf%nsamp and ncf%samp_idx.  samp_idx holds the SILHS sample indices.
-    if ( present(nsamp) ) then
-      ncf%nsamp = nsamp
-      allocate( ncf%samp_idx(1:nsamp) )
-      forall( k=1:nsamp )
-        ncf%samp_idx(k) = real( k, kind = core_rknd )
+  
+      allocate( ncf%lat_vals(1:nlat), ncf%lon_vals(1:nlon) )
+  
+      ncf%lat_vals = lat_vals
+      ncf%lon_vals = lon_vals
+  
+      ! If nsamp is present, SILHS samples are being handled.  Therefore set
+      ! ncf%nsamp and ncf%samp_idx.  samp_idx holds the SILHS sample indices.
+      if ( present(nsamp) ) then
+        ncf%nsamp = nsamp
+        allocate( ncf%samp_idx(1:nsamp) )
+        forall( k=1:nsamp )
+          ncf%samp_idx(k) = real( k, kind = core_rknd )
       end forall
     endif
-
-    ! Create NetCDF dataset: enter define mode
-    stat = nf90_create( path = trim( fdir )//trim( fname )//'.nc',  & 
-                        cmode = NF90_CLOBBER,  & ! overwrite existing file
-                        ncid = ncf%iounit )
-    if ( stat /= NF90_NOERR ) then
-      write(unit=fstderr,fmt=*) "Error opening file: ",  & 
-        trim( fdir )//trim( fname )//'.nc', & 
-        trim( nf90_strerror( stat ) )
-      err_code = clubb_fatal_error
+  
+      ! Create NetCDF dataset: enter define mode
+      stat = nf90_create( path = trim( fdir )//trim( fname )//'.nc',  & 
+                          cmode = NF90_CLOBBER,  & ! overwrite existing file
+                          ncid = ncf%iounit )
+      if ( stat /= NF90_NOERR ) then
+        write(unit=fstderr,fmt=*) "Error opening file: ",  & 
+          trim( fdir )//trim( fname )//'.nc', & 
+          trim( nf90_strerror( stat ) )
+        err_code = clubb_fatal_error
       return
     end if
-
-    call define_netcdf( ncf%iounit, ncf%nlat, ncf%nlon, ncf%iz, ncf%nsamp, & ! In
-                  ncf%day, ncf%month, ncf%year, ncf%time, & ! In
-                  ncf%SampDimId, ncf%LatDimId, ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, &  ! Out
-                  ncf%SampVarId, ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId ) ! Out
-
+  
+      call define_netcdf( ncf%iounit, ncf%nlat, ncf%nlon, ncf%iz, ncf%nsamp, & ! In
+                    ncf%day, ncf%month, ncf%year, ncf%time, & ! In
+                    ncf%SampDimId, ncf%LatDimId, ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, &  ! Out
+                    ncf%SampVarId, ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId ) ! Out
+  
     return
   end subroutine open_netcdf_for_writing
 
@@ -206,21 +206,21 @@ module output_netcdf
         NF90_NOERR,  & ! Variable(s)
         nf90_put_var,  & ! Procedure
         nf90_strerror
-
+  
     use stat_file_module, only: & 
         stat_file ! Variable
-
+  
     use constants_clubb, only:  & 
         fstderr, & ! Variable
         sec_per_min
-
+  
     use error_code, only: &
-      err_code, &           ! Error Indicator
-      clubb_fatal_error     ! Constant
-
+        err_code, &           ! Error Indicator
+        clubb_fatal_error     ! Constant
+  
     use clubb_precision, only: &
-      time_precision ! Constant(s)
-
+        time_precision ! Constant(s)
+  
     implicit none
 
     ! Input
@@ -333,26 +333,26 @@ module output_netcdf
 !   None
 !-------------------------------------------------------------------------------
     use netcdf, only: & 
-      NF90_NOERR,   & ! Constants
-      NF90_DOUBLE, & 
-      NF90_UNLIMITED
-
+        NF90_NOERR,   & ! Constants
+        NF90_DOUBLE, & 
+        NF90_UNLIMITED
+  
     use netcdf, only: & 
-      nf90_def_dim,  & ! Functions
-      nf90_strerror, & 
-      nf90_def_var, & 
-      nf90_put_att
-
+        nf90_def_dim,  & ! Functions
+        nf90_strerror, & 
+        nf90_def_var, & 
+        nf90_put_att
+  
     use clubb_precision, only:  & 
-      time_precision ! Variable(s)
-
+        time_precision ! Variable(s)
+  
     use constants_clubb, only:  & 
-      fstderr ! Variable(s)
-
+        fstderr ! Variable(s)
+  
     use error_code, only: &
-      err_code, &           ! Error Indicator
-      clubb_fatal_error     ! Constant
-
+        err_code, &           ! Error Indicator
+        clubb_fatal_error     ! Constant
+  
     implicit none
 
     integer, intent(in) ::  & 
@@ -528,15 +528,15 @@ module output_netcdf
 
     use stat_file_module, only: & 
         stat_file ! Type
-
+  
     use netcdf, only: & 
         NF90_NOERR,  & ! Variable
         nf90_close,  & ! Procedure(s)
         nf90_strerror
-
+  
     use constants_clubb, only:  & 
         fstderr  ! Variable
-
+  
     implicit none
 
     ! Input/Output Variables
@@ -577,48 +577,48 @@ module output_netcdf
 !-------------------------------------------------------------------------------
 
     use netcdf, only: & 
-      NF90_NOERR,  & ! Constants
-      NF90_FLOAT,  &
-      NF90_DOUBLE, & 
-      NF90_GLOBAL, &
-      nf90_def_var,  & ! Procedure(s)
-      nf90_strerror, & 
-      nf90_put_att, & 
-      nf90_enddef
-
+        NF90_NOERR,  & ! Constants
+        NF90_FLOAT,  &
+        NF90_DOUBLE, & 
+        NF90_GLOBAL, &
+        nf90_def_var,  & ! Procedure(s)
+        nf90_strerror, & 
+        nf90_put_att, & 
+        nf90_enddef
+  
     use stat_file_module, only: &
-      stat_file ! Derived type
-
+        stat_file ! Derived type
+  
     use constants_clubb, only:  &
-      fstderr ! Variable
-
+        fstderr ! Variable
+  
     use parameters_model, only: &
-      T0, &       ! Real variables
-      ts_nudge, &
-      sclr_tol    ! Real array variable
-
+        T0, &       ! Real variables
+        ts_nudge, &
+        sclr_tol    ! Real array variable
+  
     use parameters_tunable, only: &
-      params_list ! Variable names (characters)
-
+        params_list ! Variable names (characters)
+  
     use parameters_tunable, only: &
-      get_parameters ! Subroutine
-
+        get_parameters ! Subroutine
+  
     use parameter_indices, only: &
-      nparams ! Integer
-
+        nparams ! Integer
+  
     use model_flags, only: &
-      l_pos_def, &
-      l_hole_fill, &
+        l_pos_def, &
+        l_hole_fill, &
       l_clip_semi_implicit, &
       l_gamma_Skw
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     use error_code, only: &
-      err_code, &           ! Error Indicator
-      clubb_fatal_error     ! Constant
-
+        err_code, &           ! Error Indicator
+        clubb_fatal_error     ! Constant
+  
     implicit none
 
     ! External
@@ -886,17 +886,17 @@ module output_netcdf
         NF90_NOERR,   & ! Variable(s)
         nf90_put_var,  & ! Procedure(s)
         nf90_strerror
-
+  
     use stat_file_module, only: & 
         stat_file ! Type
-
+  
     use constants_clubb, only:  & 
         fstderr ! Variable
-
+  
     use error_code, only: &
         err_code, &         ! Error Indicator
         clubb_fatal_error   ! Constant
-
+  
     implicit none
 
     ! Input Variable(s)
@@ -964,11 +964,11 @@ module output_netcdf
 !-------------------------------------------------------------------------------
 
     use calendar, only:  &
-      compute_current_date ! Procedure(s)
-
+        compute_current_date ! Procedure(s)
+  
     use clubb_precision, only:  & 
         time_precision ! Variable(s)
-
+  
     implicit none
 
     ! External

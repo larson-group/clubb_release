@@ -49,7 +49,7 @@ module new_pdf_main
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         four,                & ! Variable(s)
         two,                 &
@@ -58,7 +58,7 @@ module new_pdf_main
         rt_tol,              &
         thl_tol,             &
         max_mag_correlation
-
+  
     use new_pdf, only: &
         calc_setter_var_params,     & ! Procedure(s)
         calc_coef_wp4_implicit,     &
@@ -74,15 +74,15 @@ module new_pdf_main
         pdf_component_stdev_factor_w, &
         coef_spread_DG_means_rt, &
         coef_spread_DG_means_thl
-
+  
     use model_flags, only: &
         l_explicit_turbulent_adv_wp3,  & ! Variable(s)
         l_explicit_turbulent_adv_wpxp, &
         l_explicit_turbulent_adv_xpyp
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -425,17 +425,17 @@ module new_pdf_main
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         zero    ! Variable(s)
-
+  
     use new_pdf, only: &
         calc_limits_F_x_responder, & ! Procedure(s)
         calc_responder_params
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -578,14 +578,14 @@ module new_pdf_main
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         one,  & ! Variable(s)
         zero
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -725,13 +725,13 @@ module new_pdf_main
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         one    ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables

@@ -47,17 +47,17 @@ module lapack_wrap
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     use error_code, only: &
-      clubb_at_least_debug_level,  & ! Procedure  
-      err_code,                    & ! Error Indicator
-      clubb_fatal_error              ! Constants
-
+        clubb_at_least_debug_level,  & ! Procedure  
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error              ! Constants
+  
     use lapack_interfaces, only: &
-      lapack_gtsvx, &      ! Procedure
-      lapack_isnan
-
+        lapack_gtsvx, &      ! Procedure
+        lapack_isnan
+  
     implicit none
 
     intrinsic :: kind
@@ -185,8 +185,8 @@ module lapack_wrap
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
 #ifdef E3SM
 #ifndef NDEBUG
 #if defined(ARCH_MIC_KNL) && defined(CPRINTEL)
@@ -194,15 +194,15 @@ module lapack_wrap
 #endif
 #endif
 #endif /*E3SM*/
-
+  
     use error_code, only: &
-      err_code,                    & ! Error Indicator
-      clubb_fatal_error              ! Constants
-      
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error              ! Constants
+        
     use lapack_interfaces, only: &
-      lapack_gtsv, &       ! Procedure
-      lapack_isnan
-
+        lapack_gtsv, &       ! Procedure
+        lapack_isnan
+  
     implicit none
 
     intrinsic :: kind
@@ -302,194 +302,194 @@ module lapack_wrap
 !   <http://www.netlib.org/lapack/double/dgbsvx.f>
 
 ! Notes:
-!   I found that due to the use of sgbcon/dgbcon it is much
-!   more expensive to use this on most systems than the simple
-!   driver. Use this version only if you don't case about compute time.
-!   Also note that this version equilibrates the lhs and does an iterative
-!   refinement of the solutions, which results in a slightly different answer
-!   than the simple driver does. -dschanen 24 Sep 2008
-!-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    use error_code, only: &
-      clubb_at_least_debug_level,  & ! Procedure  
-      err_code,                    & ! Error Indicator
-      clubb_fatal_error              ! Constants
-
-    use lapack_interfaces, only: &
-      lapack_gbsvx, &      ! Procedures
-      lapack_isnan
-
-    implicit none
-
-    intrinsic :: eoshift, kind, trim
-
-    ! Input Variables
-    character(len=*), intent(in) :: solve_type
-
-    integer, intent(in) :: & 
-      nsup,  & ! Number of superdiagonals
-      nsub,  & ! Number of subdiagonals
+  !   I found that due to the use of sgbcon/dgbcon it is much
+  !   more expensive to use this on most systems than the simple
+  !   driver. Use this version only if you don't case about compute time.
+  !   Also note that this version equilibrates the lhs and does an iterative
+  !   refinement of the solutions, which results in a slightly different answer
+  !   than the simple driver does. -dschanen 24 Sep 2008
+  !-----------------------------------------------------------------------
+  
+      use clubb_precision, only: &
+          core_rknd ! Variable(s)
+    
+      use error_code, only: &
+          clubb_at_least_debug_level,  & ! Procedure  
+          err_code,                    & ! Error Indicator
+          clubb_fatal_error              ! Constants
+    
+      use lapack_interfaces, only: &
+          lapack_gbsvx, &      ! Procedures
+          lapack_isnan
+    
+      implicit none
+  
+      intrinsic :: eoshift, kind, trim
+  
+      ! Input Variables
+      character(len=*), intent(in) :: solve_type
+  
+      integer, intent(in) :: & 
+        nsup,  & ! Number of superdiagonals
+        nsub,  & ! Number of subdiagonals
       ndim,  & ! The order of the LHS Matrix, i.e. the # of linear equations
-      nrhs     ! Number of RHS's to back substitute for
-
-    real( kind = core_rknd ), dimension(nsup+nsub+1,ndim), intent(inout) ::  & 
-      lhs ! Left hand side
-    real( kind = core_rknd ), dimension(ndim,nrhs), intent(inout) ::  & 
-      rhs ! Right hand side(s)
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(ndim,nrhs), intent(out) :: &
-      solution
-
-    ! The estimate of the reciprocal condition number of matrix
-    ! after equilibration (if done).
-    real( kind = core_rknd ), intent(out) ::  & 
-      rcond
-
-    ! Local Variables
-
-    ! Workspaces
-    real( kind = core_rknd ), dimension(3*ndim)  :: work
-    integer, dimension(ndim) :: iwork
-
-    real( kind = core_rknd ), dimension(2*nsub+nsup+1,ndim) :: & 
-      lulhs ! LU Decomposition of the LHS
-
-    integer, dimension(ndim) ::  & 
-      ipivot
-
-    real( kind = core_rknd ), dimension(nrhs) ::  & 
-      ferr, berr ! Forward and backward error estimate
-
-    real( kind = core_rknd ), dimension(ndim) ::  & 
-      rscale, cscale ! Row and column scale factors for the LHS
-
-    integer ::  & 
-      info,   & ! If this doesn't come back as 0, something went wrong
-      offset, & ! Loop iterator
-      imain,  & ! Main diagonal of the matrix
-      i         ! Loop iterator
-
-    character ::  & 
-      equed ! Row equilibration status
-
-
-!-----------------------------------------------------------------------
-!       Reorder Matrix to use LAPACK band matrix format (5x6)
-
-!       Shift example:
-
-!       [    *        *     lhs(1,1) lhs(1,2) lhs(1,3) lhs(1,4) ] (2)=>
-!       [    *     lhs(2,1) lhs(2,2) lhs(2,3) lhs(2,4) lhs(2,5) ] (1)=>
-!       [ lhs(3,1) lhs(3,2) lhs(3,3) lhs(3,4) lhs(3,5) lhs(3,6) ]
-! <=(1) [ lhs(4,2) lhs(4,3) lhs(4,4) lhs(4,5) lhs(4,6)    *     ]
-! <=(2) [ lhs(5,3) lhs(5,4) lhs(5,5) lhs(5,6)    *        *     ]
-
-!       The '*' indicates unreferenced elements.
-!       For additional bands above and below the main diagonal, the
-!       shifts to the left or right increases by the distance from the
-!       main diagonal of the matrix.
-!-----------------------------------------------------------------------
-
-    imain = nsup + 1
-
-    ! For the offset, (+) is left, and (-) is right
-
-    ! Sub diagonals
-    do offset = 1, nsub, 1
-      lhs(imain+offset, 1:ndim) & 
-      = eoshift( lhs(imain+offset, 1:ndim), offset )
+        nrhs     ! Number of RHS's to back substitute for
+  
+      real( kind = core_rknd ), dimension(nsup+nsub+1,ndim), intent(inout) ::  & 
+        lhs ! Left hand side
+      real( kind = core_rknd ), dimension(ndim,nrhs), intent(inout) ::  & 
+        rhs ! Right hand side(s)
+  
+      ! Output Variables
+      real( kind = core_rknd ), dimension(ndim,nrhs), intent(out) :: &
+        solution
+  
+      ! The estimate of the reciprocal condition number of matrix
+      ! after equilibration (if done).
+      real( kind = core_rknd ), intent(out) ::  & 
+        rcond
+  
+      ! Local Variables
+  
+      ! Workspaces
+      real( kind = core_rknd ), dimension(3*ndim)  :: work
+      integer, dimension(ndim) :: iwork
+  
+      real( kind = core_rknd ), dimension(2*nsub+nsup+1,ndim) :: & 
+        lulhs ! LU Decomposition of the LHS
+  
+      integer, dimension(ndim) ::  & 
+        ipivot
+  
+      real( kind = core_rknd ), dimension(nrhs) ::  & 
+        ferr, berr ! Forward and backward error estimate
+  
+      real( kind = core_rknd ), dimension(ndim) ::  & 
+        rscale, cscale ! Row and column scale factors for the LHS
+  
+      integer ::  & 
+        info,   & ! If this doesn't come back as 0, something went wrong
+        offset, & ! Loop iterator
+        imain,  & ! Main diagonal of the matrix
+        i         ! Loop iterator
+  
+      character ::  & 
+        equed ! Row equilibration status
+  
+  
+  !-----------------------------------------------------------------------
+  !       Reorder Matrix to use LAPACK band matrix format (5x6)
+  
+  !       Shift example:
+  
+  !       [    *        *     lhs(1,1) lhs(1,2) lhs(1,3) lhs(1,4) ] (2)=>
+  !       [    *     lhs(2,1) lhs(2,2) lhs(2,3) lhs(2,4) lhs(2,5) ] (1)=>
+  !       [ lhs(3,1) lhs(3,2) lhs(3,3) lhs(3,4) lhs(3,5) lhs(3,6) ]
+  ! <=(1) [ lhs(4,2) lhs(4,3) lhs(4,4) lhs(4,5) lhs(4,6)    *     ]
+  ! <=(2) [ lhs(5,3) lhs(5,4) lhs(5,5) lhs(5,6)    *        *     ]
+  
+  !       The '*' indicates unreferenced elements.
+  !       For additional bands above and below the main diagonal, the
+  !       shifts to the left or right increases by the distance from the
+  !       main diagonal of the matrix.
+  !-----------------------------------------------------------------------
+  
+      imain = nsup + 1
+  
+      ! For the offset, (+) is left, and (-) is right
+  
+      ! Sub diagonals
+      do offset = 1, nsub, 1
+        lhs(imain+offset, 1:ndim) & 
+        = eoshift( lhs(imain+offset, 1:ndim), offset )
     end do
-
-    ! Super diagonals
-    do offset = 1, nsup, 1
-      lhs(imain-offset, 1:ndim) & 
-      = eoshift( lhs(imain-offset, 1:ndim), -offset )
+  
+      ! Super diagonals
+      do offset = 1, nsup, 1
+        lhs(imain-offset, 1:ndim) & 
+        = eoshift( lhs(imain-offset, 1:ndim), -offset )
     end do
-
-!-----------------------------------------------------------------------
-!     *** The LAPACK Routine ***
-!     SUBROUTINE SGBSVX( FACT, TRANS, N, KL, KU, NRHS, AB, LDAB, AFB,
-!    $                   LDAFB, IPIV, EQUED, R, C, B, LDB, X, LDX,
-!    $                   RCOND, FERR, BERR, WORK, IWORK, INFO )
-!-----------------------------------------------------------------------
-
-    ! Lapack general band solver, expert version, sgbsvx for single 
-    ! or dgbsvx for double precision
-    call lapack_gbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
-                       ndim, nsub, nsup, nrhs, & 
-                       lhs, nsup+nsub+1, lulhs, 2*nsub+nsup+1, & 
-                       ipivot, equed, rscale, cscale, & 
-                       rhs, ndim, solution, ndim, & 
-                       rcond, ferr, berr, work, iwork, info )
-
-
-! %% debug
-!       select case ( equed )
-!       case ('N')
-!         print *, "No equilib. was required for lhs."
-!       case ('R')
-!         print *, "Row equilib. was done on lhs."
-!       case ('C')
-!         print *, "Column equilib. was done on lhs."
-!       case ('B')
-!         print *, "Row and column equilib. was done on lhs."
+  
+  !-----------------------------------------------------------------------
+  !     *** The LAPACK Routine ***
+  !     SUBROUTINE SGBSVX( FACT, TRANS, N, KL, KU, NRHS, AB, LDAB, AFB,
+  !    $                   LDAFB, IPIV, EQUED, R, C, B, LDB, X, LDX,
+  !    $                   RCOND, FERR, BERR, WORK, IWORK, INFO )
+  !-----------------------------------------------------------------------
+  
+      ! Lapack general band solver, expert version, sgbsvx for single 
+      ! or dgbsvx for double precision
+      call lapack_gbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
+                         ndim, nsub, nsup, nrhs, & 
+                         lhs, nsup+nsub+1, lulhs, 2*nsub+nsup+1, & 
+                         ipivot, equed, rscale, cscale, & 
+                         rhs, ndim, solution, ndim, & 
+                         rcond, ferr, berr, work, iwork, info )
+  
+  
+  ! %% debug
+  !       select case ( equed )
+  !       case ('N')
+  !         print *, "No equilib. was required for lhs."
+  !       case ('R')
+  !         print *, "Row equilib. was done on lhs."
+  !       case ('C')
+  !         print *, "Column equilib. was done on lhs."
+  !       case ('B')
+  !         print *, "Row and column equilib. was done on lhs."
 !       end select
-
-!       write(*,'(a,e12.5)') "Row scale : ", rscale
-!       write(*,'(a,e12.5)') "Column scale: ", cscale
-!       write(*,'(a,e12.5)') "Estimate of the reciprocal of the "//
-!                            "condition number: ", rcond
-!       write(*,'(a,e12.5)') "Forward Error Estimate: ", ferr
-!       write(*,'(a,e12.5)') "Backward Error Estimate: ", berr
+  
+  !       write(*,'(a,e12.5)') "Row scale : ", rscale
+  !       write(*,'(a,e12.5)') "Column scale: ", cscale
+  !       write(*,'(a,e12.5)') "Estimate of the reciprocal of the "//
+  !                            "condition number: ", rcond
+  !       write(*,'(a,e12.5)') "Forward Error Estimate: ", ferr
+  !       write(*,'(a,e12.5)') "Backward Error Estimate: ", berr
 ! %% end debug
-
-    ! Diagnostic information
-    if ( clubb_at_least_debug_level( 2 ) .and. any( ferr > 1.e-3_core_rknd ) ) then
-
-      write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
-
-      do i = 1, nrhs, 1
+  
+      ! Diagnostic information
+      if ( clubb_at_least_debug_level( 2 ) .and. any( ferr > 1.e-3_core_rknd ) ) then
+  
+        write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
+  
+        do i = 1, nrhs, 1
         write(fstderr,*) "rhs # ", i, "band_solvex forward error est. =", ferr(i)
         write(fstderr,*) "rhs # ", i, "band_solvex backward error est. =", berr(i)
       end do
-
-      write(fstderr,'(2(a20,e15.6))') "rcond est. = ", rcond, & 
-        "machine epsilon = ", epsilon( lhs(1,1) )
+  
+        write(fstderr,'(2(a20,e15.6))') "rcond est. = ", rcond, & 
+          "machine epsilon = ", epsilon( lhs(1,1) )
     end if
-
-    select case( info )
-
-    case( :-1 )
-        write(fstderr,*) "in band_solvex for ", trim( solve_type ), &
-            ": illegal value for argument", -info
-        err_code = clubb_fatal_error
-
-    case( 0 )
-      ! Success!
-      if ( lapack_isnan( ndim, nrhs, solution ) ) then
-        err_code = clubb_fatal_error 
+  
+      select case( info )
+  
+      case( :-1 )
+          write(fstderr,*) "in band_solvex for ", trim( solve_type ), &
+              ": illegal value for argument", -info
+          err_code = clubb_fatal_error
+  
+      case( 0 )
+        ! Success!
+        if ( lapack_isnan( ndim, nrhs, solution ) ) then
+          err_code = clubb_fatal_error 
       end if
-
-    case( 1: )
-      if ( info == ndim+1 ) then
-
-        write(fstderr,*) trim( solve_type )// & 
-          " Warning: matrix singular to working precision."
-        write(fstderr,'(a,e12.5)')  & 
-          "Estimate of the reciprocal of the"// & 
-          " condition number: ", rcond
-      else
-        write(fstderr,*) "in band_solvex for", trim( solve_type ), &
-          ": singular matrix, solution not computed"    
-        err_code = clubb_fatal_error
+  
+      case( 1: )
+        if ( info == ndim+1 ) then
+  
+          write(fstderr,*) trim( solve_type )// & 
+            " Warning: matrix singular to working precision."
+          write(fstderr,'(a,e12.5)')  & 
+            "Estimate of the reciprocal of the"// & 
+            " condition number: ", rcond
+        else
+          write(fstderr,*) "in band_solvex for", trim( solve_type ), &
+            ": singular matrix, solution not computed"    
+          err_code = clubb_fatal_error
       end if
-
+  
     end select
-
+  
     return
   end subroutine band_solvex
 
@@ -506,17 +506,17 @@ module lapack_wrap
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     use error_code, only: &
-      clubb_at_least_debug_level, &
-      err_code,                    & ! Error Indicator
-      clubb_fatal_error              ! Constants
-
+        clubb_at_least_debug_level, &
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error              ! Constants
+  
     use lapack_interfaces, only: &
-      lapack_gbsv, &       ! Procedures
-      lapack_isnan
-
+        lapack_gbsv, &       ! Procedures
+        lapack_isnan
+  
     implicit none
     intrinsic :: eoshift, kind, trim
 

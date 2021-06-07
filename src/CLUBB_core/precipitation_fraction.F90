@@ -46,30 +46,30 @@ module precipitation_fraction
         zero,           &
         cloud_frac_min, &
         fstderr
-
+  
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-
+  
     use array_index, only: &
         l_mix_rat_hm, & ! Variable(s)
         l_frozen_hm,  &
         hydromet_tol
-
+  
     use stats_variables, only: &
         stats_sfc,        & ! Variable(s)
         iprecip_frac_tol
-
+  
     use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
         err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
-
+  
     implicit none
 
     ! Input Variables
@@ -414,17 +414,17 @@ module precipitation_fraction
     use constants_clubb, only: &
         one,  & ! Constant(s)
         zero
-
+  
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-
+  
     use array_index, only: &
         l_frozen_hm,  & ! Variable(s)
         hydromet_tol
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -765,19 +765,19 @@ module precipitation_fraction
         one,  & ! Constant(s)
         zero, &
         eps
-
+  
     use parameters_tunable, only: &
         upsilon_precip_frac_rat  ! Variable(s)
-
+  
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-
+  
     use array_index, only: &
         hydromet_tol  ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -1063,20 +1063,20 @@ module precipitation_fraction
         zero,    &
         fstderr, &
         eps
-
+  
     use array_index, only: &
         hydromet_tol  ! Variable(s)
-
+  
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use error_code, only: &
         err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
-
+  
     implicit none
 
     ! Input Variables

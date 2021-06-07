@@ -174,14 +174,14 @@ module mean_adv
 
     use grid_class, only: & 
         gr ! Variable(s)
-
+  
     use constants_clubb, only: &
         one,  & ! Constant(s)
         zero
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters
@@ -419,13 +419,13 @@ module mean_adv
 
     use grid_class, only: & 
         gr ! Variable(s)
-
+  
     use constants_clubb, only: &
         zero ! Constant(s)
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters

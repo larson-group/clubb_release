@@ -50,10 +50,10 @@ module numerical_check
 !---------------------------------------------------------------------------------
     use grid_class, only: & 
         gr ! Variable
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Constant Parameters
@@ -92,23 +92,23 @@ module numerical_check
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use parameters_model, only: & 
         sclr_dim ! Variable
-
+  
     use pdf_parameter_module, only:  &
         pdf_parameter  ! type
-
+  
     use stats_variables, only: &
         iwp4,       & ! Variables
         ircp2,      &
         iwprtp2,    &
         iwprtpthlp, &
         iwpthlp2
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Parameter Constants
@@ -298,26 +298,26 @@ module numerical_check
 
     use grid_class, only: & 
         gr ! Variable
-
+  
     use parameters_model, only: & 
         sclr_dim,  & ! Variable
         edsclr_dim
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     use error_code, only: &
-      clubb_at_least_debug_level,   & ! Procedure
-      err_code,                     & ! Error Indicator
-      clubb_no_error,               & ! Constants
-      clubb_fatal_error
-
+        clubb_at_least_debug_level,   & ! Procedure
+        err_code,                     & ! Error Indicator
+        clubb_no_error,               & ! Constants
+        clubb_fatal_error
+  
     use T_in_K_module, only: &
-      thlm2T_in_K ! Procedure
-
+        thlm2T_in_K ! Procedure
+  
     use constants_clubb, only:  & 
         fstderr ! Variable
-
+  
     implicit none
 
     ! Constant Parameters
@@ -343,163 +343,163 @@ module numerical_check
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt!,      & ! Dry, base-state theta_v on thermo. levs.  [K]
-!     rcm                ! Cloud water mixing ratio  [kg/kg] - Unused
-
-    real( kind = core_rknd ), intent(in) ::  & 
-      wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
-      wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
-      upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
-      vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
-
-    ! These are prognostic or are planned to be in the future
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
-      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
-      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
-      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
-      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
-      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
-      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
-      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
-      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
-      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
-      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
-      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
-      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
-      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
-      wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
-      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-
-    character(len=*), intent(in) :: prefix ! Location where subroutine is called
-
-    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
-      wpsclrp_sfc    ! Scalar flux at surface [units m/s]
-
-    real( kind = core_rknd ), intent(in), dimension(edsclr_dim) :: & 
-      wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
-
-    real( kind = core_rknd ), intent(in),dimension(gr%nz,sclr_dim) :: & 
-      sclrm,         & ! Passive scalar mean      [units vary]
-      wpsclrp,       & ! w'sclr'                  [units vary]
-      sclrp2,        & ! sclr'^2                  [units vary]
-      sclrprtp,      & ! sclr'rt'                 [units vary]
-      sclrpthlp,     & ! sclr'thl'                [units vary]
-      sclrm_forcing    ! Passive scalar forcing   [units / s]
-
-    real( kind = core_rknd ), intent(in),dimension(gr%nz,edsclr_dim) :: & 
-      edsclrm,         & ! Eddy passive scalar mean    [units vary]
-      edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
-
-    ! Local Variables
-    integer :: i ! Loop iterator for the scalars
-    integer :: k ! Vertical grid level 
-
-!-------- Input Nan Check ----------------------------------------------
-
-    call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name )
-    call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name )
-    call check_nan( um_forcing,"um_forcing", prefix//proc_name )
-    call check_nan( vm_forcing,"vm_forcing", prefix//proc_name )
-
-    call check_nan( wm_zm, "wm_zm", prefix//proc_name )
-    call check_nan( wm_zt, "wm_zt", prefix//proc_name )
-    call check_nan( p_in_Pa, "p_in_Pa", prefix//proc_name )
-    call check_nan( rho_zm, "rho_zm", prefix//proc_name )
-    call check_nan( rho, "rho", prefix//proc_name )
-    call check_nan( exner, "exner", prefix//proc_name )
-    call check_nan( rho_ds_zm, "rho_ds_zm", prefix//proc_name )
-    call check_nan( rho_ds_zt, "rho_ds_zt", prefix//proc_name )
-    call check_nan( invrs_rho_ds_zm, "invrs_rho_ds_zm", prefix//proc_name )
-    call check_nan( invrs_rho_ds_zt, "invrs_rho_ds_zt", prefix//proc_name )
-    call check_nan( thv_ds_zm, "thv_ds_zm", prefix//proc_name )
-    call check_nan( thv_ds_zt, "thv_ds_zt", prefix//proc_name )
-
-    call check_nan( um, "um", prefix//proc_name )
-    call check_nan( upwp, "upwp", prefix//proc_name )
-    call check_nan( vm, "vm", prefix//proc_name )
-    call check_nan( vpwp, "vpwp", prefix//proc_name )
-    call check_nan( up2, "up2", prefix//proc_name )
-    call check_nan( vp2, "vp2", prefix//proc_name )
-    call check_nan( rtm, "rtm", prefix//proc_name )
-    call check_nan( wprtp, "wprtp", prefix//proc_name )
-    call check_nan( thlm, "thlm", prefix//proc_name )
-    call check_nan( wpthlp, "wpthlp", prefix//proc_name )
-    call check_nan( wp2, "wp2", prefix//proc_name )
-    call check_nan( wp3, "wp3", prefix//proc_name )
-    call check_nan( rtp2, "rtp2", prefix//proc_name )
-    call check_nan( thlp2, "thlp2", prefix//proc_name )
-    call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
-
-    call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name )
-    call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name )
-    call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name )
-    call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name )
-
-    do i = 1, sclr_dim
-
-      call check_nan( sclrm_forcing(2:,i),"sclrm_forcing",  & 
-                      prefix//proc_name )
-
-      call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & 
-                      prefix//proc_name )
-
-      call check_nan( sclrm(2:,i),"sclrm", prefix//proc_name )
-      call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name )
-      call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name )
-      call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name )
-      call check_nan( sclrpthlp(:,i),"sclrpthlp", prefix//proc_name )
-
+  !     rcm                ! Cloud water mixing ratio  [kg/kg] - Unused
+  
+      real( kind = core_rknd ), intent(in) ::  & 
+        wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
+        wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
+        upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
+        vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
+  
+      ! These are prognostic or are planned to be in the future
+      real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
+        um,      & ! u mean wind component (thermodynamic levels)   [m/s]
+        upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+        vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+        vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+        up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+        vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+        rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+        wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+        thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+        wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+        rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+        thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+        rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+        wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
+        wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+  
+      character(len=*), intent(in) :: prefix ! Location where subroutine is called
+  
+      real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+        wpsclrp_sfc    ! Scalar flux at surface [units m/s]
+  
+      real( kind = core_rknd ), intent(in), dimension(edsclr_dim) :: & 
+        wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
+  
+      real( kind = core_rknd ), intent(in),dimension(gr%nz,sclr_dim) :: & 
+        sclrm,         & ! Passive scalar mean      [units vary]
+        wpsclrp,       & ! w'sclr'                  [units vary]
+        sclrp2,        & ! sclr'^2                  [units vary]
+        sclrprtp,      & ! sclr'rt'                 [units vary]
+        sclrpthlp,     & ! sclr'thl'                [units vary]
+        sclrm_forcing    ! Passive scalar forcing   [units / s]
+  
+      real( kind = core_rknd ), intent(in),dimension(gr%nz,edsclr_dim) :: & 
+        edsclrm,         & ! Eddy passive scalar mean    [units vary]
+        edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
+  
+      ! Local Variables
+      integer :: i ! Loop iterator for the scalars
+      integer :: k ! Vertical grid level 
+  
+  !-------- Input Nan Check ----------------------------------------------
+  
+      call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name )
+      call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name )
+      call check_nan( um_forcing,"um_forcing", prefix//proc_name )
+      call check_nan( vm_forcing,"vm_forcing", prefix//proc_name )
+  
+      call check_nan( wm_zm, "wm_zm", prefix//proc_name )
+      call check_nan( wm_zt, "wm_zt", prefix//proc_name )
+      call check_nan( p_in_Pa, "p_in_Pa", prefix//proc_name )
+      call check_nan( rho_zm, "rho_zm", prefix//proc_name )
+      call check_nan( rho, "rho", prefix//proc_name )
+      call check_nan( exner, "exner", prefix//proc_name )
+      call check_nan( rho_ds_zm, "rho_ds_zm", prefix//proc_name )
+      call check_nan( rho_ds_zt, "rho_ds_zt", prefix//proc_name )
+      call check_nan( invrs_rho_ds_zm, "invrs_rho_ds_zm", prefix//proc_name )
+      call check_nan( invrs_rho_ds_zt, "invrs_rho_ds_zt", prefix//proc_name )
+      call check_nan( thv_ds_zm, "thv_ds_zm", prefix//proc_name )
+      call check_nan( thv_ds_zt, "thv_ds_zt", prefix//proc_name )
+  
+      call check_nan( um, "um", prefix//proc_name )
+      call check_nan( upwp, "upwp", prefix//proc_name )
+      call check_nan( vm, "vm", prefix//proc_name )
+      call check_nan( vpwp, "vpwp", prefix//proc_name )
+      call check_nan( up2, "up2", prefix//proc_name )
+      call check_nan( vp2, "vp2", prefix//proc_name )
+      call check_nan( rtm, "rtm", prefix//proc_name )
+      call check_nan( wprtp, "wprtp", prefix//proc_name )
+      call check_nan( thlm, "thlm", prefix//proc_name )
+      call check_nan( wpthlp, "wpthlp", prefix//proc_name )
+      call check_nan( wp2, "wp2", prefix//proc_name )
+      call check_nan( wp3, "wp3", prefix//proc_name )
+      call check_nan( rtp2, "rtp2", prefix//proc_name )
+      call check_nan( thlp2, "thlp2", prefix//proc_name )
+      call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
+  
+      call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name )
+      call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name )
+      call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name )
+      call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name )
+  
+      do i = 1, sclr_dim
+  
+        call check_nan( sclrm_forcing(2:,i),"sclrm_forcing",  & 
+                        prefix//proc_name )
+  
+        call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & 
+                        prefix//proc_name )
+  
+        call check_nan( sclrm(2:,i),"sclrm", prefix//proc_name )
+        call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name )
+        call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name )
+        call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name )
+        call check_nan( sclrpthlp(:,i),"sclrpthlp", prefix//proc_name )
+  
     end do
-
-
-    do i = 1, edsclr_dim
-
-      call check_nan( edsclrm_forcing(2:,i),"edsclrm_forcing", prefix//proc_name )
-
-      call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
-                      prefix//proc_name )
-
-      call check_nan( edsclrm(2:,i),"edsclrm", prefix//proc_name )
-
+  
+  
+      do i = 1, edsclr_dim
+  
+        call check_nan( edsclrm_forcing(2:,i),"edsclrm_forcing", prefix//proc_name )
+  
+        call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
+                        prefix//proc_name )
+  
+        call check_nan( edsclrm(2:,i),"edsclrm", prefix//proc_name )
+  
     enddo
-
-!---------------------------------------------------------------------
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then 
+  
+  !---------------------------------------------------------------------
+  
+      if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code == clubb_fatal_error ) then 
             return
         end if
     end if
-
-    call check_negative( rtm, 2, gr%nz, "rtm", prefix//proc_name )
-    call check_negative( p_in_Pa, 2, gr%nz, "p_in_Pa", prefix//proc_name )
-    call check_negative( rho, 2, gr%nz, "rho", prefix//proc_name )
-    call check_negative( rho_zm, 1, gr%nz, "rho_zm", prefix//proc_name )
-    call check_negative( exner, 2, gr%nz, "exner", prefix//proc_name )
-    call check_negative( rho_ds_zm, 1, gr%nz, "rho_ds_zm", prefix//proc_name )
-    call check_negative( rho_ds_zt, 2, gr%nz, "rho_ds_zt", prefix//proc_name )
-    call check_negative( invrs_rho_ds_zm, 1, gr%nz, "invrs_rho_ds_zm", prefix//proc_name )
-    call check_negative( invrs_rho_ds_zt, 2, gr%nz, "invrs_rho_ds_zt", prefix//proc_name )
-    call check_negative( thv_ds_zm, 1, gr%nz, "thv_ds_zm", prefix//proc_name )
-    call check_negative( thv_ds_zt, 2, gr%nz, "thv_ds_zt", prefix//proc_name )
-    call check_negative( up2, 1, gr%nz, "up2", prefix//proc_name )
-    call check_negative( vp2, 1, gr%nz, "vp2", prefix//proc_name )
-    call check_negative( wp2, 1, gr%nz, "wp2", prefix//proc_name )
-    call check_negative( thlm, 2, gr%nz, "thlm", prefix//proc_name )
-    call check_negative( rtp2, 1, gr%nz, "rtp2", prefix//proc_name )
-    call check_negative( thlp2, 1, gr%nz, "thlp2", prefix//proc_name )
-
-    if ( err_code == clubb_fatal_error .and. prefix == "beginning of " ) then
-        err_code = clubb_no_error   ! Negative value generated by host model, hence ignore error
+  
+      call check_negative( rtm, 2, gr%nz, "rtm", prefix//proc_name )
+      call check_negative( p_in_Pa, 2, gr%nz, "p_in_Pa", prefix//proc_name )
+      call check_negative( rho, 2, gr%nz, "rho", prefix//proc_name )
+      call check_negative( rho_zm, 1, gr%nz, "rho_zm", prefix//proc_name )
+      call check_negative( exner, 2, gr%nz, "exner", prefix//proc_name )
+      call check_negative( rho_ds_zm, 1, gr%nz, "rho_ds_zm", prefix//proc_name )
+      call check_negative( rho_ds_zt, 2, gr%nz, "rho_ds_zt", prefix//proc_name )
+      call check_negative( invrs_rho_ds_zm, 1, gr%nz, "invrs_rho_ds_zm", prefix//proc_name )
+      call check_negative( invrs_rho_ds_zt, 2, gr%nz, "invrs_rho_ds_zt", prefix//proc_name )
+      call check_negative( thv_ds_zm, 1, gr%nz, "thv_ds_zm", prefix//proc_name )
+      call check_negative( thv_ds_zt, 2, gr%nz, "thv_ds_zt", prefix//proc_name )
+      call check_negative( up2, 1, gr%nz, "up2", prefix//proc_name )
+      call check_negative( vp2, 1, gr%nz, "vp2", prefix//proc_name )
+      call check_negative( wp2, 1, gr%nz, "wp2", prefix//proc_name )
+      call check_negative( thlm, 2, gr%nz, "thlm", prefix//proc_name )
+      call check_negative( rtp2, 1, gr%nz, "rtp2", prefix//proc_name )
+      call check_negative( thlp2, 1, gr%nz, "thlp2", prefix//proc_name )
+  
+      if ( err_code == clubb_fatal_error .and. prefix == "beginning of " ) then
+          err_code = clubb_no_error   ! Negative value generated by host model, hence ignore error
     end if
-
-    ! Check the first levels for temperatures greater than 200K
-    do k=1, min( 10, size(thlm) )
-        if ( thlm(k) < 190. ) then
-            write(fstderr,*) "Liquid water potential temperature (thlm) < 190K ", &
-                             "at grid level k = ", k
+  
+      ! Check the first levels for temperatures greater than 200K
+      do k=1, min( 10, size(thlm) )
+          if ( thlm(k) < 190. ) then
+              write(fstderr,*) "Liquid water potential temperature (thlm) < 190K ", &
+                               "at grid level k = ", k
         end if
     end do 
-
+  
     return
   end subroutine parameterization_check
 
@@ -518,10 +518,10 @@ module numerical_check
 !-----------------------------------------------------------------------
     use parameters_model, only: & 
         sclr_dim ! Variable
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Constant Parameters
@@ -580,10 +580,10 @@ module numerical_check
 
     use grid_class, only: & 
         gr ! Variable
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Constant Parameters
@@ -637,21 +637,21 @@ module numerical_check
 
     use grid_class, only: &
         gr    ! Grid Type
-
+  
     use constants_clubb, only: & 
         fstderr   ! Constant(s)
-
+  
     use parameters_model, only: & 
         sclr_dim,  & ! Variable(s)
         edsclr_dim, &
         hydromet_dim
-
+  
     use array_index, only: &
         hydromet_list ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -830,35 +830,35 @@ module numerical_check
 !   Checks if a given scalar real is a NaN, +inf or -inf.
 
 ! Notes:
-!   I was advised by Andy Vaught to use a data statement and the transfer( )
-!   intrinsic rather than using a hex number in a parameter for portability.
-
-!   Certain compiler optimizations may cause variables with invalid
-!   results to flush to zero.  Avoid these!
-!  -dschanen 16 Dec 2010
-
-!------------------------------------------------------------------------
-
-    use, intrinsic :: ieee_arithmetic 
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: xarg
-
-    ! ---- Begin Code ---
-
-    if (.not. ieee_is_finite(xarg) .or. ieee_is_nan(xarg)) then
-      ! Try ieee_is_finite ieee_is_nan 
-      is_nan_sclr = .true.
-    else
-      is_nan_sclr = .false.
+  !   I was advised by Andy Vaught to use a data statement and the transfer( )
+  !   intrinsic rather than using a hex number in a parameter for portability.
+  
+  !   Certain compiler optimizations may cause variables with invalid
+  !   results to flush to zero.  Avoid these!
+  !  -dschanen 16 Dec 2010
+  
+  !------------------------------------------------------------------------
+  
+      use, intrinsic :: ieee_arithmetic 
+    
+      use clubb_precision, only: &
+          core_rknd ! Variable(s)
+    
+      implicit none
+  
+      ! Input Variables
+      real( kind = core_rknd ), intent(in) :: xarg
+  
+      ! ---- Begin Code ---
+  
+      if (.not. ieee_is_finite(xarg) .or. ieee_is_nan(xarg)) then
+        ! Try ieee_is_finite ieee_is_nan 
+        is_nan_sclr = .true.
+      else
+        is_nan_sclr = .false.
     end if
-
-
+  
+  
     return
   end function is_nan_sclr
 !------------------------------------------------------------------------
@@ -872,8 +872,8 @@ module numerical_check
 !------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! External
@@ -912,14 +912,14 @@ module numerical_check
 !-----------------------------------------------------------------------
     use constants_clubb, only: & 
         fstderr ! Variable
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     use error_code, only: &
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-
+  
     implicit none
 
     real( kind = core_rknd ), intent(in) :: var(:)
@@ -960,14 +960,14 @@ module numerical_check
 !------------------------------------------------------------------------
     use constants_clubb, only:  & 
         fstderr ! Variable(s)
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     use error_code, only: &
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-
+  
     implicit none
 
     ! External
@@ -997,14 +997,14 @@ module numerical_check
 !-----------------------------------------------------------------------
     use constants_clubb, only:  & 
         fstderr ! Variable
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     use error_code, only: &
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-
+  
     implicit none
 
     ! External
@@ -1042,8 +1042,8 @@ module numerical_check
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variables

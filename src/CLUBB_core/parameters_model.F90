@@ -84,10 +84,10 @@ module parameters_model
 !-------------------------------------------------------------------------------
     use parameters_tunable, only: &
         Skw_max_mag
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! External

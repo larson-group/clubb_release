@@ -65,13 +65,13 @@ module clip_explicit
 
     use grid_class, only: &
         gr ! Variable(s)
-
+  
     use parameters_model, only: &
         sclr_dim ! Variable(s)
-
+  
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -391,19 +391,19 @@ module clip_explicit
 
     use grid_class, only: & 
         gr ! Variable(s)
-
+  
     use constants_clubb, only: &
         max_mag_correlation,      & ! Constant(s)
         max_mag_correlation_flux
-
+  
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
-
+  
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
         stat_modify, & 
         stat_end_update
-
+  
     use stats_variables, only: & 
         stats_zm,  & ! Variable(s)
         iwprtp_cl, &
@@ -412,7 +412,7 @@ module clip_explicit
         iupwp_cl, &
         ivpwp_cl, &
         l_stats_samp
-
+  
     implicit none
 
     ! Input Variables
@@ -599,15 +599,15 @@ module clip_explicit
         max_mag_correlation,      & ! Constant(s)
         max_mag_correlation_flux, &
         zero
-
+  
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
-
+  
     use stats_type_utilities, only: & 
         stat_begin_update_pt, & ! Procedure(s)
         stat_modify_pt,       & 
         stat_end_update_pt
-
+  
     use stats_variables, only: & 
         stats_zm,  & ! Variable(s)
         iwprtp_cl, &
@@ -616,7 +616,7 @@ module clip_explicit
         iupwp_cl, &
         ivpwp_cl, &
         l_stats_samp
-
+  
     implicit none
 
     ! Input Variables
@@ -768,14 +768,14 @@ module clip_explicit
 
     use grid_class, only: & 
         gr ! Variable(s)
-
+  
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
-
+  
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
         stat_end_update
-
+  
     use stats_variables, only: & 
         stats_zm,  & ! Variable(s)
         iwp2_cl, & 
@@ -784,7 +784,7 @@ module clip_explicit
         iup2_cl, & 
         ivp2_cl, & 
         l_stats_samp
-
+  
     implicit none
 
     ! Input Variables
@@ -877,11 +877,11 @@ module clip_explicit
 
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
-
+  
     use stats_type_utilities, only: & 
         stat_begin_update_pt,  & ! Procedure(s)
         stat_end_update_pt
-
+  
     use stats_variables, only: & 
         stats_zm,  & ! Variable(s)
         iwp2_cl, & 
@@ -890,7 +890,7 @@ module clip_explicit
         iup2_cl, & 
         ivp2_cl, & 
         l_stats_samp
-
+  
     implicit none
 
     ! Input Variables
@@ -993,20 +993,20 @@ module clip_explicit
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-      gr ! Variable(s)
-
+        gr ! Variable(s)
+  
     use clubb_precision, only: & 
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     use stats_type_utilities, only: &
-      stat_begin_update,  & ! Procedure(s)
-      stat_end_update
-
+        stat_begin_update,  & ! Procedure(s)
+        stat_end_update
+  
     use stats_variables, only: & 
-      stats_zt,  & ! Variable(s)
-      iwp3_cl, & 
-      l_stats_samp     
-
+        stats_zt,  & ! Variable(s)
+        iwp3_cl, & 
+        l_stats_samp     
+  
     implicit none
 
     ! External
@@ -1045,14 +1045,14 @@ module clip_explicit
   subroutine clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
 !
     use grid_class, only: & 
-      gr ! Variable(s)
-
+        gr ! Variable(s)
+  
     use parameters_tunable, only: &
-      Skw_max_mag ! [-]
-
+        Skw_max_mag ! [-]
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! External

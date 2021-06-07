@@ -34,7 +34,7 @@ module sfc_varnce_module
 
     use parameters_model, only:  & 
         T0 ! Variable(s)
-
+  
     use constants_clubb, only: &
         four,       & ! Variable(s)
         two,        &
@@ -50,32 +50,32 @@ module sfc_varnce_module
         rt_tol,     &
         max_mag_correlation_flux, &
         fstderr
-
+  
     use parameters_model, only: & 
         sclr_dim  ! Variable(s)
-
+  
     use numerical_check, only: & 
         sfc_varnce_check ! Procedure
-
+  
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-
+  
     use array_index, only: &
         iisclr_rt, & ! Index for a scalar emulating rt
         iisclr_thl   ! Index for a scalar emulating thetal
-
+  
     use stats_type_utilities, only: & 
         stat_end_update_pt, & ! Procedure(s)
         stat_update_var_pt
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     use parameters_tunable, only: &
         up2_sfc_coef ! Variable
-
+  
     implicit none
 
     ! External

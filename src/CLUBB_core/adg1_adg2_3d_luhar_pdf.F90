@@ -57,18 +57,18 @@ module adg1_adg2_3d_luhar_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         rt_tol,  & ! Constant(s)
         thl_tol
-
+  
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         sclr_tol
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -228,20 +228,20 @@ module adg1_adg2_3d_luhar_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         one,       & ! Constant(s)
         w_tol_sqd, &
         rt_tol,    &
         thl_tol
-
+  
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         sclr_tol
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -371,15 +371,15 @@ module adg1_adg2_3d_luhar_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         w_tol_sqd, & ! Constant(s)
         rt_tol,    &
         thl_tol
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -601,10 +601,10 @@ module adg1_adg2_3d_luhar_pdf
         one_half,  &
         zero,      &
         w_tol_sqd
-
+  
     use clubb_precision, only: &
         core_rknd     ! Precision
-
+  
     implicit none
 
     ! Input Variables
@@ -786,10 +786,10 @@ module adg1_adg2_3d_luhar_pdf
         one_half,   &
         one_third,  &
         zero
-
+  
     use clubb_precision, only: &
         core_rknd     ! Precision
-
+  
     implicit none
 
     ! Input Variables
@@ -889,10 +889,10 @@ module adg1_adg2_3d_luhar_pdf
     use constants_clubb, only: &
         one,  & ! Constant(s)
         zero
-
+  
     use clubb_precision, only: &
         core_rknd     ! Precision
-
+  
     implicit none
 
     ! Input Variables
@@ -1024,7 +1024,7 @@ module adg1_adg2_3d_luhar_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-
+  
     use constants_clubb, only: &
         two,            & ! Constant(s)
         one,            &
@@ -1032,13 +1032,13 @@ module adg1_adg2_3d_luhar_pdf
         one_half,       &
         zero_threshold, &
         w_tol_sqd
-
+  
     use parameters_tunable, only: &
         beta    ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -1173,10 +1173,10 @@ module adg1_adg2_3d_luhar_pdf
         one_half, &
         zero,     &
         eps
-
+  
     use clubb_precision, only: &
         core_rknd     ! Precision
-
+  
     implicit none
 
     ! Input Variables
@@ -1338,10 +1338,10 @@ module adg1_adg2_3d_luhar_pdf
     use calc_roots, only: &
         cubic_solve,     & ! Procedure(s)
         quadratic_solve
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables

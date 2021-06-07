@@ -276,16 +276,16 @@ module grid_class
 
     use constants_clubb, only:  & 
         fstderr ! Variable(s)
-
+  
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
         err_code, &                     ! Error indicator
         clubb_fatal_error, &            ! Constant
         err_header                      ! String
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters
@@ -518,7 +518,7 @@ module grid_class
     !------------------------------------------------------------------------------
     use constants_clubb, only: &
         fstderr  ! Constant(s)
-
+  
     implicit none
 
     ! Local Variable(s)
@@ -558,15 +558,15 @@ module grid_class
 
     use constants_clubb, only: &
         fstderr  ! Constant(s)
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use error_code, only: &
         err_code, &                     ! Error indicator
         clubb_fatal_error, &            ! Constant
         err_header                      ! String
-
+  
     implicit none
 
     ! Input Variables
@@ -804,18 +804,18 @@ module grid_class
 
     use constants_clubb, only:  & 
         fstderr ! Variable(s)
-
+  
     use file_functions, only:  & 
         file_read_1d ! Procedure(s)
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     use error_code, only: &
         err_code, &                     ! Error indicator
         clubb_fatal_error, &            ! Constant
         err_header                      ! String
-
+  
     implicit none
 
     ! Input Variables.
@@ -1104,14 +1104,14 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use model_flags, only: &
-      l_cubic_interp, & ! Variable(s)
-      l_quintic_poly_interp
-
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
+  
     use constants_clubb, only: &
-      fstdout ! Variable
-
+        fstdout ! Variable
+  
     implicit none
 
     ! Input Variables
@@ -1155,14 +1155,14 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use model_flags, only: &
-      l_cubic_interp, & ! Variable(s)
-      l_quintic_poly_interp
-
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
+  
     use constants_clubb, only: &
-      fstdout ! Variable
-
+        fstdout ! Variable
+  
     implicit none
 
     ! Input Variables
@@ -1203,14 +1203,14 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use model_flags, only: &
-      l_cubic_interp, & ! Variable(s)
-      l_quintic_poly_interp
-
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
+  
     use constants_clubb, only: &
-      fstdout ! Variable
-
+        fstdout ! Variable
+  
     implicit none
 
     ! Input Variables
@@ -1254,14 +1254,14 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use model_flags, only: &
-      l_cubic_interp, & ! Variable(s)
-      l_quintic_poly_interp
-
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
+  
     use constants_clubb, only: &
-      fstdout ! Variable
-
+        fstdout ! Variable
+  
     implicit none
 
     ! Input Variables
@@ -1307,10 +1307,10 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use interpolation, only: &
         linear_interp_factor  ! Procedure(s)
-
+  
     implicit none
 
     ! Input Variable
@@ -1363,10 +1363,10 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use interpolation, only: &
         linear_interp_factor  ! Procedure(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -1420,7 +1420,7 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -1461,10 +1461,10 @@ module grid_class
 
     use interpolation, only: &
         mono_cubic_interp  ! Procedure(s)
-
+  
     use clubb_precision, only: &
         core_rknd  ! Constant(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -1677,10 +1677,10 @@ module grid_class
 
     use constants_clubb, only: &
         one  ! Constant(s)
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters
@@ -1739,10 +1739,10 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use interpolation, only: &
         linear_interp_factor  ! Procedure(s)
-
+  
     implicit none
 
     ! Input Variable
@@ -1795,10 +1795,10 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     use interpolation, only: &
         linear_interp_factor  ! Procedure(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -1854,7 +1854,7 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -1899,10 +1899,10 @@ module grid_class
 
     use interpolation, only: &
         mono_cubic_interp  ! Procedure(s)
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -2118,10 +2118,10 @@ module grid_class
 
     use constants_clubb, only: &
         one  ! Constant(s)
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Constant parameters
@@ -2176,55 +2176,55 @@ module grid_class
     ! thermodynamic grid.
     !-----------------------------------------------------------------------
 
-!    use constants_clubb, only: &
-!        zero  ! Constant(s)
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input Variable
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
-      azm    ! Variable on momentum grid levels    [units vary]
-
-    ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      gradzm    ! Vertical derivative of azm    [units vary / m]
-
-    ! Local Variable
-    integer :: k  ! Grid level loop index
-
-
-    ! Set the value of the vertical derivative of a momentum-level variable over
-    ! the thermodynamic grid level at the lowermost level of the model.
-    k = 1
-!    ! Thermodynamic level 1 is located below momentum level 1, so there is not
-!    ! enough information to calculate the derivative over thermodynamic
-!    ! level 1.  Thus, the value of the derivative at thermodynamic level 1 is
-!    ! set equal to 0.  This formulation is consistent with setting the value of
-!    ! the variable azm below the model grid to the value of the variable azm at
-!    ! the lowest grid level.
-!    gradzm(k) = zero
-    ! Thermodynamic level 1 is located below momentum level 1, so there is not
-    ! enough information to calculate the derivative over thermodynamic level 1.
-    ! Thus, the value of the derivative at thermodynamic level 1 is set equal to
-    ! the value of the derivative at thermodynamic level 2.  This formulation is
-    ! consistent with using a linear extension to find the values of the
-    ! variable azm below the model grid.
-    gradzm(k) = ( azm(k+1) - azm(k) ) * gr%invrs_dzt(k+1)
-
-    ! Calculate the vertical derivative of a momentum-level variable between two
-    ! successive momentum grid levels.
-    forall( k = gr%nz : 2 : -1 )
-       ! Take derivative of momentum-level variable azm over the central
-       ! thermodynamic level (k).
-       gradzm(k) = ( azm(k) - azm(k-1) ) * gr%invrs_dzt(k)
+  !    use constants_clubb, only: &
+  !        zero  ! Constant(s)
+  
+      use clubb_precision, only: &
+          core_rknd ! Variable(s)
+    
+      implicit none
+  
+      ! Input Variable
+      real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+        azm    ! Variable on momentum grid levels    [units vary]
+  
+      ! Return Variable
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        gradzm    ! Vertical derivative of azm    [units vary / m]
+  
+      ! Local Variable
+      integer :: k  ! Grid level loop index
+  
+  
+      ! Set the value of the vertical derivative of a momentum-level variable over
+      ! the thermodynamic grid level at the lowermost level of the model.
+      k = 1
+  !    ! Thermodynamic level 1 is located below momentum level 1, so there is not
+  !    ! enough information to calculate the derivative over thermodynamic
+  !    ! level 1.  Thus, the value of the derivative at thermodynamic level 1 is
+  !    ! set equal to 0.  This formulation is consistent with setting the value of
+  !    ! the variable azm below the model grid to the value of the variable azm at
+  !    ! the lowest grid level.
+  !    gradzm(k) = zero
+      ! Thermodynamic level 1 is located below momentum level 1, so there is not
+      ! enough information to calculate the derivative over thermodynamic level 1.
+      ! Thus, the value of the derivative at thermodynamic level 1 is set equal to
+      ! the value of the derivative at thermodynamic level 2.  This formulation is
+      ! consistent with using a linear extension to find the values of the
+      ! variable azm below the model grid.
+      gradzm(k) = ( azm(k+1) - azm(k) ) * gr%invrs_dzt(k+1)
+  
+      ! Calculate the vertical derivative of a momentum-level variable between two
+      ! successive momentum grid levels.
+      forall( k = gr%nz : 2 : -1 )
+         ! Take derivative of momentum-level variable azm over the central
+         ! thermodynamic level (k).
+         gradzm(k) = ( azm(k) - azm(k-1) ) * gr%invrs_dzt(k)
     end forall ! k = gr%nz : 2 : -1
-
-
+  
+  
     return
-
+  
   end function gradzm
 
   !=============================================================================
@@ -2236,55 +2236,55 @@ module grid_class
     ! the momentum grid.
     !-----------------------------------------------------------------------
 
-!    use constants_clubb, only: &
-!        zero  ! Constant(s)
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input Variable
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
-      azt    ! Variable on thermodynamic grid levels    [units vary]
-
-    ! Output Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      gradzt    ! Vertical derivative of azt    [units vary / m]
-
-    ! Local Variable
-    integer :: k  ! Grid level loop index
-
-
-    ! Set the value of the vertical derivative of a thermodynamic-level variable
-    ! over the momentum grid level at the uppermost level of the model.
-    k = gr%nz
-!    ! Momentum level gr%nz is located above thermodynamic level gr%nz, so
-!    ! there is not enough information to calculate the derivative over momentum
-!    ! level gr%nz.  Thus, the value of the derivative at momentum level
-!    ! gr%nz is set equal to 0.  This formulation is consistent with setting
-!    ! the value of the variable azt above the model grid to the value of the
-!    ! variable azt at the highest grid level.
-!    gradzt(k) = zero
-    ! Momentum level gr%nz is located above thermodynamic level gr%nz, so
-    ! there is not enough information to calculate the derivative over momentum
-    ! level gr%nz.  Thus, the value of the derivative at momentum level
-    ! gr%nz is set equal to the value of the derivative at momentum level
-    ! gr%nz-1.  This formulation is consistent with using a linear extension
-    ! to find the values of the variable azt above the model grid.
-    gradzt(k) = ( azt(k) - azt(k-1) ) * gr%invrs_dzm(k-1)
-
-    ! Calculate the vertical derivative of a thermodynamic-level variable
-    ! between two successive thermodynamic grid levels.
-    forall( k = 1 : gr%nz-1 : 1 )
-       ! Take derivative of thermodynamic-level variable azt over the central
-       ! momentum level (k).
-       gradzt(k) = ( azt(k+1) - azt(k) ) * gr%invrs_dzm(k)
+  !    use constants_clubb, only: &
+  !        zero  ! Constant(s)
+  
+      use clubb_precision, only: &
+          core_rknd ! Variable(s)
+    
+      implicit none
+  
+      ! Input Variable
+      real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+        azt    ! Variable on thermodynamic grid levels    [units vary]
+  
+      ! Output Variable
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        gradzt    ! Vertical derivative of azt    [units vary / m]
+  
+      ! Local Variable
+      integer :: k  ! Grid level loop index
+  
+  
+      ! Set the value of the vertical derivative of a thermodynamic-level variable
+      ! over the momentum grid level at the uppermost level of the model.
+      k = gr%nz
+  !    ! Momentum level gr%nz is located above thermodynamic level gr%nz, so
+  !    ! there is not enough information to calculate the derivative over momentum
+  !    ! level gr%nz.  Thus, the value of the derivative at momentum level
+  !    ! gr%nz is set equal to 0.  This formulation is consistent with setting
+  !    ! the value of the variable azt above the model grid to the value of the
+  !    ! variable azt at the highest grid level.
+  !    gradzt(k) = zero
+      ! Momentum level gr%nz is located above thermodynamic level gr%nz, so
+      ! there is not enough information to calculate the derivative over momentum
+      ! level gr%nz.  Thus, the value of the derivative at momentum level
+      ! gr%nz is set equal to the value of the derivative at momentum level
+      ! gr%nz-1.  This formulation is consistent with using a linear extension
+      ! to find the values of the variable azt above the model grid.
+      gradzt(k) = ( azt(k) - azt(k-1) ) * gr%invrs_dzm(k-1)
+  
+      ! Calculate the vertical derivative of a thermodynamic-level variable
+      ! between two successive thermodynamic grid levels.
+      forall( k = 1 : gr%nz-1 : 1 )
+         ! Take derivative of thermodynamic-level variable azt over the central
+         ! momentum level (k).
+         gradzt(k) = ( azt(k+1) - azt(k) ) * gr%invrs_dzm(k)
     end forall ! k = 1 : gr%nz-1 : 1
-
-
+  
+  
     return
-
+  
   end function gradzt
 
   !=============================================================================
@@ -2302,7 +2302,7 @@ module grid_class
     
     use clubb_precision, only: &
         dp ! double precision
-
+  
     implicit none
 
     ! Input Variables

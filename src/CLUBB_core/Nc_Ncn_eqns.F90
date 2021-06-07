@@ -182,10 +182,10 @@ module Nc_Ncn_eqns
     use constants_clubb, only: &
         one,            & ! Constant(s)
         cloud_frac_min
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -280,10 +280,10 @@ module Nc_Ncn_eqns
         one,            & ! Constant(s)
         cloud_frac_min, &
         eps
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -431,10 +431,10 @@ module Nc_Ncn_eqns
 
     use constants_clubb, only: &
         one  ! Constant(s)
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -647,10 +647,10 @@ module Nc_Ncn_eqns
     use constants_clubb, only: &
         one,  & ! Constant(s)
         zero
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -776,10 +776,10 @@ module Nc_Ncn_eqns
         zero,     &
         chi_tol,  &
         Ncn_tol
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -897,10 +897,10 @@ module Nc_Ncn_eqns
         one_half, &
         zero,     &
         chi_tol
-
+  
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables

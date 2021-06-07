@@ -98,13 +98,13 @@ module advance_xp2_xpyp_module
         one_third, &
         zero,   &
         eps
-
+  
     use model_flags, only: & 
         iiPDF_ADG1,       & ! integer constants
         iiPDF_new_hybrid, &
         l_hole_fill,      & ! logical constants
         l_explicit_turbulent_adv_xpyp
-
+  
     use parameters_tunable, only: &
         C2rt,     & ! Variable(s)
         C2thl,    &
@@ -121,25 +121,25 @@ module advance_xp2_xpyp_module
         C2b,      &
         C2c,      &
         rtp2_clip_coef
-
+  
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         sclr_tol
-
+  
     use grid_class, only: & 
         gr,    & ! Variable(s)
         zm2zt, & ! Procedure(s)
         zt2zm
-
+  
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
     use turbulent_adv_pdf, only: &
         sgn_turbulent_velocity    ! Procedure(s)
-
+  
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-
+  
     use clip_explicit, only: & 
         clip_covar,  & ! Procedure(s)
         clip_variance, &
@@ -147,23 +147,23 @@ module advance_xp2_xpyp_module
         clip_sclrp2, &
         clip_sclrprtp, &
         clip_sclrpthlp
-
+  
     use sponge_layer_damping, only: &
         up2_vp2_sponge_damp_settings, & ! Variable(s)
         up2_vp2_sponge_damp_profile,  &
         sponge_damp_xp2                 ! Procedure(s)
-      
+        
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
         stat_end_update,   &
         stat_modify,       &
         stat_update_var
-
+  
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
-
+  
     use stats_variables, only: &
         stats_zm,                 & ! Variable(s)
         irtp2_cl,                 &
@@ -172,17 +172,17 @@ module advance_xp2_xpyp_module
         iup2_cl,                  &
         ivp2_cl,                  &
         l_stats_samp
-
+  
     use array_index, only: &
         iisclr_rt, &
         iisclr_thl
         
     use mean_adv, only:  & 
         term_ma_zm_lhs      ! Procedure(s)
-
+  
     use diffusion, only:  & 
         diffusion_zm_lhs    ! Procedure(s)
-
+  
     implicit none
 
     ! Intrinsic functions
@@ -1109,7 +1109,7 @@ module advance_xp2_xpyp_module
         thl_tol, &
         zero, &
         zero_threshold
-      
+        
       use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         sclr_tol
@@ -1117,7 +1117,7 @@ module advance_xp2_xpyp_module
       use array_index, only: &
         iisclr_rt, &
         iisclr_thl
-      
+        
       implicit none
       
       ! -------- Input Variables --------
@@ -1329,18 +1329,18 @@ module advance_xp2_xpyp_module
         thl_tol, &
         zero, &
         zero_threshold
-      
+        
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         sclr_tol
-
+  
     use model_flags, only: &
         iiPDF_ADG1    ! Variable(s)
           
     use array_index, only: &
         iisclr_rt, &
         iisclr_thl
-      
+        
     implicit none
       
     ! -------- Input Variables --------
@@ -1677,204 +1677,204 @@ module advance_xp2_xpyp_module
   ! 
   ! Notes:
   !     For LHS turbulent advection terms:
-  !         An "over-implicit" weighted time step is applied to this term.
-  !         The weight of the implicit portion of this term is controlled by
-  !         the factor gamma_over_implicit_ts (abbreviated "gamma" in the
-  !         expression below).  A factor is added to the right-hand side of
-  !         the equation in order to balance a weight that is not equal to 1,
-  !         such that:
-  !              -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-  !         where X is the variable that is being solved for in a predictive
-  !         equation (<x'^2> or <x'y'> in this case), y(t) is the linearized
-  !         portion of the term that gets treated implicitly, and RHS is the
-  !         portion of the term that is always treated explicitly.  A weight
-  !         of greater than 1 can be applied to make the term more
-  !         numerically stable.
-  ! 
-  !----------------------------------------------------------------------------------
-
-    use grid_class, only: & 
-        gr ! Variable(s)
-
-    use constants_clubb, only:  &
-        gamma_over_implicit_ts, & ! Constant(s)
-        one
-
-    use diffusion, only:  & 
-        diffusion_zm_lhs
-
-    use clubb_precision, only:  & 
-        core_rknd ! Variable(s)
-
-    use advance_helper_module, only: &
-        set_boundary_conditions_lhs    ! Procedure(s)
-
+    !         An "over-implicit" weighted time step is applied to this term.
+    !         The weight of the implicit portion of this term is controlled by
+    !         the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+    !         expression below).  A factor is added to the right-hand side of
+    !         the equation in order to balance a weight that is not equal to 1,
+    !         such that:
+    !              -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+    !         where X is the variable that is being solved for in a predictive
+    !         equation (<x'^2> or <x'y'> in this case), y(t) is the linearized
+    !         portion of the term that gets treated implicitly, and RHS is the
+    !         portion of the term that is always treated explicitly.  A weight
+    !         of greater than 1 can be applied to make the term more
+    !         numerically stable.
+    ! 
+    !----------------------------------------------------------------------------------
+  
+      use grid_class, only: & 
+          gr ! Variable(s)
     
-    use stats_variables, only: &
-        l_stats_samp, &
-        zmscr01, &
-        zmscr02, &
-        zmscr03, &
-        zmscr04, &
-        zmscr05, &
-        zmscr06, &
-        zmscr07, &
-        zmscr08, &
-        zmscr09, &
-        zmscr10, &
-        irtp2_ma, &
-        irtp2_ta, &
-        irtp2_dp1, &
-        irtp2_dp2, &
-        ithlp2_ma, &
-        ithlp2_ta, &
-        ithlp2_dp1, &
-        ithlp2_dp2, &
-        irtpthlp_ma, &
-        irtpthlp_ta, &
-        irtpthlp_dp1, &
-        irtpthlp_dp2, &
-        iup2_ma, &
-        iup2_ta, &
-        iup2_dp2, &
-        ivp2_ma, &
-        ivp2_ta, &
-        ivp2_dp2
-
-    implicit none
-
-    !------------------- Input Variables -------------------
-    real( kind = core_rknd ), intent(in) :: & 
-      dt ! Timestep length                             [s]
-
-    logical, intent(in) :: & 
-      l_iter  ! Whether the variances are prognostic (T/F)
-      
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
-     lhs_ta     ! Turbulent advection contributions to lhs
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      invrs_tau_zm,            & ! Inverse time-scale tau on momentum levels [1/s]
-      Cn                         ! Coefficient C_n                           [-]
-      
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
-      lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
-      lhs_ma      ! Mean advection contributions to lhs
-
-    !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: & 
-      lhs         ! Implicit contributions to the term
-
-    !---------------- Local Variables -------------------
+      use constants_clubb, only:  &
+          gamma_over_implicit_ts, & ! Constant(s)
+          one
+  
+      use diffusion, only:  & 
+          diffusion_zm_lhs
     
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      lhs_dp1   ! LHS dissipation term 1
-
-    ! Array indices
-    integer :: k, low_bound, high_bound
-
-    !---------------- Begin Code -------------------
-
-    ! LHS dissipation term 1 (dp1). An "over-implicit" weighted time 
-    ! step is applied to this term (and to pressure term 1 for u'^2 and v'^2).
-    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
-    do k = 2, gr%nz-1
-        lhs_dp1(k) = term_dp1_lhs( Cn(k), invrs_tau_zm(k) ) * gamma_over_implicit_ts
-    enddo ! k=2..gr%nz-1
-
-
-    ! Combine all lhs terms into lhs, should be fully vectorized
-    do k = 2, gr%nz-1
-
-      lhs(1,k) = lhs_diff(1,k) + lhs_ma(1,k) + lhs_ta(1,k) * gamma_over_implicit_ts
-
-      lhs(2,k) = lhs_diff(2,k) + lhs_ma(2,k) + lhs_ta(2,k) * gamma_over_implicit_ts &
-                                               + lhs_dp1(k)
+      use clubb_precision, only:  & 
+          core_rknd ! Variable(s)
+    
+      use advance_helper_module, only: &
+          set_boundary_conditions_lhs    ! Procedure(s)
+    
         
-      lhs(3,k) = lhs_diff(3,k) + lhs_ma(3,k) + lhs_ta(3,k) * gamma_over_implicit_ts
-
+      use stats_variables, only: &
+          l_stats_samp, &
+          zmscr01, &
+          zmscr02, &
+          zmscr03, &
+          zmscr04, &
+          zmscr05, &
+          zmscr06, &
+          zmscr07, &
+          zmscr08, &
+          zmscr09, &
+          zmscr10, &
+          irtp2_ma, &
+          irtp2_ta, &
+          irtp2_dp1, &
+          irtp2_dp2, &
+          ithlp2_ma, &
+          ithlp2_ta, &
+          ithlp2_dp1, &
+          ithlp2_dp2, &
+          irtpthlp_ma, &
+          irtpthlp_ta, &
+          irtpthlp_dp1, &
+          irtpthlp_dp2, &
+          iup2_ma, &
+          iup2_ta, &
+          iup2_dp2, &
+          ivp2_ma, &
+          ivp2_ta, &
+          ivp2_dp2
+    
+      implicit none
+  
+      !------------------- Input Variables -------------------
+      real( kind = core_rknd ), intent(in) :: & 
+        dt ! Timestep length                             [s]
+  
+      logical, intent(in) :: & 
+        l_iter  ! Whether the variances are prognostic (T/F)
+        
+      real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+       lhs_ta     ! Turbulent advection contributions to lhs
+  
+      real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+        invrs_tau_zm,            & ! Inverse time-scale tau on momentum levels [1/s]
+        Cn                         ! Coefficient C_n                           [-]
+        
+      real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+        lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
+        lhs_ma      ! Mean advection contributions to lhs
+  
+      !------------------- Output Variables -------------------
+      real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: & 
+        lhs         ! Implicit contributions to the term
+  
+      !---------------- Local Variables -------------------
+      
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        lhs_dp1   ! LHS dissipation term 1
+  
+      ! Array indices
+      integer :: k, low_bound, high_bound
+  
+      !---------------- Begin Code -------------------
+  
+      ! LHS dissipation term 1 (dp1). An "over-implicit" weighted time 
+      ! step is applied to this term (and to pressure term 1 for u'^2 and v'^2).
+    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
+      do k = 2, gr%nz-1
+          lhs_dp1(k) = term_dp1_lhs( Cn(k), invrs_tau_zm(k) ) * gamma_over_implicit_ts
     enddo ! k=2..gr%nz-1
-
-
+  
+  
+      ! Combine all lhs terms into lhs, should be fully vectorized
+      do k = 2, gr%nz-1
+  
+        lhs(1,k) = lhs_diff(1,k) + lhs_ma(1,k) + lhs_ta(1,k) * gamma_over_implicit_ts
+  
+        lhs(2,k) = lhs_diff(2,k) + lhs_ma(2,k) + lhs_ta(2,k) * gamma_over_implicit_ts &
+                                                 + lhs_dp1(k)
+          
+        lhs(3,k) = lhs_diff(3,k) + lhs_ma(3,k) + lhs_ta(3,k) * gamma_over_implicit_ts
+  
+    enddo ! k=2..gr%nz-1
+  
+  
     ! LHS time tendency.
-    if ( l_iter ) then
-        do k = 2, gr%nz-1
-            lhs(2,k) = lhs(2,k) + ( one / dt )
+      if ( l_iter ) then
+          do k = 2, gr%nz-1
+              lhs(2,k) = lhs(2,k) + ( one / dt )
         end do
     endif
-
-    if ( l_stats_samp ) then
-
-        ! Statistics: implicit contributions for rtp2, thlp2,
-        !             rtpthlp, up2, or vp2.
-
-        if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
-
-            ! Note:  The statistical implicit contribution to term dp1
-            !        (as well as to term pr1) for up2 and vp2 is recorded
-            !        in xp2_xpyp_uv_rhs because up2 and vp2 use a special
-            !        dp1/pr1 combined term.
-            ! Note:  An "over-implicit" weighted time step is applied to this
-            !        term.  A weighting factor of greater than 1 may be used to
-            !        make the term more numerically stable (see note above for
-            !        LHS turbulent advection (ta) term).
-            do k = 2, gr%nz-1
-                zmscr01(k) = -lhs_dp1(k)
+  
+      if ( l_stats_samp ) then
+  
+          ! Statistics: implicit contributions for rtp2, thlp2,
+          !             rtpthlp, up2, or vp2.
+  
+          if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
+  
+              ! Note:  The statistical implicit contribution to term dp1
+              !        (as well as to term pr1) for up2 and vp2 is recorded
+              !        in xp2_xpyp_uv_rhs because up2 and vp2 use a special
+              !        dp1/pr1 combined term.
+              ! Note:  An "over-implicit" weighted time step is applied to this
+              !        term.  A weighting factor of greater than 1 may be used to
+              !        make the term more numerically stable (see note above for
+              !        LHS turbulent advection (ta) term).
+              do k = 2, gr%nz-1
+                  zmscr01(k) = -lhs_dp1(k)
             end do
-
+  
         endif
-
-        if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + iup2_dp2 + ivp2_dp2 > 0 ) then
-
-            do k = 2, gr%nz-1
-                zmscr02(k) = -lhs_diff(3,k)
-                zmscr03(k) = -lhs_diff(2,k)
-                zmscr04(k) = -lhs_diff(1,k)
+  
+          if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + iup2_dp2 + ivp2_dp2 > 0 ) then
+  
+              do k = 2, gr%nz-1
+                  zmscr02(k) = -lhs_diff(3,k)
+                  zmscr03(k) = -lhs_diff(2,k)
+                  zmscr04(k) = -lhs_diff(1,k)
             end do
-
+  
         endif
-
-        if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + iup2_ta + ivp2_ta > 0 ) then
-
-            ! Note:  An "over-implicit" weighted time step is applied to this
-            !        term.  A weighting factor of greater than 1 may be used to
-            !        make the term more numerically stable (see note above for
-            !        LHS turbulent advection (ta) term).
-            do k = 2, gr%nz-1
-                zmscr05(k) = -gamma_over_implicit_ts * lhs_ta(3,k)
-                zmscr06(k) = -gamma_over_implicit_ts * lhs_ta(2,k)
-                zmscr07(k) = -gamma_over_implicit_ts * lhs_ta(1,k)
+  
+          if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + iup2_ta + ivp2_ta > 0 ) then
+  
+              ! Note:  An "over-implicit" weighted time step is applied to this
+              !        term.  A weighting factor of greater than 1 may be used to
+              !        make the term more numerically stable (see note above for
+              !        LHS turbulent advection (ta) term).
+              do k = 2, gr%nz-1
+                  zmscr05(k) = -gamma_over_implicit_ts * lhs_ta(3,k)
+                  zmscr06(k) = -gamma_over_implicit_ts * lhs_ta(2,k)
+                  zmscr07(k) = -gamma_over_implicit_ts * lhs_ta(1,k)
             end do
-
+  
         endif
-
-        if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + iup2_ma + ivp2_ma > 0 ) then
-
-            do k = 2, gr%nz-1
-                zmscr08(k) = -lhs_ma(3,k)
-                zmscr09(k) = -lhs_ma(2,k)
-                zmscr10(k) = -lhs_ma(1,k)
+  
+          if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + iup2_ma + ivp2_ma > 0 ) then
+  
+              do k = 2, gr%nz-1
+                  zmscr08(k) = -lhs_ma(3,k)
+                  zmscr09(k) = -lhs_ma(2,k)
+                  zmscr10(k) = -lhs_ma(1,k)
             end do
-
+  
         endif
-
+  
     end if
-
-
-    ! Boundary Conditions
-    ! These are set so that the surface_varnce value of the variances and
-    ! covariances can be used at the lowest boundary and the values of those
-    ! variables can be set to their respective threshold minimum values at the
-    ! top boundary.  Fixed-point boundary conditions are used for both the
-    ! variances and the covariances.
-    low_bound = 1
-    high_bound = gr%nz
-
-    call set_boundary_conditions_lhs( 2, low_bound, high_bound, & ! intent(in)
-                                      lhs ) ! intent(inout)
-
+  
+  
+      ! Boundary Conditions
+      ! These are set so that the surface_varnce value of the variances and
+      ! covariances can be used at the lowest boundary and the values of those
+      ! variables can be set to their respective threshold minimum values at the
+      ! top boundary.  Fixed-point boundary conditions are used for both the
+      ! variances and the covariances.
+      low_bound = 1
+      high_bound = gr%nz
+  
+      call set_boundary_conditions_lhs( 2, low_bound, high_bound, & ! intent(in)
+                                        lhs ) ! intent(inout)
+  
     return
-
+  
   end subroutine xp2_xpyp_lhs
 
   !=============================================================================
@@ -1889,18 +1889,18 @@ module advance_xp2_xpyp_module
 
     use constants_clubb, only: &
         one  ! Constant(s)
-
+  
     use lapack_wrap, only:  & 
         tridag_solve,  & ! Variable(s)
         tridag_solvex !, &
-!        band_solve
-
+  !        band_solve
+  
     use grid_class, only: & 
         gr ! Variable(s)
-
+  
     use stats_type_utilities, only: & 
         stat_update_var_pt  ! Procedure(s)
-
+  
     use stats_variables, only: & 
         stats_sfc, &  ! Derived type
         irtp2_matrix_condt_num, & ! Stat index Variables
@@ -1908,10 +1908,10 @@ module advance_xp2_xpyp_module
         irtpthlp_matrix_condt_num, & 
         iup2_vp2_matrix_condt_num, & 
         l_stats_samp  ! Logical
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! External
@@ -2035,53 +2035,53 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-      gr ! Derived type variable
-
+        gr ! Derived type variable
+  
     use stats_type_utilities, only: & 
-      stat_end_update_pt, & ! Procedure(s)
-      stat_update_var_pt
-
+        stat_end_update_pt, & ! Procedure(s)
+        stat_update_var_pt
+  
     use stats_variables, only: &
-      stats_zm,  & ! Variable(s) 
-      irtp2_dp1, &
-      irtp2_dp2, &
-      irtp2_ta, &
-      irtp2_ma, &
-      ithlp2_dp1, &
-      ithlp2_dp2, &
-      ithlp2_ta, &
-      ithlp2_ma, &
-      irtpthlp_dp1, &
-      irtpthlp_dp2, &
-      irtpthlp_ta, &
-      irtpthlp_ma, &
-      iup2_dp1, &
-      iup2_dp2, &
-      iup2_ta, &
-      iup2_ma, &
-      iup2_pr1, &
-      ivp2_dp1
-
+        stats_zm,  & ! Variable(s) 
+        irtp2_dp1, &
+        irtp2_dp2, &
+        irtp2_ta, &
+        irtp2_ma, &
+        ithlp2_dp1, &
+        ithlp2_dp2, &
+        ithlp2_ta, &
+        ithlp2_ma, &
+        irtpthlp_dp1, &
+        irtpthlp_dp2, &
+        irtpthlp_ta, &
+        irtpthlp_ma, &
+        iup2_dp1, &
+        iup2_dp2, &
+        iup2_ta, &
+        iup2_ma, &
+        iup2_pr1, &
+        ivp2_dp1
+  
     use stats_variables, only: &
-      ivp2_dp2, &
-      ivp2_ta, &
-      ivp2_ma, &
-      ivp2_pr1, &
-      zmscr01, &
-      zmscr02, &
-      zmscr03, &
-      zmscr04, &
-      zmscr05, &
-      zmscr06, &
-      zmscr07, &
-      zmscr08, &
-      zmscr09, &
-      zmscr10, &
-      zmscr11
-
+        ivp2_dp2, &
+        ivp2_ta, &
+        ivp2_ma, &
+        ivp2_pr1, &
+        zmscr01, &
+        zmscr02, &
+        zmscr03, &
+        zmscr04, &
+        zmscr05, &
+        zmscr06, &
+        zmscr07, &
+        zmscr08, &
+        zmscr09, &
+        zmscr10, &
+        zmscr11
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! External
@@ -2210,286 +2210,286 @@ module advance_xp2_xpyp_module
   ! 
   ! Notes:
   !    For LHS turbulent advection (ta) term:
-  !        An "over-implicit" weighted time step is applied to this term.
-  !        The weight of the implicit portion of this term is controlled by
-  !        the factor gamma_over_implicit_ts (abbreviated "gamma" in the
-  !        expression below).  A factor is added to the right-hand side of
-  !        the equation in order to balance a weight that is not equal to 1,
-  !        such that:
-  !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-  !        where X is the variable that is being solved for in a predictive
-  !        equation (x'^2 or x'y' in this case), y(t) is the linearized
-  !        portion of the term that gets treated implicitly, and RHS is the
-  !        portion of the term that is always treated explicitly.  A weight
-  !        of greater than 1 can be applied to make the term more
-  !        numerically stable.
-  ! 
-  ! 
-  !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
-  !   Significant changes to this routine may adversely affect computational speed
-  !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
-  !----------------------------------------------------------------------------------
-
-    use grid_class, only: & 
-        gr ! Variable(s)
-
-    use constants_clubb, only:  & 
-        gamma_over_implicit_ts, & ! Constant(s)
-        w_tol_sqd, &
-        one, &
-        two_thirds, &
-        one_third, &
-        zero
-
-    use clubb_precision, only:  & 
-        core_rknd ! Variable(s)
-
-    use stats_type_utilities, only: & 
-        stat_begin_update_pt, & ! Procedure(s)
-        stat_update_var_pt, &
-        stat_modify_pt
-
-    use stats_variables, only: & 
-        ivp2_ta,  & ! Variable(s)
-        ivp2_tp, & 
-        ivp2_dp1, & 
-        ivp2_pr1, & 
-        ivp2_pr2, & 
-        ivp2_splat, & 
-        iup2_ta, & 
-        iup2_tp, & 
-        iup2_dp1, & 
-        iup2_pr1, & 
-        iup2_pr2, & 
-        iup2_splat, & 
-        stats_zm, & 
-        zmscr01, & 
-        zmscr11, & 
-        l_stats_samp
-
-    implicit none
-
-    !------------------- Input Variables -------------------
-    integer, intent(in) :: solve_type
-
-    real( kind = core_rknd ), intent(in) :: & 
-      dt                 ! Model timestep                              [s]
-
-    logical, intent(in) :: & 
-      l_iter  ! Whether x is prognostic (T/F)
-      
-    ! For "over-implicit" weighted time step.
-    ! This vector holds output from the LHS (implicit) portion of a term at a
-    ! given vertical level.  This output is weighted and applied to the RHS.
-    ! This is used if the implicit portion of the term is "over-implicit", which
-    ! means that the LHS contribution is given extra weight (>1) in order to
-    ! increase numerical stability.  A weighted factor must then be applied to
-    ! the RHS in order to balance the weight.
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
-     lhs_ta     ! LHS turbulent advection term
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      rhs_ta,                 & ! RHS turbulent advection terms
-      wp2,                    & ! w'^2 (momentum levels)              [m^2/s^2]
-      wp2_zt,                 & ! w'^2 interp. to thermo. levels      [m^2/s^2]
-      wpthvp,                 & ! w'th_v' (momentum levels)             [K m/s]
-      Lscale,                 & ! Mixing Length                             [m]
-      C4_C14_1d,              & ! Combination of model params. C_4 and C_14 [-]
-      invrs_tau_wp2_zm,       & ! Inverse time-scale for wp2 (up2, vp2) on m-levs.  [1/s]
-      xam,                    & ! x_am (thermodynamic levels)             [m/s]
-      xbm,                    & ! x_bm (thermodynamic levels)             [m/s]
-      wpxap,                  & ! w'x_a' (momentum levels)            [m^2/s^2]
-      wpxbp,                  & ! w'x_b' (momentum levels)            [m^2/s^2]
-      xap2,                   & ! x_a'^2 (momentum levels)            [m^2/s^2]
-      xbp2,                   & ! x_b'^2 (momentum levels)            [m^2/s^2]
-      thv_ds_zm,              & ! Dry, base-state theta_v on momentum levs. [K]
+    !        An "over-implicit" weighted time step is applied to this term.
+    !        The weight of the implicit portion of this term is controlled by
+    !        the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+    !        expression below).  A factor is added to the right-hand side of
+    !        the equation in order to balance a weight that is not equal to 1,
+    !        such that:
+    !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+    !        where X is the variable that is being solved for in a predictive
+    !        equation (x'^2 or x'y' in this case), y(t) is the linearized
+    !        portion of the term that gets treated implicitly, and RHS is the
+    !        portion of the term that is always treated explicitly.  A weight
+    !        of greater than 1 can be applied to make the term more
+    !        numerically stable.
+    ! 
+    ! 
+    !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
+    !   Significant changes to this routine may adversely affect computational speed
+    !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
+    !----------------------------------------------------------------------------------
+  
+      use grid_class, only: & 
+          gr ! Variable(s)
+    
+      use constants_clubb, only:  & 
+          gamma_over_implicit_ts, & ! Constant(s)
+          w_tol_sqd, &
+          one, &
+          two_thirds, &
+          one_third, &
+          zero
+  
+      use clubb_precision, only:  & 
+          core_rknd ! Variable(s)
+    
+      use stats_type_utilities, only: & 
+          stat_begin_update_pt, & ! Procedure(s)
+          stat_update_var_pt, &
+          stat_modify_pt
+    
+      use stats_variables, only: & 
+          ivp2_ta,  & ! Variable(s)
+          ivp2_tp, & 
+          ivp2_dp1, & 
+          ivp2_pr1, & 
+          ivp2_pr2, & 
+          ivp2_splat, & 
+          iup2_ta, & 
+          iup2_tp, & 
+          iup2_dp1, & 
+          iup2_pr1, & 
+          iup2_pr2, & 
+          iup2_splat, & 
+          stats_zm, & 
+          zmscr01, & 
+          zmscr11, & 
+          l_stats_samp
+    
+      implicit none
+  
+      !------------------- Input Variables -------------------
+      integer, intent(in) :: solve_type
+  
+      real( kind = core_rknd ), intent(in) :: & 
+        dt                 ! Model timestep                              [s]
+  
+      logical, intent(in) :: & 
+        l_iter  ! Whether x is prognostic (T/F)
+        
+      ! For "over-implicit" weighted time step.
+      ! This vector holds output from the LHS (implicit) portion of a term at a
+      ! given vertical level.  This output is weighted and applied to the RHS.
+      ! This is used if the implicit portion of the term is "over-implicit", which
+      ! means that the LHS contribution is given extra weight (>1) in order to
+      ! increase numerical stability.  A weighted factor must then be applied to
+      ! the RHS in order to balance the weight.
+      real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+       lhs_ta     ! LHS turbulent advection term
+  
+      real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+        rhs_ta,                 & ! RHS turbulent advection terms
+        wp2,                    & ! w'^2 (momentum levels)              [m^2/s^2]
+        wp2_zt,                 & ! w'^2 interp. to thermo. levels      [m^2/s^2]
+        wpthvp,                 & ! w'th_v' (momentum levels)             [K m/s]
+        Lscale,                 & ! Mixing Length                             [m]
+        C4_C14_1d,              & ! Combination of model params. C_4 and C_14 [-]
+        invrs_tau_wp2_zm,       & ! Inverse time-scale for wp2 (up2, vp2) on m-levs.  [1/s]
+        xam,                    & ! x_am (thermodynamic levels)             [m/s]
+        xbm,                    & ! x_bm (thermodynamic levels)             [m/s]
+        wpxap,                  & ! w'x_a' (momentum levels)            [m^2/s^2]
+        wpxbp,                  & ! w'x_b' (momentum levels)            [m^2/s^2]
+        xap2,                   & ! x_a'^2 (momentum levels)            [m^2/s^2]
+        xbp2,                   & ! x_b'^2 (momentum levels)            [m^2/s^2]
+        thv_ds_zm,              & ! Dry, base-state theta_v on momentum levs. [K]
       wp2_splat    ! Tendency of <w'^2> due to splatting of eddies  [m^2/s^3]
-
-    real( kind = core_rknd ), intent(in) :: & 
-      C4,        & ! Model parameter C_4                         [-]
-      C_uu_shr,  & ! Model parameter C_uu_shr                    [-]
-      C_uu_buoy, & ! Model parameter C_uu_buoy                   [-]
-      C14          ! Model parameter C_{14}                      [-]
-
-    !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
-      rhs    ! Explicit contributions to x variance/covariance terms
-
-    !---------------- Local Variables -------------------
-
-    ! Array indices
-    integer :: k
-
-    real( kind = core_rknd ) :: tmp
-
-    integer :: & 
-      ixapxbp_ta, & 
-      ixapxbp_tp, & 
-      ixapxbp_dp1, & 
-      ixapxbp_pr1, & 
-      ixapxbp_pr2, &
-      ixapxbp_splat
-
-    !----------------------------- Begin Code ----------------------------------
-
-    select case ( solve_type )
-    case ( xp2_xpyp_vp2 )
-      ixapxbp_ta  = ivp2_ta
-      ixapxbp_tp  = ivp2_tp
-      ixapxbp_dp1 = ivp2_dp1
-      ixapxbp_pr1 = ivp2_pr1
-      ixapxbp_pr2 = ivp2_pr2
-      ixapxbp_splat = ivp2_splat
-    case ( xp2_xpyp_up2 )
-      ixapxbp_ta  = iup2_ta
-      ixapxbp_tp  = iup2_tp
-      ixapxbp_dp1 = iup2_dp1
-      ixapxbp_pr1 = iup2_pr1
-      ixapxbp_pr2 = iup2_pr2
-      ixapxbp_splat = iup2_splat
-    case default ! No budgets for passive scalars
-      ixapxbp_ta  = 0
-      ixapxbp_tp  = 0
-      ixapxbp_dp1 = 0
-      ixapxbp_pr1 = 0
-      ixapxbp_pr2 = 0
-      ixapxbp_splat = 0
+  
+      real( kind = core_rknd ), intent(in) :: & 
+        C4,        & ! Model parameter C_4                         [-]
+        C_uu_shr,  & ! Model parameter C_uu_shr                    [-]
+        C_uu_buoy, & ! Model parameter C_uu_buoy                   [-]
+        C14          ! Model parameter C_{14}                      [-]
+  
+      !------------------- Output Variables -------------------
+      real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
+        rhs    ! Explicit contributions to x variance/covariance terms
+  
+      !---------------- Local Variables -------------------
+  
+      ! Array indices
+      integer :: k
+  
+      real( kind = core_rknd ) :: tmp
+  
+      integer :: & 
+        ixapxbp_ta, & 
+        ixapxbp_tp, & 
+        ixapxbp_dp1, & 
+        ixapxbp_pr1, & 
+        ixapxbp_pr2, &
+        ixapxbp_splat
+  
+      !----------------------------- Begin Code ----------------------------------
+  
+      select case ( solve_type )
+      case ( xp2_xpyp_vp2 )
+        ixapxbp_ta  = ivp2_ta
+        ixapxbp_tp  = ivp2_tp
+        ixapxbp_dp1 = ivp2_dp1
+        ixapxbp_pr1 = ivp2_pr1
+        ixapxbp_pr2 = ivp2_pr2
+        ixapxbp_splat = ivp2_splat
+      case ( xp2_xpyp_up2 )
+        ixapxbp_ta  = iup2_ta
+        ixapxbp_tp  = iup2_tp
+        ixapxbp_dp1 = iup2_dp1
+        ixapxbp_pr1 = iup2_pr1
+        ixapxbp_pr2 = iup2_pr2
+        ixapxbp_splat = iup2_splat
+      case default ! No budgets for passive scalars
+        ixapxbp_ta  = 0
+        ixapxbp_tp  = 0
+        ixapxbp_dp1 = 0
+        ixapxbp_pr1 = 0
+        ixapxbp_pr2 = 0
+        ixapxbp_splat = 0
     end select
-
-    ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
-    ! Add half the contribution to up2 and half to vp2
-    rhs(2:gr%nz-1) = rhs_ta(2:gr%nz-1) - 0.5_core_rknd*wp2_splat(2:gr%nz-1)
-
-    ! Finish RHS calc with vectorizable loop, functions are in source file and should
-    ! be inlined with an -O2 or above compiler optimization flag
-    do k = 2, gr%nz-1, 1
-
-        rhs(k) = rhs(k) + ( one - gamma_over_implicit_ts ) &
-                             * ( - lhs_ta(1,k) * xap2(k+1) &
-                                 - lhs_ta(2,k) * xap2(k) &
-                                 - lhs_ta(3,k) * xap2(k-1) )
-
-        ! RHS turbulent production (tp) term.
+  
+      ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
+      ! Add half the contribution to up2 and half to vp2
+      rhs(2:gr%nz-1) = rhs_ta(2:gr%nz-1) - 0.5_core_rknd*wp2_splat(2:gr%nz-1)
+  
+      ! Finish RHS calc with vectorizable loop, functions are in source file and should
+      ! be inlined with an -O2 or above compiler optimization flag
+      do k = 2, gr%nz-1, 1
+  
+          rhs(k) = rhs(k) + ( one - gamma_over_implicit_ts ) &
+                               * ( - lhs_ta(1,k) * xap2(k+1) &
+                                   - lhs_ta(2,k) * xap2(k) &
+                                   - lhs_ta(3,k) * xap2(k-1) )
+  
+          ! RHS turbulent production (tp) term.
         ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_pr 
-        rhs(k) = rhs(k) + ( one - C_uu_shr ) * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), & 
-                                                wpxap(k), wpxap(k), gr%invrs_dzm(k) )
-
-        ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
-        rhs(k) = rhs(k) + term_pr1( C4, C14, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) )
-
-        ! RHS contribution from "over-implicit" weighted time step
-        ! for LHS dissipation term 1 (dp1) and pressure term 1 (pr1).
-        rhs(k) = rhs(k) + ( one - gamma_over_implicit_ts ) &
-                        * ( - term_dp1_lhs( C4_C14_1d(k), invrs_tau_wp2_zm(k) ) * xap2(k) )
-
-        ! RHS pressure term 2 (pr2).
-        rhs(k) = rhs(k) + term_pr2( C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), &
-                                  wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, &
-                                  Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) )
+          rhs(k) = rhs(k) + ( one - C_uu_shr ) * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), & 
+                                                  wpxap(k), wpxap(k), gr%invrs_dzm(k) )
+  
+          ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
+          rhs(k) = rhs(k) + term_pr1( C4, C14, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) )
+  
+          ! RHS contribution from "over-implicit" weighted time step
+          ! for LHS dissipation term 1 (dp1) and pressure term 1 (pr1).
+          rhs(k) = rhs(k) + ( one - gamma_over_implicit_ts ) &
+                          * ( - term_dp1_lhs( C4_C14_1d(k), invrs_tau_wp2_zm(k) ) * xap2(k) )
+  
+          ! RHS pressure term 2 (pr2).
+          rhs(k) = rhs(k) + term_pr2( C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), &
+                                    wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, &
+                                    Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) )
     enddo ! k=2..gr%nz-1
-
-
+  
+  
     ! RHS time tendency.
-    if ( l_iter ) then
-        do k = 2, gr%nz-1
-            rhs(k) = rhs(k) + one/dt * xap2(k)
+      if ( l_iter ) then
+          do k = 2, gr%nz-1
+              rhs(k) = rhs(k) + one/dt * xap2(k)
         end do
     endif
-
-
-    if ( l_stats_samp ) then
-
-        ! Statistics: explicit contributions for up2 or vp2.
-
-        ! x'y' term ta has both implicit and explicit components; call
-        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-        ! subtracts the value sent in, reverse the sign on term_ta_ADG1_rhs.
-
-        do k = 2, gr%nz-1
-
-            call stat_begin_update_pt( ixapxbp_ta, k, &    ! Intent(in)
-                                       -rhs_ta(k), &
-                                       stats_zm )          ! Intent(inout)
-
-            call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
-                                 + ( one - gamma_over_implicit_ts )  & ! Intent(in)
-                                   * ( - lhs_ta(1,k) * xap2(k+1) &
-                                       - lhs_ta(2,k) * xap2(k) &
-                                       - lhs_ta(3,k) * xap2(k-1) ), &
-                                 stats_zm )                 ! Intent(inout)
-
-            if ( ixapxbp_pr1 > 0 ) then
-
-              tmp  &
-              = gamma_over_implicit_ts  &
-              * term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
-              zmscr11(k) = -tmp
-              call stat_begin_update_pt( ixapxbp_pr1, k, & ! Intent(in)
-                   -term_pr1( C4, zero, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), & ! Intent(in)
-                                         stats_zm )        ! Intent(inout)
-
-              tmp  &
-              = term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
-              call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
-                    + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
-                    * ( - tmp * xap2(k) ),  &               ! Intent(in)
-                                         stats_zm )         ! Intent(inout)
-
+  
+  
+      if ( l_stats_samp ) then
+  
+          ! Statistics: explicit contributions for up2 or vp2.
+  
+          ! x'y' term ta has both implicit and explicit components; call
+          ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+          ! subtracts the value sent in, reverse the sign on term_ta_ADG1_rhs.
+  
+          do k = 2, gr%nz-1
+  
+              call stat_begin_update_pt( ixapxbp_ta, k, &    ! Intent(in)
+                                         -rhs_ta(k), &
+                                         stats_zm )          ! Intent(inout)
+  
+              call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
+                                   + ( one - gamma_over_implicit_ts )  & ! Intent(in)
+                                     * ( - lhs_ta(1,k) * xap2(k+1) &
+                                         - lhs_ta(2,k) * xap2(k) &
+                                         - lhs_ta(3,k) * xap2(k-1) ), &
+                                   stats_zm )                 ! Intent(inout)
+  
+              if ( ixapxbp_pr1 > 0 ) then
+  
+                tmp  &
+                = gamma_over_implicit_ts  &
+                * term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
+                zmscr11(k) = -tmp
+                call stat_begin_update_pt( ixapxbp_pr1, k, & ! Intent(in)
+                     -term_pr1( C4, zero, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), & ! Intent(in)
+                                           stats_zm )        ! Intent(inout)
+  
+                tmp  &
+                = term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
+                call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
+                      + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
+                      * ( - tmp * xap2(k) ),  &               ! Intent(in)
+                                           stats_zm )         ! Intent(inout)
+  
             endif
-
-            if ( ixapxbp_dp1 > 0 ) then
-              tmp  &
-              = gamma_over_implicit_ts  &
-              * term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
-              zmscr01(k) = -tmp
-              call stat_begin_update_pt( ixapxbp_dp1, k, & ! Intent(in)  
-                   -term_pr1( zero, C14, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), &! Intent(in)
-                                         stats_zm )        ! Intent(inout)
-
-              tmp  &
-              = term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
-              call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
-                    + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
-                    * ( - tmp * xap2(k) ),  &               ! Intent(in)
-                                         stats_zm )         ! Intent(inout)
-
+  
+              if ( ixapxbp_dp1 > 0 ) then
+                tmp  &
+                = gamma_over_implicit_ts  &
+                * term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
+                zmscr01(k) = -tmp
+                call stat_begin_update_pt( ixapxbp_dp1, k, & ! Intent(in)  
+                     -term_pr1( zero, C14, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), &! Intent(in)
+                                           stats_zm )        ! Intent(inout)
+  
+                tmp  &
+                = term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
+                call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
+                      + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
+                      * ( - tmp * xap2(k) ),  &               ! Intent(in)
+                                           stats_zm )         ! Intent(inout)
+  
             endif
-
-            ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
-            call stat_update_var_pt( ixapxbp_pr2, k, & ! Intent(in)
-                 term_pr2( C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), & ! In
-                           wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, &  
-                           Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) ), &
-                           stats_zm )                          ! Intent(inout)
-
-            ! x'y' term tp is completely explicit; call stat_update_var_pt.
-            call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
-                  ( one - C_uu_shr ) &                ! Intent(in)
-                   * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), &
-                              wpxap(k), wpxap(k), gr%invrs_dzm(k) ), & 
-                                     stats_zm )       ! Intent(inout)
-
-            ! Vertical compression of eddies.
-            call stat_update_var_pt( ixapxbp_splat, k, & ! Intent(in) 
-                         -0.5_core_rknd * wp2_splat(k),  & ! Intent(in)
-                                     stats_zm )       ! Intent(inout)
-
+  
+              ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
+              call stat_update_var_pt( ixapxbp_pr2, k, & ! Intent(in)
+                   term_pr2( C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), & ! In
+                             wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, &  
+                             Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) ), &
+                             stats_zm )                          ! Intent(inout)
+  
+              ! x'y' term tp is completely explicit; call stat_update_var_pt.
+              call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
+                    ( one - C_uu_shr ) &                ! Intent(in)
+                     * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), &
+                                wpxap(k), wpxap(k), gr%invrs_dzm(k) ), & 
+                                       stats_zm )       ! Intent(inout)
+  
+              ! Vertical compression of eddies.
+              call stat_update_var_pt( ixapxbp_splat, k, & ! Intent(in) 
+                           -0.5_core_rknd * wp2_splat(k),  & ! Intent(in)
+                                       stats_zm )       ! Intent(inout)
+  
         end do
-
+  
       endif ! l_stats_samp
-
-
-    ! Boundary Conditions
-    ! These are set so that the surface_varnce value of u'^2 or v'^2 can be
-    ! used at the lowest boundary and the values of those variables can be
-    ! set to their respective threshold minimum values at the top boundary.
-    ! Fixed-point boundary conditions are used for the variances.
-
-    rhs(1) = xap2(1)
-    ! The value of u'^2 or v'^2 at the upper boundary will be set to the
-    ! threshold minimum value of w_tol_sqd.
-    rhs(gr%nz) = w_tol_sqd
-
+  
+  
+      ! Boundary Conditions
+      ! These are set so that the surface_varnce value of u'^2 or v'^2 can be
+      ! used at the lowest boundary and the values of those variables can be
+      ! set to their respective threshold minimum values at the top boundary.
+      ! Fixed-point boundary conditions are used for the variances.
+  
+      rhs(1) = xap2(1)
+      ! The value of u'^2 or v'^2 at the upper boundary will be set to the
+      ! threshold minimum value of w_tol_sqd.
+      rhs(gr%nz) = w_tol_sqd
+  
     return
   end subroutine xp2_xpyp_uv_rhs
 
@@ -2507,331 +2507,331 @@ module advance_xp2_xpyp_module
   ! 
   !   Note:  
   !     For LHS turbulent advection term:
-  !        An "over-implicit" weighted time step is applied to this term.
-  !        The weight of the implicit portion of this term is controlled by
-  !        the factor gamma_over_implicit_ts (abbreviated "gamma" in the
-  !        expression below).  A factor is added to the right-hand side of
-  !        the equation in order to balance a weight that is not equal to 1,
-  !        such that:
-  !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-  !        where X is the variable that is being solved for in a predictive
-  !        equation (x'^2 or x'y' in this case), y(t) is the linearized
-  !        portion of the term that gets treated implicitly, and RHS is the
-  !        portion of the term that is always treated explicitly.  A weight
-  !        of greater than 1 can be applied to make the term more
-  !        numerically stable.
-  ! 
-  !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
-  !   Significant changes to this routine may adversely affect computational speed
-  !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
-  !----------------------------------------------------------------------------------
-
-    use grid_class, only: & 
-        gr ! Variable(s)
-
-    use constants_clubb, only: &
-        gamma_over_implicit_ts, & ! Constant(s)
-        one, &
-        zero
-
-    use clubb_precision, only:  & 
-        core_rknd ! Variable(s)
-
-    use stats_type_utilities, only: & 
-        stat_begin_update_pt, & ! Procedure(s)
-        stat_update_var_pt, &
-        stat_modify_pt
-
-    use stats_variables, only: & 
-        irtp2_ta,      & ! Variable(s)
-        irtp2_tp,      & 
-        irtp2_dp1,     &
-        irtp2_forcing, &
-        ithlp2_ta,      & 
-        ithlp2_tp,      &
-        ithlp2_dp1,     &
-        ithlp2_forcing, & 
-        irtpthlp_ta,      & 
-        irtpthlp_tp1,     & 
-        irtpthlp_tp2,     &
-        irtpthlp_dp1,     &
-        irtpthlp_forcing, & 
-        stats_zm, & 
-        l_stats_samp
+    !        An "over-implicit" weighted time step is applied to this term.
+    !        The weight of the implicit portion of this term is controlled by
+    !        the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+    !        expression below).  A factor is added to the right-hand side of
+    !        the equation in order to balance a weight that is not equal to 1,
+    !        such that:
+    !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+    !        where X is the variable that is being solved for in a predictive
+    !        equation (x'^2 or x'y' in this case), y(t) is the linearized
+    !        portion of the term that gets treated implicitly, and RHS is the
+    !        portion of the term that is always treated explicitly.  A weight
+    !        of greater than 1 can be applied to make the term more
+    !        numerically stable.
+    ! 
+    !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
+    !   Significant changes to this routine may adversely affect computational speed
+    !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
+    !----------------------------------------------------------------------------------
   
-    use advance_helper_module, only: &
-        set_boundary_conditions_rhs    ! Procedure(s)
-
-    implicit none
-
-    !------------------- Input Variables -------------------
-    integer, intent(in) :: solve_type
-
-    real( kind = core_rknd ), intent(in) :: & 
-      dt                 ! Model timestep                              [s]
-
-    logical, intent(in) :: & 
-      l_iter   ! Whether x is prognostic (T/F)
+      use grid_class, only: & 
+          gr ! Variable(s)
+    
+      use constants_clubb, only: &
+          gamma_over_implicit_ts, & ! Constant(s)
+          one, &
+          zero
+  
+      use clubb_precision, only:  & 
+          core_rknd ! Variable(s)
+    
+      use stats_type_utilities, only: & 
+          stat_begin_update_pt, & ! Procedure(s)
+          stat_update_var_pt, &
+          stat_modify_pt
+    
+      use stats_variables, only: & 
+          irtp2_ta,      & ! Variable(s)
+          irtp2_tp,      & 
+          irtp2_dp1,     &
+          irtp2_forcing, &
+          ithlp2_ta,      & 
+          ithlp2_tp,      &
+          ithlp2_dp1,     &
+          ithlp2_forcing, & 
+          irtpthlp_ta,      & 
+          irtpthlp_tp1,     & 
+          irtpthlp_tp2,     &
+          irtpthlp_dp1,     &
+          irtpthlp_forcing, & 
+          stats_zm, & 
+          l_stats_samp
       
-    ! For "over-implicit" weighted time step.
-    ! This vector holds output from the LHS (implicit) portion of a term at a
-    ! given vertical level.  This output is weighted and applied to the RHS.
-    ! This is used if the implicit portion of the term is "over-implicit", which
-    ! means that the LHS contribution is given extra weight (>1) in order to
-    ! increase numerical stability.  A weighted factor must then be applied to
-    ! the RHS in order to balance the weight.
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
-      lhs_ta    ! LHS turbulent advection (ta) term
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      rhs_ta,                  & ! RHS turbulent advection (ta) term
-      wpxap,                   & ! w'x_a' (momentum levels)     [m/s{x_a units}]
-      wpxbp,                   & ! w'x_b' (momentum levels)     [m/s{x_b units}]
-      xam,                     & ! x_am (thermodynamic levels)     [{x_a units}]
-      xbm,                     & ! x_bm (thermodynamic levels)     [{x_b units}]
-      xapxbp,                  & ! x_a'x_b' (m-levs)          [{x_a un}{x_b un}]
-      xpyp_forcing,            & ! <x'y'> forcing (m-levs)      [{x un}{x un}/s]
-      invrs_tau_zm,            & ! Time-scale tau on momentum levels       [1/s]
-      Cn                         ! Coefficient C_n                           [-]
-
-    real( kind = core_rknd ), intent(in) :: &
-      threshold    ! Smallest allowable mag. value for x_a'x_b'  [{x_am units}
-                   !                                              *{x_bm units}]
-
-    !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
-      rhs     ! Explicit contributions to x variance/covariance terms
-
-    !---------------- Local Variables -------------------
-    real( kind = core_rknd ) :: tmp
+      use advance_helper_module, only: &
+          set_boundary_conditions_rhs    ! Procedure(s)
     
-    real( kind = core_rknd ) :: &
-      turbulent_prod, & ! Turbulent production term  [{x_a units}*{x_b units}/s]
-      xp2_mc_limiter    ! Largest allowable (negative) mc effect
-
-    logical :: &
-      l_clip_large_neg_mc = .false.  ! Flag to clip excessively large mc values.
-
-    ! Fractional amount of xp2 that microphysics (mc) is allowed to deplete,
-    ! where 0 <= mc_xp2_deplete_frac <= 1.  When mc_xp2_deplete_frac has a value
-    ! of 0, microphysics is not allowed to deplete xp2 at all, and when
-    ! mc_xp2_deplete_frac has a value of 1, microphysics is allowed to deplete
-    ! xp2 down to the threshold value of x_tol^2.  This is used only when the
-    ! l_clip_large_neg_mc flag is enabled.
-    real( kind = core_rknd ), parameter :: &
-      mc_xp2_deplete_frac = 0.75_core_rknd
-
-    ! Array indices
-    integer :: k, k_low, k_high
-
-    integer :: & 
-      ixapxbp_ta, & 
-      ixapxbp_tp, & 
-      ixapxbp_tp1, & 
-      ixapxbp_tp2, &
-      ixapxbp_dp1, &
-      ixapxbp_f
-
-    !------------------------------ Begin Code ---------------------------------
-
-    select case ( solve_type )
-    case ( xp2_xpyp_rtp2 )
-      ixapxbp_ta  = irtp2_ta
-      ixapxbp_tp  = irtp2_tp
-      ixapxbp_tp1 = 0
-      ixapxbp_tp2 = 0
-      ixapxbp_dp1 = irtp2_dp1
-      ixapxbp_f   = irtp2_forcing
-    case ( xp2_xpyp_thlp2 )
-      ixapxbp_ta  = ithlp2_ta
-      ixapxbp_tp  = ithlp2_tp
-      ixapxbp_tp1 = 0
-      ixapxbp_tp2 = 0
-      ixapxbp_dp1 = ithlp2_dp1
-      ixapxbp_f   = ithlp2_forcing
-    case ( xp2_xpyp_rtpthlp )
-      ixapxbp_ta  = irtpthlp_ta
-      ixapxbp_tp  = 0
-      ixapxbp_tp1 = irtpthlp_tp1
-      ixapxbp_tp2 = irtpthlp_tp2
-      ixapxbp_dp1 = irtpthlp_dp1
-      ixapxbp_f   = irtpthlp_forcing
-    case default ! No budgets for passive scalars
-      ixapxbp_ta  = 0
-      ixapxbp_tp  = 0
-      ixapxbp_tp1 = 0
-      ixapxbp_tp2 = 0
-      ixapxbp_dp1 = 0
-      ixapxbp_f   = 0
+      implicit none
+  
+      !------------------- Input Variables -------------------
+      integer, intent(in) :: solve_type
+  
+      real( kind = core_rknd ), intent(in) :: & 
+        dt                 ! Model timestep                              [s]
+  
+      logical, intent(in) :: & 
+        l_iter   ! Whether x is prognostic (T/F)
+        
+      ! For "over-implicit" weighted time step.
+      ! This vector holds output from the LHS (implicit) portion of a term at a
+      ! given vertical level.  This output is weighted and applied to the RHS.
+      ! This is used if the implicit portion of the term is "over-implicit", which
+      ! means that the LHS contribution is given extra weight (>1) in order to
+      ! increase numerical stability.  A weighted factor must then be applied to
+      ! the RHS in order to balance the weight.
+      real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+        lhs_ta    ! LHS turbulent advection (ta) term
+  
+      real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+        rhs_ta,                  & ! RHS turbulent advection (ta) term
+        wpxap,                   & ! w'x_a' (momentum levels)     [m/s{x_a units}]
+        wpxbp,                   & ! w'x_b' (momentum levels)     [m/s{x_b units}]
+        xam,                     & ! x_am (thermodynamic levels)     [{x_a units}]
+        xbm,                     & ! x_bm (thermodynamic levels)     [{x_b units}]
+        xapxbp,                  & ! x_a'x_b' (m-levs)          [{x_a un}{x_b un}]
+        xpyp_forcing,            & ! <x'y'> forcing (m-levs)      [{x un}{x un}/s]
+        invrs_tau_zm,            & ! Time-scale tau on momentum levels       [1/s]
+        Cn                         ! Coefficient C_n                           [-]
+  
+      real( kind = core_rknd ), intent(in) :: &
+        threshold    ! Smallest allowable mag. value for x_a'x_b'  [{x_am units}
+                     !                                              *{x_bm units}]
+  
+      !------------------- Output Variables -------------------
+      real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
+        rhs     ! Explicit contributions to x variance/covariance terms
+  
+      !---------------- Local Variables -------------------
+      real( kind = core_rknd ) :: tmp
+      
+      real( kind = core_rknd ) :: &
+        turbulent_prod, & ! Turbulent production term  [{x_a units}*{x_b units}/s]
+        xp2_mc_limiter    ! Largest allowable (negative) mc effect
+  
+      logical :: &
+        l_clip_large_neg_mc = .false.  ! Flag to clip excessively large mc values.
+  
+      ! Fractional amount of xp2 that microphysics (mc) is allowed to deplete,
+      ! where 0 <= mc_xp2_deplete_frac <= 1.  When mc_xp2_deplete_frac has a value
+      ! of 0, microphysics is not allowed to deplete xp2 at all, and when
+      ! mc_xp2_deplete_frac has a value of 1, microphysics is allowed to deplete
+      ! xp2 down to the threshold value of x_tol^2.  This is used only when the
+      ! l_clip_large_neg_mc flag is enabled.
+      real( kind = core_rknd ), parameter :: &
+        mc_xp2_deplete_frac = 0.75_core_rknd
+  
+      ! Array indices
+      integer :: k, k_low, k_high
+  
+      integer :: & 
+        ixapxbp_ta, & 
+        ixapxbp_tp, & 
+        ixapxbp_tp1, & 
+        ixapxbp_tp2, &
+        ixapxbp_dp1, &
+        ixapxbp_f
+  
+      !------------------------------ Begin Code ---------------------------------
+  
+      select case ( solve_type )
+      case ( xp2_xpyp_rtp2 )
+        ixapxbp_ta  = irtp2_ta
+        ixapxbp_tp  = irtp2_tp
+        ixapxbp_tp1 = 0
+        ixapxbp_tp2 = 0
+        ixapxbp_dp1 = irtp2_dp1
+        ixapxbp_f   = irtp2_forcing
+      case ( xp2_xpyp_thlp2 )
+        ixapxbp_ta  = ithlp2_ta
+        ixapxbp_tp  = ithlp2_tp
+        ixapxbp_tp1 = 0
+        ixapxbp_tp2 = 0
+        ixapxbp_dp1 = ithlp2_dp1
+        ixapxbp_f   = ithlp2_forcing
+      case ( xp2_xpyp_rtpthlp )
+        ixapxbp_ta  = irtpthlp_ta
+        ixapxbp_tp  = 0
+        ixapxbp_tp1 = irtpthlp_tp1
+        ixapxbp_tp2 = irtpthlp_tp2
+        ixapxbp_dp1 = irtpthlp_dp1
+        ixapxbp_f   = irtpthlp_forcing
+      case default ! No budgets for passive scalars
+        ixapxbp_ta  = 0
+        ixapxbp_tp  = 0
+        ixapxbp_tp1 = 0
+        ixapxbp_tp2 = 0
+        ixapxbp_dp1 = 0
+        ixapxbp_f   = 0
     end select
-
-    ! Finish RHS calc with vectorizable loop, functions are in source file and should
-    ! be inlined with an -O2 or above compiler optimization flag
-    do k = 2, gr%nz-1
-
-      rhs(k) = rhs_ta(k) + ( one - gamma_over_implicit_ts ) &
-                           * ( - lhs_ta(1,k) * xapxbp(k+1) &
-                               - lhs_ta(2,k) * xapxbp(k) &
-                               - lhs_ta(3,k) * xapxbp(k-1) )
-
-      ! RHS turbulent production (tp) term.
-      rhs(k) = rhs(k) + term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &
-                                 wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
-
-      ! RHS dissipation term 1 (dp1)
-      rhs(k) = rhs(k) + term_dp1_rhs( Cn(k), invrs_tau_zm(k), threshold )
-
-      ! RHS contribution from "over-implicit" weighted time step
-      ! for LHS dissipation term 1 (dp1).
-      rhs(k) = rhs(k)  + ( one - gamma_over_implicit_ts ) &
-                       * ( - term_dp1_lhs( Cn(k), invrs_tau_zm(k) ) * xapxbp(k) )
+  
+      ! Finish RHS calc with vectorizable loop, functions are in source file and should
+      ! be inlined with an -O2 or above compiler optimization flag
+      do k = 2, gr%nz-1
+  
+        rhs(k) = rhs_ta(k) + ( one - gamma_over_implicit_ts ) &
+                             * ( - lhs_ta(1,k) * xapxbp(k+1) &
+                                 - lhs_ta(2,k) * xapxbp(k) &
+                                 - lhs_ta(3,k) * xapxbp(k-1) )
+  
+        ! RHS turbulent production (tp) term.
+        rhs(k) = rhs(k) + term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &
+                                   wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
+  
+        ! RHS dissipation term 1 (dp1)
+        rhs(k) = rhs(k) + term_dp1_rhs( Cn(k), invrs_tau_zm(k), threshold )
+  
+        ! RHS contribution from "over-implicit" weighted time step
+        ! for LHS dissipation term 1 (dp1).
+        rhs(k) = rhs(k)  + ( one - gamma_over_implicit_ts ) &
+                         * ( - term_dp1_lhs( Cn(k), invrs_tau_zm(k) ) * xapxbp(k) )
     end do
-
-    ! RHS <x'y'> forcing.
-    ! Note: <x'y'> forcing includes the effects of microphysics on <x'y'>.
-    if ( l_clip_large_neg_mc &
-         .and. ( solve_type == xp2_xpyp_rtp2 .or. solve_type == xp2_xpyp_thlp2 ) ) then
-
-        do k = 2, gr%nz-1
-
-            turbulent_prod = term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &
-                                      wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
-
-            ! Limit the variance-depleting effects of excessively large
-            ! microphysics terms on rtp2 and thlp2 in order to reduce oscillations.
-            if ( turbulent_prod >= zero ) then
-
-                ! Microphysics is allowed to deplete turbulent production and a
-                ! fraction of the variance, determined by mc_xp2_deplete_frac, down
-                ! to the threshold.
-                xp2_mc_limiter = - mc_xp2_deplete_frac &
-                               * ( xapxbp(k) - threshold ) / dt &
-                               - turbulent_prod
-            else
-            
-                ! Microphysics is allowed to deplete a fraction of the variance,
-                ! determined by mc_xp2_deplete_frac, down to the threshold.
-                xp2_mc_limiter = - mc_xp2_deplete_frac &
-                               * ( xapxbp(k) - threshold ) / dt
+  
+      ! RHS <x'y'> forcing.
+      ! Note: <x'y'> forcing includes the effects of microphysics on <x'y'>.
+      if ( l_clip_large_neg_mc &
+           .and. ( solve_type == xp2_xpyp_rtp2 .or. solve_type == xp2_xpyp_thlp2 ) ) then
+  
+          do k = 2, gr%nz-1
+  
+              turbulent_prod = term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &
+                                        wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
+  
+              ! Limit the variance-depleting effects of excessively large
+              ! microphysics terms on rtp2 and thlp2 in order to reduce oscillations.
+              if ( turbulent_prod >= zero ) then
+  
+                  ! Microphysics is allowed to deplete turbulent production and a
+                  ! fraction of the variance, determined by mc_xp2_deplete_frac, down
+                  ! to the threshold.
+                  xp2_mc_limiter = - mc_xp2_deplete_frac &
+                                 * ( xapxbp(k) - threshold ) / dt &
+                                 - turbulent_prod
+              else
+              
+                  ! Microphysics is allowed to deplete a fraction of the variance,
+                  ! determined by mc_xp2_deplete_frac, down to the threshold.
+                  xp2_mc_limiter = - mc_xp2_deplete_frac &
+                                 * ( xapxbp(k) - threshold ) / dt
             endif
-
-            ! Note: the value of xp2_mc_limiter is always negative.
-            rhs(k) = rhs(k) + max( xpyp_forcing(k), xp2_mc_limiter )
-
+  
+              ! Note: the value of xp2_mc_limiter is always negative.
+              rhs(k) = rhs(k) + max( xpyp_forcing(k), xp2_mc_limiter )
+  
         end do
-
-    else
-
-        do k = 2, gr%nz-1
-            rhs(k) = rhs(k) + xpyp_forcing(k)
+  
+      else
+  
+          do k = 2, gr%nz-1
+              rhs(k) = rhs(k) + xpyp_forcing(k)
         end do
-
+  
     endif 
-
-    
+  
+      
     ! RHS time tendency.
-    if ( l_iter ) then
-        do k = 2, gr%nz-1, 1
-            rhs(k) = rhs(k) + one/dt * xapxbp(k)
+      if ( l_iter ) then
+          do k = 2, gr%nz-1, 1
+              rhs(k) = rhs(k) + one/dt * xapxbp(k)
         end do
     endif
-
-
-    if ( l_stats_samp ) then
-
-        do k = 2, gr%nz-1
-
-            ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
-
-            ! <x'y'> term ta has both implicit and explicit components; call
-            ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-            ! subtracts the value sent in, reverse the sign on term_ta_explicit_rhs.
-            call stat_begin_update_pt( ixapxbp_ta, k, & ! Intent(in)
-                                       -rhs_ta(k), &
-                                       stats_zm )       ! Intent(inout)
-
-            call stat_modify_pt( ixapxbp_ta, k, &             ! Intent(in)
-                                 + ( one - gamma_over_implicit_ts ) & ! Intent(in)
-                                   * ( - lhs_ta(1,k) * xapxbp(k+1) &
-                                       - lhs_ta(2,k) * xapxbp(k) &
-                                       - lhs_ta(3,k) * xapxbp(k-1) ), &
-                                 stats_zm )                   ! Intent(inout)
-
-            ! x'y' term dp1 has both implicit and explicit components; call
-            ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-            ! subtracts the value sent in, reverse the sign on term_dp1_rhs.
-            call stat_begin_update_pt( ixapxbp_dp1, k, &           ! Intent(in)
-                 -term_dp1_rhs( Cn(k), invrs_tau_zm(k), threshold ), &   ! Intent(in)
-                                       stats_zm )                  ! Intent(inout)
-
-            ! Note:  An "over-implicit" weighted time step is applied to this term.
-            !        A weighting factor of greater than 1 may be used to make the
-            !        term more numerically stable (see note above for RHS turbulent
-            !        advection (ta) term).
-            tmp  &
-            = term_dp1_lhs( Cn(k), invrs_tau_zm(k) )
-            call stat_modify_pt( ixapxbp_dp1, k,  &         ! Intent(in)
-                  + ( one - gamma_over_implicit_ts )  &     ! Intent(in)
-                  * ( - tmp * xapxbp(k) ),  & ! Intent(in)
+  
+  
+      if ( l_stats_samp ) then
+  
+          do k = 2, gr%nz-1
+  
+              ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
+  
+              ! <x'y'> term ta has both implicit and explicit components; call
+              ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+              ! subtracts the value sent in, reverse the sign on term_ta_explicit_rhs.
+              call stat_begin_update_pt( ixapxbp_ta, k, & ! Intent(in)
+                                         -rhs_ta(k), &
+                                         stats_zm )       ! Intent(inout)
+  
+              call stat_modify_pt( ixapxbp_ta, k, &             ! Intent(in)
+                                   + ( one - gamma_over_implicit_ts ) & ! Intent(in)
+                                     * ( - lhs_ta(1,k) * xapxbp(k+1) &
+                                         - lhs_ta(2,k) * xapxbp(k) &
+                                         - lhs_ta(3,k) * xapxbp(k-1) ), &
+                                   stats_zm )                   ! Intent(inout)
+  
+              ! x'y' term dp1 has both implicit and explicit components; call
+              ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+              ! subtracts the value sent in, reverse the sign on term_dp1_rhs.
+              call stat_begin_update_pt( ixapxbp_dp1, k, &           ! Intent(in)
+                   -term_dp1_rhs( Cn(k), invrs_tau_zm(k), threshold ), &   ! Intent(in)
+                                         stats_zm )                  ! Intent(inout)
+  
+              ! Note:  An "over-implicit" weighted time step is applied to this term.
+              !        A weighting factor of greater than 1 may be used to make the
+              !        term more numerically stable (see note above for RHS turbulent
+              !        advection (ta) term).
+              tmp  &
+              = term_dp1_lhs( Cn(k), invrs_tau_zm(k) )
+              call stat_modify_pt( ixapxbp_dp1, k,  &         ! Intent(in)
+                    + ( one - gamma_over_implicit_ts )  &     ! Intent(in)
+                    * ( - tmp * xapxbp(k) ),  & ! Intent(in)
+                                         stats_zm )                 ! Intent(inout)
+  
+              ! rtp2/thlp2 case (1 turbulent production term)
+              ! x'y' term tp is completely explicit; call stat_update_var_pt.
+              call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
+                    term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &  ! Intent(in)
+                             wpxbp(k), wpxap(k), gr%invrs_dzm(k) ), & 
+                                       stats_zm )                         ! Intent(inout)
+  
+              ! rtpthlp case (2 turbulent production terms)
+              ! x'y' term tp1 is completely explicit; call stat_update_var_pt.
+              ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
+              !        the xam inputs and the wpxbp input to function term_tp.
+              call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
+                    term_tp( zero, zero, xbm(k+1), xbm(k), &  ! Intent(in)
+                             zero, wpxap(k), gr%invrs_dzm(k) ), &
                                        stats_zm )                 ! Intent(inout)
-
-            ! rtp2/thlp2 case (1 turbulent production term)
-            ! x'y' term tp is completely explicit; call stat_update_var_pt.
-            call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
-                  term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &  ! Intent(in)
-                           wpxbp(k), wpxap(k), gr%invrs_dzm(k) ), & 
-                                     stats_zm )                         ! Intent(inout)
-
-            ! rtpthlp case (2 turbulent production terms)
-            ! x'y' term tp1 is completely explicit; call stat_update_var_pt.
-            ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
-            !        the xam inputs and the wpxbp input to function term_tp.
-            call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
-                  term_tp( zero, zero, xbm(k+1), xbm(k), &  ! Intent(in)
-                           zero, wpxap(k), gr%invrs_dzm(k) ), &
-                                     stats_zm )                 ! Intent(inout)
-
-            ! x'y' term tp2 is completely explicit; call stat_update_var_pt.
-            ! Note:  To find the contribution of x'y' term tp2, substitute 0 for all
-            !        the xbm inputs and the wpxap input to function term_tp.
-            call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
-                  term_tp( xam(k+1), xam(k), zero, zero, &  ! Intent(in)
-                           wpxbp(k), zero, gr%invrs_dzm(k) ), &
-                                     stats_zm )                 ! Intent(inout)
-
-            ! x'y' forcing term is completely explicit; call stat_update_var_pt.
-            if ( l_clip_large_neg_mc &
-                 .and. ( solve_type == xp2_xpyp_rtp2 &
-                         .or. solve_type == xp2_xpyp_thlp2 ) ) then
-               call stat_update_var_pt( ixapxbp_f, k, & ! intent(in)
-                                        max( xpyp_forcing(k), xp2_mc_limiter ), & ! intent(in)
-                                        stats_zm ) ! intent(inout)
-            else
-               call stat_update_var_pt( ixapxbp_f, k, xpyp_forcing(k), & ! intent(in)
-                                        stats_zm )                       ! intent(inout)
+  
+              ! x'y' term tp2 is completely explicit; call stat_update_var_pt.
+              ! Note:  To find the contribution of x'y' term tp2, substitute 0 for all
+              !        the xbm inputs and the wpxap input to function term_tp.
+              call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
+                    term_tp( xam(k+1), xam(k), zero, zero, &  ! Intent(in)
+                             wpxbp(k), zero, gr%invrs_dzm(k) ), &
+                                       stats_zm )                 ! Intent(inout)
+  
+              ! x'y' forcing term is completely explicit; call stat_update_var_pt.
+              if ( l_clip_large_neg_mc &
+                   .and. ( solve_type == xp2_xpyp_rtp2 &
+                           .or. solve_type == xp2_xpyp_thlp2 ) ) then
+                 call stat_update_var_pt( ixapxbp_f, k, & ! intent(in)
+                                          max( xpyp_forcing(k), xp2_mc_limiter ), & ! intent(in)
+                                          stats_zm ) ! intent(inout)
+              else
+                 call stat_update_var_pt( ixapxbp_f, k, xpyp_forcing(k), & ! intent(in)
+                                          stats_zm )                       ! intent(inout)
             endif
-   
+     
         enddo ! k=2..gr%nz-1
-
+  
     endif ! l_stats_samp
-
-
-    ! Boundary Conditions
-    ! These are set so that the surface_varnce value of rtp2, thlp2, or rtpthlp
-    ! (or sclrp2, sclrprtp, or sclrpthlp) can be used at the lowest boundary and the
-    ! values of those variables can be set to their respective threshold minimum
-    ! values (which is 0 in the case of the covariances) at the top boundary.
-    ! Fixed-point boundary conditions are used for both the variances and the
-    ! covariances.
-
-    k_low = 1
-    k_high = gr%nz
-
-    ! The value of the field at the upper boundary will be set to it's threshold
-    ! minimum value, as contained in the variable 'threshold'.
-    call set_boundary_conditions_rhs( xapxbp(1), k_low, threshold, k_high, & ! intent(in)
-                                      rhs(:) )                               ! intent(inout)
-
+  
+  
+      ! Boundary Conditions
+      ! These are set so that the surface_varnce value of rtp2, thlp2, or rtpthlp
+      ! (or sclrp2, sclrprtp, or sclrpthlp) can be used at the lowest boundary and the
+      ! values of those variables can be set to their respective threshold minimum
+      ! values (which is 0 in the case of the covariances) at the top boundary.
+      ! Fixed-point boundary conditions are used for both the variances and the
+      ! covariances.
+  
+      k_low = 1
+      k_high = gr%nz
+  
+      ! The value of the field at the upper boundary will be set to it's threshold
+      ! minimum value, as contained in the variable 'threshold'.
+      call set_boundary_conditions_rhs( xapxbp(1), k_low, threshold, k_high, & ! intent(in)
+                                        rhs(:) )                               ! intent(inout)
+  
     return
   end subroutine xp2_xpyp_rhs
   
@@ -2866,22 +2866,22 @@ module advance_xp2_xpyp_module
         gr,     & ! Variable(s)
         zt2zm,  & ! Procedure(s)
         zm2zt
-      
+        
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-      
+        
     use constants_clubb, only: &
         one, &
         one_third, &
         zero, &
         zero_threshold
-      
+        
     use parameters_tunable, only: &
         beta
-      
+        
     use parameters_model, only: &
         sclr_dim  ! Number of passive scalar variables
-      
+        
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
@@ -2891,13 +2891,13 @@ module advance_xp2_xpyp_module
         xpyp_term_ta_pdf_rhs,         &
         xpyp_term_ta_pdf_rhs_godunov, &
         sgn_turbulent_velocity
-      
+        
     use model_flags, only: &
         iiPDF_ADG1,       & ! integer constants
         iiPDF_new,        &
         iiPDF_new_hybrid, &
         l_explicit_turbulent_adv_xpyp     ! Logical constant
-      
+        
     use stats_variables, only: &
         l_stats_samp,             & ! Logical constant
         stats_zt,                 & ! Variable(s)
@@ -2910,7 +2910,7 @@ module advance_xp2_xpyp_module
       
     use stats_type_utilities, only: & 
         stat_update_var   ! Procedure(s)
-      
+        
     implicit none    
     
     !------------------- Input Variables -------------------
@@ -4296,8 +4296,8 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input variables
@@ -4372,8 +4372,8 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variables
@@ -4434,8 +4434,8 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variables
@@ -4538,10 +4538,10 @@ module advance_xp2_xpyp_module
     use constants_clubb, only: &
         w_tol_sqd, & ! Constant(s)
         one_third
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -4613,13 +4613,13 @@ module advance_xp2_xpyp_module
         two_thirds, &
         zero, &
         zero_threshold
-
+  
     use grid_class, only: &
         gr ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! External
@@ -4782,16 +4782,16 @@ module advance_xp2_xpyp_module
 
     use constants_clubb, only: &
         two    ! Constant(s)
-
+  
     use interpolation, only : &
         binary_search, lin_interpolate_two_points  ! Function(s)
-
+  
     use grid_class, only: &
         gr ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -4886,14 +4886,14 @@ module advance_xp2_xpyp_module
     use fill_holes, only: fill_holes_vertical
     use grid_class, only: gr
     use clubb_precision, only: core_rknd
-
+  
     use stats_variables, only:  & 
         stats_zm, l_stats_samp, & 
         irtp2_pd, ithlp2_pd, iup2_pd, ivp2_pd ! variables
     use stats_type_utilities, only:  & 
         stat_begin_update, stat_end_update ! subroutines
-
-
+  
+  
     implicit none
 
     ! External
@@ -4977,19 +4977,19 @@ module advance_xp2_xpyp_module
     !variables on the zt grid, and the outputs are on the zm grid --storer
 
     use pdf_parameter_module, only: pdf_parameter
-
+  
     use grid_class, only: &
-      zt2zm   ! Procedure(s)
-
+        zt2zm   ! Procedure(s)
+  
     use constants_clubb, only: &
-      cloud_frac_min, &  !Variables
-      Cp, &
-      Lv
-
+        cloud_frac_min, &  !Variables
+        Cp, &
+        Lv
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-      
-
+        core_rknd ! Variable(s)
+        
+  
     implicit none
 
     !input parameters

@@ -51,10 +51,10 @@ module sigma_sqd_w_module
         thl_tol,     &
         one_hundred, &
         w_tol_sqd
-
+  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
+  
     implicit none
 
     ! External

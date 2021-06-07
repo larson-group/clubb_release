@@ -28,93 +28,93 @@ module stats_lh_zt_module
 !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-      fstderr ! Constant(s)
-
+        fstderr ! Constant(s)
+  
     use stats_variables, only: & 
-      stats_lh_zt    ! Variable
-
+        stats_lh_zt    ! Variable
+  
     use stats_variables, only: & 
-      iAKm, &  ! Variable(s)
-      ilh_AKm, & 
-      iAKstd, & 
-      iAKstd_cld, & 
-      iAKm_rcm, & 
-      iAKm_rcc
-
+        iAKm, &  ! Variable(s)
+        ilh_AKm, & 
+        iAKstd, & 
+        iAKstd_cld, & 
+        iAKm_rcm, & 
+        iAKm_rcc
+  
     use stats_variables, only: &
-      ilh_thlm_mc, &  ! Variable(s)
-      ilh_rvm_mc, & 
-      ilh_rcm_mc, & 
-      ilh_Ncm_mc, & 
-      ilh_rrm_mc, & 
-      ilh_Nrm_mc, & 
-      ilh_rsm_mc, & 
-      ilh_Nsm_mc, & 
-      ilh_rgm_mc, & 
-      ilh_Ngm_mc, & 
-      ilh_rim_mc, & 
-      ilh_Nim_mc, & 
-      ilh_Vrr, &
-      ilh_VNr, &
-      ilh_rcm_avg
-
+        ilh_thlm_mc, &  ! Variable(s)
+        ilh_rvm_mc, & 
+        ilh_rcm_mc, & 
+        ilh_Ncm_mc, & 
+        ilh_rrm_mc, & 
+        ilh_Nrm_mc, & 
+        ilh_rsm_mc, & 
+        ilh_Nsm_mc, & 
+        ilh_rgm_mc, & 
+        ilh_Ngm_mc, & 
+        ilh_rim_mc, & 
+        ilh_Nim_mc, & 
+        ilh_Vrr, &
+        ilh_VNr, &
+        ilh_rcm_avg
+  
     use stats_variables, only: &
-      ilh_rrm, & ! Variable(s)
-      ilh_Nrm, &
-      ilh_rim, &
-      ilh_Nim, &
-      ilh_rsm, &
-      ilh_Nsm, &
-      ilh_rgm, &
-      ilh_Ngm, &
-      ilh_thlm, &
-      ilh_rcm, &
-      ilh_Ncm, &
-      ilh_Ncnm, &
-      ilh_rvm, &
-      ilh_wm, &
-      ilh_wp2_zt, &
-      ilh_rcp2_zt, &
-      ilh_rtp2_zt, &
-      ilh_thlp2_zt, &
-      ilh_rrp2_zt, &
-      ilh_Nrp2_zt, &
-      ilh_Ncp2_zt, &
-      ilh_Ncnp2_zt, &
-      ilh_cloud_frac, &
-      ilh_chi, &
-      ilh_eta, &
-      ilh_chip2, &
-      ilh_rrm_auto, &
-      ilh_rrm_accr, &
-      ilh_rrm_evap, &
-      ilh_Nrm_auto, &
-      ilh_Nrm_evap
-
+        ilh_rrm, & ! Variable(s)
+        ilh_Nrm, &
+        ilh_rim, &
+        ilh_Nim, &
+        ilh_rsm, &
+        ilh_Nsm, &
+        ilh_rgm, &
+        ilh_Ngm, &
+        ilh_thlm, &
+        ilh_rcm, &
+        ilh_Ncm, &
+        ilh_Ncnm, &
+        ilh_rvm, &
+        ilh_wm, &
+        ilh_wp2_zt, &
+        ilh_rcp2_zt, &
+        ilh_rtp2_zt, &
+        ilh_thlp2_zt, &
+        ilh_rrp2_zt, &
+        ilh_Nrp2_zt, &
+        ilh_Ncp2_zt, &
+        ilh_Ncnp2_zt, &
+        ilh_cloud_frac, &
+        ilh_chi, &
+        ilh_eta, &
+        ilh_chip2, &
+        ilh_rrm_auto, &
+        ilh_rrm_accr, &
+        ilh_rrm_evap, &
+        ilh_Nrm_auto, &
+        ilh_Nrm_evap
+  
     use stats_variables, only: &
-      ilh_cloud_frac_unweighted, &
-      ilh_precip_frac_unweighted,&
-      ilh_mixt_frac_unweighted
-
+        ilh_cloud_frac_unweighted, &
+        ilh_precip_frac_unweighted,&
+        ilh_mixt_frac_unweighted
+  
     use stats_variables, only: &
-      ilh_rrm_src_adj,  & ! Variable(s)
-      ilh_rrm_evap_adj, &
-      ilh_Nrm_src_adj,     &
-      ilh_Nrm_evap_adj, &
-      ilh_rrm_mc_nonadj
-
+        ilh_rrm_src_adj,  & ! Variable(s)
+        ilh_rrm_evap_adj, &
+        ilh_Nrm_src_adj,     &
+        ilh_Nrm_evap_adj, &
+        ilh_rrm_mc_nonadj
+  
     use stats_variables, only: &
-      ilh_precip_frac, &
-      ilh_mixt_frac, &
-      ilh_m_vol_rad_rain
-
+        ilh_precip_frac, &
+        ilh_mixt_frac, &
+        ilh_m_vol_rad_rain
+  
     use stats_variables, only: &
-      isilhs_variance_category, & ! Variable
-      ilh_samp_frac_category
-
+        isilhs_variance_category, & ! Variable
+        ilh_samp_frac_category
+  
     use stats_type_utilities, only: & 
-      stat_assign ! Procedure
-
+        stat_assign ! Procedure
+  
     implicit none
 
     ! External

@@ -26,7 +26,7 @@ module stats_sfc_module
 
     use constants_clubb, only: &
         fstderr ! Constant(s)
-
+  
     use stats_variables, only: &
         stats_sfc,  & ! Variables
         iustar, &
@@ -48,7 +48,7 @@ module stats_sfc_module
         irain_flux_sfc, &
         irrm_sfc, &
         iprecip_frac_tol
-
+  
     use stats_variables, only: &
         iwpthlp_sfc, &
         iwprtp_sfc, &
@@ -64,7 +64,7 @@ module stats_sfc_module
         irtp2_vert_avg, &
         ithlp2_vert_avg, &
         iT_sfc
-
+  
     use stats_variables, only: &
         iwp23_matrix_condt_num, &
         irtm_matrix_condt_num, &
@@ -74,18 +74,18 @@ module stats_sfc_module
         irtpthlp_matrix_condt_num, &
         iup2_vp2_matrix_condt_num, &
         iwindm_matrix_condt_num
-
+  
     use stats_variables, only: &
-      imorr_snow_rate ! Variable(s)
-
+        imorr_snow_rate ! Variable(s)
+  
     use stats_variables, only: &
-      irtm_spur_src,            &
-      ithlm_spur_src, &
-      irsm_sd_morr_int
-
+        irtm_spur_src,            &
+        ithlm_spur_src, &
+        irsm_sd_morr_int
+  
     use stats_type_utilities, only: &
         stat_assign ! Procedure
-
+  
     implicit none
 
     ! External

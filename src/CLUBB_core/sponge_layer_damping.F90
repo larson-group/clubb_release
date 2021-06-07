@@ -89,10 +89,10 @@ module sponge_layer_damping
 
     use grid_class, only: &
         gr    ! Variable(s)
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! External
@@ -208,13 +208,13 @@ module sponge_layer_damping
 
     use grid_class, only: &
         gr    ! Variable(s)
-
+  
     use constants_clubb, only: &
         one    ! Constant(s)
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variable(s)
@@ -328,13 +328,13 @@ module sponge_layer_damping
 
     use grid_class, only: &
         gr    ! Variable(s)
-
+  
     use constants_clubb, only: &
         one    ! Constant(s)
-
+  
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-
+  
     implicit none
 
     ! Input Variable(s)
@@ -418,98 +418,98 @@ module sponge_layer_damping
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-    
+      
     use constants_clubb, only: &
         two,     & ! Constant(s)
         fstderr
-
+  
     use grid_class, only: &
         gr    ! Variable(s)
-
-!    use interpolation, only: &
-!        lin_interpolate_two_points    ! Procedure(s)
-
-    implicit none
-
-    ! Input Variable(s)
-    real( kind = core_rknd ), intent(in) :: &
-      dt    ! Model Timestep    [s]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      z    ! Height of model grid levels    [m]
-
-    type(sponge_damp_settings), intent(in) :: &
-      settings
-
-    ! Output Variable(s)
-    type(sponge_damp_profile), intent(out) :: &
-      damping_profile
-
-    ! Local Variable(s)
-    real( kind = core_rknd ) :: &
-      tau_sponge_damp_exponent  ! Exponent in calculation of tau_sponge_damp [-]
-
-    integer :: &
-      k    ! Loop index
-
-    ! ---- Begin Code ----
-
-    ! Allocate the damping time scale.
-    allocate( damping_profile%tau_sponge_damp(1:gr%nz) )
-
-    ! Calculate the depth of the sponge layer.
-    ! The height of the model top is gr%zm(gr%nz).
-    damping_profile%sponge_layer_depth &
-    = settings%sponge_damp_depth * gr%zm(gr%nz)
-
-    ! Check the value of tau_sponge_damp_min.
-    if ( settings%tau_sponge_damp_min < two * dt ) then
-       write(fstderr,*) "Error:  tau_sponge_damp_min is too small!"
-       write(fstderr,*) "It must be at least 2.0 * dt"
-       error stop
+  
+  !    use interpolation, only: &
+  !        lin_interpolate_two_points    ! Procedure(s)
+  
+      implicit none
+  
+      ! Input Variable(s)
+      real( kind = core_rknd ), intent(in) :: &
+        dt    ! Model Timestep    [s]
+  
+      real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+        z    ! Height of model grid levels    [m]
+  
+      type(sponge_damp_settings), intent(in) :: &
+        settings
+  
+      ! Output Variable(s)
+      type(sponge_damp_profile), intent(out) :: &
+        damping_profile
+  
+      ! Local Variable(s)
+      real( kind = core_rknd ) :: &
+        tau_sponge_damp_exponent  ! Exponent in calculation of tau_sponge_damp [-]
+  
+      integer :: &
+        k    ! Loop index
+  
+      ! ---- Begin Code ----
+  
+      ! Allocate the damping time scale.
+      allocate( damping_profile%tau_sponge_damp(1:gr%nz) )
+  
+      ! Calculate the depth of the sponge layer.
+      ! The height of the model top is gr%zm(gr%nz).
+      damping_profile%sponge_layer_depth &
+      = settings%sponge_damp_depth * gr%zm(gr%nz)
+  
+      ! Check the value of tau_sponge_damp_min.
+      if ( settings%tau_sponge_damp_min < two * dt ) then
+         write(fstderr,*) "Error:  tau_sponge_damp_min is too small!"
+         write(fstderr,*) "It must be at least 2.0 * dt"
+         error stop
     endif
-
-    ! Calculate the value of the damping time scale, tau_sponge_damp, at levels
-    ! that are within the sponge damping layer.
-    do k = gr%nz, 1, -1
-
-       ! The height of the model top is gr%zm(gr%nz).
-       if ( gr%zm(gr%nz) - z(k) < damping_profile%sponge_layer_depth ) then
-
-          ! Vince Larson added code to use standard linear interpolation.
-          ! Brian Griffin reverted the linear interpolation in order to use code
-          ! that is similar to what is found in SAM LES.
-
-          tau_sponge_damp_exponent &
-          = ( gr%zm(gr%nz) - z(k) ) / damping_profile%sponge_layer_depth
-
-          damping_profile%tau_sponge_damp(k) &
-          = settings%tau_sponge_damp_min &
-            * ( settings%tau_sponge_damp_max &
-                / settings%tau_sponge_damp_min )**tau_sponge_damp_exponent
-
-          !damping_profile%tau_sponge_damp(k) &
-          != lin_interpolate_two_points( z(k), gr%zm(gr%nz), &
-          !                              gr%zm(gr%nz) &
-          !                              - damping_profile%sponge_layer_depth, &
-          !                              settings%tau_sponge_damp_min, &
-          !                              settings%tau_sponge_damp_max )
-
-          ! End Vince Larson's change
-          ! End Brian Griffin's rebellious reversion.
-
-       else ! gr%zm(gr%nz) - z(k) >= damping_profile%sponge_layer_depth
-
-          ! Below sponge damping layer; exit loop.
-          exit
-
+  
+      ! Calculate the value of the damping time scale, tau_sponge_damp, at levels
+      ! that are within the sponge damping layer.
+      do k = gr%nz, 1, -1
+  
+         ! The height of the model top is gr%zm(gr%nz).
+         if ( gr%zm(gr%nz) - z(k) < damping_profile%sponge_layer_depth ) then
+  
+            ! Vince Larson added code to use standard linear interpolation.
+            ! Brian Griffin reverted the linear interpolation in order to use code
+            ! that is similar to what is found in SAM LES.
+  
+            tau_sponge_damp_exponent &
+            = ( gr%zm(gr%nz) - z(k) ) / damping_profile%sponge_layer_depth
+  
+            damping_profile%tau_sponge_damp(k) &
+            = settings%tau_sponge_damp_min &
+              * ( settings%tau_sponge_damp_max &
+                  / settings%tau_sponge_damp_min )**tau_sponge_damp_exponent
+  
+            !damping_profile%tau_sponge_damp(k) &
+            != lin_interpolate_two_points( z(k), gr%zm(gr%nz), &
+            !                              gr%zm(gr%nz) &
+            !                              - damping_profile%sponge_layer_depth, &
+            !                              settings%tau_sponge_damp_min, &
+            !                              settings%tau_sponge_damp_max )
+  
+            ! End Vince Larson's change
+            ! End Brian Griffin's rebellious reversion.
+  
+         else ! gr%zm(gr%nz) - z(k) >= damping_profile%sponge_layer_depth
+  
+            ! Below sponge damping layer; exit loop.
+            exit
+  
        endif ! gr%zm(gr%nz) - z(k) < damping_profile%sponge_layer_depth
-
+  
     enddo ! k = gr%nz, 1, -1
-
-
+  
+  
     return
-
+  
   end subroutine initialize_tau_sponge_damp
 
   !=============================================================================

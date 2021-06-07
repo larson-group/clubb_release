@@ -147,7 +147,7 @@ module corr_varnce_module
     use constants_clubb, only: &
         one,  & ! Constant(s)
         zero
-
+  
     implicit none
 
     integer:: indx
@@ -313,7 +313,7 @@ module corr_varnce_module
     use constants_clubb, only: &
         zero, &
         one
-
+  
     implicit none
 
     ! Local Variables
@@ -354,16 +354,16 @@ module corr_varnce_module
     !-----------------------------------------------------------------------------
 
     use input_reader, only: &
-      one_dim_read_var, & ! Variable(s)
-      read_one_dim_file, deallocate_one_dim_vars, count_columns ! Procedure(s)
-
+        one_dim_read_var, & ! Variable(s)
+        read_one_dim_file, deallocate_one_dim_vars, count_columns ! Procedure(s)
+  
     use matrix_operations, only: set_lower_triangular_matrix ! Procedure(s)
-
+  
     use constants_clubb, only: fstderr ! Variable(s)
-
+  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
+        core_rknd ! Variable(s)
+  
     implicit none
 
     ! Input Variable(s)
@@ -502,98 +502,98 @@ module corr_varnce_module
 
   ! Description:
   ! 
-  ! Setup for the iiPDF indices. These indices are used to address 
-  ! chi(s), eta(t), w and the hydrometeors in the mean/stdev/corr arrays
-  ! 
-  ! References:
-  !-------------------------------------------------------------------------------
-
-    
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      hydromet_dim, & ! Total number of hydrometeor species.
-      iirr,         & ! Index of rain water mixing ratio
-      iiNr,         & ! Index of rain drop concentration
-      iiri,         & ! Index of ice mixing ratio
-      iiNi,         & ! Index of ice crystal concentration
-      iirs,         & ! Index of snow mixing ratio
-      iiNs,         & ! Index of snow flake concentration
-      iirg,         & ! Index of graupel mixing ratio
-      iiNg            ! Index of graupel concentration
-
-    ! Local Variables
-    integer :: &
-      pdf_count, & ! Count number of PDF variables
-      i            ! Hydrometeor loop index
-
-  !--------------------- Begin Code --------------------------------
-
+    ! Setup for the iiPDF indices. These indices are used to address 
+    ! chi(s), eta(t), w and the hydrometeors in the mean/stdev/corr arrays
+    ! 
+    ! References:
+    !-------------------------------------------------------------------------------
+  
+      
+  
+      implicit none
+  
+      ! Input Variables
+      integer, intent(in) :: &
+        hydromet_dim, & ! Total number of hydrometeor species.
+        iirr,         & ! Index of rain water mixing ratio
+        iiNr,         & ! Index of rain drop concentration
+        iiri,         & ! Index of ice mixing ratio
+        iiNi,         & ! Index of ice crystal concentration
+        iirs,         & ! Index of snow mixing ratio
+        iiNs,         & ! Index of snow flake concentration
+        iirg,         & ! Index of graupel mixing ratio
+        iiNg            ! Index of graupel concentration
+  
+      ! Local Variables
+      integer :: &
+        pdf_count, & ! Count number of PDF variables
+        i            ! Hydrometeor loop index
+  
+    !--------------------- Begin Code --------------------------------
+  
     iiPDF_chi = 1 ! Extended liquid water mixing ratio, chi
-    iiPDF_eta = 2 ! 'eta' orthogonal to 'chi'
-    iiPDF_w   = 3 ! vertical velocity
+      iiPDF_eta = 2 ! 'eta' orthogonal to 'chi'
+      iiPDF_w   = 3 ! vertical velocity
     iiPDF_Ncn = 4 ! Simplified cloud nuclei concentration or extended Nc.
-
-    pdf_count = iiPDF_Ncn
-
-    ! Loop over hydrometeors.
-    ! Hydrometeor indices in the PDF arrays should be in the same order as
-    ! found in the hydrometeor arrays.
-    if ( hydromet_dim > 0 ) then
-
-       do i = 1, hydromet_dim, 1
-
-          if ( i == iirr ) then
-             pdf_count = pdf_count + 1
-             iiPDF_rr = pdf_count
+  
+      pdf_count = iiPDF_Ncn
+  
+      ! Loop over hydrometeors.
+      ! Hydrometeor indices in the PDF arrays should be in the same order as
+      ! found in the hydrometeor arrays.
+      if ( hydromet_dim > 0 ) then
+  
+         do i = 1, hydromet_dim, 1
+  
+            if ( i == iirr ) then
+               pdf_count = pdf_count + 1
+               iiPDF_rr = pdf_count
           endif
-
-          if ( i == iiNr ) then
-             pdf_count = pdf_count + 1
-             iiPDF_Nr = pdf_count
+  
+            if ( i == iiNr ) then
+               pdf_count = pdf_count + 1
+               iiPDF_Nr = pdf_count
           endif
-
-          if ( i == iiri ) then
-             pdf_count = pdf_count + 1
-             iiPDF_ri = pdf_count
+  
+            if ( i == iiri ) then
+               pdf_count = pdf_count + 1
+               iiPDF_ri = pdf_count
           endif
-
-          if ( i == iiNi ) then
-             pdf_count = pdf_count + 1
-             iiPDF_Ni = pdf_count
+  
+            if ( i == iiNi ) then
+               pdf_count = pdf_count + 1
+               iiPDF_Ni = pdf_count
           endif
-
-          if ( i == iirs ) then
-             pdf_count = pdf_count + 1
-             iiPDF_rs = pdf_count
+  
+            if ( i == iirs ) then
+               pdf_count = pdf_count + 1
+               iiPDF_rs = pdf_count
           endif
-
-          if ( i == iiNs ) then
-             pdf_count = pdf_count + 1
-             iiPDF_Ns = pdf_count
+  
+            if ( i == iiNs ) then
+               pdf_count = pdf_count + 1
+               iiPDF_Ns = pdf_count
           endif
-
-          if ( i == iirg ) then
-             pdf_count = pdf_count + 1
-             iiPDF_rg = pdf_count
+  
+            if ( i == iirg ) then
+               pdf_count = pdf_count + 1
+               iiPDF_rg = pdf_count
           endif
-        
-          if ( i == iiNg ) then
-             pdf_count = pdf_count + 1
-             iiPDF_Ng = pdf_count
+          
+            if ( i == iiNg ) then
+               pdf_count = pdf_count + 1
+               iiPDF_Ng = pdf_count
           endif   
-
+  
        enddo ! i = 1, hydromet_dim, 1
-
+  
     endif ! hydromet_dim > 0
-
-    pdf_dim = pdf_count
-
-
+  
+      pdf_dim = pdf_count
+  
+  
     return
-
+  
   end subroutine init_pdf_indices
 
   !===============================================================================
@@ -616,13 +616,13 @@ module corr_varnce_module
         Ni_tol, &
         Ns_tol, &
         Ng_tol
-
+  
     use array_index, only: &
         hydromet_list,  & ! Names of the hydrometeor species
         hydromet_tol,   & ! List of tolerances for each enabled hydrometeor
         l_frozen_hm,    & ! True means hydrometeor is frozen
         l_mix_rat_hm      ! True means hydrometeor is a mixing ratio
-
+  
     implicit none
 
     ! Input Variables
@@ -728,11 +728,11 @@ module corr_varnce_module
 !-------------------------------------------------------------------------------
 
     use matrix_operations, only: mirror_lower_triangular_matrix ! Procedure
-
+  
     use constants_clubb, only: &
-      fstderr, &  ! Constant(s)
-      eps
-
+        fstderr, &  ! Constant(s)
+        eps
+  
     implicit none
 
     ! External
@@ -861,7 +861,7 @@ module corr_varnce_module
     !---------------------------------------------------------------------------
 
     use constants_clubb, only: fstderr, eps, one ! Constant(s)
-
+  
     implicit none
 
     ! Input Variables
@@ -915,7 +915,7 @@ module corr_varnce_module
     !---------------------------------------------------------------------------
 
     use clubb_precision, only: core_rknd
-
+  
     implicit none
 
     ! Input Variables
