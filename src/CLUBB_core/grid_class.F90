@@ -276,16 +276,16 @@ module grid_class
 
     use constants_clubb, only:  & 
         fstderr ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
         err_code, &                     ! Error indicator
         clubb_fatal_error, &            ! Constant
         err_header                      ! String
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Constant parameters
@@ -518,7 +518,7 @@ module grid_class
     !------------------------------------------------------------------------------
     use constants_clubb, only: &
         fstderr  ! Constant(s)
-  
+
     implicit none
 
     ! Local Variable(s)
@@ -558,15 +558,15 @@ module grid_class
 
     use constants_clubb, only: &
         fstderr  ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use error_code, only: &
         err_code, &                     ! Error indicator
         clubb_fatal_error, &            ! Constant
         err_header                      ! String
-  
+
     implicit none
 
     ! Input Variables
@@ -804,18 +804,18 @@ module grid_class
 
     use constants_clubb, only:  & 
         fstderr ! Variable(s)
-  
+
     use file_functions, only:  & 
         file_read_1d ! Procedure(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         err_code, &                     ! Error indicator
         clubb_fatal_error, &            ! Constant
         err_header                      ! String
-  
+
     implicit none
 
     ! Input Variables.
@@ -1104,14 +1104,14 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use model_flags, only: &
         l_cubic_interp, & ! Variable(s)
         l_quintic_poly_interp
-  
+
     use constants_clubb, only: &
         fstdout ! Variable
-  
+
     implicit none
 
     ! Input Variables
@@ -1155,14 +1155,14 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use model_flags, only: &
         l_cubic_interp, & ! Variable(s)
         l_quintic_poly_interp
-  
+
     use constants_clubb, only: &
         fstdout ! Variable
-  
+
     implicit none
 
     ! Input Variables
@@ -1203,14 +1203,14 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use model_flags, only: &
         l_cubic_interp, & ! Variable(s)
         l_quintic_poly_interp
-  
+
     use constants_clubb, only: &
         fstdout ! Variable
-  
+
     implicit none
 
     ! Input Variables
@@ -1254,14 +1254,14 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use model_flags, only: &
         l_cubic_interp, & ! Variable(s)
         l_quintic_poly_interp
-  
+
     use constants_clubb, only: &
         fstdout ! Variable
-  
+
     implicit none
 
     ! Input Variables
@@ -1307,10 +1307,10 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use interpolation, only: &
         linear_interp_factor  ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variable
@@ -1363,10 +1363,10 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use interpolation, only: &
         linear_interp_factor  ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1420,7 +1420,7 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1461,10 +1461,10 @@ module grid_class
 
     use interpolation, only: &
         mono_cubic_interp  ! Procedure(s)
-  
+
     use clubb_precision, only: &
         core_rknd  ! Constant(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1677,10 +1677,10 @@ module grid_class
 
     use constants_clubb, only: &
         one  ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Constant parameters
@@ -1739,10 +1739,10 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use interpolation, only: &
         linear_interp_factor  ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variable
@@ -1795,10 +1795,10 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use interpolation, only: &
         linear_interp_factor  ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1854,7 +1854,7 @@ module grid_class
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1899,10 +1899,10 @@ module grid_class
 
     use interpolation, only: &
         mono_cubic_interp  ! Procedure(s)
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -2118,10 +2118,10 @@ module grid_class
 
     use constants_clubb, only: &
         one  ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Constant parameters
@@ -2181,7 +2181,7 @@ module grid_class
   
       use clubb_precision, only: &
           core_rknd ! Variable(s)
-    
+  
       implicit none
   
       ! Input Variable
@@ -2241,7 +2241,7 @@ module grid_class
   
       use clubb_precision, only: &
           core_rknd ! Variable(s)
-    
+  
       implicit none
   
       ! Input Variable
@@ -2302,7 +2302,7 @@ module grid_class
     
     use clubb_precision, only: &
         dp ! double precision
-  
+
     implicit none
 
     ! Input Variables

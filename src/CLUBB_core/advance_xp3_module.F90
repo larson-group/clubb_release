@@ -44,18 +44,18 @@ module advance_xp3_module
 
     use grid_class, only: &
         gr    ! Variable Type
-  
+
     use constants_clubb, only: &
         rt_tol,  & ! Variable(s)
         thl_tol
-  
+
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         sclr_tol
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -248,17 +248,17 @@ module advance_xp3_module
         gr,    & ! Variable Type
         zm2zt, & ! Procedure(s)
         zt2zm
-  
+
     use constants_clubb, only: &
         one,      & ! Variable(s)
         one_half, &
         zero
-  
+
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
         stat_end_update,   &
         stat_update_var
-  
+
     use stats_variables, only: &
         irtp3_bt,     & ! Variable(s)
         irtp3_tp,     &
@@ -270,10 +270,10 @@ module advance_xp3_module
         ithlp3_dp,    &
         stats_zt,     &
         l_stats_samp
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -479,10 +479,10 @@ module advance_xp3_module
 
     use constants_clubb, only: &
         three    ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -552,10 +552,10 @@ module advance_xp3_module
 
     use constants_clubb, only: &
         three    ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables

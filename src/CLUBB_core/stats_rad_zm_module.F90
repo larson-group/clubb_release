@@ -24,7 +24,7 @@ module stats_rad_zm_module
 
     use constants_clubb, only:  &
         fstderr ! Constant(s)
-  
+
     use stats_variables, only: & 
         stats_rad_zm, &
         iFrad_LW_rad, & ! Variable(s)
@@ -33,14 +33,14 @@ module stats_rad_zm_module
         iFrad_LW_up_rad, &
         iFrad_SW_down_rad, &
         iFrad_LW_down_rad
-  
+
     use stats_variables, only: &
         ifulwcl, ifdlwcl, ifdswcl, ifuswcl ! Variable(s)
-  
+
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
-  
-  
+
+
     implicit none
 
     ! Input Variable

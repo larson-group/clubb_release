@@ -114,25 +114,25 @@ module mixing_length
         fstderr,        &
         zero_threshold, &
         eps
-  
+
     use parameters_tunable, only:  &  ! Variable(s)
         lmin    ! Minimum value for Lscale                         [m]
-  
+
     use grid_class, only:  &
         gr,  & ! Variable(s)
         zm2zt ! Procedure(s)
-  
+
     use numerical_check, only:  &
         length_check ! Procedure(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-  
+
     implicit none
 
     ! External
@@ -795,23 +795,23 @@ module mixing_length
 
     use clubb_precision, only: &
         core_rknd ! Precision
-  
+
     use model_flags, only: &
         l_sat_mixrat_lookup ! Variable(s)
-  
+
     use saturation, only:  &
         sat_mixrat_liq, & ! Procedure(s)
         sat_mixrat_liq_lookup, &
         sat_mixrat_ice
-  
+
     use constants_clubb, only: &
         zero, &
         one, &
         T_freeze_K
-  
+
     use error_code, only: &
         clubb_at_least_debug_level
-  
+
     implicit none
 
     ! Parameters
@@ -892,35 +892,35 @@ module mixing_length
     use parameters_tunable, only: &
         Lscale_mu_coef, &
         Lscale_pert_coef
-  
+
     use grid_class, only: &
         gr   ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd
-  
+
     use stats_variables, only: &
         l_stats_samp,  &
         stats_zt
-  
+
     use pdf_parameter_module, only: &
         pdf_parameter
-  
+
     use stats_variables, only: &
         iLscale_pert_1, & ! Variable(s)
         iLscale_pert_2
-  
+
     use stats_type_utilities, only:   &
         stat_update_var
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-  
+
     use constants_clubb, only:  &
         fstderr  ! Variable(s)
-  
+
     implicit none
 
     intrinsic :: sqrt, min, max, exp, real
@@ -1152,7 +1152,7 @@ module mixing_length
 
     use advance_helper_module, only: &
         calc_brunt_vaisala_freq_sqd
-    
+  
     use constants_clubb, only: &
         one_fourth,     &
         vonk,           &
@@ -1161,18 +1161,18 @@ module mixing_length
         em_min,         &
         zero_threshold, &
         eps
-    
-    
+  
+  
     use grid_class, only: &
         gr,    &
         zt2zm, &
         zm2zt, &
         ddzt
-    
-    
+  
+  
     use clubb_precision, only: &
         core_rknd
-    
+  
     use parameters_tunable, only: &
         C_invrs_tau_bkgnd,          &
         C_invrs_tau_shear,          &
@@ -1185,7 +1185,7 @@ module mixing_length
         C_invrs_tau_N2_clear_wp3,   &
         C_invrs_tau_wpxp_Ri,        &
         altitude_threshold
-    
+  
     implicit none
   
     real( kind = core_rknd ), intent(in) :: &

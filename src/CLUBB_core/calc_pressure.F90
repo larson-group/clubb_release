@@ -75,7 +75,7 @@ module calc_pressure
     use grid_class, only: &
         gr,    & ! Variable Type(s)
         zt2zm    ! Procedure(s)
-  
+
     use constants_clubb, only: &
         one,   & ! 1
         Rd,    & ! Gas constant for dry air                    [J/(kg K)]
@@ -85,10 +85,10 @@ module calc_pressure
         ep2,   & ! Rv/Rd (Rv is gas constant for water vapor)  [-]
         p0,    & ! Reference pressure of 100000 Pa             [Pa]
         grav     ! Acceleration of gravity (9.81 m/s^2)        [m/s^2]
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -348,17 +348,17 @@ module calc_pressure
     use grid_class, only: &
         gr,    & ! Variable Type(s)
         zt2zm    ! Procedure(s)
-  
+
     use constants_clubb, only: &
         one,   & ! 1
         Cp,    & ! Specific heat of dry air                    [J/(kg K)]
         kappa, & ! Rd/Cp                                       [-]
         p0,    & ! Reference pressure of 100000 Pa             [Pa]
         grav     ! Acceleration of gravity (9.81 m/s^2)        [m/s^2]
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -492,10 +492,10 @@ module calc_pressure
         Cp,  & ! Specific Heat of Dry Air      [J/(kg K)]
         ep1, & ! Rv/Rd - 1                     [-]
         ep2    ! Rv/Rd                         [-]
-  
+
     use clubb_precision, only: &
         core_rknd
-  
+
     implicit none
 
     ! Input Variables

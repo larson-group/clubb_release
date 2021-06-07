@@ -50,10 +50,10 @@ module numerical_check
 !---------------------------------------------------------------------------------
     use grid_class, only: & 
         gr ! Variable
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Constant Parameters
@@ -92,23 +92,23 @@ module numerical_check
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use parameters_model, only: & 
         sclr_dim ! Variable
-  
+
     use pdf_parameter_module, only:  &
         pdf_parameter  ! type
-  
+
     use stats_variables, only: &
         iwp4,       & ! Variables
         ircp2,      &
         iwprtp2,    &
         iwprtpthlp, &
         iwpthlp2
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Parameter Constants
@@ -298,26 +298,26 @@ module numerical_check
 
     use grid_class, only: & 
         gr ! Variable
-  
+
     use parameters_model, only: & 
         sclr_dim,  & ! Variable
         edsclr_dim
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,   & ! Procedure
         err_code,                     & ! Error Indicator
         clubb_no_error,               & ! Constants
         clubb_fatal_error
-  
+
     use T_in_K_module, only: &
         thlm2T_in_K ! Procedure
-  
+
     use constants_clubb, only:  & 
         fstderr ! Variable
-  
+
     implicit none
 
     ! Constant Parameters
@@ -518,10 +518,10 @@ module numerical_check
 !-----------------------------------------------------------------------
     use parameters_model, only: & 
         sclr_dim ! Variable
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Constant Parameters
@@ -580,10 +580,10 @@ module numerical_check
 
     use grid_class, only: & 
         gr ! Variable
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Constant Parameters
@@ -637,21 +637,21 @@ module numerical_check
 
     use grid_class, only: &
         gr    ! Grid Type
-  
+
     use constants_clubb, only: & 
         fstderr   ! Constant(s)
-  
+
     use parameters_model, only: & 
         sclr_dim,  & ! Variable(s)
         edsclr_dim, &
         hydromet_dim
-  
+
     use array_index, only: &
         hydromet_list ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -840,10 +840,10 @@ module numerical_check
   !------------------------------------------------------------------------
   
       use, intrinsic :: ieee_arithmetic 
-    
+  
       use clubb_precision, only: &
           core_rknd ! Variable(s)
-    
+  
       implicit none
   
       ! Input Variables
@@ -873,7 +873,7 @@ module numerical_check
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -912,14 +912,14 @@ module numerical_check
 !-----------------------------------------------------------------------
     use constants_clubb, only: & 
         fstderr ! Variable
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-  
+
     implicit none
 
     real( kind = core_rknd ), intent(in) :: var(:)
@@ -960,14 +960,14 @@ module numerical_check
 !------------------------------------------------------------------------
     use constants_clubb, only:  & 
         fstderr ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-  
+
     implicit none
 
     ! External
@@ -997,14 +997,14 @@ module numerical_check
 !-----------------------------------------------------------------------
     use constants_clubb, only:  & 
         fstderr ! Variable
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-  
+
     implicit none
 
     ! External
@@ -1043,7 +1043,7 @@ module numerical_check
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables

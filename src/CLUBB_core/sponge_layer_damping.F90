@@ -89,10 +89,10 @@ module sponge_layer_damping
 
     use grid_class, only: &
         gr    ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -208,13 +208,13 @@ module sponge_layer_damping
 
     use grid_class, only: &
         gr    ! Variable(s)
-  
+
     use constants_clubb, only: &
         one    ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variable(s)
@@ -328,13 +328,13 @@ module sponge_layer_damping
 
     use grid_class, only: &
         gr    ! Variable(s)
-  
+
     use constants_clubb, only: &
         one    ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variable(s)
@@ -418,14 +418,14 @@ module sponge_layer_damping
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-      
+    
     use constants_clubb, only: &
         two,     & ! Constant(s)
         fstderr
-  
+
     use grid_class, only: &
         gr    ! Variable(s)
-  
+
   !    use interpolation, only: &
   !        lin_interpolate_two_points    ! Procedure(s)
   

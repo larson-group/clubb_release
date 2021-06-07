@@ -78,13 +78,13 @@ module input_reader
     !-----------------------------------------------------------------------------------------------
     use constants_clubb, only: &
         fstderr ! Constant(s)
-  
+
     use input_names, only: &
         time_name ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -225,7 +225,7 @@ module input_reader
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -335,7 +335,7 @@ module input_reader
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -446,10 +446,10 @@ module input_reader
   !-----------------------------------------------------------------------------------------------
 
     use interpolation, only: zlinterp_fnc
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variable(s)
@@ -614,10 +614,10 @@ module input_reader
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: &
         fstderr ! Constant(s)
-  
+
     implicit none
 
     ! External Functions
@@ -690,10 +690,10 @@ module input_reader
 
     use constants_clubb, only: &
         fstderr  ! Variable for writing to error stream
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External Functions

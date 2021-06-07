@@ -54,12 +54,12 @@ module new_hybrid_pdf_main
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         one_half, & ! Constant(s)
         zero,     &
         fstderr
-  
+
     use new_hybrid_pdf, only: &
         calculate_w_params,          & ! Procedure(s)
         calculate_coef_wp4_implicit, &
@@ -74,18 +74,18 @@ module new_hybrid_pdf_main
         l_explicit_turbulent_adv_wp3,  & ! Variable(s)
         l_explicit_turbulent_adv_wpxp, &
         l_explicit_turbulent_adv_xpyp
-  
+
     use parameters_tunable, only: &
         gamma_coef,  & ! Variable(s)
         gamma_coefb, &
         gamma_coefc
-  
+
     use parameters_model, only: &
         sclr_dim
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -683,13 +683,13 @@ module new_hybrid_pdf_main
         three_halves, &
         one,          &
         zero
-  
+
     use new_hybrid_pdf, only: &
         calculate_responder_params    ! Procedure(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -872,14 +872,14 @@ module new_hybrid_pdf_main
         one,                      & ! Variable(s)
         zero,                     &
         max_mag_correlation_flux
-  
+
     use parameters_tunable, only: &
         slope_coef_spread_DG_means_w, & ! Variable(s)
         pdf_component_stdev_factor_w
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables

@@ -42,10 +42,10 @@ module LY93_pdf
 
     use grid_class, only: &
         gr    ! Type(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -121,16 +121,16 @@ module LY93_pdf
 
     use grid_class, only: &
         gr    ! Type(s)
-  
+
     use constants_clubb, only: &
         one,           & ! Constant(s)
         three_fourths, &
         one_half,      &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variable
@@ -212,16 +212,16 @@ module LY93_pdf
 
     use grid_class, only: &
         gr    ! Type(s)
-  
+
     use constants_clubb, only: &
         three,     & ! Constant(s)
         one,       &
         one_third, &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables

@@ -27,7 +27,7 @@ module stats_rad_zt_module
 
     use constants_clubb, only:  &
         fstderr ! Constant(s)
-  
+
     use stats_variables, only: & 
         stats_rad_zt, &
         iT_in_K_rad, & ! Variable(s)
@@ -42,10 +42,10 @@ module stats_rad_zt_module
         iradht_SW_rad, &
         ip_in_mb_rad, &
         isp_humidity_rad
-  
+
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
-  
+
     implicit none
 
     ! Input Variable

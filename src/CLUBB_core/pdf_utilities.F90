@@ -46,10 +46,10 @@ module pdf_utilities
 
     use constants_clubb, only: &
         one  ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -93,10 +93,10 @@ module pdf_utilities
 
     use constants_clubb, only: &
         one_dp  ! Constant(s)
-  
+
     use clubb_precision, only: &
         dp ! double precision
-  
+
     implicit none
 
     ! Input Variables
@@ -136,10 +136,10 @@ module pdf_utilities
 
     use constants_clubb, only: &
         one  ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -179,10 +179,10 @@ module pdf_utilities
 
     use constants_clubb, only: &
         one_dp  ! Constant(s)
-  
+
     use clubb_precision, only: &
         dp ! double precision
-  
+
     implicit none
 
     ! Input Variables
@@ -223,10 +223,10 @@ module pdf_utilities
     use constants_clubb, only: &
         max_mag_correlation, & ! Constant(s)
         zero
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -294,10 +294,10 @@ module pdf_utilities
     use constants_clubb, only: &
         max_mag_correlation, & ! Constant(s)
         zero_dp
-  
+
     use clubb_precision, only: &
         dp ! double precision
-  
+
     implicit none
 
     ! Input Variables
@@ -365,10 +365,10 @@ module pdf_utilities
     use constants_clubb, only: &
         max_mag_correlation, & ! Constant(s)
         zero
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -456,10 +456,10 @@ module pdf_utilities
         one,                 & ! Constant(s)
         zero,                &
         max_mag_correlation
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -535,10 +535,10 @@ module pdf_utilities
         one_dp,              & ! Constant(s)
         zero_dp,             &
         max_mag_correlation
-  
+
     use clubb_precision, only: &
         dp ! double precision
-  
+
     implicit none
 
     ! Input Variables
@@ -609,10 +609,10 @@ module pdf_utilities
         one,                 & ! Constant(s)
         zero,                &
         max_mag_correlation
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -686,10 +686,10 @@ module pdf_utilities
 
     use clubb_precision, only: &
         core_rknd ! Constant
-  
+
     use constants_clubb, only: &
         one ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -728,10 +728,10 @@ module pdf_utilities
 
     use clubb_precision, only: &
         core_rknd ! Constant
-  
+
     use constants_clubb, only: &
         one ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -831,10 +831,10 @@ module pdf_utilities
         max_mag_correlation, & ! Variable(s)
         one, &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -952,10 +952,10 @@ module pdf_utilities
         zero,                & ! Constant(s)
         chi_tol,             &
         max_mag_correlation
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1030,10 +1030,10 @@ module pdf_utilities
         zero,                & ! Constant(s)
         eta_tol,             &
         max_mag_correlation
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1100,10 +1100,10 @@ module pdf_utilities
         zero,                &
         rt_tol,              &
         max_mag_correlation
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1170,10 +1170,10 @@ module pdf_utilities
         zero,                &
         thl_tol,             &
         max_mag_correlation
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1257,10 +1257,10 @@ module pdf_utilities
         one,  &
         zero, &
         eps
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables

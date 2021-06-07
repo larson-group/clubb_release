@@ -147,7 +147,7 @@ module corr_varnce_module
     use constants_clubb, only: &
         one,  & ! Constant(s)
         zero
-  
+
     implicit none
 
     integer:: indx
@@ -313,7 +313,7 @@ module corr_varnce_module
     use constants_clubb, only: &
         zero, &
         one
-  
+
     implicit none
 
     ! Local Variables
@@ -356,14 +356,14 @@ module corr_varnce_module
     use input_reader, only: &
         one_dim_read_var, & ! Variable(s)
         read_one_dim_file, deallocate_one_dim_vars, count_columns ! Procedure(s)
-  
+
     use matrix_operations, only: set_lower_triangular_matrix ! Procedure(s)
-  
+
     use constants_clubb, only: fstderr ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variable(s)
@@ -616,13 +616,13 @@ module corr_varnce_module
         Ni_tol, &
         Ns_tol, &
         Ng_tol
-  
+
     use array_index, only: &
         hydromet_list,  & ! Names of the hydrometeor species
         hydromet_tol,   & ! List of tolerances for each enabled hydrometeor
         l_frozen_hm,    & ! True means hydrometeor is frozen
         l_mix_rat_hm      ! True means hydrometeor is a mixing ratio
-  
+
     implicit none
 
     ! Input Variables
@@ -728,11 +728,11 @@ module corr_varnce_module
 !-------------------------------------------------------------------------------
 
     use matrix_operations, only: mirror_lower_triangular_matrix ! Procedure
-  
+
     use constants_clubb, only: &
         fstderr, &  ! Constant(s)
         eps
-  
+
     implicit none
 
     ! External
@@ -861,7 +861,7 @@ module corr_varnce_module
     !---------------------------------------------------------------------------
 
     use constants_clubb, only: fstderr, eps, one ! Constant(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -915,7 +915,7 @@ module corr_varnce_module
     !---------------------------------------------------------------------------
 
     use clubb_precision, only: core_rknd
-  
+
     implicit none
 
     ! Input Variables

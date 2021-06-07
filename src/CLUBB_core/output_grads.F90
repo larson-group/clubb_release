@@ -52,16 +52,16 @@ module output_grads
     use constants_clubb, only:  & 
         fstderr,  & ! Constant(s)
         sec_per_min
-  
+
     use stat_file_module, only: & 
         stat_file ! Type
-  
+
     use clubb_precision, only:  & 
         time_precision ! Variable
-  
+
     use stats_variables, only: &
         l_allow_small_stats_tout
-  
+
     implicit none
 
     ! Input Variables
@@ -235,15 +235,15 @@ module output_grads
 !-------------------------------------------------------------------------------
     use stat_file_module, only: & 
         grid_avg_variable ! Type
-  
+
     use clubb_precision, only: & 
         time_precision ! Variable
-  
+
     use constants_clubb, only:  & 
         fstderr,  & ! Variable 
         sec_per_hr, &
         sec_per_min
-  
+
     implicit none
 
     ! Input Variables
@@ -483,17 +483,17 @@ module output_grads
 
     use constants_clubb, only: & 
         fstderr ! Variable(s)
-  
+
     use model_flags, only: &
         l_byteswap_io ! Variable
-  
+
     use endian, only: & 
         big_endian, & ! Variable
         little_endian
-  
+
     use stat_file_module, only: & 
         stat_file ! Type
-  
+
   !   use stat_file_module, only: &
   !     clubb_i, clubb_j ! Variable(s)
   
@@ -552,7 +552,7 @@ module output_grads
         do ivar=1, grads_file%nvar
           write(grads_file%iounit,rec=grads_file%nrecord) & 
             real( grads_file%grid_avg_var(ivar)%ptr(1:grads_file%nlon, &
-                                       1:grads_file%nlat,grads_file%ia:grads_file%iz:-1), kind=r4)
+                                           1:grads_file%nlat,grads_file%ia:grads_file%iz:-1), kind=r4)
           grads_file%nrecord = grads_file%nrecord + 1
       end do
   
@@ -667,17 +667,17 @@ module output_grads
 !---------------------------------------------------------
     use clubb_precision, only:  & 
         time_precision    ! Variable(s)
-  
+
     use calendar, only:  & 
         compute_current_date ! Procedure(s)
-  
+
     use calendar, only: & 
         month_names ! Variable(s)
-  
+
     use constants_clubb, only: &
         sec_per_hr, & ! Variable(s)
         min_per_hr
-  
+
     implicit none
 
     ! Input Variables
@@ -737,8 +737,8 @@ module output_grads
         sec_per_day, & ! Constants
         sec_per_hr, &
         sec_per_min
-  
-  
+
+
     implicit none
 
     ! External

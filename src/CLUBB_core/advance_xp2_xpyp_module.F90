@@ -98,13 +98,13 @@ module advance_xp2_xpyp_module
         one_third, &
         zero,   &
         eps
-  
+
     use model_flags, only: & 
         iiPDF_ADG1,       & ! integer constants
         iiPDF_new_hybrid, &
         l_hole_fill,      & ! logical constants
         l_explicit_turbulent_adv_xpyp
-  
+
     use parameters_tunable, only: &
         C2rt,     & ! Variable(s)
         C2thl,    &
@@ -121,25 +121,25 @@ module advance_xp2_xpyp_module
         C2b,      &
         C2c,      &
         rtp2_clip_coef
-  
+
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         sclr_tol
-  
+
     use grid_class, only: & 
         gr,    & ! Variable(s)
         zm2zt, & ! Procedure(s)
         zt2zm
-  
+
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
     use turbulent_adv_pdf, only: &
         sgn_turbulent_velocity    ! Procedure(s)
-  
+
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use clip_explicit, only: & 
         clip_covar,  & ! Procedure(s)
         clip_variance, &
@@ -147,23 +147,23 @@ module advance_xp2_xpyp_module
         clip_sclrp2, &
         clip_sclrprtp, &
         clip_sclrpthlp
-  
+
     use sponge_layer_damping, only: &
         up2_vp2_sponge_damp_settings, & ! Variable(s)
         up2_vp2_sponge_damp_profile,  &
         sponge_damp_xp2                 ! Procedure(s)
-        
+      
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
         stat_end_update,   &
         stat_modify,       &
         stat_update_var
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
-  
+
     use stats_variables, only: &
         stats_zm,                 & ! Variable(s)
         irtp2_cl,                 &
@@ -172,17 +172,17 @@ module advance_xp2_xpyp_module
         iup2_cl,                  &
         ivp2_cl,                  &
         l_stats_samp
-  
+
     use array_index, only: &
         iisclr_rt, &
         iisclr_thl
         
     use mean_adv, only:  & 
         term_ma_zm_lhs      ! Procedure(s)
-  
+
     use diffusion, only:  & 
         diffusion_zm_lhs    ! Procedure(s)
-  
+
     implicit none
 
     ! Intrinsic functions
@@ -1109,7 +1109,7 @@ module advance_xp2_xpyp_module
         thl_tol, &
         zero, &
         zero_threshold
-        
+      
       use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         sclr_tol
@@ -1117,7 +1117,7 @@ module advance_xp2_xpyp_module
       use array_index, only: &
         iisclr_rt, &
         iisclr_thl
-        
+      
       implicit none
       
       ! -------- Input Variables --------
@@ -1329,18 +1329,18 @@ module advance_xp2_xpyp_module
         thl_tol, &
         zero, &
         zero_threshold
-        
+      
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         sclr_tol
-  
+
     use model_flags, only: &
         iiPDF_ADG1    ! Variable(s)
           
     use array_index, only: &
         iisclr_rt, &
         iisclr_thl
-        
+      
     implicit none
       
     ! -------- Input Variables --------
@@ -1695,21 +1695,21 @@ module advance_xp2_xpyp_module
   
       use grid_class, only: & 
           gr ! Variable(s)
-    
+  
       use constants_clubb, only:  &
           gamma_over_implicit_ts, & ! Constant(s)
           one
   
       use diffusion, only:  & 
           diffusion_zm_lhs
-    
+  
       use clubb_precision, only:  & 
           core_rknd ! Variable(s)
-    
+  
       use advance_helper_module, only: &
           set_boundary_conditions_lhs    ! Procedure(s)
-    
-        
+  
+      
       use stats_variables, only: &
           l_stats_samp, &
           zmscr01, &
@@ -1740,7 +1740,7 @@ module advance_xp2_xpyp_module
           ivp2_ma, &
           ivp2_ta, &
           ivp2_dp2
-    
+  
       implicit none
   
       !------------------- Input Variables -------------------
@@ -1889,18 +1889,18 @@ module advance_xp2_xpyp_module
 
     use constants_clubb, only: &
         one  ! Constant(s)
-  
+
     use lapack_wrap, only:  & 
         tridag_solve,  & ! Variable(s)
         tridag_solvex !, &
   !        band_solve
-  
+
     use grid_class, only: & 
         gr ! Variable(s)
-  
+
     use stats_type_utilities, only: & 
         stat_update_var_pt  ! Procedure(s)
-  
+
     use stats_variables, only: & 
         stats_sfc, &  ! Derived type
         irtp2_matrix_condt_num, & ! Stat index Variables
@@ -1908,10 +1908,10 @@ module advance_xp2_xpyp_module
         irtpthlp_matrix_condt_num, & 
         iup2_vp2_matrix_condt_num, & 
         l_stats_samp  ! Logical
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -2036,11 +2036,11 @@ module advance_xp2_xpyp_module
 
     use grid_class, only: &
         gr ! Derived type variable
-  
+
     use stats_type_utilities, only: & 
         stat_end_update_pt, & ! Procedure(s)
         stat_update_var_pt
-  
+
     use stats_variables, only: &
         stats_zm,  & ! Variable(s) 
         irtp2_dp1, &
@@ -2061,7 +2061,7 @@ module advance_xp2_xpyp_module
         iup2_ma, &
         iup2_pr1, &
         ivp2_dp1
-  
+
     use stats_variables, only: &
         ivp2_dp2, &
         ivp2_ta, &
@@ -2078,10 +2078,10 @@ module advance_xp2_xpyp_module
         zmscr09, &
         zmscr10, &
         zmscr11
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -2232,7 +2232,7 @@ module advance_xp2_xpyp_module
   
       use grid_class, only: & 
           gr ! Variable(s)
-    
+  
       use constants_clubb, only:  & 
           gamma_over_implicit_ts, & ! Constant(s)
           w_tol_sqd, &
@@ -2243,12 +2243,12 @@ module advance_xp2_xpyp_module
   
       use clubb_precision, only:  & 
           core_rknd ! Variable(s)
-    
+  
       use stats_type_utilities, only: & 
           stat_begin_update_pt, & ! Procedure(s)
           stat_update_var_pt, &
           stat_modify_pt
-    
+  
       use stats_variables, only: & 
           ivp2_ta,  & ! Variable(s)
           ivp2_tp, & 
@@ -2266,7 +2266,7 @@ module advance_xp2_xpyp_module
           zmscr01, & 
           zmscr11, & 
           l_stats_samp
-    
+  
       implicit none
   
       !------------------- Input Variables -------------------
@@ -2528,7 +2528,7 @@ module advance_xp2_xpyp_module
   
       use grid_class, only: & 
           gr ! Variable(s)
-    
+  
       use constants_clubb, only: &
           gamma_over_implicit_ts, & ! Constant(s)
           one, &
@@ -2536,12 +2536,12 @@ module advance_xp2_xpyp_module
   
       use clubb_precision, only:  & 
           core_rknd ! Variable(s)
-    
+  
       use stats_type_utilities, only: & 
           stat_begin_update_pt, & ! Procedure(s)
           stat_update_var_pt, &
           stat_modify_pt
-    
+  
       use stats_variables, only: & 
           irtp2_ta,      & ! Variable(s)
           irtp2_tp,      & 
@@ -2558,10 +2558,10 @@ module advance_xp2_xpyp_module
           irtpthlp_forcing, & 
           stats_zm, & 
           l_stats_samp
-      
+    
       use advance_helper_module, only: &
           set_boundary_conditions_rhs    ! Procedure(s)
-    
+  
       implicit none
   
       !------------------- Input Variables -------------------
@@ -2866,22 +2866,22 @@ module advance_xp2_xpyp_module
         gr,     & ! Variable(s)
         zt2zm,  & ! Procedure(s)
         zm2zt
-        
+      
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-        
+      
     use constants_clubb, only: &
         one, &
         one_third, &
         zero, &
         zero_threshold
-        
+      
     use parameters_tunable, only: &
         beta
-        
+      
     use parameters_model, only: &
         sclr_dim  ! Number of passive scalar variables
-        
+      
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
@@ -2891,13 +2891,13 @@ module advance_xp2_xpyp_module
         xpyp_term_ta_pdf_rhs,         &
         xpyp_term_ta_pdf_rhs_godunov, &
         sgn_turbulent_velocity
-        
+      
     use model_flags, only: &
         iiPDF_ADG1,       & ! integer constants
         iiPDF_new,        &
         iiPDF_new_hybrid, &
         l_explicit_turbulent_adv_xpyp     ! Logical constant
-        
+      
     use stats_variables, only: &
         l_stats_samp,             & ! Logical constant
         stats_zt,                 & ! Variable(s)
@@ -2910,7 +2910,7 @@ module advance_xp2_xpyp_module
       
     use stats_type_utilities, only: & 
         stat_update_var   ! Procedure(s)
-        
+      
     implicit none    
     
     !------------------- Input Variables -------------------
@@ -4297,7 +4297,7 @@ module advance_xp2_xpyp_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -4373,7 +4373,7 @@ module advance_xp2_xpyp_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -4435,7 +4435,7 @@ module advance_xp2_xpyp_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -4538,10 +4538,10 @@ module advance_xp2_xpyp_module
     use constants_clubb, only: &
         w_tol_sqd, & ! Constant(s)
         one_third
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -4613,13 +4613,13 @@ module advance_xp2_xpyp_module
         two_thirds, &
         zero, &
         zero_threshold
-  
+
     use grid_class, only: &
         gr ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -4782,16 +4782,16 @@ module advance_xp2_xpyp_module
 
     use constants_clubb, only: &
         two    ! Constant(s)
-  
+
     use interpolation, only : &
         binary_search, lin_interpolate_two_points  ! Function(s)
-  
+
     use grid_class, only: &
         gr ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -4886,14 +4886,14 @@ module advance_xp2_xpyp_module
     use fill_holes, only: fill_holes_vertical
     use grid_class, only: gr
     use clubb_precision, only: core_rknd
-  
+
     use stats_variables, only:  & 
         stats_zm, l_stats_samp, & 
         irtp2_pd, ithlp2_pd, iup2_pd, ivp2_pd ! variables
     use stats_type_utilities, only:  & 
         stat_begin_update, stat_end_update ! subroutines
-  
-  
+
+
     implicit none
 
     ! External
@@ -4977,19 +4977,19 @@ module advance_xp2_xpyp_module
     !variables on the zt grid, and the outputs are on the zm grid --storer
 
     use pdf_parameter_module, only: pdf_parameter
-  
+
     use grid_class, only: &
         zt2zm   ! Procedure(s)
-  
+
     use constants_clubb, only: &
         cloud_frac_min, &  !Variables
         Cp, &
         Lv
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-        
-  
+      
+
     implicit none
 
     !input parameters

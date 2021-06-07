@@ -571,17 +571,17 @@ contains
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
-  
+
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type(s)
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         edsclr_dim
-  
+
     use model_flags, only: &
         clubb_config_flags_type
-  
+
     implicit none
       !!! Input Variables
     logical, intent(in) ::  &
@@ -844,13 +844,13 @@ contains
     err_code_api )                                        ! intent(out) 
 
     use advance_clubb_core_module, only : setup_clubb_core
-  
+
     use parameter_indices, only:  &
         nparams ! Variable(s)
-        
+      
     use model_flags, only: &
         clubb_config_flags_type  ! Type
-  
+
   ! TODO: This should be called from the api, but all the host models appear to call
   !       it directly or not at all.
   !   use model_flags, only: &
@@ -989,7 +989,7 @@ contains
   subroutine cleanup_clubb_core_api( )
 
     use advance_clubb_core_module, only : cleanup_clubb_core
-  
+
     implicit none
 
     call cleanup_clubb_core( )
@@ -1004,7 +1004,7 @@ contains
     day, month, year )
 
     use calendar, only : gregorian2julian_day
-  
+
     implicit none
 
     ! Input Variables
@@ -1030,7 +1030,7 @@ contains
     seconds_since_current_date )
 
     use calendar, only : compute_current_date
-  
+
     implicit none
 
     ! Previous date
@@ -1070,7 +1070,7 @@ contains
     year )
 
     use calendar, only : leap_year
-  
+
     implicit none
 
     ! External
@@ -1092,7 +1092,7 @@ contains
     l_fix_w_chi_eta_correlations )
 
     use corr_varnce_module, only : setup_corr_varnce_array
-  
+
     implicit none
 
     ! External
@@ -1124,7 +1124,7 @@ contains
 
     use error_code, only: &
         set_clubb_debug_level ! Procedure
-  
+
     implicit none
 
     ! Input variable
@@ -1143,7 +1143,7 @@ contains
     
     use error_code, only: &
         clubb_at_least_debug_level ! Procedure
-  
+
     implicit none
 
     ! Input variable
@@ -1164,7 +1164,7 @@ contains
     thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
 
     use fill_holes, only : fill_holes_driver
-  
+
     implicit none
 
     intrinsic :: trim
@@ -1209,7 +1209,7 @@ contains
     field )
 
     use fill_holes, only : fill_holes_vertical
-  
+
     implicit none
 
     ! Input variables
@@ -1247,7 +1247,7 @@ contains
 
     use fill_holes, only: &
         fill_holes_hydromet ! Procedure
-  
+
     implicit none
 
     ! Input Variables
@@ -1278,7 +1278,7 @@ contains
     field, dz )
 
     use fill_holes, only : vertical_integral
-  
+
     implicit none
 
     ! Input variables
@@ -1311,10 +1311,10 @@ contains
     thermodynamic_heights )
 
     use grid_class, only : setup_grid_heights
-      
+    
     use error_code, only : &
         clubb_fatal_error       ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -1372,7 +1372,7 @@ contains
     var_high, var_low )
 
     use interpolation, only : lin_interpolate_two_points
-  
+
     implicit none
 
     real( kind = core_rknd ), intent(in) :: &
@@ -1399,7 +1399,7 @@ contains
     nparam, xlist, tlist, xvalue, tvalue )
 
     use interpolation, only : lin_interpolate_on_grid
-  
+
     implicit none
 
     ! Input Variables
@@ -1429,10 +1429,10 @@ contains
     iunit, filename, params )
 
     use parameters_tunable, only : read_parameters
-  
+
     use parameter_indices, only:  &
         nparams ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -1460,10 +1460,10 @@ contains
 
     use parameters_tunable, only: &
         setup_parameters
-  
+
     use parameter_indices, only:  &
         nparams ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1525,7 +1525,7 @@ contains
     l_prescribed_avg_deltaz )  ! Intent(in)
 
     use parameters_tunable, only : adj_low_res_nu
-  
+
     implicit none
 
     ! Input Variables
@@ -1580,7 +1580,7 @@ contains
                                   k_start, k_end )
 
     use pdf_parameter_module, only : pack_pdf_params
-  
+
     !use statements
 
     implicit none
@@ -1613,7 +1613,7 @@ contains
                                     k_start, k_end )
 
     use pdf_parameter_module, only : unpack_pdf_params
-  
+
     implicit none
     
     integer, intent(in) :: nz ! Num Vert Model Levs
@@ -1644,7 +1644,7 @@ contains
   subroutine init_pdf_params_api( nz, ngrdcol, pdf_params )
   
     use pdf_parameter_module, only : init_pdf_params
-      
+    
     implicit none
 
     ! Input Variable(s)
@@ -1672,7 +1672,7 @@ contains
                                               pdf_params_multi )
                                               
     use pdf_parameter_module, only : init_pdf_params
-      
+    
     implicit none
 
     ! Input Variable(s)
@@ -1748,7 +1748,7 @@ contains
                                               pdf_params_single )
                                               
     use pdf_parameter_module, only : init_pdf_params
-      
+    
     implicit none
 
     ! Input Variable(s)
@@ -1820,7 +1820,7 @@ contains
                                     precip_fracs )
 
     use hydromet_pdf_parameter_module, only : init_precip_fracs
-  
+
     implicit none
     
     ! Input Variable(s)
@@ -1891,14 +1891,14 @@ contains
     hydromet_pdf_params )                       ! Intent(out)
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
-  
+
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
-  
+
     use error_code, only : &
         err_code, &         ! Error Indicator
         clubb_fatal_error   ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -2085,14 +2085,14 @@ contains
     hydromet_pdf_params )                       ! Intent(out)
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
-  
+
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
-  
+
     use error_code, only : &
         err_code, &         ! Error Indicator
         clubb_fatal_error   ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -2212,7 +2212,7 @@ contains
     lon_vals, lat_vals, time_current, delt, l_silhs_out_in )
 
     use stats_clubb_utilities, only : stats_init
-  
+
     implicit none
 
     ! Input Variables
@@ -2288,7 +2288,7 @@ contains
 
 
     use stats_clubb_utilities, only : stats_begin_timestep
-  
+
     implicit none
 
     ! External
@@ -2318,7 +2318,7 @@ contains
                                       )
 
     use stats_clubb_utilities, only : stats_end_timestep
-  
+
     implicit none
 
 #ifdef NETCDF
@@ -2355,7 +2355,7 @@ contains
     hydromet, rho_ds_zt )
 
     use stats_clubb_utilities, only : stats_accumulate_hydromet
-  
+
     implicit none
 
     ! Input Variables
@@ -2376,7 +2376,7 @@ contains
   subroutine stats_finalize_api
 
     use stats_clubb_utilities, only : stats_finalize
-  
+
     implicit none
 
     call stats_finalize
@@ -2391,7 +2391,7 @@ contains
     vars_rad_zm, l_error )
 
     use stats_rad_zm_module, only : stats_init_rad_zm, nvarmax_rad_zm
-  
+
     implicit none
 
     ! Input Variable
@@ -2412,7 +2412,7 @@ contains
     vars_rad_zt, l_error )
 
     use stats_rad_zt_module, only : stats_init_rad_zt, nvarmax_rad_zt
-  
+
     implicit none
 
     ! Input Variable
@@ -2433,7 +2433,7 @@ contains
     vars_zm, l_error )
 
     use stats_zm_module, only : stats_init_zm, nvarmax_zm
-  
+
     implicit none
 
     ! Input Variable
@@ -2455,7 +2455,7 @@ contains
     vars_zt, l_error )
 
     use stats_zt_module, only : stats_init_zt, nvarmax_zt
-  
+
     implicit none
 
     ! Input Variable
@@ -2477,7 +2477,7 @@ contains
     vars_sfc, l_error )
 
     use stats_sfc_module, only : stats_init_sfc, nvarmax_sfc
-  
+
     implicit none
 
     ! Input Variable
@@ -2500,7 +2500,7 @@ contains
     result( T_in_K )
 
     use T_in_K_module, only : thlm2T_in_K
-  
+
     implicit none
 
     ! Input
@@ -2526,7 +2526,7 @@ contains
     result( thlm )
 
     use T_in_K_module, only : T_in_K2thlm
-  
+
     implicit none
 
     ! Input
@@ -2552,7 +2552,7 @@ contains
     integral_forcing, dt ) result( spurious_source )
 
     use numerical_check, only : calculate_spurious_source
-  
+
     implicit none
 
     ! Input Variables
@@ -2580,7 +2580,7 @@ contains
   function zm2zt_scalar_api( azm, k )
 
     use grid_class, only: zm2zt
-  
+
     implicit none
 
     ! Input Variables
@@ -2604,7 +2604,7 @@ contains
   function zt2zm_scalar_api( azt, k )
 
     use grid_class, only: zt2zm
-  
+
     implicit none
 
     ! Input Variables
@@ -2628,7 +2628,7 @@ contains
   function zt2zm_prof_api( azt )
 
     use grid_class, only: zt2zm
-  
+
     implicit none
 
     ! Input Variables
@@ -2649,7 +2649,7 @@ contains
   function zm2zt_prof_api( azm )
 
     use grid_class, only: zm2zt
-  
+
     implicit none
 
     ! Input Variables
@@ -2673,10 +2673,10 @@ contains
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use advance_clubb_core_module, only: &
         calculate_thlp2_rad
-    
+  
     implicit none
   
     ! Input Variables
@@ -2709,7 +2709,7 @@ contains
 
     use advance_xp2_xpyp_module, only: &
         update_xp2_mc
-  
+
     implicit none
 
     !input parameters
@@ -2752,7 +2752,7 @@ contains
   elemental real( kind = core_rknd ) function sat_mixrat_liq_api( p_in_Pa, T_in_K )
 
     use saturation, only: sat_mixrat_liq
-  
+
     implicit none
 
     ! Input Variables
@@ -2829,17 +2829,17 @@ contains
         iiNs, & 
         iiNi, &
         iiNg
-  
+
     use corr_varnce_module, only: &
         init_pdf_indices,                   & ! Procedures
         init_hydromet_arrays,               &
         hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
         hmp2_ip_on_hmm2_ip_intrcpt_type,    &
         hmp2_ip_on_hmm2_ip                    ! Array of hydromet ratios
-  
+
     use parameters_model, only: &
         hydromet_dim
-  
+
     implicit none
 
     ! Input Variables
@@ -3011,7 +3011,7 @@ contains
 
     use model_flags, only: &
         set_default_clubb_config_flags  ! Procedure
-  
+
     implicit none
 
     ! Output variables
@@ -3232,7 +3232,7 @@ contains
     use model_flags, only: &
         clubb_config_flags_type, &          ! Type
         initialize_clubb_config_flags_type  ! Procedure
-  
+
     implicit none
 
     ! Input variables
@@ -3411,7 +3411,7 @@ contains
     use model_flags, only: &
         clubb_config_flags_type, &          ! Type
         print_clubb_config_flags            ! Procedure
-  
+
     implicit none
 
     ! Input variables
@@ -3434,7 +3434,7 @@ contains
         sponge_damp_settings,       & ! Variable(s)
         sponge_damp_profile,        &
         initialize_tau_sponge_damp    ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variable(s)
@@ -3463,7 +3463,7 @@ contains
     use sponge_layer_damping, only: &
         sponge_damp_profile,      & ! Variable(s)
         finalize_tau_sponge_damp    ! Procedure(s)
-  
+
     implicit none
 
     ! Input/Output Variable(s)

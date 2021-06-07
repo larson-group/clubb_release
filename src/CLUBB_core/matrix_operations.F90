@@ -30,7 +30,7 @@ module matrix_operations
 
     use clubb_precision, only: &
         core_rknd ! double precision
-  
+
     implicit none
 
     ! External
@@ -72,7 +72,7 @@ module matrix_operations
 
     use clubb_precision, only: &
         core_rknd ! double precision
-  
+
     implicit none
 
 
@@ -118,18 +118,18 @@ module matrix_operations
   !-------------------------------------------------------------------------------
       use error_code, only: &
           clubb_at_least_debug_level ! Procedure
-    
+  
       use constants_clubb, only: &
           fstderr ! Constant
-    
+  
       use clubb_precision, only: & 
           core_rknd
-          
+        
       use lapack_interfaces, only: &
           lapack_potrf, &   ! Procedures
           lapack_poequ, &
           lapack_laqsy
-    
+  
       implicit none
   
       ! Constant Parameters
@@ -325,13 +325,13 @@ module matrix_operations
 
     use constants_clubb, only: &
         fstderr ! Constant
-  
+
     use clubb_precision, only: &
         core_rknd ! double precision
-        
+      
     use lapack_interfaces, only: &
         lapack_syev       ! Procedure
-  
+
     implicit none
 
     ! Parameters
@@ -439,7 +439,7 @@ module matrix_operations
 
     use clubb_precision, only: &
         core_rknd
-  
+
     implicit none
 
     ! External
@@ -482,7 +482,7 @@ module matrix_operations
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -521,7 +521,7 @@ module matrix_operations
 
     use clubb_precision, only: &
         core_rknd  ! Constant
-  
+
     implicit none
 
     ! Input Variables

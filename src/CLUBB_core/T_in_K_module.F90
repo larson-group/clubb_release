@@ -26,10 +26,10 @@ module T_in_K_module
         ! Variable(s) 
         Cp,  & ! Dry air specific heat at constant p [J/kg/K]
         Lv     ! Latent heat of vaporization         [J/kg]
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input 
@@ -61,10 +61,10 @@ module T_in_K_module
         ! Variable(s) 
         Cp,  & ! Dry air specific heat at constant p [J/kg/K]
         Lv     ! Latent heat of vaporization         [J/kg]
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input 

@@ -42,15 +42,15 @@ module new_tsdadg_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         one,     & ! Variable(s)
         zero,    &
         fstderr
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -533,10 +533,10 @@ module new_tsdadg_pdf
         one_half, &
         zero,     &
         eps
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -655,10 +655,10 @@ module new_tsdadg_pdf
     use constants_clubb, only: &
         four, & ! Variable(s)
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -835,10 +835,10 @@ module new_tsdadg_pdf
         one,   &
         zero,  &
         eps
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables

@@ -91,7 +91,7 @@ module pdf_closure_module
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &  ! Constants
         three,          & ! 3
         one,            & ! 1
@@ -108,67 +108,67 @@ module pdf_closure_module
         zero_threshold, &
         eps, &
         w_tol
-  
+
     use parameters_model, only: &
         mixt_frac_max_mag, & ! Variable(s)
         sclr_dim             ! Number of passive scalar variables
-  
+
     use parameters_tunable, only: & 
         Skw_denom_coef ! Variable(s)
-  
+
     use pdf_parameter_module, only:  &
         pdf_parameter,        & ! Variable Type
         implicit_coefs_terms
 
     use new_pdf_main, only: &
         new_pdf_driver    ! Procedure(s)
-  
+
     use new_hybrid_pdf_main, only: &
         new_hybrid_pdf_driver    ! Procedure(s)
-  
+
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_pdf_driver,     & ! Procedure(s)
         ADG2_pdf_driver,     &
         Luhar_3D_pdf_driver
-  
+
     use new_tsdadg_pdf, only: &
         tsdadg_pdf_driver    ! Procedure(s)
-  
+
     use LY93_pdf, only: &
         LY93_driver    ! Procedure(s)
-  
+
     use pdf_utilities, only: &
         calc_comp_corrs_binormal, & ! Procedure(s)
         calc_corr_chi_x,          &
         calc_corr_eta_x
-  
+
     use array_index, only: &
         l_mix_rat_hm  ! Variable(s)
-  
+
     use model_flags, only: &
         l_explicit_turbulent_adv_xpyp ! Variable(s)
-  
+
     use numerical_check, only:  & 
         pdf_closure_check ! Procedure(s)
-  
+
     use saturation, only:  & 
         sat_mixrat_liq, & ! Procedure(s)
         sat_mixrat_ice
-  
+
     use stats_variables, only: &
         ircp2,      & ! Variables
         iwprtp2,    &
         iwprtpthlp, &
         iwpthlp2
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-  
+
     implicit none
 
     intrinsic :: sqrt, exp, min, max, abs, present
@@ -1508,17 +1508,17 @@ endif
                                               corr_chi_eta )              ! Out
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: &
         zero, one, two, &
         ep, Lv, Rd, Cp, &
         chi_tol, &
         eta_tol, &
         max_mag_correlation
-  
+
     implicit none
 
     ! ----------- Input Variables -----------
@@ -1660,15 +1660,15 @@ endif
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         six,   & ! Variable(s)
         three, &
         one
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1749,14 +1749,14 @@ endif
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         one,   & ! Variable(s)
         four
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1839,14 +1839,14 @@ endif
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         two,   & ! Variable(s)
         one
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1930,14 +1930,14 @@ endif
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         two,   & ! Variable(s)
         one
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -2037,13 +2037,13 @@ endif
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         one    ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -2153,7 +2153,7 @@ endif
 
     use grid_class, only: &
         gr
-  
+
     use constants_clubb, only: &
         chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
         sqrt_2pi,       & ! sqrt(2*pi)
@@ -2163,10 +2163,10 @@ endif
         zero,           & ! 0
         max_num_stdevs, &
         eps
-  
+
     use clubb_precision, only: &
         core_rknd     ! Precision
-  
+
     implicit none
 
     !----------- Input Variables -----------
@@ -2329,10 +2329,10 @@ endif
         zero,           & ! 0
         max_num_stdevs, &
         eps
-  
+
     use clubb_precision, only: &
         core_rknd     ! Precision
-  
+
     implicit none
 
     !----------- Input Variables -----------
@@ -2758,16 +2758,16 @@ endif
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         sqrt_2pi,       & ! Variable(s)
         two,            &
         zero,           &
         chi_tol
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -2876,7 +2876,7 @@ endif
 
     use clubb_precision, only: &
         core_rknd
-  
+
     implicit none
 
     intrinsic :: sum
@@ -2938,7 +2938,7 @@ endif
 
     use clubb_precision, only: &
         core_rknd           ! Constant
-    
+  
     implicit none
   
     ! Input Variables
@@ -3018,10 +3018,10 @@ endif
 
     use clubb_precision, only: &
         core_rknd       ! Constant
-  
+
     use interpolation, only: &
         mono_cubic_interp  ! Procedure
-  
+
     implicit none
 
     ! Input Variables
@@ -3087,10 +3087,10 @@ endif
 
     use clubb_precision, only: &
         core_rknd       ! Constant
-  
+
     use interpolation, only: &
         mono_cubic_interp   ! Procedure
-  
+
     implicit none
 
     ! Input Variables

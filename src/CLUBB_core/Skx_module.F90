@@ -27,13 +27,13 @@ module Skx_module
     use parameters_tunable, only: &
         Skw_denom_coef, & ! Variable(s)
         Skw_max_mag       ! Max magnitude of skewness
-  
+
     use clubb_precision, only: &
         core_rknd         ! Variable(s)
-  
+
     use grid_class, only: &
         gr                ! Variable Type
-  
+
     implicit none
 
     ! External
@@ -99,10 +99,10 @@ module Skx_module
     use constants_clubb, only: &
         one,          & ! Variable(s)
         w_tol_sqd
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -160,14 +160,14 @@ module Skx_module
 
     use grid_class, only: &
         gr    ! Variable Type
-  
+
     use parameters_tunable, only: &
         beta,           & ! Variable(s)
         Skw_denom_coef
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! External

@@ -279,10 +279,10 @@ module new_hybrid_pdf
         two,        &
         one,        &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -357,10 +357,10 @@ module new_hybrid_pdf
         two,  & ! Variable(s)
         one,  &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -616,10 +616,10 @@ module new_hybrid_pdf
         two,   &
         one,   &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -793,10 +793,10 @@ module new_hybrid_pdf
           six,   & ! Variable(s)
           three, &
           one
-    
+  
       use clubb_precision, only: &
           core_rknd    ! Procedure(s)
-    
+  
       implicit none
   
       ! Input Variables
@@ -934,10 +934,10 @@ module new_hybrid_pdf
       use constants_clubb, only: &
           one,  & ! Variable(s)
           zero
-    
+  
       use clubb_precision, only: &
           core_rknd    ! Procedure(s)
-    
+  
       implicit none
   
       ! Input Variables
@@ -1082,10 +1082,10 @@ module new_hybrid_pdf
     use constants_clubb, only: &
         one,  & ! Variable(s)
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1310,10 +1310,10 @@ module new_hybrid_pdf
     use constants_clubb, only: &
         one,  & ! Variable(s)
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variables

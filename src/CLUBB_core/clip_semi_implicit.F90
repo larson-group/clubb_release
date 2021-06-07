@@ -386,7 +386,7 @@ module clip_semi_implicit
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -442,7 +442,7 @@ module clip_semi_implicit
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -575,10 +575,10 @@ module clip_semi_implicit
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: eps ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variable

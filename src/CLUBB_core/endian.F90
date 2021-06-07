@@ -141,7 +141,7 @@ module endian
     ! Added by Eric Raut, Nov 2015
     use clubb_precision, only: &
         dp      ! Constant (64-bit floating point kind)
-  
+
     implicit none
 
     ! Added by Eric Raut, Nov 2015

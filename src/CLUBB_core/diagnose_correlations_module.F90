@@ -35,13 +35,13 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
   !    use array_index, only: &
   !        iiPDF_w ! Variable(s)
   
       use constants_clubb, only: &
           zero
-    
+  
       implicit none
   
       intrinsic :: max, sqrt, transpose
@@ -114,13 +114,13 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
   !    use parameters_tunable, only:  &
   !        alpha_corr ! Constant(s)
   
       use constants_clubb, only: &
           max_mag_correlation
-    
+  
       implicit none
   
       intrinsic :: &
@@ -178,7 +178,7 @@ module diagnose_correlations_module
           ! If the predicting c1i's are small then cij will be closer to the prescribed value. If
           ! the c1i's are bigger, then cij will be closer to formular (15) from the ref. paper. See
           ! clubb:ticket:514:comment:61 for details.
-   !f_ij = (1-abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j)))*corr_matrix_prescribed(i,j) &
+        !f_ij = (1-abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j)))*corr_matrix_prescribed(i,j) &
         !       + abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j))*f_ij_o
   
           f_ij = corr_matrix_prescribed(i,j)
@@ -434,10 +434,10 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: &
         max_mag_correlation
-  
+
     implicit none
 
     intrinsic :: max
@@ -484,7 +484,7 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -522,7 +522,7 @@ module diagnose_correlations_module
     
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -559,10 +559,10 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: &
         zero ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -634,11 +634,11 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: &
         zero, & ! Variable(s)
         one
-  
+
     implicit none
 
     intrinsic :: sqrt
@@ -745,7 +745,7 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     intrinsic :: matmul, transpose
@@ -785,16 +785,16 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: &
         max_mag_correlation ! Variable(s)
-  
+
     use constants_clubb, only: &
         one ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
-  
+
     implicit none
 
     ! Input Variables
@@ -867,10 +867,10 @@ module diagnose_correlations_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use array_index, only: &
         iiPDF_w ! Variable(s)
-  
+
     implicit none
 
     intrinsic :: max, sqrt, transpose

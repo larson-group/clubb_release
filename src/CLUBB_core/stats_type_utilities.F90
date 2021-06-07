@@ -100,10 +100,10 @@ module stats_type_utilities
 
     use clubb_precision, only: &
         stat_rknd ! Constant
-  
+
     use stat_file_module, only: &
         clubb_i, clubb_j ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables(s)
@@ -149,10 +149,10 @@ module stats_type_utilities
 
     use clubb_precision, only: &
         stat_rknd ! Constant
-  
+
     use stat_file_module, only: &
         clubb_i, clubb_j ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables(s)
@@ -218,7 +218,7 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use grid_class, only: gr  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables(s)
@@ -265,16 +265,16 @@ module stats_type_utilities
 
     use clubb_precision, only: &
         stat_rknd ! Constant
-  
+
     use stat_file_module, only: &
         clubb_i, clubb_j ! Variable(s)
-  
+
     use constants_clubb, only: & 
         fstderr   ! Constant(s) 
-  
+
     use error_code, only: &
         clubb_at_least_debug_level   ! Procedure
-  
+
     implicit none
 
     ! Input Variables(s)
@@ -350,7 +350,7 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables(s)
@@ -394,13 +394,13 @@ module stats_type_utilities
 
     use stat_file_module, only: &
         clubb_i, clubb_j ! Variable(s)
-  
+
     use constants_clubb, only: & 
         fstderr   ! Constant(s) 
-  
+
     use error_code, only: &
         clubb_at_least_debug_level   ! Procedure
-  
+
     implicit none
 
     ! Input Variables(s)
@@ -454,7 +454,7 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use grid_class, only: gr ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables(s)
@@ -496,10 +496,10 @@ module stats_type_utilities
 
     use clubb_precision, only: &
         stat_rknd ! Constant
-  
+
     use stat_file_module, only: &
         clubb_i, clubb_j ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables(s)

@@ -43,21 +43,21 @@ module output_netcdf
           NF90_NOERR,   & 
           nf90_create,  & ! Procedure
           nf90_strerror
-    
+  
       use stat_file_module, only: & 
           stat_file ! Type
-    
+  
       use clubb_precision, only:  & 
           time_precision, & ! Variable(s)
           core_rknd
-    
+  
       use constants_clubb, only:  & 
           fstderr ! Variable(s)
-    
+  
       use error_code, only: &
           err_code, &           ! Error Indicator
           clubb_fatal_error     ! Constant
-    
+  
       implicit none
   
       ! Input Variables
@@ -206,21 +206,21 @@ module output_netcdf
         NF90_NOERR,  & ! Variable(s)
         nf90_put_var,  & ! Procedure
         nf90_strerror
-  
+
     use stat_file_module, only: & 
         stat_file ! Variable
-  
+
     use constants_clubb, only:  & 
         fstderr, & ! Variable
         sec_per_min
-  
+
     use error_code, only: &
         err_code, &           ! Error Indicator
         clubb_fatal_error     ! Constant
-  
+
     use clubb_precision, only: &
         time_precision ! Constant(s)
-  
+
     implicit none
 
     ! Input
@@ -336,23 +336,23 @@ module output_netcdf
         NF90_NOERR,   & ! Constants
         NF90_DOUBLE, & 
         NF90_UNLIMITED
-  
+
     use netcdf, only: & 
         nf90_def_dim,  & ! Functions
         nf90_strerror, & 
         nf90_def_var, & 
         nf90_put_att
-  
+
     use clubb_precision, only:  & 
         time_precision ! Variable(s)
-  
+
     use constants_clubb, only:  & 
         fstderr ! Variable(s)
-  
+
     use error_code, only: &
         err_code, &           ! Error Indicator
         clubb_fatal_error     ! Constant
-  
+
     implicit none
 
     integer, intent(in) ::  & 
@@ -528,15 +528,15 @@ module output_netcdf
 
     use stat_file_module, only: & 
         stat_file ! Type
-  
+
     use netcdf, only: & 
         NF90_NOERR,  & ! Variable
         nf90_close,  & ! Procedure(s)
         nf90_strerror
-  
+
     use constants_clubb, only:  & 
         fstderr  ! Variable
-  
+
     implicit none
 
     ! Input/Output Variables
@@ -585,27 +585,27 @@ module output_netcdf
         nf90_strerror, & 
         nf90_put_att, & 
         nf90_enddef
-  
+
     use stat_file_module, only: &
         stat_file ! Derived type
-  
+
     use constants_clubb, only:  &
         fstderr ! Variable
-  
+
     use parameters_model, only: &
         T0, &       ! Real variables
         ts_nudge, &
         sclr_tol    ! Real array variable
-  
+
     use parameters_tunable, only: &
         params_list ! Variable names (characters)
-  
+
     use parameters_tunable, only: &
         get_parameters ! Subroutine
-  
+
     use parameter_indices, only: &
         nparams ! Integer
-  
+
     use model_flags, only: &
         l_pos_def, &
         l_hole_fill, &
@@ -614,11 +614,11 @@ module output_netcdf
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         err_code, &           ! Error Indicator
         clubb_fatal_error     ! Constant
-  
+
     implicit none
 
     ! External
@@ -886,17 +886,17 @@ module output_netcdf
         NF90_NOERR,   & ! Variable(s)
         nf90_put_var,  & ! Procedure(s)
         nf90_strerror
-  
+
     use stat_file_module, only: & 
         stat_file ! Type
-  
+
     use constants_clubb, only:  & 
         fstderr ! Variable
-  
+
     use error_code, only: &
         err_code, &         ! Error Indicator
         clubb_fatal_error   ! Constant
-  
+
     implicit none
 
     ! Input Variable(s)
@@ -965,10 +965,10 @@ module output_netcdf
 
     use calendar, only:  &
         compute_current_date ! Procedure(s)
-  
+
     use clubb_precision, only:  & 
         time_precision ! Variable(s)
-  
+
     implicit none
 
     ! External

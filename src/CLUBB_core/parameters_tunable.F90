@@ -526,20 +526,20 @@ module parameters_tunable
         one,     &
         zero,    &
         fstderr
-  
+
     use model_flags, only: &
         l_clip_semi_implicit  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-  
+
     use parameter_indices, only: &
         izeta_vrnce_rat
-  
+
     implicit none
 
 
@@ -843,13 +843,13 @@ module parameters_tunable
     !   implemented in WRF.  --ldgrant Jul 2010
     !----------------------------------------------------------------------
     use grid_class, only: gr
-  
+
     use constants_clubb, only: &
         fstderr ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Constant Parameters
@@ -1069,7 +1069,7 @@ module parameters_tunable
     use units,           only: getunit, freeunit
     use cam_abortutils,  only: endrun
     use mpishorthand, only: mpicom, mpir8
-  
+
     implicit none
 
     ! Input variables
@@ -1318,7 +1318,7 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Constant
-  
+
     implicit none
 
     ! Input variables
@@ -1513,10 +1513,10 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
     use constants_clubb, only: fstderr ! Constant
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -1702,13 +1702,13 @@ module parameters_tunable
         iC_wp3_pr_turb, &
         iC_wp3_pr_dfsn, &
         iC_wp2_splat
-  
+
     use parameter_indices, only: &
         iC6rt_Lscale0, &
         iC6thl_Lscale0, &
         iC7_Lscale0, &
         iwpxp_L_thresh
-  
+
     use parameter_indices, only: & 
         ic_K,  & 
         ic_K1, & 
@@ -1772,7 +1772,7 @@ module parameters_tunable
         iRichardson_num_min, &
         iRichardson_num_max, &
         nparams
-  
+
     implicit none
 
     ! Input variables
@@ -1985,13 +1985,13 @@ module parameters_tunable
         iC_wp3_pr_turb, &
         iC_wp3_pr_dfsn, &
         iC_wp2_splat
-  
+
     use parameter_indices, only: &
         iC6rt_Lscale0, &
         iC6thl_Lscale0, &
         iC7_Lscale0, &
         iwpxp_L_thresh
-  
+
     use parameter_indices, only: & 
         ic_K,  & 
         ic_K1, & 
@@ -2055,7 +2055,7 @@ module parameters_tunable
         iRichardson_num_min, &
         iRichardson_num_max, &
         nparams
-  
+
     implicit none
 
     ! Input variables
@@ -2371,7 +2371,7 @@ module parameters_tunable
 
     use constants_clubb, only: &
         fstderr  ! Constant
-  
+
     implicit none
 
     ! Local Variable(s)

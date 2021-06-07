@@ -61,22 +61,22 @@ module advance_windm_edsclrm_module
 
     use grid_class, only:  &
         gr  ! Variables(s)
-  
+
     use parameters_model, only:  &
         ts_nudge,  & ! Variable(s)
         edsclr_dim
-  
+
     use parameters_tunable, only: &
         nu10_vert_res_dep ! Constant
-  
+
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
-  
+
     use stats_type_utilities, only: &
         stat_begin_update, & ! Subroutines
         stat_end_update, &
         stat_update_var
-  
+
     use stats_variables, only: &
         ium_ref, & ! Variables
         ivm_ref, &
@@ -87,26 +87,26 @@ module advance_windm_edsclrm_module
         iwindm_matrix_condt_num, &
         stats_zt,     &
         l_stats_samp
-  
+
     use clip_explicit, only:  &
         clip_covar  ! Procedure(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-  
+
     use constants_clubb, only:  &
         one_half, & ! Constant(s)
         zero,     &
         fstderr,  &
         eps
-  
+
     use sponge_layer_damping, only: &
         uv_sponge_damp_settings, &
         uv_sponge_damp_profile, &
         sponge_damp_xm     ! Procedure(s)
-  
+
     implicit none
 
     ! External
@@ -1140,21 +1140,21 @@ module advance_windm_edsclrm_module
 
     use grid_class, only: & 
         gr ! Variable(s)
-  
+
     use lapack_wrap, only:  & 
         tridag_solve, & ! Procedure(s)
         tridag_solvex
-  
+
     use stats_variables, only: & 
         stats_sfc,     &   ! Variable(s)
         l_stats_samp
-  
+
     use stats_type_utilities, only:  &
         stat_update_var_pt  ! Subroutine
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Constant parameters
@@ -1227,17 +1227,17 @@ module advance_windm_edsclrm_module
         ztscr05, & 
         ztscr06, & 
         stats_zt
-  
+
     use stats_type_utilities, only:  &
         stat_end_update_pt,  & ! Subroutines
         stat_update_var_pt
-  
+
     use clubb_precision, only:  & 
         core_rknd
-  
+
     use grid_class, only: &
         gr ! Derived type variable
-  
+
     implicit none
 
     ! Input variables
@@ -1352,10 +1352,10 @@ module advance_windm_edsclrm_module
 
     use grid_class, only: & 
         gr
-  
+
     use stats_type_utilities, only: & 
         stat_update_var
-  
+
     use stats_variables, only:      &
         ium_gf, & 
         ium_cf, & 
@@ -1365,10 +1365,10 @@ module advance_windm_edsclrm_module
         ivm_f,  &
         stats_zt, & 
         l_stats_samp
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1496,19 +1496,19 @@ module advance_windm_edsclrm_module
 
     use grid_class, only:  & 
         gr  ! Variable(s)
-  
+
     use constants_clubb, only: &
         zero    ! Procedure(s)
-  
+
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use diffusion, only:  & 
         diffusion_zt_lhs   ! Procedure(s)
-  
+
     use mean_adv, only: & 
         term_ma_zt_lhs    ! Procedures
-  
+
     use stats_variables, only: &
         ium_ma,  & ! Variable(s)
         ium_ta,  &
@@ -1521,7 +1521,7 @@ module advance_windm_edsclrm_module
         ztscr05, &
         ztscr06, &
         l_stats_samp
-  
+
     implicit none
 
     integer, parameter :: &
@@ -1722,26 +1722,26 @@ module advance_windm_edsclrm_module
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: &
         zero    ! Procedure(s)
-  
+
     use diffusion, only:  & 
         diffusion_zt_lhs    ! Procedure(s)
-  
+
     use stats_variables, only: &
         ium_ta,  & ! Variable(s)
         ivm_ta,  &
         stats_zt,      &
         l_stats_samp
-  
+
     use stats_type_utilities, only: &
         stat_begin_update_pt,  & ! Procedure(s)
         stat_modify_pt
-  
+
     use grid_class, only:  & 
         gr  ! Variable(s)
-  
+
     implicit none
 
     ! External
@@ -1909,7 +1909,7 @@ module advance_windm_edsclrm_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables

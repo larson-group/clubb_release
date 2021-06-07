@@ -106,7 +106,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Exernal 
@@ -175,7 +175,7 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Exernal 
@@ -246,17 +246,17 @@ module advance_helper_module
 
     use parameters_tunable, only: &
         lambda0_stability_coef ! Variable(s)
-  
+
     use constants_clubb, only: &
         zero    ! Constant(s)
-  
+
     use grid_class, only:  &
         gr, & ! Variable(s)
         zt2zm    ! Procedure(s)
-  
+
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -328,26 +328,26 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd ! Konstant
-  
+
     use constants_clubb, only: &
         grav, & ! Constant(s)
         Lv, Cp, Rd, ep, &
         one
-  
+
     use parameters_model, only: & 
         T0 ! Variable! 
-  
+
     use grid_class, only: &
         gr,     & ! Variable
         ddzt,   &  ! Procedure(s)
         zt2zm
-  
+
     use T_in_K_module, only: &
         thlm2T_in_K ! Procedure
-  
+
     use saturation, only: &
         sat_mixrat_liq ! Procedure
-  
+
     implicit none
 
     ! Input Variables
@@ -496,34 +496,34 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd  ! Konstant
-  
+
     use grid_class, only: &
         gr,   & ! Variable
         ddzt, & ! Procedure(s)
         zt2zm
-  
+
     use constants_clubb, only: &
   !      one_third,  & ! Constant(s)
         one
-  
+
     use interpolation, only: &
         linear_interp_factor ! Procedure
-  
+
     use parameters_tunable, only: &
         Cx_min,             & ! Variable(s)
         Cx_max,             &
         Richardson_num_min, &
         Richardson_num_max
-  
+
     use stats_variables, only: &
         iRichardson_num, &    ! Variable(s)
         ishear_sqd, &
         stats_zm,       &
         l_stats_samp
-  
+
     use stats_type_utilities, only: &
         stat_update_var      ! Procedure
-  
+
     implicit none
 
     ! Constant Parameters
@@ -673,10 +673,10 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd ! Precision
-  
+
     use grid_class, only: &
         gr ! Variable
-  
+
     implicit none
 
     ! Input Variables
@@ -846,13 +846,13 @@ module advance_helper_module
     ! Included Modules
     use grid_class, only: &
         ddzt   ! Procedure(s)
-  
+
     use clubb_precision, only: & 
         core_rknd 
-  
+
     use constants_clubb, only: &
         five  ! Constant(s)
-  
+
     implicit none 
 
     ! Input Variables
@@ -907,14 +907,14 @@ module advance_helper_module
     ! Included Modules
     use grid_class, only: &
         ddzm   ! Procedure(s)
-  
+
     use clubb_precision, only: & 
         core_rknd 
-  
+
     use constants_clubb, only: &
         three, &  ! Constant(s)
         five
-  
+
     implicit none 
 
     ! Input Variables
@@ -963,12 +963,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1003,12 +1003,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1043,12 +1043,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1081,12 +1081,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1121,12 +1121,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1161,12 +1161,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1199,12 +1199,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1239,12 +1239,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1279,12 +1279,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1317,12 +1317,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1357,12 +1357,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables
@@ -1397,12 +1397,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm, &                      ! Procedure
         zm2zt, &
         gr
-    
+  
     implicit none
   
     ! Input Variables

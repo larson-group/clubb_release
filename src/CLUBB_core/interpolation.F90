@@ -56,9 +56,9 @@ module interpolation
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: fstderr ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -98,7 +98,7 @@ module interpolation
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     real( kind = core_rknd ), intent(in) :: &
@@ -133,13 +133,13 @@ module interpolation
     use constants_clubb, only: &
         three_halves, & ! Constant(s)
         eps
-  
+
     use clubb_precision, only: &
         core_rknd ! Constant
-      
+    
     use model_flags, only: &
         l_quintic_poly_interp ! Variable(s)
-  
+
     implicit none
 
     ! Constant Parameters
@@ -284,13 +284,13 @@ module interpolation
 
     use clubb_precision, only: &
         core_rknd                  ! Variable(s)
-  
+
     use constants_clubb, only: &
         fstderr                    ! Variable(s)
-      
+    
     use error_code, only: &
         clubb_at_least_debug_level ! Error indicator
-  
+
     implicit none
 
     ! Input Variables
@@ -390,7 +390,7 @@ module interpolation
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -429,7 +429,7 @@ module interpolation
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -586,13 +586,13 @@ module interpolation
 !-------------------------------------------------------------------------------
 
     use constants_clubb, only: fstderr ! Constant
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level ! Error indicator
-  
+
     implicit none
 
     ! Input Variables

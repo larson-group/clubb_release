@@ -91,7 +91,7 @@ module setup_clubb_pdf_params
         gr,    & ! Variable(s)
         zm2zt, & ! Procedure(s)
         zt2zm
-  
+
     use constants_clubb, only: &
         one,            & ! Constant(s)
         zero,           &
@@ -100,58 +100,58 @@ module setup_clubb_pdf_params
         cloud_frac_min, &
         fstderr,        &
         zero_threshold
-  
+
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)
-  
+
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter,   &  ! Type
         precipitation_fractions,  &
         init_hydromet_pdf_params     ! Procedure
-  
+
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-  
+
     use array_index, only: &
         hydromet_list, &       ! Variable(s)
         hydromet_tol,  &
         iiPDF_Ncn,     & 
         iiPDF_chi,     &
         iiPDF_eta
-  
+
     use precipitation_fraction, only: &
         precip_fraction
-  
+
     use Nc_Ncn_eqns, only: &
         Nc_in_cloud_to_Ncnm  ! Procedure(s)
-  
+
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
-  
+
     use parameters_tunable, only: &
         c_K_hm
-  
+
     use pdf_utilities, only: &
         calc_xp2,                  &  ! Procedure(s)
         compute_mean_binormal,     &
         compute_variance_binormal, &
         stdev_L2N,                 &
         corr_NN2NL
-  
+
     use clip_explicit, only: &
         clip_covar_level, & ! Procedure(s)
         clip_wphydrometp    ! Variables(s)
-  
+
     use clubb_precision, only: &
         core_rknd        ! Variable(s)
-  
+
     use matrix_operations, only: &
         Cholesky_factor  ! Procedure(s)
-  
+
     use stats_type_utilities, only: &
   !        stat_update_var,    & ! Procedure(s)
         stat_update_var_pt
-  
+
     use stats_variables, only: &
         iprecip_frac,   & ! Variable(s)
         iprecip_frac_1, &
@@ -161,21 +161,21 @@ module setup_clubb_pdf_params
         irtp2_from_chi, &
         stats_zt,             &
         stats_zm
-  
+
     use diagnose_correlations_module, only: &
         diagnose_correlations, & ! Procedure(s)
         calc_cholesky_corr_mtx_approx
-  
+
     use corr_varnce_module, only: &
         assert_corr_symmetric, & ! Procedure(s)
         hmp2_ip_on_hmm2_ip,    & ! Variable(s)
         Ncnp2_on_Ncnm2
-  
+
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
         err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -938,31 +938,31 @@ module setup_clubb_pdf_params
 
     use constants_clubb, only:  &
         zero     ! Constant(s)
-  
+
     use array_index, only: &
         hydromet_tol, &
         iiPDF_chi,    & 
         iiPDF_eta,    &
         iiPDF_w,      &
         iiPDF_Ncn
-  
+
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
-  
+
     use parameters_tunable, only: &
         omicron,        & ! Variable(s)
         zeta_vrnce_rat
-  
+
     use corr_varnce_module, only: &
         hmp2_ip_on_hmm2_ip, & ! Variable(s)
         Ncnp2_on_Ncnm2
-  
+
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1181,10 +1181,10 @@ module setup_clubb_pdf_params
     use constants_clubb, only:  &
         rc_tol,      &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use array_index, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
@@ -1195,13 +1195,13 @@ module setup_clubb_pdf_params
         iiPDF_ADG1,       & ! Variable(s)
         iiPDF_ADG2,       &
         iiPDF_new_hybrid
-  
+
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)    
         
     use matrix_operations, only: &
         Cholesky_factor ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1383,33 +1383,33 @@ module setup_clubb_pdf_params
         Ncn_tol,      &
         one,          &
         zero
-  
+
     use diagnose_correlations_module, only: &
         calc_mean,        & ! Procedure(s)
         calc_w_corr
-  
+
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
-  
+
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     use array_index, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
         iiPDF_w,   &
         iiPDF_Ncn, &
         hydromet_tol
-  
+
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)    
         
     use matrix_operations, only: &
         mirror_lower_triangular_matrix
-  
+
     implicit none
 
     ! Input Variables
@@ -2200,10 +2200,10 @@ module setup_clubb_pdf_params
         two,  &
         one,  &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
     
     ! Input Variables
@@ -2553,15 +2553,15 @@ module setup_clubb_pdf_params
         one,    & ! Constant(s)
         zero,   &
         rc_tol
-  
+
     use model_flags, only: &
         iiPDF_ADG1,       & ! Variable(s)
         iiPDF_ADG2,       &
         iiPDF_new_hybrid
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -2679,10 +2679,10 @@ module setup_clubb_pdf_params
         one,    & ! Constant(s)
         rc_tol, &
         max_mag_correlation
-  
+
     use clubb_precision, only: &
         core_rknd  ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -2814,10 +2814,10 @@ module setup_clubb_pdf_params
     use constants_clubb, only:  &
         one,    & ! Constant(s)
         rc_tol
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -2921,10 +2921,10 @@ module setup_clubb_pdf_params
     use constants_clubb, only:  &
         one,    & ! Constant(s)
         rc_tol
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -3013,10 +3013,10 @@ module setup_clubb_pdf_params
     use constants_clubb, only:  &
         one,    & ! Constant(s)
         rc_tol
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -3109,7 +3109,7 @@ module setup_clubb_pdf_params
 
     use clubb_precision, only: &
         core_rknd       ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -3162,27 +3162,27 @@ module setup_clubb_pdf_params
     use constants_clubb, only:  &
         Ncn_tol, &  ! Constant(s)
         zero
-  
+
     use pdf_utilities, only: &
         mean_L2N,  & ! Procedure(s)
         stdev_L2N
-  
+
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
-  
+
     use array_index, only: &
         iiPDF_w,   & 
         iiPDF_chi, &
         iiPDF_eta, &
         iiPDF_Ncn, &  ! Variable(s)
         hydromet_tol  ! Variable(s)
-  
+
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -3412,20 +3412,20 @@ module setup_clubb_pdf_params
 
     use constants_clubb, only : &
         one
-  
+
     use pdf_utilities, only: &
         corr_NN2NL, & ! Procedure(s)
         corr_NN2LL
-  
+
     use array_index, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
         iiPDF_w,   &
         iiPDF_Ncn
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -3682,10 +3682,10 @@ module setup_clubb_pdf_params
         zero,                &
         max_mag_correlation, &
         w_tol
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -3824,23 +3824,23 @@ module setup_clubb_pdf_params
 
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
-  
+
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-  
+
     use array_index, only: &
         iiPDF_w,   & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &
         iiPDF_Ncn
-  
+
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
-  
+
     use stats_type_utilities, only: &
   !        stat_update_var  ! Procedure(s)
         stat_update_var_pt  ! Procedure(s)
-  
+
     use stats_variables, only : &
         ihm_1,        & ! Variable(s)
         ihm_2,        &
@@ -3852,7 +3852,7 @@ module setup_clubb_pdf_params
         isigma_hm_2,  &
         isigma_Ncn_1, &
         isigma_Ncn_2
-  
+
     use stats_variables, only : &
         icorr_w_chi_1_ca,   & ! Variable(s)
         icorr_w_chi_2_ca,   &
@@ -3877,7 +3877,7 @@ module setup_clubb_pdf_params
         icorr_hmx_hmy_1,    &
         icorr_hmx_hmy_2,    &
         stats_zt
-  
+
     implicit none
 
     ! Input Variables
@@ -4388,20 +4388,20 @@ module setup_clubb_pdf_params
 
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
-  
+
     use array_index, only: &
         iiPDF_w,   & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &
         iiPDF_Ncn
-  
+
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
-  
+
     use stats_type_utilities, only: &
   !        stat_update_var  ! Procedure(s)
         stat_update_var_pt  ! Procedure(s)
-  
+
     use stats_variables, only : &
         imu_hm_1_n,     & ! Variable(s)
         imu_hm_2_n,     &
@@ -4411,7 +4411,7 @@ module setup_clubb_pdf_params
         isigma_hm_2_n,  &
         isigma_Ncn_1_n, &
         isigma_Ncn_2_n
-  
+
     use stats_variables, only : &
         icorr_w_hm_1_n,    & ! Variables
         icorr_w_hm_2_n,    &
@@ -4430,7 +4430,7 @@ module setup_clubb_pdf_params
         icorr_hmx_hmy_1_n, &
         icorr_hmx_hmy_2_n, &
         stats_zt
-  
+
     implicit none
 
     ! Input Variables
@@ -4840,25 +4840,25 @@ module setup_clubb_pdf_params
 
     use constants_clubb, only: &
         one  ! Constant(s)
-  
+
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter  ! Variable(s)
-  
+
     use index_mapping, only: &
         hydromet2pdf_idx  ! Procedure(s)
-  
+
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-  
+
     use array_index, only: &
         iiPDF_w,   & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &
         iiPDF_Ncn
-  
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -5006,15 +5006,15 @@ module setup_clubb_pdf_params
 
     use clubb_precision, only: &
         core_rknd    ! Constant
-  
+
     use pdf_utilities, only: &
         compute_variance_binormal   ! Procedure
-  
+
     use constants_clubb, only: &
         one_half, & ! Constant(s)
         one,      &
         two
-  
+
     implicit none
 
     ! Input Variables

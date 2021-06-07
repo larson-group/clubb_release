@@ -44,10 +44,10 @@ module fill_holes
 
     use grid_class, only: & 
          gr ! Variable
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -188,10 +188,10 @@ module fill_holes
 
     use constants_clubb, only: &
         eps
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -366,7 +366,7 @@ module fill_holes
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -431,7 +431,7 @@ module fill_holes
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -494,13 +494,13 @@ module fill_holes
         one, & ! Variable(s)
         zero, &
         eps
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
-  
+
     implicit none
 
     ! Input Variables
@@ -622,14 +622,14 @@ module fill_holes
 
     use clubb_precision, only: &
         core_rknd
-  
+
     use array_index, only: &
         l_frozen_hm, & ! Variable(s)
         l_mix_rat_hm
-  
+
     use constants_clubb, only: &
         zero
-  
+
     implicit none
 
     ! Input Variables
@@ -717,13 +717,13 @@ module fill_holes
 
     use clubb_precision, only: &
         core_rknd
-  
+
     use constants_clubb, only: &
         zero_threshold, &
         Lv, &
         Ls, &
         Cp
-  
+
     implicit none
 
     ! Input Variables
@@ -806,10 +806,10 @@ module fill_holes
 
     use grid_class, only: &
         gr  ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
-  
+
     use constants_clubb, only: &
         zero,            &
         zero_threshold,  &
@@ -817,30 +817,30 @@ module fill_holes
         Ls,              &
         Cp,              &
         fstderr
-  
+
     use array_index, only: &
         hydromet_list, & ! Names of the hydrometeor species
         hydromet_tol
-  
+
     use array_index, only: &
         l_mix_rat_hm, & ! Variable(s)
         l_frozen_hm
-  
+
     use index_mapping, only: &
         Nx2rx_hm_idx, & ! Procedure(s)
         mvr_hm_max
-  
+
     use stats_type_utilities, only: &
         stat_begin_update, & ! Subroutines
         stat_end_update
-  
+
     use stats_variables, only: &
         stats_zt, &  ! Variables
         l_stats_samp
-  
+
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
-  
+
     implicit none
 
     intrinsic :: trim
@@ -1128,7 +1128,7 @@ module fill_holes
 
     use grid_class, only: &
         gr    ! Variable(s)
-  
+
     use constants_clubb, only: &
         pi,          & ! Variable(s)
         four_thirds, &
@@ -1136,18 +1136,18 @@ module fill_holes
         zero,        &
         rho_lw,      &
         rho_ice
-  
+
     use array_index, only: &
         l_mix_rat_hm, & ! Variable(s)
         l_frozen_hm
-  
+
     use index_mapping, only: &
         Nx2rx_hm_idx, & ! Procedure(s)
         mvr_hm_max
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1279,7 +1279,7 @@ module fill_holes
 
     use array_index, only: &
         hydromet_list  ! Names of the hydrometeor species
-  
+
     use stats_variables, only: &
         irrm_bt,   & ! Variable(s)
         irrm_mc,   &
@@ -1301,7 +1301,7 @@ module fill_holes
         irsm_hf,   &
         irsm_wvhf, &
         irsm_cl
-  
+
     use stats_variables, only: &
         iNrm_bt, & ! Variable(s)
         iNrm_mc, &
@@ -1318,13 +1318,13 @@ module fill_holes
         iNcm_bt, &
         iNcm_cl, &
         iNcm_mc
-  
+
     use clubb_precision, only: &
         core_rknd
-  
+
     use constants_clubb, only: &
         zero
-  
+
     implicit none
 
     ! Input Variables

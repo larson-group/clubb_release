@@ -48,16 +48,16 @@ module lapack_wrap
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure  
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
-  
+
     use lapack_interfaces, only: &
         lapack_gtsvx, &      ! Procedure
         lapack_isnan
-  
+
     implicit none
 
     intrinsic :: kind
@@ -186,7 +186,7 @@ module lapack_wrap
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
 #ifdef E3SM
 #ifndef NDEBUG
 #if defined(ARCH_MIC_KNL) && defined(CPRINTEL)
@@ -194,15 +194,15 @@ module lapack_wrap
 #endif
 #endif
 #endif /*E3SM*/
-  
+
     use error_code, only: &
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
-        
+      
     use lapack_interfaces, only: &
         lapack_gtsv, &       ! Procedure
         lapack_isnan
-  
+
     implicit none
 
     intrinsic :: kind
@@ -312,16 +312,16 @@ module lapack_wrap
   
       use clubb_precision, only: &
           core_rknd ! Variable(s)
-    
+  
       use error_code, only: &
           clubb_at_least_debug_level,  & ! Procedure  
           err_code,                    & ! Error Indicator
           clubb_fatal_error              ! Constants
-    
+  
       use lapack_interfaces, only: &
           lapack_gbsvx, &      ! Procedures
           lapack_isnan
-    
+  
       implicit none
   
       intrinsic :: eoshift, kind, trim
@@ -507,16 +507,16 @@ module lapack_wrap
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level, &
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
-  
+
     use lapack_interfaces, only: &
         lapack_gbsv, &       ! Procedures
         lapack_isnan
-  
+
     implicit none
     intrinsic :: eoshift, kind, trim
 

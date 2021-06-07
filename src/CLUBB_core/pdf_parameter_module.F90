@@ -176,7 +176,7 @@ module pdf_parameter_module
 
     use constants_clubb, only: &
         zero    ! Constant(s)
-  
+
     implicit none
 
     ! Input Variable(s)
@@ -302,7 +302,7 @@ module pdf_parameter_module
 
     use constants_clubb, only: &
         zero    ! Constant(s)
-  
+
     implicit none
 
     ! Input Variables

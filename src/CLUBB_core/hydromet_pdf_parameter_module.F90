@@ -76,7 +76,7 @@ contains
 
     use constants_clubb, only: &
         zero  ! Constant(s)
-  
+
     implicit none
 
     ! Output Variable
@@ -121,7 +121,7 @@ contains
 
     use constants_clubb, only: &
         zero  ! Constant(s)
-  
+
     implicit none
     
     ! Input Variable(s)

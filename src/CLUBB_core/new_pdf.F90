@@ -357,7 +357,7 @@ module new_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         thirty_six, & ! Constant(s)
         eighteen,   &
@@ -369,10 +369,10 @@ module new_pdf
         one,        &
         zero,       &
         fstderr
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -458,14 +458,14 @@ module new_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         two, & ! Variable(s)
         one
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -825,15 +825,15 @@ module new_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         three, & ! Variable(s)
         one,   &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -933,19 +933,19 @@ module new_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         three, & ! Variable(s)
         two,   &
         one,   &
         zero
-  
+
     use calc_roots, only: &
         cubic_solve    ! Procedure(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -1091,10 +1091,10 @@ module new_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variable
@@ -1261,15 +1261,15 @@ module new_pdf
   
       use grid_class, only: &
           gr    ! Variable type(s)
-    
+  
       use constants_clubb, only: &
           six,   & ! Variable(s)
           three, &
           one
-    
+  
       use clubb_precision, only: &
           core_rknd    ! Procedure(s)
-    
+  
       implicit none
   
       ! Input Variables
@@ -1489,15 +1489,15 @@ module new_pdf
   
       use grid_class, only: &
           gr    ! Variable type(s)
-    
+  
       use constants_clubb, only: &
           two,  & ! Variable(s)
           one,  &
           zero
-    
+  
       use clubb_precision, only: &
           core_rknd    ! Procedure(s)
-    
+  
       implicit none
   
       ! Input Variables
@@ -1780,15 +1780,15 @@ module new_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         two,  & ! Variable(s)
         one,  &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -2134,14 +2134,14 @@ module new_pdf
 
     use grid_class, only: &
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         one,  & ! Variable(s)
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Procedure(s)
-  
+
     implicit none
 
     ! Input Variables

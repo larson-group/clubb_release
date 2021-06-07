@@ -205,13 +205,13 @@ module advance_clubb_core_module
         C_wp2_splat, &
         xp3_coef_base, &
         xp3_coef_slope
-  
+
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
         edsclr_dim, &
         T0, &
         sclr_tol
-  
+
     use model_flags, only: &
         clubb_config_flags_type, & ! Type
         l_host_applies_sfc_fluxes, & ! Variable(s)
@@ -226,11 +226,11 @@ module advance_clubb_core_module
         zt2zm, &
         ddzm, &
         ddzt
-  
+
     use numerical_check, only: &
         parameterization_check, & ! Procedure(s)
         calculate_spurious_source
-  
+
     use pdf_parameter_module, only: &
         pdf_parameter, &
         implicit_coefs_terms
@@ -244,61 +244,61 @@ module advance_clubb_core_module
 
     use advance_xm_wpxp_module, only: &
         advance_xm_wpxp          ! Compute mean/flux terms
-  
+
     use advance_xp2_xpyp_module, only: &
         advance_xp2_xpyp     ! Computes variance terms
-  
+
     use sfc_varnce_module, only:  &
         calc_sfc_varnce ! Procedure
-  
+
     use mixing_length, only: &
         compute_mixing_length, &    ! Procedure
         calc_Lscale_directly,  &  ! for Lscale
         diagnose_Lscale_from_tau  ! for Lscale from tau
-  
+
     use advance_windm_edsclrm_module, only:  &
         advance_windm_edsclrm  ! Procedure(s)
-  
+
     use saturation, only:  &
         ! Procedure
         sat_mixrat_liq ! Saturation mixing ratio
-  
+
     use advance_wp2_wp3_module, only:  &
         advance_wp2_wp3 ! Procedure
-  
+
     use advance_xp3_module, only: &
         advance_xp3    ! Procedure(s)
-  
+
     use calc_pressure, only: &
         update_pressure, & ! Procedure(s)
         calculate_thvm
-  
+
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_no_error, &              ! Constant
         clubb_fatal_error              ! Constant
-  
+
     use Skx_module, only: &
         Skx_func,           & ! Procedure(s)
         xp3_LG_2005_ansatz
-  
+
     use clip_explicit, only: &
         clip_covars_denom ! Procedure(s)
-  
+
     use T_in_K_module, only: &
         ! Read values from namelist
         thlm2T_in_K ! Procedure
-  
+
     use sigma_sqd_w_module, only: &
         compute_sigma_sqd_w    ! Procedure(s)
-  
+
     use stats_clubb_utilities, only: &
         stats_accumulate ! Procedure
-  
+
     use stats_type_utilities, only:   &
         stat_update_var_pt,   & ! Procedure(s)
         stat_update_var,      &
@@ -306,7 +306,7 @@ module advance_clubb_core_module
         stat_begin_update_pt, &
         stat_end_update,      &
         stat_end_update_pt
-  
+
     use stats_variables, only: &
         irtp2_bt,      & ! Variable(s)
         ithlp2_bt,     &
@@ -326,7 +326,7 @@ module advance_clubb_core_module
         irvm,          &
         irel_humidity, &
         iwpthlp_zt
-  
+
     use stats_variables, only: &
         iinvrs_tau_zm,           & ! Variable(s)
         iinvrs_tau_xp2_zm,       &
@@ -339,7 +339,7 @@ module advance_clubb_core_module
         iinvrs_tau_shear,        &
         ibrunt_vaisala_freq_sqd, &
         isqrt_Ri_zm
-  
+
     use stats_variables, only: &
         iwprtp_zt,     &
         iup2_zt,       &
@@ -359,24 +359,24 @@ module advance_clubb_core_module
         stats_sfc,     &
         irtm_spur_src, &
         ithlm_spur_src
-  
+
     use stats_variables, only: &
         irfrzm, & ! Variable(s)
         istability_correction
-  
+
     use fill_holes, only: &
         vertical_integral, & ! Procedure(s)
         fill_holes_vertical
-  
+
     use advance_helper_module, only: &
         calc_stability_correction, & ! Procedure(s)
         compute_Cx_fnc_Richardson, &
         calc_brunt_vaisala_freq_sqd, &
         term_wp2_splat, term_wp3_splat
-  
+
     use interpolation, only: &
         pvertinterp
-  
+
     implicit none
 
     !!! External
@@ -2164,7 +2164,7 @@ module advance_clubb_core_module
         gr,    & ! Variable(s)
         zt2zm, & ! Procedure(s)
         zm2zt
-  
+
     use constants_clubb, only: &
         w_tol,          & ! Variable(s)
         w_tol_sqd,      &
@@ -2176,7 +2176,7 @@ module advance_clubb_core_module
         zero,           &
         zero_threshold, &
         eps
-  
+
     use pdf_parameter_module, only: &
         pdf_parameter,        & ! Variable Type
         implicit_coefs_terms, & ! Variable Type
@@ -2188,43 +2188,43 @@ module advance_clubb_core_module
         ts_nudge,               &
         rtm_min,                &
         rtm_nudge_max_altitude
-  
+
     use parameters_tunable, only: &
         gamma_coef,  & ! Variable(s)
         gamma_coefb, &
         gamma_coefc
-  
+
     use pdf_closure_module, only: &
         pdf_closure,                & ! Procedure(s)
         calc_vert_avg_cf_component
-  
+
     use Skx_module, only: &
         Skx_func    ! Procedure(s)
-  
+
     use sigma_sqd_w_module, only: &
         compute_sigma_sqd_w    ! Procedure(s)
-  
+
     use pdf_utilities, only: &
         compute_mean_binormal    ! Procedure(s)
-  
+
     use T_in_K_module, only: &
         thlm2T_in_K    ! Procedure(s)
-  
+
     use saturation, only:  &
         sat_mixrat_liq    ! Procedure(s)
-  
+
     use model_flags, only: &
         l_gamma_Skw    ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
-  
+
     use stats_type_utilities, only: &
         stat_update_var,    & ! Procedure(s)
         stat_update_var_pt
-  
+
     use stats_variables, only: &
         l_stats_samp,        & ! Variable(s)
         stats_zt,            &
@@ -2249,10 +2249,10 @@ module advance_clubb_core_module
         ircp2,               &
         ircm_refined,        &
         icloud_frac_refined
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     !!! External
@@ -3091,29 +3091,29 @@ module advance_clubb_core_module
       use grid_class, only: &
           setup_grid, & ! Procedure
           gr ! Variable(s)
-  
+
       use parameter_indices, only:  &
           nparams, & ! Variable(s)
           iC1,     & ! Constant(s)
           iC14
-  
+
       use parameters_tunable, only: &
           setup_parameters ! Procedure
-  
+
       use parameters_model, only: &
           setup_parameters_model ! Procedure
-  
+
       use constants_clubb, only:  &
           fstderr, &  ! Variable(s)
           eps
-  
+
       use error_code, only: &
           clubb_at_least_debug_level,  & ! Procedures
           initialize_error_headers,    &
           err_code,                    & ! Error Indicator
           clubb_no_error, &              ! Constant
           clubb_fatal_error              ! Constant
-  
+
       use model_flags, only: &
           clubb_config_flags_type, & ! Type
           setup_model_flags, & ! Subroutine
@@ -3125,10 +3125,10 @@ module advance_clubb_core_module
           iiPDF_LY93,       &
           iiPDF_new_hybrid, &
           l_explicit_turbulent_adv_wpxp
-  
+
       use clubb_precision, only: &
           core_rknd ! Variable(s)
-  
+
       implicit none
 
       ! Input Variables
@@ -3511,13 +3511,13 @@ module advance_clubb_core_module
       !   None
       !---------------------------------------------------------------------------
       use parameters_model, only: sclr_tol ! Variable
-  
+
       use grid_class, only: &
         cleanup_grid ! Procedure
-  
+
       use parameters_tunable, only: &
         cleanup_nu ! Procedure
-  
+
       implicit none
 
       !----- Begin Code -----
@@ -3570,7 +3570,7 @@ module advance_clubb_core_module
 
       use constants_clubb, only: &
           fstderr  ! Constant(s)
-  
+
       use stats_variables, only: &
           iwprtp2, & ! Varibles
           iwprtpthlp, &
@@ -3580,20 +3580,20 @@ module advance_clubb_core_module
           iwpsclrprtp, &
           iwpsclrpthlp, &
           l_stats
-  
+
       use grid_class, only: &
           gr, & ! Variable
           zt2zm ! Procedure
-  
+
       use parameters_model, only: &
           sclr_dim ! Number of passive scalar variables
-  
+
       use pdf_parameter_module, only: &
           pdf_parameter ! Derived data type
-  
+
       use clubb_precision, only: &
           core_rknd ! Variable(s)
-  
+
       implicit none
 
       ! Constant parameters
@@ -4045,10 +4045,10 @@ module advance_clubb_core_module
       !-----------------------------------------------------------------------
 
       use grid_class, only: gr ! Variable
-  
+
       use clubb_precision, only: &
         core_rknd ! variable(s)
-  
+
       implicit none
 
       ! Input variables
@@ -4085,10 +4085,10 @@ module advance_clubb_core_module
       !--------------------------------------------------------------------
 
       use grid_class, only: gr ! Variable
-  
+
       use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
       implicit none
 
       ! Input Variables
@@ -4131,10 +4131,10 @@ module advance_clubb_core_module
       !--------------------------------------------------------------------
 
       use grid_class, only: gr ! Variable
-  
+
       use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
       implicit none
 
       ! Input Variables
@@ -4188,18 +4188,18 @@ module advance_clubb_core_module
       use constants_clubb, only: &
           rc_tol, & ! Variable(s)
           fstderr
-  
+
       use grid_class, only: gr ! Variable
-  
+
       use pdf_parameter_module, only: &
           pdf_parameter ! Derived data type
-  
+
       use clubb_precision, only: &
           core_rknd ! Variable(s)
-  
+
       use error_code, only: &
           clubb_at_least_debug_level  ! Procedure
-  
+
       implicit none
 
       ! External functions
@@ -4356,17 +4356,17 @@ module advance_clubb_core_module
 
 
       use grid_class, only: gr ! Variable
-  
+
       use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
-  
+
       use constants_clubb, only: &
         fstderr, & ! Variable(s)
         zero_threshold
-  
+
       use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
       implicit none
 
       ! External functions
@@ -4430,7 +4430,7 @@ module advance_clubb_core_module
 
       use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
       implicit none
 
       ! Input Variables
@@ -4472,17 +4472,17 @@ module advance_clubb_core_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-    
+  
     use grid_class, only:  &
         zt2zm                         ! Procedure
-    
+  
     use constants_clubb, only: &
         two, &
         rc_tol
-    
+  
     use parameters_tunable, only: &
         thlp2_rad_coef
-    
+  
     implicit none
   
     ! Input Variables

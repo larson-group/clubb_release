@@ -107,24 +107,24 @@ module advance_xm_wpxp_module
         C6thl_Lscale0, &
         C7_Lscale0, &
         wpxp_L_thresh
-  
+
     use constants_clubb, only:  & 
         fstderr, &  ! Constant
         one, &
         one_half, &
         zero, &
         eps
-  
+
     use parameters_model, only: & 
         sclr_dim, &  ! Variable(s)
         ts_nudge
-  
+
     use grid_class, only: & 
         gr,   & ! Variable(s)
         ddzt,  &    ! Procedure(s)
         zm2zt, & ! Procedure(s)
         zt2zm
-  
+
     use model_flags, only: &
         iiPDF_new,                     & ! Variable(s)
         l_clip_semi_implicit,          &
@@ -132,26 +132,26 @@ module advance_xm_wpxp_module
 
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
-  
+
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
     use turbulent_adv_pdf, only: &
         sgn_turbulent_velocity    ! Procedure(s)
-  
+
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
-  
+
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
         stat_end_update, &
         stat_update_var
-  
+
     use stats_variables, only: & 
         stats_zt, &         ! Variables
         stats_zm, &
@@ -168,7 +168,7 @@ module advance_xm_wpxp_module
         iC6thl_Skw_fnc, &
         iC6_term, &
         l_stats_samp
-  
+
     use sponge_layer_damping, only: &
         rtm_sponge_damp_settings, &
         thlm_sponge_damp_settings, &
@@ -177,7 +177,7 @@ module advance_xm_wpxp_module
         thlm_sponge_damp_profile, &
         uv_sponge_damp_profile, &
         sponge_damp_xm ! Procedure(s)
-  
+
     implicit none
 
     ! Parameter Constants
@@ -862,7 +862,7 @@ module advance_xm_wpxp_module
         gr,  & ! Variable(s)
         zm2zt, & ! Procedure(s)
         ddzt
-  
+
     use constants_clubb, only: &
         gamma_over_implicit_ts, & ! Constant(s)
         one, &
@@ -873,10 +873,10 @@ module advance_xm_wpxp_module
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use clip_semi_implicit, only: & 
         clip_semi_imp_lhs ! Procedure(s)
-  
+
     use stats_variables, only: & 
         ztscr01, & ! Variable(s)
         ztscr02, & 
@@ -898,7 +898,7 @@ module advance_xm_wpxp_module
         zmscr13, & 
         zmscr14, & 
         zmscr15
-  
+
     use stats_variables, only: & 
         l_stats_samp, & 
         ithlm_ma, & 
@@ -921,11 +921,11 @@ module advance_xm_wpxp_module
         iwprtp_pr2, & 
         iwprtp_dp1, & 
         iwprtp_sicl
-  
+
     use advance_helper_module, only: &
         set_boundary_conditions_lhs, & ! Procedure(s)
         calc_stability_correction
-  
+
     implicit none
 
     ! External
@@ -1229,27 +1229,27 @@ module advance_xm_wpxp_module
     
     use grid_class, only:  & 
         gr  ! Variable(s)
-  
+
     use parameters_tunable, only:  & 
         nu6_vert_res_dep ! Variable(s)
-  
+
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use advance_helper_module, only: &
         calc_stability_correction
-        
+      
     use mean_adv, only: & 
         term_ma_zt_lhs, &
         term_ma_zm_lhs
-  
+
     use turbulent_adv_pdf, only: &
         xpyp_term_ta_pdf_lhs
-  
+
     use diffusion, only:  & 
         diffusion_zt_lhs, &
         diffusion_zm_lhs
-  
+
     implicit none
 
     !------------------- Input Variables -------------------
@@ -1410,7 +1410,7 @@ module advance_xm_wpxp_module
 
     use grid_class, only: & 
         gr ! Variable(s)
-  
+
     use constants_clubb, only:  &
         gamma_over_implicit_ts, & ! Constant(s)
         one, &
@@ -1422,19 +1422,19 @@ module advance_xm_wpxp_module
     use turbulent_adv_pdf, only: &
         xpyp_term_ta_pdf_lhs, & ! Procedure(s)
         xpyp_term_ta_pdf_rhs
-  
+
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use clip_semi_implicit, only: & 
         clip_semi_imp_rhs ! Procedure(s)
-  
+
     use stats_type_utilities, only: & 
         stat_update_var,      & ! Procedure(s)
         stat_update_var_pt,   & 
         stat_begin_update_pt, &
         stat_modify_pt
-  
+
     use stats_variables, only: & 
         stats_zt, & ! Variable(s)
         stats_zm, & 
@@ -1461,10 +1461,10 @@ module advance_xm_wpxp_module
         ivpwp_ta, &
         ivpwp_pr1, &
         l_stats_samp
-  
+
     use advance_helper_module, only: &
         set_boundary_conditions_rhs    ! Procedure(s)
-  
+
     implicit none
 
     !------------------- Input Variables -------------------
@@ -1760,18 +1760,18 @@ module advance_xm_wpxp_module
           gr,     & ! Variable(s)
           zt2zm,  & ! Procedure(s)
           zm2zt
-          
+        
       use clubb_precision, only: &
           core_rknd  ! Variable(s)
-          
+        
       use constants_clubb, only: &
           one, &
           zero, &
           zero_threshold
-          
+        
       use parameters_model, only: &
           sclr_dim  ! Number of passive scalar variables
-          
+        
       use pdf_parameter_module, only: &
           implicit_coefs_terms    ! Variable Type
   
@@ -1780,12 +1780,12 @@ module advance_xm_wpxp_module
           xpyp_term_ta_pdf_lhs_godunov, &
           xpyp_term_ta_pdf_rhs, &
           sgn_turbulent_velocity
-          
+        
       use model_flags, only: &
           iiPDF_ADG1,       & ! Integer constants
           iiPDF_new,        &
           iiPDF_new_hybrid
-          
+        
       use stats_variables, only: &
           l_stats_samp,             & ! Logical constant
           stats_zt,                 & ! Variable(s)
@@ -1796,7 +1796,7 @@ module advance_xm_wpxp_module
         
       use stats_type_utilities, only: & 
           stat_update_var   ! Procedure(s)
-          
+        
       implicit none 
       
       !------------------- Input Variables -------------------
@@ -2329,15 +2329,15 @@ module advance_xm_wpxp_module
     use grid_class, only: & 
         gr,   & ! Variable(s)
         ddzt    ! Procedure(s)
-        
+      
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
-        
+      
     use stats_type_utilities, only: & 
         stat_update_var   ! Procedure(s)
-        
+      
     use stats_variables, only: & 
         stats_zt, &
         stats_zm, &
@@ -2364,13 +2364,13 @@ module advance_xm_wpxp_module
     use parameters_model, only: & 
         sclr_dim, &  ! Variable(s)
         sclr_tol
-  
+
     use parameters_tunable, only: &
         C_uu_shr    ! Parameter(s)
         
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only:  & 
         fstderr, &  ! Constant
         rt_tol, &
@@ -2382,7 +2382,7 @@ module advance_xm_wpxp_module
         zero, &
         one, &
         ep1
-    
+  
     implicit none
     
     ! ------------------- Input Variables -------------------
@@ -2929,15 +2929,15 @@ module advance_xm_wpxp_module
     use grid_class, only: & 
         gr,   & ! Variable(s)
         ddzt    ! Procedure(s)
-        
+      
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
-        
+      
     use stats_type_utilities, only: & 
         stat_update_var   ! Procedure(s)
-        
+      
     use stats_variables, only: & 
         irtm_matrix_condt_num, &  ! Variables
         ithlm_matrix_condt_num, &
@@ -2949,7 +2949,7 @@ module advance_xm_wpxp_module
         
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only:  & 
         fstderr, &  ! Constant
         rt_tol, &
@@ -2958,7 +2958,7 @@ module advance_xm_wpxp_module
         rt_tol_mfl, &
         zero, &
         max_mag_correlation
-    
+  
     implicit none
     
     ! ------------------- Input Variables -------------------
@@ -3379,22 +3379,22 @@ module advance_xm_wpxp_module
 
     use grid_class, only: & 
         gr ! Variable(s)
-  
+
     use lapack_wrap, only:  & 
         band_solve,  & ! Procedure(s)
         band_solvex
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: &
         fstderr     ! Constant(s)
-      
+    
     use error_code, only: &
         clubb_at_least_debug_level,     & ! Procedure
         err_code,                       & ! Error indicator
         clubb_no_error                    ! Constant
-  
+
     implicit none
 
     ! Input Variables
@@ -3459,19 +3459,19 @@ module advance_xm_wpxp_module
 
     use grid_class, only: & 
         gr ! Variable(s)
-  
+
     use model_flags, only: &
         l_clip_semi_implicit    ! Variable(s)
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-  
+
     use mono_flux_limiter, only: &
         monotonic_turbulent_flux_limit ! Procedure(s)
-  
+
     use pos_definite_module, only:  & 
         pos_definite_adj ! Procedure(s)
-  
+
     use clip_explicit, only: & 
         clip_covar,   & ! Procedure(s)
         clip_wprtp,   & ! Variable(s)
@@ -3479,24 +3479,24 @@ module advance_xm_wpxp_module
         clip_upwp,    &
         clip_vpwp,    &
         clip_wpsclrp
-  
+
     use model_flags, only: & 
         l_pos_def, &     ! Logical for whether to apply the positive definite scheme to rtm
         l_hole_fill, &   ! Logical for whether to apply the hole filling scheme to thlm/rtm
         l_clip_turb_adv  ! Logical for whether to clip xm when wpxp is clipped
-  
+
     use constants_clubb, only: &
         fstderr, & ! Constant(s)
         one, &
         zero, &
         eps
-  
+
     use fill_holes, only: &
         fill_holes_vertical ! Procedure
-  
+
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
-  
+
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
         stat_update_var_pt, & 
@@ -3504,7 +3504,7 @@ module advance_xm_wpxp_module
         stat_end_update,  & 
         stat_update_var, & 
         stat_modify
-  
+
     use stats_variables, only: & 
         stats_zt,  & ! Variable(s)
         stats_zm, & 
@@ -3524,7 +3524,7 @@ module advance_xm_wpxp_module
         iwprtp_pd, & 
         iwprtp_sicl, & 
         ithlm_ta
-  
+
     use stats_variables, only: &
         ithlm_ma, & 
         ithlm_cl, & 
@@ -3555,7 +3555,7 @@ module advance_xm_wpxp_module
         ivpwp_pr1, &
         ivpwp_pr2, &
         ivpwp_dp1
-  
+
     use stats_variables, only: & 
         l_stats_samp, & 
         ztscr01, & 
@@ -3578,7 +3578,7 @@ module advance_xm_wpxp_module
         zmscr13, & 
         zmscr14, & 
         zmscr15
-  
+
     implicit none
 
     ! Constant Parameters
@@ -4124,13 +4124,13 @@ module advance_xm_wpxp_module
 
     use grid_class, only:  & 
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         zero    ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Constant parameters
@@ -4221,13 +4221,13 @@ module advance_xm_wpxp_module
 
     use grid_class, only:  & 
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         zero    ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Constant parameters
@@ -4330,14 +4330,14 @@ module advance_xm_wpxp_module
 
     use grid_class, only:  & 
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         one,  & ! Constant(s)
         zero
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -4407,13 +4407,13 @@ module advance_xm_wpxp_module
 
     use grid_class, only:  & 
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: &
         zero  ! Constant(s)
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -4497,15 +4497,15 @@ module advance_xm_wpxp_module
 
     use grid_class, only:  & 
         gr    ! Variable type(s)
-  
+
     use constants_clubb, only: & ! Constants(s) 
         grav, & ! Gravitational acceleration [m/s^2]
         one,  &
         zero
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -4656,19 +4656,19 @@ module advance_xm_wpxp_module
 
     use grid_class, only: &
         gr  ! Variable(s); gr%nz only.
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
-  
+
     use stats_variables, only: &
         l_stats_samp, & ! Variable(s)
         stats_zt, &
         ithlm_tacl, &
         irtm_tacl
-  
+
     implicit none
 
     ! Input Variables
@@ -4736,14 +4736,14 @@ module advance_xm_wpxp_module
 
     use grid_class, only: & 
         gr    ! Variable type(s)
-  
+
       ! Added to prevent large damping at low altitudes where Lscale is small
     use parameters_tunable, only: &
         altitude_threshold    ! Variable(s)
-  
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     ! Input variables
@@ -4788,14 +4788,14 @@ module advance_xm_wpxp_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     use constants_clubb, only: & ! Constants(s)
         one     ! 1.0_core_rknd
-  
+
     use grid_class, only:  &
         gr, & ! Variable
         ddzt  ! Procedure
-  
+
     implicit none
 
     ! Input Variables
@@ -4852,19 +4852,19 @@ module advance_xm_wpxp_module
 
     use constants_clubb, only: &
         fstderr    ! Variable(s)
-  
+
     use grid_class, only: &
         gr    ! Variable Type(s)
-  
+
     use parameters_model, only: &
         sclr_dim    ! Variable(s)
-  
+
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type(s)
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables

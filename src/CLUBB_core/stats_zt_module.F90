@@ -29,7 +29,7 @@ module stats_zt_module
 
     use constants_clubb, only:  &
         fstderr ! Constant(s)
-  
+
     use stats_variables, only: &
         ithlm,  & ! Variable(s)
         iT_in_K, &
@@ -55,7 +55,7 @@ module stats_zt_module
         irho_ds_zt, &
         ithv_ds_zt, &
         iLscale
-  
+
     use stats_variables, only: &
         iwp3, & ! Variable(s)
         ithlp3, &
@@ -78,7 +78,7 @@ module stats_zt_module
         iSkthl_zt, &
         iSkrt_zt, &
         ircm_supersat_adj
-  
+
     use stats_variables, only: &
         ihm_1, & ! Variable(s)
         ihm_2, &
@@ -86,7 +86,7 @@ module stats_zt_module
         iprecip_frac_1, &
         iprecip_frac_2, &
         iNcnm
-  
+
     use stats_variables, only: &
         imu_hm_1,       & ! Variable(s)
         imu_hm_2,       &
@@ -104,7 +104,7 @@ module stats_zt_module
         isigma_hm_2_n,  &
         isigma_Ncn_1_n, &
         isigma_Ncn_2_n
-  
+
     use stats_variables, only: &
         icorr_w_chi_1_ca,  & ! Variable(s)
         icorr_w_chi_2_ca,  &
@@ -128,7 +128,7 @@ module stats_zt_module
         icorr_Ncn_hm_2,  &
         icorr_hmx_hmy_1, &
         icorr_hmx_hmy_2
-  
+
     use stats_variables, only: &
         icorr_w_hm_1_n,    & ! Variable(s)
         icorr_w_hm_2_n,    &
@@ -146,7 +146,7 @@ module stats_zt_module
         icorr_Ncn_hm_2_n,  &
         icorr_hmx_hmy_1_n, &
         icorr_hmx_hmy_2_n
-  
+
     use stats_variables, only: &
         irel_humidity, &
         irho, &
@@ -173,14 +173,14 @@ module stats_zt_module
         irsm, &
         irgm, &
         irim
-  
+
     use stats_variables, only: &
         ieff_rad_cloud, &
         ieff_rad_ice, &
         ieff_rad_snow, &
         ieff_rad_rain, &
         ieff_rad_graupel
-  
+
     use stats_variables, only: &
         irtm_bt, &
         irtm_ma, &
@@ -201,7 +201,7 @@ module stats_zt_module
         ithlm_forcing, &
         ithlm_mc, &
         ithlm_sdmp
-  
+
     use stats_variables, only: &
         ithlm_mfl, &
         ithlm_tacl, &
@@ -221,7 +221,7 @@ module stats_zt_module
         iwp3_sdmp, &
         iwp3_cl, &
         iwp3_splat
-  
+
     use stats_variables, only: &
         irtp3_bt, &
         irtp3_tp, &
@@ -231,7 +231,7 @@ module stats_zt_module
         ithlp3_tp, &
         ithlp3_ac, &
         ithlp3_dp
-  
+
       ! Monotonic flux limiter diagnostic variables
     use stats_variables, only: &
         ithlm_mfl_min, &
@@ -246,7 +246,7 @@ module stats_zt_module
         irtm_exit_mfl, &
         irtm_old, &
         irtm_without_ta
-  
+
     use stats_variables, only: &
         irrm_bt, &
         irrm_ma, &
@@ -262,7 +262,7 @@ module stats_zt_module
         irrm_mc_nonadj, &
         irrm_mc, &
         irrm_hf
-  
+
     use stats_variables, only: &
         irrm_wvhf, &
         irrm_cl, &
@@ -277,7 +277,7 @@ module stats_zt_module
         iNrm_src_adj, &
         iNrm_mc, &
         iNrm_cl
-  
+
     use stats_variables, only: &
         irsm_bt, &
         irsm_ma, &
@@ -294,7 +294,7 @@ module stats_zt_module
         irgm_sd_morr, &
         irgm_ta, &
         irgm_mc
-  
+
     use stats_variables, only: &
         irgm_hf, &
         irgm_wvhf, &
@@ -308,7 +308,7 @@ module stats_zt_module
         irim_hf, &
         irim_wvhf, &
         irim_cl
-  
+
     use stats_variables, only: &
         ivm_bt, &
         ivm_ma, &
@@ -328,7 +328,7 @@ module stats_zt_module
         ium_sdmp, &
         ium_ndg, &
         ium_mfl
-  
+
     use stats_variables, only: &
         imixt_frac, & ! Variable(s)
         iw_1, &
@@ -349,7 +349,7 @@ module stats_zt_module
         irsatl_2, &
         icloud_frac_1, &
         icloud_frac_2
-  
+
     use stats_variables, only: &
         ichi_1, &
         ichi_2, &
@@ -376,7 +376,7 @@ module stats_zt_module
         icrt_2, &
         icthl_1, &
         icthl_2
-  
+
     use stats_variables, only: &
         iF_w, &
         iF_rt, &
@@ -387,7 +387,7 @@ module stats_zt_module
         imax_F_rt, &
         imin_F_thl, &
         imax_F_thl
-  
+
     use stats_variables, only: &
         icoef_wprtp2_implicit, &
         iterm_wprtp2_explicit, &
@@ -411,17 +411,17 @@ module stats_zt_module
         ivp2_zt, &
         iupwp_zt, &
         ivpwp_zt
-  
+
     use stats_variables, only: &
         ihmp2_zt
-  
+
     use stats_variables, only: &
         stats_zt, &
         isclrm, &
         isclrm_f, &
         iedsclrm, &
         iedsclrm_f
-  
+
     use stats_variables, only: &
         iNsm, & ! Variable(s)
         iNrm, &
@@ -445,7 +445,7 @@ module stats_zt_module
         iNim_ta, &
         iNim_sd, &
         iNim_cl
-  
+
     use stats_variables, only: &
         iNcm_bt, &
         iNcm_mc, &
@@ -453,7 +453,7 @@ module stats_zt_module
         iNcm_ta, &
         iNcm_cl, &
         iNcm_act
-  
+
     use stats_variables, only: &
         iw_KK_evap_covar_zt,   &
         irt_KK_evap_covar_zt,  &
@@ -467,17 +467,17 @@ module stats_zt_module
         irr_KK_mvr_covar_zt,   &
         iNr_KK_mvr_covar_zt,   &
         iKK_mvr_variance_zt
-  
+
     use stats_variables, only: &
         iC11_Skw_fnc, & ! Variable(s)
         ichi, &
         iwp3_on_wp2_zt, &
         ia3_coef_zt
-  
+
     use stats_variables, only: &
         iLscale_pert_1, & ! Variable(s)
         iLscale_pert_2
-  
+
     use stats_variables, only: &
         iPSMLT,  & ! Variable(s)
         iEVPMS,  &
@@ -510,7 +510,7 @@ module stats_zt_module
         iPSACR,  &
         iPRDG,   &
         iEPRDG
-  
+
     use stats_variables, only: &
         iNGSTEN, & ! Lots of variable(s)
         iNRSTEN, &
@@ -536,7 +536,7 @@ module stats_zt_module
         iPRC, &
         iPRA, &
         iPRE
-  
+
     use stats_variables, only: &
         iPCC, &
         iNNUCCC, &
@@ -577,26 +577,26 @@ module stats_zt_module
         iNS_INST, &
         iNG_INST, &
         iT_in_K_mc
-  
+
     use stats_variables, only: &
         iwp2hmp, & ! Variable(s)
         icloud_frac_refined, &
         ircm_refined, &
         ihl_on_Cp_residual, &
         iqto_residual
-  
+
     use stats_type_utilities, only: &
         stat_assign ! Procedure
-  
+
     use parameters_model, only: &
         hydromet_dim, & ! Variable(s)
         sclr_dim,     &
         edsclr_dim
-  
+
     use array_index, only: &
         hydromet_list, &  ! Variable(s)
         l_mix_rat_hm
-  
+
     implicit none
 
     ! External

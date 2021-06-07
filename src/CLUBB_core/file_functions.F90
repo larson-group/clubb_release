@@ -41,9 +41,9 @@ module file_functions
   
       use clubb_precision, only: &
           core_rknd ! Variable(s)
-    
+  
       use constants_clubb, only: fstderr ! Constant(s)
-    
+  
       implicit none
   
       integer, intent(in) :: & 
@@ -123,7 +123,7 @@ module file_functions
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-  
+
     implicit none
 
     integer, intent(in) :: & 

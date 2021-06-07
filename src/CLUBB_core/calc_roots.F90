@@ -64,10 +64,10 @@ module calc_roots
         two,       &
         one_half,  &
         one_third
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -205,10 +205,10 @@ module calc_roots
     use constants_clubb, only: &
         four, & ! Constant(s)
         two
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
@@ -277,10 +277,10 @@ module calc_roots
     use constants_clubb, only: &
         one_third, & ! Constant(s)
         zero
-  
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
-  
+
     implicit none
 
     ! Input Variables
