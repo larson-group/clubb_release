@@ -812,7 +812,7 @@ module new_hybrid_pdf
 
 
     ! Calculate coef_wp4_implicit.
-      coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
+    coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
                         + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
                         + F_w**2 * ( one - mixt_frac )**2 / mixt_frac &
                         + three * ( one - mixt_frac ) * coef_sigma_w_2_sqd**2 &

@@ -984,7 +984,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = min( input_var1, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
+    output_var = min( input_var1, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zm_sclr_array
@@ -1024,7 +1024,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = min( input_var2, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
+    output_var = min( input_var2, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zm_array_sclr
@@ -1062,7 +1062,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = zt2zm( zm2zt( min( input_var1 , input_var2 )))
+    output_var = zt2zm( zm2zt( min( input_var1 , input_var2 )))
 
     return
   end function smooth_min_zm_arrays
@@ -1102,7 +1102,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = min( input_var1, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
+    output_var = min( input_var1, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zt_sclr_array
@@ -1142,7 +1142,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = min( input_var2, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
+    output_var = min( input_var2, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zt_array_sclr
@@ -1180,7 +1180,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = zm2zt( zt2zm( min( input_var1 , input_var2 )))
+    output_var = zm2zt( zt2zm( min( input_var1 , input_var2 )))
 
     return
   end function smooth_min_zt_arrays
@@ -1220,7 +1220,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = max( input_var1, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
+    output_var = max( input_var1, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
   
     return
   end function smooth_max_zm_sclr_array
@@ -1260,7 +1260,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = max( input_var2, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
+    output_var = max( input_var2, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
 
     return
   end function smooth_max_zm_array_sclr
@@ -1298,7 +1298,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = zt2zm( zm2zt( max( input_var1 , input_var2 )))
+    output_var = zt2zm( zm2zt( max( input_var1 , input_var2 )))
 
     return
   end function smooth_max_zm_arrays
@@ -1338,7 +1338,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = max( input_var1, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
+    output_var = max( input_var1, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
 
     return
   end function smooth_max_zt_sclr_array
@@ -1378,7 +1378,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = max( input_var2, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
+    output_var = max( input_var2, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
 
     return
   end function smooth_max_zt_array_sclr
@@ -1416,7 +1416,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-      output_var = zm2zt( zt2zm( max( input_var1 , input_var2 )))
+    output_var = zm2zt( zt2zm( max( input_var1 , input_var2 )))
 
     return
   end function smooth_max_zt_arrays

@@ -1285,7 +1285,7 @@ module new_pdf
 
 
     ! Calculate coef_wp4_implicit.
-      coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
+    coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
                         + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
                         + F_w**2 * ( one - mixt_frac )**2 / mixt_frac &
                         + three * ( one - mixt_frac ) * coef_sigma_w_2_sqd**2 &
@@ -1524,11 +1524,11 @@ module new_pdf
 
 
     ! Calculate coef_wpxp2_implicit.
-      where ( ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero &
-                .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) &
-              .and. ( wp2 * xp2 > zero ) )
+    where ( ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero &
+              .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) &
+            .and. ( wp2 * xp2 > zero ) )
 
-         coefs_factor &
+       coefs_factor &
        = ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &
            - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) &
          / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &

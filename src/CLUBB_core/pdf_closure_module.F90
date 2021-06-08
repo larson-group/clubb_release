@@ -2973,11 +2973,11 @@ endif
     !----- Begin Code -----
 
     ! Place a point at each of k-1, k, and k+1.
-      interp_var_array(1) = var_value_integer_height( nz, k-1, z_vals, var )
-      interp_var_array((n_points+1)/2) = var_value_integer_height( nz, k, z_vals, var )
-      interp_var_array(n_points) = var_value_integer_height( nz, k+1, z_vals, var )
+    interp_var_array(1) = var_value_integer_height( nz, k-1, z_vals, var )
+    interp_var_array((n_points+1)/2) = var_value_integer_height( nz, k, z_vals, var )
+    interp_var_array(n_points) = var_value_integer_height( nz, k+1, z_vals, var )
 
-      subgrid_lev_count = (n_points - 3) / 2
+    subgrid_lev_count = (n_points - 3) / 2
 
     ! Lower half
     if ( k == 1 ) then

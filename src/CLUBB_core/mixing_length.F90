@@ -1256,22 +1256,22 @@ module mixing_length
 
 
 !-----------------------------------Begin Code---------------------------------------------------!
-    call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
-                                            ice_supersat_frac, &
-                                            l_brunt_vaisala_freq_moist, &
-                                            l_use_thvm_in_bv_freq, &
-                                            brunt_vaisala_freq_sqd, &
-                                            brunt_vaisala_freq_sqd_mixed,&
-                                            brunt_vaisala_freq_sqd_dry, &
-                                            brunt_vaisala_freq_sqd_moist, &
-                                            brunt_vaisala_freq_sqd_plus )
+  call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
+                                          ice_supersat_frac, &
+                                          l_brunt_vaisala_freq_moist, &
+                                          l_use_thvm_in_bv_freq, &
+                                          brunt_vaisala_freq_sqd, &
+                                          brunt_vaisala_freq_sqd_mixed,&
+                                          brunt_vaisala_freq_sqd_dry, &
+                                          brunt_vaisala_freq_sqd_moist, &
+                                          brunt_vaisala_freq_sqd_plus )
 
 
-          ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
+        ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
-          invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
+        invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
 
-          invrs_tau_shear &
+        invrs_tau_shear &
         = C_invrs_tau_shear &
           * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
 

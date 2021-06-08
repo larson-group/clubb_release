@@ -2693,8 +2693,8 @@ contains
       thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
   !----------------------------------------------------------------------
 
-      call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, &
-                      thlp2_forcing )
+    call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, &
+                    thlp2_forcing )
 
     return
   end subroutine calculate_thlp2_rad_api
