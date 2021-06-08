@@ -1139,21 +1139,21 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-      gr ! Variable(s)
+        gr ! Variable(s)
 
     use lapack_wrap, only:  & 
-      tridag_solve, & ! Procedure(s)
-      tridag_solvex
+        tridag_solve, & ! Procedure(s)
+        tridag_solvex
 
     use stats_variables, only: & 
-      stats_sfc,     &   ! Variable(s)
-      l_stats_samp
+        stats_sfc,     &   ! Variable(s)
+        l_stats_samp
 
     use stats_type_utilities, only:  &
-      stat_update_var_pt  ! Subroutine
+        stat_update_var_pt  ! Subroutine
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -1216,27 +1216,27 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
-      ium_ma,  & ! Variables
-      ium_ta,  & 
-      ivm_ma,  &
-      ivm_ta,  & 
-      ztscr01, & 
-      ztscr02, & 
-      ztscr03, & 
-      ztscr04, & 
-      ztscr05, & 
-      ztscr06, & 
-      stats_zt
+        ium_ma,  & ! Variables
+        ium_ta,  & 
+        ivm_ma,  &
+        ivm_ta,  & 
+        ztscr01, & 
+        ztscr02, & 
+        ztscr03, & 
+        ztscr04, & 
+        ztscr05, & 
+        ztscr06, & 
+        stats_zt
 
     use stats_type_utilities, only:  &
-      stat_end_update_pt,  & ! Subroutines
-      stat_update_var_pt
+        stat_end_update_pt,  & ! Subroutines
+        stat_update_var_pt
 
     use clubb_precision, only:  & 
-      core_rknd
+        core_rknd
 
     use grid_class, only: &
-      gr ! Derived type variable
+        gr ! Derived type variable
 
     implicit none
 
@@ -1367,7 +1367,7 @@ module advance_windm_edsclrm_module
         l_stats_samp
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -1908,7 +1908,7 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 

@@ -47,16 +47,16 @@ module pos_definite_module
 !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-      gr,   & ! Variable(s)
-      ddzt, & ! Function
-      ddzm    ! Function
+        gr,   & ! Variable(s)
+        ddzt, & ! Function
+        ddzm    ! Function
 
     use constants_clubb, only :  & 
-      eps, & ! Variable(s)
-      zero_threshold
+        eps, & ! Variable(s)
+        zero_threshold
 
     use clubb_precision, only:  & 
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level   ! Procedure

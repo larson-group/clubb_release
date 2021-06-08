@@ -43,10 +43,10 @@ module fill_holes
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-       gr ! Variable
+         gr ! Variable
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -187,10 +187,10 @@ module fill_holes
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-      eps
+        eps
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -365,7 +365,7 @@ module fill_holes
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -430,7 +430,7 @@ module fill_holes
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 

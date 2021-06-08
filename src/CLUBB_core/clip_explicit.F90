@@ -993,19 +993,19 @@ module clip_explicit
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-      gr ! Variable(s)
+        gr ! Variable(s)
 
     use clubb_precision, only: & 
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: &
-      stat_begin_update,  & ! Procedure(s)
-      stat_end_update
+        stat_begin_update,  & ! Procedure(s)
+        stat_end_update
 
     use stats_variables, only: & 
-      stats_zt,  & ! Variable(s)
-      iwp3_cl, & 
-      l_stats_samp     
+        stats_zt,  & ! Variable(s)
+        iwp3_cl, & 
+        l_stats_samp     
 
     implicit none
 
@@ -1045,13 +1045,13 @@ module clip_explicit
   subroutine clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
 !
     use grid_class, only: & 
-      gr ! Variable(s)
+        gr ! Variable(s)
 
     use parameters_tunable, only: &
-      Skw_max_mag ! [-]
+        Skw_max_mag ! [-]
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 

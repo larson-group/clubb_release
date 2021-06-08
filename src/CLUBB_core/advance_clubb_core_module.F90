@@ -237,8 +237,8 @@ module advance_clubb_core_module
 
 #ifdef GFDL
     use advance_sclrm_Nd_module, only: &  ! h1g, 2010-06-16 begin mod
-       advance_sclrm_Nd_diffusion_OG, &
-       advance_sclrm_Nd_upwind, &
+         advance_sclrm_Nd_diffusion_OG, &
+         advance_sclrm_Nd_upwind, &
        advance_sclrm_Nd_semi_implicit     ! h1g, 2010-06-16 end mod
 #endif
 
@@ -361,21 +361,21 @@ module advance_clubb_core_module
         ithlm_spur_src
 
     use stats_variables, only: &
-      irfrzm, & ! Variable(s)
-      istability_correction
+        irfrzm, & ! Variable(s)
+        istability_correction
 
     use fill_holes, only: &
-      vertical_integral, & ! Procedure(s)
-      fill_holes_vertical
+        vertical_integral, & ! Procedure(s)
+        fill_holes_vertical
 
     use advance_helper_module, only: &
-      calc_stability_correction, & ! Procedure(s)
-      compute_Cx_fnc_Richardson, &
-      calc_brunt_vaisala_freq_sqd, &
-      term_wp2_splat, term_wp3_splat
+        calc_stability_correction, & ! Procedure(s)
+        compute_Cx_fnc_Richardson, &
+        calc_brunt_vaisala_freq_sqd, &
+        term_wp2_splat, term_wp3_splat
 
     use interpolation, only: &
-      pvertinterp
+        pvertinterp
 
     implicit none
 
@@ -4470,37 +4470,37 @@ module advance_clubb_core_module
   !   See clubb:ticket:632
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm                         ! Procedure
+    use grid_class, only:  &
+        zt2zm                         ! Procedure
 
-  use constants_clubb, only: &
-    two, &
-    rc_tol
+    use constants_clubb, only: &
+        two, &
+        rc_tol
 
-  use parameters_tunable, only: &
-    thlp2_rad_coef
+    use parameters_tunable, only: &
+        thlp2_rad_coef
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  integer, intent(in) :: &
-    nz                    ! Number of vertical levels                      [-]
+    integer, intent(in) :: &
+      nz                    ! Number of vertical levels                      [-]
 
-  real( kind = core_rknd ), dimension(nz), intent(in) :: &
-    rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
-    thlprcp, &            ! thl'rc'                                        [K kg/kg]
-    radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+      thlprcp, &            ! thl'rc'                                        [K kg/kg]
+      radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
 
   ! Input/Output Variables
-  real( kind = core_rknd ), dimension(nz), intent(inout) :: &
-    thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+      thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
 
   ! Local Variables
-  integer :: &
-    k                     ! Loop iterator                                  [-]
+    integer :: &
+      k                     ! Loop iterator                                  [-]
 
   !----------------------------------------------------------------------
 

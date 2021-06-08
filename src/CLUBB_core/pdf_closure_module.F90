@@ -2875,7 +2875,7 @@ endif
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd
+        core_rknd
 
     implicit none
 
@@ -2936,36 +2936,36 @@ endif
   ! References
   !-----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd           ! Constant
+    use clubb_precision, only: &
+        core_rknd           ! Constant
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  integer, intent(in) :: &
-    n_points, & ! Number of points to interpolate to (must be odd and >= 3)
-    nz,       & ! Total number of vertical levels
-    k           ! Center of interpolation array
+    integer, intent(in) :: &
+      n_points, & ! Number of points to interpolate to (must be odd and >= 3)
+      nz,       & ! Total number of vertical levels
+      k           ! Center of interpolation array
 
-  real( kind = core_rknd ), dimension(nz), intent(in) :: &
-    z_vals, &         ! Height at each vertical level           [m]
-    var               ! Variable values on grid                 [units vary]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      z_vals, &         ! Height at each vertical level           [m]
+      var               ! Variable values on grid                 [units vary]
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(n_points) :: &
-    interp_var_array  ! Interpolated values of variable         [units vary]
+    real( kind = core_rknd ), dimension(n_points) :: &
+      interp_var_array  ! Interpolated values of variable         [units vary]
 
   ! Local Variables
-  real( kind = core_rknd ) :: &
-    dz    ! Distance between vertical levels
+    real( kind = core_rknd ) :: &
+      dz    ! Distance between vertical levels
 
-  real( kind = core_rknd ) :: &
-    z_val             ! Height at some sub-grid level
+    real( kind = core_rknd ) :: &
+      z_val             ! Height at some sub-grid level
 
-  integer :: &
-    i, &                      ! Loop iterator
+    integer :: &
+      i, &                      ! Loop iterator
 
-    subgrid_lev_count         ! Number of refined grid points located between
+      subgrid_lev_count         ! Number of refined grid points located between
                               ! two defined grid levels
 
   !-----------------------------------------------------------------------
@@ -3017,10 +3017,10 @@ endif
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd       ! Constant
+        core_rknd       ! Constant
 
     use interpolation, only: &
-      mono_cubic_interp  ! Procedure
+        mono_cubic_interp  ! Procedure
 
     implicit none
 
@@ -3086,10 +3086,10 @@ endif
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd       ! Constant
+        core_rknd       ! Constant
 
     use interpolation, only: &
-      mono_cubic_interp   ! Procedure
+        mono_cubic_interp   ! Procedure
 
     implicit none
 

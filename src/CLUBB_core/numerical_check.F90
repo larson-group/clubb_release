@@ -304,16 +304,16 @@ module numerical_check
         edsclr_dim
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use error_code, only: &
-      clubb_at_least_debug_level,   & ! Procedure
-      err_code,                     & ! Error Indicator
-      clubb_no_error,               & ! Constants
-      clubb_fatal_error
+        clubb_at_least_debug_level,   & ! Procedure
+        err_code,                     & ! Error Indicator
+        clubb_no_error,               & ! Constants
+        clubb_fatal_error
 
     use T_in_K_module, only: &
-      thlm2T_in_K ! Procedure
+        thlm2T_in_K ! Procedure
 
     use constants_clubb, only:  & 
         fstderr ! Variable
@@ -520,7 +520,7 @@ module numerical_check
         sclr_dim ! Variable
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -582,7 +582,7 @@ module numerical_check
         gr ! Variable
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -842,7 +842,7 @@ module numerical_check
     use, intrinsic :: ieee_arithmetic 
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -872,7 +872,7 @@ module numerical_check
 !------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -914,7 +914,7 @@ module numerical_check
         fstderr ! Variable
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use error_code, only: &
         err_code,                    & ! Error Indicator
@@ -962,7 +962,7 @@ module numerical_check
         fstderr ! Variable(s)
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use error_code, only: &
         err_code,                    & ! Error Indicator
@@ -999,7 +999,7 @@ module numerical_check
         fstderr ! Variable
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use error_code, only: &
         err_code,                    & ! Error Indicator
@@ -1042,7 +1042,7 @@ module numerical_check
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 

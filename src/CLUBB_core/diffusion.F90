@@ -347,19 +347,19 @@ module diffusion
   !   This algorithm uses equations derived from Guo, et al. 2009.
   !-----------------------------------------------------------------------------
 
-   use grid_class, only: & 
-     gr ! Variable(s)
+     use grid_class, only: & 
+         gr ! Variable(s)
 
-   use clubb_precision, only: &
-     core_rknd ! Variable(s)
+     use clubb_precision, only: &
+         core_rknd ! Variable(s)
 
-    implicit none
+      implicit none
 
     ! External
-    intrinsic :: min
+      intrinsic :: min
 
     ! Constant parameters
-    real( kind = core_rknd ), parameter :: &
+      real( kind = core_rknd ), parameter :: &
       cf_ratio = 10._core_rknd ! Maximum cloud-fraction coefficient applied to Kh_zm
 
     integer, parameter :: & 

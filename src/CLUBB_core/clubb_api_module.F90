@@ -576,11 +576,11 @@ contains
         implicit_coefs_terms    ! Variable Type(s)
 
     use parameters_model, only: &
-      sclr_dim, & ! Variable(s)
-      edsclr_dim
+        sclr_dim, & ! Variable(s)
+        edsclr_dim
 
     use model_flags, only: &
-      clubb_config_flags_type
+        clubb_config_flags_type
 
     implicit none
       !!! Input Variables
@@ -846,7 +846,7 @@ contains
     use advance_clubb_core_module, only : setup_clubb_core
 
     use parameter_indices, only:  &
-      nparams ! Variable(s)
+        nparams ! Variable(s)
       
     use model_flags, only: &
         clubb_config_flags_type  ! Type
@@ -1431,7 +1431,7 @@ contains
     use parameters_tunable, only : read_parameters
 
     use parameter_indices, only:  &
-      nparams ! Variable(s)
+        nparams ! Variable(s)
 
     implicit none
 
@@ -1459,10 +1459,10 @@ contains
     err_code_api )
 
     use parameters_tunable, only: &
-      setup_parameters
+        setup_parameters
 
     use parameter_indices, only:  &
-      nparams ! Variable(s)
+        nparams ! Variable(s)
 
     implicit none
 
@@ -1893,7 +1893,7 @@ contains
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
     use advance_windm_edsclrm_module, only: &
-      xpwp_fnc
+        xpwp_fnc
 
     use error_code, only : &
         err_code, &         ! Error Indicator
@@ -2087,7 +2087,7 @@ contains
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
     use advance_windm_edsclrm_module, only: &
-      xpwp_fnc
+        xpwp_fnc
 
     use error_code, only : &
         err_code, &         ! Error Indicator
@@ -2671,26 +2671,26 @@ contains
                   ( nz, rcm_zm, thlprcp, radht_zm, &      ! Intent(in)
                     thlp2_forcing )                       ! Intent(inout)
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use advance_clubb_core_module, only: &
-    calculate_thlp2_rad
+    use advance_clubb_core_module, only: &
+        calculate_thlp2_rad
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  integer, intent(in) :: &
-    nz                    ! Number of vertical levels                      [-]
+    integer, intent(in) :: &
+      nz                    ! Number of vertical levels                      [-]
 
-  real( kind = core_rknd ), dimension(nz), intent(in) :: &
-    rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
-    thlprcp, &            ! thl'rc'                                        [K kg/kg]
-    radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+      thlprcp, &            ! thl'rc'                                        [K kg/kg]
+      radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
 
   ! Input/Output Variables
-  real( kind = core_rknd ), dimension(nz), intent(inout) :: &
-    thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+      thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
   !----------------------------------------------------------------------
 
     call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, &
@@ -2708,7 +2708,7 @@ contains
                             rtpthlp_mc )
 
     use advance_xp2_xpyp_module, only: &
-      update_xp2_mc
+        update_xp2_mc
 
     implicit none
 
@@ -3010,7 +3010,7 @@ contains
                                                  l_use_tke_in_wp3_pr_turb_term ) ! Out
 
     use model_flags, only: &
-      set_default_clubb_config_flags  ! Procedure
+        set_default_clubb_config_flags  ! Procedure
 
     implicit none
 
@@ -3230,8 +3230,8 @@ contains
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
-      clubb_config_flags_type, &          ! Type
-      initialize_clubb_config_flags_type  ! Procedure
+        clubb_config_flags_type, &          ! Type
+        initialize_clubb_config_flags_type  ! Procedure
 
     implicit none
 
@@ -3409,8 +3409,8 @@ contains
   subroutine print_clubb_config_flags_api( iunit, clubb_config_flags ) ! In
 
     use model_flags, only: &
-      clubb_config_flags_type, &          ! Type
-      print_clubb_config_flags            ! Procedure
+        clubb_config_flags_type, &          ! Type
+        print_clubb_config_flags            ! Procedure
 
     implicit none
 

@@ -29,7 +29,7 @@ module matrix_operations
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! double precision
+        core_rknd ! double precision
 
     implicit none
 
@@ -71,7 +71,7 @@ module matrix_operations
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! double precision
+        core_rknd ! double precision
 
     implicit none
 
@@ -117,18 +117,18 @@ module matrix_operations
 !    <http://www.netlib.org/lapack/explore-html/a00753.html> dlaqsy
 !-------------------------------------------------------------------------------
     use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
+        clubb_at_least_debug_level ! Procedure
 
     use constants_clubb, only: &
-      fstderr ! Constant
+        fstderr ! Constant
 
     use clubb_precision, only: & 
-      core_rknd
+        core_rknd
       
     use lapack_interfaces, only: &
-      lapack_potrf, &   ! Procedures
-      lapack_poequ, &
-      lapack_laqsy
+        lapack_potrf, &   ! Procedures
+        lapack_poequ, &
+        lapack_laqsy
 
     implicit none
 
@@ -324,13 +324,13 @@ module matrix_operations
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-      fstderr ! Constant
+        fstderr ! Constant
 
     use clubb_precision, only: &
-      core_rknd ! double precision
+        core_rknd ! double precision
       
     use lapack_interfaces, only: &
-      lapack_syev       ! Procedure
+        lapack_syev       ! Procedure
 
     implicit none
 
@@ -438,7 +438,7 @@ module matrix_operations
 !-------------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd
+        core_rknd
 
     implicit none
 
@@ -481,7 +481,7 @@ module matrix_operations
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -520,7 +520,7 @@ module matrix_operations
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd  ! Constant
+        core_rknd  ! Constant
 
     implicit none
 

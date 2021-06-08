@@ -86,10 +86,10 @@ module saturation
 !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
-      ep    ! Variable
+        ep    ! Variable
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -148,10 +148,10 @@ module saturation
 !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
-      ep    ! Variable
+        ep    ! Variable
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -207,13 +207,13 @@ module saturation
 !   None
 
     use model_flags, only: &
-      saturation_formula, & ! Variable
-      saturation_bolton, &
-      saturation_gfdl, &
-      saturation_flatau
+        saturation_formula, & ! Variable
+        saturation_bolton, &
+        saturation_gfdl, &
+        saturation_flatau
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -308,7 +308,7 @@ module saturation
     use constants_clubb, only: T_freeze_K
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -404,7 +404,7 @@ module saturation
     use constants_clubb, only: T_freeze_K
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -439,7 +439,7 @@ module saturation
 !------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -489,7 +489,7 @@ module saturation
         ep ! Variable(s)
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -550,13 +550,13 @@ module saturation
 !------------------------------------------------------------------------
  
     use model_flags, only: &
-      saturation_formula, & ! Variable(s)
-      saturation_bolton, &
-      saturation_gfdl, &
-      saturation_flatau
+        saturation_formula, & ! Variable(s)
+        saturation_bolton, &
+        saturation_gfdl, &
+        saturation_flatau
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -607,7 +607,7 @@ module saturation
     use constants_clubb, only: T_freeze_K
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -668,7 +668,7 @@ module saturation
 !------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -703,7 +703,7 @@ module saturation
 !------------------------------------------------------------------------
  
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -751,7 +751,7 @@ module saturation
     !-------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use constants_clubb, only: & 
         Cp,            & ! Variable(s)

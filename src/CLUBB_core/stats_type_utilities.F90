@@ -99,10 +99,10 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use clubb_precision, only: &
-      stat_rknd ! Constant
+        stat_rknd ! Constant
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     implicit none
 
@@ -148,10 +148,10 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use clubb_precision, only: &
-      stat_rknd ! Constant
+        stat_rknd ! Constant
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     implicit none
 
@@ -264,16 +264,16 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use clubb_precision, only: &
-      stat_rknd ! Constant
+        stat_rknd ! Constant
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     use constants_clubb, only: & 
-      fstderr   ! Constant(s) 
+        fstderr   ! Constant(s) 
 
     use error_code, only: &
-      clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level   ! Procedure
 
     implicit none
 
@@ -393,13 +393,13 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     use constants_clubb, only: & 
-      fstderr   ! Constant(s) 
+        fstderr   ! Constant(s) 
 
     use error_code, only: &
-      clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level   ! Procedure
 
     implicit none
 
@@ -495,10 +495,10 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use clubb_precision, only: &
-      stat_rknd ! Constant
+        stat_rknd ! Constant
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     implicit none
 

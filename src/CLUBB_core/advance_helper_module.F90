@@ -105,7 +105,7 @@ module advance_helper_module
   !---------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -174,7 +174,7 @@ module advance_helper_module
   !---------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -245,17 +245,17 @@ module advance_helper_module
   !--------------------------------------------------------------------
 
     use parameters_tunable, only: &
-      lambda0_stability_coef ! Variable(s)
+        lambda0_stability_coef ! Variable(s)
 
     use constants_clubb, only: &
-      zero    ! Constant(s)
+        zero    ! Constant(s)
 
     use grid_class, only:  &
-      gr, & ! Variable(s)
-      zt2zm    ! Procedure(s)
+        gr, & ! Variable(s)
+        zt2zm    ! Procedure(s)
 
     use clubb_precision, only:  &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -327,26 +327,26 @@ module advance_helper_module
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Konstant
+        core_rknd ! Konstant
 
     use constants_clubb, only: &
-      grav, & ! Constant(s)
-      Lv, Cp, Rd, ep, &
-      one
+        grav, & ! Constant(s)
+        Lv, Cp, Rd, ep, &
+        one
 
     use parameters_model, only: & 
-      T0 ! Variable! 
+        T0 ! Variable! 
 
     use grid_class, only: &
-      gr,     & ! Variable
-      ddzt,   &  ! Procedure(s)
-      zt2zm
+        gr,     & ! Variable
+        ddzt,   &  ! Procedure(s)
+        zt2zm
 
     use T_in_K_module, only: &
-      thlm2T_in_K ! Procedure
+        thlm2T_in_K ! Procedure
 
     use saturation, only: &
-      sat_mixrat_liq ! Procedure
+        sat_mixrat_liq ! Procedure
 
     implicit none
 
@@ -495,19 +495,19 @@ module advance_helper_module
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd  ! Konstant
+        core_rknd  ! Konstant
 
     use grid_class, only: &
-      gr,   & ! Variable
-      ddzt, & ! Procedure(s)
-      zt2zm
+        gr,   & ! Variable
+        ddzt, & ! Procedure(s)
+        zt2zm
 
     use constants_clubb, only: &
 !      one_third,  & ! Constant(s)
-      one
+        one
 
     use interpolation, only: &
-      linear_interp_factor ! Procedure
+        linear_interp_factor ! Procedure
 
     use parameters_tunable, only: &
         Cx_min,             & ! Variable(s)
@@ -516,13 +516,13 @@ module advance_helper_module
         Richardson_num_max
 
     use stats_variables, only: &
-      iRichardson_num, &    ! Variable(s)
-      ishear_sqd, &
-      stats_zm,       &
-      l_stats_samp
+        iRichardson_num, &    ! Variable(s)
+        ishear_sqd, &
+        stats_zm,       &
+        l_stats_samp
 
     use stats_type_utilities, only: &
-      stat_update_var      ! Procedure
+        stat_update_var      ! Procedure
 
     implicit none
 
@@ -672,10 +672,10 @@ module advance_helper_module
   !   cam:ticket:59
 
     use clubb_precision, only: &
-      core_rknd ! Precision
+        core_rknd ! Precision
 
     use grid_class, only: &
-      gr ! Variable
+        gr ! Variable
 
     implicit none
 
@@ -845,13 +845,13 @@ module advance_helper_module
 
     ! Included Modules
     use grid_class, only: &
-      ddzt   ! Procedure(s)
+        ddzt   ! Procedure(s)
 
     use clubb_precision, only: & 
-      core_rknd 
+        core_rknd 
 
     use constants_clubb, only: &
-      five  ! Constant(s)
+        five  ! Constant(s)
 
     implicit none 
 
@@ -906,14 +906,14 @@ module advance_helper_module
 
     ! Included Modules
     use grid_class, only: &
-      ddzm   ! Procedure(s)
+        ddzm   ! Procedure(s)
 
     use clubb_precision, only: & 
-      core_rknd 
+        core_rknd 
 
     use constants_clubb, only: &
-      three, &  ! Constant(s)
-      five
+        three, &  ! Constant(s)
+        five
 
     implicit none 
 
@@ -961,26 +961,26 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), intent(in) :: &
-    input_var1          ! Units vary
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var1          ! Units vary
 
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1001,26 +1001,26 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var1          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var1          ! Units vary
 
-  real ( kind = core_rknd ), intent(in) :: &
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1041,24 +1041,24 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var1, &       ! Units vary
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var1, &       ! Units vary
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1079,26 +1079,26 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), intent(in) :: &
-    input_var1          ! Units vary
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var1          ! Units vary
 
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1119,26 +1119,26 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var1          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var1          ! Units vary
 
-  real ( kind = core_rknd ), intent(in) :: &
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1159,24 +1159,24 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var1, &       ! Units vary
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var1, &       ! Units vary
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1197,26 +1197,26 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), intent(in) :: &
-    input_var1          ! Units vary
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var1          ! Units vary
 
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1237,26 +1237,26 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var1          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var1          ! Units vary
 
-  real ( kind = core_rknd ), intent(in) :: &
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1277,24 +1277,24 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var1, &       ! Units vary
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var1, &       ! Units vary
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1315,26 +1315,26 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), intent(in) :: &
-    input_var1          ! Units vary
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var1          ! Units vary
 
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1355,26 +1355,26 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var1          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var1          ! Units vary
 
-  real ( kind = core_rknd ), intent(in) :: &
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 
@@ -1395,24 +1395,24 @@ module advance_helper_module
   !   See clubb:ticket:894
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm, &                      ! Procedure
-    zm2zt, &
-    gr
+    use grid_class, only:  &
+        zt2zm, &                      ! Procedure
+        zm2zt, &
+        gr
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    input_var1, &       ! Units vary
-    input_var2          ! Units vary
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input_var1, &       ! Units vary
+      input_var2          ! Units vary
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    output_var          ! Units vary
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      output_var          ! Units vary
 
   !----------------------------------------------------------------------
 

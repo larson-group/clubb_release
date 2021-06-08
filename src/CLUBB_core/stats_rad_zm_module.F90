@@ -35,7 +35,7 @@ module stats_rad_zm_module
         iFrad_LW_down_rad
 
     use stats_variables, only: &
-      ifulwcl, ifdlwcl, ifdswcl, ifuswcl ! Variable(s)
+        ifulwcl, ifdlwcl, ifdswcl, ifuswcl ! Variable(s)
 
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
