@@ -3284,7 +3284,7 @@ subroutine stats_check_num_samples( stats_grid, l_error )
 
   ! Look for errors by checking the number of sampling points
   ! for each variable in the statistics grid at each vertical level.
-    do ivar = 1, stats_grid%num_output_fields
+  do ivar = 1, stats_grid%num_output_fields
     do kvar = 1, stats_grid%kk
 
       l_proper_sample = ( stats_grid%accum_num_samples(1,1,kvar,ivar) == 0 .or. &

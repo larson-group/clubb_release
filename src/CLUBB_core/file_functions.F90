@@ -74,7 +74,7 @@ module file_functions
     ! Open data file.
       open( unit=file_unit, file=path_and_filename, action='read', status='old', &
             iostat=ierr )
-      if ( ierr /= 0 ) then
+    if ( ierr /= 0 ) then
       write(fstderr,*) "CLUBB encountered an error trying to open "//path_and_filename
       error stop "Error opening forcings file"
     end if

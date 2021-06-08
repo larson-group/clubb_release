@@ -2980,7 +2980,7 @@ endif
       subgrid_lev_count = (n_points - 3) / 2
 
     ! Lower half
-      if ( k == 1 ) then
+    if ( k == 1 ) then
       dz = (z_vals(2) - z_vals(1)) / real( subgrid_lev_count+1, kind=core_rknd )
     else
       dz = (z_vals(k) - z_vals(k-1)) / real( subgrid_lev_count+1, kind=core_rknd )

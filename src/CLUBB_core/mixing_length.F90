@@ -1272,7 +1272,7 @@ module mixing_length
           invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
 
           invrs_tau_shear &
-          = C_invrs_tau_shear &
+        = C_invrs_tau_shear &
           * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
 
         invrs_tau_sfc &

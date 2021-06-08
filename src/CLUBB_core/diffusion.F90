@@ -391,7 +391,7 @@ module diffusion
 
     ! ---- Begin Code ----
 
-      if ( level == 1 ) then
+    if ( level == 1 ) then
 
       ! k = 1 (bottom level); lower boundary level.
       ! Only relevant if zero-flux boundary conditions are used.

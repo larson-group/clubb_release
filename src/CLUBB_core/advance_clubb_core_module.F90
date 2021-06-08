@@ -237,9 +237,9 @@ module advance_clubb_core_module
 
 #ifdef GFDL
     use advance_sclrm_Nd_module, only: &  ! h1g, 2010-06-16 begin mod
-        advance_sclrm_Nd_diffusion_OG, &
-        advance_sclrm_Nd_upwind, &
-        advance_sclrm_Nd_semi_implicit     ! h1g, 2010-06-16 end mod
+         advance_sclrm_Nd_diffusion_OG, &
+         advance_sclrm_Nd_upwind, &
+       advance_sclrm_Nd_semi_implicit     ! h1g, 2010-06-16 end mod
 #endif
 
     use advance_xm_wpxp_module, only: &
@@ -4505,7 +4505,7 @@ module advance_clubb_core_module
   !----------------------------------------------------------------------
 
 
-      do k = 1, nz
+    do k = 1, nz
 
        if ( rcm_zm(k) > rc_tol ) then
 
