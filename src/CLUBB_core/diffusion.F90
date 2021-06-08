@@ -362,36 +362,36 @@ module diffusion
       real( kind = core_rknd ), parameter :: &
         cf_ratio = 10._core_rknd ! Maximum cloud-fraction coefficient applied to Kh_zm
 
-    integer, parameter :: & 
-      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+      integer, parameter :: & 
+        kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+        k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+        km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  & 
-      K_zm,            & ! Coef. of eddy diffusivity at mom. level (k)   [m^2/s]
-      K_zmm1,          & ! Coef. of eddy diffusivity at mom. level (k-1) [m^2/s]
-      cloud_frac_zt,   & ! Cloud fraction at the thermo. level (k)       [-]
-      cloud_frac_ztm1, & ! Cloud fraction at the thermo. level (k-1)     [-]
-      cloud_frac_ztp1, & ! Cloud fraction at the thermo. level (k+1)     [-]
-      cloud_frac_zm,   & ! Cloud fraction at the momentum level (k)      [-]
-      cloud_frac_zmm1, & ! Cloud fraction at the momentum level (k-1)    [-]
-      invrs_dzt,       & ! Inverse of grid spacing over thermo. lev. (k) [1/m]
-      invrs_dzm,       & ! Inverse of grid spacing over mom. level (k)   [1/m]
-      invrs_dzmm1        ! Inverse of grid spacing over mom. level (k-1) [1/m]
+      real( kind = core_rknd ), intent(in) ::  & 
+        K_zm,            & ! Coef. of eddy diffusivity at mom. level (k)   [m^2/s]
+        K_zmm1,          & ! Coef. of eddy diffusivity at mom. level (k-1) [m^2/s]
+        cloud_frac_zt,   & ! Cloud fraction at the thermo. level (k)       [-]
+        cloud_frac_ztm1, & ! Cloud fraction at the thermo. level (k-1)     [-]
+        cloud_frac_ztp1, & ! Cloud fraction at the thermo. level (k+1)     [-]
+        cloud_frac_zm,   & ! Cloud fraction at the momentum level (k)      [-]
+        cloud_frac_zmm1, & ! Cloud fraction at the momentum level (k-1)    [-]
+        invrs_dzt,       & ! Inverse of grid spacing over thermo. lev. (k) [1/m]
+        invrs_dzm,       & ! Inverse of grid spacing over mom. level (k)   [1/m]
+        invrs_dzmm1        ! Inverse of grid spacing over mom. level (k-1) [1/m]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      nu                 ! Background constant coef. of eddy diffusivity [m^2/s]
+      real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+        nu                 ! Background constant coef. of eddy diffusivity [m^2/s]
 
-    integer, intent(in) ::  & 
-      level     ! Thermodynamic level where calculation occurs.           [-]
+      integer, intent(in) ::  & 
+        level     ! Thermodynamic level where calculation occurs.           [-]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(3) :: lhs
+      real( kind = core_rknd ), dimension(3) :: lhs
 
     ! ---- Begin Code ----
 
-    if ( level == 1 ) then
+      if ( level == 1 ) then
 
       ! k = 1 (bottom level); lower boundary level.
       ! Only relevant if zero-flux boundary conditions are used.

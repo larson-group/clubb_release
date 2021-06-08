@@ -1259,34 +1259,34 @@ module new_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        gr    ! Variable type(s)
+      use grid_class, only: &
+          gr    ! Variable type(s)
 
-    use constants_clubb, only: &
-        six,   & ! Variable(s)
-        three, &
-        one
+      use constants_clubb, only: &
+          six,   & ! Variable(s)
+          three, &
+          one
 
-    use clubb_precision, only: &
-        core_rknd    ! Procedure(s)
+      use clubb_precision, only: &
+          core_rknd    ! Procedure(s)
 
-    implicit none
+      implicit none
 
     ! Input Variables
-    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      mixt_frac,          & ! Mixture fraction                               [-]
-      F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
-      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
-      coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+      real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+        mixt_frac,          & ! Mixture fraction                               [-]
+        F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+        coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+        coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
     ! Return Variable
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
-      coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
+      real ( kind = core_rknd ), dimension(gr%nz) :: &
+        coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
 
 
     ! Calculate coef_wp4_implicit.
-    coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
-                        + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
+      coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
+                          + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
                         + F_w**2 * ( one - mixt_frac )**2 / mixt_frac &
                         + three * ( one - mixt_frac ) * coef_sigma_w_2_sqd**2 &
                         + six * F_w * mixt_frac * coef_sigma_w_2_sqd &
@@ -1487,49 +1487,49 @@ module new_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        gr    ! Variable type(s)
+      use grid_class, only: &
+          gr    ! Variable type(s)
 
-    use constants_clubb, only: &
-        two,  & ! Variable(s)
-        one,  &
-        zero
+      use constants_clubb, only: &
+          two,  & ! Variable(s)
+          one,  &
+          zero
 
-    use clubb_precision, only: &
-        core_rknd    ! Procedure(s)
+      use clubb_precision, only: &
+          core_rknd    ! Procedure(s)
 
-    implicit none
+      implicit none
 
     ! Input Variables
-    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      wp2,                & ! Variance of w (overall)                  [m^2/s^2]
-      xp2,                & ! Variance of x (overall)           [(units vary)^2]
-      wpxp,               & ! Covariance of w and x           [m/s (units vary)]
-      sgn_wpxp,           & ! Sign of the covariance of w and x              [-]
-      mixt_frac,          & ! Mixture fraction                               [-]
-      F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
-      F_x,                & ! Parameter: spread of the PDF comp. means of x  [-]
-      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
-      coef_sigma_w_2_sqd, & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
-      coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
-      coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
+      real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+        wp2,                & ! Variance of w (overall)                  [m^2/s^2]
+        xp2,                & ! Variance of x (overall)           [(units vary)^2]
+        wpxp,               & ! Covariance of w and x           [m/s (units vary)]
+        sgn_wpxp,           & ! Sign of the covariance of w and x              [-]
+        mixt_frac,          & ! Mixture fraction                               [-]
+        F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+        F_x,                & ! Parameter: spread of the PDF comp. means of x  [-]
+        coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+        coef_sigma_w_2_sqd, & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+        coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
+        coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
     ! Return Variable
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
-      coef_wpxp2_implicit ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> [m/s]
+      real ( kind = core_rknd ), dimension(gr%nz) :: &
+        coef_wpxp2_implicit ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> [m/s]
 
     ! Local Variable
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
-      coefs_factor    ! Factor involving coef_sigma_... coefficients         [-]
+      real ( kind = core_rknd ), dimension(gr%nz) :: &
+        coefs_factor    ! Factor involving coef_sigma_... coefficients         [-]
 
 
     ! Calculate coef_wpxp2_implicit.
-    where ( ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero &
-              .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) &
-            .and. ( wp2 * xp2 > zero ) )
+      where ( ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero &
+                .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) &
+              .and. ( wp2 * xp2 > zero ) )
 
-       coefs_factor &
-       = ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &
+         coefs_factor &
+         = ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &
            - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) &
          / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &
              + ( one - mixt_frac ) &

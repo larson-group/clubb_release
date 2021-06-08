@@ -1218,61 +1218,61 @@ module mixing_length
       l_e3sm_config,              &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
                                   ! saturated atmospheres (from Durran and Klemp, 1982)
-    l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
-  real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-    brunt_vaisala_freq_sqd,       &
-    brunt_vaisala_freq_sqd_mixed, &
-    brunt_vaisala_freq_sqd_dry,   &
-    brunt_vaisala_freq_sqd_moist, &
-    brunt_vaisala_freq_sqd_plus,  &
-    sqrt_Ri_zm,                   &
-    invrs_tau_zt,                 &
-    invrs_tau_zm,                 &
-    invrs_tau_sfc,                &
-    invrs_tau_no_N2_zm,           &
-    invrs_tau_bkgnd,              &
-    invrs_tau_shear,              &
-    invrs_tau_wp2_zm,             &
-    invrs_tau_xp2_zm,             &
-    invrs_tau_wp3_zm,             &
-    invrs_tau_wp3_zt,             &
-    invrs_tau_wpxp_zm,            &
-    tau_max_zm,                   &
-    tau_max_zt,                   &
-    tau_zm,                       &
-    tau_zt,                       &
-    Lscale,                       &
-    Lscale_up,                    &
-    Lscale_down
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      brunt_vaisala_freq_sqd,       &
+      brunt_vaisala_freq_sqd_mixed, &
+      brunt_vaisala_freq_sqd_dry,   &
+      brunt_vaisala_freq_sqd_moist, &
+      brunt_vaisala_freq_sqd_plus,  &
+      sqrt_Ri_zm,                   &
+      invrs_tau_zt,                 &
+      invrs_tau_zm,                 &
+      invrs_tau_sfc,                &
+      invrs_tau_no_N2_zm,           &
+      invrs_tau_bkgnd,              &
+      invrs_tau_shear,              &
+      invrs_tau_wp2_zm,             &
+      invrs_tau_xp2_zm,             &
+      invrs_tau_wp3_zm,             &
+      invrs_tau_wp3_zt,             &
+      invrs_tau_wpxp_zm,            &
+      tau_max_zm,                   &
+      tau_max_zt,                   &
+      tau_zm,                       &
+      tau_zt,                       &
+      Lscale,                       &
+      Lscale_up,                    &
+      Lscale_down
 
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    brunt_freq_pos,               &
-    brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
-    brunt_freq_out_cloud
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      brunt_freq_pos,               &
+      brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
+      brunt_freq_out_cloud
 
- real( kind = core_rknd ) :: &
-    ustar
+   real( kind = core_rknd ) :: &
+      ustar
 
 
 !-----------------------------------Begin Code---------------------------------------------------!
-  call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
-                                          ice_supersat_frac, &
-                                          l_brunt_vaisala_freq_moist, &
-                                          l_use_thvm_in_bv_freq, &
-                                          brunt_vaisala_freq_sqd, &
-                                          brunt_vaisala_freq_sqd_mixed,&
-                                          brunt_vaisala_freq_sqd_dry, &
-                                          brunt_vaisala_freq_sqd_moist, &
-                                          brunt_vaisala_freq_sqd_plus )
+    call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
+                                            ice_supersat_frac, &
+                                            l_brunt_vaisala_freq_moist, &
+                                            l_use_thvm_in_bv_freq, &
+                                            brunt_vaisala_freq_sqd, &
+                                            brunt_vaisala_freq_sqd_mixed,&
+                                            brunt_vaisala_freq_sqd_dry, &
+                                            brunt_vaisala_freq_sqd_moist, &
+                                            brunt_vaisala_freq_sqd_plus )
 
 
-        ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
+          ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
-        invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
+          invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
 
-        invrs_tau_shear &
-        = C_invrs_tau_shear &
+          invrs_tau_shear &
+          = C_invrs_tau_shear &
           * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
 
         invrs_tau_sfc &

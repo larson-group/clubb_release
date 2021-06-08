@@ -789,31 +789,31 @@ module new_hybrid_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        six,   & ! Variable(s)
-        three, &
-        one
+      use constants_clubb, only: &
+          six,   & ! Variable(s)
+          three, &
+          one
 
-    use clubb_precision, only: &
-        core_rknd    ! Procedure(s)
+      use clubb_precision, only: &
+          core_rknd    ! Procedure(s)
 
-    implicit none
+      implicit none
 
     ! Input Variables
-    real ( kind = core_rknd ), intent(in) :: &
-      mixt_frac,          & ! Mixture fraction                               [-]
-      F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
-      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
-      coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+      real ( kind = core_rknd ), intent(in) :: &
+        mixt_frac,          & ! Mixture fraction                               [-]
+        F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+        coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+        coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
     ! Return Variable
-    real ( kind = core_rknd ) :: &
-      coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
+      real ( kind = core_rknd ) :: &
+        coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
 
 
     ! Calculate coef_wp4_implicit.
-    coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
-                        + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
+      coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
+                          + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
                         + F_w**2 * ( one - mixt_frac )**2 / mixt_frac &
                         + three * ( one - mixt_frac ) * coef_sigma_w_2_sqd**2 &
                         + six * F_w * mixt_frac * coef_sigma_w_2_sqd &
@@ -931,31 +931,31 @@ module new_hybrid_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        one,  & ! Variable(s)
-        zero
+      use constants_clubb, only: &
+          one,  & ! Variable(s)
+          zero
 
-    use clubb_precision, only: &
-        core_rknd    ! Procedure(s)
+      use clubb_precision, only: &
+          core_rknd    ! Procedure(s)
 
-    implicit none
+      implicit none
 
     ! Input Variables
-    real ( kind = core_rknd ), intent(in) :: &
-      wp2,                & ! Variance of w (overall)                  [m^2/s^2]
-      mixt_frac,          & ! Mixture fraction                               [-]
-      F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
-      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
-      coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+      real ( kind = core_rknd ), intent(in) :: &
+        wp2,                & ! Variance of w (overall)                  [m^2/s^2]
+        mixt_frac,          & ! Mixture fraction                               [-]
+        F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+        coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+        coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
     ! Return Variable
     ! Coefficient: <w'^2 x'> = coef_wp2xp_implicit * <w'x'>
-    real ( kind = core_rknd ) :: &
-      coef_wp2xp_implicit    ! Coefficient that is multiplied by <w'x'>    [m/s]
+      real ( kind = core_rknd ) :: &
+        coef_wp2xp_implicit    ! Coefficient that is multiplied by <w'x'>    [m/s]
 
 
     ! Calculate coef_wp2xp_implicit.
-    if ( F_w > 0 ) then
+      if ( F_w > 0 ) then
 
        coef_wp2xp_implicit &
        = sqrt( mixt_frac * ( one - mixt_frac ) ) &
