@@ -3,17 +3,17 @@
 !===============================================================================
 module file_functions
 
-    implicit none
+  implicit none
 
-    public :: file_read_1d, file_read_2d
+  public :: file_read_1d, file_read_2d
 
-    private ! Default Scope
+  private ! Default Scope
 
-    contains
+  contains
 
 !===============================================================================
-    subroutine file_read_1d( file_unit, path_and_filename,  & 
-                             num_datapts, entries_per_line, variable )
+  subroutine file_read_1d( file_unit, path_and_filename,  & 
+                           num_datapts, entries_per_line, variable )
 
 !     Description:
 !     This subroutine reads in values from a data file with a number of
@@ -39,28 +39,28 @@ module file_functions
 !     See Michael Falk's comments below for more information.
 !-----------------------------------------------------------------------
 
-      use clubb_precision, only: &
-          core_rknd ! Variable(s)
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
 
-      use constants_clubb, only: fstderr ! Constant(s)
+    use constants_clubb, only: fstderr ! Constant(s)
 
-      implicit none
+    implicit none
 
-      integer, intent(in) :: & 
-       file_unit,          & ! Unit number of file being read.
-       num_datapts,        & ! Total number of data points being read in.
-       entries_per_line   ! Number of data points
+    integer, intent(in) :: & 
+     file_unit,          & ! Unit number of file being read.
+     num_datapts,        & ! Total number of data points being read in.
+     entries_per_line   ! Number of data points
     ! on one line of the file being read.
 
-      character(*), intent(in) :: & 
-       path_and_filename  ! Path to file and filename of file being read.
+    character(*), intent(in) :: & 
+     path_and_filename  ! Path to file and filename of file being read.
 
-      real( kind = core_rknd ), dimension(num_datapts), intent(out) :: & 
-       variable           ! Data values output into variable
+    real( kind = core_rknd ), dimension(num_datapts), intent(out) :: & 
+     variable           ! Data values output into variable
 
-      integer :: k        ! Data file row number.
-      integer :: i        ! Data file column number.
-      integer :: ierr
+    integer :: k        ! Data file row number.
+    integer :: i        ! Data file column number.
+    integer :: ierr
 
     ! ---- Begin Code ----
 ! A ThreadLock is necessary here because FORTRAN can only have each file open on
@@ -72,8 +72,8 @@ module file_functions
 !$omp critical
 
     ! Open data file.
-      open( unit=file_unit, file=path_and_filename, action='read', status='old', &
-            iostat=ierr )
+    open( unit=file_unit, file=path_and_filename, action='read', status='old', &
+          iostat=ierr )
     if ( ierr /= 0 ) then
       write(fstderr,*) "CLUBB encountered an error trying to open "//path_and_filename
       error stop "Error opening forcings file"
