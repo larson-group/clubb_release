@@ -27,7 +27,7 @@ module mono_flux_limiter
   contains
 
   !=============================================================================
-  subroutine monotonic_turbulent_flux_limit(  gr, solve_type, dt, xm_old, &
+  subroutine monotonic_turbulent_flux_limit( gr, solve_type, dt, xm_old, &
                                              xp2, wm_zt, xm_forcing, &
                                              rho_ds_zm, rho_ds_zt, &
                                              invrs_rho_ds_zm, invrs_rho_ds_zt, &
@@ -283,7 +283,7 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid, &
+        grid, & ! Type
         zm2zt  ! Procedure(s)
 
     use constants_clubb, only: &    
@@ -861,7 +861,7 @@ module mono_flux_limiter
   end subroutine monotonic_turbulent_flux_limit
 
   !=============================================================================
-  subroutine mfl_xm_lhs(  gr, dt, wm_zt, l_implemented, l_upwind_xm_ma, &
+  subroutine mfl_xm_lhs( gr, dt, wm_zt, l_implemented, l_upwind_xm_ma, &
                          lhs )
 
     ! Description:
@@ -876,7 +876,7 @@ module mono_flux_limiter
     ! Subroutine mfl_xm_lhs sets up the left-hand side of the matrix equation.
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use mean_adv, only: & 
         term_ma_zt_lhs ! Procedure(s)
@@ -959,7 +959,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_lhs
 
   !=============================================================================
-  subroutine mfl_xm_rhs(  gr, dt, xm_old, wpxp, xm_forcing, &
+  subroutine mfl_xm_rhs( gr, dt, xm_old, wpxp, xm_forcing, &
                          rho_ds_zm, invrs_rho_ds_zt, &
                          rhs )
 
@@ -975,7 +975,7 @@ module mono_flux_limiter
     ! Subroutine mfl_xm_rhs sets up the right-hand side of the matrix equation.
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1057,7 +1057,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_rhs
 
   !=============================================================================
-  subroutine mfl_xm_solve(  gr, solve_type, lhs, rhs,  &
+  subroutine mfl_xm_solve( gr, solve_type, lhs, rhs,  &
                            xm )
 
     ! Description:
@@ -1073,7 +1073,7 @@ module mono_flux_limiter
     ! timestep index (t+1).
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use lapack_wrap, only:  & 
         tridag_solve  ! Procedure(s)
@@ -1143,7 +1143,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_solve
 
   !=============================================================================
-  subroutine calc_turb_adv_range(  gr, dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+  subroutine calc_turb_adv_range( gr, dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                                   mixt_frac_zm, &
                                   low_lev_effect, high_lev_effect )
 
@@ -1177,7 +1177,7 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
     
     use grid_class, only:  &
-        grid
+        grid ! Type
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1503,7 +1503,7 @@ module mono_flux_limiter
   end subroutine calc_turb_adv_range
 
   !=============================================================================
-  subroutine mean_vert_vel_up_down(  gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+  subroutine mean_vert_vel_up_down( gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                                     mixt_frac_zm, w_ref, w_min, &
                                     mean_w_down, mean_w_up )
 
@@ -1698,7 +1698,7 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        grid
+        grid ! Type
 
     use stats_type_utilities, only:  &
         stat_update_var  ! Procedure(s)
@@ -1710,7 +1710,7 @@ module mono_flux_limiter
         l_stats_samp
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -1771,7 +1771,7 @@ module mono_flux_limiter
   end subroutine mean_vert_vel_up_down
 
   !=============================================================================
-  subroutine calc_mean_w_up_down_component(  gr, w_i_zm, varnce_w_i, &
+  subroutine calc_mean_w_up_down_component( gr, w_i_zm, varnce_w_i, &
                                             w_ref, w_min, &
                                             mean_w_down_i, mean_w_up_i )
 
@@ -1797,7 +1797,7 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
       use grid_class, only:  &
-        grid
+        grid ! Type
 
       use constants_clubb, only: &
           sqrt_2pi, &  ! Constant(s)

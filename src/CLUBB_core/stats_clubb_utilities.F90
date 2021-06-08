@@ -30,116 +30,116 @@ module stats_clubb_utilities
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
-      stats_zt,      & ! Variables
-      ztscr01, & 
-      ztscr02, & 
-      ztscr03, & 
-      ztscr04, & 
-      ztscr05, & 
-      ztscr06, & 
-      ztscr07, & 
-      ztscr08, & 
-      ztscr09, & 
-      ztscr10, & 
-      ztscr11, & 
-      ztscr12, & 
-      ztscr13, & 
-      ztscr14, & 
-      ztscr15, & 
-      ztscr16, & 
-      ztscr17, & 
-      ztscr18, & 
-      ztscr19, & 
-      ztscr20, & 
-      ztscr21
+        stats_zt,      & ! Variables
+        ztscr01, & 
+        ztscr02, & 
+        ztscr03, & 
+        ztscr04, & 
+        ztscr05, & 
+        ztscr06, & 
+        ztscr07, & 
+        ztscr08, & 
+        ztscr09, & 
+        ztscr10, & 
+        ztscr11, & 
+        ztscr12, & 
+        ztscr13, & 
+        ztscr14, & 
+        ztscr15, & 
+        ztscr16, & 
+        ztscr17, & 
+        ztscr18, & 
+        ztscr19, & 
+        ztscr20, & 
+        ztscr21
 
     use stats_variables, only: &
-      l_silhs_out, & ! Variable(s)
-      stats_lh_zt, &
-      stats_lh_sfc
+        l_silhs_out, & ! Variable(s)
+        stats_lh_zt, &
+        stats_lh_sfc
 
     use stats_variables, only: &
-      stats_zm,      & ! Variables
-      zmscr01, &
-      zmscr02, &
-      zmscr03, &
-      zmscr04, &
-      zmscr05, &
-      zmscr06, &
-      zmscr07, &
-      zmscr08, &
-      zmscr09, &
-      zmscr10, &
-      zmscr11, &
-      zmscr12, &
-      zmscr13, &
-      zmscr14, &
-      zmscr15, &
-      zmscr16, &
-      zmscr17, &
-      stats_rad_zt
+        stats_zm,      & ! Variables
+        zmscr01, &
+        zmscr02, &
+        zmscr03, &
+        zmscr04, &
+        zmscr05, &
+        zmscr06, &
+        zmscr07, &
+        zmscr08, &
+        zmscr09, &
+        zmscr10, &
+        zmscr11, &
+        zmscr12, &
+        zmscr13, &
+        zmscr14, &
+        zmscr15, &
+        zmscr16, &
+        zmscr17, &
+        stats_rad_zt
 
     use stats_variables, only: &
-      stats_rad_zm,  &
-      stats_sfc,     &
-      l_stats, &
-      l_output_rad_files, &
-      stats_tsamp,   &
-      stats_tout,    &
-      l_stats_samp,  &
-      l_stats_last, &
-      fname_zt, &
-      fname_lh_zt, &
-      fname_lh_sfc, &
-      fname_zm, &
-      fname_rad_zt, &
-      fname_rad_zm, &
-      fname_sfc, &
-      l_netcdf, &
-      l_grads
+        stats_rad_zm,  &
+        stats_sfc,     &
+        l_stats, &
+        l_output_rad_files, &
+        stats_tsamp,   &
+        stats_tout,    &
+        l_stats_samp,  &
+        l_stats_last, &
+        fname_zt, &
+        fname_lh_zt, &
+        fname_lh_sfc, &
+        fname_zm, &
+        fname_rad_zt, &
+        fname_rad_zm, &
+        fname_sfc, &
+        l_netcdf, &
+        l_grads
 
     use clubb_precision, only: &
-      time_precision, & ! Constant(s)
-      core_rknd
+        time_precision, & ! Constant(s)
+        core_rknd
 
     use output_grads, only: &
-      open_grads ! Procedure
+        open_grads ! Procedure
 
 #ifdef NETCDF
     use output_netcdf, only: &
-      open_netcdf_for_writing     ! Procedure
+        open_netcdf_for_writing     ! Procedure
 #endif
 
     use stats_zm_module, only: &
-      nvarmax_zm, & ! Constant(s)
-      stats_init_zm ! Procedure(s)
+        nvarmax_zm, & ! Constant(s)
+        stats_init_zm ! Procedure(s)
 
     use stats_zt_module, only: &
-      nvarmax_zt, & ! Constant(s)
-      stats_init_zt ! Procedure(s)
+        nvarmax_zt, & ! Constant(s)
+        stats_init_zt ! Procedure(s)
 
     use stats_lh_zt_module, only: &
-      nvarmax_lh_zt, & ! Constant(s)
-      stats_init_lh_zt ! Procedure(s)
+        nvarmax_lh_zt, & ! Constant(s)
+        stats_init_lh_zt ! Procedure(s)
 
     use stats_lh_sfc_module, only: &
-      nvarmax_lh_sfc, & ! Constant(s)
-      stats_init_lh_sfc ! Procedure(s)
+        nvarmax_lh_sfc, & ! Constant(s)
+        stats_init_lh_sfc ! Procedure(s)
 
     use stats_rad_zt_module, only: &
-      nvarmax_rad_zt, & ! Constant(s)
-      stats_init_rad_zt ! Procedure(s)
+        nvarmax_rad_zt, & ! Constant(s)
+        stats_init_rad_zt ! Procedure(s)
 
     use stats_rad_zm_module, only: &
-      nvarmax_rad_zm, & ! Constant(s)
-      stats_init_rad_zm ! Procedure(s)
+        nvarmax_rad_zm, & ! Constant(s)
+        stats_init_rad_zm ! Procedure(s)
 
     use stats_sfc_module, only: &
-      nvarmax_sfc, & ! Constant(s)
-      stats_init_sfc ! Procedure(s)
+        nvarmax_sfc, & ! Constant(s)
+        stats_init_sfc ! Procedure(s)
 
     use constants_clubb, only: &
-      fstdout, fstderr, var_length ! Constants
+        fstdout, fstderr, var_length ! Constants
 
     use parameters_model, only: &
         hydromet_dim, &  ! Variable(s)
@@ -1488,11 +1488,11 @@ module stats_clubb_utilities
     !   None
     !-----------------------------------------------------------------------
     use clubb_precision, only: & 
-      stat_rknd,   & ! Variable(s)
-      stat_nknd
+        stat_rknd,   & ! Variable(s)
+        stat_nknd
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     implicit none
 
@@ -1612,8 +1612,8 @@ module stats_clubb_utilities
         write_grads ! Procedure(s)
 
     use stat_file_module, only: &
-      clubb_i, & ! Variable(s)
-      clubb_j
+        clubb_i, & ! Variable(s)
+        clubb_j
 
 #ifdef NETCDF
     use output_netcdf, only: & 
@@ -1799,7 +1799,7 @@ module stats_clubb_utilities
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate & 
-                   (  gr, um, vm, upwp, vpwp, up2, vp2, &
+                   ( gr, um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
@@ -2038,7 +2038,9 @@ module stats_clubb_utilities
         ircm_in_cloud
 
     use grid_class, only: & 
-        grid, &
+        grid ! Type
+
+    use grid_class, only: & 
         zt2zm ! Procedure(s)
 
     use pdf_parameter_module, only: & 
@@ -2576,7 +2578,7 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_hydromet(  gr, hydromet, rho_ds_zt )
+  subroutine stats_accumulate_hydromet( gr, hydromet, rho_ds_zt )
 ! Description:
 !   Compute stats related the hydrometeors
 
@@ -2584,42 +2586,42 @@ module stats_clubb_utilities
 !   None
 !------------------------------------------------------------------------------
     use parameters_model, only: &
-      hydromet_dim ! Variable(s)
+        hydromet_dim ! Variable(s)
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use array_index, only:  & 
-      iirr, iirs, iiri, iirg, & ! Variable(s)
-      iiNr, iiNs, iiNi, iiNg
+        iirr, iirs, iiri, iirg, & ! Variable(s)
+        iiNr, iiNs, iiNi, iiNg
 
     use stats_variables, only: &
-      stats_sfc, & ! Variable(s)
-      irrm, & 
-      irsm, & 
-      irim, & 
-      irgm, & 
-      iNim, & 
-      iNrm, & 
-      iNsm, &
-      iNgm, &
-      iswp, &
-      irwp, &
-      iiwp
+        stats_sfc, & ! Variable(s)
+        irrm, & 
+        irsm, & 
+        irim, & 
+        irgm, & 
+        iNim, & 
+        iNrm, & 
+        iNsm, &
+        iNgm, &
+        iswp, &
+        irwp, &
+        iiwp
 
     use fill_holes, only: &
-      vertical_integral ! Procedure(s)
+        vertical_integral ! Procedure(s)
 
     use stats_type_utilities, only: & 
-      stat_update_var, & ! Procedure(s)
-      stat_update_var_pt
+        stat_update_var, & ! Procedure(s)
+        stat_update_var_pt
 
     use stats_variables, only: &
-      stats_zt, & ! Variables
-      l_stats_samp
+        stats_zt, & ! Variables
+        l_stats_samp
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -2713,7 +2715,7 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate_hydromet
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_lh_tend(  gr, lh_hydromet_mc, lh_Ncm_mc, &
+  subroutine stats_accumulate_lh_tend( gr, lh_hydromet_mc, lh_Ncm_mc, &
                                        lh_thlm_mc, lh_rvm_mc, lh_rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc )
@@ -2726,47 +2728,47 @@ module stats_clubb_utilities
 !------------------------------------------------------------------------------
 
     use parameters_model, only: &
-      hydromet_dim ! Variable(s)
+        hydromet_dim ! Variable(s)
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use array_index, only:  & 
-      iirr, iirs, iiri, iirg, & ! Variable(s)
-      iiNr, iiNs, iiNi, iiNg
+        iirr, iirs, iiri, iirg, & ! Variable(s)
+        iiNr, iiNs, iiNi, iiNg
 
     use stats_variables, only: &
-      ilh_rrm_mc, & ! Variable(s)
-      ilh_rsm_mc, & 
-      ilh_rim_mc, & 
-      ilh_rgm_mc, & 
-      ilh_Ncm_mc, &
-      ilh_Nim_mc, & 
-      ilh_Nrm_mc, & 
-      ilh_Nsm_mc, &
-      ilh_Ngm_mc, &
-      ilh_rcm_mc, &
-      ilh_rvm_mc, &
-      ilh_thlm_mc
+        ilh_rrm_mc, & ! Variable(s)
+        ilh_rsm_mc, & 
+        ilh_rim_mc, & 
+        ilh_rgm_mc, & 
+        ilh_Ncm_mc, &
+        ilh_Nim_mc, & 
+        ilh_Nrm_mc, & 
+        ilh_Nsm_mc, &
+        ilh_Ngm_mc, &
+        ilh_rcm_mc, &
+        ilh_rvm_mc, &
+        ilh_thlm_mc
 
     use stats_variables, only: &
-      iAKstd, & ! Variable(s)
-      iAKstd_cld, &
-      iAKm_rcm, &
-      iAKm_rcc, &
-      iAKm, & 
-      ilh_AKm, &
-      ilh_rcm_avg
+        iAKstd, & ! Variable(s)
+        iAKstd_cld, &
+        iAKm_rcm, &
+        iAKm_rcc, &
+        iAKm, & 
+        ilh_AKm, &
+        ilh_rcm_avg
 
     use stats_type_utilities, only: & 
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &
-      stats_lh_zt, & ! Variables
-      l_stats_samp
+        stats_lh_zt, & ! Variables
+        l_stats_samp
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -3254,33 +3256,33 @@ subroutine stats_check_num_samples( stats_grid, l_error )
 !   None
 !-----------------------------------------------------------------------
 
-  use constants_clubb, only: &
-    fstderr ! Constant
+    use constants_clubb, only: &
+        fstderr ! Constant
 
-  use stats_type, only: &
-    stats ! Type
+    use stats_type, only: &
+        stats ! Type
 
-  use stats_variables, only: &
-    stats_tsamp, & ! Variable(s)
-    stats_tout
+    use stats_variables, only: &
+        stats_tsamp, & ! Variable(s)
+        stats_tout
 
-  use error_code, only: &
-    clubb_at_least_debug_level   ! Procedure
+    use error_code, only: &
+        clubb_at_least_debug_level   ! Procedure
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  type (stats), intent(in) :: &
-    stats_grid               ! Grid type              [grid]
+    type (stats), intent(in) :: &
+      stats_grid               ! Grid type              [grid]
 
   ! Input/Output Variables
-  logical, intent(inout) :: &
-    l_error                  ! Indicates an error     [boolean]
+    logical, intent(inout) :: &
+      l_error                  ! Indicates an error     [boolean]
 
   ! Local Variables
-  integer :: ivar, kvar      ! Loop variable          [index]
+    integer :: ivar, kvar      ! Loop variable          [index]
 
-  logical :: l_proper_sample
+    logical :: l_proper_sample
 
 !-----------------------------------------------------------------------
 

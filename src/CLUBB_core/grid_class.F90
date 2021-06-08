@@ -1106,11 +1106,11 @@ module grid_class
         core_rknd  ! Variable(s)
 
     use model_flags, only: &
-      l_cubic_interp, & ! Variable(s)
-      l_quintic_poly_interp
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
 
     use constants_clubb, only: &
-      fstdout ! Variable
+        fstdout ! Variable
 
     implicit none
 
@@ -1157,11 +1157,11 @@ module grid_class
         core_rknd  ! Variable(s)
 
     use model_flags, only: &
-      l_cubic_interp, & ! Variable(s)
-      l_quintic_poly_interp
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
 
     use constants_clubb, only: &
-      fstdout ! Variable
+        fstdout ! Variable
 
     implicit none
 
@@ -1205,11 +1205,11 @@ module grid_class
         core_rknd  ! Variable(s)
 
     use model_flags, only: &
-      l_cubic_interp, & ! Variable(s)
-      l_quintic_poly_interp
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
 
     use constants_clubb, only: &
-      fstdout ! Variable
+        fstdout ! Variable
 
     implicit none
 
@@ -1256,11 +1256,11 @@ module grid_class
         core_rknd  ! Variable(s)
 
     use model_flags, only: &
-      l_cubic_interp, & ! Variable(s)
-      l_quintic_poly_interp
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
 
     use constants_clubb, only: &
-      fstdout ! Variable
+        fstdout ! Variable
 
     implicit none
 

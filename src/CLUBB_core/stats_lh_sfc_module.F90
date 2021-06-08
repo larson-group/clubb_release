@@ -26,18 +26,18 @@ module stats_lh_sfc_module
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-      fstderr ! Constant(s)
+        fstderr ! Constant(s)
 
     use stats_variables, only: & 
-      stats_lh_sfc ! Variable(s)
+        stats_lh_sfc ! Variable(s)
 
     use stats_variables, only: & 
-      ilh_morr_snow_rate, & ! Variable(s)
-      ilh_vwp, &
-      ilh_lwp, &
-      ilh_sample_weights_sum, &
-      ilh_sample_weights_avg, &
-      ik_lh_start
+        ilh_morr_snow_rate, & ! Variable(s)
+        ilh_vwp, &
+        ilh_lwp, &
+        ilh_sample_weights_sum, &
+        ilh_sample_weights_avg, &
+        ik_lh_start
       
     use stats_type_utilities, only: & 
         stat_assign ! Procedure

@@ -1016,8 +1016,6 @@ module latin_hypercube_driver_module
   !-----------------------------------------------------------------------
 
     ! Included Modules
-    use grid_class, only: gr
-
     use clubb_precision, only: &
         core_rknd
 
@@ -1041,6 +1039,8 @@ module latin_hypercube_driver_module
 
     use transform_to_pdf_module, only: &
         chi_eta_2_rtthl ! Awesome procedure
+
+    use grid_class, only: gr
 
     implicit none
 

@@ -354,15 +354,15 @@ module corr_varnce_module
     !-----------------------------------------------------------------------------
 
     use input_reader, only: &
-      one_dim_read_var, & ! Variable(s)
-      read_one_dim_file, deallocate_one_dim_vars, count_columns ! Procedure(s)
+        one_dim_read_var, & ! Variable(s)
+        read_one_dim_file, deallocate_one_dim_vars, count_columns ! Procedure(s)
 
     use matrix_operations, only: set_lower_triangular_matrix ! Procedure(s)
 
     use constants_clubb, only: fstderr ! Variable(s)
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -730,8 +730,8 @@ module corr_varnce_module
     use matrix_operations, only: mirror_lower_triangular_matrix ! Procedure
 
     use constants_clubb, only: &
-      fstderr, &  ! Constant(s)
-      eps
+        fstderr, &  ! Constant(s)
+        eps
 
     implicit none
 

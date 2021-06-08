@@ -118,7 +118,7 @@ module advance_clubb_core_module
   !#######################################################################
   !#######################################################################
   subroutine advance_clubb_core &
-             (  gr, l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
+             ( gr, l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! intent(in)
                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! intent(in)
@@ -221,7 +221,7 @@ module advance_clubb_core_module
         iiPDF_ADG1
 
     use grid_class, only: &
-        grid, &
+        grid, & ! Type
         zm2zt,  & ! Procedure(s)
         zt2zm, &
         ddzm, &
@@ -237,8 +237,8 @@ module advance_clubb_core_module
 
 #ifdef GFDL
     use advance_sclrm_Nd_module, only: &  ! h1g, 2010-06-16 begin mod
-       advance_sclrm_Nd_diffusion_OG, &
-       advance_sclrm_Nd_upwind, &
+         advance_sclrm_Nd_diffusion_OG, &
+         advance_sclrm_Nd_upwind, &
        advance_sclrm_Nd_semi_implicit     ! h1g, 2010-06-16 end mod
 #endif
 
@@ -361,21 +361,21 @@ module advance_clubb_core_module
         ithlm_spur_src
 
     use stats_variables, only: &
-      irfrzm, & ! Variable(s)
-      istability_correction
+        irfrzm, & ! Variable(s)
+        istability_correction
 
     use fill_holes, only: &
-      vertical_integral, & ! Procedure(s)
-      fill_holes_vertical
+        vertical_integral, & ! Procedure(s)
+        fill_holes_vertical
 
     use advance_helper_module, only: &
-      calc_stability_correction, & ! Procedure(s)
-      compute_Cx_fnc_Richardson, &
-      calc_brunt_vaisala_freq_sqd, &
-      term_wp2_splat, term_wp3_splat
+        calc_stability_correction, & ! Procedure(s)
+        compute_Cx_fnc_Richardson, &
+        calc_brunt_vaisala_freq_sqd, &
+        term_wp2_splat, term_wp3_splat
 
     use interpolation, only: &
-      pvertinterp
+        pvertinterp
 
     implicit none
 
@@ -1420,7 +1420,7 @@ module advance_clubb_core_module
       ! otherwise its value is irrelevant, set it to 0 to avoid NaN problems
       if ( clubb_config_flags%l_use_C7_Richardson .or. clubb_config_flags%l_use_C11_Richardson &
         .or. l_use_wp3_pr3 ) then
-       call compute_Cx_Fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm,          & ! intent(in)
+       call compute_Cx_Fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm,      & ! intent(in)
                                        rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
                                        ice_supersat_frac,                             & ! intent(in)
                                        clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
@@ -1569,7 +1569,7 @@ module advance_clubb_core_module
 
       ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3 &
-           (  gr, dt_advance, sfc_elevation, sigma_sqd_w, wm_zm,             & ! intent(in)
+           ( gr, dt_advance, sfc_elevation, sigma_sqd_w, wm_zm,             & ! intent(in)
              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,                    & ! intent(in)
              wp2up2, wp2vp2, wp4,                                       & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,                       & ! intent(in)
@@ -1996,7 +1996,7 @@ module advance_clubb_core_module
       end if
 
       call stats_accumulate &
-           (  gr, um, vm, upwp, vpwp, up2, vp2,                          & ! intent(in)
+           ( gr, um, vm, upwp, vpwp, up2, vp2,                          & ! intent(in)
              thlm, rtm, wprtp, wpthlp,                              & ! intent(in)
              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp,           & ! intent(in)
              wpthvp, wp2thvp, rtpthvp, thlpthvp,                    & ! intent(in)
@@ -2022,7 +2022,7 @@ module advance_clubb_core_module
 
       if ( clubb_at_least_debug_level( 2 ) ) then
         call parameterization_check &
-           ( gr, thlm_forcing, rtm_forcing, um_forcing,                             & ! intent(in)
+           ( gr, thlm_forcing, rtm_forcing, um_forcing,                         & ! intent(in)
              vm_forcing, wm_zm, wm_zt, p_in_Pa,                                 & ! intent(in)
              rho_zm, rho, exner, rho_ds_zm,                                     & ! intent(in)
              rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,                       & ! intent(in)
@@ -2113,7 +2113,7 @@ module advance_clubb_core_module
     end subroutine advance_clubb_core
 
   !=============================================================================
-  subroutine pdf_closure_driver(  gr, dt, hydromet_dim, wprtp,       & ! Intent(in)
+  subroutine pdf_closure_driver( gr, dt, hydromet_dim, wprtp,       & ! Intent(in)
                                  thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                  thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
                                  wp3, wm_zm, wm_zt,             & ! Intent(in)
@@ -2163,7 +2163,7 @@ module advance_clubb_core_module
                                  pdf_implicit_coefs_terms )       ! Intent(out)
 
     use grid_class, only: &
-        grid, &
+        grid, & ! Type
         zt2zm, & ! Procedure(s)
         zm2zt
 
@@ -2705,7 +2705,7 @@ module advance_clubb_core_module
 
 
     call pdf_closure &
-         (  gr, hydromet_dim, p_in_Pa, exner, thv_ds_zt,        & ! intent(in)
+         ( gr, hydromet_dim, p_in_Pa, exner, thv_ds_zt,        & ! intent(in)
            wm_zt, wp2_zt, wp3, sigma_sqd_w_zt,             & ! intent(in)
            Skw_zt, Skthl_zt, Skrt_zt, Sku_zt, Skv_zt,      & ! intent(in)
            rtm, rtp2_zt, wprtp_zt,                         & ! intent(in)
@@ -2871,7 +2871,7 @@ module advance_clubb_core_module
       ! Call pdf_closure to output the variables which belong on the momentum grid.
 
       call pdf_closure &
-           (  gr, hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm,        & ! intent(in)
+           ( gr, hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm,        & ! intent(in)
              wm_zm, wp2, wp3_zm, sigma_sqd_w,                      & ! intent(in)
              Skw_zm, Skthl_zm, Skrt_zm, Sku_zm, Skv_zm,            & ! intent(in)
              rtm_zm, rtp2, wprtp,                                  & ! intent(in)
@@ -2981,7 +2981,7 @@ module advance_clubb_core_module
     ! ldgrant June 2009
     if ( l_trapezoidal_rule_zt ) then
       call trapezoidal_rule_zt &
-           (  gr, l_call_pdf_closure_twice,                    & ! intent(in)
+           ( gr, l_call_pdf_closure_twice,                    & ! intent(in)
              wprtp2, wpthlp2,                             & ! intent(inout)
              wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
              rcm, wp2thvp, wpsclrprtp, wpsclrp2,          & ! intent(inout)
@@ -2998,7 +2998,7 @@ module advance_clubb_core_module
     ! ldgrant Feb. 2010
     if ( l_trapezoidal_rule_zm ) then
       call trapezoidal_rule_zm &
-         (  gr, wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
+         ( gr, wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
            wpthvp, thlpthvp, rtpthvp )           ! intent(inout)
     end if ! l_trapezoidal_rule_zm
 
@@ -3014,7 +3014,7 @@ module advance_clubb_core_module
     ! Compute variables cloud_cover and rcm_in_layer.
     ! Added July 2009
     call compute_cloud_cover &
-       (  gr, pdf_params, cloud_frac, rcm, & ! intent(in)
+       ( gr, pdf_params, cloud_frac, rcm, & ! intent(in)
          cloud_cover, rcm_in_layer )    ! intent(out)
 
     ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help
@@ -3060,7 +3060,7 @@ module advance_clubb_core_module
 
   !=============================================================================
     subroutine setup_clubb_core &
-               (  gr, nzmax, T0_in, ts_nudge_in,               & ! intent(in)
+               ( gr, nzmax, T0_in, ts_nudge_in,               & ! intent(in)
                  hydromet_dim_in, sclr_dim_in,            & ! intent(in)
                  sclr_tol_in, edsclr_dim_in, params,      & ! intent(in)
                  l_host_applies_sfc_fluxes,               & ! intent(in)
@@ -3094,7 +3094,7 @@ module advance_clubb_core_module
 
       use grid_class, only: &
           setup_grid, & ! Procedure
-        grid
+        grid ! Type
 
       use parameter_indices, only:  &
           nparams, & ! Variable(s)
@@ -3476,7 +3476,7 @@ module advance_clubb_core_module
 
       ! Define tunable constant parameters
       call setup_parameters &
-           (  gr, deltaz, params, gr%nz,                                & ! intent(in)
+           ( gr, deltaz, params, gr%nz,                                & ! intent(in)
              grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
              thermodynamic_heights(begin_height:end_height),       & ! intent(in)
              l_prescribed_avg_deltaz,                              & ! intent(in)
@@ -3542,7 +3542,7 @@ module advance_clubb_core_module
 
     !-----------------------------------------------------------------------
     subroutine trapezoidal_rule_zt &
-               (  gr, l_call_pdf_closure_twice,                    & ! intent(in)
+               ( gr, l_call_pdf_closure_twice,                    & ! intent(in)
                  wprtp2, wpthlp2,                             & ! intent(inout)
                  wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
                  rcm, wp2thvp, wpsclrprtp, wpsclrp2,          & ! intent(inout)
@@ -3588,7 +3588,7 @@ module advance_clubb_core_module
           l_stats
 
       use grid_class, only: &
-        grid, &
+        grid, & ! Type
           zt2zm ! Procedure
 
       use parameters_model, only: &
@@ -4031,7 +4031,7 @@ module advance_clubb_core_module
 
     !-----------------------------------------------------------------------
     subroutine trapezoidal_rule_zm &
-               (  gr, wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
+               ( gr, wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
                  wpthvp, thlpthvp, rtpthvp )           ! intent(inout)
       !
       ! Description:
@@ -4084,7 +4084,7 @@ module advance_clubb_core_module
     end subroutine trapezoidal_rule_zm
 
     !-----------------------------------------------------------------------
-    pure function trapezoid_zt(  gr, variable_zt, variable_zm )
+    pure function trapezoid_zt( gr, variable_zt, variable_zm )
       !
       ! Description:
       !   Function which uses the trapezoidal rule from calculus
@@ -4131,7 +4131,7 @@ module advance_clubb_core_module
     end function trapezoid_zt
 
     !-----------------------------------------------------------------------
-    pure function trapezoid_zm(  gr, variable_zm, variable_zt )
+  pure function trapezoid_zm( gr, variable_zm, variable_zt )
       !
       ! Description:
       !   Function which uses the trapezoidal rule from calculus
@@ -4144,10 +4144,10 @@ module advance_clubb_core_module
 
     use grid_class, only: grid
 
-      use clubb_precision, only: &
+    use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-      implicit none
+    implicit none
 
     type (grid), target, intent(in) :: gr
 
@@ -4182,7 +4182,7 @@ module advance_clubb_core_module
 
     !-----------------------------------------------------------------------
     subroutine compute_cloud_cover &
-             (  gr, pdf_params, cloud_frac, rcm, & ! intent(in)
+             ( gr, pdf_params, cloud_frac, rcm, & ! intent(in)
                cloud_cover, rcm_in_layer )    ! intent(out)
       !
       ! Description:
@@ -4357,7 +4357,7 @@ module advance_clubb_core_module
     end subroutine compute_cloud_cover
     !-----------------------------------------------------------------------
     subroutine clip_rcm &
-             (  gr, rtm, message, & ! intent(in)
+             ( gr, rtm, message, & ! intent(in)
                rcm )    ! intent(inout)
       !
       ! Description:
@@ -4488,37 +4488,37 @@ module advance_clubb_core_module
   !   See clubb:ticket:632
   !----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd                     ! Constant(s)
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
 
-  use grid_class, only:  &
-    zt2zm                         ! Procedure
+    use grid_class, only:  &
+        zt2zm                         ! Procedure
 
-  use constants_clubb, only: &
-    two, &
-    rc_tol
+    use constants_clubb, only: &
+        two, &
+        rc_tol
 
-  use parameters_tunable, only: &
-    thlp2_rad_coef
+    use parameters_tunable, only: &
+        thlp2_rad_coef
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  integer, intent(in) :: &
-    nz                    ! Number of vertical levels                      [-]
+    integer, intent(in) :: &
+      nz                    ! Number of vertical levels                      [-]
 
-  real( kind = core_rknd ), dimension(nz), intent(in) :: &
-    rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
-    thlprcp, &            ! thl'rc'                                        [K kg/kg]
-    radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+      thlprcp, &            ! thl'rc'                                        [K kg/kg]
+      radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
 
   ! Input/Output Variables
-  real( kind = core_rknd ), dimension(nz), intent(inout) :: &
-    thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+      thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
 
   ! Local Variables
-  integer :: &
-    k                     ! Loop iterator                                  [-]
+    integer :: &
+      k                     ! Loop iterator                                  [-]
 
   !----------------------------------------------------------------------
 

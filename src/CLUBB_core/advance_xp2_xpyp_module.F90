@@ -42,7 +42,7 @@ module advance_xp2_xpyp_module
   contains
 
   !=============================================================================
-  subroutine advance_xp2_xpyp(  gr, invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm, & ! In
+  subroutine advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm, & ! In
                                rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,  & ! In
                                wp2, wp2_zt, wp3, upwp, vpwp,              & ! In
                                sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,      & ! In
@@ -127,7 +127,7 @@ module advance_xp2_xpyp_module
         sclr_tol
 
     use grid_class, only: & 
-        grid, &
+        grid, & ! Type
         zm2zt, & ! Procedure(s)
         zt2zm
 
@@ -1080,7 +1080,7 @@ module advance_xp2_xpyp_module
   end subroutine advance_xp2_xpyp
   
   !============================================================================================
-  subroutine solve_xp2_xpyp_with_single_lhs(  gr, C2x, invrs_tau_xp2_zm, rtm, thlm, wprtp, &
+  subroutine solve_xp2_xpyp_with_single_lhs( gr, C2x, invrs_tau_xp2_zm, rtm, thlm, wprtp, &
                                              wpthlp, rtp2_forcing, thlp2_forcing, &
                                              rtpthlp_forcing, sclrm, wpsclrp, &
                                              lhs_ta, lhs_ma, lhs_diff, &
@@ -1101,7 +1101,7 @@ module advance_xp2_xpyp_module
       !----------------------------------------------------------------------------------
       
       use grid_class, only: &
-        grid
+        grid ! Type
         
       use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1304,7 +1304,7 @@ module advance_xp2_xpyp_module
   end subroutine solve_xp2_xpyp_with_single_lhs
   
   !============================================================================================
-  subroutine solve_xp2_xpyp_with_multiple_lhs(  gr, C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
+  subroutine solve_xp2_xpyp_with_multiple_lhs( gr, C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
                                     invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp, &
                                     rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
                                     sclrm, wpsclrp, &
@@ -1323,7 +1323,7 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
       
     use grid_class, only: &
-        grid
+        grid ! Type
         
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1674,7 +1674,7 @@ module advance_xp2_xpyp_module
   end subroutine solve_xp2_xpyp_with_multiple_lhs
 
   !=============================================================================
-  subroutine xp2_xpyp_lhs(  gr, dt, l_iter, invrs_tau_zm, Cn, & ! In
+  subroutine xp2_xpyp_lhs( gr, dt, l_iter, invrs_tau_zm, Cn, & ! In
                            lhs_ta, lhs_ma, lhs_diff, & ! In
                            lhs ) ! Out
 
@@ -1700,7 +1700,7 @@ module advance_xp2_xpyp_module
   !----------------------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use constants_clubb, only:  &
         gamma_over_implicit_ts, & ! Constant(s)
@@ -1886,7 +1886,7 @@ module advance_xp2_xpyp_module
   end subroutine xp2_xpyp_lhs
 
   !=============================================================================
-  subroutine xp2_xpyp_solve(  gr, solve_type, nrhs, rhs, lhs, xapxbp )
+  subroutine xp2_xpyp_solve( gr, solve_type, nrhs, rhs, lhs, xapxbp )
 
     ! Description:
     ! Solve a tridiagonal system
@@ -1904,7 +1904,7 @@ module advance_xp2_xpyp_module
 !        band_solve
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use stats_type_utilities, only: & 
         stat_update_var_pt  ! Procedure(s)
@@ -2034,7 +2034,7 @@ module advance_xp2_xpyp_module
   end subroutine xp2_xpyp_solve
 
   !=============================================================================
-  subroutine xp2_xpyp_implicit_stats(  gr, solve_type, xapxbp )
+  subroutine xp2_xpyp_implicit_stats( gr, solve_type, xapxbp )
 
     ! Description:
     ! Finalize implicit contributions for r_t'^2, th_l'^2, r_t'th_l',
@@ -2045,52 +2045,52 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use stats_type_utilities, only: & 
-      stat_end_update_pt, & ! Procedure(s)
-      stat_update_var_pt
+        stat_end_update_pt, & ! Procedure(s)
+        stat_update_var_pt
 
     use stats_variables, only: &
-      stats_zm,  & ! Variable(s) 
-      irtp2_dp1, &
-      irtp2_dp2, &
-      irtp2_ta, &
-      irtp2_ma, &
-      ithlp2_dp1, &
-      ithlp2_dp2, &
-      ithlp2_ta, &
-      ithlp2_ma, &
-      irtpthlp_dp1, &
-      irtpthlp_dp2, &
-      irtpthlp_ta, &
-      irtpthlp_ma, &
-      iup2_dp1, &
-      iup2_dp2, &
-      iup2_ta, &
-      iup2_ma, &
-      iup2_pr1, &
-      ivp2_dp1
+        stats_zm,  & ! Variable(s) 
+        irtp2_dp1, &
+        irtp2_dp2, &
+        irtp2_ta, &
+        irtp2_ma, &
+        ithlp2_dp1, &
+        ithlp2_dp2, &
+        ithlp2_ta, &
+        ithlp2_ma, &
+        irtpthlp_dp1, &
+        irtpthlp_dp2, &
+        irtpthlp_ta, &
+        irtpthlp_ma, &
+        iup2_dp1, &
+        iup2_dp2, &
+        iup2_ta, &
+        iup2_ma, &
+        iup2_pr1, &
+        ivp2_dp1
 
     use stats_variables, only: &
-      ivp2_dp2, &
-      ivp2_ta, &
-      ivp2_ma, &
-      ivp2_pr1, &
-      zmscr01, &
-      zmscr02, &
-      zmscr03, &
-      zmscr04, &
-      zmscr05, &
-      zmscr06, &
-      zmscr07, &
-      zmscr08, &
-      zmscr09, &
-      zmscr10, &
-      zmscr11
+        ivp2_dp2, &
+        ivp2_ta, &
+        ivp2_ma, &
+        ivp2_pr1, &
+        zmscr01, &
+        zmscr02, &
+        zmscr03, &
+        zmscr04, &
+        zmscr05, &
+        zmscr06, &
+        zmscr07, &
+        zmscr08, &
+        zmscr09, &
+        zmscr10, &
+        zmscr11
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -2209,7 +2209,7 @@ module advance_xp2_xpyp_module
   end subroutine xp2_xpyp_implicit_stats
 
   !==================================================================================
-  subroutine xp2_xpyp_uv_rhs(  gr, solve_type, dt, l_iter, & ! In
+  subroutine xp2_xpyp_uv_rhs( gr, solve_type, dt, l_iter, & ! In
                               wp2, wp2_zt, wpthvp, & ! In
                               Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
@@ -2243,7 +2243,7 @@ module advance_xp2_xpyp_module
   !----------------------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use constants_clubb, only:  & 
         gamma_over_implicit_ts, & ! Constant(s)
@@ -2508,7 +2508,7 @@ module advance_xp2_xpyp_module
   end subroutine xp2_xpyp_uv_rhs
 
   !=============================================================================
-  subroutine xp2_xpyp_rhs(  gr, solve_type, dt, l_iter, & ! In
+  subroutine xp2_xpyp_rhs( gr, solve_type, dt, l_iter, & ! In
                            wpxap, wpxbp, & ! In
                            xam, xbm, xapxbp, xpyp_forcing, & ! In
                            Cn, invrs_tau_zm, threshold, & ! In
@@ -2541,7 +2541,7 @@ module advance_xp2_xpyp_module
   !----------------------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         gamma_over_implicit_ts, & ! Constant(s)
@@ -2852,7 +2852,7 @@ module advance_xp2_xpyp_module
   end subroutine xp2_xpyp_rhs
   
   !=============================================================================================
-  subroutine calc_xp2_xpyp_ta_terms(  gr, wprtp, wprtp2, wpthlp, wpthlp2, wprtpthlp, &
+  subroutine calc_xp2_xpyp_ta_terms( gr, wprtp, wprtp2, wpthlp, wpthlp2, wprtpthlp, &
                                      rtp2, thlp2, rtpthlp, upwp, vpwp, up2, vp2, wp2, &
                                      wp2_zt, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, &
                                      sclrp2, sclrprtp, sclrpthlp, &
@@ -2879,7 +2879,7 @@ module advance_xp2_xpyp_module
     !-------------------------------------------------------------------------------------------
                                          
     use grid_class, only: &
-        grid, &
+        grid, & ! Type
         zt2zm,  & ! Procedure(s)
         zm2zt
       
@@ -4314,7 +4314,7 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -4390,7 +4390,7 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -4452,7 +4452,7 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -4580,7 +4580,7 @@ module advance_xp2_xpyp_module
   end function term_pr1
 
   !=============================================================================
-  function term_pr2(  gr, C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, & 
+  function term_pr2( gr, C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, & 
                           vpwp, um, vm, invrs_dzm, kp1, k, & 
                           Lscalep1, Lscale, wp2_ztp1, wp2_zt ) &
   result( rhs )
@@ -4633,7 +4633,7 @@ module advance_xp2_xpyp_module
         zero_threshold
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -4717,7 +4717,7 @@ module advance_xp2_xpyp_module
         ! produces larger spikes in up2 and vp2 near the inversion for
         ! the stratocumulus cases.
         call find_endpts_for_vert_avg_winds &
-             (  gr, vert_avg_depth, k, um, vm, & ! intent(in)
+             ( gr, vert_avg_depth, k, um, vm, & ! intent(in)
                zt_high, um_high, vm_high, & ! intent(out)
                zt_low, um_low, vm_low )     ! intent(out)
 
@@ -4786,7 +4786,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine find_endpts_for_vert_avg_winds &
-                  (  gr, vert_avg_depth, k, um, vm, & ! intent(in)
+                  ( gr, vert_avg_depth, k, um, vm, & ! intent(in)
                     zt_high, um_high, vm_high, & ! intent(out)
                     zt_low, um_low, vm_low )     ! intent(out)
     ! Description:
@@ -4807,7 +4807,7 @@ module advance_xp2_xpyp_module
         binary_search, lin_interpolate_two_points  ! Function(s)
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -4897,7 +4897,7 @@ module advance_xp2_xpyp_module
   end subroutine find_endpts_for_vert_avg_winds
 
   !=============================================================================
-  subroutine pos_definite_variances(  gr, solve_type, dt, tolerance, &
+  subroutine pos_definite_variances( gr, solve_type, dt, tolerance, &
                                      rho_ds_zm, rho_ds_zt, &
                                      xp2_np1 )
 
@@ -5003,15 +5003,15 @@ module advance_xp2_xpyp_module
     use pdf_parameter_module, only: pdf_parameter
 
     use grid_class, only: &
-      zt2zm   ! Procedure(s)
+        zt2zm   ! Procedure(s)
 
     use constants_clubb, only: &
-      cloud_frac_min, &  !Variables
-      Cp, &
-      Lv
+        cloud_frac_min, &  !Variables
+        Cp, &
+        Lv
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
       
 
     implicit none

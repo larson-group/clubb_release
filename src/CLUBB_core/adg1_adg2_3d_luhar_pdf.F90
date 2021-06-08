@@ -29,7 +29,7 @@ module adg1_adg2_3d_luhar_pdf
   contains
 
   !=============================================================================
-  subroutine ADG1_pdf_driver(  gr, wm, rtm, thlm, um, vm,                    & ! In
+  subroutine ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,                    & ! In
                               wp2, rtp2, thlp2, up2, vp2,               & ! In
                               Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, & ! In
                               sigma_sqd_w, mixt_frac_max_mag_in,        & ! In
@@ -56,7 +56,7 @@ module adg1_adg2_3d_luhar_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         rt_tol,  & ! Constant(s)
@@ -208,7 +208,7 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine ADG1_pdf_driver
 
   !=============================================================================
-  subroutine ADG2_pdf_driver(  gr, wm, rtm, thlm, wp2, rtp2, thlp2,          & ! In
+  subroutine ADG2_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,          & ! In
                               Skw, wprtp, wpthlp, sqrt_wp2,             & ! In
                               sclrm, sclrp2, wpsclrp, l_scalar_calc,    & ! In
                               w_1, w_2,                                 & ! Out
@@ -229,7 +229,7 @@ module adg1_adg2_3d_luhar_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one,       & ! Constant(s)
@@ -358,7 +358,7 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine ADG2_pdf_driver
 
   !=============================================================================
-  subroutine Luhar_3D_pdf_driver(  gr, wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
+  subroutine Luhar_3D_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
                                   Skw, Skrt, Skthl, wprtp, wpthlp,      & ! In
                                   w_1, w_2,                             & ! Out
                                   rt_1, rt_2,                           & ! Out
@@ -374,7 +374,7 @@ module adg1_adg2_3d_luhar_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         w_tol_sqd, & ! Constant(s)
@@ -992,7 +992,7 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine close_Luhar_pdf
 
   !=============================================================================
-  subroutine ADG1_ADG2_responder_params(  gr, xm, xp2, wp2, sqrt_wp2, &        ! In
+  subroutine ADG1_ADG2_responder_params( gr, xm, xp2, wp2, sqrt_wp2, &        ! In
                                          wpxp, w_1_n, w_2_n, mixt_frac, & ! In
                                          sigma_sqd_w, x_tol, &            ! In
                                          x_1, x_2, varnce_x_1, &          ! Out
@@ -1029,7 +1029,7 @@ module adg1_adg2_3d_luhar_pdf
     ! References:
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         two,            & ! Constant(s)

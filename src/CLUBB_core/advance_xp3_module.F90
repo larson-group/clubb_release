@@ -26,7 +26,7 @@ module advance_xp3_module
   contains
 
   !=============================================================================
-  subroutine advance_xp3(  gr, dt, rtm, thlm, rtp2, thlp2, wprtp,         & ! Intent(in)
+  subroutine advance_xp3( gr, dt, rtm, thlm, rtp2, thlp2, wprtp,         & ! Intent(in)
                           wpthlp, wprtp2, wpthlp2, rho_ds_zm,        & ! Intent(in)
                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, & ! Intent(in)
                           sclrm, sclrp2, wpsclrp, wpsclrp2,          & ! Intent(in)
@@ -43,7 +43,7 @@ module advance_xp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         rt_tol,  & ! Variable(s)
@@ -139,7 +139,7 @@ module advance_xp3_module
   end subroutine advance_xp3
 
   !=============================================================================
-  subroutine advance_xp3_simplified(  gr, solve_type, dt, xm,       & ! Intent(in)
+  subroutine advance_xp3_simplified( gr, solve_type, dt, xm,       & ! Intent(in)
                                      xp2, wpxp,                & ! Intent(in)
                                      wpxp2, rho_ds_zm,         & ! Intent(in)
                                      invrs_rho_ds_zt,          & ! Intent(in)
@@ -247,7 +247,7 @@ module advance_xp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid, &
+        grid, & ! Type
         zm2zt, & ! Procedure(s)
         zt2zm
 

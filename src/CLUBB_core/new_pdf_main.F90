@@ -23,7 +23,7 @@ module new_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_pdf_driver(  gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,      & ! In
+  subroutine new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,      & ! In
                              wprtp, wpthlp, rtpthlp,                    & ! In
                              Skrt, Skthl,                               & ! I/O
                              mu_w_1, mu_w_2,                            & ! Out
@@ -48,7 +48,7 @@ module new_pdf_main
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         four,                & ! Variable(s)
@@ -403,7 +403,7 @@ module new_pdf_main
   end subroutine new_pdf_driver
 
   !=============================================================================
-  subroutine calc_responder_var(  gr, xm, xp2, sgn_wpxp, mixt_frac, & ! In
+  subroutine calc_responder_var( gr, xm, xp2, sgn_wpxp, mixt_frac, & ! In
                                  coef_spread_DG_means_x,       & ! In
                                  exp_factor_x,                 & ! In
                                  max_Skx2_pos_Skx_sgn_wpxp,    & ! In
@@ -426,7 +426,7 @@ module new_pdf_main
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Variable(s)
@@ -520,7 +520,7 @@ module new_pdf_main
   end subroutine calc_responder_var
 
   !=============================================================================
-  subroutine calc_F_x_zeta_x_setter(  gr, Skx,                          & ! In
+  subroutine calc_F_x_zeta_x_setter( gr, Skx,                          & ! In
                                      slope_coef_spread_DG_means_x, & ! In
                                      pdf_component_stdev_factor_x, & ! In
                                      lambda,                       & ! In
@@ -581,7 +581,7 @@ module new_pdf_main
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one,  & ! Variable(s)
@@ -639,7 +639,7 @@ module new_pdf_main
   end subroutine calc_F_x_zeta_x_setter
 
   !=============================================================================
-  function calc_F_x_responder(  gr, coef_spread_DG_means_x, exp_factor_x, &
+  function calc_F_x_responder( gr, coef_spread_DG_means_x, exp_factor_x, &
                                min_F_x, max_F_x ) &
   result( F_x )
 
@@ -730,7 +730,7 @@ module new_pdf_main
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one    ! Variable(s)

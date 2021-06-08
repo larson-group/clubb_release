@@ -40,7 +40,7 @@ module advance_wp2_wp3_module
   contains
 
   !=============================================================================
-  subroutine advance_wp2_wp3(  gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
+  subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
                               wm_zt, a3, a3_zt, wp3_on_wp2,                  & ! In
                               wp2up2, wp2vp2, wp4,                           & ! In
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! In
@@ -82,7 +82,7 @@ module advance_wp2_wp3_module
     !------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid, &
+        grid, & ! Type
         zt2zm,  & ! Procedure(s)
         zm2zt
 
@@ -497,7 +497,7 @@ module advance_wp2_wp3_module
   end subroutine advance_wp2_wp3
 
   !=============================================================================
-  subroutine wp23_solve(  gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
+  subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
                          wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                          wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                          wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -529,7 +529,9 @@ module advance_wp2_wp3_module
     !------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid, &
+        grid ! Type
+
+    use grid_class, only:  & 
         zm2zt, & ! Function(s)
         zt2zm, & 
         ddzt
@@ -1197,7 +1199,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_solve
 
   !=================================================================================
-  subroutine wp23_lhs(  gr, dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+  subroutine wp23_lhs( gr, dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, coef_wp4_implicit, &
                        Kw1, Kw8, Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
@@ -1237,7 +1239,7 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use parameters_tunable, only:  & 
         C4,  & ! Variables
@@ -1846,7 +1848,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_lhs
 
   !=================================================================================
-  subroutine wp23_rhs(  gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
+  subroutine wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
                        coef_wp4_implicit, wp2up2, wp2vp2, wp4, &
                        wpthvp, wp2thvp, um, vm, &
                        upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt, & 
@@ -1893,7 +1895,9 @@ module advance_wp2_wp3_module
 
     use grid_class, only:  & 
         grid, &
-        zm2zt, & ! Variables
+        zm2zt ! Variable
+
+    use grid_class, only:  & 
         ddzt ! Procedure
 
     use parameters_tunable, only:  & 
@@ -2678,7 +2682,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_ta_lhs(  gr, rho_ds_zt, invrs_rho_ds_zm, invrs_dzm, &
+  pure subroutine wp2_term_ta_lhs( gr, rho_ds_zt, invrs_rho_ds_zm, invrs_dzm, &
                                    lhs_ta_wp2 )
 
     ! Description:
@@ -2730,7 +2734,7 @@ module advance_wp2_wp3_module
         zero    ! Constant(s)
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -2785,7 +2789,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_ta_lhs
 
   !=============================================================================
-  pure subroutine wp2_terms_ac_pr2_lhs(  gr, C_uu_shr, wm_zt, invrs_dzm, &
+  pure subroutine wp2_terms_ac_pr2_lhs( gr, C_uu_shr, wm_zt, invrs_dzm, &
                                         lhs_ac_pr2_wp2 )
 
     ! Description:
@@ -2842,7 +2846,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         two,  & ! Variable(s)
@@ -2893,7 +2897,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure subroutine wp2_term_dp1_lhs(  gr, C1_Skw_fnc, invrs_tau1m, &
+  pure subroutine wp2_term_dp1_lhs( gr, C1_Skw_fnc, invrs_tau1m, &
                                     lhs_dp1_wp2 )
 
     ! Description:
@@ -2929,7 +2933,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s) 
@@ -2974,7 +2978,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_dp1_lhs
 
   !=============================================================================
-  pure subroutine wp2_term_pr1_lhs(  gr, C4, invrs_tau1m, &
+  pure subroutine wp2_term_pr1_lhs( gr, C4, invrs_tau1m, &
                                     lhs_pr1_wp2 )
 
     ! Description
@@ -3013,7 +3017,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         three, & ! Variable(s)
@@ -3062,7 +3066,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr1_lhs
 
   !=============================================================================
-  pure subroutine wp2_terms_bp_pr2_rhs(  gr, C_uu_buoy, thv_ds_zm, wpthvp, &
+  pure subroutine wp2_terms_bp_pr2_rhs( gr, C_uu_buoy, thv_ds_zm, wpthvp, &
                                         rhs_bp_pr2_wp2 )
 
     ! Description:
@@ -3091,7 +3095,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only:  & ! Variable(s)        
         grav, & ! Gravitational acceleration [m/s^2]
@@ -3142,7 +3146,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_bp_pr2_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_dp1_rhs(  gr, C1_Skw_fnc, invrs_tau1m, threshold, up2, vp2, &
+  pure subroutine wp2_term_dp1_rhs( gr, C1_Skw_fnc, invrs_tau1m, threshold, up2, vp2, &
                                     l_damp_wp2_using_em, &
                                     rhs_dp1_wp2 )
 
@@ -3178,7 +3182,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -3239,7 +3243,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_dp1_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_pr3_rhs(  gr, C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, &
+  pure subroutine wp2_term_pr3_rhs( gr, C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, &
                                     um, vpwp, vm, invrs_dzm, &
                                     rhs_pr3_wp2 )
 
@@ -3279,7 +3283,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: & ! Variables 
         grav,           & ! Gravitational acceleration [m/s^2]
@@ -3358,7 +3362,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr3_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_pr1_rhs(  gr, C4, up2, vp2, invrs_tau1m, &
+  pure subroutine wp2_term_pr1_rhs( gr, C4, up2, vp2, invrs_tau1m, &
                                     rhs_pr1_wp2 )
 
     ! Description:
@@ -3389,7 +3393,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         three, & ! Constant9(s)
@@ -3438,7 +3442,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr1_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_ta_new_pdf_lhs(  gr, coef_wp4_implicit, wp2, rho_ds_zm, &
+  pure subroutine wp3_term_ta_new_pdf_lhs( gr, coef_wp4_implicit, wp2, rho_ds_zm, &
                                            invrs_rho_ds_zt, invrs_dzt, &
                                            lhs_ta_wp3 )
 
@@ -3520,7 +3524,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero
@@ -3582,7 +3586,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_ta_new_pdf_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_ta_ADG1_lhs(  gr, wp2, a1, a1_zt, a3, a3_zt, &
+  pure subroutine wp3_term_ta_ADG1_lhs( gr, wp2, a1, a1_zt, a3, a3_zt, &
                                         wp3_on_wp2, rho_ds_zm, &
                                         rho_ds_zt, invrs_rho_ds_zt, &
                                         invrs_dzt, l_standard_term_ta, &
@@ -3677,7 +3681,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero
@@ -3898,7 +3902,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_ta_ADG1_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_tp_lhs(  gr, wp2, &
+  pure subroutine wp3_term_tp_lhs( gr, wp2, &
                                    rho_ds_zm, &
                                    invrs_rho_ds_zt, &
                                    invrs_dzt, &
@@ -3968,7 +3972,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use constants_clubb, only:  &
         three,        & ! Constant(s)
@@ -4033,7 +4037,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_tp_lhs
 
   !=============================================================================
-  pure subroutine wp3_terms_ac_pr2_lhs(  gr, C11_Skw_fnc, wm_zm, invrs_dzt, &
+  pure subroutine wp3_terms_ac_pr2_lhs( gr, C11_Skw_fnc, wm_zm, invrs_dzt, &
                                         lhs_ac_pr2_wp3 )
 
     ! Description:
@@ -4088,7 +4092,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         three, & ! Variable(s)
@@ -4138,7 +4142,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr1_lhs(  gr, C8, C8b, invrs_tauw3t, Skw_zt, &
+  pure subroutine wp3_term_pr1_lhs( gr, C8, C8b, invrs_tauw3t, Skw_zt, &
                                     l_damp_wp3_Skw_squared, &
                                     lhs_pr1_wp3 )
 
@@ -4186,7 +4190,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one, & ! Variable(s)
@@ -4257,7 +4261,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr1_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_ta_explicit_rhs(  gr, wp4, &
+  pure subroutine wp3_term_ta_explicit_rhs( gr, wp4, &
                                             rho_ds_zm, &
                                             invrs_rho_ds_zt, &
                                             invrs_dzt, &
@@ -4310,7 +4314,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -4358,7 +4362,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_ta_explicit_rhs
 
   !=============================================================================
-  pure subroutine wp3_terms_bp1_pr2_rhs(  gr, C11_Skw_fnc, thv_ds_zt, wp2thvp, &
+  pure subroutine wp3_terms_bp1_pr2_rhs( gr, C11_Skw_fnc, thv_ds_zt, wp2thvp, &
                                          rhs_bp1_pr2_wp3 )
 
     ! Description:
@@ -4384,7 +4388,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: & ! Constant(s) 
         grav,  & ! Gravitational acceleration [m/s^2]
@@ -4434,7 +4438,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_terms_bp1_pr2_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr_turb_rhs(  gr, C_wp3_pr_turb, Kh_zt, wpthvp, &
+  pure subroutine wp3_term_pr_turb_rhs( gr, C_wp3_pr_turb, Kh_zt, wpthvp, &
                                         dum_dz, dvm_dz, &
                                         upwp, vpwp, &
                                         thv_ds_zt, invrs_dzt, &
@@ -4442,6 +4446,7 @@ module advance_wp2_wp3_module
                                         em, wp2, &
                                         rhs_pr_turb_wp3, &
                                         l_use_tke_in_wp3_pr_turb_term )
+    use grid_class, only: grid
 
     ! Description:
     !   Experimental term from CLUBB TRAC ticket #411. The derivative here is of
@@ -4534,7 +4539,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr_turb_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr_dfsn_rhs(  gr, C_wp3_pr_dfsn, invrs_dzt, &
+  pure subroutine wp3_term_pr_dfsn_rhs( gr, C_wp3_pr_dfsn, invrs_dzt, &
                                         rho_ds_zm, invrs_rho_ds_zt, &
                                         wp2up2, wp2vp2, wp4, &
                                         rhs_pr_dfsn_wp3 )
@@ -4556,7 +4561,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero
@@ -4612,7 +4617,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr_dfsn_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr1_rhs(  gr, C8, C8b, invrs_tauw3t, Skw_zt, wp3, &
+  pure subroutine wp3_term_pr1_rhs( gr, C8, C8b, invrs_tauw3t, Skw_zt, wp3, &
                                     l_damp_wp3_Skw_squared, &
                                     rhs_pr1_wp3 )
 
@@ -4656,7 +4661,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         two,  & ! Constant(s)

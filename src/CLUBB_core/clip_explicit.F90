@@ -37,7 +37,7 @@ module clip_explicit
   contains
 
   !=============================================================================
-  subroutine clip_covars_denom(  gr, dt, rtp2, thlp2, up2, vp2, wp2, &
+  subroutine clip_covars_denom( gr, dt, rtp2, thlp2, up2, vp2, wp2, &
                                 sclrp2, wprtp_cl_num, wpthlp_cl_num, &
                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
                                 l_predict_upwp_vpwp, &
@@ -64,7 +64,7 @@ module clip_explicit
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use parameters_model, only: &
         sclr_dim ! Variable(s)
@@ -346,7 +346,7 @@ module clip_explicit
   end subroutine clip_covars_denom
 
   !=============================================================================
-  subroutine clip_covar(  gr, solve_type, l_first_clip_ts,  & 
+  subroutine clip_covar( gr, solve_type, l_first_clip_ts,  & 
                          l_last_clip_ts, dt, xp2, yp2,  &
                          l_predict_upwp_vpwp, &
                          xpyp, xpyp_chnge )
@@ -392,7 +392,7 @@ module clip_explicit
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         max_mag_correlation,      & ! Constant(s)
@@ -752,7 +752,7 @@ module clip_explicit
   end subroutine clip_covar_level
 
   !=============================================================================
-  subroutine clip_variance(  gr, solve_type, dt, threshold, &
+  subroutine clip_variance( gr, solve_type, dt, threshold, &
                             xp2 )
 
     ! Description:
@@ -771,7 +771,7 @@ module clip_explicit
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
@@ -956,7 +956,7 @@ module clip_explicit
   end subroutine clip_variance_level
 
   !=============================================================================
-  subroutine clip_skewness(  gr, dt, sfc_elevation, wp2_zt, &
+  subroutine clip_skewness( gr, dt, sfc_elevation, wp2_zt, &
                             wp3 )
 
     ! Description:
@@ -999,19 +999,19 @@ module clip_explicit
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use clubb_precision, only: & 
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: &
-      stat_begin_update,  & ! Procedure(s)
-      stat_end_update
+        stat_begin_update,  & ! Procedure(s)
+        stat_end_update
 
     use stats_variables, only: & 
-      stats_zt,  & ! Variable(s)
-      iwp3_cl, & 
-      l_stats_samp     
+        stats_zt,  & ! Variable(s)
+        iwp3_cl, & 
+        l_stats_samp     
 
     implicit none
 
@@ -1050,16 +1050,16 @@ module clip_explicit
   end subroutine clip_skewness
 
 !=============================================================================
-  subroutine clip_skewness_core(  gr, sfc_elevation, wp2_zt, wp3 )
+  subroutine clip_skewness_core( gr, sfc_elevation, wp2_zt, wp3 )
 !
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use parameters_tunable, only: &
-      Skw_max_mag ! [-]
+        Skw_max_mag ! [-]
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 

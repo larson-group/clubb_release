@@ -36,7 +36,7 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure(  gr, hydromet_dim, p_in_Pa, exner, thv_ds,     &
+  subroutine pdf_closure( gr, hydromet_dim, p_in_Pa, exner, thv_ds,     &
                           wm, wp2, wp3, sigma_sqd_w,                &
                           Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,   &
                           rtm, rtp2, wprtp,                         &
@@ -90,7 +90,7 @@ module pdf_closure_module
     !----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &  ! Constants
         three,          & ! 3
@@ -1501,7 +1501,7 @@ endif
   end subroutine pdf_closure
 
   !===============================================================================================
-  subroutine transform_pdf_chi_eta_component(  gr, tl, rsatl, rt, exner,     & ! In
+  subroutine transform_pdf_chi_eta_component( gr, tl, rsatl, rt, exner,     & ! In
                                               varnce_thl, varnce_rt,    & ! In
                                               corr_rt_thl, chi,         & ! In
                                               crt, cthl,                & ! Out
@@ -1509,7 +1509,7 @@ endif
                                               covar_chi_eta,            & ! Out
                                               corr_chi_eta )              ! Out
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1633,7 +1633,7 @@ endif
   end subroutine transform_pdf_chi_eta_component
   
   !=============================================================================
-  function calc_wp4_pdf(  gr, wm, w_1, w_2,              &
+  function calc_wp4_pdf( gr, wm, w_1, w_2,              &
                          varnce_w_1, varnce_w_2,    &
                          mixt_frac ) &
   result( wp4 )
@@ -1663,7 +1663,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         six,   & ! Variable(s)
@@ -1705,7 +1705,7 @@ endif
   end function calc_wp4_pdf
 
   !=============================================================================
-  function calc_wp2xp2_pdf(  gr, wm, xm, w_1,             &
+  function calc_wp2xp2_pdf( gr, wm, xm, w_1,             &
                             w_2, x_1, x_2,           &
                             varnce_w_1, varnce_w_2,  &
                             varnce_x_1, varnce_x_2,  &
@@ -1754,7 +1754,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one,   & ! Variable(s)
@@ -1803,7 +1803,7 @@ endif
   end function calc_wp2xp2_pdf
 
   !=============================================================================
-  function calc_wp2xp_pdf(  gr, wm, xm, w_1, w_2,        &
+  function calc_wp2xp_pdf( gr, wm, xm, w_1, w_2,        &
                            x_1, x_2,                &
                            varnce_w_1, varnce_w_2,  &
                            varnce_x_1, varnce_x_2,  &
@@ -1846,7 +1846,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         two,   & ! Variable(s)
@@ -1896,7 +1896,7 @@ endif
   end function calc_wp2xp_pdf
 
   !=============================================================================
-  function calc_wpxp2_pdf(  gr, wm, xm, w_1,             &
+  function calc_wpxp2_pdf( gr, wm, xm, w_1,             &
                            w_2, x_1, x_2,           &
                            varnce_w_1, varnce_w_2,  &
                            varnce_x_1, varnce_x_2,  &
@@ -1939,7 +1939,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         two,   & ! Variable(s)
@@ -1989,7 +1989,7 @@ endif
   end function calc_wpxp2_pdf
 
   !=============================================================================
-  function calc_wpxpyp_pdf(  gr, wm, xm, ym, w_1, w_2,   &
+  function calc_wpxpyp_pdf( gr, wm, xm, ym, w_1, w_2,   &
                             x_1, x_2,               &
                             y_1, y_2,               &
                             varnce_w_1, varnce_w_2, &
@@ -2048,7 +2048,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one    ! Variable(s)
@@ -2109,7 +2109,7 @@ endif
   end function calc_wpxpyp_pdf
 
   !=============================================================================
-  subroutine calc_liquid_cloud_frac_component(  gr, mean_chi, stdev_chi, &
+  subroutine calc_liquid_cloud_frac_component( gr, mean_chi, stdev_chi, &
                                                cloud_frac, rc )
     ! Description:
     ! Calculates the PDF component cloud water mixing ratio, rc_i, and cloud
@@ -2166,7 +2166,7 @@ endif
     !----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
@@ -2403,7 +2403,7 @@ endif
   end subroutine calc_cloud_frac_component
 
   !=============================================================================
-  subroutine calc_xprcp_component(  gr, wm, rtm, thlm, um, vm, rcm,                      & ! In
+  subroutine calc_xprcp_component( gr, wm, rtm, thlm, um, vm, rcm,                      & ! In
                                    w_i, rt_i,                                       & ! In
                                    thl_i, u_i, v_i,                                 & ! In
                                    varnce_w_i, chi_i,                               & ! In
@@ -2773,7 +2773,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         sqrt_2pi,       & ! Variable(s)
@@ -2893,7 +2893,7 @@ endif
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd
+        core_rknd
 
     implicit none
 
@@ -2954,36 +2954,36 @@ endif
   ! References
   !-----------------------------------------------------------------------
 
-  use clubb_precision, only: &
-    core_rknd           ! Constant
+    use clubb_precision, only: &
+        core_rknd           ! Constant
 
-  implicit none
+    implicit none
 
   ! Input Variables
-  integer, intent(in) :: &
-    n_points, & ! Number of points to interpolate to (must be odd and >= 3)
-    nz,       & ! Total number of vertical levels
-    k           ! Center of interpolation array
+    integer, intent(in) :: &
+      n_points, & ! Number of points to interpolate to (must be odd and >= 3)
+      nz,       & ! Total number of vertical levels
+      k           ! Center of interpolation array
 
-  real( kind = core_rknd ), dimension(nz), intent(in) :: &
-    z_vals, &         ! Height at each vertical level           [m]
-    var               ! Variable values on grid                 [units vary]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      z_vals, &         ! Height at each vertical level           [m]
+      var               ! Variable values on grid                 [units vary]
 
   ! Output Variables
-  real( kind = core_rknd ), dimension(n_points) :: &
-    interp_var_array  ! Interpolated values of variable         [units vary]
+    real( kind = core_rknd ), dimension(n_points) :: &
+      interp_var_array  ! Interpolated values of variable         [units vary]
 
   ! Local Variables
-  real( kind = core_rknd ) :: &
-    dz    ! Distance between vertical levels
+    real( kind = core_rknd ) :: &
+      dz    ! Distance between vertical levels
 
-  real( kind = core_rknd ) :: &
-    z_val             ! Height at some sub-grid level
+    real( kind = core_rknd ) :: &
+      z_val             ! Height at some sub-grid level
 
-  integer :: &
-    i, &                      ! Loop iterator
+    integer :: &
+      i, &                      ! Loop iterator
 
-    subgrid_lev_count         ! Number of refined grid points located between
+      subgrid_lev_count         ! Number of refined grid points located between
                               ! two defined grid levels
 
   !-----------------------------------------------------------------------
@@ -3035,10 +3035,10 @@ endif
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd       ! Constant
+        core_rknd       ! Constant
 
     use interpolation, only: &
-      mono_cubic_interp  ! Procedure
+        mono_cubic_interp  ! Procedure
 
     implicit none
 
@@ -3104,10 +3104,10 @@ endif
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd       ! Constant
+        core_rknd       ! Constant
 
     use interpolation, only: &
-      mono_cubic_interp   ! Procedure
+        mono_cubic_interp   ! Procedure
 
     implicit none
 

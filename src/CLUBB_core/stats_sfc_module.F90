@@ -76,12 +76,12 @@ module stats_sfc_module
         iwindm_matrix_condt_num
 
     use stats_variables, only: &
-      imorr_snow_rate ! Variable(s)
+        imorr_snow_rate ! Variable(s)
 
     use stats_variables, only: &
-      irtm_spur_src,            &
-      ithlm_spur_src, &
-      irsm_sd_morr_int
+        irtm_spur_src,            &
+        ithlm_spur_src, &
+        irsm_sd_morr_int
 
     use stats_type_utilities, only: &
         stat_assign ! Procedure

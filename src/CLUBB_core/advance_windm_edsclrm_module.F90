@@ -31,7 +31,7 @@ module advance_windm_edsclrm_module
 
   !=============================================================================
   subroutine advance_windm_edsclrm &
-             (  gr, dt, wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, &
+             ( gr, dt, wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, &
                wp2, up2, vp2, um_forcing, vm_forcing, &
                edsclrm_forcing, &
                rho_ds_zm, invrs_rho_ds_zt, &
@@ -60,7 +60,7 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        grid
+        grid ! Type
 
     use parameters_model, only:  &
         ts_nudge,  & ! Variable(s)
@@ -642,7 +642,7 @@ module advance_windm_edsclrm_module
   end subroutine advance_windm_edsclrm
 
   !=============================================================================
-  subroutine windm_edsclrm_solve(  gr, nrhs, ixm_matrix_condt_num, &
+  subroutine windm_edsclrm_solve( gr, nrhs, ixm_matrix_condt_num, &
                                   lhs, rhs, solution )
 
     ! Note:  In the "Description" section of this subroutine, the variable
@@ -1141,21 +1141,21 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use lapack_wrap, only:  & 
-      tridag_solve, & ! Procedure(s)
-      tridag_solvex
+        tridag_solve, & ! Procedure(s)
+        tridag_solvex
 
     use stats_variables, only: & 
-      stats_sfc,     &   ! Variable(s)
-      l_stats_samp
+        stats_sfc,     &   ! Variable(s)
+        l_stats_samp
 
     use stats_type_utilities, only:  &
-      stat_update_var_pt  ! Subroutine
+        stat_update_var_pt  ! Subroutine
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -1210,7 +1210,7 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_solve
 
   !=============================================================================
-  subroutine windm_edsclrm_implicit_stats(  gr, solve_type, xm )
+  subroutine windm_edsclrm_implicit_stats( gr, solve_type, xm )
 
     ! Description:
     ! Compute implicit contributions to um and vm
@@ -1220,27 +1220,27 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
-      ium_ma,  & ! Variables
-      ium_ta,  & 
-      ivm_ma,  &
-      ivm_ta,  & 
-      ztscr01, & 
-      ztscr02, & 
-      ztscr03, & 
-      ztscr04, & 
-      ztscr05, & 
-      ztscr06, & 
-      stats_zt
+        ium_ma,  & ! Variables
+        ium_ta,  & 
+        ivm_ma,  &
+        ivm_ta,  & 
+        ztscr01, & 
+        ztscr02, & 
+        ztscr03, & 
+        ztscr04, & 
+        ztscr05, & 
+        ztscr06, & 
+        stats_zt
 
     use stats_type_utilities, only:  &
-      stat_end_update_pt,  & ! Subroutines
-      stat_update_var_pt
+        stat_end_update_pt,  & ! Subroutines
+        stat_update_var_pt
 
     use clubb_precision, only:  & 
-      core_rknd
+        core_rknd
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     implicit none
 
@@ -1326,7 +1326,7 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_implicit_stats
 
   !=============================================================================
-  subroutine compute_uv_tndcy(  gr, solve_type, fcor, perp_wind_m, perp_wind_g, xm_forcing, &
+  subroutine compute_uv_tndcy( gr, solve_type, fcor, perp_wind_m, perp_wind_g, xm_forcing, &
                                l_implemented, xm_tndcy )
 
     ! Description:
@@ -1357,7 +1357,7 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use stats_type_utilities, only: & 
         stat_update_var
@@ -1373,7 +1373,7 @@ module advance_windm_edsclrm_module
         l_stats_samp
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -1478,7 +1478,7 @@ module advance_windm_edsclrm_module
   end subroutine compute_uv_tndcy
 
 !======================================================================================
-  subroutine windm_edsclrm_lhs(  gr, dt, nu, wm_zt, Km_zm, wind_speed, u_star_sqd,  &
+  subroutine windm_edsclrm_lhs( gr, dt, nu, wm_zt, Km_zm, wind_speed, u_star_sqd,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_implemented, l_imp_sfc_momentum_flux,  &
                                 l_upwind_xm_ma, &
@@ -1503,7 +1503,7 @@ module advance_windm_edsclrm_module
     !----------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Procedure(s)
@@ -1702,7 +1702,7 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_lhs
 
   !=============================================================================
-  subroutine windm_edsclrm_rhs(  gr, solve_type, dt, nu, Km_zm, xm, xm_tndcy,  &
+  subroutine windm_edsclrm_rhs( gr, solve_type, dt, nu, Km_zm, xm, xm_tndcy,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_imp_sfc_momentum_flux, xpwp_sfc, &
                                 rhs )
@@ -1750,7 +1750,7 @@ module advance_windm_edsclrm_module
         stat_modify_pt
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     implicit none
 
@@ -1920,7 +1920,7 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 

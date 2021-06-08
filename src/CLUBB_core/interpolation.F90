@@ -55,7 +55,7 @@ module interpolation
 !-------------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use constants_clubb, only: fstderr ! Constant
 
@@ -97,7 +97,7 @@ module interpolation
   !-------------------------------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -131,14 +131,14 @@ module interpolation
   !-------------------------------------------------------------------------------------------------
 
     use constants_clubb, only: &
-      three_halves, & ! Constant(s)
-      eps
+        three_halves, & ! Constant(s)
+        eps
 
     use clubb_precision, only: &
-      core_rknd ! Constant
+        core_rknd ! Constant
     
     use model_flags, only: &
-      l_quintic_poly_interp ! Variable(s)
+        l_quintic_poly_interp ! Variable(s)
 
     implicit none
 
@@ -283,13 +283,13 @@ module interpolation
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd                  ! Variable(s)
+        core_rknd                  ! Variable(s)
 
     use constants_clubb, only: &
-      fstderr                    ! Variable(s)
+        fstderr                    ! Variable(s)
     
     use error_code, only: &
-      clubb_at_least_debug_level ! Error indicator
+        clubb_at_least_debug_level ! Error indicator
 
     implicit none
 
@@ -389,7 +389,7 @@ module interpolation
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -428,7 +428,7 @@ module interpolation
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -588,10 +588,10 @@ module interpolation
     use constants_clubb, only: fstderr ! Constant
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use error_code, only: &
-      clubb_at_least_debug_level ! Error indicator
+        clubb_at_least_debug_level ! Error indicator
 
     implicit none
 

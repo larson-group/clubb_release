@@ -21,7 +21,7 @@ module LY93_pdf
   contains
 
   !=============================================================================
-  subroutine LY93_driver(  gr, wm, rtm, thlm, wp2, rtp2,         & ! In
+  subroutine LY93_driver( gr, wm, rtm, thlm, wp2, rtp2,         & ! In
                           thlp2, Skw, Skrt, Skthl,          & ! In
                           mu_w_1, mu_w_2,                   & ! Out
                           mu_rt_1, mu_rt_2,                 & ! Out
@@ -41,7 +41,7 @@ module LY93_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -110,7 +110,7 @@ module LY93_pdf
   end subroutine LY93_driver
 
   !=============================================================================
-  function calc_mixt_frac_LY93(  gr, Sk_max ) &
+  function calc_mixt_frac_LY93( gr, Sk_max ) &
   result( mixt_frac )
 
     ! Description:
@@ -122,7 +122,7 @@ module LY93_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one,           & ! Constant(s)
@@ -200,7 +200,7 @@ module LY93_pdf
   end function calc_mixt_frac_LY93
 
   !=============================================================================
-  subroutine calc_params_LY93(  gr, xm, xp2, Skx, mixt_frac,     & ! In
+  subroutine calc_params_LY93( gr, xm, xp2, Skx, mixt_frac,     & ! In
                                mu_x_1, mu_x_2,              & ! Out
                                sigma_x_1_sqd, sigma_x_2_sqd ) ! Out
 
@@ -215,7 +215,7 @@ module LY93_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         three,     & ! Constant(s)

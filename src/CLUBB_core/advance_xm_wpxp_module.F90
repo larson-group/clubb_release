@@ -43,7 +43,7 @@ module advance_xm_wpxp_module
   contains
 
   !=============================================================================
-  subroutine advance_xm_wpxp(  gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
+  subroutine advance_xm_wpxp( gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                               Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                               invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                               rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
@@ -120,8 +120,10 @@ module advance_xm_wpxp_module
         ts_nudge
 
     use grid_class, only: & 
-        grid, &
-        ddzt,  &    ! Procedure(s)
+        grid, & ! Type
+        ddzt    ! Procedure(s)
+
+    use grid_class, only: &
         zm2zt, & ! Procedure(s)
         zt2zm
 
@@ -783,7 +785,7 @@ module advance_xm_wpxp_module
   end subroutine advance_xm_wpxp
 
   !======================================================================================
-  subroutine xm_wpxp_lhs(  gr, l_iter, dt, wpxp, wm_zt, C7_Skw_fnc,              & ! In
+  subroutine xm_wpxp_lhs( gr, l_iter, dt, wpxp, wm_zt, C7_Skw_fnc,              & ! In
                           invrs_rho_ds_zt, wpxp_upper_lim, wpxp_lower_lim,  & ! In
                           l_implemented, lhs_diff_zm, lhs_diff_zt,          & ! In
                           lhs_ma_zm, lhs_ma_zt, lhs_ta_wpxp, lhs_ta_xm,     & ! In
@@ -861,7 +863,7 @@ module advance_xm_wpxp_module
     !----------------------------------------------------------------------------------
     
     use grid_class, only:  & 
-        grid, &
+        grid, & ! Type
         zm2zt, & ! Procedure(s)
         ddzt
 
@@ -925,8 +927,8 @@ module advance_xm_wpxp_module
         iwprtp_sicl
 
     use advance_helper_module, only: &
-      set_boundary_conditions_lhs, & ! Procedure(s)
-      calc_stability_correction
+        set_boundary_conditions_lhs, & ! Procedure(s)
+        calc_stability_correction
 
     implicit none
 
@@ -1212,7 +1214,7 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_lhs
 
   !=============================================================================================
-  subroutine calc_xm_wpxp_lhs_terms(  gr, Kh_zm, wm_zm, wm_zt, wp2,                          & ! In
+  subroutine calc_xm_wpxp_lhs_terms( gr, Kh_zm, wm_zm, wm_zt, wp2,                          & ! In
                                      Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                  & ! In
                                      rho_ds_zm, l_implemented, em,                      & ! In
                                      Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,      & ! In
@@ -1232,7 +1234,7 @@ module advance_xm_wpxp_module
     !-------------------------------------------------------------------------------------------
     
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use parameters_tunable, only:  & 
         nu6_vert_res_dep ! Variable(s)
@@ -1382,7 +1384,7 @@ module advance_xm_wpxp_module
   end subroutine calc_xm_wpxp_lhs_terms
 
   !=============================================================================
-  subroutine xm_wpxp_rhs(  gr, solve_type, l_iter, dt, xm, wpxp, & ! In
+  subroutine xm_wpxp_rhs( gr, solve_type, l_iter, dt, xm, wpxp, & ! In
                           xm_forcing, wpxp_forcing, C7_Skw_fnc, & ! In
                           xpthvp, rhs_ta, thv_ds_zm, & ! In
                           wpxp_upper_lim, wpxp_lower_lim, & ! In
@@ -1415,7 +1417,7 @@ module advance_xm_wpxp_module
     !----------------------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use constants_clubb, only:  &
         gamma_over_implicit_ts, & ! Constant(s)
@@ -1744,7 +1746,7 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_rhs
   
   !=============================================================================================
-  subroutine calc_xm_wpxp_ta_terms(  gr, wprtp, wp2rtp, wpthlp, wp2thlp, wpsclrp, wp2sclrp, &
+  subroutine calc_xm_wpxp_ta_terms( gr, wprtp, wp2rtp, wpthlp, wp2thlp, wpsclrp, wp2sclrp, &
                                     rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                     sigma_sqd_w, wp3_on_wp2, wp3_on_wp2_zt, &
                                     pdf_implicit_coefs_terms, &
@@ -1765,7 +1767,7 @@ module advance_xm_wpxp_module
   !---------------------------------------------------------------------------------------------
                                     
     use grid_class, only: &
-        grid, &
+        grid, & ! Type
         zt2zm,  & ! Procedure(s)
         zm2zt
       
@@ -2307,7 +2309,7 @@ module advance_xm_wpxp_module
   end subroutine calc_xm_wpxp_ta_terms
   
   !==========================================================================================
-  subroutine solve_xm_wpxp_with_single_lhs(  gr, dt, l_iter, nrhs, wm_zt, wp2, &
+  subroutine solve_xm_wpxp_with_single_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2, &
                                             invrs_tau_C6_zm, tau_max_zm, &
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp, &
                                             thlm_forcing, wpthlp_forcing, rho_ds_zm, &
@@ -2337,61 +2339,61 @@ module advance_xm_wpxp_module
     !----------------------------------------------------------------------------------------
     
     use grid_class, only: & 
-        grid, &
-      ddzt    ! Procedure(s)
+        grid, & ! Type
+        ddzt    ! Procedure(s)
       
     use error_code, only: &
-      clubb_at_least_debug_level,  & ! Procedure
-      err_code,                    & ! Error Indicator
-      clubb_fatal_error              ! Constants
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error              ! Constants
       
     use stats_type_utilities, only: & 
-      stat_update_var   ! Procedure(s)
+        stat_update_var   ! Procedure(s)
       
     use stats_variables, only: & 
-      stats_zt, &
-      stats_zm, &
-      irtm_matrix_condt_num, &  ! Variables
-      ithlm_matrix_condt_num, &
-      ium_gf, &
-      ium_cf, &
-      ivm_gf, &
-      ivm_cf, &
-      ium_f, &
-      ivm_f, &
-      iupwp_pr4, &
-      ivpwp_pr4, &
-      iupthlp, &
-      iuprtp,  &
-      ivpthlp, &
-      ivprtp,  &
-      iupthvp, &
-      iuprcp,  &
-      ivpthvp, &
-      ivprcp,  &
-      l_stats_samp
+        stats_zt, &
+        stats_zm, &
+        irtm_matrix_condt_num, &  ! Variables
+        ithlm_matrix_condt_num, &
+        ium_gf, &
+        ium_cf, &
+        ivm_gf, &
+        ivm_cf, &
+        ium_f, &
+        ivm_f, &
+        iupwp_pr4, &
+        ivpwp_pr4, &
+        iupthlp, &
+        iuprtp,  &
+        ivpthlp, &
+        ivprtp,  &
+        iupthvp, &
+        iuprcp,  &
+        ivpthvp, &
+        ivprcp,  &
+        l_stats_samp
         
     use parameters_model, only: & 
-      sclr_dim, &  ! Variable(s)
-      sclr_tol
+        sclr_dim, &  ! Variable(s)
+        sclr_tol
 
     use parameters_tunable, only: &
-      C_uu_shr    ! Parameter(s)
+        C_uu_shr    ! Parameter(s)
         
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
     use constants_clubb, only:  & 
-      fstderr, &  ! Constant
-      rt_tol, &
-      thl_tol, &
-      w_tol, &
-      w_tol_sqd, &
-      thl_tol_mfl, &
-      rt_tol_mfl, &
-      zero, &
-      one, &
-      ep1
+        fstderr, &  ! Constant
+        rt_tol, &
+        thl_tol, &
+        w_tol, &
+        w_tol_sqd, &
+        thl_tol_mfl, &
+        rt_tol_mfl, &
+        zero, &
+        one, &
+        ep1
   
     implicit none
 
@@ -2798,7 +2800,7 @@ module advance_xm_wpxp_module
     endif
 
     call xm_wpxp_clipping_and_stats &
-         (  gr, xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
+         ( gr, xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
            rtm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
            invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
            rt_tol**2, rt_tol, rcond, &            ! Intent(in)
@@ -2817,7 +2819,7 @@ module advance_xm_wpxp_module
     endif
 
     call xm_wpxp_clipping_and_stats &
-         (  gr, xm_wpxp_thlm, dt, wp2, thlp2, wm_zt, & ! Intent(in)
+         ( gr, xm_wpxp_thlm, dt, wp2, thlp2, wm_zt, & ! Intent(in)
            thlm_forcing, rho_ds_zm, rho_ds_zt, &  ! Intent(in)
            invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
            thl_tol**2, thl_tol, rcond, &          ! Intent(in)
@@ -2846,7 +2848,7 @@ module advance_xm_wpxp_module
 ! <--- h1g, 2010-06-15
 
       call xm_wpxp_clipping_and_stats &
-           (  gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,i), &  ! Intent(in)
+           ( gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,i), &  ! Intent(in)
              wm_zt, sclrm_forcing(:,i), &             ! Intent(in)
              rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &      ! Intent(in)
@@ -2872,7 +2874,7 @@ module advance_xm_wpxp_module
        ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
 
        call xm_wpxp_clipping_and_stats &
-            (  gr, xm_wpxp_um, dt, wp2, up2, wm_zt,       & ! Intent(in)
+            ( gr, xm_wpxp_um, dt, wp2, up2, wm_zt,       & ! Intent(in)
               um_tndcy, rho_ds_zm, rho_ds_zt,        & ! Intent(in)
               invrs_rho_ds_zm, invrs_rho_ds_zt,      & ! Intent(in)
               w_tol_sqd, w_tol, rcond,               & ! Intent(in)
@@ -2891,7 +2893,7 @@ module advance_xm_wpxp_module
        endif
 
        call xm_wpxp_clipping_and_stats &
-            (  gr, xm_wpxp_vm, dt, wp2, vp2, wm_zt,       & ! Intent(in)
+            ( gr, xm_wpxp_vm, dt, wp2, vp2, wm_zt,       & ! Intent(in)
               vm_tndcy, rho_ds_zm, rho_ds_zt,        & ! Intent(in)
               invrs_rho_ds_zm, invrs_rho_ds_zt,      & ! Intent(in)
               w_tol_sqd, w_tol, rcond,               & ! Intent(in)
@@ -2914,7 +2916,7 @@ module advance_xm_wpxp_module
   end subroutine solve_xm_wpxp_with_single_lhs
   
   !==========================================================================================
-  subroutine solve_xm_wpxp_with_multiple_lhs(  gr, dt, l_iter, nrhs, wm_zt, wp2, &
+  subroutine solve_xm_wpxp_with_multiple_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2, &
                                             l_clip_semi_implicit, &
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp, &
                                             thlm_forcing,   wpthlp_forcing, rho_ds_zm, &
@@ -2939,37 +2941,37 @@ module advance_xm_wpxp_module
     !----------------------------------------------------------------------------------------
     
     use grid_class, only: & 
-        grid, &
-      ddzt    ! Procedure(s)
+        grid, & ! Type
+        ddzt    ! Procedure(s)
       
     use error_code, only: &
-      clubb_at_least_debug_level,  & ! Procedure
-      err_code,                    & ! Error Indicator
-      clubb_fatal_error              ! Constants
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error              ! Constants
       
     use stats_type_utilities, only: & 
-      stat_update_var   ! Procedure(s)
+        stat_update_var   ! Procedure(s)
       
     use stats_variables, only: & 
-      irtm_matrix_condt_num, &  ! Variables
-      ithlm_matrix_condt_num, &
-      l_stats_samp
+        irtm_matrix_condt_num, &  ! Variables
+        ithlm_matrix_condt_num, &
+        l_stats_samp
         
     use parameters_model, only: & 
-      sclr_dim, &  ! Variable(s)
-      sclr_tol
+        sclr_dim, &  ! Variable(s)
+        sclr_tol
         
     use clubb_precision, only:  & 
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use constants_clubb, only:  & 
-      fstderr, &  ! Constant
-      rt_tol, &
-      thl_tol, &
-      thl_tol_mfl, &
-      rt_tol_mfl, &
-      zero, &
-      max_mag_correlation
+        fstderr, &  ! Constant
+        rt_tol, &
+        thl_tol, &
+        thl_tol_mfl, &
+        rt_tol_mfl, &
+        zero, &
+        max_mag_correlation
   
     implicit none
 
@@ -3181,7 +3183,7 @@ module advance_xm_wpxp_module
     endif
 
     call xm_wpxp_clipping_and_stats &
-         (  gr, xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
+         ( gr, xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
            rtm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
            invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
            rt_tol**2, rt_tol, rcond, &            ! Intent(in)
@@ -3264,7 +3266,7 @@ module advance_xm_wpxp_module
     endif
 
     call xm_wpxp_clipping_and_stats &
-         (  gr, xm_wpxp_thlm, dt, wp2, thlp2, wm_zt,  & ! Intent(in)
+         ( gr, xm_wpxp_thlm, dt, wp2, thlp2, wm_zt,  & ! Intent(in)
            thlm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
            invrs_rho_ds_zm, invrs_rho_ds_zt, &     ! Intent(in)
            thl_tol**2, thl_tol, rcond, &           ! Intent(in)
@@ -3358,7 +3360,7 @@ module advance_xm_wpxp_module
       endif
 
       call xm_wpxp_clipping_and_stats &
-           (  gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,i),  & ! Intent(in)
+           ( gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,i),  & ! Intent(in)
              wm_zt, sclrm_forcing(:,i),  &            ! Intent(in)
              rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &      ! Intent(in)
@@ -3382,7 +3384,7 @@ module advance_xm_wpxp_module
   end subroutine solve_xm_wpxp_with_multiple_lhs
 
   !=============================================================================
-  subroutine xm_wpxp_solve(  gr, nrhs, lhs, rhs, solution, rcond )
+  subroutine xm_wpxp_solve( gr, nrhs, lhs, rhs, solution, rcond )
 
     ! Description:
     !   Solve for xm / w'x' using the band diagonal solver.
@@ -3392,22 +3394,22 @@ module advance_xm_wpxp_module
     !------------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use lapack_wrap, only:  & 
-      band_solve,  & ! Procedure(s)
-      band_solvex
+        band_solve,  & ! Procedure(s)
+        band_solvex
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-      fstderr     ! Constant(s)
+        fstderr     ! Constant(s)
     
     use error_code, only: &
-      clubb_at_least_debug_level,     & ! Procedure
-      err_code,                       & ! Error indicator
-      clubb_no_error                    ! Constant
+        clubb_at_least_debug_level,     & ! Procedure
+        err_code,                       & ! Error indicator
+        clubb_no_error                    ! Constant
 
     implicit none
 
@@ -3455,7 +3457,7 @@ module advance_xm_wpxp_module
 
 !===============================================================================
   subroutine xm_wpxp_clipping_and_stats &
-             (  gr, solve_type, dt, wp2, xp2, wm_zt, &
+             ( gr, solve_type, dt, wp2, xp2, wm_zt, &
                xm_forcing, rho_ds_zm, rho_ds_zt, &
                invrs_rho_ds_zm, invrs_rho_ds_zt, &
                xp2_threshold, xm_threshold, rcond, &
@@ -3474,7 +3476,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use model_flags, only: &
         l_clip_semi_implicit    ! Variable(s)
@@ -4090,7 +4092,7 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_clipping_and_stats
 
   !=============================================================================
-  pure subroutine xm_term_ta_lhs(  gr, rho_ds_zm, &
+  pure subroutine xm_term_ta_lhs( gr, rho_ds_zm, &
                                   invrs_rho_ds_zt, &
                                   invrs_dzt, &
                                   lhs_ta_xm )
@@ -4141,7 +4143,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -4195,7 +4197,7 @@ module advance_xm_wpxp_module
   end subroutine xm_term_ta_lhs
 
   !=============================================================================
-  pure subroutine wpxp_term_tp_lhs(  gr, wp2, invrs_dzm, & 
+  pure subroutine wpxp_term_tp_lhs( gr, wp2, invrs_dzm, & 
                                     lhs_tp )
 
     ! Description:
@@ -4240,7 +4242,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -4297,7 +4299,7 @@ module advance_xm_wpxp_module
   end subroutine wpxp_term_tp_lhs
     
   !=============================================================================
-  pure subroutine wpxp_terms_ac_pr2_lhs(  gr, C7_Skw_fnc, wm_zt, invrs_dzm, &
+  pure subroutine wpxp_terms_ac_pr2_lhs( gr, C7_Skw_fnc, wm_zt, invrs_dzm, &
                                          lhs_ac_pr2  ) 
 
     ! Description:
@@ -4351,7 +4353,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one,  & ! Constant(s)
@@ -4399,7 +4401,7 @@ module advance_xm_wpxp_module
   end subroutine wpxp_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure subroutine wpxp_term_pr1_lhs(  gr, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
+  pure subroutine wpxp_term_pr1_lhs( gr, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
                                      invrs_tau_C6_zm, l_scalar_calc, &
                                      lhs_pr1_wprtp, lhs_pr1_wpthlp, &
                                      lhs_pr1_wpsclrp )
@@ -4430,7 +4432,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero  ! Constant(s)
@@ -4497,7 +4499,7 @@ module advance_xm_wpxp_module
   end subroutine wpxp_term_pr1_lhs
 
   !=============================================================================
-  pure subroutine wpxp_terms_bp_pr3_rhs(  gr, C7_Skw_fnc, thv_ds_zm, xpthvp, &
+  pure subroutine wpxp_terms_bp_pr3_rhs( gr, C7_Skw_fnc, thv_ds_zm, xpthvp, &
                                          rhs_bp_pr3 )
 
     ! Description:
@@ -4522,7 +4524,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid
+        grid ! Type
 
     use constants_clubb, only: & ! Constants(s) 
         grav, & ! Gravitational acceleration [m/s^2]
@@ -4569,7 +4571,7 @@ module advance_xm_wpxp_module
   end subroutine wpxp_terms_bp_pr3_rhs
 
   !=============================================================================
-  subroutine xm_correction_wpxp_cl(  gr, solve_type, dt, wpxp_chnge, invrs_dzt, &
+  subroutine xm_correction_wpxp_cl( gr, solve_type, dt, wpxp_chnge, invrs_dzt, &
                                     xm )
 
     ! Description:
@@ -4683,7 +4685,7 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -4756,7 +4758,7 @@ module advance_xm_wpxp_module
 
 
   !=============================================================================
-  pure function damp_coefficient(  gr, coefficient, Cx_Skw_fnc, max_coeff_value, &
+  pure function damp_coefficient( gr, coefficient, Cx_Skw_fnc, max_coeff_value, &
                                   threshold, Lscale ) &
     result( damped_value )
 
@@ -4765,7 +4767,7 @@ module advance_xm_wpxp_module
     ! For additional information see CLUBB ticket #431.
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     ! Added to prevent large damping at low altitudes where Lscale is small
     use parameters_tunable, only: &
@@ -4805,7 +4807,7 @@ module advance_xm_wpxp_module
   !-----------------------------------------------------------------------
 
   !=====================================================================================
-  pure subroutine diagnose_upxp(  gr, ypwp, xm, wpxp, ym, &
+  pure subroutine diagnose_upxp( gr, ypwp, xm, wpxp, ym, &
                                  C6x_Skw_fnc, tau_C6_zm, C7_Skw_fnc, &
                                  ypxp )
     ! Description:
@@ -4825,7 +4827,7 @@ module advance_xm_wpxp_module
         one     ! 1.0_core_rknd
 
     use grid_class, only:  &
-        grid, &
+        grid, & ! Type
         ddzt  ! Procedure
 
     implicit none
@@ -4854,7 +4856,7 @@ module advance_xm_wpxp_module
   end subroutine diagnose_upxp
 
   !=============================================================================
-  subroutine error_prints_xm_wpxp(  gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
+  subroutine error_prints_xm_wpxp( gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                                    Lscale, wp3_on_wp2, wp3_on_wp2_zt, &
                                    Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, &
                                    wp2rtp, rtpthvp, rtm_forcing, &
@@ -4888,7 +4890,7 @@ module advance_xm_wpxp_module
         fstderr    ! Variable(s)
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use parameters_model, only: &
         sclr_dim    ! Variable(s)

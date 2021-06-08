@@ -28,7 +28,7 @@ module turbulent_adv_pdf
   contains
 
   !=============================================================================
-  pure subroutine xpyp_term_ta_pdf_lhs(  gr, coef_wpxpyp_implicit, rho_ds_zt, & ! In
+  pure subroutine xpyp_term_ta_pdf_lhs( gr, coef_wpxpyp_implicit, rho_ds_zt, & ! In
                                         invrs_rho_ds_zm, invrs_dzm,      & ! In
                                         l_upwind_xpyp_turbulent_adv,     & ! In
                                         sgn_turbulent_vel,               & ! In
@@ -316,7 +316,7 @@ module turbulent_adv_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & ! gr%weights_zm2zt
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Variable(s)
@@ -448,7 +448,7 @@ module turbulent_adv_pdf
   end subroutine xpyp_term_ta_pdf_lhs
 
     !=============================================================================================
-    pure subroutine xpyp_term_ta_pdf_lhs_godunov(  gr, coef_wpxpyp_implicit, & ! Intent(in)
+    pure subroutine xpyp_term_ta_pdf_lhs_godunov( gr, coef_wpxpyp_implicit, & ! Intent(in)
                                                       invrs_rho_ds_zm, invrs_dzm, & ! Intent(in)
                                                       rho_ds_zm,  & ! Intent(in)
                                                       lhs_ta )
@@ -472,7 +472,7 @@ module turbulent_adv_pdf
     !---------------------------------------------------------------------------------------------
 
         use grid_class, only:  & ! for gr%weights_zm2zt
-        grid
+        grid ! Type
 
         use clubb_precision, only: &
             core_rknd    ! Variable(s)
@@ -530,7 +530,7 @@ module turbulent_adv_pdf
     end subroutine xpyp_term_ta_pdf_lhs_godunov
 
   !=============================================================================
-  pure subroutine xpyp_term_ta_pdf_rhs(  gr, term_wpxpyp_explicit, rho_ds_zt, & ! In
+  pure subroutine xpyp_term_ta_pdf_rhs( gr, term_wpxpyp_explicit, rho_ds_zt, & ! In
                                         invrs_rho_ds_zm, invrs_dzm,      & ! In
                                         l_upwind_xpyp_turbulent_adv,     & ! In
                                         sgn_turbulent_vel,               & ! In
@@ -787,7 +787,7 @@ module turbulent_adv_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Variable(s)
@@ -877,7 +877,7 @@ module turbulent_adv_pdf
   end subroutine xpyp_term_ta_pdf_rhs
 
   !=============================================================================
-  pure subroutine xpyp_term_ta_pdf_rhs_godunov(  gr, term_wpxpyp_explicit_zm, & ! Intent(in)
+  pure subroutine xpyp_term_ta_pdf_rhs_godunov( gr, term_wpxpyp_explicit_zm, & ! Intent(in)
                                                     invrs_rho_ds_zm, invrs_dzm, & ! Intent(in)
                                                     sgn_turbulent_vel, & ! Intent(in)
                                                     rho_ds_zm, & ! Intent(in)
@@ -901,7 +901,7 @@ module turbulent_adv_pdf
              core_rknd ! Variable(s)
 
          use grid_class, only: &
-        grid
+        grid ! Type
 
          implicit none
 
@@ -951,7 +951,7 @@ module turbulent_adv_pdf
   end subroutine xpyp_term_ta_pdf_rhs_godunov
 
   !=============================================================================
-  pure function sgn_turbulent_velocity(  gr, wpxpyp_zm, xpyp ) &
+  pure function sgn_turbulent_velocity( gr, wpxpyp_zm, xpyp ) &
   result( sgn_turbulent_vel )
 
     ! Description:
@@ -980,7 +980,7 @@ module turbulent_adv_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one,  & ! Variable(s)

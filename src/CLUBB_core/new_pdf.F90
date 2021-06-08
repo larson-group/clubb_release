@@ -345,7 +345,7 @@ module new_pdf
   ! Brian Griffin; September 2017.
   !
   !=============================================================================
-  function calc_mixture_fraction(  gr, Skx, F_x, zeta_x, sgn_wpxp ) &
+  function calc_mixture_fraction( gr, Skx, F_x, zeta_x, sgn_wpxp ) &
   result( mixt_frac )
 
     ! Description:
@@ -356,7 +356,7 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         thirty_six, & ! Constant(s)
@@ -443,7 +443,7 @@ module new_pdf
   end function calc_mixture_fraction
 
   !=============================================================================
-  subroutine calc_setter_var_params(  gr, xm, xp2, Skx, sgn_wpxp,    & ! In
+  subroutine calc_setter_var_params( gr, xm, xp2, Skx, sgn_wpxp,    & ! In
                                      F_x, zeta_x,               & ! In
                                      mu_x_1, mu_x_2, sigma_x_1, & ! Out
                                      sigma_x_2, mixt_frac,      & ! Out
@@ -459,7 +459,7 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         two, & ! Variable(s)
@@ -811,7 +811,7 @@ module new_pdf
   ! Brian Griffin; September 2017.
   !
   !=============================================================================
-  subroutine calc_responder_params(  gr, xm, xp2, Skx, sgn_wpxp,       & ! In
+  subroutine calc_responder_params( gr, xm, xp2, Skx, sgn_wpxp,       & ! In
                                     F_x, mixt_frac,               & ! In
                                     mu_x_1, mu_x_2,               & ! Out
                                     sigma_x_1_sqd, sigma_x_2_sqd, & ! Out
@@ -828,7 +828,7 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         three, & ! Variable(s)
@@ -925,7 +925,7 @@ module new_pdf
   end subroutine calc_responder_params
 
   !=============================================================================
-  subroutine calc_limits_F_x_responder(  gr, mixt_frac, Skx, sgn_wpxp,  & ! In
+  subroutine calc_limits_F_x_responder( gr, mixt_frac, Skx, sgn_wpxp,  & ! In
                                         max_Skx2_pos_Skx_sgn_wpxp, & ! In
                                         max_Skx2_neg_Skx_sgn_wpxp, & ! In
                                         min_F_x, max_F_x )           ! Out
@@ -938,7 +938,7 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         three, & ! Variable(s)
@@ -1088,7 +1088,7 @@ module new_pdf
   end subroutine calc_limits_F_x_responder
 
   !=============================================================================
-  function sort_roots(  gr, roots ) &
+  function sort_roots( gr, roots ) &
   result ( roots_sorted )
 
     ! Description:
@@ -1098,7 +1098,7 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -1187,7 +1187,7 @@ module new_pdf
   end function sort_roots
 
   !=============================================================================
-  function calc_coef_wp4_implicit(  gr, mixt_frac, F_w, &
+  function calc_coef_wp4_implicit( gr, mixt_frac, F_w, &
                                    coef_sigma_w_1_sqd, &
                                    coef_sigma_w_2_sqd ) &
   result( coef_wp4_implicit )
@@ -1270,7 +1270,7 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         six,   & ! Variable(s)
@@ -1310,7 +1310,7 @@ module new_pdf
   end function calc_coef_wp4_implicit
 
   !=============================================================================
-  function calc_coef_wpxp2_implicit(  gr, wp2, xp2, wpxp, sgn_wpxp, &
+  function calc_coef_wpxp2_implicit( gr, wp2, xp2, wpxp, sgn_wpxp, &
                                      mixt_frac, F_w, F_x, &
                                      coef_sigma_w_1_sqd, &
                                      coef_sigma_w_2_sqd, &
@@ -1500,7 +1500,7 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         two,  & ! Variable(s)
@@ -1577,7 +1577,7 @@ module new_pdf
   end function calc_coef_wpxp2_implicit
 
   !=============================================================================
-  subroutine calc_coefs_wp2xp_semiimpl(  gr, wp2, xp2, sgn_wpxp,  & ! In
+  subroutine calc_coefs_wp2xp_semiimpl( gr, wp2, xp2, sgn_wpxp,  & ! In
                                         mixt_frac, F_w, F_x, & ! In
                                         coef_sigma_w_1_sqd,  & ! In
                                         coef_sigma_w_2_sqd,  & ! In
@@ -1793,7 +1793,7 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         two,  & ! Variable(s)
@@ -1876,7 +1876,7 @@ module new_pdf
   end subroutine calc_coefs_wp2xp_semiimpl
 
   !=============================================================================
-  subroutine calc_coefs_wpxpyp_semiimpl(  gr, wp2, xp2, yp2, wpxp,      & ! In
+  subroutine calc_coefs_wpxpyp_semiimpl( gr, wp2, xp2, yp2, wpxp,      & ! In
                                          wpyp, sgn_wpxp, sgn_wpyp, & ! In
                                          mixt_frac, F_w, F_x, F_y, & ! In
                                          coef_sigma_w_1_sqd,       & ! In
@@ -2149,7 +2149,7 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         one,  & ! Variable(s)

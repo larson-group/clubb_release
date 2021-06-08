@@ -14,7 +14,7 @@ module mixing_length
   contains
 
   !=============================================================================
-  subroutine compute_mixing_length(  gr, thvm, thlm, &
+  subroutine compute_mixing_length( gr, thvm, thlm, &
                              rtm, em, Lscale_max, p_in_Pa, &
                              exner, thv_ds, mu, l_implemented, &
                              Lscale, Lscale_up, Lscale_down )
@@ -119,7 +119,7 @@ module mixing_length
         lmin    ! Minimum value for Lscale                         [m]
 
     use grid_class, only:  &
-        grid, &
+        grid, & ! Type
         zm2zt ! Procedure(s)
 
     use numerical_check, only:  &
@@ -796,23 +796,23 @@ module mixing_length
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Precision
+        core_rknd ! Precision
 
     use model_flags, only: &
-      l_sat_mixrat_lookup ! Variable(s)
+        l_sat_mixrat_lookup ! Variable(s)
 
     use saturation, only:  &
-      sat_mixrat_liq, & ! Procedure(s)
-      sat_mixrat_liq_lookup, &
-      sat_mixrat_ice
+        sat_mixrat_liq, & ! Procedure(s)
+        sat_mixrat_liq_lookup, &
+        sat_mixrat_ice
 
     use constants_clubb, only: &
-      zero, &
-      one, &
-      T_freeze_K
+        zero, &
+        one, &
+        T_freeze_K
 
     use error_code, only: &
-      clubb_at_least_debug_level
+        clubb_at_least_debug_level
 
     implicit none
 
@@ -879,7 +879,7 @@ module mixing_length
 
 
 !===============================================================================
-  subroutine calc_Lscale_directly (  gr, l_implemented, p_in_Pa, exner, rtm,        &
+  subroutine calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, rtm,        &
                   thlm, thvm, newmu, rtp2, thlp2, rtpthlp,                     &
                   pdf_params, em, thv_ds_zt, Lscale_max,                       &
                   l_Lscale_plume_centered,                                     &
@@ -896,7 +896,7 @@ module mixing_length
         Lscale_pert_coef
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd
@@ -1127,7 +1127,7 @@ module mixing_length
 
 !===============================================================================
 
- subroutine diagnose_Lscale_from_tau(  gr, &
+ subroutine diagnose_Lscale_from_tau( gr, &
                         upwp_sfc, vpwp_sfc, um, vm, & !intent in
                         exner, p_in_Pa, & !intent in
                         rtm, thlm, thvm, & !intent in
@@ -1154,111 +1154,111 @@ module mixing_length
 !     Guo et al.(2021, JAMES)
 !--------------------------------------------------------------------------------------------------
 
-  use advance_helper_module, only: &
-    calc_brunt_vaisala_freq_sqd
+    use advance_helper_module, only: &
+        calc_brunt_vaisala_freq_sqd
 
-  use constants_clubb, only: &
-    one_fourth,     &
-    vonk,           &
-    zero,           &
-    one,            & 
-    em_min,         &
-    zero_threshold, &
-    eps
-
-
-  use grid_class, only: &
-        grid, &
-    zt2zm, &
-    zm2zt, &
-    ddzt
+    use constants_clubb, only: &
+        one_fourth,     &
+        vonk,           &
+        zero,           &
+        one,            & 
+        em_min,         &
+        zero_threshold, &
+        eps
 
 
-  use clubb_precision, only: &
-    core_rknd
+    use grid_class, only: &
+        grid, & ! Type
+        zt2zm, &
+        zm2zt, &
+        ddzt
 
-  use parameters_tunable, only: &
-    C_invrs_tau_bkgnd,          &
-    C_invrs_tau_shear,          &
-    C_invrs_tau_sfc,            &
-    C_invrs_tau_N2,             &
-    C_invrs_tau_N2_wp2 ,        &
-    C_invrs_tau_N2_wpxp,        &
-    C_invrs_tau_N2_xp2,         &
-    C_invrs_tau_wpxp_N2_thresh, &
-    C_invrs_tau_N2_clear_wp3,   &
-    C_invrs_tau_wpxp_Ri,        &
-    altitude_threshold
 
-  implicit none
+    use clubb_precision, only: &
+        core_rknd
+
+    use parameters_tunable, only: &
+        C_invrs_tau_bkgnd,          &
+        C_invrs_tau_shear,          &
+        C_invrs_tau_sfc,            &
+        C_invrs_tau_N2,             &
+        C_invrs_tau_N2_wp2 ,        &
+        C_invrs_tau_N2_wpxp,        &
+        C_invrs_tau_N2_xp2,         &
+        C_invrs_tau_wpxp_N2_thresh, &
+        C_invrs_tau_N2_clear_wp3,   &
+        C_invrs_tau_wpxp_Ri,        &
+        altitude_threshold
+
+    implicit none
 
     type (grid), target, intent(in) :: gr
 
-  real( kind = core_rknd ), intent(in) :: &
-    upwp_sfc,      &
-    vpwp_sfc
+    real( kind = core_rknd ), intent(in) :: &
+      upwp_sfc,      &
+      vpwp_sfc
     
 
-  real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    um,                &
-    vm,                &
-    exner,             &
-    p_in_Pa,           &
-    rtm,               &
-    thlm,              &
-    thvm,              &
-    rcm,               &
-    ice_supersat_frac, &
-    em,                &
-    sqrt_em_zt
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      um,                &
+      vm,                &
+      exner,             &
+      p_in_Pa,           &
+      rtm,               &
+      thlm,              &
+      thvm,              &
+      rcm,               &
+      ice_supersat_frac, &
+      em,                &
+      sqrt_em_zt
 
 
-  real(kind = core_rknd), intent(in) :: &
-    ufmin,         &
-    z_displace,    &
-    tau_const,     &
-    sfc_elevation, &
-    Lscale_max
+    real(kind = core_rknd), intent(in) :: &
+      ufmin,         &
+      z_displace,    &
+      tau_const,     &
+      sfc_elevation, &
+      Lscale_max
 
-  logical, intent(in) :: &
-    l_e3sm_config,              &
-    l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
+    logical, intent(in) :: &
+      l_e3sm_config,              &
+      l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
                                   ! saturated atmospheres (from Durran and Klemp, 1982)
-    l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
-  real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-    brunt_vaisala_freq_sqd,       &
-    brunt_vaisala_freq_sqd_mixed, &
-    brunt_vaisala_freq_sqd_dry,   &
-    brunt_vaisala_freq_sqd_moist, &
-    brunt_vaisala_freq_sqd_plus,  &
-    sqrt_Ri_zm,                   &
-    invrs_tau_zt,                 &
-    invrs_tau_zm,                 &
-    invrs_tau_sfc,                &
-    invrs_tau_no_N2_zm,           &
-    invrs_tau_bkgnd,              &
-    invrs_tau_shear,              &
-    invrs_tau_wp2_zm,             &
-    invrs_tau_xp2_zm,             &
-    invrs_tau_wp3_zm,             &
-    invrs_tau_wp3_zt,             &
-    invrs_tau_wpxp_zm,            &
-    tau_max_zm,                   &
-    tau_max_zt,                   &
-    tau_zm,                       &
-    tau_zt,                       &
-    Lscale,                       &
-    Lscale_up,                    &
-    Lscale_down
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      brunt_vaisala_freq_sqd,       &
+      brunt_vaisala_freq_sqd_mixed, &
+      brunt_vaisala_freq_sqd_dry,   &
+      brunt_vaisala_freq_sqd_moist, &
+      brunt_vaisala_freq_sqd_plus,  &
+      sqrt_Ri_zm,                   &
+      invrs_tau_zt,                 &
+      invrs_tau_zm,                 &
+      invrs_tau_sfc,                &
+      invrs_tau_no_N2_zm,           &
+      invrs_tau_bkgnd,              &
+      invrs_tau_shear,              &
+      invrs_tau_wp2_zm,             &
+      invrs_tau_xp2_zm,             &
+      invrs_tau_wp3_zm,             &
+      invrs_tau_wp3_zt,             &
+      invrs_tau_wpxp_zm,            &
+      tau_max_zm,                   &
+      tau_max_zt,                   &
+      tau_zm,                       &
+      tau_zt,                       &
+      Lscale,                       &
+      Lscale_up,                    &
+      Lscale_down
 
-  real( kind = core_rknd ), dimension(gr%nz) :: &
-    brunt_freq_pos,               &
-    brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
-    brunt_freq_out_cloud
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      brunt_freq_pos,               &
+      brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
+      brunt_freq_out_cloud
 
- real( kind = core_rknd ) :: &
-    ustar
+   real( kind = core_rknd ) :: &
+      ustar
 
 
 !-----------------------------------Begin Code---------------------------------------------------!

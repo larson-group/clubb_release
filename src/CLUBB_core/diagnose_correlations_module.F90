@@ -119,7 +119,7 @@ module diagnose_correlations_module
 !        alpha_corr ! Constant(s)
 
     use constants_clubb, only: &
-      max_mag_correlation
+        max_mag_correlation
 
     implicit none
 
@@ -433,10 +433,10 @@ module diagnose_correlations_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-      max_mag_correlation
+        max_mag_correlation
 
     implicit none
 
@@ -483,7 +483,7 @@ module diagnose_correlations_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -521,7 +521,7 @@ module diagnose_correlations_module
     !-----------------------------------------------------------------------
     
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -784,13 +784,13 @@ module diagnose_correlations_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-      max_mag_correlation ! Variable(s)
+        max_mag_correlation ! Variable(s)
 
     use constants_clubb, only: &
-      one ! Variable(s)
+        one ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure

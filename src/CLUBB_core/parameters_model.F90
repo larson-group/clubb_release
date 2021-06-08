@@ -86,7 +86,7 @@ module parameters_model
         Skw_max_mag
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 

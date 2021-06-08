@@ -62,7 +62,7 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters(  gr, nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
+  subroutine setup_pdf_parameters( gr, nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
                                    Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -88,7 +88,7 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid, &
+        grid, & ! Type
         zm2zt, & ! Procedure(s)
         zt2zm
 
@@ -3413,7 +3413,7 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use constants_clubb, only : &
-      one
+        one
 
     use pdf_utilities, only: &
         corr_NN2NL, & ! Procedure(s)

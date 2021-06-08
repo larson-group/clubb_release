@@ -12,7 +12,7 @@ module pos_definite_module
   contains
 !-----------------------------------------------------------------------
   subroutine pos_definite_adj & 
-            (  gr, dt, field_grid, field_np1,  & 
+            ( gr, dt, field_grid, field_np1,  & 
               flux_np1, field_n, &
               field_pd, flux_pd )
 ! Description:
@@ -47,16 +47,16 @@ module pos_definite_module
 !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid, &
-      ddzt, & ! Function
-      ddzm    ! Function
+        grid, & ! Type
+        ddzt, & ! Function
+        ddzm    ! Function
 
     use constants_clubb, only :  & 
-      eps, & ! Variable(s)
-      zero_threshold
+        eps, & ! Variable(s)
+        zero_threshold
 
     use clubb_precision, only:  & 
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level   ! Procedure

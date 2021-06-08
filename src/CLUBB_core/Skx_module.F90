@@ -32,7 +32,7 @@ module Skx_module
         core_rknd         ! Variable(s)
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     implicit none
 
@@ -149,7 +149,7 @@ module Skx_module
   end function LG_2005_ansatz
 
   !-----------------------------------------------------------------------------
-  function xp3_LG_2005_ansatz(  gr, Skw_zt, wpxp_zt, wp2_zt, &
+  function xp3_LG_2005_ansatz( gr, Skw_zt, wpxp_zt, wp2_zt, &
                                xp2_zt, sigma_sqd_w_zt, x_tol ) &
   result( xp3 )
 
@@ -161,7 +161,7 @@ module Skx_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use parameters_tunable, only: &
         beta,           & ! Variable(s)

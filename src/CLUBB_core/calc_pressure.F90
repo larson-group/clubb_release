@@ -12,7 +12,7 @@ module calc_pressure
   contains
 
   !=============================================================================
-  subroutine update_pressure(  gr, thlm, rtm, rcm, rho_ds_zt, thv_ds_zt, &
+  subroutine update_pressure( gr, thlm, rtm, rcm, rho_ds_zt, thv_ds_zt, &
                               p_in_Pa, exner, &
                               p_in_Pa_zm, exner_zm )
 
@@ -73,7 +73,7 @@ module calc_pressure
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid, &
+        grid, & ! Type
         zt2zm    ! Procedure(s)
 
     use constants_clubb, only: &
@@ -302,7 +302,7 @@ module calc_pressure
   end subroutine update_pressure
 
   !=============================================================================
-  subroutine init_pressure(  gr, thvm, p_sfc, &
+  subroutine init_pressure( gr, thvm, p_sfc, &
                             p_in_Pa, exner, p_in_Pa_zm, exner_zm )
 
     ! Description:
@@ -348,7 +348,7 @@ module calc_pressure
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid, &
+        grid, & ! Type
         zt2zm    ! Procedure(s)
 
     use constants_clubb, only: &

@@ -22,7 +22,7 @@ module fill_holes
   contains
 
   !=============================================================================
-  subroutine fill_holes_vertical(  gr, num_draw_pts, threshold, field_grid, &
+  subroutine fill_holes_vertical( gr, num_draw_pts, threshold, field_grid, &
                                   rho_ds, rho_ds_zm, &
                                   field )
 
@@ -43,10 +43,10 @@ module fill_holes
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -189,10 +189,10 @@ module fill_holes
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-      eps
+        eps
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -367,7 +367,7 @@ module fill_holes
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -432,7 +432,7 @@ module fill_holes
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -787,7 +787,7 @@ module fill_holes
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_driver(  gr, nz, dt, hydromet_dim,        & ! Intent(in)
+  subroutine fill_holes_driver( gr, nz, dt, hydromet_dim,        & ! Intent(in)
                                 l_fill_holes_hm,             & ! Intent(in)
                                 rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
                                 thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
@@ -807,7 +807,7 @@ module fill_holes
   !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
@@ -1118,7 +1118,7 @@ module fill_holes
   end subroutine fill_holes_driver
 
   !=============================================================================
-  subroutine clip_hydromet_conc_mvr(  gr, hydromet_dim, hydromet, & ! Intent(in)
+  subroutine clip_hydromet_conc_mvr( gr, hydromet_dim, hydromet, & ! Intent(in)
                                      hydromet_clipped )        ! Intent(out)
 
     ! Description:
@@ -1131,7 +1131,7 @@ module fill_holes
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        grid
+        grid ! Type
 
     use constants_clubb, only: &
         pi,          & ! Variable(s)

@@ -508,7 +508,7 @@ module parameters_tunable
 
   !=============================================================================
   subroutine setup_parameters & 
-            (  gr, deltaz, params, nzmax, &
+            ( gr, deltaz, params, nzmax, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
               err_code_out )
@@ -647,7 +647,7 @@ module parameters_tunable
 
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu &
-           (  gr, nzmax, grid_type, deltaz,  & ! Intent(in)
+           ( gr, nzmax, grid_type, deltaz,  & ! Intent(in)
              momentum_heights, thermodynamic_heights, & ! Intent(in)
              l_prescribed_avg_deltaz )   ! Intent(in)
 
@@ -832,7 +832,7 @@ module parameters_tunable
 
   !=============================================================================
   subroutine adj_low_res_nu &
-               (  gr, nzmax, grid_type, deltaz, & ! Intent(in)
+               ( gr, nzmax, grid_type, deltaz, & ! Intent(in)
                  momentum_heights, thermodynamic_heights, & ! Intent(in)
                  l_prescribed_avg_deltaz )  ! Intent(in)
 
@@ -848,10 +848,10 @@ module parameters_tunable
     use grid_class, only: grid
 
     use constants_clubb, only: &
-      fstderr ! Constant(s)
+        fstderr ! Constant(s)
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -1520,7 +1520,7 @@ module parameters_tunable
     use constants_clubb, only: fstderr ! Constant
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -1674,109 +1674,109 @@ module parameters_tunable
     !-----------------------------------------------------------------------
 
     use parameter_indices, only: & 
-      iC1,  & ! Variable(s)
-      iC1b, & 
-      iC1c, & 
-      iC2, & 
-      iC2b, & 
-      iC2c, & 
-      iC2rt, & 
-      iC2thl, & 
-      iC2rtthl, & 
-      iC4, & 
-      iC_uu_shr, &
-      iC_uu_buoy, & 
-      iC6rt, & 
-      iC6rtb, & 
-      iC6rtc, & 
-      iC6thl, & 
-      iC6thlb, & 
-      iC6thlc, & 
-      iC7, & 
-      iC7b, & 
-      iC7c, & 
-      iC8, & 
-      iC8b, & 
-      iC10, & 
-      iC11, & 
-      iC11b, & 
-      iC11c, & 
-      iC12, & 
-      iC13, & 
-      iC14, &
-      iC_wp3_pr_turb, &
-      iC_wp3_pr_dfsn, &
-      iC_wp2_splat
+        iC1,  & ! Variable(s)
+        iC1b, & 
+        iC1c, & 
+        iC2, & 
+        iC2b, & 
+        iC2c, & 
+        iC2rt, & 
+        iC2thl, & 
+        iC2rtthl, & 
+        iC4, & 
+        iC_uu_shr, &
+        iC_uu_buoy, & 
+        iC6rt, & 
+        iC6rtb, & 
+        iC6rtc, & 
+        iC6thl, & 
+        iC6thlb, & 
+        iC6thlc, & 
+        iC7, & 
+        iC7b, & 
+        iC7c, & 
+        iC8, & 
+        iC8b, & 
+        iC10, & 
+        iC11, & 
+        iC11b, & 
+        iC11c, & 
+        iC12, & 
+        iC13, & 
+        iC14, &
+        iC_wp3_pr_turb, &
+        iC_wp3_pr_dfsn, &
+        iC_wp2_splat
 
     use parameter_indices, only: &
-      iC6rt_Lscale0, &
-      iC6thl_Lscale0, &
-      iC7_Lscale0, &
-      iwpxp_L_thresh
+        iC6rt_Lscale0, &
+        iC6thl_Lscale0, &
+        iC7_Lscale0, &
+        iwpxp_L_thresh
 
     use parameter_indices, only: & 
-      ic_K,  & 
-      ic_K1, & 
-      inu1, & 
-      ic_K2, & 
-      inu2, & 
-      ic_K6, & 
-      inu6, & 
-      ic_K8, & 
-      inu8, & 
-      ic_K9, & 
-      inu9, & 
-      inu10, &
-      ic_K_hm, & 
-      ic_K_hmb, & 
-      iK_hm_min_coef, &
-      inu_hm, & 
-      islope_coef_spread_DG_means_w, &
-      ipdf_component_stdev_factor_w, &
-      icoef_spread_DG_means_rt, &
-      icoef_spread_DG_means_thl, &
-      igamma_coef, & 
-      igamma_coefb, & 
-      igamma_coefc, & 
-      imu, & 
-      ibeta, & 
-      ilmin_coef, &
-      iomicron, &
-      izeta_vrnce_rat, &
-      iupsilon_precip_frac_rat, &
-      ilambda0_stability_coef, &
-      imult_coef, &
-      itaumin, & 
-      itaumax, & 
-      iLscale_mu_coef, &
-      iLscale_pert_coef, &
-      ialpha_corr, &
-      iSkw_denom_coef, &
-      ic_K10, &
-      ic_K10h, &
-      ithlp2_rad_coef, &
-      ithlp2_rad_cloud_frac_thresh, &
-      iup2_sfc_coef, &
-      iSkw_max_mag, &
-      ixp3_coef_base, &
-      ixp3_coef_slope, &
-      ialtitude_threshold, &
-      irtp2_clip_coef, &
-      iC_invrs_tau_bkgnd, &
-      iC_invrs_tau_sfc, &
-      iC_invrs_tau_shear, &
-      iC_invrs_tau_N2, &
-      iC_invrs_tau_N2_wp2, &
-      iC_invrs_tau_N2_xp2, &
-      iC_invrs_tau_N2_wpxp, &
-      iC_invrs_tau_N2_clear_wp3, &
-      iC_invrs_tau_wpxp_Ri, &
-      iC_invrs_tau_wpxp_N2_thresh, &
-      iCx_min, &
-      iCx_max, &
-      iRichardson_num_min, &
-      iRichardson_num_max, &
-      nparams
+        ic_K,  & 
+        ic_K1, & 
+        inu1, & 
+        ic_K2, & 
+        inu2, & 
+        ic_K6, & 
+        inu6, & 
+        ic_K8, & 
+        inu8, & 
+        ic_K9, & 
+        inu9, & 
+        inu10, &
+        ic_K_hm, & 
+        ic_K_hmb, & 
+        iK_hm_min_coef, &
+        inu_hm, & 
+        islope_coef_spread_DG_means_w, &
+        ipdf_component_stdev_factor_w, &
+        icoef_spread_DG_means_rt, &
+        icoef_spread_DG_means_thl, &
+        igamma_coef, & 
+        igamma_coefb, & 
+        igamma_coefc, & 
+        imu, & 
+        ibeta, & 
+        ilmin_coef, &
+        iomicron, &
+        izeta_vrnce_rat, &
+        iupsilon_precip_frac_rat, &
+        ilambda0_stability_coef, &
+        imult_coef, &
+        itaumin, & 
+        itaumax, & 
+        iLscale_mu_coef, &
+        iLscale_pert_coef, &
+        ialpha_corr, &
+        iSkw_denom_coef, &
+        ic_K10, &
+        ic_K10h, &
+        ithlp2_rad_coef, &
+        ithlp2_rad_cloud_frac_thresh, &
+        iup2_sfc_coef, &
+        iSkw_max_mag, &
+        ixp3_coef_base, &
+        ixp3_coef_slope, &
+        ialtitude_threshold, &
+        irtp2_clip_coef, &
+        iC_invrs_tau_bkgnd, &
+        iC_invrs_tau_sfc, &
+        iC_invrs_tau_shear, &
+        iC_invrs_tau_N2, &
+        iC_invrs_tau_N2_wp2, &
+        iC_invrs_tau_N2_xp2, &
+        iC_invrs_tau_N2_wpxp, &
+        iC_invrs_tau_N2_clear_wp3, &
+        iC_invrs_tau_wpxp_Ri, &
+        iC_invrs_tau_wpxp_N2_thresh, &
+        iCx_min, &
+        iCx_max, &
+        iRichardson_num_min, &
+        iRichardson_num_max, &
+        nparams
 
     implicit none
 
@@ -1957,109 +1957,109 @@ module parameters_tunable
     !-----------------------------------------------------------------------
 
     use parameter_indices, only: & 
-      iC1,  & ! Variable(s)
-      iC1b, & 
-      iC1c, & 
-      iC2, & 
-      iC2b, & 
-      iC2c, & 
-      iC2rt, & 
-      iC2thl, & 
-      iC2rtthl, & 
-      iC4, & 
-      iC_uu_shr, &
-      iC_uu_buoy, & 
-      iC6rt, & 
-      iC6rtb, & 
-      iC6rtc, & 
-      iC6thl, & 
-      iC6thlb, & 
-      iC6thlc, & 
-      iC7, & 
-      iC7b, & 
-      iC7c, & 
-      iC8, & 
-      iC8b, & 
-      iC10, & 
-      iC11, & 
-      iC11b, & 
-      iC11c, & 
-      iC12, & 
-      iC13, & 
-      iC14, &
-      iC_wp3_pr_turb, &
-      iC_wp3_pr_dfsn, &
-      iC_wp2_splat
+        iC1,  & ! Variable(s)
+        iC1b, & 
+        iC1c, & 
+        iC2, & 
+        iC2b, & 
+        iC2c, & 
+        iC2rt, & 
+        iC2thl, & 
+        iC2rtthl, & 
+        iC4, & 
+        iC_uu_shr, &
+        iC_uu_buoy, & 
+        iC6rt, & 
+        iC6rtb, & 
+        iC6rtc, & 
+        iC6thl, & 
+        iC6thlb, & 
+        iC6thlc, & 
+        iC7, & 
+        iC7b, & 
+        iC7c, & 
+        iC8, & 
+        iC8b, & 
+        iC10, & 
+        iC11, & 
+        iC11b, & 
+        iC11c, & 
+        iC12, & 
+        iC13, & 
+        iC14, &
+        iC_wp3_pr_turb, &
+        iC_wp3_pr_dfsn, &
+        iC_wp2_splat
 
     use parameter_indices, only: &
-      iC6rt_Lscale0, &
-      iC6thl_Lscale0, &
-      iC7_Lscale0, &
-      iwpxp_L_thresh
+        iC6rt_Lscale0, &
+        iC6thl_Lscale0, &
+        iC7_Lscale0, &
+        iwpxp_L_thresh
 
     use parameter_indices, only: & 
-      ic_K,  & 
-      ic_K1, & 
-      inu1, & 
-      ic_K2, & 
-      inu2, & 
-      ic_K6, & 
-      inu6, & 
-      ic_K8, & 
-      inu8, & 
-      ic_K9, & 
-      inu9, & 
-      inu10, &
-      ic_K_hm, & 
-      ic_K_hmb, & 
-      iK_hm_min_coef, & 
-      inu_hm, & 
-      islope_coef_spread_DG_means_w, &
-      ipdf_component_stdev_factor_w, &
-      icoef_spread_DG_means_rt, &
-      icoef_spread_DG_means_thl, &
-      igamma_coef, & 
-      igamma_coefb, & 
-      igamma_coefc, & 
-      imu, & 
-      ibeta, & 
-      ilmin_coef, &
-      iomicron, &
-      izeta_vrnce_rat, &
-      iupsilon_precip_frac_rat, &
-      ilambda0_stability_coef, &
-      imult_coef, &
-      itaumin, & 
-      itaumax, & 
-      iLscale_mu_coef, &
-      iLscale_pert_coef, &
-      ialpha_corr, &
-      iSkw_denom_coef, &
-      ic_K10, &
-      ic_K10h, & 
-      ithlp2_rad_coef, &
-      ithlp2_rad_cloud_frac_thresh, &
-      iup2_sfc_coef, &
-      iSkw_max_mag, &
-      ixp3_coef_base, &
-      ixp3_coef_slope, &
-      ialtitude_threshold, &
-      irtp2_clip_coef, &
-      iC_invrs_tau_bkgnd, &
-      iC_invrs_tau_sfc, &
-      iC_invrs_tau_shear, &
-      iC_invrs_tau_N2, &
-      iC_invrs_tau_N2_wp2, &
-      iC_invrs_tau_N2_xp2, &
-      iC_invrs_tau_N2_wpxp, &
-      iC_invrs_tau_N2_clear_wp3, &
-      iC_invrs_tau_wpxp_Ri, &
-      iC_invrs_tau_wpxp_N2_thresh, &
-      iCx_min, &
-      iCx_max, &
-      iRichardson_num_min, &
-      iRichardson_num_max, &
-      nparams
+        ic_K,  & 
+        ic_K1, & 
+        inu1, & 
+        ic_K2, & 
+        inu2, & 
+        ic_K6, & 
+        inu6, & 
+        ic_K8, & 
+        inu8, & 
+        ic_K9, & 
+        inu9, & 
+        inu10, &
+        ic_K_hm, & 
+        ic_K_hmb, & 
+        iK_hm_min_coef, & 
+        inu_hm, & 
+        islope_coef_spread_DG_means_w, &
+        ipdf_component_stdev_factor_w, &
+        icoef_spread_DG_means_rt, &
+        icoef_spread_DG_means_thl, &
+        igamma_coef, & 
+        igamma_coefb, & 
+        igamma_coefc, & 
+        imu, & 
+        ibeta, & 
+        ilmin_coef, &
+        iomicron, &
+        izeta_vrnce_rat, &
+        iupsilon_precip_frac_rat, &
+        ilambda0_stability_coef, &
+        imult_coef, &
+        itaumin, & 
+        itaumax, & 
+        iLscale_mu_coef, &
+        iLscale_pert_coef, &
+        ialpha_corr, &
+        iSkw_denom_coef, &
+        ic_K10, &
+        ic_K10h, & 
+        ithlp2_rad_coef, &
+        ithlp2_rad_cloud_frac_thresh, &
+        iup2_sfc_coef, &
+        iSkw_max_mag, &
+        ixp3_coef_base, &
+        ixp3_coef_slope, &
+        ialtitude_threshold, &
+        irtp2_clip_coef, &
+        iC_invrs_tau_bkgnd, &
+        iC_invrs_tau_sfc, &
+        iC_invrs_tau_shear, &
+        iC_invrs_tau_N2, &
+        iC_invrs_tau_N2_wp2, &
+        iC_invrs_tau_N2_xp2, &
+        iC_invrs_tau_N2_wpxp, &
+        iC_invrs_tau_N2_clear_wp3, &
+        iC_invrs_tau_wpxp_Ri, &
+        iC_invrs_tau_wpxp_N2_thresh, &
+        iCx_min, &
+        iCx_max, &
+        iRichardson_num_min, &
+        iRichardson_num_max, &
+        nparams
 
     implicit none
 
@@ -2375,7 +2375,7 @@ module parameters_tunable
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-      fstderr  ! Constant
+        fstderr  ! Constant
 
     implicit none
 

@@ -99,10 +99,10 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use clubb_precision, only: &
-      stat_rknd ! Constant
+        stat_rknd ! Constant
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     implicit none
 
@@ -148,10 +148,10 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use clubb_precision, only: &
-      stat_rknd ! Constant
+        stat_rknd ! Constant
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     implicit none
 
@@ -183,7 +183,7 @@ module stats_type_utilities
   end subroutine stat_update_var_pt
 
   !=============================================================================
-  subroutine stat_begin_update(  gr, var_index, value, &
+  subroutine stat_begin_update( gr, var_index, value, &
                                 grid_kind )
 
     ! Description:
@@ -266,16 +266,16 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use clubb_precision, only: &
-      stat_rknd ! Constant
+        stat_rknd ! Constant
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     use constants_clubb, only: & 
-      fstderr   ! Constant(s) 
+        fstderr   ! Constant(s) 
 
     use error_code, only: &
-      clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level   ! Procedure
 
     implicit none
 
@@ -317,7 +317,7 @@ module stats_type_utilities
   end subroutine stat_begin_update_pt
 
   !=============================================================================
-  subroutine stat_end_update(  gr, var_index, value, &
+  subroutine stat_end_update( gr, var_index, value, &
                               grid_kind )
 
     ! Description:
@@ -397,13 +397,13 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     use constants_clubb, only: & 
-      fstderr   ! Constant(s) 
+        fstderr   ! Constant(s) 
 
     use error_code, only: &
-      clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level   ! Procedure
 
     implicit none
 
@@ -444,7 +444,7 @@ module stats_type_utilities
   end subroutine stat_end_update_pt
 
   !=============================================================================
-  subroutine stat_modify(  gr, var_index, value, &
+  subroutine stat_modify( gr, var_index, value, &
                           grid_kind )
 
     ! Description:
@@ -501,10 +501,10 @@ module stats_type_utilities
     !---------------------------------------------------------------------
 
     use clubb_precision, only: &
-      stat_rknd ! Constant
+        stat_rknd ! Constant
 
     use stat_file_module, only: &
-      clubb_i, clubb_j ! Variable(s)
+        clubb_i, clubb_j ! Variable(s)
 
     implicit none
 
