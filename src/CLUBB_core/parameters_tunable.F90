@@ -508,7 +508,7 @@ module parameters_tunable
 
   !=============================================================================
   subroutine setup_parameters & 
-            ( deltaz, params, nzmax, &
+            ( gr, deltaz, params, nzmax, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
               err_code_out )
@@ -526,6 +526,7 @@ module parameters_tunable
         one,     &
         zero,    &
         fstderr
+    use grid_class, only: grid
 
     use model_flags, only: &
         l_clip_semi_implicit  ! Variable(s)
@@ -541,6 +542,8 @@ module parameters_tunable
         izeta_vrnce_rat
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
 
     ! Constant Parameters
@@ -644,7 +647,7 @@ module parameters_tunable
 
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu &
-           ( nzmax, grid_type, deltaz,  & ! Intent(in)
+           ( gr, nzmax, grid_type, deltaz,  & ! Intent(in)
              momentum_heights, thermodynamic_heights, & ! Intent(in)
              l_prescribed_avg_deltaz )   ! Intent(in)
 
@@ -829,7 +832,7 @@ module parameters_tunable
 
   !=============================================================================
   subroutine adj_low_res_nu &
-               ( nzmax, grid_type, deltaz, & ! Intent(in)
+               ( gr, nzmax, grid_type, deltaz, & ! Intent(in)
                  momentum_heights, thermodynamic_heights, & ! Intent(in)
                  l_prescribed_avg_deltaz )  ! Intent(in)
 
@@ -842,7 +845,7 @@ module parameters_tunable
     !   and/or time.  This occurs, for example, when CLUBB is
     !   implemented in WRF.  --ldgrant Jul 2010
     !----------------------------------------------------------------------
-    use grid_class, only: gr
+    use grid_class, only: grid
 
     use constants_clubb, only: &
         fstderr ! Constant(s)
@@ -851,6 +854,8 @@ module parameters_tunable
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant Parameters
 

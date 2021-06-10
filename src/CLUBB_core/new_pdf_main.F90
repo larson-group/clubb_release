@@ -23,7 +23,7 @@ module new_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,      & ! In
+  subroutine new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,      & ! In
                              wprtp, wpthlp, rtpthlp,                    & ! In
                              Skrt, Skthl,                               & ! I/O
                              mu_w_1, mu_w_2,                            & ! Out
@@ -48,7 +48,7 @@ module new_pdf_main
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         four,                & ! Variable(s)
@@ -84,6 +84,8 @@ module new_pdf_main
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -228,7 +230,7 @@ module new_pdf_main
 
 
     ! Vertical velocity, w, will always be the setter variable.
-    call calc_F_x_zeta_x_setter( Skw,                          & ! In
+    call calc_F_x_zeta_x_setter( gr, Skw,                          & ! In
                                  slope_coef_spread_DG_means_w, & ! In
                                  pdf_component_stdev_factor_w, & ! In
                                  lambda_w,                     & ! In
@@ -237,7 +239,7 @@ module new_pdf_main
 
     ! Calculate the PDF parameters, including mixture fraction, for the
     ! setter variable, w.
-    call calc_setter_var_params( wm, wp2, Skw, sgn_wp2,     & ! In
+    call calc_setter_var_params( gr, wm, wp2, Skw, sgn_wp2,     & ! In
                                  F_w, zeta_w,               & ! In
                                  mu_w_1, mu_w_2, sigma_w_1, & ! Out
                                  sigma_w_2, mixt_frac,      & ! Out
@@ -255,7 +257,7 @@ module new_pdf_main
     max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
 
     ! Calculate the PDF parameters for responder variable rt.
-    call calc_responder_var( rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
+    call calc_responder_var( gr, rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
                              coef_spread_DG_means_rt,         & ! In
                              exp_factor_rt,                   & ! In
                              max_Skx2_pos_Skx_sgn_wpxp,       & ! In
@@ -268,7 +270,7 @@ module new_pdf_main
                              F_rt, min_F_rt, max_F_rt         ) ! Out
 
     ! Calculate the PDF parameters for responder variable thl.
-    call calc_responder_var( thlm, thlp2, sgn_wpthlp, mixt_frac, & ! In
+    call calc_responder_var( gr, thlm, thlp2, sgn_wpthlp, mixt_frac, & ! In
                              coef_spread_DG_means_thl,           & ! In
                              exp_factor_thl,                     & ! In
                              max_Skx2_pos_Skx_sgn_wpxp,          & ! In
@@ -287,7 +289,7 @@ module new_pdf_main
 
        ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
        coef_wp4_implicit &
-       = calc_coef_wp4_implicit( mixt_frac, F_w, &
+       = calc_coef_wp4_implicit( gr, mixt_frac, F_w, &
                                  coef_sigma_w_1_sqd, &
                                  coef_sigma_w_2_sqd )
 
@@ -306,7 +308,7 @@ module new_pdf_main
 
        ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>
        coef_wprtp2_implicit &
-       = calc_coef_wpxp2_implicit( wp2, rtp2, wprtp, sgn_wprtp, &
+       = calc_coef_wpxp2_implicit( gr, wp2, rtp2, wprtp, sgn_wprtp, &
                                    mixt_frac, F_w, F_rt, &
                                    coef_sigma_w_1_sqd, &
                                    coef_sigma_w_2_sqd, &
@@ -315,7 +317,7 @@ module new_pdf_main
 
        ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2>
        coef_wpthlp2_implicit &
-       = calc_coef_wpxp2_implicit( wp2, thlp2, wpthlp, sgn_wpthlp, &
+       = calc_coef_wpxp2_implicit( gr, wp2, thlp2, wpthlp, sgn_wpthlp, &
                                    mixt_frac, F_w, F_thl, &
                                    coef_sigma_w_1_sqd, &
                                    coef_sigma_w_2_sqd, &
@@ -324,7 +326,7 @@ module new_pdf_main
 
        ! <w'rt'thl'> = coef_wprtpthlp_implicit * <rt'thl'>
        !               + term_wprtpthlp_explicit
-       call calc_coefs_wpxpyp_semiimpl( wp2, rtp2, thlp2, wprtp,       & ! In
+       call calc_coefs_wpxpyp_semiimpl( gr, wp2, rtp2, thlp2, wprtp,       & ! In
                                         wpthlp, sgn_wprtp, sgn_wpthlp, & ! In
                                         mixt_frac, F_w, F_rt, F_thl,   & ! In
                                         coef_sigma_w_1_sqd  ,          & ! In
@@ -353,7 +355,7 @@ module new_pdf_main
        ! semi-implicitly.
 
        ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-       call calc_coefs_wp2xp_semiimpl( wp2, rtp2, sgn_wprtp, & ! In
+       call calc_coefs_wp2xp_semiimpl( gr, wp2, rtp2, sgn_wprtp, & ! In
                                        mixt_frac, F_w, F_rt, & ! In
                                        coef_sigma_w_1_sqd,   & ! In
                                        coef_sigma_w_2_sqd,   & ! In
@@ -363,7 +365,7 @@ module new_pdf_main
                                        term_wp2rtp_explicit  ) ! Out
 
        ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-       call calc_coefs_wp2xp_semiimpl( wp2, thlp2, sgn_wpthlp, & ! In
+       call calc_coefs_wp2xp_semiimpl( gr, wp2, thlp2, sgn_wpthlp, & ! In
                                        mixt_frac, F_w, F_thl,  & ! In
                                        coef_sigma_w_1_sqd,     & ! In
                                        coef_sigma_w_2_sqd,     & ! In
@@ -401,7 +403,7 @@ module new_pdf_main
   end subroutine new_pdf_driver
 
   !=============================================================================
-  subroutine calc_responder_var( xm, xp2, sgn_wpxp, mixt_frac, & ! In
+  subroutine calc_responder_var( gr, xm, xp2, sgn_wpxp, mixt_frac, & ! In
                                  coef_spread_DG_means_x,       & ! In
                                  exp_factor_x,                 & ! In
                                  max_Skx2_pos_Skx_sgn_wpxp,    & ! In
@@ -424,7 +426,7 @@ module new_pdf_main
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Variable(s)
@@ -437,6 +439,8 @@ module new_pdf_main
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -494,16 +498,16 @@ module new_pdf_main
        endwhere ! Skx^2 >= max_Skx2_neg_Skx_sgn_wpxp
     endwhere ! Skx * sgn( <w'x'> ) >= 0
 
-    call calc_limits_F_x_responder( mixt_frac, Skx, sgn_wpxp,  & ! In
+    call calc_limits_F_x_responder( gr, mixt_frac, Skx, sgn_wpxp,  & ! In
                                     max_Skx2_pos_Skx_sgn_wpxp, & ! In
                                     max_Skx2_neg_Skx_sgn_wpxp, & ! In
                                     min_F_x, max_F_x )           ! Out
 
     ! F_x must have a value between min_F_x and max_F_x.
-    F_x = calc_F_x_responder( coef_spread_DG_means_x, exp_factor_x, &
+    F_x = calc_F_x_responder( gr, coef_spread_DG_means_x, exp_factor_x, &
                               min_F_x, max_F_x )
 
-    call calc_responder_params( xm, xp2, Skx, sgn_wpxp,       & ! In
+    call calc_responder_params( gr, xm, xp2, Skx, sgn_wpxp,       & ! In
                                 F_x, mixt_frac,               & ! In
                                 mu_x_1, mu_x_2,               & ! Out
                                 sigma_x_1_sqd, sigma_x_2_sqd, & ! Out
@@ -516,7 +520,7 @@ module new_pdf_main
   end subroutine calc_responder_var
 
   !=============================================================================
-  subroutine calc_F_x_zeta_x_setter( Skx,                          & ! In
+  subroutine calc_F_x_zeta_x_setter( gr, Skx,                          & ! In
                                      slope_coef_spread_DG_means_x, & ! In
                                      pdf_component_stdev_factor_x, & ! In
                                      lambda,                       & ! In
@@ -577,7 +581,7 @@ module new_pdf_main
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         one,  & ! Variable(s)
@@ -587,6 +591,8 @@ module new_pdf_main
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -633,7 +639,7 @@ module new_pdf_main
   end subroutine calc_F_x_zeta_x_setter
 
   !=============================================================================
-  function calc_F_x_responder( coef_spread_DG_means_x, exp_factor_x, &
+  function calc_F_x_responder( gr, coef_spread_DG_means_x, exp_factor_x, &
                                min_F_x, max_F_x ) &
   result( F_x )
 
@@ -724,7 +730,7 @@ module new_pdf_main
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         one    ! Variable(s)
@@ -733,6 +739,8 @@ module new_pdf_main
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &

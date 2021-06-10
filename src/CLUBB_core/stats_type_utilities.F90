@@ -183,7 +183,7 @@ module stats_type_utilities
   end subroutine stat_update_var_pt
 
   !=============================================================================
-  subroutine stat_begin_update( var_index, value, &
+  subroutine stat_begin_update( gr, var_index, value, &
                                 grid_kind )
 
     ! Description:
@@ -217,9 +217,11 @@ module stats_type_utilities
     ! component is sent into stat_end_update_pt.
     !---------------------------------------------------------------------
 
-    use grid_class, only: gr  ! Variable(s)
+    use grid_class, only: grid
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables(s)
 
@@ -315,7 +317,7 @@ module stats_type_utilities
   end subroutine stat_begin_update_pt
 
   !=============================================================================
-  subroutine stat_end_update( var_index, value, &
+  subroutine stat_end_update( gr, var_index, value, &
                               grid_kind )
 
     ! Description:
@@ -349,9 +351,11 @@ module stats_type_utilities
     ! component is sent into stat_end_update_pt.
     !---------------------------------------------------------------------
 
-    use grid_class, only: gr ! Variable(s)
+    use grid_class, only: grid
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables(s)
 
@@ -440,7 +444,7 @@ module stats_type_utilities
   end subroutine stat_end_update_pt
 
   !=============================================================================
-  subroutine stat_modify( var_index, value, &
+  subroutine stat_modify( gr, var_index, value, &
                           grid_kind )
 
     ! Description:
@@ -453,9 +457,11 @@ module stats_type_utilities
     ! stat_begin_update and stat_end_update.
     !---------------------------------------------------------------------
 
-    use grid_class, only: gr ! Variable(s)
+    use grid_class, only: grid
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables(s)
 

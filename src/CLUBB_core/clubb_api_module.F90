@@ -768,7 +768,7 @@ contains
       RH_crit  ! critical relative humidity for droplet and ice nucleation
     logical, intent(in)                 ::  do_liquid_only_in_clubb
 #endif
-    call advance_clubb_core( &
+    call advance_clubb_core( gr, &
       l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
       thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
       sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
@@ -957,7 +957,7 @@ contains
     err_code_api   ! Diagnostic for a problem with the setup 
 
     call setup_clubb_core &
-      ( nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
+      ( gr, nzmax, T0_in, ts_nudge_in,                      & ! intent(in)
       hydromet_dim_in, sclr_dim_in,                         & ! intent(in)
       sclr_tol_in, edsclr_dim_in, params,                   & ! intent(in)
       l_host_applies_sfc_fluxes,                            & ! intent(in)
@@ -1192,7 +1192,7 @@ contains
       rvm_mc,  & ! Microphysics contributions to vapor water            [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp. [K/s]
 
-    call fill_holes_driver( &
+    call fill_holes_driver( gr,    &
       nz, dt, hydromet_dim,        & ! Intent(in)
       l_fill_holes_hm,             & ! Intent(in)
       rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
@@ -1232,7 +1232,7 @@ contains
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
 
-    call fill_holes_vertical( &
+    call fill_holes_vertical( gr, &
       num_pts, threshold, field_grid, &
       rho_ds, rho_ds_zm, &
       field )
@@ -1507,7 +1507,7 @@ contains
     integer, intent(out) ::  & 	 	      
       err_code_api ! Error condition 
 
-    call setup_parameters( &
+    call setup_parameters( gr, &
       deltaz, params, nzmax, &
       grid_type, momentum_heights, thermodynamic_heights, &
       l_prescribed_avg_deltaz, &
@@ -1563,7 +1563,7 @@ contains
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
-    call adj_low_res_nu( &
+    call adj_low_res_nu( gr, &
       nzmax, grid_type, deltaz, & ! Intent(in)
       momentum_heights, thermodynamic_heights, & ! Intent(in)
       l_prescribed_avg_deltaz )  ! Intent(in)
@@ -2025,7 +2025,7 @@ contains
     hydromet_col(1,:,:) = hydromet
     wphydrometp_col(1,:,:) = wphydrometp
 
-    call setup_pdf_parameters( &
+    call setup_pdf_parameters( gr, &
       nz, 1, pdf_dim, dt, &                                   ! Intent(in)
       Nc_in_cloud_col, rcm_col, cloud_frac_col, Kh_zm_col, &  ! Intent(in)
       ice_supersat_frac_col, hydromet_col, wphydrometp_col, & ! Intent(in)
@@ -2175,7 +2175,7 @@ contains
     type(precipitation_fractions), intent(inout) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    call setup_pdf_parameters( &
+    call setup_pdf_parameters( gr, &
       nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
       Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
@@ -2365,7 +2365,7 @@ contains
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       rho_ds_zt ! Dry, static density (thermo. levs.)      [kg/m^3]
 
-    call stats_accumulate_hydromet( &
+    call stats_accumulate_hydromet( gr, &
       hydromet, rho_ds_zt )
   end subroutine stats_accumulate_hydromet_api
 
@@ -3451,7 +3451,7 @@ contains
     type(sponge_damp_profile), intent(out) :: &
       damping_profile
 
-    call initialize_tau_sponge_damp( dt, z, settings, damping_profile )
+    call initialize_tau_sponge_damp( gr, dt, z, settings, damping_profile )
 
   end subroutine initialize_tau_sponge_damp_api
 

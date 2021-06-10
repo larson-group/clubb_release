@@ -40,7 +40,7 @@ module advance_wp2_wp3_module
   contains
 
   !=============================================================================
-  subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
+  subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
                               wm_zt, a3, a3_zt, wp3_on_wp2,                  & ! In
                               wp2up2, wp2vp2, wp4,                           & ! In
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! In
@@ -82,7 +82,7 @@ module advance_wp2_wp3_module
     !------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr,     & ! Variable(s)
+        grid, & ! Type
         zt2zm,  & ! Procedure(s)
         zm2zt
 
@@ -138,6 +138,8 @@ module advance_wp2_wp3_module
         clubb_fatal_error              ! Constant
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     intrinsic :: exp
 
@@ -368,7 +370,7 @@ module advance_wp2_wp3_module
     endif ! l_lmm_stepping
 
     ! Solve semi-implicitly
-    call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
+    call wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
                      wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                      wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -401,15 +403,15 @@ module advance_wp2_wp3_module
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
 
        if ( l_stats_samp ) then
-          call stat_begin_update( iwp2_sdmp, wp2 / dt, & ! intent(in)
+          call stat_begin_update( gr, iwp2_sdmp, wp2 / dt, & ! intent(in)
                                   stats_zm )             ! intent(inout)
        endif
 
-       wp2 = sponge_damp_xp2( dt, gr%zm, wp2, w_tol_sqd, &
+       wp2 = sponge_damp_xp2( gr, dt, gr%zm, wp2, w_tol_sqd, &
                               wp2_sponge_damp_profile )
 
        if ( l_stats_samp ) then
-          call stat_end_update( iwp2_sdmp, wp2 / dt, & ! intent(in)
+          call stat_end_update( gr, iwp2_sdmp, wp2 / dt, & ! intent(in)
                                 stats_zm )             ! intent(inout)
        endif
 
@@ -418,14 +420,14 @@ module advance_wp2_wp3_module
     if ( wp3_sponge_damp_settings%l_sponge_damping ) then
 
        if ( l_stats_samp ) then
-          call stat_begin_update( iwp3_sdmp, wp3 / dt, & ! intent(in)
+          call stat_begin_update( gr, iwp3_sdmp, wp3 / dt, & ! intent(in)
                                   stats_zt )             ! intent(inout)
        endif
 
-       wp3 = sponge_damp_xp3( dt, gr%zt, wp3, wp3_sponge_damp_profile )
+       wp3 = sponge_damp_xp3( gr, dt, gr%zt, wp3, wp3_sponge_damp_profile )
 
        if ( l_stats_samp ) then
-          call stat_end_update( iwp3_sdmp, wp3 / dt, & ! intent(in) 
+          call stat_end_update( gr, iwp3_sdmp, wp3 / dt, & ! intent(in) 
                                 stats_zt )             ! intent(inout)
        endif
 
@@ -495,7 +497,7 @@ module advance_wp2_wp3_module
   end subroutine advance_wp2_wp3
 
   !=============================================================================
-  subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
+  subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
                          wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                          wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                          wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -527,7 +529,7 @@ module advance_wp2_wp3_module
     !------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr  ! Variable(s) 
+        grid ! Type
 
     use grid_class, only:  & 
         zm2zt, & ! Function(s)
@@ -636,6 +638,8 @@ module advance_wp2_wp3_module
         ztscr16
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: max, min, sqrt
@@ -831,7 +835,7 @@ module advance_wp2_wp3_module
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    call wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &                 ! intent(in)
+    call wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &                 ! intent(in)
                    coef_wp4_implicit, wp2up2, wp2vp2, wp4, &                         ! intent(in)
                    wpthvp, wp2thvp, um, vm, &                                        ! intent(in)
                    upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt,  &                     ! intent(in)
@@ -855,7 +859,7 @@ module advance_wp2_wp3_module
 
     ! Compute the implicit portion of the w'^2 and w'^3 equations.
     ! Build the left-hand side matrix.
-    call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  & ! intent(in)
+    call wp23_lhs( gr, dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  & ! intent(in)
                    wp3_on_wp2, coef_wp4_implicit, & ! intent(in)
                    Kw1, Kw8, Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & !intent(in)
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, & ! intent(in)
@@ -1102,14 +1106,14 @@ module advance_wp2_wp3_module
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_begin_update( iwp2_pd, wp2 / dt, & ! intent(in)
+      call stat_begin_update( gr, iwp2_pd, wp2 / dt, & ! intent(in)
                               stats_zm )           ! intent(inout)
     endif
 
     if ( l_hole_fill .and. any( wp2 < w_tol_sqd ) ) then
 
       ! Use a simple hole filling algorithm
-      call fill_holes_vertical( 2, w_tol_sqd, "zm", &   ! intent(in)
+      call fill_holes_vertical( gr, 2, w_tol_sqd, "zm", &   ! intent(in)
                                 rho_ds_zt, rho_ds_zm, & ! intent(in)
                                 wp2 )                   ! intent(inout)
 
@@ -1123,7 +1127,7 @@ module advance_wp2_wp3_module
 
     if ( l_stats_samp ) then
       ! Store updated value for effect of the positive definite scheme
-      call stat_end_update( iwp2_pd, wp2 / dt, & ! intent(in)
+      call stat_end_update( gr, iwp2_pd, wp2 / dt, & ! intent(in)
                             stats_zm )           ! intent(inout)
     endif
 
@@ -1174,7 +1178,7 @@ module advance_wp2_wp3_module
        ! Consider only the minimum tolerance threshold value for wp2.
        threshold = w_tol_sqd
 
-       call clip_variance( clip_wp2, dt, threshold, & ! Intent(in)
+       call clip_variance( gr, clip_wp2, dt, threshold, & ! Intent(in)
                            wp2 )                      ! Intent(inout)
 
     endif ! l_min_wp2_from_corr_wx
@@ -1185,7 +1189,7 @@ module advance_wp2_wp3_module
     wp2_zt = max( zm2zt( wp2 ), w_tol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
-    call clip_skewness( dt, sfc_elevation, wp2_zt, & ! intent(in)
+    call clip_skewness( gr, dt, sfc_elevation, wp2_zt, & ! intent(in)
                         wp3 )                        ! intent(inout)
 
     ! Compute wp3_zm for output purposes
@@ -1195,7 +1199,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_solve
 
   !=================================================================================
-  subroutine wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
+  subroutine wp23_lhs( gr, dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, coef_wp4_implicit, &
                        Kw1, Kw8, Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
@@ -1235,7 +1239,7 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr ! Variable
+        grid ! Type
 
     use parameters_tunable, only:  & 
         C4,  & ! Variables
@@ -1321,6 +1325,8 @@ module advance_wp2_wp3_module
     use advance_helper_module, only: set_boundary_conditions_lhs ! Procedure(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
 
     ! Input Variables
@@ -1428,23 +1434,23 @@ module advance_wp2_wp3_module
 
 
     ! Calculated mean advection term for w'2
-    call term_ma_zm_lhs( wm_zm(:), gr%invrs_dzm(:), &                  ! intent(in)
+    call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), &                  ! intent(in)
                          lhs_ma_zm(:,:) )                              ! intent(out)
 
 
     ! Calculated mean advection term for w'3
-    call term_ma_zt_lhs( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
+    call term_ma_zt_lhs( gr, wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
                          l_upwind_xm_ma, &                             ! intent(in)
                          lhs_ma_zt(:,:) )                              ! intent(out)
 
 
     ! Calculate diffusion term for w'2 using a completely implicit time step
-    call diffusion_zm_lhs( Kw1(:), nu1_vert_res_dep(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
+    call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
                            lhs_diff_zm(:,:) ) ! intent(out)
 
 
     ! Calculate diffusion term for w'3 using a completely implicit time step
-    call diffusion_zt_lhs( Kw8(:), nu8_vert_res_dep(:), gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
+    call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:), gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
                            lhs_diff_zt(:,:) ) ! intent(out)
 
     lhs_diff_zt(:,:) = lhs_diff_zt(:,:) * C12
@@ -1469,22 +1475,22 @@ module advance_wp2_wp3_module
 
 
     ! Calculate turbulent advection terms for wp2
-    call wp2_term_ta_lhs( rho_ds_zt(:), invrs_rho_ds_zm(:), gr%invrs_dzm(:), & ! intent(in)
+    call wp2_term_ta_lhs( gr, rho_ds_zt(:), invrs_rho_ds_zm(:), gr%invrs_dzm(:), & ! intent(in)
                           lhs_ta_wp2(:,:) )                                    ! intent(out)
 
 
     ! Calculate accumulation terms of w'^2 and w'^2 pressure term 2
-    call wp2_terms_ac_pr2_lhs( C_uu_shr, wm_zt(:), gr%invrs_dzm(:), & ! intent(in)
+    call wp2_terms_ac_pr2_lhs( gr, C_uu_shr, wm_zt(:), gr%invrs_dzm(:), & ! intent(in)
                                lhs_ac_pr2_wp2(:) )                    ! intent(out)
 
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_lhs( C1_Skw_fnc(:), invrs_tau_C1_zm(:), & ! intent(in)
+    call wp2_term_dp1_lhs( gr, C1_Skw_fnc(:), invrs_tau_C1_zm(:), & ! intent(in)
                            lhs_dp1_wp2(:) )                     ! intent(out)
 
 
     ! Calculate turbulent production terms of w'^3
-    call wp3_term_tp_lhs( wp2(:), &             ! intent(in)
+    call wp3_term_tp_lhs( gr, wp2(:), &             ! intent(in)
                           rho_ds_zm(:), &       ! intent(in)
                           invrs_rho_ds_zt(:), & ! intent(in)
                           gr%invrs_dzt(:), &    ! intent(in)
@@ -1492,12 +1498,12 @@ module advance_wp2_wp3_module
 
 
     ! Calculate accumulation terms of w'^3 and w'^3 pressure terms 2
-    call wp3_terms_ac_pr2_lhs( C11_Skw_fnc(:), wm_zm(:), gr%invrs_dzt(:), & ! intent(in)
+    call wp3_terms_ac_pr2_lhs( gr, C11_Skw_fnc(:), wm_zm(:), gr%invrs_dzt(:), & ! intent(in)
                                lhs_ac_pr2_wp3(:) )                          ! intent(out)
 
 
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_lhs( C8, C8b, invrs_tauw3t(:), Skw_zt(:), & ! intent(in)
+    call wp3_term_pr1_lhs( gr, C8, C8b, invrs_tauw3t(:), Skw_zt(:), & ! intent(in)
                            l_damp_wp3_Skw_squared, &              ! intent(in)
                            lhs_pr1_wp3(:) )                       ! intent(out)
 
@@ -1610,7 +1616,7 @@ module advance_wp2_wp3_module
         ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wp2_pr 
 
         ! Calculate terms
-        call wp2_term_pr1_lhs( C4, invrs_tau1m(:), & ! intent(in)
+        call wp2_term_pr1_lhs( gr, C4, invrs_tau1m(:), & ! intent(in)
                                lhs_pr1_wp2(:) )      ! intent(out)
 
         ! Add terms to lhs
@@ -1648,7 +1654,7 @@ module advance_wp2_wp3_module
             ! The ADG1 PDF is used.
 
             ! Calculate terms
-            call wp3_term_ta_ADG1_lhs( wp2, a1, a1_zt, a3, a3_zt, &        ! intent(in)
+            call wp3_term_ta_ADG1_lhs( gr, wp2, a1, a1_zt, a3, a3_zt, &        ! intent(in)
                                        wp3_on_wp2, rho_ds_zm, &            ! intent(in)
                                        rho_ds_zt, invrs_rho_ds_zt, &       ! intent(in)
                                        gr%invrs_dzt, l_standard_term_ta, & ! intent(in)
@@ -1661,7 +1667,7 @@ module advance_wp2_wp3_module
             ! The new PDF or the new hybrid PDF is used.
 
             ! Calculate terms
-            call wp3_term_ta_new_pdf_lhs( coef_wp4_implicit(:), wp2(:), &     ! intent(in)
+            call wp3_term_ta_new_pdf_lhs( gr, coef_wp4_implicit(:), wp2(:), &     ! intent(in)
                                           rho_ds_zm(:), invrs_rho_ds_zt(:), & ! intent(in)
                                           gr%invrs_dzt(:), &                  ! intent(in)
                                           lhs_ta_wp3(:,:) )                   ! intent(out)
@@ -1806,7 +1812,7 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
         !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_ac > 0 ) then
-           call wp2_terms_ac_pr2_lhs( zero, wm_zt, gr%invrs_dzm, & ! intent(in)
+           call wp2_terms_ac_pr2_lhs( gr, zero, wm_zt, gr%invrs_dzm, & ! intent(in)
                                       zmscr10  )                   ! intent(out)
            zmscr10 = - zmscr10
         endif
@@ -1814,7 +1820,7 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
         !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_pr2 > 0 ) then
-           call wp2_terms_ac_pr2_lhs( (one+C_uu_shr), wm_zt, gr%invrs_dzm, & ! intent(in)
+           call wp2_terms_ac_pr2_lhs( gr, (one+C_uu_shr), wm_zt, gr%invrs_dzm, & ! intent(in)
                                        zmscr11 )                             ! intent(out)
            zmscr11 = - zmscr11
         endif
@@ -1822,7 +1828,7 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^3 term ac, substitute 0 for the
         !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
         if ( iwp3_ac > 0 ) then
-           call wp3_terms_ac_pr2_lhs( zero_vector, wm_zm, gr%invrs_dzt, & ! intent(in)
+           call wp3_terms_ac_pr2_lhs( gr, zero_vector, wm_zm, gr%invrs_dzt, & ! intent(in)
                                       ztscr15 )                           ! intent(out)
            ztscr15 = - ztscr15
         endif
@@ -1830,7 +1836,7 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
         !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
         if ( iwp3_pr2 > 0 ) then
-           call wp3_terms_ac_pr2_lhs( (one+C11_Skw_fnc), wm_zm, gr%invrs_dzt, & ! intent(in)
+           call wp3_terms_ac_pr2_lhs( gr, (one+C11_Skw_fnc), wm_zm, gr%invrs_dzt, & ! intent(in)
                                       ztscr16 )                                 ! intent(out)
            ztscr16 = - ztscr16
         endif
@@ -1842,7 +1848,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_lhs
 
   !=================================================================================
-  subroutine wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
+  subroutine wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
                        coef_wp4_implicit, wp2up2, wp2vp2, wp4, &
                        wpthvp, wp2thvp, um, vm, &
                        upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt, & 
@@ -1888,7 +1894,8 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr, zm2zt ! Variable
+        grid, &
+        zm2zt ! Variable
 
     use grid_class, only:  & 
         ddzt ! Procedure
@@ -1942,6 +1949,8 @@ module advance_wp2_wp3_module
 
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     logical, parameter :: &
@@ -2084,7 +2093,7 @@ module advance_wp2_wp3_module
           dvm_dz = ddzt( vm )
 
         ! Calculate term
-        call wp3_term_pr_turb_rhs( C_wp3_pr_turb, Kh_zt(:), wpthvp(:), & ! intent(in)
+        call wp3_term_pr_turb_rhs( gr, C_wp3_pr_turb, Kh_zt(:), wpthvp(:), & ! intent(in)
                                    dum_dz(:), dvm_dz(:),               & ! intent(in)
                                    upwp(:), vpwp(:),                   & ! intent(in)
                                    thv_ds_zt(:), gr%invrs_dzt(:),      & ! intent(in)
@@ -2093,7 +2102,7 @@ module advance_wp2_wp3_module
                                    rhs_pr_turb_wp3(:),                 & ! intent(out)
                                    l_use_tke_in_wp3_pr_turb_term )       ! intent(in)
 
-        call wp3_term_pr_dfsn_rhs( C_wp3_pr_dfsn, gr%invrs_dzt(:),   & ! intent(in)
+        call wp3_term_pr_dfsn_rhs( gr, C_wp3_pr_dfsn, gr%invrs_dzt(:),   & ! intent(in)
                                    rho_ds_zm(:), invrs_rho_ds_zt(:), & ! intent(in)
                                    wp2up2(:), wp2vp2(:), wp4(:),     & ! intent(in)
                                    rhs_pr_dfsn_wp3(:) )                ! intent(out)
@@ -2117,11 +2126,11 @@ module advance_wp2_wp3_module
 
         ! Calculate RHS eddy diffusion terms for w'2 and w'3
         
-        call diffusion_zm_lhs( Kw1(:), nu1_vert_res_dep(:),      & ! intent(in) 
+        call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:),      & ! intent(in) 
                                gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
                                rhs_diff_zm(:,:) )                  ! inetnt(out)
 
-        call diffusion_zt_lhs( Kw8(:), nu8_vert_res_dep(:),      & ! inetnt(in) 
+        call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:),      & ! inetnt(in) 
                                gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
                                rhs_diff_zt(:,:) )                  ! intent(out)
         ! Add diffusion terms
@@ -2156,14 +2165,14 @@ module advance_wp2_wp3_module
 
         ! Calculate "over-implicit" pressure terms for w'2 and w'3
 
-        call wp2_term_pr1_rhs( C4, up2(:), vp2(:), invrs_tau1m(:), & ! intent(in)
+        call wp2_term_pr1_rhs( gr, C4, up2(:), vp2(:), invrs_tau1m(:), & ! intent(in)
                                rhs_pr1_wp2(:) )                      ! intent(out)
 
         ! Note:  An "over-implicit" weighted time step is applied to the  term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 RHS
         !        turbulent advection (ta) term).
-        call wp2_term_pr1_lhs( C4, invrs_tau1m(:), & ! intent(in)
+        call wp2_term_pr1_lhs( gr, C4, invrs_tau1m(:), & ! intent(in)
                                lhs_pr1_wp2(:) )      ! intent(out)
 
         ! Add pressure terms and splat terms
@@ -2184,41 +2193,41 @@ module advance_wp2_wp3_module
     endif
 
     ! Calculate turbulent production terms of w'^3 
-    call wp3_term_tp_lhs( wp2(:),             & ! intent(in)
+    call wp3_term_tp_lhs( gr, wp2(:),             & ! intent(in)
                           rho_ds_zm(:),       & ! intent(in)
                           invrs_rho_ds_zt(:), & ! intent(in)
                           gr%invrs_dzt(:),    & ! intent(in)
                           lhs_tp_wp3(:,:) )     ! intent(out)
 
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_lhs( C8, C8b, invrs_tauw3t(:), Skw_zt(:), & ! intent(in)
+    call wp3_term_pr1_lhs( gr, C8, C8b, invrs_tauw3t(:), Skw_zt(:), & ! intent(in)
                            l_damp_wp3_Skw_squared,              & ! intent(in)
                            lhs_pr1_wp3(:) )                       ! intent(out)
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_lhs( C1_Skw_fnc(:), invrs_tau_C1_zm(:), & ! intent(in)
+    call wp2_term_dp1_lhs( gr, C1_Skw_fnc(:), invrs_tau_C1_zm(:), & ! intent(in)
                            lhs_dp1_wp2(:) )                     ! intent(out)
 
     ! Calculate buoyancy production of w'^2 and w'^2 pressure term 2
-    call wp2_terms_bp_pr2_rhs( C_uu_buoy , thv_ds_zm(:), wpthvp(:), & ! intent(in)
+    call wp2_terms_bp_pr2_rhs( gr, C_uu_buoy , thv_ds_zm(:), wpthvp(:), & ! intent(in)
                                rhs_bp_pr2_wp2(:) )                    ! intent(out)
 
     ! Calculate pressure terms 3 for w'^2
-    call wp2_term_pr3_rhs( C_uu_shr, C_uu_buoy, thv_ds_zm(:), wpthvp(:), upwp(:), & ! intent(in)
+    call wp2_term_pr3_rhs( gr, C_uu_shr, C_uu_buoy, thv_ds_zm(:), wpthvp(:), upwp(:), & ! intent(in)
                            um(:), vpwp(:), vm(:), gr%invrs_dzm(:),                & ! intent(in)
                            rhs_pr3_wp2(:) )                                         ! intent(out)
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_rhs( C1_Skw_fnc(:), invrs_tau_C1_zm(:), w_tol_sqd, up2(:), vp2(:), & ! intent(in)
+    call wp2_term_dp1_rhs( gr, C1_Skw_fnc(:), invrs_tau_C1_zm(:), w_tol_sqd, up2(:), vp2(:), & ! intent(in)
                            l_damp_wp2_using_em, & ! intent(in)
                            rhs_dp1_wp2(:) ) ! intent(out)
 
     ! Calculate buoyancy production of w'^3 and w'^3 pressure term 2
-    call wp3_terms_bp1_pr2_rhs( C11_Skw_fnc(:), thv_ds_zt(:), wp2thvp(:), & ! intent(in)
+    call wp3_terms_bp1_pr2_rhs( gr, C11_Skw_fnc(:), thv_ds_zt(:), wp2thvp(:), & ! intent(in)
                                 rhs_bp1_pr2_wp3(:) )                        ! intent(out)
 
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_rhs( C8, C8b, invrs_tauw3t(:), Skw_zt(:), wp3(:), & ! intent(in)
+    call wp3_term_pr1_rhs( gr, C8, C8b, invrs_tauw3t(:), Skw_zt(:), wp3(:), & ! intent(in)
                            l_damp_wp3_Skw_squared, &                      ! intent(in)
                            rhs_pr1_wp3(:) )                               ! intent(out)
 
@@ -2280,7 +2289,7 @@ module advance_wp2_wp3_module
 
         ! The turbulent advection term is being solved explicitly.
 
-        call wp3_term_ta_explicit_rhs( wp4(:),             & ! intent(in)
+        call wp3_term_ta_explicit_rhs( gr, wp4(:),             & ! intent(in)
                                        rho_ds_zm(:),       & ! intent(in)
                                        invrs_rho_ds_zt(:), & ! intent(in)
                                        gr%invrs_dzt(:),    & ! intent(in)
@@ -2302,7 +2311,7 @@ module advance_wp2_wp3_module
         if ( iiPDF_type == iiPDF_ADG1 ) then
 
             ! The ADG1 PDF is used.
-            call wp3_term_ta_ADG1_lhs( wp2, a1, a1_zt, a3, a3_zt,        & ! intent(in)
+            call wp3_term_ta_ADG1_lhs( gr, wp2, a1, a1_zt, a3, a3_zt,        & ! intent(in)
                                        wp3_on_wp2, rho_ds_zm,            & ! intent(in)
                                        rho_ds_zt, invrs_rho_ds_zt,       & ! intent(in)
                                        gr%invrs_dzt, l_standard_term_ta, & ! intent(in)
@@ -2328,7 +2337,7 @@ module advance_wp2_wp3_module
             ! The new PDF or the new hybrid PDF is used.
 
             ! Calculate terms
-            call wp3_term_ta_new_pdf_lhs( coef_wp4_implicit(:), wp2(:),     & ! intent(in)
+            call wp3_term_ta_new_pdf_lhs( gr, coef_wp4_implicit(:), wp2(:),     & ! intent(in)
                                           rho_ds_zm(:), invrs_rho_ds_zt(:), & ! intent(in)
                                           gr%invrs_dzt(:),                  & ! intent(in)
                                           lhs_ta_wp3(:,:) )                   ! intent(out)
@@ -2413,7 +2422,7 @@ module advance_wp2_wp3_module
         ! w'^2 term bp is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
         !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-        call wp2_terms_bp_pr2_rhs( zero, thv_ds_zm(:), wpthvp(:), & ! intent(in)
+        call wp2_terms_bp_pr2_rhs( gr, zero, thv_ds_zm(:), wpthvp(:), & ! intent(in)
                                    rhs_bp_wp2(:) )                  ! intent(out)
 
         ! w'^2 term pr2 has both implicit and explicit components; call
@@ -2421,7 +2430,7 @@ module advance_wp2_wp3_module
         ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
         !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-        call wp2_terms_bp_pr2_rhs( (one+C_uu_buoy), thv_ds_zm(:), wpthvp(:), & ! intent(in)
+        call wp2_terms_bp_pr2_rhs( gr, (one+C_uu_buoy), thv_ds_zm(:), wpthvp(:), & ! intent(in)
                                    rhs_pr2_wp2(:) )                            ! intent(out)
 
         if ( l_explicit_turbulent_adv_wp3 ) then
@@ -2433,7 +2442,7 @@ module advance_wp2_wp3_module
            ! which has a value of 0, will still be called later.  Since
            ! stat_begin_update_pt automatically subtracts the value sent in,
            ! reverse the sign on the input value.
-           call wp3_term_ta_explicit_rhs( wp4(:),             & ! intent(in)
+           call wp3_term_ta_explicit_rhs( gr, wp4(:),             & ! intent(in)
                                           rho_ds_zm(:),       & ! intent(in)
                                           invrs_rho_ds_zt(:), & ! intent(in)
                                           gr%invrs_dzt(:),    & ! intent(in)
@@ -2444,7 +2453,7 @@ module advance_wp2_wp3_module
         ! w'^3 term bp is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
         !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
-        call wp3_terms_bp1_pr2_rhs( zero_vector, thv_ds_zt(:), wp2thvp(:), & ! intent(in) 
+        call wp3_terms_bp1_pr2_rhs( gr, zero_vector, thv_ds_zt(:), wp2thvp(:), & ! intent(in) 
                                     rhs_bp1_wp3(:) )                         ! intent(out)
 
         ! w'^3 term pr2 has both implicit and explicit components; call
@@ -2452,7 +2461,7 @@ module advance_wp2_wp3_module
         ! subtracts the value sent in, reverse the sign on wp3_terms_bp1_pr2_rhs.
         ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
         !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
-        call wp3_terms_bp1_pr2_rhs( ( one + C11_Skw_fnc(:) ), thv_ds_zt(:), & ! intent(in)
+        call wp3_terms_bp1_pr2_rhs( gr, ( one + C11_Skw_fnc(:) ), thv_ds_zt(:), & ! intent(in)
                                     wp2thvp(:), &                             ! intent(in)
                                     rhs_pr2_wp3(:) )                          ! intent(out)
 
@@ -2673,7 +2682,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_ta_lhs( rho_ds_zt, invrs_rho_ds_zm, invrs_dzm, &
+  pure subroutine wp2_term_ta_lhs( gr, rho_ds_zt, invrs_rho_ds_zm, invrs_dzm, &
                                    lhs_ta_wp2 )
 
     ! Description:
@@ -2725,12 +2734,14 @@ module advance_wp2_wp3_module
         zero    ! Constant(s)
 
     use grid_class, only: & 
-        gr    ! Variable Type(s)
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -2778,7 +2789,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_ta_lhs
 
   !=============================================================================
-  pure subroutine wp2_terms_ac_pr2_lhs( C_uu_shr, wm_zt, invrs_dzm, &
+  pure subroutine wp2_terms_ac_pr2_lhs( gr, C_uu_shr, wm_zt, invrs_dzm, &
                                         lhs_ac_pr2_wp2 )
 
     ! Description:
@@ -2835,7 +2846,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable types(s)
+        grid ! Type
 
     use constants_clubb, only: &
         two,  & ! Variable(s)
@@ -2846,6 +2857,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -2884,7 +2897,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure subroutine wp2_term_dp1_lhs( C1_Skw_fnc, invrs_tau1m, &
+  pure subroutine wp2_term_dp1_lhs( gr, C1_Skw_fnc, invrs_tau1m, &
                                     lhs_dp1_wp2 )
 
     ! Description:
@@ -2920,7 +2933,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s) 
@@ -2929,6 +2942,8 @@ module advance_wp2_wp3_module
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -2963,7 +2978,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_dp1_lhs
 
   !=============================================================================
-  pure subroutine wp2_term_pr1_lhs( C4, invrs_tau1m, &
+  pure subroutine wp2_term_pr1_lhs( gr, C4, invrs_tau1m, &
                                     lhs_pr1_wp2 )
 
     ! Description
@@ -3002,7 +3017,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        gr      ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         three, & ! Variable(s)
@@ -3013,6 +3028,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -3049,7 +3066,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr1_lhs
 
   !=============================================================================
-  pure subroutine wp2_terms_bp_pr2_rhs( C_uu_buoy, thv_ds_zm, wpthvp, &
+  pure subroutine wp2_terms_bp_pr2_rhs( gr, C_uu_buoy, thv_ds_zm, wpthvp, &
                                         rhs_bp_pr2_wp2 )
 
     ! Description:
@@ -3078,7 +3095,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only:  & ! Variable(s)        
         grav, & ! Gravitational acceleration [m/s^2]
@@ -3090,6 +3107,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
@@ -3127,7 +3146,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_bp_pr2_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_dp1_rhs( C1_Skw_fnc, invrs_tau1m, threshold, up2, vp2, &
+  pure subroutine wp2_term_dp1_rhs( gr, C1_Skw_fnc, invrs_tau1m, threshold, up2, vp2, &
                                     l_damp_wp2_using_em, &
                                     rhs_dp1_wp2 )
 
@@ -3163,7 +3182,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -3172,6 +3191,8 @@ module advance_wp2_wp3_module
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -3222,7 +3243,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_dp1_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_pr3_rhs( C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, &
+  pure subroutine wp2_term_pr3_rhs( gr, C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, &
                                     um, vpwp, vm, invrs_dzm, &
                                     rhs_pr3_wp2 )
 
@@ -3262,7 +3283,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: & ! Variables 
         grav,           & ! Gravitational acceleration [m/s^2]
@@ -3274,6 +3295,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
@@ -3339,7 +3362,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr3_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_pr1_rhs( C4, up2, vp2, invrs_tau1m, &
+  pure subroutine wp2_term_pr1_rhs( gr, C4, up2, vp2, invrs_tau1m, &
                                     rhs_pr1_wp2 )
 
     ! Description:
@@ -3370,7 +3393,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         three, & ! Constant9(s)
@@ -3380,6 +3403,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
@@ -3417,7 +3442,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr1_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_ta_new_pdf_lhs( coef_wp4_implicit, wp2, rho_ds_zm, &
+  pure subroutine wp3_term_ta_new_pdf_lhs( gr, coef_wp4_implicit, wp2, rho_ds_zm, &
                                            invrs_rho_ds_zt, invrs_dzt, &
                                            lhs_ta_wp3 )
 
@@ -3499,7 +3524,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        gr    ! Variable Type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         zero
@@ -3508,6 +3533,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -3559,7 +3586,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_ta_new_pdf_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_ta_ADG1_lhs( wp2, a1, a1_zt, a3, a3_zt, &
+  pure subroutine wp3_term_ta_ADG1_lhs( gr, wp2, a1, a1_zt, a3, a3_zt, &
                                         wp3_on_wp2, rho_ds_zm, &
                                         rho_ds_zt, invrs_rho_ds_zt, &
                                         invrs_dzt, l_standard_term_ta, &
@@ -3654,7 +3681,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        gr ! Variable gr%weights_zt2zm
+        grid ! Type
 
     use constants_clubb, only: &
         zero
@@ -3663,6 +3690,8 @@ module advance_wp2_wp3_module
         core_rknd  ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -3873,7 +3902,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_ta_ADG1_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_tp_lhs( wp2, &
+  pure subroutine wp3_term_tp_lhs( gr, wp2, &
                                    rho_ds_zm, &
                                    invrs_rho_ds_zt, &
                                    invrs_dzt, &
@@ -3943,7 +3972,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr       ! Variable(s)
+        grid ! Type
 
     use constants_clubb, only:  &
         three,        & ! Constant(s)
@@ -3954,6 +3983,8 @@ module advance_wp2_wp3_module
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -4006,7 +4037,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_tp_lhs
 
   !=============================================================================
-  pure subroutine wp3_terms_ac_pr2_lhs( C11_Skw_fnc, wm_zm, invrs_dzt, &
+  pure subroutine wp3_terms_ac_pr2_lhs( gr, C11_Skw_fnc, wm_zm, invrs_dzt, &
                                         lhs_ac_pr2_wp3 )
 
     ! Description:
@@ -4061,7 +4092,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid types(s)
+        grid ! Type
 
     use constants_clubb, only: &
         three, & ! Variable(s)
@@ -4072,6 +4103,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -4109,7 +4142,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr1_lhs( C8, C8b, invrs_tauw3t, Skw_zt, &
+  pure subroutine wp3_term_pr1_lhs( gr, C8, C8b, invrs_tauw3t, Skw_zt, &
                                     l_damp_wp3_Skw_squared, &
                                     lhs_pr1_wp3 )
 
@@ -4157,7 +4190,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable types(s)
+        grid ! Type
 
     use constants_clubb, only: &
         one, & ! Variable(s)
@@ -4169,6 +4202,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -4226,7 +4261,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr1_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_ta_explicit_rhs( wp4, &
+  pure subroutine wp3_term_ta_explicit_rhs( gr, wp4, &
                                             rho_ds_zm, &
                                             invrs_rho_ds_zt, &
                                             invrs_dzt, &
@@ -4279,7 +4314,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable types(s)
+        grid ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -4288,6 +4323,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -4325,7 +4362,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_ta_explicit_rhs
 
   !=============================================================================
-  pure subroutine wp3_terms_bp1_pr2_rhs( C11_Skw_fnc, thv_ds_zt, wp2thvp, &
+  pure subroutine wp3_terms_bp1_pr2_rhs( gr, C11_Skw_fnc, thv_ds_zt, wp2thvp, &
                                          rhs_bp1_pr2_wp3 )
 
     ! Description:
@@ -4351,7 +4388,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid type(s)
+        grid ! Type
 
     use constants_clubb, only: & ! Constant(s) 
         grav,  & ! Gravitational acceleration [m/s^2]
@@ -4363,6 +4400,8 @@ module advance_wp2_wp3_module
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -4399,7 +4438,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_terms_bp1_pr2_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr_turb_rhs( C_wp3_pr_turb, Kh_zt, wpthvp, &
+  pure subroutine wp3_term_pr_turb_rhs( gr, C_wp3_pr_turb, Kh_zt, wpthvp, &
                                         dum_dz, dvm_dz, &
                                         upwp, vpwp, &
                                         thv_ds_zt, invrs_dzt, &
@@ -4407,6 +4446,7 @@ module advance_wp2_wp3_module
                                         em, wp2, &
                                         rhs_pr_turb_wp3, &
                                         l_use_tke_in_wp3_pr_turb_term )
+    use grid_class, only: grid
 
     ! Description:
     !   Experimental term from CLUBB TRAC ticket #411. The derivative here is of
@@ -4423,7 +4463,8 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr, zm2zt    ! Variable type(s)
+        grid, &
+        zm2zt    ! Variable type(s)
 
     use constants_clubb, only: & ! Constant(s) 
         grav, & ! Gravitational acceleration [m/s^2]
@@ -4433,6 +4474,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -4496,7 +4539,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr_turb_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr_dfsn_rhs( C_wp3_pr_dfsn, invrs_dzt, &
+  pure subroutine wp3_term_pr_dfsn_rhs( gr, C_wp3_pr_dfsn, invrs_dzt, &
                                         rho_ds_zm, invrs_rho_ds_zt, &
                                         wp2up2, wp2vp2, wp4, &
                                         rhs_pr_dfsn_wp3 )
@@ -4518,7 +4561,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         zero
@@ -4527,6 +4570,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -4572,7 +4617,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr_dfsn_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr1_rhs( C8, C8b, invrs_tauw3t, Skw_zt, wp3, &
+  pure subroutine wp3_term_pr1_rhs( gr, C8, C8b, invrs_tauw3t, Skw_zt, wp3, &
                                     l_damp_wp3_Skw_squared, &
                                     rhs_pr1_wp3 )
 
@@ -4616,7 +4661,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         two,  & ! Constant(s)
@@ -4627,6 +4672,8 @@ module advance_wp2_wp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 

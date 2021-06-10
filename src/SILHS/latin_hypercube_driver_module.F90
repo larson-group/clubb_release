@@ -1040,6 +1040,8 @@ module latin_hypercube_driver_module
     use transform_to_pdf_module, only: &
         chi_eta_2_rtthl ! Awesome procedure
 
+    use grid_class, only: gr
+
     implicit none
 
     ! ------------------- Input Variables -------------------
@@ -1192,7 +1194,7 @@ module latin_hypercube_driver_module
            ! maintaining the value of the hydrometeor mixing ratio sample points
            ! and satisfying the maximum allowable mean volume radius for that
            ! hydrometeor species.
-           call clip_hydromet_conc_mvr( hydromet_dim, hydromet_pts, & ! In
+           call clip_hydromet_conc_mvr( gr, hydromet_dim, hydromet_pts, & ! In
                                         hydromet_pts_clipped )        ! Out
 
            ! Unpack the clipped SILHS hydrometeor sample points, which are stored

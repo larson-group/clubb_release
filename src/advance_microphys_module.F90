@@ -428,7 +428,7 @@ module advance_microphys_module
 
     endif ! l_stats_samp and iirr > 0
 
-    call stats_accumulate_hydromet( hydromet, rho_ds_zt )
+    call stats_accumulate_hydromet( gr, hydromet, rho_ds_zt )
 
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -652,7 +652,7 @@ module advance_microphys_module
           ! Save prior value of the hydrometeors for determining total time
           ! tendency.
           if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
-             call stat_begin_update( ixrm_bt, &
+             call stat_begin_update( gr, ixrm_bt, &
                                      hydromet(:,i) &
                                      / dt, stats_zt )
           else
@@ -767,7 +767,7 @@ module advance_microphys_module
 
     ! Now that all precipitating hydrometeors have been advanced, fill holes in
     ! hydromet profiles.
-    call fill_holes_driver( gr%nz, dt, hydromet_dim,     & ! Intent(in)
+    call fill_holes_driver( gr, gr%nz, dt, hydromet_dim,     & ! Intent(in)
                             l_fill_holes_hm,             & ! Intent(in)
                             rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
                             thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
@@ -888,7 +888,7 @@ module advance_microphys_module
 
           ! Total time tendency
           if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
-             call stat_end_update( ixrm_bt, &
+             call stat_end_update( gr, ixrm_bt, &
                                    hydromet(:,i) &
                                    / dt, stats_zt )
           else
@@ -1165,7 +1165,7 @@ module advance_microphys_module
 
     ! Store the previous value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
-       call stat_begin_update( iNcm_cl, &
+       call stat_begin_update( gr, iNcm_cl, &
                                Ncm / dt, stats_zt )
     endif
 
@@ -1181,7 +1181,7 @@ module advance_microphys_module
 
     ! Enter the new value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
-       call stat_end_update( iNcm_cl, &
+       call stat_end_update( gr, iNcm_cl, &
                              Ncm / dt, stats_zt )
     endif
 
@@ -1732,7 +1732,7 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    call diffusion_zt_lhs( rho_ds_zm * K_hm, nu, gr%invrs_dzm, gr%invrs_dzt, &
+    call diffusion_zt_lhs( gr, rho_ds_zm * K_hm, nu, gr%invrs_dzm, gr%invrs_dzt, &
                            lhs_ta )
 
     do k = 2, gr%nz, 1
@@ -1763,7 +1763,7 @@ module advance_microphys_module
 
 
     ! LHS mean advection term.
-    call term_ma_zt_lhs( wm_zt, gr%invrs_dzt, gr%invrs_dzm, &
+    call term_ma_zt_lhs( gr, wm_zt, gr%invrs_dzt, gr%invrs_dzm, &
                          l_upwind_xm_ma, &
                          lhs_ma )
 
@@ -2046,7 +2046,7 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    call diffusion_zt_lhs( rho_ds_zm * K_hm, nu, gr%invrs_dzm, gr%invrs_dzt, &
+    call diffusion_zt_lhs( gr, rho_ds_zm * K_hm, nu, gr%invrs_dzm, gr%invrs_dzt, &
                            lhs_ta )
 
     do k = 2, gr%nz, 1

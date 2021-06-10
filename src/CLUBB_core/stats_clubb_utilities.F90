@@ -1799,7 +1799,7 @@ module stats_clubb_utilities
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate & 
-                   ( um, vm, upwp, vpwp, up2, vp2, &
+                   ( gr, um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
@@ -2038,7 +2038,7 @@ module stats_clubb_utilities
         ircm_in_cloud
 
     use grid_class, only: & 
-        gr ! Variable
+        grid ! Type
 
     use grid_class, only: & 
         zt2zm ! Procedure(s)
@@ -2074,6 +2074,8 @@ module stats_clubb_utilities
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variable(s)
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
@@ -2576,7 +2578,7 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_hydromet( hydromet, rho_ds_zt )
+  subroutine stats_accumulate_hydromet( gr, hydromet, rho_ds_zt )
 ! Description:
 !   Compute stats related the hydrometeors
 
@@ -2587,8 +2589,8 @@ module stats_clubb_utilities
         hydromet_dim ! Variable(s)
 
     use grid_class, only: &
-        gr ! Variable(s)
-
+        grid ! Type
+        
     use array_index, only:  & 
         iirr, iirs, iiri, iirg, & ! Variable(s)
         iiNr, iiNs, iiNi, iiNg
@@ -2622,6 +2624,8 @@ module stats_clubb_utilities
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
@@ -2711,7 +2715,7 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate_hydromet
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_lh_tend( lh_hydromet_mc, lh_Ncm_mc, &
+  subroutine stats_accumulate_lh_tend( gr, lh_hydromet_mc, lh_Ncm_mc, &
                                        lh_thlm_mc, lh_rvm_mc, lh_rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc )
@@ -2727,7 +2731,7 @@ module stats_clubb_utilities
         hydromet_dim ! Variable(s)
 
     use grid_class, only: &
-        gr ! Variable(s)
+        grid ! Type
 
     use array_index, only:  & 
         iirr, iirs, iiri, iirg, & ! Variable(s)
@@ -2767,6 +2771,8 @@ module stats_clubb_utilities
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &

@@ -14,7 +14,7 @@ module Skx_module
   contains
 
   !-----------------------------------------------------------------------------
-  function Skx_func( xp2, xp3, x_tol )  &
+  function Skx_func( gr, xp2, xp3, x_tol )  &
   result( Skx )
 
     ! Description:
@@ -32,9 +32,11 @@ module Skx_module
         core_rknd         ! Variable(s)
 
     use grid_class, only: &
-        gr                ! Variable Type
+        grid ! Type
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: min, max
@@ -147,7 +149,7 @@ module Skx_module
   end function LG_2005_ansatz
 
   !-----------------------------------------------------------------------------
-  function xp3_LG_2005_ansatz( Skw_zt, wpxp_zt, wp2_zt, &
+  function xp3_LG_2005_ansatz( gr, Skw_zt, wpxp_zt, wp2_zt, &
                                xp2_zt, sigma_sqd_w_zt, x_tol ) &
   result( xp3 )
 
@@ -159,7 +161,7 @@ module Skx_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable Type
+        grid ! Type
 
     use parameters_tunable, only: &
         beta,           & ! Variable(s)
@@ -169,6 +171,8 @@ module Skx_module
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: sqrt

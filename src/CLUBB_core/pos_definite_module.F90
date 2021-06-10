@@ -12,7 +12,7 @@ module pos_definite_module
   contains
 !-----------------------------------------------------------------------
   subroutine pos_definite_adj & 
-            ( dt, field_grid, field_np1,  & 
+            ( gr, dt, field_grid, field_np1,  & 
               flux_np1, field_n, &
               field_pd, flux_pd )
 ! Description:
@@ -47,7 +47,7 @@ module pos_definite_module
 !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,   & ! Variable(s)
+        grid, & ! Type
         ddzt, & ! Function
         ddzm    ! Function
 
@@ -62,6 +62,8 @@ module pos_definite_module
         clubb_at_least_debug_level   ! Procedure
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: eoshift, kind, any, min, max

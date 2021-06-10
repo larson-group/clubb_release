@@ -24,7 +24,7 @@ module new_hybrid_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_hybrid_pdf_driver( wm, rtm, thlm, um, vm,              & ! In
+  subroutine new_hybrid_pdf_driver( gr, wm, rtm, thlm, um, vm,              & ! In
                                     wp2, rtp2, thlp2, up2, vp2,         & ! In
                                     Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
                                     sclrm, sclrp2, wpsclrp,             & ! In
@@ -53,7 +53,7 @@ module new_hybrid_pdf_main
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid ! Type
 
     use constants_clubb, only: &
         one_half, & ! Constant(s)
@@ -87,6 +87,8 @@ module new_hybrid_pdf_main
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
