@@ -1166,7 +1166,6 @@ module mixing_length
         zero_threshold, &
         eps
 
-
     use grid_class, only: &
         grid, & ! Type
         zt2zm, &

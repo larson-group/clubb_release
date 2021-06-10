@@ -356,7 +356,7 @@ module diffusion
          core_rknd ! Variable(s)
 
       implicit none
-
+ 
     type (grid), target, intent(in) :: gr
 
     ! External

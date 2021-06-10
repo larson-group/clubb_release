@@ -31,7 +31,8 @@ OPTIMIZE="-O2"
 
 # == NetCDF Location ==
 #NETCDF="$HOME/netcdf-3.6.3"
-NETCDF="/usr/local/NETCDF-Fortran-4.4.5-pgi"
+#Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
+NETCDF="$PGI_NETCDF_FORTRAN"
 
 # == LAPACK libraries ==
 # The PGI directory contains static versions of LAPACK and BLAS

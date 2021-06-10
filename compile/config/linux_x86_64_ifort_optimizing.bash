@@ -36,7 +36,8 @@ WARNINGS="-warn -warn notruncated_source"
 DOUBLE_PRECISION="-real-size 64"
 
 # == NetCDF Location ==
-NETCDF="/usr/local/NETCDF-Fortran-4.4.5-ifort"
+#Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
+NETCDF="$IFORT_NETCDF_FORTRAN"
 
 # == LAPACK libraries ==
 # AMD Core Math Library

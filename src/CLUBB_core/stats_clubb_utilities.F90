@@ -2590,7 +2590,7 @@ module stats_clubb_utilities
 
     use grid_class, only: &
         grid ! Type
-
+        
     use array_index, only:  & 
         iirr, iirs, iiri, iirg, & ! Variable(s)
         iiNr, iiNs, iiNi, iiNg
