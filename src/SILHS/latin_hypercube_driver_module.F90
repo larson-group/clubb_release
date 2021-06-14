@@ -1040,7 +1040,7 @@ module latin_hypercube_driver_module
     use transform_to_pdf_module, only: &
         chi_eta_2_rtthl ! Awesome procedure
 
-    use grid_class, only: gr
+    use clubb_api_module, only: gr
 
     implicit none
 
@@ -1950,7 +1950,7 @@ module latin_hypercube_driver_module
 
     use parameters_model, only: hydromet_dim ! Variable
 
-    use grid_class, only: gr
+    use clubb_api_module, only: gr
 
     use stats_variables, only: &
       l_stats_samp, & ! Variable(s)

@@ -51,7 +51,7 @@ module coamps_microphys_driver_module
     use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
     use grid_class, only: zt2zm ! Procedure(s)
-    use grid_class, only: gr ! Variable(s)
+    use clubb_api_module, only: gr ! Variable(s)
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
@@ -869,11 +869,11 @@ module coamps_microphys_driver_module
       fallg(1,1,1) = .5 * ( fallg(1,1,2) + fallg(1,1,3) )
       falls(1,1,1) = .5 * ( falls(1,1,2) + falls(1,1,3) )
 
-      Vrr      = zt2zm( real(fallr(1,1,:), kind = core_rknd) )
-      VNr      = zt2zm( real(falln(1,1,:), kind = core_rknd) )
-      Vrs    = zt2zm( real(snowv(1,1,:), kind = core_rknd) )
-      Vri     = zt2zm( real(falli(1,1,:), kind = core_rknd) )
-      Vrg = zt2zm( real(fallg(1,1,:), kind = core_rknd) )
+      Vrr      = zt2zm( gr, real(fallr(1,1,:), kind = core_rknd) )
+      VNr      = zt2zm( gr, real(falln(1,1,:), kind = core_rknd) )
+      Vrs    = zt2zm( gr, real(snowv(1,1,:), kind = core_rknd) )
+      Vri     = zt2zm( gr, real(falli(1,1,:), kind = core_rknd) )
+      Vrg = zt2zm( gr, real(fallg(1,1,:), kind = core_rknd) )
 
 ! Compute tendencies
       do k=1, kk, 1

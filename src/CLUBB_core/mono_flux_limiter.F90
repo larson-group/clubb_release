@@ -487,7 +487,7 @@ module mono_flux_limiter
     xm_enter_mfl = xm
 
     ! Interpolate x'^2 to thermodynamic levels.
-    xp2_zt = max( zm2zt( xp2 ), xp2_threshold )
+    xp2_zt = max( zm2zt( gr, xp2 ), xp2_threshold )
 
     ! Place an upper limit on xp2_zt.
     ! For purposes of this subroutine, an upper limit has been placed on the

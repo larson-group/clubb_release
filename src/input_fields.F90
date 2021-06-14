@@ -234,9 +234,10 @@ module inputfields
 !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,  & ! Variable(s)
         zt2zm ! Procedure(s)
 
+    use clubb_api_module, only: gr ! Variable
+ 
     use constants_clubb, only:  &
         rt_tol,    & ! Variable(s)
         thl_tol,   &
@@ -2807,7 +2808,7 @@ module inputfields
 
     use stat_file_module, only: stat_file
 
-    use grid_class, only: gr
+    use clubb_api_module, only: gr
 
     use input_grads, only: &
       open_grads_read, &
@@ -3023,7 +3024,7 @@ module inputfields
     use stat_file_module, only: &
       stat_file ! Type
 
-    use grid_class, only: &
+    use clubb_api_module, only: &
       gr ! Type
 
     implicit none

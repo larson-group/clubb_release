@@ -56,7 +56,7 @@ module ice_dfsn_module
 !     pp. 1779--1804.
 !-------------------------------------------------------------------------------
 
-    use grid_class, only: & 
+    use clubb_api_module, only: & 
         gr ! Variable(s)
 
     use constants_clubb, only: & 

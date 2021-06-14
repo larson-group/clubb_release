@@ -489,6 +489,8 @@ module KK_microphys_module
         iNrm_evap_adj, &
         irrm_mc_nonadj
 
+    use clubb_api_module, only: gr
+
     implicit none
 
     ! Local Constants
@@ -921,11 +923,11 @@ module KK_microphys_module
 
        ! Output microphysics tendency terms for
        ! model variances and covariances on momentum levels.
-       wprtp_mc   = zt2zm( wprtp_mc_zt )
-       wpthlp_mc  = zt2zm( wpthlp_mc_zt )
-       rtp2_mc    = zt2zm( rtp2_mc_zt )
-       thlp2_mc   = zt2zm( thlp2_mc_zt )
-       rtpthlp_mc = zt2zm( rtpthlp_mc_zt )
+       wprtp_mc   = zt2zm( gr, wprtp_mc_zt )
+       wpthlp_mc  = zt2zm( gr, wpthlp_mc_zt )
+       rtp2_mc    = zt2zm( gr, rtp2_mc_zt )
+       thlp2_mc   = zt2zm( gr, thlp2_mc_zt )
+       rtpthlp_mc = zt2zm( gr, rtpthlp_mc_zt )
 
        ! Set values of microphysics tendency terms to 0 at model lower boundary.
        wprtp_mc(1)   = zero
@@ -1029,7 +1031,7 @@ module KK_microphys_module
           ! compared to the < V_rr'r_r' > results used in the code, which are
           ! calculated semi-implicitly.
           call stat_update_var( iVrrprrp_expcalc, &
-                                zt2zm( Vrrprrp_zt_impc * rrm &
+                                zt2zm( gr, Vrrprrp_zt_impc * rrm &
                                        + Vrrprrp_zt_expc ), stats_zm )
 
        endif
@@ -1041,7 +1043,7 @@ module KK_microphys_module
           ! compared to the < V_Nr'N_r' > results used in the code, which are
           ! calculated semi-implicitly.
           call stat_update_var( iVNrpNrp_expcalc, &
-                                zt2zm( VNrpNrp_zt_impc * Nrm &
+                                zt2zm( gr, VNrpNrp_zt_impc * Nrm &
                                        + VNrpNrp_zt_expc ), stats_zm )
 
        endif

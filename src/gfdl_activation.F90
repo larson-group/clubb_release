@@ -61,7 +61,7 @@ module gfdl_activation
         ! The main subroutine used for the GFDL droplet activation.
         !=======================================================================
     use aer_ccn_act_k_mod,   only: aer_ccn_act_k, aer_ccn_act_wpdf_k
-    use grid_class, only: gr
+    use clubb_api_module, only: gr
     use pdf_parameter_module, only: pdf_parameter
     use clubb_precision, only: &
       core_rknd ! Variable(s)

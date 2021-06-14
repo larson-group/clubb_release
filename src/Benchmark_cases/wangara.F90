@@ -24,7 +24,7 @@ module wangara
 !   JAS, Vol. 59, pp. 3552--3571.
 !----------------------------------------------------------------------
 
-    use grid_class, only: gr ! Variable(s)
+    use clubb_api_module, only: gr ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

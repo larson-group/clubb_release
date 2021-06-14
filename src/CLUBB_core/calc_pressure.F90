@@ -136,7 +136,7 @@ module calc_pressure
     thvm = calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt )
 
     ! Interpolate thvm to momentum grid levels.
-    thvm_zm = zt2zm( thvm )
+    thvm_zm = zt2zm( gr, thvm )
 
     ! Calculate mean theta (thm) at the uppermost thermodynamic vertical grid
     ! level.
@@ -185,7 +185,7 @@ module calc_pressure
     else ! .not. l_calc_p_exner_m_levs
 
        ! Interpolate exner to momentum levels
-       exner_zm(gr%nz) = zt2zm( exner, gr%nz )
+       exner_zm(gr%nz) = zt2zm( gr, exner, gr%nz )
 
     endif ! l_calc_p_exner_m_levs
 
@@ -239,7 +239,7 @@ module calc_pressure
        else ! .not. l_calc_p_exner_m_levs
 
           ! Interpolate exner to momentum levels
-          exner_zm(k) = zt2zm( exner, k )
+          exner_zm(k) = zt2zm( gr, exner, k )
 
        endif ! l_calc_p_exner_m_levs
 
@@ -401,7 +401,7 @@ module calc_pressure
     exner(1) = exner_zm(1)
 
     ! Interpolate theta_v to momentum levels.
-    thvm_zm = zt2zm( thvm )
+    thvm_zm = zt2zm( gr, thvm )
 
     ! Calculate exner at all other thermodynamic and momentum grid levels.
     ! exner2

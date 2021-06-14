@@ -30,7 +30,7 @@ module dycoms2_rf01
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variables(s)
 
-    use grid_class, only: gr
+    use clubb_api_module, only: gr
 
     use clubb_precision, only: core_rknd ! Variable(s)
 

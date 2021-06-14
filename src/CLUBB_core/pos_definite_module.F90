@@ -203,11 +203,11 @@ module pos_definite_module
     ! Apply change to field at n+1
     if ( field_grid == "zt" ) then
 
-      field_np1 = -dt * ddzm( flux_lim - flux_np1 ) + field_np1
+      field_np1 = -dt * ddzm( gr, flux_lim - flux_np1 ) + field_np1
 
     else if ( field_grid == "zm" ) then
 
-      field_np1 = -dt * ddzt( flux_lim - flux_np1 ) + field_np1
+      field_np1 = -dt * ddzt( gr, flux_lim - flux_np1 ) + field_np1
 
     end if
 

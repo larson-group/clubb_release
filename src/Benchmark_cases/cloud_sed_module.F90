@@ -95,9 +95,10 @@ contains
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr,    & ! Variable(s)
         zt2zm, & ! Procedure(s)
         ddzm
+
+    use clubb_api_module, only: gr ! Variable
 
     use constants_clubb, only: &
         five,       & ! Constant(s)
@@ -156,13 +157,13 @@ contains
     ! Define cloud water sedimentation flux on momentum levels.
     do k = 2, gr%nz-1, 1
 
-       if ( zt2zm( rcm, k)  > zero .AND. zt2zm( Ncm, k ) > zero ) then
+       if ( zt2zm( gr, rcm, k)  > zero .AND. zt2zm( gr, Ncm, k ) > zero ) then
 
           Fcsed(k) &
           = 1.19E8_core_rknd & 
-            * ( ( three / ( four * pi * rho_lw * zt2zm( Ncm, k ) * rho_zm(k) ) &
+            * ( ( three / ( four * pi * rho_lw * zt2zm( gr, Ncm, k ) * rho_zm(k) ) &
                 )**two_thirds ) & 
-            * ( ( rho_zm(k) * zt2zm( rcm, k ) )**(five/three) ) & 
+            * ( ( rho_zm(k) * zt2zm( gr, rcm, k ) )**(five/three) ) & 
             * exp( five*( ( log( sigma_g ) )**2 ) ) ! See Ackerman - eq. no. 7
 
        else
@@ -182,7 +183,7 @@ contains
     ! Fcsed units:  kg (liquid) / [ m^2 * s ]
     ! Multiply by Lv for units of W / m^2.
     ! sed_rcm units:  [ kg (liquid) / kg (air) ] / s
-    sed_rcm = (one/rho) * ddzm( Fcsed )
+    sed_rcm = (one/rho) * ddzm( gr, Fcsed )
 
     if ( l_stats_samp ) then
  

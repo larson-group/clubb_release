@@ -44,7 +44,7 @@ module clubb_driver
     !---------------------------------------------------------------------
 
 
-    use grid_class, only: gr !----------------------------------------------- Variable(s)
+    use clubb_api_module, only: gr !----------------------------------------------- Variable(s)
 
     use grid_class, only: read_grid_heights, zt2zm, zm2zt !------------------ Procedure(s)
 
@@ -2074,7 +2074,7 @@ module clubb_driver
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
-          wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
+          wp2_zt = max( zm2zt( gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
           call clip_skewness_core( gr, sfc_elevation, wp2_zt, wp3 )
         end if
       end if
@@ -2144,8 +2144,8 @@ module clubb_driver
         rfrzm = rfrzm + hydromet(:,iirg)
       end if
 
-      rcm_zm = zt2zm( rcm(1,:) )
-      radht_zm = zt2zm( radht )
+      rcm_zm = zt2zm( gr, rcm(1,:) )
+      radht_zm = zt2zm( gr, radht )
 
       ! Add effects of radiation on thlp2
       if ( clubb_config_flags%l_calc_thlp2_rad ) then
@@ -2204,7 +2204,7 @@ module clubb_driver
       time_clubb_advance = time_clubb_advance + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for setup_pdf_parameters
       
-      wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
+      wp2_zt = max( zm2zt( gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
 
       
       if ( .not. trim( microphys_scheme ) == "none" ) then
@@ -2286,7 +2286,7 @@ module clubb_driver
         ! Calculate Lscale on momentum levels and then interpolate back to
         ! thermodynamic levels.
         Lscale(1,:) &
-        = max( zm2zt( Kh_zm / ( params(ic_K) * sqrt( max( em, em_min ) ) ) ), &
+        = max( zm2zt( gr, Kh_zm / ( params(ic_K) * sqrt( max( em, em_min ) ) ) ), &
                0.01_core_rknd )
                
         ! Copy grid dzt to variable with column index as 1
@@ -2389,7 +2389,7 @@ module clubb_driver
       ! Calculate Skw_zm for use in advance_microphys.
       ! This field is smoothed by interpolating to thermodynamic levels and then
       ! interpolating back to momentum levels.
-      Skw_zm = zt2zm( zm2zt( Skx_func( gr, wp2, zt2zm( wp3 ), w_tol ) ) )
+      Skw_zm = zt2zm( gr, zm2zt( gr, Skx_func( gr, wp2, zt2zm( gr, wp3 ), w_tol ) ) )
 
       ! Advance predictive microphysics fields one model timestep.
       call advance_microphys( dt_main, time_current, wm_zt, wp2,          & ! In
@@ -2730,7 +2730,7 @@ module clubb_driver
 
     use parameters_radiation, only: radiation_top, rad_scheme !--------- Variable(s)
 
-    use grid_class, only: gr !------------------------------------------ Variable(s)
+    use clubb_api_module, only: gr !------------------------------------------ Variable(s)
 
     use grid_class, only: zm2zt, zt2zm !-------------------------------- Procedure(s)
 
@@ -2932,7 +2932,7 @@ module clubb_driver
       !                                   the sounding file
     case ( wm_name )
 
-      wm_zm = zt2zm( wm_zt )
+      wm_zm = zt2zm( gr, wm_zt )
       wm_zm(1) = 0.0_core_rknd
       wm_zm(gr%nz) = 0.0_core_rknd
 
@@ -2945,7 +2945,7 @@ module clubb_driver
       wm_zt(1) = 0.0_core_rknd
       wm_zt(gr%nz) = 0.0_core_rknd
 
-      wm_zm = zt2zm( wm_zt )
+      wm_zm = zt2zm( gr, wm_zt )
       wm_zm(gr%nz) = 0.0_core_rknd
 
     case default ! This should not happen
@@ -3398,8 +3398,9 @@ module clubb_driver
     !---------------------------------------------------------------------------
 
     use grid_class, only: &
-        gr, & ! Variable(s)
         zt2zm ! Procedure(s)
+
+    use clubb_api_module, only: gr ! Variable
 
     use constants_clubb, only:  & ! Constant(s)
         one,   & ! 1
@@ -3790,7 +3791,7 @@ module clubb_driver
        ! momentum levels) and water vapor mixing ratio (interpolated to
        ! momentum levels), such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
        p_dry_zm(k) = p_in_Pa_zm(k) &
-                     / ( one + ep2 * max( zt2zm( rtm - rcm, k ), &
+                     / ( one + ep2 * max( zt2zm( gr, rtm - rcm, k ), &
                                           zero_threshold ) )
     enddo
 
@@ -3803,8 +3804,8 @@ module clubb_driver
     ! Calculate theta_d on momentum levels by interpolating theta and water
     ! vapor mixing ratio to momentum levels.
     do k = 1, gr%nz, 1
-       th_dry_zm(k) = zt2zm( thm, k ) &
-                      * ( one + ep2 * max( zt2zm( rtm - rcm, k ), &
+       th_dry_zm(k) = zt2zm( gr, thm, k ) &
+                      * ( one + ep2 * max( zt2zm( gr, rtm - rcm, k ), &
                                            zero_threshold ) )**kappa
     enddo
 
@@ -3896,6 +3897,8 @@ module clubb_driver
     use stats_clubb_utilities, only:  &
         stats_finalize
 
+    use clubb_api_module, only: gr ! Variable
+
 #ifdef SILHS
     use parameters_microphys, only: &
         lh_microphys_type,     & !------------------------ Variable(s)
@@ -3947,7 +3950,7 @@ module clubb_driver
 
     call finalize_extended_atm( )
 
-    call cleanup_clubb_core( )
+    call cleanup_clubb_core( gr )
 
     call cleanup_radiation_variables( )
 
@@ -4041,7 +4044,7 @@ module clubb_driver
         set_filenames, &
         get_clubb_variable_interpolated
 
-    use grid_class, only: gr !------------------------------------ Variable(s)
+    use clubb_api_module, only: gr !------------------------------------ Variable(s)
 
     use grid_class, only: zt2zm !--------------------------------- Procedure(s)
 
@@ -4448,7 +4451,7 @@ module clubb_driver
     use soil_vegetation, only:  &
       l_soil_veg
 
-    use grid_class, only: gr !-------------------------------- Variable(s)
+    use clubb_api_module, only: gr !-------------------------------- Variable(s)
 
     use grid_class, only: zt2zm, zm2zt !---------------------- Procedure(s)
 
@@ -5089,7 +5092,7 @@ module clubb_driver
 
     use array_index, only: iirs, iiri !--------------------------------- Variable(s)
 
-    use grid_class, only: gr !------------------------------------------ Instance of a type
+    use clubb_api_module, only: gr !------------------------------------------ Instance of a type
 
     use grid_class, only: zt2zm !--------------------------------------- Procedure
 
@@ -5287,7 +5290,7 @@ module clubb_driver
              amu0,                                    &   ! Intent(in)
              thlm, rcm, rtm, rsm, rim,           &        ! Intent(in)
              cloud_frac, ice_supersat_frac,           &   ! Intent(in)
-             p_in_Pa, zt2zm( p_in_Pa ), exner, rho_zm,&   ! Intent(in)
+             p_in_Pa, zt2zm( gr, p_in_Pa ), exner, rho_zm,&   ! Intent(in)
              radht, Frad,                             &   ! Intent(out)
              Frad_SW_up, Frad_LW_up,                  &   ! Intent(out)
              Frad_SW_down, Frad_LW_down )                 ! Intent(out)

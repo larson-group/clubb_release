@@ -83,6 +83,8 @@ module mixed_moment_PDF_integrals
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use clubb_api_module, only: gr
+
     implicit none
 
     ! Input Variables
@@ -403,18 +405,18 @@ module mixed_moment_PDF_integrals
 
           if ( irtphmp(hm_idx) > 0 ) then
              call stat_update_var( irtphmp(hm_idx), &
-                                   zt2zm( rtphmp_zt(:,hm_idx) ), stats_zm )
+                                   zt2zm( gr, rtphmp_zt(:,hm_idx) ), stats_zm )
           endif ! irtphmp(hm_idx) > 0
 
           if ( ithlphmp(hm_idx) > 0 ) then
              call stat_update_var( ithlphmp(hm_idx), &
-                                   zt2zm( thlphmp_zt(:,hm_idx) ), stats_zm )
+                                   zt2zm( gr, thlphmp_zt(:,hm_idx) ), stats_zm )
           endif ! ithlphmp(hm_idx) > 0
 
           do hmy_idx = hm_idx+1, hydromet_dim, 1
              if ( ihmxphmyp(hmy_idx,hm_idx) > 0 ) then
                 call stat_update_var( ihmxphmyp(hmy_idx,hm_idx), &
-                                      zt2zm( hmxphmyp_zt(:,hmy_idx,hm_idx) ), &
+                                      zt2zm( gr, hmxphmyp_zt(:,hmy_idx,hm_idx) ), &
                                       stats_zm )
              endif ! ihmxphmyp(hmy_idx,hm_idx) > 0
           enddo ! hmy_idx = hm_idx+1, hydromet_dim, 1

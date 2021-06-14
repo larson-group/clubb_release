@@ -43,7 +43,7 @@ module nov11
 !   https://pantherfile.uwm.edu/vlarson/www/journal_articles/JGR_09_smith_clex_LES.pdf
 !--------------------------------------------------------------------------
 
-    use grid_class, only: &
+    use clubb_api_module, only: &
       gr       ! Variable(s)
 
     use clubb_precision, only: &
@@ -117,7 +117,7 @@ module nov11
 !   https://pantherfile.uwm.edu/vlarson/www/journal_articles/JGR_09_smith_clex_LES.pdf
 !----------------------------------------------------------------------
 !
-!    use grid_class, only: gr ! Variable(s)
+!    use clubb_api_module, only: gr ! Variable(s)
 !
 !    use grid_class, only: zt2zm ! Procedure(s)
 !

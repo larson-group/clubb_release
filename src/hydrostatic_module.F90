@@ -81,8 +81,9 @@ module hydrostatic_module
     !------------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,  & ! Variable(s)
         zt2zm
+
+    use clubb_api_module, only: gr ! Variable
 
     use constants_clubb, only: & 
         Rd    ! Gas Constant for Dry Air  [J/(kg K)]
@@ -126,7 +127,7 @@ module hydrostatic_module
     ! linear extension is used.  Since thvm is considered to either be constant
     ! or vary linearly over the depth of a grid level, this interpolation is
     ! consistent with the rest of this code.
-    thvm_zm = zt2zm( thvm )
+    thvm_zm = zt2zm( gr, thvm )
 
     ! Calculate density based on pressure, exner, and thvm.
     do k = 1, gr%nz

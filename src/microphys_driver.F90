@@ -67,8 +67,9 @@ module microphys_driver
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,    & ! Variable(s)
         zt2zm    ! Procedure(s)
+
+    use clubb_api_module, only: gr ! Variable
 
     use constants_clubb, only: & 
         one,            & ! Constant(s)
@@ -440,20 +441,20 @@ module microphys_driver
       if ( l_stats_samp ) then
 
         ! Sedimentation velocity for rrm
-        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirr) ), stats_zm)
+        call stat_update_var(iVrr, zt2zm( gr, hydromet_vel_zt(:,iirr) ), stats_zm)
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var(iVNr, zt2zm( hydromet_vel_zt(:,iiNr) ), stats_zm )
+        call stat_update_var(iVNr, zt2zm( gr, hydromet_vel_zt(:,iiNr) ), stats_zm )
 
         ! Sedimentation velocity for snow
-        call stat_update_var(iVrs, zt2zm( hydromet_vel_zt(:,iirs) ), stats_zm )
+        call stat_update_var(iVrs, zt2zm( gr, hydromet_vel_zt(:,iirs) ), stats_zm )
 
         ! Sedimentation velocity for pristine ice
-        call stat_update_var( iVri, zt2zm( hydromet_vel_zt(:,iiri) ), stats_zm )
+        call stat_update_var( iVri, zt2zm( gr, hydromet_vel_zt(:,iiri) ), stats_zm )
 
         ! Sedimentation velocity for graupel
         call stat_update_var( iVrg, &
-                            zt2zm( hydromet_vel_zt(:,iirg) ), stats_zm )
+                            zt2zm( gr, hydromet_vel_zt(:,iirg) ), stats_zm )
       endif ! l_stats_samp
 
     case ( "morrison" )
@@ -530,7 +531,7 @@ module microphys_driver
 
           rrm_evap = microphys_get_var( irrm_evap, microphys_stats_zt )
 
-          call update_xp2_mc( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
+          call update_xp2_mc( gr, gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
                               wm_zt, exner, rrm_evap, pdf_params,         & ! Intent(in)
                               rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,     & ! Intent(out)
                               rtpthlp_mc )                                  ! Intent(out)
@@ -550,7 +551,7 @@ module microphys_driver
 
       ! Output rain sedimentation velocity
       if ( l_stats_samp ) then
-        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirr) ), stats_zm)
+        call stat_update_var(iVrr, zt2zm( gr, hydromet_vel_zt(:,iirr) ), stats_zm)
       endif
 
     case ( "khairoutdinov_kogan" )
@@ -645,10 +646,10 @@ module microphys_driver
       if ( l_stats_samp ) then
 
         ! Sedimentation velocity for rrm
-        call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirr) ), stats_zm )
+        call stat_update_var( iVrr, zt2zm( gr, hydromet_vel_zt(:,iirr) ), stats_zm )
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var( iVNr, zt2zm( hydromet_vel_zt(:,iiNr) ), stats_zm )
+        call stat_update_var( iVNr, zt2zm( gr, hydromet_vel_zt(:,iiNr) ), stats_zm )
 
       endif ! l_stats_samp
 

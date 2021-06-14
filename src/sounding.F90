@@ -33,7 +33,7 @@ module sounding
     !   None
     !------------------------------------------------------------------------
 
-    use grid_class, only:  & 
+    use clubb_api_module, only:  & 
         gr ! Variable(s)
 
     use constants_clubb, only:  & 
@@ -715,7 +715,7 @@ module sounding
     !       Subroutine to initialize one generic model variable from file
     !------------------------------------------------------------------------
 
-    use grid_class, only:  & 
+    use clubb_api_module, only:  & 
         gr ! Variable(s)
 
     use interpolation, only:  & 

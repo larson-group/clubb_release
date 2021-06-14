@@ -30,7 +30,7 @@ module rico
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-  use grid_class, only: gr ! Variable(s)
+  use clubb_api_module, only: gr ! Variable(s)
 
   use grid_class, only: zt2zm ! Procedure(s)
 

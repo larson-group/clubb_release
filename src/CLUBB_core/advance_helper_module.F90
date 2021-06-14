@@ -305,7 +305,7 @@ module advance_helper_module
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
     stability_correction = 1.0_core_rknd &
-      + min( lambda0_stability * brunt_vaisala_freq_sqd * zt2zm( Lscale )**2 / em, 3.0_core_rknd )
+      + min( lambda0_stability * brunt_vaisala_freq_sqd * zt2zm( gr, Lscale )**2 / em, 3.0_core_rknd )
 
     return
   end function calc_stability_correction
@@ -391,9 +391,9 @@ module advance_helper_module
 
   !---------------------------------------------------------------------
     !----- Begin Code -----
-    ddzt_thlm = ddzt( thlm )
-    thvm_zm = zt2zm( thvm )
-    ddzt_thvm = ddzt( thvm )
+    ddzt_thlm = ddzt( gr, thlm )
+    thvm_zm = zt2zm( gr, thvm )
+    ddzt_thvm = ddzt( gr, thvm )
 
     if ( .not. l_brunt_vaisala_freq_moist ) then
 
@@ -409,23 +409,23 @@ module advance_helper_module
         end if
 
         T_in_K = thlm2T_in_K( thlm, exner, rcm )
-        T_in_K_zm = zt2zm( T_in_K )
+        T_in_K_zm = zt2zm( gr, T_in_K )
 
         rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
-        rsat_zm = zt2zm( rsat )
-        ddzt_rsat = ddzt( rsat )
+        rsat_zm = zt2zm( gr, rsat )
+        ddzt_rsat = ddzt( gr, rsat )
         thm = thlm + Lv/(Cp*exner) * rcm
-        thm_zm = zt2zm( thm )
-        ddzt_thm = ddzt( thm )
-        ddzt_rtm = ddzt( rtm )
+        thm_zm = zt2zm( gr, thm )
+        ddzt_thm = ddzt( gr, thm )
+        ddzt_rtm = ddzt( gr, rtm )
 
         stat_dry  =  Cp * T_in_K + grav * gr%zt
         stat_liq  =  stat_dry -Lv * rcm
-        ddzt_stat_liq       = ddzt( stat_liq )
-        ddzt_stat_liq_zm    = zt2zm( ddzt_stat_liq)
+        ddzt_stat_liq       = ddzt( gr, stat_liq )
+        ddzt_stat_liq_zm    = zt2zm( gr, ddzt_stat_liq)
         stat_dry_virtual    = stat_dry + Cp * T_in_K *(0.608*(rtm-rcm)- rcm)
-        stat_dry_virtual_zm = zt2zm(stat_dry_virtual)
-        ddzt_rtm_zm         = zt2zm( ddzt_rtm )
+        stat_dry_virtual_zm = zt2zm( gr, stat_dry_virtual)
+        ddzt_rtm_zm         = zt2zm( gr, ddzt_rtm )
 
          brunt_vaisala_freq_sqd_dry(:) = ( grav / thm_zm)* ddzt_thm(:)
 
@@ -454,14 +454,14 @@ module advance_helper_module
     else ! l_brunt_vaisala_freq_moist
 
         T_in_K = thlm2T_in_K( thlm, exner, rcm )
-        T_in_K_zm = zt2zm( T_in_K )
+        T_in_K_zm = zt2zm( gr, T_in_K )
         rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
-        rsat_zm = zt2zm( rsat )
-        ddzt_rsat = ddzt( rsat )
+        rsat_zm = zt2zm( gr, rsat )
+        ddzt_rsat = ddzt( gr, rsat )
         thm = thlm + Lv/(Cp*exner) * rcm
-        thm_zm = zt2zm( thm )
-        ddzt_thm = ddzt( thm )
-        ddzt_rtm = ddzt( rtm )
+        thm_zm = zt2zm( gr, thm )
+        ddzt_thm = ddzt( gr, thm )
+        ddzt_rtm = ddzt( gr, rtm )
 
         do k=1, gr%nz
 
@@ -605,12 +605,12 @@ module advance_helper_module
     invrs_min_max_diff = 1.0_core_rknd / ( Richardson_num_max - Richardson_num_min )
     invrs_num_div_thresh = 1.0_core_rknd / Richardson_num_divisor_threshold
 
-    Lscale_zm = zt2zm( Lscale )
+    Lscale_zm = zt2zm( gr, Lscale )
 
     if ( l_use_shear_turb_freq_sqd ) then
       ! Calculate shear_sqd
-      dum_dz = ddzt( um )
-      dvm_dz = ddzt( vm )
+      dum_dz = ddzt( gr, um )
+      dvm_dz = ddzt( gr, vm )
       shear_sqd = dum_dz**2 + dvm_dz**2
 
       turb_freq_sqd = em / Lscale_zm**2
@@ -626,7 +626,7 @@ module advance_helper_module
          Richardson_num = brunt_vaisala_freq_sqd_mixed * invrs_num_div_thresh
          Ri_zm &
          = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed ) &
-           / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd )
+           / max( ( ddzt( gr, um)**2 + ddzt( gr, vm )**2 ), 1.0e-7_core_rknd )
       else
          Richardson_num = brunt_vaisala_freq_sqd * invrs_num_div_thresh
          Ri_zm = Richardson_num
@@ -838,7 +838,7 @@ module advance_helper_module
   end function Lscale_width_vert_avg
 
  !============================================================================
-  subroutine term_wp2_splat( C_wp2_splat, nz, dt, wp2, wp2_zt, tau_zm, &
+  subroutine term_wp2_splat( gr, C_wp2_splat, nz, dt, wp2, wp2_zt, tau_zm, &
                              wp2_splat )
 
 
@@ -853,7 +853,8 @@ module advance_helper_module
 
     ! Included Modules
     use grid_class, only: &
-        ddzt   ! Procedure(s)
+        ddzt,  &   ! Procedure(s)
+        grid
 
     use clubb_precision, only: & 
         core_rknd 
@@ -862,6 +863,8 @@ module advance_helper_module
         five  ! Constant(s)
 
     implicit none 
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) :: & 
@@ -886,7 +889,7 @@ module advance_helper_module
 
     ! ---- Begin Code ----
 
-    d_sqrt_wp2_dz = ddzt( sqrt( wp2_zt ) )
+    d_sqrt_wp2_dz = ddzt( gr, sqrt( wp2_zt ) )
     ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
     !   value of wp2 itself.  This prevents spikes in wp2 from being propagated to up2 and vp2.
     !   However, it does introduce undesired dependence on the time step.
@@ -897,7 +900,7 @@ module advance_helper_module
   end subroutine term_wp2_splat
 
   !============================================================================
-  subroutine term_wp3_splat( C_wp2_splat, nz, dt, wp2, wp3, tau_zt, &
+  subroutine term_wp3_splat( gr, C_wp2_splat, nz, dt, wp2, wp3, tau_zt, &
                              wp3_splat )
 
   ! Description:
@@ -914,7 +917,8 @@ module advance_helper_module
 
     ! Included Modules
     use grid_class, only: &
-        ddzm   ! Procedure(s)
+        ddzm, &   ! Procedure(s)
+        grid    
 
     use clubb_precision, only: & 
         core_rknd 
@@ -923,7 +927,9 @@ module advance_helper_module
         three, &  ! Constant(s)
         five
 
-    implicit none 
+    implicit none
+   
+    type(grid), target, intent(in) :: gr 
 
     ! Input Variables
     integer, intent(in) :: & 
@@ -948,7 +954,7 @@ module advance_helper_module
 
     ! ---- Begin Code ----
 
-    d_sqrt_wp2_dz = ddzm( sqrt( wp2 ) )
+    d_sqrt_wp2_dz = ddzm( gr, sqrt( wp2 ) )
     ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
     ! value of wp3 itself. Someday we may wish to treat this term using a semi-implicit 
     ! discretization.
@@ -994,7 +1000,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = min( input_var1, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
+    output_var = min( input_var1, zt2zm( gr, zm2zt( gr, min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zm_sclr_array
@@ -1036,7 +1042,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = min( input_var2, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
+    output_var = min( input_var2, zt2zm( gr, zm2zt( gr, min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zm_array_sclr
@@ -1076,7 +1082,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = zt2zm( zm2zt( min( input_var1 , input_var2 )))
+    output_var = zt2zm( gr, zm2zt( gr, min( input_var1 , input_var2 )))
 
     return
   end function smooth_min_zm_arrays
@@ -1118,7 +1124,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = min( input_var1, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
+    output_var = min( input_var1, zm2zt( gr, zt2zm( gr, min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zt_sclr_array
@@ -1160,7 +1166,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = min( input_var2, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
+    output_var = min( input_var2, zm2zt( gr, zt2zm( gr, min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zt_array_sclr
@@ -1200,7 +1206,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = zm2zt( zt2zm( min( input_var1 , input_var2 )))
+    output_var = zm2zt( gr, zt2zm( gr, min( input_var1 , input_var2 )))
 
     return
   end function smooth_min_zt_arrays
@@ -1242,7 +1248,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = max( input_var1, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
+    output_var = max( input_var1, zt2zm( gr, zm2zt( gr, max( input_var1 , input_var2 ))))
   
     return
   end function smooth_max_zm_sclr_array
@@ -1284,7 +1290,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = max( input_var2, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
+    output_var = max( input_var2, zt2zm( gr, zm2zt( gr, max( input_var1 , input_var2 ))))
 
     return
   end function smooth_max_zm_array_sclr
@@ -1324,7 +1330,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = zt2zm( zm2zt( max( input_var1 , input_var2 )))
+    output_var = zt2zm( gr, zm2zt( gr, max( input_var1 , input_var2 )))
 
     return
   end function smooth_max_zm_arrays
@@ -1366,7 +1372,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = max( input_var1, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
+    output_var = max( input_var1, zm2zt( gr, zt2zm( gr, max( input_var1 , input_var2 ))))
 
     return
   end function smooth_max_zt_sclr_array
@@ -1408,7 +1414,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = max( input_var2, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
+    output_var = max( input_var2, zm2zt( gr, zt2zm( gr, max( input_var1 , input_var2 ))))
 
     return
   end function smooth_max_zt_array_sclr
@@ -1448,7 +1454,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = zm2zt( zt2zm( max( input_var1 , input_var2 )))
+    output_var = zm2zt( gr, zt2zm( gr, max( input_var1 , input_var2 )))
 
     return
   end function smooth_max_zt_arrays
