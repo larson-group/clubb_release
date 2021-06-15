@@ -168,7 +168,7 @@ module pdf_parameter_tests
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
 
-    use grid_class, only: &
+    use clubb_api_module, only: &
         gr    ! Variable type(s)
 
     use clubb_precision, only: &

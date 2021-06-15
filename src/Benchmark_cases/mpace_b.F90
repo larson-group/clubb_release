@@ -38,7 +38,7 @@ module mpace_b
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use grid_class, only: gr ! Variable(s)
+    use clubb_api_module, only: gr ! Variable(s)
 
     use grid_class, only: zt2zm ! Procedure(s)
 
@@ -93,7 +93,7 @@ module mpace_b
     wm_zt(1) = 0.0_core_rknd        ! Below surface
 
     ! Interpolate
-    wm_zm = zt2zm( wm_zt )
+    wm_zm = zt2zm( gr, wm_zt )
 
     ! Boundary conditions
     wm_zm(1) = 0.0_core_rknd        ! At surface

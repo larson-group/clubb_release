@@ -97,6 +97,8 @@ module estimate_scm_microphys_module
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions
 
+    use clubb_api_module, only: gr
+
     implicit none
 
     ! External
@@ -255,11 +257,11 @@ module estimate_scm_microphys_module
              lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )               ! Intent(out)
 
       ! Convert from the zt grid to the zm grid.
-      lh_rtp2_mc    = zt2zm( lh_rtp2_mc_zt )
-      lh_thlp2_mc   = zt2zm( lh_thlp2_mc_zt )
-      lh_wprtp_mc   = zt2zm( lh_wprtp_mc_zt )
-      lh_wpthlp_mc  = zt2zm( lh_wpthlp_mc_zt )
-      lh_rtpthlp_mc = zt2zm( lh_rtpthlp_mc_zt )
+      lh_rtp2_mc    = zt2zm( gr, lh_rtp2_mc_zt )
+      lh_thlp2_mc   = zt2zm( gr, lh_thlp2_mc_zt )
+      lh_wprtp_mc   = zt2zm( gr, lh_wprtp_mc_zt )
+      lh_wpthlp_mc  = zt2zm( gr, lh_wpthlp_mc_zt )
+      lh_rtpthlp_mc = zt2zm( gr, lh_rtpthlp_mc_zt )
 
       ! Stats sampling
       if ( l_stats_samp ) then

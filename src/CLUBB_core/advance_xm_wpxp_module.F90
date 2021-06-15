@@ -1953,7 +1953,7 @@ module advance_xm_wpxp_module
        
       ! Interpolate wp2rtp to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_wpxp_ta ) then
-        term_wp2rtp_explicit_zm = zt2zm( wp2rtp )
+        term_wp2rtp_explicit_zm = zt2zm( gr, wp2rtp )
         sgn_t_vel_wprtp = sgn_turbulent_velocity( gr, term_wp2rtp_explicit_zm, wprtp )
       endif ! l_upwind_wpxp_ta
 
@@ -1971,7 +1971,7 @@ module advance_xm_wpxp_module
       
       ! Interpolate wp2thlp to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_wpxp_ta ) then
-        term_wp2thlp_explicit_zm = zt2zm( wp2thlp )
+        term_wp2thlp_explicit_zm = zt2zm( gr, wp2thlp )
         sgn_t_vel_wpthlp = sgn_turbulent_velocity( gr, term_wp2thlp_explicit_zm, wpthlp )
       endif ! l_upwind_wpxp_ta
        
@@ -1992,7 +1992,7 @@ module advance_xm_wpxp_module
         ! Interpolate wpsclrp to momentum levels, and calculate the sign of vertical velocity if
         ! l_upwind_wpxp_ta, otherwise just use wp2sclrp
         if ( l_upwind_wpxp_ta ) then
-          term_wp2sclrp_explicit_zm(:) = zt2zm( wp2sclrp(:,i) )
+          term_wp2sclrp_explicit_zm(:) = zt2zm( gr, wp2sclrp(:,i) )
           sgn_t_vel_wpsclrp(:) = sgn_turbulent_velocity( gr, term_wp2sclrp_explicit_zm(:), &
                                                             wpsclrp(:,i) )
         else 
@@ -2034,7 +2034,7 @@ module advance_xm_wpxp_module
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the <w'x'> turbulent advection (ta) term.
-        a1_zt = max( zm2zt( a1 ), zero_threshold )   ! Positive def. quantity
+        a1_zt = max( zm2zt( gr, a1 ), zero_threshold )   ! Positive def. quantity
         
         ! The termodynamic grid level coefficients are only needed if l_upwind_wpxp_ta
         ! is false, or if stats output is on
@@ -2136,8 +2136,8 @@ module advance_xm_wpxp_module
            ! Interpolate coef_wp2rtp_implicit and term_wp2rtp_explicit
            ! to momentum levels as coef_wp2rtp_implicit_zm and
            ! term_wp2rtp_explicit_zm, respectively.
-           coef_wp2rtp_implicit_zm = zt2zm( pdf_implicit_coefs_terms%coef_wp2rtp_implicit )
-           term_wp2rtp_explicit_zm = zt2zm( pdf_implicit_coefs_terms%coef_wp2thlp_implicit )
+           coef_wp2rtp_implicit_zm = zt2zm( gr, pdf_implicit_coefs_terms%coef_wp2rtp_implicit )
+           term_wp2rtp_explicit_zm = zt2zm( gr, pdf_implicit_coefs_terms%coef_wp2thlp_implicit )
 
            ! Calculate the sign of the turbulent velocity for <w'rt'>.
            sgn_t_vel_wprtp &
@@ -2175,8 +2175,8 @@ module advance_xm_wpxp_module
            ! Interpolate coef_wp2thlp_implicit and term_wp2thlp_explicit
            ! to momentum levels as coef_wp2thlp_implicit_zm and
            ! term_wp2thlp_explicit_zm, respectively.
-           coef_wp2thlp_implicit_zm = zt2zm( pdf_implicit_coefs_terms%coef_wp2thlp_implicit )
-           term_wp2thlp_explicit_zm = zt2zm( pdf_implicit_coefs_terms%term_wp2thlp_explicit )
+           coef_wp2thlp_implicit_zm = zt2zm( gr, pdf_implicit_coefs_terms%coef_wp2thlp_implicit )
+           term_wp2thlp_explicit_zm = zt2zm( gr, pdf_implicit_coefs_terms%term_wp2thlp_explicit )
 
            ! Calculate the sign of the turbulent velocity for <w'thl'>.
            sgn_t_vel_wpthlp &
@@ -2236,7 +2236,7 @@ module advance_xm_wpxp_module
            ! Interpolate coef_wp2rtp_implicit to momentum levels as
            ! coef_wp2rtp_implicit_zm, respectively.
            coef_wp2rtp_implicit_zm &
-           = zt2zm( pdf_implicit_coefs_terms%coef_wp2rtp_implicit )
+           = zt2zm( gr, pdf_implicit_coefs_terms%coef_wp2rtp_implicit )
 
            ! Calculate the sign of the turbulent velocity for <w'rt'>.
            sgn_t_vel_wprtp &
@@ -2670,13 +2670,13 @@ module advance_xm_wpxp_module
        endif ! .not. l_implemented
 
        ! Add "extra term" and optional Coriolis term for <u'w'> and <v'w'>.
-       upwp_forcing = C_uu_shr * wp2 * ddzt( um )
-       vpwp_forcing = C_uu_shr * wp2 * ddzt( vm )
+       upwp_forcing = C_uu_shr * wp2 * ddzt( gr, um )
+       vpwp_forcing = C_uu_shr * wp2 * ddzt( gr, vm )
 
        if ( l_stats_samp ) then
-          call stat_update_var( iupwp_pr4, C_uu_shr * wp2 * ddzt( um ), & ! intent(in)
+          call stat_update_var( iupwp_pr4, C_uu_shr * wp2 * ddzt( gr, um ), & ! intent(in)
                                 stats_zm )                                ! intent(inout)
-          call stat_update_var( ivpwp_pr4, C_uu_shr * wp2 * ddzt( vm ), & ! intent(in)
+          call stat_update_var( ivpwp_pr4, C_uu_shr * wp2 * ddzt( gr, vm ), & ! intent(in)
                                 stats_zm )                                ! intent(inout)
        endif ! l_stats_samp
 
@@ -4849,7 +4849,7 @@ module advance_xm_wpxp_module
         ypxp        ! horizontal flux of a conserved scalar, either upthlp, uprtp, vpthlp, or vprtp
 
     ypxp = ( tau_C6_zm / C6x_Skw_fnc ) * &
-              ( - ypwp * ddzt( xm ) - (one - C7_Skw_fnc ) * ( wpxp * ddzt( ym ) ) )
+              ( - ypwp * ddzt( gr, xm ) - (one - C7_Skw_fnc ) * ( wpxp * ddzt( gr, ym ) ) )
 
     return
 

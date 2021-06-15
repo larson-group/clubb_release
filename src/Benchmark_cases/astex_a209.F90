@@ -29,7 +29,7 @@ module astex_a209
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use grid_class, only: gr ! Variable(s)
+    use clubb_api_module, only: gr ! Variable(s)
 
     use grid_class, only: zt2zm ! Procedure(s)
 
@@ -68,7 +68,7 @@ module astex_a209
     wm_zt(1) = 0.0_core_rknd        ! Below surface
 
     ! Interpolate to momentum levels
-    wm_zm = zt2zm( wm_zt )
+    wm_zm = zt2zm( gr, wm_zt )
 
     ! Boundary conditions on zm
     wm_zm(1) = 0.0_core_rknd        ! At surface

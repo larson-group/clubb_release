@@ -505,7 +505,7 @@ module setup_clubb_pdf_params
     ! momentum grid levels.
     do i = 1, hydromet_dim, 1
       do j = 1, ngrdcol
-        hydrometp2(j,:,i)  = zt2zm( hydrometp2_zt(j,:,i) )
+        hydrometp2(j,:,i)  = zt2zm( gr, hydrometp2_zt(j,:,i) )
         hydrometp2(j,nz,i) = zero
       end do
     end do
@@ -537,7 +537,7 @@ module setup_clubb_pdf_params
       ! hydrometeors to thermodynamic grid levels.
       do i = 1, hydromet_dim
         do j = 1, ngrdcol
-          wphydrometp_zt(j,:,i) = zm2zt( wphydrometp(j,:,i) )
+          wphydrometp_zt(j,:,i) = zm2zt( gr, wphydrometp(j,:,i) )
         end do
       end do
           
@@ -581,7 +581,7 @@ module setup_clubb_pdf_params
         wpNcnp_zm(j,nz) = zero
 
         ! Interpolate the covariances to thermodynamic grid levels.
-        wpNcnp_zt(j,:) = zm2zt( wpNcnp_zm(j,:) )
+        wpNcnp_zt(j,:) = zm2zt( gr, wpNcnp_zm(j,:) )
 
         ! When the mean value of Ncn is below tolerance value, it is considered
         ! to have a value of 0, and Ncn does not vary over the grid level.  Any
@@ -829,7 +829,7 @@ module setup_clubb_pdf_params
           ! call stat_update_var( irtp2_from_chi, zt2zm( rtp2_zt_from_chi ), &
           ! stats_zm )
           do k = 1, nz, 1
-            call stat_update_var_pt( irtp2_from_chi, k, zt2zm( rtp2_zt_from_chi, k ), &
+            call stat_update_var_pt( irtp2_from_chi, k, zt2zm( gr, rtp2_zt_from_chi, k ), &
                                      stats_zm )
           end do ! k = 1, nz, 1
         end do

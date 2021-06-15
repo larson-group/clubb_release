@@ -804,7 +804,7 @@ module advance_wp2_wp3_module
           ! discretization diagram is found in the description section of
           ! function wp3_term_ta_new_pdf_lhs below.  These values are always
           ! positive.
-          coef_wp4_implicit = max( zt2zm( coef_wp4_implicit_zt ), &
+          coef_wp4_implicit = max( zt2zm( gr, coef_wp4_implicit_zt ), &
                                    zero_threshold )
 
           ! Set the value of coef_wp4_implicit to 0 at the lower boundary and at
@@ -827,7 +827,7 @@ module advance_wp2_wp3_module
 
           ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
           ! will be used for the w'^3 turbulent advection (ta) term.
-          a1_zt = max( zm2zt( a1 ), zero_threshold )  ! Positive def. quantity
+          a1_zt = max( zm2zt( gr, a1 ), zero_threshold )  ! Positive def. quantity
 
        endif ! iiPDF_type
 
@@ -1186,14 +1186,14 @@ module advance_wp2_wp3_module
     ! Interpolate w'^2 from momentum levels to thermodynamic levels.
     ! This is used for the clipping of w'^3 according to the value
     ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
-    wp2_zt = max( zm2zt( wp2 ), w_tol_sqd )   ! Positive definite quantity
+    wp2_zt = max( zm2zt( gr, wp2 ), w_tol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
     call clip_skewness( gr, dt, sfc_elevation, wp2_zt, & ! intent(in)
                         wp3 )                        ! intent(inout)
 
     ! Compute wp3_zm for output purposes
-    wp3_zm = zt2zm( wp3 )
+    wp3_zm = zt2zm( gr, wp3 )
 
     return
   end subroutine wp23_solve
@@ -2089,8 +2089,8 @@ module advance_wp2_wp3_module
     if ( l_wp3_2nd_buoyancy_term ) then
 
         ! Compute the vertical derivative of the u and v winds
-          dum_dz = ddzt( um )
-          dvm_dz = ddzt( vm )
+          dum_dz = ddzt( gr, um )
+          dvm_dz = ddzt( gr, vm )
 
         ! Calculate term
         call wp3_term_pr_turb_rhs( gr, C_wp3_pr_turb, Kh_zt(:), wpthvp(:), & ! intent(in)

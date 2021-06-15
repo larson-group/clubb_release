@@ -253,7 +253,7 @@ module mixing_length
 
 
     ! Calculate initial turbulent kinetic energy for each grid level
-    tke_i = zm2zt( em )
+    tke_i = zm2zt( gr, em )
 
 
     ! ---------------- Upwards Length Scale Calculation ----------------
@@ -1261,7 +1261,7 @@ module mixing_length
 
 
 !-----------------------------------Begin Code---------------------------------------------------!
-  call calc_brunt_vaisala_freq_sqd( gr, zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
+  call calc_brunt_vaisala_freq_sqd( gr, zm2zt( gr, zt2zm( gr, thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
                                           ice_supersat_frac, &
                                           l_brunt_vaisala_freq_moist, &
                                           l_use_thvm_in_bv_freq, &
@@ -1278,7 +1278,7 @@ module mixing_length
 
         invrs_tau_shear &
         = C_invrs_tau_shear &
-          * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
+          * zt2zm( gr, zm2zt( gr, sqrt( (ddzt( gr, um ))**2 + (ddzt( gr, vm ))**2 ) ) )
 
         invrs_tau_sfc &
         = C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace )
@@ -1291,18 +1291,18 @@ module mixing_length
         !  and thereby allows tau to remain large in Sc layers in which thlm may
         !  be slightly stably stratified.
 
-        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
+        brunt_vaisala_freq_sqd_smth = zt2zm( gr, zm2zt( gr, &
               min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
 
         sqrt_Ri_zm &
         = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
-                / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd ) )
+                / max( ( ddzt( gr, um)**2 + ddzt(gr, vm)**2 ), 1.0e-7_core_rknd ) )
 
         brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
 
         brunt_freq_out_cloud =  brunt_freq_pos &
               * min(one, max(zero_threshold,&
-              one - ( (zt2zm(ice_supersat_frac) / 0.007_core_rknd) )))
+              one - ( (zt2zm(gr, ice_supersat_frac) / 0.007_core_rknd) )))
 
         where ( gr%zt < altitude_threshold )
            brunt_freq_out_cloud = 0.0_core_rknd
@@ -1322,7 +1322,7 @@ module mixing_length
                             + C_invrs_tau_sfc * 2.0_core_rknd &
                             * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
 
-          invrs_tau_xp2_zm = min( max( sqrt( ( ddzt(um)**2 + ddzt(vm)**2 ) &
+          invrs_tau_xp2_zm = min( max( sqrt( ( ddzt( gr, um)**2 + ddzt(gr, vm)**2 ) &
                             / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
                             0.3_core_rknd ), 1.0_core_rknd ) * invrs_tau_xp2_zm
 
@@ -1335,7 +1335,7 @@ module mixing_length
                 + invrs_tau_shear + C_invrs_tau_N2_xp2 * brunt_freq_pos
 
           invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
-                zt2zm(ice_supersat_frac) <= 0.01_core_rknd &
+                zt2zm(gr, ice_supersat_frac) <= 0.01_core_rknd &
                 .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
 
           invrs_tau_wpxp_zm = invrs_tau_zm + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
@@ -1364,9 +1364,9 @@ module mixing_length
         tau_max_zm = Lscale_max / sqrt( max( em, em_min ) )
 
         tau_zm           = min( one / invrs_tau_zm, tau_max_zm )
-        tau_zt           = min( zm2zt( tau_zm ), tau_max_zt )
-        invrs_tau_zt     = zm2zt( invrs_tau_zm )
-        invrs_tau_wp3_zt = zm2zt( invrs_tau_wp3_zm )
+        tau_zt           = min( zm2zt( gr, tau_zm ), tau_max_zt )
+        invrs_tau_zt     = zm2zt( gr, invrs_tau_zm )
+        invrs_tau_wp3_zt = zm2zt( gr, invrs_tau_wp3_zm )
 
         Lscale = tau_zt * sqrt_em_zt
 

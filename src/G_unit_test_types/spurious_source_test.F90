@@ -41,8 +41,9 @@ module spurious_source_test
     use grid_class, only: &
         setup_grid, & ! Procedure(s)
         zm2zt,      &
-        zt2zm,      &
-        gr            ! Variable(s)
+        zt2zm
+
+    use clubb_api_module, only: gr ! Variable
 
     use constants_clubb, only: &
         one,       & ! Variable(s)
@@ -476,7 +477,7 @@ module spurious_source_test
     thermodynamic_heights = zero
 
     ! Set up the vertical grid.
-    call setup_grid( nz, sfc_elevation, l_implemented,        &
+    call setup_grid( gr, nz, sfc_elevation, l_implemented,        &
                      grid_type, deltaz, zm_init, zm_top,      &
                      momentum_heights, thermodynamic_heights, &
                      begin_height, end_height                 )
@@ -741,12 +742,12 @@ module spurious_source_test
        wm_zm = zero
 
        ! Interpolate fields set on momentum levels to thermodynamic levels.
-       wm_zt = zm2zt( wm_zm )
+       wm_zt = zm2zt( gr, wm_zm )
        wm_zt(1) = zero
-       wp3_on_wp2_zt = zm2zt( wp3_on_wp2 )
+       wp3_on_wp2_zt = zm2zt( gr, wp3_on_wp2 )
        wp3_on_wp2_zt(1) = zero
-       Kh_zt = zm2zt( Kh_zm )
-       rho_ds_zt = zm2zt( rho_ds_zm )
+       Kh_zt = zm2zt( gr, Kh_zm )
+       rho_ds_zt = zm2zt( gr, rho_ds_zm )
 
        ! Calculate the value of skewness of w (momentum levels).
        Skw_zm = wp3_on_wp2 / sqrt( wp2 )
@@ -804,7 +805,7 @@ module spurious_source_test
               + ( Lv / ( Cp * exner ) - ep2 * 300.0_core_rknd ) * rcm
 
        ! Interpolate fields set on thermodynamic levels to momentum levels.
-       thv_ds_zm = zt2zm( thvm )
+       thv_ds_zm = zt2zm( gr, thvm )
 
        ! Calculate the vertical integrals of rtm and thlm before the call to
        ! advance_xm_wpxp so that spurious source can be calculated.

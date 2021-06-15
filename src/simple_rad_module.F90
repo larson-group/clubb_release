@@ -185,7 +185,7 @@ module simple_rad_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use grid_class, only: gr ! Variable(s)
+    use clubb_api_module, only: gr ! Variable(s)
 
     use grid_class, only: zt2zm ! Procedure(s)
 
@@ -334,7 +334,7 @@ module simple_rad_module
 ! References:
 !   <http://www.knmi.nl/~siebesma/gcss/bomexcomp.init.html>
 !-------------------------------------------------------------------------------
-    use grid_class, only: gr ! Type
+    use clubb_api_module, only: gr ! Type
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -382,7 +382,7 @@ module simple_rad_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use grid_class, only: gr ! Type
+    use clubb_api_module, only: gr ! Type
 
     use interpolation, only: zlinterp_fnc ! Procedure(s)
 
@@ -519,7 +519,7 @@ module simple_rad_module
 !  See subroutine sunray_sw
 !-------------------------------------------------------------------------------
 
-    use grid_class, only: gr ! Variable(s)
+    use clubb_api_module, only: gr ! Variable(s)
 
     use grid_class, only: ddzm ! Procedure(s)
 
@@ -604,7 +604,7 @@ module simple_rad_module
     end do
 
     ! Take the derivative of the flux to compute radht_SW (see comment above)
-    radht_SW(:) = (-1.0_core_rknd / (rho(:) * Cp) ) * ddzm( Frad_SW(:) )
+    radht_SW(:) = (-1.0_core_rknd / (rho(:) * Cp) ) * ddzm( gr, Frad_SW(:) )
 
     return
   end subroutine sunray_sw_wrap

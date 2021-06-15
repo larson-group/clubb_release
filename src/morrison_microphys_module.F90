@@ -31,7 +31,7 @@ module morrison_microphys_module
     use module_MP_graupel, only: &
         M2005MICRO_GRAUPEL  ! Procedure
 
-    use grid_class, only: &
+    use clubb_api_module, only: &
         gr
 
     use constants_clubb, only: &

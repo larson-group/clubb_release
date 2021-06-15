@@ -493,6 +493,8 @@ module time_dependent_input
     !
     !---------------------------------------------------------------------------------
 
+    use clubb_api_module, only: gr
+
     use constants_clubb, only: &
       grav, & ! Variable(s)
       sec_per_hr, &
@@ -669,7 +671,7 @@ module time_dependent_input
 
           end select
 
-          wm_zm = zt2zm( wm_zt )
+          wm_zm = zt2zm( gr, wm_zt )
 
         case(ug_name)
 

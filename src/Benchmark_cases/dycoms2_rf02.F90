@@ -33,7 +33,7 @@ module dycoms2_rf02
     !  http://www.atmos.ucla.edu/~bstevens/Documents/dycoms.pdf 
     !----------------------------------------------------------------------
 
-    use grid_class, only: gr ! Variable(s)
+    use clubb_api_module, only: gr ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

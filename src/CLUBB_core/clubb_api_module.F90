@@ -117,7 +117,7 @@ module clubb_api_module
       clubb_fatal_error
 
   use grid_class, only : &
-    gr
+    grid
 
   use hydromet_pdf_parameter_module, only : &
     hydromet_pdf_parameter, &
@@ -239,6 +239,8 @@ module clubb_api_module
 
   implicit none
 
+  type(grid), target :: gr
+!$omp threadprivate(gr)
   private
 
   public &
@@ -992,7 +994,7 @@ contains
 
     implicit none
 
-    call cleanup_clubb_core( )
+    call cleanup_clubb_core( gr  )
 
   end subroutine cleanup_clubb_core_api
 
@@ -1353,7 +1355,7 @@ contains
       momentum_heights,   & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-    call setup_grid_heights( &
+    call setup_grid_heights( gr, &
       l_implemented, grid_type,  &
       deltaz, zm_init, momentum_heights,  &
       thermodynamic_heights )
@@ -2594,7 +2596,7 @@ contains
     real( kind = core_rknd ) :: &
       zm2zt_scalar_api   ! Variable when interp. to thermo. levels
 
-    zm2zt_scalar_api = zm2zt( azm, k )
+    zm2zt_scalar_api = zm2zt( gr, azm, k )
 
   end function zm2zt_scalar_api
 
@@ -2618,7 +2620,7 @@ contains
     real( kind = core_rknd ) :: &
       zt2zm_scalar_api   ! Variable when interp. to momentum levels
 
-    zt2zm_scalar_api = zt2zm( azt, k )
+    zt2zm_scalar_api = zt2zm( gr, azt, k )
 
   end function zt2zm_scalar_api
 
@@ -2639,7 +2641,7 @@ contains
     real( kind = core_rknd ), dimension(gr%nz) :: &
       zt2zm_prof_api   ! Variable when interp. to momentum levels
 
-    zt2zm_prof_api = zt2zm( azt )
+    zt2zm_prof_api = zt2zm( gr, azt )
 
   end function zt2zm_prof_api
 
@@ -2660,7 +2662,7 @@ contains
     real( kind = core_rknd ), dimension(gr%nz) :: &
       zm2zt_prof_api   ! Variable when interp. to thermo. levels
 
-    zm2zt_prof_api = zm2zt( azm )
+    zm2zt_prof_api = zm2zt( gr, azm )
 
   end function zm2zt_prof_api
 
@@ -2739,7 +2741,7 @@ contains
       wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
       rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
 
-    call update_xp2_mc( nz, dt, cloud_frac, rcm, rvm, thlm,        &
+    call update_xp2_mc( gr, nz, dt, cloud_frac, rcm, rvm, thlm,        &
                         wm, exner, rrm_evap, pdf_params,        &
                         rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
                         rtpthlp_mc )

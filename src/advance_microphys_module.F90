@@ -53,8 +53,9 @@ module advance_microphys_module
     !---------------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,    & ! Variable(s)
         zt2zm    ! Procedure(s)
+
+    use clubb_api_module, only: gr ! Variable
 
     use parameters_tunable, only: & 
         c_K_hm ! Variable(s) 
@@ -395,7 +396,7 @@ module advance_microphys_module
       ! It is generally a convention in meteorology to show Precipitation Flux
       ! as a positive downward quantity, so the minus (-) sign is necessary.
       call stat_update_var( iFprec,  & 
-                            max( - ( zt2zm( hydromet(:,iirr) )  & 
+                            max( - ( zt2zm( gr, hydromet(:,iirr) )  & 
                                      * hydromet_vel(:,iirr) &
                                      + hydromet_vel_covar(:,iirr) ), &
                                  zero ) &
@@ -416,7 +417,7 @@ module advance_microphys_module
       endif ! microphys_scheme /= "morrison"
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
-                               max( - ( zt2zm( hydromet(:,iirr), 1 )  & 
+                               max( - ( zt2zm( gr, hydromet(:,iirr), 1 )  & 
                                         * hydromet_vel(1,iirr) &
                                         + hydromet_vel_covar(1,iirr) ), &
                                     zero ) &
@@ -424,7 +425,7 @@ module advance_microphys_module
 
       ! Also store the value of surface rain water mixing ratio.
       call stat_update_var_pt( irrm_sfc, 1,  & 
-                               ( zt2zm( hydromet(:,iirr), 1 ) ), stats_sfc )
+                               ( zt2zm( gr, hydromet(:,iirr), 1 ) ), stats_sfc )
 
     endif ! l_stats_samp and iirr > 0
 
@@ -500,9 +501,10 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,    & ! Variable(s)
         zt2zm    ! Procedure(s)
 
+    use clubb_api_module, only: gr ! Variable
+ 
     use constants_clubb, only: & 
         one_half,       & ! Constant(s)
         zero,           &
@@ -688,14 +690,14 @@ module advance_microphys_module
 
        ! Interpolate velocity to the momentum grid for a centered difference
        ! approximation of the sedimenation term.
-       hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
+       hydromet_vel(:,i) = zt2zm( gr, hydromet_vel_zt(:,i) )
        hydromet_vel(gr%nz,i) = zero ! Upper boundary condition
 
        ! Calculate the value of <hm'^2> / <hm>^2.  This will be used to update
        ! <hm'^2> after <hm> has been advanced one model timestep.  This method
        ! is being used because CLUBB does not currently have a predictive
        ! equation for <hm'^2> (hydrometp2).
-       hydromet_zm = zt2zm( hydromet(:,i) )
+       hydromet_zm = zt2zm( gr, hydromet(:,i) )
 
        do k = 1, gr%nz, 1
 
@@ -811,7 +813,7 @@ module advance_microphys_module
        ! ratio of <hm'^2> / <hm>^2 (ratio_hmp2_on_hmm2) that was saved before
        ! hydrometeors were updated.  This method is being used because CLUBB
        ! does not currently have a predictive equation for <hm'^2>.
-       hydromet_zm = zt2zm( hydromet(:,i) )
+       hydromet_zm = zt2zm( gr, hydromet(:,i) )
 
        do k = 1, gr%nz, 1
           hydrometp2(k,i) = ratio_hmp2_on_hmm2(k,i) * hydromet_zm(k)**2
@@ -845,7 +847,7 @@ module advance_microphys_module
        !!! Calculate the covariance of hydrometeor sedimentation velocity and
        !!! the hydrometeor, < V_hm'h_m' >, by interpolating the thermodynamic
        !!! level results to momentum levels.
-       hydromet_vel_covar(:,i) = zt2zm( hydromet_vel_covar_zt(:,i) )
+       hydromet_vel_covar(:,i) = zt2zm( gr, hydromet_vel_covar_zt(:,i) )
 
        ! Boundary conditions for < V_hm'hm' >.
        hydromet_vel_covar(1,i)     = hydromet_vel_covar_zt(2,i)
@@ -925,8 +927,9 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,    & ! Variable(s)
         zt2zm    ! Procedure(s)
+
+    use clubb_api_module, only: gr ! Variable
 
     use constants_clubb, only: &
         pi,              & ! Constant(s)
@@ -1252,7 +1255,7 @@ module advance_microphys_module
     !  None
     !---------------------------------------------------------------------------
 
-    use grid_class, only: & 
+    use clubb_api_module, only: & 
         gr ! Variable(s)
 
     use constants_clubb, only: &
@@ -1531,9 +1534,10 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr,    & ! Variable(s)
         zm2zt, & ! Procedure(s)
         zt2zm    ! Procedure(s)
+
+    use clubb_api_module, only: gr ! Variable
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1721,7 +1725,7 @@ module advance_microphys_module
     ! Interpolate the implicit component of < V_hm'h_m' >, a momentum-level
     ! variable that is calculated on thermodynamic levels, from thermodynamic
     ! levels to momentum levels.
-    Vhmphmp_impc = zt2zm( Vhmphmp_zt_impc )
+    Vhmphmp_impc = zt2zm( gr, Vhmphmp_zt_impc )
 
     ! Reset LHS Matrix for current timestep.
     lhs = zero
@@ -1910,8 +1914,9 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr,    & ! Variable(s)
         zt2zm    ! Procedure(s)
+
+    use clubb_api_module, only: gr ! Variable
 
     use constants_clubb, only: &
         one_half,       & ! Constant(s)
@@ -2035,7 +2040,7 @@ module advance_microphys_module
     ! Interpolate the explicit component of < V_hm'h_m' >, a momentum-level
     ! variable that is calculated on thermodynamic levels, from thermodynamic
     ! levels to momentum levels.
-    Vhmphmp_expc = zt2zm( Vhmphmp_zt_expc )
+    Vhmphmp_expc = zt2zm( gr, Vhmphmp_zt_expc )
 
     ! Initialize right-hand side vector to 0.
     rhs = zero
@@ -2325,7 +2330,7 @@ module advance_microphys_module
     !   velocities, but COAMPS has only the local parameterization.
     !-----------------------------------------------------------------------
 
-    use grid_class, only:  & 
+    use clubb_api_module, only:  & 
         gr ! Variable(s)
 
     use constants_clubb, only: &
@@ -2561,7 +2566,7 @@ module advance_microphys_module
     ! highly diffusive. 
     !-----------------------------------------------------------------------
 
-    use grid_class, only:  & 
+    use clubb_api_module, only:  & 
         gr ! Variable(s)
 
     use constants_clubb, only: &
@@ -2759,7 +2764,7 @@ module advance_microphys_module
     ! highly diffusive. 
     !-----------------------------------------------------------------------
 
-    use grid_class, only:  & 
+    use clubb_api_module, only:  & 
         gr ! Variable(s)
 
     use constants_clubb, only: &
@@ -3060,7 +3065,7 @@ module advance_microphys_module
     ! highly diffusive. 
     !-----------------------------------------------------------------------
 
-    use grid_class, only:  & 
+    use clubb_api_module, only:  & 
         gr ! Variable(s)
 
     use constants_clubb, only: &
@@ -3189,8 +3194,9 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,    & ! Variable(s)
-        zt2zm    ! Procedure(s)
+       zt2zm    ! Procedure(s)
+
+    use clubb_api_module, only: gr ! Variable
 
     use parameters_tunable, only: & 
         c_K_hm,        & ! Variable(s) 
@@ -3249,15 +3255,15 @@ module advance_microphys_module
           K_hm(k,i) &
           = c_K_hm * Kh_zm(k) &
             * ( sqrt( hydrometp2(k,i) ) &
-                / max( zt2zm( hydromet(:,i), k ), hydromet_tol(i) ) ) &
+                / max( zt2zm( gr, hydromet(:,i), k ), hydromet_tol(i) ) ) &
             * ( one + abs( Skw_zm(k) ) ) 
 
           if ( l_use_non_local_diff_fac ) then
              K_gamma(k,i) &
              = one &
                - c_K_hmb &
-                 * ( ( zt2zm( Lscale(:), k ) &
-                       / max( zt2zm( hydromet(:,i), k ), hydromet_tol(i) ) ) &
+                 * ( ( zt2zm( gr, Lscale(:), k ) &
+                       / max( zt2zm( gr, hydromet(:,i), k ), hydromet_tol(i) ) ) &
                      * ( gr%invrs_dzm(k) &
                          * ( hydromet(kp1,i) - hydromet(k,i) ) ) )
 
