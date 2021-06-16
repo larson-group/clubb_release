@@ -230,7 +230,7 @@ module stats_sfc_module
       case ('rain_flux_sfc')         ! Brian
         irain_flux_sfc = k
 
-        call stat_assign( var_index=irain_flux_sfc, var_name="rain_flux_sfc, ", &
+        call stat_assign( var_index=irain_flux_sfc, var_name="rain_flux_sfc", &
              var_description="rain_flux_sfc, Surface rain flux", &
              var_units="W/m^2", l_silhs=.false., &
              grid_kind=stats_sfc )
