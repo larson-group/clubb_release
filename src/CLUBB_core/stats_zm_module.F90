@@ -1701,7 +1701,7 @@ module stats_zm_module
 
       case ('upwp_tp')
         iupwp_tp = k
-        call stat_assign( var_index=iupwp_tp, var_name="upwp_tp, ", &
+        call stat_assign( var_index=iupwp_tp, var_name="upwp_tp", &
              var_description="u'w'_t', upwp budget: upwp turbulent production", &
              var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
