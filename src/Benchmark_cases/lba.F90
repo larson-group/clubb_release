@@ -17,7 +17,7 @@ module lba
   contains
 
   !----------------------------------------------------------------------
-  subroutine lba_tndcy( thlm_forcing, rtm_forcing, & 
+  subroutine lba_tndcy( gr, thlm_forcing, rtm_forcing, & 
                         sclrm_forcing, edsclrm_forcing )
     !       Description:
     !       Subroutine to set theta and water tendencies for LBA case.
@@ -26,7 +26,6 @@ module lba
     !       http://www.mmm.ucar.edu/gcss-wg4/gcss/case4.html
     !----------------------------------------------------------------------
 
-    use clubb_api_module, only: gr !  Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -37,8 +36,11 @@ module lba
 
     use clubb_precision, only: core_rknd ! Variable(s)
 
+    use grid_class, only: grid
 
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 

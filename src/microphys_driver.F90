@@ -28,7 +28,7 @@ module microphys_driver
   contains
 
   !=============================================================================
-  subroutine calc_microphys_scheme_tendcies( dt, time_current, n_variables, runtype, & ! In
+  subroutine calc_microphys_scheme_tendcies( gr, dt, time_current, n_variables, runtype, & ! In
                                 thlm, p_in_Pa, exner, rho, rho_zm, rtm, & ! In
                                 rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &  ! In
                                 hydromet, Nc_in_cloud, &                  ! In
@@ -69,7 +69,9 @@ module microphys_driver
     use grid_class, only: & 
         zt2zm    ! Procedure(s)
 
-    use clubb_api_module, only: gr ! Variable
+
+    use grid_class, only: grid ! Type
+
 
     use constants_clubb, only: & 
         one,            & ! Constant(s)
@@ -191,6 +193,8 @@ module microphys_driver
         microphys_stats_cleanup
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
@@ -418,7 +422,7 @@ module microphys_driver
 
 #ifdef COAMPS_MICRO
       call coamps_microphys_driver & 
-           ( runtype, time_current, dt, & ! In
+           ( gr, runtype, time_current, dt, & ! In
              rtm, wm_zm, p_in_Pa, exner, rho, & ! In
              thlm, hydromet(:,iiri), hydromet(:,iirr),  &  ! In
              hydromet(:,iirg), hydromet(:,iirs), & ! In
@@ -462,7 +466,7 @@ module microphys_driver
       if ( lh_microphys_type /= lh_microphys_disabled ) then
 #ifdef SILHS
         call lh_microphys_driver &
-             ( dt, gr%nz, lh_num_samples, pdf_dim, & ! In
+             ( gr, dt, gr%nz, lh_num_samples, pdf_dim, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, precip_fracs, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
@@ -519,7 +523,7 @@ module microphys_driver
         endif
 
         call morrison_microphys_driver &
-             ( dt, gr%nz, &
+             ( gr, dt, gr%nz, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, wtmp, &
                delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, &
@@ -560,7 +564,7 @@ module microphys_driver
 
 #ifdef SILHS
         call lh_microphys_driver &
-             ( dt, gr%nz, lh_num_samples, pdf_dim, & ! In
+             ( gr, dt, gr%nz, lh_num_samples, pdf_dim, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, precip_fracs, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
@@ -605,7 +609,7 @@ module microphys_driver
 
         if ( l_local_kk ) then
 
-          call KK_local_microphys( dt, gr%nz, l_latin_hypercube_input,     & ! In
+          call KK_local_microphys( gr, dt, gr%nz, l_latin_hypercube_input,     & ! In
                                    thlm, wm_zt, p_in_Pa, exner, rho,       & ! In
                                    cloud_frac, wtmp, delta_zt, rcm,        & ! In
                                    Ncm_microphys, chi, rvm, hydromet, & ! In
@@ -616,7 +620,7 @@ module microphys_driver
 
         else
 
-          call KK_upscaled_microphys( dt, gr%nz, n_variables, l_stats_samp, & ! In
+          call KK_upscaled_microphys( gr, dt, gr%nz, n_variables, l_stats_samp, & ! In
                                       wm_zt, rtm, thlm, p_in_Pa,            & ! In
                                       exner, rho, rcm,                      & ! In
                                       pdf_params, hydromet_pdf_params,      & ! In
@@ -656,7 +660,7 @@ module microphys_driver
     case ( "simplified_ice" )
 
       ! Call the simplified ice diffusion scheme
-      call ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
+      call ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
 
     case default
       ! Do nothing
@@ -676,7 +680,7 @@ module microphys_driver
           call stat_begin_update( gr, iNcm_act, Ncm_mc, stats_zt )
         endif
 
-        call aer_act_clubb_quadrature_Gauss( pdf_params, p_in_Pa, &
+        call aer_act_clubb_quadrature_Gauss( gr, pdf_params, p_in_Pa, &
                                              aeromass, T_in_K, &
                                              Ndrop_max )
 
@@ -728,7 +732,7 @@ module microphys_driver
       ! Note:  it would be very easy to upscale the cloud water sedimentation
       !        flux, so we should look into adding an upscaled option.
 
-      call cloud_drop_sed( rcm, Ncm_microphys,          & ! Intent(in)
+      call cloud_drop_sed( gr, rcm, Ncm_microphys,          & ! Intent(in)
                            rho_zm, rho, exner, sigma_g, & ! Intent(in)
                            rcm_mc, thlm_mc )              ! Intent(inout)
 

@@ -16,7 +16,7 @@ module hydrostatic_module
   contains
 
 !===============================================================================
-  subroutine hydrostatic( thvm, p_sfc, &
+  subroutine hydrostatic( gr, thvm, p_sfc, &
                           p_in_Pa, p_in_Pa_zm, &
                           exner, exner_zm, &
                           rho, rho_zm )
@@ -76,6 +76,9 @@ module hydrostatic_module
     ! The resulting value of exner is used to calculate pressure.  Then, the
     ! values of pressure, exner, and theta_v can be used to calculate density.
 
+
+    use grid_class, only: grid ! Type
+
     ! References:
     !
     !------------------------------------------------------------------------
@@ -83,7 +86,6 @@ module hydrostatic_module
     use grid_class, only: & 
         zt2zm
 
-    use clubb_api_module, only: gr ! Variable
 
     use constants_clubb, only: & 
         Rd    ! Gas Constant for Dry Air  [J/(kg K)]
@@ -95,6 +97,8 @@ module hydrostatic_module
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &

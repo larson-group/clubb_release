@@ -998,7 +998,7 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine clip_transform_silhs_output( nz, ngrdcol, num_samples,       & ! In
+  subroutine clip_transform_silhs_output( gr, nz, ngrdcol, num_samples,       & ! In
                                           pdf_dim, hydromet_dim,          & ! In
                                           X_mixt_comp_all_levs,           & ! In
                                           X_nl_all_levs,                  & ! Inout
@@ -1006,6 +1006,9 @@ module latin_hypercube_driver_module
                                           lh_rt_clipped, lh_thl_clipped,  & ! Out
                                           lh_rc_clipped, lh_rv_clipped,   & ! Out
                                           lh_Nc_clipped                   ) ! Out
+
+
+    use grid_class, only: grid ! Type
 
   ! Description:
   !   Derives from the SILHS sampling structure X_nl_all_levs the variables
@@ -1040,9 +1043,11 @@ module latin_hypercube_driver_module
     use transform_to_pdf_module, only: &
         chi_eta_2_rtthl ! Awesome procedure
 
-    use clubb_api_module, only: gr
+    use grid_class, only: grid
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! ------------------- Input Variables -------------------
     logical, intent(in) :: &
@@ -1934,7 +1939,7 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine stats_accumulate_lh &
-             ( nz, num_samples, pdf_dim, rho_ds_zt, &
+             ( gr, nz, num_samples, pdf_dim, rho_ds_zt, &
                lh_sample_point_weights, X_nl_all_levs, &
                lh_rt_clipped, lh_thl_clipped, & 
                lh_rc_clipped, lh_rv_clipped, & 
@@ -1950,7 +1955,7 @@ module latin_hypercube_driver_module
 
     use parameters_model, only: hydromet_dim ! Variable
 
-    use clubb_api_module, only: gr
+    use grid_class, only: grid
 
     use stats_variables, only: &
       l_stats_samp, & ! Variable(s)
@@ -2023,6 +2028,8 @@ module latin_hypercube_driver_module
      vertical_integral ! Procedure(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) :: &

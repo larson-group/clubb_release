@@ -177,7 +177,7 @@ module simple_rad_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine simple_rad( rho, rho_zm, rtm, rcm, exner,  & 
+  subroutine simple_rad( gr, rho, rho_zm, rtm, rcm, exner,  & 
                          Frad_LW, radht_LW )
 ! Description:
 !   A simplified radiation driver
@@ -185,9 +185,8 @@ module simple_rad_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use clubb_api_module, only: gr ! Variable(s)
 
-    use grid_class, only: zt2zm ! Procedure(s)
+    use grid_class, only: zt2zm, grid ! Procedure(s)
 
     use constants_clubb, only: fstderr, Cp, eps ! Variable(s)
 
@@ -213,6 +212,8 @@ module simple_rad_module
       core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: exp
@@ -328,18 +329,21 @@ module simple_rad_module
   end subroutine simple_rad
 
 !-------------------------------------------------------------------------------
-  subroutine simple_rad_bomex( radht )
+  subroutine simple_rad_bomex( gr, radht )
 ! Description:
 !   Compute radiation as per the GCSS BOMEX specification.
 ! References:
 !   <http://www.knmi.nl/~siebesma/gcss/bomexcomp.init.html>
 !-------------------------------------------------------------------------------
-    use clubb_api_module, only: gr ! Type
+
+    use grid_class, only: grid
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
@@ -375,22 +379,25 @@ module simple_rad_module
   end subroutine simple_rad_bomex
 
 !-------------------------------------------------------------------------------
-  subroutine simple_rad_lba( time_current, time_initial, radht )
+  subroutine simple_rad_lba( gr, time_current, time_initial, radht )
 ! Description:
 !   Compute radiation For the LBA TRMM case.  Uses a prescribed formula and
 !   interpolates with respect to time.
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use clubb_api_module, only: gr ! Type
 
     use interpolation, only: zlinterp_fnc ! Procedure(s)
+
+    use grid_class, only: grid
 
     use interpolation, only: linear_interp_factor ! Procedure(s)
 
     use clubb_precision, only: time_precision, core_rknd ! Constant
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real(kind=time_precision), intent(in) :: &
@@ -510,7 +517,7 @@ module simple_rad_module
   end function liq_water_path
 
 !-------------------------------------------------------------------------------
-  subroutine sunray_sw_wrap( Fs0, amu0, rho, rcm, & 
+  subroutine sunray_sw_wrap( gr, Fs0, amu0, rho, rcm, & 
                              Frad_SW, radht_SW )
 ! Description:
 !   Wrapper for the Geert Lenderink code.
@@ -519,7 +526,9 @@ module simple_rad_module
 !  See subroutine sunray_sw
 !-------------------------------------------------------------------------------
 
-    use clubb_api_module, only: gr ! Variable(s)
+
+
+    use grid_class, only: grid ! Type
 
     use grid_class, only: ddzm ! Procedure(s)
 
@@ -538,6 +547,8 @@ module simple_rad_module
       core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     ! Toggle for centered/forward differencing (in interpolations)

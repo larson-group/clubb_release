@@ -40,7 +40,7 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_local_microphys( dt, nz, l_latin_hypercube,             & ! In
+  subroutine KK_local_microphys( gr, dt, nz, l_latin_hypercube,             & ! In
                                  thlm, wm_zt, p_in_Pa, exner, rho,      & ! In
                                  cloud_frac, w_std_dev, dzq, rcm,       & ! In
                                  Ncm, chi, rvm, hydromet,               & ! In
@@ -103,7 +103,11 @@ module KK_microphys_module
         irrm_src_adj, &
         irrm_mc_nonadj
 
+    use grid_class, only: grid ! Type
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Local Constants
     integer, parameter :: &
@@ -385,7 +389,7 @@ module KK_microphys_module
   end subroutine KK_local_microphys
 
   !=============================================================================
-  subroutine KK_upscaled_microphys( dt, nz, pdf_dim, l_stats_samp, & ! In
+  subroutine KK_upscaled_microphys( gr, dt, nz, pdf_dim, l_stats_samp, & ! In
                                     wm_zt, rtm, thlm, p_in_Pa,         & ! In
                                     exner, rho, rcm,                   & ! In
                                     pdf_params, hydromet_pdf_params,   & ! In
@@ -435,6 +439,9 @@ module KK_microphys_module
 
     use grid_class, only: &
         zt2zm    ! Procedure(s)
+
+
+    use grid_class, only: grid ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -489,9 +496,9 @@ module KK_microphys_module
         iNrm_evap_adj, &
         irrm_mc_nonadj
 
-    use clubb_api_module, only: gr
-
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Local Constants
     logical, parameter :: &

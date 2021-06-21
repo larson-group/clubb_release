@@ -15,7 +15,7 @@ module rico
   contains
 
 !----------------------------------------------------------------------
-  subroutine rico_tndcy( rtm, exner, &
+  subroutine rico_tndcy( gr, rtm, exner, &
                          thlm_forcing, rtm_forcing, & 
                          sclrm_forcing, edsclrm_forcing )
 !
@@ -30,7 +30,7 @@ module rico
 
   use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-  use clubb_api_module, only: gr ! Variable(s)
+  use grid_class, only: grid
 
   use grid_class, only: zt2zm ! Procedure(s)
 
@@ -48,6 +48,8 @@ module rico
 
 
   implicit none
+
+  type (grid), target, intent(in) :: gr
 
   ! Input Variables
 

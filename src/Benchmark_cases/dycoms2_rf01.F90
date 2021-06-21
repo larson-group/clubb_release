@@ -17,7 +17,7 @@ module dycoms2_rf01
   contains
 
   !----------------------------------------------------------------------
-  subroutine dycoms2_rf01_tndcy( thlm_forcing, rtm_forcing, &
+  subroutine dycoms2_rf01_tndcy( gr, thlm_forcing, rtm_forcing, &
                                  sclrm_forcing, edsclrm_forcing )
 ! Description:
 !   Subroutine to set theta and water tendencies for DYCOMS RF01 case.
@@ -30,11 +30,13 @@ module dycoms2_rf01
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variables(s)
 
-    use clubb_api_module, only: gr
+    use grid_class, only: grid
 
     use clubb_precision, only: core_rknd ! Variable(s)
 
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 

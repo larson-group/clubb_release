@@ -17,7 +17,7 @@ module gabls2
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine gabls2_tndcy( time, time_initial, &
+  subroutine gabls2_tndcy( gr, time, time_initial, &
                            wm_zt, wm_zm, thlm_forcing, & 
                            rtm_forcing, & 
                            sclrm_forcing, edsclrm_forcing )
@@ -32,7 +32,8 @@ module gabls2
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use clubb_api_module, only: gr ! Variable(s)
+    use grid_class, only: grid ! Type
+
 
     use grid_class, only: zt2zm ! Procedure(s)
 
@@ -41,6 +42,8 @@ module gabls2
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real(kind=time_precision), intent(in) :: & 

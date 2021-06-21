@@ -22,7 +22,7 @@ module sounding
 
   contains
   !------------------------------------------------------------------------
-  subroutine read_sounding( iunit, runtype, p_sfc, zm_init,& 
+  subroutine read_sounding( gr, iunit, runtype, p_sfc, zm_init,& 
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
                             alt_type, press, subs_type, wm, &
                             rtm_sfc, thlm_sfc, sclrm, edsclrm )
@@ -32,9 +32,6 @@ module sounding
     ! References:
     !   None
     !------------------------------------------------------------------------
-
-    use clubb_api_module, only:  & 
-        gr ! Variable(s)
 
     use constants_clubb, only:  & 
         fstderr, & ! Constant
@@ -78,7 +75,11 @@ module sounding
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: trim, exp
@@ -709,14 +710,11 @@ module sounding
   end subroutine read_edsclr_sounding_file
 
   !------------------------------------------------------------------------
-  subroutine read_profile( fname, x )
+  subroutine read_profile( gr, fname, x )
 
     !       Description:
     !       Subroutine to initialize one generic model variable from file
     !------------------------------------------------------------------------
-
-    use clubb_api_module, only:  & 
-        gr ! Variable(s)
 
     use interpolation, only:  & 
         lin_interpolate_two_points ! Procedure
@@ -727,7 +725,11 @@ module sounding
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use grid_class, only: grid ! Type
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: trim

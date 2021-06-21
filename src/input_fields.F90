@@ -208,7 +208,7 @@ module inputfields
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine stat_fields_reader( timestep, &
+  subroutine stat_fields_reader( gr, timestep, &
                                  um, upwp, vm, vpwp, up2, vp2, rtm, &
                                  wprtp, thlm, wpthlp, rtp2, rtp3, &
                                  thlp2, thlp3, rtpthlp, wp2, wp3, &
@@ -236,7 +236,6 @@ module inputfields
     use grid_class, only: & 
         zt2zm ! Procedure(s)
 
-    use clubb_api_module, only: gr ! Variable
  
     use constants_clubb, only:  &
         rt_tol,    & ! Variable(s)
@@ -274,8 +273,11 @@ module inputfields
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
+    use grid_class, only: grid
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: max, trim, any
@@ -1547,7 +1549,7 @@ module inputfields
       if ( l_fatal_error ) error stop "oops, bad input for inputfields"
       
       call get_input_variables_interp &
-             (k, coamps_variables, timestep, &
+             ( gr, k, coamps_variables, timestep, &
               k_lowest_zt, k_highest_zt, &
               k_lowest_zm, k_highest_zm, l_fatal_error )
 
@@ -2349,7 +2351,7 @@ module inputfields
 
 
       call get_input_variables_interp &
-             (k, SAM_variables, timestep, &
+             ( gr, k, SAM_variables, timestep, &
               k_lowest_zt, k_highest_zt, &
               k_lowest_zm, k_highest_zm, l_fatal_error )
 
@@ -2540,7 +2542,7 @@ module inputfields
       RAMS_variables(k)%input_file_index = rams_file
 
       call get_input_variables_interp &
-             (k, RAMS_variables, timestep, &
+             ( gr, k, RAMS_variables, timestep, &
               k_lowest_zt, k_highest_zt, &
               k_lowest_zm, k_highest_zm, l_fatal_error )
 
@@ -2795,7 +2797,7 @@ module inputfields
   end subroutine get_clubb_variable_interpolated
 
   !--------------------------------------------------------------------------
-  subroutine get_input_variables_interp( nvars, variables , timestep, &
+  subroutine get_input_variables_interp( gr, nvars, variables , timestep, &
                                          k_lowest_zt, k_highest_zt,   &
                                          k_lowest_zm, k_highest_zm, l_error )
 
@@ -2807,8 +2809,6 @@ module inputfields
   !--------------------------------------------------------------------------------
 
     use stat_file_module, only: stat_file
-
-    use clubb_api_module, only: gr
 
     use input_grads, only: &
       open_grads_read, &
@@ -2830,7 +2830,11 @@ module inputfields
     use constants_clubb, only: &
       fstderr  ! Variable(s)
 
+    use grid_class, only: grid
+
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     integer, intent(in) :: &
       nvars, & ! The size of the variables array
@@ -2967,12 +2971,12 @@ module inputfields
         l_error = l_error .or. l_internal_error
 
         if( current_var%clubb_grid_type == "zt" ) then
-          call inputfields_interp_and_adjust( current_var%clubb_grid_type, & ! In
+          call inputfields_interp_and_adjust( gr, current_var%clubb_grid_type, & ! In
                     fread_vars(file_index), current_var%adjustment, & ! In
                     LES_tmp(file_index, :), k_lowest_zt(file_index), k_highest_zt(file_index), &!In
                       current_var%clubb_var ) ! In/out
         else if( current_var%clubb_grid_type == "zm" ) then
-          call inputfields_interp_and_adjust( current_var%clubb_grid_type, & ! In
+          call inputfields_interp_and_adjust( gr, current_var%clubb_grid_type, & ! In
                     fread_vars(file_index), current_var%adjustment, & ! In
                     LES_tmp(file_index, :), k_lowest_zm(file_index), k_highest_zm(file_index), &!In
                       current_var%clubb_var ) ! In/out
@@ -3003,7 +3007,7 @@ module inputfields
   end subroutine get_input_variables_interp
         
   !----------------------------------------------------------------------------------------
-  subroutine inputfields_interp_and_adjust( clubb_grid_type, fread_var, adjustment, &
+  subroutine inputfields_interp_and_adjust( gr, clubb_grid_type, fread_var, adjustment, &
                                             LES_tmp, k_lowest_input, k_highest_input, &
                                             clubb_var )
 
@@ -3024,10 +3028,11 @@ module inputfields
     use stat_file_module, only: &
       stat_file ! Type
 
-    use clubb_api_module, only: &
-      gr ! Type
+    use grid_class, only: grid ! Type
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variable(s)
 
@@ -3070,14 +3075,14 @@ module inputfields
       k ! loop counter
     
     real( kind = core_rknd ), pointer, dimension(:) :: &
-      grid ! the momentum or thermo grid
+      grid_var ! the momentum or thermo grid
 
     !----------------BEGIN CODE----------------
 
     if ( clubb_grid_type == "zt" ) then
-      grid => gr%zt
+      grid_var => gr%zt
     else if ( clubb_grid_type == "zm" ) then
-      grid => gr%zm
+      grid_var => gr%zm
     end if
 
     ! For all CLUBB levels, k, that are within the LES domain,
@@ -3088,7 +3093,7 @@ module inputfields
 
       ! CLUBB vertical level k is found at an altitude that is within the
       ! domain of the LES output.
-      call LES_grid_to_CLUBB_grid( fread_var, grid, k,  &
+      call LES_grid_to_CLUBB_grid( fread_var, grid_var, k,  &
                                    exact_lev_idx(k), lower_lev_idx(k),  &
                                    upper_lev_idx(k), l_lin_int(k) )
     enddo
@@ -3098,7 +3103,7 @@ module inputfields
       if( l_lin_int(k) ) then
         ! CLUBB level k is found at an altitude that is between two
         ! LES levels.  Linear interpolation is required.
-         clubb_var(k) = lin_interpolate_two_points( grid(k), &
+         clubb_var(k) = lin_interpolate_two_points( grid_var(k), &
                           fread_var%z(upper_lev_idx(k)), &
                           fread_var%z(lower_lev_idx(k)), &
                           LES_tmp(upper_lev_idx(k)), &

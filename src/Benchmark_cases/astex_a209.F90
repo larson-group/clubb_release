@@ -17,7 +17,7 @@ module astex_a209
   contains
 
   !----------------------------------------------------------------------
-  subroutine astex_a209_tndcy( wm_zt, wm_zm,  & 
+  subroutine astex_a209_tndcy( gr, wm_zt, wm_zm,  & 
                                thlm_forcing, rtm_forcing, &
                                sclrm_forcing, edsclrm_forcing )
 
@@ -29,7 +29,8 @@ module astex_a209
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use clubb_api_module, only: gr ! Variable(s)
+    use grid_class, only: grid ! Type
+
 
     use grid_class, only: zt2zm ! Procedure(s)
 
@@ -38,6 +39,8 @@ module astex_a209
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 

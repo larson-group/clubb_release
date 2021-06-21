@@ -14,7 +14,7 @@ contains
 
   !=============================================================================
   subroutine lh_microphys_driver &
-             ( dt, nz, num_samples, pdf_dim, &
+             ( gr, dt, nz, num_samples, pdf_dim, &
                X_nl_all_levs, lh_sample_point_weights, &
                pdf_params, precip_fracs, p_in_Pa, exner, rho, &
                rcm, delta_zt, cloud_frac, &
@@ -42,6 +42,8 @@ contains
 
     use parameters_model, only: hydromet_dim ! Variable
 
+    use grid_class, only: grid ! Type
+
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
 
@@ -61,6 +63,8 @@ contains
       est_single_column_tndcy
 
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Interface block
 #include "microphys_interface.inc"
@@ -154,7 +158,7 @@ contains
 
     ! Call the latin hypercube microphysics driver for microphys_sub
     call est_single_column_tndcy &
-         ( dt, nz, num_samples, pdf_dim, &                             ! Intent(in)
+         ( gr, dt, nz, num_samples, pdf_dim, &                             ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, &                      ! Intent(in)
            lh_sample_point_weights, pdf_params, precip_fracs, &        ! Intent(in)
            p_in_Pa, exner, rho, &                                      ! Intent(in)

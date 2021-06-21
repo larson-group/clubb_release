@@ -18,7 +18,7 @@ module bomex
   contains
 
 !----------------------------------------------------------------------
-  subroutine bomex_tndcy( rtm, & 
+  subroutine bomex_tndcy( gr, rtm, & 
                           thlm_forcing, rtm_forcing, & 
                           sclrm_forcing, edsclrm_forcing )
 !       Description:
@@ -28,9 +28,10 @@ module bomex
 !       <http://www.knmi.nl/~siebesma/gcss/bomexcomp.init.html>
 !----------------------------------------------------------------------
 
-    use clubb_api_module, only: gr ! Variable(s)
 
-    use grid_class, only: zt2zm ! Procedure(s)
+    use grid_class, only: &
+        zt2zm, & ! Procedure(s)
+        grid     ! Type
 
     use spec_hum_to_mixing_ratio, only: &
         force_spec_hum_to_mixing_ratio ! Procedure(s)
@@ -42,6 +43,8 @@ module bomex
     use clubb_precision, only: core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variable
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &

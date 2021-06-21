@@ -15,7 +15,7 @@ module atex
   contains
 
   !======================================================================
-  subroutine atex_tndcy( time, time_initial, &
+  subroutine atex_tndcy( gr, time, time_initial, &
                          rtm, &
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, & 
@@ -33,9 +33,9 @@ module atex
 
   use constants_clubb, only: fstderr ! Constant(s)
 
-  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+  use grid_class, only: grid ! Type
 
-  use clubb_api_module, only: gr ! Variable(s)
+  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
   use grid_class, only: zt2zm ! Procedure(s)
 
@@ -48,6 +48,8 @@ module atex
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
    
   implicit none
+
+  type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real(kind=time_precision), intent(in) ::  & 
