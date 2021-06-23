@@ -5,7 +5,7 @@ module microphysics
 
 use params, only: lcond, lsub, fac_cond, fac_sub, ggr
 
-use grid, only: nx,ny,nzm,nz, &  !grid dimensions; nzm = nz-1 # of scalar lvls
+use grid_config, only: nx,ny,nzm,nz, &  !grid dimensions; nzm = nz-1 # of scalar lvls
      dimx1_s,dimx2_s,dimy1_s,dimy2_s, & ! actual scalar-array dimensions in x,y
      dz, adz, dostatis, masterproc, &
      doSAMconditionals, dosatupdnconditionals
@@ -834,10 +834,10 @@ end subroutine micro_flux
 ! proceses is the liquid/ice water static energy: t = tabs + gz - Lc (qc+qr) - Ls (qi+qs+qg) 
 ! It should not be changed during all of your point microphysical processes!
 
-subroutine micro_proc()
+subroutine micro_proc( gr )
 
 use params, only: fac_cond, fac_sub, rgas
-use grid, only: z, zi
+use grid_config, only: z, zi
 use vars, only: t,  gamaz, precsfc, precflux, qpfall, tlat, prec_xy, &
      nstep, nstatis, icycle, total_water_prec
 
@@ -845,7 +845,7 @@ use vars, only: t,  gamaz, precsfc, precflux, qpfall, tlat, prec_xy, &
 !weberjk(UWM), to compute budget statistics on q2, t2, tw, qw, include the
 !effect of precipitation (microphysics)    
 use vars, only: t2leprec, q2leprec, qwleprec, twleprec, prespot, qsatw
-use grid, only: nsave3D, nsave3dstart, nsave3dend
+use grid_config, only: nsave3D, nsave3dstart, nsave3dend
 use module_mp_GRAUPEL, only: Nc0
 use compute_chi_module, only: compute_chi_eta
 #endif /*UWM_STATS*/
@@ -863,7 +863,7 @@ use vars, only: thel2leprec, thelwleprec, thel, thellat, &
 #ifdef CLUBB
 use params, only: docloud, dosmoke
 use sgs_params, only: doclubb
-use grid, only: nz
+use grid_config, only: nz
 use clubb_api_module, only: &
   clubb_at_least_debug_level_api, &
   fill_holes_vertical_api, &
@@ -874,7 +874,7 @@ use vars, only: prespot ! exner^-1
 use module_mp_GRAUPEL, only: &
   cloud_frac_thresh ! Threshold for using sgs cloud fraction to weight 
                     ! microphysical quantities [%]
-use clubb_driver, only: gr ! variable
+use grid_class, only: grid ! Type
 
 #endif
 #ifdef SILHS
@@ -884,6 +884,10 @@ use clubb_silhs_vars, only: &
   lh_microphys_non_interactive, &
   lh_microphys_disabled
 #endif
+
+implicit none 
+
+type(grid), target, intent(in) :: gr
 
 real, dimension(nzm) :: &
      tmpqcl, tmpqci, tmpqr, tmpqs, tmpqg, tmpqv, &
@@ -8946,7 +8950,7 @@ use domain, only: &
     nsubdomains_x, & ! Variable(s)
     nsubdomains_y
 
-use grid, only:  &
+use grid_config, only:  &
     masterproc,  & ! Variable(s)
     output_sep,  &
     rank,        &
