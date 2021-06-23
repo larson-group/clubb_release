@@ -155,9 +155,13 @@ program G_unit_tests
   use tuner_tests, only: &
       tuner_tests_driver        ! Procedure
 
-  use clubb_driver, only: gr ! Variable
+  use grid_class, only: grid ! Type
 
   implicit none
+
+  type(grid), target :: gr
+
+
 
   ! Local Constants
   integer, parameter :: iunit = 25

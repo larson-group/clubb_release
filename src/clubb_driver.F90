@@ -32,8 +32,8 @@ module clubb_driver
 
 
   public :: &
-    run_clubb, &
-    gr
+    run_clubb
+
 
 
   private ! Default to private

@@ -34,9 +34,12 @@ program clubb_tuner
   use text_writer, only: &
     write_text ! Subroutine
 
-  use clubb_driver, only: gr ! Variable
+  use grid_class, only: grid ! Type
 
   implicit none
+
+  type(grid), target :: gr
+
 
   ! External
   external :: enhanced_simann_driver, amoeba_driver, amebsa_driver, &

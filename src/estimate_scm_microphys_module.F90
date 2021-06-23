@@ -76,8 +76,8 @@ module estimate_scm_microphys_module
       lh_microphys_non_interactive              ! Constant
 
     use latin_hypercube_driver_module, only: &
-      copy_X_nl_into_hydromet_all_pts, &    ! Procedure(s)
-      clip_transform_silhs_output
+      copy_X_nl_into_hydromet_all_pts    ! Procedure(s)
+
 
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
