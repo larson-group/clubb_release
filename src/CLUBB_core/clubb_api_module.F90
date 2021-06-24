@@ -959,7 +959,7 @@ contains
     err_code_api   ! Diagnostic for a problem with the setup 
 
     call setup_clubb_core &
-      ( gr, nzmax, T0_in, ts_nudge_in,                      & ! intent(in)
+      ( nzmax, T0_in, ts_nudge_in,                      & ! intent(in)
       hydromet_dim_in, sclr_dim_in,                         & ! intent(in)
       sclr_tol_in, edsclr_dim_in, params,                   & ! intent(in)
       l_host_applies_sfc_fluxes,                            & ! intent(in)
@@ -980,7 +980,7 @@ contains
 #ifdef GFDL
       , cloud_frac_min                                      & ! intent(in)  h1g, 2010-06-16
 #endif
-      err_code_api )                                          ! intent(out)
+      gr, err_code_api )                                          ! intent(out)
 
   end subroutine setup_clubb_core_api
 
@@ -994,7 +994,7 @@ contains
 
     implicit none
 
-    call cleanup_clubb_core( gr  )
+    call cleanup_clubb_core( gr )
 
   end subroutine cleanup_clubb_core_api
 
@@ -1355,10 +1355,10 @@ contains
       momentum_heights,   & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-    call setup_grid_heights( gr, &
+    call setup_grid_heights( &
       l_implemented, grid_type,  &
       deltaz, zm_init, momentum_heights,  &
-      thermodynamic_heights )
+      gr, thermodynamic_heights )
 
     if ( err_code == clubb_fatal_error ) error stop
 

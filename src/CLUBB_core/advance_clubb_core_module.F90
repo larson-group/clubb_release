@@ -3060,7 +3060,7 @@ module advance_clubb_core_module
 
   !=============================================================================
     subroutine setup_clubb_core &
-               ( gr, nzmax, T0_in, ts_nudge_in,               & ! intent(in)
+               ( nzmax, T0_in, ts_nudge_in,               & ! intent(in)
                  hydromet_dim_in, sclr_dim_in,            & ! intent(in)
                  sclr_tol_in, edsclr_dim_in, params,      & ! intent(in)
                  l_host_applies_sfc_fluxes,               & ! intent(in)
@@ -3083,7 +3083,7 @@ module advance_clubb_core_module
 #ifdef GFDL
                  , cloud_frac_min                         & ! intent(in)  h1g, 2010-06-16
 #endif
-                 , err_code_out )                             ! intent(out)
+                 , gr , err_code_out )                             ! intent(out)
 
       ! Description:
       !   Subroutine to set up the model for execution.
@@ -3094,7 +3094,7 @@ module advance_clubb_core_module
 
       use grid_class, only: &
           setup_grid, & ! Procedure
-        grid ! Type
+          grid ! Type
 
       use parameter_indices, only:  &
           nparams, & ! Variable(s)
@@ -3135,7 +3135,7 @@ module advance_clubb_core_module
 
       implicit none
 
-    type (grid), target, intent(inout) :: gr
+    type(grid), target, intent(inout) :: gr
 
       ! Input Variables
 
@@ -3421,10 +3421,10 @@ module advance_clubb_core_module
       endif ! l_predict_upwp_vpwp
 
       ! Setup grid
-      call setup_grid( gr, nzmax, sfc_elevation, l_implemented,     & ! intent(in)
+      call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)
                        grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
                        momentum_heights, thermodynamic_heights, & ! intent(in)
-                       begin_height, end_height                 ) ! intent(out)
+                       gr, begin_height, end_height                 ) ! intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
