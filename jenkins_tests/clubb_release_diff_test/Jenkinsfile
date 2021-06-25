@@ -3,8 +3,8 @@ pipeline {
   stages {
     stage('Checkout Clubb and Clubb_Release') {
       steps {
-        sh '''git clone https://LarsonGroupSysAdmin:repo99sitori@github.com/larson-group/clubb.git
-              git clone https://LarsonGroupSysAdmin:repo99sitori@github.com/larson-group/clubb_release.git'''
+        sh '''git clone https://github.com/larson-group/clubb.git
+              git clone https://github.com/larson-group/clubb_release.git'''
       }
     }
     stage('Diff') {
