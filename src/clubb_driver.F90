@@ -1371,7 +1371,7 @@ module clubb_driver
     ! setup grid, setup constants, and setup flags
 
     call setup_clubb_core                                     & ! Intent(in)
-         ( gr, nzmax, T0, ts_nudge,                               & ! Intent(in)
+         ( nzmax, T0, ts_nudge,                               & ! Intent(in)
            hydromet_dim, sclr_dim,                            & ! Intent(in)
            sclr_tol(1:sclr_dim), edsclr_dim, params,          & ! Intent(in)
            l_host_applies_sfc_fluxes,                         & ! Intent(in)
@@ -1386,7 +1386,7 @@ module clubb_driver
            l_prescribed_avg_deltaz,                           & ! intent(in)
            l_damp_wp2_using_em,                               & ! intent(in)
            l_stability_correct_tau_zm,                        & ! intent(in)
-           err_code_dummy )                                     ! Intent(out)
+           gr, err_code_dummy )                                     ! Intent(out)
 
     ! Allocate and initialize variables
 

@@ -259,10 +259,10 @@ module grid_class
   contains
 
   !=============================================================================
-  subroutine setup_grid( gr, nzmax, sfc_elevation, l_implemented,      &
+  subroutine setup_grid( nzmax, sfc_elevation, l_implemented,      &
                          grid_type, deltaz, zm_init, zm_top,      &
                          momentum_heights, thermodynamic_heights, &
-                         begin_height, end_height                 )
+                         gr, begin_height, end_height                 )
 
     ! Description:
     !   Grid Constructor
@@ -488,10 +488,10 @@ module grid_class
     ! Set the values for the derived types used for heights, derivatives, and
     ! interpolation from the momentum/thermodynamic grid
     call setup_grid_heights &
-               ( gr, l_implemented, grid_type,  & 
+               ( l_implemented, grid_type,  & 
                  deltaz, zm_init,  &
                  momentum_heights(begin_height:end_height),  & 
-                 thermodynamic_heights(begin_height:end_height) )
+                 gr, thermodynamic_heights(begin_height:end_height) )
 
     if ( sfc_elevation > gr%zm(1) ) then
       write(fstderr,*) "The altitude of the lowest momentum level, "        &
@@ -547,9 +547,9 @@ module grid_class
 
   !=============================================================================
   subroutine setup_grid_heights &
-             ( gr, l_implemented, grid_type,  & 
+             ( l_implemented, grid_type,  & 
                deltaz, zm_init, momentum_heights,  & 
-               thermodynamic_heights )
+               gr, thermodynamic_heights )
 
     ! Description:
     !   Sets the heights and interpolation weights of the column.

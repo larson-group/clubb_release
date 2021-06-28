@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('Checkout Clubb_Release') {
       steps {
-        sh '''git clone https://LarsonGroupSysAdmin:repo99sitori@github.com/larson-group/clubb_release.git'''
+        sh '''git clone https://github.com/larson-group/clubb_release.git'''
       }
     }
     stage('Compile Clubb Release ') {
