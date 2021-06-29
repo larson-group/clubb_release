@@ -13,7 +13,7 @@ module estimate_scm_microphys_module
 
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy &
-             ( dt, nz, num_samples, pdf_dim, &
+             ( gr, dt, nz, num_samples, pdf_dim, &
                X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
                pdf_params, precip_fracs, p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, &
@@ -36,6 +36,9 @@ module estimate_scm_microphys_module
     use constants_clubb, only:  &
       zero, & ! Constant(s)
       unused_var
+
+
+    use grid_class, only: grid ! Type
 
     use parameters_model, only: &
       hydromet_dim ! Variable
@@ -73,8 +76,8 @@ module estimate_scm_microphys_module
       lh_microphys_non_interactive              ! Constant
 
     use latin_hypercube_driver_module, only: &
-      copy_X_nl_into_hydromet_all_pts, &    ! Procedure(s)
-      clip_transform_silhs_output
+      copy_X_nl_into_hydromet_all_pts    ! Procedure(s)
+
 
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
@@ -97,9 +100,9 @@ module estimate_scm_microphys_module
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions
 
-    use clubb_api_module, only: gr
-
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
 #include "microphys_interface.inc"
@@ -232,7 +235,7 @@ module estimate_scm_microphys_module
       w_std_dev_unused  = unused_var
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nz, & ! In
+           ( gr, dt, nz, & ! In
              l_latin_hypercube, lh_thl_clipped(sample,:), w_all_points(sample,:), p_in_Pa, & ! In
              exner, rho, cloud_frac_unused, w_std_dev_unused, & ! In
              dzq, lh_rc_clipped(sample,:), lh_Nc_clipped(sample,:), & ! In

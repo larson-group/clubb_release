@@ -10,7 +10,7 @@ module spurious_source_test
   contains
 
   !=============================================================================
-  function spurious_source_unit_test(  )
+  function spurious_source_unit_test( gr )
 
     ! Description:
     !
@@ -43,7 +43,8 @@ module spurious_source_test
         zm2zt,      &
         zt2zm
 
-    use clubb_api_module, only: gr ! Variable
+    use grid_class, only: grid ! Type
+
 
     use constants_clubb, only: &
         one,       & ! Variable(s)
@@ -87,6 +88,8 @@ module spurious_source_test
         set_default_clubb_config_flags ! Procedure(s)
 
     implicit none
+
+    type (grid), target, intent(inout) :: gr
 
     ! Return Variable
     integer :: &

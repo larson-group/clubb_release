@@ -10,7 +10,7 @@ module morrison_microphys_module
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_microphys_driver &
-             ( dt, nz, &
+             ( gr, dt, nz, &
                l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, w_std_dev, &
                dzq, rcm, Ncm, chi, rvm, hydromet, &
@@ -30,9 +30,6 @@ module morrison_microphys_module
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_MP_graupel, only: &
         M2005MICRO_GRAUPEL  ! Procedure
-
-    use clubb_api_module, only: &
-        gr
 
     use constants_clubb, only: &
         Lv,   & ! Constants
@@ -200,7 +197,11 @@ module morrison_microphys_module
         microphys_stats_alloc, & ! Procedure
         microphys_put_var
 
+    use grid_class, only: grid ! Type
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: max, real, maxval

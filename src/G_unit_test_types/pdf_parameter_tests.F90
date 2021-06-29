@@ -14,7 +14,7 @@ module pdf_parameter_tests
   contains
 
   !=============================================================================
-  function pdf_parameter_unit_tests( test_PDF_type )
+  function pdf_parameter_unit_tests( gr, test_PDF_type )
 
     ! Description:
     ! Unit testing framework for the code that calculates the mixture fraction,
@@ -91,9 +91,10 @@ module pdf_parameter_tests
     ! Test 15, and Test 19 are analogous to Test 4 for w, rt, and theta-l,
     ! respectively.  Test 20 is analogous to Test 5, but also checks that
     ! sigma_rt_1 >= 0, sigma_rt_2 >= 0, sigma_thl_1 >= 0, and sigma_thl_2 >= 0.
-
     ! References:
     !-----------------------------------------------------------------------
+
+    use grid_class, only: grid ! Type
 
     use constants_clubb, only: &
         three,         & ! Constant(s)
@@ -168,13 +169,12 @@ module pdf_parameter_tests
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
 
-    use clubb_api_module, only: &
-        gr    ! Variable type(s)
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(inout) :: gr
 
     ! Input Variable
     integer, intent(in) :: &

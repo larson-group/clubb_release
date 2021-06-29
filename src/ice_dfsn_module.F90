@@ -11,7 +11,7 @@ module ice_dfsn_module
 
   contains
 !-------------------------------------------------------------------------------
-  subroutine ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, & 
+  subroutine ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, & 
                        rcm_icedfsn, thlm_icedfsn )
 ! Description:
 !   This subroutine is based on a COAMPS subroutine (nov11_icedfs)
@@ -56,8 +56,7 @@ module ice_dfsn_module
 !     pp. 1779--1804.
 !-------------------------------------------------------------------------------
 
-    use clubb_api_module, only: & 
-        gr ! Variable(s)
+    use grid_class, only: grid
 
     use constants_clubb, only: & 
         Cp,  & ! Constant(s)
@@ -83,6 +82,8 @@ module ice_dfsn_module
         ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
 
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Constant Parameters
     ! Number of ice crystals per unit volume of air    [m^{-3}]

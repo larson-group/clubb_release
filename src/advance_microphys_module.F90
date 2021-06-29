@@ -33,7 +33,7 @@ module advance_microphys_module
   contains
 
   !=============================================================================
-  subroutine advance_microphys( dt, time_current, wm_zt, wp2, &            ! In
+  subroutine advance_microphys( gr, dt, time_current, wm_zt, wp2, &            ! In
                                 exner, rho, rho_zm, rcm, &                 ! In
                                 cloud_frac, Kh_zm, Skw_zm, &               ! In
                                 rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &   ! In
@@ -55,7 +55,9 @@ module advance_microphys_module
     use grid_class, only: & 
         zt2zm    ! Procedure(s)
 
-    use clubb_api_module, only: gr ! Variable
+
+    use grid_class, only: grid ! Type
+
 
     use parameters_tunable, only: & 
         c_K_hm ! Variable(s) 
@@ -120,6 +122,8 @@ module advance_microphys_module
         stats_accumulate_hydromet  ! Procedure(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
@@ -244,7 +248,7 @@ module advance_microphys_module
 
        ! Solve for the value of K_hm, the coefficient of diffusion for
        ! hydrometeors.
-       K_hm = calculate_K_hm( wp2, Kh_zm, Skw_zm, Lscale, &
+       K_hm = calculate_K_hm( gr, wp2, Kh_zm, Skw_zm, Lscale, &
                               hydromet, hydrometp2, &
                               l_use_non_local_diff_fac )
 
@@ -297,7 +301,7 @@ module advance_microphys_module
 
     if ( hydromet_dim > 0 ) then
 
-       call advance_hydrometeor( dt, wm_zt, exner, cloud_frac, K_hm, &
+       call advance_hydrometeor( gr, dt, wm_zt, exner, cloud_frac, K_hm, &
                                  rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                                  hydromet_mc, hydromet_vel_covar_zt_impc, &
                                  hydromet_vel_covar_zt_expc, &
@@ -327,7 +331,7 @@ module advance_microphys_module
 
        ! Nc is predicted.
 
-       call advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
+       call advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          l_upwind_xm_ma, &
                          Ncm, Nc_in_cloud, &
@@ -483,7 +487,7 @@ module advance_microphys_module
   end subroutine advance_microphys
 
   !=============================================================================
-  subroutine advance_hydrometeor( dt, wm_zt, exner, cloud_frac, K_hm, &
+  subroutine advance_hydrometeor( gr, dt, wm_zt, exner, cloud_frac, K_hm, &
                                   rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                                   hydromet_mc, hydromet_vel_covar_zt_impc, &
                                   hydromet_vel_covar_zt_expc, &
@@ -503,7 +507,9 @@ module advance_microphys_module
     use grid_class, only: & 
         zt2zm    ! Procedure(s)
 
-    use clubb_api_module, only: gr ! Variable
+
+    use grid_class, only: grid ! Type
+
  
     use constants_clubb, only: & 
         one_half,       & ! Constant(s)
@@ -561,6 +567,8 @@ module advance_microphys_module
         iwphydrometp
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
@@ -733,7 +741,7 @@ module advance_microphys_module
        wphydrometp(gr%nz,i) = zero
 
        ! Add implicit terms to the LHS matrix
-       call microphys_lhs( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
+       call microphys_lhs( gr, trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
                            dt, K_hm(:,i), nu_hm_vert_res_dep, wm_zt,    & ! In
                            hydromet_vel(:,i), hydromet_vel_zt(:,i),     & ! In
                            hydromet_vel_covar_zt_impc(:,i),             & ! In
@@ -742,7 +750,7 @@ module advance_microphys_module
                            lhs )                                          ! Out
 
        ! Set up explicit term in the RHS vector
-       call microphys_rhs( trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
+       call microphys_rhs( gr, trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
                            hydromet(:,i), hydromet_mc(:,i), &
                            K_hm(:,i), nu_hm_vert_res_dep, cloud_frac, &
                            hydromet_vel_covar_zt_expc(:,i), &
@@ -750,7 +758,7 @@ module advance_microphys_module
                            rhs )
 
        !!!!! Advance hydrometeor one time step.
-       call microphys_solve( trim( hydromet_list(i) ), l_hydromet_sed(i), &
+       call microphys_solve( gr, trim( hydromet_list(i) ), l_hydromet_sed(i), &
                              cloud_frac, &
                              lhs, rhs, hydromet(:,i) )
 
@@ -914,7 +922,7 @@ module advance_microphys_module
   end subroutine advance_hydrometeor
 
   !=============================================================================
-  subroutine advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
+  subroutine advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                           l_upwind_xm_ma, &
                           Ncm, Nc_in_cloud, &
@@ -929,7 +937,9 @@ module advance_microphys_module
     use grid_class, only: & 
         zt2zm    ! Procedure(s)
 
-    use clubb_api_module, only: gr ! Variable
+
+    use grid_class, only: grid ! Type
+
 
     use constants_clubb, only: &
         pi,              & ! Constant(s)
@@ -975,6 +985,8 @@ module advance_microphys_module
         iwpNcp
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
@@ -1081,7 +1093,7 @@ module advance_microphys_module
     wpNcp(gr%nz) = zero
 
     ! Add implicit terms to the LHS array
-    call microphys_lhs( "Ncm", l_Ncm_sed, & ! In
+    call microphys_lhs( gr, "Ncm", l_Ncm_sed, & ! In
                         dt, K_Nc, nu_hm_vert_res_dep, wm_zt, &  ! In
                         Ncm_vel, Ncm_vel_zt, & ! In
                         Ncm_vel_covar_zt_impc, & ! In
@@ -1092,7 +1104,7 @@ module advance_microphys_module
     ! Set up explicit term in the RHS vector
     if ( l_in_cloud_Nc_diff ) then
 
-       call microphys_rhs( "Ncm", dt, l_Ncm_sed, &
+       call microphys_rhs( gr, "Ncm", dt, l_Ncm_sed, &
                            Nc_in_cloud, &
                            Ncm_mc / max( cloud_frac, cloud_frac_min ), &
                            K_Nc, nu_hm_vert_res_dep, cloud_frac, &
@@ -1102,7 +1114,7 @@ module advance_microphys_module
 
     else
 
-       call microphys_rhs( "Ncm", dt, l_Ncm_sed, &
+       call microphys_rhs( gr, "Ncm", dt, l_Ncm_sed, &
                            Ncm, Ncm_mc, &
                            K_Nc, nu_hm_vert_res_dep, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
@@ -1115,7 +1127,7 @@ module advance_microphys_module
     !!!!! Advance Ncm one time step.
     if ( l_in_cloud_Nc_diff ) then
 
-       call microphys_solve( "Ncm", l_Ncm_sed, &
+       call microphys_solve( gr, "Ncm", l_Ncm_sed, &
                              cloud_frac, &
                              lhs, rhs, Nc_in_cloud )
 
@@ -1123,7 +1135,7 @@ module advance_microphys_module
 
     else
 
-       call microphys_solve( "Ncm", l_Ncm_sed, &
+       call microphys_solve( gr, "Ncm", l_Ncm_sed, &
                              cloud_frac, &
                              lhs, rhs, Ncm )
 
@@ -1244,7 +1256,7 @@ module advance_microphys_module
   end subroutine advance_Ncm
 
   !=============================================================================
-  subroutine microphys_solve( solve_type, l_sed, &
+  subroutine microphys_solve( gr, solve_type, l_sed, &
                               cloud_frac, &
                               lhs, rhs, hmm )
 
@@ -1255,8 +1267,7 @@ module advance_microphys_module
     !  None
     !---------------------------------------------------------------------------
 
-    use clubb_api_module, only: & 
-        gr ! Variable(s)
+    use grid_class, only: grid
 
     use constants_clubb, only: &
         cloud_frac_min  ! Constant(s)
@@ -1326,6 +1337,8 @@ module advance_microphys_module
         stat_end_update_pt
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     character(len=*), intent(in) :: &
@@ -1515,7 +1528,7 @@ module advance_microphys_module
 
   !=============================================================================
   subroutine microphys_lhs & 
-             ( solve_type, l_sed, dt, K_hm, nu, wm_zt, &
+             ( gr, solve_type, l_sed, dt, K_hm, nu, wm_zt, &
                V_hm, V_hmt, &
                Vhmphmp_zt_impc, &
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
@@ -1537,7 +1550,9 @@ module advance_microphys_module
         zm2zt, & ! Procedure(s)
         zt2zm    ! Procedure(s)
 
-    use clubb_api_module, only: gr ! Variable
+
+    use grid_class, only: grid ! Type
+
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1602,6 +1617,8 @@ module advance_microphys_module
         l_stats_samp
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -1799,7 +1816,7 @@ module advance_microphys_module
              ! differencing.  This is the default method.
              lhs(kp1_tdiag:km1_tdiag,k) & 
              = lhs(kp1_tdiag:km1_tdiag,k) & 
-               + sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
+               + sed_centered_diff_lhs( gr, V_hm(k), V_hm(km1), rho_ds_zm(k), &
                                         rho_ds_zm(km1), invrs_rho_ds_zt(k), &
                                         gr%invrs_dzt(k), k )
 
@@ -1809,7 +1826,7 @@ module advance_microphys_module
              ! differencing.
              lhs(kp1_tdiag:km1_tdiag,k) & 
              = lhs(kp1_tdiag:km1_tdiag,k) & 
-               + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+               + sed_upwind_diff_lhs( gr, V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
                                       rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
                                       gr%invrs_dzm(k), k )
 
@@ -1818,7 +1835,7 @@ module advance_microphys_module
           ! LHS turbulent sedimentation term.
           lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) & 
-             + term_turb_sed_lhs( Vhmphmp_impc(k), Vhmphmp_impc(km1), &
+             + term_turb_sed_lhs( gr, Vhmphmp_impc(k), Vhmphmp_impc(km1), &
                                   Vhmphmp_zt_impc(kp1), Vhmphmp_zt_impc(k), &
                                   rho_ds_zm(k), rho_ds_zm(km1), &
                                   rho_ds_zt(kp1), rho_ds_zt(k), &
@@ -1833,12 +1850,12 @@ module advance_microphys_module
           if ( ihmm_sd > 0 .and. l_sed ) then
              if ( .not. l_upwind_diff_sed ) then
                 tmp(1:3) &
-                = sed_centered_diff_lhs( V_hm(k), V_hm(km1), rho_ds_zm(k), &
+                = sed_centered_diff_lhs( gr, V_hm(k), V_hm(km1), rho_ds_zm(k), &
                                          rho_ds_zm(km1), invrs_rho_ds_zt(k), &
                                          gr%invrs_dzt(k), k )
              else
                 tmp(1:3) &
-                = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
+                = sed_upwind_diff_lhs( gr, V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
                                        rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
                                        gr%invrs_dzm(k), k )
              endif
@@ -1851,7 +1868,7 @@ module advance_microphys_module
 
           if ( ihmm_ts > 0 .and. l_sed ) then
              tmp(1:3) &
-             = term_turb_sed_lhs( Vhmphmp_impc(k), Vhmphmp_impc(km1), &
+             = term_turb_sed_lhs( gr, Vhmphmp_impc(k), Vhmphmp_impc(km1), &
                                   Vhmphmp_zt_impc(kp1), Vhmphmp_zt_impc(k), &
                                   rho_ds_zm(k), rho_ds_zm(km1), &
                                   rho_ds_zt(kp1), rho_ds_zt(k), &
@@ -1898,7 +1915,7 @@ module advance_microphys_module
   end subroutine microphys_lhs
 
   !=============================================================================
-  subroutine microphys_rhs( solve_type, dt, l_sed, &
+  subroutine microphys_rhs( gr, solve_type, dt, l_sed, &
                             hmm, hmm_tndcy, &
                             K_hm, nu, cloud_frac, &
                             Vhmphmp_zt_expc, &
@@ -1916,7 +1933,9 @@ module advance_microphys_module
     use grid_class, only:  & 
         zt2zm    ! Procedure(s)
 
-    use clubb_api_module, only: gr ! Variable
+
+    use grid_class, only: grid ! Type
+
 
     use constants_clubb, only: &
         one_half,       & ! Constant(s)
@@ -1953,6 +1972,8 @@ module advance_microphys_module
         stat_begin_update_pt ! Procedure(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -2103,7 +2124,7 @@ module advance_microphys_module
        if ( l_sed ) then
           rhs(k) &
           = rhs(k) &
-            + term_turb_sed_rhs( Vhmphmp_expc(k), Vhmphmp_expc(km1), &
+            + term_turb_sed_rhs( gr, Vhmphmp_expc(k), Vhmphmp_expc(km1), &
                                  Vhmphmp_zt_expc(kp1), Vhmphmp_zt_expc(k), &
                                  rho_ds_zm(k), rho_ds_zm(km1), &
                                  rho_ds_zt(kp1), rho_ds_zt(k), &
@@ -2149,7 +2170,7 @@ module advance_microphys_module
           ! subtracts the value sent in, reverse the sign on term_turb_sed_rhs.
           if ( ihmm_ts > 0 .and. l_sed ) then
              call stat_begin_update_pt( ihmm_ts, k, &
-                 -term_turb_sed_rhs( Vhmphmp_expc(k), Vhmphmp_expc(km1), &
+                 -term_turb_sed_rhs( gr, Vhmphmp_expc(k), Vhmphmp_expc(km1), &
                                      Vhmphmp_zt_expc(kp1), Vhmphmp_zt_expc(k), &
                                      rho_ds_zm(k), rho_ds_zm(km1), &
                                      rho_ds_zt(kp1), rho_ds_zt(k), &
@@ -2175,7 +2196,7 @@ module advance_microphys_module
   end subroutine microphys_rhs
 
   !=============================================================================
-  pure function sed_centered_diff_lhs( V_hm, V_hmm1, rho_ds_zm, &
+  pure function sed_centered_diff_lhs( gr, V_hm, V_hmm1, rho_ds_zm, &
                                        rho_ds_zmm1, invrs_rho_ds_zt, &
                                        invrs_dzt, level ) &
     result( lhs )
@@ -2330,8 +2351,7 @@ module advance_microphys_module
     !   velocities, but COAMPS has only the local parameterization.
     !-----------------------------------------------------------------------
 
-    use clubb_api_module, only:  & 
-        gr ! Variable(s)
+    use grid_class, only: grid
 
     use constants_clubb, only: &
         zero  ! Constant(s)
@@ -2340,6 +2360,8 @@ module advance_microphys_module
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -2438,7 +2460,7 @@ module advance_microphys_module
   end function sed_centered_diff_lhs
 
   !=============================================================================
-  pure function sed_upwind_diff_lhs( V_hmt, V_hmtp1, rho_ds_zt, &
+  pure function sed_upwind_diff_lhs( gr, V_hmt, V_hmtp1, rho_ds_zt, &
                                      rho_ds_ztp1, invrs_rho_ds_zt, &
                                      invrs_dzm, level ) &
     result( lhs )
@@ -2566,8 +2588,7 @@ module advance_microphys_module
     ! highly diffusive. 
     !-----------------------------------------------------------------------
 
-    use clubb_api_module, only:  & 
-        gr ! Variable(s)
+    use grid_class, only: grid
 
     use constants_clubb, only: &
         zero  ! Constant(s)
@@ -2576,6 +2597,8 @@ module advance_microphys_module
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -2636,7 +2659,7 @@ module advance_microphys_module
   end function sed_upwind_diff_lhs
 
   !=============================================================================
-  pure function term_turb_sed_lhs( Vhmphmp_impcm, Vhmphmp_impcm1, &
+  pure function term_turb_sed_lhs( gr, Vhmphmp_impcm, Vhmphmp_impcm1, &
                                    Vhmphmp_zt_impcp1, Vhmphmp_zt_impc, &
                                    rho_ds_zm, rho_ds_zmm1, &
                                    rho_ds_ztp1, rho_ds_zt, &
@@ -2764,8 +2787,7 @@ module advance_microphys_module
     ! highly diffusive. 
     !-----------------------------------------------------------------------
 
-    use clubb_api_module, only:  & 
-        gr ! Variable(s)
+    use grid_class, only: grid
 
     use constants_clubb, only: &
         zero  ! Constant(s)
@@ -2777,6 +2799,8 @@ module advance_microphys_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -2948,7 +2972,7 @@ module advance_microphys_module
   end function term_turb_sed_lhs
 
   !=============================================================================
-  pure function term_turb_sed_rhs( Vhmphmp_expcm, Vhmphmp_expcm1, &
+  pure function term_turb_sed_rhs( gr, Vhmphmp_expcm, Vhmphmp_expcm1, &
                                    Vhmphmp_zt_expcp1, Vhmphmp_zt_expc, &
                                    rho_ds_zm, rho_ds_zmm1, &
                                    rho_ds_ztp1, rho_ds_zt, &
@@ -3065,8 +3089,7 @@ module advance_microphys_module
     ! highly diffusive. 
     !-----------------------------------------------------------------------
 
-    use clubb_api_module, only:  & 
-        gr ! Variable(s)
+    use grid_class, only: grid
 
     use constants_clubb, only: &
         zero  ! Constant(s)
@@ -3078,6 +3101,8 @@ module advance_microphys_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -3170,10 +3195,13 @@ module advance_microphys_module
   end function term_turb_sed_rhs
 
   !=============================================================================
-  function calculate_K_hm( wp2, Kh_zm, Skw_zm, Lscale, &
+  function calculate_K_hm( gr, wp2, Kh_zm, Skw_zm, Lscale, &
                            hydromet, hydrometp2, &
                            l_use_non_local_diff_fac ) &
   result( K_hm )
+
+
+    use grid_class, only: grid ! Type
 
     ! Description:
     ! The predictive equation for a hydrometeor, hm, contains a turbulent
@@ -3196,7 +3224,6 @@ module advance_microphys_module
     use grid_class, only: & 
        zt2zm    ! Procedure(s)
 
-    use clubb_api_module, only: gr ! Variable
 
     use parameters_tunable, only: & 
         c_K_hm,        & ! Variable(s) 
@@ -3217,6 +3244,8 @@ module advance_microphys_module
         hydromet_tol    ! Tolerance values for hydrometeor species
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 

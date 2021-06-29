@@ -18,7 +18,7 @@ module mpace_b
   contains
 
   !----------------------------------------------------------------------
-  subroutine mpace_b_tndcy( p_in_Pa, thvm, & 
+  subroutine mpace_b_tndcy( gr, p_in_Pa, thvm, & 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                             sclrm_forcing, edsclrm_forcing )
 
@@ -36,9 +36,10 @@ module mpace_b
     use constants_clubb, only: Rd, Cp, &
                                grav, sec_per_day, g_per_kg ! Variable(s)
 
+    use grid_class, only: grid ! Type
+
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use clubb_api_module, only: gr ! Variable(s)
 
     use grid_class, only: zt2zm ! Procedure(s)
 
@@ -47,6 +48,8 @@ module mpace_b
     use array_index, only: iiedsclr_rt, iiedsclr_thl, iisclr_rt, iisclr_thl ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Local constants, subsidence
     real( kind = core_rknd ), parameter :: & 

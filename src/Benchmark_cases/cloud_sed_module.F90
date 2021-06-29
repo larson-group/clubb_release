@@ -59,7 +59,7 @@ module cloud_sed_module
 contains
 
   !=============================================================================
-  subroutine cloud_drop_sed( rcm, Ncm, &
+  subroutine cloud_drop_sed( gr, rcm, Ncm, &
                              rho_zm, rho, exner, sigma_g, &
                              rcm_mc, thlm_mc )
 
@@ -98,7 +98,8 @@ contains
         zt2zm, & ! Procedure(s)
         ddzm
 
-    use clubb_api_module, only: gr ! Variable
+    use grid_class, only: grid ! Type
+
 
     use constants_clubb, only: &
         five,       & ! Constant(s)
@@ -126,6 +127,8 @@ contains
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: exp, log

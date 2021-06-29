@@ -53,7 +53,7 @@ module gfdl_activation
   contains
 
   !-----------------------------------------------------------------------------
-  SUBROUTINE aer_act_clubb_quadrature_Gauss( pdf_params, p_in_Pa,            & ! Intent(in)
+  SUBROUTINE aer_act_clubb_quadrature_Gauss( gr, pdf_params, p_in_Pa,            & ! Intent(in)
                                              aeromass_clubb, temp_clubb_act, & ! Intent(in)
                                              Ndrop_max )                       ! Intent(out)
 
@@ -61,11 +61,13 @@ module gfdl_activation
         ! The main subroutine used for the GFDL droplet activation.
         !=======================================================================
     use aer_ccn_act_k_mod,   only: aer_ccn_act_k, aer_ccn_act_wpdf_k
-    use clubb_api_module, only: gr
+    use grid_class, only: grid
     use pdf_parameter_module, only: pdf_parameter
     use clubb_precision, only: &
       core_rknd ! Variable(s)
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     intrinsic :: real
     ! ---> h1g, 2010-08-24, dumping Nact

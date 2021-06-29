@@ -483,7 +483,7 @@ module time_dependent_input
 
   !================================================================================================
   subroutine apply_time_dependent_forcings &
-            ( time, grid_size, rtm, rho, exner,  &
+            ( gr, time, grid_size, rtm, rho, exner,  &
               thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
               wm_zt, wm_zm,  ug, vg, &
               sclrm_forcing, edsclrm_forcing )
@@ -493,7 +493,8 @@ module time_dependent_input
     !
     !---------------------------------------------------------------------------------
 
-    use clubb_api_module, only: gr
+
+    use grid_class, only: grid ! Type
 
     use constants_clubb, only: &
       grav, & ! Variable(s)
@@ -530,6 +531,8 @@ module time_dependent_input
                            iiedsclr_rt, iiedsclr_thl
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variable(s)
 

@@ -13,7 +13,7 @@ module wangara
 
   contains
 !----------------------------------------------------------------------
-  subroutine wangara_tndcy( wm_zt, wm_zm,  & 
+  subroutine wangara_tndcy( gr, wm_zt, wm_zm,  & 
                             thlm_forcing, rtm_forcing, & 
                             sclrm_forcing, edsclrm_forcing )
 ! Description:
@@ -24,7 +24,6 @@ module wangara
 !   JAS, Vol. 59, pp. 3552--3571.
 !----------------------------------------------------------------------
 
-    use clubb_api_module, only: gr ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -32,7 +31,11 @@ module wangara
 
     use array_index, only: iisclr_thl, iisclr_rt, iiedsclr_thl, iiedsclr_rt ! Variable(s)
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 

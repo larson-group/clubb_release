@@ -19,7 +19,7 @@ module mixed_moment_PDF_integrals
   contains
 
   !=============================================================================
-  subroutine hydrometeor_mixed_moments( nz, pdf_dim, hydromet, &
+  subroutine hydrometeor_mixed_moments( gr, nz, pdf_dim, hydromet, &
                                         mu_x_1_n, mu_x_2_n, &
                                         sigma_x_1_n, sigma_x_2_n, &
                                         corr_array_1_n, corr_array_2_n, &
@@ -31,11 +31,11 @@ module mixed_moment_PDF_integrals
     ! Calculates <rt'hm'>, <thl'hm'>, and <w'^2 hm'>, for all hydrometeors, hm.
     ! These terms are used in the liquid/ice water loading term as part of the
     ! buoyancy term in some of the CLUBB predictive equations.
-
     ! References:
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
+        grid, & ! Type
         zt2zm    ! Procedure(s)
 
     use constants_clubb, only: &
@@ -83,9 +83,9 @@ module mixed_moment_PDF_integrals
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
-    use clubb_api_module, only: gr
-
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) :: &

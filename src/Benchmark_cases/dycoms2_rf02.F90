@@ -15,7 +15,7 @@ module dycoms2_rf02
   contains
 
   !----------------------------------------------------------------------
-  subroutine dycoms2_rf02_tndcy( wm_zt, wm_zm,    &
+  subroutine dycoms2_rf02_tndcy( gr, wm_zt, wm_zm,    &
                                  thlm_forcing, rtm_forcing,  & 
                                  sclrm_forcing, edsclrm_forcing )
     ! Description:
@@ -33,7 +33,6 @@ module dycoms2_rf02
     !  http://www.atmos.ucla.edu/~bstevens/Documents/dycoms.pdf 
     !----------------------------------------------------------------------
 
-    use clubb_api_module, only: gr ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -42,7 +41,11 @@ module dycoms2_rf02
 
     use clubb_precision, only: core_rknd ! Variable(s)
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &

@@ -48,7 +48,7 @@ module mpace_a
   contains
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_tndcy( time, p_in_Pa, & 
+  subroutine mpace_a_tndcy( gr, time, p_in_Pa, & 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                             um_hoc_grid, vm_hoc_grid, & 
                             sclrm_forcing, edsclrm_forcing )
@@ -63,9 +63,10 @@ module mpace_a
     use constants_clubb, only: Cp, Rd, & ! Variable(s)
                          sec_per_hr, g_per_kg, fstderr
 
+    use grid_class, only: grid ! Type
+
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use clubb_api_module, only: gr ! Variable(s)
 
     use grid_class, only: zt2zm ! Procedure(s)
 
@@ -82,6 +83,8 @@ module mpace_a
     use time_dependent_input, only: time_select !Procedure(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Local constants, subsidence
     real( kind = core_rknd ), parameter :: & 

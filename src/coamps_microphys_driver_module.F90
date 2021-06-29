@@ -15,7 +15,7 @@ module coamps_microphys_driver_module
 
 #ifdef COAMPS_MICRO
   subroutine coamps_microphys_driver & 
-         ( runtype, timea_in, deltf_in, & 
+         ( gr, runtype, timea_in, deltf_in, & 
            rtm, wm_zm, p_in_Pa, exner, rho, & 
            thlm, rim, rrm, rgm, rsm, & 
            rcm, Ncm, Nrm, Nim, &
@@ -51,7 +51,9 @@ module coamps_microphys_driver_module
     use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
     use grid_class, only: zt2zm ! Procedure(s)
-    use clubb_api_module, only: gr ! Variable(s)
+
+
+    use grid_class, only: grid ! Type
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
@@ -69,6 +71,8 @@ module coamps_microphys_driver_module
     use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
 ! External Calls
     external ::  & 

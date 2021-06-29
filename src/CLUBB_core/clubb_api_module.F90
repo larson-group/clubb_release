@@ -117,9 +117,6 @@ module clubb_api_module
       clubb_no_error,              & ! Constants
       clubb_fatal_error
 
-  use grid_class, only : &
-    grid
-
   use hydromet_pdf_parameter_module, only : &
     hydromet_pdf_parameter, &
     precipitation_fractions
@@ -240,8 +237,6 @@ module clubb_api_module
 
   implicit none
 
-  type(grid), target :: gr
-!$omp threadprivate(gr)
   private
 
   public &
@@ -338,7 +333,6 @@ module clubb_api_module
 
   public &
     ! To Interact With CLUBB's Grid:
-    gr, &
     ! For Varying Grids
     setup_grid_heights_api    ! if heights vary with time
 
@@ -529,7 +523,7 @@ contains
   ! advance_clubb_core - Advances the model one timestep.
   !================================================================================================
 
-  subroutine advance_clubb_core_api( &
+  subroutine advance_clubb_core_api( gr, &
     l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
     sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
@@ -585,7 +579,11 @@ contains
     use model_flags, only: &
         clubb_config_flags_type
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
       !!! Input Variables
     logical, intent(in) ::  &
       l_implemented ! Is this part of a larger host model (T/F) ?
@@ -822,7 +820,7 @@ contains
   ! setup_clubb_core - Sets up the model for execution.
   !================================================================================================
 
-  subroutine setup_clubb_core_api( &
+  subroutine setup_clubb_core_api( gr, &
     nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
     hydromet_dim_in, sclr_dim_in,                       & ! intent(in)
     sclr_tol_in, edsclr_dim_in, params,                 & ! intent(in)
@@ -848,6 +846,8 @@ contains
 
     use advance_clubb_core_module, only : setup_clubb_core
 
+    use grid_class, only: grid ! Type
+
     use parameter_indices, only:  &
         nparams ! Variable(s)
       
@@ -860,6 +860,8 @@ contains
 !     setup_model_flags    ! Subroutine
 
       implicit none
+
+      type(grid), target, intent(inout) :: gr
 
     ! Input Variables
 
@@ -989,12 +991,15 @@ contains
   ! cleanup_clubb_core_api - Frees memory used by the model.
   !================================================================================================
 
-  subroutine cleanup_clubb_core_api( )
+  subroutine cleanup_clubb_core_api( gr )
 
     use advance_clubb_core_module, only : cleanup_clubb_core
 
+    use grid_class, only: grid
+
     implicit none
 
+    type(grid), target, intent(inout) :: gr
     call cleanup_clubb_core( gr )
 
   end subroutine cleanup_clubb_core_api
@@ -1160,7 +1165,7 @@ contains
   ! fill_holes_driver - Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
   !================================================================================================
 
-  subroutine fill_holes_driver_api( &
+  subroutine fill_holes_driver_api( gr, &
     nz, dt, hydromet_dim,        & ! Intent(in)
     l_fill_holes_hm,             & ! Intent(in)
     rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
@@ -1168,7 +1173,11 @@ contains
 
     use fill_holes, only : fill_holes_driver
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     intrinsic :: trim
 
@@ -1206,14 +1215,18 @@ contains
   ! fill_holes_vertical - clips values of 'field' that are below 'threshold' as much as possible.
   !================================================================================================
 
-  subroutine fill_holes_vertical_api( &
+  subroutine fill_holes_vertical_api( gr, &
     num_pts, threshold, field_grid, &
     rho_ds, rho_ds_zm, &
     field )
 
     use fill_holes, only : fill_holes_vertical
 
+    use grid_class, only: grid ! Type
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input variables
     integer, intent(in) :: &
@@ -1308,17 +1321,21 @@ contains
   ! setup_grid_heights - Sets the heights and interpolation weights of the column.
   !================================================================================================
 
-  subroutine setup_grid_heights_api( &
+  subroutine setup_grid_heights_api( gr, &
     l_implemented, grid_type,  &
     deltaz, zm_init, momentum_heights,  &
     thermodynamic_heights )
 
-    use grid_class, only : setup_grid_heights
+    use grid_class, only: & 
+        grid, & ! Type
+        setup_grid_heights
     
     use error_code, only : &
         clubb_fatal_error       ! Constant
 
     implicit none
+   
+    type(grid), target, intent(inout) :: gr
 
     ! Input Variables
 
@@ -1455,7 +1472,7 @@ contains
   ! setup_parameters - Sets up model parameters.
   !================================================================================================
 
-  subroutine setup_parameters_api( &
+  subroutine setup_parameters_api( gr, &
     deltaz, params, nzmax, &
     grid_type, momentum_heights, thermodynamic_heights, &
     l_prescribed_avg_deltaz, &
@@ -1467,7 +1484,11 @@ contains
     use parameter_indices, only:  &
         nparams ! Variable(s)
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
@@ -1522,14 +1543,18 @@ contains
   ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
   !================================================================================================
 
-  subroutine adj_low_res_nu_api( &
+  subroutine adj_low_res_nu_api( gr, &
     nzmax, grid_type, deltaz, & ! Intent(in)
     momentum_heights, thermodynamic_heights, & ! Intent(in)
     l_prescribed_avg_deltaz )  ! Intent(in)
 
     use parameters_tunable, only : adj_low_res_nu
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
 
@@ -1872,7 +1897,7 @@ contains
   ! setup_pdf_parameters
   !================================================================================================
 
-  subroutine setup_pdf_parameters_api_single_col( &
+  subroutine setup_pdf_parameters_api_single_col( gr, &
     nz, pdf_dim, dt, &                      ! Intent(in)
     Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
@@ -1902,7 +1927,11 @@ contains
         err_code, &         ! Error Indicator
         clubb_fatal_error   ! Constant
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) :: &
@@ -2065,8 +2094,8 @@ contains
     end if
 
   end subroutine setup_pdf_parameters_api_single_col
-  
-  subroutine setup_pdf_parameters_api_multi_col( &
+!===========================================================================! 
+  subroutine setup_pdf_parameters_api_multi_col( gr, &
     nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
     Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
@@ -2089,6 +2118,8 @@ contains
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
+    use grid_class, only: grid
+
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
 
@@ -2097,6 +2128,8 @@ contains
         clubb_fatal_error   ! Constant
 
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) :: &
@@ -2354,12 +2387,16 @@ contains
   ! stats_accumulate_hydromet - Computes stats related the hydrometeors.
   !================================================================================================
 
-  subroutine stats_accumulate_hydromet_api( &
+  subroutine stats_accumulate_hydromet_api( gr, &
     hydromet, rho_ds_zt )
 
     use stats_clubb_utilities, only : stats_accumulate_hydromet
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
@@ -2580,11 +2617,15 @@ contains
   !================================================================================================
   ! zm2zt_scalar - Interpolates a variable from zm to zt grid at one height level
   !================================================================================================
-  function zm2zt_scalar_api( azm, k )
+  function zm2zt_scalar_api( gr, azm, k )
 
-    use grid_class, only: zm2zt
+    use grid_class, only: & 
+        grid, & ! Type
+        zm2zt
 
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
@@ -2604,11 +2645,15 @@ contains
   !================================================================================================
   ! zt2zm_scalar - Interpolates a variable from zt to zm grid at one height level
   !================================================================================================
-  function zt2zm_scalar_api( azt, k )
+  function zt2zm_scalar_api( gr, azt, k )
 
-    use grid_class, only: zt2zm
+    use grid_class, only: &
+        grid, & ! Type
+        zt2zm
 
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
@@ -2628,11 +2673,15 @@ contains
   !================================================================================================
   ! zt2zm_prof - Interpolates a variable (profile) from zt to zm grid
   !================================================================================================
-  function zt2zm_prof_api( azt )
+  function zt2zm_prof_api( gr, azt )
 
-    use grid_class, only: zt2zm
+    use grid_class, only: &
+        grid, & ! Type
+        zt2zm
 
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
@@ -2649,11 +2698,15 @@ contains
   !================================================================================================
   ! zm2zt_prof - Interpolates a variable (profile) from zm to zt grid
   !================================================================================================
-  function zm2zt_prof_api( azm )
+  function zm2zt_prof_api( gr, azm )
 
-    use grid_class, only: zm2zt
+    use grid_class, only: &
+        grid, & ! Type
+        zm2zt
 
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
@@ -2705,7 +2758,7 @@ contains
   !================================================================================================
   ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2
   !================================================================================================
-  subroutine update_xp2_mc_api( nz, dt, cloud_frac, rcm, rvm, thlm,        &
+  subroutine update_xp2_mc_api( gr, nz, dt, cloud_frac, rcm, rvm, thlm,        &
                             wm, exner, rrm_evap, pdf_params,        &
                             rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
                             rtpthlp_mc )
@@ -2713,7 +2766,11 @@ contains
     use advance_xp2_xpyp_module, only: &
         update_xp2_mc
 
+    use grid_class, only: grid ! Type
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     !input parameters
     integer, intent(in) :: nz ! Points in the Vertical        [-]
@@ -3431,14 +3488,18 @@ contains
   !================================================================================================
   ! initialize_tau_sponge_damp
   !================================================================================================
-  subroutine initialize_tau_sponge_damp_api( dt, z, settings, damping_profile )
+  subroutine initialize_tau_sponge_damp_api( gr, dt, z, settings, damping_profile )
 
     use sponge_layer_damping, only: &
         sponge_damp_settings,       & ! Variable(s)
         sponge_damp_profile,        &
         initialize_tau_sponge_damp    ! Procedure(s)
 
+    use grid_class, only: grid
+
     implicit none
+
+    type(grid), target, intent(in) :: gr
 
     ! Input Variable(s)
     real( kind = core_rknd ), intent(in) :: &

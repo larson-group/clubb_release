@@ -5,7 +5,7 @@
 ! hypercube sampling for.  New microphysics drivers will need to have the same
 ! number and type of arguments as this does.
 interface
-  subroutine microphys_sub( dt, nnzp, &
+  subroutine microphys_sub( gr, dt, nnzp, &
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, w_std_dev, &
                             dzq, rcm, Nc, chi, rvm, hydromet, &
@@ -17,10 +17,14 @@ interface
 
     use clubb_precision, only: core_rknd
 
+    use grid_class, only: grid ! Type
+
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type   ! Type
 
     ! Input Variables
+
+    type(grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 

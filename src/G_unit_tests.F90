@@ -155,7 +155,13 @@ program G_unit_tests
   use tuner_tests, only: &
       tuner_tests_driver        ! Procedure
 
+  use grid_class, only: grid ! Type
+
   implicit none
+
+  type(grid), target :: gr
+
+
 
   ! Local Constants
   integer, parameter :: iunit = 25
@@ -239,25 +245,25 @@ program G_unit_tests
   endif
 
   if ( l_pdf_parameter_tests ) then
-     if ( pdf_parameter_unit_tests( iiPDF_ADG1 ) /= 0 ) then
+     if ( pdf_parameter_unit_tests( gr, iiPDF_ADG1 ) /= 0 ) then
         exit_code = 1
      endif
-     if ( pdf_parameter_unit_tests( iiPDF_LY93 ) /= 0 ) then
+     if ( pdf_parameter_unit_tests( gr, iiPDF_LY93 ) /= 0 ) then
         exit_code = 1
      endif
-     if ( pdf_parameter_unit_tests( iiPDF_TSDADG ) /= 0 ) then
+     if ( pdf_parameter_unit_tests( gr, iiPDF_TSDADG ) /= 0 ) then
         exit_code = 1
      endif
-     if ( pdf_parameter_unit_tests( iiPDF_new ) /= 0 ) then
+     if ( pdf_parameter_unit_tests( gr, iiPDF_new ) /= 0 ) then
         exit_code = 1
      endif
-     if ( pdf_parameter_unit_tests( iiPDF_new_hybrid ) /= 0 ) then
+     if ( pdf_parameter_unit_tests( gr, iiPDF_new_hybrid ) /= 0 ) then
         exit_code = 1
      endif
   endif
 
   if ( l_spurious_source_test ) then
-     if ( spurious_source_unit_test( ) /= 0 ) then
+     if ( spurious_source_unit_test( gr ) /= 0 ) then
         exit_code = 1
      endif
   endif

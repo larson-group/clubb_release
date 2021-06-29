@@ -26,7 +26,7 @@ module nov11
   contains
 
 !-----------------------------------------------------------------------
-  subroutine nov11_altocu_rtm_adjust( time, time_initial, dt, &
+  subroutine nov11_altocu_rtm_adjust( gr, time, time_initial, dt, &
                                       rtm )
 
 ! Description:
@@ -43,14 +43,15 @@ module nov11
 !   https://pantherfile.uwm.edu/vlarson/www/journal_articles/JGR_09_smith_clex_LES.pdf
 !--------------------------------------------------------------------------
 
-    use clubb_api_module, only: &
-      gr       ! Variable(s)
-
+    use grid_class, only: grid
+      
     use clubb_precision, only: &
       time_precision, & ! Variable(s)
       core_rknd
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input variables
     real(kind=time_precision), intent(in) :: & 
@@ -117,7 +118,6 @@ module nov11
 !   https://pantherfile.uwm.edu/vlarson/www/journal_articles/JGR_09_smith_clex_LES.pdf
 !----------------------------------------------------------------------
 !
-!    use clubb_api_module, only: gr ! Variable(s)
 !
 !    use grid_class, only: zt2zm ! Procedure(s)
 !
