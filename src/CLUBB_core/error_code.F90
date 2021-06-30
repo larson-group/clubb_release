@@ -81,6 +81,8 @@ module error_code
         ! NAG compiler.
         integer :: getpid
         write(err_header,'(A7,I7,A20)') "Process ", getpid(), " -- CLUBB -- ERROR: "
+#else
+        write(err_header,'(A20)') " -- CLUBB -- ERROR: "
 #endif /* CLUBB_CAM */
 #endif               
         
