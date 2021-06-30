@@ -20,12 +20,16 @@ pipeline {
   }
   post {
     always {
+      script {
       if ( "${env.JOB_NAME}" == "clubb_release_intel_build" )
       	cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true, cleanWhenAborted: true)
+      }
     }
     failure {
+      script {
       if ( "${env.JOB_NAME}" == "clubb_release_intel_build" )
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
     }
   }
 }
