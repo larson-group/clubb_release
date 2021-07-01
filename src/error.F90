@@ -163,7 +163,7 @@ module error
   contains
 
   !-----------------------------------------------------------------------
-  subroutine tuner_init( gr, l_read_files )
+  subroutine tuner_init( l_read_files )
 
 ! Description:
 !   Initializes param_vals_matrix with constants from error.in
@@ -195,11 +195,7 @@ module error
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
-    use grid_class, only: grid ! Type
-
     implicit none
-
-    type(grid), target, intent(in) :: gr
 
     ! Constant Variables
 

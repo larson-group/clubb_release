@@ -2218,7 +2218,7 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters_api( gr, gr%nz, pdf_dim, dt_main,                    & ! Intent(in)
+         call setup_pdf_parameters_api( gr, gr%nz, pdf_dim, dt_main,                & ! Intent(in)
                         Nc_in_cloud, rcm(1,:), cloud_frac, Kh_zm,                   & ! Intent(in)
                         ice_supersat_frac, hydromet, wphydrometp,                   & ! Intent(in)
                         corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
@@ -2241,7 +2241,7 @@ module clubb_driver
          if ( err_code == clubb_fatal_error ) error stop
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
-         call hydrometeor_mixed_moments( gr, gr%nz, pdf_dim, hydromet,                   & ! Intent(in)
+         call hydrometeor_mixed_moments( gr, gr%nz, pdf_dim, hydromet,               & ! Intent(in)
                                    mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                 & ! Intent(in)
                                    sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),           & ! Intent(in)
                                    corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:), & ! Intent(in)
@@ -5659,7 +5659,7 @@ module clubb_driver
     do isample=1, lh_num_samples
       ! Call a radiation scheme
       call advance_clubb_radiation &
-           ( gr, time_current, time_initial, rho, rho_zm, p_in_Pa, &                     ! Intent(in)
+           ( gr, time_current, time_initial, rho, rho_zm, p_in_Pa, &           ! Intent(in)
              exner, cloud_frac, ice_supersat_frac, lh_thl_clipped(isample,:), & ! Intent(in)
              lh_rt_clipped(isample,:), lh_rc_clipped(isample,:), &         ! Intent(in)
              hydromet_all_pts(isample,:,:), &                                        ! Intent(in)

@@ -231,7 +231,8 @@ module advance_helper_module
   end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
-  function calc_stability_correction( gr, thlm, Lscale, em, exner, rtm, rcm, &
+  function calc_stability_correction( gr, thlm, Lscale, em, &
+                                      exner, rtm, rcm, &
                                       p_in_Pa, thvm, ice_supersat_frac, &
                                       l_brunt_vaisala_freq_moist, &
                                       l_use_thvm_in_bv_freq ) &
@@ -305,13 +306,14 @@ module advance_helper_module
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
     stability_correction = 1.0_core_rknd &
-      + min( lambda0_stability * brunt_vaisala_freq_sqd * zt2zm( gr, Lscale )**2 / em, 3.0_core_rknd )
+    + min( lambda0_stability * brunt_vaisala_freq_sqd * zt2zm(gr, Lscale)**2 / em, 3.0_core_rknd )
 
     return
   end function calc_stability_correction
 
   !===============================================================================
-  subroutine calc_brunt_vaisala_freq_sqd(  gr, thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+  subroutine calc_brunt_vaisala_freq_sqd(  gr, thlm, &
+                                           exner, rtm, rcm, p_in_Pa, thvm, &
                                            ice_supersat_frac, &
                                            l_brunt_vaisala_freq_moist, &
                                            l_use_thvm_in_bv_freq, &

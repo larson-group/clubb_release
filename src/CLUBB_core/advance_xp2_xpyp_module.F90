@@ -513,7 +513,7 @@ module advance_xp2_xpyp_module
            
        ! All left hand side matricies are equal for rtp2, thlp2, rtpthlp, and scalars.
        ! Thus only one solve is neccesary, using combined right hand sides
-       call solve_xp2_xpyp_with_single_lhs( gr, C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp,    & ! In
+       call solve_xp2_xpyp_with_single_lhs( gr, C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp,& ! In
                                             wpthlp, rtp2_forcing, thlp2_forcing,            & ! In
                                             rtpthlp_forcing, sclrm, wpsclrp,                & ! In
                                             lhs_ta_wprtp2, lhs_ma, lhs_diff,                & ! In
@@ -526,7 +526,7 @@ module advance_xp2_xpyp_module
     else
         
         ! Left hand sides are potentially different, this requires multiple solves
-        call solve_xp2_xpyp_with_multiple_lhs( gr, C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d,     & ! In
+        call solve_xp2_xpyp_with_multiple_lhs( gr, C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, & ! In
                                                invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp,   & ! In
                                                rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! In
                                                sclrm, wpsclrp,                               & ! In

@@ -772,7 +772,7 @@ endif
     endif
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwpthlp2 > 0 ) then
-       wpthlp2 = calc_wpxp2_pdf( gr, wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),          &
+       wpthlp2 = calc_wpxp2_pdf( gr, wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),      &
                                  pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                &
                                  pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),      &
                                  pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),  &
@@ -781,7 +781,7 @@ endif
     endif
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwprtpthlp > 0 ) then
-       wprtpthlp = calc_wpxpyp_pdf( gr, wm, rtm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),      &
+       wprtpthlp = calc_wpxpyp_pdf( gr, wm, rtm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),  &
                                     pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                   &
                                     pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                 &
                                     pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),       &
@@ -800,7 +800,7 @@ endif
        do i = 1, sclr_dim
 
           wp2sclrp(:,i) &
-          = calc_wp2xp_pdf( gr, wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:),             &
+          = calc_wp2xp_pdf( gr, wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:),        &
                             sclr1(:,i), sclr2(:,i),                                     &
                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),               &
                             varnce_sclr1(:,i), varnce_sclr2(:,i),                       &
@@ -816,7 +816,7 @@ endif
                             pdf_params%mixt_frac(1,:) )
 
           wpsclrprtp(:,i) &
-          = calc_wpxpyp_pdf( gr, wm, sclrm(:,i), rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),       &
+          = calc_wpxpyp_pdf( gr, wm, sclrm(:,i), rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),  &
                              sclr1(:,i), sclr2(:,i),                                    &
                              pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                          &
                              pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),              &

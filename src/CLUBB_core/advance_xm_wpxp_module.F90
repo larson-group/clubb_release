@@ -551,7 +551,8 @@ module advance_xm_wpxp_module
     end if
 
                     
-    call  calc_xm_wpxp_ta_terms( gr, wprtp, wp2rtp, wpthlp, wp2thlp, wpsclrp, wp2sclrp, & ! intent(in)
+    call  calc_xm_wpxp_ta_terms( gr, wprtp, wp2rtp, wpthlp, &  ! intent(in)
+                                 wp2thlp, wpsclrp, wp2sclrp, & ! intent(in)
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, & ! intent(in)
                                  sigma_sqd_w, wp3_on_wp2, wp3_on_wp2_zt, & ! intent(in)
                                  pdf_implicit_coefs_terms, & ! intent(in)
@@ -587,7 +588,7 @@ module advance_xm_wpxp_module
                 .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) ) then
 
       ! LHS matrices are unique, multiple band solves required
-      call solve_xm_wpxp_with_multiple_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2,                   & ! In
+      call solve_xm_wpxp_with_multiple_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2,               & ! In
                                             l_clip_semi_implicit,                           & ! In
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,  & ! In
                                             thlm_forcing,   wpthlp_forcing, rho_ds_zm,      & ! In
@@ -609,29 +610,29 @@ module advance_xm_wpxp_module
     else
       
       ! LHS matrices are equivalent, only one solve required
-      call solve_xm_wpxp_with_single_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2,                     & ! In 
-                                          invrs_tau_C6_zm, tau_max_zm,                      & ! In
-                                          rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,    & ! In
-                                          thlm_forcing, wpthlp_forcing, rho_ds_zm,          & ! In
-                                          rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,      & ! In
-                                          thv_ds_zm, rtp2, thlp2, l_implemented,            & ! In
-                                          sclrpthvp, sclrm_forcing, sclrp2, um_forcing,     & ! In
-                                          vm_forcing, ug, vg, uprcp, vprcp, rc_coef, fcor,  & ! In
-                                          up2, vp2,                                         & ! In
-                                          low_lev_effect, high_lev_effect,                  & ! In
-                                          C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,          & ! In
-                                          lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,   & ! In
-                                          lhs_ta_wprtp,                                     & ! In
-                                          rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup,         & ! In
-                                          rhs_ta_wpvp, rhs_ta_wpsclrp,                      & ! In
-                                          lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,     & ! In
-                                          lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                  & ! In
-                                          l_predict_upwp_vpwp,                              & ! In
-                                          l_diffuse_rtm_and_thlm,                           & ! In
-                                          l_upwind_xm_ma,                                   & ! In
-                                          l_tke_aniso,                                      & ! In
-                                          rtm, wprtp, thlm, wpthlp,                         & ! Out
-                                          sclrm, wpsclrp, um, upwp, vm,vpwp )                 ! Out
+      call solve_xm_wpxp_with_single_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2,                & ! In 
+                                          invrs_tau_C6_zm, tau_max_zm,                     & ! In
+                                          rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,   & ! In
+                                          thlm_forcing, wpthlp_forcing, rho_ds_zm,         & ! In
+                                          rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,     & ! In
+                                          thv_ds_zm, rtp2, thlp2, l_implemented,           & ! In
+                                          sclrpthvp, sclrm_forcing, sclrp2, um_forcing,    & ! In
+                                          vm_forcing, ug, vg, uprcp, vprcp, rc_coef, fcor, & ! In
+                                          up2, vp2,                                        & ! In
+                                          low_lev_effect, high_lev_effect,                 & ! In
+                                          C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,         & ! In
+                                          lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,  & ! In
+                                          lhs_ta_wprtp,                                    & ! In
+                                          rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup,        & ! In
+                                          rhs_ta_wpvp, rhs_ta_wpsclrp,                     & ! In
+                                          lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,    & ! In
+                                          lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                 & ! In
+                                          l_predict_upwp_vpwp,                             & ! In
+                                          l_diffuse_rtm_and_thlm,                          & ! In
+                                          l_upwind_xm_ma,                                  & ! In
+                                          l_tke_aniso,                                     & ! In
+                                          rtm, wprtp, thlm, wpthlp,                        & ! Out
+                                          sclrm, wpsclrp, um, upwp, vm,vpwp )                ! Out
 
     endif ! l_clip_semi_implicit &
           ! .or. ( ( iiPDF_type == iiPDF_new ) &
@@ -1746,7 +1747,8 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_rhs
   
   !=============================================================================================
-  subroutine calc_xm_wpxp_ta_terms( gr, wprtp, wp2rtp, wpthlp, wp2thlp, wpsclrp, wp2sclrp, &
+  subroutine calc_xm_wpxp_ta_terms( gr, wprtp, wp2rtp, wpthlp, &
+                                    wp2thlp, wpsclrp, wp2sclrp, &
                                     rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                     sigma_sqd_w, wp3_on_wp2, wp3_on_wp2_zt, &
                                     pdf_implicit_coefs_terms, &

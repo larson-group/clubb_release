@@ -1261,15 +1261,16 @@ module mixing_length
 
 
 !-----------------------------------Begin Code---------------------------------------------------!
-  call calc_brunt_vaisala_freq_sqd( gr, zm2zt( gr, zt2zm( gr, thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
-                                          ice_supersat_frac, &
-                                          l_brunt_vaisala_freq_moist, &
-                                          l_use_thvm_in_bv_freq, &
-                                          brunt_vaisala_freq_sqd, &
-                                          brunt_vaisala_freq_sqd_mixed,&
-                                          brunt_vaisala_freq_sqd_dry, &
-                                          brunt_vaisala_freq_sqd_moist, &
-                                          brunt_vaisala_freq_sqd_plus )
+  call calc_brunt_vaisala_freq_sqd( gr, zm2zt(gr, zt2zm(gr, thlm)), &
+                                        exner, rtm, rcm, p_in_Pa, thvm, &
+                                        ice_supersat_frac, &
+                                        l_brunt_vaisala_freq_moist, &
+                                        l_use_thvm_in_bv_freq, &
+                                        brunt_vaisala_freq_sqd, &
+                                        brunt_vaisala_freq_sqd_mixed,&
+                                        brunt_vaisala_freq_sqd_dry, &
+                                        brunt_vaisala_freq_sqd_moist, &
+                                        brunt_vaisala_freq_sqd_plus )
 
 
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )

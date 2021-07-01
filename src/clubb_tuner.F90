@@ -68,7 +68,7 @@ program clubb_tuner
   end if ! l_save_tuning_run
 
   ! Read in namelists and define parameters
-  call tuner_init( gr, l_read_files=.true. )
+  call tuner_init( l_read_files=.true. )
 
   ! Attempt to find the optimal parameter set
   do
@@ -165,7 +165,7 @@ program clubb_tuner
     end if
 
 
-    call tuner_init( gr, l_read_files=.false. )
+    call tuner_init( l_read_files=.false. )
 
 
   end do ! user_response /= 'y', 'Y' or 'yes'

@@ -235,6 +235,8 @@ module clubb_api_module
   use stats_sfc_module, only : &
     nvarmax_sfc
 
+  use grid_class, only: grid ! Type
+
   implicit none
 
   private
@@ -329,7 +331,8 @@ module clubb_api_module
     hmp2_ip_on_hmm2_ip, &
     Ncnp2_on_Ncnm2,     &
     hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
-    hmp2_ip_on_hmm2_ip_intrcpt_type
+    hmp2_ip_on_hmm2_ip_intrcpt_type, &
+    grid
 
   public &
     ! To Interact With CLUBB's Grid:
@@ -579,7 +582,7 @@ contains
     use model_flags, only: &
         clubb_config_flags_type
 
-    use grid_class, only: grid
+    
 
     implicit none
 
@@ -820,7 +823,7 @@ contains
   ! setup_clubb_core - Sets up the model for execution.
   !================================================================================================
 
-  subroutine setup_clubb_core_api( gr, &
+  subroutine setup_clubb_core_api( &
     nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
     hydromet_dim_in, sclr_dim_in,                       & ! intent(in)
     sclr_tol_in, edsclr_dim_in, params,                 & ! intent(in)
@@ -842,11 +845,9 @@ contains
 #ifdef GFDL
     cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
-    err_code_api )                                        ! intent(out) 
+    gr, err_code_api )                                        ! intent(out) 
 
     use advance_clubb_core_module, only : setup_clubb_core
-
-    use grid_class, only: grid ! Type
 
     use parameter_indices, only:  &
         nparams ! Variable(s)
@@ -995,7 +996,7 @@ contains
 
     use advance_clubb_core_module, only : cleanup_clubb_core
 
-    use grid_class, only: grid
+    
 
     implicit none
 
@@ -1173,7 +1174,7 @@ contains
 
     use fill_holes, only : fill_holes_driver
 
-    use grid_class, only: grid
+    
 
     implicit none
 
@@ -1222,7 +1223,7 @@ contains
 
     use fill_holes, only : fill_holes_vertical
 
-    use grid_class, only: grid ! Type
+     ! Type
 
     implicit none
 
@@ -1321,10 +1322,10 @@ contains
   ! setup_grid_heights - Sets the heights and interpolation weights of the column.
   !================================================================================================
 
-  subroutine setup_grid_heights_api( gr, &
+  subroutine setup_grid_heights_api( &
     l_implemented, grid_type,  &
     deltaz, zm_init, momentum_heights,  &
-    thermodynamic_heights )
+    gr, thermodynamic_heights )
 
     use grid_class, only: & 
         grid, & ! Type
@@ -1484,7 +1485,7 @@ contains
     use parameter_indices, only:  &
         nparams ! Variable(s)
 
-    use grid_class, only: grid
+    
 
     implicit none
 
@@ -1550,7 +1551,7 @@ contains
 
     use parameters_tunable, only : adj_low_res_nu
 
-    use grid_class, only: grid
+    
 
     implicit none
 
@@ -1927,7 +1928,7 @@ contains
         err_code, &         ! Error Indicator
         clubb_fatal_error   ! Constant
 
-    use grid_class, only: grid
+    
 
     implicit none
 
@@ -2118,7 +2119,7 @@ contains
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
-    use grid_class, only: grid
+    
 
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
@@ -2392,7 +2393,7 @@ contains
 
     use stats_clubb_utilities, only : stats_accumulate_hydromet
 
-    use grid_class, only: grid
+    
 
     implicit none
 
@@ -2766,7 +2767,7 @@ contains
     use advance_xp2_xpyp_module, only: &
         update_xp2_mc
 
-    use grid_class, only: grid ! Type
+     ! Type
 
     implicit none
 
@@ -3495,7 +3496,7 @@ contains
         sponge_damp_profile,        &
         initialize_tau_sponge_damp    ! Procedure(s)
 
-    use grid_class, only: grid
+    
 
     implicit none
 
