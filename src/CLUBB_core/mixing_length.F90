@@ -1261,7 +1261,7 @@ module mixing_length
 
 
 !-----------------------------------Begin Code---------------------------------------------------!
-  call calc_brunt_vaisala_freq_sqd( gr, zm2zt(gr, zt2zm(gr, thlm)), &
+  call calc_brunt_vaisala_freq_sqd( gr, zm2zt( gr, zt2zm( gr, thlm )), &
                                         exner, rtm, rcm, p_in_Pa, thvm, &
                                         ice_supersat_frac, &
                                         l_brunt_vaisala_freq_moist, &
