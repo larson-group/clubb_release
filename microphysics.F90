@@ -837,8 +837,8 @@ end subroutine micro_flux
 #ifdef CLUBB
 subroutine micro_proc( gr )
 #else
-subroutine micro_proc( gr )
-#endif /* CLUBB */
+subroutine micro_proc()
+#endif
 
 
 use params, only: fac_cond, fac_sub, rgas
@@ -895,7 +895,9 @@ implicit none
 
 #ifdef CLUBB
 type(grid), target, intent(in) :: gr
+
 #endif /* CLUBB */
+
 
 real, dimension(nzm) :: &
      tmpqcl, tmpqci, tmpqr, tmpqs, tmpqg, tmpqv, &
