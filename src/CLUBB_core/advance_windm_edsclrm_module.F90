@@ -31,7 +31,8 @@ module advance_windm_edsclrm_module
 
   !=============================================================================
   subroutine advance_windm_edsclrm &
-             ( gr, dt, wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, &
+             ( gr, dt, wm_zt, Km_zm, Kmh_zm, &
+               ug, vg, um_ref, vm_ref, &
                wp2, up2, vp2, um_forcing, vm_forcing, &
                edsclrm_forcing, &
                rho_ds_zm, invrs_rho_ds_zt, &
@@ -1820,7 +1821,7 @@ module advance_windm_edsclrm_module
     K_zm(1:gr%nz) = rho_ds_zm(1:gr%nz) * Km_zm(1:gr%nz)   ! Calculate coefs of eddy diffusivity
     
     ! RHS turbulent advection term, for grid level 3 - gr%nz
-    call diffusion_zt_lhs( gr, K_zm(1:gr%nz), nu(1:gr%nz),                   & ! Intent(in)
+    call diffusion_zt_lhs( gr, K_zm(1:gr%nz), nu(1:gr%nz),               & ! Intent(in)
                            gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
                            lhs_diff(1:3,1:gr%nz)                         ) ! Intent(out)
 

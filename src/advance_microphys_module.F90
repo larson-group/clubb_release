@@ -1753,7 +1753,8 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    call diffusion_zt_lhs( gr, rho_ds_zm * K_hm, nu, gr%invrs_dzm, gr%invrs_dzt, &
+    call diffusion_zt_lhs( gr, rho_ds_zm * K_hm, nu, &
+                           gr%invrs_dzm, gr%invrs_dzt, &
                            lhs_ta )
 
     do k = 2, gr%nz, 1
@@ -2072,7 +2073,8 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    call diffusion_zt_lhs( gr, rho_ds_zm * K_hm, nu, gr%invrs_dzm, gr%invrs_dzt, &
+    call diffusion_zt_lhs( gr, rho_ds_zm * K_hm, nu, &
+                           gr%invrs_dzm, gr%invrs_dzt, &
                            lhs_ta )
 
     do k = 2, gr%nz, 1

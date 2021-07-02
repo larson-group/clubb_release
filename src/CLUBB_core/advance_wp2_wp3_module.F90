@@ -835,7 +835,7 @@ module advance_wp2_wp3_module
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    call wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &                 ! intent(in)
+    call wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &             ! intent(in)
                    coef_wp4_implicit, wp2up2, wp2vp2, wp4, &                         ! intent(in)
                    wpthvp, wp2thvp, um, vm, &                                        ! intent(in)
                    upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt,  &                     ! intent(in)
@@ -861,7 +861,8 @@ module advance_wp2_wp3_module
     ! Build the left-hand side matrix.
     call wp23_lhs( gr, dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  & ! intent(in)
                    wp3_on_wp2, coef_wp4_implicit, & ! intent(in)
-                   Kw1, Kw8, Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & !intent(in)
+                   Kw1, Kw8, Skw_zt, & ! intent(in) 
+                   invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & !intent(in)
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, & ! intent(in)
                    invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, & ! intent(in)
                    iiPDF_type, & ! intent(in)
@@ -1201,7 +1202,8 @@ module advance_wp2_wp3_module
   !=================================================================================
   subroutine wp23_lhs( gr, dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, coef_wp4_implicit, &
-                       Kw1, Kw8, Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
+                       Kw1, Kw8, Skw_zt, &
+                       invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                        invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
                        iiPDF_type, &
@@ -1445,12 +1447,14 @@ module advance_wp2_wp3_module
 
 
     ! Calculate diffusion term for w'2 using a completely implicit time step
-    call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
+    call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:), & ! intent(in)
+                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
                            lhs_diff_zm(:,:) ) ! intent(out)
 
 
     ! Calculate diffusion term for w'3 using a completely implicit time step
-    call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:), gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
+    call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:), & ! intent(in)
+                           gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
                            lhs_diff_zt(:,:) ) ! intent(out)
 
     lhs_diff_zt(:,:) = lhs_diff_zt(:,:) * C12
@@ -2218,7 +2222,8 @@ module advance_wp2_wp3_module
                            rhs_pr3_wp2(:) )                                         ! intent(out)
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_rhs( gr, C1_Skw_fnc(:), invrs_tau_C1_zm(:), w_tol_sqd, up2(:), vp2(:), & ! intent(in)
+    call wp2_term_dp1_rhs( gr, C1_Skw_fnc(:), invrs_tau_C1_zm(:), & ! intent(in)
+                           w_tol_sqd, up2(:), vp2(:), & ! intent(in)
                            l_damp_wp2_using_em, & ! intent(in)
                            rhs_dp1_wp2(:) ) ! intent(out)
 
@@ -3146,7 +3151,8 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_bp_pr2_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_dp1_rhs( gr, C1_Skw_fnc, invrs_tau1m, threshold, up2, vp2, &
+  pure subroutine wp2_term_dp1_rhs( gr, C1_Skw_fnc, invrs_tau1m, &
+                                    threshold, up2, vp2, &
                                     l_damp_wp2_using_em, &
                                     rhs_dp1_wp2 )
 

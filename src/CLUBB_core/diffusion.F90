@@ -31,8 +31,9 @@ module diffusion
   contains
 
   !=============================================================================
-  pure subroutine diffusion_zt_lhs( gr, K_zm, nu, invrs_dzm, invrs_dzt, & ! In
-                                    lhs )                             ! Out
+  pure subroutine diffusion_zt_lhs( gr, K_zm, nu, &         ! In
+                                    invrs_dzm, invrs_dzt, & ! In
+                                    lhs )                   ! Out
 
     ! Description:
     ! Vertical eddy diffusion of var_zt:  implicit portion of the code.
@@ -504,8 +505,9 @@ module diffusion
   end function diffusion_cloud_frac_zt_lhs
 
   !=============================================================================
-  pure subroutine diffusion_zm_lhs( gr, K_zt, nu, invrs_dzt, invrs_dzm, & ! In
-                                    lhs )                             ! Out
+  pure subroutine diffusion_zm_lhs( gr, K_zt, nu, &         ! In
+                                    invrs_dzt, invrs_dzm, & ! In
+                                    lhs )                   ! Out
 
     ! Description:
     ! Vertical eddy diffusion of var_zm:  implicit portion of the code.

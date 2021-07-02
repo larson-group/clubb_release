@@ -1364,7 +1364,8 @@ module advance_clubb_core_module
       end if
 
       ! Determine stability correction factor
-      stability_correction = calc_stability_correction( gr, thlm, Lscale, em, exner, rtm, rcm, & ! In
+      stability_correction = calc_stability_correction( gr, thlm, Lscale, em, &
+                                              exner, rtm, rcm, & ! In
                                               p_in_Pa,thvm, ice_supersat_frac, & ! In
                                               clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
                                               clubb_config_flags%l_use_thvm_in_bv_freq ) ! In
@@ -1803,7 +1804,8 @@ module advance_clubb_core_module
         edsclrm(:,edsclr_dim)=rtm(:)
       endif
 
-      call advance_windm_edsclrm( gr, dt, wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, & ! intent(in)
+      call advance_windm_edsclrm( gr, dt, wm_zt, Km_zm, Kmh_zm,                 & ! intent(in)
+                                  ug, vg, um_ref, vm_ref,                       & ! intent(in)
                                   wp2, up2, vp2, um_forcing, vm_forcing,        & ! intent(in)
                                   edsclrm_forcing,                              & ! intent(in)
                                   rho_ds_zm, invrs_rho_ds_zt,                   & ! intent(in)
