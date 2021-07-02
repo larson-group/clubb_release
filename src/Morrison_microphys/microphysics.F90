@@ -834,7 +834,11 @@ end subroutine micro_flux
 ! proceses is the liquid/ice water static energy: t = tabs + gz - Lc (qc+qr) - Ls (qi+qs+qg) 
 ! It should not be changed during all of your point microphysical processes!
 
+#ifdef CLUBB
 subroutine micro_proc( gr )
+#else
+subroutine micro_proc()
+#endif
 
 use params, only: fac_cond, fac_sub, rgas
 use grid_config, only: z, zi
@@ -887,7 +891,9 @@ use clubb_silhs_vars, only: &
 
 implicit none 
 
+#ifdef CLUBB
 type(grid), target, intent(in) :: gr
+#endif
 
 real, dimension(nzm) :: &
      tmpqcl, tmpqci, tmpqr, tmpqs, tmpqg, tmpqv, &
