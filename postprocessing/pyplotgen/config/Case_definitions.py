@@ -877,7 +877,8 @@ WANGARA = {'name': 'wangara',
            'height_min_value': 0, 'height_max_value': 1900,
 
            'blacklisted_vars': ['Ngm'],
-           'sam_benchmark_file': None,
+           'sam_benchmark_file': {'sam_benchmark': SAM_BENCHMARK_OUTPUT_ROOT +
+                                                   "/WANGARA/WANGARA_64x64x80_100m_40m_LES.nc"},
            'clubb_file': {'zm': clubb_output_root + '/wangara_zm.nc',
                           'zt': clubb_output_root + '/wangara_zt.nc',
                           'sfc': clubb_output_root + '/wangara_sfc.nc'},
