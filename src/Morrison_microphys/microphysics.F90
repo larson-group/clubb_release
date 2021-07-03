@@ -840,6 +840,7 @@ subroutine micro_proc( gr )
 subroutine micro_proc()
 #endif
 
+
 use params, only: fac_cond, fac_sub, rgas
 use grid_config, only: z, zi
 use vars, only: t,  gamaz, precsfc, precflux, qpfall, tlat, prec_xy, &
@@ -871,14 +872,15 @@ use grid_config, only: nz
 use clubb_api_module, only: &
   clubb_at_least_debug_level_api, &
   fill_holes_vertical_api, &
-  core_rknd
+  core_rknd, &
+  grid
 use clubbvars, only: wp2, cloud_frac, rho_ds_zt, rho_ds_zm ! are used, but not modified here
 use vars, only: qcl ! Used here and updated in micro_diagnose
 use vars, only: prespot ! exner^-1
 use module_mp_GRAUPEL, only: &
   cloud_frac_thresh ! Threshold for using sgs cloud fraction to weight 
                     ! microphysical quantities [%]
-use grid_class, only: grid ! Type
+
 
 #endif
 #ifdef SILHS
@@ -893,7 +895,9 @@ implicit none
 
 #ifdef CLUBB
 type(grid), target, intent(in) :: gr
-#endif
+
+#endif /* CLUBB */
+
 
 real, dimension(nzm) :: &
      tmpqcl, tmpqci, tmpqr, tmpqs, tmpqg, tmpqv, &
