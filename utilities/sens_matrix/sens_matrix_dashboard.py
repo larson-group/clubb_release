@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 import pdb
 
-from analyze_sensitivity_matrix import analyzeSensMatrix
+from analyze_sensitivity_matrix import analyzeSensMatrix, setupObsCol, setupDefaultMetricValsCol
 from test_analyzeSensMatrix import write_test_netcdf_files
 
 # The parameters are tunable model parameters.
@@ -62,39 +62,39 @@ from test_analyzeSensMatrix import write_test_netcdf_files
 # Column vector of (positive) weights.  A small value de-emphasizes
 #   the corresponding metric in the fit.
 metricsNamesAndWeights = [ \
-                        ['SWCF_GLB', 2.], \
-                        ['SWCF_DYCOMS', 1.], \
-                        ['SWCF_HAWAII', 1.], \
-                        ['SWCF_VOCAL', 1.], \
-                        ['SWCF_LBA', 1.], \
-                        ['SWCF_WP', 1.], \
-                        ['SWCF_EP', 1.], \
-                        ['SWCF_NP', 1.], \
-                        ['SWCF_SP', 1.], \
-                        ['SWCF_PA', 1.], \
-                        ['SWCF_CAF', 1.], \
-                        ['LWCF_GLB', 2.], \
-##                        ['LWCF_DYCOMS', 0.1], \
-##                        ['LWCF_HAWAII', 0.1], \
-##                        ['LWCF_VOCAL', 0.1], \
-                        ['LWCF_LBA', 1.], \
-                        ['LWCF_WP', 1.], \
-                        ['LWCF_EP', 1.], \
-                        ['LWCF_NP', 1.], \
-                        ['LWCF_SP', 1.], \
-                        ['LWCF_PA', 1.], \
-                        ['LWCF_CAF', 1.], \
-                        ['PRECT_GLB', 2.], \
-##                        ['PRECT_DYCOMS', 0.1], \
-##                        ['PRECT_HAWAII', 0.1], \
-##                        ['PRECT_VOCAL', 0.1], \
-                        ['PRECT_LBA', 1.], \
-                        ['PRECT_WP', 1.], \
-                        ['PRECT_EP', 1.], \
-                        ['PRECT_NP', 1.], \
-                        ['PRECT_SP', 1.], \
-                        ['PRECT_PA', 1.], \
-                        ['PRECT_CAF', 1.] \
+                        ['SWCF_GLB', 2.01], \
+                        ['SWCF_DYCOMS', 0.01], \
+                        ['SWCF_HAWAII', 0.01], \
+                        ['SWCF_VOCAL', 2.01], \
+                        ['SWCF_LBA', 0.01], \
+                        ['SWCF_WP', 0.01], \
+                        ['SWCF_EP', 0.01], \
+                        ['SWCF_NP', 0.01], \
+                        ['SWCF_SP', 0.01], \
+                        ['SWCF_PA', 0.01], \
+                        ['SWCF_CAF', 0.01], \
+                        ['LWCF_GLB', 2.01], \
+#                        ['LWCF_DYCOMS', 0.01], \
+#                        ['LWCF_HAWAII', 0.01], \
+#                        ['LWCF_VOCAL', 0.01], \
+                        ['LWCF_LBA', 0.01], \
+                        ['LWCF_WP', 0.01], \
+                        ['LWCF_EP', 0.01], \
+                        ['LWCF_NP', 0.01], \
+                        ['LWCF_SP', 0.01], \
+                        ['LWCF_PA', 0.01], \
+                        ['LWCF_CAF', 0.01], \
+                        ['PRECT_GLB', 2.01], \
+#                        ['PRECT_DYCOMS', 0.01], \
+#                        ['PRECT_HAWAII', 0.01], \
+#                        ['PRECT_VOCAL', 0.01], \
+                        ['PRECT_LBA', 0.01], \
+                        ['PRECT_WP', 0.01], \
+                        ['PRECT_EP', 0.01], \
+                        ['PRECT_NP', 0.01], \
+                        ['PRECT_SP', 0.01], \
+                        ['PRECT_PA', 0.01], \
+                        ['PRECT_CAF', 2.01] \
                          ]
 
 
@@ -111,21 +111,20 @@ metricsWeights = dfMetricsNamesAndWeights[['metricsWeights']].to_numpy()
 # paramsNames designates the parameter whose value is changed in the corresponding sensitivity simulation.
 # The float listed below is a factor that is used below for scaling plots.
 paramsNamesScalesAndFilenames = [ \
-#                  ['clubb_c8', 1.0, 'devel/anvil.devel.C82.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.0, 'devel/anvil.devel.n2thres3.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_n2', 1.0, 'devel/anvil.devel.n21.ne30_ne30_Regional.nc'], \
-#                  ['prc_exp', 1.0, 'devel/anvil.devel.prc2.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_wpxp_ri', 1.0, 'devel/anvil.devel.ri4.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_n2_clear_wp3', 1.0, 'devel/anvil.devel.wp35.ne30_ne30_Regional.nc'], \
-                  ['clubb_c8', 1.0, '20210505/anvil.devel.0503_c8p4.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, '20210505/anvil.devel.0503_thresh2.2.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_n2', 1.0, '20210505/anvil.devel.0503_n2p4.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_k10', 1.0, '20210505/anvil.devel.0503_ck10p3.ne30_ne30_Regional.nc'], \
-                  ['vqit', 1.0, '20210505/anvil.devel.0503_vqitp4.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_wpxp_ri', 1.0, '20210505/anvil.devel.0503_ri5.ne30_ne30_Regional.nc'], \
-#                  ['clubb_gamma_coef', 1.0, '20210505/anvil.devel.0503_gap2.ne30_ne30_Regional.nc'], \
-#                  ['max_total_ni', 1.0, '20210505/anvil.devel.0503_ni700.ne30_ne30_Regional.nc'], \
-#                  ['cldfrc_rhminl', 1.0, '20210505/anvil.devel.0503_rhp9.ne30_ne30_Regional.nc'] \
+#                  ['clubb_c8', 1.0, '20210515/anvil.newp3.vqitp4_c81.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, '20210515/anvil.newp3.vqitp4_thres2p8.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_n2', 1.0, '20210515/anvil.newp3.vqitp4_n2p5.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_k10', 1.0, '20210515/anvil.newp3.vqitp4_ck10p3.ne30_ne30_Regional.nc'], \
+#                  ['vqit', 1.0, '20210515/anvil.newp3.vqitp35.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_ri', 1.0, '20210515/anvil.newp3.vqitp4_ri5.ne30_ne30_Regional.nc'], \
+#                  ['clubb_gamma_coef', 1.0, '20210515/anvil.newp3.vqitp4_gap2.ne30_ne30_Regional.nc'], \
+#                  ['max_total_ni', 1.0, '20210515/anvil.newp3.vqitp4_ni700.ne30_ne30_Regional.nc'], \
+#                  ['cldfrc_rhminl', 1.0, '20210515/anvil.newp3.vqitp4_rhp9.ne30_ne30_Regional.nc'] \
+                  ['clubb_c8', 1.0, '20210705/anvil.0703.c8p3.ne30pg2_r05_oECv3_Regional.nc'], \
+                  ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, '20210705/anvil.0703.n2thresp3.ne30pg2_r05_oECv3_Regional.nc'], \
+                  ['clubb_c_invrs_tau_n2', 1.0, '20210705/anvil.0703.n2p2.ne30pg2_r05_oECv3_Regional.nc'], \
+                  ['clubb_c_k10', 1.0, '20210705/anvil.0703.ck10p7.ne30pg2_r05_oECv3_Regional.nc'], \
+                  ['vqit', 1.0, '20210705/anvil.0703.vqitp5.ne30pg2_r05_oECv3_Regional.nc'], \
                         ]
 
 dfparamsNamesScalesAndFilenames =  \
@@ -144,13 +143,12 @@ transformedParamsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2', 'clubb_c_i
 
 # Netcdf file containing metric and parameter values from the default simulation
 defaultNcFilename = \
-    '20210505/anvil.devel.NGD_thres2p3_vqitp5.ne30_ne30_Regional.nc'#'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
-#    'devel/anvil.devel.base.ne30_ne30_Regional.nc'
+        '20210705/anvil.0703.newdefault_n2thresp25.ne30pg2_r05_oECv3_Regional.nc'
 
 # Metrics from simulation that use the SVD-recommended parameter values
 # Here, we use default simulation just as a placeholder.
 linSolnNcFilename = \
-   '20210505/anvil.devel.NGD_thres2p3_vqitp5.ne30_ne30_Regional.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+        '20210705/anvil.0703.newdefault_n2thresp25.ne30pg2_r05_oECv3_Regional.nc'
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
 # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -181,16 +179,30 @@ paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
                         sensNcFilenames, defaultNcFilename,
                         obsMetricValsDict)
 
+# Set up a column vector of observed metrics
+obsMetricValsCol = setupObsCol(obsMetricValsDict, metricsNames)
+
+# Set up a column vector of metric values from the default simulation
+linSolnMetricValsCol = setupDefaultMetricValsCol(metricsNames, linSolnNcFilename)
+
+# Set up a column vector of metric values from the default simulation
+defaultMetricValsCol = setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
+
+# Store biases in default simulation
+linSolnBiasesCol = np.subtract(linSolnMetricValsCol, defaultMetricValsCol)
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 sensMatrixDashboard = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # Plot the biases of the default simulation and the SVD approximation of that
-biasesMatrix = np.dstack((defaultBiasesCol,defaultBiasesApprox, defaultBiasesApproxPC)).squeeze()
+biasesMatrix = np.dstack((defaultBiasesCol,defaultBiasesApprox,
+                          defaultBiasesApproxPC,linSolnBiasesCol)).squeeze()
 fracBiasesMatrix = np.diagflat(np.reciprocal(np.abs(defaultMetricValsCol))) @ biasesMatrix
 df = pd.DataFrame(fracBiasesMatrix,
                   index=metricsNames,
-                  columns= ['fracDefBias', 'fracDefBiasApprox', 'defaultBiasesApproxPC'])
+                  columns= ['fracDefBias', 'fracDefBiasApprox',
+                            'fracDefaultBiasesApproxPC','fracLinSolnBiasesCol'])
 biasesFig = px.line(df, x=df.index, y=df.columns,
               title = 'Fractional biases of default simulation and approximations thereof.')
 biasesFig.update_yaxes(title="-(Sim-Obs) / abs(default metric value)")

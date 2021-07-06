@@ -63,7 +63,7 @@ def main():
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                       metricsWeights,
                       sensNcFilenames, defaultNcFilename,
-                      obsMetricValsDict)
+                       obsMetricValsDict)
 
     # See if new global simulation output based on a linear combination
     #    of the SVD-calculated parameter values matches what we expect.
@@ -128,13 +128,18 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
     # Set up a column vector of observed metrics
     obsMetricValsCol = \
-            setupObsCol(obsMetricValsDict, metricsNames, numMetrics)
+            setupObsCol(obsMetricValsDict, metricsNames)
+
+    # Set up a column vector of metric values from the default simulation
+    defaultMetricValsCol = \
+        setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
 
     # Based on the default simulation,
     #    set up a column vector of metrics and a row vector of parameter values.
-    defaultMetricValsCol, defaultParamValsRow, defaultParamValsOrigRow = \
-            setupDefaultVectors(metricsNames, paramsNames, transformedParamsNames,
+    defaultParamValsRow, defaultParamValsOrigRow = \
+            setupDefaultParamVectors(metricsNames, paramsNames, transformedParamsNames,
                                 numMetrics, numParams,
+                                defaultMetricValsCol,
                                 defaultNcFilename)
 
     # Make sure that each sensitivity simulation changes one and only one parameter.
@@ -413,6 +418,7 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
     halfNumSVals = np.floor_divide( sValsTrunc.size, 2 )
     sValsInvPC = np.zeros_like(sValsTruncInv)
     #sValsInvPC[0:halfNumSVals] = sValsTruncInv[0:halfNumSVals]
+    # Syntax: (a_truncated = a[0:a.size-2] lops off the last two elements of `a`.)
     sValsInvPC[0:sValsTruncInv.size-2] = sValsTruncInv[0:sValsTruncInv.size-2]
 
     #pdb.set_trace()
@@ -469,7 +475,7 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, 
 
     return ( paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, defaultBiasesApprox )
 
-def setupObsCol(obsMetricValsDict, metricsNames, numMetrics):
+def setupObsCol(obsMetricValsDict, metricsNames):
     """
     Input: A python dictionary of observed metrics.
     Output: A column vector of observed metrics
@@ -477,6 +483,9 @@ def setupObsCol(obsMetricValsDict, metricsNames, numMetrics):
 
     import numpy as np
     import pdb
+
+    # Number of metrics
+    numMetrics = len(metricsNames)
 
     # Set up column vector of numMetrics elements containing
     # "true" metric values from observations
@@ -490,17 +499,17 @@ def setupObsCol(obsMetricValsDict, metricsNames, numMetrics):
 
     return obsMetricValsCol
 
-def setupDefaultVectors(metricsNames, paramsNames, transformedParamsNames,
-                        numMetrics, numParams,
-                        defaultNcFilename):
+def setupDefaultMetricValsCol(metricsNames, defaultNcFilename):
     """
-    Input: Filename containing default-simulation metrics and parameters.
-    Output: Column vector of default-sim metrics,
-            and row vector of default-sim parameter values.
+    Input: Filename containing default-simulation metrics.
+    Output: Column vector of default-sim metrics.
     """
 
     import numpy as np
     import netCDF4
+
+    # Number of metrics
+    numMetrics = len(metricsNames)
 
     # Read netcdf file with metrics and parameters from default simulation
     f_defaultMetricsParams = netCDF4.Dataset(defaultNcFilename, 'r')
@@ -516,6 +525,25 @@ def setupDefaultVectors(metricsNames, paramsNames, transformedParamsNames,
 
     print("\ndefaultMetricValsCol =")
     print(defaultMetricValsCol)
+
+    f_defaultMetricsParams.close()
+
+    return defaultMetricValsCol
+
+def setupDefaultParamVectors(metricsNames, paramsNames, transformedParamsNames,
+                        numMetrics, numParams,
+                        defaultMetricValsCol,
+                        defaultNcFilename):
+    """
+    Input: Filename containing default-simulation metrics and parameters.
+    Output: Row vector of default-sim parameter values.
+    """
+
+    import numpy as np
+    import netCDF4
+
+    # Read netcdf file with metrics and parameters from default simulation
+    f_defaultMetricsParams = netCDF4.Dataset(defaultNcFilename, 'r')
 
     # Create row vector size numParams containing
     # parameter values from default simulation
@@ -541,7 +569,7 @@ def setupDefaultVectors(metricsNames, paramsNames, transformedParamsNames,
 
     f_defaultMetricsParams.close()
 
-    return (defaultMetricValsCol, defaultParamValsRow, defaultParamValsOrigRow)
+    return (defaultParamValsRow, defaultParamValsOrigRow)
 
 def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
