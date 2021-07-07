@@ -3257,7 +3257,10 @@ module advance_clubb_core_module
         if ( l_damp_wp2_using_em .and. &
            (abs(params(iC1) - params(iC14)) > abs(params(iC1) + params(iC14)) / 2 * eps .or. &
              l_stability_correct_tau_zm) ) then
-          write(fstderr,*) "l_damp_wp2_using_em requires C1=C14 and l_stability_correct_tau_zm = F"
+          write(fstderr,*) "l_damp_wp2_using_em = T requires C1=C14 and l_stability_correct_tau_zm = F"
+          write(fstderr,*) "C1 = ", params(iC1)
+          write(fstderr,*) "C14 = ", params(iC14)
+          write(fstderr,*) "l_stability_correct_tau_zm = ", l_stability_correct_tau_zm
           write(fstderr,*) "Fatal error in setup_clubb_core"
           err_code = clubb_fatal_error
           err_code_out = clubb_fatal_error
@@ -3280,9 +3283,9 @@ module advance_clubb_core_module
         ! Add new saturation formulas after this
 
       case default
-        write(fstderr,*) "Error in setup_clubb_core."
         write(fstderr,*) "Unknown approx. of saturation vapor pressure: "// &
           trim( saturation_formula )
+        write(fstderr,*) "Fatal error in setup_clubb_core"
         err_code = clubb_fatal_error
         err_code_out = clubb_fatal_error
         return
@@ -3291,9 +3294,9 @@ module advance_clubb_core_module
       ! Check for the type of two component normal (double Gaussian) PDF being
       ! used for w, rt, and theta-l (or w, chi, and eta).
       if ( iiPDF_type < iiPDF_ADG1 .or. iiPDF_type > iiPDF_new_hybrid ) then
-         write(fstderr,*) "Error in setup_clubb_core."
-         write(fstderr,*) "Unknown type of double Gaussian PDF selected."
+         write(fstderr,*) "Unknown type of double Gaussian PDF selected: ", iiPDF_type
          write(fstderr,*) "iiPDF_type = ", iiPDF_type
+         write(fstderr,*) "Fatal error in setup_clubb_core"
          err_code = clubb_fatal_error
          err_code_out = clubb_fatal_error
          return
@@ -3302,11 +3305,11 @@ module advance_clubb_core_module
       ! The ADG2 and 3D Luhar PDFs can only be used as part of input fields.
       if ( iiPDF_type == iiPDF_ADG2 ) then
          if ( .not. l_input_fields ) then
-            write(fstderr,*) "Error in setup_clubb_core."
             write(fstderr,*) "The ADG2 PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
             err_code_out = clubb_fatal_error
             return
@@ -3315,11 +3318,11 @@ module advance_clubb_core_module
 
       if ( iiPDF_type == iiPDF_3D_Luhar ) then
          if ( .not. l_input_fields ) then
-            write(fstderr,*) "Error in setup_clubb_core."
             write(fstderr,*) "The 3D Luhar PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
             err_code_out = clubb_fatal_error
             return
@@ -3330,11 +3333,11 @@ module advance_clubb_core_module
       ! implemented.
       if ( iiPDF_type == iiPDF_new ) then
          if ( .not. l_input_fields ) then
-            write(fstderr,*) "Error in setup_clubb_core."
             write(fstderr,*) "The new PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
             err_code_out = clubb_fatal_error
             return
@@ -3345,11 +3348,11 @@ module advance_clubb_core_module
       ! implemented.
       if ( iiPDF_type == iiPDF_TSDADG ) then
          if ( .not. l_input_fields ) then
-            write(fstderr,*) "Error in setup_clubb_core."
             write(fstderr,*) "The new TSDADG PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
             err_code_out = clubb_fatal_error
             return
@@ -3359,11 +3362,11 @@ module advance_clubb_core_module
       ! This also applies to Lewellen and Yoh (1993).
       if ( iiPDF_type == iiPDF_LY93 ) then
          if ( .not. l_input_fields ) then
-            write(fstderr,*) "Error in setup_clubb_core."
             write(fstderr,*) "The Lewellen and Yoh PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
+            write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
             err_code_out = clubb_fatal_error
             return
@@ -3373,7 +3376,8 @@ module advance_clubb_core_module
       ! Check the option for the placement of the call to CLUBB's PDF.
       if ( ipdf_call_placement < ipdf_pre_advance_fields &
            .or. ipdf_call_placement > ipdf_pre_post_advance_fields ) then
-         write(fstderr,*) "Invalid option selected for ipdf_call_placement"
+         write(fstderr,*) "Invalid option selected for ipdf_call_placement: ", ipdf_call_placement
+         write(fstderr,*) "Fatal error in setup_clubb_core"
          err_code = clubb_fatal_error
          err_code_out = clubb_fatal_error
          return
@@ -3392,6 +3396,7 @@ module advance_clubb_core_module
             write(fstderr,*) "The l_explicit_turbulent_adv_wpxp option" &
                              // " is not currently set up for use with the" &
                              // " l_predict_upwp_vpwp code."
+            write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
             err_code_out = clubb_fatal_error
             return
@@ -3406,6 +3411,7 @@ module advance_clubb_core_module
             write(fstderr,*) "Currently, only the ADG1 PDF and the new hybrid" &
                              // " PDF are set up for use with the" &
                              // " l_predict_upwp_vpwp code."
+            write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
             err_code_out = clubb_fatal_error
             return
@@ -3415,6 +3421,7 @@ module advance_clubb_core_module
             write(fstderr,*) "Currently,  ipdf_call_placement == ipdf_post_advance_fields" &
                              // " is incompatible with the l_predict_upwp_vpwp code" &
                              // " because uprcp has not been fed through advance_clubb_core."
+            write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
             err_code_out = clubb_fatal_error
             return
@@ -3426,13 +3433,13 @@ module advance_clubb_core_module
       call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)
                        grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
                        momentum_heights, thermodynamic_heights, & ! intent(in)
-                       gr, begin_height, end_height                 ) ! intent(out)
+                       gr, begin_height, end_height             ) ! intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
           err_code_out = err_code
 
-          write(fstderr,*) "Error in setup_clubb_core"
+          write(fstderr,*) "Error calling setup_grid"
 
           write(fstderr,*) "Intent(in)"
 
@@ -3445,6 +3452,7 @@ module advance_clubb_core_module
           write(fstderr,*) "T0_in = ", T0_in
           write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
           write(fstderr,*) "params = ", params
+          write(fstderr,*) "Fatal error in setup_clubb_core"
           return
 
         end if
@@ -3487,7 +3495,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
 
-            write(fstderr,*) "Error in setup_clubb_core"
+            write(fstderr,*) "Error calling setup_parameters"
 
             write(fstderr,*) "Intent(in)"
 
@@ -3500,6 +3508,7 @@ module advance_clubb_core_module
             write(fstderr,*) "T0_in = ", T0_in
             write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
             write(fstderr,*) "params = ", params
+            write(fstderr,*) "Fatal error in setup_clubb_core"
 
             return
 
