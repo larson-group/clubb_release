@@ -1,4 +1,4 @@
-pipeline {
+\pipeline {
   agent any
   stages {
     stage('Run test_fatal_error_handling') {
@@ -22,13 +22,13 @@ pipeline {
   post {
     always {
       script {
-      if ( "${env.JOB_NAME}" == "cam_global_regression_test" )
+      if ( "${env.JOB_NAME}" == "clubb_error_handling_gfortran_test" )
       	cleanWs(cleanWhenSuccess: true, cleanWhenFailure: true)
       }
     }
     failure {
       script {
-      if ( "${env.JOB_NAME}" ==	"clubb_error_handling_test" )
+      if ( "${env.JOB_NAME}" ==	"clubb_error_handling_gfortran_test" )
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
     }

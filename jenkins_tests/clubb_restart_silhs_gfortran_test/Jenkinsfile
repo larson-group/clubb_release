@@ -6,22 +6,22 @@ pipeline {
         sh 'compile/compile.bash -c config/linux_x86_64_gfortran.bash'
       }
     }
-    stage('Run the CLUBB restart test script') {
+    stage('Run the restart test script with rico_silhs') {
       steps {
-        sh 'run_scripts/run_restart_test.bash bomex'
+        sh 'run_scripts/run_restart_test.bash rico_silhs'
       }
     }
   }
   post {
     always {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_restart_test" )
+      if ( "${env.JOB_NAME}" == "clubb_restart_silhs_gfortran_test" )
       	cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
       }
     }
     failure {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_restart_test" )
+      if ( "${env.JOB_NAME}" == "clubb_restart_silhs_gfortran_test" )
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
     }

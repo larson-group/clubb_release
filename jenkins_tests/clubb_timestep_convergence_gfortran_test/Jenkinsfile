@@ -6,22 +6,22 @@ pipeline {
         sh 'compile/compile.bash -c config/linux_x86_64_gfortran.bash'
       }
     }
-    stage('Run the Thread Test Script') {
+    stage('Run the CLUBB convergence test script') {
       steps {
-        sh 'run_scripts/run_thread_test.bash'
+        sh 'run_scripts/run_clubb_conv_test.bash'
       }
     }
   }
   post {
     always {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_openmp_test" )
-      	cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true, cleanWhenAborted: true)
+      if ( "${env.JOB_NAME}" == "clubb_timestep_convergence_gfortran_test" )
+      	cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
       }
     }
     failure {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_openmp_test" )
+      if ( "${env.JOB_NAME}" == "clubb_timestep_convergence_gfortran_test" )
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
     }

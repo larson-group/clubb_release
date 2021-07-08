@@ -3,27 +3,25 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
-        //Replace instances of error stop with stop (sunf95 does not support error stop)
-        sh 'grep -rl "error stop" src/ | xargs sed -i "s/error stop/stop/"'
-        sh 'compile/compile.bash -c config/linux_x86_64_oracle_debug.bash'
+        sh 'compile/compile.bash -c config/linux_x86_64_gfortran.bash'
       }
     }
-    stage('Run CLUBB') {
+    stage('Run SILHS test script') {
       steps {
-        sh 'run_scripts/run_scm_all.bash'
+        sh 'run_scripts/run_silhs_test.bash'
       }
     }
   }
   post {
     always {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_uninit_var_test" )
+      if ( "${env.JOB_NAME}" == "clubb_silhs_convergence_gfortran" )
       	cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true, cleanWhenAborted: true)
       }
     }
     failure {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_uninit_var_test" )
+      if ( "${env.JOB_NAME}" == "clubb_silhs_convergence_gfortran" )
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
     }
