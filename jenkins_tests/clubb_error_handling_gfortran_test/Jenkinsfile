@@ -1,4 +1,4 @@
-\pipeline {
+pipeline {
   agent any
   stages {
     stage('Run test_fatal_error_handling') {
