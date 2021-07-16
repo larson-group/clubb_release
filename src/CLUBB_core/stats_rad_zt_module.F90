@@ -16,7 +16,7 @@ module stats_rad_zt_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_rad_zt( vars_rad_zt, l_error )
+  subroutine stats_init_rad_zt( vars_rad_zt, l_error, stats_rad_zt )
 
 ! Description:
 !   Initializes array indices for stats_zt
@@ -29,7 +29,6 @@ module stats_rad_zt_module
         fstderr ! Constant(s)
 
     use stats_variables, only: & 
-        stats_rad_zt, &
         iT_in_K_rad, & ! Variable(s)
         ircil_rad, &
         io3l_rad, &
@@ -46,7 +45,12 @@ module stats_rad_zt_module
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_rad_zt
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_rad_zt), intent(in) :: vars_rad_zt

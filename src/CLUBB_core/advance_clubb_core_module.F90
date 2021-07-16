@@ -118,7 +118,7 @@ module advance_clubb_core_module
   !#######################################################################
   !#######################################################################
   subroutine advance_clubb_core &
-             ( gr, l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
+             ( gr, l_implemented, dt, fcor, sfc_elevation, hydromet_dim, stats_zt,  stats_zm,  stats_sfc, &
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! intent(in)
                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! intent(in)
@@ -354,9 +354,6 @@ module advance_clubb_core_module
         iwp2_sf,       &
         l_stats_samp,  &
         l_stats,       &
-        stats_zt,      &
-        stats_zm,      &
-        stats_sfc,     &
         irtm_spur_src, &
         ithlm_spur_src
 
@@ -377,7 +374,14 @@ module advance_clubb_core_module
     use interpolation, only: &
         pvertinterp
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
 
@@ -970,7 +974,7 @@ module advance_clubb_core_module
        !#######   AND OUTPUT PDF PARAMETERS AND INTEGRATED QUANTITITES   #######
        !########################################################################
        !call pdf_closure_driver( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
-       call pdf_closure_driver( gr, dt, hydromet_dim, wprtp,                     & ! Intent(in)
+       call pdf_closure_driver( gr, dt, hydromet_dim, wprtp,                     stats_zt,  stats_zm, &
                                 thlm, wpthlp, rtp2, rtp3,                    & ! Intent(in)
                                 thlp2, thlp3, rtpthlp, wp2,                  & ! Intent(in)
                                 wp3, wm_zm, wm_zt,                           & ! Intent(in)
@@ -1421,7 +1425,7 @@ module advance_clubb_core_module
       ! otherwise its value is irrelevant, set it to 0 to avoid NaN problems
       if ( clubb_config_flags%l_use_C7_Richardson .or. clubb_config_flags%l_use_C11_Richardson &
         .or. l_use_wp3_pr3 ) then
-       call compute_Cx_Fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm,      & ! intent(in)
+       call compute_Cx_Fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm, stats_zm, & ! intent(in)
                                        rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
                                        ice_supersat_frac,                             & ! intent(in)
                                        clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
@@ -1437,7 +1441,7 @@ module advance_clubb_core_module
       !   scalar turbulent fluxes (wprtp, wpthlp, and wpsclrp)
       !   by one time step.
       ! advance_xm_wpxp_bad_wp2 ! Test error comment, DO NOT modify or move
-      call advance_xm_wpxp( gr, dt_advance, sigma_sqd_w, wm_zm, wm_zt, wp2,           & ! intent(in)
+      call advance_xm_wpxp( gr, dt_advance, sigma_sqd_w, wm_zm, wm_zt, wp2,           stats_zt,  stats_zm,  stats_sfc, &
                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm,      & ! intent(in)
                             invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, & ! intent(in)
                             rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp,         & ! intent(in)
@@ -1506,7 +1510,7 @@ module advance_clubb_core_module
       ! Advance the prognostic equations
       !   for scalar variances and covariances,
       !   plus the horizontal wind variances by one time step, by one time step.
-      call advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm,   & ! intent(in)
+      call advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm,   stats_zm,  stats_zt,  stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,    & ! intent(in)
                              wp2, wp2_zt, wp3, upwp, vpwp,                & ! intent(in)
                              sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,        & ! intent(in)
@@ -1555,7 +1559,7 @@ module advance_clubb_core_module
          vpwp_cl_num = 1 ! First instance of v'w' clipping.
       endif ! l_predict_upwp_vpwp
 
-      call clip_covars_denom( gr, dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
+      call clip_covars_denom( gr, dt, rtp2, thlp2, up2, vp2, wp2,           stats_zm, &
                               sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
                               wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
                               clubb_config_flags%l_predict_upwp_vpwp,   & ! intent(in)
@@ -1570,7 +1574,7 @@ module advance_clubb_core_module
 
       ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3 &
-           ( gr, dt_advance, sfc_elevation, sigma_sqd_w, wm_zm,             & ! intent(in)
+           ( gr, dt_advance, sfc_elevation, sigma_sqd_w, wm_zm,             stats_zm,  stats_zt,  stats_sfc, &
              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,                    & ! intent(in)
              wp2up2, wp2vp2, wp4,                                       & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,                       & ! intent(in)
@@ -1620,7 +1624,7 @@ module advance_clubb_core_module
          vpwp_cl_num = 2 ! Second instance of v'w' clipping.
       endif ! l_predict_upwp_vpwp
 
-      call clip_covars_denom( gr, dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
+      call clip_covars_denom( gr, dt, rtp2, thlp2, up2, vp2, wp2,           stats_zm, &
                               sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
                               wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, & ! intent(in)
                               clubb_config_flags%l_predict_upwp_vpwp,   & ! intent(in)
@@ -1638,7 +1642,7 @@ module advance_clubb_core_module
          ! simplified form of the <x'^3> predictive equation.  The simplified
          ! <x'^3> equation can either be advanced from its previous value or
          ! calculated using a steady-state approximation.
-         call advance_xp3( gr, dt, rtm, thlm, rtp2, thlp2, wprtp,          & ! Intent(in)
+         call advance_xp3( gr, dt, rtm, thlm, rtp2, thlp2, wprtp,          stats_zt, &
                            wpthlp, wprtp2, wpthlp2, rho_ds_zm,         & ! Intent(in)
                            invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,  & ! Intent(in)
                            sclrm, sclrp2, wpsclrp, wpsclrp2,           & ! Intent(in)
@@ -1804,7 +1808,7 @@ module advance_clubb_core_module
         edsclrm(:,edsclr_dim)=rtm(:)
       endif
 
-      call advance_windm_edsclrm( gr, dt, wm_zt, Km_zm, Kmh_zm,                 & ! intent(in)
+      call advance_windm_edsclrm( gr, dt, wm_zt, Km_zm, Kmh_zm,                 stats_zt,  stats_sfc,  stats_zm, &
                                   ug, vg, um_ref, vm_ref,                       & ! intent(in)
                                   wp2, up2, vp2, um_forcing, vm_forcing,        & ! intent(in)
                                   edsclrm_forcing,                              & ! intent(in)
@@ -1872,7 +1876,7 @@ module advance_clubb_core_module
        ! Given CLUBB's prognosed moments, diagnose CLUBB's PDF parameters
        !   and quantities integrated over that PDF, including
        !   quantities related to clouds, buoyancy, and turbulent advection.
-       call pdf_closure_driver( gr, dt, hydromet_dim, wprtp,                     & ! Intent(in)
+       call pdf_closure_driver( gr, dt, hydromet_dim, wprtp,                     stats_zt,  stats_zm, &
                                 thlm, wpthlp, rtp2, rtp3,                    & ! Intent(in)
                                 thlp2, thlp3, rtpthlp, wp2,                  & ! Intent(in)
                                 wp3, wm_zm, wm_zt,                           & ! Intent(in)
@@ -1998,7 +2002,7 @@ module advance_clubb_core_module
       end if
 
       call stats_accumulate &
-           ( gr, um, vm, upwp, vpwp, up2, vp2,                          & ! intent(in)
+           ( gr, um, vm, upwp, vpwp, up2, vp2,                          stats_zt,  stats_zm,  stats_sfc, &
              thlm, rtm, wprtp, wpthlp,                              & ! intent(in)
              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp,           & ! intent(in)
              wpthvp, wp2thvp, rtpthvp, thlpthvp,                    & ! intent(in)
@@ -2115,7 +2119,7 @@ module advance_clubb_core_module
     end subroutine advance_clubb_core
 
   !=============================================================================
-  subroutine pdf_closure_driver( gr, dt, hydromet_dim, wprtp,       & ! Intent(in)
+  subroutine pdf_closure_driver( gr, dt, hydromet_dim, wprtp,       stats_zt,  stats_zm, &
                                  thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                  thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
                                  wp3, wm_zm, wm_zt,             & ! Intent(in)
@@ -2231,8 +2235,6 @@ module advance_clubb_core_module
 
     use stats_variables, only: &
         l_stats_samp,        & ! Variable(s)
-        stats_zt,            &
-        stats_zm,            &
         iSkw_zm,             &
         iSkw_zt,             &
         iSkrt_zm,            &
@@ -2257,7 +2259,13 @@ module advance_clubb_core_module
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 

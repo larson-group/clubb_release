@@ -787,7 +787,7 @@ module fill_holes
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_driver( gr, nz, dt, hydromet_dim,        & ! Intent(in)
+  subroutine fill_holes_driver( gr, nz, dt, hydromet_dim,        stats_zt, &
                                 l_fill_holes_hm,             & ! Intent(in)
                                 rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
                                 thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
@@ -837,13 +837,17 @@ module fill_holes
         stat_end_update
 
     use stats_variables, only: &
-        stats_zt, &  ! Variables
         l_stats_samp
 
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt
 
     type (grid), target, intent(in) :: gr
 

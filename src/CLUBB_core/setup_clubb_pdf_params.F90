@@ -62,7 +62,7 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( gr, nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
+  subroutine setup_pdf_parameters( gr, nz, ngrdcol, pdf_dim, dt, stats_zt,  stats_sfc, &
                                    Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -159,7 +159,6 @@ module setup_clubb_pdf_params
         iNcnm,          &
         ihmp2_zt,       &
         irtp2_from_chi, &
-        stats_zt,             &
         stats_zm
 
     use diagnose_correlations_module, only: &
@@ -176,7 +175,13 @@ module setup_clubb_pdf_params
         err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
 
@@ -418,7 +423,7 @@ module setup_clubb_pdf_params
         ice_supersat_frac_2(j,:) = pdf_params%ice_supersat_frac_2(j,:)
       end do
       
-      call precip_fraction( nz, ngrdcol,                                              & ! In
+      call precip_fraction( nz, ngrdcol,                                              stats_sfc, &
                             hydromet(:,:,:), cloud_frac(:,:), cloud_frac_1(:,:),      & ! In
                             cloud_frac_2(:,:), ice_supersat_frac(:,:),                & ! In
                             ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:),       & ! In
@@ -561,7 +566,7 @@ module setup_clubb_pdf_params
           do j = 1, ngrdcol
 
             ! Clip the value of covariance <w'hm'> on thermodynamic levels.
-            call clip_covar_level( clip_wphydrometp, k, l_first_clip_ts,  & ! In
+            call clip_covar_level( clip_wphydrometp, k, l_first_clip_ts,  stats_zm, &
                                    l_last_clip_ts, dt, wp2_zt(j,k),       & ! In
                                    hydrometp2_zt(j,k,i),                  & ! In
                                    l_predict_upwp_vpwp,                   & ! In

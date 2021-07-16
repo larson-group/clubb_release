@@ -485,7 +485,7 @@ module advance_helper_module
   end subroutine calc_brunt_vaisala_freq_sqd
 
 !===============================================================================
-  subroutine compute_Cx_fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm, &
+  subroutine compute_Cx_fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm, stats_zm, &
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
                                         ice_supersat_frac, &
                                         l_brunt_vaisala_freq_moist, &
@@ -524,13 +524,17 @@ module advance_helper_module
     use stats_variables, only: &
         iRichardson_num, &    ! Variable(s)
         ishear_sqd, &
-        stats_zm,       &
         l_stats_samp
 
     use stats_type_utilities, only: &
         stat_update_var      ! Procedure
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 

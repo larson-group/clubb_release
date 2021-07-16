@@ -16,7 +16,7 @@ module stats_clubb_utilities
   contains
 
   !-----------------------------------------------------------------------
-  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, &
+  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, stats_zt,  stats_lh_zt,  stats_zm,  stats_rad_zm,  stats_sfc, &
                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
                          nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
@@ -30,7 +30,6 @@ module stats_clubb_utilities
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
-        stats_zt,      & ! Variables
         ztscr01, & 
         ztscr02, & 
         ztscr03, & 
@@ -55,11 +54,9 @@ module stats_clubb_utilities
 
     use stats_variables, only: &
         l_silhs_out, & ! Variable(s)
-        stats_lh_zt, &
         stats_lh_sfc
 
     use stats_variables, only: &
-        stats_zm,      & ! Variables
         zmscr01, &
         zmscr02, &
         zmscr03, &
@@ -80,8 +77,6 @@ module stats_clubb_utilities
         stats_rad_zt
 
     use stats_variables, only: &
-        stats_rad_zm,  &
-        stats_sfc,     &
         l_stats, &
         l_output_rad_files, &
         stats_tsamp,   &
@@ -151,7 +146,16 @@ module stats_clubb_utilities
         err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_lh_zt, &
+      stats_zm, &
+      stats_rad_zm, &
+      stats_sfc
 
     ! Local Constants
     integer, parameter :: &
@@ -796,7 +800,7 @@ module stats_clubb_utilities
 
     ! Default initialization for array indices for zt
 
-    call stats_init_zt( vars_zt, l_error )
+    call stats_init_zt( vars_zt, l_error, stats_zt )
 
 
     ! Setup output file for stats_lh_zt (Latin Hypercube stats)
@@ -1214,7 +1218,7 @@ module stats_clubb_utilities
 #endif
     end if
 
-    call stats_init_zm( vars_zm, l_error )
+    call stats_init_zm( vars_zm, l_error, stats_zm )
 
     ! Initialize stats_rad_zt (radiation points)
 
@@ -1284,7 +1288,7 @@ module stats_clubb_utilities
 #endif
       end if
 
-      call stats_init_rad_zt( vars_rad_zt, l_error )
+      call stats_init_rad_zt( vars_rad_zt, l_error, stats_rad_zt )
 
       ! Initialize stats_rad_zm (radiation points)
 
@@ -1353,7 +1357,7 @@ module stats_clubb_utilities
 #endif
       end if
 
-      call stats_init_rad_zm( vars_rad_zm, l_error )
+      call stats_init_rad_zm( vars_rad_zm, l_error, stats_rad_zm )
     end if ! l_output_rad_files
 
 
@@ -1424,7 +1428,7 @@ module stats_clubb_utilities
 #endif
     end if
 
-    call stats_init_sfc( vars_sfc, l_error )
+    call stats_init_sfc( vars_sfc, l_error, stats_sfc )
 
     ! Check for errors
 
@@ -1574,7 +1578,7 @@ module stats_clubb_utilities
   end subroutine stats_begin_timestep
 
   !-----------------------------------------------------------------------
-  subroutine stats_end_timestep( &
+  subroutine stats_end_timestep( stats_zt,  stats_lh_zt,  stats_lh_sfc,  stats_zm,  stats_rad_zt,  stats_rad_zm,  stats_sfc, &
 #ifdef NETCDF
                                  l_uv_nudge, &
                                  l_tke_aniso, &
@@ -1596,13 +1600,6 @@ module stats_clubb_utilities
         fstderr ! Constant(s)
 
     use stats_variables, only: & 
-        stats_zt,  & ! Variable(s)
-        stats_lh_zt, &
-        stats_lh_sfc, &
-        stats_zm, & 
-        stats_rad_zt, &
-        stats_rad_zm, &
-        stats_sfc, &
         l_stats_last, &
         l_output_rad_files, & 
         l_grads, &
@@ -1624,7 +1621,18 @@ module stats_clubb_utilities
         err_code, &         ! Error Indicator
         clubb_fatal_error   ! Constant
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_zm, &
+      stats_rad_zt, &
+      stats_rad_zm, &
+      stats_sfc
 
     ! External
     intrinsic :: floor
@@ -1799,7 +1807,7 @@ module stats_clubb_utilities
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate & 
-                   ( gr, um, vm, upwp, vpwp, up2, vp2, &
+                   ( gr, um, vm, upwp, vpwp, up2, vp2, stats_zt,  stats_zm,  stats_sfc, &
                      thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
@@ -1839,9 +1847,6 @@ module stats_clubb_utilities
         compute_variance_binormal    ! Procedure
 
     use stats_variables, only: & 
-        stats_zt, & ! Variables
-        stats_zm, & 
-        stats_sfc, & 
         l_stats_samp, & 
         ithlm, & 
         iT_in_K, & 
@@ -2073,7 +2078,14 @@ module stats_clubb_utilities
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
 
@@ -2578,7 +2590,7 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_hydromet( gr, hydromet, rho_ds_zt )
+  subroutine stats_accumulate_hydromet( gr, hydromet, rho_ds_zt, stats_sfc,  stats_zt )
 ! Description:
 !   Compute stats related the hydrometeors
 
@@ -2596,7 +2608,6 @@ module stats_clubb_utilities
         iiNr, iiNs, iiNi, iiNg
 
     use stats_variables, only: &
-        stats_sfc, & ! Variable(s)
         irrm, & 
         irsm, & 
         irim, & 
@@ -2617,13 +2628,18 @@ module stats_clubb_utilities
         stat_update_var_pt
 
     use stats_variables, only: &
-        stats_zt, & ! Variables
         l_stats_samp
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_sfc, &
+      stats_zt
 
     type (grid), target, intent(in) :: gr
 
@@ -2715,7 +2731,7 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate_hydromet
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_lh_tend( gr, lh_hydromet_mc, lh_Ncm_mc, &
+  subroutine stats_accumulate_lh_tend( gr, lh_hydromet_mc, lh_Ncm_mc, stats_lh_zt, &
                                        lh_thlm_mc, lh_rvm_mc, lh_rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc )
@@ -2764,13 +2780,17 @@ module stats_clubb_utilities
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &
-        stats_lh_zt, & ! Variables
         l_stats_samp
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_lh_zt
 
     type (grid), target, intent(in) :: gr
 
@@ -2848,7 +2868,7 @@ module stats_clubb_utilities
   end subroutine stats_accumulate_lh_tend
     
   !-----------------------------------------------------------------------
-  subroutine stats_finalize( )
+  subroutine stats_finalize( stats_zt,  stats_lh_zt,  stats_lh_sfc,  stats_zm,  stats_rad_zt,  stats_rad_zm,  stats_sfc )
 
     !     Description:
     !     Close NetCDF files and deallocate scratch space and
@@ -2856,13 +2876,6 @@ module stats_clubb_utilities
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
-        stats_zt,  & ! Variable(s)
-        stats_lh_zt, &
-        stats_lh_sfc, &
-        stats_zm, &
-        stats_rad_zt, &
-        stats_rad_zm, & 
-        stats_sfc, & 
         l_netcdf, & 
         l_stats, &
         l_output_rad_files, &
@@ -2976,7 +2989,18 @@ module stats_clubb_utilities
         close_netcdf ! Procedure
 #endif
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_zm, &
+      stats_rad_zt, &
+      stats_rad_zm, &
+      stats_sfc
 
     if ( l_stats .and. l_netcdf ) then
 #ifdef NETCDF

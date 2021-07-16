@@ -433,7 +433,7 @@ module advance_microphys_module
 
     endif ! l_stats_samp and iirr > 0
 
-    call stats_accumulate_hydromet( gr, hydromet, rho_ds_zt )
+    call stats_accumulate_hydromet( gr, hydromet, rho_ds_zt, stats_sfc, stats_zt )
 
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -777,7 +777,7 @@ module advance_microphys_module
 
     ! Now that all precipitating hydrometeors have been advanced, fill holes in
     ! hydromet profiles.
-    call fill_holes_driver( gr, gr%nz, dt, hydromet_dim,     & ! Intent(in)
+    call fill_holes_driver( gr, gr%nz, dt, hydromet_dim, stats_zt,  & ! Intent(in)
                             l_fill_holes_hm,             & ! Intent(in)
                             rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
                             thlm_mc, rvm_mc, hydromet )    ! Intent(inout)

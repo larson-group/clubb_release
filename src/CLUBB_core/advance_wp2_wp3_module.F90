@@ -40,7 +40,7 @@ module advance_wp2_wp3_module
   contains
 
   !=============================================================================
-  subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
+  subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,         stats_zm,  stats_zt,  stats_sfc, &
                               wm_zt, a3, a3_zt, wp3_on_wp2,                  & ! In
                               wp2up2, wp2vp2, wp4,                           & ! In
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! In
@@ -114,8 +114,6 @@ module advance_wp2_wp3_module
         iC11_Skw_fnc, &
         iwp2_sdmp, &
         iwp3_sdmp, &
-        stats_zm, &
-        stats_zt, &
         l_stats_samp
 
     use constants_clubb, only:  & 
@@ -137,7 +135,14 @@ module advance_wp2_wp3_module
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zm, &
+      stats_zt, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
 
@@ -370,7 +375,7 @@ module advance_wp2_wp3_module
     endif ! l_lmm_stepping
 
     ! Solve semi-implicitly
-    call wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
+    call wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   stats_zm,  stats_zt,  stats_sfc, &
                      wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                      wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -497,7 +502,7 @@ module advance_wp2_wp3_module
   end subroutine advance_wp2_wp3
 
   !=============================================================================
-  subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
+  subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   stats_zm,  stats_zt,  stats_sfc, &
                          wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                          wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                          wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -582,9 +587,6 @@ module advance_wp2_wp3_module
         stat_end_update_pt
 
     use stats_variables, only:  & 
-        stats_zm, & ! Variable(s)
-        stats_zt, & 
-        stats_sfc, & 
         l_stats_samp, &
         icoef_wp4_implicit, &
         iwp2_ta, & 
@@ -637,7 +639,14 @@ module advance_wp2_wp3_module
         ztscr15, &
         ztscr16
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zm, &
+      stats_zt, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
 
@@ -1169,7 +1178,7 @@ module advance_wp2_wp3_module
                  wprtp(k)**2 / ( rtp2(k) * max_mag_correlation_flux**2 ), &
                  wpthlp(k)**2 / ( thlp2(k) * max_mag_correlation_flux**2 ) )
 
-          call clip_variance_level( clip_wp2, dt, threshold, k, & ! intent(in)
+          call clip_variance_level( clip_wp2, dt, threshold, k, stats_zm, &
                                     wp2(k) )                      ! intent(inout)
 
        enddo ! k = 1, gr%nz, 1
@@ -1179,7 +1188,7 @@ module advance_wp2_wp3_module
        ! Consider only the minimum tolerance threshold value for wp2.
        threshold = w_tol_sqd
 
-       call clip_variance( gr, clip_wp2, dt, threshold, & ! Intent(in)
+       call clip_variance( gr, clip_wp2, dt, threshold, stats_zm, &
                            wp2 )                      ! Intent(inout)
 
     endif ! l_min_wp2_from_corr_wx
@@ -1190,7 +1199,7 @@ module advance_wp2_wp3_module
     wp2_zt = max( zm2zt( gr, wp2 ), w_tol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
-    call clip_skewness( gr, dt, sfc_elevation, wp2_zt, & ! intent(in)
+    call clip_skewness( gr, dt, sfc_elevation, wp2_zt, stats_zt, &
                         wp3 )                        ! intent(inout)
 
     ! Compute wp3_zm for output purposes

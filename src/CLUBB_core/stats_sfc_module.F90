@@ -16,7 +16,7 @@ module stats_sfc_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_sfc( vars_sfc, l_error )
+  subroutine stats_init_sfc( vars_sfc, l_error, stats_sfc )
 
 ! Description:
 !   Initializes array indices for stats_sfc
@@ -28,7 +28,6 @@ module stats_sfc_module
         fstderr ! Constant(s)
 
     use stats_variables, only: &
-        stats_sfc,  & ! Variables
         iustar, &
         isoil_heat_flux, &
         iveg_T_in_K, &
@@ -86,7 +85,12 @@ module stats_sfc_module
     use stats_type_utilities, only: &
         stat_assign ! Procedure
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_sfc
 
     ! External
     intrinsic :: trim

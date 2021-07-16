@@ -26,7 +26,7 @@ module advance_xp3_module
   contains
 
   !=============================================================================
-  subroutine advance_xp3( gr, dt, rtm, thlm, rtp2, thlp2, wprtp,         & ! Intent(in)
+  subroutine advance_xp3( gr, dt, rtm, thlm, rtp2, thlp2, wprtp,         stats_zt, &
                           wpthlp, wprtp2, wpthlp2, rho_ds_zm,        & ! Intent(in)
                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, & ! Intent(in)
                           sclrm, sclrp2, wpsclrp, wpsclrp2,          & ! Intent(in)
@@ -56,7 +56,12 @@ module advance_xp3_module
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt
 
     type (grid), target, intent(in) :: gr
 
@@ -101,7 +106,7 @@ module advance_xp3_module
 
     ! Advance <rt'^3> one model timestep or calculate <rt'^3> using a
     ! steady-state approximation.
-    call advance_xp3_simplified( gr, xp3_rtp3, dt, rtm,        & ! Intent(in)
+    call advance_xp3_simplified( gr, xp3_rtp3, dt, rtm,        stats_zt, &
                                  rtp2, wprtp,              & ! Intent(in)
                                  wprtp2, rho_ds_zm,        & ! Intent(in)
                                  invrs_rho_ds_zt,          & ! Intent(in)
@@ -111,7 +116,7 @@ module advance_xp3_module
 
     ! Advance <thl'^3> one model timestep or calculate <thl'^3> using a
     ! steady-state approximation.
-    call advance_xp3_simplified( gr, xp3_thlp3, dt, thlm,      & ! Intent(in)
+    call advance_xp3_simplified( gr, xp3_thlp3, dt, thlm,      stats_zt, &
                                  thlp2, wpthlp,            & ! Intent(in)
                                  wpthlp2, rho_ds_zm,       & ! Intent(in)
                                  invrs_rho_ds_zt,          & ! Intent(in)
@@ -123,7 +128,7 @@ module advance_xp3_module
     ! steady-state approximation.
     do i = 1, sclr_dim, 1
 
-       call advance_xp3_simplified( gr, xp3_sclrp3, dt, sclrm(:,i),  & ! In
+       call advance_xp3_simplified( gr, xp3_sclrp3, dt, sclrm(:,i),  stats_zt, &
                                     sclrp2(:,i), wpsclrp(:,i),   & ! In
                                     wpsclrp2(:,i), rho_ds_zm,    & ! In
                                     invrs_rho_ds_zt,             & ! In
@@ -139,7 +144,7 @@ module advance_xp3_module
   end subroutine advance_xp3
 
   !=============================================================================
-  subroutine advance_xp3_simplified( gr, solve_type, dt, xm,       & ! Intent(in)
+  subroutine advance_xp3_simplified( gr, solve_type, dt, xm,       stats_zt, &
                                      xp2, wpxp,                & ! Intent(in)
                                      wpxp2, rho_ds_zm,         & ! Intent(in)
                                      invrs_rho_ds_zt,          & ! Intent(in)
@@ -270,13 +275,17 @@ module advance_xp3_module
         ithlp3_tp,    &
         ithlp3_ac,    &
         ithlp3_dp,    &
-        stats_zt,     &
         l_stats_samp
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt
 
     type (grid), target, intent(in) :: gr
 

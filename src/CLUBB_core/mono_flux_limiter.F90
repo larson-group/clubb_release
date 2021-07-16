@@ -27,7 +27,7 @@ module mono_flux_limiter
   contains
 
   !=============================================================================
-  subroutine monotonic_turbulent_flux_limit( gr, solve_type, dt, xm_old, &
+  subroutine monotonic_turbulent_flux_limit( gr, solve_type, dt, xm_old, stats_zm,  stats_zt, &
                                              xp2, wm_zt, xm_forcing, &
                                              rho_ds_zm, rho_ds_zt, &
                                              invrs_rho_ds_zm, invrs_rho_ds_zt, &
@@ -308,8 +308,6 @@ module mono_flux_limiter
         stat_update_var
 
     use stats_variables, only:  &
-        stats_zm, & ! Variable(s)
-        stats_zt, &
         iwprtp_mfl, &
         irtm_mfl, &
         iwpthlp_mfl, &
@@ -340,7 +338,13 @@ module mono_flux_limiter
         iwprtp_exit_mfl, &
         l_stats_samp
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zm, &
+      stats_zt
 
     type (grid), target, intent(in) :: gr
 
@@ -1143,7 +1147,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_solve
 
   !=============================================================================
-  subroutine calc_turb_adv_range( gr, dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+  subroutine calc_turb_adv_range( gr, dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, stats_zm, &
                                   mixt_frac_zm, &
                                   low_lev_effect, high_lev_effect )
 
@@ -1182,7 +1186,12 @@ module mono_flux_limiter
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
    
@@ -1326,7 +1335,7 @@ module mono_flux_limiter
        ! vertical velocity.
        ! Note:  A level that has all vertical wind moving downwards will have a
        !        vert_vel_up value that is 0, and vice versa.
-       call mean_vert_vel_up_down( gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & !  In
+       call mean_vert_vel_up_down( gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, stats_zm, &
                                    mixt_frac_zm, 0.0_core_rknd, w_min, & ! In
                                    vert_vel_down, vert_vel_up )
 
@@ -1503,7 +1512,7 @@ module mono_flux_limiter
   end subroutine calc_turb_adv_range
 
   !=============================================================================
-  subroutine mean_vert_vel_up_down( gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+  subroutine mean_vert_vel_up_down( gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, stats_zm, &
                                     mixt_frac_zm, w_ref, w_min, &
                                     mean_w_down, mean_w_up )
 
@@ -1704,7 +1713,6 @@ module mono_flux_limiter
         stat_update_var  ! Procedure(s)
 
     use stats_variables, only:  &
-        stats_zm,  & ! Variable(s)
         imean_w_up, &
         imean_w_down, &
         l_stats_samp
@@ -1712,7 +1720,12 @@ module mono_flux_limiter
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 

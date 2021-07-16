@@ -16,7 +16,7 @@ module stats_rad_zm_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_rad_zm( vars_rad_zm, l_error )
+  subroutine stats_init_rad_zm( vars_rad_zm, l_error, stats_rad_zm )
 
 !     Description:
 !     Initializes array indices for stats_rad_zm variables
@@ -26,7 +26,6 @@ module stats_rad_zm_module
         fstderr ! Constant(s)
 
     use stats_variables, only: & 
-        stats_rad_zm, &
         iFrad_LW_rad, & ! Variable(s)
         iFrad_SW_rad, &
         iFrad_SW_up_rad, &
@@ -41,7 +40,12 @@ module stats_rad_zm_module
         stat_assign ! Procedure
 
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_rad_zm
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_rad_zm), intent(in) :: vars_rad_zm
