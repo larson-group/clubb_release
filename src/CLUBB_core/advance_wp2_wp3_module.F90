@@ -40,7 +40,8 @@ module advance_wp2_wp3_module
   contains
 
   !=============================================================================
-  subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,         stats_zm,  stats_zt,  stats_sfc, &
+  subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
+                              stats_zm, stats_zt, stats_sfc, & ! intent(inout)
                               wm_zt, a3, a3_zt, wp3_on_wp2,                  & ! In
                               wp2up2, wp2vp2, wp4,                           & ! In
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! In
@@ -375,7 +376,8 @@ module advance_wp2_wp3_module
     endif ! l_lmm_stepping
 
     ! Solve semi-implicitly
-    call wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   stats_zm,  stats_zt,  stats_sfc, &
+    call wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
+                     stats_zm, stats_zt, stats_sfc, & ! intent(inout)
                      wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                      wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -502,7 +504,8 @@ module advance_wp2_wp3_module
   end subroutine advance_wp2_wp3
 
   !=============================================================================
-  subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   stats_zm,  stats_zt,  stats_sfc, &
+  subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
+                         stats_zm, stats_zt, stats_sfc, & ! intent(inout)
                          wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                          wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                          wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -1178,7 +1181,8 @@ module advance_wp2_wp3_module
                  wprtp(k)**2 / ( rtp2(k) * max_mag_correlation_flux**2 ), &
                  wpthlp(k)**2 / ( thlp2(k) * max_mag_correlation_flux**2 ) )
 
-          call clip_variance_level( clip_wp2, dt, threshold, k, stats_zm, &
+          call clip_variance_level( clip_wp2, dt, threshold, k, & ! intent(in)
+                                    stats_zm, & ! intent(inout)
                                     wp2(k) )                      ! intent(inout)
 
        enddo ! k = 1, gr%nz, 1
@@ -1188,7 +1192,8 @@ module advance_wp2_wp3_module
        ! Consider only the minimum tolerance threshold value for wp2.
        threshold = w_tol_sqd
 
-       call clip_variance( gr, clip_wp2, dt, threshold, stats_zm, &
+       call clip_variance( gr, clip_wp2, dt, threshold, & ! Intent(in)
+                           stats_zm, & ! intent(inout)
                            wp2 )                      ! Intent(inout)
 
     endif ! l_min_wp2_from_corr_wx
@@ -1199,7 +1204,8 @@ module advance_wp2_wp3_module
     wp2_zt = max( zm2zt( gr, wp2 ), w_tol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
-    call clip_skewness( gr, dt, sfc_elevation, wp2_zt, stats_zt, &
+    call clip_skewness( gr, dt, sfc_elevation, wp2_zt, & ! intent(in)
+                        stats_zt, & ! intent(inout)
                         wp3 )                        ! intent(inout)
 
     ! Compute wp3_zm for output purposes

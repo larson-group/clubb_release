@@ -62,7 +62,8 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( gr, nz, ngrdcol, pdf_dim, dt, stats_zt,  stats_sfc, &
+  subroutine setup_pdf_parameters( gr, nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
+                                   stats_zt, stats_sfc, & ! intent(inout)
                                    Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -423,7 +424,8 @@ module setup_clubb_pdf_params
         ice_supersat_frac_2(j,:) = pdf_params%ice_supersat_frac_2(j,:)
       end do
       
-      call precip_fraction( nz, ngrdcol,                                              stats_sfc, &
+      call precip_fraction( nz, ngrdcol,                                              & ! In
+                            stats_sfc, & ! intent(inout)
                             hydromet(:,:,:), cloud_frac(:,:), cloud_frac_1(:,:),      & ! In
                             cloud_frac_2(:,:), ice_supersat_frac(:,:),                & ! In
                             ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:),       & ! In
@@ -566,7 +568,8 @@ module setup_clubb_pdf_params
           do j = 1, ngrdcol
 
             ! Clip the value of covariance <w'hm'> on thermodynamic levels.
-            call clip_covar_level( clip_wphydrometp, k, l_first_clip_ts,  stats_zm, &
+            call clip_covar_level( clip_wphydrometp, k, l_first_clip_ts,  & ! In
+                                   stats_zm, & ! intent(inout)
                                    l_last_clip_ts, dt, wp2_zt(j,k),       & ! In
                                    hydrometp2_zt(j,k,i),                  & ! In
                                    l_predict_upwp_vpwp,                   & ! In

@@ -787,7 +787,8 @@ module fill_holes
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_driver( gr, nz, dt, hydromet_dim,        stats_zt, &
+  subroutine fill_holes_driver( gr, nz, dt, hydromet_dim,        & ! Intent(in)
+                                stats_zt, & ! intent(inout)
                                 l_fill_holes_hm,             & ! Intent(in)
                                 rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
                                 thlm_mc, rvm_mc, hydromet )    ! Intent(inout)

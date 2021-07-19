@@ -16,7 +16,8 @@ module stats_sfc_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_sfc( vars_sfc, l_error, stats_sfc )
+  subroutine stats_init_sfc( vars_sfc, l_error, & !intent(in)
+  stats_sfc ) ! intent(inout)
 
 ! Description:
 !   Initializes array indices for stats_sfc

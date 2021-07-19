@@ -16,7 +16,8 @@ module stats_clubb_utilities
   contains
 
   !-----------------------------------------------------------------------
-  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, stats_zt,  stats_lh_zt,  stats_zm,  stats_rad_zm,  stats_sfc, &
+  subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, &
+                         stats_zt, stats_lh_zt, stats_zm, stats_rad_zm, stats_sfc, & ! intent(inout)
                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
                          nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
@@ -800,7 +801,8 @@ module stats_clubb_utilities
 
     ! Default initialization for array indices for zt
 
-    call stats_init_zt( vars_zt, l_error, stats_zt )
+    call stats_init_zt( vars_zt, l_error, & !intent(in)
+  stats_zt ) ! intent(inout)
 
 
     ! Setup output file for stats_lh_zt (Latin Hypercube stats)
@@ -1218,7 +1220,8 @@ module stats_clubb_utilities
 #endif
     end if
 
-    call stats_init_zm( vars_zm, l_error, stats_zm )
+    call stats_init_zm( vars_zm, l_error, & !intent(in)
+  stats_zm ) ! intent(inout)
 
     ! Initialize stats_rad_zt (radiation points)
 
@@ -1288,7 +1291,8 @@ module stats_clubb_utilities
 #endif
       end if
 
-      call stats_init_rad_zt( vars_rad_zt, l_error, stats_rad_zt )
+      call stats_init_rad_zt( vars_rad_zt, l_error, & !intent(in)
+  stats_rad_zt ) ! intent(inout)
 
       ! Initialize stats_rad_zm (radiation points)
 
@@ -1357,7 +1361,8 @@ module stats_clubb_utilities
 #endif
       end if
 
-      call stats_init_rad_zm( vars_rad_zm, l_error, stats_rad_zm )
+      call stats_init_rad_zm( vars_rad_zm, l_error, & !intent(in)
+    stats_rad_zm ) ! intent(inout)
     end if ! l_output_rad_files
 
 
@@ -1428,7 +1433,8 @@ module stats_clubb_utilities
 #endif
     end if
 
-    call stats_init_sfc( vars_sfc, l_error, stats_sfc )
+    call stats_init_sfc( vars_sfc, l_error, & !intent(in)
+  stats_sfc ) ! intent(inout)
 
     ! Check for errors
 
@@ -1578,7 +1584,8 @@ module stats_clubb_utilities
   end subroutine stats_begin_timestep
 
   !-----------------------------------------------------------------------
-  subroutine stats_end_timestep( stats_zt,  stats_lh_zt,  stats_lh_sfc,  stats_zm,  stats_rad_zt,  stats_rad_zm,  stats_sfc, &
+  subroutine stats_end_timestep( &
+  stats_zt, stats_lh_zt, stats_lh_sfc, stats_zm, stats_rad_zt, stats_rad_zm, stats_sfc, & ! intent(inout)
 #ifdef NETCDF
                                  l_uv_nudge, &
                                  l_tke_aniso, &
@@ -1807,7 +1814,8 @@ module stats_clubb_utilities
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate & 
-                   ( gr, um, vm, upwp, vpwp, up2, vp2, stats_zt,  stats_zm,  stats_sfc, &
+                   ( gr, um, vm, upwp, vpwp, up2, vp2, &
+                     stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                      thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
@@ -2590,7 +2598,8 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_hydromet( gr, hydromet, rho_ds_zt, stats_sfc,  stats_zt )
+  subroutine stats_accumulate_hydromet( gr, hydromet, rho_ds_zt, & !intent(in)
+  stats_sfc, stats_zt ) ! intent(inout)
 ! Description:
 !   Compute stats related the hydrometeors
 
@@ -2731,7 +2740,8 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate_hydromet
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_lh_tend( gr, lh_hydromet_mc, lh_Ncm_mc, stats_lh_zt, &
+  subroutine stats_accumulate_lh_tend( gr, lh_hydromet_mc, lh_Ncm_mc, &
+                                       stats_lh_zt, & ! intent(inout)
                                        lh_thlm_mc, lh_rvm_mc, lh_rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc )
@@ -2868,7 +2878,7 @@ module stats_clubb_utilities
   end subroutine stats_accumulate_lh_tend
     
   !-----------------------------------------------------------------------
-  subroutine stats_finalize( stats_zt,  stats_lh_zt,  stats_lh_sfc,  stats_zm,  stats_rad_zt,  stats_rad_zm,  stats_sfc )
+  subroutine stats_finalize( stats_zt, stats_lh_zt, stats_lh_sfc, stats_zm, stats_rad_zt, stats_rad_zm, stats_sfc ) ! intent(inout)
 
     !     Description:
     !     Close NetCDF files and deallocate scratch space and

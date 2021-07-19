@@ -37,7 +37,8 @@ module clip_explicit
   contains
 
   !=============================================================================
-  subroutine clip_covars_denom( gr, dt, rtp2, thlp2, up2, vp2, wp2, stats_zm, &
+  subroutine clip_covars_denom( gr, dt, rtp2, thlp2, up2, vp2, wp2, &
+                                stats_zm, & ! intent(inout)
                                 sclrp2, wprtp_cl_num, wpthlp_cl_num, &
                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
                                 l_predict_upwp_vpwp, &
@@ -171,7 +172,8 @@ module clip_explicit
     endif
 
     ! Clip w'r_t'
-    call clip_covar( gr, clip_wprtp, l_first_clip_ts,   stats_zm, &
+    call clip_covar( gr, clip_wprtp, l_first_clip_ts,   & ! intent(in) 
+                     stats_zm, & ! intent(inout)
                      l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
                      l_predict_upwp_vpwp,           & ! intent(in)
                      wprtp, wprtp_chnge )             ! intent(inout)
@@ -209,7 +211,8 @@ module clip_explicit
     endif
 
     ! Clip w'th_l'
-    call clip_covar( gr, clip_wpthlp, l_first_clip_ts,   stats_zm, &
+    call clip_covar( gr, clip_wpthlp, l_first_clip_ts,   & ! intent(in)
+                     stats_zm, & ! intent(inout)
                      l_last_clip_ts, dt, wp2, thlp2, & ! intent(in)
                      l_predict_upwp_vpwp,            & ! intent(in)
                      wpthlp, wpthlp_chnge )            ! intent(inout)
@@ -248,7 +251,8 @@ module clip_explicit
 
     ! Clip w'sclr'
     do i = 1, sclr_dim, 1
-      call clip_covar( gr, clip_wpsclrp, l_first_clip_ts,           stats_zm, &
+      call clip_covar( gr, clip_wpsclrp, l_first_clip_ts,           & ! intent(in)
+                       stats_zm, & ! intent(inout)
                        l_last_clip_ts, dt, wp2(:), sclrp2(:,i), & ! intent(in)
                        l_predict_upwp_vpwp,                     & ! intent(in)
                        wpsclrp(:,i), wpsclrp_chnge(:,i) )         ! intent(inout)
@@ -288,13 +292,15 @@ module clip_explicit
 
     ! Clip u'w'
     if ( l_tke_aniso ) then
-      call clip_covar( gr, clip_upwp, l_first_clip_ts,   stats_zm, &
+      call clip_covar( gr, clip_upwp, l_first_clip_ts,   & ! intent(in)
+                       stats_zm, & ! intent(inout)
                        l_last_clip_ts, dt, wp2, up2, & ! intent(in)
                        l_predict_upwp_vpwp,          & ! intent(in)
                        upwp, upwp_chnge )              ! intent(inout)
     else
       ! In this case, up2 = wp2, and the variable `up2' does not interact
-      call clip_covar( gr, clip_upwp, l_first_clip_ts,   stats_zm, &
+      call clip_covar( gr, clip_upwp, l_first_clip_ts,   & ! intent(in)
+                       stats_zm, & ! intent(inout)
                        l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
                        l_predict_upwp_vpwp,          & ! intent(in)
                        upwp, upwp_chnge )              ! intent(inout)
@@ -334,13 +340,15 @@ module clip_explicit
     endif
 
     if ( l_tke_aniso ) then
-      call clip_covar( gr, clip_vpwp, l_first_clip_ts,   stats_zm, &
+      call clip_covar( gr, clip_vpwp, l_first_clip_ts,   & ! intent(in)
+                       stats_zm, & ! intent(inout)
                        l_last_clip_ts, dt, wp2, vp2, & ! intent(in)
                        l_predict_upwp_vpwp,          & ! intent(in)
                        vpwp, vpwp_chnge )              ! intent(inout)
     else
       ! In this case, vp2 = wp2, and the variable `vp2' does not interact
-      call clip_covar( gr, clip_vpwp, l_first_clip_ts,   stats_zm, &
+      call clip_covar( gr, clip_vpwp, l_first_clip_ts,   & ! intent(in)
+                       stats_zm, & ! intent(inout)
                        l_last_clip_ts, dt, wp2, wp2, & ! intent(in)
                        l_predict_upwp_vpwp,          & ! intent(in)
                        vpwp, vpwp_chnge )              ! intent(inout)
@@ -351,7 +359,8 @@ module clip_explicit
   end subroutine clip_covars_denom
 
   !=============================================================================
-  subroutine clip_covar( gr, solve_type, l_first_clip_ts,  stats_zm, &
+  subroutine clip_covar( gr, solve_type, l_first_clip_ts,  & 
+                         stats_zm, & ! intent(inout)
                          l_last_clip_ts, dt, xp2, yp2,  &
                          l_predict_upwp_vpwp, &
                          xpyp, xpyp_chnge )
@@ -563,7 +572,8 @@ module clip_explicit
   end subroutine clip_covar
 
   !=============================================================================
-  subroutine clip_covar_level( solve_type, level, l_first_clip_ts,  stats_zm, &
+  subroutine clip_covar_level( solve_type, level, l_first_clip_ts,  & 
+                               stats_zm, & ! intent(inout)
                                l_last_clip_ts, dt, xp2, yp2,  &
                                l_predict_upwp_vpwp, &
                                xpyp, xpyp_chnge )
@@ -765,7 +775,8 @@ module clip_explicit
   end subroutine clip_covar_level
 
   !=============================================================================
-  subroutine clip_variance( gr, solve_type, dt, threshold, stats_zm, &
+  subroutine clip_variance( gr, solve_type, dt, threshold, &
+                            stats_zm, & ! intent(inout)
                             xp2 )
 
     ! Description:
@@ -879,7 +890,8 @@ module clip_explicit
   end subroutine clip_variance
 
   !=============================================================================
-  subroutine clip_variance_level( solve_type, dt, threshold, level, stats_zm, &
+  subroutine clip_variance_level( solve_type, dt, threshold, level, &
+                                  stats_zm, & ! intent(inout)
                                   xp2 )
 
     ! Description:
@@ -977,7 +989,8 @@ module clip_explicit
   end subroutine clip_variance_level
 
   !=============================================================================
-  subroutine clip_skewness( gr, dt, sfc_elevation, wp2_zt, stats_zt, &
+  subroutine clip_skewness( gr, dt, sfc_elevation, wp2_zt, &
+                            stats_zt, & ! intent(inout)
                             wp3 )
 
     ! Description:
