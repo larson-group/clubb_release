@@ -87,11 +87,6 @@ module spurious_source_test
     use model_flags, only: &
         set_default_clubb_config_flags ! Procedure(s)
 
-    use stats_variables, only: &
-        stats_sfc, &
-        stats_zm,  &
-        stats_zt
-
     implicit none
 
     type (grid), target, intent(inout) :: gr
@@ -825,7 +820,7 @@ module spurious_source_test
        = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
                             thlm(2:gr%nz), gr%dzt(2:gr%nz) )
 
-       call advance_xm_wpxp( gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, stats_zt, stats_zm,  stats_sfc, &
+       call advance_xm_wpxp( gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                              invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                              rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &

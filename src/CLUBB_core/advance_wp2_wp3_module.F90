@@ -41,7 +41,7 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
-                              stats_zm, stats_zt, stats_sfc, & ! intent(inout)
+                              stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                               wm_zt, a3, a3_zt, wp3_on_wp2,                  & ! In
                               wp2up2, wp2vp2, wp4,                           & ! In
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! In
@@ -141,8 +141,8 @@ module advance_wp2_wp3_module
     implicit none
 
     type (stats), target, intent(inout) :: &
-      stats_zm, &
       stats_zt, &
+      stats_zm, &
       stats_sfc
 
     type (grid), target, intent(in) :: gr
@@ -377,7 +377,7 @@ module advance_wp2_wp3_module
 
     ! Solve semi-implicitly
     call wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
-                     stats_zm, stats_zt, stats_sfc, & ! intent(inout)
+                     stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                      wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                      wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -505,7 +505,7 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
-                         stats_zm, stats_zt, stats_sfc, & ! intent(inout)
+                         stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                          wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                          wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                          wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -647,8 +647,8 @@ module advance_wp2_wp3_module
     implicit none
 
     type (stats), target, intent(inout) :: &
-      stats_zm, &
       stats_zt, &
+      stats_zm, &
       stats_sfc
 
     type (grid), target, intent(in) :: gr
@@ -848,6 +848,7 @@ module advance_wp2_wp3_module
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
     call wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &             ! intent(in)
+                   stats_zt, stats_zm, & ! intent(inout)
                    coef_wp4_implicit, wp2up2, wp2vp2, wp4, &                         ! intent(in)
                    wpthvp, wp2thvp, um, vm, &                                        ! intent(in)
                    upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt,  &                     ! intent(in)
@@ -1868,6 +1869,7 @@ module advance_wp2_wp3_module
 
   !=================================================================================
   subroutine wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
+                       stats_zt, stats_zm, & ! intent(inout)
                        coef_wp4_implicit, wp2up2, wp2vp2, wp4, &
                        wpthvp, wp2thvp, um, vm, &
                        upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt, & 
@@ -1953,9 +1955,9 @@ module advance_wp2_wp3_module
         core_rknd ! Variable
 
     use stats_variables, only:  & 
-        l_stats_samp, iwp2_dp1, iwp2_dp2, stats_zm, iwp2_bp,   & ! Variable(s)
+        l_stats_samp, iwp2_dp1, iwp2_dp2, iwp2_bp,   & ! Variable(s)
         iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_splat, iwp3_splat, &
-        iwp3_ta, stats_zt, & 
+        iwp3_ta, & 
         iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_pr_turb, &
         iwp3_pr_dfsn, iwp3_pr3
         
@@ -1967,7 +1969,13 @@ module advance_wp2_wp3_module
     use advance_helper_module, only: set_boundary_conditions_rhs
 
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 

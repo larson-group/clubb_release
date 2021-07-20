@@ -15,7 +15,8 @@ module stats_lh_zt_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_lh_zt( vars_lh_zt, l_error )
+  subroutine stats_init_lh_zt( vars_lh_zt, l_error, & !intent(in)
+  stats_lh_zt ) ! intent(inout)
 
 ! Description:
 !   Initializes array indices for stats_zt
@@ -29,9 +30,6 @@ module stats_lh_zt_module
 
     use constants_clubb, only:  &
         fstderr ! Constant(s)
-
-    use stats_variables, only: & 
-        stats_lh_zt    ! Variable
 
     use stats_variables, only: & 
         iAKm, &  ! Variable(s)
@@ -115,7 +113,12 @@ module stats_lh_zt_module
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_lh_zt
 
     ! External
     intrinsic :: trim

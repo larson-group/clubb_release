@@ -43,7 +43,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm, & ! In
-                               stats_zm, stats_zt, stats_sfc, & ! intent(inout)
+                               stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,  & ! In
                                wp2, wp2_zt, wp3, upwp, vpwp,              & ! In
                                sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,      & ! In
@@ -188,8 +188,8 @@ module advance_xp2_xpyp_module
     implicit none
 
     type (stats), target, intent(inout) :: &
-      stats_zm, &
       stats_zt, &
+      stats_zm, &
       stats_sfc
 
     type (grid), target, intent(in) :: gr
@@ -522,7 +522,7 @@ module advance_xp2_xpyp_module
        ! All left hand side matricies are equal for rtp2, thlp2, rtpthlp, and scalars.
        ! Thus only one solve is neccesary, using combined right hand sides
        call solve_xp2_xpyp_with_single_lhs( gr, C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp,& ! In
-                                            stats_sfc, stats_zm, & ! intent(inout)
+                                            stats_zm, stats_sfc, & ! intent(inout)
                                             wpthlp, rtp2_forcing, thlp2_forcing,            & ! In
                                             rtpthlp_forcing, sclrm, wpsclrp,                & ! In
                                             lhs_ta_wprtp2, lhs_ma, lhs_diff,                & ! In
@@ -536,7 +536,7 @@ module advance_xp2_xpyp_module
         
         ! Left hand sides are potentially different, this requires multiple solves
         call solve_xp2_xpyp_with_multiple_lhs( gr, C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, & ! In
-                                               stats_sfc, stats_zm, & ! intent(inout)
+                                               stats_zm, stats_sfc, & ! intent(inout)
                                                invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp,   & ! In
                                                rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! In
                                                sclrm, wpsclrp,                               & ! In
@@ -712,15 +712,19 @@ module advance_xp2_xpyp_module
     ! Apply the positive definite scheme to variances
     if ( l_hole_fill ) then
       call pos_definite_variances( gr, xp2_xpyp_rtp2, dt, rt_tol**2, & ! Intent(in)
+                                   stats_zm, & ! intent(inout)
                                    rho_ds_zm, rho_ds_zt, &         ! Intent(in)
                                    rtp2 )                          ! Intent(inout)
       call pos_definite_variances( gr, xp2_xpyp_thlp2, dt, thl_tol**2, & ! Intent(in)
+                                   stats_zm, & ! intent(inout)
                                    rho_ds_zm, rho_ds_zt, &           ! Intent(in)
                                    thlp2 )                           ! Intent(inout)
       call pos_definite_variances( gr, xp2_xpyp_up2, dt, w_tol_sqd, & ! Intent(in)
+                                   stats_zm, & ! intent(inout)
                                    rho_ds_zm, rho_ds_zt, &        ! Intent(in)
                                    up2 )                          ! Intent(inout)
       call pos_definite_variances( gr, xp2_xpyp_vp2, dt, w_tol_sqd, & ! Intent(in)
+                                   stats_zm, & ! intent(inout)
                                    rho_ds_zm, rho_ds_zt, &        ! Intent(in)
                                    vp2 )                          ! Intent(inout)
     endif
@@ -951,17 +955,20 @@ module advance_xp2_xpyp_module
       if ( l_hole_fill ) then
         do i = 1, sclr_dim, 1
           call pos_definite_variances( gr, xp2_xpyp_sclrp2, dt, sclr_tol(i)**2, & ! Intent(in)
+                                       stats_zm, & ! intent(inout)
                                        rho_ds_zm, rho_ds_zt, &                ! Intent(in)
                                        sclrp2(:,i) )                          ! Intent(inout)
           if ( i == iisclr_rt ) then
             ! Here again, we do this kluge here to make sclr'rt' == rt'^2
             call pos_definite_variances( gr, xp2_xpyp_sclrprtp, dt, sclr_tol(i)**2, & ! Intent(in)
+                                         stats_zm, & ! intent(inout)
                                          rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
                                          sclrprtp(:,i) )                          ! Intent(inout)
           end if
           if ( i == iisclr_thl ) then
             ! As with sclr'rt' above, but for sclr'thl'
             call pos_definite_variances( gr, xp2_xpyp_sclrpthlp, dt, sclr_tol(i)**2, & ! Intent(in)
+                                         stats_zm, & ! intent(inout)
                                          rho_ds_zm, rho_ds_zt, &                   ! Intent(in)
                                          sclrpthlp(:,i) )                          ! Intent(inout)
           end if
@@ -1117,7 +1124,7 @@ module advance_xp2_xpyp_module
   
   !============================================================================================
   subroutine solve_xp2_xpyp_with_single_lhs( gr, C2x, invrs_tau_xp2_zm, rtm, thlm, wprtp, &
-                                             stats_sfc, stats_zm, & ! intent(inout)
+                                             stats_zm, stats_sfc, & ! intent(inout)
                                              wpthlp, rtp2_forcing, thlp2_forcing, &
                                              rtpthlp_forcing, sclrm, wpsclrp, &
                                              lhs_ta, lhs_ma, lhs_diff, &
@@ -1162,8 +1169,8 @@ module advance_xp2_xpyp_module
       implicit none
 
     type (stats), target, intent(inout) :: &
-      stats_sfc, &
-      stats_zm
+      stats_zm, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
       
@@ -1355,7 +1362,7 @@ module advance_xp2_xpyp_module
   
   !============================================================================================
   subroutine solve_xp2_xpyp_with_multiple_lhs( gr, C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
-                                    stats_sfc, stats_zm, & ! intent(inout)
+                                    stats_zm, stats_sfc, & ! intent(inout)
                                     invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp, &
                                     rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
                                     sclrm, wpsclrp, &
@@ -1401,8 +1408,8 @@ module advance_xp2_xpyp_module
     implicit none
 
     type (stats), target, intent(inout) :: &
-      stats_sfc, &
-      stats_zm
+      stats_zm, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
       
@@ -4997,6 +5004,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine pos_definite_variances( gr, solve_type, dt, tolerance, &
+                                     stats_zm, & ! intent(inout)
                                      rho_ds_zm, rho_ds_zt, &
                                      xp2_np1 )
 
@@ -5009,13 +5017,18 @@ module advance_xp2_xpyp_module
     use clubb_precision, only: core_rknd
 
     use stats_variables, only:  & 
-        stats_zm, l_stats_samp, & 
+        l_stats_samp, & 
         irtp2_pd, ithlp2_pd, iup2_pd, ivp2_pd ! variables
     use stats_type_utilities, only:  & 
         stat_begin_update, stat_end_update ! subroutines
 
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 

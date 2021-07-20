@@ -14,18 +14,17 @@ module clubb_driver
 
   use grid_class, only: grid ! Type
 
-  use stats_variables, only: &
-      stats_zt,     & !--------------------------------------------------------- Type
-      stats_zm,     &
-      stats_lh_sfc, &
-      stats_lh_zt,  &
-      stats_rad_zm, &
-      stats_rad_zt, &
-      stats_sfc,    &
-      stats_lh_sfc
-
   use mt95, only: &
     genrand_intg
+
+  use stats_variables, only: &
+    stats_zt,     &
+    stats_zm,     &
+    stats_sfc,    &
+    stats_lh_zt,  &
+    stats_lh_sfc, &
+    stats_rad_zt, &
+    stats_rad_zm
 
   implicit none
 
@@ -61,8 +60,6 @@ module clubb_driver
     ! References:
     !   None
     !---------------------------------------------------------------------
-
-
 
     use grid_class, only: read_grid_heights, zt2zm, zm2zt !------------------ Procedure(s)
 
@@ -1953,8 +1950,8 @@ module clubb_driver
     ! not include CLUBB's ghost point. -nielsenb 20 Oct 2009
     if ( l_output_rad_files ) then
       ! Initialize statistics output
-      call stats_init( iunit, fname_prefix, fdir, l_stats,  & ! Intent(in)
-                       stats_zt,  stats_lh_zt,  stats_zm,  stats_rad_zm,  stats_sfc, & ! intent(inout)
+      call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
+                       stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, &
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
@@ -1963,7 +1960,7 @@ module clubb_driver
     else
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
-                       stats_zt,  stats_lh_zt,  stats_zm,  stats_rad_zm,  stats_sfc, & ! intent(inout) 
+                       stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, &
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
@@ -2179,8 +2176,8 @@ module clubb_driver
       
       ! Call the parameterization one timestep
       call advance_clubb_core &
-           ( gr, l_implemented, dt_main, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
-             stats_zt, stats_zm, stats_sfc, &                     ! Intent(inout)
+           ( gr, l_implemented, dt_main, fcor, sfc_elevation, hydromet_dim, & ! Intent(in)
+             stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
@@ -2488,7 +2485,8 @@ module clubb_driver
                                        Frad_SW_down, Frad_LW_down )
 
       ! End statistics timestep
-      call stats_end_timestep( stats_zt,  stats_lh_zt,  stats_lh_sfc,  stats_zm,  stats_rad_zt,  stats_rad_zm,  stats_sfc, & ! intent(inout)
+      call stats_end_timestep( &
+      stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, & ! intent(inout)
 #ifdef NETCDF
                                clubb_config_flags%l_uv_nudge, &
                                clubb_config_flags%l_tke_aniso, &
@@ -3986,7 +3984,7 @@ module clubb_driver
       call cleanup_input_fields()
     end if
 
-    call stats_finalize( stats_zt,  stats_lh_zt,  stats_lh_sfc,  stats_zm,  stats_rad_zt,  stats_rad_zm,  stats_sfc ) ! intent(inout)
+    call stats_finalize( stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm )
 
 #ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then
@@ -4489,7 +4487,6 @@ module clubb_driver
       iustar, &
       isoil_heat_flux, &
       l_stats_samp, &
-      stats_sfc, &
       iT_sfc
 
     use stats_type_utilities, only: stat_update_var_pt !------ Procedure(s)
@@ -5435,8 +5432,6 @@ module clubb_driver
 
     use grid_class, only: &
       flip !------------------------------------------------------------------------- Prodecure(s)
-
-    use stats_variables, only: stats_zt, stats_zm, stats_rad_zt, stats_rad_zm !------------ Type
 
     use stats_variables, only: l_stats_samp, l_output_rad_files !--------------------- Variable(s)
 

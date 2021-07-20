@@ -1134,8 +1134,9 @@ module advance_clubb_core_module
                                                                   ! buoyant parcel calc
 
 
-        call calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, & ! intent(in)
-                  rtm, thlm, thvm, &                                 ! intent(in)  
+        call calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, rtm, & ! intent(in)
+                  stats_zt, & ! intent(inout)
+                  thlm, thvm, &                                 ! intent(in)  
                   newmu, rtp2, thlp2, rtpthlp, pdf_params, em, &     ! intent(in)
                   thv_ds_zt, Lscale_max, &                           ! intent(in)
                   clubb_config_flags%l_Lscale_plume_centered, &      ! intent(in)
@@ -1515,7 +1516,7 @@ module advance_clubb_core_module
       !   for scalar variances and covariances,
       !   plus the horizontal wind variances by one time step, by one time step.
       call advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm,   & ! intent(in)
-                             stats_zm, stats_zt, stats_sfc, & ! intent(inout)
+                             stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                              rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,    & ! intent(in)
                              wp2, wp2_zt, wp3, upwp, vpwp,                & ! intent(in)
                              sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,        & ! intent(in)
@@ -1581,7 +1582,7 @@ module advance_clubb_core_module
       ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3 &
            ( gr, dt_advance, sfc_elevation, sigma_sqd_w, wm_zm,             & ! intent(in)
-             stats_zm, stats_zt, stats_sfc, & ! intent(inout)
+             stats_zt, stats_zm, stats_sfc, & ! intent(inout)
              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,                    & ! intent(in)
              wp2up2, wp2vp2, wp4,                                       & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,                       & ! intent(in)
@@ -1818,7 +1819,7 @@ module advance_clubb_core_module
       endif
 
       call advance_windm_edsclrm( gr, dt, wm_zt, Km_zm, Kmh_zm,                 & ! intent(in)
-                                  stats_zt, stats_sfc, stats_zm, & ! intent(inout)
+                                  stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                   ug, vg, um_ref, vm_ref,                       & ! intent(in)
                                   wp2, up2, vp2, um_forcing, vm_forcing,        & ! intent(in)
                                   edsclrm_forcing,                              & ! intent(in)

@@ -3987,7 +3987,7 @@ module advance_xm_wpxp_module
     ! Apply a monotonic turbulent flux limiter to xm/w'x'.
     if ( l_mono_flux_lim ) then
       call monotonic_turbulent_flux_limit( gr, solve_type, dt, xm_n, & ! intent(in)
-                                           stats_zm, stats_zt, & ! intent(inout)
+                                           stats_zt, stats_zm, & ! intent(inout)
                                            xp2, wm_zt, xm_forcing, & ! intent(in)
                                            rho_ds_zm, rho_ds_zt, & ! intent(in)
                                            invrs_rho_ds_zm, invrs_rho_ds_zt, & ! intent(in)

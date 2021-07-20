@@ -17,7 +17,7 @@ module stats_clubb_utilities
 
   !-----------------------------------------------------------------------
   subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, &
-                         stats_zt, stats_lh_zt, stats_zm, stats_rad_zm, stats_sfc, & ! intent(inout)
+                         stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, & ! intent(inout)
                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
                          nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
@@ -54,8 +54,7 @@ module stats_clubb_utilities
         ztscr21
 
     use stats_variables, only: &
-        l_silhs_out, & ! Variable(s)
-        stats_lh_sfc
+        l_silhs_out ! Variable(s)
 
     use stats_variables, only: &
         zmscr01, &
@@ -74,8 +73,7 @@ module stats_clubb_utilities
         zmscr14, &
         zmscr15, &
         zmscr16, &
-        zmscr17, &
-        stats_rad_zt
+        zmscr17
 
     use stats_variables, only: &
         l_stats, &
@@ -153,10 +151,12 @@ module stats_clubb_utilities
 
     type (stats), target, intent(inout) :: &
       stats_zt, &
-      stats_lh_zt, &
       stats_zm, &
-      stats_rad_zm, &
-      stats_sfc
+      stats_sfc, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_rad_zt, &
+      stats_rad_zm
 
     ! Local Constants
     integer, parameter :: &
@@ -893,7 +893,8 @@ module stats_clubb_utilities
 
       end if
 
-      call stats_init_lh_zt( vars_lh_zt, l_error )
+      call stats_init_lh_zt( vars_lh_zt, l_error, & !intent(in)
+  stats_lh_zt ) ! intent(inout)
 
       ivar = 1
       do while ( ichar(vars_lh_sfc(ivar)(1:1)) /= 0  & 
@@ -961,7 +962,8 @@ module stats_clubb_utilities
 
       end if
 
-      call stats_init_lh_sfc( vars_lh_sfc, l_error )
+      call stats_init_lh_sfc( vars_lh_sfc, l_error, & !intent(in)
+  stats_lh_sfc ) ! intent(inout)
 
     end if ! l_silhs_out
 
@@ -1585,7 +1587,7 @@ module stats_clubb_utilities
 
   !-----------------------------------------------------------------------
   subroutine stats_end_timestep( &
-  stats_zt, stats_lh_zt, stats_lh_sfc, stats_zm, stats_rad_zt, stats_rad_zm, stats_sfc, & ! intent(inout)
+  stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, & ! intent(inout)
 #ifdef NETCDF
                                  l_uv_nudge, &
                                  l_tke_aniso, &
@@ -1634,12 +1636,12 @@ module stats_clubb_utilities
 
     type (stats), target, intent(inout) :: &
       stats_zt, &
+      stats_zm, &
+      stats_sfc, &
       stats_lh_zt, &
       stats_lh_sfc, &
-      stats_zm, &
       stats_rad_zt, &
-      stats_rad_zm, &
-      stats_sfc
+      stats_rad_zm
 
     ! External
     intrinsic :: floor
@@ -2599,7 +2601,7 @@ module stats_clubb_utilities
   end subroutine stats_accumulate
 !------------------------------------------------------------------------------
   subroutine stats_accumulate_hydromet( gr, hydromet, rho_ds_zt, & !intent(in)
-  stats_sfc, stats_zt ) ! intent(inout)
+  stats_zt, stats_sfc ) ! intent(inout)
 ! Description:
 !   Compute stats related the hydrometeors
 
@@ -2647,8 +2649,8 @@ module stats_clubb_utilities
     implicit none
 
     type (stats), target, intent(inout) :: &
-      stats_sfc, &
-      stats_zt
+      stats_zt, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
 
@@ -2878,7 +2880,7 @@ module stats_clubb_utilities
   end subroutine stats_accumulate_lh_tend
     
   !-----------------------------------------------------------------------
-  subroutine stats_finalize( stats_zt, stats_lh_zt, stats_lh_sfc, stats_zm, stats_rad_zt, stats_rad_zm, stats_sfc ) ! intent(inout)
+  subroutine stats_finalize( stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm ) ! intent(inout)
 
     !     Description:
     !     Close NetCDF files and deallocate scratch space and
@@ -3005,12 +3007,12 @@ module stats_clubb_utilities
 
     type (stats), target, intent(inout) :: &
       stats_zt, &
+      stats_zm, &
+      stats_sfc, &
       stats_lh_zt, &
       stats_lh_sfc, &
-      stats_zm, &
       stats_rad_zt, &
-      stats_rad_zm, &
-      stats_sfc
+      stats_rad_zm
 
     if ( l_stats .and. l_netcdf ) then
 #ifdef NETCDF

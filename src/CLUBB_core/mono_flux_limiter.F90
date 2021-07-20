@@ -28,7 +28,7 @@ module mono_flux_limiter
 
   !=============================================================================
   subroutine monotonic_turbulent_flux_limit( gr, solve_type, dt, xm_old, &
-                                             stats_zm, stats_zt, & ! intent(inout)
+                                             stats_zt, stats_zm, & ! intent(inout)
                                              xp2, wm_zt, xm_forcing, &
                                              rho_ds_zm, rho_ds_zt, &
                                              invrs_rho_ds_zm, invrs_rho_ds_zt, &
@@ -344,8 +344,8 @@ module mono_flux_limiter
     implicit none
 
     type (stats), target, intent(inout) :: &
-      stats_zm, &
-      stats_zt
+      stats_zt, &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 

@@ -63,7 +63,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine setup_pdf_parameters( gr, nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
-                                   stats_zt, stats_sfc, & ! intent(inout)
+                                   stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                    Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -159,8 +159,7 @@ module setup_clubb_pdf_params
         iprecip_frac_2, &
         iNcnm,          &
         ihmp2_zt,       &
-        irtp2_from_chi, &
-        stats_zm
+        irtp2_from_chi
 
     use diagnose_correlations_module, only: &
         diagnose_correlations, & ! Procedure(s)
@@ -182,6 +181,7 @@ module setup_clubb_pdf_params
 
     type (stats), target, intent(inout) :: &
       stats_zt, &
+      stats_zm, &
       stats_sfc
 
     type (grid), target, intent(in) :: gr
@@ -806,6 +806,7 @@ module setup_clubb_pdf_params
       
       do j = 1, ngrdcol
         call pdf_param_hm_stats( nz, pdf_dim, hm_1(j,:,:), hm_2(j,:,:), &
+                                 stats_zt, & ! intent(inout)
                                  mu_x_1(j,:,:), mu_x_2(j,:,:), &
                                  sigma_x_1(j,:,:), sigma_x_2(j,:,:), &
                                  corr_array_1(j,:,:,:), corr_array_2(j,:,:,:), &
@@ -815,6 +816,7 @@ module setup_clubb_pdf_params
       !!! Statistics for normal space PDF parameters involving hydrometeors.
       do j = 1, ngrdcol
         call pdf_param_ln_hm_stats( nz, pdf_dim, mu_x_1_n(j,:,:), &
+                                    stats_zt, & ! intent(inout)
                                     mu_x_2_n(j,:,:), sigma_x_1_n(j,:,:), &
                                     sigma_x_2_n(j,:,:), corr_array_1_n(j,:,:,:), &
                                     corr_array_2_n(j,:,:,:), l_stats_samp )
@@ -3821,6 +3823,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine pdf_param_hm_stats( nz, pdf_dim, hm_1, hm_2, &
+                                 stats_zt, & ! intent(inout)
                                  mu_x_1, mu_x_2, &
                                  sigma_x_1, sigma_x_2, &
                                  corr_array_1, corr_array_2, &
@@ -3885,10 +3888,14 @@ module setup_clubb_pdf_params
         icorr_Ncn_hm_1,     &
         icorr_Ncn_hm_2,     &
         icorr_hmx_hmy_1,    &
-        icorr_hmx_hmy_2,    &
-        stats_zt
+        icorr_hmx_hmy_2
+
+    use stats_type, only: stats ! Type
 
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt
 
     ! Input Variables
     integer, intent(in) :: &
@@ -4386,6 +4393,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine pdf_param_ln_hm_stats( nz, pdf_dim, mu_x_1_n, &
+                                    stats_zt, & ! intent(inout)
                                     mu_x_2_n, sigma_x_1_n, &
                                     sigma_x_2_n, corr_array_1_n, &
                                     corr_array_2_n, l_stats_samp )
@@ -4438,10 +4446,14 @@ module setup_clubb_pdf_params
         icorr_Ncn_hm_1_n,  &
         icorr_Ncn_hm_2_n,  &
         icorr_hmx_hmy_1_n, &
-        icorr_hmx_hmy_2_n, &
-        stats_zt
+        icorr_hmx_hmy_2_n
+
+    use stats_type, only: stats ! Type
 
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt
 
     ! Input Variables
     integer, intent(in) :: &

@@ -63,6 +63,15 @@ module clubb_api_module
     stat_rknd, &
     dp  ! Double Precision
 
+  use stats_variables, only: &
+    stats_zt,     &
+    stats_zm,     &
+    stats_sfc,    &
+    stats_lh_zt,  &
+    stats_lh_sfc, &
+    stats_rad_zt, &
+    stats_rad_zm
+
   use constants_clubb, only : &
     cloud_frac_min, & ! Threshold for cloud fractions
     cm3_per_m3, & ! Cubic centimeters per cubic meter
@@ -219,14 +228,7 @@ module clubb_api_module
     zmscr07, zmscr08, zmscr09, &
     zmscr10, zmscr11, zmscr12, &
     zmscr13, zmscr14, zmscr15, &
-    zmscr16, zmscr17, &
-    stats_rad_zt, &
-    stats_zt, &
-    stats_sfc, &
-    stats_rad_zm, &
-    stats_lh_sfc, &
-    stats_zm, &
-    stats_lh_zt
+    zmscr16, zmscr17
 
   use stats_zm_module, only : &
     nvarmax_zm ! Maximum variables allowed
@@ -451,8 +453,7 @@ module clubb_api_module
     nvarmax_rad_zt, &
     nvarmax_sfc, &
     nvarmax_zm, &
-    nvarmax_zt, &
-    stats_rad_zt
+    nvarmax_zt
     public &
     nparams, &
     setup_parameters_api, &
@@ -772,7 +773,7 @@ contains
 #endif
     call advance_clubb_core( gr, &
       l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
-      stats_zt, stats_zm, stats_sfc, & ! intent(inout)      
+      stats_zt, stats_zm, stats_sfc, & ! intent(inout)
       thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
       sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
       wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
@@ -1206,7 +1207,7 @@ contains
 
     call fill_holes_driver( gr,    &
       nz, dt, hydromet_dim,        & ! Intent(in)
-      stats_zt, & ! intent(inout)
+      stats_zt,                    & ! intent(inout)
       l_fill_holes_hm,             & ! Intent(in)
       rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
       thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
@@ -2060,7 +2061,7 @@ contains
 
     call setup_pdf_parameters( gr, &
       nz, 1, pdf_dim, dt, &                                   ! Intent(in)
-      stats_zt, stats_sfc, & ! intent(inout)
+      stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
       Nc_in_cloud_col, rcm_col, cloud_frac_col, Kh_zm_col, &  ! Intent(in)
       ice_supersat_frac_col, hydromet_col, wphydrometp_col, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &               ! Intent(in)
@@ -2215,7 +2216,7 @@ contains
 
     call setup_pdf_parameters( gr, &
       nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
-      stats_zt, stats_sfc, & ! intent(inout)
+      stats_zt, stats_zm, stats_sfc, &            ! intent(inout)
       Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -2309,7 +2310,7 @@ contains
 
     call stats_init( &
       iunit, fname_prefix, fdir, l_stats_in, &
-      stats_zt, stats_lh_zt, stats_zm, stats_rad_zm, stats_sfc, & ! intent(inout)
+      stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, & ! intent(inout)
       stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
       nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
       grad_zt, nnrad_zm, grad_zm, day, month, year, &
@@ -2375,7 +2376,7 @@ contains
 #endif
 
     call stats_end_timestep( &
-  stats_zt, stats_lh_zt, stats_lh_sfc, stats_zm, stats_rad_zt, stats_rad_zm, stats_sfc, & ! intent(inout)
+  stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, & ! intent(inout)
 #ifdef NETCDF
                              l_uv_nudge, & ! Intent(in)
                              l_tke_aniso, & ! Intent(in)
@@ -2412,9 +2413,8 @@ contains
 
     call stats_accumulate_hydromet( gr, &
       hydromet, rho_ds_zt, &
-      stats_sfc, stats_zt ) ! intent(inout)
-  
-   end subroutine stats_accumulate_hydromet_api
+      stats_zt, stats_sfc ) ! intent(inout)
+  end subroutine stats_accumulate_hydromet_api
 
   !================================================================================================
   ! stats_finalize - Close NetCDF files and deallocate scratch space and stats file structures.
@@ -2426,7 +2426,7 @@ contains
 
     implicit none
 
-    call stats_finalize ( stats_zt, stats_lh_zt, stats_lh_sfc, stats_zm, stats_rad_zt, stats_rad_zm, stats_sfc ) ! intent(inout)
+    call stats_finalize ( stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm ) ! intent(inout)
 
   end subroutine stats_finalize_api
 
@@ -2517,7 +2517,7 @@ contains
 
     call stats_init_zt( &
       vars_zt, l_error, &
-      stats_zt )! intent(inout)
+      stats_zt ) ! intent(inout)
 
   end subroutine stats_init_zt_api
 

@@ -32,7 +32,7 @@ module advance_windm_edsclrm_module
   !=============================================================================
   subroutine advance_windm_edsclrm &
              ( gr, dt, wm_zt, Km_zm, Kmh_zm, &
-               stats_zt, stats_sfc, stats_zm, & ! intent(inout)
+               stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                ug, vg, um_ref, vm_ref, &
                wp2, up2, vp2, um_forcing, vm_forcing, &
                edsclrm_forcing, &
@@ -114,8 +114,8 @@ module advance_windm_edsclrm_module
 
     type (stats), target, intent(inout) :: &
       stats_zt, &
-      stats_sfc, &
-      stats_zm
+      stats_zm, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
 
@@ -345,9 +345,11 @@ module advance_windm_edsclrm_module
        if ( l_stats_samp ) then
 
           ! Implicit contributions to um and vm
-          call windm_edsclrm_implicit_stats( gr, windm_edsclrm_um, um ) ! intent(in)
+          call windm_edsclrm_implicit_stats( gr, windm_edsclrm_um, um, & !intent(in)
+  stats_zt ) ! intent(inout)
 
-          call windm_edsclrm_implicit_stats( gr, windm_edsclrm_vm, vm ) ! intent(in)
+          call windm_edsclrm_implicit_stats( gr, windm_edsclrm_vm, vm, & !intent(in)
+  stats_zt ) ! intent(inout)
 
        endif ! l_stats_samp
     
@@ -1234,7 +1236,8 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_solve
 
   !=============================================================================
-  subroutine windm_edsclrm_implicit_stats( gr, solve_type, xm )
+  subroutine windm_edsclrm_implicit_stats( gr, solve_type, xm, & !intent(in)
+  stats_zt ) ! intent(inout)
 
     ! Description:
     ! Compute implicit contributions to um and vm
@@ -1253,8 +1256,7 @@ module advance_windm_edsclrm_module
         ztscr03, & 
         ztscr04, & 
         ztscr05, & 
-        ztscr06, & 
-        stats_zt
+        ztscr06
 
     use stats_type_utilities, only:  &
         stat_end_update_pt,  & ! Subroutines
@@ -1266,7 +1268,12 @@ module advance_windm_edsclrm_module
     use grid_class, only: &
         grid ! Type
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt
 
     type (grid), target, intent(in) :: gr
 

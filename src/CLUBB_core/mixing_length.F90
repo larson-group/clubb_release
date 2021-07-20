@@ -880,6 +880,7 @@ module mixing_length
 
 !===============================================================================
   subroutine calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, rtm,        &
+                  stats_zt, & ! intent(inout)
                   thlm, thvm, newmu, rtp2, thlp2, rtpthlp,                     &
                   pdf_params, em, thv_ds_zt, Lscale_max,                       &
                   l_Lscale_plume_centered,                                     &
@@ -902,8 +903,7 @@ module mixing_length
         core_rknd
 
     use stats_variables, only: &
-        l_stats_samp,  &
-        stats_zt
+        l_stats_samp
 
     use pdf_parameter_module, only: &
         pdf_parameter
@@ -923,7 +923,12 @@ module mixing_length
     use constants_clubb, only:  &
         fstderr  ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type (stats), target, intent(inout) :: &
+      stats_zt
 
     type (grid), target, intent(in) :: gr
 

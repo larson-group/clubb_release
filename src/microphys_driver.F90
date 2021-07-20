@@ -491,7 +491,8 @@ module microphys_driver
             + lh_sample_point_weights(1,1) + real( X_mixt_comp_all_levs(1,1) )
         endif
 #endif /* SILHS */
-        call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, stats_lh_zt, &
+        call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, &
+                                       stats_lh_zt, &
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc )
@@ -585,7 +586,8 @@ module microphys_driver
         error stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
 #endif /* SILHS */
 
-        call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, stats_lh_zt, &
+        call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, &
+                                       stats_lh_zt, &
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc )
