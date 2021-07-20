@@ -2486,8 +2486,10 @@ module clubb_driver
 
       ! End statistics timestep
       call stats_end_timestep( &
-      stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, & ! intent(inout)
 #ifdef NETCDF
+                               stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+                               stats_lh_zt, stats_lh_sfc, & ! intent(inout)
+                               stats_rad_zt, stats_rad_zm, & ! intent(inout)
                                clubb_config_flags%l_uv_nudge, &
                                clubb_config_flags%l_tke_aniso, &
                                clubb_config_flags%l_standard_term_ta, &
