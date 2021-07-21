@@ -304,6 +304,13 @@ module clubb_api_module
         iiedsclr_CO2, &
         l_frozen_hm, &
         l_mix_rat_hm, &
+        stats_zt, &
+        stats_zm, &
+        stats_sfc, &
+        stats_lh_zt, &
+        stats_lh_sfc, &
+        stats_rad_zt, &
+        stats_rad_zm, &
     cleanup_clubb_core_api
 
   public &
@@ -2376,11 +2383,11 @@ contains
 #endif
 
     call stats_end_timestep( &
-#ifdef NETCDF
                              stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                              stats_lh_zt, stats_lh_sfc, & ! intent(inout)
-                             stats_rad_zt, stats_rad_zm, & ! intent(inout)
-                             l_uv_nudge, & ! Intent(in)
+                             stats_rad_zt, stats_rad_zm & ! intent(inout)
+#ifdef NETCDF
+                             , l_uv_nudge, & ! Intent(in)
                              l_tke_aniso, & ! Intent(in)
                              l_standard_term_ta, & ! Intent(in)
                              l_single_C2_Skw & ! Intent(in)

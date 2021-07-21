@@ -1587,11 +1587,11 @@ module stats_clubb_utilities
 
   !-----------------------------------------------------------------------
   subroutine stats_end_timestep( &
-#ifdef NETCDF
                                  stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                  stats_lh_zt, stats_lh_sfc, & ! intent(inout)
-                                 stats_rad_zt, stats_rad_zm, & ! intent(inout)
-                                 l_uv_nudge, &
+                                 stats_rad_zt, stats_rad_zm & ! intent(inout)
+#ifdef NETCDF
+                                 , l_uv_nudge, &
                                  l_tke_aniso, &
                                  l_standard_term_ta, &
                                  l_single_C2_Skw &
