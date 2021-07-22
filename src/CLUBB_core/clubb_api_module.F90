@@ -780,7 +780,6 @@ contains
 #endif
     call advance_clubb_core( gr, &
       l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
-      stats_zt, stats_zm, stats_sfc, & ! intent(inout)
       thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
       sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
       wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
@@ -798,6 +797,7 @@ contains
       wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)
       clubb_config_flags, &                                   ! intent(in)
+      stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
       um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
       thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
       wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
@@ -1214,9 +1214,9 @@ contains
 
     call fill_holes_driver( gr,    &
       nz, dt, hydromet_dim,        & ! Intent(in)
-      stats_zt,                    & ! intent(inout)
       l_fill_holes_hm,             & ! Intent(in)
       rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
+      stats_zt,                    & ! intent(inout)
       thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
   end subroutine fill_holes_driver_api
 
@@ -2068,7 +2068,6 @@ contains
 
     call setup_pdf_parameters( gr, &
       nz, 1, pdf_dim, dt, &                                   ! Intent(in)
-      stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
       Nc_in_cloud_col, rcm_col, cloud_frac_col, Kh_zm_col, &  ! Intent(in)
       ice_supersat_frac_col, hydromet_col, wphydrometp_col, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &               ! Intent(in)
@@ -2080,6 +2079,7 @@ contains
       l_calc_w_corr, &                                        ! Intent(in)
       l_const_Nc_in_cloud, &                                  ! Intent(in)
       l_fix_w_chi_eta_correlations, &                         ! Intent(in)
+      stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
       hydrometp2_col, &                                       ! Intent(inout)
       mu_x_1_n_col, mu_x_2_n_col, &                           ! Intent(out)
       sigma_x_1_n_col, sigma_x_2_n_col, &                     ! Intent(out)
@@ -2223,7 +2223,6 @@ contains
 
     call setup_pdf_parameters( gr, &
       nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
-      stats_zt, stats_zm, stats_sfc, &            ! intent(inout)
       Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -2235,6 +2234,7 @@ contains
       l_calc_w_corr, &                            ! Intent(in)
       l_const_Nc_in_cloud, &                      ! Intent(in)
       l_fix_w_chi_eta_correlations, &             ! Intent(in)
+      stats_zt, stats_zm, stats_sfc, &            ! intent(inout)
       hydrometp2, &                               ! Intent(inout)
       mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
       sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -2317,11 +2317,13 @@ contains
 
     call stats_init( &
       iunit, fname_prefix, fdir, l_stats_in, &
-      stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, & ! intent(inout)
       stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
       nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
       grad_zt, nnrad_zm, grad_zm, day, month, year, &
-      lon_vals, lat_vals, time_current, delt, l_silhs_out_in )
+      lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+      stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+      stats_lh_zt, stats_lh_sfc, & ! intent(inout)
+      stats_rad_zt, stats_rad_zm ) ! intent(inout)
 
     if ( err_code == clubb_fatal_error ) error stop
     
@@ -2435,7 +2437,9 @@ contains
 
     implicit none
 
-    call stats_finalize ( stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm ) ! intent(inout)
+    call stats_finalize ( stats_zt, stats_zm, stats_sfc, &
+                          stats_lh_zt, stats_lh_sfc, &
+                          stats_rad_zt, stats_rad_zm ) ! intent(inout)
 
   end subroutine stats_finalize_api
 

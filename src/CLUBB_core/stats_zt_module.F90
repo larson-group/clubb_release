@@ -16,7 +16,7 @@ module stats_zt_module
 
   !=============================================================================
   subroutine stats_init_zt( vars_zt, l_error, & !intent(in)
-  stats_zt ) ! intent(inout)
+                            stats_zt ) ! intent(inout)
 
     ! Description:
     ! Initializes array indices for stats_zt

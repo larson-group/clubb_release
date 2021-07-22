@@ -486,12 +486,12 @@ module advance_helper_module
 
 !===============================================================================
   subroutine compute_Cx_fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm, &
-                                        stats_zm, & ! intent(inout)
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
                                         ice_supersat_frac, &
                                         l_brunt_vaisala_freq_moist, &
                                         l_use_thvm_in_bv_freq, &
                                         l_use_shear_Richardson, &
+                                        stats_zm, & 
                                         Cx_fnc_Richardson )
 
   ! Description:

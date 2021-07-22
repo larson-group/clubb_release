@@ -880,10 +880,10 @@ module mixing_length
 
 !===============================================================================
   subroutine calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, rtm,        &
-                  stats_zt, & ! intent(inout)
                   thlm, thvm, newmu, rtp2, thlp2, rtpthlp,                     &
                   pdf_params, em, thv_ds_zt, Lscale_max,                       &
                   l_Lscale_plume_centered,                                     &
+                  stats_zt, & 
                   Lscale, Lscale_up, Lscale_down)
 
     use constants_clubb, only: &

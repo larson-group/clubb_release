@@ -87,6 +87,11 @@ module spurious_source_test
     use model_flags, only: &
         set_default_clubb_config_flags ! Procedure(s)
 
+    use stats_variables, only: &
+        stats_zt, &
+        stats_zm, &
+        stats_sfc
+
     implicit none
 
     type (grid), target, intent(inout) :: gr
@@ -850,6 +855,7 @@ module spurious_source_test
                              l_brunt_vaisala_freq_moist, &
                              l_use_thvm_in_bv_freq, &
                              l_lmm_stepping, &
+                             stats_zt, stats_zm, stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp )
 

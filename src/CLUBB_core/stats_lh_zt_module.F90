@@ -16,7 +16,7 @@ module stats_lh_zt_module
 
 !-----------------------------------------------------------------------
   subroutine stats_init_lh_zt( vars_lh_zt, l_error, & !intent(in)
-  stats_lh_zt ) ! intent(inout)
+                               stats_lh_zt ) ! intent(inout)
 
 ! Description:
 !   Initializes array indices for stats_zt

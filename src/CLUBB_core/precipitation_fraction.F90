@@ -24,11 +24,11 @@ module precipitation_fraction
 
   !=============================================================================
   subroutine precip_fraction( nz, ngrdcol, &
-                              stats_sfc, & ! intent(inout)
                               hydromet, cloud_frac, cloud_frac_1, &
                               cloud_frac_2, ice_supersat_frac, &
                               ice_supersat_frac_1, ice_supersat_frac_2, &
                               mixt_frac, l_stats_samp, &
+                              stats_sfc, & 
                               precip_frac, &
                               precip_frac_1, &
                               precip_frac_2, &

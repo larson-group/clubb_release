@@ -17,7 +17,7 @@ module stats_rad_zm_module
 
 !-----------------------------------------------------------------------
   subroutine stats_init_rad_zm( vars_rad_zm, l_error, & !intent(in)
-  stats_rad_zm ) ! intent(inout)
+                                stats_rad_zm ) ! intent(inout)
 
 !     Description:
 !     Initializes array indices for stats_rad_zm variables

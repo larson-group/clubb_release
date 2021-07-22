@@ -492,10 +492,10 @@ module microphys_driver
         endif
 #endif /* SILHS */
         call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, &
-                                       stats_lh_zt, &
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
-                                       lh_rcm_avg, AKm_rcm, AKm_rcc )
+                                       lh_rcm_avg, AKm_rcm, AKm_rcc, &
+                                       stats_lh_zt ) ! intent(inout)
 
       endif ! LH isn't disabled
 
@@ -587,10 +587,10 @@ module microphys_driver
 #endif /* SILHS */
 
         call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, &
-                                       stats_lh_zt, &
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
-                                       lh_rcm_avg, AKm_rcm, AKm_rcc )
+                                       lh_rcm_avg, AKm_rcm, AKm_rcc, &
+                                       stats_lh_zt ) ! intent(inout)
 
         if ( l_stats_samp ) then
           ! Latin hypercube estimate for sedimentation velocities

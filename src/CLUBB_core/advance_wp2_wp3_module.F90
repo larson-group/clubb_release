@@ -40,8 +40,7 @@ module advance_wp2_wp3_module
   contains
 
   !=============================================================================
-  subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
-                              stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+  subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,     & ! In
                               wm_zt, a3, a3_zt, wp3_on_wp2,                  & ! In
                               wp2up2, wp2vp2, wp4,                           & ! In
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! In
@@ -64,6 +63,7 @@ module advance_wp2_wp3_module
                               l_damp_wp3_Skw_squared,                        & ! In
                               l_lmm_stepping,                                & ! In
                               l_use_tke_in_wp3_pr_turb_term,                 & ! In
+                              stats_zt, stats_zm, stats_sfc,                 & ! intent(inout)
                               wp2, wp3, wp3_zm, wp2_zt )                       ! Inout
 
     ! Description:
@@ -376,8 +376,7 @@ module advance_wp2_wp3_module
     endif ! l_lmm_stepping
 
     ! Solve semi-implicitly
-    call wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
-                     stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+    call wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,               & ! Intent(in)
                      wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                      wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -399,6 +398,7 @@ module advance_wp2_wp3_module
                      l_damp_wp2_using_em,                                     & ! Intent(in)
                      l_damp_wp3_Skw_squared,                                  & ! Intent(in)
                      l_use_tke_in_wp3_pr_turb_term,                           & ! Intent(in)
+                     stats_zt, stats_zm, stats_sfc,                           & ! intent(inout)
                      wp2, wp3, wp3_zm, wp2_zt )                                 ! Intent(inout)
 
     if ( l_lmm_stepping ) then
@@ -504,8 +504,7 @@ module advance_wp2_wp3_module
   end subroutine advance_wp2_wp3
 
   !=============================================================================
-  subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
-                         stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+  subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,               & ! Intent(in)
                          wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                          wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                          wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
@@ -527,6 +526,7 @@ module advance_wp2_wp3_module
                          l_damp_wp2_using_em,                                     & ! Intent(in)
                          l_damp_wp3_Skw_squared,                                  & ! Intent(in)
                          l_use_tke_in_wp3_pr_turb_term,                           & ! Intent(in)
+                         stats_zt, stats_zm, stats_sfc,                           & ! intent(inout)
                          wp2, wp3, wp3_zm, wp2_zt )                                 ! Intent(inout)
 
     ! Description:
@@ -848,7 +848,6 @@ module advance_wp2_wp3_module
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
     call wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &             ! intent(in)
-                   stats_zt, stats_zm, & ! intent(inout)
                    coef_wp4_implicit, wp2up2, wp2vp2, wp4, &                         ! intent(in)
                    wpthvp, wp2thvp, um, vm, &                                        ! intent(in)
                    upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt,  &                     ! intent(in)
@@ -864,6 +863,7 @@ module advance_wp2_wp3_module
                    l_damp_wp2_using_em, &                                            ! intent(in)
                    l_damp_wp3_Skw_squared, &                                         ! intent(in)
                    l_use_tke_in_wp3_pr_turb_term, &                                  ! intent(in)
+                   stats_zt, stats_zm, &                                             ! intent(inout)
                    rhs )                                                             ! intent(out)
 
     ! Save the value of rhs, which will be overwritten with the solution as
@@ -1183,7 +1183,7 @@ module advance_wp2_wp3_module
                  wpthlp(k)**2 / ( thlp2(k) * max_mag_correlation_flux**2 ) )
 
           call clip_variance_level( clip_wp2, dt, threshold, k, & ! intent(in)
-                                    stats_zm, & ! intent(inout)
+                                    stats_zm, &                   ! intent(inout)
                                     wp2(k) )                      ! intent(inout)
 
        enddo ! k = 1, gr%nz, 1
@@ -1194,7 +1194,7 @@ module advance_wp2_wp3_module
        threshold = w_tol_sqd
 
        call clip_variance( gr, clip_wp2, dt, threshold, & ! Intent(in)
-                           stats_zm, & ! intent(inout)
+                           stats_zm, &                ! intent(inout)
                            wp2 )                      ! Intent(inout)
 
     endif ! l_min_wp2_from_corr_wx
@@ -1206,8 +1206,8 @@ module advance_wp2_wp3_module
 
     ! Clip w'^3 by limiting skewness.
     call clip_skewness( gr, dt, sfc_elevation, wp2_zt, & ! intent(in)
-                        stats_zt, & ! intent(inout)
-                        wp3 )                        ! intent(inout)
+                        stats_zt, &                      ! intent(inout)
+                        wp3 )                            ! intent(inout)
 
     ! Compute wp3_zm for output purposes
     wp3_zm = zt2zm( gr, wp3 )
@@ -1869,7 +1869,6 @@ module advance_wp2_wp3_module
 
   !=================================================================================
   subroutine wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
-                       stats_zt, stats_zm, & ! intent(inout)
                        coef_wp4_implicit, wp2up2, wp2vp2, wp4, &
                        wpthvp, wp2thvp, um, vm, &
                        upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt, & 
@@ -1885,6 +1884,7 @@ module advance_wp2_wp3_module
                        l_damp_wp2_using_em, &
                        l_damp_wp3_Skw_squared, &
                        l_use_tke_in_wp3_pr_turb_term, &
+                       stats_zt, stats_zm, &
                        rhs )
 
     ! Description:

@@ -1951,20 +1951,24 @@ module clubb_driver
     if ( l_output_rad_files ) then
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
-                       stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, &
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
                        complete_momentum(2:total_atmos_dim + 1), day, month, year, & ! Intent(in)
-                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out ) ! Intent(in)
+                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out, & ! intent(in)
+                       stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+                       stats_lh_zt, stats_lh_sfc, & ! intent(inout)
+                       stats_rad_zt, stats_rad_zm ) ! intent(inout)
     else
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
-                       stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm, &
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
-                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out ) ! Intent(in)
+                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out, & ! intent(in)
+                       stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+                       stats_lh_zt, stats_lh_sfc, & ! intent(inout)
+                       stats_rad_zt, stats_rad_zm ) ! intent(inout)
     end if
  
 
@@ -2177,7 +2181,6 @@ module clubb_driver
       ! Call the parameterization one timestep
       call advance_clubb_core &
            ( gr, l_implemented, dt_main, fcor, sfc_elevation, hydromet_dim, & ! Intent(in)
-             stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
@@ -2192,6 +2195,7 @@ module clubb_driver
              wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
              dummy_dx, dummy_dy, &                                ! Intent(in)
              clubb_config_flags, &                                ! Intent(in)
+             stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
              um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
@@ -3986,7 +3990,9 @@ module clubb_driver
       call cleanup_input_fields()
     end if
 
-    call stats_finalize( stats_zt, stats_zm, stats_sfc, stats_lh_zt, stats_lh_sfc, stats_rad_zt, stats_rad_zm )
+    call stats_finalize( stats_zt, stats_zm, stats_sfc, &
+                         stats_lh_zt, stats_lh_sfc, &
+                         stats_rad_zt, stats_rad_zm )
 
 #ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then

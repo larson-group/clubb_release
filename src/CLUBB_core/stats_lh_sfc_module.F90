@@ -18,7 +18,7 @@ module stats_lh_sfc_module
 
 !-----------------------------------------------------------------------
   subroutine stats_init_lh_sfc( vars_lh_sfc, l_error, & !intent(in)
-  stats_lh_sfc ) ! intent(inout)
+                                stats_lh_sfc ) ! intent(inout)
 
 ! Description:
 !   Initializes array indices for stats_lh_sfc

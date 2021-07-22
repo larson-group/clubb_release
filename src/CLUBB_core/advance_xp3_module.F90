@@ -26,12 +26,12 @@ module advance_xp3_module
   contains
 
   !=============================================================================
-  subroutine advance_xp3( gr, dt, rtm, thlm, rtp2, thlp2, wprtp,         & ! Intent(in)
-                          stats_zt, & ! intent(inout)
+  subroutine advance_xp3( gr, dt, rtm, thlm, rtp2, thlp2, wprtp,     & ! Intent(in)
                           wpthlp, wprtp2, wpthlp2, rho_ds_zm,        & ! Intent(in)
                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, & ! Intent(in)
                           sclrm, sclrp2, wpsclrp, wpsclrp2,          & ! Intent(in)
                           l_lmm_stepping,                            & ! Intent(in)
+                          stats_zt,                                  & ! intent(inout)
                           rtp3, thlp3, sclrp3 )                        ! Intent(inout)
 
     ! Description:
@@ -108,23 +108,23 @@ module advance_xp3_module
     ! Advance <rt'^3> one model timestep or calculate <rt'^3> using a
     ! steady-state approximation.
     call advance_xp3_simplified( gr, xp3_rtp3, dt, rtm,        & ! Intent(in)
-                                 stats_zt, & ! intent(inout)
                                  rtp2, wprtp,              & ! Intent(in)
                                  wprtp2, rho_ds_zm,        & ! Intent(in)
                                  invrs_rho_ds_zt,          & ! Intent(in)
                                  invrs_tau_zt, tau_max_zt, & ! Intent(in) 
                                  rt_tol, l_lmm_stepping,   & ! Intent(in)
+                                 stats_zt,                 & ! intent(inout)
                                  rtp3                      ) ! Intent(inout)
 
     ! Advance <thl'^3> one model timestep or calculate <thl'^3> using a
     ! steady-state approximation.
-    call advance_xp3_simplified( gr, xp3_thlp3, dt, thlm,      & ! Intent(in)
-                                 stats_zt, & ! intent(inout)
+    call advance_xp3_simplified( gr, xp3_thlp3, dt, thlm,  & ! Intent(in)
                                  thlp2, wpthlp,            & ! Intent(in)
                                  wpthlp2, rho_ds_zm,       & ! Intent(in)
                                  invrs_rho_ds_zt,          & ! Intent(in)
                                  invrs_tau_zt, tau_max_zt, & ! Intent(in) 
                                  thl_tol, l_lmm_stepping,  & ! Intent(in)
+                                 stats_zt,                 & ! intent(inout)
                                  thlp3                     ) ! Intent(inout)
 
     ! Advance <sclr'^3> one model timestep or calculate <sclr'^3> using a
@@ -132,12 +132,12 @@ module advance_xp3_module
     do i = 1, sclr_dim, 1
 
        call advance_xp3_simplified( gr, xp3_sclrp3, dt, sclrm(:,i),  & ! In
-                                    stats_zt, & ! intent(inout)
                                     sclrp2(:,i), wpsclrp(:,i),   & ! In
                                     wpsclrp2(:,i), rho_ds_zm,    & ! In
                                     invrs_rho_ds_zt,             & ! In
                                     invrs_tau_zt, tau_max_zt,    & ! In 
                                     sclr_tol(i), l_lmm_stepping, & ! In
+                                    stats_zt,                    & ! intent(inout)
                                     sclrp3(:,i)                  ) ! In/Out
 
     enddo ! i = 1, sclr_dim
@@ -148,14 +148,14 @@ module advance_xp3_module
   end subroutine advance_xp3
 
   !=============================================================================
-  subroutine advance_xp3_simplified( gr, solve_type, dt, xm,       & ! Intent(in)
-                                     stats_zt, & ! intent(inout)
+  subroutine advance_xp3_simplified( gr, solve_type, dt, xm,   & ! Intent(in)
                                      xp2, wpxp,                & ! Intent(in)
                                      wpxp2, rho_ds_zm,         & ! Intent(in)
                                      invrs_rho_ds_zt,          & ! Intent(in)
                                      invrs_tau_zt, tau_max_zt, & ! Intent(in) 
                                      x_tol, l_lmm_stepping,    & ! Intent(in)
-                                     xp3                       ) ! Intent(inout)
+                                     stats_zt,                 & ! intent(inout)
+                                     xp3 )                       ! Intent(inout)
 
     ! Description:
     ! Predicts the value of <x'^3> using a simplified form of the <x'^3>

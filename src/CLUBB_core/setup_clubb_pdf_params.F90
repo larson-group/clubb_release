@@ -62,8 +62,7 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( gr, nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
-                                   stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+  subroutine setup_pdf_parameters( gr, nz, ngrdcol, pdf_dim, dt, &             ! Intent(in)
                                    Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -75,6 +74,7 @@ module setup_clubb_pdf_params
                                    l_calc_w_corr, &                            ! Intent(in)
                                    l_const_Nc_in_cloud, &                      ! Intent(in)
                                    l_fix_w_chi_eta_correlations, &             ! Intent(in)
+                                   stats_zt, stats_zm, stats_sfc, &            ! intent(inout)
                                    hydrometp2, &                               ! Intent(out)
                                    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
                                    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -425,11 +425,11 @@ module setup_clubb_pdf_params
       end do
       
       call precip_fraction( nz, ngrdcol,                                              & ! In
-                            stats_sfc, & ! intent(inout)
                             hydromet(:,:,:), cloud_frac(:,:), cloud_frac_1(:,:),      & ! In
                             cloud_frac_2(:,:), ice_supersat_frac(:,:),                & ! In
                             ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:),       & ! In
                             mixt_frac(:,:), l_stats_samp,                             & ! In
+                            stats_sfc,                                                & ! intent(inout)
                             precip_frac(:,:),                                         & ! Out
                             precip_frac_1(:,:),                                       & ! Out
                             precip_frac_2(:,:),                                       & ! Out
@@ -569,10 +569,10 @@ module setup_clubb_pdf_params
 
             ! Clip the value of covariance <w'hm'> on thermodynamic levels.
             call clip_covar_level( clip_wphydrometp, k, l_first_clip_ts,  & ! In
-                                   stats_zm, & ! intent(inout)
                                    l_last_clip_ts, dt, wp2_zt(j,k),       & ! In
                                    hydrometp2_zt(j,k,i),                  & ! In
                                    l_predict_upwp_vpwp,                   & ! In
+                                   stats_zm,                              & ! intent(inout)
                                    wphydrometp_zt(j,k,i),                 & ! Inout
                                    wphydrometp_chnge(j,k,i) )               ! Out
 
@@ -806,20 +806,20 @@ module setup_clubb_pdf_params
       
       do j = 1, ngrdcol
         call pdf_param_hm_stats( nz, pdf_dim, hm_1(j,:,:), hm_2(j,:,:), &
-                                 stats_zt, & ! intent(inout)
                                  mu_x_1(j,:,:), mu_x_2(j,:,:), &
                                  sigma_x_1(j,:,:), sigma_x_2(j,:,:), &
                                  corr_array_1(j,:,:,:), corr_array_2(j,:,:,:), &
-                                 l_stats_samp )
+                                 l_stats_samp, &
+                                 stats_zt ) ! intent(inout)
       end do
 
       !!! Statistics for normal space PDF parameters involving hydrometeors.
       do j = 1, ngrdcol
         call pdf_param_ln_hm_stats( nz, pdf_dim, mu_x_1_n(j,:,:), &
-                                    stats_zt, & ! intent(inout)
                                     mu_x_2_n(j,:,:), sigma_x_1_n(j,:,:), &
                                     sigma_x_2_n(j,:,:), corr_array_1_n(j,:,:,:), &
-                                    corr_array_2_n(j,:,:,:), l_stats_samp )
+                                    corr_array_2_n(j,:,:,:), l_stats_samp, &
+                                    stats_zt ) ! intent(inout)
       end do
       
       if ( irtp2_from_chi > 0 ) then
@@ -3823,11 +3823,11 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine pdf_param_hm_stats( nz, pdf_dim, hm_1, hm_2, &
-                                 stats_zt, & ! intent(inout)
                                  mu_x_1, mu_x_2, &
                                  sigma_x_1, sigma_x_2, &
                                  corr_array_1, corr_array_2, &
-                                 l_stats_samp )
+                                 l_stats_samp, &
+                                 stats_zt )
 
     ! Description:
     ! Record statistics for standard PDF parameters involving hydrometeors.
@@ -4393,10 +4393,10 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine pdf_param_ln_hm_stats( nz, pdf_dim, mu_x_1_n, &
-                                    stats_zt, & ! intent(inout)
                                     mu_x_2_n, sigma_x_1_n, &
                                     sigma_x_2_n, corr_array_1_n, &
-                                    corr_array_2_n, l_stats_samp )
+                                    corr_array_2_n, l_stats_samp, & 
+                                    stats_zt )
 
     ! Description:
     ! Record statistics for normal space PDF parameters involving hydrometeors.

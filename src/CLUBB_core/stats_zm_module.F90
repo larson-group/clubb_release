@@ -16,7 +16,7 @@ module stats_zm_module
 
 !-----------------------------------------------------------------------
   subroutine stats_init_zm( vars_zm, l_error, & !intent(in)
-  stats_zm ) ! intent(inout)
+                            stats_zm ) ! intent(inout)
 
 ! Description:
 !   Initializes array indices for stats_zm
