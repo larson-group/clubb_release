@@ -12,6 +12,7 @@ module ice_dfsn_module
   contains
 !-------------------------------------------------------------------------------
   subroutine ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, & 
+                       stats_zt, &
                        rcm_icedfsn, thlm_icedfsn )
 ! Description:
 !   This subroutine is based on a COAMPS subroutine (nov11_icedfs)
@@ -78,10 +79,15 @@ module ice_dfsn_module
     use stats_type_utilities, only: & 
         stat_update_var
 
-    use stats_variables, only: stats_zt, l_stats_samp,  & ! Variable(s)
+    use stats_variables, only: l_stats_samp,  & ! Variable(s)
         ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt
 
     type(grid), target, intent(in) :: gr
 

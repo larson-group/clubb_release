@@ -44,6 +44,7 @@ module microphys_driver
                                 lh_Nc_clipped, &                          ! In
                                 l_lh_importance_sampling, &               ! In
                                 l_lh_instant_var_covar_src, &             ! In
+                                stats_zt, stats_zm, stats_sfc, stats_lh_zt, & ! intent(inout)
                                 Nccnm, &                                  ! Inout
                                 hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &    ! Out
                                 thlm_mc, hydromet_vel_zt, &               ! Out
@@ -150,10 +151,6 @@ module microphys_driver
         iiNi
 
     use stats_variables, only: & 
-        stats_zt,  & ! Variable(s)
-        stats_zm,  & 
-        stats_sfc, & 
-        stats_lh_zt, &
         l_stats_samp
 
     use stats_variables, only: & 
@@ -192,7 +189,15 @@ module microphys_driver
         microphys_get_var,          &
         microphys_stats_cleanup
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt
 
     type (grid), target, intent(in) :: gr
 
@@ -427,6 +432,7 @@ module microphys_driver
              thlm, hydromet(:,iiri), hydromet(:,iirr),  &  ! In
              hydromet(:,iirg), hydromet(:,iirs), & ! In
              rcm, Ncm_microphys, hydromet(:,iiNr), hydromet(:,iiNi), & !In
+             stats_zt, &
              Nccnm, cond, & ! Inout
              hydromet_vel_zt(:,iirs), hydromet_vel_zt(:,iiri), & ! Out
              hydromet_vel_zt(:,iirr), hydromet_vel_zt(:,iiNr),  &  ! Out
@@ -476,6 +482,7 @@ module microphys_driver
                lh_Nc_clipped, & ! In
                l_lh_importance_sampling, & ! In
                l_lh_instant_var_covar_src, & ! In
+               stats_zt, stats_zm, stats_sfc, stats_lh_zt, & ! intent(inout)
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
@@ -575,6 +582,7 @@ module microphys_driver
                lh_Nc_clipped, & ! In
                l_lh_importance_sampling, & ! In
                l_lh_instant_var_covar_src, & ! In
+               stats_zt, stats_zm, stats_sfc, stats_lh_zt, & ! intent(inout)
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
@@ -631,6 +639,7 @@ module microphys_driver
                                       mu_x_1_n, mu_x_2_n,                   & ! In
                                       sigma_x_1_n, sigma_x_2_n,             & ! In
                                       corr_array_1_n, corr_array_2_n,       & ! In
+                                      stats_zt, stats_zm,                   & ! intent(inout)
                                       hydromet_mc, hydromet_vel_zt,         & ! Out
                                       rcm_mc, rvm_mc, thlm_mc,              & ! Out
                                       hydromet_vel_covar_zt_impc,           & ! Out
@@ -662,7 +671,9 @@ module microphys_driver
     case ( "simplified_ice" )
 
       ! Call the simplified ice diffusion scheme
-      call ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
+      call ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, &
+                     stats_zt, &
+                     rcm_mc, thlm_mc )
 
     case default
       ! Do nothing
@@ -734,8 +745,9 @@ module microphys_driver
       ! Note:  it would be very easy to upscale the cloud water sedimentation
       !        flux, so we should look into adding an upscaled option.
 
-      call cloud_drop_sed( gr, rcm, Ncm_microphys,          & ! Intent(in)
+      call cloud_drop_sed( gr, rcm, Ncm_microphys,      & ! Intent(in)
                            rho_zm, rho, exner, sigma_g, & ! Intent(in)
+                           stats_zt, stats_zm,          & ! intent(inout)
                            rcm_mc, thlm_mc )              ! Intent(inout)
 
     endif ! l_cloud_sed

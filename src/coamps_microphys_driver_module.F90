@@ -19,6 +19,7 @@ module coamps_microphys_driver_module
            rtm, wm_zm, p_in_Pa, exner, rho, & 
            thlm, rim, rrm, rgm, rsm, & 
            rcm, Ncm, Nrm, Nim, &
+           stats_zt, &
            Nccnm, cond, &
            Vrs, Vri, Vrr, VNr, Vrg, & 
            ritend, rrtend, rgtend,  & 
@@ -57,7 +58,7 @@ module coamps_microphys_driver_module
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
-    use stats_variables, only: stats_zt, l_stats_samp,  & ! Variable(s)
+    use stats_variables, only: l_stats_samp,  & ! Variable(s)
         im_vol_rad_rain, & 
         im_vol_rad_cloud, &
         isnowslope, & 
@@ -70,7 +71,12 @@ module coamps_microphys_driver_module
 
     use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt 
 
     type (grid), target, intent(in) :: gr
 

@@ -25,6 +25,7 @@ module mixed_moment_PDF_integrals
                                         corr_array_1_n, corr_array_2_n, &
                                         pdf_params, hydromet_pdf_params, &
                                         precip_fracs, &
+                                        stats_zt, stats_zm, &
                                         rtphmp_zt, thlphmp_zt, wp2hmp ) 
 
     ! Description:
@@ -76,14 +77,18 @@ module mixed_moment_PDF_integrals
         irtphmp,      &
         ithlphmp,     &
         ihmxphmyp,    &
-        stats_zt,     &
-        stats_zm,     &
         l_stats_samp
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm 
 
     type (grid), target, intent(in) :: gr
 

@@ -1487,19 +1487,6 @@ module stats_variables
 
 !$omp threadprivate( irtp2_from_chi )
 
-  ! Variables that contains all the statistics
-
-  type (stats), target, public, save :: stats_zt,   &    ! stats_zt grid
-                                        stats_zm,   &    ! stats_zm grid
-                                        stats_lh_zt,  &  ! stats_lh_zt grid
-                                        stats_lh_sfc,  & ! stats_lh_sfc grid
-                                        stats_rad_zt,  & ! stats_rad_zt grid
-                                        stats_rad_zm,  & ! stats_rad_zm grid
-                                        stats_sfc        ! stats_sfc
-
-!$omp threadprivate(stats_zt, stats_zm, stats_lh_zt, stats_lh_sfc)
-!$omp threadprivate(stats_rad_zt, stats_rad_zm, stats_sfc)
-
   ! Scratch space
 
   real( kind = core_rknd ), dimension(:), allocatable, public :: &

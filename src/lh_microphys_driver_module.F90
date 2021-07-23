@@ -24,6 +24,7 @@ contains
                lh_Nc_clipped, & ! In
                l_lh_importance_sampling, &
                l_lh_instant_var_covar_src, &
+               stats_zt, stats_zm, stats_sfc, stats_lh_zt, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -62,7 +63,15 @@ contains
     use estimate_scm_microphys_module, only: &
       est_single_column_tndcy
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt
 
     type(grid), target, intent(in) :: gr
 
@@ -167,6 +176,7 @@ contains
            lh_rc_clipped, lh_rv_clipped, &                             ! Intent(in)
            lh_Nc_clipped, &                                            ! Intent(in)
            l_lh_instant_var_covar_src, &                               ! Intent(in)
+           stats_zt, stats_zm, stats_sfc, stats_lh_zt, &               ! intent(inout)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &               ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                         ! Intent(out)
            lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &                     ! Intent(out)

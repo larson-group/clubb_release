@@ -16,7 +16,8 @@ module silhs_category_variance_module
              ( nz, num_samples, pdf_dim, hydromet_dim, X_nl_all_levs, &
                X_mixt_comp_all_levs, microphys_stats_vars_all, &
                lh_hydromet_mc_all, lh_sample_point_weights, pdf_params, &
-               precip_fracs )
+               precip_fracs, &
+               stats_lh_zt )
 
   ! Description:
   !   Computes the variance of a microphysics variable in each importance
@@ -48,8 +49,12 @@ module silhs_category_variance_module
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions
 
+    use stats_type, only: stats ! Type
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt
 
     ! Input Variables
     integer, intent(in) :: &
@@ -126,7 +131,8 @@ module silhs_category_variance_module
 
     call silhs_sample_category_variance &
          ( nz, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
-           samples_all, lh_sample_point_weights, pdf_params, precip_fracs )
+           samples_all, lh_sample_point_weights, pdf_params, precip_fracs, &
+           stats_lh_zt )
 
     return
   end subroutine silhs_category_variance_driver
@@ -135,7 +141,8 @@ module silhs_category_variance_module
   !-----------------------------------------------------------------------
   subroutine silhs_sample_category_variance &
              ( nz, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
-               samples_all, lh_sample_point_weights, pdf_params, precip_fracs )
+               samples_all, lh_sample_point_weights, pdf_params, precip_fracs, &
+               stats_lh_zt )
 
   ! Description:
   !   Computes the variance of a microphysics variable in each importance
@@ -160,7 +167,6 @@ module silhs_category_variance_module
       determine_sample_categories
 
     use stats_variables, only: &
-      stats_lh_zt, &                  ! Variable(s)
       isilhs_variance_category, &
       l_stats_samp
 
@@ -173,7 +179,12 @@ module silhs_category_variance_module
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt
 
     ! Input Variables
     integer, intent(in) :: &

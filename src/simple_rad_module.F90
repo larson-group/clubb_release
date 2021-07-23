@@ -177,7 +177,8 @@ module simple_rad_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine simple_rad( gr, rho, rho_zm, rtm, rcm, exner,  & 
+  subroutine simple_rad( gr, rho, rho_zm, rtm, rcm, exner,  &
+                         stats_sfc, &
                          Frad_LW, radht_LW )
 ! Description:
 !   A simplified radiation driver
@@ -198,7 +199,7 @@ module simple_rad_module
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
     use stats_variables, only:  & 
-        iz_inversion, stats_sfc, l_stats_samp ! Variable(s)
+        iz_inversion, l_stats_samp ! Variable(s)
 
     use interpolation, only: lin_interpolate_two_points ! Procedure(s)
 
@@ -211,7 +212,12 @@ module simple_rad_module
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
 

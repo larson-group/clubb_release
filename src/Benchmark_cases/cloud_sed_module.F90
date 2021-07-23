@@ -61,6 +61,7 @@ contains
   !=============================================================================
   subroutine cloud_drop_sed( gr, rcm, Ncm, &
                              rho_zm, rho, exner, sigma_g, &
+                             stats_zt, stats_zm, & 
                              rcm_mc, thlm_mc )
 
     ! Description:
@@ -119,14 +120,18 @@ contains
     use stats_variables, only: & 
         ised_rcm,     & ! Variable(s)
         iFcsed,       &
-        stats_zt,           &
-        stats_zm,           &
         l_stats_samp
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 

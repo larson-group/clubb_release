@@ -59,6 +59,7 @@ module KK_upscaled_covariances
                                        crt1, crt2, &
                                        cthl1, cthl2, &
                                        level, l_stats_samp, &
+                                       stats_zt, &
                                        wprtp_mc_src_tndcy, &
                                        wpthlp_mc_src_tndcy, &
                                        rtp2_mc_src_tndcy, &
@@ -107,10 +108,14 @@ module KK_upscaled_covariances
         ithl_KK_auto_covar_zt, &
         iw_KK_accr_covar_zt,   &
         irt_KK_accr_covar_zt,  &
-        ithl_KK_accr_covar_zt, &
-        stats_zt
+        ithl_KK_accr_covar_zt
+
+    use stats_type, only: stats ! Type
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &

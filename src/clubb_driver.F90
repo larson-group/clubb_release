@@ -14,19 +14,25 @@ module clubb_driver
 
   use grid_class, only: grid ! Type
 
+  use stats_type, only: stats ! Type
+
   use mt95, only: &
     genrand_intg
 
-  use stats_variables, only: &
-    stats_zt,     &
-    stats_zm,     &
-    stats_sfc,    &
-    stats_lh_zt,  &
-    stats_lh_sfc, &
-    stats_rad_zt, &
-    stats_rad_zm
-
   implicit none
+
+  ! Variables that contains all the statistics
+
+  type (stats), target, public, save :: stats_zt,      & ! stats_zt grid
+                                        stats_zm,      & ! stats_zm grid
+                                        stats_lh_zt,   & ! stats_lh_zt grid
+                                        stats_lh_sfc,  & ! stats_lh_sfc grid
+                                        stats_rad_zt,  & ! stats_rad_zt grid
+                                        stats_rad_zm,  & ! stats_rad_zm grid
+                                        stats_sfc        ! stats_sfc
+
+!$omp threadprivate(stats_zt, stats_zm, stats_lh_zt, stats_lh_sfc)
+!$omp threadprivate(stats_rad_zt, stats_rad_zm, stats_sfc)
 
   type(grid), target :: gr
 !$omp threadprivate(gr)
@@ -37,12 +43,9 @@ module clubb_driver
     initialize_clubb_variables, &
     prescribe_forcings, &
     restart_clubb
-    
-
 
   public :: &
     run_clubb
-
 
 
   private ! Default to private
@@ -2240,6 +2243,7 @@ module clubb_driver
                         clubb_config_flags%l_calc_w_corr,                           & ! Intent(in)
                         clubb_config_flags%l_const_Nc_in_cloud,                     & ! Intent(in)
                         clubb_config_flags%l_fix_w_chi_eta_correlations,            & ! Intent(in)
+                        stats_zt, stats_zm, stats_sfc,                              & ! intent(inout)
                         hydrometp2,                                                 & ! Intent(out)
                         mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                           & ! Intent(out)
                         sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),                     & ! Intent(out)
@@ -2257,6 +2261,7 @@ module clubb_driver
                                    corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:), & ! Intent(in)
                                    pdf_params, hydromet_pdf_params(1,:),             & ! Intent(in)
                                    precip_fracs,                                     & ! Intent(in)
+                                   stats_zt, stats_zm,                               & ! intent(inout)
                                    rtphmp_zt, thlphmp_zt, wp2hmp )                     ! Intent(out)
 
       endif ! not microphys_scheme == "none"
@@ -2329,6 +2334,7 @@ module clubb_driver
                clubb_config_flags%l_standard_term_ta,                        & ! In
                clubb_config_flags%l_single_C2_Skw,                           & ! In
                vert_decorr_coef,                                             & ! In
+               stats_lh_zt, stats_lh_sfc,                                    & ! intent(inout)
                X_nl_all_levs, X_mixt_comp_all_levs,                          & ! Out
                lh_sample_point_weights ) ! Out
        
@@ -2345,11 +2351,12 @@ module clubb_driver
         !$acc wait
                                           
         call stats_accumulate_lh &
-             ( gr, gr%nz, lh_num_samples, pdf_dim, rho_ds_zt(1,:),          & ! In
+             ( gr, gr%nz, lh_num_samples, pdf_dim, rho_ds_zt(1,:),      & ! In
                lh_sample_point_weights(1,:,:),  X_nl_all_levs(1,:,:,:), & ! In
                lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:),             & ! In
                lh_rc_clipped(1,:,:), lh_rv_clipped(1,:,:),              & ! In
-               lh_Nc_clipped(1,:,:)                                     ) ! In
+               lh_Nc_clipped(1,:,:),                                    &
+               stats_lh_zt, stats_lh_sfc )                                ! intent(inout)
           
                
 
@@ -2391,6 +2398,7 @@ module clubb_driver
                               lh_Nc_clipped(1,:,:), &                                 ! In
                               silhs_config_flags%l_lh_importance_sampling, &          ! In
                               silhs_config_flags%l_lh_instant_var_covar_src, &        ! In
+                              stats_zt, stats_zm, stats_sfc, stats_lh_zt, &           ! intent(inout)
                               Nccnm, &                                                ! Inout
                               hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &                  ! Out
                               thlm_mc, hydromet_vel_zt, &                             ! Out
@@ -2418,6 +2426,7 @@ module clubb_driver
                               hydromet_vel_covar_zt_impc,                 & ! In
                               hydromet_vel_covar_zt_expc,                 & ! In
                               clubb_config_flags%l_upwind_xm_ma,          & ! In
+                              stats_zt, stats_zm, stats_sfc,              & ! intent(inout)
                               hydromet, hydromet_vel_zt, hydrometp2,      & ! Inout
                               K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc,    & ! Inout
                               wphydrometp, wpNcp )                          ! Out
@@ -5042,7 +5051,9 @@ module clubb_driver
 
       call advance_soil_veg( dt, rho_zm(1), &
                              Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
-                             Frad_LW_down(1), wpthep, soil_heat_flux )
+                             Frad_LW_down(1), wpthep, &
+                             stats_sfc, &
+                             soil_heat_flux )
     else
       ! Here the value is undefined
       soil_heat_flux = -999._core_rknd
@@ -5373,7 +5384,8 @@ module clubb_driver
       end if
 
       call simple_rad( gr, rho, rho_zm, rtm, rcm, exner, & ! In
-                       Frad_LW, radht_LW )             ! Out
+                       stats_sfc,                        & ! intent(inout)
+                       Frad_LW, radht_LW )                 ! Out
 
 
       Frad = Frad_SW + Frad_LW

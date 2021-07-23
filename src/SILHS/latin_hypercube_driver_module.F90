@@ -39,6 +39,7 @@ module latin_hypercube_driver_module
                l_standard_term_ta, &                                       ! intent(in)
                l_single_C2_Skw, &                                          ! intent(in)
                vert_decorr_coef, &                                         ! intent(in)
+               stats_lh_zt, stats_lh_sfc, &                                ! intent(inout)
                X_nl_all_levs, X_mixt_comp_all_levs, &                      ! intent(out)
                lh_sample_point_weights )                                   ! intent(out)
 
@@ -91,7 +92,13 @@ module latin_hypercube_driver_module
     use mt95, only: &
       genrand_intg  ! Type
 
+    use stats_type, only: stats ! Type 
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt, &
+      stats_lh_sfc
 
     ! External
     intrinsic :: allocated, mod, maxloc, epsilon, transpose
@@ -389,7 +396,8 @@ module latin_hypercube_driver_module
       call stats_accumulate_uniform_lh( nz, num_samples, ngrdcol, l_in_precip(:,:,:), &
                                         X_mixt_comp_all_levs(:,:,:), &
                                         X_u_all_levs(:,:,:,iiPDF_chi), pdf_params, &
-                                        lh_sample_point_weights(:,:,:), k_lh_start(:) )
+                                        lh_sample_point_weights(:,:,:), k_lh_start(:), &
+                                        stats_lh_zt, stats_lh_sfc )
     end if
 
     if ( l_output_2D_lognormal_dist ) then
@@ -1943,7 +1951,8 @@ module latin_hypercube_driver_module
                lh_sample_point_weights, X_nl_all_levs, &
                lh_rt_clipped, lh_thl_clipped, & 
                lh_rc_clipped, lh_rv_clipped, & 
-               lh_Nc_clipped )
+               lh_Nc_clipped, &
+               stats_lh_zt, stats_lh_sfc )
 
 ! Description:
 !   Clip subcolumns from latin hypercube and create stats for diagnostic
@@ -1991,9 +2000,7 @@ module latin_hypercube_driver_module
       ilh_vwp, &
       ilh_lwp, &
       ilh_sample_weights_sum, &
-      ilh_sample_weights_avg, &
-      stats_lh_zt, &
-      stats_lh_sfc
+      ilh_sample_weights_avg
 
     use math_utilities, only: & ! Procedure(s)
       compute_sample_mean, & ! Procedure(s)
@@ -2027,7 +2034,13 @@ module latin_hypercube_driver_module
    use fill_holes, only: &
      vertical_integral ! Procedure(s)
 
+   use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt, &
+      stats_lh_sfc
 
     type (grid), target, intent(in) :: gr
 
@@ -2438,7 +2451,8 @@ module latin_hypercube_driver_module
   !-----------------------------------------------------------------------
   subroutine stats_accumulate_uniform_lh( nz, num_samples, ngrdcol, l_in_precip_all_levs, &
                                           X_mixt_comp_all_levs, X_u_chi_all_levs, pdf_params, &
-                                          lh_sample_point_weights, k_lh_start )
+                                          lh_sample_point_weights, k_lh_start, &
+                                          stats_lh_zt, stats_lh_sfc )
 
   ! Description:
   !   Samples statistics that cannot be deduced from the normal-lognormal
@@ -2461,9 +2475,7 @@ module latin_hypercube_driver_module
       ilh_precip_frac_unweighted, &
       ilh_mixt_frac_unweighted, &
       ik_lh_start, &
-      ilh_samp_frac_category, &
-      stats_lh_zt, &
-      stats_lh_sfc
+      ilh_samp_frac_category
 
     use math_utilities, only: &
       compute_sample_mean ! Procedure
@@ -2480,7 +2492,13 @@ module latin_hypercube_driver_module
       num_importance_categories, & ! Constant
       define_importance_categories
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt, &
+      stats_lh_sfc
 
     ! Input Variables
     integer, intent(in) :: &

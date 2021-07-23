@@ -398,6 +398,7 @@ module KK_microphys_module
                                     mu_x_1_n, mu_x_2_n,                & ! In
                                     sigma_x_1_n, sigma_x_2_n,          & ! In
                                     corr_array_1_n, corr_array_2_n,    & ! In
+                                    stats_zt, stats_zm, &
                                     hydromet_mc, hydromet_vel,         & ! Out
                                     rcm_mc, rvm_mc, thlm_mc,           & ! Out
                                     hydromet_vel_covar_zt_impc,        & ! Out
@@ -488,15 +489,19 @@ module KK_microphys_module
     use stats_variables, only: &
         iVrrprrp_expcalc, &
         iVNrpNrp_expcalc, &
-        stats_zm, &
-        stats_zt, &
         irrm_src_adj, &
         iNrm_src_adj, &
         irrm_evap_adj, &
         iNrm_evap_adj, &
         irrm_mc_nonadj
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 
@@ -810,6 +815,7 @@ module KK_microphys_module
                                sigma_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                                KK_mvr_coef, mixt_frac(k), precip_frac_1, &
                                precip_frac_2, k, l_stats_samp, &
+                               stats_zt, & 
                                Vrrprrp_zt_impc(k), Vrrprrp_zt_expc(k), &
                                VNrpNrp_zt_impc(k), VNrpNrp_zt_expc(k) )
 
@@ -851,6 +857,7 @@ module KK_microphys_module
                                          pdf_params%crt_1(1,k), pdf_params%crt_2(1,k), &
                                          pdf_params%cthl_1(1,k), pdf_params%cthl_2(1,k), &
                                          k, l_stats_samp, &
+                                         stats_zt, &
                                          wprtp_mc_zt(k), &
                                          wpthlp_mc_zt(k), &
                                          rtp2_mc_zt(k), &
@@ -899,13 +906,15 @@ module KK_microphys_module
                                sigma_Nr_1_n, sigma_Nr_2_n, corr_rr_Nr_1_n, &
                                corr_rr_Nr_2_n, mixt_frac(k), precip_frac_1, &
                                precip_frac_2, KK_mvr_coef, KK_mean_vol_rad(k), &
-                               k, l_stats_samp )
+                               k, l_stats_samp, &
+                               stats_zt )
 
        !!! Statistical output for mean microphysics tendenices.
        call KK_stats_output( KK_evap_tndcy(k), KK_auto_tndcy(k), &
                              KK_accr_tndcy(k), KK_mean_vol_rad(k), &
                              KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
-                             l_stats_samp, k )
+                             l_stats_samp, k, &
+                             stats_zt )
 
 
     enddo  ! Microphysics tendency loop: k = 2, nz, 1
@@ -1483,7 +1492,8 @@ module KK_microphys_module
                                 sigma_Nr_1_n, sigma_Nr_2_n, corr_rr_Nr_1_n, &
                                 corr_rr_Nr_2_n, mixt_frac, precip_frac_1, &
                                 precip_frac_2, KK_mvr_coef, KK_mean_vol_rad, &
-                                level, l_stats_samp )
+                                level, l_stats_samp, &
+                                stats_zt )
 
     ! Description:
 
@@ -1500,10 +1510,14 @@ module KK_microphys_module
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &
-        iKK_mvr_variance_zt, &
-        stats_zt
+        iKK_mvr_variance_zt
+
+    use stats_type, only: stats ! Type
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -1579,7 +1593,8 @@ module KK_microphys_module
   subroutine KK_stats_output( KK_evap_tndcy, KK_auto_tndcy, &
                               KK_accr_tndcy, KK_mean_vol_rad, &
                               KK_Nrm_evap_tndcy, KK_Nrm_auto_tndcy, &
-                              l_stats_samp, level )
+                              l_stats_samp, level, &
+                              stats_zt )
 
     ! Description:
 
@@ -1590,7 +1605,6 @@ module KK_microphys_module
         core_rknd  ! Variable(s)
 
     use stats_variables, only: &
-        stats_zt,              & ! Variable(s)
         im_vol_rad_rain, &
         irrm_evap,       &
         irrm_auto,       &
@@ -1601,7 +1615,12 @@ module KK_microphys_module
     use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &

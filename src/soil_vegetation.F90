@@ -27,7 +27,9 @@ module soil_vegetation
   !----------------------------------------------------------------------
   subroutine advance_soil_veg( dt, rho_sfc, &
                                Frad_SW_net, Frad_SW_down_sfc, &
-                               Frad_LW_down_sfc, wpthep, soil_heat_flux )
+                               Frad_LW_down_sfc, wpthep, &
+                               stats_sfc, &
+                               soil_heat_flux )
     !
     !     Description:
     !
@@ -78,14 +80,19 @@ module soil_vegetation
 
     use clubb_precision, only: core_rknd ! Constant
 
-    use stats_variables, only: l_stats_samp, stats_sfc, &
+    use stats_variables, only: l_stats_samp, &
                                 iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K ! Variables
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
     use constants_clubb, only: pi, Cp, stefan_boltzmann ! Variable(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_sfc
 
     ! This subroutine does not produce any output variables. Instead the module
     ! variables listed below are updated.

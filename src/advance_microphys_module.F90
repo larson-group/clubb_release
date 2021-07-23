@@ -33,7 +33,7 @@ module advance_microphys_module
   contains
 
   !=============================================================================
-  subroutine advance_microphys( gr, dt, time_current, wm_zt, wp2, &            ! In
+  subroutine advance_microphys( gr, dt, time_current, wm_zt, wp2, &        ! In
                                 exner, rho, rho_zm, rcm, &                 ! In
                                 cloud_frac, Kh_zm, Skw_zm, &               ! In
                                 rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &   ! In
@@ -41,6 +41,7 @@ module advance_microphys_module
                                 hydromet_vel_covar_zt_impc, &              ! In
                                 hydromet_vel_covar_zt_expc, &              ! In
                                 l_upwind_xm_ma, &                          ! In
+                                stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                                 K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
                                 wphydrometp, wpNcp )                       ! Out
@@ -93,9 +94,6 @@ module advance_microphys_module
         iiNi
 
     use stats_variables, only: & 
-        stats_zt,  & ! Variable(s)
-        stats_zm,  &
-        stats_sfc, &
         l_stats_samp
 
     !use stats_variables, only: & 
@@ -121,7 +119,14 @@ module advance_microphys_module
     use stats_clubb_utilities, only: &
         stats_accumulate_hydromet  ! Procedure(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
 
     type (grid), target, intent(in) :: gr
 
@@ -306,6 +311,7 @@ module advance_microphys_module
                                  hydromet_mc, hydromet_vel_covar_zt_impc, &
                                  hydromet_vel_covar_zt_expc, &
                                  l_upwind_xm_ma, &
+                                 stats_zt, stats_zm, &
                                  hydromet, hydromet_vel_zt, &
                                  hydrometp2, rvm_mc, thlm_mc, &
                                  wphydrometp, hydromet_vel, &
@@ -334,6 +340,7 @@ module advance_microphys_module
        call advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          l_upwind_xm_ma, &
+                         stats_zt, stats_zm, &
                          Ncm, Nc_in_cloud, &
                          wpNcp )
         
@@ -493,6 +500,7 @@ module advance_microphys_module
                                   hydromet_mc, hydromet_vel_covar_zt_impc, &
                                   hydromet_vel_covar_zt_expc, &
                                   l_upwind_xm_ma, &
+                                  stats_zt, stats_zm, & 
                                   hydromet, hydromet_vel_zt, &
                                   hydrometp2, rvm_mc, thlm_mc, &
                                   wphydrometp, hydromet_vel, &
@@ -551,8 +559,6 @@ module advance_microphys_module
         stat_end_update_pt
 
     use stats_variables, only: & 
-        stats_zt,           &  ! Variable(s)
-        stats_zm,           &
         l_stats_samp
 
     use array_index, only:  & 
@@ -567,7 +573,13 @@ module advance_microphys_module
         ihydrometp2,  &
         iwphydrometp
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 
@@ -756,11 +768,13 @@ module advance_microphys_module
                            K_hm(:,i), nu_hm_vert_res_dep, cloud_frac, &
                            hydromet_vel_covar_zt_expc(:,i), &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           stats_zt, &
                            rhs )
 
        !!!!! Advance hydrometeor one time step.
        call microphys_solve( gr, trim( hydromet_list(i) ), l_hydromet_sed(i), &
                              cloud_frac, &
+                             stats_zt, &
                              lhs, rhs, hydromet(:,i) )
 
        if ( clubb_at_least_debug_level( 0 ) ) then 
@@ -927,6 +941,7 @@ module advance_microphys_module
   subroutine advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                           l_upwind_xm_ma, &
+                          stats_zt, stats_zm, &
                           Ncm, Nc_in_cloud, &
                           wpNcp )
 
@@ -978,15 +993,19 @@ module advance_microphys_module
         stat_end_update_pt
 
     use stats_variables, only: & 
-        stats_zt,           & ! Variable(s)
-        stats_zm,           &
         l_stats_samp, &
         iNcm_bt,      &
         iNcm_mc,      &
         iNcm_cl,      &
         iwpNcp
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
 
     type (grid), target, intent(in) :: gr
 
@@ -1112,6 +1131,7 @@ module advance_microphys_module
                            K_Nc, nu_hm_vert_res_dep, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           stats_zt, &
                            rhs )
 
     else
@@ -1121,6 +1141,7 @@ module advance_microphys_module
                            K_Nc, nu_hm_vert_res_dep, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           stats_zt, &
                            rhs )
 
     endif
@@ -1131,6 +1152,7 @@ module advance_microphys_module
 
        call microphys_solve( gr, "Ncm", l_Ncm_sed, &
                              cloud_frac, &
+                             stats_zt, &
                              lhs, rhs, Nc_in_cloud )
 
        Ncm = Nc_in_cloud * max( cloud_frac, cloud_frac_min )
@@ -1139,6 +1161,7 @@ module advance_microphys_module
 
        call microphys_solve( gr, "Ncm", l_Ncm_sed, &
                              cloud_frac, &
+                             stats_zt, &
                              lhs, rhs, Ncm )
 
        Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
@@ -1260,6 +1283,7 @@ module advance_microphys_module
   !=============================================================================
   subroutine microphys_solve( gr, solve_type, l_sed, &
                               cloud_frac, &
+                              stats_zt, &
                               lhs, rhs, hmm )
 
     ! Description:
@@ -1287,7 +1311,6 @@ module advance_microphys_module
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
 
     use stats_variables, only: & 
-        stats_zt,  & ! Variable(s)
         irrm_ma, & 
         irrm_sd, & 
         irrm_ts, & 
@@ -1338,7 +1361,12 @@ module advance_microphys_module
         stat_update_var_pt, & ! Procedure(s)
         stat_end_update_pt
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt
 
     type (grid), target, intent(in) :: gr
 
@@ -1923,6 +1951,7 @@ module advance_microphys_module
                             K_hm, nu, cloud_frac, &
                             Vhmphmp_zt_expc, &
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                            stats_zt, &
                             rhs )
 
     ! Description:
@@ -1959,7 +1988,6 @@ module advance_microphys_module
         irrm_ts, &
         iNrm_ta, &
         iNrm_ts, &
-        stats_zt, &
         l_stats_samp
 
     use stats_variables, only: &
@@ -1974,7 +2002,12 @@ module advance_microphys_module
     use stats_type_utilities, only: &
         stat_begin_update_pt ! Procedure(s)
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt
 
     type (grid), target, intent(in) :: gr
 

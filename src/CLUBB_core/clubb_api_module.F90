@@ -63,15 +63,6 @@ module clubb_api_module
     stat_rknd, &
     dp  ! Double Precision
 
-  use stats_variables, only: &
-    stats_zt,     &
-    stats_zm,     &
-    stats_sfc,    &
-    stats_lh_zt,  &
-    stats_lh_sfc, &
-    stats_rad_zt, &
-    stats_rad_zm
-
   use constants_clubb, only : &
     cloud_frac_min, & ! Threshold for cloud fractions
     cm3_per_m3, & ! Cubic centimeters per cubic meter
@@ -241,6 +232,8 @@ module clubb_api_module
 
   use grid_class, only: grid ! Type
 
+  use stats_type, only: stats ! Type
+
   implicit none
 
   private
@@ -304,13 +297,6 @@ module clubb_api_module
         iiedsclr_CO2, &
         l_frozen_hm, &
         l_mix_rat_hm, &
-        stats_zt, &
-        stats_zm, &
-        stats_sfc, &
-        stats_lh_zt, &
-        stats_lh_sfc, &
-        stats_rad_zt, &
-        stats_rad_zm, &
     cleanup_clubb_core_api
 
   public &
@@ -343,7 +329,8 @@ module clubb_api_module
     Ncnp2_on_Ncnm2,     &
     hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
     hmp2_ip_on_hmm2_ip_intrcpt_type, &
-    grid
+    grid, &
+    stats
 
   public &
     ! To Interact With CLUBB's Grid:
@@ -551,6 +538,7 @@ contains
     wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
+    stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
     wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
@@ -591,6 +579,11 @@ contains
     
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
 
     type(grid), target, intent(in) :: gr
       !!! Input Variables
@@ -1177,6 +1170,7 @@ contains
     nz, dt, hydromet_dim,        & ! Intent(in)
     l_fill_holes_hm,             & ! Intent(in)
     rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
+    stats_zt, &                    ! intent(inout)
     thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
 
     use fill_holes, only : fill_holes_driver
@@ -1184,6 +1178,9 @@ contains
     
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt
 
     type(grid), target, intent(in) :: gr
 
@@ -1919,6 +1916,7 @@ contains
     l_calc_w_corr, &                            ! Intent(in)
     l_const_Nc_in_cloud, &                      ! Intent(in)
     l_fix_w_chi_eta_correlations, &             ! Intent(in)
+    stats_zt, stats_zm, stats_sfc, &            ! intent(inout)
     hydrometp2, &                               ! Intent(inout)
     mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
     sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -1939,6 +1937,11 @@ contains
     
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
 
     type(grid), target, intent(in) :: gr
 
@@ -2118,6 +2121,7 @@ contains
     l_calc_w_corr, &                            ! Intent(in)
     l_const_Nc_in_cloud, &                      ! Intent(in)
     l_fix_w_chi_eta_correlations, &             ! Intent(in)
+    stats_zt, stats_zm, stats_sfc, &            ! intent(inout)
     hydrometp2, &                               ! Intent(inout)
     mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
     sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -2138,6 +2142,11 @@ contains
         clubb_fatal_error   ! Constant
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
 
     type(grid), target, intent(in) :: gr
 
@@ -2256,11 +2265,23 @@ contains
     stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
     nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
     grad_zt, nnrad_zm, grad_zm, day, month, year, &
-    lon_vals, lat_vals, time_current, delt, l_silhs_out_in )
+    lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+    stats_zt, stats_zm, stats_sfc, &
+    stats_lh_zt, stats_lh_sfc, &
+    stats_rad_zt, stats_rad_zm )
 
     use stats_clubb_utilities, only : stats_init
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_rad_zt, &
+      stats_rad_zm
 
     ! Input Variables
     integer, intent(in) :: iunit  ! File unit for fnamelist
@@ -2359,8 +2380,11 @@ contains
   !================================================================================================
 
   subroutine stats_end_timestep_api( &
+                                     stats_zt, stats_zm, stats_sfc, &
+                                     stats_lh_zt, stats_lh_sfc, &
+                                     stats_rad_zt, stats_rad_zm &
 #ifdef NETCDF
-                                     l_uv_nudge, &
+                                     , l_uv_nudge, &
                                      l_tke_aniso, &
                                      l_standard_term_ta, &
                                      l_single_C2_Skw &
@@ -2370,6 +2394,15 @@ contains
     use stats_clubb_utilities, only : stats_end_timestep
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_rad_zt, &
+      stats_rad_zm
 
 #ifdef NETCDF
     ! Input Variables
@@ -2405,13 +2438,18 @@ contains
   !================================================================================================
 
   subroutine stats_accumulate_hydromet_api( gr, &
-    hydromet, rho_ds_zt )
+                                            hydromet, rho_ds_zt, &
+                                            stats_zt, stats_sfc )
 
     use stats_clubb_utilities, only : stats_accumulate_hydromet
 
     
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_sfc
 
     type(grid), target, intent(in) :: gr
 
@@ -2431,11 +2469,22 @@ contains
   ! stats_finalize - Close NetCDF files and deallocate scratch space and stats file structures.
   !================================================================================================
 
-  subroutine stats_finalize_api
+  subroutine stats_finalize_api ( stats_zt, stats_zm, stats_sfc, &
+                                  stats_lh_zt, stats_lh_sfc, &
+                                  stats_rad_zt, stats_rad_zm )
 
     use stats_clubb_utilities, only : stats_finalize
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt, &
+      stats_lh_sfc, &
+      stats_rad_zt, &
+      stats_rad_zm
 
     call stats_finalize ( stats_zt, stats_zm, stats_sfc, &
                           stats_lh_zt, stats_lh_sfc, &
@@ -2448,11 +2497,15 @@ contains
   !================================================================================================
 
   subroutine stats_init_rad_zm_api( &
-    vars_rad_zm, l_error )
+                                    vars_rad_zm, l_error, &
+                                    stats_rad_zm )
 
     use stats_rad_zm_module, only : stats_init_rad_zm, nvarmax_rad_zm
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_rad_zm
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_rad_zm), intent(in) :: vars_rad_zm
@@ -2470,11 +2523,15 @@ contains
   !================================================================================================
 
   subroutine stats_init_rad_zt_api( &
-    vars_rad_zt, l_error )
+                                    vars_rad_zt, l_error, &
+                                    stats_rad_zt )
 
     use stats_rad_zt_module, only : stats_init_rad_zt, nvarmax_rad_zt
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_rad_zt
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_rad_zt), intent(in) :: vars_rad_zt
@@ -2493,11 +2550,15 @@ contains
   !================================================================================================
 
   subroutine stats_init_zm_api( &
-    vars_zm, l_error )
+                                vars_zm, l_error, &
+                                stats_zm )
 
     use stats_zm_module, only : stats_init_zm, nvarmax_zm
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zm
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_zm), intent(in) :: vars_zm ! zm variable names
@@ -2516,11 +2577,15 @@ contains
   !================================================================================================
 
   subroutine stats_init_zt_api( &
-    vars_zt, l_error )
+                                vars_zt, l_error, &
+                                stats_zt )
 
     use stats_zt_module, only : stats_init_zt, nvarmax_zt
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_zt), intent(in) :: vars_zt
@@ -2539,11 +2604,15 @@ contains
   !================================================================================================
 
   subroutine stats_init_sfc_api( &
-    vars_sfc, l_error )
+                                 vars_sfc, l_error, &
+                                 stats_sfc )
 
     use stats_sfc_module, only : stats_init_sfc, nvarmax_sfc
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_sfc
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_sfc), intent(in) :: vars_sfc

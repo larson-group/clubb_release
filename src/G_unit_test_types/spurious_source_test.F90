@@ -10,7 +10,8 @@ module spurious_source_test
   contains
 
   !=============================================================================
-  function spurious_source_unit_test( gr )
+  function spurious_source_unit_test( gr, &
+                                      stats_zt, stats_zm, stats_sfc )
 
     ! Description:
     !
@@ -87,12 +88,14 @@ module spurious_source_test
     use model_flags, only: &
         set_default_clubb_config_flags ! Procedure(s)
 
-    use stats_variables, only: &
-        stats_zt, &
-        stats_zm, &
-        stats_sfc
+    use stats_type, only: stats ! Type
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
 
     type (grid), target, intent(inout) :: gr
 

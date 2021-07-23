@@ -21,6 +21,7 @@ module estimate_scm_microphys_module
                lh_rc_clipped, lh_rv_clipped, &
                lh_Nc_clipped, &
                l_lh_instant_var_covar_src, &
+               stats_zt, stats_zm, stats_sfc, stats_lh_zt, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -37,7 +38,6 @@ module estimate_scm_microphys_module
       zero, & ! Constant(s)
       unused_var
 
-
     use grid_class, only: grid ! Type
 
     use parameters_model, only: &
@@ -53,9 +53,6 @@ module estimate_scm_microphys_module
       zt2zm
 
     use stats_variables, only: &
-      stats_zt,           & ! Variable(s)
-      stats_zm,           &
-      stats_sfc,          &
       isilhs_variance_category, &
       l_stats_samp,       &
       ilh_rtp2_mc, ilh_thlp2_mc, ilh_wprtp_mc, ilh_wpthlp_mc, ilh_rtpthlp_mc
@@ -100,7 +97,15 @@ module estimate_scm_microphys_module
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt
 
     type (grid), target, intent(in) :: gr
 
@@ -313,14 +318,16 @@ module estimate_scm_microphys_module
       call microphys_stats_accumulate( microphys_stats_zt_avg, l_stats_samp, stats_zt )
       call microphys_stats_accumulate( microphys_stats_sfc_avg, l_stats_samp, stats_sfc )
     else
-      call silhs_noninteractive_stats( microphys_stats_zt_avg, l_stats_samp )
+      call silhs_noninteractive_stats( microphys_stats_zt_avg, l_stats_samp, &
+                                       stats_lh_zt )
     end if
 
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirr),           & ! intent(in)
                                 hydromet(:,iiNr), hydromet,                     & ! intent(in)
-                                microphys_stats_zt_avg, l_stats_samp,            & ! intent(in)
+                                microphys_stats_zt_avg, l_stats_samp,           & ! intent(in)
+                                stats_lh_zt,                                    & ! intent(inout)
                                 lh_hydromet_vel(:,iirr),                        & ! intent(inout)
                                 lh_hydromet_vel(:,iiNr),                        & ! intent(inout)
                                 lh_hydromet_mc(:,iirr), lh_hydromet_mc(:,iiNr),& ! intent(out)
@@ -338,7 +345,8 @@ module estimate_scm_microphys_module
                ( nz, num_samples, pdf_dim, hydromet_dim, X_nl_all_levs, & ! Intent(in)
                  X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
                  lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
-                 precip_fracs )                                        ! Intent(in)
+                 precip_fracs,                                              & ! intent(in)
+                 stats_lh_zt )                                                ! intent(inout)
         end if ! isilhs_variance_category(1) > 0
 
       end if ! allocated( isilhs_variance_category ) 
@@ -432,7 +440,8 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine silhs_noninteractive_stats( microphys_stats_zt_avg, l_stats_samp )
+  subroutine silhs_noninteractive_stats( microphys_stats_zt_avg, l_stats_samp, &
+                                         stats_lh_zt )
 
   ! Description:
   !   When SILHS is run in non-interactive mode in CLUBB standalone, this
@@ -448,7 +457,6 @@ module estimate_scm_microphys_module
       microphys_get_var ! Procedure
 
     use stats_variables, only: &
-      stats_lh_zt, &  ! Variable(s)
       irrm_auto, &
       irrm_accr, &
       irrm_evap, &
@@ -470,7 +478,12 @@ module estimate_scm_microphys_module
     use parameters_microphys, only: &
       microphys_scheme    ! Variable
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt
 
     ! Input Variables
     type(microphys_stats_vars_type), intent(in) :: &
@@ -533,6 +546,7 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------------
   subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrm, Nrm, hydromet, &
                                   microphys_stats_zt, l_stats_samp,       &
+                                  stats_lh_zt,                            &
                                   lh_Vrr, lh_VNr,                         &
                                   rrm_mc, Nrm_mc,                         &
                                   rvm_mc, rcm_mc, thlm_mc )
@@ -569,7 +583,6 @@ module estimate_scm_microphys_module
         stat_update_var ! Procedure
 
     use stats_variables, only: &
-        stats_lh_zt,     &
         irrm_auto,       &
         irrm_accr,       &
         irrm_evap,       &
@@ -584,7 +597,12 @@ module estimate_scm_microphys_module
         microphys_stats_vars_type, &     ! Type
         microphys_get_var                ! Procedure
 
+    use stats_type, only: stats ! Type
+
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt
 
     ! Local Constants
     logical, parameter :: &

@@ -31,6 +31,7 @@ module KK_upscaled_turbulent_sed
                                 sigma_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                                 KK_mvr_coef, mixt_frac, precip_frac_1, &
                                 precip_frac_2, level, l_stats_samp, &
+                                stats_zt, &
                                 Vrrprrp_impc, Vrrprrp_expc, &
                                 VNrpNrp_impc, VNrpNrp_expc )
 
@@ -74,10 +75,14 @@ module KK_upscaled_turbulent_sed
 
     use stats_variables, only: & 
         irr_KK_mvr_covar_zt, & ! Variable(s)
-        iNr_KK_mvr_covar_zt, &
-        stats_zt
+        iNr_KK_mvr_covar_zt
+
+    use stats_type, only: stats ! Type
 
     implicit none
+
+    type(stats), target, intent(inout) :: &
+      stats_zt
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
