@@ -67,7 +67,7 @@ def main():
 
     # See if new global simulation output based on a linear combination
     #    of the SVD-calculated parameter values matches what we expect.
-    linSolnBias = calcLinSolnBias(linSolnNcFilename, defaultNcFilename,
+    linSolnDiff = calcLinSolnDiff(linSolnNcFilename, defaultNcFilename,
                                   metricsNames)
 
     # Create a heatmap plot that allows us to visualize the normalized sensitivity matrix
@@ -139,7 +139,6 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     defaultParamValsRow, defaultParamValsOrigRow = \
             setupDefaultParamVectors(metricsNames, paramsNames, transformedParamsNames,
                                 numMetrics, numParams,
-                                defaultMetricValsCol,
                                 defaultNcFilename)
 
     # Make sure that each sensitivity simulation changes one and only one parameter.
@@ -235,13 +234,15 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
     paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, defaultBiasesApprox = \
     calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, \
-                   sensMatrix, defaultParamValsOrigRow, \
+                   sensMatrix, normlzdWeightedSensMatrix, \
+                   defaultBiasesCol, defaultParamValsOrigRow, \
                    sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames )
 
     paramsSolnPC, paramsLowValsPC, paramsHiValsPC, dparamsSolnPC, defaultBiasesApproxPC = \
     calcParamsSoln(svdInvrsNormlzdWeightedPC, metricsWeights, maxMagParamValsRow, \
-                   sensMatrix, defaultParamValsOrigRow, \
+                   sensMatrix, normlzdWeightedSensMatrix, \
+                   defaultBiasesCol, defaultParamValsOrigRow, \
                    sValsTruncInvNormlzdWeightedPC, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames )
 
@@ -335,6 +336,7 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     # Store biases in default simulation
     defaultBiasesCol = np.subtract(obsMetricValsCol, defaultMetricValsCol)
 
+
     if beVerbose:
         print("\ndefaultBiasesCol =")
         print(defaultBiasesCol)
@@ -414,12 +416,23 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
 
 
     # Delete half the singular values in order to show just the most important patterns.
-    #pdb.set_trace()
-    halfNumSVals = np.floor_divide( sValsTrunc.size, 2 )
-    sValsInvPC = np.zeros_like(sValsTruncInv)
+#    pdb.set_trace()
+    #sValsInvPC = np.zeros_like(sValsTruncInv)
+    #halfNumSVals = np.floor_divide( sValsTrunc.size, 2 )
     #sValsInvPC[0:halfNumSVals] = sValsTruncInv[0:halfNumSVals]
     # Syntax: (a_truncated = a[0:a.size-2] lops off the last two elements of `a`.)
-    sValsInvPC[0:sValsTruncInv.size-2] = sValsTruncInv[0:sValsTruncInv.size-2]
+    #sValsInvPC[0:sValsTruncInv.size-2] = sValsTruncInv[0:sValsTruncInv.size-2]
+    #sValsInvPC = sValsTruncInv
+    sValsInvPC = np.zeros_like(sValsTruncInv)
+    for idx, val in np.ndenumerate(sValsTruncInv):
+        # If a singular value is much smaller than largest singular value, then zero it out.
+        if val/sValsTruncInv[0] > 50.:
+           sValsInvPC[idx] = 0.
+        else:
+            sValsInvPC[idx] = sValsTruncInv[idx]
+
+    print("\nsValsInvPC =")
+    print(sValsInvPC)
 
     #pdb.set_trace()
 
@@ -436,16 +449,59 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
     return ( svdInvrs, svdInvrsPC, sValsTruncInv, sValsInvPC, vh )
 
 def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, \
-                   sensMatrix, defaultParamValsOrigRow, \
+                   sensMatrix, normlzdWeightedSensMatrix, \
+                   defaultBiasesCol, defaultParamValsOrigRow, \
                    sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames ):
 
     import numpy as np
     import pdb
 
+
+#    zero_obs = np.array( [ \
+#                         [0.], #SWCF_GLB
+#                         [1.], #SWCF_DYCOMS
+#                         [1.], #SWCF_HAWAII
+#                         [0.], #SWCF_VOCAL
+#                         [0.], #SWCF_LBA
+#                         [0.], #SWCF_WP
+#                         [0.], #SWCF_EP
+#                         [0.], #SWCF_NP
+#                         [0.], #SWCF_SP
+#                         [0.], #SWCF_PA
+#                         [0.], #SWCF_CAF
+#                         [0.], #LWCF_GLB
+#        #                        ['LWCF_DYCOMS', 0.01], \
+#        #                        ['LWCF_HAWAII', 0.01], \
+#        #                        ['LWCF_VOCAL', 0.01], \
+#                         [0.], #LWCF_LBA
+#                         [0.], #LWCF_WP
+#                         [0.], #LWCF_EP
+#                         [0.], #LWCF_NP
+#                         [0.], #LWCF_SP
+#                         [0.], #LWCF_PA
+#                         [0.], #LWCF_CAF
+#                         [0.], #PRECT_GLB
+#        #                        ['PRECT_DYCOMS', 0.01], \
+#        #                        ['PRECT_HAWAII', 0.01], \
+#        #                        ['PRECT_VOCAL', 0.01], \
+#                         [0.], #PRECT_LBA
+#                         [0.], #PRECT_WP
+#                         [0.], #PRECT_EP
+#                         [0.], #PRECT_NP
+#                         [0.], #PRECT_SP
+#                         [0.], #PRECT_PA
+#                         [0.]  #PRECT_CAF
+#                         ] )
+
     # Calculate solution in transformed space
     dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights * np.transpose(maxMagParamValsRow)
+#    dparamsSoln = svdInvrsNormlzdWeighted @ ( metricsWeights * zero_obs ) * np.transpose(maxMagParamValsRow)
     defaultBiasesApprox = sensMatrix @ dparamsSoln
+#    dparamsSolnFrac = svdInvrsNormlzdWeighted @ metricsWeights
+#    defaultBiasesApprox = normlzdWeightedSensMatrix @ dparamsSolnFrac * \
+#                          np.reciprocal(metricsWeights) * defaultBiasesCol
+#    pdb.set_trace()
     paramsSoln = np.transpose(defaultParamValsOrigRow) + dparamsSoln
     # Create matrix whose columns are the columns of v divided by singular values
     #    (see 15.4.18 of Numerical Recipes)
@@ -532,7 +588,6 @@ def setupDefaultMetricValsCol(metricsNames, defaultNcFilename):
 
 def setupDefaultParamVectors(metricsNames, paramsNames, transformedParamsNames,
                         numMetrics, numParams,
-                        defaultMetricValsCol,
                         defaultNcFilename):
     """
     Input: Filename containing default-simulation metrics and parameters.
@@ -649,7 +704,7 @@ def plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames):
     plt.show()
     plt.pause(1)
 
-def calcLinSolnBias(linSolnNcFilename, defaultNcFilename,
+def calcLinSolnDiff(linSolnNcFilename, defaultNcFilename,
                     metricsNames):
 
     import numpy as np
@@ -682,12 +737,12 @@ def calcLinSolnBias(linSolnNcFilename, defaultNcFilename,
         linSolnMetricValsCol[idx] = f_linSoln.variables[metricName][0]
     f_linSoln.close()
 
-    linSolnBias = linSolnMetricValsCol - defaultMetricValsCol
+    linSolnDiff = linSolnMetricValsCol - defaultMetricValsCol
 
-    print("\nlinSolnBias")
-    print(linSolnBias)
+    print("\nlinSolnDiff")
+    print(linSolnDiff)
 
-    return linSolnBias
+    return linSolnDiff
 
 # Standard boilerplate to call the main() function to begin
 # the program.
