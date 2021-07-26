@@ -2138,10 +2138,11 @@ module advance_wp2_wp3_module
                                    rhs_pr_turb_wp3(:),                 & ! intent(out)
                                    l_use_tke_in_wp3_pr_turb_term )       ! intent(in)
 
-        call wp3_term_pr_dfsn_rhs( gr, C_wp3_pr_dfsn, gr%invrs_dzt(:),   & ! intent(in)
-                                   rho_ds_zm(:), invrs_rho_ds_zt(:), & ! intent(in)
-                                   wp2up2(:), wp2vp2(:), wp4(:),     & ! intent(in)
-                                   rhs_pr_dfsn_wp3(:) )                ! intent(out)
+        call wp3_term_pr_dfsn_rhs( gr, C_wp3_pr_dfsn, gr%invrs_dzt(:), & ! intent(in)
+                                   rho_ds_zm(:), invrs_rho_ds_zt(:),   & ! intent(in)
+                                   wp2up2(:), wp2vp2(:), wp4(:),       & ! intent(in)
+                                   up2(:), vp2(:), wp2(:),             & ! intent(in)
+                                   rhs_pr_dfsn_wp3(:) )                  ! intent(out)
 
         ! Add term
         do k = 2, gr%nz-1
@@ -4682,22 +4683,29 @@ module advance_wp2_wp3_module
   pure subroutine wp3_term_pr_dfsn_rhs( gr, C_wp3_pr_dfsn, invrs_dzt, &
                                         rho_ds_zm, invrs_rho_ds_zt, &
                                         wp2up2, wp2vp2, wp4, &
+                                        up2, vp2, wp2, &
                                         rhs_pr_dfsn_wp3 )
 
     ! Description:
     !
-    ! This term is intended to represent the "diffusion" part of the total 
-    ! pressure correlation.  The total pressure term, -3w'^2/rho*dp'/dz, can be
+    ! This term is intended to represent the "diffusion" part of the total wp3 
+    ! pressure correlation.  The total wp3 pressure term, -3w'^2/rho*dp'/dz, can be
     ! split into
     ! 
     !   -3w'^2/rho*dp'/dz = + 3p'/rho*d(w'^2)/dz - 3/rho*d(w'^2p')/dz 
     !
-    ! using the product rule.  The second term here we consider to be the
-    ! diffusion part, calculated by this subroutine.  (It should probably be
-    ! evaluated using CLUBB's PDF but this may be good enough for now.)
+    ! using the product rule.  The second term on the RHS we consider to be the
+    ! diffusion part, calculated by this subroutine.  We replace the factor of 3
+    ! with a tunable parameter, C_wp3_pr_dfsn, and we replace p' with
+    !
+    !   p' ~ - rho * ( u_i*u_i - <u_i*u_i> ),
+    !
+    ! following Lumley 1978.  The wp3 pressure diffusion term then becomes
+    !
+    !   + C_wp3_pr_dfsn / rho * ( d( rho*( <w'^2u_i'u_i'> - <w'^2>*<u_i'u_i'> ) )/dz )
     !
     ! References:
-    !   None
+    !   Lumley 1978, p. 170.  See eq. 6.47 and accompanying discussion.
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
@@ -4715,15 +4723,18 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      C_wp3_pr_dfsn      ! Model parameter C_wp3_pr_dfsn                [-]
+      C_wp3_pr_dfsn      ! Model parameter C_wp3_pr_dfsn              [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
+      invrs_dzt,       & ! Inverse of grid spacing                    [1/m]
       invrs_rho_ds_zt, & ! Inverse dry static density (thermo levels) [kg/m^3] 
-      rho_ds_zm,       & ! Dry static density on mom. levels       [kg/m^3]
-      wp2up2,          & ! w'^2u'^2 on momentum levels             [m^4/s^4]
-      wp2vp2,          & ! w'^2v'^2 on momentum levels             [m^4/s^4]
-      wp4                ! w'^4 on momentum levels                 [m^4/s^4]
+      rho_ds_zm,       & ! Dry static density on mom. levels          [kg/m^3]
+      wp2up2,          & ! w'^2u'^2 on momentum levels                [m^4/s^4]
+      wp2vp2,          & ! w'^2v'^2 on momentum levels                [m^4/s^4]
+      wp4,             & ! w'^4 on momentum levels                    [m^4/s^4]
+      up2,             & ! u'^2 on momentum levels                    [m^2/s^2]
+      vp2,             & ! v'^2 on momentum levels                    [m^2/s^2]
+      wp2                ! w'^2 on momentum levels                    [m^2/s^2]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -4733,11 +4744,13 @@ module advance_wp2_wp3_module
     integer :: k   ! Vertical level index 
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      wp2uip2            ! 4th-order moment sum <w'^2u_i'u_i'>     [m^4/s^4]
+      wp2uip2,   & ! 4th-order moment sum <w'^2u_i'u_i'>     [m^4/s^4]
+      wp2_uip2     ! 2nd-order moment sum <w'^2>*<u_i'u_i'>  [m^4/s^4]
 
     ! ---- Begin Code ----
 
     wp2uip2 = wp2up2 + wp2vp2 + wp4
+    wp2_uip2 = wp2*up2 + wp2*vp2 + wp2*wp2
 
     ! Set lower boundary to 0
     rhs_pr_dfsn_wp3(1) = zero
@@ -4745,12 +4758,12 @@ module advance_wp2_wp3_module
     do k = 2, gr%nz-1
       rhs_pr_dfsn_wp3(k) &
        = + C_wp3_pr_dfsn * invrs_rho_ds_zt(k) * invrs_dzt(k) &
-         * ( rho_ds_zm(k) * wp2uip2(k) - rho_ds_zm(k-1) * wp2uip2(k-1) )
+         * ( rho_ds_zm(k) * ( wp2uip2(k) - wp2_uip2(k) ) &
+           - rho_ds_zm(k-1) * ( wp2uip2(k-1) - wp2_uip2(k-1) ) )
     enddo ! k = 2, gr%nz-1
 
     ! Set upper boundary to 0
     rhs_pr_dfsn_wp3(gr%nz) = zero
-
 
     return
 
