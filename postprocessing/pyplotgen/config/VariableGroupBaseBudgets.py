@@ -123,6 +123,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wp3_pr1'], 'legend_label': 'wp3_pr1'},
             {'var_names': ['wp3_pr2'], 'legend_label': 'wp3_pr2'},
             {'var_names': ['wp3_pr3'], 'legend_label': 'wp3_pr3'},
+            {'var_names': ['wp3_pr_tp'], 'legend_label': 'wp3_pr_tp'},
             {'var_names': ['wp3_bp1'], 'legend_label': 'wp3_bp1'},
             {'var_names': ['wp3_pr_turb'], 'legend_label': 'wp3_pr_turb'},
             {'var_names': ['wp3_pr_dfsn'], 'legend_label': 'wp3_pr_dfsn'},
@@ -930,6 +931,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         wp3_pr1, indep, dataset = self.getVarForCalculations('wp3_pr1', dataset)
         wp3_pr3, indep, dataset = self.getVarForCalculations('wp3_pr3', dataset)
         wp3_pr2, indep, dataset = self.getVarForCalculations('wp3_pr2', dataset)
+        wp3_pr_tp, indep, dataset = self.getVarForCalculations('wp3_pr_tp', dataset)
         wp3_pr_dfsn, indep, dataset = self.getVarForCalculations('wp3_pr_dfsn', dataset)
         wp3_dp1, indep, dataset = self.getVarForCalculations('wp3_dp1', dataset)
         wp3_bt, indep, dataset = self.getVarForCalculations('wp3_bt', dataset)
@@ -939,7 +941,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         wp3_tp, indep, dataset = self.getVarForCalculations('wp3_tp', dataset)
 
         output_data = wp3_bt - (
-                wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_pr_turb + wp3_pr1 + wp3_pr2 + wp3_pr3 +
+                wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_pr_turb +
+                wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_pr_tp +
                 wp3_dp1 + wp3_cl + wp3_splat + wp3_pr_dfsn)
 
         return output_data, indep

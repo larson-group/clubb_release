@@ -36,6 +36,7 @@ C12         = 1.000000 ! Constant applied to vertical velocity diffusion. Units 
 !C13         = 0.100000 ! Not currently used in model. Units [-]
 C14         = 1.000000 ! Constant applied to up2 and vp2. Units [-]
 C_wp2_pr_dfsn = 0.000000 ! Constant applied to wp2_pr_dfsn. Units [-]
+C_wp3_pr_tp   = 0.000000 ! Constant applied to wp3_pr_tp. Units [-]
 C_wp3_pr_turb = 0.400000 ! Constant applied to wp3_pr_turb. Units [-]
 C_wp3_pr_dfsn = 0.000000 ! Constant applied to wp3_pr_dfsn. Units [-]
 C_wp2_splat = 3.0      ! Pre-factor for vertical compression of eddies [-]
