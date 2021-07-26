@@ -1294,7 +1294,7 @@ module stats_zt_module
       case ('wpup2')
         iwpup2 = k
         call stat_assign( var_index=iwpup2, var_name="wpup2", &
-             var_description="w'u'^2", &
+             var_description="w'u'^2, Third-order moment from PDF", &
              var_units="m^3/s^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
@@ -1302,7 +1302,7 @@ module stats_zt_module
       case ('wpvp2')
         iwpvp2 = k
         call stat_assign( var_index=iwpvp2, var_name="wpvp2", &
-             var_description="w'v'^2", &
+             var_description="w'v'^2, Third-order moment from PDF", &
              var_units="m^3/s^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1

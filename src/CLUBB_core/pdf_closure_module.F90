@@ -754,7 +754,7 @@ endif
                             corr_u_w_1, corr_u_w_2, &
                             pdf_params%mixt_frac(1,:) )
 
-    wpvp2 = calc_wpxp2_pdf( gr, wm, um, pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
+    wpvp2 = calc_wpxp2_pdf( gr, wm, vm, pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
                             v_1, v_2, &
                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),   &
                             varnce_v_1, varnce_v_2, &
