@@ -3565,14 +3565,14 @@ module advance_wp2_wp3_module
 
     wpuip2 = wpup2 + wpvp2 + wp3
 
-    ! Set lower boundary to 0
-    rhs_pr_dfsn_wp2(1) = zero
-
     do k = 2, gr%nz-1
       rhs_pr_dfsn_wp2(k) &
        = + C_wp2_pr_dfsn * invrs_rho_ds_zm(k) * invrs_dzm(k) &
-         * ( rho_ds_zt(k) * wpuip2(k) - rho_ds_zt(k-1) * wpuip2(k-1) )
+         * ( rho_ds_zt(k+1) * wpuip2(k+1) - rho_ds_zt(k) * wpuip2(k) )
     enddo ! k = 2, gr%nz-1
+
+    ! Set lower boundary condition
+    rhs_pr_dfsn_wp2(1) = rhs_pr_dfsn_wp2(2)
 
     ! Set upper boundary to 0
     rhs_pr_dfsn_wp2(gr%nz) = zero
@@ -4752,15 +4752,15 @@ module advance_wp2_wp3_module
     wp2uip2 = wp2up2 + wp2vp2 + wp4
     wp2_uip2 = wp2*up2 + wp2*vp2 + wp2*wp2
 
-    ! Set lower boundary to 0
-    rhs_pr_dfsn_wp3(1) = zero
-
     do k = 2, gr%nz-1
       rhs_pr_dfsn_wp3(k) &
        = + C_wp3_pr_dfsn * invrs_rho_ds_zt(k) * invrs_dzt(k) &
          * ( rho_ds_zm(k) * ( wp2uip2(k) - wp2_uip2(k) ) &
            - rho_ds_zm(k-1) * ( wp2uip2(k-1) - wp2_uip2(k-1) ) )
     enddo ! k = 2, gr%nz-1
+
+    ! Set lower boundary condition 
+    rhs_pr_dfsn_wp3(1) = zero
 
     ! Set upper boundary to 0
     rhs_pr_dfsn_wp3(gr%nz) = zero

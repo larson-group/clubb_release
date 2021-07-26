@@ -662,9 +662,7 @@ module advance_clubb_core_module
       up2_zt,     & ! u'^2 on thermo. grid     [m^2/s^2]
       vp2_zt,     & ! v'^2 on thermo. grid     [m^2/s^2]
       upwp_zt,    & ! u'w' on thermo. grid     [m^2/s^2]
-      vpwp_zt,    & ! v'w' on thermo. grid     [m^2/s^2]
-      wpup2_zt,   & ! w'u'^2 on thermo. grid   [m^3/s^3]
-      wpvp2_zt      ! w'v'^2 on thermo. grid   [m^3/s^3]
+      vpwp_zt       ! v'w' on thermo. grid     [m^2/s^2]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Skw_velocity, & ! Skewness velocity    [m/s]
@@ -1041,9 +1039,6 @@ module advance_clubb_core_module
 
     Skw_zt(1:gr%nz) = Skx_func( gr, wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
     Skw_zm(1:gr%nz) = Skx_func( gr, wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
-
-    wpup2_zt = zm2zt(gr, wpup2)
-    wpvp2_zt = zm2zt(gr, wpvp2)
 
     if ( clubb_config_flags%ipdf_call_placement &
          == ipdf_post_advance_fields ) then
@@ -2531,8 +2526,8 @@ module advance_clubb_core_module
     ! momentum grid levels, but pdf_closure outputs them on the thermodynamic
     ! grid levels.
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      wpup2_zt,    & ! w'u'^2 (on thermo. grid)         [m^3/s^3]
-      wpvp2_zt,    & ! w'v'^2 (on thermo. grid)         [m^3/s^3]
+      wpup2_zm,    & ! w'u'^2 (on momentum grid)        [m^3/s^3]
+      wpvp2_zm,    & ! w'v'^2 (on momentum grid)        [m^3/s^3]
       wp2up2_zt,   & ! w'^2u'^2 (on thermo. grid)       [m^4/s^4]
       wp2vp2_zt,   & ! w'^2v'^2 (on thermo. grid)       [m^4/s^4]
       wp4_zt,      & ! w'^4 (on thermo. grid)           [m^4/s^4]
@@ -2760,7 +2755,7 @@ module advance_clubb_core_module
            wphydrometp_zt, wp2hmp,                         & ! intent(in)
            rtphmp_zt, thlphmp_zt,                          & ! intent(in)
            iiPDF_type,                                     & ! intent(in)
-           wpup2_zt, wpvp2_zt,                             & ! intent(out)
+           wpup2, wpvp2,                                   & ! intent(out)
            wp2up2_zt, wp2vp2_zt, wp4_zt,                   & ! intent(out)
            wprtp2, wp2rtp,                                 & ! intent(out)
            wpthlp2, wp2thlp, wprtpthlp,                    & ! intent(out)
@@ -2927,7 +2922,7 @@ module advance_clubb_core_module
              wphydrometp, wp2hmp_zm,                               & ! intent(in)
              rtphmp, thlphmp,                                      & ! intent(in)
              iiPDF_type,                                           & ! intent(in)
-             wpup2, wpvp2,                                         & ! intent(out)
+             wpup2_zm, wpvp2_zm,                                   & ! intent(out)
              wp2up2, wp2vp2, wp4,                                  & ! intent(out)
              wprtp2_zm, wp2rtp_zm,                                 & ! intent(out)
              wpthlp2_zm, wp2thlp_zm, wprtpthlp_zm,                 & ! intent(out)
@@ -2995,10 +2990,6 @@ module advance_clubb_core_module
       uprcp(gr%nz)      = 0.0_core_rknd
       vprcp             = zt2zm( gr, vprcp_zt )
       vprcp(gr%nz)      = 0.0_core_rknd
-      wpup2             = zt2zm( gr, wpup2_zt )
-      wpup2(gr%nz)      = 0.0_core_rknd
-      wpvp2             = zt2zm( gr, wpvp2_zt )
-      wpvp2(gr%nz)      = 0.0_core_rknd
       wp2up2            = zt2zm( gr, wp2up2_zt )
       wp2up2(gr%nz)     = 0.0_core_rknd
       wp2vp2            = zt2zm( gr, wp2vp2_zt )
