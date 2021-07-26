@@ -59,6 +59,8 @@ module stats_zt_module
 
     use stats_variables, only: &
         iwp3, & ! Variable(s)
+        iwpup2, &
+        iwpvp2, &
         ithlp3, &
         irtp3, &
         iwpthlp2, &
@@ -1285,6 +1287,22 @@ module stats_zt_module
         iwp3 = k
         call stat_assign( var_index=iwp3, var_name="wp3", &
              var_description="w'^3, Third-order moment of vertical air velocity", &
+             var_units="m^3/s^3", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('wpup2')
+        iwpup2 = k
+        call stat_assign( var_index=iwpup2, var_name="wpup2", &
+             var_description="w'u'^2", &
+             var_units="m^3/s^3", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('wpvp2')
+        iwpvp2 = k
+        call stat_assign( var_index=iwpvp2, var_name="wpvp2", &
+             var_description="w'v'^2", &
              var_units="m^3/s^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1

@@ -23,6 +23,30 @@ class VariableGroupWs(VariableGroup):
         self.variable_definitions = [
              {'var_names':
                  {
+                 'clubb': ['wpup2'],
+                 'sam': [''],
+                 'coamps': ['wpup2'],
+                 'r408': ['wpup2'],
+                 'hoc': ['wpup2'],
+                 'e3sm': ['wpup2'],
+                 'cam': ['wpup2'],
+                 'wrf': ['wpup2'],
+                 },
+             },
+             {'var_names':
+                 {
+                 'clubb': ['wpvp2'],
+                 'sam': [''],
+                 'coamps': ['wpvp2'],
+                 'r408': ['wpvp2'],
+                 'hoc': ['wpvp2'],
+                 'e3sm': ['wpvp2'],
+                 'cam': ['wpvp2'],
+                 'wrf': ['wpvp2'],
+                 },
+             },
+             {'var_names':
+                 {
                  'clubb': ['wp2up2'],
                  'sam': ['WP2UP2'],
                  'coamps': ['wp2up2'],

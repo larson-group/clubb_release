@@ -52,6 +52,7 @@ module pdf_closure_module
                           wphydrometp, wp2hmp,                      &
                           rtphmp, thlphmp,                          &
                           iiPDF_type,                               &
+                          wpup2, wpvp2,                             &
                           wp2up2, wp2vp2, wp4,                      &
                           wprtp2, wp2rtp,                           &
                           wpthlp2, wp2thlp, wprtpthlp,              &
@@ -243,6 +244,8 @@ module pdf_closure_module
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
+      wpup2,              & ! w'u'^2                [m^3/s^3]
+      wpvp2,              & ! w'v'^2                [m^3/s^3]
       wp2up2,             & ! w'^2u'^2              [m^2/s^4]
       wp2vp2,             & ! w'^2v'^2              [m^2/s^4]
       wp4,                & ! w'^4                  [m^4/s^4]
@@ -744,19 +747,33 @@ endif
                               pdf_params%mixt_frac(1,:) )
 
     ! Compute higher order moments (these may be interactive)
-    wp2up2 = calc_wp2xp2_pdf( gr, wm, um, pdf_params%w_1, pdf_params%w_2, &
+    wpup2 = calc_wpxp2_pdf( gr, wm, um, pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
+                            u_1, u_2, &
+                            pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),   &
+                            varnce_u_1, varnce_u_2, &
+                            corr_u_w_1, corr_u_w_2, &
+                            pdf_params%mixt_frac(1,:) )
+
+    wpvp2 = calc_wpxp2_pdf( gr, wm, um, pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
+                            v_1, v_2, &
+                            pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),   &
+                            varnce_v_1, varnce_v_2, &
+                            corr_v_w_1, corr_v_w_2, &
+                            pdf_params%mixt_frac(1,:) )
+
+    wp2up2 = calc_wp2xp2_pdf( gr, wm, um, pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
                               u_1, u_2, &
-                              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+                              pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:), &
                               varnce_u_1, varnce_u_2, &
                               corr_u_w_1, corr_u_w_2, &
-                              pdf_params%mixt_frac )
+                              pdf_params%mixt_frac(1,:) )
 
-    wp2vp2 = calc_wp2xp2_pdf( gr, wm, vm, pdf_params%w_1, pdf_params%w_2, &
+    wp2vp2 = calc_wp2xp2_pdf( gr, wm, vm, pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
                               v_1, v_2, &
-                              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+                              pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:), &
                               varnce_v_1, varnce_v_2, &
                               corr_v_w_1, corr_v_w_2, &
-                              pdf_params%mixt_frac )
+                              pdf_params%mixt_frac(1,:) )
 
     wp4 = calc_wp4_pdf( gr, wm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),              &
                         pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),    &

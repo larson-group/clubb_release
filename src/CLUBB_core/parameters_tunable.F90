@@ -74,6 +74,7 @@ module parameters_tunable
     C12         = 1.000000_core_rknd,    & ! Constant in w'^3 Crank-Nich. diff.  [-]
     C13         = 0.100000_core_rknd,    & ! Not currently used in model         [-]
     C14         = 1.000000_core_rknd,    & ! Constant for u'^2 and v'^2 terms    [-]
+    C_wp2_pr_dfsn = 0.000000_core_rknd,  & ! Coefficient for the wp2_pr_dfsn term [-]
     C_wp3_pr_turb = 0.000000_core_rknd,  & ! Coefficient for the wp3_pr_turb term [-]
     C_wp3_pr_dfsn = 0.000000_core_rknd,  & ! Coefficient for the wp3_pr_dfsn term [-]
     C_wp2_splat = 2.000000_core_rknd       ! Coefficient for gustiness near ground [-]
@@ -81,7 +82,7 @@ module parameters_tunable
 !$omp   C2rt, C2thl, C2rtthl, C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
 !$omp   C6thl, C6thlb, C6thlc, &
 !$omp   C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, &
-!$omp   C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat)
+!$omp   C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat)
 
   real( kind = core_rknd ), public ::    &
     C6rt_Lscale0  = 14.0_core_rknd,      & ! Damp C6rt as a fnct. of Lscale  [-]
@@ -320,7 +321,7 @@ module parameters_tunable
     C2rt, C2thl, C2rtthl, C4, C_uu_shr, C_uu_buoy, & 
     C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-    C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, & 
+    C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, & 
     C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, &
@@ -366,7 +367,8 @@ module parameters_tunable
        "C10                         ", "C11                         ", &
        "C11b                        ", "C11c                        ", &
        "C12                         ", "C13                         ", &
-       "C14                         ", "C_wp3_pr_turb               ", &
+       "C14                         ", "C_wp2_pr_dfsn               ", &
+       "C_wp3_pr_turb               ", &
        "C_wp3_pr_dfsn               ", "C_wp2_splat                 ", &
        "C6rt_Lscale0                ", "C6thl_Lscale0               ", &
        "C7_Lscale0                  ", "wpxp_L_thresh               ", &
@@ -437,6 +439,7 @@ module parameters_tunable
     clubb_C11b,                         &
     clubb_C11c,                         &
     clubb_C14,                          &
+    clubb_C_wp2_pr_dfsn,                &
     clubb_C_wp3_pr_turb,                &
     clubb_C_wp3_pr_dfsn,                &
     clubb_beta,                         &
@@ -487,7 +490,7 @@ module parameters_tunable
 !$omp   clubb_C_uu_shr, clubb_C_uu_buoy, clubb_C6rt, clubb_C6rtb, clubb_C6rtc, &
 !$omp   clubb_C6thl, clubb_C6thlb, clubb_C6thlc, &
 !$omp   clubb_C7, clubb_C7b, clubb_C8, clubb_C8b, clubb_C11, clubb_C11b, &
-!$omp   clubb_C11c, clubb_C14, clubb_C_wp3_pr_turb, clubb_C_wp3_pr_dfsn, &
+!$omp   clubb_C11c, clubb_C14, clubb_C_wp2_pr_dfsn, clubb_C_wp3_pr_turb, clubb_C_wp3_pr_dfsn, &
 !$omp   clubb_beta, clubb_gamma_coef, clubb_gamma_coefb, clubb_gamma_coefc, &
 !$omp   clubb_pdf_component_stdev_factor_w, clubb_mu, clubb_c_K1, clubb_nu1, &
 !$omp   clubb_c_K2, clubb_nu2, clubb_c_K8, clubb_nu8, clubb_c_K9, clubb_nu9, &
@@ -618,7 +621,8 @@ module parameters_tunable
                C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+               C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, & 
+               C_wp3_pr_dfsn, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1105,6 +1109,7 @@ module parameters_tunable
     clubb_C11b,                         &
     clubb_C11c,                         &
     clubb_C14,                          &
+    clubb_C_wp2_pr_dfsn,                &
     clubb_C_wp3_pr_turb,                &
     clubb_C_wp3_pr_dfsn,                &
     clubb_beta,                         &
@@ -1128,7 +1133,7 @@ module parameters_tunable
     clubb_lmin_coef,                    &
     clubb_mult_coef,                    &
     clubb_Skw_denom_coef,               &
-    clubb_up2_sfc_coef,               &
+    clubb_up2_sfc_coef,                 &
     clubb_Skw_max_mag,                  &
     clubb_C_invrs_tau_bkgnd,            &
     clubb_C_invrs_tau_sfc,              &
@@ -1181,6 +1186,7 @@ module parameters_tunable
     clubb_C11b = init_value
     clubb_C11c = init_value
     clubb_C14 = init_value
+    clubb_C_wp2_pr_dfsn = init_value
     clubb_C_wp3_pr_turb = init_value
     clubb_C_wp3_pr_dfsn = init_value
     clubb_beta = init_value
@@ -1264,6 +1270,7 @@ module parameters_tunable
    call mpibcast(clubb_C11b,       1, mpir8,  0, mpicom)
    call mpibcast(clubb_C11c,       1, mpir8,  0, mpicom)
    call mpibcast(clubb_C14,        1, mpir8,  0, mpicom)
+   call mpibcast(clubb_C_wp2_pr_dfsn, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_wp3_pr_turb, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_wp3_pr_dfsn, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_beta,       1, mpir8,  0, mpicom)
@@ -1394,6 +1401,7 @@ module parameters_tunable
     if (clubb_C11b /= init_value) C11b = clubb_C11b
     if (clubb_C11c /= init_value) C11c = clubb_C11c
     if (clubb_C14 /= init_value) C14 = clubb_C14
+    if (clubb_C_wp2_pr_dfsn /= init_value) C_wp2_pr_dfsn = clubb_C_wp2_pr_dfsn
     if (clubb_C_wp3_pr_turb /= init_value) C_wp3_pr_turb = clubb_C_wp3_pr_turb
     if (clubb_C_wp3_pr_dfsn /= init_value) C_wp3_pr_dfsn = clubb_C_wp3_pr_dfsn
     if (clubb_beta /= init_value) beta = clubb_beta
@@ -1470,7 +1478,8 @@ module parameters_tunable
              ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+               C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, &
+               C_wp3_pr_dfsn, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1554,7 +1563,7 @@ module parameters_tunable
       C2rt, C2thl, C2rtthl, C4, C_uu_shr, C_uu_buoy, & 
       C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-      C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+      C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
       C6rt_Lscale0, C6thl_Lscale0, &
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, &
@@ -1588,7 +1597,8 @@ module parameters_tunable
              ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+               C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, &
+               C_wp3_pr_dfsn, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1644,7 +1654,8 @@ module parameters_tunable
              ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+               C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, &
+               C_wp3_pr_dfsn, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1704,6 +1715,7 @@ module parameters_tunable
         iC12, & 
         iC13, & 
         iC14, &
+        iC_wp2_pr_dfsn, &
         iC_wp3_pr_turb, &
         iC_wp3_pr_dfsn, &
         iC_wp2_splat
@@ -1785,7 +1797,7 @@ module parameters_tunable
       C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
-      C11, C11b, C11c, C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, & 
+      C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1837,6 +1849,7 @@ module parameters_tunable
     params(iC13)     = C13
     params(iC14)     = C14
 
+    params(iC_wp2_pr_dfsn)      = C_wp2_pr_dfsn
     params(iC_wp3_pr_turb)      = C_wp3_pr_turb
     params(iC_wp3_pr_dfsn)      = C_wp3_pr_dfsn
     params(iC_wp2_splat)        = C_wp2_splat
@@ -1927,7 +1940,8 @@ module parameters_tunable
                C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+               C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, &
+               C_wp3_pr_dfsn, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1987,6 +2001,7 @@ module parameters_tunable
         iC12, & 
         iC13, & 
         iC14, &
+        iC_wp2_pr_dfsn, &
         iC_wp3_pr_turb, &
         iC_wp3_pr_dfsn, &
         iC_wp2_splat
@@ -2071,7 +2086,7 @@ module parameters_tunable
       C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
-      C11, C11b, C11c, C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, & 
+      C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -2120,6 +2135,7 @@ module parameters_tunable
     C13     = params(iC13)
     C14     = params(iC14)
 
+    C_wp2_pr_dfsn      = params(iC_wp2_pr_dfsn)
     C_wp3_pr_turb      = params(iC_wp3_pr_turb)
     C_wp3_pr_dfsn      = params(iC_wp3_pr_dfsn)
     C_wp2_splat        = params(iC_wp2_splat)
@@ -2223,7 +2239,8 @@ module parameters_tunable
              ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+               C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_turb, &
+               C_wp3_pr_dfsn, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -2291,6 +2308,7 @@ module parameters_tunable
     C12                          = init_value
     C13                          = init_value
     C14                          = init_value
+    C_wp2_pr_dfsn                = init_value
     C_wp3_pr_turb                = init_value
     C_wp3_pr_dfsn                = init_value
     C_wp2_splat                  = init_value 

@@ -42,7 +42,7 @@ module advance_wp2_wp3_module
   !=============================================================================
   subroutine advance_wp2_wp3( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,     & ! In
                               wm_zt, a3, a3_zt, wp3_on_wp2,                  & ! In
-                              wp2up2, wp2vp2, wp4,                           & ! In
+                              wpup2, wpvp2, wp2up2, wp2vp2, wp4,             & ! In
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! In
                               up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_zm,      & ! In
                               invrs_tau_zt, invrs_tau_C1_zm, Skw_zm,         & ! In
@@ -163,6 +163,8 @@ module advance_wp2_wp3_module
       a3,                & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
       a3_zt,             & ! a_3 interpolated to thermodynamic levels  [-]
       wp3_on_wp2,        & ! Smoothed version of wp3 / wp2             [m/s]
+      wpup2,             & ! w'u'^2 (momentum levels)                  [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (momentum levels)                  [m^3/s^3]
       wp2up2,            & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
       wp2vp2,            & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
       wp4,               & ! w'^4 (momentum levels)                    [m^4/s^4]
@@ -378,7 +380,7 @@ module advance_wp2_wp3_module
     ! Solve semi-implicitly
     call wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,               & ! Intent(in)
                      wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
-                     wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
+                     wpup2, wpvp2, wp2up2, wp2vp2, wp4,                       & ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
                      up2, vp2, em, Kw1, Kw8, Kh_zt, Skw_zt,                   & ! Intent(in)
                      invrs_tau_zm, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! Intent(in)
@@ -506,7 +508,7 @@ module advance_wp2_wp3_module
   !=============================================================================
   subroutine wp23_solve( gr, dt, sfc_elevation, sigma_sqd_w, wm_zm,               & ! Intent(in)
                          wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
-                         wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
+                         wpup2, wpvp2, wp2up2, wp2vp2, wp4,                       & ! Intent(in)
                          wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
                          up2, vp2, em, Kw1, Kw8, Kh_zt, Skw_zt,                   & ! Intent(in)
                          invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc,  & ! Intent(in)
@@ -674,6 +676,8 @@ module advance_wp2_wp3_module
       a3,              & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
       a3_zt,           & ! a_3 interpolated to thermodynamic levels  [-]
       wp3_on_wp2,      & ! Smoothed version of wp3 / wp2             [m/s]
+      wpup2,           & ! w'u'^2 (momentum levels)                  [m^3/s^3]
+      wpvp2,           & ! w'v'^2 (momentum levels)                  [m^3/s^3]
       wp2up2,          & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
       wp2vp2,          & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
       wp4,             & ! w'^4 (momentum levels)                    [m^4/s^4]
@@ -848,12 +852,12 @@ module advance_wp2_wp3_module
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
     call wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &             ! intent(in)
-                   coef_wp4_implicit, wp2up2, wp2vp2, wp4, &                         ! intent(in)
+                   coef_wp4_implicit, wpup2, wpvp2, wp2up2, wp2vp2, wp4, &           ! intent(in)
                    wpthvp, wp2thvp, um, vm, &                                        ! intent(in)
                    upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt,  &                     ! intent(in)
                    Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! intent(in)
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &                     ! intent(in)
-                   invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &                    ! intent(in)
+                   invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &   ! intent(in)
                    wp2_splat, wp3_splat, &                                           ! intent(in)
                    l_crank_nich_diff, &                                              ! intent(in)
                    iiPDF_type, &                                                     ! intent(in)
@@ -1869,12 +1873,12 @@ module advance_wp2_wp3_module
 
   !=================================================================================
   subroutine wp23_rhs( gr, dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
-                       coef_wp4_implicit, wp2up2, wp2vp2, wp4, &
+                       coef_wp4_implicit, wpup2, wpvp2, wp2up2, wp2vp2, wp4, &
                        wpthvp, wp2thvp, um, vm, &
                        upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt, & 
                        Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
-                       invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &
+                       invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &
                        wp2_splat, wp3_splat, & 
                        l_crank_nich_diff, &
                        iiPDF_type, &
@@ -1927,7 +1931,8 @@ module advance_wp2_wp3_module
         C_uu_buoy,  & 
         C8,  & 
         C8b, & 
-        C12, & 
+        C12, &
+        C_wp2_pr_dfsn, & 
         C_wp3_pr_turb, &
         C_wp3_pr_dfsn, & 
         nu1_vert_res_dep, & 
@@ -1956,7 +1961,7 @@ module advance_wp2_wp3_module
 
     use stats_variables, only:  & 
         l_stats_samp, iwp2_dp1, iwp2_dp2, iwp2_bp,   & ! Variable(s)
-        iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_splat, iwp3_splat, &
+        iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_pr_dfsn, iwp2_splat, iwp3_splat, &
         iwp3_ta, & 
         iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_pr_turb, &
         iwp3_pr_dfsn, iwp3_pr3
@@ -1996,6 +2001,8 @@ module advance_wp2_wp3_module
       a3_zt,             & ! a_3 interpolated to thermodynamic levels  [-]
       wp3_on_wp2,        & ! Smoothed version of wp3 / wp2             [m/s]
       coef_wp4_implicit, & ! <w'^4> = coef_wp4_implicit * <w'^2>^2     [-]
+      wpup2,             & ! w'u'^2 (momentum levels)                  [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (momentum levels)                  [m^3/s^3]
       wp2up2,            & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
       wp2vp2,            & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
       wp4,               & ! w'^4 (momentum levels)                    [m^4/s^4]
@@ -2020,6 +2027,7 @@ module advance_wp2_wp3_module
       C16_fnc,           & ! C_16 parameter                            [-]
       rho_ds_zm,         & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,         & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zm,   & ! Inv. dry, static density @ mom. levs.     [m^3/kg]
       invrs_rho_ds_zt,   & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       radf,              & ! Buoyancy production at the CL top         [m^2/s^3]
       thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
@@ -2085,12 +2093,13 @@ module advance_wp2_wp3_module
       lhs_pr1_wp3, &          ! wp3 "over-implicit" pressure term 1
       rhs_pr1_wp3, &          ! wp3 rhs pressure term 1
       rhs_bp_pr2_wp2, &       ! wp2 bouyancy production and pressure term 2
+      rhs_pr_dfsn_wp2, &      ! wp2 pressure diffusion term
       rhs_bp1_pr2_wp3, &      ! wp3 bouyancy production 1 and pressure term 2
       rhs_pr3_wp2, &          ! wp2 pressure term 3
       rhs_pr3_wp3, &          ! wp3 pressure term 3
       rhs_ta_wp3, &           ! wp3 turbulent advection term
       rhs_pr_turb_wp3, &      ! wp3 pressure-turbulence correlation term !--EXPERIMENTAL--!
-      rhs_pr_dfsn_wp3
+      rhs_pr_dfsn_wp3         ! wp3 pressure diffusion term
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rhs_bp_wp2, &  ! wp2 bouyancy production (stats only)
@@ -2146,6 +2155,18 @@ module advance_wp2_wp3_module
     end if
 
 
+    call wp2_term_pr_dfsn_rhs( gr, C_wp2_pr_dfsn, gr%invrs_dzm, &
+                               rho_ds_zt, invrs_rho_ds_zm, &
+                               wpup2, wpvp2, wp3, &
+                               rhs_pr_dfsn_wp2 )
+
+    do k = 2, gr%nz-1
+
+      k_wp2 = 2*k
+
+      rhs(k_wp2) = rhs(k_wp2) + rhs_pr_dfsn_wp2(k)
+
+    enddo
 
     ! These lines are for the diffusional term with a Crank-Nicholson
     ! time step.  They are not used for completely implicit diffusion.
@@ -2517,6 +2538,10 @@ module advance_wp2_wp3_module
             !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
             call stat_update_var_pt( iwp2_bp, k, rhs_bp_wp2(k), & ! intent(in)
                                      stats_zm )                   ! intent(inout)
+
+
+            call stat_update_var_pt( iwp2_pr_dfsn, k, rhs_pr_dfsn_wp2(k), & ! intent(in)
+                                     stats_zm )                             ! intent(out)
 
 
             ! Include effect of vertical compression of eddies in wp2 budget
@@ -3469,6 +3494,84 @@ module advance_wp2_wp3_module
     return
 
   end subroutine wp2_term_pr1_rhs
+
+  !=============================================================================
+  pure subroutine wp2_term_pr_dfsn_rhs( gr, C_wp2_pr_dfsn, invrs_dzm, &
+                                        rho_ds_zt, invrs_rho_ds_zm, &
+                                        wpup2, wpvp2, wp3, &
+                                        rhs_pr_dfsn_wp2 )
+
+    ! Description:
+    !
+    ! This term is intended to represent the "diffusion" part of the total 
+    ! pressure correlation.  The total pressure term, -3w'^2/rho*dp'/dz, can be
+    ! split into
+    ! 
+    !   -3w'^2/rho*dp'/dz = + 3p'/rho*d(w'^2)/dz - 3/rho*d(w'^2p')/dz 
+    !
+    ! using the product rule.  The second term here we consider to be the
+    ! diffusion part, calculated by this subroutine.  (It should probably be
+    ! evaluated using CLUBB's PDF but this may be good enough for now.)
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        grid  ! Type
+
+    use constants_clubb, only: &
+        zero
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    type (grid), target, intent(in) :: gr
+
+    real( kind = core_rknd ), intent(in) :: &
+      C_wp2_pr_dfsn      ! Model parameter C_wp2_pr_dfsn                [-]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      invrs_dzm,       & ! Inverse of grid spacing                 [1/m]
+      invrs_rho_ds_zm, & ! Inverse dry static density (thermo levels) [kg/m^3] 
+      rho_ds_zt,       & ! Dry static density on mom. levels       [kg/m^3]
+      wpup2,           & ! w'u'^2 on momentum levels             [m^4/s^4]
+      wpvp2,           & ! w'v'^2 on momentum levels             [m^4/s^4]
+      wp3                ! w'^3 on thermo levels                 [m^4/s^4]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      rhs_pr_dfsn_wp2    ! RHS portion of wp2 from pressure-diffusion correlation [m^3/s^4]
+
+    ! Local Variables
+    integer :: k   ! Vertical level index 
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      wpuip2            ! 4th-order moment sum <w'u_i'u_i'>     [m^4/s^4]
+
+    ! ---- Begin Code ----
+
+    wpuip2 = wpup2 + wpvp2 + wp3
+
+    ! Set lower boundary to 0
+    rhs_pr_dfsn_wp2(1) = zero
+
+    do k = 2, gr%nz-1
+      rhs_pr_dfsn_wp2(k) &
+       = + C_wp2_pr_dfsn * invrs_rho_ds_zm(k) * invrs_dzm(k) &
+         * ( rho_ds_zt(k) * wpuip2(k) - rho_ds_zt(k-1) * wpuip2(k-1) )
+    enddo ! k = 2, gr%nz-1
+
+    ! Set upper boundary to 0
+    rhs_pr_dfsn_wp2(gr%nz) = zero
+
+
+    return
+
+  end subroutine wp2_term_pr_dfsn_rhs
 
   !=============================================================================
   pure subroutine wp3_term_ta_new_pdf_lhs( gr, coef_wp4_implicit, wp2, rho_ds_zm, &
@@ -4622,11 +4725,11 @@ module advance_wp2_wp3_module
     integer :: k   ! Vertical level index 
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      wp2upi2            ! 4th-order moment sum <w'^2u_i'u_i'>     [m^4/s^4]
+      wp2uip2            ! 4th-order moment sum <w'^2u_i'u_i'>     [m^4/s^4]
 
     ! ---- Begin Code ----
 
-    wp2upi2 = 0.5 * ( wp2up2 + wp2vp2 + wp4 )
+    wp2uip2 = wp2up2 + wp2vp2 + wp4
 
     ! Set lower boundary to 0
     rhs_pr_dfsn_wp3(1) = zero
@@ -4634,7 +4737,7 @@ module advance_wp2_wp3_module
     do k = 2, gr%nz-1
       rhs_pr_dfsn_wp3(k) &
        = + C_wp3_pr_dfsn * invrs_rho_ds_zt(k) * invrs_dzt(k) &
-         * ( rho_ds_zm(k) * wp2upi2(k) - rho_ds_zm(k-1) * wp2upi2(k-1) )
+         * ( rho_ds_zm(k) * wp2uip2(k) - rho_ds_zm(k-1) * wp2uip2(k-1) )
     enddo ! k = 2, gr%nz-1
 
     ! Set upper boundary to 0

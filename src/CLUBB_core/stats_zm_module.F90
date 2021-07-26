@@ -160,6 +160,7 @@ module stats_zm_module
         iwp2_pr1, &
         iwp2_pr2, &
         iwp2_pr3, &
+        iwp2_pr_dfsn, &
         iwp2_dp1, &
         iwp2_dp2, &
         iwp2_sdmp, &
@@ -1375,6 +1376,15 @@ module stats_zm_module
         iwp2_pr3 = k
         call stat_assign( var_index=iwp2_pr3, var_name="wp2_pr3", &
              var_description="w'^2_pr3, wp2 budget: wp2 pressure term 3", var_units="m^2/s^3", &
+             l_silhs=.false., grid_kind=stats_zm )
+
+        k = k + 1
+
+      case ('wp2_pr_dfsn')
+        iwp2_pr_dfsn = k
+        call stat_assign( var_index=iwp2_pr_dfsn, var_name="wp2_pr_dfsn", &
+             var_description="w'^2_pr_dfsn, wp2 budget: wp2 pressure diffusion term", &
+              var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
 
         k = k + 1
