@@ -2429,8 +2429,8 @@ module advance_clubb_core_module
 
     ! Variables being passed back to only advance_clubb_core (for statistics).
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
-      wpup2,     & ! < w'u'^2 > (momentum levels)             [m^3/s^3]
-      wpvp2,     & ! < w'v'^2 > (momentum levels)             [m^3/s^3]
+      wpup2,     & ! < w'u'^2 > (thermodynamic levels)        [m^3/s^3]
+      wpvp2,     & ! < w'v'^2 > (thermodynamic levels)        [m^3/s^3]
       wp2up2,    & ! < w'^2u'^2 > (momentum levels)           [m^4/s^4]
       wp2vp2,    & ! < w'^2v'^2 > (momentum levels)           [m^4/s^4]
       wp4,       & ! < w'^4 > (momentum levels)               [m^4/s^4]
