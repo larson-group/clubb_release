@@ -3503,18 +3503,26 @@ module advance_wp2_wp3_module
 
     ! Description:
     !
-    ! This term is intended to represent the "diffusion" part of the total 
-    ! pressure correlation.  The total pressure term, -3w'^2/rho*dp'/dz, can be
-    ! split into
+    ! This term is intended to represent the "diffusion" part of the wp2 
+    ! pressure correlation.  The total pressure diffusion term, 
     ! 
-    !   -3w'^2/rho*dp'/dz = + 3p'/rho*d(w'^2)/dz - 3/rho*d(w'^2p')/dz 
+    !   -1 / rho * ( d( <u_k'p'> )/dx_i + d( <u_i'p'> )/dx_k  )
     !
-    ! using the product rule.  The second term here we consider to be the
-    ! diffusion part, calculated by this subroutine.  (It should probably be
-    ! evaluated using CLUBB's PDF but this may be good enough for now.)
+    ! becomes 
+    !
+    !   -2 / rho * d( <w'p'> )/dz
+    !
+    ! for the w'^2 equation.  The factor of 2 is replaced with a tunable
+    ! parameter, C_wp2_pr_dfsn, and p' is replaced with 
+    !
+    !   p' ~ - rho * ( u_i*u_i - <u_i*u_i> ),
+    !
+    ! following Lumley 1978.  The wp2 pressure diffusion term becomes
+    !
+    !   + C_wp2_pr_dfsn / rho * ( d( rho*<w'u_iu_i> )/dz )
     !
     ! References:
-    !   None
+    !   Lumley 1978, p. 170.  See eq. 6.47 and accompanying discussion.
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
