@@ -2355,7 +2355,7 @@ module clubb_driver
                lh_sample_point_weights(1,:,:),  X_nl_all_levs(1,:,:,:), & ! In
                lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:),             & ! In
                lh_rc_clipped(1,:,:), lh_rv_clipped(1,:,:),              & ! In
-               lh_Nc_clipped(1,:,:),                                    &
+               lh_Nc_clipped(1,:,:),                                    & ! In
                stats_lh_zt, stats_lh_sfc )                                ! intent(inout)
           
                
