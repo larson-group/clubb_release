@@ -7,9 +7,30 @@ pipeline {
               git clone https://github.com/larson-group/sys_admin.git /home/pub/bitten/tmp/sys_admin'''
       }
     }
-    stage('Run Python Test') {
+    stage('Clone Clubb to tmp') {
       steps {
-        sh '''python3 /home/pub/bitten/tmp/sys_admin/python_tests/run_test.py -c /home/jenkins/clubb_bit_diff_test_workspace/bit_diff_clubb_config_example'''
+        sh '''rm -rf /home/pub/bitten/tmp/clubb
+              git clone https://github.com/larson-group/clubb.git /home/pub/bitten/tmp/clubb'''
+      }
+    }
+    stage('Compile using default compiler') {
+      steps {
+        sh '/home/pub/bitten/tmp/clubb/compile/compile.bash'
+      }
+    }
+    stage('Run Clubb') {
+      steps {
+        sh '/home/pub/bitten/tmp/clubb/run_scripts/run_scm_all.bash --netcdf'
+      }
+    }
+    stage('Diff test') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/bitten_test_driver_scripts/bitten_bindiff_test.bash /home/pub/bitten/tmp/clubb'
+      }
+    }
+    stage('Update the latest results') {
+      steps {
+        sh '/home/pub/bitten_bindiff_test/update_last.bash'
       }
     }
   }
