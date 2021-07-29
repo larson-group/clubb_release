@@ -706,8 +706,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp2_pr2, indep, dataset = self.getVarForCalculations('wp2_pr2', dataset_override)
         wp2_pr3, indep, dataset = self.getVarForCalculations('wp2_pr3', dataset)
         wp2_splat, indep, dataset = self.getVarForCalculations('wp2_splat', dataset)
+        wp2_pr_dfsn, indep, dataset = self.getVarForCalculations('wp2_pr_dfsn', dataset)
 
-        output_data = wp2_pr2 + wp2_pr3 + wp2_splat
+        output_data = wp2_pr2 + wp2_pr3 + wp2_splat + wp2_pr_dfsn
 
         return output_data, indep
 
@@ -769,6 +770,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp2_pr1, indep, dataset = self.getVarForCalculations('wp2_pr1', dataset)
         wp2_pr3, indep, dataset = self.getVarForCalculations('wp2_pr3', dataset)
         wp2_pr2, indep, dataset = self.getVarForCalculations('wp2_pr2', dataset)
+        wp2_pr_dfsn, indep, dataset = self.getVarForCalculations('wp2_pr_dfsn', dataset)
         wp2_dp1, indep, dataset = self.getVarForCalculations('wp2_dp1', dataset)
         wp2_dp2, indep, dataset = self.getVarForCalculations('wp2_dp2', dataset)
         wp2_bt, indep, dataset = self.getVarForCalculations('wp2_bt', dataset)
@@ -780,7 +782,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         output_data = wp2_bt - (
                 wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 +
-                wp2_cl + wp2_pd + wp2_sf + wp2_splat)
+                wp2_cl + wp2_pd + wp2_sf + wp2_splat + wp2_pr_dfsn )
 
         return output_data, indep
 
@@ -804,11 +806,12 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp3_pr1, indep, dataset = self.getVarForCalculations('wp3_pr1', dataset_override)
         wp3_pr2, indep, dataset = self.getVarForCalculations('wp3_pr2', dataset)
         wp3_pr3, indep, dataset = self.getVarForCalculations('wp3_pr3', dataset)
+        wp3_pr_tp, indep, dataset = self.getVarForCalculations('wp3_pr_tp', dataset)
         wp3_pr_turb, indep, dataset = self.getVarForCalculations('wp3_pr_turb', dataset)
         wp3_pr_dfsn, indep, dataset = self.getVarForCalculations('wp3_pr_dfsn', dataset)
         wp3_splat, indep, dataset = self.getVarForCalculations('wp3_splat', dataset)
 
-        output_data = wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_pr_turb + wp3_pr_dfsn + wp3_splat
+        output_data = wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_pr_turb + wp3_pr_dfsn + wp3_splat + wp3_pr_tp
 
         return output_data, indep
 
@@ -849,6 +852,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp3_pr3, indep, dataset = self.getVarForCalculations('wp3_pr3', dataset)
         wp3_pr_turb, indep, dataset = self.getVarForCalculations('wp3_pr_turb', dataset)
         wp3_pr_dfsn, indep, dataset = self.getVarForCalculations('wp3_pr_dfsn', dataset)
+        wp3_pr_tp, indep, dataset = self.getVarForCalculations('wp3_pr_tp', dataset)
         wp3_dp1, indep, dataset = self.getVarForCalculations('wp3_dp1', dataset)
         wp3_bt, indep, dataset = self.getVarForCalculations('wp3_bt', dataset)
         wp3_ta, indep, dataset = self.getVarForCalculations('wp3_ta', dataset)
@@ -858,7 +862,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         output_data = wp3_bt - (
                 wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_pr_turb + wp3_pr_dfsn 
-                + wp3_pr1 + wp3_pr2 + wp3_pr3
+                + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_pr_tp
                 + wp3_dp1 + wp3_cl + wp3_splat)
 
         return output_data, indep
