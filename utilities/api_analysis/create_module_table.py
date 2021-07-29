@@ -1,3 +1,5 @@
+#!/usr/bin/env/ python3
+
 """
 Create Module Table (create_module_table.py)
 
@@ -9,17 +11,9 @@ an html table of which modules are used in which list
 """
 
 import sys
-import time
+import datetime
 from api_commitment_test import findFiles, arrayOfFileNames
-
-
-def formatBool(boolean):
-    if boolean:
-        retStr = "<td>" + str(boolean) + "</td>"
-    else:
-        retStr = "<td style='color:lightgrey'>" + str(boolean) + "</td>"
-    return retStr
-
+from tabulate import tabulate
 
 def getClubbCoreModules(clubbCoreLocation):
     retVals = []
@@ -33,7 +27,7 @@ def getClubbCoreModules(clubbCoreLocation):
 try:
     tempString = sys.argv[1]
 except Exception:
-    print "Missing Argument: CLUBB_core location"
+    print("Missing Argument: CLUBB_core location")
 
 # Create data lists
 clubb_standalone = []
@@ -79,22 +73,10 @@ usedByWrf = False
 usedByCam = False
 usedByClubbCore = False
 # Using "sortable" http://www.kryogenix.org/code/browser/sorttable/#symbolsbeforesorting
-table = '<!DOCTYPE html><html><script src="sorttable.js"></script>'
-table += "<style>table,td, th{"
-table += "border:1px solid black;"
-table += "border-collapse: collapse;"
-table += "}"
-table += "th {"
-table += "background-color: lightgrey;"
-table += "}</style>"
-table += '<body><p>'
-table += 'Date: ' + time.strftime("%d/%m/%Y") + '</p><p>'
-table += 'test line </p><p>'
-table += 'This table shows which modules in CLUBB_standalone, CLUBB_core, SAM, WRF, and CAM are "use"ing modules in CLUBB_core, with the exception of the clubb_api_module and silhs_api_module. This allows us to ensure that CLUBB is only being called by the host models through the APIs.</p><p>'
-table += 'The leftmost column of the table is every module in the CLUBB_core folder. The 5 rightmost columns are true if the corresponding module is used in the host model. The 3 rightmost columns (SAM, WRF, and CAM) should all be false, otherwise the API Commitment Bitten Test will fail. The table also has a "number of users" column which is the number of "true"s on that row. The table can be sorted by clicking on the headers, and this column allows a user to see which subroutines are used most or least often.</p>'
-table += '<table class="sortable"><tr><th>Module Name</th>'
-table += "<th># of Users</th><th>CLUBB_core</th><th>CLUBB_standalone</th>"
-table += "<th>SAM</th><th>WRF</th><th>CAM</th></tr>"
+print datetime.datetime.now()
+table = []
+table.append(["Module Name", "# of Users", "CLUBB_core", "CLUBB_standalone", "SAM", "WRF", "CAM"])
+
 
 # Create the table
 for module in modules:
@@ -125,14 +107,7 @@ for module in modules:
         usedByClubbCore = True
         currentUsers += 1
 
-    table += "<tr><td>" + module + "</td>"
-    table += "<td>" + str(currentUsers) + "</td>"
-    table += formatBool(usedByClubbCore)
-    table += formatBool(usedByClubbStandalone)
-    table += formatBool(usedBySam)
-    table += formatBool(usedByWrf)
-    table += formatBool(usedByCam) + "</tr>"
+    table_line = [str(module), str(currentUsers), str(usedByClubbCore), str(usedByClubbStandalone), str(usedBySam), str(usedByWrf), str(usedByCam)]
+    table.append(table_line)
 
-table += "</table></body></html>"
-
-print table
+print tabulate(table, headers='firstrow', tablefmt='grid')

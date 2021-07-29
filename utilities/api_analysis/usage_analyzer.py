@@ -15,6 +15,8 @@ Example: python usage_analyzer.py ../../src/CLUBB_core/clubb_api_module.F90 ../.
 import re, sys, os
 # Importing strftime for the system's time
 from time import strftime
+from tabulate import tabulate
+import datetime
 
 # Settings
 fontSize = 12  # Controls the general font of the output table
@@ -363,15 +365,8 @@ def findFiles(dir):
 
 # Formats all this fancy data into a HTML table
 def makeTable(apiModule, samModules, wrfModules, camModules):
-    table = '<!DOCTYPE html><html><script src="sorttable.js"></script>'  # Setup page
-    table += '<style>table,td, th{border:1px solid black;border-collapse: '  # Table CSS
-    table += 'collapse;}th {background-color: lightgrey;}</style><head><title>'  #
-    table += 'Usage Breakdown: ' + strftime("%Y-%m-%d %H:%M:%S")  # Page Title
-    table += '</title></head><body>'  # Add some descriptive text
-    table += '<p>This table shows how each subroutine, function, and variable in clubb_api_module and silhs_api_module is used by the host models, SAM, WRF, and CAM. The table highlights areas where the three host models use CLUBB and SILHS differently.</p>'
-    table += '<p>The leftmost column is every subroutine, function, and variable in the public lists in the clubb_api_module and silhs_api_module. The rightmost columns are the subroutines, functions, and modules which use the corresponding element in the leftmost column. Subroutines and functions in the rightmost columns are followed by (in smaller text) the module that they are in. Like the API Commitment Table, the table can be sorted by clicking on the headers.</p>'
-    table += '<table class="sortable">'  # Setup Table
-    table += '<tr><th>API Element</th><th>SAM</th><th>WRF</th><th>CAM</th></tr>'  # Add the Header
+    table = []
+    table.append(["API Element", "SAM", "WRF", "CAM"])
 
     # Every element (and use!) in the API
     apiElements = list()
@@ -383,15 +378,13 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
     hostModels.append(wrfModules)
     hostModels.append(camModules)
 
-    # Go through every element in every use in every module in each host model in every element in the api...
-    # And look for places where the host models use an api element
-    for apiElement in apiElements:  # Go through each element in the api
-        if not isinstance(apiElement, str):  # Add it to the table's leftmost column
-            table += "<tr><td>" + apiElement.name + "</td>"  #
-        else:  #
-            table += "<tr><td>" + apiElement + "</td>"  #
-
-        for hostModel in hostModels:  # Go through each hostModel
+    for apiElement in apiElements:
+       temp_line = []
+       if not isinstance(apiElement, str):  # Add it to the table's leftmost column
+            temp_line.append(apiElement.name)
+       else:  
+            temp_line.append(apiElement)
+       for hostModel in hostModels:  # Go through each hostModel
             elementsFound = set()  # Hold all of the elements found
             for module in hostModel:  # Go through each module
                 for use in module.uses:  # Go through each use in each module's top level uses (module.uses)
@@ -402,24 +395,17 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
                     for use in function.uses:  # Go though each use in the function
                         if apiElement in use.elements and (
                                 use.name == "clubb_api_module" or use.name == "silhs_api_module"):  # If there's a match
-                            elementsFound.add(use.parentElement + \
-                                              "<span style='font-size:" + str(fontSizeReduced) + "pt'> in " + \
-                                              module.name + "<span style='font-size:" + str(fontSize) + "pt'>")  # Add the element to the list of found elements
+                            elementsFound.add(use.parentElement + " in " + module.name)  # Add the element to the list of found elements
                 for subroutine in module.subroutines:  # Same as functions
                     for use in subroutine.uses:
                         if apiElement in use.elements and (
                                 use.name == "clubb_api_module" or use.name == "silhs_api_module"):
-                            elementsFound.add(use.parentElement + \
-                                              "<span style='font-size:" + str(fontSizeReduced) + "pt'> in " + \
-                                              module.name + "<span style='font-size:" + str(fontSize) + "pt'>")
+                            elementsFound.add(use.parentElement + " in " + module.name)
             if len(elementsFound) == 0:  # If no elements have been found
-                table += "<td></td>"  # add an empty table cell
+                temp_line.append(" ")
             else:  # otherwise
-                table += "<td><p style='font-size:" + str(fontSize) + "pt'>"  # add all the matched up elements
-                table += ", <br>".join(elementsFound)
-                table += "</p></td>"
-
-    table += "</table></body></html>"  # Finish the table
+                temp_line.extend(elementsFound)    
+       table.append(temp_line)
     return table  # Return it
 
 
@@ -467,7 +453,8 @@ def main():
             wrfModules.extend(parseModulesInFile(file))
         for file in findFiles(sys.argv[4]):  # parse CAM
             camModules.extend(parseModulesInFile(file))
-        print makeTable(apiModule, samModules, wrfModules, camModules)  # print the table
+        print datetime.datetime.now()
+        print tabulate(makeTable(apiModule, samModules, wrfModules, camModules), headers='firstrow', tablefmt='grid') # print the table
     else:
         raise IOError("An error occurred processing the given arguments.")
 

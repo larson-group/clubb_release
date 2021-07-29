@@ -28,25 +28,25 @@ run_dir=`dirname $0`
 # Change directories to the one in which the script is located.
 cd $run_dir
 
-# Checkout CLUBB and the Host Models
-if [[ "$1" == "-nightly" ]]
-then
-    # Setup the paths to the host models
-    clubbDir=$clubbSource
-    samDir=$samSource
-    wrfDir=$wrfSource
-    camDir=$camSource
-
-    # Setup the checkout scripts
-    echo "Checking out CLUBB"
-    $buildDir/checkout_fresh.bash "CLUBB"
-    echo "Checking out SAM"
-    $buildDir/checkout_fresh.bash "SAM"
-    echo "Checking out WRF"
-    $buildDir/checkout_fresh.bash "WRF"
-    echo "Checking out CAM"
-    $buildDir/checkout_fresh.bash "CAM"
-else
+## Checkout CLUBB and the Host Models
+#if [[ "$1" == "-nightly" ]]
+#then
+#    # Setup the paths to the host models
+#    clubbDir=$clubbSource
+#    samDir=$samSource
+#    wrfDir=$wrfSource
+#    camDir=$camSource
+#
+#    # Setup the checkout scripts
+#    echo "Checking out CLUBB"
+#    $buildDir/checkout_fresh.bash "CLUBB"
+#    echo "Checking out SAM"
+#    $buildDir/checkout_fresh.bash "SAM"
+#    echo "Checking out WRF"
+#    $buildDir/checkout_fresh.bash "WRF"
+#    echo "Checking out CAM"
+#    $buildDir/checkout_fresh.bash "CAM"
+#else
     # Setup the paths to the host models
     clubbDir="CLUBB"
     samDir="SAM"
@@ -61,7 +61,7 @@ else
     git clone https://github.com/larson-group/wrf.git $wrfDir
     echo "Checking out CAM"
     git clone https://github.com/larson-group/cam.git $camDir
-fi
+#fi
 
 echo "Moving CLUBB_core"
 mv $clubbDir/src/CLUBB_core CLUBB_core
@@ -79,15 +79,12 @@ find $samDir -type d -name .gitignore -exec rm -rf {} \;
 find $wrfDir -type d -name .gitignore -exec rm -rf {} \;
 find $camDir -type d -name .gitignore -exec rm -rf {} \;
 
-if [[ "$1" == "-nightly" ]]
-then
-    echo "Copying the SILHS API into the CLUBB API"
-    cat $clubbDir/src/SILHS/silhs_api_module.F90 CLUBB_core/clubb_api_module.F90 > tempApiFile
-    mv tempApiFile CLUBB_core/clubb_api_module.F90
+echo "Copying the SILHS API into the CLUBB API"
+cat $clubbDir/src/SILHS/silhs_api_module.F90 CLUBB_core/clubb_api_module.F90 > tempApiFile
+mv tempApiFile CLUBB_core/clubb_api_module.F90
 
-    echo "Running the Usage Analyzer"
-    python usage_analyzer.py CLUBB_core/clubb_api_module.F90 $samDir $wrfDir/WRF $camDir > $textResults/usageAnalyzerTable.html
-fi
+echo "Running the Usage Analyzer"
+python usage_analyzer.py CLUBB_core/clubb_api_module.F90 $samDir $wrfDir/WRF $camDir > log/usageAnalyzerTable.txt
 
 echo "Removing API from CLUBB_core"
 rm  CLUBB_core/clubb_api_module.F90
@@ -117,47 +114,41 @@ python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir spcam cime c
 echo "Testing WRF's API Commitment"
 python api_commitment_test.py -cpu CLUBB_core $wrfDir/WRF --exclude-dir clubb silhs > wrf_modules.txt
 
-if [[ "$1" == "-nightly" ]]
-then
-    python create_module_table.py CLUBB_core > $textResults/apiCommitmentTable.html
-    rm -rf CLUBB_core     
-else
-    echo "Removing Checkouts"
-    rm -rf $clubbDir
-    rm -rf $samDir
-    rm -rf $wrfDir
-    rm -rf $camDir
-    rm -rf CLUBB_core
+python create_module_table.py CLUBB_core > log/apiCommitmentTable.txt
+echo "Removing Checkouts"
+rm -rf $clubbDir
+rm -rf $samDir
+rm -rf $wrfDir
+rm -rf $camDir
+rm -rf CLUBB_core
     
-    echo "Testing API Commitment"
-    sam_modules="sam_modules.txt"
-    wrf_modules="wrf_modules.txt"
-    cam_modules="cam_modules.txt"
-    if [[ -s "$sam_modules" ]] || [[ -s "$wrf_modules" ]] || [[ -s "$cam_modules" ]] ; then
-        echo "ERROR: A host model is circumventing the API."
-        echo "Please inspect the nightly test API Commitment Table."
-        echo "MODELS AT FAULT INCLUDE:"
+echo "Testing API Commitment"
+sam_modules="sam_modules.txt"
+wrf_modules="wrf_modules.txt"
+cam_modules="cam_modules.txt"
+if [[ -s "$sam_modules" ]] || [[ -s "$wrf_modules" ]] || [[ -s "$cam_modules" ]] ; then
+   echo "ERROR: A host model is circumventing the API."
+   echo "Please inspect the nightly test API Commitment Table."
+   echo "MODELS AT FAULT INCLUDE:"
 
-        if [[ -s "$sam_modules" ]] ; then
-                echo " - SAM Model"
-                cat $sam_modules
-        fi
-        if [[ -s "$wrf_modules" ]] ; then
-                echo " - WRF Model"
-                cat $wrf_modules
-        fi
-        if [[ -s "$cam_modules" ]] ; then
-                echo " - CAM Model"
-                cat $cam_modules
-        fi
-
-
-        exitCode=1
-    else 
-        echo "All host models passed."
-        exitCode=0
-    fi
+   if [[ -s "$sam_modules" ]] ; then
+        echo " - SAM Model"
+        cat $sam_modules
+   fi
+   if [[ -s "$wrf_modules" ]] ; then
+        echo " - WRF Model"
+        cat $wrf_modules
+   fi
+   if [[ -s "$cam_modules" ]] ; then
+        echo " - CAM Model"
+        cat $cam_modules
+   fi
+   exitCode=1
+else 
+   echo "All host models passed."
+   exitCode=0
 fi
+
 
 echo "Removing Dependencies"
 rm -rf clubb_standalone_modules.txt
