@@ -1958,7 +1958,7 @@ module clubb_driver
                        gr%nz, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
                        complete_momentum(2:total_atmos_dim + 1), day, month, year, & ! Intent(in)
-                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out, & ! intent(in)
+                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!intent(in)
                        stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                        stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                        stats_rad_zt, stats_rad_zm ) ! intent(inout)
@@ -1968,7 +1968,7 @@ module clubb_driver
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
-                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out, & ! intent(in)
+                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!intent(in)
                        stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                        stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                        stats_rad_zt, stats_rad_zm ) ! intent(inout)
@@ -2243,7 +2243,7 @@ module clubb_driver
                         clubb_config_flags%l_calc_w_corr,                           & ! Intent(in)
                         clubb_config_flags%l_const_Nc_in_cloud,                     & ! Intent(in)
                         clubb_config_flags%l_fix_w_chi_eta_correlations,            & ! Intent(in)
-                        stats_zt, stats_zm, stats_sfc,                              & ! intent(inout)
+                        stats_zt, stats_zm, stats_sfc,                           & ! intent(inout)
                         hydrometp2,                                                 & ! Intent(out)
                         mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                           & ! Intent(out)
                         sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),                     & ! Intent(out)
@@ -2261,7 +2261,7 @@ module clubb_driver
                                    corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:), & ! Intent(in)
                                    pdf_params, hydromet_pdf_params(1,:),             & ! Intent(in)
                                    precip_fracs,                                     & ! Intent(in)
-                                   stats_zt, stats_zm,                               & ! intent(inout)
+                                   stats_zt, stats_zm,                        & ! intent(inout)
                                    rtphmp_zt, thlphmp_zt, wp2hmp )                     ! Intent(out)
 
       endif ! not microphys_scheme == "none"
@@ -2398,7 +2398,7 @@ module clubb_driver
                               lh_Nc_clipped(1,:,:), &                                 ! In
                               silhs_config_flags%l_lh_importance_sampling, &          ! In
                               silhs_config_flags%l_lh_instant_var_covar_src, &        ! In
-                              stats_zt, stats_zm, stats_sfc, stats_lh_zt, &           ! intent(inout)
+                              stats_zt, stats_zm, stats_sfc, stats_lh_zt, &  ! intent(inout)
                               Nccnm, &                                                ! Inout
                               hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &                  ! Out
                               thlm_mc, hydromet_vel_zt, &                             ! Out

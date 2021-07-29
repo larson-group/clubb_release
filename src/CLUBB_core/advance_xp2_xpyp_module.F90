@@ -495,7 +495,7 @@ module advance_xp2_xpyp_module
                                  pdf_implicit_coefs_terms, l_scalar_calc,            & ! In
                                  iiPDF_type, l_upwind_xpyp_ta,                       & ! In
                                  l_godunov_upwind_xpyp_ta,                           & ! In 
-                                 stats_zt,                                           & ! intent(inout)
+                                 stats_zt,                        & ! intent(inout)
                                  lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp,    & ! Out
                                  lhs_ta_wpup2, lhs_ta_wpvp2, lhs_ta_wpsclrp2,        & ! Out
                                  lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,              & ! Out
@@ -529,7 +529,7 @@ module advance_xp2_xpyp_module
                                             rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,              & ! In
                                             rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,          & ! In
                                             dt, l_iter, l_scalar_calc,                      & ! In
-                                            stats_zm, stats_sfc,                            & ! intent(inout)
+                                            stats_zm, stats_sfc,                  & ! intent(inout)
                                             rtp2, thlp2, rtpthlp,                           & ! Out
                                             sclrp2, sclrprtp, sclrpthlp )                     ! Out
     else
@@ -547,7 +547,7 @@ module advance_xp2_xpyp_module
                                                rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,            & ! In
                                                rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,        & ! In
                                                dt, iiPDF_type, l_iter, l_scalar_calc,        & ! In
-                                               stats_zm, stats_sfc,                          & ! intent(inout)
+                                               stats_zm, stats_sfc,                & ! intent(inout)
                                                rtp2, thlp2, rtpthlp,                         & ! Out
                                                sclrp2, sclrprtp, sclrpthlp )                   ! Out
     end if

@@ -424,16 +424,16 @@ module setup_clubb_pdf_params
         ice_supersat_frac_2(j,:) = pdf_params%ice_supersat_frac_2(j,:)
       end do
       
-      call precip_fraction( nz, ngrdcol,                                              & ! In
-                            hydromet(:,:,:), cloud_frac(:,:), cloud_frac_1(:,:),      & ! In
-                            cloud_frac_2(:,:), ice_supersat_frac(:,:),                & ! In
-                            ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:),       & ! In
-                            mixt_frac(:,:), l_stats_samp,                             & ! In
-                            stats_sfc,                                                & ! intent(inout)
-                            precip_frac(:,:),                                         & ! Out
-                            precip_frac_1(:,:),                                       & ! Out
-                            precip_frac_2(:,:),                                       & ! Out
-                            precip_frac_tol(:) )                                        ! Out
+      call precip_fraction( nz, ngrdcol,                                         & ! In
+                            hydromet(:,:,:), cloud_frac(:,:), cloud_frac_1(:,:), & ! In
+                            cloud_frac_2(:,:), ice_supersat_frac(:,:),           & ! In
+                            ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:),  & ! In
+                            mixt_frac(:,:), l_stats_samp,                        & ! In
+                            stats_sfc,                                           & ! intent(inout)
+                            precip_frac(:,:),                                    & ! Out
+                            precip_frac_1(:,:),                                  & ! Out
+                            precip_frac_2(:,:),                                  & ! Out
+                            precip_frac_tol(:) )                                   ! Out
         
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) " in setup_pdf_parameters after calling precip_fraction"

@@ -1437,7 +1437,7 @@ module advance_clubb_core_module
                                        clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
                                        clubb_config_flags%l_use_thvm_in_bv_freq,      & ! intent(in
                                        clubb_config_flags%l_use_shear_Richardson,     & ! intent(in)
-                                       stats_zm,                                      & ! intent(inout)
+                                       stats_zm, & ! intent(inout)
                                        Cx_fnc_Richardson )                             ! intent(out)
       else
           Cx_fnc_Richardson = 0.0
