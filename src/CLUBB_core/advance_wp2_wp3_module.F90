@@ -1531,24 +1531,21 @@ module advance_wp2_wp3_module
 
 
     ! Calculate turbulent production terms of w'^3
-    call wp3_term_tp_lhs( gr, C_wp3_pr_tp, wp2(:), & ! intent(in)
-                          rho_ds_zm(:), &            ! intent(in)
-                          invrs_rho_ds_zt(:), &      ! intent(in)
-                          gr%invrs_dzt(:), &         ! intent(in)
-                          lhs_tp_wp3(:,:) )          ! intent(out)
-
-    call wp3_term_tp_lhs( gr, zero, wp2(:), &        ! intent(in)
+    call wp3_term_tp_lhs( gr, one, wp2(:), &         ! intent(in)
                           rho_ds_zm(:), &            ! intent(in)
                           invrs_rho_ds_zt(:), &      ! intent(in)
                           gr%invrs_dzt(:), &         ! intent(in)
                           lhs_adv_tp_wp3(:,:) )      ! intent(out)
 
-    call wp3_term_tp_lhs( gr, C_wp3_pr_tp+one, wp2(:), & ! intent(in)
+    ! Calculate pressure damping of turbulent production of w'^3
+    call wp3_term_tp_lhs( gr, -1*C_wp3_pr_tp, wp2(:),  & ! intent(in)
                           rho_ds_zm(:), &                ! intent(in)
                           invrs_rho_ds_zt(:), &          ! intent(in)
                           gr%invrs_dzt(:), &             ! intent(in)
                           lhs_pr_tp_wp3(:,:) )           ! intent(out)
 
+    ! Sum contributions to turbulent production from standard term & damping
+    lhs_tp_wp3 = lhs_adv_tp_wp3 + lhs_pr_tp_wp3
 
     ! Calculate accumulation terms of w'^3 and w'^3 pressure terms 2
     call wp3_terms_ac_pr2_lhs( gr, C11_Skw_fnc(:), wm_zm(:), gr%invrs_dzt(:), & ! intent(in)
@@ -2282,23 +2279,21 @@ module advance_wp2_wp3_module
     endif
 
     ! Calculate turbulent production terms of w'^3 
-    call wp3_term_tp_lhs( gr, C_wp3_pr_tp, wp2(:), & ! intent(in)
-                          rho_ds_zm(:),            & ! intent(in)
-                          invrs_rho_ds_zt(:),      & ! intent(in)
-                          gr%invrs_dzt(:),         & ! intent(in)
-                          lhs_tp_wp3(:,:) )          ! intent(out)
-
-    call wp3_term_tp_lhs( gr, zero, wp2(:),     & ! intent(in)
+    call wp3_term_tp_lhs( gr, one, wp2(:),      & ! intent(in)
                           rho_ds_zm(:),         & ! intent(in)
                           invrs_rho_ds_zt(:),   & ! intent(in)
                           gr%invrs_dzt(:),      & ! intent(in)
                           lhs_adv_tp_wp3(:,:) )   ! intent(out)
 
-    call wp3_term_tp_lhs( gr, C_wp3_pr_tp+one, wp2(:), & ! intent(in)
+    ! Calculate pressure damping of turbulent production of w'^3
+    call wp3_term_tp_lhs( gr, -1*C_wp3_pr_tp, wp2(:),  & ! intent(in)
                           rho_ds_zm(:),                & ! intent(in)
                           invrs_rho_ds_zt(:),          & ! intent(in)
                           gr%invrs_dzt(:),             & ! intent(in)
                           lhs_pr_tp_wp3(:,:) )           ! intent(out)
+
+    ! Sum contributions to turbulent production from standard term & damping
+    lhs_tp_wp3 = lhs_adv_tp_wp3 + lhs_pr_tp_wp3
 
     ! Calculate pressure terms 1 for w'^3
     call wp3_term_pr1_lhs( gr, C8, C8b, invrs_tauw3t(:), Skw_zt(:), & ! intent(in)
@@ -4100,7 +4095,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_ta_ADG1_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_tp_lhs( gr, C_wp3_pr_tp, wp2, &
+  pure subroutine wp3_term_tp_lhs( gr, coef_wp3_tp, wp2, &
                                    rho_ds_zm, &
                                    invrs_rho_ds_zt, &
                                    invrs_dzt, &
@@ -4192,7 +4187,7 @@ module advance_wp2_wp3_module
 
     ! Input Variables
    real( kind = core_rknd ), intent(in) :: &
-      C_wp3_pr_tp      ! Coefficient for tp pressure scrambling term   [-]
+      coef_wp3_tp      ! Coefficient for tp pressure scrambling term   [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       wp2,             & ! w'^2                                        [m^2/s^2]
@@ -4217,15 +4212,15 @@ module advance_wp2_wp3_module
 
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
        lhs_tp_wp3(k_mdiag,k) &
-       = - three * ( one - C_wp3_pr_tp ) * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+       = - coef_wp3_tp * three * invrs_rho_ds_zt(k) * invrs_dzt(k) &
            * rho_ds_zm(k) * wp2(k) &
-         + three_halves * ( one - C_wp3_pr_tp ) * invrs_dzt(k) * wp2(k)
+         + coef_wp3_tp * three_halves * invrs_dzt(k) * wp2(k)
 
        ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
        lhs_tp_wp3(km1_mdiag,k) &
-       = + three * ( one - C_wp3_pr_tp ) * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+       = + coef_wp3_tp * three * invrs_rho_ds_zt(k) * invrs_dzt(k) &
            * rho_ds_zm(k-1) * wp2(k-1) &
-         - three_halves * ( one - C_wp3_pr_tp ) * invrs_dzt(k) * wp2(k-1)
+         - coef_wp3_tp * three_halves * invrs_dzt(k) * wp2(k-1)
 
     enddo ! k = 2, gr%nz-1
 

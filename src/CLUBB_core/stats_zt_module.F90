@@ -1859,7 +1859,8 @@ module stats_zt_module
       case ('wp3_pr_tp')
         iwp3_pr_tp = k
         call stat_assign( var_index=iwp3_pr_tp, var_name="wp3_pr_tp", &
-             var_description="wp3_pr_tp, wp3 budget: wp3 pressure-turb. transport", &
+             var_description= &
+               "wp3_pr_tp, wp3 budget: wp3 pressure damping of turbulent production", &
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 

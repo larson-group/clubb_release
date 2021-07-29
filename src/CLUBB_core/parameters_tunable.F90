@@ -78,7 +78,7 @@ module parameters_tunable
     C_wp3_pr_tp   = 0.000000_core_rknd,  & ! Coefficient for the wp3_pr_tp term [-]
     C_wp3_pr_turb = 0.000000_core_rknd,  & ! Coefficient for the wp3_pr_turb term [-]
     C_wp3_pr_dfsn = 0.000000_core_rknd,  & ! Coefficient for the wp3_pr_dfsn term [-]
-    C_wp2_splat   = 2.000000_core_rknd       ! Coefficient for gustiness near ground [-]
+    C_wp2_splat   = 2.000000_core_rknd     ! Coefficient for gustiness near ground [-]
 !$omp threadprivate(C1, C1b, C1c, C2, C2b, C2c, &
 !$omp   C2rt, C2thl, C2rtthl, C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
 !$omp   C6thl, C6thlb, C6thlc, &
