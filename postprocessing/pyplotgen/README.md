@@ -22,7 +22,7 @@ If you'd like to overplot two CLUBB cases that have been output to two different
 
 ### Make sure filenames match
 
-In order to correctly plot output, Pyplotgen needs to find the files it is looking for.  As shown in the example run commands above, the user specifies the path to the netcdf files containing the data to be plotted.  However the user must also ensure that the files in that directoy are properly named so that pyplotgen can open them.  For example, if the user wants to plot BOMEX data from the SAM model, the pyplotgen command might look like this:
+In order to correctly plot output, Pyplotgen needs to find the files it is looking for.  As shown in the example run commands above, the user specifies the path to the netcdf files containing the data to be plotted.  However the user must also ensure that the files in that directory are properly named so that pyplotgen can open them.  For example, if the user wants to plot BOMEX data from the SAM model, the pyplotgen command might look like this:
 
 `python3 ./pyplotgen.py -s /path/to/sam/output/ -o ./sam_plots`
 
