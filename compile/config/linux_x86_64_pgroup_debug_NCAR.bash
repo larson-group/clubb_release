@@ -43,7 +43,7 @@ LAPACK="-DNO_LAPACK_ISNAN -llapack -lblas" #NCAR
 # == Linking Flags ==
 LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK" #NCAR
 
-FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output

@@ -44,7 +44,7 @@ NETCDF="$PGI_NETCDF_FORTRAN"
 # == Linking Flags ==
 LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK"
 
-FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Kieee"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
