@@ -280,7 +280,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 done
 
 # If no cases failed, print an all good message
-if [[ EXIT_STATUS != 1 ]]; then
+if [[ $EXIT_STATUS -eq 0 ]]; then
    echo "" 
    echo "All cases ran to completion."
 fi
