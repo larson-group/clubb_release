@@ -1,0 +1,29 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh '''compile/compile.bash -c config/linux_x86_64_gfortran.bash'''
+      }
+    }
+    stage('Run Timesteps Test') {
+      steps {
+        sh '''run_scripts/run_timestep_tests.bash'''
+      }
+    }
+  }
+  post {
+    always {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_timestep_gfortran_tests" )
+      	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_timestep_gfortran_tests" )
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}
