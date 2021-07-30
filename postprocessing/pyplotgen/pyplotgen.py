@@ -213,12 +213,13 @@ class PyPlotGen:
                 all_cases_casenames.append(case["name"])
 
             logToFileAndConsole( 
-                "Error: no cases were plotted. Please confirm your input folder path "
-                "(i.e. following --sam, --clubb, --e3sm, --wrf, --cam), and confirm that your netcdf filename "
-                "matches the expected filename given in config/Case_definitions.py "
-                "(see the 'Make sure filenames match' section of the pyplotgen README for more info). "
-                "Also confirm that the CASES_TO_PLOT variable in config/Case_Defintions.py lists "
-                "all of the cases you expected to plot.\n"
+                "Error:  No cases were plotted.  Please confirm your input folder path,\n"
+                "(i.e. following --sam, --clubb, --e3sm, --wrf, --cam), and confirm that\n"
+                "your netcdf filename matches the expected filename given in\n"
+                "config/Case_definitions.py (see the 'Make sure filenames match' section\n"
+                "of the pyplotgen README for more info).  Also confirm that the CASES_TO_PLOT\n"
+                "variable in config/Case_Defintions.py lists all of the cases you expected\n"
+                "to plot.\n"
                 "CASES_TO_PLOT = " + str(all_cases_casenames) +
                 "\nPlease run ./pyplotgen.py -h for more information on parameters.")
         logToFile("Generating webpage for viewing plots ")
