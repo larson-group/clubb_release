@@ -20,6 +20,19 @@ If you'd like to overplot two CLUBB cases that have been output to two different
 `-c /home/USERNAME/clubb_issue_834/output/dir1 /home/USERNAME/clubb_issue_834/output/dir2` <br/>
 `-o /home/USERNAME/clubb/output/pyplots_default_run`
 
+### Make sure filenames match
+
+In order to correctly plot output, Pyplotgen needs to find the files it is looking for.  As shown in the example run commands above, the user specifies the path to the netcdf files containing the data to be plotted.  However the user must also ensure that the files in that directoy are properly named so that pyplotgen can open them.  For example, if the user wants to plot BOMEX data from the SAM model, the pyplotgen command might look like this:
+
+`python3 ./pyplotgen.py -s /path/to/sam/output/ -o ./sam_plots`
+
+But, in the /path/to/sam/output/ directory, pyplotgen will look for a file named BOMEX_SAM_CLUBB.nc. This is because by default, in config/Case_definitions.py in the case definition block for BOMEX, the SAM file is given as 
+
+         `'sam_file': {'sam': sam_output_root + "/BOMEX_SAM_CLUBB.nc"}` 
+
+The user can either change this line of code to match their file name (probably preferred), or they can change their file name to match config/Case_definitions.py.
+
+
 ## Valid options
 
 | *Option Flag* | *Description* |
