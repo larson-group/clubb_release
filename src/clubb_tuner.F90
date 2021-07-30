@@ -114,7 +114,7 @@ program clubb_tuner
     if ( tune_type /= iploops ) then
        ! Prompt the user to re-run with new parameters.
        write(unit=fstdout,fmt='(A)', advance='no')  & 
-         "Re-run with new parameters?(y/n) "
+         "Re-run tuner starting with new parameters?(y/n) "
        read(*,*) user_response
     else
        ! For the parameter loops tuner, automatically enter a response of "no".
@@ -125,7 +125,7 @@ program clubb_tuner
 
     ! Save tuning results in file if specified
     if( l_save_tuning_run ) then
-      write(file_unit,*) "Re-run with new parameters?(y/n) ", user_response
+      write(file_unit,*) "Re-run tuner starting with new parameters?(y/n) ", user_response
       close(unit=file_unit)
     end if ! l_save_tuning_run
 
@@ -193,22 +193,22 @@ program clubb_tuner
       action="write", position="append")
     call write_text( "New filename is: "//results_f, l_save_tuning_run, file_unit )
 
-    ! Parameters namelist
-    call write_text( "Generating new tunable_parameters.in file...", l_save_tuning_run, file_unit )
-    if( l_save_tuning_run ) close(unit=file_unit)
-
-    results_f = "../input/tunable_parameters/tunable_parameters_"//current_date//'_' & 
-      //current_time(1:4)//".in" 
-
-    call output_nml_standalone( results_f,  & 
-                                param_vals_matrix(1,1:ndim) )
-    ! Save tuning results in file if specified
-    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
-      action="write", position="append")
-    call write_text( "New filename is: "//results_f, l_save_tuning_run, file_unit )
-    if( l_save_tuning_run ) close(unit=file_unit)
-
   end if
+
+  ! Parameters namelist
+  call write_text( "Generating new tunable_parameters.in file...", l_save_tuning_run, file_unit )
+  if( l_save_tuning_run ) close(unit=file_unit)
+
+  results_f = "../input/tunable_parameters/tunable_parameters_"//current_date//'_' & 
+    //current_time(1:4)//".in" 
+
+  call output_nml_standalone( results_f,  & 
+                              param_vals_matrix(1,1:ndim) )
+  ! Save tuning results in file if specified
+  if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
+    action="write", position="append")
+  call write_text( "New filename is: "//results_f, l_save_tuning_run, file_unit )
+  if( l_save_tuning_run ) close(unit=file_unit)
 
   ! Print message if tuning results were saved in a file
   if ( l_save_tuning_run ) then
