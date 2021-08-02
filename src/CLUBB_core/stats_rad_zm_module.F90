@@ -16,7 +16,8 @@ module stats_rad_zm_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_rad_zm( vars_rad_zm, l_error, & !intent(in)
+  subroutine stats_init_rad_zm( vars_rad_zm, &
+                                l_error, & !intent(in)
                                 stats_rad_zm ) ! intent(inout)
 
 !     Description:

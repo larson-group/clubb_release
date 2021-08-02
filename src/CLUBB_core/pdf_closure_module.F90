@@ -937,7 +937,7 @@ endif
                               pdf_params%corr_chi_eta_1(1,:) )                              ! Out
     
     ! Calculate cloud fraction component for pdf 1
-    call calc_liquid_cloud_frac_component( gr, &
+    call calc_liquid_cloud_frac_component( gr, & ! intent(in)
                                 pdf_params%chi_1(1,:), pdf_params%stdev_chi_1(1,:),    & ! In
                                 pdf_params%cloud_frac_1(1,:), pdf_params%rc_1(1,:) )     ! Out
 
@@ -953,9 +953,9 @@ endif
           chi_at_ice_sat1 = ( sat_mixrat_ice( p_in_Pa(i), tl1(i) ) - pdf_params%rsatl_1(1,i) ) &
                             * pdf_params%crt_1(1,i)
 
-          call calc_cloud_frac_component( pdf_params%chi_1(1,i), pdf_params%stdev_chi_1(1,i), &
-                                          chi_at_ice_sat1, &
-                                          pdf_params%ice_supersat_frac_1(1,i), rc_1_ice(i) )
+          call calc_cloud_frac_component( pdf_params%chi_1(1,i), pdf_params%stdev_chi_1(1,i), &!in
+                                          chi_at_ice_sat1, & ! intent(in)
+                                          pdf_params%ice_supersat_frac_1(1,i), rc_1_ice(i) )! out
         else
 
             ! Temperature is warmer than freezing, the ice_supersat_frac calculation is
@@ -997,9 +997,11 @@ endif
               chi_at_ice_sat2 = ( sat_mixrat_ice( p_in_Pa(i), tl2(i) ) - pdf_params%rsatl_2(1,i) ) &
                                 * pdf_params%crt_2(1,i)
 
-              call calc_cloud_frac_component( pdf_params%chi_2(1,i), pdf_params%stdev_chi_2(1,i), &
-                                              chi_at_ice_sat2, &
-                                              pdf_params%ice_supersat_frac_2(1,i), rc_2_ice(i) )
+              call calc_cloud_frac_component( pdf_params%chi_2(1,i), & ! intent(in)
+                                              pdf_params%stdev_chi_2(1,i), & ! intent(in)
+                                              chi_at_ice_sat2, & ! intent(in)
+                                              pdf_params%ice_supersat_frac_2(1,i), & ! intent(out)
+                                              rc_2_ice(i) ) ! intent(out)
             else
 
                 ! Temperature is warmer than freezing, the ice_supersat_frac calculation is 
@@ -1230,15 +1232,15 @@ endif
     if ( clubb_at_least_debug_level( 2 ) ) then
 
       call pdf_closure_check & 
-           ( gr, wp4, wprtp2, wp2rtp, wpthlp2, & 
-             wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
-             rtpthvp, thlpthvp, wprcp, wp2rcp, & 
-             rtprcp, thlprcp, rcp2, wprtpthlp, & 
-             pdf_params%crt_1(1,:), pdf_params%crt_2(1,:), &
-             pdf_params%cthl_1(1,:), pdf_params%cthl_2(1,:), &
-             pdf_params, &
-             sclrpthvp, sclrprcp, wpsclrp2, & 
-             wpsclrprtp, wpsclrpthlp, wp2sclrp )
+           ( gr, wp4, wprtp2, wp2rtp, wpthlp2, & ! intent(in)
+             wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, &  ! intent(in)
+             rtpthvp, thlpthvp, wprcp, wp2rcp, & ! intent(in)
+             rtprcp, thlprcp, rcp2, wprtpthlp, & ! intent(in)
+             pdf_params%crt_1(1,:), pdf_params%crt_2(1,:), & ! intent(in)
+             pdf_params%cthl_1(1,:), pdf_params%cthl_2(1,:), & ! intent(in)
+             pdf_params, & ! intent(in)
+             sclrpthvp, sclrprcp, wpsclrp2, &  ! intent(in)
+             wpsclrprtp, wpsclrpthlp, wp2sclrp ) ! intent(in)
 
       ! Error Reporting
       ! Joshua Fasching February 2008

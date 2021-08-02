@@ -13,7 +13,8 @@ module file_functions
 
 !===============================================================================
   subroutine file_read_1d( file_unit, path_and_filename,  & 
-                           num_datapts, entries_per_line, variable )
+                           num_datapts, entries_per_line, &
+                           variable )
 
 !     Description:
 !     This subroutine reads in values from a data file with a number of

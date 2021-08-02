@@ -434,10 +434,12 @@ module advance_xp3_module
 
     if ( l_stats_samp ) then
 
-       call stat_update_var( ixp3_tp, term_tp, stats_zt )
-       call stat_update_var( ixp3_ac, term_ac, stats_zt )
-       call stat_update_var( ixp3_dp, -(C_xp3_dissipation * invrs_tau_zt)*xp3, &
-                             stats_zt )
+       call stat_update_var( ixp3_tp, term_tp, & ! intent(in)
+                             stats_zt )          ! intent(inout)
+       call stat_update_var( ixp3_ac, term_ac, & ! intent(in)
+                             stats_zt )          ! intent(inout)
+       call stat_update_var( ixp3_dp, -(C_xp3_dissipation * invrs_tau_zt)*xp3, & ! intent(in)
+                             stats_zt ) ! intent(inout)
 
        if ( l_predict_xp3 ) then
           call stat_end_update( gr, ixp3_bt, xp3 / dt, & ! Intent(in)

@@ -406,7 +406,8 @@ module sponge_layer_damping
   end function sponge_damp_xp3
 
   !=============================================================================
-  subroutine initialize_tau_sponge_damp( gr, dt, z, settings, damping_profile )
+  subroutine initialize_tau_sponge_damp( gr, dt, z, settings, &
+                                         damping_profile )
 
     ! Description:
     ! Initialize time scale, tau_sponge_damp, used for damping.  The time scale

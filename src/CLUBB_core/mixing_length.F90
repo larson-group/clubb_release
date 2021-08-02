@@ -754,7 +754,7 @@ module mixing_length
     ! Ensure that no Lscale values are NaN
     if ( clubb_at_least_debug_level( 1 ) ) then
 
-        call length_check( gr, Lscale, Lscale_up, Lscale_down )
+        call length_check( gr, Lscale, Lscale_up, Lscale_down ) ! intent(in)
 
         if ( err_code == clubb_fatal_error ) then
 
@@ -1266,16 +1266,16 @@ module mixing_length
 
 
 !-----------------------------------Begin Code---------------------------------------------------!
-  call calc_brunt_vaisala_freq_sqd( gr, zm2zt( gr, zt2zm( gr, thlm )), &
-                                        exner, rtm, rcm, p_in_Pa, thvm, &
-                                        ice_supersat_frac, &
-                                        l_brunt_vaisala_freq_moist, &
-                                        l_use_thvm_in_bv_freq, &
-                                        brunt_vaisala_freq_sqd, &
-                                        brunt_vaisala_freq_sqd_mixed,&
-                                        brunt_vaisala_freq_sqd_dry, &
-                                        brunt_vaisala_freq_sqd_moist, &
-                                        brunt_vaisala_freq_sqd_plus )
+  call calc_brunt_vaisala_freq_sqd( gr, zm2zt( gr, zt2zm( gr, thlm )), & ! intent(in)
+                                        exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+                                        ice_supersat_frac, & ! intent(in)
+                                        l_brunt_vaisala_freq_moist, & ! intent(in)
+                                        l_use_thvm_in_bv_freq, & ! intent(in)
+                                        brunt_vaisala_freq_sqd, & ! intent(out)
+                                        brunt_vaisala_freq_sqd_mixed,& ! intent(out)
+                                        brunt_vaisala_freq_sqd_dry, & ! intent(out)
+                                        brunt_vaisala_freq_sqd_moist, & ! intent(out)
+                                        brunt_vaisala_freq_sqd_plus ) ! intent(out)
 
 
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )

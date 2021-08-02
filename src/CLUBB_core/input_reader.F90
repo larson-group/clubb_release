@@ -213,7 +213,8 @@ module input_reader
   end subroutine read_two_dim_file
 
   !------------------------------------------------------------------------------------------------
-  subroutine read_one_dim_file( iunit, nCol, filename, read_vars )
+  subroutine read_one_dim_file( iunit, nCol, filename, &
+                                read_vars )
     !
     ! Description: 
     !   This subroutine reads from a file containing data that varies
@@ -516,7 +517,8 @@ module input_reader
     return
   end function linear_fill_blanks
   !----------------------------------------------------------------------------
-  subroutine deallocate_one_dim_vars( num_vars, one_dim_vars )
+  subroutine deallocate_one_dim_vars( num_vars, &
+                                      one_dim_vars )
     !
     !  Description: 
     !    This subroutine deallocates the pointer stored in

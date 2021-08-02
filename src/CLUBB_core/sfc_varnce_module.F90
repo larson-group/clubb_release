@@ -483,9 +483,9 @@ module sfc_varnce_module
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-       call sfc_varnce_check( wp2_sfc, up2_sfc, vp2_sfc,  & 
-                                  thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
-                                  sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
+       call sfc_varnce_check( wp2_sfc, up2_sfc, vp2_sfc,  & ! intent(in)
+                                  thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & ! intent(in)
+                                  sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc ) ! intent(in)
 
        if ( err_code == clubb_fatal_error ) then
 

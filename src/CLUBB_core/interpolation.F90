@@ -572,7 +572,8 @@ module interpolation
 
 !-------------------------------------------------------------------------------
   subroutine lin_interpolate_on_grid & 
-             ( nparam, xlist, tlist, xvalue, tvalue )
+             ( nparam, xlist, tlist, xvalue, &
+               tvalue )
 
 ! Description:
 !   Linear interpolation for 25 June 1996 altocumulus case.

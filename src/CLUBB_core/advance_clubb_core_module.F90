@@ -846,7 +846,7 @@ module advance_clubb_core_module
     !----------------------------------------------------------------
     if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check &
-           ( gr, thlm_forcing, rtm_forcing, um_forcing,                             & ! intent(in)
+           ( gr, thlm_forcing, rtm_forcing, um_forcing,                         & ! intent(in)
              vm_forcing, wm_zm, wm_zt, p_in_Pa,                                 & ! intent(in)
              rho_zm, rho, exner, rho_ds_zm,                                     & ! intent(in)
              rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,                       & ! intent(in)
@@ -1174,7 +1174,7 @@ module advance_clubb_core_module
 
       else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
-        call diagnose_Lscale_from_tau( gr, &
+        call diagnose_Lscale_from_tau( gr, & ! intent(in)
                           upwp_sfc, vpwp_sfc, um, vm, & !intent in
                           exner, p_in_Pa, & !intent in
                           rtm, thlm, thvm, & !intent in
@@ -2783,15 +2783,24 @@ module advance_clubb_core_module
 
     ! Stats output
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
-       call stat_update_var( iF_w, F_w, stats_zt )
-       call stat_update_var( iF_rt, F_rt, stats_zt )
-       call stat_update_var( iF_thl, F_thl, stats_zt )
-       call stat_update_var( imin_F_w, min_F_w, stats_zt )
-       call stat_update_var( imax_F_w, max_F_w, stats_zt )
-       call stat_update_var( imin_F_rt, min_F_rt, stats_zt )
-       call stat_update_var( imax_F_rt, max_F_rt, stats_zt )
-       call stat_update_var( imin_F_thl, min_F_thl, stats_zt )
-       call stat_update_var( imax_F_thl, max_F_thl, stats_zt )
+       call stat_update_var( iF_w, F_w, & ! intent(in)
+                             stats_zt )   ! intent(inout)
+       call stat_update_var( iF_rt, F_rt, & ! intent(in)
+                             stats_zt )     ! intent(inout)
+       call stat_update_var( iF_thl, F_thl, & ! intent(in)
+                             stats_zt )       ! intent(inout)
+       call stat_update_var( imin_F_w, min_F_w, & ! intent(in)
+                             stats_zt )           ! intent(inout)
+       call stat_update_var( imax_F_w, max_F_w, & ! intent(in)
+                             stats_zt )           ! intent(inout)
+       call stat_update_var( imin_F_rt, min_F_rt, & ! intent(in)
+                             stats_zt )             ! intent(inout)
+       call stat_update_var( imax_F_rt, max_F_rt, & ! intent(in)
+                             stats_zt )             ! intent(inout)
+       call stat_update_var( imin_F_thl, min_F_thl, & ! intent(in)
+                             stats_zt )               ! intent(inout)
+       call stat_update_var( imax_F_thl, max_F_thl, & ! intent(in)
+                             stats_zt )               ! intent(inout)
     endif
 
     if ( l_refine_grid_in_cloud ) then
@@ -3580,7 +3589,7 @@ module advance_clubb_core_module
       deallocate( sclr_tol )
 
       ! De-allocate the arrays for the grid
-      call cleanup_grid( gr )
+      call cleanup_grid( gr ) ! intent(in)
 
       ! De-allocate the arrays for nu
       call cleanup_nu( )

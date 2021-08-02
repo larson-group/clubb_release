@@ -505,9 +505,11 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( l_first_clip_ts ) then
-        call stat_begin_update( gr, ixpyp_cl, xpyp / dt, stats_zm )
+        call stat_begin_update( gr, ixpyp_cl, xpyp / dt, & ! intent(in)
+                                stats_zm ) ! intent(inout)
       else
-        call stat_modify( gr, ixpyp_cl, -xpyp / dt, stats_zm )
+        call stat_modify( gr, ixpyp_cl, -xpyp / dt, & ! intent(in)
+                          stats_zm ) ! intent(inout)
       endif
     endif
 
@@ -562,9 +564,11 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( l_last_clip_ts ) then
-        call stat_end_update( gr, ixpyp_cl, xpyp / dt, stats_zm )
+        call stat_end_update( gr, ixpyp_cl, xpyp / dt, & ! intent(in)
+                              stats_zm ) ! intent(inout)
       else
-        call stat_modify( gr, ixpyp_cl, xpyp / dt, stats_zm )
+        call stat_modify( gr, ixpyp_cl, xpyp / dt, & ! intent(in)
+                          stats_zm ) ! intent(inout)
       endif
     endif
 
@@ -575,7 +579,7 @@ module clip_explicit
   subroutine clip_covar_level( solve_type, level, l_first_clip_ts,  & 
                                l_last_clip_ts, dt, xp2, yp2,  &
                                l_predict_upwp_vpwp, &
-                               stats_zm, & ! intent(inout)
+                               stats_zm, & 
                                xpyp, xpyp_chnge )
 
     ! Description:
@@ -711,11 +715,11 @@ module clip_explicit
 
     if ( l_stats_samp ) then
        if ( l_first_clip_ts ) then
-          call stat_begin_update_pt( ixpyp_cl, level, &
-                                     xpyp / dt, stats_zm )
+          call stat_begin_update_pt( ixpyp_cl, level, xpyp / dt, & ! intent(in)
+                                     stats_zm ) ! intent(inout)
        else
-          call stat_modify_pt( ixpyp_cl, level, &
-                               -xpyp / dt, stats_zm )
+          call stat_modify_pt( ixpyp_cl, level, -xpyp / dt, & ! intent(in)
+                               stats_zm ) ! intent(inout)
        endif
     endif
 
@@ -762,11 +766,11 @@ module clip_explicit
 
     if ( l_stats_samp ) then
        if ( l_last_clip_ts ) then
-          call stat_end_update_pt( ixpyp_cl, level, &
-                                   xpyp / dt, stats_zm )
+          call stat_end_update_pt( ixpyp_cl, level, xpyp / dt, & ! intent(in)
+                                   stats_zm ) ! intent(inout)
        else
-          call stat_modify_pt( ixpyp_cl, level, &
-                               xpyp / dt, stats_zm )
+          call stat_modify_pt( ixpyp_cl, level, xpyp / dt, & ! intent(in)
+                               stats_zm ) ! intent(inout)
        endif
     endif
 
@@ -861,7 +865,8 @@ module clip_explicit
 
 
     if ( l_stats_samp ) then
-      call stat_begin_update( gr, ixp2_cl, xp2 / dt, stats_zm )
+      call stat_begin_update( gr, ixp2_cl, xp2 / dt, & ! intent(in)
+                              stats_zm ) ! intent(inout)
     endif
 
     ! Limit the value of x'^2 at threshold.
@@ -882,7 +887,8 @@ module clip_explicit
     enddo
 
     if ( l_stats_samp ) then
-      call stat_end_update( gr, ixp2_cl, xp2 / dt, stats_zm )
+      call stat_end_update( gr, ixp2_cl, xp2 / dt, & ! intent(in)
+                            stats_zm ) ! intent(inout)
     endif
 
 
@@ -971,7 +977,8 @@ module clip_explicit
 
 
     if ( l_stats_samp ) then
-       call stat_begin_update_pt( ixp2_cl, level, xp2 / dt, stats_zm )
+       call stat_begin_update_pt( ixp2_cl, level, xp2 / dt, & ! intent(in)
+                                  stats_zm ) ! intent(inout)
     endif
 
     ! Limit the value of x'^2 at threshold.
@@ -980,7 +987,8 @@ module clip_explicit
     endif
 
     if ( l_stats_samp ) then
-       call stat_end_update_pt( ixp2_cl, level, xp2 / dt, stats_zm )
+       call stat_end_update_pt( ixp2_cl, level, xp2 / dt, & ! intent(in)
+                                stats_zm ) ! intent(inout)
     endif
 
 
@@ -1075,20 +1083,24 @@ module clip_explicit
     ! ---- Begin Code ----
 
     if ( l_stats_samp ) then
-      call stat_begin_update( gr, iwp3_cl, wp3 / dt, stats_zt )
+      call stat_begin_update( gr, iwp3_cl, wp3 / dt, & ! intent(in)
+                              stats_zt ) ! intent(inout)
     endif
 
-    call clip_skewness_core( gr, sfc_elevation, wp2_zt, wp3 )
+    call clip_skewness_core( gr, sfc_elevation, wp2_zt, & ! intent(in)
+                             wp3 ) ! intent(inout)
 
     if ( l_stats_samp ) then
-      call stat_end_update( gr, iwp3_cl, wp3 / dt, stats_zt )
+      call stat_end_update( gr, iwp3_cl, wp3 / dt, & ! intent(in)
+                            stats_zt ) ! intent(inout)
     endif
 
     return
   end subroutine clip_skewness
 
 !=============================================================================
-  subroutine clip_skewness_core( gr, sfc_elevation, wp2_zt, wp3 )
+  subroutine clip_skewness_core( gr, sfc_elevation, wp2_zt, &
+                                 wp3 )
 !
     use grid_class, only: & 
         grid ! Type

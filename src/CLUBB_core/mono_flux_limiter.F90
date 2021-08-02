@@ -471,17 +471,25 @@ module mono_flux_limiter
 
 
     if ( l_stats_samp ) then
-       call stat_begin_update( gr, iwpxp_mfl, wpxp / dt, stats_zm )
-       call stat_begin_update( gr, ixm_mfl, xm / dt, stats_zt )
+       call stat_begin_update( gr, iwpxp_mfl, wpxp / dt, & ! intent(in)
+                               stats_zm ) ! intent(inout)
+       call stat_begin_update( gr, ixm_mfl, xm / dt, & ! intent(in)
+                               stats_zt ) ! intent(inout)
     endif
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
-       call stat_update_var( ithlm_enter_mfl, xm, stats_zt )
-       call stat_update_var( ithlm_old, xm_old, stats_zt )
-       call stat_update_var( iwpthlp_entermfl, xm, stats_zm )
+       call stat_update_var( ithlm_enter_mfl, xm, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( ithlm_old, xm_old, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( iwpthlp_entermfl, xm, & ! intent(in)
+                             stats_zm ) ! intent(inout)
     elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
-       call stat_update_var( irtm_enter_mfl, xm, stats_zt )
-       call stat_update_var( irtm_old, xm_old, stats_zt )
-       call stat_update_var( iwprtp_enter_mfl, xm, stats_zm )
+       call stat_update_var( irtm_enter_mfl, xm, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( irtm_old, xm_old, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( iwprtp_enter_mfl, xm, & ! intent(in)
+                             stats_zm ) ! intent(inout)
     endif
 
     ! Initialize arrays.
@@ -709,17 +717,27 @@ module mono_flux_limiter
     wpxp_mfl_max(gr%nz) = 0._core_rknd
 
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
-       call stat_update_var( ithlm_without_ta, xm_without_ta, stats_zt )
-       call stat_update_var( ithlm_mfl_min, min_x_allowable, stats_zt )
-       call stat_update_var( ithlm_mfl_max, max_x_allowable, stats_zt )
-       call stat_update_var( iwpthlp_mfl_min, wpxp_mfl_min, stats_zm )
-       call stat_update_var( iwpthlp_mfl_max, wpxp_mfl_max, stats_zm )
+       call stat_update_var( ithlm_without_ta, xm_without_ta, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( ithlm_mfl_min, min_x_allowable, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( ithlm_mfl_max, max_x_allowable, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( iwpthlp_mfl_min, wpxp_mfl_min, & ! intent(in)
+                             stats_zm ) ! intent(inout)
+       call stat_update_var( iwpthlp_mfl_max, wpxp_mfl_max, & ! intent(in)
+                             stats_zm ) ! intent(inout)
     elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
-       call stat_update_var( irtm_without_ta, xm_without_ta, stats_zt )
-       call stat_update_var( irtm_mfl_min, min_x_allowable, stats_zt )
-       call stat_update_var( irtm_mfl_max, max_x_allowable, stats_zt )
-       call stat_update_var( iwprtp_mfl_min, wpxp_mfl_min, stats_zm )
-       call stat_update_var( iwprtp_mfl_max, wpxp_mfl_max, stats_zm )
+       call stat_update_var( irtm_without_ta, xm_without_ta, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( irtm_mfl_min, min_x_allowable, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( irtm_mfl_max, max_x_allowable, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( iwprtp_mfl_min, wpxp_mfl_min, & ! intent(in)
+                             stats_zm ) ! intent(inout)
+       call stat_update_var( iwprtp_mfl_max, wpxp_mfl_max, & ! intent(in)
+                             stats_zm ) ! intent(inout)
     endif
 
 
@@ -733,17 +751,18 @@ module mono_flux_limiter
           ! values of xm at timestep index (t+1).
 
           ! Set up the left-hand side of the tridiagonal matrix equation.
-          call mfl_xm_lhs( gr, dt, wm_zt, l_implemented, l_upwind_xm_ma, &
-                           lhs_mfl_xm )
+          call mfl_xm_lhs( gr, dt, wm_zt, l_implemented, l_upwind_xm_ma, & ! intent(in)
+                           lhs_mfl_xm ) ! intent(out)
 
           ! Set up the right-hand side of tridiagonal matrix equation.
-          call mfl_xm_rhs( gr, dt, xm_old, wpxp, xm_forcing, &
-                           rho_ds_zm, invrs_rho_ds_zt, &
-                           rhs_mfl_xm )
+          call mfl_xm_rhs( gr, dt, xm_old, wpxp, xm_forcing, & ! intent(in)
+                           rho_ds_zm, invrs_rho_ds_zt, & ! intent(in)
+                           rhs_mfl_xm ) ! intent(out)
 
           ! Solve the tridiagonal matrix equation.
-          call mfl_xm_solve( gr, solve_type, lhs_mfl_xm, rhs_mfl_xm,  &
-                             xm )
+          call mfl_xm_solve( gr, solve_type, & ! intent(in)
+                             lhs_mfl_xm, rhs_mfl_xm,  & ! intent(inout)
+                             xm ) ! intent(inout)
 
           ! Check for errors
           if ( clubb_at_least_debug_level( 0 ) ) then
@@ -847,16 +866,22 @@ module mono_flux_limiter
 
     if ( l_stats_samp ) then
 
-       call stat_end_update( gr, iwpxp_mfl, wpxp / dt, stats_zm )
+       call stat_end_update( gr, iwpxp_mfl, wpxp / dt, & ! intent(in)
+                             stats_zm ) ! intent(inout)
 
-       call stat_end_update( gr, ixm_mfl, xm / dt, stats_zt )
+       call stat_end_update( gr, ixm_mfl, xm / dt, & ! intent(in)
+                             stats_zt ) ! intent(inout)
 
        if ( solve_type == mono_flux_thlm ) then
-          call stat_update_var( ithlm_exit_mfl, xm, stats_zt )
-          call stat_update_var( iwpthlp_exit_mfl, xm, stats_zm )
+          call stat_update_var( ithlm_exit_mfl, xm, & ! intent(in)
+                                stats_zt ) ! intent(inout)
+          call stat_update_var( iwpthlp_exit_mfl, xm, & ! intent(in)
+                                stats_zm ) ! intent(inout)
        elseif ( solve_type == mono_flux_rtm ) then
-          call stat_update_var( irtm_exit_mfl, xm, stats_zt )
-          call stat_update_var( iwprtp_exit_mfl, xm, stats_zm )
+          call stat_update_var( irtm_exit_mfl, xm, & ! intent(in)
+                                stats_zt ) ! intent(inout)
+          call stat_update_var( iwprtp_exit_mfl, xm, & ! intent(in)
+                                stats_zm ) ! intent(inout)
        endif
 
     endif
@@ -935,9 +960,9 @@ module mono_flux_limiter
     ! LHS xm mean advection (ma) term.
     if ( .not. l_implemented ) then
 
-       call term_ma_zt_lhs( gr, wm_zt, gr%invrs_dzt, gr%invrs_dzm, &
-                            l_upwind_xm_ma, &
-                            lhs )
+       call term_ma_zt_lhs( gr, wm_zt, gr%invrs_dzt, gr%invrs_dzm, & ! intent(in)
+                            l_upwind_xm_ma, & ! intent(in)
+                            lhs ) ! intent(out)
 
     else
 
@@ -1062,7 +1087,8 @@ module mono_flux_limiter
   end subroutine mfl_xm_rhs
 
   !=============================================================================
-  subroutine mfl_xm_solve( gr, solve_type, lhs, rhs,  &
+  subroutine mfl_xm_solve( gr, solve_type, &
+                           lhs, rhs,  &
                            xm )
 
     ! Description:
@@ -1340,7 +1366,7 @@ module mono_flux_limiter
        call mean_vert_vel_up_down( gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & !  In
                                    mixt_frac_zm, 0.0_core_rknd, w_min, & ! In
                                    stats_zm, & ! intent(inout)
-                                   vert_vel_down, vert_vel_up )
+                                   vert_vel_down, vert_vel_up ) ! intent(out)
 
        ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
        do k = 3, gr%nz-2, 1
@@ -1759,13 +1785,13 @@ module mono_flux_limiter
 
     ! ---- Begin Code ----
 
-    call calc_mean_w_up_down_component( gr, w_1_zm, varnce_w_1_zm, &
-                                        w_ref, w_min, &
-                                        mean_w_down_1st, mean_w_up_1st )
+    call calc_mean_w_up_down_component( gr, w_1_zm, varnce_w_1_zm, & ! intent(in)
+                                        w_ref, w_min, & ! intent(in)
+                                        mean_w_down_1st, mean_w_up_1st ) ! intent(out)
 
-    call calc_mean_w_up_down_component( gr, w_2_zm, varnce_w_2_zm, &
-                                        w_ref, w_min, &
-                                        mean_w_down_2nd, mean_w_up_2nd )
+    call calc_mean_w_up_down_component( gr, w_2_zm, varnce_w_2_zm, & ! intent(in)
+                                        w_ref, w_min, & ! intent(in)
+                                        mean_w_down_2nd, mean_w_up_2nd ) ! intent(out)
 
     ! Overall mean of downwards w.
     mean_w_down = mixt_frac_zm * mean_w_down_1st &
@@ -1777,9 +1803,11 @@ module mono_flux_limiter
 
     if ( l_stats_samp ) then
 
-       call stat_update_var( imean_w_up, mean_w_up, stats_zm )
+       call stat_update_var( imean_w_up, mean_w_up, & ! intent(in)
+                             stats_zm ) ! intent(inout)
 
-       call stat_update_var( imean_w_down, mean_w_down, stats_zm )
+       call stat_update_var( imean_w_down, mean_w_down, & ! intent(in)
+                             stats_zm ) ! intent(inout)
 
     endif ! l_stats_samp
 

@@ -316,9 +316,10 @@ module clip_semi_implicit
 
       ! Compute the values of functions A_fnc and B_fnc evaluated at f_diff(t)
       ! for the upper threshold.
-      call compute_fncts_A_B( l_upper_thresh, upper_threshold,  & 
-                              l_lower_thresh, lower_threshold,  & 
-                              f_diff, A_fnc, B_fnc )
+      call compute_fncts_A_B( l_upper_thresh, upper_threshold,  & ! intent(in) 
+                              l_lower_thresh, lower_threshold,  & ! intent(in)
+                              f_diff, & ! intent(in)
+                              A_fnc, B_fnc ) ! intent(out)
 
       ! Compute the implicit (LHS) contribution from clipping for the upper
       ! threshold.
@@ -341,9 +342,10 @@ module clip_semi_implicit
 
       ! Compute the values of functions A_fnc and B_fnc evaluated at f_diff(t)
       ! for the lower threshold.
-      call compute_fncts_A_B( l_upper_thresh, upper_threshold,  & 
-                              l_lower_thresh, lower_threshold,  & 
-                              f_diff, A_fnc, B_fnc )
+      call compute_fncts_A_B( l_upper_thresh, upper_threshold,  & ! intent(in)
+                              l_lower_thresh, lower_threshold,  & ! intent(in)
+                              f_diff, & ! intent(in)
+                              A_fnc, B_fnc ) ! intent(out)
 
       ! Compute the implicit (LHS) contribution from clipping for the lower
       ! threshold.
@@ -487,9 +489,10 @@ module clip_semi_implicit
 
       ! Compute the values of functions A_fnc and B_fnc evaluated at f_diff(t)
       ! for the upper threshold.
-      call compute_fncts_A_B( l_upper_thresh, upper_threshold,  & 
-                              l_lower_thresh, lower_threshold,  & 
-                              f_diff, A_fnc, B_fnc )
+      call compute_fncts_A_B( l_upper_thresh, upper_threshold,  & ! intent(in) 
+                              l_lower_thresh, lower_threshold,  & ! intent(in)
+                              f_diff, & ! intent(in)
+                              A_fnc, B_fnc ) ! intent(out)
 
       ! Compute the explicit (RHS) contribution from clipping for the upper
       ! threshold.
@@ -514,9 +517,10 @@ module clip_semi_implicit
 
       ! Compute the values of functions A_fnc and B_fnc evaluated at f_diff(t)
       ! for the lower threshold.
-      call compute_fncts_A_B( l_upper_thresh, upper_threshold,  & 
-                              l_lower_thresh, lower_threshold,  & 
-                              f_diff, A_fnc, B_fnc )
+      call compute_fncts_A_B( l_upper_thresh, upper_threshold,  & ! intent(in) 
+                              l_lower_thresh, lower_threshold,  & ! intent(in)
+                              f_diff, & ! intent(in)
+                              A_fnc, B_fnc ) ! intent(out)
 
       ! Compute the explicit (RHS) contribution from clipping for the lower
       ! threshold.
@@ -540,7 +544,8 @@ module clip_semi_implicit
   !=============================================================================
   subroutine compute_fncts_A_B( l_upper_thresh, upper_threshold,  & 
                                 l_lower_thresh, lower_threshold,  & 
-                                f_diff, A_fnc, B_fnc )
+                                f_diff, &
+                                A_fnc, B_fnc )
 
     ! Description:
     ! This subroutine computes the values of two functions used in semi-implicit

@@ -15,7 +15,8 @@ module stats_zm_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_zm( vars_zm, l_error, & !intent(in)
+  subroutine stats_init_zm( vars_zm, & ! intent(in)
+                            l_error, & !intent(inout)
                             stats_zm ) ! intent(inout)
 
 ! Description:

@@ -2568,15 +2568,15 @@ module advance_xp2_xpyp_module
             ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
             call stat_update_var_pt( ixapxbp_pr2, k, & ! Intent(in)
                  term_pr2( gr, C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), & ! In
-                           wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, &  
-                           Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) ), &
+                           wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, & ! intent(in)
+                           Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) ), & ! intent(in)
                            stats_zm )                          ! Intent(inout)
 
             ! x'y' term tp is completely explicit; call stat_update_var_pt.
             call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
                   ( one - C_uu_shr ) &                ! Intent(in)
-                   * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), &
-                              wpxap(k), wpxap(k), gr%invrs_dzm(k) ), & 
+                   * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), & ! intent(in)
+                              wpxap(k), wpxap(k), gr%invrs_dzm(k) ), &  ! intent(in)
                                      stats_zm )       ! Intent(inout)
 
             ! Vertical compression of eddies.

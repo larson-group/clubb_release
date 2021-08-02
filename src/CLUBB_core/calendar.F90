@@ -59,7 +59,8 @@ module calendar
 
 !------------------------------------------------------------------
   subroutine julian2gregorian_date & 
-               ( julian_date, day, month, year )
+               ( julian_date, &
+                 day, month, year )
 !
 ! Description:
 !   Computes the Gregorina Calendar date (day, month, year)
@@ -201,8 +202,8 @@ module calendar
       - ( real( days_since_start, kind=time_precision ) * real(sec_per_day,kind=time_precision) )
 
     call julian2gregorian_date & 
-           ( days_since_1jan4713bc, & 
-             current_day, current_month, current_year )
+           ( days_since_1jan4713bc, & ! intent(in)
+             current_day, current_month, current_year ) ! intent(out)
 
     return
   end subroutine compute_current_date

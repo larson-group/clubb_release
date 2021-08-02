@@ -18,7 +18,8 @@ module matrix_operations
   contains
  
 !-----------------------------------------------------------------------
-  subroutine symm_covar_matrix_2_corr_matrix( ndim, covar, corr )
+  subroutine symm_covar_matrix_2_corr_matrix( ndim, covar, &
+                                              corr )
 
 ! Description:
 !   Convert a matrix of covariances in to a matrix of correlations.
@@ -242,14 +243,16 @@ module matrix_operations
         end if
 
         if ( clubb_at_least_debug_level( 2 ) ) then
-          call Symm_matrix_eigenvalues( ndim, a_input, a_eigenvalues )
+          call Symm_matrix_eigenvalues( ndim, a_input, & ! intent(in)
+                                        a_eigenvalues ) ! intent(out)
           write(fstderr,*) "a_eigenvalues="
           do i = 1, ndim
             write(fstderr,'(g10.3)',advance='no') a_eigenvalues(i)
           end do
           write(fstderr,*) ""
 
-          call symm_covar_matrix_2_corr_matrix( ndim, a_input, a_corr )
+          call symm_covar_matrix_2_corr_matrix( ndim, a_input, & ! intent(in)
+                                                a_corr ) ! intent(out)
           write(fstderr,*) "a_correlations="
           do i = 1, ndim
             do j = 1, i
@@ -299,7 +302,8 @@ module matrix_operations
         end do
 
         if ( clubb_at_least_debug_level( 2 ) ) then
-          call Symm_matrix_eigenvalues( ndim, a_Cholesky, a_eigenvalues )
+          call Symm_matrix_eigenvalues( ndim, a_Cholesky, & ! intent(in)
+                                        a_eigenvalues ) ! intent(out)
           write(fstderr,*) "a_modified eigenvalues="
           do i = 1, ndim
             write(fstderr,'(e10.3)',advance='no') a_eigenvalues(i)
@@ -314,7 +318,8 @@ module matrix_operations
   end subroutine Cholesky_factor
 
 !----------------------------------------------------------------------
-  subroutine Symm_matrix_eigenvalues( ndim, a_input, a_eigenvalues )
+  subroutine Symm_matrix_eigenvalues( ndim, a_input, &
+                                      a_eigenvalues )
 
 !   Description:
 !     Computes the eigevalues of a_input
@@ -509,7 +514,8 @@ module matrix_operations
   end subroutine print_lower_triangular_matrix
 
   !-----------------------------------------------------------------------
-  subroutine mirror_lower_triangular_matrix( nvars, matrix )
+  subroutine mirror_lower_triangular_matrix( nvars, &
+                                             matrix )
 
   ! Description:
   !   Mirrors the elements of a lower triangular matrix to the upper

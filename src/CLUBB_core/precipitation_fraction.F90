@@ -210,21 +210,21 @@ module precipitation_fraction
 
       ! Calculatate precip_frac_1 and precip_frac_2 based on the greatest
       ! weighted cloud_frac_1 at or above a grid level.
-      call component_precip_frac_weighted( nz, ngrdcol, &
-                                           hydromet(:,:,:), precip_frac(:,:), &
-                                           cloud_frac_1(:,:), cloud_frac_2(:,:), &
-                                           ice_supersat_frac_1(:,:), &
-                                           ice_supersat_frac_2(:,:), mixt_frac(:,:), &
-                                           precip_frac_tol(:), &
-                                           precip_frac_1(:,:), precip_frac_2(:,:) )
+      call component_precip_frac_weighted( nz, ngrdcol, & ! intent(in)
+                                           hydromet(:,:,:), precip_frac(:,:), & ! intent(in)
+                                           cloud_frac_1(:,:), cloud_frac_2(:,:), & ! intent(in)
+                                           ice_supersat_frac_1(:,:), & ! intent(in)
+                                           ice_supersat_frac_2(:,:), mixt_frac(:,:), & !intent(in)
+                                           precip_frac_tol(:), & ! intent(in)
+                                           precip_frac_1(:,:), precip_frac_2(:,:) ) ! intent(out)
                                             
     elseif ( precip_frac_calc_type == 2 ) then
 
       ! Specified method.
-      call component_precip_frac_specify( nz, ngrdcol, &
-                                          hydromet(:,:,:), precip_frac(:,:), &
-                                          mixt_frac(:,:), precip_frac_tol(:), &
-                                          precip_frac_1(:,:), precip_frac_2(:,:) )
+      call component_precip_frac_specify( nz, ngrdcol, & ! intent(in)
+                                          hydromet(:,:,:), precip_frac(:,:), & ! intent(in)
+                                          mixt_frac(:,:), precip_frac_tol(:), & ! intent(in)
+                                          precip_frac_1(:,:), precip_frac_2(:,:) ) ! intent(out)
 
     else ! Invalid option selected.
 
@@ -369,8 +369,8 @@ module precipitation_fraction
     if ( l_stats_samp ) then
       if ( iprecip_frac_tol > 0 ) then
         do j = 1, ngrdcol
-          call stat_update_var_pt( iprecip_frac_tol, 1, precip_frac_tol(j), &
-                                   stats_sfc )
+          call stat_update_var_pt( iprecip_frac_tol, 1, precip_frac_tol(j), & ! intent(in)
+                                   stats_sfc ) ! intent(inout)
         end do
       end if ! iprecip_frac_tol
     end if ! l_stats_samp
@@ -379,9 +379,9 @@ module precipitation_fraction
     ! Assertion check for precip_frac, precip_frac_1, and precip_frac_2.
     if ( clubb_at_least_debug_level( 2 ) ) then
       do j = 1, ngrdcol
-        call precip_frac_assert_check( nz, hydromet(j,:,:), mixt_frac(j,:), precip_frac(j,:), &
-                                       precip_frac_1(j,:), precip_frac_2(j,:), &
-                                       precip_frac_tol(j) )
+        call precip_frac_assert_check( nz, hydromet(j,:,:), mixt_frac(j,:), precip_frac(j,:), & !in
+                                       precip_frac_1(j,:), precip_frac_2(j,:), & ! intent(in)
+                                       precip_frac_tol(j) ) ! intent(in)
       end do
     endif
 

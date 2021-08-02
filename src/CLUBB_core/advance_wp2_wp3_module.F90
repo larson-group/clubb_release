@@ -1093,9 +1093,10 @@ module advance_wp2_wp3_module
            stats_zt )                           ! intent(inout)
 
         ! w'^3 term pr_tp same as above tp term but opposite sign.
-        call stat_end_update_pt( iwp3_pr_tp, k,  &
+        call stat_end_update_pt( iwp3_pr_tp, k,  & ! intent(in)
            ztscr17(k) * wp2(km1) &
-         + ztscr18(k) * wp2(k), stats_zt )
+         + ztscr18(k) * wp2(k), & ! intent(in)
+           stats_zt )             ! intent(inout)
 
         ! w'^3 pressure term 3 (pr3) has both implicit and explicit components;
         ! call stat_end_update_pt
@@ -2708,11 +2709,11 @@ module advance_wp2_wp3_module
                                              - lhs_adv_tp_wp3(2,k) * wp2(k-1) ), & ! intent(in)
                                        stats_zt ) ! intent(inout)
 
-            call stat_begin_update_pt( iwp3_pr_tp, k, &
+            call stat_begin_update_pt( iwp3_pr_tp, k, & ! intent(in)
                                        - ( one - gamma_over_implicit_ts )  &
                                          * ( - lhs_pr_tp_wp3(1,k) * wp2(k)  &
                                              - lhs_pr_tp_wp3(2,k) * wp2(k-1) ), & ! intent(in)
-                                       stats_zt )
+                                       stats_zt ) ! intent(inout)
 
 
             ! w'^3 pressure term 3 (pr3) explicit (rhs) contribution

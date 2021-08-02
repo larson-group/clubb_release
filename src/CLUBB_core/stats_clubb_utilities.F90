@@ -1461,7 +1461,8 @@ module stats_clubb_utilities
     return
   end subroutine stats_init
   !-----------------------------------------------------------------------
-  subroutine stats_zero( ii, jj, kk, nn, x, n, l_in_update )
+  subroutine stats_zero( ii, jj, kk, nn, &
+                         x, n, l_in_update )
 
     ! Description:
     !   Initialize stats to zero

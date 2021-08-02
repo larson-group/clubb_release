@@ -1001,7 +1001,7 @@ contains
     implicit none
 
     type(grid), target, intent(inout) :: gr
-    call cleanup_clubb_core( gr )
+    call cleanup_clubb_core( gr ) ! intent(inout)
 
   end subroutine cleanup_clubb_core_api
 
@@ -1063,12 +1063,12 @@ contains
       seconds_since_current_date
 
     call compute_current_date( &
-      previous_day, previous_month, &
-      previous_year,  &
-      seconds_since_previous_date, &
-      current_day, current_month, &
-      current_year, &
-      seconds_since_current_date )
+      previous_day, previous_month, & ! intent(in)
+      previous_year,  & ! intent(in)
+      seconds_since_previous_date, & ! intent(in)
+      current_day, current_month, & ! intent(out)
+      current_year, & ! intent(out)
+      seconds_since_current_date ) ! intent(out)
   end subroutine compute_current_date_api
 
   !================================================================================================
@@ -1119,8 +1119,8 @@ contains
       l_fix_w_chi_eta_correlations ! Use a fixed correlation for s and t Mellor(chi/eta)
 
     call setup_corr_varnce_array( &
-      input_file_cloud, input_file_below, iunit, &
-      l_fix_w_chi_eta_correlations )
+      input_file_cloud, input_file_below, iunit, & ! intent(in)
+      l_fix_w_chi_eta_correlations ) ! intent(in)
 
   end subroutine setup_corr_varnce_array_api
 
@@ -1140,7 +1140,7 @@ contains
     integer, intent(in) :: level ! The debug level being checked against the current setting
 
     call set_clubb_debug_level( &
-      level )
+      level ) ! intent(in)
   end subroutine set_clubb_debug_level_api
 
   !================================================================================================
@@ -1209,7 +1209,7 @@ contains
       rvm_mc,  & ! Microphysics contributions to vapor water            [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp. [K/s]
 
-    call fill_holes_driver( gr,    &
+    call fill_holes_driver( gr,    & ! intent(in)
       nz, dt, hydromet_dim,        & ! Intent(in)
       l_fill_holes_hm,             & ! Intent(in)
       rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
@@ -1254,10 +1254,10 @@ contains
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
 
-    call fill_holes_vertical( gr, &
-      num_pts, threshold, field_grid, &
-      rho_ds, rho_ds_zm, &
-      field )
+    call fill_holes_vertical( gr, & ! intent(in)
+      num_pts, threshold, field_grid, & ! intent(in)
+      rho_ds, rho_ds_zm, & ! intent(in)
+      field ) ! intent(inout)
   end subroutine fill_holes_vertical_api
 
   !=============================================================================
@@ -1380,9 +1380,10 @@ contains
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
     call setup_grid_heights( &
-      l_implemented, grid_type,  &
-      deltaz, zm_init, momentum_heights,  &
-      gr, thermodynamic_heights )
+      l_implemented, grid_type,  & ! intent(in)
+      deltaz, zm_init, momentum_heights,  & ! intent(in)
+      thermodynamic_heights, & ! intent(in)
+      gr ) ! intent(inout)
 
     if ( err_code == clubb_fatal_error ) error stop
 
@@ -1443,7 +1444,8 @@ contains
       tvalue  ! t-value solved by interpolation
 
     call lin_interpolate_on_grid( &
-      nparam, xlist, tlist, xvalue, tvalue )
+      nparam, xlist, tlist, xvalue, & ! intent(in)
+      tvalue ) ! intent(inout)
 
   end subroutine lin_interpolate_on_grid_api
 
@@ -1470,7 +1472,8 @@ contains
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
 
     call read_parameters( &
-      iunit, filename, params )
+      iunit, filename, & ! intent(in)
+      params ) ! intent(out)
 
   end subroutine read_parameters_api
 
@@ -1537,11 +1540,11 @@ contains
     integer, intent(out) ::  & 	 	      
       err_code_api ! Error condition 
 
-    call setup_parameters( gr, &
-      deltaz, params, nzmax, &
-      grid_type, momentum_heights, thermodynamic_heights, &
-      l_prescribed_avg_deltaz, &
-      err_code_api )
+    call setup_parameters( gr, & ! intent(in)
+      deltaz, params, nzmax, & ! intent(in)
+      grid_type, momentum_heights, thermodynamic_heights, & ! intent(in)
+      l_prescribed_avg_deltaz, & ! intent(in)
+      err_code_api ) ! intent(out)
 
   end subroutine setup_parameters_api
 
@@ -1597,7 +1600,7 @@ contains
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
-    call adj_low_res_nu( gr, &
+    call adj_low_res_nu( gr, & ! intent(in)
       nzmax, grid_type, deltaz, & ! Intent(in)
       momentum_heights, thermodynamic_heights, & ! Intent(in)
       l_prescribed_avg_deltaz )  ! Intent(in)
@@ -1631,10 +1634,12 @@ contains
     integer, optional, intent(in) :: k_start, k_end
       
     if( present( k_start ) .and. present( k_end ) ) then
-        call pack_pdf_params( pdf_params, nz, r_param_array, &
-                              k_start, k_end )
+        call pack_pdf_params( pdf_params, nz, & ! intent(in)
+                              r_param_array, & ! intent(out)
+                              k_start, k_end ) ! intent(in/optional)
     else 
-        call pack_pdf_params( pdf_params, nz, r_param_array )
+        call pack_pdf_params( pdf_params, nz, & ! intent(in)
+                              r_param_array ) ! intent(out)
     end if
 
   end subroutine pack_pdf_params_api
@@ -1662,10 +1667,12 @@ contains
     integer, optional, intent(in) :: k_start, k_end
 
     if( present( k_start ) .and. present( k_end ) ) then
-        call unpack_pdf_params( r_param_array, nz, pdf_params, &
-                                k_start, k_end )
-    else 
-        call unpack_pdf_params( r_param_array, nz, pdf_params )
+        call unpack_pdf_params( r_param_array, nz, & ! intent(in)
+                                pdf_params, & ! intent(inout)
+                                k_start, k_end ) ! intent(in/optional)
+    else  
+        call unpack_pdf_params( r_param_array, nz, & ! intent(in)
+                                pdf_params ) ! intent(inout)
     end if
     
     
@@ -1690,7 +1697,8 @@ contains
     type(pdf_parameter), intent(out) :: &
       pdf_params    ! PDF parameters            [units vary]
     
-    call init_pdf_params( nz, ngrdcol, pdf_params )
+    call init_pdf_params( nz, ngrdcol, & ! intent(in)
+                          pdf_params ) ! intent(out)
     
   end subroutine init_pdf_params_api
   
@@ -1866,8 +1874,8 @@ contains
     type(precipitation_fractions), intent(out) :: &
       precip_fracs    ! Hydrometeor PDF parameters      [units vary]
 
-    call init_precip_fracs( nz, ngrdcol, &
-                            precip_fracs )
+    call init_precip_fracs( nz, ngrdcol, & ! intent(in)
+                            precip_fracs ) ! intent(out)
 
     return
 
@@ -1894,8 +1902,8 @@ contains
     type(implicit_coefs_terms), intent(out) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
-    call init_pdf_implicit_coefs_terms( nz, sclr_dim, &
-                                        pdf_implicit_coefs_terms )
+    call init_pdf_implicit_coefs_terms( nz, sclr_dim, & ! intent(in)
+                                        pdf_implicit_coefs_terms ) ! intent(out)
 
   end subroutine init_pdf_implicit_coefs_terms_api
 
@@ -1903,7 +1911,7 @@ contains
   ! setup_pdf_parameters
   !================================================================================================
 
-  subroutine setup_pdf_parameters_api_single_col( gr, &
+  subroutine setup_pdf_parameters_api_single_col( gr, & ! intent(in)
     nz, pdf_dim, dt, &                      ! Intent(in)
     Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
@@ -2069,7 +2077,7 @@ contains
     hydromet_col(1,:,:) = hydromet
     wphydrometp_col(1,:,:) = wphydrometp
 
-    call setup_pdf_parameters( gr, &
+    call setup_pdf_parameters( gr, &                          ! intent(in)
       nz, 1, pdf_dim, dt, &                                   ! Intent(in)
       Nc_in_cloud_col, rcm_col, cloud_frac_col, Kh_zm_col, &  ! Intent(in)
       ice_supersat_frac_col, hydromet_col, wphydrometp_col, & ! Intent(in)
@@ -2230,7 +2238,7 @@ contains
     type(precipitation_fractions), intent(inout) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    call setup_pdf_parameters( gr, &
+    call setup_pdf_parameters( gr, &              ! intent(in)
       nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
       Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
@@ -2337,11 +2345,11 @@ contains
       l_silhs_out_in  ! Whether to output SILHS files (stats_lh_zt,stats_lh_sfc) [dimensionless]
 
     call stats_init( &
-      iunit, fname_prefix, fdir, l_stats_in, &
-      stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
-      nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
-      grad_zt, nnrad_zm, grad_zm, day, month, year, &
-      lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+      iunit, fname_prefix, fdir, l_stats_in, & ! intent(in)
+      stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, & ! intent(in)
+      nzmax, nlon, nlat, gzt, gzm, nnrad_zt, & ! intent(in)
+      grad_zt, nnrad_zm, grad_zm, day, month, year, & ! intent(in)
+      lon_vals, lat_vals, time_current, delt, l_silhs_out_in, & ! intent(in)
       stats_zt, stats_zm, stats_sfc, & ! intent(inout)
       stats_lh_zt, stats_lh_sfc, & ! intent(inout)
       stats_rad_zt, stats_rad_zm ) ! intent(inout)
@@ -2372,7 +2380,7 @@ contains
       stats_nout      ! Stats output interval    [timestep]
 
     call stats_begin_timestep( &
-      itime, stats_nsamp, stats_nout )
+      itime, stats_nsamp, stats_nout ) ! intent(in)
   end subroutine stats_begin_timestep_api
 
   !================================================================================================
@@ -2460,8 +2468,8 @@ contains
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       rho_ds_zt ! Dry, static density (thermo. levs.)      [kg/m^3]
 
-    call stats_accumulate_hydromet( gr, &
-      hydromet, rho_ds_zt, &
+    call stats_accumulate_hydromet( gr, & ! intent(in)
+      hydromet, rho_ds_zt, & ! intent(in)
       stats_zt, stats_sfc ) ! intent(inout)
   end subroutine stats_accumulate_hydromet_api
 
@@ -2486,8 +2494,8 @@ contains
       stats_rad_zt, &
       stats_rad_zm
 
-    call stats_finalize ( stats_zt, stats_zm, stats_sfc, &
-                          stats_lh_zt, stats_lh_sfc, &
+    call stats_finalize ( stats_zt, stats_zm, stats_sfc, & ! intent(inout)
+                          stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                           stats_rad_zt, stats_rad_zm ) ! intent(inout)
 
   end subroutine stats_finalize_api
@@ -2514,7 +2522,8 @@ contains
     logical, intent(inout) :: l_error
 
     call stats_init_rad_zm( &
-      vars_rad_zm, l_error, &
+      vars_rad_zm, & ! intent(in)
+      l_error, & ! intent(inout)
       stats_rad_zm ) ! intent(inout)
   end subroutine stats_init_rad_zm_api
 
@@ -2540,7 +2549,8 @@ contains
     logical, intent(inout) :: l_error
 
     call stats_init_rad_zt( &
-      vars_rad_zt, l_error, &
+      vars_rad_zt, & ! intent(in)
+      l_error, & ! intent(inout)
       stats_rad_zt ) ! intent(inout)
 
   end subroutine stats_init_rad_zt_api
@@ -2567,7 +2577,8 @@ contains
     logical, intent(inout) :: l_error
 
     call stats_init_zm( &
-      vars_zm, l_error, &
+      vars_zm, & ! intent(in)
+      l_error, & ! intent(inout)
       stats_zm ) ! intent(inout)
 
   end subroutine stats_init_zm_api
@@ -2594,7 +2605,8 @@ contains
     logical, intent(inout) :: l_error
 
     call stats_init_zt( &
-      vars_zt, l_error, &
+      vars_zt, & ! intent(in)
+      l_error, & ! intent(inout)
       stats_zt ) ! intent(inout)
 
   end subroutine stats_init_zt_api
@@ -2621,7 +2633,8 @@ contains
     logical, intent(inout) :: l_error
 
     call stats_init_sfc( &
-      vars_sfc, l_error, &
+      vars_sfc, & ! intent(in)
+      l_error, & ! intent(inout)
       stats_sfc ) ! intent(inout)
 
   end subroutine stats_init_sfc_api
@@ -2844,8 +2857,8 @@ contains
       thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
   !----------------------------------------------------------------------
 
-    call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, &
-                    thlp2_forcing )
+    call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, & ! intent(in)
+                    thlp2_forcing ) ! intent(inout)
 
     return
   end subroutine calculate_thlp2_rad_api
@@ -2894,10 +2907,10 @@ contains
       wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
       rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
 
-    call update_xp2_mc( gr, nz, dt, cloud_frac, rcm, rvm, thlm,        &
-                        wm, exner, rrm_evap, pdf_params,        &
-                        rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
-                        rtpthlp_mc )
+    call update_xp2_mc( gr, nz, dt, cloud_frac, rcm, rvm, thlm,        & ! intent(in)
+                        wm, exner, rrm_evap, pdf_params,        & ! intent(in)
+                        rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    & ! intent(inout)
+                        rtpthlp_mc ) ! intent(inout)
     return
   end subroutine update_xp2_mc_api
 
@@ -3610,7 +3623,8 @@ contains
     type(sponge_damp_profile), intent(out) :: &
       damping_profile
 
-    call initialize_tau_sponge_damp( gr, dt, z, settings, damping_profile )
+    call initialize_tau_sponge_damp( gr, dt, z, settings, & ! intent(in)
+                                     damping_profile ) ! intent(inout)
 
   end subroutine initialize_tau_sponge_damp_api
 
@@ -3629,7 +3643,7 @@ contains
     type(sponge_damp_profile), intent(inout) :: &
       damping_profile ! Information for damping the profile
 
-    call finalize_tau_sponge_damp( damping_profile )
+    call finalize_tau_sponge_damp( damping_profile ) ! intent(inout)
 
   end subroutine finalize_tau_sponge_damp_api
     

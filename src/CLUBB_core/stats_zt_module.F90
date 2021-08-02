@@ -15,7 +15,8 @@ module stats_zt_module
   contains
 
   !=============================================================================
-  subroutine stats_init_zt( vars_zt, l_error, & !intent(in)
+  subroutine stats_init_zt( vars_zt, & ! intent(in)
+                            l_error, & !intent(out)
                             stats_zt ) ! intent(inout)
 
     ! Description:

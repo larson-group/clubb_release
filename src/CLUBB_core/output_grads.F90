@@ -190,12 +190,12 @@ module output_grads
 
       !  Check existing ctl file
 
-      call check_grads( iunit, fdir, fname,  & 
-                        ia, iz, & 
-                        day, month, year, time, dtwrite, & 
-                        nvar,  & 
-                        l_error, grads_file%ntimes, grads_file%nrecord, &
-                        grads_file%time )
+      call check_grads( iunit, fdir, fname,  & ! intent(in)
+                        ia, iz, &  ! intent(in)
+                        day, month, year, time, dtwrite, & ! intent(in) 
+                        nvar,  &  ! intent(in)
+                        l_error, grads_file%ntimes, grads_file%nrecord, & ! intent(out)
+                        grads_file%time ) ! intnet(out)
 
       if ( l_error ) then
         write(unit=fstderr,fmt=*) "Error in open_grads:"

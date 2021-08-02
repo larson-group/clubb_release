@@ -488,10 +488,11 @@ module grid_class
     ! Set the values for the derived types used for heights, derivatives, and
     ! interpolation from the momentum/thermodynamic grid
     call setup_grid_heights &
-               ( l_implemented, grid_type,  & 
-                 deltaz, zm_init,  &
-                 momentum_heights(begin_height:end_height),  & 
-                 gr, thermodynamic_heights(begin_height:end_height) )
+               ( l_implemented, grid_type,  & ! intent(in)
+                 deltaz, zm_init,  & ! intent(in)
+                 momentum_heights(begin_height:end_height),  & ! intent(in) 
+                 thermodynamic_heights(begin_height:end_height), & ! intent(in)
+                 gr ) ! intent(inout)
 
     if ( sfc_elevation > gr%zm(1) ) then
       write(fstderr,*) "The altitude of the lowest momentum level, "        &
@@ -549,7 +550,8 @@ module grid_class
   subroutine setup_grid_heights &
              ( l_implemented, grid_type,  & 
                deltaz, zm_init, momentum_heights,  & 
-               gr, thermodynamic_heights )
+               thermodynamic_heights, &
+               gr )
 
     ! Description:
     !   Sets the heights and interpolation weights of the column.
@@ -974,8 +976,8 @@ module grid_class
       endif
 
       ! Read the thermodynamic level altitudes from zt_grid_fname.
-      call file_read_1d( file_unit, zt_grid_fname, nzmax, 1,  & 
-                         thermodynamic_heights )
+      call file_read_1d( file_unit, zt_grid_fname, nzmax, 1,  & ! intent(in)
+                         thermodynamic_heights ) ! intent(out)
 
       ! Check that each thermodynamic level altitude increases
       ! in height as the thermodynamic level grid index increases.
@@ -1061,8 +1063,8 @@ module grid_class
       endif
 
       ! Read the momentum level altitudes from zm_grid_fname.
-      call file_read_1d( file_unit, zm_grid_fname, nzmax, 1, & 
-                         momentum_heights )
+      call file_read_1d( file_unit, zm_grid_fname, nzmax, 1, & ! intent(in) 
+                         momentum_heights ) ! intent(out)
 
       ! Check that each momentum level altitude increases in height as the
       ! momentum level grid index increases.

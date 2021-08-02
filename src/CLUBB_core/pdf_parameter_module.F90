@@ -166,7 +166,8 @@ module pdf_parameter_module
   contains
   
   !=============================================================================
-  subroutine init_pdf_params( nz, ngrdcol, pdf_params )
+  subroutine init_pdf_params( nz, ngrdcol, &
+                              pdf_params )
 
     ! Description:
     ! Initializes all PDF parameters in the variable type pdf_parameter.
@@ -390,7 +391,8 @@ module pdf_parameter_module
 ! code is now also used for WRF-CLUBB.
 !#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
 
-  subroutine pack_pdf_params(pdf_params, nz, r_param_array, &
+  subroutine pack_pdf_params(pdf_params, nz, &
+                             r_param_array, &
                              k_start_in, k_end_in )
     implicit none
     
@@ -464,8 +466,9 @@ module pdf_parameter_module
     r_param_array(:,47) = pdf_params%ice_supersat_frac_2(1,k_start:k_end)
 
   end subroutine pack_pdf_params
-
-  subroutine unpack_pdf_params(r_param_array, nz, pdf_params, &
+!===============================================================!
+  subroutine unpack_pdf_params(r_param_array, nz, &
+                               pdf_params, &
                                k_start_in, k_end_in )
     implicit none
     

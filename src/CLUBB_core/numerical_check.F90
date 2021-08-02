@@ -69,9 +69,9 @@ module numerical_check
 
 !-----------------------------------------------------------------------------
 
-    call check_nan( Lscale, "Lscale", proc_name )
-    call check_nan( Lscale_up, "Lscale_up", proc_name )
-    call check_nan( Lscale_down, "Lscale_down", proc_name )
+    call check_nan( Lscale, "Lscale", proc_name ) ! intnet(in)
+    call check_nan( Lscale_up, "Lscale_up", proc_name ) ! intent(in)
+    call check_nan( Lscale_down, "Lscale_down", proc_name ) ! intent(in)
 
     return
   end subroutine length_check
@@ -159,119 +159,119 @@ module numerical_check
 
     ! ---- Begin Code ----
 
-    if ( iwp4 > 0 ) call check_nan( wp4,"wp4", proc_name )
-    if ( iwprtp2 > 0 ) call check_nan( wprtp2,"wprtp2", proc_name )
-    call check_nan( wp2rtp,"wp2rtp", proc_name )
-    if ( iwpthlp2 > 0 ) call check_nan( wpthlp2,"wpthlp2", proc_name )
-    call check_nan( wp2thlp,"wp2thlp", proc_name )
-    call check_nan( cloud_frac,"cloud_frac", proc_name )
-    call check_nan( rcm,"rcm", proc_name )
-    call check_nan( wpthvp, "wpthvp", proc_name )
-    call check_nan( wp2thvp, "wp2thvp", proc_name )
-    call check_nan( rtpthvp, "rtpthvp", proc_name )
-    call check_nan( thlpthvp, "thlpthvp", proc_name )
-    call check_nan( wprcp, "wprcp", proc_name )
-    call check_nan( wp2rcp, "wp2rcp", proc_name )
-    call check_nan( rtprcp, "rtprcp", proc_name )
-    call check_nan( thlprcp, "thlprcp", proc_name )
-    if ( ircp2 >  0 ) call check_nan( rcp2, "rcp2", proc_name )
-    if ( iwprtpthlp > 0 ) call check_nan( wprtpthlp, "wprtpthlp", proc_name )
-    call check_nan( crt_1, "crt_1", proc_name )
-    call check_nan( crt_2, "crt_2", proc_name )
-    call check_nan( cthl_1, "cthl_1", proc_name )
-    call check_nan( cthl_2, "cthl_2", proc_name )
+    if ( iwp4 > 0 ) call check_nan( wp4,"wp4", proc_name ) ! intent(in)
+    if ( iwprtp2 > 0 ) call check_nan( wprtp2,"wprtp2", proc_name ) ! intent(in)
+    call check_nan( wp2rtp,"wp2rtp", proc_name ) ! intent(in)
+    if ( iwpthlp2 > 0 ) call check_nan( wpthlp2,"wpthlp2", proc_name ) ! intnet(in)
+    call check_nan( wp2thlp,"wp2thlp", proc_name ) ! intent(in)
+    call check_nan( cloud_frac,"cloud_frac", proc_name ) ! intent(in)
+    call check_nan( rcm,"rcm", proc_name ) ! intent(in)
+    call check_nan( wpthvp, "wpthvp", proc_name ) ! intent(in)
+    call check_nan( wp2thvp, "wp2thvp", proc_name ) ! intent(in)
+    call check_nan( rtpthvp, "rtpthvp", proc_name ) ! intent(in)
+    call check_nan( thlpthvp, "thlpthvp", proc_name ) ! intent(in)
+    call check_nan( wprcp, "wprcp", proc_name ) ! intent(in)
+    call check_nan( wp2rcp, "wp2rcp", proc_name ) ! intent(in)
+    call check_nan( rtprcp, "rtprcp", proc_name ) ! intent(in)
+    call check_nan( thlprcp, "thlprcp", proc_name ) ! intent(in)
+    if ( ircp2 >  0 ) call check_nan( rcp2, "rcp2", proc_name ) ! intent(in)
+    if ( iwprtpthlp > 0 ) call check_nan( wprtpthlp, "wprtpthlp", proc_name ) ! intnet(in)
+    call check_nan( crt_1, "crt_1", proc_name ) ! intent(in)
+    call check_nan( crt_2, "crt_2", proc_name ) ! intent(in)
+    call check_nan( cthl_1, "cthl_1", proc_name ) ! intent(in)
+    call check_nan( cthl_2, "cthl_2", proc_name ) ! intent(in)
     ! Check each PDF parameter at the grid level sent in.
-    call check_nan( pdf_params%w_1(1,:), "pdf_params%w_1(1,:)", proc_name )
-    call check_nan( pdf_params%w_2(1,:), "pdf_params%w_2(1,:)", proc_name )
-    call check_nan( pdf_params%varnce_w_1(1,:), "pdf_params%varnce_w_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%varnce_w_2(1,:), "pdf_params%varnce_w_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%rt_1(1,:), "pdf_params%rt_1(1,:)", proc_name )
-    call check_nan( pdf_params%rt_2(1,:), "pdf_params%rt_2(1,:)", proc_name )
-    call check_nan( pdf_params%varnce_rt_1(1,:), "pdf_params%varnce_rt_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%varnce_rt_2(1,:), "pdf_params%varnce_rt_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%thl_1(1,:), "pdf_params%thl_1(1,:)", proc_name )
-    call check_nan( pdf_params%thl_2(1,:), "pdf_params%thl_2(1,:)", proc_name )
-    call check_nan( pdf_params%varnce_thl_1(1,:), "pdf_params%varnce_thl_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%varnce_thl_2(1,:), "pdf_params%varnce_thl_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%mixt_frac(1,:), "pdf_params%mixt_frac(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_w_rt_1(1,:), "pdf_params%corr_w_rt_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_w_rt_2(1,:), "pdf_params%corr_w_rt_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_w_thl_1(1,:), "pdf_params%corr_w_thl_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_w_thl_2(1,:), "pdf_params%corr_w_thl_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_rt_thl_1(1,:), "pdf_params%corr_rt_thl_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_rt_thl_2(1,:), "pdf_params%corr_rt_thl_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%rc_1(1,:), "pdf_params%rc_1(1,:)", proc_name )
-    call check_nan( pdf_params%rc_2(1,:), "pdf_params%rc_2(1,:)", proc_name )
-    call check_nan( pdf_params%rsatl_1(1,:), "pdf_params%rsatl_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%rsatl_2(1,:), "pdf_params%rsatl_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%cloud_frac_1(1,:), "pdf_params%cloud_frac_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%cloud_frac_2(1,:), "pdf_params%cloud_frac_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%chi_1(1,:), "pdf_params%chi_1(1,:)", proc_name )
-    call check_nan( pdf_params%chi_2(1,:), "pdf_params%chi_2(1,:)", proc_name )
-    call check_nan( pdf_params%stdev_chi_1(1,:), "pdf_params%stdev_chi_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%stdev_chi_2(1,:), "pdf_params%stdev_chi_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%stdev_eta_1(1,:), "pdf_params%stdev_eta_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%stdev_eta_2(1,:), "pdf_params%stdev_eta_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%covar_chi_eta_1(1,:), "pdf_params%covar_chi_eta_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%covar_chi_eta_2(1,:), "pdf_params%covar_chi_eta_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_w_chi_1(1,:), "pdf_params%corr_w_chi_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_w_chi_2(1,:), "pdf_params%corr_w_chi_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_w_eta_1(1,:), "pdf_params%corr_w_eta_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_w_eta_2(1,:), "pdf_params%corr_w_eta_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_chi_eta_1(1,:), "pdf_params%corr_chi_eta_1(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%corr_chi_eta_2(1,:), "pdf_params%corr_chi_eta_2(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%alpha_thl(1,:), "pdf_params%alpha_thl(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%alpha_rt(1,:), "pdf_params%alpha_rt(1,:)", &
-                    proc_name )
-    call check_nan( pdf_params%ice_supersat_frac_1(1,:), &
-                    "pdf_params%ice_supersat_frac_1(1,:)", proc_name )
-    call check_nan( pdf_params%ice_supersat_frac_2(1,:), &
-                    "pdf_params%ice_supersat_frac_2(1,:)", proc_name )
+    call check_nan( pdf_params%w_1(1,:), "pdf_params%w_1(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%w_2(1,:), "pdf_params%w_2(1,:)", proc_name ) ! intnet(in)
+    call check_nan( pdf_params%varnce_w_1(1,:), "pdf_params%varnce_w_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%varnce_w_2(1,:), "pdf_params%varnce_w_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%rt_1(1,:), "pdf_params%rt_1(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%rt_2(1,:), "pdf_params%rt_2(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%varnce_rt_1(1,:), "pdf_params%varnce_rt_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%varnce_rt_2(1,:), "pdf_params%varnce_rt_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%thl_1(1,:), "pdf_params%thl_1(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%thl_2(1,:), "pdf_params%thl_2(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%varnce_thl_1(1,:), "pdf_params%varnce_thl_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%varnce_thl_2(1,:), "pdf_params%varnce_thl_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%mixt_frac(1,:), "pdf_params%mixt_frac(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_w_rt_1(1,:), "pdf_params%corr_w_rt_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_w_rt_2(1,:), "pdf_params%corr_w_rt_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_w_thl_1(1,:), "pdf_params%corr_w_thl_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_w_thl_2(1,:), "pdf_params%corr_w_thl_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_rt_thl_1(1,:), "pdf_params%corr_rt_thl_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_rt_thl_2(1,:), "pdf_params%corr_rt_thl_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%rc_1(1,:), "pdf_params%rc_1(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%rc_2(1,:), "pdf_params%rc_2(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%rsatl_1(1,:), "pdf_params%rsatl_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%rsatl_2(1,:), "pdf_params%rsatl_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%cloud_frac_1(1,:), "pdf_params%cloud_frac_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%cloud_frac_2(1,:), "pdf_params%cloud_frac_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%chi_1(1,:), "pdf_params%chi_1(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%chi_2(1,:), "pdf_params%chi_2(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%stdev_chi_1(1,:), "pdf_params%stdev_chi_1(1,:)", &! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%stdev_chi_2(1,:), "pdf_params%stdev_chi_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%stdev_eta_1(1,:), "pdf_params%stdev_eta_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%stdev_eta_2(1,:), "pdf_params%stdev_eta_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%covar_chi_eta_1(1,:), "pdf_params%covar_chi_eta_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%covar_chi_eta_2(1,:), "pdf_params%covar_chi_eta_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_w_chi_1(1,:), "pdf_params%corr_w_chi_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_w_chi_2(1,:), "pdf_params%corr_w_chi_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_w_eta_1(1,:), "pdf_params%corr_w_eta_1(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_w_eta_2(1,:), "pdf_params%corr_w_eta_2(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_chi_eta_1(1,:), "pdf_params%corr_chi_eta_1(1,:)", & !intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%corr_chi_eta_2(1,:), "pdf_params%corr_chi_eta_2(1,:)", & !intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%alpha_thl(1,:), "pdf_params%alpha_thl(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%alpha_rt(1,:), "pdf_params%alpha_rt(1,:)", & ! intent(in)
+                    proc_name ) ! intent(in)
+    call check_nan( pdf_params%ice_supersat_frac_1(1,:), & ! intent(in)
+                    "pdf_params%ice_supersat_frac_1(1,:)", proc_name ) ! intent(in)
+    call check_nan( pdf_params%ice_supersat_frac_2(1,:), & ! intent(in)
+                    "pdf_params%ice_supersat_frac_2(1,:)", proc_name ) ! intent(in)
 
     if ( sclr_dim > 0 ) then
        do i = 1, sclr_dim, 1
-          call check_nan( sclrpthvp(:,i),"sclrpthvp", & 
-                          proc_name )
-          call check_nan( sclrprcp(:,i), "sclrprcp", & 
-                          proc_name )
-          call check_nan( wpsclrprtp(:,i), "wpsclrprtp", & 
-                          proc_name )
-          call check_nan( wpsclrp2(:,i), "wpsclrp2", & 
-                          proc_name )
-          call check_nan( wpsclrpthlp(:,i), "wpsclrtlp", & 
-                          proc_name )
-          call check_nan( wp2sclrp(:,i), "wp2sclrp", & 
-                          proc_name )
+          call check_nan( sclrpthvp(:,i),"sclrpthvp", & ! intent(in)
+                          proc_name ) ! intent(in)
+          call check_nan( sclrprcp(:,i), "sclrprcp", & ! intent(in)
+                          proc_name ) ! intent(in)
+          call check_nan( wpsclrprtp(:,i), "wpsclrprtp", & ! intent(in) 
+                          proc_name ) ! intent(in)
+          call check_nan( wpsclrp2(:,i), "wpsclrp2", & ! intent(in) 
+                          proc_name ) ! intent(in)
+          call check_nan( wpsclrpthlp(:,i), "wpsclrtlp", & ! intent(in) 
+                          proc_name ) ! intent(in)
+          call check_nan( wp2sclrp(:,i), "wp2sclrp", & ! intent(in) 
+                          proc_name ) ! intent(in)
        enddo ! i = 1, sclr_dim, 1
     endif
 
@@ -401,70 +401,70 @@ module numerical_check
 
 !-------- Input Nan Check ----------------------------------------------
 
-    call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name )
-    call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name )
-    call check_nan( um_forcing,"um_forcing", prefix//proc_name )
-    call check_nan( vm_forcing,"vm_forcing", prefix//proc_name )
+    call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name ) ! intent(in)
+    call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name ) ! intent(in)
+    call check_nan( um_forcing,"um_forcing", prefix//proc_name ) ! intent(in)
+    call check_nan( vm_forcing,"vm_forcing", prefix//proc_name ) ! intent(in)
 
-    call check_nan( wm_zm, "wm_zm", prefix//proc_name )
-    call check_nan( wm_zt, "wm_zt", prefix//proc_name )
-    call check_nan( p_in_Pa, "p_in_Pa", prefix//proc_name )
-    call check_nan( rho_zm, "rho_zm", prefix//proc_name )
-    call check_nan( rho, "rho", prefix//proc_name )
-    call check_nan( exner, "exner", prefix//proc_name )
-    call check_nan( rho_ds_zm, "rho_ds_zm", prefix//proc_name )
-    call check_nan( rho_ds_zt, "rho_ds_zt", prefix//proc_name )
-    call check_nan( invrs_rho_ds_zm, "invrs_rho_ds_zm", prefix//proc_name )
-    call check_nan( invrs_rho_ds_zt, "invrs_rho_ds_zt", prefix//proc_name )
-    call check_nan( thv_ds_zm, "thv_ds_zm", prefix//proc_name )
-    call check_nan( thv_ds_zt, "thv_ds_zt", prefix//proc_name )
+    call check_nan( wm_zm, "wm_zm", prefix//proc_name ) ! intent(in)
+    call check_nan( wm_zt, "wm_zt", prefix//proc_name ) ! intent(in)
+    call check_nan( p_in_Pa, "p_in_Pa", prefix//proc_name ) ! intent(in)
+    call check_nan( rho_zm, "rho_zm", prefix//proc_name ) ! intent(in)
+    call check_nan( rho, "rho", prefix//proc_name ) ! intent(in)
+    call check_nan( exner, "exner", prefix//proc_name ) ! intent(in)
+    call check_nan( rho_ds_zm, "rho_ds_zm", prefix//proc_name ) ! intent(in)
+    call check_nan( rho_ds_zt, "rho_ds_zt", prefix//proc_name ) ! intent(in)
+    call check_nan( invrs_rho_ds_zm, "invrs_rho_ds_zm", prefix//proc_name ) ! intent(in)
+    call check_nan( invrs_rho_ds_zt, "invrs_rho_ds_zt", prefix//proc_name ) ! intent(in)
+    call check_nan( thv_ds_zm, "thv_ds_zm", prefix//proc_name ) ! intent(in)
+    call check_nan( thv_ds_zt, "thv_ds_zt", prefix//proc_name ) ! intent(in)
 
-    call check_nan( um, "um", prefix//proc_name )
-    call check_nan( upwp, "upwp", prefix//proc_name )
-    call check_nan( vm, "vm", prefix//proc_name )
-    call check_nan( vpwp, "vpwp", prefix//proc_name )
-    call check_nan( up2, "up2", prefix//proc_name )
-    call check_nan( vp2, "vp2", prefix//proc_name )
-    call check_nan( rtm, "rtm", prefix//proc_name )
-    call check_nan( wprtp, "wprtp", prefix//proc_name )
-    call check_nan( thlm, "thlm", prefix//proc_name )
-    call check_nan( wpthlp, "wpthlp", prefix//proc_name )
-    call check_nan( wp2, "wp2", prefix//proc_name )
-    call check_nan( wp3, "wp3", prefix//proc_name )
-    call check_nan( rtp2, "rtp2", prefix//proc_name )
-    call check_nan( thlp2, "thlp2", prefix//proc_name )
-    call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
+    call check_nan( um, "um", prefix//proc_name ) ! intent(in)
+    call check_nan( upwp, "upwp", prefix//proc_name ) ! intent(in)
+    call check_nan( vm, "vm", prefix//proc_name ) ! intent(in)
+    call check_nan( vpwp, "vpwp", prefix//proc_name ) ! intent(in)
+    call check_nan( up2, "up2", prefix//proc_name ) ! intent(in)
+    call check_nan( vp2, "vp2", prefix//proc_name ) ! intent(in)
+    call check_nan( rtm, "rtm", prefix//proc_name ) ! intent(in)
+    call check_nan( wprtp, "wprtp", prefix//proc_name ) ! intent(in)
+    call check_nan( thlm, "thlm", prefix//proc_name ) ! intent(in)
+    call check_nan( wpthlp, "wpthlp", prefix//proc_name ) ! intent(in)
+    call check_nan( wp2, "wp2", prefix//proc_name ) ! intent(in)
+    call check_nan( wp3, "wp3", prefix//proc_name ) ! intent(in)
+    call check_nan( rtp2, "rtp2", prefix//proc_name ) ! intent(in)
+    call check_nan( thlp2, "thlp2", prefix//proc_name ) ! intent(in)
+    call check_nan( rtpthlp, "rtpthlp", prefix//proc_name ) ! intent(in)
 
-    call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name )
-    call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name )
-    call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name )
-    call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name )
+    call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name ) ! intent(in)
+    call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name ) ! intent(in)
+    call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name ) ! intent(in)
+    call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name ) ! intent(in)
 
     do i = 1, sclr_dim
 
-      call check_nan( sclrm_forcing(2:,i),"sclrm_forcing",  & 
-                      prefix//proc_name )
+      call check_nan( sclrm_forcing(2:,i),"sclrm_forcing",  & ! intent(in)
+                      prefix//proc_name ) ! intent(in)
 
-      call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & 
-                      prefix//proc_name )
+      call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & ! intent(in)
+                      prefix//proc_name ) ! intent(in)
 
-      call check_nan( sclrm(2:,i),"sclrm", prefix//proc_name )
-      call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name )
-      call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name )
-      call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name )
-      call check_nan( sclrpthlp(:,i),"sclrpthlp", prefix//proc_name )
+      call check_nan( sclrm(2:,i),"sclrm", prefix//proc_name ) ! intent(in)
+      call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name ) ! intent(in)
+      call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name ) ! intent(in)
+      call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name ) ! intent(in)
+      call check_nan( sclrpthlp(:,i),"sclrpthlp", prefix//proc_name ) ! intent(in)
 
     end do
 
 
     do i = 1, edsclr_dim
 
-      call check_nan( edsclrm_forcing(2:,i),"edsclrm_forcing", prefix//proc_name )
+      call check_nan( edsclrm_forcing(2:,i),"edsclrm_forcing", prefix//proc_name ) ! intent(in)
 
-      call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
-                      prefix//proc_name )
+      call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & ! intent(in)
+                      prefix//proc_name ) ! intent(in)
 
-      call check_nan( edsclrm(2:,i),"edsclrm", prefix//proc_name )
+      call check_nan( edsclrm(2:,i),"edsclrm", prefix//proc_name ) ! intent(in)
 
     enddo
 
@@ -476,23 +476,25 @@ module numerical_check
         end if
     end if
 
-    call check_negative( rtm, 2, gr%nz, "rtm", prefix//proc_name )
-    call check_negative( p_in_Pa, 2, gr%nz, "p_in_Pa", prefix//proc_name )
-    call check_negative( rho, 2, gr%nz, "rho", prefix//proc_name )
-    call check_negative( rho_zm, 1, gr%nz, "rho_zm", prefix//proc_name )
-    call check_negative( exner, 2, gr%nz, "exner", prefix//proc_name )
-    call check_negative( rho_ds_zm, 1, gr%nz, "rho_ds_zm", prefix//proc_name )
-    call check_negative( rho_ds_zt, 2, gr%nz, "rho_ds_zt", prefix//proc_name )
-    call check_negative( invrs_rho_ds_zm, 1, gr%nz, "invrs_rho_ds_zm", prefix//proc_name )
-    call check_negative( invrs_rho_ds_zt, 2, gr%nz, "invrs_rho_ds_zt", prefix//proc_name )
-    call check_negative( thv_ds_zm, 1, gr%nz, "thv_ds_zm", prefix//proc_name )
-    call check_negative( thv_ds_zt, 2, gr%nz, "thv_ds_zt", prefix//proc_name )
-    call check_negative( up2, 1, gr%nz, "up2", prefix//proc_name )
-    call check_negative( vp2, 1, gr%nz, "vp2", prefix//proc_name )
-    call check_negative( wp2, 1, gr%nz, "wp2", prefix//proc_name )
-    call check_negative( thlm, 2, gr%nz, "thlm", prefix//proc_name )
-    call check_negative( rtp2, 1, gr%nz, "rtp2", prefix//proc_name )
-    call check_negative( thlp2, 1, gr%nz, "thlp2", prefix//proc_name )
+    call check_negative( rtm, 2, gr%nz, "rtm", prefix//proc_name ) ! intent(in)
+    call check_negative( p_in_Pa, 2, gr%nz, "p_in_Pa", prefix//proc_name ) ! intent(in)
+    call check_negative( rho, 2, gr%nz, "rho", prefix//proc_name ) ! intent(in)
+    call check_negative( rho_zm, 1, gr%nz, "rho_zm", prefix//proc_name ) ! intent(in)
+    call check_negative( exner, 2, gr%nz, "exner", prefix//proc_name ) ! intent(in)
+    call check_negative( rho_ds_zm, 1, gr%nz, "rho_ds_zm", prefix//proc_name ) ! intent(in)
+    call check_negative( rho_ds_zt, 2, gr%nz, "rho_ds_zt", prefix//proc_name ) ! intent(in)
+    call check_negative( invrs_rho_ds_zm, 1, gr%nz, "invrs_rho_ds_zm", & ! intent(in)
+                         prefix//proc_name )!intent(in)
+    call check_negative( invrs_rho_ds_zt, 2, gr%nz, "invrs_rho_ds_zt", & ! intent(in)
+                         prefix//proc_name ) ! intent(in)
+    call check_negative( thv_ds_zm, 1, gr%nz, "thv_ds_zm", prefix//proc_name ) ! intent(in)
+    call check_negative( thv_ds_zt, 2, gr%nz, "thv_ds_zt", prefix//proc_name ) ! intent(in)
+    call check_negative( up2, 1, gr%nz, "up2", prefix//proc_name ) ! intent(in)
+    call check_negative( vp2, 1, gr%nz, "vp2", prefix//proc_name ) ! intent(in)
+    call check_negative( wp2, 1, gr%nz, "wp2", prefix//proc_name ) ! intent(in)
+    call check_negative( thlm, 2, gr%nz, "thlm", prefix//proc_name ) ! intent(in)
+    call check_negative( rtp2, 1, gr%nz, "rtp2", prefix//proc_name ) ! intent(in)
+    call check_negative( thlp2, 1, gr%nz, "thlp2", prefix//proc_name ) ! intent(in)
 
     if ( err_code == clubb_fatal_error .and. prefix == "beginning of " ) then
         err_code = clubb_no_error   ! Negative value generated by host model, hence ignore error
@@ -554,23 +556,23 @@ module numerical_check
 
     ! ---- Begin Code ----
 
-    call check_nan( wp2_sfc, "wp2_sfc", proc_name )
-    call check_nan( up2_sfc, "up2_sfc", proc_name )
-    call check_nan( vp2_sfc, "vp2_sfc", proc_name )
-    call check_nan( thlp2_sfc, "thlp2_sfc", proc_name )
-    call check_nan( rtp2_sfc, "rtp2_sfc", proc_name )
+    call check_nan( wp2_sfc, "wp2_sfc", proc_name ) ! intent(in)
+    call check_nan( up2_sfc, "up2_sfc", proc_name ) ! intent(in)
+    call check_nan( vp2_sfc, "vp2_sfc", proc_name ) ! intent(in)
+    call check_nan( thlp2_sfc, "thlp2_sfc", proc_name ) ! intent(in)
+    call check_nan( rtp2_sfc, "rtp2_sfc", proc_name ) ! intent(in)
     call check_nan( rtpthlp_sfc, "rtpthlp_sfc",  & 
                     proc_name )
 
     if ( sclr_dim > 0 ) then
-      call check_nan( sclrp2_sfc, "sclrp2_sfc", & 
-                      proc_name )
+      call check_nan( sclrp2_sfc, "sclrp2_sfc", & ! intent(in)
+                      proc_name ) ! intent(in)
 
-      call check_nan( sclrprtp_sfc, "sclrprtp_sfc", & 
-                      proc_name )
+      call check_nan( sclrprtp_sfc, "sclrprtp_sfc", & ! intent(in)
+                      proc_name ) ! intent(in)
 
-      call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc",  & 
-                      proc_name )
+      call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc",  & ! intent(in)
+                      proc_name ) ! intent(in)
     end if
 
     return
@@ -616,15 +618,15 @@ module numerical_check
 
     rvm = rtm - rcm
 
-    call check_negative( thlm, 1, gr%nz, "thlm", proc_name )
-    call check_negative( rcm, 1, gr%nz, "rcm", proc_name )
-    call check_negative( rtm, 1, gr%nz, "rtm", proc_name )
-    call check_negative( rvm, 1, gr%nz, "rvm", proc_name )
-    call check_negative( rim, 1, gr%nz, "rim", proc_name )
-    call check_negative( cloud_frac, 1, gr%nz,"cloud_frac", proc_name )
-    call check_negative( p_in_Pa, 1, gr%nz, "p_in_Pa", proc_name )
-    call check_negative( exner, 1, gr%nz, "exner", proc_name )
-    call check_negative( rho_zm, 1, gr%nz, "rho_zm", proc_name )
+    call check_negative( thlm, 1, gr%nz, "thlm", proc_name ) ! intent(in)
+    call check_negative( rcm, 1, gr%nz, "rcm", proc_name ) ! intent(in)
+    call check_negative( rtm, 1, gr%nz, "rtm", proc_name ) ! intent(in)
+    call check_negative( rvm, 1, gr%nz, "rvm", proc_name ) ! intent(in)
+    call check_negative( rim, 1, gr%nz, "rim", proc_name ) ! intent(in)
+    call check_negative( cloud_frac, 1, gr%nz,"cloud_frac", proc_name ) ! intent(in)
+    call check_negative( p_in_Pa, 1, gr%nz, "p_in_Pa", proc_name ) ! intent(in)
+    call check_negative( exner, 1, gr%nz, "exner", proc_name ) ! intent(in) 
+    call check_negative( rho_zm, 1, gr%nz, "rho_zm", proc_name ) ! intent(in)
 
     return
 

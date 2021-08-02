@@ -252,12 +252,12 @@ module output_netcdf
     ncf%ntimes = ncf%ntimes + 1
 
     if ( .not. ncf%l_defined ) then
-      call first_write( l_uv_nudge, &
-                        l_tke_aniso, &
-                        l_standard_term_ta, &
-                        l_single_C2_Skw, &
-                        ncf ) ! finalize the variable definitions
-      call write_grid( ncf )  ! define lat., long., and grid
+      call first_write( l_uv_nudge, & ! intent(in)
+                        l_tke_aniso, & ! intent(in)
+                        l_standard_term_ta, & ! intent(in)
+                        l_single_C2_Skw, & ! intent(in)
+                        ncf ) ! finalize the variable definitions intent(inout)
+      call write_grid( ncf )  ! define lat., long., and grid intent(inout)
       ncf%l_defined = .true.
       if ( err_code == clubb_fatal_error ) return
     end if
@@ -465,7 +465,8 @@ module output_netcdf
       return
     end if
 
-    call format_date( day, month, year, time, TimeUnits )
+    call format_date( day, month, year, time, & ! intent(in)
+                      TimeUnits ) ! intent(out)
 
     stat = nf90_put_att( ncid, TimeVarId, "units", TimeUnits )
     if ( stat /= NF90_NOERR ) then
@@ -845,7 +846,7 @@ module output_netcdf
     stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "ts_nudge", ts_nudge )
     stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "sclr_tol", sclr_tol )
 
-    call get_parameters( params )
+    call get_parameters( params ) ! intent(out)
 
     do i = 1, nparams, 1
       stat(i) = nf90_put_att( ncf%iounit, NF90_GLOBAL, params_list(i), params(i) )
@@ -951,7 +952,8 @@ module output_netcdf
 !-------------------------------------------------------------------------------
 
   subroutine format_date & 
-             ( day_in, month_in, year_in, time_in, date )
+             ( day_in, month_in, year_in, time_in, &
+               date )
 
 ! Description:
 !   Put the model date in a format that udunits and NetCDF can easily
@@ -990,12 +992,12 @@ module output_netcdf
 
     real(kind=time_precision) :: st_time ! Start time [s]
 
-    call compute_current_date( day_in, month_in,  & 
-                               year_in, & 
-                               time_in, & 
-                               iday, imonth, & 
-                               iyear, & 
-                               st_time )
+    call compute_current_date( day_in, month_in,  & ! intent(in)
+                               year_in, &  ! intent(in)
+                               time_in, & ! intent(in)
+                               iday, imonth, & ! intent(out)
+                               iyear, &  ! intent(out)
+                               st_time ) ! intent(out)
 
     if ( .not. l_grads_netcdf_boost_ts ) then
       date = "seconds since YYYY-MM-DD HH:MM:00.0"
