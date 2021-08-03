@@ -29,7 +29,8 @@ module output_netcdf
 !-------------------------------------------------------------------------------
   subroutine open_netcdf_for_writing( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
                           day, month, year, lat_vals, lon_vals, & 
-                          time, dtwrite, nvar, ncf, &
+                          time, dtwrite, nvar, &
+                          ncf, &
                           nsamp) ! optional
 
 ! Description:

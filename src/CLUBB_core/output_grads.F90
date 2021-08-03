@@ -41,7 +41,8 @@ module output_grads
                          ia, iz, nlat, nlon, z, & 
                          day, month, year, lat_vals, lon_vals, & 
                          time, dtwrite, & 
-                         nvar, grads_file )
+                         nvar, &
+                         grads_file )
 ! Description:
 !   Opens and initialize variable components for derived type 'grads_file'
 !   If the GrADS file already exists, open_grads will overwrite it.

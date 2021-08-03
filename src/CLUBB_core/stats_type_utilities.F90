@@ -31,7 +31,8 @@ module stats_type_utilities
   !=============================================================================
   subroutine stat_assign( var_index, var_name,  &
                           var_description, var_units, &
-                          l_silhs, grid_kind )
+                          l_silhs, &
+                          grid_kind )
 
     ! Description:
     !   Assigns pointers for statistics variables in grid. There is an

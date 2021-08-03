@@ -83,78 +83,90 @@ module stats_rad_zm_module
 
       case('fulwcl')
         ifulwcl = k
-        call stat_assign( var_index=ifulwcl, var_name="fulwcl", &
-             var_description="Upward clear-sky LW flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+        call stat_assign( var_index=ifulwcl, var_name="fulwcl", & ! intent(in)
+             var_description="Upward clear-sky LW flux [W/m^2]", var_units="W/m^2", & ! intent(in)
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case( 'fdlwcl' )
         ifdlwcl = k
-        call stat_assign( var_index=ifdlwcl, var_name="fdlwcl", &
-             var_description="Downward clear-sky LW flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+        call stat_assign( var_index=ifdlwcl, var_name="fdlwcl", & ! intent(in)
+             var_description="Downward clear-sky LW flux [W/m^2]", var_units="W/m^2", & !intent(in)
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case( 'fdswcl' )
         ifdswcl = k
-        call stat_assign( var_index=ifdswcl, var_name="fdswcl", &
-             var_description="Downward clear-sky SW flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+        call stat_assign( var_index=ifdswcl, var_name="fdswcl", & ! intent(in)
+             var_description="Downward clear-sky SW flux [W/m^2]", var_units="W/m^2", & !intent(in)
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case( 'fuswcl' )
         ifuswcl = k
-        call stat_assign( var_index=ifuswcl, var_name="fuswcl", &
-             var_description="Upward clear-sky SW flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+        call stat_assign( var_index=ifuswcl, var_name="fuswcl", & ! intent(in)
+             var_description="Upward clear-sky SW flux [W/m^2]", var_units="W/m^2", & ! intent(in)
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_LW_rad')
         iFrad_LW_rad = k
 
-        call stat_assign( var_index=iFrad_LW_rad, var_name="Frad_LW_rad", &
-             var_description="Net long-wave radiative flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+        call stat_assign( var_index=iFrad_LW_rad, var_name="Frad_LW_rad", & ! intent(in)
+             var_description="Net long-wave radiative flux [W/m^2]", var_units="W/m^2", & ! In
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_SW_rad')
         iFrad_SW_rad = k
 
-        call stat_assign( var_index=iFrad_SW_rad, var_name="Frad_SW_rad", &
-             var_description="Net short-wave radiative flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+        call stat_assign( var_index=iFrad_SW_rad, var_name="Frad_SW_rad", & ! intent(in)
+             var_description="Net short-wave radiative flux [W/m^2]", var_units="W/m^2", & ! In
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_SW_up_rad')
         iFrad_SW_up_rad = k
 
-        call stat_assign( var_index=iFrad_SW_up_rad, var_name="Frad_SW_up_rad", &
-             var_description="Short-wave upwelling radiative flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+        call stat_assign( var_index=iFrad_SW_up_rad, var_name="Frad_SW_up_rad", & ! intent(in)
+             var_description="Short-wave upwelling radiative flux [W/m^2]", var_units="W/m^2", &!In
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_LW_up_rad')
         iFrad_LW_up_rad = k
 
-        call stat_assign( var_index=iFrad_LW_up_rad, var_name="Frad_LW_up_rad", &
-             var_description="Long-wave upwelling radiative flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+        call stat_assign( var_index=iFrad_LW_up_rad, var_name="Frad_LW_up_rad", & ! intent(in)
+             var_description="Long-wave upwelling radiative flux [W/m^2]", var_units="W/m^2", &!In
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_SW_down_rad')
         iFrad_SW_down_rad = k
-
-        call stat_assign( var_index=iFrad_SW_down_rad, var_name="Frad_SW_down_rad", &
-             var_description="Short-wave downwelling radiative flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+ 
+        call stat_assign( var_index=iFrad_SW_down_rad, var_name="Frad_SW_down_rad", & ! intent(in)
+             var_description="Short-wave downwelling radiative flux [W/m^2]", & ! intent(in)
+             var_units="W/m^2", & ! intent(in)
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_LW_down_rad')
         iFrad_LW_down_rad = k
 
-        call stat_assign( var_index=iFrad_LW_down_rad, var_name="Frad_LW_down_rad", &
-             var_description="Long-wave downwelling radiative flux [W/m^2]", var_units="W/m^2", &
-             l_silhs=.false., grid_kind=stats_rad_zm )
+        call stat_assign( var_index=iFrad_LW_down_rad, var_name="Frad_LW_down_rad", & ! intent(in)
+             var_description="Long-wave downwelling radiative flux [W/m^2]", & ! intent(in)
+             var_units="W/m^2", & ! intent(in)
+             l_silhs=.false., & ! intent(in)
+             grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case default
