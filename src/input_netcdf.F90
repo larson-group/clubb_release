@@ -252,28 +252,28 @@ module input_netcdf
       colon2 = index( time , ":" , .true. )
     
       ! year
-      read(time( hyphen1-4:hyphen1-1), *) netcdf_year
+      read( time( hyphen1 - 4 : hyphen1 - 1 ) , * ) netcdf_year
 
       ! month
-      if (hyphen2 - hyphen1 == 2 ) then
-        dummy_string = "0" // time(hyphen1+1:hyphen1+1)
+      if ( hyphen2 - hyphen1 == 2 ) then
+        dummy_string = "0" // time( hyphen1 + 1 : hyphen1 + 1 )
       else
-        dummy_string = time(hyphen1+1:hyphen1+2)
+        dummy_string = time( hyphen1 + 1 : hyphen1 + 2 )
       end if
-      read(dummy_string,*) netcdf_month
+      read( dummy_string , * ) netcdf_month
 
       ! day
-      if (colon1 - hyphen2 == 5) then
-        dummy_string = "0" // time(hyphen2+1:hyphen2+1)
+      if ( colon1 - hyphen2 == 5 ) then
+        dummy_string = "0" // time( hyphen2 + 1 : hyphen2 + 1 )
       else
-        dummy_string = time(hyphen2+1:hyphen2+2)
+        dummy_string = time( hyphen2 + 1 : hyphen2 + 2 )
       end if
-      read(dummy_string, *) netcdf_day
+      read( dummy_string , * ) netcdf_day
 
       ! time
-      read(time( colon1-2:colon1-1 ), *) hours
-      read(time( colon1+1:colon1+2 ), *) minutes
-      read(time( colon2+1:colon2+2 ), *) seconds
+      read( time( colon1 - 2 : colon1 - 1 ) , * ) hours
+      read( time( colon1 + 1 : colon1 + 2 ) , * ) minutes
+      read( time( colon2 + 1 : colon2 + 2 ) , * ) seconds
 
       ncf%year = netcdf_year
       ncf%month = netcdf_month
