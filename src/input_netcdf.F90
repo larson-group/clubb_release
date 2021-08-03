@@ -82,7 +82,9 @@ module input_netcdf
     
     real( kind = core_rknd ), dimension(2) :: write_times
 
-    character(len=80) :: time
+    character(len=80) :: time, dummy_string
+
+    integer :: hyphen1, hyphen2, colon1, colon2
 
     character(len=NF90_MAX_NAME) :: zname, time_name, dim_name
 
@@ -230,6 +232,7 @@ module input_netcdf
       ! Read starting time from the "units" attribute of the netcdf file
       time = trim( time )
       length = len( trim( time ) )
+
       if ( length < 29 ) then
         write(fstderr,*) "The NetCDF file does not have a proper time unit &
                          &specification. The ""units"" attribute for the &
@@ -239,14 +242,38 @@ module input_netcdf
         return
       end if
 
+      ! search forwards
+      hyphen1 = index( time , "-" )
+      ! search backwards
+      hyphen2 = index( time , "-" , .true. )
+      ! search forwards
+      colon1 = index( time , ":" )
+      ! search backwards
+      colon2 = index( time , ":" , .true. )
+    
+      ! year
+      read(time( hyphen1-4:hyphen1-1), *) netcdf_year
 
-      read(time( length-20:length-17), *) netcdf_year
-      read(time( length-15:length-14), *) netcdf_month
-      read(time( length-12:length-11), *) netcdf_day
+      ! month
+      if (hyphen2 - hyphen1 == 2 ) then
+        dummy_string = "0" // time(hyphen1+1:hyphen1+1)
+      else
+        dummy_string = time(hyphen1+1:hyphen1+2)
+      end if
+      read(dummy_string,*) netcdf_month
 
-      read(time( length-10:length-8 ), *) hours
-      read(time( length-6:length-5 ), *) minutes
-      read(time( length-3:length - 2 ), *) seconds
+      ! day
+      if (colon1 - hyphen2 == 5) then
+        dummy_string = "0" // time(hyphen2+1:hyphen2+1)
+      else
+        dummy_string = time(hyphen2+1:hyphen2+2)
+      end if
+      read(dummy_string, *) netcdf_day
+
+      ! time
+      read(time( colon1-2:colon1-1 ), *) hours
+      read(time( colon1+1:colon1+2 ), *) minutes
+      read(time( colon2+1:colon2+2 ), *) seconds
 
       ncf%year = netcdf_year
       ncf%month = netcdf_month
