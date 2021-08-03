@@ -84,7 +84,7 @@ module input_netcdf
 
     character(len=80) :: time, dummy_string
 
-    integer :: hyphen1, hyphen2, colon1, colon2
+    integer :: first_hyphen_idx, second_hyphen_idx, first_colon_idx, second_colon_idx
 
     character(len=NF90_MAX_NAME) :: zname, time_name, dim_name
 
@@ -242,38 +242,48 @@ module input_netcdf
         return
       end if
 
-      ! search forwards
-      hyphen1 = index( time , "-" )
-      ! search backwards
-      hyphen2 = index( time , "-" , .true. )
-      ! search forwards
-      colon1 = index( time , ":" )
-      ! search backwards
-      colon2 = index( time , ":" , .true. )
-    
-      ! year
-      read( time( hyphen1 - 4 : hyphen1 - 1 ) , * ) netcdf_year
+      ! The following blocks of code are intended to parse date string from
+      ! input netcdf files.  The CLUBB output files are in the format 
+      ! TIMEUNITS since YYYY-MM-DD HH:MM:SS.S, while other files, like some
+      ! COAMPS files, may be formatted TIMEUNITS since YYYY-M-D HH:MM:SS (i.e.
+      ! with single-digit month or day, and without the ".S" at the end.  Hence
+      ! we need to parse these string carefully to correctly compare dates.
 
-      ! month
-      if ( hyphen2 - hyphen1 == 2 ) then
-        dummy_string = "0" // time( hyphen1 + 1 : hyphen1 + 1 )
+      ! Search forward
+      first_hyphen_idx = index( time , "-" )
+      ! Search backward
+      second_hyphen_idx = index( time , "-" , .true. )
+      ! Search forward
+      first_colon_idx = index( time , ":" )
+      ! Search backward
+      second_colon_idx = index( time , ":" , .true. )
+    
+      ! Year
+      read( time( first_hyphen_idx - 4 : first_hyphen_idx - 1 ) , * ) netcdf_year
+
+      ! Month
+      ! If difference between hyphen indices is 2, then the month is a single digit.
+      if ( second_hyphen_idx - first_hyphen_idx == 2 ) then
+        dummy_string = time( first_hyphen_idx + 1 : first_hyphen_idx + 1 )
       else
-        dummy_string = time( hyphen1 + 1 : hyphen1 + 2 )
+        dummy_string = time( first_hyphen_idx + 1 : first_hyphen_idx + 2 )
       end if
       read( dummy_string , * ) netcdf_month
 
-      ! day
-      if ( colon1 - hyphen2 == 5 ) then
-        dummy_string = "0" // time( hyphen2 + 1 : hyphen2 + 1 )
+      ! Day
+      ! If difference between second hyphen and first colon indices is 5, then the
+      ! day is a single digit.
+      if ( first_colon_idx - second_hyphen_idx == 5 ) then
+        dummy_string = time( second_hyphen_idx + 1 : second_hyphen_idx + 1 )
       else
-        dummy_string = time( hyphen2 + 1 : hyphen2 + 2 )
+        dummy_string = time( second_hyphen_idx + 1 : second_hyphen_idx + 2 )
       end if
       read( dummy_string , * ) netcdf_day
 
-      ! time
-      read( time( colon1 - 2 : colon1 - 1 ) , * ) hours
-      read( time( colon1 + 1 : colon1 + 2 ) , * ) minutes
-      read( time( colon2 + 1 : colon2 + 2 ) , * ) seconds
+      ! Time
+      read( time( first_colon_idx - 2 : first_colon_idx - 1 ) , * ) hours
+      read( time( first_colon_idx + 1 : first_colon_idx + 2 ) , * ) minutes
+      read( time( second_colon_idx + 1 : second_colon_idx + 2 ) , * ) seconds
 
       ncf%year = netcdf_year
       ncf%month = netcdf_month
