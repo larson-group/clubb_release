@@ -627,9 +627,6 @@ module error
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
-    use stats_variables, only: &
-      stats_tout
-
     use stat_file_module, only: &
       stat_file ! Type(s)
 
@@ -638,12 +635,6 @@ module error
       open_netcdf_read, & ! Procedure(s)
       close_netcdf_read
 #endif /* NETCDF */
-
-    use clubb_model_settings, only: &
-      day, &
-      month, &
-      year, &
-      time_initial
 
     implicit none
 
@@ -707,7 +698,9 @@ module error
     integer, dimension(c_total) ::  & 
       run_stat ! isValid over each model case
 
-    type (stat_file) :: netcdf_file ! Data file derived type
+    type (stat_file) ::  &
+      les_netcdf_file,   & ! Data file derived type
+      clubb_netcdf_file
 
     integer :: &
 #ifdef NETCDF
@@ -859,8 +852,8 @@ module error
         ! First, be sure we are dealing with a netCDF file
         len_file = LEN_TRIM(les_stats_file(c_run))
         if (les_stats_file(c_run)(len_file-2: len_file) == ".nc") then
-          call open_netcdf_read( les_v(i), les_stats_file(c_run), netcdf_file, l_file_error);
-          call close_netcdf_read(netcdf_file);
+          call open_netcdf_read( les_v(i), les_stats_file(c_run), les_netcdf_file, l_file_error);
+          call close_netcdf_read(les_netcdf_file);
           if (l_file_error) then
             l_error = .true. ! This may or may not be necessary
           end if
@@ -868,33 +861,37 @@ module error
           l_file_error = .true. ! This will cause the following assertion check to be skipped
         end if
 
+        ! Call open_netcdf_read for CLUBB files too, to get date/time, etc. for next step.
+        call open_netcdf_read( hoc_v(i), hoc_stats_file(c_run), clubb_netcdf_file, l_file_error)
+        call close_netcdf_read(clubb_netcdf_file)
+
         if ( .not. l_file_error) then
           ! If the file could not be read, then it is most likely that the file is a GrADS file.
           ! This assertion check only supports NetCDF files. The case that the file could not
           ! be found is handled elsewhere in the tuner.
           if ( &
-            day /= netcdf_file%day &
-            .or. month /= netcdf_file%month &
-            .or. year /= netcdf_file%year &
-            .or. abs(time_initial - netcdf_file%time) > &
-                abs(time_initial + netcdf_file%time) / 2 * eps &
-            .or. abs(stats_tout - netcdf_file%dtwrite) > &
-                abs(stats_tout + netcdf_file%dtwrite) / 2 * eps ) then
+            clubb_netcdf_file%day /= les_netcdf_file%day &
+            .or. clubb_netcdf_file%month /= les_netcdf_file%month &
+            .or. clubb_netcdf_file%year /= les_netcdf_file%year &
+            .or. abs(clubb_netcdf_file%time - les_netcdf_file%time) > &
+                abs(clubb_netcdf_file%time + les_netcdf_file%time) / 2 * eps &
+            .or. abs(clubb_netcdf_file%dtwrite - les_netcdf_file%dtwrite) > &
+                abs(clubb_netcdf_file%dtwrite + les_netcdf_file%dtwrite) / 2 * eps ) then
               write(*,*) "Error: The CLUBB run and LES run do not start at the same time &
                   &or have different stat output intervals. Here are the currently set &
                   &start times and stat output intervals."
 
-              write(*,*) "CLUBB start day: ", day
-              write(*,*) "CLUBB start month: ", month
-              write(*,*) "CLUBB start year: ", year
-              write(*,*) "CLUBB start time: ", time_initial
-              write(*,*) "CLUBB dtwrite: ", stats_tout
+              write(*,*) "CLUBB start day: ", clubb_netcdf_file%day
+              write(*,*) "CLUBB start month: ", clubb_netcdf_file%month
+              write(*,*) "CLUBB start year: ", clubb_netcdf_file%year
+              write(*,*) "CLUBB start time: ", clubb_netcdf_file%time
+              write(*,*) "CLUBB dtwrite: ", clubb_netcdf_file%dtwrite
 
-              write(*,*) "LES start day: ", netcdf_file%day
-              write(*,*) "LES start month: ", netcdf_file%month
-              write(*,*) "LES start year: ", netcdf_file%year
-              write(*,*) "LES start time: ", netcdf_file%time
-              write(*,*) "LES dtwrite: ", netcdf_file%dtwrite
+              write(*,*) "LES start day: ", les_netcdf_file%day
+              write(*,*) "LES start month: ", les_netcdf_file%month
+              write(*,*) "LES start year: ", les_netcdf_file%year
+              write(*,*) "LES start time: ", les_netcdf_file%time
+              write(*,*) "LES dtwrite: ", les_netcdf_file%dtwrite
 
               error stop "Please modify the models so that they start at the same time and &
                 &have the same stat output interval." 
