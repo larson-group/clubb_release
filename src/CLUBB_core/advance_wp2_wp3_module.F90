@@ -4171,7 +4171,6 @@ module advance_wp2_wp3_module
     use constants_clubb, only:  &
         three,        & ! Constant(s)
         three_halves, &
-        one, &
         zero
 
     use clubb_precision, only: &
