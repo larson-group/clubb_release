@@ -114,7 +114,7 @@ program clubb_tuner
     if ( tune_type /= iploops ) then
        ! Prompt the user to continue tuning with new parameters.
        write(unit=fstdout,fmt='(A)', advance='no')  & 
-         "Continut tuning starting with new parameters?(y/n) "
+         "Continue tuning starting with new parameters?(y/n) "
        read(*,*) user_response
     else
        ! For the parameter loops tuner, automatically enter a response of "no".
