@@ -875,6 +875,10 @@ enabled.
 - (3.3) Executing a tuning run:
 -----------------------------------------------------------------------
 
+NOTE:  As of 8.9.21, the tuner appears to have some issues when compiled with
+gfortran, but appears to work fine when compiled with ifort.  This is being 
+discussed in CLUBB issue #939.
+
 The "tuner" code is used to optimize CLUBB's parameters in order to better match
 output from a 3D large-eddy simulation (LES) model.  The default optimization 
 technique is the downhill-simplex method of Needler and Mead, as implemented in 
