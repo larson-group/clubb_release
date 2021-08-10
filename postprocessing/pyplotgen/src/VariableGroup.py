@@ -139,10 +139,14 @@ class VariableGroup:
         """
         var_names = variable_def_dict['var_names']
 
-        plot_sam_benchmark = self.sam_benchmark_dataset is not None and len(self.sam_benchmark_dataset) > 0
-        plot_coamps = self.coamps_dataset is not None and len(self.coamps_dataset) > 0
-        plot_r408 = self.r408_datasets is not None and len(self.r408_datasets) > 0
-        plot_hoc = self.hoc_datasets is not None and len(self.hoc_datasets) > 0
+        plot_sam_benchmark = self.sam_benchmark_dataset is not None and len(self.sam_benchmark_dataset) > 0 \
+                             and len(var_names['sam']) > 0
+        plot_coamps = self.coamps_dataset is not None and len(self.coamps_dataset) > 0 \
+                      and len(var_names['coamps']) > 0
+        plot_r408 = self.r408_datasets is not None and len(self.r408_datasets) > 0 \
+                    and len(var_names['r408']) > 0
+        plot_hoc = self.hoc_datasets is not None and len(self.hoc_datasets) > 0 \
+                   and len(var_names['hoc']) > 0
 
         plot_sam = self.sam_datasets is not None and len(self.sam_datasets) > 0 \
                    and (len(var_names['sam']) > 0 or 'sam_calc' in variable_def_dict.keys())

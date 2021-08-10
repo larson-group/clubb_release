@@ -37,6 +37,18 @@ class VariableGroupBase(VariableGroup):
             {'var_names': ['corr_chi_eta_2'], 'legend_label': 'PDF comp. 2'},
         ]
 
+        tau_i_lines = [
+            {'var_names': ['invrs_tau_zm'], 'legend_label': 'invrs_tau_zm'},
+            {'var_names': ['invrs_tau_xp2_zm'], 'legend_label': 'invrs_tau_xp2_zm'},
+            {'var_names': ['invrs_tau_wp2_zm'], 'legend_label': 'invrs_tau_wp2_zm'},
+            {'var_names': ['invrs_tau_wpxp_zm'], 'legend_label': 'invrs_tau_wpxp_zm'},
+            {'var_names': ['invrs_tau_wp3_zm'], 'legend_label': 'invrs_tau_wp3_zm'},
+            {'var_names': ['invrs_tau_no_N2_zm'], 'legend_label': 'invrs_tau_no_N2_zm'},
+            {'var_names': ['invrs_tau_bkgnd'], 'legend_label': 'invrs_tau_bkgnd'},
+            {'var_names': ['invrs_tau_sfc'], 'legend_label': 'invrs_tau_sfc'},
+            {'var_names': ['invrs_tau_shear'], 'legend_label': 'invrs_tau_shear'},
+        ]
+
         self.variable_definitions = [
             {'var_names':
                 {
@@ -404,24 +416,25 @@ class VariableGroupBase(VariableGroup):
             },
             {'var_names':
                 {
-                    'clubb': ['tau_zm'],
-                    'sam': ['tau_zm'],
-                    'coamps': ['tau_zm'],
-                    'r408': ['tau_zm'],
-                    'hoc': ['tau_zm'],
-                    'e3sm': ['tau_zm'],
-                    'cam': ['tau_zm'],
-                    'wrf': ['tau_zm'],
+                    'clubb': ['tau'],
+                    'sam': [],
+                    'coamps': [],
+                    'r408': [],
+                    'hoc': [],
+                    'e3sm': [],
+                    'cam': [],
+                    'wrf': [],
                 },
-                'title': 'CLUBB time-scale tau',
-                'axis_title': 'tau [s]',
+                'lines': tau_i_lines,
+                'title': 'CLUBB time-scale tau variables',
+                'axis_title': 'tau_i [s]',
                 'sci_scale': 0,
             },
             {'var_names':
                 {
                     'clubb': ['Lscale'],
-                    'sam': ['Lscale'],
-                    'coamps': ['Lscale'],
+                    'sam': [],
+                    'coamps': [],
                     'r408': ['Lscale'],
                     'hoc': ['Lscale'],
                     'e3sm': ['Lscale'],
@@ -435,8 +448,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['bv_freq_sqd'],
-                'sam': ['BV_FREQ_SQD'],
-                'coamps': ['bv_freq_sqd'],
+                'sam': [],
+                'coamps': [],
                 'r408': ['bv_freq_sqd'],
                 'hoc': ['bv_freq_sqd'],
                 'e3sm': ['bv_freq_sqd'],
@@ -488,8 +501,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['corr_w_chi_i'],
-                    'sam': ['corr_w_chi_i'],
-                    'coamps': ['corr_w_chi_i'],
+                    'sam': [],
+                    'coamps': [],
                     'r408': ['corr_w_chi_i'],
                     'hoc': ['corr_w_chi_i'],
                     'e3sm': ['corr_w_chi_i'],
@@ -504,8 +517,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['corr_chi_eta_i'],
-                    'sam': ['corr_chi_eta_i'],
-                    'coamps': ['corr_chi_eta_i'],
+                    'sam': [],
+                    'coamps': [],
                     'r408': ['corr_chi_eta_i'],
                     'hoc': ['corr_chi_eta_i'],
                     'e3sm': ['corr_chi_eta_i'],
