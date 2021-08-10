@@ -217,7 +217,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                             numMetrics, numParams,
                             beVerbose=True)
 
-    # In order to de-weight certain metrics, multiply each row of normlzdSensMatrix 
+    # In order to de-weight certain metrics, multiply each row of normlzdSensMatrix
     # by metricsWeights
     normlzdWeightedSensMatrix = np.diag(np.transpose(metricsWeights)[0]) @ normlzdSensMatrix
 
@@ -232,14 +232,16 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     #print("\nNormalized, weighted SVD inverse =")
     #print(svdInvrsNormlzdWeighted)
 
-    paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, defaultBiasesApprox = \
+    paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, \
+    defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals = \
     calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, \
                    sensMatrix, normlzdWeightedSensMatrix, \
                    defaultBiasesCol, defaultParamValsOrigRow, \
                    sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames )
 
-    paramsSolnPC, paramsLowValsPC, paramsHiValsPC, dparamsSolnPC, defaultBiasesApproxPC = \
+    paramsSolnPC, paramsLowValsPC, paramsHiValsPC, dparamsSolnPC, \
+    defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC = \
     calcParamsSoln(svdInvrsNormlzdWeightedPC, metricsWeights, maxMagParamValsRow, \
                    sensMatrix, normlzdWeightedSensMatrix, \
                    defaultBiasesCol, defaultParamValsOrigRow, \
@@ -262,10 +264,18 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     print("defaultBiasesOrigApprox =")
     print(defaultBiasesOrigApprox)
 
+    # If the solution were perfect, this variable would equal metricsWeights
+    normlzdWeightedDefaultBiasesApproxPC = \
+            normlzdWeightedSensMatrix @ ( dparamsSolnPC / np.transpose(maxMagParamValsRow) )
+
     defaultBiasesOrigApproxPC = sensMatrixOrig @ dparamsSolnPC
 
+    #pdb.set_trace()
+
     return (defaultMetricValsCol, defaultBiasesCol, \
-            defaultBiasesApprox, defaultBiasesApproxPC, \
+            defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals, \
+            defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
+            normlzdWeightedDefaultBiasesApproxPC, \
             defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
             sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
             defaultParamValsOrigRow, dparamsSoln, \
@@ -326,7 +336,8 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     #print("\ninvrsDparamsMatrix =")
     #print(invrsDparamsMatrix)
 
-    # Sensitivity matrix of derivatives, dmetrics/dparams
+    # Sensitivity matrix of derivatives, dmetrics/dparams.
+    # sensMatrix is not normalized or weighted by any factor.
     sensMatrix = dmetricsMatrix * invrsDparamsMatrix
 
     if beVerbose:
@@ -458,50 +469,51 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, 
     import pdb
 
 
-#    zero_obs = np.array( [ \
-#                         [0.], #SWCF_GLB
-#                         [1.], #SWCF_DYCOMS
-#                         [1.], #SWCF_HAWAII
-#                         [0.], #SWCF_VOCAL
-#                         [0.], #SWCF_LBA
-#                         [0.], #SWCF_WP
-#                         [0.], #SWCF_EP
-#                         [0.], #SWCF_NP
-#                         [0.], #SWCF_SP
-#                         [0.], #SWCF_PA
-#                         [0.], #SWCF_CAF
-#                         [0.], #LWCF_GLB
-#        #                        ['LWCF_DYCOMS', 0.01], \
-#        #                        ['LWCF_HAWAII', 0.01], \
-#        #                        ['LWCF_VOCAL', 0.01], \
-#                         [0.], #LWCF_LBA
-#                         [0.], #LWCF_WP
-#                         [0.], #LWCF_EP
-#                         [0.], #LWCF_NP
-#                         [0.], #LWCF_SP
-#                         [0.], #LWCF_PA
-#                         [0.], #LWCF_CAF
-#                         [0.], #PRECT_GLB
-#        #                        ['PRECT_DYCOMS', 0.01], \
-#        #                        ['PRECT_HAWAII', 0.01], \
-#        #                        ['PRECT_VOCAL', 0.01], \
-#                         [0.], #PRECT_LBA
-#                         [0.], #PRECT_WP
-#                         [0.], #PRECT_EP
-#                         [0.], #PRECT_NP
-#                         [0.], #PRECT_SP
-#                         [0.], #PRECT_PA
-#                         [0.]  #PRECT_CAF
-#                         ] )
+    zero_obs = np.array( [ \
+                         [1.], #SWCF_GLB
+                         [1.], #SWCF_DYCOMS
+                         [1.], #SWCF_HAWAII
+                         [1.], #SWCF_VOCAL
+                         [1.], #SWCF_LBA
+                         [1.], #SWCF_WP
+                         [1.], #SWCF_EP
+                         [1.], #SWCF_NP
+                         [1.], #SWCF_SP
+                         [1.], #SWCF_PA
+                         [1.], #SWCF_CAF
+                         [1.], #LWCF_GLB
+        #                        ['LWCF_DYCOMS', 0.01], \
+        #                        ['LWCF_HAWAII', 0.01], \
+        #                        ['LWCF_VOCAL', 0.01], \
+                         [1.], #LWCF_LBA
+                         [1.], #LWCF_WP
+                         [1.], #LWCF_EP
+                         [1.], #LWCF_NP
+                         [1.], #LWCF_SP
+                         [1.], #LWCF_PA
+                         [1.], #LWCF_CAF
+                         [1.], #PRECT_GLB
+        #                        ['PRECT_DYCOMS', 0.01], \
+        #                        ['PRECT_HAWAII', 0.01], \
+        #                        ['PRECT_VOCAL', 0.01], \
+                         [1.], #PRECT_LBA
+                         [1.], #PRECT_WP
+                         [1.], #PRECT_EP
+                         [1.], #PRECT_NP
+                         [1.], #PRECT_SP
+                         [1.], #PRECT_PA
+                         [1.]  #PRECT_CAF
+                         ] )
 
     # Calculate solution in transformed space
     dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights * np.transpose(maxMagParamValsRow)
 #    dparamsSoln = svdInvrsNormlzdWeighted @ ( metricsWeights * zero_obs ) * np.transpose(maxMagParamValsRow)
+    # defaultBiasesApprox = (forward model soln - default soln)
     defaultBiasesApprox = sensMatrix @ dparamsSoln
 #    dparamsSolnFrac = svdInvrsNormlzdWeighted @ metricsWeights
 #    defaultBiasesApprox = normlzdWeightedSensMatrix @ dparamsSolnFrac * \
 #                          np.reciprocal(metricsWeights) * defaultBiasesCol
-#    pdb.set_trace()
+    #pdb.set_trace()
     paramsSoln = np.transpose(defaultParamValsOrigRow) + dparamsSoln
     # Create matrix whose columns are the columns of v divided by singular values
     #    (see 15.4.18 of Numerical Recipes)
@@ -515,6 +527,8 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, 
     paramsLowVals = np.transpose(defaultParamValsOrigRow) + dparamsLowVals
     dparamsHiVals = dparamsSoln + dparamsErrStd
     paramsHiVals = np.transpose(defaultParamValsOrigRow) + dparamsHiVals
+    defaultBiasesApproxLowVals = sensMatrix @ dparamsLowVals
+    defaultBiasesApproxHiVals = sensMatrix @ dparamsHiVals
     #pdb.set_trace()
     # Transform some variables from [-inf,inf] back to [0,inf] range
     for idx in np.arange(numParams):
@@ -529,7 +543,8 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, 
             paramsLowVals[idx,0] = np.exp(dparamsLowVals[idx,0]) * defaultParamValsOrigRow[0,idx]
             paramsHiVals[idx,0] = np.exp(dparamsHiVals[idx,0]) * defaultParamValsOrigRow[0,idx]
 
-    return ( paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, defaultBiasesApprox )
+    return (paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, \
+            defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals)
 
 def setupObsCol(obsMetricValsDict, metricsNames):
     """
