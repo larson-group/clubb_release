@@ -930,8 +930,6 @@ module parameters_tunable
       mult_factor_zt, &  ! Uses gr%dzt for nu values on zt levels
       mult_factor_zm     ! Uses gr%dzm for nu values on zm levels
 
-    integer :: k  ! Loop variable
-
     !--------------- Begin code -------------------------
 
     if ( .not. allocated( nu1_vert_res_dep ) ) then
