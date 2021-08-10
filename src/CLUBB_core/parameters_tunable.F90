@@ -930,9 +930,6 @@ module parameters_tunable
       mult_factor_zt, &  ! Uses gr%dzt for nu values on zt levels
       mult_factor_zm     ! Uses gr%dzm for nu values on zm levels
 
-    ! Flag to enable nu values that are a function of grid spacing
-    logical, parameter :: l_nu_grid_dependent = .false.
-
     integer :: k  ! Loop variable
 
     !--------------- Begin code -------------------------
@@ -1017,31 +1014,15 @@ module parameters_tunable
 
       ! The nu's are chosen for deltaz <= 40 m. Looks like they must
       ! be adjusted for larger grid spacings (Vince Larson)
-      if( .not. l_nu_grid_dependent ) then
-        ! Use a constant mult_factor so nu does not depend on grid spacing
-        if( avg_deltaz > grid_spacing_thresh ) then
-          mult_factor_zt = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-          mult_factor_zm = mult_factor_zt
-        else
-          mult_factor_zt = 1.0_core_rknd
-          mult_factor_zm = 1.0_core_rknd
-        end if
-      else  ! l_nu_grid_dependent = .true.
-        ! mult_factor will vary to create nu values that vary with grid spacing
-        do k = 1, gr%nz
-          if( gr%dzm(k) > grid_spacing_thresh ) then
-            mult_factor_zm(k) = 1.0_core_rknd + mult_coef * log( gr%dzm(k) / grid_spacing_thresh )
-          else
-            mult_factor_zm(k) = 1.0_core_rknd
-          end if
 
-          if( gr%dzt(k) > grid_spacing_thresh ) then
-            mult_factor_zt(k) = 1.0_core_rknd + mult_coef * log( gr%dzt(k) / grid_spacing_thresh )
-          else
-            mult_factor_zt(k) = 1.0_core_rknd
-          end if
-        end do
-      end if ! l_nu_grid_dependent
+      ! Use a constant mult_factor so nu does not depend on grid spacing
+      if( avg_deltaz > grid_spacing_thresh ) then
+        mult_factor_zt = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
+        mult_factor_zm = mult_factor_zt
+      else
+        mult_factor_zt = 1.0_core_rknd
+        mult_factor_zm = 1.0_core_rknd
+      end if
 
       !mult_factor = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
       nu1_vert_res_dep   =  nu1 * mult_factor_zm
