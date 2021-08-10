@@ -390,9 +390,6 @@ module advance_clubb_core_module
 
     ! Constant Parameters
 
-    logical, parameter :: &
-      l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
-
     real( kind = core_rknd ), parameter :: &
       tau_const = 1000._core_rknd
 
@@ -1519,7 +1516,7 @@ module advance_clubb_core_module
                              thv_ds_zm, cloud_frac, Lscale,               & ! intent(in)
                              wp3_on_wp2, wp3_on_wp2_zt,                   & ! intent(in)
                              pdf_implicit_coefs_terms,                    & ! intent(in)
-                             l_iter_xp2_xpyp, dt_advance,                 & ! intent(in)
+                             dt_advance,                 & ! intent(in)
                              sclrm, wpsclrp,                              & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,           & ! intent(in)
                              wp2_splat,                                   & ! intent(in)
