@@ -37,6 +37,21 @@ class VariableGroupBase(VariableGroup):
             {'var_names': ['corr_chi_eta_2'], 'legend_label': 'PDF comp. 2'},
         ]
 
+        tau_i_lines = [
+            {'var_names': ['invrs_tau_zm'], 'legend_label': 'invrs_tau_zm'},
+            {'var_names': ['invrs_tau_xp2_zm'], 'legend_label': 'invrs_tau_xp2_zm'},
+            {'var_names': ['invrs_tau_wp2_zm'], 'legend_label': 'invrs_tau_wp2_zm'},
+            {'var_names': ['invrs_tau_wpxp_zm'], 'legend_label': 'invrs_tau_wpxp_zm'},
+            {'var_names': ['invrs_tau_wp3_zm'], 'legend_label': 'invrs_tau_wp3_zm'},
+        ]
+
+        tau_j_lines = [
+            {'var_names': ['invrs_tau_no_N2_zm'], 'legend_label': 'invrs_tau_no_N2_zm'},
+            {'var_names': ['invrs_tau_bkgnd'], 'legend_label': 'invrs_tau_bkgnd'},
+            {'var_names': ['invrs_tau_sfc'], 'legend_label': 'invrs_tau_sfc'},
+            {'var_names': ['invrs_tau_shear'], 'legend_label': 'invrs_tau_shear'},
+        ]
+
         self.variable_definitions = [
             {'var_names':
                 {
@@ -402,26 +417,43 @@ class VariableGroupBase(VariableGroup):
                 },
                 'type': Panel.TYPE_TIMESERIES,
             },
-            {'var_names':
+            {'var_names': # First set of inverse tau variables (multiple lines)
                 {
-                    'clubb': ['tau_zm'],
-                    'sam': ['tau_zm'],
-                    'coamps': ['tau_zm'],
-                    'r408': ['tau_zm'],
-                    'hoc': ['tau_zm'],
-                    'e3sm': ['tau_zm'],
-                    'cam': ['tau_zm'],
-                    'wrf': ['tau_zm'],
+                    'clubb': [''],
+                    'sam': [],  # no quotes here so no SAM lines plotted
+                    'coamps': [], # no quotes here so no COAMPS lines plotted
+                    'r408': [''],
+                    'hoc': [''],
+                    'e3sm': [''],
+                    'cam': [''],
+                    'wrf': [''],
                 },
-                'title': 'CLUBB time-scale tau',
-                'axis_title': 'tau [s]',
+                'lines': tau_i_lines,
+                'title': 'CLUBB inverse time-scale, 1/tau (panel 1)',
+                'axis_title': r'inverse tau [s$^{-1}$]',
+                'sci_scale': 0,
+            },
+            {'var_names': # Second set of inverse tau variables (multiple lines)
+                {
+                    'clubb': [''],
+                    'sam': [], # no quotes here so no SAM lines plotted
+                    'coamps': [], # no quotes here so no COAMPS lines plotted
+                    'r408': [''],
+                    'hoc': [''],
+                    'e3sm': [''],
+                    'cam': [''],
+                    'wrf': [''],
+                },
+                'lines': tau_j_lines,
+                'title': 'CLUBB inverse time-scale, 1/tau (panel 2)',
+                'axis_title': r'inverse tau [s$^{-1}$]',
                 'sci_scale': 0,
             },
             {'var_names':
                 {
                     'clubb': ['Lscale'],
-                    'sam': ['Lscale'],
-                    'coamps': ['Lscale'],
+                    'sam': [],
+                    'coamps': [],
                     'r408': ['Lscale'],
                     'hoc': ['Lscale'],
                     'e3sm': ['Lscale'],
@@ -435,8 +467,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['bv_freq_sqd'],
-                'sam': ['BV_FREQ_SQD'],
-                'coamps': ['bv_freq_sqd'],
+                'sam': [],
+                'coamps': [],
                 'r408': ['bv_freq_sqd'],
                 'hoc': ['bv_freq_sqd'],
                 'e3sm': ['bv_freq_sqd'],
@@ -485,32 +517,32 @@ class VariableGroupBase(VariableGroup):
                 },
                 'sci_scale': -5,
             },
-            {'var_names':
+            {'var_names': # Correlation of w and chi (multiple lines)
                 {
-                    'clubb': ['corr_w_chi_i'],
-                    'sam': ['corr_w_chi_i'],
-                    'coamps': ['corr_w_chi_i'],
-                    'r408': ['corr_w_chi_i'],
-                    'hoc': ['corr_w_chi_i'],
-                    'e3sm': ['corr_w_chi_i'],
-                    'cam': ['corr_w_chi_i'],
-                    'wrf': ['corr_w_chi_i'],
+                    'clubb': [''],
+                    'sam': [], # no quotes here so no SAM lines plotted
+                    'coamps': [], # no quotes here so no COAMPS lines plotted
+                    'r408': [''],
+                    'hoc': [''],
+                    'e3sm': [''],
+                    'cam': [''],
+                    'wrf': [''],
                 },
                 'lines': corr_w_chi_i_lines,
                 'title': "Correlation of w and chi",
                 'axis_title': "corr_w_chi_i [$-$]",
                 'sci_scale': 0,
             },
-            {'var_names':
+            {'var_names': # Correlation of chi and eta (multiple lines)
                 {
-                    'clubb': ['corr_chi_eta_i'],
-                    'sam': ['corr_chi_eta_i'],
-                    'coamps': ['corr_chi_eta_i'],
-                    'r408': ['corr_chi_eta_i'],
-                    'hoc': ['corr_chi_eta_i'],
-                    'e3sm': ['corr_chi_eta_i'],
-                    'cam': ['corr_chi_eta_i'],
-                    'wrf': ['corr_chi_eta_i'],
+                    'clubb': [''],
+                    'sam': [], # no quotes here so no SAM lines plotted
+                    'coamps': [], # no quotes here so no COAMPS lines plotted
+                    'r408': [''],
+                    'hoc': [''],
+                    'e3sm': [''],
+                    'cam': [''],
+                    'wrf': [''],
                 },
                 'lines': corr_chi_eta_i_lines,
                 'title': "Correlation of chi and eta",
