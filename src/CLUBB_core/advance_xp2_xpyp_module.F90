@@ -49,7 +49,7 @@ module advance_xp2_xpyp_module
                                wprtpthlp, Kh_zt, rtp2_forcing,            & ! In
                                thlp2_forcing, rtpthlp_forcing,            & ! In
                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,     & ! In
-                               thv_ds_zm, cloud_frac, Lscale,             & ! In
+                               thv_ds_zm, cloud_frac,                     & ! In
                                wp3_on_wp2, wp3_on_wp2_zt,                 & ! In
                                pdf_implicit_coefs_terms,                  & ! In
                                dt,                                        & ! In
@@ -233,7 +233,6 @@ module advance_xp2_xpyp_module
       invrs_rho_ds_zm, & ! Inv. dry, static density @ mom. levs. [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on mom. levs. [K]
       cloud_frac,      & ! Cloud fraction (thermodynamic levels) [-]
-      Lscale,          & ! Mixing length                         [m]
       wp3_on_wp2,      & ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
       wp3_on_wp2_zt      ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
 
@@ -595,8 +594,8 @@ module advance_xp2_xpyp_module
 
        ! Explicit contributions to up2
        call xp2_xpyp_uv_rhs( gr, xp2_xpyp_up2, dt, & ! In
-                             wp2, wp2_zt, wpthvp, & ! In
-                             Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
+                             wp2, wpthvp, & ! In
+                             C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
@@ -629,8 +628,8 @@ module advance_xp2_xpyp_module
 
        ! Explicit contributions to vp2
        call xp2_xpyp_uv_rhs( gr, xp2_xpyp_vp2, dt, & ! In
-                             wp2, wp2_zt, wpthvp, & ! In
-                             Lscale, C4_C14_1d, invrs_tau_wp2_zm, & ! In
+                             wp2, wpthvp, & ! In
+                             C4_C14_1d, invrs_tau_wp2_zm, & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
@@ -665,8 +664,8 @@ module advance_xp2_xpyp_module
 
        ! Explicit contributions to up2
        call xp2_xpyp_uv_rhs( gr, xp2_xpyp_up2, dt, & ! In
-                             wp2, wp2_zt, wpthvp, & ! In
-                             Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
+                             wp2, wpthvp, & ! In
+                             C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
@@ -675,8 +674,8 @@ module advance_xp2_xpyp_module
 
        ! Explicit contributions to vp2
        call xp2_xpyp_uv_rhs( gr, xp2_xpyp_vp2, dt, & ! In
-                             wp2, wp2_zt, wpthvp, & ! In
-                             Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
+                             wp2, wpthvp, & ! In
+                             C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
@@ -2294,8 +2293,8 @@ module advance_xp2_xpyp_module
 
   !==================================================================================
   subroutine xp2_xpyp_uv_rhs( gr, solve_type, dt, & ! In
-                              wp2, wp2_zt, wpthvp, & ! In
-                              Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
+                              wp2, wpthvp, & ! In
+                              C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
                               thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                               lhs_ta, rhs_ta, &
@@ -2388,9 +2387,7 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       rhs_ta,                 & ! RHS turbulent advection terms
       wp2,                    & ! w'^2 (momentum levels)              [m^2/s^2]
-      wp2_zt,                 & ! w'^2 interp. to thermo. levels      [m^2/s^2]
       wpthvp,                 & ! w'th_v' (momentum levels)             [K m/s]
-      Lscale,                 & ! Mixing Length                             [m]
       C4_C14_1d,              & ! Combination of model params. C_4 and C_14 [-]
       invrs_tau_wp2_zm,       & ! Inverse time-scale for wp2 (up2, vp2) on m-levs.  [1/s]
       xam,                    & ! x_am (thermodynamic levels)             [m/s]
@@ -2484,8 +2481,8 @@ module advance_xp2_xpyp_module
 
         ! RHS pressure term 2 (pr2).
         rhs(k) = rhs(k) + term_pr2( gr, C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), &
-                                  wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, &
-                                  Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) )
+                                  wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k )
+                                  
     enddo ! k=2..gr%nz-1
 
 
@@ -2557,9 +2554,8 @@ module advance_xp2_xpyp_module
             ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
             call stat_update_var_pt( ixapxbp_pr2, k, & ! Intent(in)
                  term_pr2( gr, C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), & ! In
-                           wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, & ! intent(in)
-                           Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) ), & ! intent(in)
-                           stats_zm )                          ! Intent(inout)
+                           wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k ), & ! intent(in)
+                           stats_zm)                                     ! intent(inout)
 
             ! x'y' term tp is completely explicit; call stat_update_var_pt.
             call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
@@ -4672,8 +4668,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   function term_pr2( gr, C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, & 
-                          vpwp, um, vm, invrs_dzm, kp1, k, & 
-                          Lscalep1, Lscale, wp2_ztp1, wp2_zt ) &
+                          vpwp, um, vm, invrs_dzm, kp1, k ) & 
   result( rhs )
 
     ! Description:
@@ -4718,9 +4713,7 @@ module advance_xp2_xpyp_module
 
     use constants_clubb, only: & ! Constants 
         grav, & ! Gravitational acceleration [m/s^2]
-        one, &
         two_thirds, &
-        zero, &
         zero_threshold
 
     use grid_class, only: &
@@ -4744,11 +4737,7 @@ module advance_xp2_xpyp_module
       wpthvp,    & ! w'th_v'(k)                                     [m/K/s]
       upwp,      & ! u'w'(k)                                        [m^2/s^2]
       vpwp,      & ! v'w'(k)                                        [m^2/s^2]
-      invrs_dzm, & ! Inverse of the grid spacing (k)                [1/m]
-      Lscalep1,  & ! Mixing length (k+1)                            [m]
-      Lscale,    & ! Mixing length (k)                              [m]
-      wp2_ztp1,  & ! w'^2(k+1) (thermo. levels)                     [m^2/s^2]
-      wp2_zt       ! w'^2(k)   (thermo. levels)                     [m^2/s^2]
+      invrs_dzm    ! Inverse of the grid spacing (k)                [1/m]
 
     ! Note: Entire arrays of um and vm are now required rather than um and vm
     ! only at levels k and k+1.  The entire array is necessary when a vertical
@@ -4764,107 +4753,21 @@ module advance_xp2_xpyp_module
     ! Return Variable
     real( kind = core_rknd ) :: rhs
 
-    ! Local Variable(s)  --ldgrant, March 2010
-    real( kind = core_rknd ), parameter :: &
-      ! Constants empirically determined for experimental version of term_pr2 
-      ! ldgrant March 2010
-      constant1 = one, &     ! [m/s]
-      constant2 = 1000.0_core_rknd, &  ! [m]
-      vert_avg_depth = 200.0_core_rknd ! Depth over which to average d(um)/dz and d(vm)/dz [m]
-
-    real( kind = core_rknd ) :: &
-      zt_high, & ! altitude above current altitude zt(k)         [m]
-      um_high, & ! um at altitude zt_high                        [m/s]
-      vm_high, & ! vm at altitude zt_high                        [m/s]
-      zt_low,  & ! altitude below (or at) current altitude zt(k) [m]
-      um_low,  & ! um at altitude zt_low                         [m/s]
-      vm_low     ! vm at altitude zt_low                         [m/s]
-
-    logical, parameter :: & 
-      l_use_experimental_term_pr2 = .false., & ! If true, use experimental version
-                                               ! of term_pr2 calculation
-      l_use_vert_avg_winds = .true. ! If true, use vert_avg_depth average
     ! calculation for d(um)/dz and d(vm)/dz
 
     !------ Begin code ------------
 
-    if( .not. l_use_experimental_term_pr2 ) then
-      ! use original version of term_pr2
+    ! use original version of term_pr2
 
-      ! As applied to w'2
-      rhs = + two_thirds * &
-                      ( C_uu_buoy &
-                        * ( grav / thv_ds_zm ) * wpthvp &
-                      + C_uu_shr &
-                        * ( - upwp * invrs_dzm * ( um(kp1) - um(k) ) &
-                            - vpwp * invrs_dzm * ( vm(kp1) - vm(k) ) &
-                          ) &
-                      )
-
-    else ! use experimental version of term_pr2 --ldgrant March 2010
-
-      if( l_use_vert_avg_winds ) then
-        ! We found that using a 200m running average of d(um)/dz and d(vm)/dz
-        ! produces larger spikes in up2 and vp2 near the inversion for
-        ! the stratocumulus cases.
-        call find_endpts_for_vert_avg_winds &
-             ( gr, vert_avg_depth, k, um, vm, & ! intent(in)
-               zt_high, um_high, vm_high, & ! intent(out)
-               zt_low, um_low, vm_low )     ! intent(out)
-
-      else ! Do not use a vertical average calculation for d(um)/dz and d(vm)/dz
-        zt_high = gr%zt(kp1)
-        um_high = um(kp1)
-        vm_high = vm(kp1)
-
-        zt_low  = gr%zt(k)
-        um_low  = um(k)
-        vm_low  = vm(k)
-      end if ! l_use_vert_avg_winds
-
-      ! *****NOTES on experimental version*****
-      ! Leah Grant and Vince Larson eliminated the contribution from wpthvp
-      ! because terms with d(wp2)/dz include buoyancy effects and seem to
-      ! produce better results.
-      !
-      ! We also eliminated the contribution from the momentum flux terms
-      ! because they didn't contribute to the results.
-      !
-      ! The constant1 line does not depend on shear.  This is important for
-      ! up2 and vp2 generation in cases that have little shear such as FIRE.
-      ! We also made the constant1 line proportional to d(Lscale)/dz to account
-      ! for higher spikes in up2 and vp2 near a stronger inversion.  This
-      ! increases up2 and vp2 near the inversion for the stratocumulus cases,
-      ! but overpredicts up2 and vp2 near cloud base in cumulus cases such
-      ! as BOMEX where d(Lscale)/dz is large.  Therefore, the d(Lscale)/dz
-      ! contribution is commented out for now.
-      !
-      ! The constant2 line includes the possibility of shear generation of
-      ! up2 and vp2, which is important for some cases.  The current functional
-      ! form used is:
-      !   constant2 * |d(wp2)/dz| * |d(vm)/dz|
-      ! We use  |d(vm)/dz|  instead of  |d(um)/dz| + |d(vm)/dz|  here because
-      ! this allows for different profiles of up2 and vp2, which occur for
-      ! many cases.  In addition, we found that in buoyant cases, up2 is
-      ! more related to d(vm)/dz and vp2 is more related to d(um)/dz.  This
-      ! occurs if horizontal rolls are oriented in the direction of the shear
-      ! vector.  However, in stably stratified cases, the opposite relation is
-      ! true (horizontal rolls caused by shear are perpendicular to the shear
-      ! vector).  This effect is not yet accounted for.
-      !
-      ! For better results, we reduced the value of C_uu_shr from 5.2 to 3.0 and
-      ! changed the eddy diffusivity coefficient Kh so that it is
-      ! proportional to 1.5*wp2 rather than to em.
-      rhs = + two_thirds * C_uu_shr & 
-              * ( constant1 * abs( wp2_ztp1 - wp2_zt ) * invrs_dzm &
-                    ! * abs( Lscalep1 - Lscale ) * invrs_dzm &
-                  + constant2 * abs( wp2_ztp1 - wp2_zt ) * invrs_dzm &
-                    * abs( vm_high - vm_low ) / ( zt_high - zt_low ) &
-                     + ( Lscalep1 + Lscale ) * zero &    
-                             ! This line eliminates an Intel compiler
-                )            ! warning that Lscalep1/Lscale are not
-                             ! used. -meyern
-    end if ! .not. l_use_experimental_term_pr2
+    ! As applied to w'2
+    rhs = + two_thirds * &
+                    ( C_uu_buoy &
+                      * ( grav / thv_ds_zm ) * wpthvp &
+                    + C_uu_shr &
+                      * ( - upwp * invrs_dzm * ( um(kp1) - um(k) ) &
+                          - vpwp * invrs_dzm * ( vm(kp1) - vm(k) ) &
+                        ) &
+                    )
 
     ! Added by dschanen for ticket #36
     ! We have found that when shear generation is zero this term will only be
@@ -4874,118 +4777,6 @@ module advance_xp2_xpyp_module
 
     return
   end function term_pr2
-
-  !=============================================================================
-  subroutine find_endpts_for_vert_avg_winds &
-                  ( gr, vert_avg_depth, k, um, vm, & ! intent(in)
-                    zt_high, um_high, vm_high, & ! intent(out)
-                    zt_low, um_low, vm_low )     ! intent(out)
-    ! Description:
-    ! This subroutine determines values of um and vm which are
-    ! +/- [vert_avg_depth/2] m above and below the current altitude zt(k).
-    ! This is for the purpose of using a running vertical average
-    ! calculation of d(um)/dz and d(vm)/dz in term_pr2 (over a depth
-    ! vert_avg_depth).  E.g. If a running average over 200m is desired,
-    ! then this subroutine will determine the values of um and vm which
-    ! are 100m above and below the current level.
-    ! ldgrant March 2010
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        two    ! Constant(s)
-
-    use interpolation, only : &
-        binary_search, lin_interpolate_two_points  ! Function(s)
-
-    use grid_class, only: &
-        grid ! Type
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    type (grid), target, intent(in) :: gr
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      vert_avg_depth ! Depth over which to average d(um)/dz
-    ! and d(vm)/dz in term_pr2 [m]
-
-    integer, intent(in) :: &
-      k ! current level in xp2_xpyp_uv_rhs loop
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      um,  & ! mean zonal wind       [m/s]
-      vm     ! mean meridional wind  [m/s]
-
-    ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      zt_high, & ! current altitude zt(k) + depth [m]
-      um_high, & ! um at altitude zt_high         [m/s]
-      vm_high, & ! vm at altitude zt_high         [m/s]
-      zt_low,  & ! current altitude zt(k) - depth [m]
-      um_low,  & ! um at altitude zt_low          [m/s]
-      vm_low     ! vm at altitude zt_low          [m/s]
-
-    ! Local Variables
-    real( kind = core_rknd ) :: depth ! vert_avg_depth/2 [m]
-
-    integer :: k_high, k_low
-    ! Number of levels above (below) the current level where altitude is
-    ! [depth] greater (less) than the current altitude
-    ! [unless zt(k) < [depth] from an upper/lower boundary]
-
-    !------ Begin code ------------
-
-    depth = vert_avg_depth / two
-
-    ! Find the grid level that contains the altitude greater than or
-    ! equal to the current altitude + depth
-    k_high = binary_search( gr%nz, gr%zt, gr%zt(k)+depth )
-    ! If the current altitude + depth is greater than the highest
-    ! altitude, binary_search returns a value of -1
-    if ( k_high == -1 ) k_high = gr%nz
-
-    if ( k_high == gr%nz ) then
-      ! Current altitude + depth is higher than or exactly at the top grid level.
-      ! Since this is a ghost point, use the altitude at grid level nzmax-1
-      k_high = gr%nz-1
-      zt_high = gr%zt(k_high)
-      um_high = um(k_high)
-      vm_high = vm(k_high)
-    else ! Do an interpolation to find um & vm at current altitude + depth.
-      zt_high = gr%zt(k)+depth
-      um_high = lin_interpolate_two_points( zt_high, gr%zt(k_high), gr%zt(k_high-1), &
-                         um(k_high), um(k_high-1) )
-      vm_high = lin_interpolate_two_points( zt_high, gr%zt(k_high), gr%zt(k_high-1), &
-                         vm(k_high), vm(k_high-1) )
-    end if ! k_high ...
-
-
-    ! Find the grid level that contains the altitude less than or
-    ! equal to the current altitude - depth
-    k_low = binary_search( gr%nz, gr%zt, gr%zt(k)-depth )
-    ! If the current altitude - depth is less than the lowest
-    ! altitude, binary_search returns a value of -1
-    if ( k_low == -1 ) k_low = 2
-
-    if ( k_low == 2 ) then
-      ! Current altitude - depth is less than or exactly at grid level 2.
-      ! Since grid level 1 is a ghost point, use the altitude at grid level 2
-      zt_low = gr%zt(k_low)
-      um_low = um(k_low)
-      vm_low = vm(k_low)
-    else ! Do an interpolation to find um at current altitude - depth.
-      zt_low = gr%zt(k)-depth
-      um_low = lin_interpolate_two_points( zt_low, gr%zt(k_low), gr%zt(k_low-1), &
-                        um(k_low), um(k_low-1) )
-      vm_low = lin_interpolate_two_points( zt_low, gr%zt(k_low), gr%zt(k_low-1), &
-                        vm(k_low), vm(k_low-1) )
-    end if ! k_low ...
-
-    return
-  end subroutine find_endpts_for_vert_avg_winds
 
   !=============================================================================
   subroutine pos_definite_variances( gr, solve_type, dt, tolerance, &
