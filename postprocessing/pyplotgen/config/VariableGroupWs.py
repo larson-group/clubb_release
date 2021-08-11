@@ -152,7 +152,7 @@ class VariableGroupWs(VariableGroup):
                 {
                 'clubb': ['wprtpthlp'],
                 'sam': ['WPRTPTHLP'],
-                'coamps': ['wpqtpthlp','wprtpthlp', 'wprtp'],
+                'coamps': ['wpqtpthlp','wprtpthlp'],
                 'r408': ['wprtpthlp'],
                 'hoc': ['wprtpthlp'],
                 'e3sm': ['wprtpthlp'],
