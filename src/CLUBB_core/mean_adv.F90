@@ -213,11 +213,8 @@ module mean_adv
       lhs_ma    ! Mean advection contributions to lhs    [1/s]
 
     ! Local Variables
-    logical, parameter ::  &
-      l_ub_const_deriv = .true.  ! Flag to use the "one-sided" upper boundary.
 
     integer :: k    ! Vertical level index
-
 
     ! Set lower boundary array to 0
     lhs_ma(:,1) = 0.0_core_rknd
@@ -244,49 +241,23 @@ module mean_adv
        enddo ! k = 2, gr%nz, 1
 
        ! Upper Boundary
-       if ( l_ub_const_deriv ) then
 
-          ! Special discretization for constant derivative method (or
-          ! "one-sided" derivative method).
+        ! Special discretization for zero derivative method, where the
+        ! derivative d(var_zt)/dz over the model top is set to 0, in order
+        ! to stay consistent with the zero-flux boundary condition option
+        ! in the eddy diffusion code.
+        ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs_ma(kp1_tdiag,gr%nz) & 
+        = zero
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs_ma(k_tdiag,gr%nz) & 
+        = + wm_zt(gr%nz) &
+            * invrs_dzt(gr%nz) * ( one - gr%weights_zt2zm(t_above,gr%nz-1) )
 
-          ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs_ma(kp1_tdiag,gr%nz) & 
-          = zero
-
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs_ma(k_tdiag,gr%nz) & 
-          = + wm_zt(gr%nz) &
-              * invrs_dzt(gr%nz) * ( gr%weights_zt2zm(t_above,gr%nz) &
-                                     - gr%weights_zt2zm(t_above,gr%nz-1) )
-
-          ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs_ma(km1_tdiag,gr%nz) & 
-          = + wm_zt(gr%nz) &
-              * invrs_dzt(gr%nz) * ( gr%weights_zt2zm(t_below,gr%nz) &
-                                     - gr%weights_zt2zm(t_below,gr%nz-1) )
-
-       else
-
-          ! Special discretization for zero derivative method, where the
-          ! derivative d(var_zt)/dz over the model top is set to 0, in order
-          ! to stay consistent with the zero-flux boundary condition option
-          ! in the eddy diffusion code.
-
-          ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs_ma(kp1_tdiag,gr%nz) & 
-          = zero
-
-          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs_ma(k_tdiag,gr%nz) & 
-          = + wm_zt(gr%nz) &
-              * invrs_dzt(gr%nz) * ( one - gr%weights_zt2zm(t_above,gr%nz-1) )
-
-          ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs_ma(km1_tdiag,gr%nz) & 
-          = - wm_zt(gr%nz) &
-              * invrs_dzt(gr%nz) * gr%weights_zt2zm(t_below,gr%nz-1)
-
-       endif ! l_ub_const_deriv
+        ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs_ma(km1_tdiag,gr%nz) & 
+        = - wm_zt(gr%nz) &
+            * invrs_dzt(gr%nz) * gr%weights_zt2zm(t_below,gr%nz-1)
 
 
     else ! l_upwind_xm_ma == .true.; use "upwind" differencing
