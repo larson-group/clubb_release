@@ -131,8 +131,7 @@ module interpolation
   !-------------------------------------------------------------------------------------------------
 
     use constants_clubb, only: &
-        three_halves, & ! Constant(s)
-        eps
+        eps ! Constant
 
     use clubb_precision, only: &
         core_rknd ! Constant
@@ -142,10 +141,6 @@ module interpolation
 
     implicit none
 
-    ! Constant Parameters
-    logical, parameter :: &
-      l_equation_21 = .true.
-      
     ! External
     intrinsic :: sign, abs, min
 
@@ -177,15 +172,8 @@ module interpolation
    
     ! ---- Begin Code ---- 
 
-    if ( l_equation_21 ) then
-      ! Use the formula from Steffen (1990), which should make the interpolation
-      ! less restrictive
-      coef1 = three_halves
-      coef2 = 1.0_core_rknd/three_halves
-    else
-      coef1 = 1.0_core_rknd
-      coef2 = 1.0_core_rknd
-    end if
+    coef1 = 1.0_core_rknd
+    coef2 = 1.0_core_rknd
 
     if ( km1 <= k00 ) then
       hm1 = z00 - zm1
