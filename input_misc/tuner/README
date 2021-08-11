@@ -133,6 +133,13 @@ of 0.25 for this.
 Tips for using Gunther's esa_driver (tune_type = iesa = 2 and l_esa_siarry = .false.).
 -------------------------------------------------------------------------------------
 
+The "initmax" values in the error_*.in files should be set as follows:
+
+ - For parameters that are not being tuned, set the initmax value to zero.
+ - For parameters being tuned, the initmax value gives the *maximum* value
+     the tuner will accept for that parameter.  Hence the range of possible
+     test values for a tuned parameter is from zero to the initmax value.
+
 To reduce the number of tuning iterations, i.e. calls to CLUBB, you may
 
 - Reduce no_improve_max, so that we don't require so many iterations without significant improvement;
