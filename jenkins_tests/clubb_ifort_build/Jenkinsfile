@@ -3,7 +3,8 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
-        sh '''compile/compile.bash -c config/linux_x86_64_ifort.bash'''
+        sh '''source /opt/intel/oneapi/setvars.sh --force > /dev/null
+              compile/compile.bash -c config/linux_x86_64_ifort.bash'''
       }
     }
     stage('Run') {
