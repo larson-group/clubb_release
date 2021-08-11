@@ -19,6 +19,10 @@ NIGHTLY=false
 RUN_TYPE='single'
 #RUN_TYPE='multiple'
 
+# directory to save initial (pre-tuner) runs
+INITIAL_OUTPUT_DIR='../initial_output'
+
+
 # The code below is borrowed from run_scm.bash to allow command line arguments to this script
 
 # Note that we use `"$@"' to let each command-line parameter expand to a 
@@ -217,6 +221,34 @@ sed -i -e 's/\!.*//' 'error.in'
 
 # Copy random seed
 cp $RAND_SEED .
+
+#######################################################################
+#
+# # run test cases with initial parameters & save output to separate directory
+if [ $NIGHTLY=false ] ; then
+
+  mkdir $INITIAL_OUTPUT_DIR
+
+  if [ $RUN_TYPE = 'single' ] ; then # Single Case.
+
+    # Concatenate *_model.in and *_stats.in into clubb.in
+    cat $STATS_OPT_IN $PARAMS_FILE $SILHS_PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
+     ../bin/clubb_standalone 2>&1
+    mv ../output/$RUN_CASE* $INITIAL_OUTPUT_DIR
+
+  elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
+
+    for EACH_CASE in "${MODEL_MULT[@]}"; do
+                MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
+                # Concatenate *_model.in and *_stats.in into clubb.in
+        cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
+                ../bin/clubb_standalone 2>&1
+        mv ../output/$EACH_CASE* $INITIAL_OUTPUT_DIR
+    done
+
+  fi
+
+fi
 
 #######################################################################
 #
