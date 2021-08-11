@@ -233,7 +233,7 @@ if [ $NIGHTLY=false ] ; then
 
     # Concatenate *_model.in and *_stats.in into clubb.in
     cat $STATS_OPT_IN $PARAMS_FILE $SILHS_PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
-     ../bin/clubb_standalone 2>&1
+     ../bin/clubb_standalone
     mv ../output/$RUN_CASE* $INITIAL_OUTPUT_DIR
 
   elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
@@ -242,7 +242,7 @@ if [ $NIGHTLY=false ] ; then
                 MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
                 # Concatenate *_model.in and *_stats.in into clubb.in
         cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
-                ../bin/clubb_standalone 2>&1
+                ../bin/clubb_standalone
         mv ../output/$EACH_CASE* $INITIAL_OUTPUT_DIR
     done
 
