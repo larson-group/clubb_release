@@ -8,7 +8,7 @@ pipeline {
     }
     stage('Run') {
       steps {
-         sh '''source /opt/intel/bin/ifortvars.sh intel64
+         sh '''source /opt/intel/oneapi/setvars.sh --force > /dev/null
                run_scripts/run_scm_all.bash'''
       }
     }
