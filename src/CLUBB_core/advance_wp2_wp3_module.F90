@@ -2017,10 +2017,6 @@ module advance_wp2_wp3_module
 
     type (grid), target, intent(in) :: gr
 
-    ! Constant parameters
-    logical, parameter :: &
-      l_wp3_2nd_buoyancy_term = .true.
-
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep length                           [s]
@@ -2160,38 +2156,35 @@ module advance_wp2_wp3_module
     lhs_pr_tp_wp3 = zero
 
     ! Experimental term from CLUBB TRAC ticket #411
-    if ( l_wp3_2nd_buoyancy_term ) then
 
-        ! Compute the vertical derivative of the u and v winds
-          dum_dz = ddzt( gr, um )
-          dvm_dz = ddzt( gr, vm )
+      ! Compute the vertical derivative of the u and v winds
+        dum_dz = ddzt( gr, um )
+        dvm_dz = ddzt( gr, vm )
 
-        ! Calculate term
-        call wp3_term_pr_turb_rhs( gr, C_wp3_pr_turb, Kh_zt(:), wpthvp(:), & ! intent(in)
-                                   dum_dz(:), dvm_dz(:),               & ! intent(in)
-                                   upwp(:), vpwp(:),                   & ! intent(in)
-                                   thv_ds_zt(:), gr%invrs_dzt(:),      & ! intent(in)
-                                   rho_ds_zm(:), invrs_rho_ds_zt(:),   & !intent(in)
-                                   em(:), wp2(:),                      & ! intent(in)
-                                   rhs_pr_turb_wp3(:),                 & ! intent(out)
-                                   l_use_tke_in_wp3_pr_turb_term )       ! intent(in)
+      ! Calculate term
+      call wp3_term_pr_turb_rhs( gr, C_wp3_pr_turb, Kh_zt(:), wpthvp(:), & ! intent(in)
+                                 dum_dz(:), dvm_dz(:),               & ! intent(in)
+                                 upwp(:), vpwp(:),                   & ! intent(in)
+                                 thv_ds_zt(:), gr%invrs_dzt(:),      & ! intent(in)
+                                 rho_ds_zm(:), invrs_rho_ds_zt(:),   & !intent(in)
+                                 em(:), wp2(:),                      & ! intent(in)
+                                 rhs_pr_turb_wp3(:),                 & ! intent(out)
+                                 l_use_tke_in_wp3_pr_turb_term )       ! intent(in)
 
-        call wp3_term_pr_dfsn_rhs( gr, C_wp3_pr_dfsn,                  & ! intent(in)
-                                   rho_ds_zm(:), invrs_rho_ds_zt(:),   & ! intent(in)
-                                   wp2up2(:), wp2vp2(:), wp4(:),       & ! intent(in)
-                                   up2(:), vp2(:), wp2(:),             & ! intent(in)
-                                   rhs_pr_dfsn_wp3(:) )                  ! intent(out)
+      call wp3_term_pr_dfsn_rhs( gr, C_wp3_pr_dfsn,                  & ! intent(in)
+                                 rho_ds_zm(:), invrs_rho_ds_zt(:),   & ! intent(in)
+                                 wp2up2(:), wp2vp2(:), wp4(:),       & ! intent(in)
+                                 up2(:), vp2(:), wp2(:),             & ! intent(in)
+                                 rhs_pr_dfsn_wp3(:) )                  ! intent(out)
 
-        ! Add term
-        do k = 2, gr%nz-1
+      ! Add term
+      do k = 2, gr%nz-1
 
-            k_wp3 = 2*k - 1
+          k_wp3 = 2*k - 1
 
-            rhs(k_wp3) = rhs(k_wp3) + rhs_pr_turb_wp3(k) + rhs_pr_dfsn_wp3(k)
+          rhs(k_wp3) = rhs(k_wp3) + rhs_pr_turb_wp3(k) + rhs_pr_dfsn_wp3(k)
 
-        end do
-
-    end if
+      end do
 
 
     call wp2_term_pr_dfsn_rhs( gr, C_wp2_pr_dfsn, &
@@ -2774,13 +2767,10 @@ module advance_wp2_wp3_module
             endif
                       
             ! Experimental bouyancy term
-            if ( l_wp3_2nd_buoyancy_term ) then
-                call stat_update_var_pt( iwp3_pr_turb, k, rhs_pr_turb_wp3(k), & ! intent(in)
-                                         stats_zt )                             ! intent(inout)
-                call stat_update_var_pt( iwp3_pr_dfsn, k, rhs_pr_dfsn_wp3(k), & ! intent(in)
-                                         stats_zt )                             ! intent(inout)
-            end if
-
+              call stat_update_var_pt( iwp3_pr_turb, k, rhs_pr_turb_wp3(k), & ! intent(in)
+                                       stats_zt )                             ! intent(inout)
+              call stat_update_var_pt( iwp3_pr_dfsn, k, rhs_pr_dfsn_wp3(k), & ! intent(in)
+                                       stats_zt )                             ! intent(inout)
         end do
 
     endif
