@@ -168,7 +168,8 @@ vars_zm =
 'wpthlp_entermfl', 'wpthlp_exit_mfl', 'wprtp_enter_mfl', 'wprtp_exit_mfl',
 'wpthlp_mfl_min', 'wpthlp_mfl_max', 'wprtp_mfl_min', 'wprtp_mfl_max', 'stability_correction',
 'bv_freq_sqd', 'shear_sqd', 'invrs_tau_zm', 'invrs_tau_xp2_zm', 'invrs_tau_wp2_zm',
-'invrs_tau_wpxp_zm', 'invrs_tau_wp3_zm', 'invrs_tau_no_N2_zm', 'Richardson_num',
+'invrs_tau_wpxp_zm', 'invrs_tau_wp3_zm', 'invrs_tau_no_N2_zm', 'invrs_tau_bkgnd',
+'invrs_tau_sfc', 'invrs_tau_shear', 'Richardson_num',
 ''
 
 vars_rad_zt =
