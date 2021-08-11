@@ -2243,9 +2243,7 @@ module advance_clubb_core_module
         imax_F_rt,           &
         imin_F_thl,          &
         imax_F_thl,          &
-        ircp2,               &
-        ircm_refined,        &
-        icloud_frac_refined
+        ircp2               
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -2262,16 +2260,6 @@ module advance_clubb_core_module
 
     !!! External
     intrinsic :: sqrt, min, max, exp, mod, real
-
-    logical, parameter :: &
-      l_refine_grid_in_cloud = .false., & ! Compute cloud_frac and rcm on a refined grid
-
-      l_interactive_refined  = .false.    ! Should the refined grid code feed into the model?
-                                          ! Only has meaning if l_refined_grid_in_cloud is .true.
-
-    real( kind = core_rknd ), parameter :: &
-      chi_at_liq_sat = 0._core_rknd  ! Value of chi(s) at saturation with
-                                     ! respect to ice (zero for liquid)
 
     !!! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
@@ -2559,14 +2547,6 @@ module advance_clubb_core_module
     type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms_zm
 
-    real( kind = core_rknd ) :: &
-      cloud_frac_1_refined, & ! cloud_frac_1 computed on refined grid
-      cloud_frac_2_refined, & ! cloud_frac_2 computed on refined grid
-      rc_1_refined, &         ! rc_1 computed on refined grid
-      rc_2_refined, &         ! rc_2 computed on refined grid
-      cloud_frac_refined, &   ! cloud_frac gridbox mean on refined grid
-      rcm_refined             ! rcm gridbox mean on refined grid
-
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rsat,             & ! Saturation mixing ratio from mean rt and thl.
       rel_humidity        ! Relative humidity after PDF closure [-]
@@ -2773,66 +2753,6 @@ module advance_clubb_core_module
        call stat_update_var( imax_F_thl, max_F_thl, & ! intent(in)
                              stats_zt )               ! intent(inout)
     endif
-
-    if ( l_refine_grid_in_cloud ) then
-
-      ! Compute cloud_frac and rcm on a refined grid to improve parameterization
-      ! of subgrid clouds
-      do k=1, gr%nz
-
-        if ( pdf_params%chi_1(1,k)/pdf_params%stdev_chi_1(1,k) > -1._core_rknd ) then
-
-          ! Recalculate cloud_frac and r_c for each PDF component
-
-          call calc_vert_avg_cf_component &
-               ( gr%nz, k, gr%zt, pdf_params%chi_1(1,:), &                    ! Intent(in)
-                 pdf_params%stdev_chi_1(1,:), (/(chi_at_liq_sat,i=1,gr%nz)/), & ! Intent(in)
-                 cloud_frac_1_refined, rc_1_refined )                   ! Intent(out)
-
-          call calc_vert_avg_cf_component &
-               ( gr%nz, k, gr%zt, pdf_params%chi_2(1,:), &                     ! Intent(in)
-                 pdf_params%stdev_chi_2(1,:), (/(chi_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
-                 cloud_frac_2_refined, rc_2_refined )                    ! Intent(out)
-
-          cloud_frac_refined = compute_mean_binormal &
-                               ( cloud_frac_1_refined, cloud_frac_2_refined, &
-                                 pdf_params%mixt_frac(1,k) )
-
-          rcm_refined = compute_mean_binormal &
-                        ( rc_1_refined, rc_2_refined, pdf_params%mixt_frac(1,k) )
-
-          if ( l_interactive_refined ) then
-            ! I commented out the lines that modify the values in pdf_params, as it seems that
-            ! these values need to remain consistent with the rest of the PDF.
-            ! Eric Raut Jun 2014
-            ! Replace pdf_closure estimates with refined estimates
-            ! pdf_params%rc_1(1,k) = rc_1_refined
-            ! pdf_params%rc_2(1,k) = rc_2_refined
-            rcm(k) = rcm_refined
-
-            ! pdf_params%cloud_frac_1(1,k) = cloud_frac_1_refined
-            ! pdf_params%cloud_frac_2(1,k) = cloud_frac_2_refined
-            cloud_frac(k) = cloud_frac_refined
-          end if
-
-        else
-          ! Set these equal to the non-refined values so we have something to
-          ! output to stats!
-          cloud_frac_refined = cloud_frac(k)
-          rcm_refined = rcm(k)
-        end if ! pdf_params%chi_1(1,k)/pdf_params%stdev_chi_1(1,k) > -1._core_rknd
-
-        ! Stats output
-        if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
-          call stat_update_var_pt( icloud_frac_refined, k, cloud_frac_refined, & ! intent(in)
-                                   stats_zt )                                    ! intent(inout)
-          call stat_update_var_pt( ircm_refined, k, rcm_refined, & ! intent(in)
-                                   stats_zt )                      ! intent(inout)
-        end if
-
-      end do ! k=1, gr%nz
-
-    end if ! l_refine_grid_in_cloud
 
     if( l_rtm_nudge ) then
       ! Nudge rtm to prevent excessive drying
