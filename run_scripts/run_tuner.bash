@@ -234,22 +234,27 @@ if [ $NIGHTLY=false ] ; then
     # Concatenate *_model.in and *_stats.in into clubb.in
     cat $STATS_OPT_IN $PARAMS_FILE $SILHS_PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
      ../bin/clubb_standalone
-    mv ../output/$RUN_CASE* $INITIAL_OUTPUT_DIR
+    mv ../output/$RUN_CASE'_zt'* ../output/$RUN_CASE'_zm'* ../output/$RUN_CASE'_sfc'* $INITIAL_OUTPUT_DIR
+    mv ../output/$RUN_CASE'_lh_zt'* ../output/$RUN_CASE'_lh_sfc'* ../output/$RUN_CASE'_rad'* $INITIAL_OUTPUT_DIR
+    mv ../output/$RUN_CASE'_setup'* $INITIAL_OUTPUT_DIR
 
   elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
     for EACH_CASE in "${MODEL_MULT[@]}"; do
-                MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
-                # Concatenate *_model.in and *_stats.in into clubb.in
-        cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
-                ../bin/clubb_standalone
-        mv ../output/$EACH_CASE* $INITIAL_OUTPUT_DIR
+      MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
+      # Concatenate *_model.in and *_stats.in into clubb.in
+      cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
+        ../bin/clubb_standalone
+      mv ../output/$EACH_CASE'_zt'* ../output/$EACH_CASE'_zm'* ../output/$EACH_CASE'_sfc'* $INITIAL_OUTPUT_DIR
+      mv ../output/$EACH_CASE'_lh_zt'* ../output/$EACH_CASE'_lh_sfc'* ../output/$EACH_CASE'_rad'* $INITIAL_OUTPUT_DIR
+      mv ../output/$EACH_CASE'_setup'* $INITIAL_OUTPUT_DIR
     done
 
   fi
 
 fi
 
+exit
 #######################################################################
 #
 # State which case is being tuned
