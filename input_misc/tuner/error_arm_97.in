@@ -26,7 +26,7 @@ stp_adjst_spread_in = 0.8
 ! ARM 97
 &cases
 hoc_stats_file_nl(1)    = "../output/arm_97_zt.nc",
-les_stats_file_nl(1)    = "/usr/local/les_and_clubb_benchmark_runs/sam_benchmark_runs/ARM97_r1315_128x128x128_1km_Morrison/ARM9707.nc",
+les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/ARM97_r1315_128x128x128_1km_Morrison/ARM9707.nc",
 run_file_nl(1)          = "arm_97_hoc.in",
 z_i_nl(1)               = 2,
 z_f_nl(1)               = 88,

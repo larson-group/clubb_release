@@ -81,7 +81,7 @@ from config.VariableGroupTaus import VariableGroupTaus
 from config.VariableGroupNondimMoments import VariableGroupNondimMoments
 
 # ---------------------------
-BENCHMARK_OUTPUT_ROOT = "/usr/local/les_and_clubb_benchmark_runs/"
+BENCHMARK_OUTPUT_ROOT = "/home/pub/les_and_clubb_benchmark_runs/"
 if not os.path.isdir(BENCHMARK_OUTPUT_ROOT) and \
         not os.path.islink(BENCHMARK_OUTPUT_ROOT):
     print("Benchmark output was not found in " + BENCHMARK_OUTPUT_ROOT + ".\n\tChecking local location: " +

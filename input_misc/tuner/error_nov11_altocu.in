@@ -24,7 +24,7 @@ tune_type = 2
 &cases
 ! Nov 11 Altocumulus
 hoc_stats_file_nl(1)    = "../output/nov11_altocu_zt.nc"
-les_stats_file_nl(1)    = "/usr/local/les_and_clubb_benchmark_runs/les_runs/nov11_altocu_coamps_sm.nc"
+les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/nov11_altocu_coamps_sm.nc"
 run_file_nl(1)          = "nov11_altocu_hoc.in"
 z_i_nl(1)               = 48
 z_f_nl(1)               = 143
