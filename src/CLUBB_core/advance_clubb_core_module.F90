@@ -1416,7 +1416,8 @@ module advance_clubb_core_module
 
       ! Cx_fnc_Richardson is only used if one of these flags is true,
       ! otherwise its value is irrelevant, set it to 0 to avoid NaN problems
-      if ( clubb_config_flags%l_use_C7_Richardson .or. clubb_config_flags%l_use_C11_Richardson ) then
+      if ( clubb_config_flags%l_use_C7_Richardson .or. &
+           clubb_config_flags%l_use_C11_Richardson ) then
        call compute_Cx_Fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm,      & ! intent(in)
                                        rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
                                        ice_supersat_frac,                             & ! intent(in)
@@ -3188,7 +3189,8 @@ module advance_clubb_core_module
         if ( l_damp_wp2_using_em .and. &
            (abs(params(iC1) - params(iC14)) > abs(params(iC1) + params(iC14)) / 2 * eps .or. &
              l_stability_correct_tau_zm) ) then
-          write(fstderr,*) "l_damp_wp2_using_em = T requires C1=C14 and l_stability_correct_tau_zm = F"
+          write(fstderr,*) "l_damp_wp2_using_em = T requires C1=C14 and" &
+                            // " l_stability_correct_tau_zm = F"
           write(fstderr,*) "C1 = ", params(iC1)
           write(fstderr,*) "C14 = ", params(iC14)
           write(fstderr,*) "l_stability_correct_tau_zm = ", l_stability_correct_tau_zm

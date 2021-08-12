@@ -241,7 +241,8 @@ module stats_type_utilities
     do i = 1, gr%nz
 
       call stat_begin_update_pt &
-            ( var_index, i, value(i), grid_kind )
+            ( var_index, i, value(i), & ! intent(in)
+              grid_kind ) ! intent(inout)
 
     enddo
 
@@ -376,7 +377,8 @@ module stats_type_utilities
 
     do k = 1,gr%nz
       call stat_end_update_pt &
-               ( var_index, k, value(k), grid_kind )
+               ( var_index, k, value(k), & ! intent(in)
+                 grid_kind ) ! intent(inout)
     enddo
 
     return
@@ -429,7 +431,8 @@ module stats_type_utilities
       if ( grid_kind%l_in_update(clubb_i,clubb_j,grid_level,var_index) ) then
 
         call stat_update_var_pt &
-                 ( var_index, grid_level, value, grid_kind )
+                 ( var_index, grid_level, value, & ! intent(in)
+                   grid_kind ) ! intent(inout)
 
         grid_kind%l_in_update(clubb_i,clubb_j,grid_level,var_index) = .false. ! End Record
 
@@ -482,7 +485,8 @@ module stats_type_utilities
 
     do k = 1, gr%nz
 
-      call stat_modify_pt( var_index, k, value(k), grid_kind )
+      call stat_modify_pt( var_index, k, value(k), & ! intent(in)
+                           grid_kind ) ! intent(inout)
 
     enddo
 
