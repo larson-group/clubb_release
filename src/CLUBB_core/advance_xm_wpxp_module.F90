@@ -130,7 +130,6 @@ module advance_xm_wpxp_module
 
     use model_flags, only: &
         iiPDF_new,                     & ! Variable(s)
-        l_clip_semi_implicit,          &
         l_explicit_turbulent_adv_wpxp
 
     use mono_flux_limiter, only: &
@@ -428,8 +427,7 @@ module advance_xm_wpxp_module
       l_scalar_calc = .false.
     end if
     
-    if ( l_clip_semi_implicit &
-         .or. ( ( iiPDF_type == iiPDF_new ) &
+    if ( ( ( iiPDF_type == iiPDF_new ) &
                 .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) ) then
        nrhs = 1
     else
@@ -591,13 +589,11 @@ module advance_xm_wpxp_module
 
     ! Setup and decompose matrix for each variable.
 
-    if ( l_clip_semi_implicit &
-         .or. ( ( iiPDF_type == iiPDF_new ) &
-                .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) ) then
+    if ( ( iiPDF_type == iiPDF_new ) &
+                .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) then
 
       ! LHS matrices are unique, multiple band solves required
       call solve_xm_wpxp_with_multiple_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2,               & ! In
-                                            l_clip_semi_implicit,                           & ! In
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,  & ! In
                                             thlm_forcing,   wpthlp_forcing, rho_ds_zm,      & ! In
                                             rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,    & ! In
@@ -644,8 +640,7 @@ module advance_xm_wpxp_module
                                           rtm, wprtp, thlm, wpthlp,                        & ! Out
                                           sclrm, wpsclrp, um, upwp, vm,vpwp )                ! Out
 
-    endif ! l_clip_semi_implicit &
-          ! .or. ( ( iiPDF_type == iiPDF_new ) &
+    endif ! ( ( iiPDF_type == iiPDF_new ) &
           !        .and. ( .not. l_explicit_turbulent_adv_wpxp ) )
 
     if ( l_lmm_stepping ) then
@@ -883,9 +878,6 @@ module advance_xm_wpxp_module
         one, &
         zero
 
-    use model_flags, only: &
-        l_clip_semi_implicit  ! Variable(s)
-
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
@@ -1094,19 +1086,6 @@ module advance_xm_wpxp_module
 
     endif
 
-    ! LHS portion of semi-implicit clipping term.
-    if ( l_clip_semi_implicit ) then
-        l_upper_thresh = .true.
-        l_lower_thresh = .true.
-
-        do k = 2, gr%nz-1
-            k_wpxp = 2*k 
-            lhs(3,k_wpxp) = lhs(3,k_wpxp) + clip_semi_imp_lhs( dt, wpxp(k),  & 
-                                                    l_upper_thresh, wpxp_upper_lim(k),  & 
-                                                    l_lower_thresh, wpxp_lower_lim(k) )
-        end do
-    endif
-
 
     ! Statistics contributions
     if ( l_stats_samp ) then
@@ -1181,7 +1160,7 @@ module advance_xm_wpxp_module
             end do
         endif
 
-        if ( l_clip_semi_implicit .and. ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) ) then
+        if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
             l_upper_thresh = .true.
             l_lower_thresh = .true.
 
@@ -1398,7 +1377,6 @@ module advance_xm_wpxp_module
   subroutine xm_wpxp_rhs( gr, solve_type, l_iter, dt, xm, wpxp, & ! In
                           xm_forcing, wpxp_forcing, C7_Skw_fnc, & ! In
                           xpthvp, rhs_ta, thv_ds_zm, & ! In
-                          wpxp_upper_lim, wpxp_lower_lim, & ! In
                           lhs_pr1, lhs_ta_wpxp, & ! In
                           stats_zt, stats_zm, & ! intent(inout)
                           rhs ) ! Out
@@ -1435,9 +1413,6 @@ module advance_xm_wpxp_module
         gamma_over_implicit_ts, & ! Constant(s)
         one, &
         zero
-
-    use model_flags, only: &
-        l_clip_semi_implicit  ! Variable(s)
 
     use turbulent_adv_pdf, only: &
         xpyp_term_ta_pdf_lhs, & ! Procedure(s)
@@ -1520,8 +1495,6 @@ module advance_xm_wpxp_module
       C7_Skw_fnc,             & ! C_7 parameter with Sk_w applied            [-]
       xpthvp,                 & ! x'th_v' (momentum levels)           [{x un} K]
       thv_ds_zm,              & ! Dry, base-state theta_v on mom. levs.      [K]
-      wpxp_upper_lim,         & ! Keeps corrs. from becoming > 1       [un vary]
-      wpxp_lower_lim,         & ! Keeps corrs. from becoming < -1      [un vary]
       lhs_pr1,                & ! Pressure term 1 for w'x'
       rhs_ta
 
@@ -1553,8 +1526,6 @@ module advance_xm_wpxp_module
       iwpxp_sicl, &
       iwpxp_ta, &
       iwpxp_pr1
-
-    logical :: l_upper_thresh, l_lower_thresh ! flags for clip_semi_imp_lhs
 
     !------------------- Begin Code -------------------
 
@@ -1607,21 +1578,6 @@ module advance_xm_wpxp_module
             rhs(k_wpxp) = rhs(k_wpxp) + wpxp(k) * invrs_dt
         end do
     end if
-
-
-    ! RHS portion of semi-implicit clipping (sicl) term.
-    if ( l_clip_semi_implicit ) then
-        l_upper_thresh = .true.
-        l_lower_thresh = .true.
-
-        do k = 2, gr%nz-1
-            k_wpxp = 2*k
-            rhs(k_wpxp) = rhs(k_wpxp) + clip_semi_imp_rhs( dt, wpxp(k), & 
-                                                           l_upper_thresh, wpxp_upper_lim(k), & 
-                                                           l_lower_thresh, wpxp_lower_lim(k) )
-        end do
-
-    endif
     
 
     if ( l_stats_samp ) then
@@ -1695,19 +1651,6 @@ module advance_xm_wpxp_module
             call stat_update_var_pt( iwpxp_f, k, wpxp_forcing(k), & ! intent(in)
                                      stats_zm )                     ! intent(inout)
 
-            ! w'x' term sicl has both implicit and explicit components; call
-            ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-            ! subtracts the value sent in, reverse the sign on clip_semi_imp_rhs.
-            if ( l_clip_semi_implicit ) then
-                l_upper_thresh = .true.
-                l_lower_thresh = .true.
-
-                call stat_begin_update_pt( iwpxp_sicl, k, & ! intent(in)
-                                           -clip_semi_imp_rhs( dt, wpxp(k), & 
-                                           l_upper_thresh, wpxp_upper_lim(k), & 
-                                           l_lower_thresh, wpxp_lower_lim(k) ), & ! intent(in)
-                                           stats_zm ) ! intent(inout)
-            endif
 
             ! <w'x'> term ta has both implicit and explicit components; call
             ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -2599,7 +2542,7 @@ module advance_xm_wpxp_module
     ! warning about uninitialized variables.
     zeros_vector = zero
     
-    ! Simple case, where l_clip_semi_implicit is false, and if the new PDF is
+    ! Simple case, where the new PDF is
     ! used, l_explicit_turbulent_adv_wpxp is enabled.
       
     ! Create the lhs once
@@ -2616,7 +2559,6 @@ module advance_xm_wpxp_module
     call xm_wpxp_rhs( gr, xm_wpxp_rtm, l_iter, dt, rtm, wprtp,  & ! In
                       rtm_forcing, wprtp_forcing, C7_Skw_fnc,   & ! In
                       rtpthvp, rhs_ta_wprtp, thv_ds_zm,         & ! In
-                      zeros_vector, zeros_vector,               & ! In
                       lhs_pr1_wprtp, lhs_ta_wpxp,               & ! In
                       stats_zt, stats_zm,                       & ! intent(inout)
                       rhs(:,1) )                                  ! Out
@@ -2626,7 +2568,6 @@ module advance_xm_wpxp_module
     call xm_wpxp_rhs( gr, xm_wpxp_thlm, l_iter, dt, thlm, wpthlp, & ! In
                       thlm_forcing, wpthlp_forcing, C7_Skw_fnc,   & ! In
                       thlpthvp, rhs_ta_wpthlp, thv_ds_zm,         & ! In
-                      zeros_vector, zeros_vector,                 & ! In
                       lhs_pr1_wpthlp, lhs_ta_wpxp,                & ! In
                       stats_zt, stats_zm,                         & ! intent(inout)
                       rhs(:,2) )                                    ! Out
@@ -2649,7 +2590,6 @@ module advance_xm_wpxp_module
                         sclrm_forcing(:,i),               & ! In
                         wpsclrp_forcing(:,i), C7_Skw_fnc,               & ! In
                         sclrpthvp(:,i), rhs_ta_wpsclrp(:,i), thv_ds_zm, & ! In
-                        zeros_vector, zeros_vector,                     & ! In
                         lhs_pr1_wpsclrp, lhs_ta_wpxp,                   & ! In
                         stats_zt, stats_zm,                             & ! intent(inout)
                         rhs(:,2+i) )                                      ! Out
@@ -2759,7 +2699,6 @@ module advance_xm_wpxp_module
        call xm_wpxp_rhs( gr, xm_wpxp_um, l_iter, dt, um, upwp, & ! In
                          um_tndcy, upwp_forcing, C7_Skw_fnc,   & ! In
                          upthvp, rhs_ta_wpup, thv_ds_zm,       & ! In
-                         zeros_vector, zeros_vector,           & ! In
                          lhs_pr1_wprtp, lhs_ta_wpxp,           & ! In
                          stats_zt, stats_zm,                   & ! intent(inout)
                          rhs(:,3+sclr_dim) )                     ! Out
@@ -2767,7 +2706,6 @@ module advance_xm_wpxp_module
        call xm_wpxp_rhs( gr, xm_wpxp_vm, l_iter, dt, vm, vpwp, & ! In
                          vm_tndcy, vpwp_forcing, C7_Skw_fnc,   & ! In
                          vpthvp, rhs_ta_wpvp, thv_ds_zm,       & ! In
-                         zeros_vector, zeros_vector,           & ! In
                          lhs_pr1_wprtp, lhs_ta_wpxp,           & ! In
                          stats_zt, stats_zm,                   & ! intent(inout)
                          rhs(:,4+sclr_dim) )                     ! Out
@@ -2955,7 +2893,6 @@ module advance_xm_wpxp_module
   
   !==========================================================================================
   subroutine solve_xm_wpxp_with_multiple_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2, &
-                                            l_clip_semi_implicit, &
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp, &
                                             thlm_forcing,   wpthlp_forcing, rho_ds_zm, &
                                             rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
@@ -3009,8 +2946,7 @@ module advance_xm_wpxp_module
         thl_tol, &
         thl_tol_mfl, &
         rt_tol_mfl, &
-        zero, &
-        max_mag_correlation
+        zero
 
     use stats_type, only: stats ! Type
 
@@ -3047,8 +2983,7 @@ module advance_xm_wpxp_module
 
     logical, intent(in) ::  & 
       l_implemented, &      ! Flag for CLUBB being implemented in a larger model.
-      l_iter, &
-      l_clip_semi_implicit
+      l_iter
 
     ! Additional variables for passive scalars
     real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
@@ -3164,14 +3099,6 @@ module advance_xm_wpxp_module
     ! warning about uninitialized variables.
     zeros_vector = zero
     
-    ! Compute the upper and lower limits of w'r_t' at every level,
-    ! based on the correlation of w and r_t, such that:
-    ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
-    ! -1 <= corr_(w,r_t) <= 1.
-    if ( l_clip_semi_implicit ) then
-      wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * rtp2 )
-      wpxp_lower_lim = -wpxp_upper_lim
-    endif
 
     ! Compute the implicit portion of the r_t and w'r_t' equations.
     ! Build the left-hand side matrix.                    
@@ -3188,7 +3115,6 @@ module advance_xm_wpxp_module
     call xm_wpxp_rhs( gr, xm_wpxp_rtm, l_iter, dt, rtm, wprtp,  & ! In
                       rtm_forcing, wprtp_forcing, C7_Skw_fnc,   & ! In
                       rtpthvp, rhs_ta_wprtp, thv_ds_zm,         & ! In
-                      wpxp_upper_lim, wpxp_lower_lim,           & ! In
                       lhs_pr1_wprtp, lhs_ta_wprtp,              & ! In
                       stats_zt, stats_zm,                       & ! intent(inout)
                       rhs(:,1) )                                  ! Out
@@ -3248,15 +3174,6 @@ module advance_xm_wpxp_module
           return
        endif
     endif
-
-    ! Compute the upper and lower limits of w'th_l' at every level,
-    ! based on the correlation of w and th_l, such that:
-    ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
-    ! -1 <= corr_(w,th_l) <= 1.
-    if ( l_clip_semi_implicit ) then
-      wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * thlp2 )
-      wpxp_lower_lim = -wpxp_upper_lim
-    endif
     
     ! Compute the implicit portion of the th_l and w'th_l' equations.
     ! Build the left-hand side matrix.
@@ -3273,7 +3190,6 @@ module advance_xm_wpxp_module
     call xm_wpxp_rhs( gr, xm_wpxp_thlm, l_iter, dt, thlm, wpthlp, & ! In
                       thlm_forcing, wpthlp_forcing, C7_Skw_fnc,   & ! In
                       thlpthvp, rhs_ta_wpthlp, thv_ds_zm,         & ! In
-                      wpxp_upper_lim, wpxp_lower_lim,             & ! In
                       lhs_pr1_wpthlp, lhs_ta_wpthlp,              & ! In
                       stats_zt, stats_zm,                         & ! intent(inout)
                       rhs(:,1) )                                    ! Out
@@ -3346,15 +3262,6 @@ module advance_xm_wpxp_module
 #endif
 ! <--- h1g, 2010-06-15
 
-      ! Compute the upper and lower limits of w'sclr' at every level,
-      ! based on the correlation of w and sclr, such that:
-      ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
-      ! -1 <= corr_(w,sclr) <= 1.
-      if ( l_clip_semi_implicit ) then
-        wpxp_upper_lim(:) =  max_mag_correlation * sqrt( wp2(:) * sclrp2(:,i) )
-        wpxp_lower_lim(:) = -wpxp_upper_lim(:)
-      endif
-
       ! Set <w'sclr'> forcing to 0 unless unless testing the wpsclrp code
       ! using wprtp or wpthlp (then use wprtp_forcing or wpthlp_forcing).
       wpsclrp_forcing(:,i) = zero
@@ -3375,7 +3282,6 @@ module advance_xm_wpxp_module
                         sclrm_forcing(:,i),                 & ! In
                         wpsclrp_forcing(:,i), C7_Skw_fnc,                 & ! In
                         sclrpthvp(:,i), rhs_ta_wpsclrp(:,i), thv_ds_zm,   & ! In
-                        wpxp_upper_lim, wpxp_lower_lim,                   & ! In
                         lhs_pr1_wpsclrp, lhs_ta_wpsclrp(:,:,i),           & ! In
                         stats_zt, stats_zm,                               & ! intent(inout)
                         rhs(:,1) )                                          ! Out
@@ -3531,9 +3437,6 @@ module advance_xm_wpxp_module
     use grid_class, only: & 
         grid ! Type
 
-    use model_flags, only: &
-        l_clip_semi_implicit    ! Variable(s)
-
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
@@ -3644,8 +3547,7 @@ module advance_xm_wpxp_module
         zmscr11, & 
         zmscr12, & 
         zmscr13, & 
-        zmscr14, & 
-        zmscr15
+        zmscr14
 
     use stats_type, only: stats ! Type
 
@@ -3969,14 +3871,6 @@ module advance_xm_wpxp_module
           + zmscr13(k) * wpxp(k) & 
           + zmscr14(k) * wpxp(kp1), & ! intent(in)
             stats_zm ) ! intent(inout)
-
-        ! w'x' term sicl has both implicit and explicit components;
-        ! call stat_end_update_pt.
-        if ( l_clip_semi_implicit ) then
-          call stat_end_update_pt( iwpxp_sicl, k, & ! intent(in)
-              zmscr15(k) * wpxp(k), & ! intent(in)
-              stats_zm ) ! intent(inout)
-        endif
 
       enddo ! wpxp loop: 2..gr%nz-1
 

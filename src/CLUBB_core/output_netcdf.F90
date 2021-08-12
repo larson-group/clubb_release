@@ -611,8 +611,7 @@ module output_netcdf
     use model_flags, only: &
         l_pos_def, &
         l_hole_fill, &
-      l_clip_semi_implicit, &
-      l_gamma_Skw
+        l_gamma_Skw
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -816,19 +815,17 @@ module output_netcdf
 
     ! Write the model flags to the file
     deallocate( stat )
-    allocate( stat(8) ) ! # of model flags
+    allocate( stat(7) ) ! # of model flags
 
     stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_pos_def", lchar( l_pos_def ) )
     stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_hole_fill", lchar( l_hole_fill ) )
-    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_clip_semi_implicit", &
-      lchar( l_clip_semi_implicit ) )
-    stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_standard_term_ta", &
+    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_standard_term_ta", &
       lchar( l_standard_term_ta ) )
-    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_single_C2_Skw", &
+    stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_single_C2_Skw", &
       lchar( l_single_C2_Skw ) )
-    stat(6) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
-    stat(7) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
-    stat(8) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
+    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
+    stat(6) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
+    stat(7) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
 
     if ( any( stat /= NF90_NOERR ) ) then
       write(fstderr,*) "Error writing model flags"

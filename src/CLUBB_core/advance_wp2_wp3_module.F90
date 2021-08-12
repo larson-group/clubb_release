@@ -384,7 +384,7 @@ module advance_wp2_wp3_module
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
                      up2, vp2, em, Kw1, Kw8, Kh_zt, Skw_zt,                   & ! Intent(in)
                      invrs_tau_zm, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! Intent(in)
-                     C11_Skw_fnc, C16_fnc, rho_ds_zm,                         & ! Intent(in)
+                     C11_Skw_fnc, rho_ds_zm,                                  & ! Intent(in)
                      rho_ds_zt, invrs_rho_ds_zm,                              & ! Intent(in)
                      invrs_rho_ds_zt, radf,                                   & ! Intent(in)
                      thv_ds_zm, thv_ds_zt,                                    & ! Intent(in)
@@ -512,7 +512,7 @@ module advance_wp2_wp3_module
                          wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
                          up2, vp2, em, Kw1, Kw8, Kh_zt, Skw_zt,                   & ! Intent(in)
                          invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc,  & ! Intent(in)
-                         C11_Skw_fnc, C16_fnc, rho_ds_zm,                         & ! Intent(in)
+                         C11_Skw_fnc, rho_ds_zm,                                  & ! Intent(in)
                          rho_ds_zt, invrs_rho_ds_zm,                              & ! Intent(in)
                          invrs_rho_ds_zt, radf,                                   & ! Intent(in)
                          thv_ds_zm, thv_ds_zt,                                    & ! Intent(in)
@@ -702,7 +702,6 @@ module advance_wp2_wp3_module
       invrs_tau_C1_zm, & ! Inverse tau values used for the C1 (dp1) term in wp2 [1/s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
-      C16_fnc,         & ! C_16 parameter                            [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
@@ -859,7 +858,7 @@ module advance_wp2_wp3_module
                    wpthvp, wp2thvp, um, vm, &                                        ! intent(in)
                    upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt,  &                     ! intent(in)
                    Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! intent(in)
-                   C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &                     ! intent(in)
+                   C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &                              ! intent(in)
                    invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &   ! intent(in)
                    wp2_splat, wp3_splat, &                                           ! intent(in)
                    l_crank_nich_diff, &                                              ! intent(in)
@@ -883,7 +882,7 @@ module advance_wp2_wp3_module
                    wp3_on_wp2, coef_wp4_implicit, & ! intent(in)
                    Kw1, Kw8, Skw_zt, & ! intent(in) 
                    invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & !intent(in)
-                   C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, & ! intent(in)
+                   C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! intent(in)
                    invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, & ! intent(in)
                    iiPDF_type, & ! intent(in)
                    l_upwind_xm_ma, & ! intent(in)
@@ -1233,7 +1232,7 @@ module advance_wp2_wp3_module
                        wp3_on_wp2, coef_wp4_implicit, &
                        Kw1, Kw8, Skw_zt, &
                        invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
-                       C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
+                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
                        invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
                        iiPDF_type, &
                        l_upwind_xm_ma, &
@@ -1385,7 +1384,6 @@ module advance_wp2_wp3_module
       invrs_tau_C1_zm,   & ! Inverse tau values used for the C1 (dp1) term in wp2 [1/s]
       C1_Skw_fnc,        & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,       & ! C_11 parameter with Sk_w applied          [-]
-      C16_fnc,           & ! C_16 parameter                            [-]
       rho_ds_zm,         & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,         & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm,   & ! Inv. dry, static density @ momentum levs. [m^3/kg]
@@ -1879,7 +1877,7 @@ module advance_wp2_wp3_module
                        wpthvp, wp2thvp, um, vm, &
                        upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt, & 
                        Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
-                       C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
+                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
                        invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &
                        wp2_splat, wp3_splat, & 
                        l_crank_nich_diff, &
@@ -2022,7 +2020,6 @@ module advance_wp2_wp3_module
       invrs_tau_C1_zm,   & ! Inverse tau values used for the C1 (dp1) term in wp2 [1/s]
       C1_Skw_fnc,        & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,       & ! C_11 parameter with Sk_w applied          [-]
-      C16_fnc,           & ! C_16 parameter                            [-]
       rho_ds_zm,         & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,         & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm,   & ! Inv. dry, static density @ mom. levs.     [m^3/kg]

@@ -96,8 +96,7 @@ module advance_xm_wpxp_module
         zm2zt ! Procedure(s)
 
     use model_flags, only: &
-        l_3pt_sqd_dfsn,     & ! Variable(s)
-        l_clip_semi_implicit
+        l_3pt_sqd_dfsn
 
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
@@ -254,11 +253,8 @@ module advance_xm_wpxp_module
     !---------------------------------------------------------------------------
 
     ! ----- Begin Code -----
-    if ( l_clip_semi_implicit .or. l_3pt_sqd_dfsn ) then
-      nrhs = 1
-    else
-      nrhs = 2+sclr_dim
-    endif
+    
+    nrhs = 2+sclr_dim
 
     ! Allocate rhs and solution vector
     allocate( rhs(2*gr%nz,nrhs) )
@@ -374,16 +370,7 @@ module advance_xm_wpxp_module
 
     ! Setup and decompose matrix for each variable.
 
-    if ( l_clip_semi_implicit .or. l_3pt_sqd_dfsn ) then
-
-      ! Compute the upper and lower limits of w'r_t' at every level,
-      ! based on the correlation of w and r_t, such that:
-      ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
-      ! -1 <= corr_(w,r_t) <= 1.
-      if ( l_clip_semi_implicit ) then
-        wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * rtp2 )
-        wpxp_lower_lim = -wpxp_upper_lim
-      endif
+    if ( l_3pt_sqd_dfsn ) then
 
       ! Compute the implicit portion of the r_t and w'r_t' equations.
       ! Build the left-hand side matrix.
@@ -432,15 +419,6 @@ module advance_xm_wpxp_module
         write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
         deallocate( rhs, solution )
         return
-      endif
-
-      ! Compute the upper and lower limits of w'th_l' at every level,
-      ! based on the correlation of w and th_l, such that:
-      ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
-      ! -1 <= corr_(w,th_l) <= 1.
-      if ( l_clip_semi_implicit ) then
-        wpxp_upper_lim =  max_mag_correlation * sqrt( wp2 * thlp2 )
-        wpxp_lower_lim = -wpxp_upper_lim
       endif
 
       ! Compute the implicit portion of the th_l and w'th_l' equations.
@@ -496,15 +474,6 @@ module advance_xm_wpxp_module
       ! If sclr_dim is 0, then this loop will execute 0 times.
       do i = 1, sclr_dim, 1
 
-        ! Compute the upper and lower limits of w'sclr' at every level,
-        ! based on the correlation of w and sclr, such that:
-        ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
-        ! -1 <= corr_(w,sclr) <= 1.
-        if ( l_clip_semi_implicit ) then
-          wpxp_upper_lim(:) =  max_mag_correlation * sqrt( wp2(:) * sclrp2(:,i) )
-          wpxp_lower_lim(:) = -wpxp_upper_lim(:)
-        endif
-
         ! Compute the implicit portion of the sclr and w'sclr' equations.
         ! Build the left-hand side matrix.
         call xm_wpxp_lhs( .true., dt, Kh_zm, wpsclrp(:,i), a1_zt, wm_zm, wm_zt,  & ! Intent(in)
@@ -553,7 +522,7 @@ module advance_xm_wpxp_module
 
       enddo ! passive scalars
 
-    else ! Simple case, where l_clip_semi_implicit and l_3pt_sqd_dfsn are both false
+    else ! Simple case, where l_3pt_sqd_dfsn is both false
 
       ! This is initialized solely for the purpose of avoiding a compiler
       ! warning about uninitialized variables.
@@ -659,7 +628,7 @@ module advance_xm_wpxp_module
 
       enddo ! 1..sclr_dim
 
-    endif ! l_clip_semi_implicit .and. l_3pt_sqd_dfsn
+    endif ! l_3pt_sqd_dfsn
 
     deallocate( rhs, solution )
 
@@ -782,9 +751,6 @@ module advance_xm_wpxp_module
 
     use constants, only: &
         gamma_over_implicit_ts ! Variable(s)
-
-    use model_flags, only: &
-        l_clip_semi_implicit ! Variable(s)
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -1090,17 +1056,6 @@ module advance_xm_wpxp_module
       if (l_iter) lhs(m_k_mdiag,k_wpxp)  &
                   = real( lhs(m_k_mdiag,k_wpxp) + 1.0 / dt )
 
-      ! LHS portion of semi-implicit clipping term.
-      if ( l_clip_semi_implicit ) then
-
-        lhs(m_k_mdiag,k_wpxp) & 
-        = lhs(m_k_mdiag,k_wpxp) & 
-        + clip_semi_imp_lhs( dt, wpxp(k),  & 
-                             .true., wpxp_upper_lim(k),  & 
-                             .true., wpxp_lower_lim(k) )
-
-      endif
-
       if (l_stats_samp) then
 
         ! Statistics: implicit contributions for wprtp or wpthlp.
@@ -1170,15 +1125,6 @@ module advance_xm_wpxp_module
           zmscr12(k) = - tmp(3)
           zmscr13(k) = - tmp(2)
           zmscr14(k) = - tmp(1)
-        endif
-
-        if ( l_clip_semi_implicit ) then
-          if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
-            zmscr15(k) = & 
-            - clip_semi_imp_lhs( dt, wpxp(k),  & 
-                                 .true., wpxp_upper_lim(k),  & 
-                                 .true., wpxp_lower_lim(k) )
-          endif
         endif
 
       endif
@@ -1265,9 +1211,6 @@ module advance_xm_wpxp_module
 
     use constants, only:  &
         gamma_over_implicit_ts ! Variable(s)
-
-    use model_flags, only: &
-        l_clip_semi_implicit ! Variable(s)
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -1449,16 +1392,6 @@ module advance_xm_wpxp_module
       if ( l_iter ) rhs(k_wpxp) =  & 
            real( rhs(k_wpxp) + wpxp(k) / dt )
 
-      ! RHS portion of semi-implicit clipping (sicl) term.
-      if ( l_clip_semi_implicit ) then
-
-        rhs(k_wpxp) & 
-        = rhs(k_wpxp) & 
-        + clip_semi_imp_rhs( dt, wpxp(k), & 
-                             .true., wpxp_upper_lim(k), & 
-                             .true., wpxp_lower_lim(k) )
-
-      endif
 
       if( .not. l_upwind_differencing ) then ! Only do this when not using Upwind Differencing
         ! RHS contribution from "over-implicit" weighted time step
@@ -1520,16 +1453,6 @@ module advance_xm_wpxp_module
             wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)), thv_ds_zm(k), &
                                    xpthvp(k) ), &
                                  stats_zm )
-
-        ! w'x' term sicl has both implicit and explicit components; call
-        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-        ! subtracts the value sent in, reverse the sign on clip_semi_imp_rhs.
-        if ( l_clip_semi_implicit ) then
-          call stat_begin_update_pt( iwpxp_sicl, k, & 
-             -clip_semi_imp_rhs( dt, wpxp(k), & 
-                                 .true., wpxp_upper_lim(k), & 
-                                 .true., wpxp_lower_lim(k) ), stats_zm )
-        endif
 
         if( l_upwind_differencing ) then ! Use upwind differencint
           lhs_fnc_output(1:3)  &
@@ -1697,8 +1620,6 @@ module advance_xm_wpxp_module
     use grid_class, only: & 
         gr ! Variable(s)
 
-    use model_flags, only: &
-        l_clip_semi_implicit ! Variable(s)
 
     use stats_precision, only:  & 
         time_precision ! Variable(s)
@@ -2071,12 +1992,6 @@ module advance_xm_wpxp_module
           + zmscr13(k) * wpxp(k) & 
           + zmscr14(k) * wpxp(kp1), stats_zm )
 
-        ! w'x' term sicl has both implicit and explicit components;
-        ! call stat_end_update_pt.
-        if ( l_clip_semi_implicit ) then
-          call stat_end_update_pt( iwpxp_sicl, k, & 
-              zmscr15(k) * wpxp(k), stats_zm )
-        endif
 
       enddo ! wpxp loop: 2..gr%nz-1
 

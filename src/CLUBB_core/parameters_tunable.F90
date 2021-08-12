@@ -533,10 +533,8 @@ module parameters_tunable
         one,     &
         zero,    &
         fstderr
-    use grid_class, only: grid
 
-    use model_flags, only: &
-        l_clip_semi_implicit  ! Variable(s)
+    use grid_class, only: grid
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -754,46 +752,38 @@ module parameters_tunable
 
     endif ! lmin < 1.0
 
-    if ( .not. l_clip_semi_implicit ) then
+     ! The C6rt parameters must be set equal to the C6thl parameters.
+     ! Otherwise, the wpthlp pr1 term will be calculated inconsistently.
 
-       ! When l_clip_semi_implicit is set to false (the current default),
-       ! the C6rt parameters must be set equal to the C6thl parameters.
-       ! Otherwise, the wpthlp pr1 term will be calculated inconsistently.
+     if ( abs(C6rt - C6thl) > abs(C6rt + C6thl) / 2 * eps ) then
+        write(fstderr,*) "C6rt = ", C6rt
+        write(fstderr,*) "C6thl = ", C6thl
+        write(fstderr,*) "C6rt and C6thl must be equal."
+        err_code = clubb_fatal_error
+     endif ! C6rt /= C6thl
 
-       if ( abs(C6rt - C6thl) > abs(C6rt + C6thl) / 2 * eps ) then
-          write(fstderr,*) "C6rt = ", C6rt
-          write(fstderr,*) "C6thl = ", C6thl
-          write(fstderr,*) "C6rt and C6thl must be equal when" &
-                           // " l_clip_semi_implicit is turned off (default)."
-          err_code = clubb_fatal_error
-       endif ! C6rt /= C6thl
+     if ( abs(C6rtb - C6thlb) > abs(C6rtb + C6thlb) / 2 * eps ) then
+        write(fstderr,*) "C6rtb = ", C6rtb
+        write(fstderr,*) "C6thlb = ", C6thlb
+        write(fstderr,*) "C6rtb and C6thlb must be equal."
+        err_code = clubb_fatal_error
+     endif ! C6rtb /= C6thlb
 
-       if ( abs(C6rtb - C6thlb) > abs(C6rtb + C6thlb) / 2 * eps ) then
-          write(fstderr,*) "C6rtb = ", C6rtb
-          write(fstderr,*) "C6thlb = ", C6thlb
-          write(fstderr,*) "C6rtb and C6thlb must be equal when" &
-                           // " l_clip_semi_implicit is turned off (default)."
-          err_code = clubb_fatal_error
-       endif ! C6rtb /= C6thlb
+     if ( abs(C6rtc - C6thlc) > abs(C6rtc + C6thlc) / 2 * eps ) then
+        write(fstderr,*) "C6rtc = ", C6rtc
+        write(fstderr,*) "C6thlc = ", C6thlc
+        write(fstderr,*) "C6rtc and C6thlc must be equal."
+        err_code = clubb_fatal_error
+     endif ! C6rtc /= C6thlc
 
-       if ( abs(C6rtc - C6thlc) > abs(C6rtc + C6thlc) / 2 * eps ) then
-          write(fstderr,*) "C6rtc = ", C6rtc
-          write(fstderr,*) "C6thlc = ", C6thlc
-          write(fstderr,*) "C6rtc and C6thlc must be equal when" &
-                           // " l_clip_semi_implicit is turned off (default)."
-          err_code = clubb_fatal_error
-       endif ! C6rtc /= C6thlc
+     if ( abs(C6rt_Lscale0 - C6thl_Lscale0) > abs(C6rt_Lscale0 + C6thl_Lscale0) / 2 * eps ) then
+        write(fstderr,*) "C6rt_Lscale0 = ", C6rt_Lscale0
+        write(fstderr,*) "C6thl_Lscale0 = ", C6thl_Lscale0
+        write(fstderr,*) "C6rt_Lscale0 and C6thl_Lscale0 must be equal."
+        err_code = clubb_fatal_error
+     endif ! C6rt_Lscale0 /= C6thl_Lscale0
 
-       if ( abs(C6rt_Lscale0 - C6thl_Lscale0) > abs(C6rt_Lscale0 + C6thl_Lscale0) / 2 * eps ) then
-          write(fstderr,*) "C6rt_Lscale0 = ", C6rt_Lscale0
-          write(fstderr,*) "C6thl_Lscale0 = ", C6thl_Lscale0
-          write(fstderr,*) "C6rt_Lscale0 and C6thl_Lscale0 must be equal" &
-                           // " when l_clip_semi_implicit is turned off" &
-                           // " (default)."
-          err_code = clubb_fatal_error
-       endif ! C6rt_Lscale0 /= C6thl_Lscale0
 
-    endif ! .not. l_clip_semi_implicit
 
 
     if ( C1 < zero ) then
