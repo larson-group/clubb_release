@@ -1291,8 +1291,7 @@ module advance_wp2_wp3_module
         iiPDF_ADG1,                   & ! Variable(s)
         iiPDF_new,                    &
         iiPDF_new_hybrid,             &
-        l_explicit_turbulent_adv_wp3, &
-        l_use_wp3_pr3
+        l_explicit_turbulent_adv_wp3
 
     use diffusion, only: & 
         diffusion_zm_lhs, & ! Procedures
@@ -1740,35 +1739,6 @@ module advance_wp2_wp3_module
     endif
 
 
-    ! LHS pressure term 3 (pr3) for wp3
-    if ( l_use_wp3_pr3 ) then
-
-        do k = 2, gr%nz-1
-
-            k_wp3 = 2*k - 1
-
-            wp3_pr3_lhs(k,1) = - gamma_over_implicit_ts * C16_fnc(k) &
-                               * wp3_term_ta_lhs_result(1,k)
-
-            wp3_pr3_lhs(k,2) = - gamma_over_implicit_ts * C16_fnc(k) &
-                               * ( wp3_term_ta_lhs_result(2,k) + lhs_tp_wp3(1,k) )
-
-            wp3_pr3_lhs(k,3) = - gamma_over_implicit_ts * C16_fnc(k) &
-                               * wp3_term_ta_lhs_result(3,k)
-
-            wp3_pr3_lhs(k,4) = - gamma_over_implicit_ts * C16_fnc(k) &
-                               * ( wp3_term_ta_lhs_result(4,k) + lhs_tp_wp3(2,k) )
-
-            wp3_pr3_lhs(k,5) = - gamma_over_implicit_ts * C16_fnc(k) &
-                               * wp3_term_ta_lhs_result(5,k)
-
-            lhs(:,k_wp3) = lhs(:,k_wp3) + wp3_pr3_lhs(k,:)
-
-        end do
-
-    endif
-
-
     ! --------- Statistics output ---------
     if ( l_stats_samp ) then
 
@@ -1982,8 +1952,7 @@ module advance_wp2_wp3_module
         iiPDF_ADG1,                   & ! Variable(s)
         iiPDF_new,                    &
         iiPDF_new_hybrid,             &
-        l_explicit_turbulent_adv_wp3, &
-        l_use_wp3_pr3
+        l_explicit_turbulent_adv_wp3
 
     use diffusion, only: & 
         diffusion_zm_lhs,  & ! Procedures
@@ -2449,34 +2418,10 @@ module advance_wp2_wp3_module
 
     endif ! l_explicit_turbulent_adv_wp3
 
+      ! Not using pressure term, set to 0
+      rhs_pr3_wp3 = zero
 
-
-    if ( l_use_wp3_pr3 ) then
-
-        ! Using pressure term 3 for w'3
-
-        ! Calculate pressure term and add to rhs
-        do k = 2, gr%nz-1
-
-            k_wp3 = 2*k - 1
-
-            rhs_pr3_wp3(k) = - ( one - gamma_over_implicit_ts ) * C16_fnc(k) &
-                             * ( -   wp3_term_ta_lhs_result(1,k)                     * wp3(k+1) &
-                                 - ( wp3_term_ta_lhs_result(2,k) + lhs_tp_wp3(1,k) ) * wp2(k) &
-                                 -   wp3_term_ta_lhs_result(3,k)                     * wp3(k) &
-                                 - ( wp3_term_ta_lhs_result(4,k) + lhs_tp_wp3(2,k) ) * wp2(k-1) &
-                                 -   wp3_term_ta_lhs_result(5,k)                     * wp3(k-1) )
-
-            rhs(k_wp3) = rhs(k_wp3) + rhs_pr3_wp3(k)
-
-        end do
-
-    else
-
-        ! Not using pressure term, set to 0
-        rhs_pr3_wp3 = zero
-
-    endif
+    
 
     ! --------- Boundary Conditions ---------
 

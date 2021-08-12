@@ -131,9 +131,6 @@ module model_flags
   logical, parameter, public :: &
     l_silhs_rad = .false.    ! Resolve radiation over subcolumns using SILHS
 
-  logical, parameter, public :: &
-    l_use_wp3_pr3 = .false. ! Include pressure term 3 (pr3) in wp3
-
 #ifdef GFDL
   logical, public :: &
      I_sat_sphum       ! h1g, 2010-06-15
