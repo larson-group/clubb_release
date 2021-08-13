@@ -1,0 +1,85 @@
+commit d4f17af1e782b8c942e9d85cec08e2396228331c
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Thu Aug 12 14:16:16 2021 -0500
+
+    BIT_CHANGING:af17ebf83826423f24165dab46ce098bf39444dd
+    
+    Some new stats variables were added to standard_stats.in, thereby changing the output files, but presumably otherwise the fields are BFB.
+    
+    RESOLVED:f24ca42ae8f1f83578ea85f378140abe0624c9c2
+    
+    This change was BFB, but it wasn't merged in with the previous (bit-changing) commit.  Therefore, it undid the previous bit-changing commit, effectively causing a new change in bits.
+    
+    RESOLVED:59a2fb4c73bfb290f8b857d1e89e4535fb76f73e
+    
+    This commit merged in the original bit-changing commit, thereby redoing the bit changes, and producing another false bit change.
+
+commit 70fd151d8892a97ff1f37a85ef62a899894fcf7e
+Author: bstephens82 <benjamin.andrew.stephens@gmail.com>
+Date:   Thu Aug 12 11:34:50 2021 -0500
+
+    Updates to tuner script to prevent it from moving output files that have not been tuned.
+    
+    See https://github.com/larson-group/clubb/issues/939#issuecomment-897755841.
+
+commit 4ebb5deaafdf4368bc8625638805d311b3d1e6d6
+Author: pbroels <pbroels@uwm.edu>
+Date:   Thu Aug 12 11:35:20 2021 -0500
+
+    Replacing all mentions of /usr/local/les_and_clubb_benchmark_runs with the new/home/pub location. larson-goup/sys_admin#750
+
+commit f09a7aaaf5136251bc039c84215aaf2ee089f30b
+Author: RhodesKeegan <rhodesk@msoe.edu>
+Date:   Thu Aug 12 10:47:47 2021 -0500
+
+    Adding intent labels for subroutines throughout clubb.
+    Remaining files now have intent comments for subroutines.
+    Additionally, all lines are now less than 100 characters.
+    For ticket #942.
+    Results are BFB identical.
+
+commit 828253e53b5b8a2c0d22a9ba86ab30dd4164e86b
+Author: RhodesKeegan <rhodesk@msoe.edu>
+Date:   Thu Aug 12 10:21:31 2021 -0500
+
+    Eliminating l_clip_semi_implicit flag.
+    For ticket #926.
+    This commit is BIT_CHANGING due to how the flag needed to be removed.
+    More details on why this commit is bit changing can be seen on the ticket page.
+
+commit 642621266723971acfa6497018035788b6a80a27
+Author: RhodesKeegan <rhodesk@msoe.edu>
+Date:   Thu Aug 12 09:12:21 2021 -0500
+
+    Eliminating l_use_wp3_pr3 flag.
+    For ticket #926.
+    Results are BFB identical.
+
+commit e8130a518dd4bd8cbb8d92f75c3d204f8f567480
+Author: bstephens82 <benjamin.andrew.stephens@gmail.com>
+Date:   Wed Aug 11 15:45:05 2021 -0500
+
+    Removing superfluous bash script commands.
+
+commit c2fc8c50fd6b9ec17ff8e8c783857d6037828596
+Author: bstephens82 <benjamin.andrew.stephens@gmail.com>
+Date:   Wed Aug 11 15:09:17 2021 -0500
+
+    Updating run_tuner.bash so that it will run the tuner test cases with the initial tunable_parameters.in (i.e. before tuning) to make it easier to compare the optimized runs with the initial runs.  The initial runs are saved in a separate directory.
+    
+    See #939.
+
+commit e5ab0abad7f27f7343da8ef1a4343cf7e2e0c41d
+Merge: 815079a ec659b0
+Author: RhodesKeegan <rhodesk@msoe.edu>
+Date:   Wed Aug 11 15:28:39 2021 -0500
+
+    Merge branch 'master' of https://github.com/larson-group/clubb
+
+commit 815079aadfa7df2014c96a4e58487d3d6759facf
+Author: RhodesKeegan <rhodesk@msoe.edu>
+Date:   Wed Aug 11 15:26:39 2021 -0500
+
+    Eliminating l_use_experimental_term_pr2 and l_use_vert_avg_winds
+    For ticket #926
+    Results are BFB identical.
