@@ -41,7 +41,7 @@
 
         use constants
         use parameters, 
-     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, 
+     .    only: C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, 
      .          c_Ksqd, beta, C4, C14, C5, T0
         use grid_class
         use lapack_wrap, only: tridag_solve
@@ -149,13 +149,13 @@
 !-----------------------------------------------------------------------
 #ifdef SINGLE_C2_SKW
         ! Use a single value of C2 for all equations.
-        C2rt_1d(1:gr%nz) 
-     .  = C2b + (C2-C2b) *exp( -0.5 * (Skwm(1:gr%nz)/C2c)**2 )
+     !   C2rt_1d(1:gr%nz) 
+    ! .  = C2b + (C2-C2b) *exp( -0.5 * (Skwm(1:gr%nz)/C2c)**2 )
 
-        C2thl_1d   = C2rt_1d
-        C2rtthl_1d = C2rt_1d
+     !   C2thl_1d   = C2rt_1d
+      !  C2rtthl_1d = C2rt_1d
 
-        C2sclr_1d  = C2rt_1d
+       ! C2sclr_1d  = C2rt_1d
 #else
         ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
         C2rt_1d(1:gr%nz)    = C2rt

@@ -1525,7 +1525,6 @@ module advance_clubb_core_module
                              clubb_config_flags%l_C2_cloud_frac,          & ! intent(in)
                              clubb_config_flags%l_upwind_xpyp_ta,         & ! intent(in)
                              clubb_config_flags%l_godunov_upwind_xpyp_ta, & ! intent(in)
-                             clubb_config_flags%l_single_C2_Skw,          & ! intent(in)
                              clubb_config_flags%l_lmm_stepping,           & ! intent(in)
                              stats_zt, stats_zm, stats_sfc,               & ! intent(inout)
                              rtp2, thlp2, rtpthlp, up2, vp2,              & ! intent(inout)

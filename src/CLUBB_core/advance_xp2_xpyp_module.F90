@@ -62,7 +62,6 @@ module advance_xp2_xpyp_module
                                l_C2_cloud_frac,                           & ! In
                                l_upwind_xpyp_ta,                          & ! In
                                l_godunov_upwind_xpyp_ta,                  & ! In
-                               l_single_C2_Skw,                           & ! In
                                l_lmm_stepping,                            & ! In
                                stats_zt, stats_zm, stats_sfc,             & ! intent(inout)
                                rtp2, thlp2, rtpthlp, up2, vp2,            & ! Inout
@@ -118,9 +117,6 @@ module advance_xp2_xpyp_module
         C14,      &
         C_uu_shr, &
         C_uu_buoy, &
-        C2,       &
-        C2b,      &
-        C2c,      &
         rtp2_clip_coef
 
     use parameters_model, only: &
@@ -279,7 +275,6 @@ module advance_xp2_xpyp_module
                                    ! centered differencing for turbulent or mean advection terms.
                                    ! It affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, 
                                    ! & sclrpthlp.
-      l_single_C2_Skw,           & ! Use a single Skewness dependent C2 for rtp2, thlp2, & rtpthlp
       l_lmm_stepping               ! Apply Linear Multistep Method (LMM) Stepping
 
     ! Input/Output variables
@@ -396,53 +391,33 @@ module advance_xp2_xpyp_module
       end if
     end if
 
-    if ( l_single_C2_Skw ) then
+     ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
+     if ( l_C2_cloud_frac ) then
 
-       ! Use a single value of C2 for all equations.
-       C2rt_1d = C2b + ( C2 - C2b ) * exp( -one_half * ( Skw_zm / C2c )**2 )
+        do k = 1, gr%nz, 1
+           if ( cloud_frac(k) >= cloud_frac_min ) then
+              C2rt_1d(k) = C2rt * max( min_cloud_frac_mult, cloud_frac(k) )
+              C2thl_1d(k) = C2thl * max( min_cloud_frac_mult, cloud_frac(k) )
+              C2rtthl_1d(k) = C2rtthl &
+                              * max( min_cloud_frac_mult, cloud_frac(k) )
+           else ! cloud_frac(k) < cloud_frac_min
+              C2rt_1d(k)    = C2rt
+              C2thl_1d(k)   = C2thl
+              C2rtthl_1d(k) = C2rtthl
+           endif ! cloud_frac(k) >= cloud_frac_min
+        enddo ! k = 1, gr%nz, 1
 
-       if ( l_C2_cloud_frac ) then
-          do k = 1, gr%nz, 1
-             if ( cloud_frac(k) >= cloud_frac_min ) then
-                C2rt_1d(k) &
-                = C2rt_1d(k) * max( min_cloud_frac_mult, cloud_frac(k) )
-             endif ! cloud_frac(k) >= cloud_frac_min
-          enddo ! k = 1, gr%nz, 1
-       endif ! l_C2_cloud_frac
+     else
 
-       C2thl_1d   = C2rt_1d
-       C2rtthl_1d = C2rt_1d
-       C2sclr_1d  = C2rt_1d
+        C2rt_1d    = C2rt
+        C2thl_1d   = C2thl
+        C2rtthl_1d = C2rtthl
 
-    else ! .not. l_single_C2_Skw
+     endif ! l_C2_cloud_frac
 
-       ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
-       if ( l_C2_cloud_frac ) then
+     C2sclr_1d = C2rt  ! Use rt value for now
 
-          do k = 1, gr%nz, 1
-             if ( cloud_frac(k) >= cloud_frac_min ) then
-                C2rt_1d(k) = C2rt * max( min_cloud_frac_mult, cloud_frac(k) )
-                C2thl_1d(k) = C2thl * max( min_cloud_frac_mult, cloud_frac(k) )
-                C2rtthl_1d(k) = C2rtthl &
-                                * max( min_cloud_frac_mult, cloud_frac(k) )
-             else ! cloud_frac(k) < cloud_frac_min
-                C2rt_1d(k)    = C2rt
-                C2thl_1d(k)   = C2thl
-                C2rtthl_1d(k) = C2rtthl
-             endif ! cloud_frac(k) >= cloud_frac_min
-          enddo ! k = 1, gr%nz, 1
 
-       else
-
-          C2rt_1d    = C2rt
-          C2thl_1d   = C2thl
-          C2rtthl_1d = C2rtthl
-
-       endif ! l_C2_cloud_frac
-
-       C2sclr_1d = C2rt  ! Use rt value for now
-
-    endif ! l_single_C2_Skw
 
     ! Combine C4 and C14 for simplicity
     C4_C14_1d(1:gr%nz) = ( two_thirds * C4 ) + ( one_third * C14 )

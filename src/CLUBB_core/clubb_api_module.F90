@@ -138,7 +138,7 @@ module clubb_api_module
 
   use parameter_indices, only:  &
     nparams, & ! Variable(s)
-    iC1, iC1b, iC1c, iC2, iC2b, iC2c,  &
+    iC1, iC1b, iC1c, &
     iC2rt, iC2thl, iC2rtthl, iC4, iC_uu_shr, iC_uu_buoy, &
     iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
     iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
@@ -249,7 +249,7 @@ module clubb_api_module
         ipdf_post_advance_fields, &
         l_use_boussinesq, &
         ! The parameters of CLUBB can be retrieved and tuned using these indices:
-        iC1, iC1b, iC1c, iC2, iC2b, iC2c,  &
+        iC1, iC1b, iC1c, &
         iC2rt, iC2thl, iC2rtthl, iC4, iC_uu_shr, iC_uu_buoy, &
         iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
         iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
@@ -2394,8 +2394,7 @@ contains
 #ifdef NETCDF
                                      , l_uv_nudge, &
                                      l_tke_aniso, &
-                                     l_standard_term_ta, &
-                                     l_single_C2_Skw &
+                                     l_standard_term_ta &
 #endif
                                       )
 
@@ -2418,11 +2417,10 @@ contains
       l_uv_nudge,         & ! For wind speed nudging.
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
                             ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
                             ! Setting to .false. means that a_1 and a_3 are pulled outside of the
                             ! derivative in advance_wp2_wp3_module.F90 and in
                             ! advance_xp2_xpyp_module.F90.
-      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
 #endif
 
     call stats_end_timestep( &
@@ -2432,8 +2430,7 @@ contains
 #ifdef NETCDF
                              , l_uv_nudge, & ! Intent(in)
                              l_tke_aniso, & ! Intent(in)
-                             l_standard_term_ta, & ! Intent(in)
-                             l_single_C2_Skw & ! Intent(in)
+                             l_standard_term_ta & ! Intent(in)
 #endif
                               )
 
@@ -3169,7 +3166,6 @@ contains
                                                  l_brunt_vaisala_freq_moist, & ! Out
                                                  l_use_thvm_in_bv_freq, & ! Out
                                                  l_rcm_supersat_adj, & ! Out
-                                                 l_single_C2_Skw, & ! Out
                                                  l_damp_wp3_Skw_squared, & ! Out
                                                  l_prescribed_avg_deltaz, & ! Out
                                                  l_update_pressure, & ! Out
@@ -3286,8 +3282,6 @@ contains
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
-      l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
-                                      ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
@@ -3335,7 +3329,6 @@ contains
                                          l_brunt_vaisala_freq_moist, & ! Out
                                          l_use_thvm_in_bv_freq, & ! Out
                                          l_rcm_supersat_adj, & ! Out
-                                         l_single_C2_Skw, & ! Out
                                          l_damp_wp3_Skw_squared, & ! Out
                                          l_prescribed_avg_deltaz, & ! Out
                                          l_update_pressure, & ! Out
@@ -3388,7 +3381,6 @@ contains
                                                      l_brunt_vaisala_freq_moist, & ! In
                                                      l_use_thvm_in_bv_freq, & ! In
                                                      l_rcm_supersat_adj, & ! In
-                                                     l_single_C2_Skw, & ! In
                                                      l_damp_wp3_Skw_squared, & ! In
                                                      l_prescribed_avg_deltaz, & ! In
                                                      l_update_pressure, & ! In
@@ -3507,8 +3499,6 @@ contains
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
-      l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
-                                      ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
@@ -3560,7 +3550,6 @@ contains
                                              l_brunt_vaisala_freq_moist, & ! In
                                              l_use_thvm_in_bv_freq, & ! In
                                              l_rcm_supersat_adj, & ! In
-                                             l_single_C2_Skw, & ! In
                                              l_damp_wp3_Skw_squared, & ! In
                                              l_prescribed_avg_deltaz, & ! In
                                              l_update_pressure, & ! In

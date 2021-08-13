@@ -418,7 +418,6 @@ module spurious_source_test
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
-      l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
@@ -467,7 +466,6 @@ module spurious_source_test
                                          l_brunt_vaisala_freq_moist, &
                                          l_use_thvm_in_bv_freq, &
                                          l_rcm_supersat_adj, &
-                                         l_single_C2_Skw, &
                                          l_damp_wp3_Skw_squared, &
                                          l_prescribed_avg_deltaz, &
                                          l_update_pressure, &

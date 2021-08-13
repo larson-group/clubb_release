@@ -783,8 +783,6 @@ module clubb_driver
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
-      l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
-                                      ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
@@ -823,7 +821,7 @@ module clubb_driver
     namelist /configurable_clubb_flags_nl/ &
       iiPDF_type, ipdf_call_placement, &
       l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
-      l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
+      l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
       l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
       l_use_cloud_cover, l_rcm_supersat_adj, &
       l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
@@ -976,7 +974,6 @@ module clubb_driver
                                          l_brunt_vaisala_freq_moist, & ! Intent(out)
                                          l_use_thvm_in_bv_freq, & ! Intent(out)
                                          l_rcm_supersat_adj, & ! Intent(out)
-                                         l_single_C2_Skw, & ! Intent(out)
                                          l_damp_wp3_Skw_squared, & ! Intent(out)
                                          l_prescribed_avg_deltaz, & ! Intent(out)
                                          l_update_pressure, &  ! Intent(out)
@@ -1345,7 +1342,6 @@ module clubb_driver
                                              l_brunt_vaisala_freq_moist, & ! Intent(in)
                                              l_use_thvm_in_bv_freq, & ! Intent(in)
                                              l_rcm_supersat_adj, & ! Intent(in)
-                                             l_single_C2_Skw, & ! Intent(in)
                                              l_damp_wp3_Skw_squared, & ! Intent(in)
                                              l_prescribed_avg_deltaz, & ! Intent(in)
                                              l_update_pressure, & ! Intent(in)
@@ -1701,11 +1697,10 @@ module clubb_driver
       clubb_config_flags%l_upwind_xm_ma = model_flags_array(5)
       l_quintic_poly_interp = model_flags_array(6)
       clubb_config_flags%l_vert_avg_closure = model_flags_array(7)
-      clubb_config_flags%l_single_C2_Skw = model_flags_array(8)
-      clubb_config_flags%l_standard_term_ta = model_flags_array(9)
-      clubb_config_flags%l_tke_aniso = model_flags_array(10)
-      clubb_config_flags%l_use_cloud_cover = model_flags_array(11)
-      clubb_config_flags%l_rcm_supersat_adj = model_flags_array(12)
+      clubb_config_flags%l_standard_term_ta = model_flags_array(8)
+      clubb_config_flags%l_tke_aniso = model_flags_array(9)
+      clubb_config_flags%l_use_cloud_cover = model_flags_array(10)
+      clubb_config_flags%l_rcm_supersat_adj = model_flags_array(11)
 
       if ( clubb_config_flags%l_vert_avg_closure ) then
         clubb_config_flags%l_trapezoidal_rule_zt    = .true.
@@ -2332,7 +2327,6 @@ module clubb_driver
                clubb_config_flags%l_uv_nudge,                                & ! In
                clubb_config_flags%l_tke_aniso,                               & ! In
                clubb_config_flags%l_standard_term_ta,                        & ! In
-               clubb_config_flags%l_single_C2_Skw,                           & ! In
                vert_decorr_coef,                                             & ! In
                stats_lh_zt, stats_lh_sfc,                                    & ! intent(inout)
                X_nl_all_levs, X_mixt_comp_all_levs,                          & ! Out
@@ -2505,8 +2499,7 @@ module clubb_driver
 #ifdef NETCDF
                                , clubb_config_flags%l_uv_nudge, &
                                clubb_config_flags%l_tke_aniso, &
-                               clubb_config_flags%l_standard_term_ta, &
-                               clubb_config_flags%l_single_C2_Skw &
+                               clubb_config_flags%l_standard_term_ta &
 #endif
                                 )
 

@@ -517,7 +517,7 @@ subroutine logical_flags_driver( current_date, current_time )
     i8 = selected_int_kind( 15 )
 
   integer, parameter :: &
-    ndim = 12, & ! Temporarily hardwired for a fixed number of flags
+    ndim = 11, & ! Temporarily hardwired for a fixed number of flags
     two_ndim = 2**ndim, &
     iunit = 10
 
@@ -649,8 +649,6 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
     l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
     l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
-    l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
-                                    ! rtpthlp
     l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
     l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
     l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
@@ -661,7 +659,7 @@ subroutine logical_flags_driver( current_date, current_time )
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
-    l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
+    l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
     l_use_cloud_cover, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
@@ -715,7 +713,6 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_brunt_vaisala_freq_moist, & ! Intent(out)
                                        l_use_thvm_in_bv_freq, & ! Intent(out)
                                        l_rcm_supersat_adj, & ! Intent(out)
-                                       l_single_C2_Skw, & ! Intent(out)
                                        l_damp_wp3_Skw_squared, & ! Intent(out)
                                        l_prescribed_avg_deltaz, & ! Intent(out)
                                        l_update_pressure, & ! Intent(out)
@@ -731,11 +728,10 @@ subroutine logical_flags_driver( current_date, current_time )
   model_flags_default(5) = l_upwind_xm_ma
   model_flags_default(6) = l_quintic_poly_interp
   model_flags_default(7) = l_vert_avg_closure
-  model_flags_default(8) = l_single_C2_Skw
-  model_flags_default(9) = l_standard_term_ta
-  model_flags_default(10) = l_tke_aniso
-  model_flags_default(11) = l_use_cloud_cover
-  model_flags_default(12) = l_rcm_supersat_adj
+  model_flags_default(8) = l_standard_term_ta
+  model_flags_default(9) = l_tke_aniso
+  model_flags_default(10) = l_use_cloud_cover
+  model_flags_default(11) = l_rcm_supersat_adj
 
   ! This should always be 1.0; it's here as a sanity check
   cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
@@ -846,11 +842,10 @@ subroutine logical_flags_driver( current_date, current_time )
     l_upwind_xm_ma = model_flags_array(1,5)
     l_quintic_poly_interp = model_flags_array(1,6)
     l_vert_avg_closure = model_flags_array(1,7)
-    l_single_C2_Skw = model_flags_array(1,8)
-    l_standard_term_ta = model_flags_array(1,9)
-    l_tke_aniso = model_flags_array(1,10)
-    l_use_cloud_cover = model_flags_array(1,11)
-    l_rcm_supersat_adj = model_flags_array(1,12)
+    l_standard_term_ta = model_flags_array(1,8)
+    l_tke_aniso = model_flags_array(1,9)
+    l_use_cloud_cover = model_flags_array(1,10)
+    l_rcm_supersat_adj = model_flags_array(1,11)
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.

@@ -2,7 +2,6 @@
 ! Description:
 ! This file contains tunable model parameters.
 ! C4, C14, and nu9 are only relevant when l_tke_aniso is true.
-! C2, C2b, & C2c are not used unless l_single_C2_Skw is true.
 
 &clubb_params_nl 
 C1          = 1.000000 ! Low Skewness in C1 Skewness Function. Units [-]
@@ -11,9 +10,6 @@ C1c         = 1.000000 ! Degree of Slope of C1 Skewness Function. Units [-]
 C2rt        = 1.000000 ! C2 constant associated with rtp2 dissipation term. Units [-]
 C2thl       = 1.000000 ! C2 constant associated with thlp2 dissipation term. Units [-]
 C2rtthl     = 2.000000 ! C2 constant associated with rtpthlp dissipation term. Units [-]
-C2          = 1.300000 ! Low Skewness in C2 Skewness Function. Units [-]
-C2b         = 1.300000 ! High Skewness in C2 Skewness Function. Units [-]
-C2c         = 5.000000 ! Degree of Slope of C2 Skewness Function. Units [-]
 C4          = 5.200000 ! Return to isotropy term in wp2/up2/vp2. Units [-]
 C_uu_shr    = 0.300000 ! Constant for shear terms in wp2 pressure term 2. Units [-]
 C_uu_buoy   = 0.300000 ! Constant for buoyancy terms in wp2 pressure term 2. Units [-]

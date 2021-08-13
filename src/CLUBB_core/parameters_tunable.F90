@@ -47,12 +47,9 @@ module parameters_tunable
     C1          = 1.000000_core_rknd,    & ! Low Skewness in C1 Skw. Function    [-]
     C1b         = 1.000000_core_rknd,    & ! High Skewness in C1 Skw. Function   [-]
     C1c         = 1.000000_core_rknd,    & ! Degree of Slope of C1 Skw. Function [-]
-    C2          = 1.300000_core_rknd,    & ! Low Skewness in C2 Skw. Function    [-]
     C2rt        = 2.000000_core_rknd,    & ! C2 coef. for the rtp2_dp1 term      [-]
     C2thl       = 2.000000_core_rknd,    & ! C2 coef. for the thlp2_dp1 term     [-]
     C2rtthl     = 2.000000_core_rknd,    & ! C2 coef. for the rtpthlp_dp1 term   [-]
-    C2b         = 1.300000_core_rknd,    & ! High Skewness in C2 Skw. Function   [-]
-    C2c         = 5.000000_core_rknd,    & ! Degree of Slope of C2 Skw. Function [-]
     C4          = 2.000000_core_rknd,    & ! Used only when l_tke_aniso is true  [-]
     C_uu_shr    = 0.400000_core_rknd,    & ! Coef. in pressure terms (shear): w'^2 eqn   [-]
     C_uu_buoy   = 0.300000_core_rknd,    & ! Coef. in pressure terms (buoyancy): w'^2 eqn [-]
@@ -79,7 +76,7 @@ module parameters_tunable
     C_wp3_pr_turb = 0.000000_core_rknd,  & ! Coefficient for the wp3_pr_turb term [-]
     C_wp3_pr_dfsn = 0.000000_core_rknd,  & ! Coefficient for the wp3_pr_dfsn term [-]
     C_wp2_splat   = 2.000000_core_rknd     ! Coefficient for gustiness near ground [-]
-!$omp threadprivate(C1, C1b, C1c, C2, C2b, C2c, &
+!$omp threadprivate(C1, C1b, C1c, &
 !$omp   C2rt, C2thl, C2rtthl, C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
 !$omp   C6thl, C6thlb, C6thlc, &
 !$omp   C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, &
@@ -318,7 +315,7 @@ module parameters_tunable
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
   namelist /clubb_params_nl/  & 
-    C1, C1b, C1c, C2, C2b, C2c,  & 
+    C1, C1b, C1c, & 
     C2rt, C2thl, C2rtthl, C4, C_uu_shr, C_uu_buoy, & 
     C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
@@ -355,8 +352,7 @@ module parameters_tunable
   character(len=28), dimension(nparams), parameter, public ::  & 
   params_list = & 
      (/"C1                          ", "C1b                         ", &
-       "C1c                         ", "C2                          ", &
-       "C2b                         ", "C2c                         ", &
+       "C1c                         ", &
        "C2rt                        ", "C2thl                       ", &
        "C2rtthl                     ", "C4                          ", &
        "C_uu_shr                    ", "C_uu_buoy                   ", &
@@ -620,7 +616,7 @@ module parameters_tunable
 
     call unpack_parameters & 
              ( params, & ! intent(in)
-               C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & ! intent(out)
+               C1, C1b, C1c, C2rt, C2thl, C2rtthl, & ! intent(out)
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & ! intent(out)
                C7, C7b, C7c, C8, C8b, C10, & ! intent(out)
                C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, & ! intent(out)
@@ -1453,7 +1449,7 @@ module parameters_tunable
 
     ! Put the variables in the output array
     call pack_parameters &
-             ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & ! intent(in)
+             ( C1, C1b, C1c, C2rt, C2thl, C2rtthl, & ! intent(in)
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & ! intent(in)
                C7, C7b, C7c, C8, C8b, C10, & ! intent(in)
                C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, & ! intent(in)
@@ -1538,7 +1534,7 @@ module parameters_tunable
     ! Amount to change each parameter for the initial simplex
     ! This MUST be changed to match the clubb_params_nl namelist if parameters are added!
     namelist /initmax/  & 
-      C1, C1b, C1c, C2, C2b, C2c,  & 
+      C1, C1b, C1c, & 
       C2rt, C2thl, C2rtthl, C4, C_uu_shr, C_uu_buoy, & 
       C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
@@ -1574,7 +1570,7 @@ module parameters_tunable
 
     ! Put the variables in the output array
     call pack_parameters &
-             ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & ! intent(in)
+             ( C1, C1b, C1c, C2rt, C2thl, C2rtthl, & ! intent(in)
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & ! intent(in)
                C7, C7b, C7c, C8, C8b, C10, & ! intent(in)
                C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, & ! intent(in)
@@ -1631,7 +1627,7 @@ module parameters_tunable
 
   !=============================================================================
   subroutine pack_parameters &
-             ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
+             ( C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
                C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
@@ -1668,9 +1664,6 @@ module parameters_tunable
         iC1,  & ! Variable(s)
         iC1b, & 
         iC1c, & 
-        iC2, & 
-        iC2b, & 
-        iC2c, & 
         iC2rt, & 
         iC2thl, & 
         iC2rtthl, & 
@@ -1775,7 +1768,7 @@ module parameters_tunable
 
     ! Input variables
     real( kind = core_rknd ), intent(in) :: & 
-      C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
+      C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
       C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
@@ -1803,9 +1796,6 @@ module parameters_tunable
     params(iC1)      = C1
     params(iC1b)     = C1b
     params(iC1c)     = C1c
-    params(iC2)      = C2
-    params(iC2b)     = C2b
-    params(iC2c)     = C2c
     params(iC2rt)    = C2rt
     params(iC2thl)   = C2thl
     params(iC2rtthl) = C2rtthl
@@ -1830,18 +1820,15 @@ module parameters_tunable
     params(iC12)     = C12
     params(iC13)     = C13
     params(iC14)     = C14
-
     params(iC_wp2_pr_dfsn)      = C_wp2_pr_dfsn
     params(iC_wp3_pr_tp)        = C_wp3_pr_tp
     params(iC_wp3_pr_turb)      = C_wp3_pr_turb
     params(iC_wp3_pr_dfsn)      = C_wp3_pr_dfsn
     params(iC_wp2_splat)        = C_wp2_splat
-
     params(iC6rt_Lscale0)       = C6rt_Lscale0
     params(iC6thl_Lscale0)      = C6thl_Lscale0
     params(iC7_Lscale0)         = C7_Lscale0
     params(iwpxp_L_thresh)    = wpxp_L_thresh
-
     params(ic_K)       = c_K
     params(ic_K1)      = c_K1
     params(inu1)       = nu1
@@ -1858,32 +1845,23 @@ module parameters_tunable
     params(ic_K_hmb)   = c_K_hmb
     params(iK_hm_min_coef)   = K_hm_min_coef
     params(inu_hm)     = nu_hm
-
     params(islope_coef_spread_DG_means_w) = slope_coef_spread_DG_means_w
     params(ipdf_component_stdev_factor_w) = pdf_component_stdev_factor_w
     params(icoef_spread_DG_means_rt) = coef_spread_DG_means_rt
     params(icoef_spread_DG_means_thl) = coef_spread_DG_means_thl
-
     params(igamma_coef)  = gamma_coef
     params(igamma_coefb) = gamma_coefb
     params(igamma_coefc) = gamma_coefc
-
     params(imu) = mu
-
     params(ibeta) = beta
-
     params(ilmin_coef) = lmin_coef
-
     params(iomicron) = omicron
     params(izeta_vrnce_rat) = zeta_vrnce_rat
-
     params(iupsilon_precip_frac_rat) = upsilon_precip_frac_rat
     params(ilambda0_stability_coef) = lambda0_stability_coef
     params(imult_coef) = mult_coef
-
     params(itaumin) = taumin
     params(itaumax) = taumax
-
     params(iLscale_mu_coef) = Lscale_mu_coef
     params(iLscale_pert_coef) = Lscale_pert_coef
     params(ialpha_corr) = alpha_corr
@@ -1920,7 +1898,7 @@ module parameters_tunable
   !=============================================================================
   subroutine unpack_parameters & 
              ( params, & 
-               C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
+               C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
                C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
@@ -1957,9 +1935,6 @@ module parameters_tunable
         iC1,  & ! Variable(s)
         iC1b, & 
         iC1c, & 
-        iC2, & 
-        iC2b, & 
-        iC2c, & 
         iC2rt, & 
         iC2thl, & 
         iC2rtthl, & 
@@ -2067,7 +2042,7 @@ module parameters_tunable
 
     ! Output variables
     real( kind = core_rknd ), intent(out) :: & 
-      C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
+      C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
       C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
@@ -2092,9 +2067,6 @@ module parameters_tunable
     C1      = params(iC1)
     C1b     = params(iC1b)
     C1c     = params(iC1c)
-    C2      = params(iC2)
-    C2b     = params(iC2b)
-    C2c     = params(iC2c)
     C2rt    = params(iC2rt)
     C2thl   = params(iC2thl)
     C2rtthl = params(iC2rtthl)
@@ -2222,7 +2194,7 @@ module parameters_tunable
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
 
     call pack_parameters &
-             ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & ! intent(in)
+             ( C1, C1b, C1c, C2rt, C2thl, C2rtthl, & ! intent(in)
                C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & ! intent(in)
                C7, C7b, C7c, C8, C8b, C10, & ! intent(in)
                C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, & ! intent(in)
@@ -2271,9 +2243,6 @@ module parameters_tunable
     C2rt                         = init_value
     C2thl                        = init_value
     C2rtthl                      = init_value
-    C2                           = init_value
-    C2b                          = init_value
-    C2c                          = init_value
     C4                           = init_value
     C_uu_shr                     = init_value
     C_uu_buoy                    = init_value

@@ -141,7 +141,6 @@ contains
     l_uv_nudge, & ! In
     l_tke_aniso, & ! In
     l_standard_term_ta, & ! In
-    l_single_C2_Skw, & ! In
     vert_decorr_coef, & ! In
     stats_lh_zt, stats_lh_sfc, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
@@ -230,11 +229,11 @@ contains
       l_uv_nudge,         & ! For wind speed nudging.
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
                             ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
                             ! Setting to .false. means that a_1 and a_3 are pulled outside of the
                             ! derivative in advance_wp2_wp3_module.F90 and in
                             ! advance_xp2_xpyp_module.F90.
-      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
+
 
     real( kind = core_rknd ), intent(in) :: &
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
@@ -297,7 +296,6 @@ contains
       l_uv_nudge, & ! In
       l_tke_aniso, & ! In
       l_standard_term_ta, & ! In
-      l_single_C2_Skw, & ! In
       vert_decorr_coef, & ! In
       stats_lh_zt, stats_lh_sfc, & ! intent(inout)
       X_nl_all_levs_col, X_mixt_comp_all_levs_col, & ! Out
@@ -321,7 +319,6 @@ contains
     l_uv_nudge, & ! In
     l_tke_aniso, & ! In
     l_standard_term_ta, & ! In
-    l_single_C2_Skw, & ! In
     vert_decorr_coef, & ! In
     stats_lh_zt, stats_lh_sfc, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
@@ -411,11 +408,10 @@ contains
       l_uv_nudge,         & ! For wind speed nudging.
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
                             ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
                             ! Setting to .false. means that a_1 and a_3 are pulled outside of the
                             ! derivative in advance_wp2_wp3_module.F90 and in
                             ! advance_xp2_xpyp_module.F90.
-      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
 
     real( kind = core_rknd ), intent(in) :: &
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
@@ -432,7 +428,6 @@ contains
       l_uv_nudge, & ! In
       l_tke_aniso, & ! In
       l_standard_term_ta, & ! In
-      l_single_C2_Skw, & ! In
       vert_decorr_coef, & ! In
       stats_lh_zt, stats_lh_sfc, & ! intent(inout)
       X_nl_all_levs, X_mixt_comp_all_levs, & ! Out

@@ -242,8 +242,6 @@ module model_flags
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
-      l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
-                                      ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
@@ -359,7 +357,6 @@ module model_flags
                                              l_brunt_vaisala_freq_moist, &
                                              l_use_thvm_in_bv_freq, &
                                              l_rcm_supersat_adj, &
-                                             l_single_C2_Skw, &
                                              l_damp_wp3_Skw_squared, &
                                              l_prescribed_avg_deltaz, &
                                              l_update_pressure, &
@@ -480,8 +477,6 @@ module model_flags
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
-      l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
-                                      ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
@@ -532,7 +527,6 @@ module model_flags
     l_brunt_vaisala_freq_moist = .false.
     l_use_thvm_in_bv_freq = .false.
     l_rcm_supersat_adj = .true.
-    l_single_C2_Skw = .false.
     l_damp_wp3_Skw_squared = .true.
 #ifdef GFDL
     l_prescribed_avg_deltaz = .true.
@@ -588,7 +582,6 @@ module model_flags
                                                  l_brunt_vaisala_freq_moist, &
                                                  l_use_thvm_in_bv_freq, &
                                                  l_rcm_supersat_adj, &
-                                                 l_single_C2_Skw, &
                                                  l_damp_wp3_Skw_squared, &
                                                  l_prescribed_avg_deltaz, &
                                                  l_update_pressure, &
@@ -710,8 +703,6 @@ module model_flags
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
-      l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
-                                      ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
@@ -766,7 +757,6 @@ module model_flags
     clubb_config_flags%l_brunt_vaisala_freq_moist = l_brunt_vaisala_freq_moist
     clubb_config_flags%l_use_thvm_in_bv_freq = l_use_thvm_in_bv_freq
     clubb_config_flags%l_rcm_supersat_adj = l_rcm_supersat_adj
-    clubb_config_flags%l_single_C2_Skw = l_single_C2_Skw
     clubb_config_flags%l_damp_wp3_Skw_squared = l_damp_wp3_Skw_squared
     clubb_config_flags%l_prescribed_avg_deltaz = l_prescribed_avg_deltaz
     clubb_config_flags%l_update_pressure = l_update_pressure
@@ -840,7 +830,6 @@ module model_flags
     write(iunit,*) "l_brunt_vaisala_freq_moist = ", clubb_config_flags%l_brunt_vaisala_freq_moist
     write(iunit,*) "l_use_thvm_in_bv_freq = ", clubb_config_flags%l_use_thvm_in_bv_freq
     write(iunit,*) "l_rcm_supersat_adj = ", clubb_config_flags%l_rcm_supersat_adj
-    write(iunit,*) "l_single_C2_Skw = ", clubb_config_flags%l_single_C2_Skw
     write(iunit,*) "l_damp_wp3_Skw_squared = ", clubb_config_flags%l_damp_wp3_Skw_squared
     write(iunit,*) "l_prescribed_avg_deltaz = ", clubb_config_flags%l_prescribed_avg_deltaz
     write(iunit,*) "l_update_pressure = ", clubb_config_flags%l_update_pressure

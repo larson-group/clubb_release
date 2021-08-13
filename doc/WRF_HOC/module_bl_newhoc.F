@@ -109,9 +109,6 @@ MODULE module_bl_newhoc
 REAL, PARAMETER:: C1_in          = 1.450000 ! Low Skewness in C1 Skewness Function.
 REAL, PARAMETER:: C1b_in         = 3.500000 ! High Skewness in C1 Skewness Function.
 REAL, PARAMETER:: C1c_in         = 1.000000 ! Degree of Slope of C1 Skewness Function.
-REAL, PARAMETER:: C2_in          = 1.300000 ! Low Skewness in C2 Skewness Function.
-REAL, PARAMETER:: C2b_in         = 1.300000 ! High Skewness in C2 Skewness Function.
-REAL, PARAMETER:: C2c_in         = 5.000000 ! Degree of Slope of C2 Skewness Function.
 REAL, PARAMETER:: C4_in          = 5.200000 ! Currently Not Used in the Model.
 REAL, PARAMETER:: C5_in          = 0.300000 ! Constant from Chris Golaz.
 REAL, PARAMETER:: C6rt_in        = 2.250000 ! Low Skewness in C6rt Skewness Function.
@@ -507,7 +504,7 @@ DO i = i_start, i_end, 1
 
       CALL parameterization_setup                                         &
            ( nzmax, deltaz, C1_in, C1b_in, C1c_in,                        &
-             C2_in, C2b_in, C2c_in, C4_in, C5_in,                         &
+             C4_in, C5_in,                                                &
              C6rt_in, C6rtb_in, C6rtc_in, C6thl_in,                       &
              C6thlb_in, C6thlc_in, C7_in, C7b_in, C7c_in,                 &
              C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, C12_in,     &
@@ -1165,7 +1162,7 @@ IF (.not. restart) THEN
          ! Set up HOC interface.
          CALL parameterization_setup                                         &
               ( nzmax, deltaz, C1_in, C1b_in, C1c_in,                        &
-                C2_in, C2b_in, C2c_in, C4_in, C5_in,                         &
+                C4_in, C5_in,                                                &
                 C6rt_in, C6rtb_in, C6rtc_in, C6thl_in,                       &
                 C6thlb_in, C6thlc_in, C7_in, C7b_in, C7c_in,                 &
                 C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, C12_in,     &
