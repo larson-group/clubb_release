@@ -806,22 +806,10 @@ module mixing_length
         sat_mixrat_liq_lookup, &
         sat_mixrat_ice
 
-    use constants_clubb, only: &
-        zero, &
-        one, &
-        T_freeze_K
-
     use error_code, only: &
         clubb_at_least_debug_level
 
     implicit none
-
-    ! Parameters
-    logical, parameter :: &
-      l_include_ice = .false. ! Include ice in calculation of rsat_par
-
-    real( kind = core_rknd ), parameter :: &
-      T_all_ice = 233.15_core_rknd ! Temperature at which only ice is included in calculation [K]
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -833,46 +821,19 @@ module mixing_length
       rsatl_par
 
     real( kind = core_rknd ) :: &
-      sat_ice_ratio, &    ! Ratio of interpolation between sat_mixrat_liq and sat_mixrat_ice.
-                          ! sat_ice_ratio=1 ---> rsatl_par = sat_mixrat_ice
-      sat_mixrat_liq_res, &
-      sat_mixrat_ice_res
+      sat_mixrat_liq_res
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
 
-    if ( l_include_ice ) then
-      if ( tl_par >= T_freeze_K ) then
-        sat_ice_ratio = zero
-      else if ( tl_par <= T_all_ice ) then
-        sat_ice_ratio = one
-      else
-        ! Linear interpolation
-        sat_ice_ratio = ( T_freeze_K - tl_par ) / ( T_freeze_K - T_all_ice )
-      end if
+    ! Include liquid.
+    if ( l_sat_mixrat_lookup ) then
+      sat_mixrat_liq_res = sat_mixrat_liq_lookup( p_in_Pa, tl_par )
     else
-      sat_ice_ratio = zero
-    end if ! l_include_ice
-
-    if ( sat_ice_ratio < one ) then
-      ! Include liquid.
-      if ( l_sat_mixrat_lookup ) then
-        sat_mixrat_liq_res = sat_mixrat_liq_lookup( p_in_Pa, tl_par )
-      else
-        sat_mixrat_liq_res = sat_mixrat_liq( p_in_Pa, tl_par )
-      end if
-    else
-      sat_mixrat_liq_res = zero
+      sat_mixrat_liq_res = sat_mixrat_liq( p_in_Pa, tl_par )
     end if
-
-    if ( sat_ice_ratio > zero ) then
-      ! Include ice.
-      sat_mixrat_ice_res = sat_mixrat_ice( p_in_Pa, tl_par )
-    else
-      sat_mixrat_ice_res = zero
-    end if
-
-    rsatl_par = sat_mixrat_liq_res + ( sat_mixrat_ice_res - sat_mixrat_liq_res ) * sat_ice_ratio
+    
+    rsatl_par = sat_mixrat_liq_res 
 
     return
   end function compute_rsat_parcel
