@@ -288,6 +288,13 @@ fi
 rm -f 'error.in'
 rm -f *'_hoc.in'
 
+# Copy the contents of the error_*.in file to the tuner log so they will be saved
+TUNER_LOG=`ls -t ../input/tuning_run_results_* | head -n 1`
+echo "" >> $TUNER_LOG
+echo "********************************" >> $TUNER_LOG
+echo "contents of " $ERROR_IN >> $TUNER_LOG
+cat $ERROR_IN >> $TUNER_LOG
+
 #######################################################################
 # do a run with the optimal constants
 echo "Running with the optimal parameter set"
