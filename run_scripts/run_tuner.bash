@@ -254,7 +254,6 @@ if [ $NIGHTLY=false ] ; then
 
 fi
 
-exit
 #######################################################################
 #
 # State which case is being tuned
