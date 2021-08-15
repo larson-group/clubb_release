@@ -1484,12 +1484,14 @@ module advance_wp2_wp3_module
     ! Calculate diffusion term for w'2 using a completely implicit time step
     call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:), & ! intent(in)
                            gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
+                           invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
                            lhs_diff_zm(:,:) ) ! intent(out)
 
 
     ! Calculate diffusion term for w'3 using a completely implicit time step
     call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:), & ! intent(in)
                            gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
+                           invrs_rho_ds_zt(:), rho_ds_zm(:), & ! Intent(in)
                            lhs_diff_zt(:,:) ) ! intent(out)
 
     lhs_diff_zt(:,:) = lhs_diff_zt(:,:) * C12
@@ -2172,12 +2174,14 @@ module advance_wp2_wp3_module
 
         ! Calculate RHS eddy diffusion terms for w'2 and w'3
         
-        call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:),      & ! intent(in) 
+        call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:),  & ! intent(in) 
                                gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
+                               invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
                                rhs_diff_zm(:,:) )                  ! inetnt(out)
 
-        call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:),      & ! inetnt(in) 
+        call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:),  & ! inetnt(in) 
                                gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
+                               invrs_rho_ds_zt(:), rho_ds_zm(:), & ! Intent(in)
                                rhs_diff_zt(:,:) )                  ! intent(out)
         ! Add diffusion terms
         do k = 2, gr%nz-1

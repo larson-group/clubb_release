@@ -303,7 +303,7 @@ module advance_windm_edsclrm_module
 
        ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
        ! means that x'w' at the top model level is 0,
-       ! since x'w' = - K_zm * d(xm)/dz.
+       ! since x'w' = - Km_zm * d(xm)/dz.
        upwp(gr%nz) = zero
        vpwp(gr%nz) = zero
 
@@ -553,7 +553,7 @@ module advance_windm_edsclrm_module
 
       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
       ! means that x'w' at the top model level is 0,
-      ! since x'w' = - K_zm * d(xm)/dz.
+      ! since x'w' = - Km_zm * d(xm)/dz.
       wpedsclrp(gr%nz,1:edsclr_dim) = zero
 
 
@@ -1614,9 +1614,6 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ) :: &
         invrs_dt    ! Inverse of dt, 1/dt, used for computational efficiency
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-        K_zm        ! Coefs of eddy diffusivity 
-
     real( kind = core_rknd ), dimension(3,gr%nz) :: &
         lhs_diff, & ! LHS diffustion terms
         lhs_ma_zt   ! LHS mean advection terms
@@ -1625,23 +1622,25 @@ module advance_windm_edsclrm_module
     ! --- Begin Code ---
 
     ! Calculate coefs of eddy diffusivity and inverse of dt
-    K_zm(:) = rho_ds_zm(:) * Km_zm(:)
     invrs_dt = 1.0_core_rknd / dt
 
     ! Calculate diffusion terms
-    call diffusion_zt_lhs( gr, K_zm(:), nu(:),  &                  ! intent(in)
+    call diffusion_zt_lhs( gr, Km_zm(:), nu(:),  &              ! intent(in)
                            gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
+                           invrs_rho_ds_zt(:), rho_ds_zm(:), & ! Intent(in)
                            lhs_diff(:,:) )                     ! intent(out)
 
     ! The lower boundary condition needs to be applied here at level 2.
 
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
     lhs_diff(kp1_tdiag,2) &
-    = - gr%invrs_dzt(2) * ( K_zm(2) + nu(1) ) * gr%invrs_dzm(2)
+    = - gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
+                        * ( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
     lhs_diff(k_tdiag,2) &
-    = + gr%invrs_dzt(2) * ( K_zm(2) + nu(1) ) * gr%invrs_dzm(2)
+    = + gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
+                        * ( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
     lhs_diff(km1_tdiag,2) = zero
@@ -1655,14 +1654,14 @@ module advance_windm_edsclrm_module
     ! Add terms to lhs
     do k = 2, gr%nz
 
-        lhs(1,k) = 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(1,k)
+        lhs(1,k) = 0.5_core_rknd * lhs_diff(1,k)
 
-        lhs(2,k) = 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(2,k)
+        lhs(2,k) = 0.5_core_rknd * lhs_diff(2,k)
         
         ! LHS time tendency.
         lhs(2,k) = lhs(2,k) + invrs_dt
 
-        lhs(3,k) = 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(3,k)
+        lhs(3,k) = 0.5_core_rknd * lhs_diff(3,k)
 
 
     enddo ! k = 2 .. gr%nz
@@ -1835,9 +1834,6 @@ module advance_windm_edsclrm_module
       rhs          ! Right-hand side (explicit) contributions.
 
     !------------------- Local Variables -------------------
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      K_zm              ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
-
     integer :: k    ! Loop variable
 
     ! For use in Crank-Nicholson eddy diffusion.
@@ -1860,11 +1856,10 @@ module advance_windm_edsclrm_module
           ixm_ta = 0
     end select
    
-    K_zm(1:gr%nz) = rho_ds_zm(1:gr%nz) * Km_zm(1:gr%nz)   ! Calculate coefs of eddy diffusivity
-    
     ! RHS turbulent advection term, for grid level 3 - gr%nz
-    call diffusion_zt_lhs( gr, K_zm(1:gr%nz), nu(1:gr%nz),               & ! Intent(in)
+    call diffusion_zt_lhs( gr, Km_zm(1:gr%nz), nu(1:gr%nz),              & ! Intent(in)
                            gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
+                           invrs_rho_ds_zt(1:gr%nz), rho_ds_zm(1:gr%nz), & ! Intent(in)
                            lhs_diff(1:3,1:gr%nz)                         ) ! Intent(out)
 
     ! RHS turbulent advection term (solved as an eddy-diffusion term), for grid
@@ -1872,11 +1867,13 @@ module advance_windm_edsclrm_module
 
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
     lhs_diff(kp1_tdiag,2) &
-    = - gr%invrs_dzt(2) * ( K_zm(2) + nu(1) ) * gr%invrs_dzm(2)
+    = - gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
+                        *( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
     lhs_diff(k_tdiag,2) &
-    = + gr%invrs_dzt(2) * ( K_zm(2) + nu(1) ) * gr%invrs_dzm(2)
+    = + gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
+                        * ( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
     lhs_diff(km1_tdiag,2) = zero
@@ -1888,7 +1885,7 @@ module advance_windm_edsclrm_module
     ! Non-boundary rhs calculation, this is a highly vectorized loop
     do k = 2, gr%nz-1
 
-        rhs(k) = 0.5_core_rknd * invrs_rho_ds_zt(k) & 
+        rhs(k) = 0.5_core_rknd  & 
                  * ( - lhs_diff(3,k) * xm(k-1)      &
                      - lhs_diff(2,k) * xm(k)        &
                      - lhs_diff(1,k) * xm(k+1) )    &
@@ -1897,7 +1894,7 @@ module advance_windm_edsclrm_module
     end do
 
     ! Upper boundary calculation
-    rhs(gr%nz) = 0.5_core_rknd * invrs_rho_ds_zt(gr%nz) & 
+    rhs(gr%nz) = 0.5_core_rknd  & 
                  * ( - lhs_diff(3,gr%nz) * xm(gr%nz-1)  &
                      - lhs_diff(2,gr%nz) * xm(gr%nz) )  &
                  + xm_tndcy(gr%nz)                      & ! RHS forcings

@@ -1783,12 +1783,13 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    call diffusion_zt_lhs( gr, rho_ds_zm * K_hm, nu, &
+    call diffusion_zt_lhs( gr, K_hm, nu, &
                            gr%invrs_dzm, gr%invrs_dzt, &
+                           invrs_rho_ds_zt, rho_ds_zm, &
                            lhs_ta )
 
     do k = 2, gr%nz, 1
-       lhs_ta(:,k) = one_half * invrs_rho_ds_zt(k) * lhs_ta(:,k)
+       lhs_ta(:,k) = one_half * lhs_ta(:,k)
     enddo ! k = 1, gr%nz, 1
 
     ! The lower boundary condition needs to be applied here at level 2.  The
@@ -1801,12 +1802,12 @@ module advance_microphys_module
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
     lhs_ta(kp1_tdiag,2) &
     = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(1) ) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
     lhs_ta(k_tdiag,2) &
     = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(1) ) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
     lhs_ta(km1_tdiag,2) = zero
@@ -2108,12 +2109,13 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    call diffusion_zt_lhs( gr, rho_ds_zm * K_hm, nu, &
+    call diffusion_zt_lhs( gr, K_hm, nu, &
                            gr%invrs_dzm, gr%invrs_dzt, &
+                           invrs_rho_ds_zt, rho_ds_zm, & 
                            lhs_ta )
 
     do k = 2, gr%nz, 1
-       lhs_ta(:,k) = one_half * invrs_rho_ds_zt(k) * lhs_ta(:,k)
+       lhs_ta(:,k) = one_half * lhs_ta(:,k)
     enddo ! k = 1, gr%nz, 1
 
     ! The lower boundary condition needs to be applied here at level 2.  The
@@ -2126,12 +2128,12 @@ module advance_microphys_module
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
     lhs_ta(kp1_tdiag,2) &
     = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(1) ) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
     lhs_ta(k_tdiag,2) &
     = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(1) ) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
     lhs_ta(km1_tdiag,2) = zero
