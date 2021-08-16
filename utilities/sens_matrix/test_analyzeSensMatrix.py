@@ -57,7 +57,9 @@ def test_3x2_C8transformed():
 
     # Calculate changes in parameter values needed to match metrics.
     defaultMetricValsCol, defaultBiasesCol, \
-    defaultBiasesApprox, defaultBiasesApproxPC, \
+    defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals, \
+    defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
+    normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
     defaultParamValsOrigRow, dparamsSoln, \
@@ -117,7 +119,9 @@ def test_3x2_novarstransformed():
 
     # Calculate changes in parameter values needed to match metrics.
     defaultMetricValsCol, defaultBiasesCol, \
-    defaultBiasesApprox, defaultBiasesApproxPC, \
+    defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals, \
+    defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
+    normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
     defaultParamValsOrigRow, dparamsSoln, \
@@ -171,7 +175,9 @@ def test_2x2_C8transformed():
 
     # Calculate changes in parameter values needed to match metrics.
     defaultMetricValsCol, defaultBiasesCol, \
-    defaultBiasesApprox, defaultBiasesApproxPC, \
+    defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals, \
+    defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
+    normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
     defaultParamValsOrigRow, dparamsSoln, \
@@ -235,7 +241,9 @@ def test_2x2_novarstransformed():
 
     # Calculate changes in parameter values needed to match metrics.
     defaultMetricValsCol, defaultBiasesCol, \
-    defaultBiasesApprox, defaultBiasesApproxPC, \
+    defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals, \
+    defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
+    normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
     defaultParamValsOrigRow, dparamsSoln, \
