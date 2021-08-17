@@ -3168,7 +3168,6 @@ contains
                                                  l_rcm_supersat_adj, & ! Out
                                                  l_damp_wp3_Skw_squared, & ! Out
                                                  l_prescribed_avg_deltaz, & ! Out
-                                                 l_update_pressure, & ! Out
                                                  l_lmm_stepping, & ! Out
                                                  l_e3sm_config, & ! Out
                                                  l_use_tke_in_wp3_pr_turb_term ) ! Out
@@ -3284,7 +3283,6 @@ contains
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
@@ -3331,7 +3329,6 @@ contains
                                          l_rcm_supersat_adj, & ! Out
                                          l_damp_wp3_Skw_squared, & ! Out
                                          l_prescribed_avg_deltaz, & ! Out
-                                         l_update_pressure, & ! Out
                                          l_lmm_stepping, & ! Out
                                          l_e3sm_config, & ! Out
                                          l_use_tke_in_wp3_pr_turb_term ) ! Out
@@ -3383,7 +3380,6 @@ contains
                                                      l_rcm_supersat_adj, & ! In
                                                      l_damp_wp3_Skw_squared, & ! In
                                                      l_prescribed_avg_deltaz, & ! In
-                                                     l_update_pressure, & ! In
                                                      l_lmm_stepping, & ! In
                                                      l_e3sm_config, & ! In
                                                      l_use_tke_in_wp3_pr_turb_term, & ! In
@@ -3501,7 +3497,6 @@ contains
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
@@ -3552,7 +3547,6 @@ contains
                                              l_rcm_supersat_adj, & ! In
                                              l_damp_wp3_Skw_squared, & ! In
                                              l_prescribed_avg_deltaz, & ! In
-                                             l_update_pressure, & ! In
                                              l_lmm_stepping, & ! In
                                              l_e3sm_config, & ! In
                                              l_use_tke_in_wp3_pr_turb_term, & ! In

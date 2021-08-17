@@ -651,7 +651,6 @@ subroutine logical_flags_driver( current_date, current_time )
     l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
     l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
     l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-    l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
     l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
     l_e3sm_config,                & ! Run model with E3SM settings
     l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
@@ -668,7 +667,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_use_C11_Richardson, l_use_shear_Richardson, l_prescribed_avg_deltaz, &
     l_diffuse_rtm_and_thlm, l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, &
     l_trapezoidal_rule_zm, l_call_pdf_closure_twice, l_Lscale_plume_centered, &
-    l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, l_update_pressure, &
+    l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
     l_lmm_stepping, l_e3sm_config, l_use_tke_in_wp3_pr_turb_term
 
   ! ---- Begin Code ----
@@ -715,7 +714,6 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_rcm_supersat_adj, & ! Intent(out)
                                        l_damp_wp3_Skw_squared, & ! Intent(out)
                                        l_prescribed_avg_deltaz, & ! Intent(out)
-                                       l_update_pressure, & ! Intent(out)
                                        l_lmm_stepping, & ! Intent(out)
                                        l_e3sm_config, & ! Intent(out)
                                        l_use_tke_in_wp3_pr_turb_term ) ! Intent(out)

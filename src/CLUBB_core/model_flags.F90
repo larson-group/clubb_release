@@ -244,7 +244,6 @@ module model_flags
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
@@ -359,7 +358,6 @@ module model_flags
                                              l_rcm_supersat_adj, &
                                              l_damp_wp3_Skw_squared, &
                                              l_prescribed_avg_deltaz, &
-                                             l_update_pressure, &
                                              l_lmm_stepping, &
                                              l_e3sm_config, &
                                              l_use_tke_in_wp3_pr_turb_term )
@@ -479,7 +477,6 @@ module model_flags
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
@@ -533,7 +530,6 @@ module model_flags
 #else
     l_prescribed_avg_deltaz = .false.
 #endif
-    l_update_pressure = .true.
     l_lmm_stepping = .false.
     l_e3sm_config = .false.
     l_use_tke_in_wp3_pr_turb_term = .false.
@@ -584,7 +580,6 @@ module model_flags
                                                  l_rcm_supersat_adj, &
                                                  l_damp_wp3_Skw_squared, &
                                                  l_prescribed_avg_deltaz, &
-                                                 l_update_pressure, &
                                                  l_lmm_stepping, &
                                                  l_e3sm_config, &
                                                  l_use_tke_in_wp3_pr_turb_term, &
@@ -705,7 +700,6 @@ module model_flags
       l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
@@ -759,7 +753,6 @@ module model_flags
     clubb_config_flags%l_rcm_supersat_adj = l_rcm_supersat_adj
     clubb_config_flags%l_damp_wp3_Skw_squared = l_damp_wp3_Skw_squared
     clubb_config_flags%l_prescribed_avg_deltaz = l_prescribed_avg_deltaz
-    clubb_config_flags%l_update_pressure = l_update_pressure
     clubb_config_flags%l_lmm_stepping = l_lmm_stepping
     clubb_config_flags%l_e3sm_config = l_e3sm_config
     clubb_config_flags%l_use_tke_in_wp3_pr_turb_term = l_use_tke_in_wp3_pr_turb_term
@@ -832,7 +825,6 @@ module model_flags
     write(iunit,*) "l_rcm_supersat_adj = ", clubb_config_flags%l_rcm_supersat_adj
     write(iunit,*) "l_damp_wp3_Skw_squared = ", clubb_config_flags%l_damp_wp3_Skw_squared
     write(iunit,*) "l_prescribed_avg_deltaz = ", clubb_config_flags%l_prescribed_avg_deltaz
-    write(iunit,*) "l_update_pressure = ", clubb_config_flags%l_update_pressure
     write(iunit,*) "l_lmm_stepping = ", clubb_config_flags%l_lmm_stepping
     write(iunit,*) "l_e3sm_config = ", clubb_config_flags%l_e3sm_config
     write(iunit,*) "l_use_tke_in_wp3_pr_turb_term = ", &

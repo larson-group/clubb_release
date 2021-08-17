@@ -269,7 +269,6 @@ module advance_clubb_core_module
         advance_xp3    ! Procedure(s)
 
     use calc_pressure, only: &
-        update_pressure, & ! Procedure(s)
         calculate_thvm
 
     use clubb_precision, only:  &
@@ -684,10 +683,6 @@ module advance_clubb_core_module
       sqrt_em_zt,     & ! sqrt( em ) on zt levels; where em is TKE      [m/s]
       xp3_coef_fnc      ! Coefficient in simple xp3 equation            [-]
 !Lscale_weight Uncomment this if you need to use this vairable at some point.
-
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
-      p_in_Pa_zm, & ! Air pressure on momentum levels       [Pa]
-      exner_zm      ! Exner function on momentum levels     [-]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       w_1_zm,        & ! Mean w (1st PDF component)                   [m/s]
@@ -1825,16 +1820,6 @@ module advance_clubb_core_module
                                  edsclrm(:,ixind))       ! intent(inout)
       enddo
 #endif
-
-    ! Update pressure and exner based on the new values of the thermodynamic
-    ! predictive fields.
-    if ( clubb_config_flags%l_update_pressure ) then
-
-       call update_pressure( gr, thlm, rtm, rcm, rho_ds_zt, thv_ds_zt, & ! intent(in)
-                             p_in_Pa, exner,                       & ! intent(inout)
-                             p_in_Pa_zm, exner_zm )                  ! intent(out)
-
-    endif ! clubb_config_flags%l_update_pressure
 
     if ( clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields &
          .or. clubb_config_flags%ipdf_call_placement &
