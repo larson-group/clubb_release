@@ -129,8 +129,9 @@ module error
     iter = 0 ! Total number of iterations amoeba spent calculating optimal values
 
   real( kind = core_rknd ), public :: & 
-    init_err = -999._core_rknd,  & ! Error for the initial constants
-    min_err  = -999._core_rknd     ! The lowest the minimization algorithm could go
+    init_err    = -999._core_rknd,  & ! Error for the initial constants
+    min_err     = -999._core_rknd,  & ! The lowest the minimization algorithm could go
+    min_err_old = -999._core_rknd     ! Same as above, used to find min_err_terms
 
   real( kind = core_rknd ), dimension(nparams), private :: & 
     params = -999._core_rknd  ! Vector of all CLUBB tunable parameter values
@@ -562,6 +563,7 @@ module error
     ! Save initial error
 
     init_err = cost_fnc_vector(1)
+    min_err_old = init_err
     init_err_terms = err_terms
 
     ! Other initialization runs
@@ -1010,6 +1012,14 @@ module error
     err_sum  = sum( err_sums )
 
     !---------------------------------------------------------------
+    ! Save new minimums (used in write_results)
+    !---------------------------------------------------------------    
+    if ( err_sum < min_err_old ) then
+      min_err_old = err_sum
+      min_err_terms = err_sums
+    end if
+
+    !---------------------------------------------------------------
     ! Save total error and error contributions breakdown
     !---------------------------------------------------------------
     err_terms = err_sums
@@ -1051,7 +1061,9 @@ module error
                                  ! or = a number connected with a file
 
     ! Local variables
-    integer :: i ! Loop iterator
+    integer :: i, c_run ! Loop iterators
+    character(50) :: case_name, variable
+    integer :: underscore_idx
 
     if ( tune_type == 0 ) then
       write(unit=iunit,fmt=*) "Number of iterations past initialization:",  iter
@@ -1072,8 +1084,25 @@ module error
     ! The $$ is here to make it easy to find with grep
     write(unit=iunit,fmt='(A3,F15.6)') "$$ ", min_err
 
-    write(unit=iunit,fmt=*) "Approx. percent increase in accuracy:",  & 
+    write(unit=iunit,fmt='(A,F6.3,A2)') "Approx. percent increase in accuracy: ",  &
       ((init_err - min_err) / init_err*100.0_core_rknd), "%" ! Known magic number
+
+    write(unit=iunit,fmt=*)
+    write(unit=iunit,fmt='(A)') "Approx. percent increase in accuracy by variable:"
+    write(unit=iunit,fmt='(A9,5x,6x,A8,12x,A11)') &
+        "Case name", "Variable", "Improvement"
+
+    do c_run = 1, c_total
+      underscore_idx = index( trim(run_file(c_run)) , "_" , .true. )
+      read( run_file(c_run)(1:underscore_idx-1), * ) case_name
+      do i = 1 , v_total
+         variable = hoc_v(i)
+          write(unit=iunit,fmt="(A20,A20,F6.3,A2)") adjustl(case_name), adjustl(variable) , &
+            (init_err_terms(c_run,i)-min_err_terms(c_run,i))/init_err_terms(c_run,i) &
+             * 100.0_core_rknd, "%"
+      end do
+    end do
+ 
 
     return
   end subroutine write_results
