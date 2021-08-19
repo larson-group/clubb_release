@@ -1098,11 +1098,10 @@ module error
       do i = 1 , v_total
          variable = hoc_v(i)
           write(unit=iunit,fmt="(A20,A20,F6.3,A2)") adjustl(case_name), adjustl(variable) , &
-            (init_err_terms(c_run,i)-min_err_terms(c_run,i))/init_err_terms(c_run,i) &
+            (init_err_terms(c_run,i)-min_err_terms(c_run,i))/init_err &
              * 100.0_core_rknd, "%"
       end do
     end do
- 
 
     return
   end subroutine write_results
