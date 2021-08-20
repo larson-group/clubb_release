@@ -64,7 +64,6 @@ module advance_xm_wpxp_module
                               l_diffuse_rtm_and_thlm, &
                               l_stability_correct_Kh_N2_zm, &
                               l_godunov_upwind_wpxp_ta, &
-                              l_upwind_wpxp_ta, &
                               l_upwind_xm_ma, &
                               l_uv_nudge, &
                               l_tke_aniso, &
@@ -301,10 +300,6 @@ module advance_xm_wpxp_module
                                       ! differencing approximation rather than a centered 
                                       ! differencing for turbulent advection terms. 
                                       ! It affects  wpxp only.
-      l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
-                                      ! differencing approximation rather than a centered
-                                      ! differencing for turbulent or mean advection terms.
-                                      ! It affects wprtp, wpthlp, & wpsclrp.
       l_upwind_xm_ma,               & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
@@ -556,16 +551,15 @@ module advance_xm_wpxp_module
     end if
 
                     
-    call  calc_xm_wpxp_ta_terms( gr, wprtp, wp2rtp, wpthlp, &  ! intent(in)
-                                 wp2thlp, wpsclrp, wp2sclrp, & ! intent(in)
+    call  calc_xm_wpxp_ta_terms( gr, wp2rtp, &  ! intent(in)
+                                 wp2thlp, wp2sclrp, & ! intent(in)
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, & ! intent(in)
-                                 sigma_sqd_w, wp3_on_wp2, wp3_on_wp2_zt, & ! intent(in)
+                                 sigma_sqd_w, wp3_on_wp2_zt, & ! intent(in)
                                  pdf_implicit_coefs_terms, & ! intent(in)
                                  iiPDF_type, & ! intent(in)
                                  l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, & ! intent(in)
                                  l_scalar_calc, & ! intent(in)
                                  l_godunov_upwind_wpxp_ta, & ! intent(in)
-                                 l_upwind_wpxp_ta, & ! intent(in)
                                  stats_zt, & ! intent(inout)
                                  lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, & ! intent(out)
                                  lhs_ta_wpvp, lhs_ta_wpsclrp, & ! intent(out)
@@ -1705,16 +1699,15 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_rhs
   
   !=============================================================================================
-  subroutine calc_xm_wpxp_ta_terms( gr, wprtp, wp2rtp, wpthlp, &
-                                    wp2thlp, wpsclrp, wp2sclrp, &
+  subroutine calc_xm_wpxp_ta_terms( gr, wp2rtp, &
+                                    wp2thlp, wp2sclrp, &
                                     rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
-                                    sigma_sqd_w, wp3_on_wp2, wp3_on_wp2_zt, &
+                                    sigma_sqd_w, wp3_on_wp2_zt, &
                                     pdf_implicit_coefs_terms, &
                                     iiPDF_type, &
                                     l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, &
                                     l_scalar_calc, &
                                     l_godunov_upwind_wpxp_ta, &
-                                    l_upwind_wpxp_ta, &
                                     stats_zt, & 
                                     lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, &
                                     lhs_ta_wpvp, lhs_ta_wpsclrp, &
@@ -1782,19 +1775,15 @@ module advance_xm_wpxp_module
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
                                 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      wprtp, &
       wp2rtp, &
-      wpthlp, &
       wp2thlp, &
       rho_ds_zt, &
       invrs_rho_ds_zm, &                  
       rho_ds_zm, &           
       sigma_sqd_w, &     
-      wp3_on_wp2, &
       wp3_on_wp2_zt
       
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(in) :: &
-      wpsclrp, &
       wp2sclrp
       
     integer, intent(in) :: &
@@ -1809,13 +1798,18 @@ module advance_xm_wpxp_module
       l_predict_upwp_vpwp
 
     logical, intent(in) :: &
-      l_godunov_upwind_wpxp_ta, & ! This flag determines whether we want to use an upwind
+      l_godunov_upwind_wpxp_ta    ! This flag determines whether we want to use an upwind
                                   ! differencing approximation rather than a centered 
                                   ! differencing for turbulent advection terms. 
                                   ! It affects  wpxp only.
-      l_upwind_wpxp_ta ! This flag determines whether we want to use an upwind differencing
-                       ! approximation rather than a centered differencing for turbulent or
-                       ! mean advection terms. It affects wprtp, wpthlp, & wpsclrp.
+
+    logical, parameter :: &
+      l_dummy_false = .false. ! This flag is set to false in order to replace the flag
+                              ! passed into the xpyp_term_ta_pdf_rhs subroutine.
+                              ! This stems from removing the l_upwind_wpxp_ta flag.
+                              ! More information on this can be found on issue #926
+                              ! on the clubb repository.
+
       
     !------------------- Output Variables -------------------
         
@@ -1909,43 +1903,27 @@ module advance_xm_wpxp_module
         lhs_ta_wpsclrp(:,:,i) = zero
       end if
        
-      ! The termo-level terms only need to be set if we're not using l_upwind_wpxp_ta,
-      ! or if stats output is on
-      if ( .not. l_upwind_wpxp_ta .or. l_stats_samp ) then
-        term_wp2rtp_explicit = wp2rtp
-        term_wp2thlp_explicit = wp2thlp
-      end if
-       
-      ! Interpolate wp2rtp to momentum levels, and calculate the sign of vertical velocity
-      if ( l_upwind_wpxp_ta ) then
-        term_wp2rtp_explicit_zm = zt2zm( gr, wp2rtp )
-        sgn_t_vel_wprtp = sgn_turbulent_velocity( gr, term_wp2rtp_explicit_zm, wprtp )
-      endif ! l_upwind_wpxp_ta
-
+      term_wp2rtp_explicit = wp2rtp
+      term_wp2thlp_explicit = wp2thlp
+      
       ! Calculate the RHS turbulent advection term for <w'r_t'>
       call xpyp_term_ta_pdf_rhs( gr, term_wp2rtp_explicit(:),       & ! Intent(in)
                                  rho_ds_zt(:),                  & ! Intent(in)
                                  invrs_rho_ds_zm(:),            & ! Intent(in)
                                  gr%invrs_dzm(:),               & ! Intent(in)
-                                 l_upwind_wpxp_ta,              & ! Intent(in)
+                                 l_dummy_false,                 & ! Intent(in)
                                  sgn_t_vel_wprtp(:),            & ! Intent(in)
                                  term_wp2rtp_explicit_zm(:),    & ! Intent(in)
                                  rho_ds_zm(:),                  & ! Intent(in)
                                  gr%invrs_dzt(:),               & ! Intent(in)
                                  rhs_ta_wprtp(:)                ) ! Intent(out)
-      
-      ! Interpolate wp2thlp to momentum levels, and calculate the sign of vertical velocity
-      if ( l_upwind_wpxp_ta ) then
-        term_wp2thlp_explicit_zm = zt2zm( gr, wp2thlp )
-        sgn_t_vel_wpthlp = sgn_turbulent_velocity( gr, term_wp2thlp_explicit_zm, wpthlp )
-      endif ! l_upwind_wpxp_ta
        
       ! Calculate the RHS turbulent advection term for <w'thl'>
       call xpyp_term_ta_pdf_rhs( gr, term_wp2thlp_explicit(:),      & ! Intent(in)
                                  rho_ds_zt(:),                  & ! Intent(in)
                                  invrs_rho_ds_zm(:),            & ! Intent(in)
                                  gr%invrs_dzm(:),               & ! Intent(in)
-                                 l_upwind_wpxp_ta,              & ! Intent(in)
+                                 l_dummy_false,                 & ! Intent(in)
                                  sgn_t_vel_wpthlp(:),           & ! Intent(in)
                                  term_wp2thlp_explicit_zm(:),   & ! Intent(in)
                                  rho_ds_zm(:),                  & ! Intent(in)
@@ -1954,24 +1932,14 @@ module advance_xm_wpxp_module
                                      
       do i = 1, sclr_dim, 1
         
-        ! Interpolate wpsclrp to momentum levels, and calculate the sign of vertical velocity if
-        ! l_upwind_wpxp_ta, otherwise just use wp2sclrp
-        if ( l_upwind_wpxp_ta ) then
-          term_wp2sclrp_explicit_zm(:) = zt2zm( gr, wp2sclrp(:,i) )
-          sgn_t_vel_wpsclrp(:) = sgn_turbulent_velocity( gr, term_wp2sclrp_explicit_zm(:), &
-                                                            wpsclrp(:,i) )
-        else 
-           
-          term_wp2sclrp_explicit(:) = wp2sclrp(:,i)
-    
-        endif ! l_upwind_wpxp_ta
+        term_wp2sclrp_explicit(:) = wp2sclrp(:,i)
         
         ! Calculate the RHS turbulent advection term for <w'thl'>
         call xpyp_term_ta_pdf_rhs( gr, term_wp2sclrp_explicit(:),     & ! Intent(in)
                                    rho_ds_zt(:),                  & ! Intent(in)
                                    invrs_rho_ds_zm(:),            & ! Intent(in)
                                    gr%invrs_dzm(:),               & ! Intent(in)
-                                   l_upwind_wpxp_ta,              & ! Intent(in)
+                                   l_dummy_false,                 & ! Intent(in)
                                    sgn_t_vel_wpsclrp(:),          & ! Intent(in)
                                    term_wp2sclrp_explicit_zm(:),  & ! Intent(in)
                                    rho_ds_zm(:),                  & ! Intent(in)
@@ -2001,18 +1969,8 @@ module advance_xm_wpxp_module
         ! will be used for the <w'x'> turbulent advection (ta) term.
         a1_zt = max( zm2zt( gr, a1 ), zero_threshold )   ! Positive def. quantity
         
-        ! The termodynamic grid level coefficients are only needed if l_upwind_wpxp_ta
-        ! is false, or if stats output is on
-        if ( .not. l_upwind_wpxp_ta .or. l_stats_samp ) then
-          coef_wp2rtp_implicit = a1_zt * wp3_on_wp2_zt
-          coef_wp2thlp_implicit = coef_wp2rtp_implicit
-        end if
-        
-        ! Calculate the momentum level coefficients and sign of vertical velocity
-        if ( l_upwind_wpxp_ta ) then
-           coef_wp2rtp_implicit_zm = a1 * wp3_on_wp2
-           sgn_t_vel_wprtp = wp3_on_wp2
-        endif ! l_upwind_wpxp_ta
+        coef_wp2rtp_implicit = a1_zt * wp3_on_wp2_zt
+        coef_wp2thlp_implicit = coef_wp2rtp_implicit
        
         if ( .not. l_godunov_upwind_wpxp_ta ) then
  
@@ -2021,7 +1979,7 @@ module advance_xm_wpxp_module
                                      rho_ds_zt(:),                & ! Intent(in)
                                      invrs_rho_ds_zm(:),          & ! Intent(in)
                                      gr%invrs_dzm(:),             & ! Intent(in)
-                                     l_upwind_wpxp_ta,            & ! Intent(in)
+                                     l_dummy_false,               & ! Intent(in)
                                      sgn_t_vel_wprtp(:),          & ! Intent(in)
                                      coef_wp2rtp_implicit_zm(:),  & ! Intent(in)
                                      rho_ds_zm(:),                & ! Intent(in)
@@ -2087,36 +2045,18 @@ module advance_xm_wpxp_module
         ! implicit coefficients and explicit terms are calculated on
         ! thermodynamic levels.
         
-        ! The thermodynamic grid level coefficients are only needed if l_upwind_wpxp_ta
-        ! is false, or if stats output is on
-        if ( .not. l_upwind_wpxp_ta .or. l_stats_samp ) then
-          coef_wp2rtp_implicit = pdf_implicit_coefs_terms%coef_wp2rtp_implicit
-          coef_wp2thlp_implicit = pdf_implicit_coefs_terms%coef_wp2thlp_implicit
-          term_wp2rtp_explicit = pdf_implicit_coefs_terms%term_wp2rtp_explicit
-          term_wp2thlp_explicit = pdf_implicit_coefs_terms%term_wp2thlp_explicit
-        end if
+        coef_wp2rtp_implicit = pdf_implicit_coefs_terms%coef_wp2rtp_implicit
+        coef_wp2thlp_implicit = pdf_implicit_coefs_terms%coef_wp2thlp_implicit
+        term_wp2rtp_explicit = pdf_implicit_coefs_terms%term_wp2rtp_explicit
+        term_wp2thlp_explicit = pdf_implicit_coefs_terms%term_wp2thlp_explicit
 
-        if ( l_upwind_wpxp_ta ) then
-
-           ! Interpolate coef_wp2rtp_implicit and term_wp2rtp_explicit
-           ! to momentum levels as coef_wp2rtp_implicit_zm and
-           ! term_wp2rtp_explicit_zm, respectively.
-           coef_wp2rtp_implicit_zm = zt2zm( gr, pdf_implicit_coefs_terms%coef_wp2rtp_implicit )
-           term_wp2rtp_explicit_zm = zt2zm( gr, pdf_implicit_coefs_terms%coef_wp2thlp_implicit )
-
-           ! Calculate the sign of the turbulent velocity for <w'rt'>.
-           sgn_t_vel_wprtp &
-           = sgn_turbulent_velocity( gr, coef_wp2rtp_implicit_zm * wprtp &
-                                     + term_wp2rtp_explicit_zm, wprtp )
-
-        endif ! l_upwind_wpxp_ta
 
         ! Calculate the LHS turbulent advection term for <w'rt'>
         call xpyp_term_ta_pdf_lhs( gr, coef_wp2rtp_implicit(:),      & ! Intent(in)
                                    rho_ds_zt(:),                 & ! Intent(in)
                                    invrs_rho_ds_zm(:),           & ! Intent(in)
                                    gr%invrs_dzm(:),              & ! Intent(in)
-                                   l_upwind_wpxp_ta,             & ! Intent(in)
+                                   l_dummy_false,                & ! Intent(in)
                                    sgn_t_vel_wprtp(:),           & ! Intent(in)
                                    coef_wp2rtp_implicit_zm(:),   & ! Intent(in)
                                    rho_ds_zm(:),                 & ! Intent(in)
@@ -2128,34 +2068,20 @@ module advance_xm_wpxp_module
                                    rho_ds_zt(:),                 & ! Intent(in)
                                    invrs_rho_ds_zm(:),           & ! Intent(in)
                                    gr%invrs_dzm(:),              & ! Intent(in)
-                                   l_upwind_wpxp_ta,             & ! Intent(in)
-                                   sgn_t_vel_wprtp(:),         & ! Intent(in)
+                                   l_dummy_false,                & ! Intent(in)
+                                   sgn_t_vel_wprtp(:),           & ! Intent(in)
                                    term_wp2rtp_explicit_zm(:),   & ! Intent(in)
                                    rho_ds_zm(:),                 & ! Intent(in)
                                    gr%invrs_dzt(:),              & ! Intent(in)
                                    rhs_ta_wprtp(:)           ) ! Intent(out)
 
-        if ( l_upwind_wpxp_ta ) then
-
-           ! Interpolate coef_wp2thlp_implicit and term_wp2thlp_explicit
-           ! to momentum levels as coef_wp2thlp_implicit_zm and
-           ! term_wp2thlp_explicit_zm, respectively.
-           coef_wp2thlp_implicit_zm = zt2zm( gr, pdf_implicit_coefs_terms%coef_wp2thlp_implicit )
-           term_wp2thlp_explicit_zm = zt2zm( gr, pdf_implicit_coefs_terms%term_wp2thlp_explicit )
-
-           ! Calculate the sign of the turbulent velocity for <w'thl'>.
-           sgn_t_vel_wpthlp &
-           = sgn_turbulent_velocity( gr, coef_wp2thlp_implicit_zm * wpthlp &
-                                     + term_wp2thlp_explicit_zm, wpthlp )
-
-        endif ! l_upwind_wpxp_ta
         
         ! Calculate the LHS turbulent advection term for <w'thl'>
         call xpyp_term_ta_pdf_lhs( gr, coef_wp2thlp_implicit(:),      & ! Intent(in)
                                    rho_ds_zt(:),                  & ! Intent(in)
                                    invrs_rho_ds_zm(:),            & ! Intent(in)
                                    gr%invrs_dzm(:),               & ! Intent(in)
-                                   l_upwind_wpxp_ta,              & ! Intent(in)
+                                   l_dummy_false,                 & ! Intent(in)
                                    sgn_t_vel_wpthlp(:),           & ! Intent(in)
                                    coef_wp2thlp_implicit_zm(:),   & ! Intent(in)
                                    rho_ds_zm(:),                  & ! Intent(in)
@@ -2167,7 +2093,7 @@ module advance_xm_wpxp_module
                                    rho_ds_zt(:),                  & ! Intent(in)
                                    invrs_rho_ds_zm(:),            & ! Intent(in)
                                    gr%invrs_dzm(:),               & ! Intent(in)
-                                   l_upwind_wpxp_ta,              & ! Intent(in)
+                                   l_dummy_false,                 & ! Intent(in)
                                    sgn_t_vel_wpthlp(:),           & ! Intent(in)
                                    term_wp2thlp_explicit_zm(:),   & ! Intent(in)
                                    rho_ds_zm(:),                  & ! Intent(in)
@@ -2189,32 +2115,16 @@ module advance_xm_wpxp_module
         ! resulting implicit coefficients are calculated on thermodynamic
         ! levels.
         
-        ! The thermodynamic grid level coefficients are only needed if
-        ! l_upwind_wpxp_ta is false, or if stats output is on
-        if ( .not. l_upwind_wpxp_ta .or. l_stats_samp ) then
-           coef_wp2rtp_implicit = pdf_implicit_coefs_terms%coef_wp2rtp_implicit
-           coef_wp2thlp_implicit = coef_wp2rtp_implicit
-        endif
-
-        if ( l_upwind_wpxp_ta ) then
-
-           ! Interpolate coef_wp2rtp_implicit to momentum levels as
-           ! coef_wp2rtp_implicit_zm, respectively.
-           coef_wp2rtp_implicit_zm &
-           = zt2zm( gr, pdf_implicit_coefs_terms%coef_wp2rtp_implicit )
-
-           ! Calculate the sign of the turbulent velocity for <w'rt'>.
-           sgn_t_vel_wprtp &
-           = sgn_turbulent_velocity( gr, coef_wp2rtp_implicit_zm * wprtp, wprtp )
-
-        endif ! l_upwind_wpxp_ta
+         coef_wp2rtp_implicit = pdf_implicit_coefs_terms%coef_wp2rtp_implicit
+         coef_wp2thlp_implicit = coef_wp2rtp_implicit
+        
 
         ! Calculate the LHS turbulent advection term for <w'rt'>
         call xpyp_term_ta_pdf_lhs( gr, coef_wp2rtp_implicit(:),      & ! Intent(in)
                                    rho_ds_zt(:),                 & ! Intent(in)
                                    invrs_rho_ds_zm(:),           & ! Intent(in)
                                    gr%invrs_dzm(:),              & ! Intent(in)
-                                   l_upwind_wpxp_ta,             & ! Intent(in)
+                                   l_dummy_false,                & ! Intent(in)
                                    sgn_t_vel_wprtp(:),           & ! Intent(in)
                                    coef_wp2rtp_implicit_zm(:),   & ! Intent(in)
                                    rho_ds_zm(:),                 & ! Intent(in)
@@ -3829,17 +3739,12 @@ module advance_xm_wpxp_module
           + zmscr03(k) * wpxp(kp1), & ! intent(in)
             stats_zm ) ! intent(inout)
 
-!       if( .not. l_upwind_wpxp_ta ) then
-          ! w'x' term ta is normally completely implicit.  However, due to the
-          ! RHS contribution from the "over-implicit" weighted time step,
-          ! w'x' term ta has both implicit and explicit components;
-          ! call stat_end_update_pt.
+
           call stat_end_update_pt( iwpxp_ta, k, & ! intent(in)
               zmscr04(k) * wpxp(km1) & 
             + zmscr05(k) * wpxp(k) & 
             + zmscr06(k) * wpxp(kp1), & ! intent(in)
               stats_zm ) ! intent(inout)
-!       endif
 
         ! w'x' term tp is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_tp, k, & ! intent(in)

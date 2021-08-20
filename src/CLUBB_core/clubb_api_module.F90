@@ -3136,7 +3136,6 @@ contains
                                                  l_diffuse_rtm_and_thlm, & ! Out
                                                  l_stability_correct_Kh_N2_zm, & ! Out
                                                  l_calc_thlp2_rad, & ! Out
-                                                 l_upwind_wpxp_ta, & ! Out
                                                  l_upwind_xpyp_ta, & ! Out
                                                  l_upwind_xm_ma, & ! Out
                                                  l_uv_nudge, & ! Out
@@ -3209,10 +3208,6 @@ contains
       l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
       l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
-      l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
-                                      ! differencing approximation rather than a centered
-                                      ! differencing for turbulent or mean advection terms. It
-                                      ! affects wprtp, wpthlp, & wpsclrp.
       l_upwind_xpyp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -3297,7 +3292,6 @@ contains
                                          l_diffuse_rtm_and_thlm, & ! Out
                                          l_stability_correct_Kh_N2_zm, & ! Out
                                          l_calc_thlp2_rad, & ! Out
-                                         l_upwind_wpxp_ta, & ! Out
                                          l_upwind_xpyp_ta, & ! Out
                                          l_upwind_xm_ma, & ! Out
                                          l_uv_nudge, & ! Out
@@ -3348,7 +3342,6 @@ contains
                                                      l_diffuse_rtm_and_thlm, & ! In
                                                      l_stability_correct_Kh_N2_zm, & ! In
                                                      l_calc_thlp2_rad, & ! In
-                                                     l_upwind_wpxp_ta, & ! In
                                                      l_upwind_xpyp_ta, & ! In
                                                      l_upwind_xm_ma, & ! In
                                                      l_uv_nudge, & ! In
@@ -3423,10 +3416,6 @@ contains
       l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
       l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
-      l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
-                                      ! differencing approximation rather than a centered
-                                      ! differencing for turbulent or mean advection terms. It
-                                      ! affects wprtp, wpthlp, & wpsclrp.
       l_upwind_xpyp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -3515,7 +3504,6 @@ contains
                                              l_diffuse_rtm_and_thlm, & ! In
                                              l_stability_correct_Kh_N2_zm, & ! In
                                              l_calc_thlp2_rad, & ! In
-                                             l_upwind_wpxp_ta, & ! In
                                              l_upwind_xpyp_ta, & ! In
                                              l_upwind_xm_ma, & ! In
                                              l_uv_nudge, & ! In
