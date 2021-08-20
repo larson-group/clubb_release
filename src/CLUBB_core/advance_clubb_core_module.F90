@@ -393,8 +393,8 @@ module advance_clubb_core_module
 
     !!! Input Variables
     logical, intent(in) ::  &
-      l_implemented ! True if CLUBB is being run within a large-scale host model,
-                    !   rather than a standalone single-column model.
+      l_implemented    ! True if CLUBB is being run within a large-scale host model,
+                       !   rather than a standalone single-column model.
 
     real( kind = core_rknd ), intent(in) ::  &
       dt  ! Current timestep duration    [s]
@@ -1256,15 +1256,16 @@ module advance_clubb_core_module
         end if
 
         ! Diagnose surface variances based on surface fluxes.
-        call calc_sfc_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
-                             um(2), vm(2), Lscale_up(2), wpsclrp_sfc,        &      ! intent(in)
-                             wp2_splat(1), tau_zm(1),                        &      ! intent(in)
-                             depth_pos_wpthlp,                               &      ! intent(in)
-                             wp2(1), up2(1), vp2(1),                         &      ! intent(out)
-                             thlp2(1), rtp2(1), rtpthlp(1),                  &      ! intent(out)
-                             sclrp2(1,1:sclr_dim),                           &      ! intent(out)
-                             sclrprtp(1,1:sclr_dim),                         &      ! intent(out)
-                             sclrpthlp(1,1:sclr_dim) )                              ! intent(out)
+        call calc_sfc_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,     & ! intent(in)
+                             um(2), vm(2), Lscale_up(2), wpsclrp_sfc,        & ! intent(in)
+                             wp2_splat(1), tau_zm(1),                        & ! intent(in)
+                             depth_pos_wpthlp,                               & ! intent(in)
+                             clubb_config_flags%l_vary_convect_depth,        & ! intent(in)
+                             wp2(1), up2(1), vp2(1),                         & ! intent(out)
+                             thlp2(1), rtp2(1), rtpthlp(1),                  & ! intent(out)
+                             sclrp2(1,1:sclr_dim),                           & ! intent(out)
+                             sclrprtp(1,1:sclr_dim),                         & ! intent(out)
+                             sclrpthlp(1,1:sclr_dim) )                         ! intent(out)
 
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then

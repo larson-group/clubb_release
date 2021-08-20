@@ -783,6 +783,11 @@ module clubb_driver
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
+      l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
+                                      ! a variable estimate of layer depth based on the depth
+                                      ! over which wpthlp is positive near the ground when true
+                                      ! More information can be found by
+                                      ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
     type(clubb_config_flags_type) :: &
@@ -827,7 +832,7 @@ module clubb_driver
       l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, &
       l_call_pdf_closure_twice, l_Lscale_plume_centered, &
       l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
-      l_lmm_stepping, l_e3sm_config, l_use_tke_in_wp3_pr_turb_term
+      l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term
       
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -972,6 +977,7 @@ module clubb_driver
                                          l_prescribed_avg_deltaz, & ! Intent(out)
                                          l_lmm_stepping, & ! Intent(out)
                                          l_e3sm_config, & ! Intent(out)
+                                         l_vary_convect_depth, & ! Intent(out)
                                          l_use_tke_in_wp3_pr_turb_term ) ! Intent(out)
 
     ! Read namelist file
@@ -1338,7 +1344,8 @@ module clubb_driver
                                              l_prescribed_avg_deltaz, & ! Intent(in)
                                              l_lmm_stepping, & ! Intent(in)
                                              l_e3sm_config, & ! Intent(in)
-                                             l_use_tke_in_wp3_pr_turb_term, & ! Intent(out)
+                                             l_vary_convect_depth, & ! Intent(in)
+                                             l_use_tke_in_wp3_pr_turb_term, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs

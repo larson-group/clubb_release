@@ -242,6 +242,11 @@ module model_flags
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
+      l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
+                                      ! a variable estimate of layer depth based on the depth
+                                      ! over which wpthlp is positive near the ground when true
+                                      ! More information can be found by
+                                      ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
   end type clubb_config_flags_type
@@ -355,6 +360,7 @@ module model_flags
                                              l_prescribed_avg_deltaz, &
                                              l_lmm_stepping, &
                                              l_e3sm_config, &
+                                             l_vary_convect_depth, &
                                              l_use_tke_in_wp3_pr_turb_term )
 
 ! Description:
@@ -470,6 +476,11 @@ module model_flags
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
+      l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
+                                      ! a variable estimate of layer depth based on the depth
+                                      ! over which wpthlp is positive near the ground when true
+                                      ! More information can be found by
+                                      ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
 !-----------------------------------------------------------------------
@@ -522,6 +533,7 @@ module model_flags
 #endif
     l_lmm_stepping = .false.
     l_e3sm_config = .false.
+    l_vary_convect_depth = .false.
     l_use_tke_in_wp3_pr_turb_term = .false.
 
     return
@@ -571,6 +583,7 @@ module model_flags
                                                  l_prescribed_avg_deltaz, &
                                                  l_lmm_stepping, &
                                                  l_e3sm_config, &
+                                                 l_vary_convect_depth, &
                                                  l_use_tke_in_wp3_pr_turb_term, &
                                                  clubb_config_flags )
 
@@ -687,6 +700,11 @@ module model_flags
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
+      l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
+                                      ! a variable estimate of layer depth based on the depth
+                                      ! over which wpthlp is positive near the ground when true
+                                      ! More information can be found by
+                                      ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
     ! Output variables
@@ -739,6 +757,7 @@ module model_flags
     clubb_config_flags%l_prescribed_avg_deltaz = l_prescribed_avg_deltaz
     clubb_config_flags%l_lmm_stepping = l_lmm_stepping
     clubb_config_flags%l_e3sm_config = l_e3sm_config
+    clubb_config_flags%l_vary_convect_depth = l_vary_convect_depth
     clubb_config_flags%l_use_tke_in_wp3_pr_turb_term = l_use_tke_in_wp3_pr_turb_term
     return
   end subroutine initialize_clubb_config_flags_type
@@ -810,6 +829,7 @@ module model_flags
     write(iunit,*) "l_prescribed_avg_deltaz = ", clubb_config_flags%l_prescribed_avg_deltaz
     write(iunit,*) "l_lmm_stepping = ", clubb_config_flags%l_lmm_stepping
     write(iunit,*) "l_e3sm_config = ", clubb_config_flags%l_e3sm_config
+    write(iunit,*) "l_vary_convect_depth", clubb_config_flags%l_vary_convect_depth
     write(iunit,*) "l_use_tke_in_wp3_pr_turb_term = ", &
                    clubb_config_flags%l_use_tke_in_wp3_pr_turb_term
 

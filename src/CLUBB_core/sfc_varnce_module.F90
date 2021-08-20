@@ -13,14 +13,15 @@ module sfc_varnce_module
 
   !=============================================================================
   subroutine calc_sfc_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
-                             um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
-                             wp2_splat_sfc, tau_zm_sfc, &
-                             depth_pos_wpthlp, &
-                             wp2_sfc, up2_sfc, vp2_sfc, & 
-                             thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
-                             sclrp2_sfc, & 
-                             sclrprtp_sfc,  & 
-                             sclrpthlp_sfc )
+                              um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
+                              wp2_splat_sfc, tau_zm_sfc, &
+                              depth_pos_wpthlp, &
+                              l_vary_convect_depth, &
+                              wp2_sfc, up2_sfc, vp2_sfc, & 
+                              thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
+                              sclrp2_sfc, & 
+                              sclrprtp_sfc,  & 
+                              sclrpthlp_sfc )
 
     ! Description:
     ! This subroutine computes estimate of the surface thermodynamic and wind
@@ -86,8 +87,6 @@ module sfc_varnce_module
     ! Logical for Andre et al., 1978 parameterization.
     logical, parameter :: l_andre_1978 = .false.
 
-    logical, parameter :: l_vary_convect_depth = .false.
-
     real( kind = core_rknd ) :: &
       a_const  ! Coefficient in front of wp2_sfc, up2_sfc, and vp2_sfc
 
@@ -120,6 +119,9 @@ module sfc_varnce_module
 
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  & 
       wpsclrp_sfc    ! Passive scalar flux, <w'sclr'>|_sfc   [units m/s]
+
+    logical, intent(in) :: &
+      l_vary_convect_depth
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) ::  & 

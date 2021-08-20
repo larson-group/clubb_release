@@ -510,6 +510,11 @@ module pdf_parameter_tests
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
+      l_vary_convect_depth,         & ! Flag used to calculate convective velocity using
+                                      ! a variable estimate of layer depth based on the depth
+                                      ! over which wpthlp is positive near the ground when true
+                                      ! More information can be found by
+                                      ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
     call set_default_clubb_config_flags( iiPDF_type, &
@@ -554,8 +559,9 @@ module pdf_parameter_tests
                                          l_damp_wp3_Skw_squared, &
                                          l_prescribed_avg_deltaz, &
                                          l_lmm_stepping, &
-                                         l_use_tke_in_wp3_pr_turb_term, &
-                                         l_e3sm_config )
+                                         l_e3sm_config, & 
+                                         l_vary_convect_depth, &
+                                         l_use_tke_in_wp3_pr_turb_term )
 
     iiPDF_type = test_pdf_type
 
