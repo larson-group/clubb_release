@@ -1709,9 +1709,9 @@ module advance_windm_edsclrm_module
             endif
 
             if ( ium_ta + ivm_ta > 0 ) then
-              ztscr04(k) = - 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(3,k)
-              ztscr05(k) = - 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(2,k)
-              ztscr06(k) = - 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(1,k)
+              ztscr04(k) = - 0.5_core_rknd * lhs_diff(3,k)
+              ztscr05(k) = - 0.5_core_rknd * lhs_diff(2,k)
+              ztscr06(k) = - 0.5_core_rknd * lhs_diff(1,k)
             endif
 
         end do
@@ -1912,7 +1912,7 @@ module advance_windm_edsclrm_module
         do k = 2, gr%nz-1
 
             call stat_begin_update_pt( ixm_ta, k, &                         ! intent(in)
-                                       0.5_core_rknd * invrs_rho_ds_zt(k) &
+                                       0.5_core_rknd  &
                                      * ( lhs_diff(3,k) * xm(k-1) &
                                      +   lhs_diff(2,k) * xm(k)   &          ! intent(in)
                                      +   lhs_diff(1,k) * xm(k+1) ), &
@@ -1921,7 +1921,7 @@ module advance_windm_edsclrm_module
 
         ! Upper boundary
         call stat_begin_update_pt( ixm_ta, gr%nz, &
-                                   0.5_core_rknd * invrs_rho_ds_zt(gr%nz) & ! intent(in)
+                                   0.5_core_rknd  &                         ! intent(in)
                                  * ( lhs_diff(3,gr%nz) * xm(gr%nz-1) &
                                  +   lhs_diff(2,gr%nz) * xm(gr%nz) ), &     ! intent(in)
                                      stats_zt )                             ! intent(inout)
