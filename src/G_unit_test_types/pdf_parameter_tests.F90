@@ -488,6 +488,8 @@ module pdf_parameter_tests
                                       ! differencing approximation rather than a centered 
                                       ! differencing for turbulent advection terms. It affects
                                       ! xpyp only.
+      l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
+                                      ! a constant height level
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -543,6 +545,7 @@ module pdf_parameter_tests
                                          l_partial_upwind_wp3, &
                                          l_godunov_upwind_wpxp_ta, &
                                          l_godunov_upwind_xpyp_ta, &
+                                         l_bc_at_constant_height, & 
                                          l_use_cloud_cover, &
                                          l_diagnose_correlations, &
                                          l_calc_w_corr, &
