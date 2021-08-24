@@ -398,6 +398,9 @@ module spurious_source_test
                                       ! xpyp only.
       l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
                                       ! a constant height level
+      l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
+                                      ! spline interpolartion instead of linear interpolation to 
+                                      ! map the sounding profile to the clubb grid 
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -454,6 +457,7 @@ module spurious_source_test
                                          l_godunov_upwind_wpxp_ta, &
                                          l_godunov_upwind_xpyp_ta, &
                                          l_bc_at_constant_height, & 
+                                         l_mono_cubic_sounding, & 
                                          l_use_cloud_cover, &
                                          l_diagnose_correlations, &
                                          l_calc_w_corr, &

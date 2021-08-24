@@ -23,6 +23,7 @@ module sounding
   contains
   !------------------------------------------------------------------------
   subroutine read_sounding( gr, iunit, runtype, p_sfc, zm_init,& 
+                            l_mono_cubic_sounding, & 
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
                             alt_type, press, subs_type, wm, &
                             rtm_sfc, thlm_sfc, sclrm, edsclrm )
@@ -44,6 +45,7 @@ module sounding
 
     use interpolation, only:  & 
         lin_interpolate_two_points, & ! Procedure(s)
+        mono_cubic_interp, &
         binary_search
 
     use array_index, only: & 
@@ -93,10 +95,13 @@ module sounding
     character(len=*), intent(in) ::  & 
       runtype ! Used to determine if this in a DYCOMS II RF02 simulation
 
-
     real( kind = core_rknd ), intent(in) :: &
       p_sfc, & ! Pressure at the surface [Pa]
       zm_init ! Height at zm(1)         [m]
+  
+    logical, intent (in) :: &
+      l_mono_cubic_sounding ! use mono_cubic intstead of linear 
+                            ! interpolation on sounding profile 
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
@@ -155,6 +160,8 @@ module sounding
       sclr_sounding_retVars ! Sclr Sounding Profile
 
     integer :: i, j, k  ! Loop indices
+
+    integer :: km1, kp1, kp2, k00
 
     integer :: idx  ! Result of binary search -- sounding level index.
 
@@ -319,28 +326,104 @@ module sounding
           exit
         end if  ! k > nlevels
 
+        if ( k == gr%nz ) then
+          km1 = k-2
+          kp1 = k
+          kp2 = k
+          k00 = k-1
+        else if ( k == 2 ) then
+          km1 = 1
+          kp1 = 2
+          kp2 = 3
+          k00 = 1
+        else if ( k == 1 ) then ! Extrapolation for the ghost point
+          km1 = k
+          k00 = 1
+          kp1 = 2
+          kp2 = 3
+        else
+          km1 = k-2
+          kp1 = k
+          kp2 = k+1
+          k00 = k-1
+        end if
+
         ! Regular situation w/ linear int.
         IF ( trim( runtype ) /= "dycoms2_rf02" ) THEN
 
-          um(i)   = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
-          vm(i)   = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
-          ugm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
-          vgm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
-          thlm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), theta(k), theta(k-1) )
-          rtm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
-          press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
-          wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+          if (l_mono_cubic_sounding )then 
+
+            um(i)    = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                          z(km1), z(k00), z(kp1), z(kp2), &
+                                          u(km1), u(k00), u(kp1), u(kp2) )
+            vm(i)    = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                          z(km1), z(k00), z(kp1), z(kp2), &
+                                          v(km1), v(k00), v(kp1), v(kp2) )
+            ugm(i)   = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                          z(km1), z(k00), z(kp1), z(kp2), &
+                                          ug(km1), ug(k00), ug(kp1), ug(kp2) )
+            vgm(i)   = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                          z(km1), z(k00), z(kp1), z(kp2), &
+                                          vg(km1), vg(k00), vg(kp1), vg(kp2) )
+            thlm(i)  = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                          z(km1), z(k00), z(kp1), z(kp2), &
+                                          theta(km1), theta(k00), theta(kp1), theta(kp2) )
+            rtm(i)   = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                          z(km1), z(k00), z(kp1), z(kp2), &
+                                          rt(km1), rt(k00), rt(kp1), rt(kp2) )
+            press(i) = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                          z(km1), z(k00), z(kp1), z(kp2), &
+                                          p_in_Pa(km1), p_in_Pa(k00), p_in_Pa(kp1), p_in_Pa(kp2) )
+            wm(i)    = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                          z(km1), z(k00), z(kp1), z(kp2), &
+                                          subs(km1), subs(k00), subs(kp1), subs(kp2) )
+
+          else 
+
+            um(i)   = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
+            vm(i)   = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
+            ugm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
+            vgm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
+            thlm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), theta(k), theta(k-1) )
+            rtm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
+            press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
+            wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+
+          end if 
 
           if ( sclr_dim > 0 ) then
             do j = 1, sclr_dim
-              sclrm(i,j) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1),  & 
-                                    sclr(k,j), sclr(k-1,j) )
-            end do
+
+              if (l_mono_cubic_sounding) then
+
+                sclrm(i,j) = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                                z(km1), z(k00), z(kp1), z(kp2), &
+                                                sclr(km1,j), sclr(k00,j), sclr(kp1,j), sclr(kp2,j) )
+
+              else 
+
+                sclrm(i,j) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1),  & 
+                                     sclr(k,j), sclr(k-1,j) )
+
+              end if 
+ 
+           end do
           end if
           if ( edsclr_dim > 0 ) then
             do j = 1, edsclr_dim
-              edsclrm(i,j) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1),  & 
-                                      edsclr(k,j), edsclr(k-1,j) )
+
+              if (l_mono_cubic_sounding) then
+
+                edsclrm(i,j) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1),  & 
+                                        edsclr(k,j), edsclr(k-1,j) )
+              else
+
+                edsclrm(i,j) = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                                z(km1), z(k00), z(kp1), z(kp2), &
+                                                edsclr(km1,j), edsclr(k00,j), edsclr(kp1,j), edsclr(kp2,j) )
+
+              end if
+
             end do
           end if
 
@@ -366,9 +449,24 @@ module sounding
               sclrm(i, iisclr_rt)    = rtm(i)
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
-            press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), &
+
+            if (l_mono_cubic_sounding) then
+
+              press(i) = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                            z(km1), z(k00), z(kp1), z(kp2), &
+                                            p_in_Pa(km1), p_in_Pa(k00), p_in_Pa(kp1), p_in_Pa(kp2) )
+              wm(i)    = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                            z(km1), z(k00), z(kp1), z(kp2), &
+                                            subs(km1), subs(k00), subs(kp1), subs(kp2) )
+
+            else
+
+              press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), &
                                                    p_in_Pa(k), p_in_Pa(k-1) )
-            wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+              wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+
+            end if 
+
           ELSE
             ! (Wyant, et al. 2007, eq 1--4)
             um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(i))/ &
@@ -392,9 +490,23 @@ module sounding
               sclrm(i, iisclr_rt)    = rtm(i)
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
-            press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), &
+
+            if (l_mono_cubic_sounding) then 
+
+              press(i) = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                            z(km1), z(k00), z(kp1), z(kp2), &
+                                            p_in_Pa(km1), p_in_Pa(k00), p_in_Pa(kp1), p_in_Pa(kp2) )
+              wm(i)    = mono_cubic_interp( gr%zt(i), km1, k00, kp1, kp2, &
+                                            z(km1), z(k00), z(kp1), z(kp2), &
+                                            subs(km1), subs(k00), subs(kp1), subs(kp2) )
+            else
+ 
+              press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), &
                                                    p_in_Pa(k), p_in_Pa(k-1) )
-            wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+              wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+
+            end if 
+
           END IF
 
         END IF ! runtype

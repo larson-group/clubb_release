@@ -222,6 +222,9 @@ module model_flags
                                       ! xpyp only.
       l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
                                       ! a constant height level
+      l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
+                                      ! spline interpolartion instead of linear interpolation to 
+                                      ! map the sounding profile to the clubb grid 
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -346,6 +349,7 @@ module model_flags
                                              l_godunov_upwind_wpxp_ta, &
                                              l_godunov_upwind_xpyp_ta, &
                                              l_bc_at_constant_height, & 
+                                             l_mono_cubic_sounding, & 
                                              l_use_cloud_cover, &
                                              l_diagnose_correlations, &
                                              l_calc_w_corr, &
@@ -463,6 +467,9 @@ module model_flags
                                       ! xpyp only.
       l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
                                       ! a constant height level
+      l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
+                                      ! spline interpolartion instead of linear interpolation to 
+                                      ! map the sounding profile to the clubb grid 
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -522,6 +529,7 @@ module model_flags
     l_godunov_upwind_wpxp_ta = .false.
     l_godunov_upwind_xpyp_ta = .false.
     l_bc_at_constant_height  = .false. 
+    l_mono_cubic_sounding = .false.
     l_use_cloud_cover = .false.
     l_diagnose_correlations = .false.
     l_calc_w_corr = .false.
@@ -579,6 +587,7 @@ module model_flags
                                                  l_godunov_upwind_wpxp_ta, &
                                                  l_godunov_upwind_xpyp_ta, &
                                                  l_bc_at_constant_height, & 
+                                                 l_mono_cubic_sounding, & 
                                                  l_use_cloud_cover, &
                                                  l_diagnose_correlations, &
                                                  l_calc_w_corr, &
@@ -697,6 +706,9 @@ module model_flags
                                       ! xpyp only.
       l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
                                       ! a constant height level
+      l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
+                                      ! spline interpolartion instead of linear interpolation to 
+                                      ! map the sounding profile to the clubb grid 
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -760,6 +772,7 @@ module model_flags
     clubb_config_flags%l_godunov_upwind_wpxp_ta = l_godunov_upwind_wpxp_ta
     clubb_config_flags%l_godunov_upwind_xpyp_ta = l_godunov_upwind_xpyp_ta
     clubb_config_flags%l_bc_at_constant_height  = l_bc_at_constant_height 
+    clubb_config_flags%l_mono_cubic_sounding = l_mono_cubic_sounding 
     clubb_config_flags%l_use_cloud_cover = l_use_cloud_cover
     clubb_config_flags%l_diagnose_correlations = l_diagnose_correlations
     clubb_config_flags%l_calc_w_corr = l_calc_w_corr
@@ -834,6 +847,7 @@ module model_flags
     write(iunit,*) "l_godunov_upwind_wpxp_ta = ", clubb_config_flags%l_godunov_upwind_wpxp_ta
     write(iunit,*) "l_godunov_upwind_xpyp_ta = ", clubb_config_flags%l_godunov_upwind_xpyp_ta
     write(iunit,*) "l_bc_at_constant_height  = ", clubb_config_flags%l_bc_at_constant_height
+    write(iunit,*) "l_mono_cubic_sounding = ", clubb_config_flags%l_mono_cubic_sounding
     write(iunit,*) "l_use_cloud_cover = ", clubb_config_flags%l_use_cloud_cover
     write(iunit,*) "l_diagnose_correlations = ", clubb_config_flags%l_diagnose_correlations
     write(iunit,*) "l_calc_w_corr = ", clubb_config_flags%l_calc_w_corr

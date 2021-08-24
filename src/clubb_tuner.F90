@@ -629,6 +629,9 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! xpyp only.
     l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
                                     ! a constant height level
+    l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
+                                    ! spline interpolartion instead of linear interpolation to 
+                                    ! map the sounding profile to the clubb grid 
     l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                     ! and rcm to help increase cloudiness at coarser grid
                                     ! resolutions.
@@ -665,7 +668,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
-    l_bc_at_constant_height, & 
+    l_bc_at_constant_height, l_mono_cubic_sounding, & 
     l_use_cloud_cover, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
     l_predict_upwp_vpwp, l_diag_Lscale_from_tau, l_stability_correct_tau_zm, &
@@ -703,6 +706,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_godunov_upwind_wpxp_ta, & ! Intent(out)
                                        l_godunov_upwind_xpyp_ta, & ! Intent(out)
                                        l_bc_at_constant_height, & ! Intent(out)
+                                       l_mono_cubic_sounding, & ! Intent(out)
                                        l_use_cloud_cover, & ! Intent(out)
                                        l_diagnose_correlations, & ! Intent(out)
                                        l_calc_w_corr, & ! Intent(out)
@@ -741,6 +745,7 @@ subroutine logical_flags_driver( current_date, current_time )
   model_flags_default(11) = l_use_cloud_cover
   model_flags_default(12) = l_rcm_supersat_adj
   model_flags_default(13) = l_bc_at_constant_height
+  model_flags_default(14) = l_mono_cubic_sounding
 
   ! This should always be 1.0; it's here as a sanity check
   cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
@@ -857,6 +862,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_use_cloud_cover = model_flags_array(1,11)
     l_rcm_supersat_adj = model_flags_array(1,12)
     l_bc_at_constant_height = model_flags_array(1,13)
+    l_mono_cubic_sounding = model_flags_array(1,14)
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.

@@ -763,6 +763,9 @@ module clubb_driver
                                       ! xpyp only.
       l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
                                       ! a constant height level
+      l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
+                                      ! spline interpolartion instead of linear interpolation to 
+                                      ! map the sounding profile to the clubb grid 
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -827,7 +830,7 @@ module clubb_driver
       l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
       l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
       l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
-      l_bc_at_constant_height, & 
+      l_bc_at_constant_height, l_mono_cubic_sounding, & 
       l_use_cloud_cover, l_rcm_supersat_adj, &
       l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
       l_C2_cloud_frac, l_predict_upwp_vpwp, l_diag_Lscale_from_tau, &
@@ -964,6 +967,7 @@ module clubb_driver
                                          l_godunov_upwind_wpxp_ta, & ! Intent(out)
                                          l_godunov_upwind_xpyp_ta, & ! Intent(out)
                                          l_bc_at_constant_height, & ! Intent(out)
+                                         l_mono_cubic_sounding, & ! Intent(out)
                                          l_use_cloud_cover, & ! Intent(out)
                                          l_diagnose_correlations, & ! Intent(out)
                                          l_calc_w_corr, & ! Intent(out)
@@ -1334,6 +1338,7 @@ module clubb_driver
                                              l_godunov_upwind_wpxp_ta, & ! Intent(in)
                                              l_godunov_upwind_xpyp_ta, & ! Intent(in)
                                              l_bc_at_constant_height, & ! Intent (in)
+                                             l_mono_cubic_sounding, & ! Intent (in)
                                              l_use_cloud_cover, & ! Intent(in)
                                              l_diagnose_correlations, & ! Intent(in)
                                              l_calc_w_corr, & ! Intent(in)
@@ -1712,6 +1717,7 @@ module clubb_driver
       clubb_config_flags%l_use_cloud_cover = model_flags_array(11)
       clubb_config_flags%l_rcm_supersat_adj = model_flags_array(12)
       clubb_config_flags%l_bc_at_constant_height = model_flags_array(13)
+      clubb_config_flags%l_mono_cubic_sounding = model_flags_array(14)
 
       if ( clubb_config_flags%l_vert_avg_closure ) then
         clubb_config_flags%l_trapezoidal_rule_zt    = .true.
@@ -1826,6 +1832,7 @@ module clubb_driver
            ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
              clubb_config_flags%l_uv_nudge,                      & ! Intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! Intent(in)
+             clubb_config_flags%l_mono_cubic_sounding,           & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm(1,:), & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
              thvm, p_in_Pa,                                      & ! Intent(inout)
@@ -1856,6 +1863,7 @@ module clubb_driver
            ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
              clubb_config_flags%l_uv_nudge,                      & ! Intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! Intent(in)
+             clubb_config_flags%l_mono_cubic_sounding,           & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm(1,:), & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
              thvm, p_in_Pa,                                      & ! Intent(inout)
@@ -2732,6 +2740,7 @@ module clubb_driver
              ( gr, iunit, forcings_file_path, p_sfc, zm_init, &
                l_uv_nudge, &
                l_tke_aniso, &
+               l_mono_cubic_sounding, & 
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -2838,8 +2847,9 @@ module clubb_driver
       zm_init   ! Initial moment. level altitude [m]
 
     logical, intent(in) :: &
-      l_uv_nudge, & ! For wind speed nudging
-      l_tke_aniso   ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_uv_nudge,  & ! For wind speed nudging
+      l_tke_aniso, & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_mono_cubic_sounding ! For mono_cubic interpolation of sounding 
 
     ! Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -2906,13 +2916,14 @@ module clubb_driver
     !---- Begin code ----
 
     ! Read sounding information
-    call read_sounding( gr, iunit, runtype, p_sfc, zm_init, &        ! Intent(in) 
+    call read_sounding( gr, iunit, runtype, p_sfc, zm_init, &    ! Intent(in) 
+                        l_mono_cubic_sounding, &                 ! Intent(in)
                         thlm, theta_type, rtm, um, vm, ug, vg, & ! Intent(out)
                         alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
 
     ! Covert sounding input to CLUBB compatible input
-    call initialize_clubb_variables( gr, alt_type, theta_type,         & ! Intent(in)
+    call initialize_clubb_variables( gr, alt_type, theta_type,     & ! Intent(in)
                                      p_sfc, rtm_sfc, rtm,          & ! Intent(in)
                                      thlm, p_in_Pa, p_in_Pa_zm,    & ! Intent(inout)
                                      exner, rho, rho_zm,           & ! Intent(out)
