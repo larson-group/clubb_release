@@ -64,7 +64,8 @@ cd $scriptPath
 
 
 # Set using the default config flags
-	CONFIG=./config/linux_x86_64_gfortran.bash # Linux (Redhat Enterprise 5 / GNU)
+        CONFIG=./config/linux_x86_64_ifort_compy.bash
+#	CONFIG=./config/linux_x86_64_gfortran.bash # Linux (Redhat Enterprise 5 / GNU)
 #	CONFIG=./config/linux_x86_64_g95_optimize.bash # Linux (Redhat Enterprise 5 g95)
 #	CONFIG=./config/macosx_x86_64_gfortran.bash # MacOS X / GNU
 #	CONFIG=./config/aix_powerpc_xlf90_bluefire.bash # IBM AIX on Bluefire / XL Fortran
