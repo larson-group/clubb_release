@@ -91,6 +91,10 @@ module model_flags
     l_smooth_BVF  = .false.      ! Flag to control the smoothing on BVF 
                                  ! Default is .true.
 
+  logical, parameter, public :: &
+    l_clip_a3_coef  = .false.    ! Flag to control the clipping on a3_coef  
+                                 ! Default is .true.
+
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,
   ! add the logic to check the strings for the new formula in clubb_core and

@@ -217,6 +217,7 @@ module advance_clubb_core_module
         l_host_applies_sfc_fluxes, & ! Variable(s)
         l_gamma_Skw, &
         l_advance_xp3, &
+        l_clip_a3_coef, & 
         iiPDF_ADG1
 
     use grid_class, only: &
@@ -1065,10 +1066,14 @@ module advance_clubb_core_module
     !        now discretized on its own.
     a3_coef = -2._core_rknd * ( 1._core_rknd - sigma_sqd_w )**2 + 3.0_core_rknd
 
-    ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
-    ! than -1.4 -dschanen 4 Jan 2011
-    !a3_coef = max( a3_coef, -1.4_core_rknd ) ! Known magic number
-    a3_coef = max( a3_coef, 1.6_core_rknd ) ! Known magic number
+    if ( l_clip_a3_coef ) then 
+
+      ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
+      ! than -1.4 -dschanen 4 Jan 2011
+      !a3_coef = max( a3_coef, -1.4_core_rknd ) ! Known magic number
+      a3_coef = max( a3_coef, 1.6_core_rknd ) ! Known magic number
+
+    end if 
 
     a3_coef_zt = zm2zt( gr, a3_coef )
 
