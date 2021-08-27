@@ -3165,6 +3165,11 @@ module advance_xp2_xpyp_module
       coef_wpvp2_implicit_zm, & ! coef_wpvp2_impl intrp m-levs    [m/s]
       term_wpvp2_explicit_zm    ! term_wpvp2_expl interp. m-levs  [m^3/s^3]
 
+    real ( kind = core_rknd ), dimension(gr%nz) :: &
+      coef_wpxp2_implicit,    & ! Coef. that is multiplied by <u'^2>  and <v'^2> [m/s]
+      coef_wpup2_explicit_zm, & ! coef_wpup2_expl intrp m-levs    [m/s]
+      coef_wpvp2_explicit_zm    ! coef_wpvp2_expl intrp m-levs    [m/s
+
     ! Sign of turbulent velocity (used for "upwind" turbulent advection)
     real ( kind = core_rknd ), dimension(gr%nz) :: &
       sgn_t_vel_rtp2,    & ! Sign of the turbulent velocity for <rt'^2>      [-]
@@ -4315,44 +4320,91 @@ module advance_xp2_xpyp_module
        end if
         
        ! Calculate the LHS turbulent advection term for <w'u'^2> and <w'v'^2>
-       call xpyp_term_ta_pdf_lhs( gr, coef_wpup2_implicit(:),    & ! Intent(in)
-                                  rho_ds_zt(:),              & ! Intent(in)
-                                  invrs_rho_ds_zm(:),        & ! Intent(in)
-                                  gr%invrs_dzm(:),           & ! Intent(in)
-                                  l_upwind_xpyp_ta,          & ! Intent(in)
-                                  sgn_t_vel_up2(:),          & ! Intent(in)
-                                  coef_wpup2_implicit_zm(:), & ! Intent(in)
-                                  rho_ds_zm(:),              & ! Intent(in)
-                                  gr%invrs_dzt(:),           & ! Intent(in)
-                                  lhs_ta_wpup2(:,:)          ) ! Intent(out)
+
+       if ( .not. l_godunov_upwind_xpyp_ta ) then
+
+         call xpyp_term_ta_pdf_lhs( gr, coef_wpup2_implicit(:),    & ! Intent(in)
+                                    rho_ds_zt(:),              & ! Intent(in)
+                                    invrs_rho_ds_zm(:),        & ! Intent(in)
+                                    gr%invrs_dzm(:),           & ! Intent(in)
+                                    l_upwind_xpyp_ta,          & ! Intent(in)
+                                    sgn_t_vel_up2(:),          & ! Intent(in)
+                                    coef_wpup2_implicit_zm(:), & ! Intent(in)
+                                    rho_ds_zm(:),              & ! Intent(in)
+                                    gr%invrs_dzt(:),           & ! Intent(in)
+                                    lhs_ta_wpup2(:,:)          ) ! Intent(out)
+       else
+
+         ! Using the godunov upwind scheme for the calculation of RHS
+         ! turbulent advection term for <w'u'^2>. 
+         coef_wpxp2_implicit  =  one_third * beta * a1_zt * wp3_on_wp2_zt
+         call xpyp_term_ta_pdf_lhs_godunov( gr, coef_wpxp2_implicit(:), & ! Intent(in)
+                                            invrs_rho_ds_zm(:),         & ! Intent(in)
+                                            gr%invrs_dzm(:),            & ! Intent(in)
+                                            rho_ds_zm(:),               & ! Intent(in)
+                                            lhs_ta_wpup2(:,:)           ) ! Intent(out)
+
+
+       end if 
 
        ! The same LHS is used for <w'u'^2> and <w'v'^2>
        lhs_ta_wpvp2 = lhs_ta_wpup2
                                    
        ! Calculate the RHS turbulent advection term for <w'u'^2>
-       call xpyp_term_ta_pdf_rhs( gr, term_wpup2_explicit(:),    & ! Intent(in)
-                                  rho_ds_zt(:),              & ! Intent(in)
-                                  invrs_rho_ds_zm(:),        & ! Intent(in)
-                                  gr%invrs_dzm(:),           & ! Intent(in)
-                                  l_upwind_xpyp_ta,          & ! Intent(in)
-                                  sgn_t_vel_up2(:),          & ! Intent(in)
-                                  term_wpup2_explicit_zm(:), & ! Intent(in)
-                                  rho_ds_zm(:),              & ! Intent(in)
-                                  gr%invrs_dzt(:),           & ! Intent(in)
-                                  rhs_ta_wpup2(:)            ) ! Intent(out)
+       if ( .not. l_godunov_upwind_xpyp_ta ) then
+
+         call xpyp_term_ta_pdf_rhs( gr, term_wpup2_explicit(:),    & ! Intent(in)
+                                    rho_ds_zt(:),              & ! Intent(in)
+                                    invrs_rho_ds_zm(:),        & ! Intent(in)
+                                    gr%invrs_dzm(:),           & ! Intent(in)
+                                    l_upwind_xpyp_ta,          & ! Intent(in)
+                                    sgn_t_vel_up2(:),          & ! Intent(in)
+                                    term_wpup2_explicit_zm(:), & ! Intent(in)
+                                    rho_ds_zm(:),              & ! Intent(in)
+                                    gr%invrs_dzt(:),           & ! Intent(in)
+                                    rhs_ta_wpup2(:)            ) ! Intent(out)
     
-       ! Calculate the RHS turbulent advection term for <w'v'^2>
-       call xpyp_term_ta_pdf_rhs( gr, term_wpvp2_explicit(:),    & ! Intent(in)
-                                  rho_ds_zt(:),              & ! Intent(in)
-                                  invrs_rho_ds_zm(:),        & ! Intent(in)
-                                  gr%invrs_dzm(:),           & ! Intent(in)
-                                  l_upwind_xpyp_ta,          & ! Intent(in)
-                                  sgn_t_vel_vp2(:),          & ! Intent(in)
-                                  term_wpvp2_explicit_zm(:), & ! Intent(in)
-                                  rho_ds_zm(:),              & ! Intent(in)
-                                  gr%invrs_dzt(:),           & ! Intent(in)
-                                  rhs_ta_wpvp2(:)            ) ! Intent(out)
-     
+         ! Calculate the RHS turbulent advection term for <w'v'^2>
+         call xpyp_term_ta_pdf_rhs( gr, term_wpvp2_explicit(:),    & ! Intent(in)
+                                    rho_ds_zt(:),              & ! Intent(in)
+                                    invrs_rho_ds_zm(:),        & ! Intent(in)
+                                    gr%invrs_dzm(:),           & ! Intent(in)
+                                    l_upwind_xpyp_ta,          & ! Intent(in)
+                                    sgn_t_vel_vp2(:),          & ! Intent(in)
+                                    term_wpvp2_explicit_zm(:), & ! Intent(in)
+                                    rho_ds_zm(:),              & ! Intent(in)
+                                    gr%invrs_dzt(:),           & ! Intent(in)
+                                    rhs_ta_wpvp2(:)            ) ! Intent(out)
+
+       else 
+
+         ! Using the godunov upwind scheme for the calculation of RHS
+         ! turbulent advection term for <w'u'^2>. 
+         term_wpup2_explicit_zm = upwp**2
+         coef_wpup2_explicit_zm = ( one - one_third * beta ) * a1_zt**2 * wp3_on_wp2_zt / wp2_zt
+
+         call xpyp_term_ta_pdf_rhs_godunov( gr, term_wpup2_explicit_zm(:), & ! Intent(in)
+                                                invrs_rho_ds_zm(:),        & ! Intent(in)
+                                                gr%invrs_dzm(:),           & ! Intent(in)
+                                                coef_wpup2_explicit_zm(:), & ! Intent(in)
+                                                rho_ds_zm(:),              & ! Intent(in)
+                                                rhs_ta_wpup2(:)            ) ! Intent(out)
+
+
+         ! Using the godunov upwind scheme for the calculation of RHS
+         ! turbulent advection term for <w'v'^2>. 
+          term_wpvp2_explicit_zm = vpwp**2
+          coef_wpvp2_explicit_zm = ( one - one_third * beta ) * a1_zt**2 * wp3_on_wp2_zt / wp2_zt
+
+          call xpyp_term_ta_pdf_rhs_godunov( gr, term_wpvp2_explicit_zm(:), & ! Intent(in)
+                                                 invrs_rho_ds_zm(:),        & ! Intent(in)
+                                                 gr%invrs_dzm(:),           & ! Intent(in)
+                                                 coef_wpvp2_explicit_zm(:), & ! Intent(in)
+                                                 rho_ds_zm(:),              & ! Intent(in)
+                                                 rhs_ta_wpvp2(:)            ) ! Intent(out)
+
+       end if 
+
     endif ! iiPDF_type /= iiPDF_new_hybrid
 
     ! Stats output for implicit coefficients and explicit terms of 
