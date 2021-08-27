@@ -92,8 +92,13 @@ module model_flags
                                  ! Default is .true.
 
   logical, parameter, public :: &
-    l_clip_a3_coef  = .false.    ! Flag to control the clipping on a3_coef  
+    l_clip_a3_coef = .false.    ! Flag to control the clipping on a3_coef  
                                  ! Default is .true.
+
+  logical, parameter, public :: &
+    l_upwind_xpyp_ma = .true.   ! Flag to control if the upwind scheme will be used for 
+                                ! the mean advection terms of moments at zm levels 
+                                ! Default is .false.
 
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,

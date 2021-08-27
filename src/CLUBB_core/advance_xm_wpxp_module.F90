@@ -1362,6 +1362,7 @@ module advance_xm_wpxp_module
                               
     ! Calculate mean advection terms for all momentum grid level
     call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
+                         gr%invrs_dzt(:),               & ! Intent(in) 
                          lhs_ma_zm(:,:)             ) ! Intent(out) 
                                
     ! Calculate diffusion terms for all thermodynamic grid level

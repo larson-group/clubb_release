@@ -518,10 +518,10 @@ module advance_xp2_xpyp_module
                            lhs_diff(:,:)                               ) ! Out
                                
     ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
-    call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! In
-                         lhs_ma(:,:)                ) ! Out
-                             
-                             
+    call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
+                         gr%invrs_dzt(:),               & ! Intent(in) 
+                         lhs_ma(:,:)                ) ! Intent(out) 
+
     if ( ( abs(C2rt - C2thl) < abs(C2rt + C2thl) / 2 * eps .and. &
          abs(C2rt - C2rtthl) < abs(C2rt + C2rtthl) / 2 * eps ) .and. &
          ( l_explicit_turbulent_adv_xpyp .or. &

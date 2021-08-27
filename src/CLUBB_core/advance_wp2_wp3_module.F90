@@ -1494,9 +1494,9 @@ module advance_wp2_wp3_module
     lhs_pr_tp_wp3 = zero
 
     ! Calculated mean advection term for w'2
-    call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), &                  ! intent(in)
-                         lhs_ma_zm(:,:) )                              ! intent(out)
-
+    call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
+                         gr%invrs_dzt(:),               & ! Intent(in) 
+                         lhs_ma_zm(:,:)             ) ! Intent(out) 
 
     ! Calculated mean advection term for w'3
     call term_ma_zt_lhs( gr, wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
