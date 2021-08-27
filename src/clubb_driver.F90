@@ -766,6 +766,8 @@ module clubb_driver
       l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
                                       ! spline interpolartion instead of linear interpolation to 
                                       ! map the sounding profile to the clubb grid 
+      l_linear_Kh_dp_term,          & ! This flag detrmines whether we ignore the part of dp 
+                                      ! term that is related to dKh/dz 
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -830,7 +832,7 @@ module clubb_driver
       l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
       l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
       l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
-      l_bc_at_constant_height, l_mono_cubic_sounding, & 
+      l_bc_at_constant_height, l_mono_cubic_sounding, l_linear_Kh_dp_term, & 
       l_use_cloud_cover, l_rcm_supersat_adj, &
       l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
       l_C2_cloud_frac, l_predict_upwp_vpwp, l_diag_Lscale_from_tau, &
@@ -967,6 +969,7 @@ module clubb_driver
                                          l_godunov_upwind_wpxp_ta, & ! Intent(out)
                                          l_godunov_upwind_xpyp_ta, & ! Intent(out)
                                          l_bc_at_constant_height, & ! Intent(out)
+                                         l_linear_Kh_dp_term, & ! Intent (out)
                                          l_mono_cubic_sounding, & ! Intent(out)
                                          l_use_cloud_cover, & ! Intent(out)
                                          l_diagnose_correlations, & ! Intent(out)
@@ -1338,6 +1341,7 @@ module clubb_driver
                                              l_godunov_upwind_wpxp_ta, & ! Intent(in)
                                              l_godunov_upwind_xpyp_ta, & ! Intent(in)
                                              l_bc_at_constant_height, & ! Intent (in)
+                                             l_linear_Kh_dp_term, & ! Intent (in)
                                              l_mono_cubic_sounding, & ! Intent (in)
                                              l_use_cloud_cover, & ! Intent(in)
                                              l_diagnose_correlations, & ! Intent(in)
@@ -1718,6 +1722,7 @@ module clubb_driver
       clubb_config_flags%l_rcm_supersat_adj = model_flags_array(12)
       clubb_config_flags%l_bc_at_constant_height = model_flags_array(13)
       clubb_config_flags%l_mono_cubic_sounding = model_flags_array(14)
+      clubb_config_flags%l_linear_Kh_dp_term = model_flags_array(15)
 
       if ( clubb_config_flags%l_vert_avg_closure ) then
         clubb_config_flags%l_trapezoidal_rule_zt    = .true.
@@ -2441,6 +2446,7 @@ module clubb_driver
                               hydromet_vel_covar_zt_impc,                 & ! In
                               hydromet_vel_covar_zt_expc,                 & ! In
                               clubb_config_flags%l_upwind_xm_ma,          & ! In
+                              clubb_config_flags%l_linear_Kh_dp_term,     & ! In
                               stats_zt, stats_zm, stats_sfc,              & ! intent(inout)
                               hydromet, hydromet_vel_zt, hydrometp2,      & ! Inout
                               K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc,    & ! Inout

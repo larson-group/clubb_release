@@ -41,6 +41,7 @@ module advance_microphys_module
                                 hydromet_vel_covar_zt_impc, &              ! In
                                 hydromet_vel_covar_zt_expc, &              ! In
                                 l_upwind_xm_ma, &                          ! In
+                                l_linear_Kh_dp_term, &                     ! In
                                 stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                                 K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
@@ -165,9 +166,11 @@ module advance_microphys_module
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
     logical, intent(in) :: &
-      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
-                     ! approximation rather than a centered differencing for turbulent or
-                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_upwind_xm_ma,    & ! This flag determines whether we want to use an upwind differencing
+                           ! approximation rather than a centered differencing for turbulent or
+                           ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_linear_Kh_dp_term  ! This flag detrmines whether we ignore the part of dp 
+                           ! term that is related to dKh/dz 
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
@@ -311,6 +314,7 @@ module advance_microphys_module
                                  hydromet_mc, hydromet_vel_covar_zt_impc, &
                                  hydromet_vel_covar_zt_expc, &
                                  l_upwind_xm_ma, &
+                                 l_linear_Kh_dp_term, & 
                                  stats_zt, stats_zm, &
                                  hydromet, hydromet_vel_zt, &
                                  hydrometp2, rvm_mc, thlm_mc, &
@@ -340,6 +344,7 @@ module advance_microphys_module
        call advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          l_upwind_xm_ma, &
+                         l_linear_Kh_dp_term, & 
                          stats_zt, stats_zm, &
                          Ncm, Nc_in_cloud, &
                          wpNcp )
@@ -500,6 +505,7 @@ module advance_microphys_module
                                   hydromet_mc, hydromet_vel_covar_zt_impc, &
                                   hydromet_vel_covar_zt_expc, &
                                   l_upwind_xm_ma, &
+                                  l_linear_Kh_dp_term, & 
                                   stats_zt, stats_zm, & 
                                   hydromet, hydromet_vel_zt, &
                                   hydrometp2, rvm_mc, thlm_mc, &
@@ -608,9 +614,11 @@ module advance_microphys_module
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
     logical, intent(in) :: &
-      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
-                     ! approximation rather than a centered differencing for turbulent or
-                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_upwind_xm_ma,    & ! This flag determines whether we want to use an upwind differencing
+                           ! approximation rather than a centered differencing for turbulent or
+                           ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_linear_Kh_dp_term  ! This flag detrmines whether we ignore the part of dp 
+                           ! term that is related to dKh/dz 
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
@@ -760,6 +768,7 @@ module advance_microphys_module
                            hydromet_vel_covar_zt_impc(:,i),             & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,       & ! In
                            l_upwind_xm_ma,                              & ! In
+                           l_linear_Kh_dp_term,                         & ! In
                            lhs )                                          ! Out
 
        ! Set up explicit term in the RHS vector
@@ -768,6 +777,7 @@ module advance_microphys_module
                            K_hm(:,i), nu_hm_vert_res_dep, cloud_frac, &
                            hydromet_vel_covar_zt_expc(:,i), &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           l_linear_Kh_dp_term, &
                            stats_zt, &
                            rhs )
 
@@ -941,6 +951,7 @@ module advance_microphys_module
   subroutine advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                           l_upwind_xm_ma, &
+                          l_linear_Kh_dp_term, & 
                           stats_zt, stats_zm, &
                           Ncm, Nc_in_cloud, &
                           wpNcp )
@@ -1028,9 +1039,11 @@ module advance_microphys_module
       Ncm_mc     ! Change in Ncm due to microphysics  [num/kg/s]
 
     logical, intent(in) :: &
-      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
-                     ! approximation rather than a centered differencing for turbulent or
-                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_upwind_xm_ma,    & ! This flag determines whether we want to use an upwind differencing
+                           ! approximation rather than a centered differencing for turbulent or
+                           ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_linear_Kh_dp_term  ! This flag detrmines whether we ignore the part of dp 
+                           ! term that is related to dKh/dz 
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
@@ -1120,6 +1133,7 @@ module advance_microphys_module
                         Ncm_vel_covar_zt_impc, & ! In
                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
                         l_upwind_xm_ma, & ! In
+                        l_linear_Kh_dp_term, & ! In 
                         lhs ) ! Out
 
     ! Set up explicit term in the RHS vector
@@ -1131,6 +1145,7 @@ module advance_microphys_module
                            K_Nc, nu_hm_vert_res_dep, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           l_linear_Kh_dp_term, &
                            stats_zt, &
                            rhs )
 
@@ -1141,6 +1156,7 @@ module advance_microphys_module
                            K_Nc, nu_hm_vert_res_dep, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           l_linear_Kh_dp_term, &
                            stats_zt, &
                            rhs )
 
@@ -1563,6 +1579,7 @@ module advance_microphys_module
                Vhmphmp_zt_impc, &
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                l_upwind_xm_ma, &
+               l_linear_Kh_dp_term, & 
                lhs )
 
     ! Description:
@@ -1596,6 +1613,7 @@ module advance_microphys_module
     use constants_clubb, only: &
         one,         & ! Constant(s)
         one_half,    &
+        zero_threshold, & 
         zero
 
     use parameters_microphys, only: &
@@ -1682,9 +1700,11 @@ module advance_microphys_module
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     logical, intent(in) :: &
-      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
-                     ! approximation rather than a centered differencing for turbulent or
-                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_upwind_xm_ma,    & ! This flag determines whether we want to use an upwind differencing
+                           ! approximation rather than a centered differencing for turbulent or
+                           ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_linear_Kh_dp_term  ! This flag detrmines whether we ignore the part of  dp 
+                           ! term that is related to dKh/dz 
 
     real( kind = core_rknd ), intent(out), dimension(3,gr%nz) :: & 
       lhs    ! Left hand side of tridiagonal matrix
@@ -1697,7 +1717,9 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(3) :: tmp
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Vhmphmp_impc    ! Implicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
+      Vhmphmp_impc, &    ! Implicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
+      Kh_zm, & 
+      Kh_zt
 
     integer :: k, km1, kp1  ! Array indices
 
@@ -1783,9 +1805,13 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    call diffusion_zt_lhs( gr, K_hm, nu, &
+    Kh_zm = K_hm
+    Kh_zt = max( zm2zt(gr,K_hm), zero_threshold ) 
+
+    call diffusion_zt_lhs( gr, Kh_zm, Kh_zt, nu, &
                            gr%invrs_dzm, gr%invrs_dzt, &
                            invrs_rho_ds_zt, rho_ds_zm, &
+                           l_linear_Kh_dp_term, &   
                            lhs_ta )
 
     do k = 2, gr%nz, 1
@@ -1799,18 +1825,35 @@ module advance_microphys_module
     ! sedimentation can flux a hydrometeor through the lower boundary.
     ! The lower boundary condition needs to be applied here at level 2.
 
-    ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-    lhs_ta(kp1_tdiag,2) &
-    = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+    if ( .not. l_linear_Kh_dp_term ) then 
 
-    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-    lhs_ta(k_tdiag,2) &
-    = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+      ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+      lhs_ta(kp1_tdiag,2) &
+      = - one_half * invrs_rho_ds_zt(2) &
+          * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
-    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-    lhs_ta(km1_tdiag,2) = zero
+      ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+      lhs_ta(k_tdiag,2) &
+      = + one_half * invrs_rho_ds_zt(2) &
+          * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+
+      ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+      lhs_ta(km1_tdiag,2) = zero
+
+    else
+
+      ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+      lhs_ta(kp1_tdiag,2) &
+      = - one_half * ( gr%invrs_dzt(2) * ( Kh_zt(2) + nu(2) ) * gr%invrs_dzm(2) )
+
+      ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+      lhs_ta(k_tdiag,2) &
+      = + one_half * ( gr%invrs_dzt(2) * ( Kh_zt(2) + nu(2) ) * gr%invrs_dzm(2) )
+
+      ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+      lhs_ta(km1_tdiag,2) = zero
+    
+    end if 
 
     lhs_ta(:,1) = zero
 
@@ -1952,6 +1995,7 @@ module advance_microphys_module
                             K_hm, nu, cloud_frac, &
                             Vhmphmp_zt_expc, &
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                            l_linear_Kh_dp_term, & 
                             stats_zt, &
                             rhs )
 
@@ -1964,8 +2008,8 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        zt2zm    ! Procedure(s)
-
+        zt2zm, &    ! Procedure(s)
+        zm2zt
 
     use grid_class, only: grid ! Type
 
@@ -2039,13 +2083,19 @@ module advance_microphys_module
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
+    logical, intent(in) :: &
+      l_linear_Kh_dp_term  ! This flag detrmines whether we ignore the part of dp 
+                           ! term that is related to dKh/dz 
+
     ! Output Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
       rhs   ! Right hand side
 
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Vhmphmp_expc    ! Explicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
+      Vhmphmp_expc, & ! Explicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
+      Kh_zm, &
+      Kh_zt
 
     real( kind = core_rknd ), dimension(3,gr%nz) :: & 
       lhs_ta    ! LHS corresponding to contribution from turbulent advection
@@ -2109,9 +2159,13 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    call diffusion_zt_lhs( gr, K_hm, nu, &
+    Kh_zm = K_hm
+    Kh_zt = max( zm2zt(gr,K_hm), 0._core_rknd )
+
+    call diffusion_zt_lhs( gr, Kh_zm, Kh_zt, nu, &
                            gr%invrs_dzm, gr%invrs_dzt, &
-                           invrs_rho_ds_zt, rho_ds_zm, & 
+                           invrs_rho_ds_zt, rho_ds_zm, &
+                           l_linear_Kh_dp_term, &
                            lhs_ta )
 
     do k = 2, gr%nz, 1
@@ -2124,19 +2178,35 @@ module advance_microphys_module
     ! processes of mean or turbulent advection.  Only mean or turbulent
     ! sedimentation can flux a hydrometeor through the lower boundary.
     ! The lower boundary condition needs to be applied here at level 2.
+    if ( .not. l_linear_Kh_dp_term ) then
 
-    ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-    lhs_ta(kp1_tdiag,2) &
-    = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+      ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+      lhs_ta(kp1_tdiag,2) &
+      = - one_half * invrs_rho_ds_zt(2) &
+          * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
-    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-    lhs_ta(k_tdiag,2) &
-    = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+      ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+      lhs_ta(k_tdiag,2) &
+      = + one_half * invrs_rho_ds_zt(2) &
+          * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
-    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-    lhs_ta(km1_tdiag,2) = zero
+      ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+      lhs_ta(km1_tdiag,2) = zero
+
+    else
+
+      ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+      lhs_ta(kp1_tdiag,2) &
+      = - one_half * ( gr%invrs_dzt(2) * ( Kh_zt(2) + nu(2) ) * gr%invrs_dzm(2) )
+
+      ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+      lhs_ta(k_tdiag,2) &
+      = + one_half * ( gr%invrs_dzt(2) * ( Kh_zt(2) + nu(2) ) * gr%invrs_dzm(2) )
+
+      ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+      lhs_ta(km1_tdiag,2) = zero
+
+    end if
 
     lhs_ta(:,1) = zero
 

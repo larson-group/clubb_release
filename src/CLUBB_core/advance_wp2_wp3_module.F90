@@ -58,6 +58,7 @@ module advance_wp2_wp3_module
                               l_tke_aniso,                                   & ! In
                               l_standard_term_ta,                            & ! In
                               l_partial_upwind_wp3,                          & ! In
+                              l_linear_Kh_dp_term,                           & ! In
                               l_damp_wp2_using_em,                           & ! In
                               l_use_C11_Richardson,                          & ! In
                               l_damp_wp3_Skw_squared,                        & ! In
@@ -229,6 +230,8 @@ module advance_wp2_wp3_module
                                     ! of the wp3 turbulent advection term for ADG1
                                     ! that is linearized in terms of wp3<t+1>.
                                     ! (Requires ADG1 PDF and l_standard_term_ta).
+      l_linear_Kh_dp_term,        & ! This flag detrmines whether we ignore the part of dp 
+                                    ! term that is related to dKh/dz 
       l_damp_wp2_using_em,        & ! In wp2 equation, use a dissipation formula of 
                                     ! -(2/3)*em/tau_zm,
                                     ! as in Bougeault (1981)
@@ -255,8 +258,10 @@ module advance_wp2_wp3_module
       invrs_tauw3t  ! Currently just invrs_tau_zt         [1/s]
 
     ! Eddy Diffusion for w'^2 and w'^3.
-    real( kind = core_rknd ), dimension(gr%nz) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
-    real( kind = core_rknd ), dimension(gr%nz) :: Kw8    ! w'^3 coef. eddy diff.  [m^2/s]
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+      Kw1   ! w'^2 coef. eddy diff.  [m^2/s]
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      Kw8   ! w'^3 coef. eddy diff.  [m^2/s]
 
     ! Internal variables for C11 function, Vince Larson 13 Mar 2005
     ! Brian added C1 function.
@@ -362,13 +367,13 @@ module advance_wp2_wp3_module
       ! Kw1 is used for wp2, which is located on momentum levels.
       ! Kw1 is located on thermodynamic levels.
       ! Kw1 = c_K1 * Kh_zt
-      Kw1(k) = c_K1 * Kh_zt(k)
+      Kw1(k)    = c_K1 * Kh_zt(k)
 
       ! Kw8 is used for wp3, which is located on thermodynamic levels.
       ! Kw8 is located on momentum levels.
       ! Note: Kw8 is usually defined to be 1/2 of Kh_zm.
       ! Kw8 = c_K8 * Kh_zm
-      Kw8(k) = c_K8 * Kh_zm(k)
+      Kw8(k)    = c_K8 * Kh_zm(k)
 
     enddo
 
@@ -382,7 +387,8 @@ module advance_wp2_wp3_module
                      wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
                      wpup2, wpvp2, wp2up2, wp2vp2, wp4,                       & ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
-                     up2, vp2, em, Kw1, Kw8, Kh_zt, Skw_zt,                   & ! Intent(in)
+                     up2, vp2, em, Kw1, Kw8,                                  & ! Intent(in) 
+                     Kh_zt, Skw_zt,                                           & ! Intent(in)
                      invrs_tau_zm, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! Intent(in)
                      C11_Skw_fnc, rho_ds_zm,                                  & ! Intent(in)
                      rho_ds_zt, invrs_rho_ds_zm,                              & ! Intent(in)
@@ -397,6 +403,7 @@ module advance_wp2_wp3_module
                      l_tke_aniso,                                             & ! Intent(in)
                      l_standard_term_ta,                                      & ! Intent(in)
                      l_partial_upwind_wp3,                                    & ! Intent(in)
+                     l_linear_Kh_dp_term,                                     & ! Intent(in) 
                      l_damp_wp2_using_em,                                     & ! Intent(in)
                      l_damp_wp3_Skw_squared,                                  & ! Intent(in)
                      l_use_tke_in_wp3_pr_turb_term,                           & ! Intent(in)
@@ -525,6 +532,7 @@ module advance_wp2_wp3_module
                          l_tke_aniso,                                             & ! Intent(in)
                          l_standard_term_ta,                                      & ! Intent(in)
                          l_partial_upwind_wp3,                                    & ! Intent(in)
+                         l_linear_Kh_dp_term,                                     & ! Intent(in)
                          l_damp_wp2_using_em,                                     & ! Intent(in)
                          l_damp_wp3_Skw_squared,                                  & ! Intent(in)
                          l_use_tke_in_wp3_pr_turb_term,                           & ! Intent(in)
@@ -745,6 +753,8 @@ module advance_wp2_wp3_module
                                     ! of the wp3 turbulent advection term for ADG1
                                     ! that is linearized in terms of wp3<t+1>.
                                     ! (Requires ADG1 PDF and l_standard_term_ta).
+      l_linear_Kh_dp_term,        & ! This flag detrmines whether we ignore the part of dp 
+                                    ! term that is related to dKh/dz 
       l_damp_wp2_using_em,        & ! In wp2 equation, use a dissipation formula of 
                                     ! -(2/3)*em/tau_zm,
                                     ! as in Bougeault (1981)
@@ -866,6 +876,7 @@ module advance_wp2_wp3_module
                    l_tke_aniso, &                                                    ! intent(in)
                    l_standard_term_ta, &                                             ! intent(in)
                    l_partial_upwind_wp3, &                                           ! intent(in)
+                   l_linear_Kh_dp_term, &                                            ! intent(in) 
                    l_damp_wp2_using_em, &                                            ! intent(in)
                    l_damp_wp3_Skw_squared, &                                         ! intent(in)
                    l_use_tke_in_wp3_pr_turb_term, &                                  ! intent(in)
@@ -889,6 +900,7 @@ module advance_wp2_wp3_module
                    l_tke_aniso, & ! intent(in)
                    l_standard_term_ta, & ! intent(in)
                    l_partial_upwind_wp3, & ! intent(in)
+                   l_linear_Kh_dp_term, & ! intent(in)
                    l_damp_wp3_Skw_squared, & ! intent(in)
                    lhs, wp3_pr3_lhs ) ! intent(out)
 
@@ -1239,6 +1251,7 @@ module advance_wp2_wp3_module
                        l_tke_aniso, &
                        l_standard_term_ta, &
                        l_partial_upwind_wp3, &
+                       l_linear_Kh_dp_term, & 
                        l_damp_wp3_Skw_squared, &
                        lhs, wp3_pr3_lhs )
     ! Description:
@@ -1269,7 +1282,9 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid ! Type
+        grid,  & ! Type
+        zt2zm, & 
+        zm2zt 
 
     use parameters_tunable, only:  & 
         C4,  & ! Variables
@@ -1284,6 +1299,7 @@ module advance_wp2_wp3_module
     use constants_clubb, only:  & 
         one, & ! Constant(s)
         zero, &
+        zero_threshold, & 
         gamma_over_implicit_ts
 
     use model_flags, only: &
@@ -1376,8 +1392,8 @@ module advance_wp2_wp3_module
       a3_zt,             & ! a_3 interpolated to thermodynamic levels  [-]
       wp3_on_wp2,        & ! Smoothed version of wp3 / wp2             [m/s]
       coef_wp4_implicit, & ! <w'^4> = coef_wp4_implicit * <w'^2>^2     [-]
-      Kw1,               & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
-      Kw8,               & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
+      Kw1,               & ! Coefficient of eddy diffusivity for w'^2 (t-level) [m^2/s]
+      Kw8,               & ! Coefficient of eddy diffusivity for w'^3 (m-level) [m^2/s]
       Skw_zt,            & ! Skewness of w on thermodynamic levels     [-]
       invrs_tau1m,       & ! Inverse time-scale tau on momentum levels         [1/s]
       invrs_tauw3t,      & ! Inverse time-scale tau on thermodynamic levels    [1/s]
@@ -1414,6 +1430,8 @@ module advance_wp2_wp3_module
                                 ! of the wp3 turbulent advection term for ADG1
                                 ! that is linearized in terms of wp3<t+1>.
                                 ! (Requires ADG1 PDF and l_standard_term_ta).
+      l_linear_Kh_dp_term,    & ! This flag detrmines whether we ignore the part of dp 
+                                ! term that is related to dKh/dz 
       l_damp_wp3_Skw_squared    ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
     ! Output Variable
@@ -1455,7 +1473,9 @@ module advance_wp2_wp3_module
       invrs_dt        ! Inverse of dt, 1/dt, used for computational efficiency
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      zero_vector    ! Vector of 0s
+      zero_vector, & ! Vector of 0s
+      Kw1_zm,      & ! Coefficient of eddy diffusivity for w'^2  (m-level) [m^2/s]
+      Kw8_zt         ! Coefficient of eddy diffusivity for w'^3  (t-level) [m^2/s]
 
     !---------------------- Begin Code ----------------------
 
@@ -1465,6 +1485,9 @@ module advance_wp2_wp3_module
     wp3_pr3_lhs = 0.0_core_rknd
     wp3_term_ta_lhs_result = 0.0_core_rknd
     invrs_dt = 1.0_core_rknd / dt
+
+    Kw1_zm = max( zt2zm( gr, Kw1 ), zero_threshold )
+    Kw8_zt = max( zt2zm( gr, Kw8 ), zero_threshold )
 
     lhs_tp_wp3 = zero
     lhs_adv_tp_wp3 = zero
@@ -1482,17 +1505,19 @@ module advance_wp2_wp3_module
 
 
     ! Calculate diffusion term for w'2 using a completely implicit time step
-    call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:), & ! intent(in)
-                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
-                           invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
-                           lhs_diff_zm(:,:) ) ! intent(out)
+    call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu1_vert_res_dep(:), & ! intent(in)
+                           gr%invrs_dzt(:), gr%invrs_dzm(:),           & ! intent(in)
+                           invrs_rho_ds_zm(:), rho_ds_zt(:),           & ! Intent(in)
+                           l_linear_Kh_dp_term,                        & ! Intent(in)
+                           lhs_diff_zm(:,:)                            ) ! intent(out)
 
 
     ! Calculate diffusion term for w'3 using a completely implicit time step
-    call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:), & ! intent(in)
-                           gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
-                           invrs_rho_ds_zt(:), rho_ds_zm(:), & ! Intent(in)
-                           lhs_diff_zt(:,:) ) ! intent(out)
+    call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu8_vert_res_dep(:), & ! intent(in)
+                           gr%invrs_dzm(:), gr%invrs_dzt(:),           & ! intent(in)
+                           invrs_rho_ds_zt(:), rho_ds_zm(:),           & ! Intent(in)
+                           l_linear_Kh_dp_term,                        & ! Intent(in)
+                           lhs_diff_zt(:,:)                            ) ! intent(out)
 
     lhs_diff_zt(:,:) = lhs_diff_zt(:,:) * C12
 
@@ -1887,6 +1912,7 @@ module advance_wp2_wp3_module
                        l_tke_aniso, &
                        l_standard_term_ta, &
                        l_partial_upwind_wp3, &
+                       l_linear_Kh_dp_term, & 
                        l_damp_wp2_using_em, &
                        l_damp_wp3_Skw_squared, &
                        l_use_tke_in_wp3_pr_turb_term, &
@@ -1921,8 +1947,9 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid, &
-        zm2zt ! Variable
+        grid,  &
+        zm2zt, & ! Variable
+        zt2zm 
 
     use grid_class, only:  & 
         ddzt ! Procedure
@@ -1942,10 +1969,11 @@ module advance_wp2_wp3_module
         nu8_vert_res_dep
 
     use constants_clubb, only: & 
-        w_tol_sqd,     & ! Variable(s)
-        one,           &
-        one_half,      &
-        zero,          &
+        w_tol_sqd,      & ! Variable(s)
+        one,            &
+        one_half,       &
+        zero,           &
+        zero_threshold, & 
         gamma_over_implicit_ts
 
     use model_flags, only:  &
@@ -1986,6 +2014,9 @@ module advance_wp2_wp3_module
 
     type (grid), target, intent(in) :: gr
 
+    ! External
+    intrinsic :: max, min, sqrt
+
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep length                           [s]
@@ -2013,8 +2044,8 @@ module advance_wp2_wp3_module
       up2,               & ! u'^2 (momentum levels)                    [m^2/s^2]
       vp2,               & ! v'^2 (momentum levels)                    [m^2/s^2]
       em,                & ! Turbulence kinetic energy (momentum levels)   [m^2/s^2]
-      Kw1,               & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
-      Kw8,               & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
+      Kw1,               & ! Coefficient of eddy diffusivity for w'^2 (t-level) [m^2/s]
+      Kw8,               & ! Coefficient of eddy diffusivity for w'^3 (m-level) [m^2/s]
       Kh_zt,             & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
       Skw_zt,            & ! Skewness of w on thermodynamic levels     [-]
       invrs_tau1m,       & ! Inverse time-scale tau on momentum levels         [1/s]
@@ -2054,6 +2085,8 @@ module advance_wp2_wp3_module
                                      ! of the wp3 turbulent advection term for ADG1
                                      ! that is linearized in terms of wp3<t+1>.
                                      ! (Requires ADG1 PDF and l_standard_term_ta).
+      l_linear_Kh_dp_term, &         ! This flag detrmines whether we ignore the part of dp 
+                                     ! term that is related to dKh/dz 
       l_damp_wp2_using_em,  &        ! In wp2 equation, use a dissipation formula of 
                                      ! -(2/3)*em/tau_zm,
                                      ! as in Bougeault (1981)
@@ -2110,7 +2143,9 @@ module advance_wp2_wp3_module
       invrs_dt        ! Inverse of dt, 1/dt, used for computational efficiency
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      zero_vector    ! Vector of 0s
+      zero_vector, & ! Vector of 0s
+      Kw1_zm,      & ! Coefficient of eddy diffusivity for w'^2  (m-level)  [m^2/s]
+      Kw8_zt         ! Coefficient of eddy diffusivity for w'^3  (t-level) [m^2/s]
 
     ! --------------- Begin Code ---------------
 
@@ -2118,6 +2153,8 @@ module advance_wp2_wp3_module
     invrs_dt = 1.0_core_rknd / dt
     rhs = 0.0_core_rknd
     wp3_term_ta_lhs_result = zero
+    Kw1_zm = max( zt2zm( gr, Kw1 ), zero_threshold )
+    Kw8_zt = max( zt2zm( gr, Kw8 ), zero_threshold )
 
     lhs_tp_wp3 = zero
     lhs_adv_tp_wp3 = zero
@@ -2174,15 +2211,17 @@ module advance_wp2_wp3_module
 
         ! Calculate RHS eddy diffusion terms for w'2 and w'3
         
-        call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:),  & ! intent(in) 
-                               gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
-                               invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
-                               rhs_diff_zm(:,:) )                  ! inetnt(out)
+        call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu1_vert_res_dep(:), & ! intent(in) 
+                               gr%invrs_dzt(:), gr%invrs_dzm(:),           & ! intent(in)
+                               invrs_rho_ds_zm(:), rho_ds_zt(:),           & ! Intent(in)
+                               l_linear_Kh_dp_term,                        & ! Intent(in)
+                               rhs_diff_zm(:,:)                            ) ! inetnt(out)
 
-        call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:),  & ! inetnt(in) 
-                               gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
-                               invrs_rho_ds_zt(:), rho_ds_zm(:), & ! Intent(in)
-                               rhs_diff_zt(:,:) )                  ! intent(out)
+        call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu8_vert_res_dep(:), & ! inetnt(in) 
+                               gr%invrs_dzm(:), gr%invrs_dzt(:),           & ! intent(in)
+                               invrs_rho_ds_zt(:), rho_ds_zm(:),           & ! Intent(in)
+                               l_linear_Kh_dp_term,                        & ! Intent(in)
+                               rhs_diff_zt(:,:)                            ) ! intent(out)
         ! Add diffusion terms
         do k = 2, gr%nz-1
 

@@ -398,6 +398,8 @@ module spurious_source_test
                                       ! xpyp only.
       l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
                                       ! a constant height level
+      l_linear_Kh_dp_term,          & ! This flag detrmines whether we ignore the part of dp 
+                                      ! term that is related to dKh/dz 
       l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
                                       ! spline interpolartion instead of linear interpolation to 
                                       ! map the sounding profile to the clubb grid 
@@ -456,7 +458,8 @@ module spurious_source_test
                                          l_partial_upwind_wp3, &
                                          l_godunov_upwind_wpxp_ta, &
                                          l_godunov_upwind_xpyp_ta, &
-                                         l_bc_at_constant_height, & 
+                                         l_bc_at_constant_height, &
+                                         l_linear_Kh_dp_term, &  
                                          l_mono_cubic_sounding, & 
                                          l_use_cloud_cover, &
                                          l_diagnose_correlations, &
@@ -856,6 +859,7 @@ module spurious_source_test
                              l_diffuse_rtm_and_thlm, &
                              l_stability_correct_Kh_N2_zm, &
                              l_godunov_upwind_wpxp_ta, &
+                             l_linear_Kh_dp_term, &
                              l_upwind_wpxp_ta, &
                              l_upwind_xm_ma, &
                              l_uv_nudge, &

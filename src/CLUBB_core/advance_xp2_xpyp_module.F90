@@ -62,6 +62,7 @@ module advance_xp2_xpyp_module
                                l_C2_cloud_frac,                           & ! In
                                l_upwind_xpyp_ta,                          & ! In
                                l_godunov_upwind_xpyp_ta,                  & ! In
+                               l_linear_Kh_dp_term,                       & ! In 
                                l_single_C2_Skw,                           & ! In
                                l_lmm_stepping,                            & ! In
                                stats_zt, stats_zm, stats_sfc,             & ! intent(inout)
@@ -98,6 +99,7 @@ module advance_xp2_xpyp_module
         one_half, &
         one_third, &
         zero,   &
+        zero_threshold, & 
         eps
 
     use model_flags, only: & 
@@ -196,7 +198,7 @@ module advance_xp2_xpyp_module
 
     ! Intrinsic functions
     intrinsic :: &
-      exp, sqrt, min
+      exp, sqrt, min, max
 
     ! Constant parameters
     logical, parameter :: &
@@ -279,6 +281,8 @@ module advance_xp2_xpyp_module
                                    ! centered differencing for turbulent or mean advection terms.
                                    ! It affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, 
                                    ! & sclrpthlp.
+      l_linear_Kh_dp_term,       & ! This flag detrmines whether we ignore the part of dp 
+                                   ! term that is related to dKh/dz 
       l_single_C2_Skw,           & ! Use a single Skewness dependent C2 for rtp2, thlp2, & rtpthlp
       l_lmm_stepping               ! Apply Linear Multistep Method (LMM) Stepping
 
@@ -325,8 +329,10 @@ module advance_xp2_xpyp_module
 
     ! Eddy Diffusion for Variances and Covariances.
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
-      Kw2, & ! For rtp2, thlp2, rtpthlp, and passive scalars  [m^2/s]
-      Kw9    ! For up2 and vp2                                [m^2/s]
+      Kw2,    & ! For rtp2, thlp2, rtpthlp, and passive scalars  [m^2/s]
+      Kw9,    &    ! For up2 and vp2                                [m^2/s]
+      Kw2_zm, & 
+      Kw9_zm 
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rtpthlp_chnge    ! Net change in r_t'th_l' due to clipping [(kg/kg) K]
@@ -471,6 +477,9 @@ module advance_xp2_xpyp_module
 
     enddo
 
+    Kw2_zm = max( zt2zm( gr, Kw9 ), zero_threshold )
+    Kw9_zm = max( zt2zm( gr, Kw9 ), zero_threshold )
+
     if ( l_lmm_stepping ) then
        thlp2_old = thlp2
        rtp2_old = rtp2
@@ -502,10 +511,11 @@ module advance_xp2_xpyp_module
                                  
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2). This is the 
     ! diffusion term for all LHS matrices except <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw2(:), nu2_vert_res_dep(:),      & ! In
-                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
-                           invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
-                           lhs_diff(:,:)                     ) ! Out
+    call diffusion_zm_lhs( gr, Kw2(:), Kw2_zm(:), nu2_vert_res_dep(:), & ! In
+                           gr%invrs_dzt(:), gr%invrs_dzm(:),           & ! In
+                           invrs_rho_ds_zm(:), rho_ds_zt(:),           & ! In
+                           l_linear_Kh_dp_term,                        & ! In
+                           lhs_diff(:,:)                               ) ! Out
                                
     ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
     call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! In
@@ -573,10 +583,11 @@ module advance_xp2_xpyp_module
     !!!!!***** u'^2 / v'^2 *****!!!!!
     
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw9(:), nu9_vert_res_dep(:),      & ! In
-                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
-                           invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
-                           lhs_diff_uv(:,:)                  ) ! Out
+    call diffusion_zm_lhs( gr, Kw9(:), Kw9_zm(:), nu9_vert_res_dep(:), & ! In
+                           gr%invrs_dzt(:), gr%invrs_dzm(:),           & ! In
+                           invrs_rho_ds_zm(:), rho_ds_zt(:),           & ! Intent(in)
+                           l_linear_Kh_dp_term,                        & ! Intent(in)
+                           lhs_diff_uv(:,:)                            ) ! Out
 
     if ( l_lmm_stepping ) then
        up2_old = up2

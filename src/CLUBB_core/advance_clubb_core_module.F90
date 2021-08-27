@@ -674,8 +674,8 @@ module advance_clubb_core_module
       rc_coef_zm    ! Coefficient of X'r_c' in Eq. (34) on m-levs.  [K/(kg/kg)]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Km_zm, & ! Eddy diffusivity for momentum on zm grid levels [m^2/s]
-      Kmh_zm   ! Eddy diffusivity for thermodynamic variables [m^2/s]
+      Km_zm, & ! Eddy diffusivity for momentum on zm grid levels          [m^2/s]
+      Kmh_zm   ! Eddy diffusivity for thermodynamic variables on zm grid  [m^2/s]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       gamma_Skw_fnc,  & ! Gamma as a function of skewness               [-]
@@ -1456,6 +1456,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_diffuse_rtm_and_thlm,            & ! intent(in)
                             clubb_config_flags%l_stability_correct_Kh_N2_zm,      & ! intent(in)
                             clubb_config_flags%l_godunov_upwind_wpxp_ta,          & ! intent(in)
+                            clubb_config_flags%l_linear_Kh_dp_term,               & ! intent(in)
                             clubb_config_flags%l_upwind_wpxp_ta,                  & ! intent(in)
                             clubb_config_flags%l_upwind_xm_ma,                    & ! intent(in)
                             clubb_config_flags%l_uv_nudge,                        & ! intent(in)
@@ -1525,6 +1526,7 @@ module advance_clubb_core_module
                              clubb_config_flags%l_C2_cloud_frac,          & ! intent(in)
                              clubb_config_flags%l_upwind_xpyp_ta,         & ! intent(in)
                              clubb_config_flags%l_godunov_upwind_xpyp_ta, & ! intent(in)
+                             clubb_config_flags%l_linear_Kh_dp_term,      & ! intent(in)
                              clubb_config_flags%l_single_C2_Skw,          & ! intent(in)
                              clubb_config_flags%l_lmm_stepping,           & ! intent(in)
                              stats_zt, stats_zm, stats_sfc,               & ! intent(inout)
@@ -1589,6 +1591,7 @@ module advance_clubb_core_module
              clubb_config_flags%l_tke_aniso,                            & ! intent(in)
              clubb_config_flags%l_standard_term_ta,                     & ! intent(in)
              clubb_config_flags%l_partial_upwind_wp3,                   & ! intent(in)
+             clubb_config_flags%l_linear_Kh_dp_term,                    & ! intent(in)
              clubb_config_flags%l_damp_wp2_using_em,                    & ! intent(in)
              clubb_config_flags%l_use_C11_Richardson,                   & ! intent(in)
              clubb_config_flags%l_damp_wp3_Skw_squared,                 & ! intent(in)
@@ -1780,9 +1783,9 @@ module advance_clubb_core_module
       !   and their fluxes (upwp, vpwp, wpedsclrp) by one time step.
       !----------------------------------------------------------------
 
-      
 
-      Km_zm = Kh_zm * c_K10   ! Coefficient for momentum
+
+      Km_zm = Kh_zm * c_K10   ! Coefficient for momentum 
 
       Kmh_zm = Kh_zm * c_K10h ! Coefficient for thermo
 
@@ -1799,6 +1802,7 @@ module advance_clubb_core_module
                                   fcor, l_implemented,                          & ! intent(in)
                                   clubb_config_flags%l_predict_upwp_vpwp,       & ! intent(in)
                                   clubb_config_flags%l_upwind_xm_ma,            & ! intent(in)
+                                  clubb_config_flags%l_linear_Kh_dp_term,       & ! intent(in)
                                   clubb_config_flags%l_uv_nudge,                & ! intent(in)
                                   clubb_config_flags%l_tke_aniso,               & ! intent(in)
                                   clubb_config_flags%l_lmm_stepping,            & ! intent(in)

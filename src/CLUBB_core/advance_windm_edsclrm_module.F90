@@ -39,6 +39,7 @@ module advance_windm_edsclrm_module
                fcor, l_implemented, &
                l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
+               l_linear_Kh_dp_term, & 
                l_uv_nudge, &
                l_tke_aniso, &
                l_lmm_stepping, &
@@ -164,6 +165,8 @@ module advance_windm_edsclrm_module
       l_upwind_xm_ma,      & ! This flag determines whether we want to use an upwind differencing
                              ! approximation rather than a centered differencing for turbulent or
                              ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_linear_Kh_dp_term, & ! This flag detrmines whether we ignore the part of dp 
+                             ! term that is related to dKh/dz 
       l_uv_nudge,          & ! For wind speed nudging
       l_tke_aniso,         & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                              ! (u'^2 + v'^2 + w'^2)
@@ -214,7 +217,7 @@ module advance_windm_edsclrm_module
       u_star_sqd  ! Surface friction velocity, u_star, squared      [m/s]
 
     logical :: &
-      l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
+      l_imp_sfc_momentum_flux ! Flag for implicit momentum surface fluxes.
 
     integer :: nrhs  ! Number of right hand side terms
 
@@ -264,20 +267,22 @@ module advance_windm_edsclrm_module
        ! Compute the explicit portion of the um equation.
        ! Build the right-hand side vector.
        call windm_edsclrm_rhs( gr, windm_edsclrm_um, dt, nu10_vert_res_dep, & ! In
-                               Km_zm, um, um_tndcy,                     & ! In
-                               rho_ds_zm, invrs_rho_ds_zt,              & ! In
-                               l_imp_sfc_momentum_flux, upwp(1),        & ! In
-                               stats_zt,                                & ! intent(inout)
-                               rhs(:,windm_edsclrm_um)                  ) ! Out
+                               Km_zm, um, um_tndcy,                         & ! In
+                               rho_ds_zm, invrs_rho_ds_zt,                  & ! In
+                               l_imp_sfc_momentum_flux, upwp(1),            & ! In
+                               l_linear_Kh_dp_term,                         & ! In
+                               stats_zt,                                    & ! intent(inout)
+                               rhs(:,windm_edsclrm_um)                      ) ! Out
 
        ! Compute the explicit portion of the vm equation.
        ! Build the right-hand side vector.
        call windm_edsclrm_rhs( gr, windm_edsclrm_vm, dt, nu10_vert_res_dep, & ! In
-                               Km_zm, vm, vm_tndcy,                     & ! In
-                               rho_ds_zm, invrs_rho_ds_zt,              & ! In
-                               l_imp_sfc_momentum_flux, vpwp(1),        & ! In
-                               stats_zt,                                & ! intent(inout)
-                               rhs(:,windm_edsclrm_vm)                  ) ! Out
+                               Km_zm, vm, vm_tndcy,                         & ! In
+                               rho_ds_zm, invrs_rho_ds_zt,                  & ! In
+                               l_imp_sfc_momentum_flux, vpwp(1),            & ! In
+                               l_linear_Kh_dp_term,                         & ! In
+                               stats_zt,                                    & ! intent(inout)
+                               rhs(:,windm_edsclrm_vm)                      ) ! Out
 
 
        ! Store momentum flux (explicit component)
@@ -310,12 +315,13 @@ module advance_windm_edsclrm_module
 
        ! Compute the implicit portion of the um and vm equations.
        ! Build the left-hand side matrix.
-       call windm_edsclrm_lhs( gr, dt, nu10_vert_res_dep, wm_zt, Km_zm,    & ! In
-                               wind_speed, u_star_sqd,                 & ! In
-                               rho_ds_zm, invrs_rho_ds_zt,             & ! In
-                               l_implemented, l_imp_sfc_momentum_flux, & ! In
-                               l_upwind_xm_ma,                         & ! In
-                               lhs )                                     ! Out
+       call windm_edsclrm_lhs( gr, dt, nu10_vert_res_dep, wm_zt, Km_zm, & ! In
+                               wind_speed, u_star_sqd,                  & ! In
+                               rho_ds_zm, invrs_rho_ds_zt,              & ! In
+                               l_implemented, l_imp_sfc_momentum_flux,  & ! In
+                               l_upwind_xm_ma,                          & ! In
+                               l_linear_Kh_dp_term,                     & ! In
+                               lhs )                                      ! Out
 
        ! Decompose and back substitute for um and vm
        nrhs = 2
@@ -526,12 +532,13 @@ module advance_windm_edsclrm_module
       ! -dschanen 7 Oct 2008
 !HPF$ INDEPENDENT
       do i = 1, edsclr_dim
-        call windm_edsclrm_rhs( gr, windm_edsclrm_scalar, dt, dummy_nu,  & ! In
-                                Kmh_zm, edsclrm(:,i), edsclrm_forcing,   & ! In
-                                rho_ds_zm, invrs_rho_ds_zt,              & ! In
-                                l_imp_sfc_momentum_flux, wpedsclrp(1,i), & ! In
-                                stats_zt,                                & ! intent(inout)
-                                rhs(:,i)                                 ) ! Out
+        call windm_edsclrm_rhs( gr, windm_edsclrm_scalar, dt, dummy_nu,        & ! In
+                                Kmh_zm, edsclrm(:,i), edsclrm_forcing, & ! In
+                                rho_ds_zm, invrs_rho_ds_zt,                    & ! In
+                                l_imp_sfc_momentum_flux, wpedsclrp(1,i),       & ! In
+                                l_linear_Kh_dp_term,                           & ! In
+                                stats_zt,                                      & ! intent(inout)
+                                rhs(:,i)                                       ) ! Out
       enddo
 
 
@@ -559,12 +566,13 @@ module advance_windm_edsclrm_module
 
       ! Compute the implicit portion of the xm (eddy-scalar) equations.
       ! Build the left-hand side matrix.
-      call windm_edsclrm_lhs( gr, dt, dummy_nu, wm_zt, Kmh_zm,            & ! In
-                              wind_speed, u_star_sqd,                 & ! In
-                              rho_ds_zm, invrs_rho_ds_zt,             & ! In
-                              l_implemented, l_imp_sfc_momentum_flux, & ! In
-                              l_upwind_xm_ma,                         & ! In
-                              lhs )                                     ! Out
+      call windm_edsclrm_lhs( gr, dt, dummy_nu, wm_zt, Kmh_zm,         & ! In
+                              wind_speed, u_star_sqd,                  & ! In
+                              rho_ds_zm, invrs_rho_ds_zt,              & ! In
+                              l_implemented, l_imp_sfc_momentum_flux,  & ! In
+                              l_upwind_xm_ma,                          & ! In
+                              l_linear_Kh_dp_term,                     & ! In
+                              lhs )                                      ! Out
 
       ! Decompose and back substitute for all eddy-scalar variables
       call windm_edsclrm_solve( gr, edsclr_dim, 0, & ! in
@@ -1519,6 +1527,7 @@ module advance_windm_edsclrm_module
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_implemented, l_imp_sfc_momentum_flux,  &
                                 l_upwind_xm_ma, &
+                                l_linear_Kh_dp_term, &
                                 lhs )
     ! Description:
     ! Calculate the implicit portion of the horizontal wind or eddy-scalar
@@ -1540,7 +1549,8 @@ module advance_windm_edsclrm_module
     !----------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid ! Type
+        grid, & ! Type
+        zm2zt
 
     use constants_clubb, only: &
         zero    ! Procedure(s)
@@ -1598,10 +1608,11 @@ module advance_windm_edsclrm_module
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
     logical, intent(in) :: &
-      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
-                     ! approximation rather than a centered differencing for turbulent or
-                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
-
+      l_upwind_xm_ma,      & ! This flag determines whether we want to use an upwind differencing
+                             ! approximation rather than a centered differencing for turbulent or
+                             ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_linear_Kh_dp_term    ! This flag detrmines whether we ignore the part of dp 
+                             ! term that is related to dKh/dz 
     ! Output Variable
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
       lhs           ! Implicit contributions to xm (tridiagonal matrix)
@@ -1617,35 +1628,55 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(3,gr%nz) :: &
         lhs_diff, & ! LHS diffustion terms
         lhs_ma_zt   ! LHS mean advection terms
-    
+ 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+        Km_zt   
 
     ! --- Begin Code ---
 
     ! Calculate coefs of eddy diffusivity and inverse of dt
     invrs_dt = 1.0_core_rknd / dt
+    Km_zt    = max( zm2zt( gr, Km_zm ), zero )
 
     ! Calculate diffusion terms
-    call diffusion_zt_lhs( gr, Km_zm(:), nu(:),  &              ! intent(in)
+    call diffusion_zt_lhs( gr, Km_zm(:), Km_zt(:), nu(:),    & ! intent(in)
                            gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
                            invrs_rho_ds_zt(:), rho_ds_zm(:), & ! Intent(in)
-                           lhs_diff(:,:) )                     ! intent(out)
+                           l_linear_Kh_dp_term,              & ! Intent(in)
+                           lhs_diff(:,:)                     ) ! intent(out)
 
     ! The lower boundary condition needs to be applied here at level 2.
 
-    ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-    lhs_diff(kp1_tdiag,2) &
-    = - gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
-                        * ( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
+    if ( .not. l_linear_Kh_dp_term ) then 
 
-    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-    lhs_diff(k_tdiag,2) &
-    = + gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
-                        * ( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
+      ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+      lhs_diff(kp1_tdiag,2) &
+      = - gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
+                          * ( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
 
-    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-    lhs_diff(km1_tdiag,2) = zero
+      ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+      lhs_diff(k_tdiag,2) &
+      = + gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
+                          * ( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
 
+      ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+      lhs_diff(km1_tdiag,2) = zero
 
+    else
+
+      ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+      lhs_diff(kp1_tdiag,2) &
+      = - gr%invrs_dzt(2) * ( Km_zt(2) + nu(2) ) * gr%invrs_dzm(2)
+
+      ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+      lhs_diff(k_tdiag,2) &
+      = + gr%invrs_dzt(2) * ( Km_zt(2) + nu(2) ) * gr%invrs_dzm(2)
+
+      ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+      lhs_diff(km1_tdiag,2) = zero
+
+    end if
+ 
     ! Set lower boundary, see notes 
     lhs(1,1) = 0.0_core_rknd
     lhs(2,1) = 1.0_core_rknd
@@ -1742,6 +1773,7 @@ module advance_windm_edsclrm_module
                                 Km_zm, xm, xm_tndcy,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_imp_sfc_momentum_flux, xpwp_sfc, &
+                                l_linear_Kh_dp_term, &   
                                 stats_zt, &
                                 rhs )
     ! Description:
@@ -1787,7 +1819,8 @@ module advance_windm_edsclrm_module
         stat_modify_pt
 
     use grid_class, only:  & 
-        grid ! Type
+        grid, & ! Type
+        zm2zt
 
     use stats_type, only: stats ! Type
 
@@ -1827,7 +1860,9 @@ module advance_windm_edsclrm_module
       xpwp_sfc     ! x'w' at the surface                              [units vary]
 
     logical, intent(in) :: &
-      l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
+      l_imp_sfc_momentum_flux, & ! Flag for implicit momentum surface fluxes.
+      l_linear_Kh_dp_term        ! This flag detrmines whether we ignore the part of dp 
+                                 ! term that is related to dKh/dz 
 
     !------------------- Output Variable -------------------
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -1843,9 +1878,13 @@ module advance_windm_edsclrm_module
 
     integer :: ixm_ta
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Km_zt ! Eddy diffusivity on thermo. levels        [m^2/s]
+
     !------------------- Begin Code -------------------
 
     invrs_dt = 1.0_core_rknd / dt   ! Precalculate 1.0/dt to avoid redoing the divide
+    Km_zt    = max( zm2zt( gr, Km_zm ), zero )
 
     select case ( solve_type )
         case ( windm_edsclrm_um )
@@ -1857,27 +1896,43 @@ module advance_windm_edsclrm_module
     end select
    
     ! RHS turbulent advection term, for grid level 3 - gr%nz
-    call diffusion_zt_lhs( gr, Km_zm(1:gr%nz), nu(1:gr%nz),              & ! Intent(in)
-                           gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
-                           invrs_rho_ds_zt(1:gr%nz), rho_ds_zm(1:gr%nz), & ! Intent(in)
-                           lhs_diff(1:3,1:gr%nz)                         ) ! Intent(out)
+    call diffusion_zt_lhs( gr, Km_zm(1:gr%nz), Km_zt(1:gr%nz), nu(1:gr%nz), & ! Intent(in)
+                           gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz),    & ! Intent(in)
+                           invrs_rho_ds_zt(1:gr%nz), rho_ds_zm(1:gr%nz),    & ! Intent(in)
+                           l_linear_Kh_dp_term,                             & ! Intent(in)
+                           lhs_diff(1:3,1:gr%nz)                            ) ! Intent(out)
 
     ! RHS turbulent advection term (solved as an eddy-diffusion term), for grid
     ! level 2 lower boundary condition applied at this level; see notes above.
+    if ( .not. l_linear_Kh_dp_term ) then 
 
-    ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-    lhs_diff(kp1_tdiag,2) &
-    = - gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
-                        *( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
+      ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+      lhs_diff(kp1_tdiag,2) &
+      = - gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
+                          *( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
+    
+      ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+      lhs_diff(k_tdiag,2) &
+      = + gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
+                          * ( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
 
-    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-    lhs_diff(k_tdiag,2) &
-    = + gr%invrs_dzt(2) * invrs_rho_ds_zt(2) &
-                        * ( Km_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2)
+      ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+      lhs_diff(km1_tdiag,2) = zero
 
-    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-    lhs_diff(km1_tdiag,2) = zero
+    else
 
+      ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+      lhs_diff(kp1_tdiag,2) &
+      = - gr%invrs_dzt(2) * ( Km_zt(2) + nu(2) ) * gr%invrs_dzm(2)
+
+      ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+      lhs_diff(k_tdiag,2) &
+      = + gr%invrs_dzt(2) * ( Km_zt(2) + nu(2) ) * gr%invrs_dzm(2)
+
+      ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+      lhs_diff(km1_tdiag,2) = zero
+
+    end if 
 
     ! For purposes of the matrix equation, rhs(1) is simply set to 0.
     rhs(1) = 0.0_core_rknd

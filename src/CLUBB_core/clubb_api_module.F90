@@ -3154,6 +3154,7 @@ contains
                                                  l_godunov_upwind_wpxp_ta, & ! Out
                                                  l_godunov_upwind_xpyp_ta, & ! Out
                                                  l_bc_at_constant_height, & ! Out 
+                                                 l_linear_Kh_dp_term, & ! Out
                                                  l_mono_cubic_sounding, & ! Out
                                                  l_use_cloud_cover, & ! Out
                                                  l_diagnose_correlations, & ! Out
@@ -3268,6 +3269,8 @@ contains
                                       ! xpyp only.
       l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
                                       ! a constant height level
+      l_linear_Kh_dp_term,          & ! This flag detrmines whether we ignore the part of dp 
+                                      ! term that is related to dKh/dz 
       l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
                                       ! spline interpolartion instead of linear interpolation to 
                                       ! map the sounding profile to the clubb grid 
@@ -3327,6 +3330,7 @@ contains
                                          l_godunov_upwind_wpxp_ta, & ! Out
                                          l_godunov_upwind_xpyp_ta, & ! Out
                                          l_bc_at_constant_height, & ! Out 
+                                         l_linear_Kh_dp_term, & ! Out
                                          l_mono_cubic_sounding, & ! Out
                                          l_use_cloud_cover, & ! Out
                                          l_diagnose_correlations, & ! Out
@@ -3382,6 +3386,7 @@ contains
                                                      l_godunov_upwind_wpxp_ta, & ! In
                                                      l_godunov_upwind_xpyp_ta, & ! In
                                                      l_bc_at_constant_height, & ! In 
+                                                     l_linear_Kh_dp_term, & ! In
                                                      l_mono_cubic_sounding, & ! In
                                                      l_use_cloud_cover, & ! In
                                                      l_diagnose_correlations, & ! In
@@ -3498,6 +3503,8 @@ contains
                                       ! xpyp only.
       l_bc_at_constant_height,      & ! Flag for having CLUBB calculate boundary conditions at 
                                       ! a constant height level
+      l_linear_Kh_dp_term,          & ! This flag detrmines whether we ignore the part of dp 
+                                      ! term that is related to dKh/dz 
       l_mono_cubic_sounding,        & ! This flag determines whether we want to use the mono cubic
                                       ! spline interpolartion instead of linear interpolation to 
                                       ! map the sounding profile to the clubb grid 
@@ -3561,6 +3568,7 @@ contains
                                              l_godunov_upwind_wpxp_ta, & ! In
                                              l_godunov_upwind_xpyp_ta, & ! In
                                              l_bc_at_constant_height, & ! In 
+                                             l_linear_Kh_dp_term, & ! In 
                                              l_mono_cubic_sounding, & ! In 
                                              l_use_cloud_cover, & ! In
                                              l_diagnose_correlations, & ! In

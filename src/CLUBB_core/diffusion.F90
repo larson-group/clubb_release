@@ -31,9 +31,10 @@ module diffusion
   contains
 
   !=============================================================================
-  pure subroutine diffusion_zt_lhs( gr, K_zm, nu, &                ! In
+  pure subroutine diffusion_zt_lhs( gr, K_zm, K_zt, nu, &          ! In
                                     invrs_dzm, invrs_dzt, &        ! In
                                     invrs_rho_ds_zt, rho_ds_zm, &  ! In 
+                                    l_linear_Kh_dp_term, &         ! In 
                                     lhs )                          ! Out
 
     ! Description:
@@ -271,11 +272,15 @@ module diffusion
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       K_zm,            & ! Coef. of eddy diffusivity at momentum levels   [m^2/s]
+      K_zt,            & ! Coef. of eddy diffusivity at thermo. levels    [m^2/s]
       nu,              & ! Background constant coef. of eddy diffusivity  [m^2/s]
       invrs_rho_ds_zt, & ! Inv. dry, static density at t-levs.            [m^3/kg]
       rho_ds_zm,       & ! Dry, static density on momentum levels         [kg/m^3]
       invrs_dzt,       & ! Inverse of grid spacing over thermo. levels    [1/m]
       invrs_dzm          ! Inverse of grid spacing over momentum levels   [1/m]
+
+    logical, intent(in) ::  &
+      l_linear_Kh_dp_term ! reduced to pure dissipation term  
 
     ! Return Variable
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
@@ -288,36 +293,69 @@ module diffusion
     ! k = 1 (bottom level); lower boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
 
-    ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-    lhs(kp1_tdiag,1) = - invrs_dzt(1) * invrs_rho_ds_zt(1) &
-                                      * ( K_zm(1) + nu(1) ) * rho_ds_zm(1) * invrs_dzm(1)
+    if ( .not. l_linear_Kh_dp_term ) then
 
-    ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-    lhs(k_tdiag,1)   = + invrs_dzt(1) * invrs_rho_ds_zt(1) &
-                                      * ( K_zm(1) + nu(1) ) * rho_ds_zm(1) * invrs_dzm(1)
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag,1) = - invrs_dzt(1) * invrs_rho_ds_zt(1) &
+                                        * ( K_zm(1) + nu(1) ) * rho_ds_zm(1) * invrs_dzm(1)
 
-    ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-    lhs(km1_tdiag,1) = zero
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag,1)   = + invrs_dzt(1) * invrs_rho_ds_zt(1) &
+                                        * ( K_zm(1) + nu(1) ) * rho_ds_zm(1) * invrs_dzm(1)
 
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag,1) = zero
+
+    else
+
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag,1) = - invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1)
+
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag,1)   = + invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1)
+
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag,1) = zero
+
+
+    end if 
 
     ! Most of the interior model; normal conditions.
     do k = 2, gr%nz-1, 1
 
-       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-       lhs(kp1_tdiag,k) &
-       = - invrs_dzt(k) * invrs_rho_ds_zt(k) & 
-                        * ( K_zm(k) + nu(k) ) * rho_ds_zm(k) * invrs_dzm(k)
+      if ( .not. l_linear_Kh_dp_term ) then
 
-       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-       lhs(k_tdiag,k) &
-       = + invrs_dzt(k) * invrs_rho_ds_zt(k) & 
-                        * ( ( K_zm(k) + nu(k) ) * rho_ds_zm(k) * invrs_dzm(k)   &
-                            + ( K_zm(k-1) + nu(k-1) ) * rho_ds_zm(k-1) * invrs_dzm(k-1) )
+        ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag,k) &
+        = - invrs_dzt(k) * invrs_rho_ds_zt(k) & 
+                         * ( K_zm(k) + nu(k) ) * rho_ds_zm(k) * invrs_dzm(k)
 
-       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-       lhs(km1_tdiag,k) &
-       = - invrs_dzt(k) * invrs_rho_ds_zt(k) & 
-                        * ( K_zm(k-1) + nu(k) ) * rho_ds_zm(k-1) * invrs_dzm(k-1)
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag,k) &
+        = + invrs_dzt(k) * invrs_rho_ds_zt(k) & 
+                         * ( ( K_zm(k) + nu(k) ) * rho_ds_zm(k) * invrs_dzm(k)   &
+                             + ( K_zm(k-1) + nu(k-1) ) * rho_ds_zm(k-1) * invrs_dzm(k-1) )
+
+        ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag,k) &
+        = - invrs_dzt(k) * invrs_rho_ds_zt(k) & 
+                         * ( K_zm(k-1) + nu(k) ) * rho_ds_zm(k-1) * invrs_dzm(k-1)
+ 
+      else
+
+        ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs(kp1_tdiag,k) &
+        = - invrs_dzt(k) * ( K_zt(k) + nu(k) ) * invrs_dzm(k)
+
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs(k_tdiag,k) &
+        = + invrs_dzt(k) * ( K_zt(k) + nu(k) ) * ( invrs_dzm(k) + invrs_dzm(k-1) )
+
+        ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs(km1_tdiag,k) &
+        = - invrs_dzt(k) * ( K_zt(k) + nu(k) ) * invrs_dzm(k-1)
+
+      end if 
 
     enddo ! k = 2, gr%nz-1, 1
 
@@ -325,19 +363,34 @@ module diffusion
     ! k = gr%nz (top level); upper boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
 
-    ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-    lhs(kp1_tdiag,gr%nz) = zero
+    if ( .not. l_linear_Kh_dp_term ) then 
 
-    ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-    lhs(k_tdiag,gr%nz) &
-    = + invrs_dzt(gr%nz) * invrs_rho_ds_zt(gr%nz) &
-                         * ( K_zm(gr%nz-1) + nu(gr%nz-1) ) * rho_ds_zm(gr%nz-1) * invrs_dzm(gr%nz-1)
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag,gr%nz) = zero
 
-    ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-    lhs(km1_tdiag,gr%nz) &
-    = - invrs_dzt(gr%nz) * invrs_rho_ds_zt(gr%nz) &
-                         * ( K_zm(gr%nz-1) + nu(gr%nz-1) ) * rho_ds_zm(gr%nz-1) * invrs_dzm(gr%nz-1)
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag,gr%nz) &
+      = + invrs_dzt(gr%nz) * invrs_rho_ds_zt(gr%nz) &
+          * ( K_zm(gr%nz-1) + nu(gr%nz-1) ) * rho_ds_zm(gr%nz-1) * invrs_dzm(gr%nz-1)
 
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag,gr%nz) &
+      = - invrs_dzt(gr%nz) * invrs_rho_ds_zt(gr%nz) &
+          * ( K_zm(gr%nz-1) + nu(gr%nz-1) ) * rho_ds_zm(gr%nz-1) * invrs_dzm(gr%nz-1)
+    else
+
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag,gr%nz) = zero
+
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag,gr%nz) &
+      = + invrs_dzt(gr%nz) * ( K_zt(gr%nz) + nu(gr%nz) ) * invrs_dzm(gr%nz-1) 
+
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag,gr%nz) &
+      = - invrs_dzt(gr%nz) * ( K_zt(gr%nz) + nu(gr%nz) ) * invrs_dzm(gr%nz-1) 
+
+    end if 
 
     return
 
@@ -519,9 +572,10 @@ module diffusion
   end function diffusion_cloud_frac_zt_lhs
 
   !=============================================================================
-  pure subroutine diffusion_zm_lhs( gr, K_zt, nu, &               ! In
+  pure subroutine diffusion_zm_lhs( gr, K_zt, K_zm, nu, &         ! In
                                     invrs_dzt, invrs_dzm, &       ! In
                                     invrs_rho_ds_zm, rho_ds_zt, & ! In 
+                                    l_linear_Kh_dp_term, &        ! In
                                     lhs )                         ! Out
 
     ! Description:
@@ -759,11 +813,15 @@ module diffusion
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       K_zt,            & ! Coef. of eddy diffusivity at thermo. levels   [m^2/s]
+      K_zm,            & ! Coef. of eddy diffusivity at momentum. levels [m^2/s]
       nu,              & ! Background constant coef. of eddy diffusivity [m^2/s]
-      rho_ds_zt,       & ! Dry, static density at t-levels      [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv dry, static density at m-levels  [m^3/kg]
+      rho_ds_zt,       & ! Dry, static density at t-levels               [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv dry, static density at m-levels           [m^3/kg]
       invrs_dzm,       & ! Inverse of grid spacing over momentum levels  [1/m]
       invrs_dzt          ! Inverse of grid spacing over thermo. levels   [1/m]
+
+    logical, intent(in) ::  &
+      l_linear_Kh_dp_term ! reduced to pure dissipation term  
 
     ! Return Variable
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
@@ -776,36 +834,68 @@ module diffusion
     ! k = 1; lower boundary level at surface.
     ! Only relevant if zero-flux boundary conditions are used.
 
-    ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-    lhs(kp1_mdiag,1) = - invrs_dzm(1) * invrs_rho_ds_zm(1) &
-                                      * ( K_zt(2) + nu(2) ) * rho_ds_zt(2) * invrs_dzt(2)
+    if ( .not. l_linear_Kh_dp_term ) then 
 
-    ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-    lhs(k_mdiag,1)   = + invrs_dzm(1) * invrs_rho_ds_zm(1) &
-                                      * ( K_zt(2) + nu(2) ) * rho_ds_zt(2) * invrs_dzt(2)
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag,1) = - invrs_dzm(1) * invrs_rho_ds_zm(1) &
+                                        * ( K_zt(2) + nu(2) ) * rho_ds_zt(2) * invrs_dzt(2)
 
-    ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-    lhs(km1_mdiag,1) = zero
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag,1)   = + invrs_dzm(1) * invrs_rho_ds_zm(1) &
+                                        * ( K_zt(2) + nu(2) ) * rho_ds_zt(2) * invrs_dzt(2)
+
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag,1) = zero
+
+    else
+
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag,1) = - invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2)
+
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag,1)   = + invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2) 
+
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag,1) = zero
+
+    end if 
 
 
     ! Most of the interior model; normal conditions.
     do k = 2, gr%nz-1, 1
 
-       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-       lhs(kp1_mdiag,k) &
-       = - invrs_dzm(k) * invrs_rho_ds_zm(k) &
-                        * ( K_zt(k+1) + nu(k+1) ) * rho_ds_zt(k+1) * invrs_dzt(k+1)
+      if ( .not. l_linear_Kh_dp_term ) then 
+       
+        ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag,k) &
+        = - invrs_dzm(k) * invrs_rho_ds_zm(k) &
+                         * ( K_zt(k+1) + nu(k+1) ) * rho_ds_zt(k+1) * invrs_dzt(k+1)
 
-       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-       lhs(k_mdiag,k) &
-       = + invrs_dzm(k) * invrs_rho_ds_zm(k) & 
-                        * ( ( K_zt(k+1) + nu(k+1) ) * rho_ds_zt(k+1) * invrs_dzt(k+1)  &
-                            + ( K_zt(k) + nu(k) ) * rho_ds_zt(k) * invrs_dzt(k) )
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag,k) &
+        = + invrs_dzm(k) * invrs_rho_ds_zm(k) & 
+                         * ( ( K_zt(k+1) + nu(k+1) ) * rho_ds_zt(k+1) * invrs_dzt(k+1)  &
+                             + ( K_zt(k) + nu(k) ) * rho_ds_zt(k) * invrs_dzt(k) )
 
-       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-       lhs(km1_mdiag,k) &
-       = - invrs_dzm(k) * invrs_rho_ds_zm(k) & 
-                        * ( K_zt(k) + nu(k) ) * rho_ds_zt(k) * invrs_dzt(k)
+        ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag,k) &
+        = - invrs_dzm(k) * invrs_rho_ds_zm(k) & 
+                         * ( K_zt(k) + nu(k) ) * rho_ds_zt(k) * invrs_dzt(k)
+      else
+
+        ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+        lhs(kp1_mdiag,k) &
+        = - invrs_dzm(k) * ( K_zm(k) + nu(k) ) * invrs_dzt(k+1)
+
+        ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+        lhs(k_mdiag,k) &
+        = + invrs_dzm(k) * ( K_zm(k) + nu(k) ) * ( invrs_dzt(k+1) + invrs_dzt(k) )
+
+        ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+        lhs(km1_mdiag,k) &
+        = - invrs_dzm(k) * ( K_zm(k) + nu(k) ) * invrs_dzt(k)
+
+      end if 
 
     enddo ! k = 2, gr%nz-1, 1
 
@@ -813,19 +903,34 @@ module diffusion
     ! k = gr%nz (top level); upper boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
 
-    ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-    lhs(kp1_mdiag,gr%nz) = zero
+    if ( .not. l_linear_Kh_dp_term ) then 
 
-    ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-    lhs(k_mdiag,gr%nz) &
-    = + invrs_dzm(gr%nz) * invrs_rho_ds_zm(gr%nz) & 
-                         * ( K_zt(gr%nz) + nu(gr%nz) ) * rho_ds_zt(gr%nz) * invrs_dzt(gr%nz)
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag,gr%nz) = zero
 
-    ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-    lhs(km1_mdiag,gr%nz) &
-    = - invrs_dzm(gr%nz) * invrs_rho_ds_zm(gr%nz) & 
-                         * ( K_zt(gr%nz) + nu(gr%nz) ) * rho_ds_zt(gr%nz) * invrs_dzt(gr%nz)
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag,gr%nz) &
+      = + invrs_dzm(gr%nz) * invrs_rho_ds_zm(gr%nz) & 
+                           * ( K_zt(gr%nz) + nu(gr%nz) ) * rho_ds_zt(gr%nz) * invrs_dzt(gr%nz)
+ 
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag,gr%nz) &
+      = - invrs_dzm(gr%nz) * invrs_rho_ds_zm(gr%nz) & 
+                           * ( K_zt(gr%nz) + nu(gr%nz) ) * rho_ds_zt(gr%nz) * invrs_dzt(gr%nz)
+    else
 
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag,gr%nz) = zero
+
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag,gr%nz) &
+      = + invrs_dzm(gr%nz) * ( K_zm(gr%nz) + nu(gr%nz) ) * invrs_dzt(gr%nz)
+
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag,gr%nz) &
+      = - invrs_dzm(gr%nz) * ( K_zm(gr%nz) + nu(gr%nz) ) * invrs_dzt(gr%nz)
+
+    end if 
 
     return
 

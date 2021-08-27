@@ -164,6 +164,7 @@ l_var_covar_src = .true.
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "none",
 l_calc_thlp2_rad = .false.,
+l_rad_above_cloud = .false.,
 /
 
 &stats_setting

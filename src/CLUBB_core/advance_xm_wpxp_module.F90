@@ -64,6 +64,7 @@ module advance_xm_wpxp_module
                               l_diffuse_rtm_and_thlm, &
                               l_stability_correct_Kh_N2_zm, &
                               l_godunov_upwind_wpxp_ta, &
+                              l_linear_Kh_dp_term, & 
                               l_upwind_wpxp_ta, &
                               l_upwind_xm_ma, &
                               l_uv_nudge, &
@@ -301,6 +302,8 @@ module advance_xm_wpxp_module
                                       ! differencing approximation rather than a centered 
                                       ! differencing for turbulent advection terms. 
                                       ! It affects  wpxp only.
+      l_linear_Kh_dp_term,          & ! This flag detrmines whether we ignore the part of dp 
+                                      ! term that is related to dKh/dz 
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
@@ -345,8 +348,9 @@ module advance_xm_wpxp_module
       C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term
 
     ! Eddy Diffusion for wpthlp and wprtp.
-    real( kind = core_rknd ), dimension(gr%nz) :: Kw6  ! wpxp eddy diff. [m^2/s]
-
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Kw6  ! wpxp eddy diff. at t-level [m^2/s]
+   
     ! Variables used as part of the monotonic turbulent advection scheme.
     ! Find the lowermost and uppermost grid levels that can have an effect
     ! on the central thermodynamic level during the course of a time step,
@@ -532,7 +536,7 @@ module advance_xm_wpxp_module
     ! Kw6 is located on thermodynamic levels.
     ! Kw6 = c_K6 * Kh_zt
 
-    Kw6(1:gr%nz) = c_K6 * Kh_zt(1:gr%nz)
+    Kw6(1:gr%nz)    = c_K6 * Kh_zt(1:gr%nz)
 
     ! Find the number of grid levels, both upwards and downwards, that can
     ! have an effect on the central thermodynamic level during the course of
@@ -574,7 +578,7 @@ module advance_xm_wpxp_module
 
 
     ! Calculate various terms that are the same between all LHS matricies
-    call calc_xm_wpxp_lhs_terms( gr, Kh_zm, wm_zm, wm_zt, wp2,                         & ! In
+    call calc_xm_wpxp_lhs_terms( gr, Kh_zm, wm_zm, wm_zt, wp2,                     & ! In
                                  Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                 & ! In
                                  rho_ds_zm, invrs_rho_ds_zm, rho_ds_zt,            & ! In 
                                  l_implemented, em,                                & ! In
@@ -583,6 +587,7 @@ module advance_xm_wpxp_module
                                  l_diffuse_rtm_and_thlm,                           & ! In
                                  l_stability_correct_Kh_N2_zm,                     & ! In
                                  l_upwind_xm_ma,                                   & ! In
+                                 l_linear_Kh_dp_term,                              & ! In 
                                  l_brunt_vaisala_freq_moist,                       & ! In
                                  l_use_thvm_in_bv_freq,                            & ! In
                                  lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,   & ! Out
@@ -1204,7 +1209,7 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_lhs
 
   !=============================================================================================
-  subroutine calc_xm_wpxp_lhs_terms( gr, Kh_zm, wm_zm, wm_zt, wp2,                          & ! In
+  subroutine calc_xm_wpxp_lhs_terms( gr, Kh_zm, wm_zm, wm_zt, wp2,                      & ! In
                                      Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                  & ! In
                                      rho_ds_zm, invrs_rho_ds_zm, rho_ds_zt,             & ! In
                                      l_implemented, em,                                 & ! In
@@ -1213,6 +1218,7 @@ module advance_xm_wpxp_module
                                      l_diffuse_rtm_and_thlm,                            & ! In
                                      l_stability_correct_Kh_N2_zm,                      & ! In
                                      l_upwind_xm_ma,                                    & ! In
+                                     l_linear_Kh_dp_term,                               & ! In 
                                      l_brunt_vaisala_freq_moist,                        & ! In
                                      l_use_thvm_in_bv_freq,                             & ! In
                                      lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,    & ! Out
@@ -1225,13 +1231,18 @@ module advance_xm_wpxp_module
     !-------------------------------------------------------------------------------------------
     
     use grid_class, only:  & 
-        grid ! Type
+        grid, & ! Type
+        zm2zt, &
+        zt2zm 
 
     use parameters_tunable, only:  & 
         nu6_vert_res_dep ! Variable(s)
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        zero_threshold    ! Procedure(s)
 
     use advance_helper_module, only: &
         calc_stability_correction
@@ -1250,6 +1261,9 @@ module advance_xm_wpxp_module
     implicit none
 
     type (grid), target, intent(in) :: gr
+
+    ! External
+    intrinsic :: max, min, sqrt
 
     !------------------- Input Variables -------------------
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
@@ -1285,6 +1299,8 @@ module advance_xm_wpxp_module
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
                                       ! It affects rtm, thlm, sclrm, um and vm.
+      l_linear_Kh_dp_term,          & ! This flag detrmines whether we ignore the part of dp 
+                                      ! term that is related to dKh/dz 
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq           ! Use thvm in the calculation of Brunt-Vaisala frequency
@@ -1308,7 +1324,9 @@ module advance_xm_wpxp_module
     real (kind = core_rknd), dimension(gr%nz) :: &
       zero_nu, &
       Kh_N2_zm, &
-      K_zm          ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
+      K_zm, &          ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
+      Kw6_zm, & 
+      K_zt
 
     real (kind = core_rknd) :: &
       constant_nu ! controls the magnitude of diffusion
@@ -1317,7 +1335,8 @@ module advance_xm_wpxp_module
     
     ! Initializations/precalculations
     constant_nu  = 0.1_core_rknd
-    
+    Kw6_zm       = max( zt2zm( gr, Kw6 ), zero_threshold )
+
     ! Calculate turbulent advection terms of xm for all grid levels
     call xm_term_ta_lhs( gr, rho_ds_zm(:),       & ! Intent(in)
                          invrs_rho_ds_zt(:), & ! Intent(in)
@@ -1335,10 +1354,11 @@ module advance_xm_wpxp_module
                                 lhs_ac_pr2                       ) ! Intent(out)
 
     ! Calculate diffusion terms for all momentum grid level
-    call diffusion_zm_lhs( gr, Kw6(:), nu6_vert_res_dep(:),      & ! Intent(in)
-                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
-                           invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
-                           lhs_diff_zm(:,:)                  ) ! Intent(out)    
+    call diffusion_zm_lhs( gr, Kw6(:), Kw6_zm(:), nu6_vert_res_dep(:), & ! Intent(in)
+                           gr%invrs_dzt(:), gr%invrs_dzm(:),           & ! Intent(in)
+                           invrs_rho_ds_zm(:), rho_ds_zt(:),           & ! Intent(in)
+                           l_linear_Kh_dp_term,                        & ! Intent(in)
+                           lhs_diff_zm(:,:)                  )           ! Intent(out)    
                               
     ! Calculate mean advection terms for all momentum grid level
     call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
@@ -1358,10 +1378,12 @@ module advance_xm_wpxp_module
 
         K_zm(:) = Kh_N2_zm(:) + constant_nu
         zero_nu(:) = 0.0_core_rknd
+        K_zt = max( zm2zt( gr, K_zm ), zero_threshold )
 
-        call diffusion_zt_lhs( gr, K_zm(:), zero_nu(:),          & ! Intent(in)
+        call diffusion_zt_lhs( gr, K_zm(:), K_zt(:), zero_nu(:), & ! Intent(in)
                                gr%invrs_dzm(:), gr%invrs_dzt(:), & ! Intent(in)
                                invrs_rho_ds_zt(:), rho_ds_zm(:), & ! Intent(in)
+                               l_linear_Kh_dp_term,              & ! Intent(in)
                                lhs_diff_zt(:,:)                  ) ! Intent(out)
         
     end if        

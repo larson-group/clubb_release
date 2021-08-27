@@ -130,6 +130,7 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "simplified_bomex",
 l_calc_thlp2_rad = .true. 
+l_rad_above_cloud = .false.,
 /
 
 &gfdl_activation_setting
