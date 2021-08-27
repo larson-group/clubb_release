@@ -87,6 +87,9 @@ module model_flags
   logical, parameter, public :: &
     l_cubic_interp = .false.      ! Flag to convert grid points with cubic monotonic
                                   ! spline interpolation as opposed to linear interpolation.
+  logical, parameter, public :: &
+    l_smooth_BVF  = .false.      ! Flag to control the smoothing on BVF 
+                                 ! Default is .true.
 
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,

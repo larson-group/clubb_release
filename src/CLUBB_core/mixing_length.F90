@@ -1194,6 +1194,9 @@ module mixing_length
         C_invrs_tau_wpxp_Ri,        &
         altitude_threshold
 
+     use model_flags, only: &
+       l_smooth_BVF
+
     implicit none
 
     type (grid), target, intent(in) :: gr
@@ -1297,8 +1300,15 @@ module mixing_length
         !  and thereby allows tau to remain large in Sc layers in which thlm may
         !  be slightly stably stratified.
 
-        brunt_vaisala_freq_sqd_smth = zt2zm( gr, zm2zt( gr, &
-              min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
+        if (l_smooth_BVF) then 
+
+          brunt_vaisala_freq_sqd_smth = zt2zm( gr, zm2zt( gr, &
+                min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
+        else
+
+          brunt_vaisala_freq_sqd_smth = zt2zm( gr, zm2zt( gr, brunt_vaisala_freq_sqd ))
+
+        end if 
 
         sqrt_Ri_zm &
         = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
