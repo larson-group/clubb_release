@@ -486,18 +486,6 @@ module error
         end do
       end if
 
-        ! Error check to make sure that if a parameter is set equal to another,
-        ! it is not also being actively tuned.
-        do i = 1, nparams, 1
-          if ( len(trim(param_constraints(i))) > 0 ) then
-            if ( any( params_index == i ) ) then
-              write(*,*) "Check parameter_constraints namelist: " // trim(params_list(i)) // &
-                " is currently being tuned but is also set equal to another parameter."
-              error stop
-            end if
-          end if
-        end do
-
       if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
         ! Numerical recipes simulated annealing or downhill simplex
         allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim), & 
