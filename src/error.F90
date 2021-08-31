@@ -453,21 +453,6 @@ module error
       if ( l_vary_params_together ) then
         call read_param_constraints( iunit, filename, param_constraints )
 
-        ! Error check to make sure that parameters are only set equal to others
-        ! that are actually being tuned.  This makes the output process simpler at
-        ! the end of the tuning run, avoids user confusion, and should also avoid
-        ! some unnecessary processing.
-        do i = 1, nparams, 1
-          if ( len(trim(param_constraints(i))) > 0 ) then
-            if ( .not. any( params_list(params_index(1:ndim)) == param_constraints(i) ) ) then
-              write(fstderr,*) "Check parameter_constraints namelist: a parameter " // &
-                "has been set equal to " // trim(param_constraints(i)) // ", but " // &
-                trim(param_constraints(i)) // " is not currently being tuned."
-              error stop
-            end if
-          end if
-        end do
-
         ! Error check to ensure that if l_vary_params_together = .true. then at
         ! least one parameter is set equal to another.
         if ( all( param_constraints == "" ) ) then
@@ -475,7 +460,43 @@ module error
                            ".true. but no parameters are set equal to each other."
           error stop
         end if
+
+        ! Two more error checks:
+        do i = 1, nparams, 1
+          if ( len(trim(param_constraints(i))) > 0 ) then
+            ! First check to make sure that parameters are only set equal to others
+            ! that are actually being tuned.  This makes the output process simpler at
+            ! the end of the tuning run, avoids user confusion, and should also avoid
+            ! some unnecessary processing.
+            if ( .not. any( param_constraints(i) == params_list(params_index(1:ndim)) ) ) then
+              write(fstderr,*) "Check parameter_constraints namelist: a parameter " // &
+                "has been set equal to " // trim(param_constraints(i)) // ", but " // &
+                trim(param_constraints(i)) // " is not currently being tuned."
+              error stop
+            end if
+            ! Second, check to make sure that if a parameter is set equal to another,
+            ! the first parameter is not also being actively tuned. E.g. if
+            ! parameter A is set equal to parameter B, parameter A should not be tuned.
+            if ( any( params_index == i ) ) then
+              write(*,*) "Check parameter_constraints namelist: " // trim(params_list(i)) // &
+                " is currently being tuned but is also set equal to another parameter."
+              error stop
+            end if
+          end if
+        end do
       end if
+
+        ! Error check to make sure that if a parameter is set equal to another,
+        ! it is not also being actively tuned.
+        do i = 1, nparams, 1
+          if ( len(trim(param_constraints(i))) > 0 ) then
+            if ( any( params_index == i ) ) then
+              write(*,*) "Check parameter_constraints namelist: " // trim(params_list(i)) // &
+                " is currently being tuned but is also set equal to another parameter."
+              error stop
+            end if
+          end if
+        end do
 
       if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
         ! Numerical recipes simulated annealing or downhill simplex
