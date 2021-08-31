@@ -5,6 +5,7 @@ f_tol               = 0.0001,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .false.,
+l_vary_params_together  = .false.,
 t_variables       = "cloud_frac", "CLD", "rcm", "QC", "wp3", "W3" 
 weight_var_nl       = 1.0,
 anneal_temp         = 100.,
@@ -133,3 +134,24 @@ Richardson_num_max           = 0.
 Cx_min                       = 0.
 Cx_max                       = 0.
 /
+
+&parameter_constraints
+C1_equals                             = ""
+C1b_equals                            = ""
+C6rt_equals                           = ""
+C6rtb_equals                          = ""
+C6rtc_equals                          = ""
+C6thl_equals                          = ""
+C6thlb_equals                         = ""
+C6thlc_equals                         = ""
+C7_equals                             = ""
+C7b_equals                            = ""
+C11_equals                            = ""
+C11b_equals                           = ""
+C14_equals                            = ""
+C6rt_Lscale0_equals                   = ""
+C6thl_Lscale0_equals                  = ""
+gamma_coef_equals                     = ""
+gamma_coefb_equals                    = ""
+/
+

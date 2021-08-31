@@ -29,7 +29,13 @@ module error
 !-----------------------------------------------------------------------
   use parameter_indices, only: nparams ! Variable(s)
 
-  use parameters_tunable, only: read_parameters, read_param_max ! Procedure(s)
+  use parameters_tunable, only:  &
+    read_parameters, & ! Procedure(s)
+    read_param_max, &
+    read_param_constraints
+
+  use parameters_tunable, only: &
+    params_list  ! Variable(s)
 
   use mt95, only: genrand_real ! Constant
 
@@ -78,10 +84,12 @@ module error
     v_total = 0         ! Total number of variables to tune over
 
   logical, public :: & 
-    l_results_stdout = .false., & ! Whether to print tuning results to the terminal
-    l_results_file = .false.,   & ! Whether to generate a new error.in based on 
-                        ! the new tuning constants
-    l_stdout_on_invalid = .false. ! Generate a new error.in when the simulation crashes
+    l_results_stdout = .false.,    & ! Whether to print tuning results to the terminal
+    l_results_file = .false.,      & ! Whether to generate a new error.in based on
+                                     ! the new tuning constants
+    l_stdout_on_invalid = .false., & ! Generate a new error.in when the simulation crashes
+    l_vary_params_together = .false. ! Whether to keep parameters like C1, C1b,
+                                     ! etc. equal throughout tuning run
 
   logical, parameter, public :: &
     l_save_tuning_run = .true.  ! If true, writes the results of the tuning run to a file
@@ -138,6 +146,10 @@ module error
 
   integer, dimension(nparams), private :: & 
     params_index = 0  ! Index of the params elements that are used in the simplex
+
+  character(len=28), dimension(nparams), private :: &
+    param_constraints  ! Array of parameters meant to be kept equal to each other
+                       ! throughout tuning run
 
   real( kind = core_rknd ), allocatable, dimension(:,:), public ::  & 
     param_vals_matrix ! Holds 2D simplex the CLUBB constant parameters
@@ -275,6 +287,7 @@ module error
     namelist /stats/  & 
       f_tol, tune_type, anneal_temp, max_final_temp, anneal_iter, & 
       l_results_stdout, l_results_file, l_stdout_on_invalid, &
+      l_vary_params_together, &
       t_variables, weight_var_nl, stp_adjst_center_in, stp_adjst_spread_in
 
     namelist /cases/  & 
@@ -434,6 +447,34 @@ module error
       if ( ndim == 0 .and. tune_type /= iflags ) then
         write(fstderr,*) "You must vary at least one parameter"
         error stop
+      end if
+
+      ! Read in the parameter constraint namelist and do a simple error check
+      if ( l_vary_params_together ) then
+        call read_param_constraints( iunit, filename, param_constraints )
+
+        ! Error check to make sure that parameters are only set equal to others
+        ! that are actually being tuned.  This makes the output process simpler at
+        ! the end of the tuning run, avoids user confusion, and should also avoid
+        ! some unnecessary processing.
+        do i = 1, nparams, 1
+          if ( len(trim(param_constraints(i))) > 0 ) then
+            if ( .not. any( params_list(params_index(1:ndim)) == param_constraints(i) ) ) then
+              write(fstderr,*) "Check parameter_constraints namelist: a parameter " // &
+                "has been set equal to " // trim(param_constraints(i)) // ", but " // &
+                trim(param_constraints(i)) // " is not currently being tuned."
+              error stop
+            end if
+          end if
+        end do
+
+        ! Error check to ensure that if l_vary_params_together = .true. then at
+        ! least one parameter is set equal to another.
+        if ( all( param_constraints == "" ) ) then
+          write(fstderr,*) "Check parameter_constraints namelist: l_vary_params_together = " // &
+                           ".true. but no parameters are set equal to each other."
+          error stop
+        end if
       end if
 
       if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
@@ -618,8 +659,6 @@ module error
       stat_file_vertical_levels, &
       stat_file_average_interval
 
-    use parameters_tunable, only: params_list ! Variable(s)
-
     use numerical_check, only: is_nan_2d ! Procedure(s)
 
     use text_writer, only: write_text ! Subroutine(s)
@@ -759,6 +798,17 @@ module error
         end if
       end do
     end do
+
+    ! Copy the values of parameters that are being held equal during tuning.
+    if ( l_vary_params_together ) then
+      do i = 1, nparams, 1
+        do j = 1, nparams, 1
+          if ( param_constraints(i) == params_list(j) ) then
+            params_local(i) = params_local(j)
+          end if
+        end do
+      end do
+    end if
 
 !-----------------------------------------------------------------------
 
@@ -1052,8 +1102,6 @@ module error
 !   None
 !----------------------------------------------------------------------
 
-    use parameters_tunable, only: params_list ! Variable(s)
-
     implicit none
 
     ! Input variables
@@ -1061,7 +1109,7 @@ module error
                                  ! or = a number connected with a file
 
     ! Local variables
-    integer :: i, c_run ! Loop iterators
+    integer :: i, j, k, c_run ! Loop iterators
     character(50) :: case_name, variable
     integer :: underscore_idx
 
@@ -1069,14 +1117,30 @@ module error
       write(unit=iunit,fmt=*) "Number of iterations past initialization:",  iter
     end if ! tune_type == 0
 
-    write(unit=iunit,fmt='(4x,A9,5x,10x,A7,10x,10x,A7)') & 
+    write(unit=iunit,fmt='(4x,A9,25x,A7,10x,A7)') & 
         "Parameter", "Initial", "Optimal"
 
     do i = 1, ndim, 1
-      write(unit=iunit,fmt='(A31,2F27.20)')  & 
+      write(unit=iunit,fmt='(A31,2F17.10)')  & 
         params_list(params_index(i))//" = ",  & 
         params(params_index(i)), param_vals_matrix(1,i)
     end do
+
+    ! Also print the initial and final values of the parameters that were held
+    ! equal to each other.
+    if ( l_vary_params_together ) then
+      do i = 1, nparams, 1
+        do j = 1, ndim, 1
+          k = params_index(j)
+          if ( param_constraints(i) == params_list(k) ) then
+            write(unit=iunit,fmt='(A31,2F17.10,5x,A)') &
+              params_list(i)//" = ", params(i), param_vals_matrix(1,j), &
+                        "( held equal to " // trim(params_list(k)) // " )"
+          end if
+        end do
+      end do
+    end if
+
 
     write(unit=iunit,fmt='(A20)') "Initial cost: "
     write(unit=iunit,fmt='(F15.6)') init_err
@@ -1121,8 +1185,6 @@ module error
 !   I was more ambitious and didn't like that fact that it came out
 !   in all caps on pgf90. -dschanen 28 July 2006
 !-----------------------------------------------------------------------
-
-    use parameters_tunable, only: params_list ! Variable(s)
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -1274,8 +1336,6 @@ module error
 !   See note for output_nml_tuner, above. dschanen 28 July 2006
 !-----------------------------------------------------------------------
 
-    use parameters_tunable, only: params_list ! Variable(s)
-
     implicit none
 
     ! External
@@ -1323,6 +1383,17 @@ module error
         end if
       end do
     end do
+
+    ! Copy the values of parameters that were held equal during tuning.
+    if ( l_vary_params_together ) then
+      do i = 1, nparams, 1
+        do j = 1, nparams, 1
+          if ( param_constraints(i) == params_list(j) ) then
+            params_local(i) = params_local(j)
+          end if
+        end do
+      end do
+    end if
 
     ! Output optimal values and all possible CLUBB parameters
     do i=1, nparams, 1

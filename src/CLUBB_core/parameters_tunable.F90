@@ -35,6 +35,7 @@ module parameters_tunable
   private
 
   public :: setup_parameters, read_parameters, read_param_max, &
+            read_param_constraints, &
             get_parameters, adj_low_res_nu, cleanup_nu
 
   ! NOTE: In CLUBB standalone, as well as some host models, the hardcoded
@@ -1624,6 +1625,115 @@ module parameters_tunable
     return
 
   end subroutine read_param_max
+
+  !=============================================================================
+  subroutine read_param_constraints &
+           ( iunit, filename, param_constraints )
+
+    ! Description:
+    ! For the tuner.  While tuning it can be useful to keep certain parameters
+    ! equal to each other.  This subroutine reads in a namelist that specifies
+    ! which parameters should be kept equal to another.
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: fstderr ! Constant
+
+    use parameter_indices, only: &
+      iC1, &
+      iC1b, &
+      iC6rt, &
+      iC6rtb, &
+      iC6rtc, &
+      iC6thl, &
+      iC6thlb, &
+      iC6thlc, &
+      iC7, &
+      iC7b, &
+      iC11, &
+      iC11b, &
+      iC14, &
+      iC6rt_Lscale0, &
+      iC6thl_Lscale0, &
+      igamma_coef, &
+      igamma_coefb
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: iunit
+
+    character(len=*), intent(in) :: filename
+
+    ! Output variables
+    character(len=28), dimension(nparams), intent(out) ::  &
+      param_constraints  ! Which variables should be kept equal to others
+
+    ! Local variables
+    character(len=28) ::  &
+      C1_equals, C1b_equals, C6rt_equals, C6rtb_equals, C6rtc_equals, &
+      C6thl_equals, C6thlb_equals, C6thlc_equals, C7_equals, C7b_equals, &
+      C11_equals, C11b_equals, C14_equals, C6rt_Lscale0_equals, &
+      C6thl_Lscale0_equals, gamma_coef_equals, gamma_coefb_equals
+
+    integer :: i
+
+    logical :: l_error
+
+    ! This namelist specifies if a variable should be kept equal to another.
+    namelist /parameter_constraints/  &
+      C1_equals, C1b_equals, C6rt_equals, C6rtb_equals, C6rtc_equals, &
+      C6thl_equals, C6thlb_equals, C6thlc_equals, C7_equals, C7b_equals, &
+      C11_equals, C11b_equals, C14_equals, C6rt_Lscale0_equals, &
+      C6thl_Lscale0_equals, gamma_coef_equals, gamma_coefb_equals
+
+    ! Initialize output array
+    param_constraints = ""
+
+    ! Read the namelist
+    open(unit=iunit, file=filename, status='old', action='read')
+
+    read(unit=iunit, nml=parameter_constraints)
+
+    close(unit=iunit)
+
+    ! Put the variables in the output array
+    param_constraints(iC1)            = C1_equals
+    param_constraints(iC1b)           = C1b_equals
+    param_constraints(iC6rt)          = C6rt_equals
+    param_constraints(iC6rtb)         = C6rtb_equals
+    param_constraints(iC6rtc)         = C6rtc_equals
+    param_constraints(iC6thl)         = C6thl_equals
+    param_constraints(iC6thlb)        = C6thlb_equals
+    param_constraints(iC6thlc)        = C6thlc_equals
+    param_constraints(iC7)            = C7_equals
+    param_constraints(iC7b)           = C7b_equals
+    param_constraints(iC11)           = C11_equals
+    param_constraints(iC11b)          = C11b_equals
+    param_constraints(iC14)           = C14_equals
+    param_constraints(iC6rt_Lscale0)  = C6rt_Lscale0_equals
+    param_constraints(iC6thl_Lscale0) = C6thl_Lscale0_equals
+    param_constraints(igamma_coef)    = gamma_coef_equals
+    param_constraints(igamma_coefb)   = gamma_coefb_equals
+
+    l_error = .false.
+
+    ! Error check to make sure no constraint parameter is set equal to itself.
+    do i = 1, nparams, 1
+      if ( params_list(i) == param_constraints(i) ) then
+        write(fstderr,*) "Check parameter_constraints namelist: "//trim( params_list(i) )// &
+          " was set equal to itself."
+        l_error = .true.
+      end if
+    end do
+
+    if ( l_error ) error stop "Fatal error."
+
+    return
+
+  end subroutine read_param_constraints
 
   !=============================================================================
   subroutine pack_parameters &
