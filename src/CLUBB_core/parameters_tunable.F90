@@ -34,7 +34,7 @@ module parameters_tunable
   ! Default to private
   private
 
-  public :: setup_parameters, read_parameters, read_param_max, &
+  public :: setup_parameters, read_parameters, read_param_minmax, &
             read_param_constraints, &
             get_parameters, adj_low_res_nu, cleanup_nu
 
@@ -1303,7 +1303,7 @@ module parameters_tunable
     ! References:
     ! None
     !-----------------------------------------------------------------------
-    use constants_clubb, only: fstderr ! Constant
+!    use constants_clubb, only: fstderr ! Constant
 
     implicit none
 
@@ -1316,9 +1316,9 @@ module parameters_tunable
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
 
     ! Local variables
-    integer :: i
+!    integer :: i
 
-    logical :: l_error
+!    logical :: l_error
 
     ! ---- Begin Code ----
 
@@ -1475,25 +1475,27 @@ module parameters_tunable
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, & ! intent(in)
                params ) ! intent(out)
 
-    l_error = .false.
+!    l_error = .false.
 
-    do i = 1, nparams
-      if ( abs(params(i)-init_value) < abs(params(i)+init_value) / 2 * eps) then
-        write(fstderr,*) "Tuning parameter "//trim( params_list(i) )// &
-          " was missing from "//trim( filename )
-        l_error = .true.
-      end if
-    end do
+!    This error check is currently broken since we are not initializing the
+!    parameters to -999 ( = init_value).
+!    do i = 1, nparams
+!      if ( abs(params(i)-init_value) < abs(params(i)+init_value) / 2 * eps) then
+!        write(fstderr,*) "Tuning parameter "//trim( params_list(i) )// &
+!          " was missing from "//trim( filename )
+!        l_error = .true.
+!      end if
+!    end do
 
-    if ( l_error ) error stop "Fatal error."
+!    if ( l_error ) error stop "Fatal error."
 
     return
 
   end subroutine read_parameters
 
   !=============================================================================
-  subroutine read_param_max & 
-           ( iunit, filename, nindex, param_max, ndim )
+  subroutine read_param_minmax & 
+           ( iunit, filename, nindex, params_minmax, ndim )
 
     ! Description:
     ! Read a namelist containing the amount to vary model parameters.
@@ -1506,6 +1508,109 @@ module parameters_tunable
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+   use parameter_indices, only: &
+        iC1,  & ! Variable(s)
+        iC1b, &
+        iC1c, &
+        iC2rt, &
+        iC2thl, &
+        iC2rtthl, &
+        iC4, &
+        iC_uu_shr, &
+        iC_uu_buoy, &
+        iC6rt, &
+        iC6rtb, &
+        iC6rtc, &
+        iC6thl, &
+        iC6thlb, &
+        iC6thlc, &
+        iC7, &
+        iC7b, &
+        iC7c, &
+        iC8, &
+        iC8b, &
+        iC10, &
+        iC11, &
+        iC11b, &
+        iC11c, &
+        iC12, &
+        iC13, &
+        iC14, &
+        iC_wp2_pr_dfsn, &
+        iC_wp3_pr_tp, &
+        iC_wp3_pr_turb, &
+        iC_wp3_pr_dfsn, &
+        iC_wp2_splat
+
+    use parameter_indices, only: &
+        iC6rt_Lscale0, &
+        iC6thl_Lscale0, &
+        iC7_Lscale0, &
+        iwpxp_L_thresh
+
+    use parameter_indices, only: &
+        ic_K,  &
+        ic_K1, &
+        inu1, &
+        ic_K2, &
+        inu2, &
+        ic_K6, &
+        inu6, &
+        ic_K8, &
+        inu8, &
+        ic_K9, &
+        inu9, &
+        inu10, &
+        ic_K_hm, &
+        ic_K_hmb, &
+        iK_hm_min_coef, &
+        inu_hm, &
+        islope_coef_spread_DG_means_w, &
+        ipdf_component_stdev_factor_w, &
+        icoef_spread_DG_means_rt, &
+        icoef_spread_DG_means_thl, &
+        igamma_coef, &
+        igamma_coefb, &
+        igamma_coefc, &
+        imu, &
+        ibeta, &
+        ilmin_coef, &
+        iomicron, &
+        izeta_vrnce_rat, &
+        iupsilon_precip_frac_rat, &
+        ilambda0_stability_coef, &
+        imult_coef, &
+        itaumin, &
+        itaumax, &
+        iLscale_mu_coef, &
+        iLscale_pert_coef, &
+        ialpha_corr, &
+        iSkw_denom_coef, &
+        ic_K10, &
+        ic_K10h, &
+        ithlp2_rad_coef, &
+        ithlp2_rad_cloud_frac_thresh, &
+        iup2_sfc_coef, &
+        iSkw_max_mag, &
+        ixp3_coef_base, &
+        ixp3_coef_slope, &
+        ialtitude_threshold, &
+        irtp2_clip_coef, &
+        iC_invrs_tau_bkgnd, &
+        iC_invrs_tau_sfc, &
+        iC_invrs_tau_shear, &
+        iC_invrs_tau_N2, &
+        iC_invrs_tau_N2_wp2, &
+        iC_invrs_tau_N2_xp2, &
+        iC_invrs_tau_N2_wpxp, &
+        iC_invrs_tau_N2_clear_wp3, &
+        iC_invrs_tau_wpxp_Ri, &
+        iC_invrs_tau_wpxp_N2_thresh, &
+        iCx_min, &
+        iCx_max, &
+        iRichardson_num_min, &
+        iRichardson_num_max
 
     implicit none
 
@@ -1520,93 +1625,192 @@ module parameters_tunable
     ! are contained within the simplex and the max variable)
     integer, intent(out), dimension(nparams) :: nindex
 
-    real( kind = core_rknd ), intent(out), dimension(nparams) ::  & 
-      param_max  ! Amount to vary the parameter in the initial simplex
+    real( kind = core_rknd ), intent(out), dimension(2,nparams) ::  & 
+      params_minmax  ! Amount to vary the parameter in the initial simplex
 
     integer, intent(out) :: &
-        ndim  ! Number of variables, e.g. rcm, to be tuned. Dimension of the init simplex
-
+      ndim  ! Number of variables, e.g. rcm, to be tuned. Dimension of the init simplex
 
     ! Local variables
     integer :: i
 
-    logical :: l_error
-
     ! Amount to change each parameter for the initial simplex
-    ! This MUST be changed to match the clubb_params_nl namelist if parameters are added!
-    namelist /initmax/  & 
-      C1, C1b, C1c, & 
-      C2rt, C2thl, C2rtthl, C4, C_uu_shr, C_uu_buoy, & 
-      C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
-      C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-      C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
-      C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
-      C6rt_Lscale0, C6thl_Lscale0, &
-      C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
-      c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, &
-      c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-      slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
-      coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
-      beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
-      omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
-      lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
-      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
-      Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
-      rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-      C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
-      C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
-      C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max
+    ! This MUST be changed to match the clubb_params_nl namelist if parameters are added.
+    real ( kind = core_rknd ), dimension(2) :: &
+      C1_minmax, C1b_minmax, C1c_minmax, C2rt_minmax, C2thl_minmax, C2rtthl_minmax, C4_minmax, &
+      C_uu_shr_minmax, C_uu_buoy_minmax, C6rt_minmax, C6rtb_minmax, C6rtc_minmax, C6thl_minmax, &
+      C6thlb_minmax, C6thlc_minmax, C7_minmax, C7b_minmax, C7c_minmax, C8_minmax, C8b_minmax, &
+      C10_minmax, C11_minmax, C11b_minmax, C11c_minmax, C12_minmax, C13_minmax, C14_minmax, &
+      C_wp2_pr_dfsn_minmax, C_wp3_pr_tp_minmax, C_wp3_pr_turb_minmax, C_wp3_pr_dfsn_minmax, &
+      C_wp2_splat_minmax, C6rt_Lscale0_minmax, C6thl_Lscale0_minmax, C7_Lscale0_minmax, &
+      wpxp_L_thresh_minmax, c_K_minmax, c_K1_minmax, nu1_minmax, c_K2_minmax, nu2_minmax, &
+      c_K6_minmax, nu6_minmax, c_K8_minmax, nu8_minmax, c_K9_minmax, nu9_minmax, nu10_minmax, &
+      c_K_hm_minmax, c_K_hmb_minmax, K_hm_min_coef_minmax, nu_hm_minmax, &
+      slope_coef_spread_DG_means_w_minmax, pdf_component_stdev_factor_w_minmax, &
+      coef_spread_DG_means_rt_minmax, coef_spread_DG_means_thl_minmax, &
+      beta_minmax, gamma_coef_minmax, gamma_coefb_minmax, gamma_coefc_minmax, lmin_coef_minmax, &
+      omicron_minmax, zeta_vrnce_rat_minmax, upsilon_precip_frac_rat_minmax, &
+      lambda0_stability_coef_minmax, mult_coef_minmax, taumin_minmax, taumax_minmax, &
+      mu_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, alpha_corr_minmax, &
+      Skw_denom_coef_minmax, c_K10_minmax, c_K10h_minmax, thlp2_rad_coef_minmax, &
+      thlp2_rad_cloud_frac_thresh_minmax, up2_sfc_coef_minmax, Skw_max_mag_minmax, &
+      xp3_coef_base_minmax, xp3_coef_slope_minmax, altitude_threshold_minmax, &
+      rtp2_clip_coef_minmax, C_invrs_tau_bkgnd_minmax, C_invrs_tau_sfc_minmax, &
+      C_invrs_tau_shear_minmax, C_invrs_tau_N2_minmax, C_invrs_tau_N2_wp2_minmax, &
+      C_invrs_tau_N2_xp2_minmax, C_invrs_tau_N2_wpxp_minmax, C_invrs_tau_N2_clear_wp3_minmax, &
+      C_invrs_tau_wpxp_Ri_minmax, C_invrs_tau_wpxp_N2_thresh_minmax, Cx_min_minmax, &
+      Cx_max_minmax, Richardson_num_min_minmax, Richardson_num_max_minmax
 
-    ! Initialize values to -999.
-    call init_parameters_999( )
+    namelist /init_minmax/  & 
+      C1_minmax, C1b_minmax, C1c_minmax, C2rt_minmax, C2thl_minmax, C2rtthl_minmax, C4_minmax, &
+      C_uu_shr_minmax, C_uu_buoy_minmax, C6rt_minmax, C6rtb_minmax, C6rtc_minmax, C6thl_minmax, &
+      C6thlb_minmax, C6thlc_minmax, C7_minmax, C7b_minmax, C7c_minmax, C8_minmax, C8b_minmax, &
+      C10_minmax, C11_minmax, C11b_minmax, C11c_minmax, C12_minmax, C13_minmax, C14_minmax, &
+      C_wp2_pr_dfsn_minmax, C_wp3_pr_tp_minmax, C_wp3_pr_turb_minmax, C_wp3_pr_dfsn_minmax, &
+      C_wp2_splat_minmax, C6rt_Lscale0_minmax, C6thl_Lscale0_minmax, C7_Lscale0_minmax, &
+      wpxp_L_thresh_minmax, c_K_minmax, c_K1_minmax, nu1_minmax, c_K2_minmax, nu2_minmax, &
+      c_K6_minmax, nu6_minmax, c_K8_minmax, nu8_minmax, c_K9_minmax, nu9_minmax, nu10_minmax, &
+      c_K_hm_minmax, c_K_hmb_minmax, K_hm_min_coef_minmax, nu_hm_minmax, &
+      slope_coef_spread_DG_means_w_minmax, pdf_component_stdev_factor_w_minmax, &
+      coef_spread_DG_means_rt_minmax, coef_spread_DG_means_thl_minmax, &
+      beta_minmax, gamma_coef_minmax, gamma_coefb_minmax, gamma_coefc_minmax, lmin_coef_minmax, &
+      omicron_minmax, zeta_vrnce_rat_minmax, upsilon_precip_frac_rat_minmax, &
+      lambda0_stability_coef_minmax, mult_coef_minmax, taumin_minmax, taumax_minmax, &
+      mu_minmax, Lscale_mu_coef_minmax, Lscale_pert_coef_minmax, alpha_corr_minmax, &
+      Skw_denom_coef_minmax, c_K10_minmax, c_K10h_minmax, thlp2_rad_coef_minmax, &
+      thlp2_rad_cloud_frac_thresh_minmax, up2_sfc_coef_minmax, Skw_max_mag_minmax, &
+      xp3_coef_base_minmax, xp3_coef_slope_minmax, altitude_threshold_minmax, &
+      rtp2_clip_coef_minmax, C_invrs_tau_bkgnd_minmax, C_invrs_tau_sfc_minmax, &
+      C_invrs_tau_shear_minmax, C_invrs_tau_N2_minmax, C_invrs_tau_N2_wp2_minmax, &
+      C_invrs_tau_N2_xp2_minmax, C_invrs_tau_N2_wpxp_minmax, C_invrs_tau_N2_clear_wp3_minmax, &
+      C_invrs_tau_wpxp_Ri_minmax, C_invrs_tau_wpxp_N2_thresh_minmax, Cx_min_minmax, &
+      Cx_max_minmax, Richardson_num_min_minmax, Richardson_num_max_minmax
+
+
+! ----- Begin code -------------
 
     ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
-
-    read(unit=iunit, nml=initmax)
-
+    read(unit=iunit, nml=init_minmax)
     close(unit=iunit)
 
-    ! Put the variables in the output array
-    call pack_parameters &
-             ( C1, C1b, C1c, C2rt, C2thl, C2rtthl, & ! intent(in)
-               C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & ! intent(in)
-               C7, C7b, C7c, C8, C8b, C10, & ! intent(in)
-               C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, & ! intent(in)
-               C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, & ! intent(in)
-               C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, & ! intent(in)
-               c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, & ! intent(in)
-               c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & ! intent(in)
-               slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, & ! intent(in)
-               coef_spread_DG_means_rt, coef_spread_DG_means_thl, & ! intent(in)
-               gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, & ! intent(in)
-               omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, & ! intent(in)
-               lambda0_stability_coef, mult_coef, taumin, taumax, & ! intent(in)
-               Lscale_mu_coef, Lscale_pert_coef, alpha_corr, & ! intent(in)
-               Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, & ! intent(in)
-               thlp2_rad_cloud_frac_thresh, up2_sfc_coef, & ! intent(in)
-               Skw_max_mag, xp3_coef_base, xp3_coef_slope, & ! intent(in)
-               altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, & ! intent(in)
-               C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & ! intent(in)
-               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, & ! intent(in)
-               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, & ! intent(in)
-               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, & ! intent(in)
-               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, & ! intent(in)
-               param_max ) ! intent(out)
+    ! Put min/max values into params_minmax output array
+    params_minmax(:,iC1) = C1_minmax
+    params_minmax(:,iC1b) = C1b_minmax
+    params_minmax(:,iC1c) = C1c_minmax
+    params_minmax(:,iC2rt) = C2rt_minmax
+    params_minmax(:,iC2thl) = C2thl_minmax
+    params_minmax(:,iC2rtthl) = C2rtthl_minmax
+    params_minmax(:,iC4) = C4_minmax
+    params_minmax(:,iC_uu_shr) = C_uu_shr_minmax
+    params_minmax(:,iC_uu_buoy) = C_uu_buoy_minmax
+    params_minmax(:,iC6rt) = C6rt_minmax
+    params_minmax(:,iC6rtb) = C6rtb_minmax
+    params_minmax(:,iC6rtc) = C6rtc_minmax
+    params_minmax(:,iC6thl) = C6thl_minmax
+    params_minmax(:,iC6thlb) = C6thlb_minmax
+    params_minmax(:,iC6thlc) = C6thlc_minmax
+    params_minmax(:,iC7) = C7_minmax
+    params_minmax(:,iC7b) = C7b_minmax
+    params_minmax(:,iC7c) = C7c_minmax
+    params_minmax(:,iC8) = C8_minmax
+    params_minmax(:,iC8b) = C8b_minmax
+    params_minmax(:,iC10) = C10_minmax
+    params_minmax(:,iC11) = C11_minmax
+    params_minmax(:,iC11b) = C11b_minmax
+    params_minmax(:,iC11c) = C11c_minmax
+    params_minmax(:,iC12) = C12_minmax
+    params_minmax(:,iC13) = C13_minmax
+    params_minmax(:,iC14) = C14_minmax
+    params_minmax(:,iC_wp2_pr_dfsn) = C_wp2_pr_dfsn_minmax
+    params_minmax(:,iC_wp3_pr_tp) = C_wp3_pr_tp_minmax
+    params_minmax(:,iC_wp3_pr_turb) = C_wp3_pr_turb_minmax
+    params_minmax(:,iC_wp3_pr_dfsn) = C_wp3_pr_dfsn_minmax
+    params_minmax(:,iC_wp2_splat) = C_wp2_splat_minmax
+    params_minmax(:,iC6rt_Lscale0) = C6rt_Lscale0_minmax
+    params_minmax(:,iC6thl_Lscale0) = C6thl_Lscale0_minmax
+    params_minmax(:,iC7_Lscale0) = C7_Lscale0_minmax
+    params_minmax(:,iwpxp_L_thresh) = wpxp_L_thresh_minmax
+    params_minmax(:,ic_K) = c_K_minmax
+    params_minmax(:,ic_K1) = c_K1_minmax
+    params_minmax(:,inu1) = nu1_minmax
+    params_minmax(:,ic_K2) = c_K2_minmax
+    params_minmax(:,inu2) = nu2_minmax
+    params_minmax(:,ic_K6) = c_K6_minmax
+    params_minmax(:,inu6) = nu6_minmax
+    params_minmax(:,ic_K8) = c_K8_minmax
+    params_minmax(:,inu8) = nu8_minmax
+    params_minmax(:,ic_K9) = c_K9_minmax
+    params_minmax(:,inu9) = nu9_minmax
+    params_minmax(:,inu10) = nu10_minmax
+    params_minmax(:,ic_K_hm) = c_K_hm_minmax
+    params_minmax(:,ic_K_hmb) = c_K_hmb_minmax
+    params_minmax(:,iK_hm_min_coef) = K_hm_min_coef_minmax
+    params_minmax(:,inu_hm) = nu_hm_minmax
+    params_minmax(:,islope_coef_spread_DG_means_w) = slope_coef_spread_DG_means_w_minmax
+    params_minmax(:,ipdf_component_stdev_factor_w) = pdf_component_stdev_factor_w_minmax
+    params_minmax(:,icoef_spread_DG_means_rt) = coef_spread_DG_means_rt_minmax
+    params_minmax(:,icoef_spread_DG_means_thl) = coef_spread_DG_means_thl_minmax
+    params_minmax(:,igamma_coef) = gamma_coef_minmax
+    params_minmax(:,igamma_coefb) = gamma_coefb_minmax
+    params_minmax(:,igamma_coefc) = gamma_coefc_minmax
+    params_minmax(:,imu) = mu_minmax
+    params_minmax(:,ibeta) = beta_minmax
+    params_minmax(:,ilmin_coef) = lmin_coef_minmax
+    params_minmax(:,iomicron) = omicron_minmax
+    params_minmax(:,izeta_vrnce_rat) = zeta_vrnce_rat_minmax
+    params_minmax(:,iupsilon_precip_frac_rat) = upsilon_precip_frac_rat_minmax
+    params_minmax(:,ilambda0_stability_coef) = lambda0_stability_coef_minmax
+    params_minmax(:,imult_coef) = mult_coef_minmax
+    params_minmax(:,itaumin) = taumin_minmax
+    params_minmax(:,itaumax) = taumax_minmax
+    params_minmax(:,iLscale_mu_coef) = Lscale_mu_coef_minmax
+    params_minmax(:,iLscale_pert_coef) = Lscale_pert_coef_minmax
+    params_minmax(:,ialpha_corr) = alpha_corr_minmax
+    params_minmax(:,iSkw_denom_coef) = Skw_denom_coef_minmax
+    params_minmax(:,ic_K10) = c_K10_minmax
+    params_minmax(:,ic_K10h) = c_K10h_minmax
+    params_minmax(:,ithlp2_rad_coef) = thlp2_rad_coef_minmax
+    params_minmax(:,ithlp2_rad_cloud_frac_thresh) = thlp2_rad_cloud_frac_thresh_minmax
+    params_minmax(:,iup2_sfc_coef) = up2_sfc_coef_minmax
+    params_minmax(:,iSkw_max_mag) = Skw_max_mag_minmax
+    params_minmax(:,ixp3_coef_base) = xp3_coef_base_minmax
+    params_minmax(:,ixp3_coef_slope) = xp3_coef_slope_minmax
+    params_minmax(:,ialtitude_threshold) = altitude_threshold_minmax
+    params_minmax(:,irtp2_clip_coef) = rtp2_clip_coef_minmax
+    params_minmax(:,iC_invrs_tau_bkgnd) = C_invrs_tau_bkgnd_minmax
+    params_minmax(:,iC_invrs_tau_sfc) = C_invrs_tau_sfc_minmax
+    params_minmax(:,iC_invrs_tau_shear) = C_invrs_tau_shear_minmax
+    params_minmax(:,iC_invrs_tau_N2) = C_invrs_tau_N2_minmax
+    params_minmax(:,iC_invrs_tau_N2_wp2) = C_invrs_tau_N2_wp2_minmax
+    params_minmax(:,iC_invrs_tau_N2_xp2) = C_invrs_tau_N2_xp2_minmax
+    params_minmax(:,iC_invrs_tau_N2_wpxp) = C_invrs_tau_N2_wpxp_minmax
+    params_minmax(:,iC_invrs_tau_N2_clear_wp3) = C_invrs_tau_N2_clear_wp3_minmax
+    params_minmax(:,iC_invrs_tau_wpxp_Ri) = C_invrs_tau_wpxp_Ri_minmax
+    params_minmax(:,iC_invrs_tau_wpxp_N2_thresh) = C_invrs_tau_wpxp_N2_thresh_minmax
+    params_minmax(:,iRichardson_num_min) = Richardson_num_min_minmax
+    params_minmax(:,iRichardson_num_max) = Richardson_num_max_minmax
+    params_minmax(:,iCx_min) = Cx_min_minmax
+    params_minmax(:,iCx_max) = Cx_max_minmax
 
-    l_error = .false.
-
-    do i = 1, nparams
-      if ( abs(param_max(i)-init_value) < abs(param_max(i)+init_value) / 2 * eps) then
-        write(fstderr,*) "A max value for parameter "//trim( params_list(i) )// &
-          " was missing from "//trim( filename )
-        l_error = .true.
+    ! Error check:  if a minimum value is entered, it must have a
+    ! corresponding maximum value of greater value
+    do i = 1, nparams, 1
+      if ( params_minmax(1,i) > params_minmax(2,i) ) then
+        write(fstderr,*) "Check init_minmax namelist: " // trim(params_list(i)) // &
+                   " has a minimum value greater than its maximum value."
+        error stop
+      elseif ( params_minmax(1,i) > 0.0_core_rknd .and. &
+               abs( params_minmax(2,i) - params_minmax(1,i) ) < 0.01_core_rknd ) then
+        write(fstderr,*) "Check init_minmax namelist: " // trim(params_list(i)) // &
+                   " has a minimum value too close to its maximum value."
+        error stop
+      elseif (params_minmax(1,i) < 0.0_core_rknd .or. params_minmax(2,i) < 0.0_core_rknd ) then
+        write(fstderr,*) "Check init_minmax namelist: " // trim(params_list(i)) // &
+                   " has a minimum and/or maximum value less than zero."
+        error stop
       end if
     end do
-
-    if ( l_error ) error stop "Fatal error."
 
     ! Initialize to zero
     nindex(1:nparams) = 0
@@ -1614,17 +1818,15 @@ module parameters_tunable
 
     ! Determine how many variables are being changed
     do i = 1, nparams, 1
-
-      if ( abs(param_max(i)) > eps) then
+      if ( abs(params_minmax(2,i)) > eps) then
         ndim = ndim + 1   ! Increase the total
         nindex(ndim) = i  ! Set the next array index
       endif
-
     enddo
 
     return
 
-  end subroutine read_param_max
+  end subroutine read_param_minmax
 
   !=============================================================================
   subroutine read_param_constraints &
@@ -1680,8 +1882,6 @@ module parameters_tunable
 
     integer :: i
 
-    logical :: l_error
-
     ! This namelist specifies if a variable should be kept equal to another.
     namelist /parameter_constraints/  &
       C1_equals, C1b_equals, C6rt_equals, C6rtb_equals, C6rtc_equals, &
@@ -1718,18 +1918,14 @@ module parameters_tunable
     param_constraints(igamma_coef)    = gamma_coef_equals
     param_constraints(igamma_coefb)   = gamma_coefb_equals
 
-    l_error = .false.
-
     ! Error check to make sure no constraint parameter is set equal to itself.
     do i = 1, nparams, 1
       if ( params_list(i) == param_constraints(i) ) then
         write(fstderr,*) "Check parameter_constraints namelist: "//trim( params_list(i) )// &
           " was set equal to itself."
-        l_error = .true.
+        error stop
       end if
     end do
-
-    if ( l_error ) error stop "Fatal error."
 
     return
 
@@ -1871,8 +2067,7 @@ module parameters_tunable
         iCx_min, &
         iCx_max, &
         iRichardson_num_min, &
-        iRichardson_num_max, &
-        nparams
+        iRichardson_num_max
 
     implicit none
 

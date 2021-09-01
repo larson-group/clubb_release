@@ -417,7 +417,7 @@ subroutine enhanced_simann_driver
   use error, only: & ! Variable(s)
     ndim,                 & ! Array dimensions
     param_vals_matrix,    & ! The parameters to tune matrix
-    param_vals_max,       & ! The maximum values for the parameters
+    param_vals_minmax,    & ! The min/max values for the parameters
     anneal_temp,          & ! Start annealing temperature
     max_final_temp,       & ! Maximum final annealing temperature
     min_err,              & ! Minimum value of the cost function
@@ -453,8 +453,8 @@ subroutine enhanced_simann_driver
   xinit = param_vals_matrix(1,1:ndim)
 
   ! set constraints, this should be read in from file
-  xmin = 0._core_rknd 
-  xmax = param_vals_max
+  xmin = param_vals_minmax(1,:)
+  xmax = param_vals_minmax(2,:)
 
   if ( l_esa_siarry ) then 
     call esa_driver_siarry( xinit, xmin, xmax, anneal_temp, min_les_clubb_diff, xopt, enopt )

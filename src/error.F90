@@ -31,7 +31,7 @@ module error
 
   use parameters_tunable, only:  &
     read_parameters, & ! Procedure(s)
-    read_param_max, &
+    read_param_minmax, &
     read_param_constraints
 
   use parameters_tunable, only: &
@@ -156,8 +156,10 @@ module error
     ! The first row contains the initial values of the tunable parameters.
     ! The remaining rows contain random perturbations of those parameter values.
 
-  real( kind = core_rknd ), allocatable, dimension(:), public :: & 
-    param_vals_max,  & ! Amount to vary each respec. constant by
+  real( kind = core_rknd ), allocatable, dimension(:,:), public :: &
+    param_vals_minmax  ! Amount to vary each respec. constant by
+
+  real( kind = core_rknd ), allocatable, dimension(:), public :: &
     cost_fnc_vector    ! cache of differences between the LES and CLUBB
 
   real(kind=genrand_real), allocatable, dimension(:), private ::  & 
@@ -227,7 +229,7 @@ module error
 
     ! Local Variables
 
-    real( kind = core_rknd ), dimension(nparams) :: rtmp ! Scratch space
+    real( kind = core_rknd ), dimension(2,nparams) :: rtmp
 
     integer :: i, j, & ! looping variables
                iunit ! file unit
@@ -383,10 +385,8 @@ module error
       ! Setup the simplex
 
       if ( tune_type /= iploops ) then
-
-         call read_param_max( iunit, filename, params_index,  & 
+         call read_param_minmax( iunit, filename, params_index,  &
                                  rtmp, ndim )
-
       else ! tune_type == iploops
 
          ! Number of tunable parameters that are looped over.
@@ -400,7 +400,7 @@ module error
          params_index(4) = icoef_spread_DG_means_thl
 
          ! Set to 0 (rtmp doesn't matter for parameter loops tuning).
-         rtmp(1:nparams) = 0.0_core_rknd
+         rtmp(1:2,1:nparams) = 0.0_core_rknd
 
          ! Number of parameter values to be looped over for each variable.
          ! Must be at least 1.
@@ -489,19 +489,21 @@ module error
       if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
         ! Numerical recipes simulated annealing or downhill simplex
         allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim), & 
-                  param_vals_max(ndim), cost_fnc_vector(ndim+1) )
+                  param_vals_minmax(1,ndim), cost_fnc_vector(ndim+1) )
+        param_vals_minmax(1,1:ndim) = rtmp(2,params_index(1:ndim))
 
       elseif ( tune_type == iploops ) then
 
         allocate( param_vals_matrix(num_runs,ndim), & 
-                  param_vals_max(ndim), cost_fnc_vector(num_runs) )
+                  param_vals_minmax(1,ndim), cost_fnc_vector(num_runs) )
+        param_vals_minmax(1,1:ndim) = rtmp(2,params_index(1:ndim))
 
       else ! ESA algorithm or model flags
-        allocate( param_vals_matrix(1,ndim), param_vals_max(ndim), cost_fnc_vector(1) )
+        allocate( param_vals_matrix(1,ndim),param_vals_minmax(2,ndim), cost_fnc_vector(1) )
+        param_vals_minmax(1:2,1:ndim) = rtmp(1:2,params_index(1:ndim))
       end if
 
       ! Initialize the maximum values for the parameters
-      param_vals_max(1:ndim)  = rtmp(params_index(1:ndim))
 
       ! Copy tunable parameter values into the first row of the simplex
       param_vals_matrix(1,1:ndim) = params(params_index(1:ndim))
@@ -1310,7 +1312,7 @@ module error
       do j=1, ndim, 1
         if ( i == params_index(j) ) then
           ! Copy variable from param_vals_vector argument
-          params_local(i) = param_vals_max(j)
+          params_local(i) = param_vals_minmax(2,j)
           exit
         else
           cycle
