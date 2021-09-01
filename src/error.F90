@@ -88,7 +88,7 @@ module error
     l_results_file = .false.,      & ! Whether to generate a new error.in based on
                                      ! the new tuning constants
     l_stdout_on_invalid = .false., & ! Generate a new error.in when the simulation crashes
-    l_vary_params_together = .false. ! Whether to keep parameters like C1, C1b,
+    l_keep_params_equal = .false.    ! Whether to keep parameters like C1, C1b,
                                      ! etc. equal throughout tuning run
 
   logical, parameter, public :: &
@@ -287,7 +287,7 @@ module error
     namelist /stats/  & 
       f_tol, tune_type, anneal_temp, max_final_temp, anneal_iter, & 
       l_results_stdout, l_results_file, l_stdout_on_invalid, &
-      l_vary_params_together, &
+      l_keep_params_equal, &
       t_variables, weight_var_nl, stp_adjst_center_in, stp_adjst_spread_in
 
     namelist /cases/  & 
@@ -450,13 +450,13 @@ module error
       end if
 
       ! Read in the parameter constraint namelist and do a simple error check
-      if ( l_vary_params_together ) then
+      if ( l_keep_params_equal ) then
         call read_param_constraints( iunit, filename, param_constraints )
 
-        ! Error check to ensure that if l_vary_params_together = .true. then at
+        ! Error check to ensure that if l_keep_params_equal = .true. then at
         ! least one parameter is set equal to another.
         if ( all( param_constraints == "" ) ) then
-          write(fstderr,*) "Check parameter_constraints namelist: l_vary_params_together = " // &
+          write(fstderr,*) "Check parameter_constraints namelist: l_keep_params_equal = " // &
                            ".true. but no parameters are set equal to each other."
           error stop
         end if
@@ -809,7 +809,7 @@ module error
     end do
 
     ! Copy the values of parameters that are being held equal during tuning.
-    if ( l_vary_params_together ) then
+    if ( l_keep_params_equal ) then
       do i = 1, nparams, 1
         do j = 1, nparams, 1
           if ( param_constraints(i) == params_list(j) ) then
@@ -1137,7 +1137,7 @@ module error
 
     ! Also print the initial and final values of the parameters that were held
     ! equal to each other.
-    if ( l_vary_params_together ) then
+    if ( l_keep_params_equal ) then
       do i = 1, nparams, 1
         do j = 1, ndim, 1
           k = params_index(j)
@@ -1394,7 +1394,7 @@ module error
     end do
 
     ! Copy the values of parameters that were held equal during tuning.
-    if ( l_vary_params_together ) then
+    if ( l_keep_params_equal ) then
       do i = 1, nparams, 1
         do j = 1, nparams, 1
           if ( param_constraints(i) == params_list(j) ) then
