@@ -881,6 +881,7 @@ module advance_xm_wpxp_module
 
     use constants_clubb, only: &
         gamma_over_implicit_ts, & ! Constant(s)
+        gamma_over_implicit_diff_ts, & 
         one, &
         zero
 
@@ -1036,17 +1037,18 @@ module advance_xm_wpxp_module
 
         ! ---- sum w'x' terms ----
 
-        lhs(1,k_wpxp) = lhs_ma_zm(1,k) + lhs_diff_zm(1,k) &
+        lhs(1,k_wpxp) = lhs_ma_zm(1,k) + gamma_over_implicit_diff_ts * lhs_diff_zm(1,k) &
                         + gamma_over_implicit_ts * lhs_ta_wpxp(1,k)
 
         lhs(2,k_wpxp) = lhs_tp(1,k)
 
-        lhs(3,k_wpxp) = lhs_ma_zm(2,k) + lhs_diff_zm(2,k) + lhs_ac_pr2(k) &
+        lhs(3,k_wpxp) = lhs_ma_zm(2,k) + gamma_over_implicit_diff_ts * lhs_diff_zm(2,k) &
+                        + lhs_ac_pr2(k) &
                         + gamma_over_implicit_ts * ( lhs_ta_wpxp(2,k) + lhs_pr1(k) )
 
         lhs(4,k_wpxp) = lhs_tp(2,k)
 
-        lhs(5,k_wpxp) = lhs_ma_zm(3,k) + lhs_diff_zm(3,k) &
+        lhs(5,k_wpxp) = lhs_ma_zm(3,k) + gamma_over_implicit_diff_ts * lhs_diff_zm(3,k) &
                         + gamma_over_implicit_ts * lhs_ta_wpxp(3,k)
 
     enddo
@@ -1159,9 +1161,9 @@ module advance_xm_wpxp_module
 
         if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
             do k = 2, gr%nz-1
-                zmscr12(k) = - lhs_diff_zm(3,k)
-                zmscr13(k) = - lhs_diff_zm(2,k)
-                zmscr14(k) = - lhs_diff_zm(1,k)
+                zmscr12(k) = - gamma_over_implicit_diff_ts * lhs_diff_zm(3,k)
+                zmscr13(k) = - gamma_over_implicit_diff_ts * lhs_diff_zm(2,k)
+                zmscr14(k) = - gamma_over_implicit_diff_ts * lhs_diff_zm(1,k)
             end do
         endif
 
@@ -1405,7 +1407,7 @@ module advance_xm_wpxp_module
   subroutine xm_wpxp_rhs( gr, solve_type, l_iter, dt, xm, wpxp, & ! In
                           xm_forcing, wpxp_forcing, C7_Skw_fnc, & ! In
                           xpthvp, rhs_ta, thv_ds_zm, & ! In
-                          lhs_pr1, lhs_ta_wpxp, & ! In
+                          lhs_pr1, lhs_ta_wpxp, lhs_dp_wpxp, & ! In
                           stats_zt, stats_zm, & ! intent(inout)
                           rhs ) ! Out
 
@@ -1439,6 +1441,7 @@ module advance_xm_wpxp_module
 
     use constants_clubb, only:  &
         gamma_over_implicit_ts, & ! Constant(s)
+        gamma_over_implicit_diff_ts, & 
         one, &
         zero
 
@@ -1466,21 +1469,25 @@ module advance_xm_wpxp_module
         iwprtp_sicl, &
         iwprtp_ta, &
         iwprtp_pr1, &
+        iwprtp_dp1, &
         iwprtp_forcing, &
         iwpthlp_bp, & 
         iwpthlp_pr3, & 
         iwpthlp_sicl, &
         iwpthlp_ta, &
         iwpthlp_pr1, &
+        iwpthlp_dp1, &
         iwpthlp_forcing, &
         iupwp_bp, & 
         iupwp_pr3, &
         iupwp_ta, &
         iupwp_pr1, &
+        iupwp_dp1, &
         ivpwp_bp, & 
         ivpwp_pr3, &
         ivpwp_ta, &
         ivpwp_pr1, &
+        ivpwp_dp1, & 
         l_stats_samp
 
     use advance_helper_module, only: &
@@ -1513,7 +1520,8 @@ module advance_xm_wpxp_module
     ! increase numerical stability.  A weighted factor must then be applied to
     ! the RHS in order to balance the weight.
     real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: &
-      lhs_ta_wpxp   ! Turbulent advection terms of w'x'
+      lhs_ta_wpxp, &  ! Turbulent advection terms of w'x'
+      lhs_dp_wpxp     ! Eddy diffusion terms of w'x'
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       xm,                     & ! xm (thermodynamic levels)               [x un]
@@ -1553,6 +1561,7 @@ module advance_xm_wpxp_module
       iwpxp_f, &
       iwpxp_sicl, &
       iwpxp_ta, &
+      iwpxp_dp1, & 
       iwpxp_pr1
 
     !------------------- Begin Code -------------------
@@ -1621,6 +1630,7 @@ module advance_xm_wpxp_module
               iwpxp_sicl = iwprtp_sicl
               iwpxp_ta   = iwprtp_ta
               iwpxp_pr1  = iwprtp_pr1
+              iwpxp_dp1  = iwprtp_dp1
             case ( xm_wpxp_thlm ) ! thlm/wpthlp budget terms
               ixm_f      = ithlm_forcing
               iwpxp_bp   = iwpthlp_bp
@@ -1629,6 +1639,7 @@ module advance_xm_wpxp_module
               iwpxp_sicl = iwpthlp_sicl
               iwpxp_ta   = iwpthlp_ta
               iwpxp_pr1  = iwpthlp_pr1
+              iwpxp_dp1  = iwpthlp_dp1
             case ( xm_wpxp_um )  ! um/upwp budget terms
               ixm_f      = 0
               iwpxp_bp   = iupwp_bp
@@ -1637,6 +1648,7 @@ module advance_xm_wpxp_module
               iwpxp_sicl = 0
               iwpxp_ta   = iupwp_ta
               iwpxp_pr1  = iupwp_pr1
+              iwpxp_dp1  = iupwp_dp1
             case ( xm_wpxp_vm )  ! vm/vpwp budget terms
               ixm_f      = 0
               iwpxp_bp   = ivpwp_bp
@@ -1645,6 +1657,7 @@ module advance_xm_wpxp_module
               iwpxp_sicl = 0
               iwpxp_ta   = ivpwp_ta
               iwpxp_pr1  = ivpwp_pr1
+              iwpxp_dp1  = ivpwp_dp1
             case default    ! this includes the sclrm case
               ixm_f      = 0
               iwpxp_bp   = 0
@@ -1653,6 +1666,7 @@ module advance_xm_wpxp_module
               iwpxp_sicl = 0
               iwpxp_ta   = 0
               iwpxp_pr1  = 0
+              iwpxp_dp1  = 0
         end select
 
         ! Statistics: explicit contributions for wpxp.
@@ -1712,6 +1726,18 @@ module advance_xm_wpxp_module
                                       - ( one - gamma_over_implicit_ts )  &
                                       * ( - lhs_pr1(k) * wpxp(k) ), & ! intent(in)
                                        stats_zm ) ! intent(inout)
+
+            ! w'x' term dp1 is normally completely implicit.  However, there is a
+            ! RHS contribution from the "over-implicit" weighted time step.  A 
+            ! weighting factor of greater than 1 may be used to make the term more
+            ! numerically stable (see note above for RHS contribution from
+            call stat_begin_update_pt( iwpxp_dp1, k, & ! intent(in)
+                                      - ( one - gamma_over_implicit_diff_ts )  &
+                                      * ( - lhs_dp_wpxp(1,k) * wpxp(k+1) &
+                                          - lhs_dp_wpxp(2,k) * wpxp(k) & 
+                                          - lhs_dp_wpxp(3,k) * wpxp(k-1) ), & ! intent(in)
+                                       stats_zm ) ! intent(inout)
+
         end do
 
         
@@ -2588,6 +2614,7 @@ module advance_xm_wpxp_module
                       rtm_forcing, wprtp_forcing, C7_Skw_fnc,   & ! In
                       rtpthvp, rhs_ta_wprtp, thv_ds_zm,         & ! In
                       lhs_pr1_wprtp, lhs_ta_wpxp,               & ! In
+                      lhs_diff_zm,                              & ! In  
                       stats_zt, stats_zm,                       & ! intent(inout)
                       rhs(:,1) )                                  ! Out
                       
@@ -2597,6 +2624,7 @@ module advance_xm_wpxp_module
                       thlm_forcing, wpthlp_forcing, C7_Skw_fnc,   & ! In
                       thlpthvp, rhs_ta_wpthlp, thv_ds_zm,         & ! In
                       lhs_pr1_wpthlp, lhs_ta_wpxp,                & ! In
+                      lhs_diff_zm,                                & ! In  
                       stats_zt, stats_zm,                         & ! intent(inout)
                       rhs(:,2) )                                    ! Out
 
@@ -2619,6 +2647,7 @@ module advance_xm_wpxp_module
                         wpsclrp_forcing(:,i), C7_Skw_fnc,               & ! In
                         sclrpthvp(:,i), rhs_ta_wpsclrp(:,i), thv_ds_zm, & ! In
                         lhs_pr1_wpsclrp, lhs_ta_wpxp,                   & ! In
+                        lhs_diff_zm,                                    & ! In  
                         stats_zt, stats_zm,                             & ! intent(inout)
                         rhs(:,2+i) )                                      ! Out
 
@@ -2728,6 +2757,7 @@ module advance_xm_wpxp_module
                          um_tndcy, upwp_forcing, C7_Skw_fnc,   & ! In
                          upthvp, rhs_ta_wpup, thv_ds_zm,       & ! In
                          lhs_pr1_wprtp, lhs_ta_wpxp,           & ! In
+                         lhs_diff_zm,                          & ! In  
                          stats_zt, stats_zm,                   & ! intent(inout)
                          rhs(:,3+sclr_dim) )                     ! Out
 
@@ -2735,6 +2765,7 @@ module advance_xm_wpxp_module
                          vm_tndcy, vpwp_forcing, C7_Skw_fnc,   & ! In
                          vpthvp, rhs_ta_wpvp, thv_ds_zm,       & ! In
                          lhs_pr1_wprtp, lhs_ta_wpxp,           & ! In
+                         lhs_diff_zm,                          & ! In  
                          stats_zt, stats_zm,                   & ! intent(inout)
                          rhs(:,4+sclr_dim) )                     ! Out
 
@@ -3144,6 +3175,7 @@ module advance_xm_wpxp_module
                       rtm_forcing, wprtp_forcing, C7_Skw_fnc,   & ! In
                       rtpthvp, rhs_ta_wprtp, thv_ds_zm,         & ! In
                       lhs_pr1_wprtp, lhs_ta_wprtp,              & ! In
+                      lhs_diff_zm,                              & ! In  
                       stats_zt, stats_zm,                       & ! intent(inout)
                       rhs(:,1) )                                  ! Out
 
@@ -3219,6 +3251,7 @@ module advance_xm_wpxp_module
                       thlm_forcing, wpthlp_forcing, C7_Skw_fnc,   & ! In
                       thlpthvp, rhs_ta_wpthlp, thv_ds_zm,         & ! In
                       lhs_pr1_wpthlp, lhs_ta_wpthlp,              & ! In
+                      lhs_diff_zm,                                & ! In  
                       stats_zt, stats_zm,                         & ! intent(inout)
                       rhs(:,1) )                                    ! Out
 
@@ -3311,6 +3344,7 @@ module advance_xm_wpxp_module
                         wpsclrp_forcing(:,i), C7_Skw_fnc,                 & ! In
                         sclrpthvp(:,i), rhs_ta_wpsclrp(:,i), thv_ds_zm,   & ! In
                         lhs_pr1_wpsclrp, lhs_ta_wpsclrp(:,:,i),           & ! In
+                        lhs_diff_zm,                                      & ! In  
                         stats_zt, stats_zm,                               & ! intent(inout)
                         rhs(:,1) )                                          ! Out
 
@@ -3893,8 +3927,11 @@ module advance_xm_wpxp_module
             zmscr11(k) * wpxp(k), & ! intent(in)
             stats_zm ) ! intent(inout)
 
-        ! w'x' term dp1 is completely implicit; call stat_update_var_pt.
-        call stat_update_var_pt( iwpxp_dp1, k, & ! intent(in)
+        ! w'x' term dp1 is normally completely implicit; However, due to the
+        ! RHS contribution from the "over-implicit" weighted time step,
+        ! w'x' term dp1 has both implicit and explicit components;
+        ! call stat_end_update_pt.
+        call stat_end_update_pt( iwpxp_dp1, k, & ! intent(in)
             zmscr12(k) * wpxp(km1) & 
           + zmscr13(k) * wpxp(k) & 
           + zmscr14(k) * wpxp(kp1), & ! intent(in)

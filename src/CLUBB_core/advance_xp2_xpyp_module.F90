@@ -612,6 +612,7 @@ module advance_xp2_xpyp_module
                              um, vm, upwp, vpwp, up2, vp2, & ! In
                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
+                             lhs_diff_uv, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,1) ) ! Out
 
@@ -646,6 +647,7 @@ module advance_xp2_xpyp_module
                              vm, um, vpwp, upwp, vp2, up2, & ! In
                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
+                             lhs_diff_uv, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,1) ) ! Out
 
@@ -682,6 +684,7 @@ module advance_xp2_xpyp_module
                              um, vm, upwp, vpwp, up2, vp2, & ! In
                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
+                             lhs_diff_uv, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,1) ) ! Out
 
@@ -692,6 +695,7 @@ module advance_xp2_xpyp_module
                              vm, um, vpwp, upwp, vp2, up2, & ! In
                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
+                             lhs_diff_uv, & ! In 
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,2) ) ! Out
 
@@ -1267,6 +1271,7 @@ module advance_xp2_xpyp_module
                          rtm, rtm, rtp2, rtp2_forcing,  & ! In
                          C2x, invrs_tau_xp2_zm, rt_tol**2,    & ! In
                          lhs_ta, rhs_ta_wprtp2,         & ! In
+                         lhs_diff, & ! In 
                          stats_zm, & ! intent(inout)
                          rhs(:,1) )                       ! Out
                          
@@ -1275,6 +1280,7 @@ module advance_xp2_xpyp_module
                          thlm, thlm, thlp2, thlp2_forcing,  & ! In
                          C2x, invrs_tau_xp2_zm, thl_tol**2,       & ! In
                          lhs_ta, rhs_ta_wpthlp2,            & ! In
+                         lhs_diff, & ! In 
                          stats_zm, & ! intent(inout)
                          rhs(:,2) )                           ! Out
      
@@ -1283,6 +1289,7 @@ module advance_xp2_xpyp_module
                         rtm, thlm, rtpthlp, rtpthlp_forcing,    & ! In
                         C2x, invrs_tau_xp2_zm, zero_threshold,        & ! In
                         lhs_ta, rhs_ta_wprtpthlp,               & ! In
+                        lhs_diff, & ! In 
                         stats_zm, & ! intent(inout)
                         rhs(:,3) )                                ! Out
      
@@ -1300,6 +1307,7 @@ module advance_xp2_xpyp_module
                             sclrp2(:,i), sclrp2_forcing,     & ! In
                             C2x, invrs_tau_xp2_zm, sclr_tol(i)**2, & ! In
                             lhs_ta, rhs_ta_wpsclrp2(:,i),    & ! In
+                            lhs_diff, & ! In 
                             stats_zm, & ! intent(inout)
                             rhs(:,3+i) )                       ! Out
 
@@ -1321,6 +1329,7 @@ module advance_xp2_xpyp_module
                             sclrprtp_forcing,               & ! In
                             C2x, invrs_tau_xp2_zm, threshold,     & ! In
                             lhs_ta, rhs_ta_wprtpsclrp(:,i), & ! In
+                            lhs_diff, & ! In 
                             stats_zm, & ! intent(inout)
                             rhs(:,3+i+sclr_dim) )             ! Out
 
@@ -1341,6 +1350,7 @@ module advance_xp2_xpyp_module
                             sclrpthlp_forcing,                  & ! In
                             C2x, invrs_tau_xp2_zm, threshold,         & ! In
                             lhs_ta, rhs_ta_wpthlpsclrp(:,i),    & ! In
+                            lhs_diff, & ! In 
                             stats_zm, & ! intent(inout)
                             rhs(:,3+i+2*sclr_dim) )               ! Out
 
@@ -1523,6 +1533,7 @@ module advance_xp2_xpyp_module
                        rtm, rtm, rtp2, rtp2_forcing, & ! In
                        C2rt_1d, invrs_tau_xp2_zm, rt_tol**2, & ! In
                        lhs_ta_wprtp2, rhs_ta_wprtp2, & ! In
+                       lhs_diff, & ! In 
                        stats_zm, & ! intent(inout)
                        rhs ) ! Out
                          
@@ -1544,6 +1555,7 @@ module advance_xp2_xpyp_module
                        thlm, thlm, thlp2, thlp2_forcing, & ! In
                        C2thl_1d, invrs_tau_xp2_zm, thl_tol**2, & ! In
                        lhs_ta_wpthlp2, rhs_ta_wpthlp2, & ! In
+                       lhs_diff, & ! In 
                        stats_zm, & ! intent(inout)
                        rhs ) ! Out
 
@@ -1565,6 +1577,7 @@ module advance_xp2_xpyp_module
                        rtm, thlm, rtpthlp, rtpthlp_forcing, & ! In
                        C2rtthl_1d, invrs_tau_xp2_zm, zero_threshold, & ! In
                        lhs_ta_wprtpthlp, rhs_ta_wprtpthlp, & ! In
+                       lhs_diff, & ! In 
                        stats_zm, & ! intent(inout)
                        rhs ) ! Out
 
@@ -1595,6 +1608,7 @@ module advance_xp2_xpyp_module
                              sclrp2(:,i), sclrp2_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, sclr_tol(i)**2, & ! In
                              lhs_ta_wpsclrp2(:,:,i), rhs_ta_wpsclrp2(:,i), & ! In
+                             lhs_diff, & ! In 
                              stats_zm, & ! intent(inout)
                              rhs ) ! Out
 
@@ -1625,6 +1639,7 @@ module advance_xp2_xpyp_module
                              sclrprtp_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wprtpsclrp(:,:,i), rhs_ta_wprtpsclrp(:,i), & ! In
+                             lhs_diff, & ! In 
                              stats_zm, & ! intent(inout)
                              rhs ) ! Out
 
@@ -1655,6 +1670,7 @@ module advance_xp2_xpyp_module
                              sclrpthlp_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wpthlpsclrp(:,:,i), rhs_ta_wpthlpsclrp(:,i), & ! In
+                             lhs_diff, & ! In 
                              stats_zm, & ! intent(inout)
                              rhs ) ! Out
 
@@ -1693,6 +1709,7 @@ module advance_xp2_xpyp_module
                              sclrp2(:,i), sclrp2_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, sclr_tol(i)**2, & ! In
                              lhs_ta_wpsclrp2(:,:,1), rhs_ta_wpsclrp2(:,i), & ! In
+                             lhs_diff, & ! In 
                              stats_zm, & ! intent(inout)
                              sclr_rhs(:,i) ) ! Out
 
@@ -1714,6 +1731,7 @@ module advance_xp2_xpyp_module
                              sclrprtp_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wpsclrp2(:,:,1), rhs_ta_wprtpsclrp(:,i), & ! In
+                             lhs_diff, & ! In 
                              stats_zm, & ! intent(inout)
                              sclr_rhs(:,i+sclr_dim) ) ! Out
 
@@ -1735,6 +1753,7 @@ module advance_xp2_xpyp_module
                              sclrpthlp_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wpsclrp2(:,:,1), rhs_ta_wpthlpsclrp(:,i), & ! In
+                             lhs_diff, & ! In 
                              stats_zm, & ! intent(inout)
                              sclr_rhs(:,i+2*sclr_dim) ) ! Out
 
@@ -1792,6 +1811,7 @@ module advance_xp2_xpyp_module
 
     use constants_clubb, only:  &
         gamma_over_implicit_ts, &
+        gamma_over_implicit_diff_ts, & 
         one ! constants
 
     use diffusion, only:  & 
@@ -1880,12 +1900,15 @@ module advance_xp2_xpyp_module
     ! Combine all lhs terms into lhs, should be fully vectorized
     do k = 2, gr%nz-1
 
-      lhs(1,k) = lhs_diff(1,k) + lhs_ma(1,k) + lhs_ta(1,k) * gamma_over_implicit_ts
+      lhs(1,k) = lhs_diff(1,k) * gamma_over_implicit_diff_ts &
+                + lhs_ma(1,k) + lhs_ta(1,k) * gamma_over_implicit_ts
 
-      lhs(2,k) = lhs_diff(2,k) + lhs_ma(2,k) + lhs_ta(2,k) * gamma_over_implicit_ts &
+      lhs(2,k) = lhs_diff(2,k) * gamma_over_implicit_diff_ts &
+                + lhs_ma(2,k) + lhs_ta(2,k) * gamma_over_implicit_ts &
                                                + lhs_dp1(k)
         
-      lhs(3,k) = lhs_diff(3,k) + lhs_ma(3,k) + lhs_ta(3,k) * gamma_over_implicit_ts
+      lhs(3,k) = lhs_diff(3,k) * gamma_over_implicit_diff_ts & 
+                + lhs_ma(3,k) + lhs_ta(3,k) * gamma_over_implicit_ts
 
     enddo ! k=2..gr%nz-1
 
@@ -1920,9 +1943,9 @@ module advance_xp2_xpyp_module
         if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + iup2_dp2 + ivp2_dp2 > 0 ) then
 
             do k = 2, gr%nz-1
-                zmscr02(k) = -lhs_diff(3,k)
-                zmscr03(k) = -lhs_diff(2,k)
-                zmscr04(k) = -lhs_diff(1,k)
+                zmscr02(k) = -gamma_over_implicit_diff_ts * lhs_diff(3,k)
+                zmscr03(k) = -gamma_over_implicit_diff_ts * lhs_diff(2,k)
+                zmscr04(k) = -gamma_over_implicit_diff_ts * lhs_diff(1,k)
             end do
 
         endif
@@ -2271,8 +2294,10 @@ module advance_xp2_xpyp_module
                                zmscr01(k) * xapxbp(k), &  ! Intent(in)
                                stats_zm )                 ! Intent(inout)
 
-      ! x'y' term dp2 is completely implicit; call stat_update_var_pt.
-      call stat_update_var_pt( ixapxbp_dp2, k, &            ! Intent(in)
+      ! x'y' term dp2 is normally completely implicit; However, the
+      ! over-implicit scheme will have contribution on both implicit and
+      ! explicit component, call stat_end_update_pt.
+      call stat_end_update_pt( ixapxbp_dp2, k, &            ! Intent(in)
                                  zmscr02(k) * xapxbp(km1) & ! Intent(in)
                                + zmscr03(k) * xapxbp(k) & 
                                + zmscr04(k) * xapxbp(kp1), &
@@ -2311,6 +2336,7 @@ module advance_xp2_xpyp_module
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
                               thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                               lhs_ta, rhs_ta, &
+                              lhs_dp, & 
                               stats_zm, & ! intent(inout)
                               rhs ) ! Out
 
@@ -2344,6 +2370,7 @@ module advance_xp2_xpyp_module
 
     use constants_clubb, only:  & 
         gamma_over_implicit_ts, & ! Constant(s)
+        gamma_over_implicit_diff_ts, & ! Constant(s)
         w_tol_sqd, &
         one, &
         two_thirds, &
@@ -2362,12 +2389,14 @@ module advance_xp2_xpyp_module
         ivp2_ta,  & ! Variable(s)
         ivp2_tp, & 
         ivp2_dp1, & 
+        ivp2_dp2, & 
         ivp2_pr1, & 
         ivp2_pr2, & 
         ivp2_splat, & 
         iup2_ta, & 
         iup2_tp, & 
         iup2_dp1, & 
+        iup2_dp2, & 
         iup2_pr1, & 
         iup2_pr2, & 
         iup2_splat, & 
@@ -2395,7 +2424,8 @@ module advance_xp2_xpyp_module
     ! increase numerical stability.  A weighted factor must then be applied to
     ! the RHS in order to balance the weight.
     real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
-     lhs_ta     ! LHS turbulent advection term
+     lhs_ta, &     ! LHS turbulent advection term
+     lhs_dp        ! LHS eddy diffution term (dp2)
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       rhs_ta,                 & ! RHS turbulent advection terms
@@ -2436,6 +2466,7 @@ module advance_xp2_xpyp_module
       ixapxbp_ta, & 
       ixapxbp_tp, & 
       ixapxbp_dp1, & 
+      ixapxbp_dp2, & 
       ixapxbp_pr1, & 
       ixapxbp_pr2, &
       ixapxbp_splat
@@ -2447,6 +2478,7 @@ module advance_xp2_xpyp_module
       ixapxbp_ta  = ivp2_ta
       ixapxbp_tp  = ivp2_tp
       ixapxbp_dp1 = ivp2_dp1
+      ixapxbp_dp2 = ivp2_dp2
       ixapxbp_pr1 = ivp2_pr1
       ixapxbp_pr2 = ivp2_pr2
       ixapxbp_splat = ivp2_splat
@@ -2454,6 +2486,7 @@ module advance_xp2_xpyp_module
       ixapxbp_ta  = iup2_ta
       ixapxbp_tp  = iup2_tp
       ixapxbp_dp1 = iup2_dp1
+      ixapxbp_dp2 = iup2_dp2
       ixapxbp_pr1 = iup2_pr1
       ixapxbp_pr2 = iup2_pr2
       ixapxbp_splat = iup2_splat
@@ -2461,6 +2494,7 @@ module advance_xp2_xpyp_module
       ixapxbp_ta  = 0
       ixapxbp_tp  = 0
       ixapxbp_dp1 = 0
+      ixapxbp_dp2 = 0
       ixapxbp_pr1 = 0
       ixapxbp_pr2 = 0
       ixapxbp_splat = 0
@@ -2495,7 +2529,13 @@ module advance_xp2_xpyp_module
         ! RHS pressure term 2 (pr2).
         rhs(k) = rhs(k) + term_pr2( gr, C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), &
                                   wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k )
-                                  
+       
+        ! RHS eddy diffusion term (dp2).                           
+        rhs(k) = rhs(k) + ( one - gamma_over_implicit_diff_ts ) &
+                             * ( - lhs_dp(1,k) * xap2(k+1) &
+                                 - lhs_dp(2,k) * xap2(k) &
+                                 - lhs_dp(3,k) * xap2(k-1) )
+
     enddo ! k=2..gr%nz-1
 
 
@@ -2525,6 +2565,13 @@ module advance_xp2_xpyp_module
                                    * ( - lhs_ta(1,k) * xap2(k+1) &
                                        - lhs_ta(2,k) * xap2(k) &
                                        - lhs_ta(3,k) * xap2(k-1) ), &
+                                 stats_zm )                 ! Intent(inout)
+
+            call stat_begin_update_pt( ixapxbp_dp2, k,  &          ! Intent(in)
+                                 - ( one - gamma_over_implicit_diff_ts )  & ! Intent(in)
+                                   * ( - lhs_dp(1,k) * xap2(k+1) &
+                                       - lhs_dp(2,k) * xap2(k) &
+                                       - lhs_dp(3,k) * xap2(k-1) ), &
                                  stats_zm )                 ! Intent(inout)
 
             if ( ixapxbp_pr1 > 0 ) then
@@ -2607,6 +2654,7 @@ module advance_xp2_xpyp_module
                            xam, xbm, xapxbp, xpyp_forcing, & ! In
                            Cn, invrs_tau_zm, threshold, & ! In
                            lhs_ta, rhs_ta, &
+                           lhs_dp, & 
                            stats_zm, & ! intent(inout)
                            rhs ) ! Out
 
@@ -2640,6 +2688,7 @@ module advance_xp2_xpyp_module
 
     use constants_clubb, only: &
         gamma_over_implicit_ts, & ! Constant(s)
+        gamma_over_implicit_diff_ts, & ! Constant(s)
         one, &
         zero
 
@@ -2655,15 +2704,18 @@ module advance_xp2_xpyp_module
         irtp2_ta,      & ! Variable(s)
         irtp2_tp,      & 
         irtp2_dp1,     &
+        irtp2_dp2,     &
         irtp2_forcing, &
         ithlp2_ta,      & 
         ithlp2_tp,      &
         ithlp2_dp1,     &
+        ithlp2_dp2,     &
         ithlp2_forcing, & 
         irtpthlp_ta,      & 
         irtpthlp_tp1,     & 
         irtpthlp_tp2,     &
         irtpthlp_dp1,     &
+        irtpthlp_dp2,     &
         irtpthlp_forcing, & 
         l_stats_samp
   
@@ -2693,7 +2745,8 @@ module advance_xp2_xpyp_module
     ! increase numerical stability.  A weighted factor must then be applied to
     ! the RHS in order to balance the weight.
     real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
-      lhs_ta    ! LHS turbulent advection (ta) term
+      lhs_ta, &    ! LHS turbulent advection (ta) term
+      lhs_dp       ! LHS eddy diffusion (dp2) term 
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       rhs_ta,                  & ! RHS turbulent advection (ta) term
@@ -2742,6 +2795,7 @@ module advance_xp2_xpyp_module
       ixapxbp_tp1, & 
       ixapxbp_tp2, &
       ixapxbp_dp1, &
+      ixapxbp_dp2, &
       ixapxbp_f
 
     !------------------------------ Begin Code ---------------------------------
@@ -2753,6 +2807,7 @@ module advance_xp2_xpyp_module
       ixapxbp_tp1 = 0
       ixapxbp_tp2 = 0
       ixapxbp_dp1 = irtp2_dp1
+      ixapxbp_dp2 = irtp2_dp2
       ixapxbp_f   = irtp2_forcing
     case ( xp2_xpyp_thlp2 )
       ixapxbp_ta  = ithlp2_ta
@@ -2760,6 +2815,7 @@ module advance_xp2_xpyp_module
       ixapxbp_tp1 = 0
       ixapxbp_tp2 = 0
       ixapxbp_dp1 = ithlp2_dp1
+      ixapxbp_dp2 = ithlp2_dp2
       ixapxbp_f   = ithlp2_forcing
     case ( xp2_xpyp_rtpthlp )
       ixapxbp_ta  = irtpthlp_ta
@@ -2767,6 +2823,7 @@ module advance_xp2_xpyp_module
       ixapxbp_tp1 = irtpthlp_tp1
       ixapxbp_tp2 = irtpthlp_tp2
       ixapxbp_dp1 = irtpthlp_dp1
+      ixapxbp_dp2 = irtpthlp_dp2
       ixapxbp_f   = irtpthlp_forcing
     case default ! No budgets for passive scalars
       ixapxbp_ta  = 0
@@ -2774,6 +2831,7 @@ module advance_xp2_xpyp_module
       ixapxbp_tp1 = 0
       ixapxbp_tp2 = 0
       ixapxbp_dp1 = 0
+      ixapxbp_dp2 = 0
       ixapxbp_f   = 0
     end select
 
@@ -2797,6 +2855,13 @@ module advance_xp2_xpyp_module
       ! for LHS dissipation term 1 (dp1).
       rhs(k) = rhs(k)  + ( one - gamma_over_implicit_ts ) &
                        * ( - term_dp1_lhs( Cn(k), invrs_tau_zm(k) ) * xapxbp(k) )
+
+      ! RHS contribution from "over-implicit" weighted time step
+      ! for LHS dissipation term 2 (dp2).
+      rhs(k) = rhs(k) + ( one - gamma_over_implicit_diff_ts ) &
+                         * ( - lhs_dp(1,k) * xapxbp(k+1) &
+                             - lhs_dp(2,k) * xapxbp(k) &
+                             - lhs_dp(3,k) * xapxbp(k-1) )
     end do
 
     ! RHS <x'y'> forcing.
@@ -2874,6 +2939,16 @@ module advance_xp2_xpyp_module
             call stat_begin_update_pt( ixapxbp_dp1, k, &           ! Intent(in)
                  -term_dp1_rhs( Cn(k), invrs_tau_zm(k), threshold ), &   ! Intent(in)
                                        stats_zm )                  ! Intent(inout)
+
+            ! <x'y'> term dp2 has both implicit and explicit components; call
+            ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+            ! subtracts the value sent in, reverse the sign 
+            call stat_begin_update_pt( ixapxbp_dp2, k, &             ! Intent(in)
+                                 - ( one - gamma_over_implicit_diff_ts ) & ! Intent(in)
+                                   * ( - lhs_dp(1,k) * xapxbp(k+1) &
+                                       - lhs_dp(2,k) * xapxbp(k) &
+                                       - lhs_dp(3,k) * xapxbp(k-1) ), &
+                                 stats_zm )                   ! Intent(inout)
 
             ! Note:  An "over-implicit" weighted time step is applied to this term.
             !        A weighting factor of greater than 1 may be used to make the

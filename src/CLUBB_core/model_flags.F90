@@ -96,9 +96,13 @@ module model_flags
                                  ! Default is .true.
 
   logical, parameter, public :: &
-    l_upwind_xpyp_ma = .true.   ! Flag to control if the upwind scheme will be used for 
-                                ! the mean advection terms of moments at zm levels 
-                                ! Default is .false.
+    l_upwind_xpyp_ma = .false.   ! Flag to control if the upwind scheme will be used for 
+                                 ! the mean advection terms of moments at zm levels 
+                                 ! Default is .false.
+
+  integer, parameter, public :: &
+    wp3_tp_opt       = 0 ! constant to determine the descretization of turbulent
+                         ! production term in wp3 equation, 0 is the default option  
 
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,
