@@ -503,8 +503,6 @@ module error
         param_vals_minmax(1:2,1:ndim) = rtmp(1:2,params_index(1:ndim))
       end if
 
-      ! Initialize the maximum values for the parameters
-
       ! Copy tunable parameter values into the first row of the simplex
       param_vals_matrix(1,1:ndim) = params(params_index(1:ndim))
 
