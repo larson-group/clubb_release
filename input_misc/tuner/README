@@ -135,7 +135,7 @@ Tips for using Gunther's esa_driver (tune_type = iesa = 2 and l_esa_siarry = .fa
 
 The "init_minmax" values in the error_*.in files should be set as follows:
 
- - For each parameter, give a minimum value and a maximum value.
+ - For each parameter, give a minimum value (first) and a maximum value (second).
  - For parameters that are not being tuned, set the min and max values to zero.
  - For parameters you want to tune, a nonzero *max* value will activate that parameter
    for tuning.  The min and max values give the range of values the 
