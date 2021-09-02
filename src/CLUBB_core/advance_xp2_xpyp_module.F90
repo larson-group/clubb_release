@@ -311,6 +311,9 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ) :: & 
       threshold     ! Minimum value for variances                   [units vary]
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      threshold_array ! Minimum value for variances [units vary]
+
     real( kind = core_rknd ), dimension(3,gr%nz) ::  & 
       lhs ! Tridiagonal matrix
 
@@ -731,16 +734,15 @@ module advance_xp2_xpyp_module
        ! rtp2|_min = wprtp^2 / ( wp2 * max_mag_correlation_flux^2 ).
        do k = 1, gr%nz, 1
 
-          threshold &
+          threshold_array(k) &
           = max( rt_tol**2, &
                  wprtp(k)**2 / ( wp2(k) * max_mag_correlation_flux**2 ) )
 
-          call clip_variance_level( xp2_xpyp_rtp2, dt, threshold, k, & ! In
-                                    stats_zm, & ! intent(inout)
-                                    rtp2(k) )                          ! In/out
-
        enddo ! k = 1, gr%nz, 1
 
+       call clip_variance_level( gr, xp2_xpyp_rtp2, dt, threshold_array, & ! In
+                                 stats_zm, & ! intent(inout)
+                                 rtp2 )                          ! In/out
     else
 
        ! Consider only the minimum tolerance threshold value for rtp2.
@@ -809,15 +811,15 @@ module advance_xp2_xpyp_module
        ! thlp2|_min = wpthlp^2 / ( wp2 * max_mag_correlation_flux^2 ).
        do k = 1, gr%nz, 1
 
-          threshold &
+          threshold_array(k) &
           = max( thl_tol**2, &
                  wpthlp(k)**2 / ( wp2(k) * max_mag_correlation_flux**2 ) )
 
-          call clip_variance_level( xp2_xpyp_thlp2, dt, threshold, k, & ! In
-                                    stats_zm, & ! intent(inout)
-                                    thlp2(k) )                          ! In/out
-
        enddo ! k = 1, gr%nz, 1
+
+       call clip_variance_level( gr, xp2_xpyp_thlp2, dt, threshold_array, & ! In
+                                 stats_zm, & ! intent(inout)
+                                 thlp2 )                          ! In/out
 
     else
 

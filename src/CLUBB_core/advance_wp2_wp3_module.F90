@@ -792,6 +792,10 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ) :: &
       threshold    ! Minimum value for wp2    [m^2/s^2]
 
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      threshold_array ! Minimum values for wp2 [m^2/s^2]
+
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3
 
@@ -1189,16 +1193,16 @@ module advance_wp2_wp3_module
        !                 wpthlp^2 / ( thlp2 * max_mag_correlation_flux^2 ) ).
        do k = 1, gr%nz, 1
 
-          threshold &
+          threshold_array(k) &
           = max( w_tol_sqd, &
                  wprtp(k)**2 / ( rtp2(k) * max_mag_correlation_flux**2 ), &
                  wpthlp(k)**2 / ( thlp2(k) * max_mag_correlation_flux**2 ) )
 
-          call clip_variance_level( clip_wp2, dt, threshold, k, & ! intent(in)
-                                    stats_zm, &                   ! intent(inout)
-                                    wp2(k) )                      ! intent(inout)
-
        enddo ! k = 1, gr%nz, 1
+
+       call clip_variance_level( gr, clip_wp2, dt, threshold_array, & ! intent(in)
+                                 stats_zm, &                   ! intent(inout)
+                                 wp2 )                         ! intent(inout)
 
     else
 

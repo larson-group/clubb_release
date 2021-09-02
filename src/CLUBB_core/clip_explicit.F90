@@ -896,7 +896,7 @@ module clip_explicit
   end subroutine clip_variance
 
   !=============================================================================
-  subroutine clip_variance_level( solve_type, dt, threshold, level, &
+  subroutine clip_variance_level( gr, solve_type, dt, threshold, &
                                   stats_zm, & ! intent(inout)
                                   xp2 )
 
@@ -920,8 +920,8 @@ module clip_explicit
         core_rknd ! Variable(s)
 
     use stats_type_utilities, only: & 
-        stat_begin_update_pt,  & ! Procedure(s)
-        stat_end_update_pt
+        stat_begin_update,  & ! Procedure(s)
+        stat_end_update
 
     use stats_variables, only: & 
         iwp2_cl, & 
@@ -933,10 +933,15 @@ module clip_explicit
 
     use stats_type, only: stats ! Type
 
+    use grid_class, only: grid ! Type
+
     implicit none
 
     type (stats), target, intent(inout) :: &
       stats_zm
+
+    type(grid), target, intent(in) :: &
+      gr
 
     ! Input Variables
     integer, intent(in) :: & 
@@ -945,18 +950,15 @@ module clip_explicit
     real( kind = core_rknd ), intent(in) :: & 
       dt          ! Model timestep; used here for STATS     [s]
 
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       threshold   ! Minimum value of x'^2                   [{x units}^2]
 
-    integer, intent(in) :: &
-      level       ! Vertical level index
-
     ! Output Variable
-    real( kind = core_rknd ), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
       xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
 
     integer :: & 
-      ixp2_cl
+      ixp2_cl, k
 
     ! ---- Begin Code ----
 
@@ -975,19 +977,22 @@ module clip_explicit
       ixp2_cl = 0
     end select
 
-
     if ( l_stats_samp ) then
-       call stat_begin_update_pt( ixp2_cl, level, xp2 / dt, & ! intent(in)
+       call stat_begin_update( gr, ixp2_cl, xp2 / dt, & ! intent(in)
                                   stats_zm ) ! intent(inout)
     endif
 
+    do k = 1, gr%nz, 1
+
     ! Limit the value of x'^2 at threshold.
-    if ( xp2 < threshold ) then
-       xp2 = threshold
-    endif
+      if ( xp2(k) < threshold(k) ) then
+         xp2(k) = threshold(k)
+      endif
+
+    enddo
 
     if ( l_stats_samp ) then
-       call stat_end_update_pt( ixp2_cl, level, xp2 / dt, & ! intent(in)
+       call stat_end_update( gr, ixp2_cl, xp2 / dt, & ! intent(in)
                                 stats_zm ) ! intent(inout)
     endif
 
