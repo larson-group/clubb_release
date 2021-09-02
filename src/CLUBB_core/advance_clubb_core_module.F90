@@ -202,7 +202,6 @@ module advance_clubb_core_module
         gamma_coefc, &
         c_K10, &
         c_K10h, &
-        C_uu_shr, C4, &
         C_wp2_splat, &
         xp3_coef_base, &
         xp3_coef_slope
