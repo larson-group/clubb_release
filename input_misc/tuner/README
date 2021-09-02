@@ -133,12 +133,35 @@ of 0.25 for this.
 Tips for using Gunther's esa_driver (tune_type = iesa = 2 and l_esa_siarry = .false.).
 -------------------------------------------------------------------------------------
 
-The "initmax" values in the error_*.in files should be set as follows:
+The "init_minmax" values in the error_*.in files should be set as follows:
 
- - For parameters that are not being tuned, set the initmax value to zero.
- - For parameters being tuned, the initmax value gives the *maximum* value
-     the tuner will accept for that parameter.  Hence the range of possible
-     test values for a tuned parameter is from zero to the initmax value.
+ - For each parameter, give a minimum value and a maximum value.
+ - For parameters that are not being tuned, set the min and max values to zero.
+ - For parameters you want to tune, a nonzero *max* value will activate that parameter
+   for tuning.  The min and max values give the range of values the 
+   tuner will accept for that parameter. Zero is a common minimum for many situations,
+   but on occasion you may want to restrict the range further by choosing a nonzero min.
+ - Negative values are not allowed, and the max should always be greater than 
+   (i.e. not equal to) the min value, unless both are zero.
+
+The "parameter_constraints" namelist gives the user the ability to hold certain
+parameter values equal to each other throughout the course of a tuning experiment.
+For example the user might want to tune C11 and C11b but keep them equal. The
+values in the error_*.in files should be set as follows:
+
+ - First, if you intend to set *any* parameter equal to another, make sure that
+   l_keep_params_equal = .true.  It is set to .false. by default.  This flag is set
+   in the same error_*.in file.
+ - If you want to set a parameter equal to another, or even set several parameters
+   equal to each other, only one should have nonzero values in the init_minmax namelist.
+   For example, if you want to hold C1, C1b, and C14 equal to each other, 
+   you could choose C1 to be set in the init_minmax namelist.  Then in the
+   parameter_constraints namelist, set C1b = "C1" and C14 = "C1".  These will
+   then be held equal to C1 over the tuning experiment.
+ - A couple of additional rules about using the parameter_constraints namelist:
+   * no parameter should be set equal to itself
+   * no parameter should be set equal to another parameter that is not being tuned
+   * a parameter that is being tuned should not be set equal to any other parameter.
 
 To reduce the number of tuning iterations, i.e. calls to CLUBB, you may
 
@@ -146,4 +169,5 @@ To reduce the number of tuning iterations, i.e. calls to CLUBB, you may
 - Increase f_tol, so that a small improvement counts as another iteration without significant improvement;
 - Increase max_final_temp, so that the final polishing is omitted;
 - Decrease anneal_temp, so that the initial jumps in parameter space are not so large.
-- Reduce max_iters, which sets a hard limit on the total number of iterations.
+- Reduce max_iters, which sets a hard limit on the total number of iterations (note this is hard-coded
+  in src/enhanced_simann.F90).

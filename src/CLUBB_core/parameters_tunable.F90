@@ -1793,8 +1793,11 @@ module parameters_tunable
     params_minmax(:,iCx_min) = Cx_min_minmax
     params_minmax(:,iCx_max) = Cx_max_minmax
 
-    ! Error check:  if a minimum value is entered, it must have a
-    ! corresponding maximum value of greater value
+    ! Error checks:  if a minimum value is entered, it must have a
+    ! corresponding maximum value of greater value; the min and max values
+    ! should not be equal or too close together (current threshold 0.01,
+    ! although there may be circumstances where the user might want to adjust
+    ! this); and neither min or max should be less than zero.
     do i = 1, nparams, 1
       if ( params_minmax(1,i) > params_minmax(2,i) ) then
         write(fstderr,*) "Check init_minmax namelist: " // trim(params_list(i)) // &
