@@ -229,7 +229,7 @@ module error
 
     ! Local Variables
 
-    real( kind = core_rknd ), dimension(2,nparams) :: rtmp
+    real( kind = core_rknd ), dimension(2,nparams) :: params_minmax_all_vals
 
     integer :: i, j, & ! looping variables
                iunit ! file unit
@@ -386,7 +386,7 @@ module error
 
       if ( tune_type /= iploops ) then
          call read_param_minmax( iunit, filename, params_index,  &
-                                 rtmp, ndim )
+                                 params_minmax_all_vals, ndim )
       else ! tune_type == iploops
 
          ! Number of tunable parameters that are looped over.
@@ -399,8 +399,8 @@ module error
          params_index(3) = icoef_spread_DG_means_rt
          params_index(4) = icoef_spread_DG_means_thl
 
-         ! Set to 0 (rtmp doesn't matter for parameter loops tuning).
-         rtmp(1:2,1:nparams) = 0.0_core_rknd
+         ! Set to 0 (params_minmax_all_vals doesn't matter for parameter loops tuning).
+         params_minmax_all_vals(1:2,1:nparams) = 0.0_core_rknd
 
          ! Number of parameter values to be looped over for each variable.
          ! Must be at least 1.
@@ -449,7 +449,12 @@ module error
         error stop
       end if
 
-      ! Read in the parameter constraint namelist and do a simple error check
+      ! Read in the parameter constraint namelist and do some simple error
+      ! checks.  param_constraints is an array whose indices designate the
+      ! tunable parameters, in the same order as params_list.  Its values are
+      ! strings which should be the names of other tunable parameters. Each
+      ! index-string pair represents equality between two parameters, 
+      ! such as C1b (index) = C1 (string).
       if ( l_keep_params_equal ) then
         call read_param_constraints( iunit, filename, param_constraints )
 
@@ -490,17 +495,17 @@ module error
         ! Numerical recipes simulated annealing or downhill simplex
         allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim), & 
                   param_vals_minmax(1,ndim), cost_fnc_vector(ndim+1) )
-        param_vals_minmax(1,1:ndim) = rtmp(2,params_index(1:ndim))
+        param_vals_minmax(1,1:ndim) = params_minmax_all_vals(2,params_index(1:ndim))
 
       elseif ( tune_type == iploops ) then
 
         allocate( param_vals_matrix(num_runs,ndim), & 
                   param_vals_minmax(1,ndim), cost_fnc_vector(num_runs) )
-        param_vals_minmax(1,1:ndim) = rtmp(2,params_index(1:ndim))
+        param_vals_minmax(1,1:ndim) = params_minmax_all_vals(2,params_index(1:ndim))
 
       else ! ESA algorithm or model flags
         allocate( param_vals_matrix(1,ndim),param_vals_minmax(2,ndim), cost_fnc_vector(1) )
-        param_vals_minmax(1:2,1:ndim) = rtmp(1:2,params_index(1:ndim))
+        param_vals_minmax(1:2,1:ndim) = params_minmax_all_vals(1:2,params_index(1:ndim))
       end if
 
       ! Copy tunable parameter values into the first row of the simplex
