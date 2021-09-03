@@ -1021,8 +1021,10 @@ module advance_wp2_wp3_module
               stats_zm )                           ! intent(inout)
         endif
 
-        ! w'^2 term ta is completely implicit; call stat_update_var_pt.
-        call stat_update_var_pt( iwp2_ta, k, & ! intent(in)
+        ! w'^2 term ta is normally completely implicit; but the over-implicit
+        ! scheme would have an explicit component. 
+        ! call stat_end_update_pt.
+        call stat_end_update_pt( iwp2_ta, k, & ! intent(in)
            zmscr05(k) * wp3(k) &
          + zmscr06(k) * wp3(kp1), &            ! intent(in)
            stats_zm )                          ! intent(inout)
@@ -1301,7 +1303,8 @@ module advance_wp2_wp3_module
         zero, &
         zero_threshold, & 
         gamma_over_implicit_ts, &
-        gamma_over_implicit_diff_ts
+        gamma_over_implicit_diff_ts, &
+        gamma_over_implicit_wp2_ta_ts
 
     use model_flags, only: &
         iiPDF_ADG1,                   & ! Variable(s)
@@ -1657,7 +1660,7 @@ module advance_wp2_wp3_module
         lhs(1,k_wp2) = lhs(1,k_wp2) + lhs_ma_zm(1,k) + lhs_diff_zm(1,k)
 
         ! LHS turbulent advection (ta) term.
-        lhs(2,k_wp2) = lhs(2,k_wp2) + lhs_ta_wp2(1,k)
+        lhs(2,k_wp2) = lhs(2,k_wp2) + gamma_over_implicit_wp2_ta_ts * lhs_ta_wp2(1,k)
 
         ! LHS mean advection (ma) and diffusion (diff) terms
         lhs(3,k_wp2) = lhs(3,k_wp2) + lhs_ma_zm(2,k) + lhs_diff_zm(2,k) 
@@ -1676,7 +1679,7 @@ module advance_wp2_wp3_module
         lhs(3,k_wp2) = lhs(3,k_wp2) + invrs_dt
 
         ! LHS turbulent advection (ta) term.
-        lhs(4,k_wp2) = lhs(4,k_wp2) + lhs_ta_wp2(2,k)
+        lhs(4,k_wp2) = lhs(4,k_wp2) + gamma_over_implicit_wp2_ta_ts * lhs_ta_wp2(2,k)
 
         ! LHS mean advection (ma) and diffusion (diff) terms
         lhs(5,k_wp2) = lhs(5,k_wp2) + lhs_ma_zm(3,k) + lhs_diff_zm(3,k)
@@ -1808,8 +1811,8 @@ module advance_wp2_wp3_module
 
             ! Turbulent advection for wp2
             if ( iwp2_ta > 0 ) then
-                zmscr05(k) = - lhs_ta_wp2(2,k)
-                zmscr06(k) = - lhs_ta_wp2(1,k)
+                zmscr05(k) = - gamma_over_implicit_wp2_ta_ts * lhs_ta_wp2(2,k)
+                zmscr06(k) = - gamma_over_implicit_wp2_ta_ts * lhs_ta_wp2(1,k)
             endif
 
             ! Mean advection for wp2
@@ -1993,7 +1996,8 @@ module advance_wp2_wp3_module
         zero,           &
         zero_threshold, & 
         gamma_over_implicit_ts, & 
-        gamma_over_implicit_diff_ts
+        gamma_over_implicit_diff_ts, & 
+        gamma_over_implicit_wp2_ta_ts
 
     use model_flags, only:  &
         iiPDF_ADG1,                   & ! Variable(s)
@@ -2009,7 +2013,7 @@ module advance_wp2_wp3_module
         core_rknd ! Variable
 
     use stats_variables, only:  & 
-        l_stats_samp, iwp2_dp1, iwp2_dp2, iwp2_bp, & ! Variable(s)
+        l_stats_samp, iwp2_dp1, iwp2_dp2, iwp2_bp, iwp2_ta, & ! Variable(s)
         iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_pr_dfsn, iwp2_splat, iwp3_splat, &
         iwp3_ta, & 
         iwp3_tp, iwp3_pr_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_pr_turb, &
@@ -2412,6 +2416,11 @@ module advance_wp2_wp3_module
         rhs(k_wp2) = rhs(k_wp2) + ( one - gamma_over_implicit_ts ) &
                                 * ( - lhs_dp1_wp2(k) * wp2(k) )
 
+        ! RHS "over implicit" turbulent advection term (ta).
+        rhs(k_wp2) = rhs(k_wp2) + ( one - gamma_over_implicit_wp2_ta_ts ) &
+                                * ( - lhs_ta_wp2(1,k) * wp3(k+1)  &
+                                    - lhs_ta_wp2(2,k) * wp3(k) )
+
     enddo
 
 
@@ -2644,6 +2653,14 @@ module advance_wp2_wp3_module
             call stat_begin_update_pt( iwp2_dp1, k, -rhs_dp1_wp2(k), & ! intent(in)
                                        stats_zm )                      ! intent(inout)
 
+            ! w'^2 term ta has both implicit and explicit components; call
+            ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+            ! subtracts the value sent in, reverse the sign 
+            call stat_begin_update_pt( iwp2_ta, k,                 & ! intent(in)
+                        + ( one - gamma_over_implicit_wp2_ta_ts )  & ! intent(in)
+                        * ( - lhs_ta_wp2(1,k) * wp3(k+1)           & ! intent(in)
+                            - lhs_ta_wp2(2,k) * wp3(k) ),          & ! intent(in)
+                        stats_zm )                                   ! intent(inout)
 
             ! Note:  An "over-implicit" weighted time step is applied to this term.
             !        A weighting factor of greater than 1 may be used to make the

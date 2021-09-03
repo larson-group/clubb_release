@@ -113,7 +113,8 @@ module constants_clubb
   !           and sclr'th_l', found in module advance_xp2_xpyp_module.
   real( kind = core_rknd ), parameter, public :: &
     gamma_over_implicit_ts = 1.50_core_rknd, &
-    gamma_over_implicit_diff_ts = 1.50_core_rknd
+    gamma_over_implicit_diff_ts = 1.0_core_rknd, & 
+    gamma_over_implicit_wp2_ta_ts = 1.0_core_rknd
 
   real ( kind = core_rknd ), parameter, public :: &
     z_constant  = 25.0_core_rknd  ! constant model height for the calculation of surface fluxes 
