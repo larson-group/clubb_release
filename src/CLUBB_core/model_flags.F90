@@ -85,20 +85,24 @@ module model_flags
                                    ! Morrison microphysics, to prevent excess ice
 
   logical, parameter, public :: &
-    l_cubic_interp = .false.      ! Flag to convert grid points with cubic monotonic
-                                  ! spline interpolation as opposed to linear interpolation.
+    l_cubic_interp = .false.     ! Flag to convert grid points with cubic monotonic
+                                 ! spline interpolation as opposed to linear interpolation.
   logical, parameter, public :: &
-    l_smooth_BVF  = .false.      ! Flag to control the smoothing on BVF 
+    l_smooth_BVF  = .true.       ! Flag to control the smoothing on BVF 
                                  ! Default is .true.
 
   logical, parameter, public :: &
-    l_clip_a3_coef = .false.    ! Flag to control the clipping on a3_coef  
+    l_clip_a3_coef = .true.      ! Flag to control the clipping on a3_coef  
                                  ! Default is .true.
 
   logical, parameter, public :: &
     l_upwind_xpyp_ma = .false.   ! Flag to control if the upwind scheme will be used for 
                                  ! the mean advection terms of moments at zm levels 
                                  ! Default is .false.
+
+  logical, parameter, public :: &
+    l_smth_Heaviside_tau_wpxp = .false. ! Flag to control if the smooth Heaviside formula 
+                                        ! are used for invrs_tau_wpxp_zm
 
   integer, parameter, public :: &
     wp3_tp_opt       = 0 ! constant to determine the descretization of turbulent
