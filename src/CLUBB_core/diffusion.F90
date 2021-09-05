@@ -250,14 +250,18 @@ module diffusion
     ! None
     !-----------------------------------------------------------------------
 
-    use grid_class, only: & 
-        grid ! Type
+    use grid_class, only: &
+        grid, & ! Type
+        ddzt
 
     use constants_clubb, only: &
         zero    ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use model_flags, only: &
+        l_upwind_Kh_dp_term ! flag
 
     implicit none
 
@@ -289,11 +293,57 @@ module diffusion
     ! Local Variable
     integer :: k    ! Vertical level index
 
+    real( kind = core_rknd ), dimension(3,gr%nz) :: &
+      lhs_upwind    ! LHS coefficient diffusion term due to upwind  [1/s]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
+      ddzt_K  
+  
+    ! calculate the dKh_zt/dz 
+      ddzt_K = ddzt( gr, K_zt )
+ 
+    ! extra terms with upwind scheme 
+    if ( l_linear_Kh_dp_term ) then
+
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs_upwind(kp1_tdiag,:) = zero
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs_upwind(k_tdiag,:)   = zero 
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs_upwind(km1_tdiag,:) = zero
+
+    else
+ 
+      ! k = 1 (bottom level); lowere boundary level 
+      lhs_upwind(kp1_tdiag,1) = + min(ddzt_K(1),zero) * invrs_dzm(1)  
+      lhs_upwind(k_tdiag,1)   = - min(ddzt_K(1),zero) * invrs_dzm(1)
+      lhs_upwind(km1_tdiag,1) = zero
+        
+      ! Most of the interior model; normal conditions.
+      do k = 2, gr%nz-1, 1
+
+         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+         lhs_upwind(kp1_tdiag,k) = + min(ddzt_K(k),zero) * invrs_dzm(k) 
+         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+         lhs_upwind(k_tdiag,k)   = - min(ddzt_K(k),zero) * invrs_dzm(k) &
+                                   + max(ddzt_K(k),zero) * invrs_dzm(k-1)
+         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+         lhs_upwind(km1_tdiag,k) = - max(ddzt_K(k),zero) * invrs_dzm(k-1)
+
+      end do 
+
+      ! k = gr%nz (top level); upper boundary level.
+      ! Only relevant if zero-flux boundary conditions are used.
+      lhs_upwind(kp1_tdiag,gr%nz) =  zero 
+      lhs_upwind(k_tdiag,gr%nz)   = + max(ddzt_K(k),zero) * invrs_dzm(gr%nz-1)
+      lhs_upwind(km1_tdiag,gr%nz) = - max(ddzt_K(k),zero) * invrs_dzm(gr%nz-1)
+
+    end if 
 
     ! k = 1 (bottom level); lower boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
 
-    if ( .not. l_linear_Kh_dp_term ) then
+    if ( .not. l_upwind_Kh_dp_term ) then
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
       lhs(kp1_tdiag,1) = - invrs_dzt(1) * invrs_rho_ds_zt(1) &
@@ -309,21 +359,23 @@ module diffusion
     else
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-      lhs(kp1_tdiag,1) = - invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1)
+      lhs(kp1_tdiag,1) = - invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1) & 
+                         + lhs_upwind(kp1_tdiag,1)
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-      lhs(k_tdiag,1)   = + invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1)
+      lhs(k_tdiag,1)   = + invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1) & 
+                         + lhs_upwind(k_tdiag,1)
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-      lhs(km1_tdiag,1) = zero
-
+      lhs(km1_tdiag,1) = zero & 
+                         + lhs_upwind(km1_tdiag,1) 
 
     end if 
 
     ! Most of the interior model; normal conditions.
     do k = 2, gr%nz-1, 1
 
-      if ( .not. l_linear_Kh_dp_term ) then
+      if ( .not. l_upwind_Kh_dp_term ) then
 
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,k) &
@@ -345,15 +397,18 @@ module diffusion
 
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,k) &
-        = - invrs_dzt(k) * ( K_zt(k) + nu(k) ) * invrs_dzm(k)
+        = - invrs_dzt(k) * ( K_zt(k) + nu(k) ) * invrs_dzm(k) &
+          + lhs_upwind(kp1_tdiag,k)
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
         lhs(k_tdiag,k) &
-        = + invrs_dzt(k) * ( K_zt(k) + nu(k) ) * ( invrs_dzm(k) + invrs_dzm(k-1) )
+        = + invrs_dzt(k) * ( K_zt(k) + nu(k) ) * ( invrs_dzm(k) + invrs_dzm(k-1) ) & 
+          + lhs_upwind(k_tdiag,k)  
 
         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
         lhs(km1_tdiag,k) &
-        = - invrs_dzt(k) * ( K_zt(k) + nu(k) ) * invrs_dzm(k-1)
+        = - invrs_dzt(k) * ( K_zt(k) + nu(k) ) * invrs_dzm(k-1) & 
+          + lhs_upwind(km1_tdiag,k) 
 
       end if 
 
@@ -363,7 +418,7 @@ module diffusion
     ! k = gr%nz (top level); upper boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
 
-    if ( .not. l_linear_Kh_dp_term ) then 
+    if ( .not. l_upwind_Kh_dp_term ) then 
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
       lhs(kp1_tdiag,gr%nz) = zero
@@ -371,7 +426,7 @@ module diffusion
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
       lhs(k_tdiag,gr%nz) &
       = + invrs_dzt(gr%nz) * invrs_rho_ds_zt(gr%nz) &
-          * ( K_zm(gr%nz-1) + nu(gr%nz-1) ) * rho_ds_zm(gr%nz-1) * invrs_dzm(gr%nz-1)
+          * ( K_zm(gr%nz-1) + nu(gr%nz-1) ) * rho_ds_zm(gr%nz-1) * invrs_dzm(gr%nz-1) 
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
       lhs(km1_tdiag,gr%nz) &
@@ -380,15 +435,18 @@ module diffusion
     else
 
       ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-      lhs(kp1_tdiag,gr%nz) = zero
+      lhs(kp1_tdiag,gr%nz) = zero &
+                            + lhs_upwind(kp1_tdiag,gr%nz)
 
       ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
       lhs(k_tdiag,gr%nz) &
-      = + invrs_dzt(gr%nz) * ( K_zt(gr%nz) + nu(gr%nz) ) * invrs_dzm(gr%nz-1) 
+      = + invrs_dzt(gr%nz) * ( K_zt(gr%nz) + nu(gr%nz) ) * invrs_dzm(gr%nz-1) &
+        + lhs_upwind(k_tdiag,gr%nz) 
 
       ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
       lhs(km1_tdiag,gr%nz) &
-      = - invrs_dzt(gr%nz) * ( K_zt(gr%nz) + nu(gr%nz) ) * invrs_dzm(gr%nz-1) 
+      = - invrs_dzt(gr%nz) * ( K_zt(gr%nz) + nu(gr%nz) ) * invrs_dzm(gr%nz-1) &
+        + lhs_upwind(km1_tdiag,gr%nz)
 
     end if 
 
@@ -792,13 +850,17 @@ module diffusion
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        grid ! Type
+        grid, & ! Type
+        ddzm 
 
     use constants_clubb, only: &
         zero    ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use model_flags, only: &
+        l_upwind_Kh_dp_term ! flag
 
     implicit none
 
@@ -830,11 +892,57 @@ module diffusion
     ! Local Variable
     integer :: k    ! Vertical level index
 
+    real( kind = core_rknd ), dimension(3,gr%nz) :: &
+      lhs_upwind    ! LHS coefficient diffusion term due to upwind  [1/s]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
+      ddzm_K
+
+    ! calculate the dKh_zm/dz 
+      ddzm_K = ddzm( gr, K_zm )
+
+    ! extra terms with upwind scheme 
+    if ( l_linear_Kh_dp_term ) then
+
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs_upwind(kp1_mdiag,:) = zero
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs_upwind(k_mdiag,:)   = zero
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs_upwind(km1_mdiag,:) = zero
+
+    else
+
+      ! k = 1 (bottom level); lowere boundary level 
+      lhs_upwind(kp1_mdiag,1) = + min(ddzm_K(1),zero) * invrs_dzt(2)
+      lhs_upwind(k_mdiag,1)   = - min(ddzm_K(1),zero) * invrs_dzt(2)
+      lhs_upwind(km1_mdiag,1) = zero
+
+      ! Most of the interior model; normal conditions.
+      do k = 2, gr%nz-1, 1
+
+         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+         lhs_upwind(kp1_mdiag,k) = + min(ddzm_K(k),zero) * invrs_dzt(k+1)
+         ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+         lhs_upwind(k_mdiag,k)   = - min(ddzm_K(k),zero) * invrs_dzt(k+1) &
+                                   + max(ddzm_K(k),zero) * invrs_dzt(k)
+         ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+         lhs_upwind(km1_mdiag,k) = - max(ddzm_K(k),zero) * invrs_dzt(k)
+
+      end do
+
+      ! k = gr%nz (top level); upper boundary level.
+      ! Only relevant if zero-flux boundary conditions are used.
+      lhs_upwind(kp1_mdiag,gr%nz) =  zero
+      lhs_upwind(k_mdiag,gr%nz)   = + max(ddzm_K(k),zero) * invrs_dzt(gr%nz)
+      lhs_upwind(km1_mdiag,gr%nz) = - max(ddzm_K(k),zero) * invrs_dzt(gr%nz)
+
+    end if
 
     ! k = 1; lower boundary level at surface.
     ! Only relevant if zero-flux boundary conditions are used.
 
-    if ( .not. l_linear_Kh_dp_term ) then 
+    if ( .not. l_upwind_Kh_dp_term ) then 
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
       lhs(kp1_mdiag,1) = - invrs_dzm(1) * invrs_rho_ds_zm(1) &
@@ -850,13 +958,16 @@ module diffusion
     else
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-      lhs(kp1_mdiag,1) = - invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2)
+      lhs(kp1_mdiag,1) = - invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2) &
+                         + lhs_upwind(kp1_mdiag,1)
 
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-      lhs(k_mdiag,1)   = + invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2) 
+      lhs(k_mdiag,1)   = + invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2) &
+                         + lhs_upwind(k_mdiag,1)
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-      lhs(km1_mdiag,1) = zero
+      lhs(km1_mdiag,1) =   zero & 
+                         + lhs_upwind(km1_mdiag,1)
 
     end if 
 
@@ -864,7 +975,7 @@ module diffusion
     ! Most of the interior model; normal conditions.
     do k = 2, gr%nz-1, 1
 
-      if ( .not. l_linear_Kh_dp_term ) then 
+      if ( .not. l_upwind_Kh_dp_term ) then 
        
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,k) &
@@ -885,15 +996,18 @@ module diffusion
 
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,k) &
-        = - invrs_dzm(k) * ( K_zm(k) + nu(k) ) * invrs_dzt(k+1)
+        = - invrs_dzm(k) * ( K_zm(k) + nu(k) ) * invrs_dzt(k+1) & 
+          + lhs_upwind(kp1_mdiag,k)
 
         ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
         lhs(k_mdiag,k) &
-        = + invrs_dzm(k) * ( K_zm(k) + nu(k) ) * ( invrs_dzt(k+1) + invrs_dzt(k) )
+        = + invrs_dzm(k) * ( K_zm(k) + nu(k) ) * ( invrs_dzt(k+1) + invrs_dzt(k) ) &
+          + lhs_upwind(k_mdiag,k)
 
         ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
         lhs(km1_mdiag,k) &
-        = - invrs_dzm(k) * ( K_zm(k) + nu(k) ) * invrs_dzt(k)
+        = - invrs_dzm(k) * ( K_zm(k) + nu(k) ) * invrs_dzt(k) &
+          + lhs_upwind(km1_mdiag,k)
 
       end if 
 
@@ -903,7 +1017,7 @@ module diffusion
     ! k = gr%nz (top level); upper boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
 
-    if ( .not. l_linear_Kh_dp_term ) then 
+    if ( .not. l_upwind_Kh_dp_term ) then 
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
       lhs(kp1_mdiag,gr%nz) = zero
@@ -920,15 +1034,18 @@ module diffusion
     else
 
       ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-      lhs(kp1_mdiag,gr%nz) = zero
+      lhs(kp1_mdiag,gr%nz) =  zero &
+                            + lhs_upwind(kp1_mdiag,gr%nz)
 
       ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
       lhs(k_mdiag,gr%nz) &
-      = + invrs_dzm(gr%nz) * ( K_zm(gr%nz) + nu(gr%nz) ) * invrs_dzt(gr%nz)
+      = + invrs_dzm(gr%nz) * ( K_zm(gr%nz) + nu(gr%nz) ) * invrs_dzt(gr%nz) &
+        + lhs_upwind(k_mdiag,gr%nz)
 
       ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
       lhs(km1_mdiag,gr%nz) &
-      = - invrs_dzm(gr%nz) * ( K_zm(gr%nz) + nu(gr%nz) ) * invrs_dzt(gr%nz)
+      = - invrs_dzm(gr%nz) * ( K_zm(gr%nz) + nu(gr%nz) ) * invrs_dzt(gr%nz) & 
+        + lhs_upwind(km1_mdiag,gr%nz)
 
     end if 
 

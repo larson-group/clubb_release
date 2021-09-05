@@ -101,8 +101,13 @@ module model_flags
                                  ! Default is .false.
 
   logical, parameter, public :: &
-    l_smth_Heaviside_tau_wpxp = .false. ! Flag to control if the smooth Heaviside formula 
+    l_smth_Heaviside_tau_wpxp = .true.  ! Flag to control if the smooth Heaviside formula 
                                         ! are used for invrs_tau_wpxp_zm
+
+  logical, parameter, public :: &
+    l_upwind_Kh_dp_term = .false. ! Flag to control if the upwind scheme will be used for 
+                                  ! the eddy diffusion terms 
+                                  ! Default is .false.
 
   integer, parameter, public :: &
     wp3_tp_opt       = 0 ! constant to determine the descretization of turbulent
