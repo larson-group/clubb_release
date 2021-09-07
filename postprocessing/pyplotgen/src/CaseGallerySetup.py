@@ -79,7 +79,8 @@ class CaseGallerySetup:
         self.diff_panels = []
         self.plot_subcolumns = plot_subcolumns
         self.sam_benchmark_file = None
-        self.coamps_datasets = None
+        self.coamps_benchmark_file = None
+        self.wrf_benchmark_file = None
         self.r408_datasets = None
         self.hoc_datasets = None
         self.image_extension = image_extension
@@ -93,7 +94,8 @@ class CaseGallerySetup:
         # Load benchmark files
         if self.plot_les:
             self.sam_benchmark_file = self.__loadModelFiles__(None,case_definition,"sam")
-            self.coamps_datasets = self.__loadModelFiles__(None, case_definition, "coamps")
+            self.coamps_benchmark_file = self.__loadModelFiles__(None, case_definition, "coamps")
+            self.wrf_benchmark_file = self.__loadModelFiles__(None,case_definition,"wrf")
         if self.plot_r408:
             self.r408_datasets = self.__loadModelFiles__(None, case_definition, "clubb_r408")
         if self.plot_hoc:
@@ -223,8 +225,10 @@ class CaseGallerySetup:
         # Loop over the VariableGroup classes listed in the 'var_groups' entry
         for VarGroup in self.var_groups:
             # Calls the __init__ function of the VarGroup class and, by doing this, create an instance of it
-            temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=self.sam_benchmark_file,
-                                  coamps_dataset=self.coamps_datasets, sam_datasets=self.sam_datasets,
+            temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, sam_benchmark_dataset=self.sam_benchmark_file,
+                                  coamps_benchmark_dataset=self.coamps_benchmark_file, 
+                                  wrf_benchmark_dataset=self.wrf_benchmark_file,
+                                  sam_datasets=self.sam_datasets,
                                   wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
                                   e3sm_datasets=self.e3sm_datasets, cam_datasets=self.cam_file, priority_vars=self.priority_vars)
             self.panels.extend(temp_group.panels)
