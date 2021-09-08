@@ -400,7 +400,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['lwp'],
                     'e3sm': ['lwp'],
                     'cam': ['TGCLDLWP', 'lwp'],
-                    'wrf': ['lwp'],
+                    'wrf': ['lwp','CST_LWP'],
                 },
                 'type': Panel.TYPE_TIMESERIES,
                 'sam_conv_factor': 1 / 1000,
@@ -571,7 +571,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rc_coef_zm * wprcp'],
                     'e3sm': ['rc_coef_zm * wprcp'],
                     'cam': ['rc_coef_zm * wprcp'],
-                    'wrf': ['rc_coef_zm * wprcp'],
+                    'wrf': [self.get_rc_coef_zm_X_wprcp_wrf_line,'rc_coef_zm * wprcp'],
                 },
                 'title': 'Contribution of Cloud Water Flux to wpthvp',
                 'axis_title': 'rc_coef_zm * wprcp [K m/s]',
@@ -586,7 +586,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rc_coef_zm * thlprcp'],
                     'e3sm': ['rc_coef_zm * thlprcp'],
                     'cam': ['rc_coef_zm * thlprcp'],
-                    'wrf': ['rc_coef_zm * thlprcp'],
+                    'wrf': [self.get_rc_coef_zm_X_thlprcp_wrf_calc,'rc_coef_zm * thlprcp'],
                 },
                 'title': 'Contribution of Cloud Water Flux to thlpthvp',
                 'axis_title': 'rc_coef_zm * thlprcp [K^2]',
@@ -601,7 +601,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rc_coef_zm * rtprcp'],
                     'e3sm': ['rc_coef_zm * rtprcp'],
                     'cam': ['rc_coef_zm * rtprcp'],
-                    'wrf': ['rc_coef_zm * rtprcp'],
+                    'wrf': [self.get_rc_coef_zm_X_rtprcp_wrf_calc,'rc_coef_zm * rtprcp'],
                 },
                 'title': 'Contribution of Cloud Water Flux to rtpthvp',
                 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]',
@@ -616,7 +616,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rc_coef_zm * wp2rcp'],
                     'e3sm': ['rc_coef_zm * wp2rcp'],
                     'cam': ['rc_coef_zm * wp2rcp'],
-                    'wrf': ['rc_coef_zm * wp2rcp'],
+                    'wrf': [self.get_rc_coef_X_wp2rcp_wrf_calc,'rc_coef_zm * wp2rcp'],
                 },
                 'title': 'Cloud water contribution to wp2thvp',
                 'axis_title': 'rc_coef * wp2rcp [m^2/s^2 K]',
@@ -644,7 +644,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['em'],
                     'e3sm': ['em'],
                     'cam': ['em'],
-                    'wrf': ['em'],
+                    'wrf': ['em','CSP_TKE_RS'],
                 },
             },
             {'var_names':
@@ -1123,6 +1123,20 @@ class VariableGroupBase(VariableGroup):
         output = rc_coef_zm * wprcp
         return output, indep
 
+    def get_rc_coef_zm_X_wprcp_wrf_line(self, dataset_override=None):
+        """
+        Same as above function except used for WRF datasets.
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.wrf_datasets['zm']
+        rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+        wprcp, indep, dataset = self.getVarForCalculations('wprcp', dataset)
+
+        output = rc_coef_zm * wprcp
+        return output, indep
+
     def get_rc_coef_zm_X_wprcp_sam_calc(self, dataset_override=None):
         """
         This is a "calculate function". Calculate functions are intended to be written by the user in the event that
@@ -1209,6 +1223,22 @@ class VariableGroupBase(VariableGroup):
         output = rc_coef_zm * thlprcp
         return output, indep
 
+    # rc_coef_zm. * thlprcp
+    def get_rc_coef_zm_X_thlprcp_wrf_calc(self, dataset_override=None):
+        """
+        Same as above but for WRF datasets
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.wrf_datasets['zm']
+
+        rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+        thlprcp, indep, dataset = self.getVarForCalculations('thlprcp', dataset)
+
+        output = rc_coef_zm * thlprcp
+        return output, indep
+
     def get_rc_coef_zm_X_rtprcp_clubb_calc(self, dataset_override=None):
         """
         This is a "calculate function". Calculate functions are intended to be written by the user in the event that
@@ -1239,6 +1269,21 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.clubb_datasets['zm']
+
+        rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+        rtprcp, indep, dataset = self.getVarForCalculations('rtprcp', dataset)
+
+        output = rc_coef_zm * rtprcp
+        return output, indep
+
+    def get_rc_coef_zm_X_rtprcp_wrf_calc(self, dataset_override=None):
+        """
+        Same as above except for WRF datasets
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.wrf_datasets['zm']
 
         rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
         rtprcp, indep, dataset = self.getVarForCalculations('rtprcp', dataset)
@@ -1575,6 +1620,20 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.clubb_datasets['zm']
+        rc_coef, indep, dataset = self.getVarForCalculations('rc_coef', dataset)
+        wp2rcp, indep, dataset = self.getVarForCalculations('wp2rcp', dataset)
+
+        output = rc_coef * wp2rcp
+        return output, indep
+
+    def get_rc_coef_X_wp2rcp_wrf_calc(self, dataset_override=None):
+        """
+        Same as above except for WRF datasets
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.wrf_datasets['zm']
         rc_coef, indep, dataset = self.getVarForCalculations('rc_coef', dataset)
         wp2rcp, indep, dataset = self.getVarForCalculations('wp2rcp', dataset)
 
