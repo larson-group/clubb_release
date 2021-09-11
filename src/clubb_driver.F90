@@ -2189,6 +2189,7 @@ module clubb_driver
              rfrzm, radf, wphydrometp, &                          ! Intent(in)
              wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
              dummy_dx, dummy_dy, &                                ! Intent(in)
+             params, &                                            ! Intent(in)
              clubb_config_flags, &                                ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
              um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)

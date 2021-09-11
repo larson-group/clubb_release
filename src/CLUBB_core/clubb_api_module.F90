@@ -537,6 +537,7 @@ contains
 #endif
     wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
+    clubb_params, &                                         ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
@@ -674,6 +675,9 @@ contains
       host_dx,  & ! East-West horizontal grid spacing     [m]
       host_dy     ! North-South horizontal grid spacing   [m]
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
 
@@ -789,6 +793,7 @@ contains
 #endif
       wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)
+      clubb_params, &                                         ! intent(in)
       clubb_config_flags, &                                   ! intent(in)
       stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
       um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)

@@ -61,8 +61,12 @@ module spurious_source_test
     use advance_xm_wpxp_module, only: &
         advance_xm_wpxp    ! Procedure(s)
 
+    use parameter_indices, only: &
+        nparams
+
     use parameters_tunable, only: &
-        adj_low_res_nu    ! Procedure(s)
+        read_parameters, & ! Procedure(s)
+        adj_low_res_nu
 
     use fill_holes, only: &
         vertical_integral    ! Procedure(s)
@@ -315,6 +319,14 @@ module spurious_source_test
 
     integer :: iter, k, i  ! Loop indices
 
+    real( kind = core_rknd ), dimension(nparams) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    integer, parameter :: iunit = 10
+
+    character(len=13), parameter :: &
+      namelist_filename = ""
+
     integer :: &
       iiPDF_type,          & ! Selected option for the two-component normal
                              ! (double Gaussian) PDF type to use for the w, rt,
@@ -425,6 +437,9 @@ module spurious_source_test
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
+
+    ! Read in model parameter values
+    call read_parameters( iunit, namelist_filename, clubb_params )
 
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
@@ -841,6 +856,7 @@ module spurious_source_test
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef, &
+                             clubb_params, &
                              iiPDF_type, &
                              l_predict_upwp_vpwp, &
                              l_diffuse_rtm_and_thlm, &

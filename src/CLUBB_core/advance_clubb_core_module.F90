@@ -136,6 +136,7 @@ module advance_clubb_core_module
 #endif
                wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &        ! intent(in)
                host_dx, host_dy, &                                  ! intent(in)
+               clubb_params, &                                      ! intent(in)
                clubb_config_flags, &                                ! intent(in)
                stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! intent(inout)
@@ -192,6 +193,9 @@ module advance_clubb_core_module
         unused_var, &
         grav, &
         eps
+
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
 
     use parameters_tunable, only: &
         taumax, & ! Variable(s)
@@ -483,6 +487,9 @@ module advance_clubb_core_module
     real( kind = core_rknd ), intent(in) :: &
       host_dx,  & ! East-west horizontal grid spacing     [m]
       host_dy     ! North-south horizontal grid spacing   [m]
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -1446,6 +1453,7 @@ module advance_clubb_core_module
                             um_forcing, vm_forcing, ug, vg, wpthvp,               & ! intent(in)
                             fcor, um_ref, vm_ref, up2, vp2,                       & ! intent(in)
                             uprcp, vprcp, rc_coef,                                & ! intent(in)
+                            clubb_params,                                         & ! intent(in)
                             clubb_config_flags%iiPDF_type,                        & ! intent(in)
                             clubb_config_flags%l_predict_upwp_vpwp,               & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,            & ! intent(in)
