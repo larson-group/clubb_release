@@ -48,6 +48,20 @@ class VariableGroupWs(VariableGroup):
              },
              {'var_names':
                  {
+                 'clubb': [self.get_wpuiui],
+                 'sam': [''],
+                 'coamps': [''],
+                 'r408': [''],
+                 'hoc': [''],
+                 'e3sm': [''],
+                 'cam': [''],
+                 'wrf': [''],
+                 },
+              'title': "3rd-order moment $\overline{w'u_i'u_i'}$",
+              'axis_title': "$\overline{w'u_i'u_i'}$ [m3/s3]",
+             },
+             {'var_names':
+                 {
                  'clubb': ['wp2up2'],
                  'sam': ['WP2UP2'],
                  'coamps': ['wp2up2'],
@@ -172,6 +186,20 @@ class VariableGroupWs(VariableGroup):
                          cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
                          priority_vars=priority_vars)
 
+    def get_wpuiui(self, dataset_override=None):
+
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        wpup2, z, dataset = self.getVarForCalculations('wpup2', dataset)
+        wpvp2, z, dataset = self.getVarForCalculations('wpvp2', dataset)
+        wp3, z, dataset = self.getVarForCalculations('wp3', dataset)
+
+        output = wpup2 + wpvp2 + wp3
+
+        return output, z
+    
     def get_wp2uiui(self, dataset_override=None):
 
         if dataset_override is not None:
