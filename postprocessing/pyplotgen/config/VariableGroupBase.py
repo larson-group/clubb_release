@@ -16,14 +16,15 @@ class VariableGroupBase(VariableGroup):
     of cases.
     """
 
-    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
+    def __init__(self, case, clubb_datasets=None, sam_benchmark_dataset=None, coamps_benchmark_dataset=None,
+                 wrf_benchmark_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, priority_vars=False):
         """
 
         :param clubb_datasets:
         :param case:
-        :param les_dataset:
+        :param sam_benchmark_dataset:
         """
         self.name = "base variables"
 
@@ -62,7 +63,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['thlm'],
                     'e3sm': ['thlm'],
                     'cam': ['thlm'],
-                    'wrf': ['thlm'],
+                    'wrf': ['thlm','CSP_THL'],
                 },
                 'sci_scale': 0,
                 'priority': True,
@@ -76,7 +77,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rtm'],
                     'e3sm': ['rtm'],
                     'cam': ['rtm'],
-                    'wrf': ['rtm'],
+                    'wrf': ['rtm','CSP_QT'],
                 },
                 'sci_scale': -3,
                 'priority': True,
@@ -90,7 +91,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['wpthlp'],
                     'e3sm': ['wpthlp'],
                     'cam': ['wpthlp'],
-                    'wrf': ['wpthlp'],
+                    'wrf': ['wpthlp','CSP_WTHL'],
                 },
                 'sci_scale': 0,
                 'priority': True,
@@ -104,7 +105,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['wprtp'],
                     'e3sm': ['wprtp'],
                     'cam': ['WPRTP_clubb', 'wprtp'],
-                    'wrf': ['wprtp'],
+                    'wrf': ['wprtp','CSP_WQT'],
                 },
                 'sci_scale': -4,
                 'priority': True,
@@ -134,7 +135,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rcm'],
                     'e3sm': ['rcm'],
                     'cam': ['CLDLIQ', 'rcm'],
-                    'wrf': ['rcm'],
+                    'wrf': ['rcm','CSP_QC'],
                 },
                 'sam_conv_factor': 1 / 1000,
                 'sci_scale': -5,
@@ -149,7 +150,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['wp2'],
                     'e3sm': ['wp2'],
                     'cam': ['WP2_CLUBB', 'wp2'],
-                    'wrf': ['wp2'],
+                    'wrf': ['wp2','CSP_W2'],
                 },
                 'sci_scale': 0,
                 'priority': True,
@@ -163,7 +164,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['wp3'],
                     'e3sm': ['wp3'],
                     'cam': ['WP3_CLUBB', 'wp3'],
-                    'wrf': ['wp3'],
+                    'wrf': ['wp3','CSP_W3'],
                 },
                 'sci_scale': 0,
                 'priority': True,
@@ -177,7 +178,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['thlp2'],
                     'e3sm': ['thlp2'],
                     'cam': ['THLP2_CLUBB', 'thlp2'],
-                    'wrf': ['thlp2'],
+                    'wrf': ['thlp2','CSP_THL2'],
                 },
                 'sci_scale': 0,
                 'priority': True,
@@ -245,7 +246,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['Skw_zt'],
                     'e3sm': ['Skw_zt'],
                     'cam': ['Skw_zt'],
-                    'wrf': ['Skw_zt'],
+                    'wrf': ['Skw_zt','CSP_WSKEW'],
                 },
                 'title': 'Skw, Skewness of vertical velocity w',
                 'axis_title': 'Skw [$-$]',
@@ -290,7 +291,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['wm'],
                     'e3sm': ['wm'],
                     'cam': ['wm'], # -OMEGA /(9.81.*1)
-                    'wrf': ['wm', 'wlsm'],
+                    'wrf': ['wm', 'wlsm','CSP_W'],
                 },
                 'sci_scale': -4,
             },
@@ -303,7 +304,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['um'],
                     'e3sm': ['um'],
                     'cam': ['U','um'],
-                    'wrf': ['um'],
+                    'wrf': ['um','CSP_U'],
                 },
                 'sci_scale': 0,
             },
@@ -316,7 +317,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['vm'],
                     'e3sm': ['vm'],
                     'cam': ['V', 'vm'],
-                    'wrf': ['vm'],
+                    'wrf': ['vm','CSP_v'],
                 },
                 'sci_scale': 0,
             },
@@ -329,7 +330,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['upwp'],
                     'e3sm': ['upwp'],
                     'cam': ['UPWP_CLUBB', 'upwp'],
-                    'wrf': ['upwp'],
+                    'wrf': ['upwp','CSP_UW'],
                 },
                 'sci_scale': 0,
                 'priority': True,
@@ -343,7 +344,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['vpwp'],
                     'e3sm': ['vpwp'],
                     'cam': ['VPWP_CLUBB', 'vpwp'],
-                    'wrf': ['vpwp'],
+                    'wrf': ['vpwp','CSP_VW'],
                 },
                 'sci_scale': 0,
                 'priority': True,
@@ -357,7 +358,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['up2'],
                     'e3sm': ['up2'],
                     'cam': ['UU', 'up2'],
-                    'wrf': ['up2'],
+                    'wrf': ['up2','CSP_U2'],
                 },
                 'sci_scale': 0,
                 'priority': True,
@@ -371,7 +372,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['vp2'],
                     'e3sm': ['vp2'],
                     'cam': ['VV', 'vp2'],
-                    'wrf': ['vp2'],
+                    'wrf': ['vp2','CSP_V2'],
                 },
                 'sci_scale': 0,
                 'priority': True,
@@ -399,7 +400,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['lwp'],
                     'e3sm': ['lwp'],
                     'cam': ['TGCLDLWP', 'lwp'],
-                    'wrf': ['lwp'],
+                    'wrf': ['lwp','CST_LWP'],
                 },
                 'type': Panel.TYPE_TIMESERIES,
                 'sam_conv_factor': 1 / 1000,
@@ -570,7 +571,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rc_coef_zm * wprcp'],
                     'e3sm': ['rc_coef_zm * wprcp'],
                     'cam': ['rc_coef_zm * wprcp'],
-                    'wrf': ['rc_coef_zm * wprcp'],
+                    'wrf': [self.get_rc_coef_zm_X_wprcp_wrf_line,'rc_coef_zm * wprcp'],
                 },
                 'title': 'Contribution of Cloud Water Flux to wpthvp',
                 'axis_title': 'rc_coef_zm * wprcp [K m/s]',
@@ -585,7 +586,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rc_coef_zm * thlprcp'],
                     'e3sm': ['rc_coef_zm * thlprcp'],
                     'cam': ['rc_coef_zm * thlprcp'],
-                    'wrf': ['rc_coef_zm * thlprcp'],
+                    'wrf': [self.get_rc_coef_zm_X_thlprcp_wrf_calc,'rc_coef_zm * thlprcp'],
                 },
                 'title': 'Contribution of Cloud Water Flux to thlpthvp',
                 'axis_title': 'rc_coef_zm * thlprcp [K^2]',
@@ -600,7 +601,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rc_coef_zm * rtprcp'],
                     'e3sm': ['rc_coef_zm * rtprcp'],
                     'cam': ['rc_coef_zm * rtprcp'],
-                    'wrf': ['rc_coef_zm * rtprcp'],
+                    'wrf': [self.get_rc_coef_zm_X_rtprcp_wrf_calc,'rc_coef_zm * rtprcp'],
                 },
                 'title': 'Contribution of Cloud Water Flux to rtpthvp',
                 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]',
@@ -615,7 +616,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['rc_coef_zm * wp2rcp'],
                     'e3sm': ['rc_coef_zm * wp2rcp'],
                     'cam': ['rc_coef_zm * wp2rcp'],
-                    'wrf': ['rc_coef_zm * wp2rcp'],
+                    'wrf': [self.get_rc_coef_X_wp2rcp_wrf_calc,'rc_coef_zm * wp2rcp'],
                 },
                 'title': 'Cloud water contribution to wp2thvp',
                 'axis_title': 'rc_coef * wp2rcp [m^2/s^2 K]',
@@ -643,7 +644,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['em'],
                     'e3sm': ['em'],
                     'cam': ['em'],
-                    'wrf': ['em'],
+                    'wrf': ['em','CSP_TKE_RS'],
                 },
             },
             {'var_names':
@@ -661,8 +662,9 @@ class VariableGroupBase(VariableGroup):
         ]
 
         # Call ctor of parent class
-        super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
-                         coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
+        super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, sam_benchmark_dataset=sam_benchmark_dataset,
+                         coamps_benchmark_dataset=coamps_benchmark_dataset, wrf_benchmark_dataset=wrf_benchmark_dataset, 
+                         r408_dataset=r408_dataset, cam_datasets=cam_datasets,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
                          priority_vars=priority_vars)
 
@@ -771,8 +773,8 @@ class VariableGroupBase(VariableGroup):
         dataset = None
         if self.sam_benchmark_dataset is not None:
             dataset = self.sam_benchmark_dataset
-        if self.coamps_dataset is not None:
-            dataset = self.coamps_dataset['sm']
+        if self.coamps_benchmark_dataset is not None:
+            dataset = self.coamps_benchmark_dataset['sm']
         if dataset_override is not None:
             dataset = dataset_override
 
@@ -817,8 +819,8 @@ class VariableGroupBase(VariableGroup):
         if self.sam_benchmark_dataset is not None:
             dataset = self.sam_benchmark_dataset
 
-        if self.coamps_dataset is not None:
-            dataset = self.coamps_dataset['sm']
+        if self.coamps_benchmark_dataset is not None:
+            dataset = self.coamps_benchmark_dataset['sm']
         if dataset_override is not None:
             dataset = dataset_override
         rtp3, indep, dataset = self.getVarForCalculations(['RTP3', 'qtp3', 'rtp3'], dataset)
@@ -862,8 +864,8 @@ class VariableGroupBase(VariableGroup):
         if self.sam_benchmark_dataset is not None:
             dataset = self.sam_benchmark_dataset
 
-        if self.coamps_dataset is not None:
-            dataset = self.coamps_dataset['sm']
+        if self.coamps_benchmark_dataset is not None:
+            dataset = self.coamps_benchmark_dataset['sm']
 
         if dataset_override is not None:
             dataset = dataset_override
@@ -1121,6 +1123,20 @@ class VariableGroupBase(VariableGroup):
         output = rc_coef_zm * wprcp
         return output, indep
 
+    def get_rc_coef_zm_X_wprcp_wrf_line(self, dataset_override=None):
+        """
+        Same as above function except used for WRF datasets.
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.wrf_datasets['zm']
+        rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+        wprcp, indep, dataset = self.getVarForCalculations('wprcp', dataset)
+
+        output = rc_coef_zm * wprcp
+        return output, indep
+
     def get_rc_coef_zm_X_wprcp_sam_calc(self, dataset_override=None):
         """
         This is a "calculate function". Calculate functions are intended to be written by the user in the event that
@@ -1207,6 +1223,22 @@ class VariableGroupBase(VariableGroup):
         output = rc_coef_zm * thlprcp
         return output, indep
 
+    # rc_coef_zm. * thlprcp
+    def get_rc_coef_zm_X_thlprcp_wrf_calc(self, dataset_override=None):
+        """
+        Same as above but for WRF datasets
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.wrf_datasets['zm']
+
+        rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+        thlprcp, indep, dataset = self.getVarForCalculations('thlprcp', dataset)
+
+        output = rc_coef_zm * thlprcp
+        return output, indep
+
     def get_rc_coef_zm_X_rtprcp_clubb_calc(self, dataset_override=None):
         """
         This is a "calculate function". Calculate functions are intended to be written by the user in the event that
@@ -1244,6 +1276,21 @@ class VariableGroupBase(VariableGroup):
         output = rc_coef_zm * rtprcp
         return output, indep
 
+    def get_rc_coef_zm_X_rtprcp_wrf_calc(self, dataset_override=None):
+        """
+        Same as above except for WRF datasets
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.wrf_datasets['zm']
+
+        rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+        rtprcp, indep, dataset = self.getVarForCalculations('rtprcp', dataset)
+
+        output = rc_coef_zm * rtprcp
+        return output, indep
+
     def getUwCoampsData(self, dataset_override=None):
         """
         This is a "calculate function". Calculate functions are intended to be written by the user in the event that
@@ -1271,7 +1318,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override['sw']
         else:
-            dataset = self.coamps_dataset['sw']
+            dataset = self.coamps_benchmark_dataset['sw']
         wpup, indep, dataset = self.getVarForCalculations('wpup', dataset)
         wpup_sgs, indep, dataset = self.getVarForCalculations('wpup_sgs', dataset)
 
@@ -1306,7 +1353,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override['sw']
         else:
-            dataset = self.coamps_dataset['sw']
+            dataset = self.coamps_benchmark_dataset['sw']
         wpvp, indep, dataset = self.getVarForCalculations('wpvp', dataset)
         wpvp_sgs, indep, dataset = self.getVarForCalculations('wpvp_sgs', dataset)
 
@@ -1344,7 +1391,7 @@ class VariableGroupBase(VariableGroup):
         :return:  tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.coamps_dataset['sw']
+        dataset = self.coamps_benchmark_dataset['sw']
         if dataset_override is not None:
             dataset = dataset_override['sw']
 
@@ -1417,7 +1464,7 @@ class VariableGroupBase(VariableGroup):
           the benchmark data for the given model        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.coamps_dataset['sw']
+        dataset = self.coamps_benchmark_dataset['sw']
         if dataset_override is not None:
             dataset = dataset_override
         thlpqcp, indep, dataset = self.getVarForCalculations(['thlpqcp'], dataset)
@@ -1461,7 +1508,7 @@ class VariableGroupBase(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.coamps_dataset['sm']
+        dataset = self.coamps_benchmark_dataset['sm']
         if dataset_override is not None:
             dataset = dataset_override['sm']
 
@@ -1573,6 +1620,20 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.clubb_datasets['zm']
+        rc_coef, indep, dataset = self.getVarForCalculations('rc_coef', dataset)
+        wp2rcp, indep, dataset = self.getVarForCalculations('wp2rcp', dataset)
+
+        output = rc_coef * wp2rcp
+        return output, indep
+
+    def get_rc_coef_X_wp2rcp_wrf_calc(self, dataset_override=None):
+        """
+        Same as above except for WRF datasets
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.wrf_datasets['zm']
         rc_coef, indep, dataset = self.getVarForCalculations('rc_coef', dataset)
         wp2rcp, indep, dataset = self.getVarForCalculations('wp2rcp', dataset)
 

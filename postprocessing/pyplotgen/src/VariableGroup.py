@@ -33,7 +33,8 @@ class VariableGroup:
     ``__init__()`` method.
     """
 
-    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
+    def __init__(self, case, clubb_datasets=None, sam_benchmark_dataset=None, coamps_benchmark_dataset=None,
+                 wrf_benchmark_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
                  priority_vars=False):
         """
@@ -42,8 +43,9 @@ class VariableGroup:
         :param case: An instance of a CaseGallerySetup object
         :param clubb_datasets: A dictionary of or a single NetCDF4 Dataset object
             containing the dependent_data to be plotted
-        :param les_dataset: NetCDF4 Dataset object containing sam ouput
-        :param coamps_dataset: NetCDF4 Dataset object containing coamps ouput
+        :param sam_benchmark_dataset: NetCDF4 Dataset object containing sam ouput
+        :param coamps_benchmark_dataset: NetCDF4 Dataset object containing coamps ouput
+        :param wrf_benchmark_dataset: NetCDF4 Dataset object containing WRF-LASSO output
         :param r408_dataset: NetCDF4 Dataset object containing clubb r408 ('chris golaz') output
         :param hoc_dataset: NetCDF4 Dataset object containing hoc output
         :param cam_datasets: A dictionary of or a single NetCDF4 Dataset object containing cam output
@@ -56,12 +58,13 @@ class VariableGroup:
         self.default_panel_type = Panel.TYPE_PROFILE
         self.clubb_datasets = clubb_datasets
         self.case = case
-        self.sam_benchmark_dataset = les_dataset
+        self.sam_benchmark_dataset = sam_benchmark_dataset
+        self.coamps_benchmark_dataset = coamps_benchmark_dataset
+        self.wrf_benchmark_dataset = wrf_benchmark_dataset
         self.e3sm_datasets = e3sm_datasets
         self.sam_datasets = sam_datasets
         self.cam_datasets = cam_datasets
         self.wrf_datasets = wrf_datasets
-        self.coamps_dataset = coamps_dataset
         self.r408_datasets = r408_dataset
         self.hoc_datasets = hoc_dataset
         self.casename = case.name
@@ -141,8 +144,10 @@ class VariableGroup:
 
         plot_sam_benchmark = self.sam_benchmark_dataset is not None and len(self.sam_benchmark_dataset) > 0 \
                              and len(var_names['sam']) > 0
-        plot_coamps = self.coamps_dataset is not None and len(self.coamps_dataset) > 0 \
+        plot_coamps_benchmark = self.coamps_benchmark_dataset is not None and len(self.coamps_benchmark_dataset) > 0 \
                       and len(var_names['coamps']) > 0
+        plot_wrf_benchmark = self.wrf_benchmark_dataset is not None and len(self.wrf_benchmark_dataset) > 0 \
+                      and len(var_names['wrf']) > 0
         plot_r408 = self.r408_datasets is not None and len(self.r408_datasets) > 0 \
                     and len(var_names['r408']) > 0
         plot_hoc = self.hoc_datasets is not None and len(self.hoc_datasets) > 0 \
@@ -163,8 +168,10 @@ class VariableGroup:
         # Plot benchmarks
         if plot_sam_benchmark:
             all_lines.extend(self.__getVarLinesForModel__('sam', variable_def_dict, self.sam_benchmark_dataset))
-        if plot_coamps:
-            all_lines.extend(self.__getVarLinesForModel__('coamps', variable_def_dict, self.coamps_dataset))
+        if plot_coamps_benchmark:
+            all_lines.extend(self.__getVarLinesForModel__('coamps', variable_def_dict, self.coamps_benchmark_dataset))
+        if plot_wrf_benchmark:
+            all_lines.extend(self.__getVarLinesForModel__('wrf', variable_def_dict, self.wrf_benchmark_dataset))
         if plot_r408:
             all_lines.extend(self.__getVarLinesForModel__('r408', variable_def_dict, self.r408_datasets))
         if plot_hoc:
@@ -326,8 +333,10 @@ class VariableGroup:
                     raise TypeError("getTextDefiningDataset recieved an unexpected format of datasets")
         if self.sam_benchmark_dataset is not None:
             datasets.extend(self.sam_benchmark_dataset.values())
-        if self.coamps_dataset is not None:
-            datasets.extend(self.coamps_dataset.values())
+        if self.coamps_benchmark_dataset is not None:
+            datasets.extend(self.coamps_benchmark_dataset.values())
+        if self.wrf_benchmark_dataset is not None:
+            datasets.extend(self.wrf_benchmark_dataset.values())
         if self.r408_datasets is not None:
             datasets.extend(self.r408_datasets.values())
         if self.hoc_datasets is not None:

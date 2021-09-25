@@ -15,14 +15,15 @@ class VariableGroupNondimMoments(VariableGroup):
     such as correlations or kurtosis.
     """
 
-    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
+    def __init__(self, case, clubb_datasets=None, sam_benchmark_dataset=None, coamps_benchmark_dataset=None,
+                 wrf_benchmark_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, priority_vars=False):
         """
 
         :param clubb_datasets:
         :param case:
-        :param les_dataset:
+        :param sam_benchmark_dataset:
         """
         self.name = "normalized moments"
 
@@ -190,8 +191,9 @@ class VariableGroupNondimMoments(VariableGroup):
         ]
 
         # Call ctor of parent class
-        super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
-                         coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
+        super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, sam_benchmark_dataset=sam_benchmark_dataset,
+                         coamps_benchmark_dataset=coamps_benchmark_dataset, wrf_benchmark_dataset=wrf_benchmark_dataset,
+                         r408_dataset=r408_dataset, cam_datasets=cam_datasets,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
                          priority_vars=priority_vars)
 

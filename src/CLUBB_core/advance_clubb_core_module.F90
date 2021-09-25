@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $sId$
+! $sId$ 
 !-----------------------------------------------------------------------
 
 module advance_clubb_core_module
@@ -3594,7 +3594,7 @@ module advance_clubb_core_module
       ! If l_call_pdf_closure_twice is true, the _zm variables already have
       ! values from the second call to pdf_closure in advance_clubb_core.
       ! If it is false, the variables are interpolated to the _zm levels.
-      if ( l_call_pdf_closure_twice ) then
+      if ( .not. l_call_pdf_closure_twice ) then
 
         ! Interpolate thermodynamic variables to the momentum grid.
         ! Since top momentum level is higher than top thermo. level,
@@ -3623,7 +3623,7 @@ module advance_clubb_core_module
           wpsclrpthlp_zm(gr%nz,i) = 0.0_core_rknd
         end do ! i = 1, sclr_dim
 
-      end if ! l_call_pdf_closure_twice
+      end if ! .not. l_call_pdf_closure_twice
 
       if ( l_stats ) then
         ! Use the trapezoidal rule to recompute the variables on the stats_zt level

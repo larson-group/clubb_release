@@ -44,7 +44,8 @@ BENCHMARK_LINE_STYLES = {
     'coamps': "grey", # dark grey = #404040
     'r408': "g-",
     'hoc': "m-.",
-    'e3sm': "c-"
+    'e3sm': "c-",
+    'wrf': "k-"
 }
 
 # Line Thicknesses
@@ -63,7 +64,8 @@ BENCHMARK_LABELS = {
     'coamps': "COAMPS-LES",
     'r408': "CLUBB r408 'best ever'",
     'hoc': 'HOC 12/17/2005',
-    'e3sm': "E3SM"
+    'e3sm': "E3SM",
+    'wrf': "WRF-LASSO"
 }
 
 # Text styles
