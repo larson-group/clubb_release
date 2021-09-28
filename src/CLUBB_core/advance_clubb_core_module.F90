@@ -1584,6 +1584,7 @@ module advance_clubb_core_module
              wp2_splat, wp3_splat,                                      & ! intent(in)
              pdf_implicit_coefs_terms,                                  & ! intent(in)
              wprtp, wpthlp, rtp2, thlp2,                                & ! intent(in)
+             clubb_params,                                              & ! intent(in)
              clubb_config_flags%iiPDF_type,                             & ! intent(in)
              clubb_config_flags%l_min_wp2_from_corr_wx,                 & ! intent(in)
              clubb_config_flags%l_upwind_xm_ma,                         & ! intent(in)
