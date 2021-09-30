@@ -306,7 +306,7 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, &
-      C4_1d, C14_1d, dummy_1d
+      C4_1d, C14_1d
 
     real( kind = core_rknd ) :: & 
       threshold     ! Minimum value for variances                   [units vary]
@@ -422,7 +422,6 @@ module advance_xp2_xpyp_module
 
     C4_1d = two_thirds * C4
     C14_1d = one_third * C14
-    dummy_1d = 0.0_core_rknd
 
     ! Are we solving for passive scalars as well?
     if ( sclr_dim > 0 ) then
@@ -1213,7 +1212,7 @@ module advance_xp2_xpyp_module
         sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
 
       real( kind = core_rknd ), dimension(gr%nz) :: &
-        dummy_1d
+        invrs_tau_dummy, Cn_dummy
         
       real( kind = core_rknd ) :: & 
         threshold     ! Minimum value for variances                   [units vary]
@@ -1222,10 +1221,11 @@ module advance_xp2_xpyp_module
       
       ! -------- Begin Code --------
      
-      dummy_1d = 0.0_core_rknd
- 
+      invrs_tau_dummy = 0.0_core_rknd
+      Cn_dummy = 0.0_core_rknd 
+
       ! Calculate lhs matrix
-      call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2x, dummy_1d, dummy_1d, dt, & ! In
+      call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2x, invrs_tau_dummy, Cn_dummy, dt, & ! In
                          lhs_ta, lhs_ma, lhs_diff,    & ! In
                          lhs )                          ! Out
       
@@ -1473,7 +1473,7 @@ module advance_xp2_xpyp_module
       sclr_solution ! Solution to tridiagonal system for the passive scalars
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      dummy_1d
+      invrs_tau_dummy, Cn_dummy
  
     real( kind = core_rknd ) :: & 
       threshold     ! Minimum value for variances                   [units vary]
@@ -1482,12 +1482,13 @@ module advance_xp2_xpyp_module
       
     ! -------- Begin Code --------
 
-    dummy_1d = 0.0_core_rknd
- 
+    invrs_tau_dummy = 0.0_core_rknd
+    Cn_dummy = 0.0_core_rknd 
+
     !!!!!***** r_t'^2 *****!!!!!
     
     ! Implicit contributions to term rtp2
-    call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2rt_1d, dummy_1d, dummy_1d, dt, & ! In
+    call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2rt_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
                        lhs_ta_wprtp2, lhs_ma, lhs_diff, & ! In
                        lhs ) ! Out
 
@@ -1507,7 +1508,7 @@ module advance_xp2_xpyp_module
     !!!!!***** th_l'^2 *****!!!!!
 
     ! Implicit contributions to term thlp2
-    call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2thl_1d, dummy_1d, dummy_1d, dt, & ! In
+    call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2thl_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
                        lhs_ta_wpthlp2, lhs_ma, lhs_diff, & ! In
                        lhs ) ! Out
 
@@ -1528,7 +1529,7 @@ module advance_xp2_xpyp_module
     !!!!!***** r_t'th_l' *****!!!!!
 
     ! Implicit contributions to term rtpthlp
-    call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2rtthl_1d, dummy_1d, dummy_1d, dt, & ! In
+    call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2rtthl_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
                        lhs_ta_wprtpthlp, lhs_ma, lhs_diff, & ! In
                        lhs ) ! Out
 
@@ -1558,7 +1559,7 @@ module advance_xp2_xpyp_module
           sclrp2_forcing = zero
 
           !!!!!***** sclr'^2 *****!!!!!
-          call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, dummy_1d, dummy_1d, dt, & ! In
+          call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
                              lhs_ta_wpsclrp2(:,:,i), lhs_ma, lhs_diff, & ! In
                              lhs ) ! Out
 
@@ -1588,7 +1589,7 @@ module advance_xp2_xpyp_module
              threshold = zero_threshold
           endif
           
-          call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, dummy_1d, dummy_1d, dt, & ! In
+          call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
                              lhs_ta_wprtpsclrp(:,:,i), lhs_ma, lhs_diff, & ! In
                              lhs ) ! Out
 
@@ -1618,7 +1619,7 @@ module advance_xp2_xpyp_module
              threshold = zero_threshold
           endif
 
-          call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, dummy_1d, dummy_1d, dt, & ! In
+          call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
                              lhs_ta_wpthlpsclrp(:,:,i), lhs_ma, lhs_diff, & ! In
                              lhs ) ! Out
 
@@ -1648,7 +1649,7 @@ module advance_xp2_xpyp_module
         !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
         ! Note:  For ADG1, the LHS arrays are the same for all scalar variables,
         !        and also for <sclr'^2>, <sclr'r_t'>, and <sclr'th_l'>.
-        call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, dummy_1d, dummy_1d, dt, & ! In
+        call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
                            lhs_ta_wpsclrp2(:,:,1), lhs_ma, lhs_diff, & ! In
                            lhs ) ! Out
 
