@@ -2978,10 +2978,12 @@ endif
   end subroutine calc_vert_avg_cf_component
 
   !=============================================================================
-  subroutine calc_w_up_in_cloud(gr, a, C_1, C_2, w_1, w_2, & 
-                                varnce_w_1, varnce_w_2, w_up_in_cloud)
+  subroutine calc_w_up_in_cloud(gr, mixt_frac, cloud_frac_1, cloud_frac_2, &
+                                w_1, w_2, varnce_w_1, varnce_w_2, &
+                                w_up_in_cloud)
     ! Description:
-    ! Subroutine that computes the mean cloudy updraft.
+    ! Subroutine that computes the mean cloudy updraft. Implemented for the 
+    ! purpose of comparing CLUBB's vertical velocity with ARM measurements.
     !
     ! In order to activate aerosol, we'd like to feed the activation scheme
     ! a vertical velocity that's representative of cloudy updrafts. For skewed
@@ -2992,6 +2994,14 @@ endif
     !
     ! The formulas are only valid for certain PDFs in CLUBB (ADG1, ADG2,
     ! new hybrid), hence we omit calculation if another PDF type is used.
+    !
+    ! Formula used: 
+    !   output = (mixt_frac * cloud_frac_1 * (w * H(w))_i^{mean}
+    !               + (1-mixt_frac) * cloud_frac_2 * (w * H(w))_i^{mean})
+    !            / (mixt_frac + cloud_frac_1 + (1-mixt_frac) * cloud_frac_2)
+    ! with (w * H(w))_i^{mean} given by
+    !   w_i / 2 * [1 + erf(w_i / (stdev_w_i * sqrt(2)))] 
+    !   + stdev_w_i / sqrt(2*pi) * exp[-1/2 * (w_i / sigma_w_i)]
     !
     ! References: https://www.overleaf.com/project/614a136d47846639af22ae34
     !----------------------------------------------------------------------

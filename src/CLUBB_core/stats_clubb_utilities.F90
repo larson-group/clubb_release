@@ -1843,7 +1843,7 @@ module stats_clubb_utilities
   !----------------------------------------------------------------------
   subroutine stats_accumulate & 
                    ( gr, um, vm, upwp, vpwp, up2, vp2, &
-                     thlm, rtm, wprtp, wpthlp, &
+                     thlm, rtm, wprtp, wpthlp, w_up_in_cloud, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
                      p_in_Pa, exner, rho, rho_zm, &
