@@ -1521,6 +1521,7 @@ module advance_clubb_core_module
                              sclrm, wpsclrp,                              & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,           & ! intent(in)
                              wp2_splat,                                   & ! intent(in)
+                             clubb_params,                                & ! intent(in)
                              clubb_config_flags%iiPDF_type,               & ! intent(in)
                              clubb_config_flags%l_predict_upwp_vpwp,      & ! intent(in)
                              clubb_config_flags%l_min_xp2_from_corr_wx,   & ! intent(in)

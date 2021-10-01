@@ -56,6 +56,7 @@ module advance_xp2_xpyp_module
                                sclrm, wpsclrp,                            & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,         & ! In
                                wp2_splat,                                 & ! In
+                               clubb_params,                              & ! In
                                iiPDF_type,                                & ! In
                                l_predict_upwp_vpwp,                       & ! In
                                l_min_xp2_from_corr_wx,                    & ! In
@@ -105,19 +106,23 @@ module advance_xp2_xpyp_module
         l_hole_fill,      & ! logical constants
         l_explicit_turbulent_adv_xpyp
 
+    use parameter_indices, only: &
+        nparams,         & ! Variable(s)
+        iC2rt,           &
+        iC2thl,          &
+        iC2rtthl,        &
+        ic_K2,           &
+        ic_K9,           &
+        iC_uu_shr,       &
+        iC_uu_buoy,      &
+        ibeta,           &
+        irtp2_clip_coef
+
     use parameters_tunable, only: &
-        C2rt,     & ! Variable(s)
-        C2thl,    &
-        C2rtthl,  &
-        c_K2,     &
         nu2_vert_res_dep, &
-        c_K9,     &
         nu9_vert_res_dep, &
-        C4,       &
-        C14,      &
-        C_uu_shr, &
-        C_uu_buoy, &
-        rtp2_clip_coef
+        C4,               &
+        C14
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -249,6 +254,9 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wp2_splat    ! Gustiness tendency for wp2 equation
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
                     ! Gaussian) PDF type to use for the w, rt, and theta-l (or
@@ -303,6 +311,11 @@ module advance_xp2_xpyp_module
       sclrp2_old,    & ! Saved value of <sclr'^2>     [units vary]
       sclrprtp_old,  & ! Saved value of <sclr'rt'>    [units vary]
       sclrpthlp_old    ! Saved value of <sclr'thl'>   [units vary]
+
+    real( kind = core_rknd ) :: & 
+      C2rt,    & ! CLUBB tunable parameter C2rt
+      C2thl,   & ! CLUBB tunable parameter C2thl
+      C2rtthl    ! CLUBB tunable parameter C2rtthl
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, &
@@ -380,45 +393,52 @@ module advance_xp2_xpyp_module
     
     !---------------------------- Begin Code ----------------------------------
 
+    ! Unpack CLUBB tunable parameters
+    C2rt = clubb_params(iC2rt)
+    C2thl = clubb_params(iC2thl)
+    C2rtthl = clubb_params(iC2rtthl)
+
     if ( clubb_at_least_debug_level( 0 ) ) then
       ! Assertion check for C_uu_shr
-      if ( C_uu_shr > one .or. C_uu_shr < zero ) then
+      if ( clubb_params(iC_uu_shr) > one &
+           .or. clubb_params(iC_uu_shr) < zero ) then
         write(fstderr,*) "The C_uu_shr variable is outside the valid range"
         err_code = clubb_fatal_error
         return
       end if
-      if ( C_uu_buoy > one .or. C_uu_buoy < zero ) then
+      if ( clubb_params(iC_uu_buoy) > one &
+           .or. clubb_params(iC_uu_buoy) < zero ) then
         write(fstderr,*) "The C_uu_buoy variable is outside the valid range"
         err_code = clubb_fatal_error
         return
       end if
     end if
 
-     ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
-     if ( l_C2_cloud_frac ) then
+    ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
+    if ( l_C2_cloud_frac ) then
 
-        do k = 1, gr%nz, 1
-           if ( cloud_frac(k) >= cloud_frac_min ) then
-              C2rt_1d(k) = C2rt * max( min_cloud_frac_mult, cloud_frac(k) )
-              C2thl_1d(k) = C2thl * max( min_cloud_frac_mult, cloud_frac(k) )
-              C2rtthl_1d(k) = C2rtthl &
-                              * max( min_cloud_frac_mult, cloud_frac(k) )
-           else ! cloud_frac(k) < cloud_frac_min
-              C2rt_1d(k)    = C2rt
-              C2thl_1d(k)   = C2thl
-              C2rtthl_1d(k) = C2rtthl
-           endif ! cloud_frac(k) >= cloud_frac_min
-        enddo ! k = 1, gr%nz, 1
+       do k = 1, gr%nz, 1
+          if ( cloud_frac(k) >= cloud_frac_min ) then
+             C2rt_1d(k) = C2rt * max( min_cloud_frac_mult, cloud_frac(k) )
+             C2thl_1d(k) = C2thl * max( min_cloud_frac_mult, cloud_frac(k) )
+             C2rtthl_1d(k) = C2rtthl &
+                             * max( min_cloud_frac_mult, cloud_frac(k) )
+          else ! cloud_frac(k) < cloud_frac_min
+             C2rt_1d(k)    = C2rt
+             C2thl_1d(k)   = C2thl
+             C2rtthl_1d(k) = C2rtthl
+          endif ! cloud_frac(k) >= cloud_frac_min
+       enddo ! k = 1, gr%nz, 1
 
-     else
+    else
 
-        C2rt_1d    = C2rt
-        C2thl_1d   = C2thl
-        C2rtthl_1d = C2rtthl
+       C2rt_1d    = C2rt
+       C2thl_1d   = C2thl
+       C2rtthl_1d = C2rtthl
 
-     endif ! l_C2_cloud_frac
+    endif ! l_C2_cloud_frac
 
-     C2sclr_1d = C2rt  ! Use rt value for now
+    C2sclr_1d = C2rt  ! Use rt value for now
 
 
 
@@ -440,12 +460,12 @@ module advance_xp2_xpyp_module
       ! passive scalars.  The variances and covariances are located on the
       ! momentum levels.  Kw2 is located on the thermodynamic levels.
       ! Kw2 = c_K2 * Kh_zt
-      Kw2(k) = c_K2 * Kh_zt(k)
+      Kw2(k) = clubb_params(ic_K2) * Kh_zt(k)
 
       ! Kw9 is used for variances up2 and vp2.  The variances are located on
       ! the momentum levels.  Kw9 is located on the thermodynamic levels.
       ! Kw9 = c_K9 * Kh_zt
-      Kw9(k) = c_K9 * Kh_zt(k)
+      Kw9(k) = clubb_params(ic_K9) * Kh_zt(k)
 
     enddo
 
@@ -468,9 +488,9 @@ module advance_xp2_xpyp_module
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm,              & ! In
                                  wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w,             & ! In
                                  pdf_implicit_coefs_terms, l_scalar_calc,            & ! In
-                                 iiPDF_type, l_upwind_xpyp_ta,                       & ! In
+                                 clubb_params(ibeta), iiPDF_type, l_upwind_xpyp_ta,  & ! In
                                  l_godunov_upwind_xpyp_ta,                           & ! In 
-                                 stats_zt,                        & ! intent(inout)
+                                 stats_zt,                                           & ! InOut
                                  lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp,    & ! Out
                                  lhs_ta_wpup2, lhs_ta_wpvp2, lhs_ta_wpsclrp2,        & ! Out
                                  lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,              & ! Out
@@ -575,7 +595,8 @@ module advance_xp2_xpyp_module
                              wp2, wpthvp, & ! In
                              C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
+                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,1) ) ! Out
@@ -609,7 +630,8 @@ module advance_xp2_xpyp_module
                              wp2, wpthvp, & ! In
                              C4_C14_1d, invrs_tau_wp2_zm, & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
+                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
                              lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,1) ) ! Out
@@ -645,7 +667,8 @@ module advance_xp2_xpyp_module
                              wp2, wpthvp, & ! In
                              C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
+                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,1) ) ! Out
@@ -655,7 +678,8 @@ module advance_xp2_xpyp_module
                              wp2, wpthvp, & ! In
                              C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
+                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,2) ) ! Out
@@ -768,7 +792,9 @@ module advance_xp2_xpyp_module
       endif
       
       do k = 1, gr%nz
-        threshold = max( rt_tol**2, rtp2_clip_coef * zt2zm( gr, rtm, k )**2 )
+        threshold &
+        = max( rt_tol**2, &
+               clubb_params(irtp2_clip_coef) * zt2zm( gr, rtm, k )**2 )
         if ( rtp2(k) > threshold ) then
           rtp2(k) = threshold
         end if
@@ -2918,7 +2944,7 @@ module advance_xp2_xpyp_module
                                      rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                      wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w, &
                                      pdf_implicit_coefs_terms, l_scalar_calc, &
-                                     iiPDF_type, l_upwind_xpyp_ta, &
+                                     beta, iiPDF_type, l_upwind_xpyp_ta, &
                                      l_godunov_upwind_xpyp_ta, & 
                                      stats_zt, &
                                      lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp, &
@@ -2951,9 +2977,6 @@ module advance_xp2_xpyp_module
         one_third, &
         zero, &
         zero_threshold
-      
-    use parameters_tunable, only: &
-        beta
       
     use parameters_model, only: &
         sclr_dim  ! Number of passive scalar variables
@@ -3035,6 +3058,9 @@ module advance_xp2_xpyp_module
     
     logical, intent(in) :: &
       l_scalar_calc
+
+    real( kind = core_rknd ), intent(in) :: &
+      beta    ! CLUBB tunable parameter beta
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
