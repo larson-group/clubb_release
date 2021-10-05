@@ -81,6 +81,7 @@ module advance_clubb_core_module
 ! CLUBB" webpage (https://carson.math.uwm.edu/larson-group/clubb_site/about.html) for
 ! those contributors who so desire.
 !
+! Thanks so much and best wishes for your research!
 !
 ! The CLUBB Development Group
 ! (Present and past contributors to the source code include
