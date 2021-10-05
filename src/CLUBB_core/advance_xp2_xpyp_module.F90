@@ -111,6 +111,8 @@ module advance_xp2_xpyp_module
         iC2rt,           &
         iC2thl,          &
         iC2rtthl,        &
+        iC4,             &
+        iC14,            &
         ic_K2,           &
         ic_K9,           &
         iC_uu_shr,       &
@@ -120,9 +122,7 @@ module advance_xp2_xpyp_module
 
     use parameters_tunable, only: &
         nu2_vert_res_dep, &
-        nu9_vert_res_dep, &
-        C4,               &
-        C14
+        nu9_vert_res_dep
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -315,7 +315,9 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ) :: & 
       C2rt,    & ! CLUBB tunable parameter C2rt
       C2thl,   & ! CLUBB tunable parameter C2thl
-      C2rtthl    ! CLUBB tunable parameter C2rtthl
+      C2rtthl, & ! CLUBB tunable parameter C2rtthl
+      C4,      & ! CLUBB tunable parameter C4
+      C14        ! CLUBB tunable parameter C14
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, &
@@ -397,6 +399,8 @@ module advance_xp2_xpyp_module
     C2rt = clubb_params(iC2rt)
     C2thl = clubb_params(iC2thl)
     C2rtthl = clubb_params(iC2rtthl)
+    C4 = clubb_params(iC4)
+    C14 = clubb_params(iC14)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       ! Assertion check for C_uu_shr

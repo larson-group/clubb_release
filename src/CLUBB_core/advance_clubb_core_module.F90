@@ -80,7 +80,6 @@ module advance_clubb_core_module
 ! CLUBB" webpage (https://carson.math.uwm.edu/larson-group/clubb_site/about.html) for
 ! those contributors who so desire.
 !
-! Thanks so much and best wishes for your research!
 !
 ! The CLUBB Development Group
 ! (Present and past contributors to the source code include
@@ -195,20 +194,18 @@ module advance_clubb_core_module
         eps
 
     use parameter_indices, only: &
-        nparams    ! Variable(s)
-
-    use parameters_tunable, only: &
-        taumax, & ! Variable(s)
-        c_K, &
-        mu, &
-        gamma_coef,  &
-        gamma_coefb, &
-        gamma_coefc, &
-        c_K10, &
-        c_K10h, &
-        C_wp2_splat, &
-        xp3_coef_base, &
-        xp3_coef_slope
+        nparams,        & ! Variable(s)
+        itaumax,        &
+        ic_K,           &
+        ic_K10,         &
+        ic_K10h,        &
+        imu,            &
+        igamma_coef,    &
+        igamma_coefb,   &
+        igamma_coefc,   &
+        iC_wp2_splat,   &
+        ixp3_coef_base, &
+        ixp3_coef_slope
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -777,6 +774,15 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ) :: newmu
 
+    real( kind = core_rknd ) :: &
+      taumax,        & ! CLUBB tunable parameter taumax
+      c_K,           & ! CLUBB tunable parameter c_K
+      gamma_coef,    & ! CLUBB tunable parameter gamma_coef
+      gamma_coefb,   & ! CLUBB tunable parameter gamma_coefb
+      gamma_coefc,   & ! CLUBB tunable parameter gamma_coefc
+      xp3_coef_base, & ! CLUBB tunable parameter xp3_coef_base
+      xp3_coef_slope   ! CLUBB tunable parameter xp3_coef_slope
+
     ! Flag to sample stats in a particular call to subroutine
     ! pdf_closure_driver.
     logical :: l_samp_stats_in_pdf_call
@@ -942,7 +948,7 @@ module advance_clubb_core_module
 #ifdef CLUBBND_CAM
     newmu = varmu
 #else
-    newmu = mu
+    newmu = clubb_params(imu)
 #endif
 
     if ( clubb_config_flags%ipdf_call_placement == ipdf_pre_advance_fields &
@@ -979,6 +985,7 @@ module advance_clubb_core_module
                                 sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
                                 sclrprtp, sclrpthlp, sclrp3,                 & ! Intent(in)
                                 l_samp_stats_in_pdf_call,                    & ! Intent(in)
+                                clubb_params,                                & ! Intent(in)
                                 clubb_config_flags%iiPDF_type,               & ! Intent(in)
                                 clubb_config_flags%l_predict_upwp_vpwp,      & ! Intent(in)
                                 clubb_config_flags%l_rtm_nudge,              & ! Intent(in)
@@ -1030,6 +1037,10 @@ module advance_clubb_core_module
 
     if ( clubb_config_flags%ipdf_call_placement &
          == ipdf_post_advance_fields ) then
+
+       gamma_coef = clubb_params(igamma_coef)
+       gamma_coefb = clubb_params(igamma_coefb)
+       gamma_coefc = clubb_params(igamma_coefc)
 
        ! Calculate sigma_sqd_w here in order to avoid having to pass it in
        ! and out of subroutine advance_clubb_core.
@@ -1143,6 +1154,7 @@ module advance_clubb_core_module
 
         ! Calculate CLUBB's turbulent eddy-turnover time scale as
         !   CLUBB's length scale divided by a velocity scale.
+        taumax = clubb_params(itaumax)
 
         tau_zt = MIN( Lscale / sqrt_em_zt, taumax )
         tau_zm = MIN( ( MAX( zt2zm( gr, Lscale ), zero_threshold )  &
@@ -1205,16 +1217,19 @@ module advance_clubb_core_module
 
       ! Calculate CLUBB's eddy diffusivity as
       !   CLUBB's length scale times a velocity scale.
+      c_K = clubb_params(ic_K)
       Kh_zt = c_K * Lscale * sqrt_em_zt
       Kh_zm = c_K * max( zt2zm( gr, Lscale ), zero_threshold )  &
                   * sqrt( max( em, em_min ) )
 
       ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
-      call term_wp2_splat( gr, C_wp2_splat, gr%nz, dt, wp2, wp2_zt, tau_zm, & ! Intent(in)
+      call term_wp2_splat( gr, clubb_params(iC_wp2_splat), gr%nz, & ! Intent(in)
+                           dt, wp2, wp2_zt, tau_zm,               & ! Intent(in)
                            wp2_splat )                                ! Intent(out)
       ! Vertical compression of eddies also diminishes w'3
-      call term_wp3_splat( gr, C_wp2_splat, gr%nz, dt, wp2, wp3, tau_zt, & ! Intent(in)
-                           wp3_splat )                             ! Intent(out)
+      call term_wp3_splat( gr, clubb_params(iC_wp2_splat), gr%nz, & ! Intent(in)
+                           dt, wp2, wp3, tau_zt,                  & ! Intent(in)
+                           wp3_splat )                              ! Intent(out)
 
       !----------------------------------------------------------------
       ! Set Surface variances
@@ -1671,6 +1686,9 @@ module advance_clubb_core_module
          ! When xp3_coef_fnc goes to 0, the value of Skx goes to the smallest
          ! magnitude permitted by the function.  When xp3_coef_fnc goes to 1, the
          ! magnitude of Skx becomes huge.
+         xp3_coef_base = clubb_params(ixp3_coef_base)
+         xp3_coef_slope = clubb_params(ixp3_coef_slope)
+
          xp3_coef_fnc &
          = xp3_coef_base &
            + ( one - xp3_coef_base ) &
@@ -1745,6 +1763,9 @@ module advance_clubb_core_module
             ! higher degree of static stability.  The exp{ } portion of the
             ! xp3_coef_fnc allows the xp3_coef_fnc to become larger in regions
             ! of high static stability, producing larger magnitude values of Skx.
+            xp3_coef_base = clubb_params(ixp3_coef_base)
+            xp3_coef_slope = clubb_params(ixp3_coef_slope)
+
             xp3_coef_fnc &
             = xp3_coef_base &
               + ( one - xp3_coef_base ) &
@@ -1785,9 +1806,9 @@ module advance_clubb_core_module
 
       
 
-      Km_zm = Kh_zm * c_K10   ! Coefficient for momentum
+      Km_zm = Kh_zm * clubb_params(ic_K10)   ! Coefficient for momentum
 
-      Kmh_zm = Kh_zm * c_K10h ! Coefficient for thermo
+      Kmh_zm = Kh_zm * clubb_params(ic_K10h) ! Coefficient for thermo
 
       if ( clubb_config_flags%l_do_expldiff_rtm_thlm ) then
         edsclrm(:,edsclr_dim-1)=thlm(:)
@@ -1867,6 +1888,7 @@ module advance_clubb_core_module
                                 sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
                                 sclrprtp, sclrpthlp, sclrp3,                 & ! Intent(in)
                                 l_samp_stats_in_pdf_call,                    & ! Intent(in)
+                                clubb_params,                                & ! Intent(in)
                                 clubb_config_flags%iiPDF_type,               & ! Intent(in)
                                 clubb_config_flags%l_predict_upwp_vpwp,      & ! Intent(in)
                                 clubb_config_flags%l_rtm_nudge,              & ! Intent(in)
@@ -2114,6 +2136,7 @@ module advance_clubb_core_module
                                  sclrm, wpsclrp, sclrp2,        & ! Intent(in)
                                  sclrprtp, sclrpthlp, sclrp3,   & ! Intent(in)
                                  l_samp_stats_in_pdf_call,      & ! Intent(in)
+                                 clubb_params,                  & ! Intent(in)
                                  iiPDF_type,                    & ! Intent(in)
                                  l_predict_upwp_vpwp,           & ! Intent(in)
                                  l_rtm_nudge,                   & ! Intent(in)
@@ -2180,10 +2203,11 @@ module advance_clubb_core_module
         rtm_min,                &
         rtm_nudge_max_altitude
 
-    use parameters_tunable, only: &
-        gamma_coef,  & ! Variable(s)
-        gamma_coefb, &
-        gamma_coefc
+    use parameter_indices, only: &
+        nparams,      & ! Variable(s)
+        igamma_coef,  &
+        igamma_coefb, &
+        igamma_coefc
 
     use pdf_closure_module, only: &
         pdf_closure,                & ! Procedure(s)
@@ -2313,6 +2337,9 @@ module advance_clubb_core_module
 
     logical, intent(in) :: &
       l_samp_stats_in_pdf_call    ! Sample stats in this call to this subroutine
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -2543,6 +2570,11 @@ module advance_clubb_core_module
       rsat,             & ! Saturation mixing ratio from mean rt and thl.
       rel_humidity        ! Relative humidity after PDF closure [-]
 
+    real( kind = core_rknd ) :: &
+      gamma_coef,  & ! CLUBB tunable parameter gamma_coef
+      gamma_coefb, & ! CLUBB tunable parameter gamma_coefb
+      gamma_coefc    ! CLUBB tunable parameter gamma_coefc
+
     logical :: l_spur_supersat   ! Spurious supersaturation?
 
     integer :: i, k
@@ -2606,6 +2638,10 @@ module advance_clubb_core_module
        call stat_update_var( iSkrt_zm, Skrt_zm, &
                              stats_zm ) ! In/Out
     endif
+
+    gamma_coef = clubb_params(igamma_coef)
+    gamma_coefb = clubb_params(igamma_coefb)
+    gamma_coefc = clubb_params(igamma_coefc)
 
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent
@@ -2697,6 +2733,7 @@ module advance_clubb_core_module
 #endif
            wphydrometp_zt, wp2hmp,                         & ! intent(in)
            rtphmp_zt, thlphmp_zt,                          & ! intent(in)
+           clubb_params,                                   & ! intent(in)
            iiPDF_type,                                     & ! intent(in)
            wpup2, wpvp2,                                   & ! intent(out)
            wp2up2_zt, wp2vp2_zt, wp4_zt,                   & ! intent(out)
@@ -2813,6 +2850,7 @@ module advance_clubb_core_module
 #endif
              wphydrometp, wp2hmp_zm,                               & ! intent(in)
              rtphmp, thlphmp,                                      & ! intent(in)
+             clubb_params,                                         & ! intent(in)
              iiPDF_type,                                           & ! intent(in)
              wpup2_zm, wpvp2_zm,                                   & ! intent(out)
              wp2up2, wp2vp2, wp4,                                  & ! intent(out)

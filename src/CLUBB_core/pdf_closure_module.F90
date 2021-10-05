@@ -51,6 +51,7 @@ module pdf_closure_module
 #endif
                           wphydrometp, wp2hmp,                      &
                           rtphmp, thlphmp,                          &
+                          clubb_params,                             &
                           iiPDF_type,                               &
                           wpup2, wpvp2,                             &
                           wp2up2, wp2vp2, wp4,                      &
@@ -114,8 +115,9 @@ module pdf_closure_module
         mixt_frac_max_mag, & ! Variable(s)
         sclr_dim             ! Number of passive scalar variables
 
-    use parameters_tunable, only: & 
-        Skw_denom_coef ! Variable(s)
+    use parameter_indices, only: &
+        nparams,         & ! Variable(s)
+        iSkw_denom_coef
 
     use pdf_parameter_module, only:  &
         pdf_parameter,        & ! Variable Type
@@ -230,6 +232,9 @@ module pdf_closure_module
       wp2hmp,      & ! Third-order moment:  < w'^2 hm' >    [(m/s)^2 <hm units>]
       rtphmp,      & ! Covariance of rt and a hydrometeor   [(kg/kg) <hm units>]
       thlphmp        ! Covariance of thl and a hydrometeor  [K <hm units>]
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -394,7 +399,7 @@ module pdf_closure_module
     Skthl_clubb_pdf
 
     real( kind = core_rknd ) :: &
-      chi_at_ice_sat1, chi_at_ice_sat2
+      chi_at_ice_sat1, chi_at_ice_sat2, Skw_denom_coef
 
     logical, parameter :: &
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
@@ -1465,6 +1470,8 @@ endif
             * ( ( pdf_params%thl_2(1,:) - thlm )**2 + three * pdf_params%varnce_thl_2(1,:) )
 
         ! Skewness
+        Skw_denom_coef = clubb_params(iSkw_denom_coef)
+
         Skw_clubb_pdf &
         = wp3_clubb_pdf &
           / ( wp2_clubb_pdf + Skw_denom_coef * w_tol**2 )**1.5_core_rknd
