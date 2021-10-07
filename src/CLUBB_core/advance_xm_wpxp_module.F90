@@ -617,6 +617,7 @@ module advance_xm_wpxp_module
                                  rho_ds_zm, l_implemented, em,                     & ! In
                                  Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
                                  ice_supersat_frac,                                & ! In
+                                 clubb_params,                                     & ! In
                                  l_diffuse_rtm_and_thlm,                           & ! In
                                  l_stability_correct_Kh_N2_zm,                     & ! In
                                  l_upwind_xm_ma,                                   & ! In
@@ -1248,6 +1249,7 @@ module advance_xm_wpxp_module
                                      rho_ds_zm, l_implemented, em,                      & ! In
                                      Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,      & ! In
                                      ice_supersat_frac,                                 & ! In
+                                     clubb_params,                                      & ! In
                                      l_diffuse_rtm_and_thlm,                            & ! In
                                      l_stability_correct_Kh_N2_zm,                      & ! In
                                      l_upwind_xm_ma,                                    & ! In
@@ -1264,6 +1266,10 @@ module advance_xm_wpxp_module
     
     use grid_class, only:  & 
         grid ! Type
+
+    use parameter_indices, only: &
+        nparams, & ! Variable(s)
+        ilambda0_stability_coef
 
     use parameters_tunable, only:  & 
         nu6_vert_res_dep ! Variable(s)
@@ -1311,6 +1317,9 @@ module advance_xm_wpxp_module
 
     logical, intent(in) ::  & 
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
       l_diffuse_rtm_and_thlm,       & ! This flag determines whether or not we want CLUBB to do
@@ -1385,6 +1394,7 @@ module advance_xm_wpxp_module
         if ( l_stability_correct_Kh_N2_zm ) then
           Kh_N2_zm = Kh_zm / calc_stability_correction( gr, thlm, Lscale, em, exner, rtm, rcm, &
                                                         p_in_Pa, thvm, ice_supersat_frac, &
+                                                        clubb_params(ilambda0_stability_coef), &
                                                         l_brunt_vaisala_freq_moist, &
                                                         l_use_thvm_in_bv_freq )
         else

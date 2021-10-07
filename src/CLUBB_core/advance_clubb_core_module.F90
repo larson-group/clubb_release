@@ -196,18 +196,19 @@ module advance_clubb_core_module
         eps
 
     use parameter_indices, only: &
-        nparams,        & ! Variable(s)
-        itaumax,        &
-        ic_K,           &
-        ic_K10,         &
-        ic_K10h,        &
-        imu,            &
-        igamma_coef,    &
-        igamma_coefb,   &
-        igamma_coefc,   &
-        iC_wp2_splat,   &
-        ixp3_coef_base, &
-        ixp3_coef_slope
+        nparams,                 & ! Variable(s)
+        itaumax,                 &
+        ic_K,                    &
+        ic_K10,                  &
+        ic_K10h,                 &
+        imu,                     &
+        igamma_coef,             &
+        igamma_coefb,            &
+        igamma_coefc,            &
+        iC_wp2_splat,            &
+        ixp3_coef_base,          &
+        ixp3_coef_slope,         &
+        ilambda0_stability_coef
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -1383,6 +1384,7 @@ module advance_clubb_core_module
       stability_correction = calc_stability_correction( gr, thlm, Lscale, em, &
                                               exner, rtm, rcm, & ! In
                                               p_in_Pa,thvm, ice_supersat_frac, & ! In
+                                              clubb_params(ilambda0_stability_coef), &
                                               clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
                                               clubb_config_flags%l_use_thvm_in_bv_freq ) ! In
       if ( l_stats_samp ) then
@@ -1440,6 +1442,7 @@ module advance_clubb_core_module
        call compute_Cx_Fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm,      & ! intent(in)
                                        rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
                                        ice_supersat_frac,                             & ! intent(in)
+                                       clubb_params,                                  & ! intent(in)
                                        clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
                                        clubb_config_flags%l_use_thvm_in_bv_freq,      & ! intent(in
                                        clubb_config_flags%l_use_shear_Richardson,     & ! intent(in)

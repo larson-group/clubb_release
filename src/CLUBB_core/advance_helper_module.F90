@@ -234,6 +234,7 @@ module advance_helper_module
   function calc_stability_correction( gr, thlm, Lscale, em, &
                                       exner, rtm, rcm, &
                                       p_in_Pa, thvm, ice_supersat_frac, &
+                                      lambda0_stability_coef, &
                                       l_brunt_vaisala_freq_moist, &
                                       l_use_thvm_in_bv_freq ) &
     result ( stability_correction )
@@ -244,9 +245,6 @@ module advance_helper_module
   ! References:
   !
   !--------------------------------------------------------------------
-
-    use parameters_tunable, only: &
-        lambda0_stability_coef ! Variable(s)
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -273,6 +271,9 @@ module advance_helper_module
       p_in_Pa,         & ! Air pressure                              [Pa]
       thvm,            & ! Virtual potential temperature             [K]
       ice_supersat_frac
+
+    real( kind = core_rknd ), intent(in) :: &
+      lambda0_stability_coef    ! CLUBB tunable parameter lambda0_stability_coef
 
     logical, intent(in) :: &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -488,6 +489,7 @@ module advance_helper_module
   subroutine compute_Cx_fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm, &
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
                                         ice_supersat_frac, &
+                                        clubb_params, &
                                         l_brunt_vaisala_freq_moist, &
                                         l_use_thvm_in_bv_freq, &
                                         l_use_shear_Richardson, &
@@ -516,11 +518,12 @@ module advance_helper_module
     use interpolation, only: &
         linear_interp_factor ! Procedure
 
-    use parameters_tunable, only: &
-        Cx_min,             & ! Variable(s)
-        Cx_max,             &
-        Richardson_num_min, &
-        Richardson_num_max
+    use parameter_indices, only: &
+        nparams,             & ! Variable(s)
+        iCx_min,             &
+        iCx_max,             &
+        iRichardson_num_min, &
+        iRichardson_num_max
 
     use stats_variables, only: &
         iRichardson_num, &    ! Variable(s)
@@ -567,6 +570,9 @@ module advance_helper_module
       rho_ds_zm, &  ! Dry static density on momentum levels          [kg/m^3]
       ice_supersat_frac  ! ice cloud fraction
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     logical, intent(in) :: &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
@@ -595,6 +601,10 @@ module advance_helper_module
         invrs_min_max_diff, &
         invrs_num_div_thresh
 
+    real( kind = core_rknd ) :: &
+      Richardson_num_max, & ! CLUBB tunable parameter Richardson_num_max
+      Richardson_num_min    ! CLUBB tunable parameter Richardson_num_min
+
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
@@ -608,6 +618,9 @@ module advance_helper_module
                                       brunt_vaisala_freq_sqd_dry, &           ! intent(out)
                                       brunt_vaisala_freq_sqd_moist, &         ! intent(out)
                                       brunt_vaisala_freq_sqd_plus )           ! intent(out)
+
+    Richardson_num_max = clubb_params(iRichardson_num_max)
+    Richardson_num_min = clubb_params(iRichardson_num_min)
 
     invrs_min_max_diff = 1.0_core_rknd / ( Richardson_num_max - Richardson_num_min )
     invrs_num_div_thresh = 1.0_core_rknd / Richardson_num_divisor_threshold
@@ -654,7 +667,8 @@ module advance_helper_module
     !     value of Richardson_num_max.
     Cx_fnc_Richardson = linear_interp_factor( &
                     ( max(min(Richardson_num_max,Ri_zm),Richardson_num_min) &
-                    - Richardson_num_min )  * invrs_min_max_diff, Cx_max, Cx_min )
+                    - Richardson_num_min )  * invrs_min_max_diff, &
+                                              clubb_params(iCx_max), clubb_params(iCx_min) )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
       Cx_fnc_Richardson = Lscale_width_vert_avg( gr, Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
