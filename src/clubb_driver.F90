@@ -66,7 +66,8 @@ module clubb_driver
 
     use grid_class, only: read_grid_heights, zt2zm, zm2zt !------------------ Procedure(s)
 
-    use parameter_indices, only: nparams, ic_K !----------------------------- Variable(s)
+    use parameter_indices, only: &
+      nparams, ic_K, iSkw_denom_coef, iSkw_max_mag !------------------------- Variable(s)
 
     use numerical_check, only: invalid_model_arrays !------------------------ Procedure(s)
 
@@ -2407,7 +2408,10 @@ module clubb_driver
       ! Calculate Skw_zm for use in advance_microphys.
       ! This field is smoothed by interpolating to thermodynamic levels and then
       ! interpolating back to momentum levels.
-      Skw_zm = zt2zm( gr, zm2zt( gr, Skx_func( gr, wp2, zt2zm( gr, wp3 ), w_tol ) ) )
+      Skw_zm &
+      = zt2zm( gr, zm2zt( gr, Skx_func( gr, wp2, zt2zm( gr, wp3 ), w_tol, &
+                                        params(iSkw_denom_coef), &
+                                        params(iSkw_max_mag) ) ) )
 
       ! Advance predictive microphysics fields one model timestep.
       call advance_microphys( gr, dt_main, time_current, wm_zt, wp2,          & ! In

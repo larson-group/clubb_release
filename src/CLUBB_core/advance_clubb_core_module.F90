@@ -208,7 +208,11 @@ module advance_clubb_core_module
         iC_wp2_splat,            &
         ixp3_coef_base,          &
         ixp3_coef_slope,         &
-        ilambda0_stability_coef
+        ilambda0_stability_coef, &
+        ibeta,                   &
+        iSkw_denom_coef,         &
+        iSkw_max_mag,            &
+        iup2_sfc_coef
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -778,13 +782,16 @@ module advance_clubb_core_module
     real( kind = core_rknd ) :: newmu
 
     real( kind = core_rknd ) :: &
-      taumax,        & ! CLUBB tunable parameter taumax
-      c_K,           & ! CLUBB tunable parameter c_K
-      gamma_coef,    & ! CLUBB tunable parameter gamma_coef
-      gamma_coefb,   & ! CLUBB tunable parameter gamma_coefb
-      gamma_coefc,   & ! CLUBB tunable parameter gamma_coefc
-      xp3_coef_base, & ! CLUBB tunable parameter xp3_coef_base
-      xp3_coef_slope   ! CLUBB tunable parameter xp3_coef_slope
+      taumax,         & ! CLUBB tunable parameter taumax
+      c_K,            & ! CLUBB tunable parameter c_K
+      gamma_coef,     & ! CLUBB tunable parameter gamma_coef
+      gamma_coefb,    & ! CLUBB tunable parameter gamma_coefb
+      gamma_coefc,    & ! CLUBB tunable parameter gamma_coefc
+      xp3_coef_base,  & ! CLUBB tunable parameter xp3_coef_base
+      xp3_coef_slope, & ! CLUBB tunable parameter xp3_coef_slope
+      beta,           & ! CLUBB tunable parameter beta
+      Skw_denom_coef, & ! CLUBB tunable parameter Skw_denom_coef
+      Skw_max_mag       ! CLUBB tunable parameter Skw_max_mag
 
     ! Flag to sample stats in a particular call to subroutine
     ! pdf_closure_driver.
@@ -1035,8 +1042,14 @@ module advance_clubb_core_module
     wp2_zt = max( zm2zt( gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
     wp3_zm = zt2zm( gr, wp3 )
 
-    Skw_zt(1:gr%nz) = Skx_func( gr, wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
-    Skw_zm(1:gr%nz) = Skx_func( gr, wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
+    beta = clubb_params(ibeta)
+    Skw_denom_coef = clubb_params(iSkw_denom_coef)
+    Skw_max_mag = clubb_params(iSkw_max_mag)
+
+    Skw_zt(1:gr%nz) = Skx_func( gr, wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol, &
+                                Skw_denom_coef, Skw_max_mag )
+    Skw_zm(1:gr%nz) = Skx_func( gr, wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol, &
+                                Skw_denom_coef, Skw_max_mag )
 
     if ( clubb_config_flags%ipdf_call_placement &
          == ipdf_post_advance_fields ) then
@@ -1283,7 +1296,7 @@ module advance_clubb_core_module
         call calc_sfc_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,     & ! intent(in)
                              um(2), vm(2), Lscale_up(2), wpsclrp_sfc,        & ! intent(in)
                              wp2_splat(1), tau_zm(1),                        & ! intent(in)
-                             depth_pos_wpthlp,                               & ! intent(in)
+                             depth_pos_wpthlp, clubb_params(iup2_sfc_coef),  & ! intent(in)
                              clubb_config_flags%l_vary_convect_depth,        & ! intent(in)
                              wp2(1), up2(1), vp2(1),                         & ! intent(out)
                              thlp2(1), rtp2(1), rtpthlp(1),                  & ! intent(out)
@@ -1674,7 +1687,8 @@ module advance_clubb_core_module
 
          ! Use a modified form of the Larson and Golaz (2005) ansatz for the
          ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
-         Skw_zt(1:gr%nz) = Skx_func( gr, wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
+         Skw_zt(1:gr%nz) = Skx_func( gr, wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol, &
+                                     Skw_denom_coef, Skw_max_mag )
 
          upwp_zt = zm2zt( gr, upwp )
          vpwp_zt = zm2zt( gr, vpwp )
@@ -1700,15 +1714,18 @@ module advance_clubb_core_module
              * ( one - exp( brunt_vaisala_freq_sqd_zt / xp3_coef_slope ) )
 
          up3 = xp3_LG_2005_ansatz( gr, Skw_zt, upwp_zt, wp2_zt, &
-                                   up2_zt, xp3_coef_fnc, w_tol )
+                                   up2_zt, xp3_coef_fnc, &
+                                   beta, Skw_denom_coef, w_tol )
 
          vp3 = xp3_LG_2005_ansatz( gr, Skw_zt, vpwp_zt, wp2_zt, &
-                                   vp2_zt, xp3_coef_fnc, w_tol )
+                                   vp2_zt, xp3_coef_fnc, &
+                                   beta, Skw_denom_coef, w_tol )
 
       else ! .not. l_advance_xp3 .or. clubb_config_flags%iiPDF_type = iiPDF_ADG1
 
          ! The ADG1 PDF must use this option.
-         Skw_zt(1:gr%nz) = Skx_func( gr, wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
+         Skw_zt(1:gr%nz) = Skx_func( gr, wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol, &
+                                     Skw_denom_coef, Skw_max_mag )
 
          wpthlp_zt = zm2zt( gr, wpthlp )
          wprtp_zt  = zm2zt( gr, wprtp )
@@ -1727,16 +1744,20 @@ module advance_clubb_core_module
             sigma_sqd_w_zt = max( zm2zt( gr, sigma_sqd_w ), zero_threshold )
 
             thlp3 = xp3_LG_2005_ansatz( gr, Skw_zt, wpthlp_zt, wp2_zt, &
-                                        thlp2_zt, sigma_sqd_w_zt, thl_tol )
+                                        thlp2_zt, sigma_sqd_w_zt, &
+                                        beta, Skw_denom_coef, thl_tol )
 
             rtp3 = xp3_LG_2005_ansatz( gr, Skw_zt, wprtp_zt, wp2_zt, &
-                                       rtp2_zt, sigma_sqd_w_zt, rt_tol )
+                                       rtp2_zt, sigma_sqd_w_zt, &
+                                       beta, Skw_denom_coef, rt_tol )
 
             up3 = xp3_LG_2005_ansatz( gr, Skw_zt, upwp_zt, wp2_zt, &
-                                      up2_zt, sigma_sqd_w_zt, w_tol )
+                                      up2_zt, sigma_sqd_w_zt, &
+                                      beta, Skw_denom_coef, w_tol )
 
             vp3 = xp3_LG_2005_ansatz( gr, Skw_zt, vpwp_zt, wp2_zt, &
-                                      vp2_zt, sigma_sqd_w_zt, w_tol )
+                                      vp2_zt, sigma_sqd_w_zt, &
+                                      beta, Skw_denom_coef, w_tol )
 
             do i = 1, sclr_dim, 1
 
@@ -1745,7 +1766,7 @@ module advance_clubb_core_module
 
                sclrp3(:,i) = xp3_LG_2005_ansatz( gr, Skw_zt, wpsclrp_zt, wp2_zt, &
                                                  sclrp2_zt, sigma_sqd_w_zt, &
-                                                 sclr_tol(i) )
+                                                 beta, Skw_denom_coef, sclr_tol(i) )
 
             enddo ! i = 1, sclr_dim
 
@@ -1777,16 +1798,20 @@ module advance_clubb_core_module
                 * ( one - exp( brunt_vaisala_freq_sqd_zt / xp3_coef_slope ) )
 
             thlp3 = xp3_LG_2005_ansatz( gr, Skw_zt, wpthlp_zt, wp2_zt, &
-                                        thlp2_zt, xp3_coef_fnc, thl_tol )
+                                        thlp2_zt, xp3_coef_fnc, &
+                                        beta, Skw_denom_coef, thl_tol )
 
             rtp3 = xp3_LG_2005_ansatz( gr, Skw_zt, wprtp_zt, wp2_zt, &
-                                       rtp2_zt, xp3_coef_fnc, rt_tol )
+                                       rtp2_zt, xp3_coef_fnc, &
+                                       beta, Skw_denom_coef, rt_tol )
 
             up3 = xp3_LG_2005_ansatz( gr, Skw_zt, upwp_zt, wp2_zt, &
-                                      up2_zt, xp3_coef_fnc, w_tol )
+                                      up2_zt, xp3_coef_fnc, &
+                                      beta, Skw_denom_coef, w_tol )
 
             vp3 = xp3_LG_2005_ansatz( gr, Skw_zt, vpwp_zt, wp2_zt, &
-                                      vp2_zt, xp3_coef_fnc, w_tol )
+                                      vp2_zt, xp3_coef_fnc, &
+                                      beta, Skw_denom_coef, w_tol )
 
             do i = 1, sclr_dim, 1
 
@@ -1795,7 +1820,7 @@ module advance_clubb_core_module
 
                sclrp3(:,i) = xp3_LG_2005_ansatz( gr, Skw_zt, wpsclrp_zt, wp2_zt, &
                                                  sclrp2_zt, xp3_coef_fnc, &
-                                                 sclr_tol(i) )
+                                                 beta, Skw_denom_coef, sclr_tol(i) )
 
             enddo ! i = 1, sclr_dim
 
@@ -2209,10 +2234,12 @@ module advance_clubb_core_module
         rtm_nudge_max_altitude
 
     use parameter_indices, only: &
-        nparams,      & ! Variable(s)
-        igamma_coef,  &
-        igamma_coefb, &
-        igamma_coefc
+        nparams,         & ! Variable(s)
+        igamma_coef,     &
+        igamma_coefb,    &
+        igamma_coefc,    &
+        iSkw_denom_coef, &
+        iSkw_max_mag
 
     use pdf_closure_module, only: &
         pdf_closure,                & ! Procedure(s)
@@ -2576,9 +2603,11 @@ module advance_clubb_core_module
       rel_humidity        ! Relative humidity after PDF closure [-]
 
     real( kind = core_rknd ) :: &
-      gamma_coef,  & ! CLUBB tunable parameter gamma_coef
-      gamma_coefb, & ! CLUBB tunable parameter gamma_coefb
-      gamma_coefc    ! CLUBB tunable parameter gamma_coefc
+      gamma_coef,     & ! CLUBB tunable parameter gamma_coef
+      gamma_coefb,    & ! CLUBB tunable parameter gamma_coefb
+      gamma_coefc,    & ! CLUBB tunable parameter gamma_coefc
+      Skw_denom_coef, & ! CLUBB tunable parameter Skw_denom_coef
+      Skw_max_mag       ! CLUBB tunable parameter Skw_max_mag
 
     logical :: l_spur_supersat   ! Spurious supersaturation?
 
@@ -2607,26 +2636,41 @@ module advance_clubb_core_module
        sclrp3_zm(:,i)  = zt2zm( gr, sclrp3(:,i) )
     enddo ! i = 1, sclr_dim, 1
 
-    Skw_zt(1:gr%nz) = Skx_func( gr, wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
-    Skw_zm(1:gr%nz) = Skx_func( gr, wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
+    Skw_denom_coef = clubb_params(iSkw_denom_coef)
+    Skw_max_mag = clubb_params(iSkw_max_mag)
 
-    Skthl_zt(1:gr%nz) = Skx_func( gr, thlp2_zt(1:gr%nz), thlp3(1:gr%nz), thl_tol )
-    Skthl_zm(1:gr%nz) = Skx_func( gr, thlp2(1:gr%nz), thlp3_zm(1:gr%nz), thl_tol )
+    Skw_zt(1:gr%nz) = Skx_func( gr, wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol, &
+                                Skw_denom_coef, Skw_max_mag )
+    Skw_zm(1:gr%nz) = Skx_func( gr, wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol, &
+                                Skw_denom_coef, Skw_max_mag )
 
-    Skrt_zt(1:gr%nz) = Skx_func( gr, rtp2_zt(1:gr%nz), rtp3(1:gr%nz), rt_tol )
-    Skrt_zm(1:gr%nz) = Skx_func( gr, rtp2(1:gr%nz), rtp3_zm(1:gr%nz), rt_tol )
+    Skthl_zt(1:gr%nz) = Skx_func( gr, thlp2_zt(1:gr%nz), thlp3(1:gr%nz), &
+                                  thl_tol, Skw_denom_coef, Skw_max_mag )
+    Skthl_zm(1:gr%nz) = Skx_func( gr, thlp2(1:gr%nz), thlp3_zm(1:gr%nz), &
+                                  thl_tol, Skw_denom_coef, Skw_max_mag )
 
-    Sku_zt(1:gr%nz) = Skx_func( gr, up2_zt(1:gr%nz), up3(1:gr%nz), w_tol )
-    Sku_zm(1:gr%nz) = Skx_func( gr, up2(1:gr%nz), up3_zm(1:gr%nz), w_tol )
+    Skrt_zt(1:gr%nz) = Skx_func( gr, rtp2_zt(1:gr%nz), rtp3(1:gr%nz), rt_tol, &
+                                 Skw_denom_coef, Skw_max_mag )
+    Skrt_zm(1:gr%nz) = Skx_func( gr, rtp2(1:gr%nz), rtp3_zm(1:gr%nz), rt_tol, &
+                                 Skw_denom_coef, Skw_max_mag )
 
-    Skv_zt(1:gr%nz) = Skx_func( gr, vp2_zt(1:gr%nz), vp3(1:gr%nz), w_tol )
-    Skv_zm(1:gr%nz) = Skx_func( gr, vp2(1:gr%nz), vp3_zm(1:gr%nz), w_tol )
+    Sku_zt(1:gr%nz) = Skx_func( gr, up2_zt(1:gr%nz), up3(1:gr%nz), w_tol, &
+                                Skw_denom_coef, Skw_max_mag )
+    Sku_zm(1:gr%nz) = Skx_func( gr, up2(1:gr%nz), up3_zm(1:gr%nz), w_tol, &
+                                Skw_denom_coef, Skw_max_mag )
+
+    Skv_zt(1:gr%nz) = Skx_func( gr, vp2_zt(1:gr%nz), vp3(1:gr%nz), w_tol, &
+                                Skw_denom_coef, Skw_max_mag )
+    Skv_zm(1:gr%nz) = Skx_func( gr, vp2(1:gr%nz), vp3_zm(1:gr%nz), w_tol, &
+                                Skw_denom_coef, Skw_max_mag )
 
     do i = 1, sclr_dim, 1
        Sksclr_zt(1:gr%nz,i) &
-       = Skx_func( gr, sclrp2_zt(1:gr%nz,i), sclrp3(1:gr%nz,i), sclr_tol(i) )
+       = Skx_func( gr, sclrp2_zt(1:gr%nz,i), sclrp3(1:gr%nz,i), sclr_tol(i), &
+                   Skw_denom_coef, Skw_max_mag )
        Sksclr_zm(1:gr%nz,i) &
-       = Skx_func( gr, sclrp2(1:gr%nz,i), sclrp3_zm(1:gr%nz,i), sclr_tol(i) )
+       = Skx_func( gr, sclrp2(1:gr%nz,i), sclrp3_zm(1:gr%nz,i), sclr_tol(i), &
+                   Skw_denom_coef, Skw_max_mag )
     enddo ! i = 1, sclr_dim, 1
 
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
