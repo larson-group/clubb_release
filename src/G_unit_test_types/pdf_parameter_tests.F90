@@ -164,7 +164,8 @@ module pdf_parameter_tests
     use parameters_tunable, only: &
         gamma_coef,  & ! Variable(s)
         gamma_coefb, &
-        gamma_coefc
+        gamma_coefc, &
+        beta
 
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
@@ -1472,10 +1473,10 @@ module pdf_parameter_tests
                                  up2, vp2, wpthlp, wprtp, upwp, vpwp, &
                                  l_predict_upwp_vpwp )
 
-          call ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,                  & ! In 
+          call ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,              & ! In 
                                wp2, rtp2, thlp2, up2, vp2,              & ! In 
                                Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In 
-                               sigma_sqd_w, mixt_frac_max_mag,          & ! In 
+                               sigma_sqd_w, beta, mixt_frac_max_mag,    & ! In 
                                sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In 
                                mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2,& ! Out
                                mu_u_1, mu_u_2, mu_v_1, mu_v_2,          & ! Out

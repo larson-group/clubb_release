@@ -117,6 +117,7 @@ module pdf_closure_module
 
     use parameter_indices, only: &
         nparams,         & ! Variable(s)
+        ibeta,           &
         iSkw_denom_coef
 
     use pdf_parameter_module, only:  &
@@ -399,7 +400,11 @@ module pdf_closure_module
     Skthl_clubb_pdf
 
     real( kind = core_rknd ) :: &
-      chi_at_ice_sat1, chi_at_ice_sat2, Skw_denom_coef
+      chi_at_ice_sat1, chi_at_ice_sat2
+
+    real( kind = core_rknd ) :: &
+      beta,           & ! CLUBB tunable parameter beta
+      Skw_denom_coef    ! CLUBB tunable parameter Skw_denom_coef
 
     logical, parameter :: &
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
@@ -499,6 +504,11 @@ module pdf_closure_module
 
     endif
 
+    ! Unpack CLUBB's tunable parameters
+    if ( ( iiPDF_type == iiPDF_ADG1 ) .or. ( iiPDF_type == iiPDF_ADG2 ) ) then
+       beta = clubb_params(ibeta)
+    endif
+    
 
     ! To avoid recomputing
     sqrt_wp2 = sqrt( wp2 )
@@ -510,39 +520,39 @@ module pdf_closure_module
     ! theta-l, and passive scalar variables.
     if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
 
-       call ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,                             & ! In
+       call ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,                         & ! In
                              wp2, rtp2, thlp2, up2, vp2,                        & ! In
                              Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,          & ! In
-                             sigma_sqd_w, mixt_frac_max_mag,                    & ! In
+                             sigma_sqd_w, beta, mixt_frac_max_mag,              & ! In
                              sclrm, sclrp2, wpsclrp, l_scalar_calc,             & ! In
-                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
-                             pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                  & ! Out
-                             pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                & ! Out
+                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),          & ! Out
+                             pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),        & ! Out
+                             pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),      & ! Out
                              u_1, u_2, v_1, v_2,                                & ! Out
-                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),      & ! Out
-                             pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),    & ! Out
-                             pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),  & ! Out
+                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),     & ! Out
+                             pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),   & ! Out
+                             pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:), & ! Out
                              varnce_u_1, varnce_u_2,                            & ! Out
                              varnce_v_1, varnce_v_2,                            & ! Out
-                             pdf_params%mixt_frac(1,:),                              & ! Out
-                             pdf_params%alpha_rt(1,:), pdf_params%alpha_thl(1,:),         & ! Out
+                             pdf_params%mixt_frac(1,:),                         & ! Out
+                             pdf_params%alpha_rt(1,:), pdf_params%alpha_thl(1,:), & ! Out
                              alpha_u, alpha_v,                                  & ! Out
                              sclr1, sclr2, varnce_sclr1,                        & ! Out
                              varnce_sclr2, alpha_sclr )                           ! Out
 
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
 
-       call ADG2_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,                   & ! In
-                             Skw, wprtp, wpthlp, sqrt_wp2,                      & ! In
+       call ADG2_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,               & ! In
+                             Skw, wprtp, wpthlp, sqrt_wp2, beta,                & ! In
                              sclrm, sclrp2, wpsclrp, l_scalar_calc,             & ! In
-                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
-                             pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                  & ! Out
-                             pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                & ! Out
-                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),      & ! Out
-                             pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),    & ! Out
-                             pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),  & ! Out
-                             pdf_params%mixt_frac(1,:),                              & ! Out
-                             pdf_params%alpha_rt(1,:), pdf_params%alpha_thl(1,:),         & ! Out
+                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),          & ! Out
+                             pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),        & ! Out
+                             pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),      & ! Out
+                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),     & ! Out
+                             pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),   & ! Out
+                             pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:), & ! Out
+                             pdf_params%mixt_frac(1,:),                         & ! Out
+                             pdf_params%alpha_rt(1,:), pdf_params%alpha_thl(1,:), & ! Out
                              sigma_sqd_w, sclr1, sclr2,                         & ! Out
                              varnce_sclr1, varnce_sclr2, alpha_sclr )             ! Out
 
