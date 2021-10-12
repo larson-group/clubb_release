@@ -176,7 +176,18 @@ class VariableGroupWs(VariableGroup):
                 },
              'sci_scale': -4,
             },
-
+            {'var_names':
+                 {
+                 'clubb': ['w_up_in_cloud'],
+                 'sam': [''],
+                 'coamps': [''],
+                 'r408': [''],
+                 'hoc': [''],
+                 'e3sm': [''],
+                 'cam': [''],
+                 'wrf': [''],
+                 },
+             },
         ]
 
         # Call ctor of parent class

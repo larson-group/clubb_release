@@ -61,7 +61,7 @@ module pdf_closure_module
                           rcm, wpthvp, wp2thvp, rtpthvp,            &
                           thlpthvp, wprcp, wp2rcp, rtprcp,          &
                           thlprcp, rcp2,                            &
-                          uprcp, vprcp,                             &
+                          uprcp, vprcp, w_up_in_cloud,              &
                           pdf_params, pdf_implicit_coefs_terms,     &
                           F_w, F_rt, F_thl,                         &
                           min_F_w, max_F_w,                         &
@@ -1231,15 +1231,17 @@ endif
     end if
 #endif
 
-    if (iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 
-                                 .or. iiPDF_type == iiPDF_new_hybrid)
-        
+    if (iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+                                 .or. iiPDF_type == iiPDF_new_hybrid &
+                                 .or. iiPDF_type == 7) then
       call calc_w_up_in_cloud( &
                      gr, pdf_params%mixt_frac(1,:), &                                    ! In
                      pdf_params%cloud_frac_1(1,:), pdf_params%cloud_frac_2(1,:), &       ! In
                      pdf_params%w_1(1,:), pdf_params%w_2(1,:), &                         ! In
                      pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:), &           ! In
-                     w_up_in_cloud(1,:) )                                                ! Out
+                     w_up_in_cloud )                                                     ! Out
+    else
+      w_up_in_cloud = zero
     end if
 
     if ( clubb_at_least_debug_level( 2 ) ) then
@@ -2978,12 +2980,11 @@ endif
   end subroutine calc_vert_avg_cf_component
 
   !=============================================================================
-  subroutine calc_w_up_in_cloud(gr, mixt_frac, cloud_frac_1, cloud_frac_2, &
-                                w_1, w_2, varnce_w_1, varnce_w_2, &
-                                w_up_in_cloud)
+  subroutine calc_w_up_in_cloud(gr, &
+                                mixt_frac, cloud_frac_1, cloud_frac_2, &
+                                w_1, w_2, varnce_w_1, varnce_w_2, w_up_in_cloud)
     ! Description:
-    ! Subroutine that computes the mean cloudy updraft. Implemented for the 
-    ! purpose of comparing CLUBB's vertical velocity with ARM measurements.
+    ! Subroutine that computes the mean cloudy updraft.
     !
     ! In order to activate aerosol, we'd like to feed the activation scheme
     ! a vertical velocity that's representative of cloudy updrafts. For skewed
@@ -2995,14 +2996,6 @@ endif
     ! The formulas are only valid for certain PDFs in CLUBB (ADG1, ADG2,
     ! new hybrid), hence we omit calculation if another PDF type is used.
     !
-    ! Formula used: 
-    !   output = (mixt_frac * cloud_frac_1 * (w * H(w))_i^{mean}
-    !               + (1-mixt_frac) * cloud_frac_2 * (w * H(w))_i^{mean})
-    !            / (mixt_frac + cloud_frac_1 + (1-mixt_frac) * cloud_frac_2)
-    ! with (w * H(w))_i^{mean} given by
-    !   w_i / 2 * [1 + erf(w_i / (stdev_w_i * sqrt(2)))] 
-    !   + stdev_w_i / sqrt(2*pi) * exp[-1/2 * (w_i / sigma_w_i)]
-    !
     ! References: https://www.overleaf.com/project/614a136d47846639af22ae34
     !----------------------------------------------------------------------
 
@@ -3013,7 +3006,8 @@ endif
         sqrt_2pi, & ! sqrt(2*pi)
         sqrt_2,   & ! sqrt(2)
         one,      & ! 1
-        one_half    ! 1/2
+        one_half, & ! 1/2
+        eps
 
     use clubb_precision, only: &
         core_rknd     ! Precision
@@ -3037,30 +3031,30 @@ endif
       w_up_in_cloud ! mean updraft over clouds                         [m/s]
 
     !----------- Local Variables -----------
-    real( kind = core_rknd) :: wHm_1, wHm_2 ! product of w and Heaviside function
-    real( kind = core_rknd ), dimension(gr%nz) :: stdev_w_1, stdev_w_2
-    stdev_w_1 = sqrt(varnce_w_1(1,:))
-    stdev_w_2 = sqrt(varnce_w_2(1,:))
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      wHm_1, wHm_2, &       ! product of w and Heaviside function
+      stdev_w_1, stdev_w_2  ! Standard deviation of w
+      
+    stdev_w_1 = sqrt(varnce_w_1)
+    stdev_w_2 = sqrt(varnce_w_2)
+    
+    wHm_1 &
+    = one_half * w_1 &
+        * (one + erf(w_1 / (sqrt_2 * max(eps, stdev_w_1)))) &
+      + stdev_w_1 / sqrt_2pi &
+          * exp(-one_half * (w_1 / max(eps, stdev_w_1)) ** 2)
+    wHm_2 &
+    = one_half * w_2 &
+        * (one + erf(w_2 / (sqrt_2 * max(eps, stdev_w_2)))) &
+      + stdev_w_2 / sqrt_2pi &
+          * exp(-one_half * (w_2 / max(eps, stdev_w_2)) ** 2)
 
-    do i = 1, gr%nz
-      wHm_1 &
-      = one_half * w_1(1,i) &
-          * (one + erf(w_1(1,i) / (sqrt_2 * stdev_w_1(1,i)))) &
-        + stdev_w_1(1,i) / sqrt_2pi &
-            * exp(-one_half * (w_1(1,i) / stdev_w_1(1,i)) ** 2)
-      wHm_2 &
-      = one_half * w_2(1,i) &
-          * (one + erf(w_2(1,i) / (sqrt_2 * stdev_w_2(1,i)))) &
-        + stdev_w_2(1,i) / sqrt_2pi &
-            * exp(-one_half * (w_2(1,i) / stdev_w_2(1,i)) ** 2)
+    w_up_in_cloud &
+    = (mixt_frac * max(eps, cloud_frac_1) * wHm_1 &
+        + (one - mixt_frac) * max(eps, cloud_frac_2) * wHm_2) &
+      / (mixt_frac * max(eps, cloud_frac_1) &
+        + (one - mixt_frac) * max(eps, cloud_frac_2))
 
-      w_up_in_cloud(1, i) &
-      = (mixt_frac(1,i) * cloud_frac_1(1,i) * wHm_1 &
-          + (1 - mixt_frac(1,i)) * cloud_frac_2(1,i) * wHm_2) &
-        / (mixt_frac(1,i) * cloud_frac_1(1, i) &
-          + (1 - mixt_frac(1,i)) * cloud_frac_2(1, i))
-
-    end do
   end subroutine calc_w_up_in_cloud
 
   !=============================================================================

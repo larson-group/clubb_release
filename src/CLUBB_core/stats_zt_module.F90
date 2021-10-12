@@ -75,6 +75,7 @@ module stats_zt_module
         iKh_zt, &
         iwp2thvp, &
         iwp2rcp, &
+        iw_up_in_cloud, &
         iwprtpthlp, &
         irc_coef, &
         isigma_sqd_w_zt, &
@@ -1419,6 +1420,13 @@ module stats_zt_module
              var_description="w'^2rc'", var_units="(m^2 kg)/(s^2 kg)", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
+        
+      case ('w_up_in_cloud')
+        iw_up_in_cloud = k
+        call stat_assign( var_index=iw_up_in_cloud, var_name="w_up_in_cloud", &
+             var_description="mean of updraft within clouds", &
+             var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+         k = k + 1
 
       case ('wprtpthlp')
         iwprtpthlp = k
