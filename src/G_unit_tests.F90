@@ -154,6 +154,9 @@ program G_unit_tests
 
   use tuner_tests, only: &
       tuner_tests_driver        ! Procedure
+      
+  use w_up_in_cloud_tests, only: &
+      w_up_in_cloud_tests_driver
 
   use grid_class, only: grid ! Type
 
@@ -187,14 +190,15 @@ program G_unit_tests
     l_mu_sigma_hm_tests = .true.,       & ! Flag for the hydromet mu/sigma tests
     l_pdf_parameter_tests = .true.,     & ! Flag for the PDF parameter tests
     l_spurious_source_test = .true.,    & ! Flag for the spurious source test
-    l_tuner_tests = .true.                ! Flag for the tuner tests
+    l_tuner_tests = .true.,             & ! Flag for the tuner tests
+    l_w_up_in_cloud_test = .true.
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
     l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
     l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test, &
     l_mu_sigma_hm_tests, l_pdf_parameter_tests, l_spurious_source_test, &
-    l_tuner_tests
+    l_tuner_tests, l_w_up_in_cloud_test
 
 
   ! Read namelist file
@@ -275,6 +279,12 @@ program G_unit_tests
 
   if ( l_tuner_tests ) then
      if ( tuner_tests_driver( ) /= 0 ) then
+        exit_code = 1
+     endif
+  endif
+  
+  if ( l_w_up_in_cloud_test ) then
+     if ( w_up_in_cloud_tests_driver(gr) /= 0 ) then
         exit_code = 1
      endif
   endif

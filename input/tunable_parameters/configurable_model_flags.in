@@ -1,5 +1,5 @@
 &configurable_clubb_flags_nl
-iiPDF_type                   = 1
+iiPDF_type                   = 7
 ipdf_call_placement          = 1
 
 l_godunov_upwind_wpxp_ta     = .false.,

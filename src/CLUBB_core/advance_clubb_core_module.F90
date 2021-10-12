@@ -677,9 +677,10 @@ module advance_clubb_core_module
       vpwp_zt       ! v'w' on thermo. grid     [m^2/s^2]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Skw_velocity, & ! Skewness velocity    [m/s]
-      a3_coef,      & ! The a3 coefficient from CLUBB eqns                [-]
-      a3_coef_zt      ! The a3 coefficient interpolated to the zt grid    [-]
+      Skw_velocity,  & ! Skewness velocity                                 [m/s]
+      w_up_in_cloud, & ! Upward velocity inside clouds                     [m/s]
+      a3_coef,       & ! The a3 coefficient from CLUBB eqns                [-]
+      a3_coef_zt       ! The a3 coefficient interpolated to the zt grid    [-]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       wp3_on_wp2,   &  ! w'^3 / w'^2 on the zm grid [m/s]
@@ -1037,7 +1038,7 @@ module advance_clubb_core_module
                                 wp2rtp, wprtp2, wp2thlp,                     & ! Intent(out)
                                 wpthlp2, wprtpthlp, wp2rcp,                  & ! Intent(out)
                                 rtprcp, rcp2,                                & ! Intent(out)
-                                uprcp, vprcp,                                & ! Intent(out)
+                                uprcp, vprcp, w_up_in_cloud,                 & ! Intent(out)
                                 Skw_velocity,                                & ! Intent(out)
                                 cloud_frac_zm,                               & ! Intent(out)
                                 ice_supersat_frac_zm,                        & ! Intent(out)
@@ -1974,7 +1975,7 @@ module advance_clubb_core_module
                                 wp2rtp, wprtp2, wp2thlp,                     & ! Intent(out)
                                 wpthlp2, wprtpthlp, wp2rcp,                  & ! Intent(out)
                                 rtprcp, rcp2,                                & ! Intent(out)
-                                uprcp, vprcp,                                & ! Intent(out)
+                                uprcp, vprcp, w_up_in_cloud,                 & ! Intent(out)
                                 Skw_velocity,                                & ! Intent(out)
                                 cloud_frac_zm,                               & ! Intent(out)
                                 ice_supersat_frac_zm,                        & ! Intent(out)
@@ -2081,6 +2082,7 @@ module advance_clubb_core_module
              tau_zm, Kh_zm, thlprcp,                                & ! intent(in)
              rtprcp, rcp2, em, a3_coef, a3_coef_zt,                 & ! intent(in)
              wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity,       & ! intent(in)
+             w_up_in_cloud,                                         & ! intent(in)
              pdf_params, pdf_params_zm, sclrm, sclrp2,              & ! intent(in)
              sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp,         & ! intent(in)
              wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp,     & ! intent(in)
@@ -2222,7 +2224,7 @@ module advance_clubb_core_module
                                  wp2rtp, wprtp2, wp2thlp,       & ! Intent(out)
                                  wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
                                  rtprcp, rcp2,                  & ! Intent(out)
-                                 uprcp, vprcp,                  & ! Intent(out)
+                                 uprcp, vprcp, w_up_in_cloud,   & ! Intent(out)
                                  Skw_velocity,                  & ! Intent(out)
                                  cloud_frac_zm,                 & ! Intent(out)
                                  ice_supersat_frac_zm,          & ! Intent(out)
@@ -2485,7 +2487,8 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
       uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
-      vprcp                 ! < v' r_c' >              [(m kg)/(s kg)]
+      vprcp,              & ! < v' r_c' >              [(m kg)/(s kg)]
+      w_up_in_cloud         ! mean updraft over clouds [m/s]
 
     ! Variables being passed back to only advance_clubb_core (for statistics).
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
@@ -2833,7 +2836,7 @@ module advance_clubb_core_module
            rcm, wpthvp_zt, wp2thvp, rtpthvp_zt,            & ! intent(out)
            thlpthvp_zt, wprcp_zt, wp2rcp, rtprcp_zt,       & ! intent(out)
            thlprcp_zt, rcp2_zt,                            & ! intent(out)
-           uprcp_zt, vprcp_zt,                             & ! intent(out)
+           uprcp_zt, vprcp_zt, w_up_in_cloud,              & ! intent(out)
            pdf_params, pdf_implicit_coefs_terms,           & ! intent(out)
            F_w, F_rt, F_thl,                               & ! intent(out)
            min_F_w, max_F_w,                               & ! intent(out)
@@ -2951,7 +2954,7 @@ module advance_clubb_core_module
              rcm_zm, wpthvp, wp2thvp_zm, rtpthvp,                  & ! intent(out)
              thlpthvp, wprcp, wp2rcp_zm, rtprcp,                   & ! intent(out)
              thlprcp, rcp2,                                        & ! intent(out)
-             uprcp, vprcp,                                         & ! intent(out)
+             uprcp, vprcp, w_up_in_cloud,                          & ! intent(out)
              pdf_params_zm, pdf_implicit_coefs_terms_zm,           & ! intent(out)
              F_w_zm, F_rt_zm, F_thl_zm,                            & ! intent(out)
              min_F_w_zm, max_F_w_zm,                               & ! intent(out)

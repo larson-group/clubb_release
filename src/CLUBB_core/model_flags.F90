@@ -492,7 +492,7 @@ module model_flags
 !-----------------------------------------------------------------------
     ! Begin code
 
-    iiPDF_type = iiPDF_ADG1
+    iiPDF_type = 7
     ipdf_call_placement = ipdf_pre_advance_fields
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.

@@ -110,6 +110,7 @@ module stats_variables
      iKh_zt = 0, & 
      iwp2thvp = 0, & 
      iwp2rcp = 0, & 
+     iw_up_in_cloud = 0, &
      iwprtpthlp = 0, &
      irc_coef = 0, &
      isigma_sqd_w_zt = 0, & 

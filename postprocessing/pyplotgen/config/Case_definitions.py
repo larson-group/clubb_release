@@ -169,7 +169,7 @@ ARM_97 = {'name': 'arm_97',
           'cam_file': None,
           'sam_file': {'sam': sam_output_root + "/ARM9707_SAM_CLUBB.nc"},
           'wrf_file': None,
-          'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+          'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 ASTEX_A209 = {'name': 'astex_a209',
               'description': "",
@@ -218,7 +218,7 @@ ATEX = {'name': 'atex',
                      'zt': wrf_output_root + "/atex_zt_wrf.nc",
                      'sfc': wrf_output_root + "/atex_sfc_wrf.nc"
                      },
-        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs]}
+        'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 BOMEX = {'name': 'bomex',
          'description': "",
@@ -904,7 +904,7 @@ TWP_ICE = {'name': 'twp_ice',
            'cam_file': None,
            'sam_file': None,
            'wrf_file': None,
-           'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+           'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 WANGARA = {'name': 'wangara',
            'description': "Note that COAMPS benchmark data is actually RAMS data by default.",
