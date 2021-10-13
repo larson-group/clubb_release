@@ -537,7 +537,7 @@ contains
 #endif
     wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
-    clubb_params, &                                         ! intent(in)
+    clubb_params, lmin, &                                   ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
@@ -678,6 +678,9 @@ contains
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    real( kind = core_rknd ), intent(in) :: &
+      lmin    ! Min. value for the length scale    [m]
+
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
 
@@ -793,7 +796,7 @@ contains
 #endif
       wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)
-      clubb_params, &                                         ! intent(in)
+      clubb_params, lmin, &                                   ! intent(in)
       clubb_config_flags, &                                   ! intent(in)
       stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
       um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
@@ -850,7 +853,7 @@ contains
 #ifdef GFDL
     cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
-    gr, err_code_api )                                        ! intent(out) 
+    gr, lmin, err_code_api )                              ! intent(out) 
 
     use advance_clubb_core_module, only : setup_clubb_core
 
@@ -964,11 +967,14 @@ contains
 #endif
 
     ! Output variables 
+    real( kind = core_rknd ), intent(out) :: &
+      lmin    ! Min. value for the length scale    [m]
+
     integer, intent(out) :: & 
     err_code_api   ! Diagnostic for a problem with the setup 
 
     call setup_clubb_core &
-      ( nzmax, T0_in, ts_nudge_in,                      & ! intent(in)
+      ( nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
       hydromet_dim_in, sclr_dim_in,                         & ! intent(in)
       sclr_tol_in, edsclr_dim_in, params,                   & ! intent(in)
       l_host_applies_sfc_fluxes,                            & ! intent(in)
@@ -989,7 +995,7 @@ contains
 #ifdef GFDL
       , cloud_frac_min                                      & ! intent(in)  h1g, 2010-06-16
 #endif
-      gr, err_code_api )                                          ! intent(out)
+      gr, lmin, err_code_api )                                ! intent(out)
 
   end subroutine setup_clubb_core_api
 
@@ -1490,7 +1496,7 @@ contains
     deltaz, params, nzmax, &
     grid_type, momentum_heights, thermodynamic_heights, &
     l_prescribed_avg_deltaz, &
-    err_code_api )
+    lmin, err_code_api )
 
     use parameters_tunable, only: &
         setup_parameters
@@ -1542,6 +1548,9 @@ contains
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
     ! Output Variables 
+    real( kind = core_rknd ), intent(out) :: &
+      lmin    ! Min. value for the length scale    [m]
+
     integer, intent(out) ::  & 	 	      
       err_code_api ! Error condition 
 
@@ -1549,7 +1558,7 @@ contains
       deltaz, params, nzmax, & ! intent(in)
       grid_type, momentum_heights, thermodynamic_heights, & ! intent(in)
       l_prescribed_avg_deltaz, & ! intent(in)
-      err_code_api ) ! intent(out)
+      lmin, err_code_api ) ! intent(out)
 
   end subroutine setup_parameters_api
 

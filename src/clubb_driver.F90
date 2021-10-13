@@ -596,6 +596,9 @@ module clubb_driver
     real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
       params  ! Model parameters, C1, nu2, etc.
 
+    real( kind = core_rknd ) :: &
+      lmin    ! Min. value for the length scale    [m]
+
     real( kind = core_rknd ), dimension(:), allocatable :: &
       rrm, & ! Overall mean rain water mixing ratio                  [kg/kg]
       Nrm       ! Overall mean rain drop concentration               [num/kg]
@@ -1387,7 +1390,7 @@ module clubb_driver
            l_prescribed_avg_deltaz,                           & ! intent(in)
            l_damp_wp2_using_em,                               & ! intent(in)
            l_stability_correct_tau_zm,                        & ! intent(in)
-           gr, err_code_dummy )                                     ! Intent(out)
+           gr, lmin, err_code_dummy )                           ! Intent(out)
 
     ! Allocate and initialize variables
 
@@ -2190,7 +2193,7 @@ module clubb_driver
              rfrzm, radf, wphydrometp, &                          ! Intent(in)
              wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
              dummy_dx, dummy_dy, &                                ! Intent(in)
-             params, &                                            ! Intent(in)
+             params, lmin, &                                      ! Intent(in)
              clubb_config_flags, &                                ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
              um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)

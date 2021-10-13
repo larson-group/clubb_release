@@ -137,7 +137,7 @@ module advance_clubb_core_module
 #endif
                wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &        ! intent(in)
                host_dx, host_dy, &                                  ! intent(in)
-               clubb_params, &                                      ! intent(in)
+               clubb_params, lmin, &                                ! intent(in)
                clubb_config_flags, &                                ! intent(in)
                stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! intent(inout)
@@ -494,6 +494,9 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    real( kind = core_rknd ), intent(in) :: &
+      lmin    ! Min. value for the length scale    [m]
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -1152,13 +1155,13 @@ module advance_clubb_core_module
                                                                   ! buoyant parcel calc
 
 
-        call calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, rtm, & ! intent(in)
-                  thlm, thvm, &                                 ! intent(in)  
-                  newmu, rtp2, thlp2, rtpthlp, pdf_params, em, &     ! intent(in)
-                  thv_ds_zt, Lscale_max, &                           ! intent(in)
-                  clubb_config_flags%l_Lscale_plume_centered, &      ! intent(in)
-                  stats_zt, &                                        ! intent(inout)
-                  Lscale, Lscale_up, Lscale_down )                   ! intent(out)
+        call calc_Lscale_directly ( gr, l_implemented, p_in_Pa, &! intent(in)
+                  exner, rtm, thlm, thvm, &                      ! intent(in)
+                  newmu, rtp2, thlp2, rtpthlp, pdf_params, em, & ! intent(in)
+                  thv_ds_zt, Lscale_max, lmin, &                 ! intent(in)
+                  clubb_config_flags%l_Lscale_plume_centered, &  ! intent(in)
+                  stats_zt, &                                    ! intent(inout)
+                  Lscale, Lscale_up, Lscale_down )               ! intent(out)
 
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
@@ -3097,7 +3100,7 @@ module advance_clubb_core_module
 #ifdef GFDL
                  , cloud_frac_min                         & ! intent(in)  h1g, 2010-06-16
 #endif
-                 , gr , err_code_out )                             ! intent(out)
+                 , gr , lmin, err_code_out )                ! intent(out)
 
       ! Description:
       !   Subroutine to set up the model for execution.
@@ -3252,11 +3255,14 @@ module advance_clubb_core_module
          cloud_frac_min         ! h1g, 2010-06-16 end mod
 #endif
 
-      ! Local variables
-      integer :: begin_height, end_height
+      real( kind = core_rknd ), intent(out) :: &
+        lmin    ! Min. value for the length scale    [m]
 
       integer, intent(out) :: &
         err_code_out  ! Error code indicator
+
+      ! Local variables
+      integer :: begin_height, end_height
 
       !----- Begin Code -----
 
@@ -3499,11 +3505,11 @@ module advance_clubb_core_module
 
       ! Define tunable constant parameters
       call setup_parameters &
-           ( gr, deltaz, params, gr%nz,                                & ! intent(in)
+           ( gr, deltaz, params, gr%nz,                            & ! intent(in)
              grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
              thermodynamic_heights(begin_height:end_height),       & ! intent(in)
              l_prescribed_avg_deltaz,                              & ! intent(in)
-             err_code_out )                                          ! intent(out)
+             lmin, err_code_out )                                    ! intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then

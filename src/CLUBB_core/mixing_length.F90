@@ -16,8 +16,9 @@ module mixing_length
   !=============================================================================
   subroutine compute_mixing_length( gr, thvm, thlm, &
                              rtm, em, Lscale_max, p_in_Pa, &
-                             exner, thv_ds, mu, l_implemented, &
+                             exner, thv_ds, mu, lmin, l_implemented, &
                              Lscale, Lscale_up, Lscale_down )
+
     ! Description:
     !   Larson's 5th moist, nonlocal length scale
     !
@@ -115,9 +116,6 @@ module mixing_length
         zero_threshold, &
         eps
 
-    use parameters_tunable, only:  &  ! Variable(s)
-        lmin    ! Minimum value for Lscale                         [m]
-
     use grid_class, only:  &
         grid, & ! Type
         zm2zt ! Procedure(s)
@@ -160,7 +158,8 @@ module mixing_length
       Lscale_max ! Maximum allowable value for Lscale             [m]
 
     real( kind = core_rknd ), intent(in) :: &
-      mu  ! mu Fractional extrainment rate per unit altitude      [1/m]
+      mu,   & ! mu Fractional extrainment rate per unit altitude  [1/m]
+      lmin    ! CLUBB tunable parameter lmin
 
     logical, intent(in) :: &
       l_implemented ! Flag for CLUBB being implemented in a larger model
@@ -840,9 +839,9 @@ module mixing_length
 
 
 !===============================================================================
-  subroutine calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, rtm,        &
+  subroutine calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, rtm,    &
                   thlm, thvm, newmu, rtp2, thlp2, rtpthlp,                     &
-                  pdf_params, em, thv_ds_zt, Lscale_max,                       &
+                  pdf_params, em, thv_ds_zt, Lscale_max, lmin,                 &
                   l_Lscale_plume_centered,                                     &
                   stats_zt, & 
                   Lscale, Lscale_up, Lscale_down)
@@ -913,11 +912,12 @@ module mixing_length
       thv_ds_zt
 
     real( kind = core_rknd ), intent(in) ::  &
-     newmu, &
-     Lscale_max
+      newmu, &
+      Lscale_max, &
+      lmin
 
     type (pdf_parameter), intent(in) :: &
-        pdf_params    ! PDF Parameters  [units vary]
+      pdf_params    ! PDF Parameters  [units vary]
 
     logical, intent(in) :: &
       l_Lscale_plume_centered    ! Alternate that uses the PDF to compute the perturbed values
@@ -990,15 +990,15 @@ module mixing_length
          mu_pert_2   = newmu * Lscale_mu_coef
 
 
-         call compute_mixing_length( gr, thvm, thlm_pert_1,                   &!intent(in)
-                              rtm_pert_1, em, Lscale_max, p_in_Pa,        & !intent(in)
-                              exner, thv_ds_zt, mu_pert_1, l_implemented, & !intent(in)
-                              Lscale_pert_1, Lscale_up, Lscale_down ) !intent(out)
+         call compute_mixing_length( gr, thvm, thlm_pert_1,              & ! In
+                       rtm_pert_1, em, Lscale_max, p_in_Pa,              & ! In
+                       exner, thv_ds_zt, mu_pert_1, lmin, l_implemented, & ! In
+                       Lscale_pert_1, Lscale_up, Lscale_down             ) ! Out
 
-         call compute_mixing_length( gr, thvm, thlm_pert_2,                   & !intent(in)
-                              rtm_pert_2, em, Lscale_max, p_in_Pa,        & !intent(in)
-                              exner, thv_ds_zt, mu_pert_2, l_implemented, & !intent(in)
-                              Lscale_pert_2, Lscale_up, Lscale_down ) !intent(out)
+         call compute_mixing_length( gr, thvm, thlm_pert_2,              & ! In
+                       rtm_pert_2, em, Lscale_max, p_in_Pa,              & ! In
+                       exner, thv_ds_zt, mu_pert_2, lmin, l_implemented, & ! In
+                       Lscale_pert_2, Lscale_up, Lscale_down             ) ! Out
 
       else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
         ! Take the values of thl and rt based one 1st or 2nd plume
@@ -1033,15 +1033,15 @@ module mixing_length
         mu_pert_neg_rt  = newmu * Lscale_mu_coef
 
         ! Call length with perturbed values of thl and rt
-        call compute_mixing_length( gr, thvm, thlm_pert_pos_rt,                    & !intent(in)
-                           rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
-                           exner, thv_ds_zt, mu_pert_pos_rt, l_implemented,    & !intent(in)
-                           Lscale_pert_1, Lscale_up, Lscale_down ) !intent(out)
+        call compute_mixing_length( gr, thvm, thlm_pert_pos_rt,          & ! In
+                  rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,              & ! In
+                  exner, thv_ds_zt, mu_pert_pos_rt, lmin, l_implemented, & ! In
+                  Lscale_pert_1, Lscale_up, Lscale_down                  ) ! Out
 
-        call compute_mixing_length( gr, thvm, thlm_pert_neg_rt,                    & !intent(in)
-                           rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
-                           exner, thv_ds_zt, mu_pert_neg_rt, l_implemented,    & !intent(in)
-                           Lscale_pert_2, Lscale_up, Lscale_down ) !intent(out)
+        call compute_mixing_length( gr, thvm, thlm_pert_neg_rt,          & ! In
+                  rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,              & ! In
+                  exner, thv_ds_zt, mu_pert_neg_rt, lmin, l_implemented, & ! In
+                  Lscale_pert_2, Lscale_up, Lscale_down                  ) ! Out
       else
         Lscale_pert_1 = unused_var ! Undefined
         Lscale_pert_2 = unused_var ! Undefined
@@ -1064,10 +1064,10 @@ module mixing_length
       ! rather than the mean length scale.
 
       ! Diagnose CLUBB's turbulent mixing length scale.
-      call compute_mixing_length( gr, thvm, thlm,                         & !intent(in)
-                           rtm, em, Lscale_max, p_in_Pa,              & !intent(in)
-                           exner, thv_ds_zt, newmu, l_implemented,    & !intent(in)
-                           Lscale, Lscale_up, Lscale_down ) !intent(out)
+      call compute_mixing_length( gr, thvm, thlm,                        & ! In
+                           rtm, em, Lscale_max, p_in_Pa,                 & ! In
+                           exner, thv_ds_zt, newmu, lmin, l_implemented, & ! In
+                           Lscale, Lscale_up, Lscale_down                ) ! Out
 
       if ( l_avg_Lscale ) then
         if ( l_Lscale_plume_centered ) then

@@ -107,11 +107,10 @@ module parameters_tunable
     mu          = 1.000E-3_core_rknd, & ! Fract entrain rate per unit alt  [1/m]
     mult_coef   = 0.500000_core_rknd, & ! Coef. applied to log(avg dz/thresh)[-]
     taumin      = 90.00000_core_rknd, & ! Min. allow. value: time-scale tau  [s]
-    taumax      = 3600.000_core_rknd, & ! Max. allow. value: time-scale tau  [s]
-    lmin        = 20.00000_core_rknd    ! Min. value for the length scale    [m]
+    taumax      = 3600.000_core_rknd    ! Max. allow. value: time-scale tau  [s]
 !$omp threadprivate(c_K, c_K1, c_K2, c_K6, &
 !$omp   c_K8, c_K9, c_K_hm, c_K_hmb, K_hm_min_coef, gamma_coef, gamma_coefb, gamma_coefc, &
-!$omp   mu, mult_coef, taumin, taumax, lmin)
+!$omp   mu, mult_coef, taumin, taumax)
 
   real( kind = core_rknd ), public :: &
     Lscale_mu_coef   = 2.0_core_rknd, & ! Coef perturb mu: av calc Lscale    [-]
@@ -515,7 +514,7 @@ module parameters_tunable
             ( gr, deltaz, params, nzmax, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
-              err_code_out )
+              lmin, err_code_out )
 
     ! Description:
     ! Subroutine to setup model parameters
@@ -588,6 +587,9 @@ module parameters_tunable
 
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+
+    real( kind = core_rknd ), intent(out) :: &
+      lmin    ! Min. value for the length scale    [m]
 
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
