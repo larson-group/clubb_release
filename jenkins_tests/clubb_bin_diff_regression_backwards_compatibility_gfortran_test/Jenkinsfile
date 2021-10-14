@@ -9,7 +9,7 @@ pipeline {
     }
     stage('Run Python Test') {
       steps {
-        sh '''python3 /home/jenkins/clubb_bin_diff_regression_backwards_compatibility_gfortran_test_workspace/sys_admin/python_nightly_test_suite/run_test.py -c /home/jenkins/clubb_bin_diff_regression_backwards_compatibility_gfortran_test_workspace/bit_diff_clubb_config'''
+        sh '''python3 /home/jenkins/clubb_bin_diff_regression_backwards_compatibility_gfortran_test_workspace/sys_admin/python_nightly_test_suite/run_test.py -c /home/jenkins/clubb_bin_diff_regression_backwards_compatibility_gfortran_test_workspace/bit_diff_clubb_bc_r8092_config'''
       }
     }
   }
