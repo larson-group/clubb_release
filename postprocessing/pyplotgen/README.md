@@ -174,9 +174,11 @@ Example:
 },
 ~~~~
 ### 3. Cleaning legend labels
-Changing the text on a legend label is easy. To do so, simply change the foldername of the data being imported. Note 
+Changing the text on a legend label for non-budget plots is easy. To do so, simply change the foldername of the data being imported. Note 
 that underscores (`_`) will be replaced with spaces automatically. This is done to make the legends more readable, as it 
 allows python to know how to split up new lines for longer legend labels.
+
+To change the legend labels on a budget plot, you will need to modify the legend labels in the appropriate VariableGroup file, such as VariableGroupBaseBudgets.py or VariableGroupBaseBudgetsSamStyle.py.
 
 ## Adding new Variables
 Note: additional documentation is available in the "Reference Documentation" listed above
