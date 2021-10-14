@@ -1200,6 +1200,7 @@ module advance_clubb_core_module
                           em, sqrt_em_zt, & ! intent in
                           ufmin, z_displace, tau_const, & ! intent in
                           sfc_elevation, Lscale_max, & ! intent in
+                          clubb_params, & ! intent in
                           clubb_config_flags%l_e3sm_config, & ! intent in
                           clubb_config_flags%l_brunt_vaisala_freq_moist, & !intent in
                           clubb_config_flags%l_use_thvm_in_bv_freq, &! intent in

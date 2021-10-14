@@ -1101,6 +1101,7 @@ module mixing_length
                         em, sqrt_em_zt, & ! intent in
                         ufmin, z_displace, tau_const, & ! intent in
                         sfc_elevation, Lscale_max, & ! intent in
+                        clubb_params, & ! intent in
                         l_e3sm_config, & ! intent in
                         l_brunt_vaisala_freq_moist, & !intent in
                         l_use_thvm_in_bv_freq, &! intent in
@@ -1142,18 +1143,19 @@ module mixing_length
     use clubb_precision, only: &
         core_rknd
 
-    use parameters_tunable, only: &
-        C_invrs_tau_bkgnd,          &
-        C_invrs_tau_shear,          &
-        C_invrs_tau_sfc,            &
-        C_invrs_tau_N2,             &
-        C_invrs_tau_N2_wp2 ,        &
-        C_invrs_tau_N2_wpxp,        &
-        C_invrs_tau_N2_xp2,         &
-        C_invrs_tau_wpxp_N2_thresh, &
-        C_invrs_tau_N2_clear_wp3,   &
-        C_invrs_tau_wpxp_Ri,        &
-        altitude_threshold
+    use parameter_indices, only: &
+        nparams,                    & ! Variable(s)
+        iC_invrs_tau_bkgnd,          &
+        iC_invrs_tau_shear,          &
+        iC_invrs_tau_sfc,            &
+        iC_invrs_tau_N2,             &
+        iC_invrs_tau_N2_wp2 ,        &
+        iC_invrs_tau_N2_wpxp,        &
+        iC_invrs_tau_N2_xp2,         &
+        iC_invrs_tau_wpxp_N2_thresh, &
+        iC_invrs_tau_N2_clear_wp3,   &
+        iC_invrs_tau_wpxp_Ri,        &
+        ialtitude_threshold
 
     implicit none
 
@@ -1184,6 +1186,9 @@ module mixing_length
       tau_const,     &
       sfc_elevation, &
       Lscale_max
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
       l_e3sm_config,              &
@@ -1223,7 +1228,18 @@ module mixing_length
       brunt_freq_out_cloud
 
    real( kind = core_rknd ) :: &
-      ustar
+      ustar,                      &
+      C_invrs_tau_bkgnd,          &
+      C_invrs_tau_shear,          &
+      C_invrs_tau_sfc,            &
+      C_invrs_tau_N2,             &
+      C_invrs_tau_N2_wp2 ,        &
+      C_invrs_tau_N2_wpxp,        &
+      C_invrs_tau_N2_xp2,         &
+      C_invrs_tau_wpxp_N2_thresh, &
+      C_invrs_tau_N2_clear_wp3,   &
+      C_invrs_tau_wpxp_Ri,        &
+      altitude_threshold
 
 
 !-----------------------------------Begin Code---------------------------------------------------!
@@ -1238,6 +1254,18 @@ module mixing_length
                                         brunt_vaisala_freq_sqd_moist, & ! intent(out)
                                         brunt_vaisala_freq_sqd_plus ) ! intent(out)
 
+        ! Unpack tunable parameters
+        C_invrs_tau_bkgnd = clubb_params(iC_invrs_tau_bkgnd)
+        C_invrs_tau_shear = clubb_params(iC_invrs_tau_shear)
+        C_invrs_tau_sfc = clubb_params(iC_invrs_tau_sfc)
+        C_invrs_tau_N2 = clubb_params(iC_invrs_tau_N2)
+        C_invrs_tau_N2_wp2 = clubb_params(iC_invrs_tau_N2_wp2)
+        C_invrs_tau_N2_wpxp = clubb_params(iC_invrs_tau_N2_wpxp)
+        C_invrs_tau_N2_xp2 = clubb_params(iC_invrs_tau_N2_xp2)
+        C_invrs_tau_wpxp_N2_thresh = clubb_params(iC_invrs_tau_wpxp_N2_thresh)
+        C_invrs_tau_N2_clear_wp3 = clubb_params(iC_invrs_tau_N2_clear_wp3)
+        C_invrs_tau_wpxp_Ri = clubb_params(iC_invrs_tau_wpxp_Ri)
+        altitude_threshold = clubb_params(ialtitude_threshold)
 
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
