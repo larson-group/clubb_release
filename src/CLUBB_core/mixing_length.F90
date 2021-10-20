@@ -842,6 +842,7 @@ module mixing_length
   subroutine calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, rtm,    &
                   thlm, thvm, newmu, rtp2, thlp2, rtpthlp,                     &
                   pdf_params, em, thv_ds_zt, Lscale_max, lmin,                 &
+                  clubb_params,                                                &
                   l_Lscale_plume_centered,                                     &
                   stats_zt, & 
                   Lscale, Lscale_up, Lscale_down)
@@ -852,9 +853,10 @@ module mixing_length
         one, &
         unused_var
 
-    use parameters_tunable, only: &
-        Lscale_mu_coef, &
-        Lscale_pert_coef
+    use parameter_indices, only: &
+        nparams, &
+        iLscale_mu_coef, &
+        iLscale_pert_coef
 
     use grid_class, only: &
         grid ! Type
@@ -919,6 +921,9 @@ module mixing_length
     type (pdf_parameter), intent(in) :: &
       pdf_params    ! PDF Parameters  [units vary]
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     logical, intent(in) :: &
       l_Lscale_plume_centered    ! Alternate that uses the PDF to compute the perturbed values
 
@@ -948,12 +953,16 @@ module mixing_length
 
      real( kind = core_rknd ) :: &
          mu_pert_1, mu_pert_2, &
-         mu_pert_pos_rt, mu_pert_neg_rt ! For l_Lscale_plume_centered
+         mu_pert_pos_rt, mu_pert_neg_rt, & ! For l_Lscale_plume_centered
+         Lscale_mu_coef, Lscale_pert_coef
 
     !Lscale_weight Uncomment this if you need to use this vairable at some
     !point.
 
  ! ---- Begin Code ----
+
+      Lscale_mu_coef = clubb_params(iLscale_mu_coef)
+      Lscale_pert_coef = clubb_params(iLscale_pert_coef)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
 

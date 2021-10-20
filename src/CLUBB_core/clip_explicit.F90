@@ -1002,7 +1002,7 @@ module clip_explicit
   end subroutine clip_variance_level
 
   !=============================================================================
-  subroutine clip_skewness( gr, dt, sfc_elevation, wp2_zt, &
+  subroutine clip_skewness( gr, dt, sfc_elevation, Skw_max_mag, wp2_zt, &
                             stats_zt, & ! intent(inout)
                             wp3 )
 
@@ -1076,7 +1076,8 @@ module clip_explicit
       dt               ! Model timestep; used here for STATS        [s]
 
     real( kind = core_rknd ), intent(in) ::  &
-      sfc_elevation    ! Elevation of ground level                  [m AMSL]
+      sfc_elevation, & ! Elevation of ground level                  [m AMSL]
+      Skw_max_mag      ! Maximum allowable magnitude of Skewness    [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
@@ -1092,7 +1093,7 @@ module clip_explicit
                               stats_zt ) ! intent(inout)
     endif
 
-    call clip_skewness_core( gr, sfc_elevation, wp2_zt, & ! intent(in)
+    call clip_skewness_core( gr, sfc_elevation, Skw_max_mag, wp2_zt, & ! intent(in)
                              wp3 ) ! intent(inout)
 
     if ( l_stats_samp ) then
@@ -1104,14 +1105,11 @@ module clip_explicit
   end subroutine clip_skewness
 
 !=============================================================================
-  subroutine clip_skewness_core( gr, sfc_elevation, wp2_zt, &
+  subroutine clip_skewness_core( gr, sfc_elevation, Skw_max_mag, wp2_zt, &
                                  wp3 )
 !
     use grid_class, only: & 
         grid ! Type
-
-    use parameters_tunable, only: &
-        Skw_max_mag ! [-]
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1125,7 +1123,8 @@ module clip_explicit
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
-      sfc_elevation    ! Elevation of ground level                  [m AMSL]
+      sfc_elevation, & ! Elevation of ground level                  [m AMSL]
+      Skw_max_mag      ! Maximum allowable magnitude of Skewness    [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]

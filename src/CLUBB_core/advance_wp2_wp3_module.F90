@@ -608,7 +608,8 @@ module advance_wp2_wp3_module
         band_solvex
 
     use parameter_indices, only: &
-        nparams    ! Variable(s)
+        nparams, & ! Variable(s)
+        iSkw_max_mag
 
     use fill_holes, only: & 
         fill_holes_vertical
@@ -1263,9 +1264,10 @@ module advance_wp2_wp3_module
     wp2_zt = max( zm2zt( gr, wp2 ), w_tol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
-    call clip_skewness( gr, dt, sfc_elevation, wp2_zt, & ! intent(in)
-                        stats_zt, &                      ! intent(inout)
-                        wp3 )                            ! intent(inout)
+    call clip_skewness( gr, dt, sfc_elevation, &              ! intent(in)
+                        clubb_params(iSkw_max_mag), wp2_zt, & ! intent(in)
+                        stats_zt, &                           ! intent(inout)
+                        wp3 )                                 ! intent(inout)
 
     ! Compute wp3_zm for output purposes
     wp3_zm = zt2zm( gr, wp3 )

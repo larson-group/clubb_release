@@ -1158,6 +1158,7 @@ module advance_clubb_core_module
                   exner, rtm, thlm, thvm, &                      ! intent(in)
                   newmu, rtp2, thlp2, rtpthlp, pdf_params, em, & ! intent(in)
                   thv_ds_zt, Lscale_max, lmin, &                 ! intent(in)
+                  clubb_params, &                                ! intent(in)
                   clubb_config_flags%l_Lscale_plume_centered, &  ! intent(in)
                   stats_zt, &                                    ! intent(inout)
                   Lscale, Lscale_up, Lscale_down )               ! intent(out)

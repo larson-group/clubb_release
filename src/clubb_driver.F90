@@ -2091,7 +2091,8 @@ module clubb_driver
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
           wp2_zt = max( zm2zt( gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
-          call clip_skewness_core( gr, sfc_elevation, wp2_zt, wp3 )
+          call clip_skewness_core( gr, sfc_elevation, params(iSkw_max_mag), &
+                                   wp2_zt, wp3 )
         end if
       end if
 
