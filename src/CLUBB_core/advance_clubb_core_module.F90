@@ -3115,9 +3115,10 @@ module advance_clubb_core_module
           grid ! Type
 
       use parameter_indices, only:  &
-          nparams, & ! Variable(s)
-          iC1,     & ! Constant(s)
-          iC14
+          nparams,      & ! Variable(s)
+          iC1,          & ! Constant(s)
+          iC14,         &
+          iSkw_max_mag
 
       use parameters_tunable, only: &
           setup_parameters ! Procedure
@@ -3494,12 +3495,12 @@ module advance_clubb_core_module
 
       ! Define model constant parameters
 #ifdef GFDL
-      call setup_parameters_model( T0_in, ts_nudge_in,                         & ! intent(in)
-                                   hydromet_dim_in,                            & ! intent(in)
-                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in,    & ! intent(in)
+      call setup_parameters_model( T0_in, ts_nudge_in, params(iSkw_max_mag), & ! intent(in)
+                                   hydromet_dim_in,                          & ! intent(in)
+                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in,  & ! intent(in)
                                    cloud_frac_min )                 ! intent(in)  h1g, 2010-06-16
 #else
-      call setup_parameters_model( T0_in, ts_nudge_in,                       & ! intent(in)
+      call setup_parameters_model( T0_in, ts_nudge_in, params(iSkw_max_mag), & ! intent(in)
                                    hydromet_dim_in,                          & ! intent(in)
                                    sclr_dim_in, sclr_tol_in, edsclr_dim_in )   ! intent(in)
 #endif
