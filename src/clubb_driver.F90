@@ -2234,6 +2234,7 @@ module clubb_driver
                         ice_supersat_frac, hydromet, wphydrometp,                   & ! Intent(in)
                         corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
                         pdf_params, l_stats_samp,                                   & ! Intent(in)
+                        params,                                                     & ! Intent(in)
                         clubb_config_flags%iiPDF_type,                              & ! Intent(in)
                         l_use_precip_frac,                                          & ! Intent(in)
                         clubb_config_flags%l_predict_upwp_vpwp,                     & ! Intent(in)

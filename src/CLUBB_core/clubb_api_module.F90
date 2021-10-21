@@ -1931,6 +1931,7 @@ contains
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
     pdf_params, l_stats_samp, &                 ! Intent(in)
+    clubb_params, &                             ! Intent(in)
     iiPDF_type, &                               ! Intent(in)
     l_use_precip_frac, &                        ! Intent(in)
     l_predict_upwp_vpwp, &                      ! Intent(in)
@@ -1951,6 +1952,9 @@ contains
 
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
+
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
 
     use error_code, only : &
         err_code, &         ! Error Indicator
@@ -1996,6 +2000,9 @@ contains
 
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -2097,6 +2104,7 @@ contains
       ice_supersat_frac_col, hydromet_col, wphydrometp_col, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &               ! Intent(in)
       pdf_params, l_stats_samp, &                             ! Intent(in)
+      clubb_params, &                                         ! Intent(in)
       iiPDF_type, &                                           ! Intent(in)
       l_use_precip_frac, &                                    ! Intent(in)
       l_predict_upwp_vpwp, &                                  ! Intent(in)
@@ -2136,6 +2144,7 @@ contains
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
     pdf_params, l_stats_samp, &                 ! Intent(in)
+    clubb_params, &                             ! Intent(in)
     iiPDF_type, &                               ! Intent(in)
     l_use_precip_frac, &                        ! Intent(in)
     l_predict_upwp_vpwp, &                      ! Intent(in)
@@ -2158,6 +2167,9 @@ contains
 
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
+
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
 
     use error_code, only : &
         err_code, &         ! Error Indicator
@@ -2202,6 +2214,9 @@ contains
 
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -2258,6 +2273,7 @@ contains
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
       pdf_params, l_stats_samp, &                 ! Intent(in)
+      clubb_params, &                             ! Intent(in)
       iiPDF_type, &                               ! Intent(in)
       l_use_precip_frac, &                        ! Intent(in)
       l_predict_upwp_vpwp, &                      ! Intent(in)
