@@ -284,15 +284,18 @@ module diffusion
 
     ! k = 1 (bottom level); lower boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
+    ! These lines are currently commented out because they do not have any
+    ! effect on model results.  These k=1 level of this "lhs" array is not fed into
+    ! the final LHS matrix that will be used to solve for the next timestep. 
 
     ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-    lhs(kp1_tdiag,1) = - invrs_dzt(1) * ( K_zm(1) + nu(1) ) * invrs_dzm(1)
+!    lhs(kp1_tdiag,1) = - invrs_dzt(1) * ( K_zm(1) + nu(1) ) * invrs_dzm(1)
 
     ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-    lhs(k_tdiag,1)   = + invrs_dzt(1) * ( K_zm(1) + nu(1) ) * invrs_dzm(1)
+!    lhs(k_tdiag,1)   = + invrs_dzt(1) * ( K_zm(1) + nu(1) ) * invrs_dzm(1)
 
     ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-    lhs(km1_tdiag,1) = zero
+!    lhs(km1_tdiag,1) = zero
 
 
     ! Most of the interior model; normal conditions.
@@ -758,15 +761,19 @@ module diffusion
 
     ! k = 1; lower boundary level at surface.
     ! Only relevant if zero-flux boundary conditions are used.
+    ! These lines are currently commented out because they do not have any
+    ! effect on model results.  These k=1 level of this "lhs" array is not fed into
+    ! the final LHS matrix that will be used to solve for the next timestep. 
+
 
     ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-    lhs(kp1_mdiag,1) = - invrs_dzm(1) * ( K_zt(2) + nu(2) ) * invrs_dzt(2)
+!    lhs(kp1_mdiag,1) = - invrs_dzm(1) * ( K_zt(2) + nu(2) ) * invrs_dzt(2)
 
     ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-    lhs(k_mdiag,1)   = + invrs_dzm(1) * ( K_zt(2) + nu(2) ) * invrs_dzt(2)
+!    lhs(k_mdiag,1)   = + invrs_dzm(1) * ( K_zt(2) + nu(2) ) * invrs_dzt(2)
 
     ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-    lhs(km1_mdiag,1) = zero
+!    lhs(km1_mdiag,1) = zero
 
 
     ! Most of the interior model; normal conditions.
