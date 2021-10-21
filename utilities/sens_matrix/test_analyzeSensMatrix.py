@@ -61,7 +61,7 @@ def test_3x2_C8transformed():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
     vhNormlzdWeighted, uNormlzd, sNormlzd, \
     defaultParamValsOrigRow, dparamsSoln, \
     paramsSoln, paramsLowVals, paramsHiVals, \
@@ -124,7 +124,7 @@ def test_3x2_novarstransformed():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
     vhNormlzdWeighted, uNormlzd, sNormlzd, \
     defaultParamValsOrigRow, dparamsSoln, \
     paramsSoln, paramsLowVals, paramsHiVals, \
@@ -181,7 +181,7 @@ def test_2x2_C8transformed():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
     vhNormlzdWeighted, uNormlzd, sNormlzd, \
     defaultParamValsOrigRow, dparamsSoln, \
     paramsSoln, paramsLowVals, paramsHiVals, \
@@ -248,7 +248,7 @@ def test_2x2_novarstransformed():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
     vhNormlzdWeighted, uNormlzd, sNormlzd, \
     defaultParamValsOrigRow, dparamsSoln, \
     paramsSoln, paramsLowVals, paramsHiVals, \
