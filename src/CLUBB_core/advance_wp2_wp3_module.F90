@@ -1318,7 +1318,9 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid ! Type
+        grid, & ! Type
+        zm2zt, & ! Procedure(s)
+        zt2zm
 
     use parameter_indices, only: &
         nparams, & ! Variable(s)
@@ -1510,6 +1512,10 @@ module advance_wp2_wp3_module
       invrs_dt        ! Inverse of dt, 1/dt, used for computational efficiency
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
+      Kw1_zm, &     ! Eddy diffusivity coefficient, momentum levels [m2/s]
+      Kw8_zt        ! Eddy diffusivity coefficient, thermo. levels [m2/s]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       zero_vector    ! Vector of 0s
 
     real( kind = core_rknd ) ::  &
@@ -1534,6 +1540,10 @@ module advance_wp2_wp3_module
     C12 = clubb_params(iC12)
     C_wp3_pr_tp = clubb_params(iC_wp3_pr_tp)
 
+    ! Interpolate variables used for diffusion
+    Kw1_zm = max( zt2zm( gr, Kw1 ), zero )
+    Kw8_zt = max( zm2zt( gr, Kw8 ), zero )
+
     ! Calculated mean advection term for w'2
     call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), &                  ! intent(in)
                          lhs_ma_zm(:,:) )                              ! intent(out)
@@ -1546,14 +1556,16 @@ module advance_wp2_wp3_module
 
 
     ! Calculate diffusion term for w'2 using a completely implicit time step
-    call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:), & ! intent(in)
+    call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu1_vert_res_dep(:), & ! intent(in)
                            gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
+                           invrs_rho_ds_zm(:), rho_ds_zt(:), & ! intent(in)
                            lhs_diff_zm(:,:) ) ! intent(out)
 
 
     ! Calculate diffusion term for w'3 using a completely implicit time step
-    call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:), & ! intent(in)
+    call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu8_vert_res_dep(:), & ! intent(in)
                            gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
+                           invrs_rho_ds_zt(:), rho_ds_zm(:), & ! intent(in)
                            lhs_diff_zt(:,:) ) ! intent(out)
 
     lhs_diff_zt(:,:) = lhs_diff_zt(:,:) * C12
@@ -1576,21 +1588,17 @@ module advance_wp2_wp3_module
 
     end if
 
-
     ! Calculate turbulent advection terms for wp2
     call wp2_term_ta_lhs( gr, rho_ds_zt(:), invrs_rho_ds_zm(:), gr%invrs_dzm(:), & ! intent(in)
                           lhs_ta_wp2(:,:) )                                    ! intent(out)
-
 
     ! Calculate accumulation terms of w'^2 and w'^2 pressure term 2
     call wp2_terms_ac_pr2_lhs( gr, C_uu_shr, wm_zt(:), gr%invrs_dzm(:), & ! intent(in)
                                lhs_ac_pr2_wp2(:) )                    ! intent(out)
 
-
     ! Calculate dissipation terms 1 for w'^2
     call wp2_term_dp1_lhs( gr, C1_Skw_fnc(:), invrs_tau_C1_zm(:), & ! intent(in)
                            lhs_dp1_wp2(:) )                     ! intent(out)
-
 
     ! Calculate turbulent production terms of w'^3
     call wp3_term_tp_lhs( gr, one, wp2(:), &         ! intent(in)
@@ -1613,13 +1621,11 @@ module advance_wp2_wp3_module
     call wp3_terms_ac_pr2_lhs( gr, C11_Skw_fnc(:), wm_zm(:), gr%invrs_dzt(:), & ! intent(in)
                                lhs_ac_pr2_wp3(:) )                          ! intent(out)
 
-
     ! Calculate pressure terms 1 for w'^3
     call wp3_term_pr1_lhs( gr, clubb_params(iC8), clubb_params(iC8b), & ! intent(in)
                            invrs_tauw3t(:), Skw_zt(:), &          ! intent(in)
                            l_damp_wp3_Skw_squared, &              ! intent(in)
                            lhs_pr1_wp3(:) )                       ! intent(out)
-
 
     ! Lower boundary for w'3
     lhs(1,1) = 0.0_core_rknd
@@ -1985,11 +1991,12 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        grid, &
-        zm2zt ! Variable
+        grid    ! Variable
 
     use grid_class, only:  & 
-        ddzt ! Procedure
+        ddzt, & ! Procedure
+        zm2zt, & 
+        zt2zm
 
     use parameter_indices, only: &
         nparams, & ! Variable(s)
@@ -2180,6 +2187,10 @@ module advance_wp2_wp3_module
       invrs_dt        ! Inverse of dt, 1/dt, used for computational efficiency
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
+      Kw1_zm, &    ! Eddy diffusivity coefficient, momentum levels [m2/s]
+      Kw8_zt       ! Eddy diffusivity coefficient, thermo. levels [m2/s]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       zero_vector    ! Vector of 0s
 
     real( kind = core_rknd ) ::  &
@@ -2208,6 +2219,9 @@ module advance_wp2_wp3_module
     C8b = clubb_params(iC8b)
     C12 = clubb_params(iC12)
     C_wp3_pr_tp = clubb_params(iC_wp3_pr_tp)
+
+    Kw1_zm = max( zt2zm( gr, Kw1 ), zero )
+    Kw8_zt = max( zm2zt( gr, Kw8 ), zero )
 
     ! Experimental term from CLUBB TRAC ticket #411
 
@@ -2261,12 +2275,14 @@ module advance_wp2_wp3_module
 
         ! Calculate RHS eddy diffusion terms for w'2 and w'3
         
-        call diffusion_zm_lhs( gr, Kw1(:), nu1_vert_res_dep(:),      & ! intent(in) 
+        call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu1_vert_res_dep(:),      & ! intent(in) 
                                gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
+                               invrs_rho_ds_zm(:), rho_ds_zt(:), & ! intent(in)
                                rhs_diff_zm(:,:) )                  ! inetnt(out)
 
-        call diffusion_zt_lhs( gr, Kw8(:), nu8_vert_res_dep(:),      & ! inetnt(in) 
+        call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu8_vert_res_dep(:),      & ! inetnt(in) 
                                gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
+                               invrs_rho_ds_zt(:), rho_ds_zm(:), & ! intent(in)
                                rhs_diff_zt(:,:) )                  ! intent(out)
         ! Add diffusion terms
         do k = 2, gr%nz-1

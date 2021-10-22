@@ -614,6 +614,7 @@ module advance_xm_wpxp_module
     ! Calculate various terms that are the same between all LHS matricies
     call calc_xm_wpxp_lhs_terms( gr, Kh_zm, wm_zm, wm_zt, wp2,                     & ! In
                                  Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                 & ! In
+                                 invrs_rho_ds_zm, rho_ds_zt,                       & ! In
                                  rho_ds_zm, l_implemented, em,                     & ! In
                                  Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
                                  ice_supersat_frac,                                & ! In
@@ -831,8 +832,8 @@ module advance_xm_wpxp_module
   end subroutine advance_xm_wpxp
 
   !======================================================================================
-  subroutine xm_wpxp_lhs( gr, l_iter, dt, wpxp, wm_zt, C7_Skw_fnc,              & ! In
-                          invrs_rho_ds_zt, wpxp_upper_lim, wpxp_lower_lim,  & ! In
+  subroutine xm_wpxp_lhs( gr, l_iter, dt, wpxp, wm_zt, C7_Skw_fnc,          & ! In
+                          wpxp_upper_lim, wpxp_lower_lim,                   & ! In
                           l_implemented, lhs_diff_zm, lhs_diff_zt,          & ! In
                           lhs_ma_zm, lhs_ma_zt, lhs_ta_wpxp, lhs_ta_xm,     & ! In
                           lhs_tp, lhs_pr1, lhs_ac_pr2,                      & ! In
@@ -988,7 +989,6 @@ module advance_xm_wpxp_module
       wpxp,                   & ! w'x' (momentum levs) at timestep (t) [un vary]
       wm_zt,                  & ! w wind component on thermo. levels       [m/s]
       C7_Skw_fnc,             & ! C_7 parameter with Sk_w applied            [-]
-      invrs_rho_ds_zt,        & ! Inv. dry, static density at t-levs.   [m^3/kg]
       wpxp_upper_lim,         & ! Keeps corrs. from becoming > 1       [un vary]
       wpxp_lower_lim            ! Keeps corrs. from becoming < -1      [un vary]
 
@@ -1107,9 +1107,9 @@ module advance_xm_wpxp_module
         
         do k = 2, gr%nz 
             k_xm = 2*k - 1
-            lhs(1,k_xm) = lhs(1,k_xm) + invrs_rho_ds_zt(k) * lhs_diff_zt(1,k) 
-            lhs(3,k_xm) = lhs(3,k_xm) + invrs_rho_ds_zt(k) * lhs_diff_zt(2,k)
-            lhs(5,k_xm) = lhs(5,k_xm) + invrs_rho_ds_zt(k) * lhs_diff_zt(3,k)
+            lhs(1,k_xm) = lhs(1,k_xm) + lhs_diff_zt(1,k) 
+            lhs(3,k_xm) = lhs(3,k_xm) + lhs_diff_zt(2,k)
+            lhs(5,k_xm) = lhs(5,k_xm) + lhs_diff_zt(3,k)
         end do
 
     end if
@@ -1246,6 +1246,7 @@ module advance_xm_wpxp_module
   !=============================================================================================
   subroutine calc_xm_wpxp_lhs_terms( gr, Kh_zm, wm_zm, wm_zt, wp2,                      & ! In
                                      Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                  & ! In
+                                     invrs_rho_ds_zm, rho_ds_zt,                        & ! In
                                      rho_ds_zm, l_implemented, em,                      & ! In
                                      Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,      & ! In
                                      ice_supersat_frac,                                 & ! In
@@ -1265,7 +1266,9 @@ module advance_xm_wpxp_module
     !-------------------------------------------------------------------------------------------
     
     use grid_class, only:  & 
-        grid ! Type
+        grid, & ! Type
+        zm2zt, & ! Procedure(s)
+        zt2zm
 
     use parameter_indices, only: &
         nparams, & ! Variable(s)
@@ -1291,6 +1294,9 @@ module advance_xm_wpxp_module
         diffusion_zt_lhs, &
         diffusion_zm_lhs
 
+    use constants_clubb, only: &
+        zero_threshold
+
     implicit none
 
     type (grid), target, intent(in) :: gr
@@ -1312,6 +1318,8 @@ module advance_xm_wpxp_module
       Kw6,                    & ! Coef. of eddy diffusivity for w'x'     [m^2/s]
       C7_Skw_fnc,             & ! C_7 parameter with Sk_w applied            [-]
       rho_ds_zm,              & ! Dry, static density on momentum levs. [kg/m^3]
+      rho_ds_zt,              &
+      invrs_rho_ds_zm,        &
       invrs_rho_ds_zt,        &  ! Inv. dry, static density at t-levs.   [m^3/kg]
       ice_supersat_frac
 
@@ -1353,7 +1361,9 @@ module advance_xm_wpxp_module
     real (kind = core_rknd), dimension(gr%nz) :: &
       zero_nu, &
       Kh_N2_zm, &
-      K_zm          ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
+      K_zm, &      ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
+      K_zt, &      ! Eddy diffusivity coefficient, thermo. levels [m2/s]
+      Kw6_zm       ! Eddy diffusivity coefficient, momentum levels [m2/s]
 
     real (kind = core_rknd) :: &
       constant_nu ! controls the magnitude of diffusion
@@ -1362,7 +1372,8 @@ module advance_xm_wpxp_module
     
     ! Initializations/precalculations
     constant_nu  = 0.1_core_rknd
-    
+    Kw6_zm = max( zt2zm( gr, Kw6 ), zero_threshold )
+ 
     ! Calculate turbulent advection terms of xm for all grid levels
     call xm_term_ta_lhs( gr, rho_ds_zm(:),       & ! Intent(in)
                          invrs_rho_ds_zt(:), & ! Intent(in)
@@ -1380,8 +1391,9 @@ module advance_xm_wpxp_module
                                 lhs_ac_pr2                       ) ! Intent(out)
 
     ! Calculate diffusion terms for all momentum grid level
-    call diffusion_zm_lhs( gr, Kw6(:), nu6_vert_res_dep(:),  & ! Intent(in)
+    call diffusion_zm_lhs( gr, Kw6(:), Kw6_zm(:), nu6_vert_res_dep(:), & ! Intent(in)
                            gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
+                           invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
                            lhs_diff_zm(:,:)                  ) ! Intent(out)    
                               
     ! Calculate mean advection terms for all momentum grid level
@@ -1401,11 +1413,13 @@ module advance_xm_wpxp_module
           Kh_N2_zm = Kh_zm
         end if
 
-        K_zm(:) = rho_ds_zm(:) * ( Kh_N2_zm(:) + constant_nu )
         zero_nu(:) = 0.0_core_rknd
+        K_zm(:) = Kh_N2_zm(:) + constant_nu
+        K_zt = max( zm2zt ( gr, K_zm ), zero_threshold )
 
-        call diffusion_zt_lhs( gr, K_zm(:), zero_nu(:),              & ! Intent(in)
+        call diffusion_zt_lhs( gr, K_zm(:), K_zt(:), zero_nu(:), & ! Intent(in)
                                gr%invrs_dzm(:), gr%invrs_dzt(:), & ! Intent(in)
+                               invrs_rho_ds_zt(:), rho_ds_zm(:), & ! intent(in)
                                lhs_diff_zt(:,:)                  ) ! Intent(out)
         
     end if        
@@ -2512,8 +2526,8 @@ module advance_xm_wpxp_module
     ! used, l_explicit_turbulent_adv_wpxp is enabled.
       
     ! Create the lhs once
-    call xm_wpxp_lhs( gr, l_iter, dt, zeros_vector, wm_zt, C7_Skw_fnc,    & ! In
-                      invrs_rho_ds_zt, zeros_vector, zeros_vector,    & ! In
+    call xm_wpxp_lhs( gr, l_iter, dt, zeros_vector, wm_zt, C7_Skw_fnc, & ! In
+                      zeros_vector, zeros_vector,                     & ! In
                       l_implemented, lhs_diff_zm, lhs_diff_zt,        & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wpxp, lhs_ta_xm,   & ! In
                       lhs_tp, lhs_pr1_wprtp, lhs_ac_pr2,              & ! In
@@ -3068,8 +3082,8 @@ module advance_xm_wpxp_module
 
     ! Compute the implicit portion of the r_t and w'r_t' equations.
     ! Build the left-hand side matrix.                    
-    call xm_wpxp_lhs( gr, l_iter, dt, wprtp, wm_zt, C7_Skw_fnc,               & ! In
-                      invrs_rho_ds_zt, wpxp_upper_lim, wpxp_lower_lim,    & ! In
+    call xm_wpxp_lhs( gr, l_iter, dt, wprtp, wm_zt, C7_Skw_fnc,           & ! In
+                      wpxp_upper_lim, wpxp_lower_lim,                     & ! In
                       l_implemented, lhs_diff_zm, lhs_diff_zt,            & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wprtp, lhs_ta_xm,      & ! In
                       lhs_tp, lhs_pr1_wprtp, lhs_ac_pr2,                  & ! In
@@ -3143,8 +3157,8 @@ module advance_xm_wpxp_module
     
     ! Compute the implicit portion of the th_l and w'th_l' equations.
     ! Build the left-hand side matrix.
-    call xm_wpxp_lhs( gr, l_iter, dt, wpthlp, wm_zt, C7_Skw_fnc,              & ! In
-                      invrs_rho_ds_zt, wpxp_upper_lim, wpxp_lower_lim,    & ! In
+    call xm_wpxp_lhs( gr, l_iter, dt, wpthlp, wm_zt, C7_Skw_fnc,          & ! In
+                      wpxp_upper_lim, wpxp_lower_lim,                     & ! In
                       l_implemented, lhs_diff_zm, lhs_diff_zt,            & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wpthlp, lhs_ta_xm,     & ! In
                       lhs_tp, lhs_pr1_wpthlp, lhs_ac_pr2,                 & ! In
@@ -3234,8 +3248,8 @@ module advance_xm_wpxp_module
       
       ! Compute the implicit portion of the sclr and w'sclr' equations.
       ! Build the left-hand side matrix.
-      call xm_wpxp_lhs( gr, l_iter, dt, wpsclrp(:,i), wm_zt, C7_Skw_fnc,              & ! In
-                        invrs_rho_ds_zt, wpxp_upper_lim, wpxp_lower_lim,          & ! In
+      call xm_wpxp_lhs( gr, l_iter, dt, wpsclrp(:,i), wm_zt, C7_Skw_fnc,          & ! In
+                        wpxp_upper_lim, wpxp_lower_lim,                           & ! In
                         l_implemented, lhs_diff_zm, lhs_diff_zt,                  & ! In
                         lhs_ma_zm, lhs_ma_zt, lhs_ta_wpsclrp(:,:,i), lhs_ta_xm,   & ! In
                         lhs_tp, lhs_pr1_wpsclrp, lhs_ac_pr2,                      & ! In

@@ -88,6 +88,9 @@ module model_flags
     l_cubic_interp = .false.      ! Flag to convert grid points with cubic monotonic
                                   ! spline interpolation as opposed to linear interpolation.
 
+  logical, parameter, public :: &
+    l_upwind_Kh_dp_term = .false.
+
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,
   ! add the logic to check the strings for the new formula in clubb_core and

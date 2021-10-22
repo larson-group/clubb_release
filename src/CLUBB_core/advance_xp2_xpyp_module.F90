@@ -339,7 +339,9 @@ module advance_xp2_xpyp_module
     ! Eddy Diffusion for Variances and Covariances.
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
       Kw2, & ! For rtp2, thlp2, rtpthlp, and passive scalars  [m^2/s]
-      Kw9    ! For up2 and vp2                                [m^2/s]
+      Kw9,    & ! For up2 and vp2                                [m^2/s]
+      Kw2_zm, & ! Eddy diffusivity coefficient, momentum levels [m2/s]
+      Kw9_zm    ! Eddy diffusivity coefficient, momentum levels [m2/s]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rtpthlp_chnge    ! Net change in r_t'th_l' due to clipping [(kg/kg) K]
@@ -471,6 +473,9 @@ module advance_xp2_xpyp_module
 
     enddo
 
+    Kw2_zm = max( zt2zm( gr, Kw2 ), zero )
+    Kw9_zm = max( zt2zm( gr, Kw9 ), zero )
+
     if ( l_lmm_stepping ) then
        thlp2_old = thlp2
        rtp2_old = rtp2
@@ -502,9 +507,10 @@ module advance_xp2_xpyp_module
                                  
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2). This is the 
     ! diffusion term for all LHS matrices except <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw2(:), nu2_vert_res_dep(:),      & ! In
-                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
-                           lhs_diff(:,:)                     ) ! Out
+    call diffusion_zm_lhs( gr, Kw2(:), Kw2_zm(:), nu2_vert_res_dep(:),  & ! In
+                           gr%invrs_dzt(:), gr%invrs_dzm(:),            & ! In
+                           invrs_rho_ds_zm(:), rho_ds_zt(:),            & ! In
+                           lhs_diff(:,:)                     )            ! Out
                                
     ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
     call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! In
@@ -572,9 +578,10 @@ module advance_xp2_xpyp_module
     !!!!!***** u'^2 / v'^2 *****!!!!!
     
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw9(:), nu9_vert_res_dep(:),      & ! In
-                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
-                           lhs_diff_uv(:,:)                  ) ! Out
+    call diffusion_zm_lhs( gr, Kw9(:), Kw9_zm(:), nu9_vert_res_dep(:),  & !In
+                           gr%invrs_dzt(:), gr%invrs_dzm(:),            & ! In
+                           invrs_rho_ds_zm(:), rho_ds_zt(:),            & ! In
+                           lhs_diff_uv(:,:)                  )            ! Out
 
     if ( l_lmm_stepping ) then
        up2_old = up2
