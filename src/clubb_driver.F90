@@ -2426,6 +2426,7 @@ module clubb_driver
                               hydromet_mc, Ncm_mc, Lscale(1,:),           & ! In
                               hydromet_vel_covar_zt_impc,                 & ! In
                               hydromet_vel_covar_zt_expc,                 & ! In
+                              params,                                     & ! In
                               clubb_config_flags%l_upwind_xm_ma,          & ! In
                               stats_zt, stats_zm, stats_sfc,              & ! intent(inout)
                               hydromet, hydromet_vel_zt, hydrometp2,      & ! Inout
