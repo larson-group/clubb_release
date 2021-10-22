@@ -1130,14 +1130,14 @@ module mixing_length
         one,            & 
         em_min,         &
         zero_threshold, &
-        eps
+        eps,            &
+        pi
 
     use grid_class, only: &
         grid, & ! Type
         zt2zm, &
         zm2zt, &
         ddzt
-
 
     use clubb_precision, only: &
         core_rknd
@@ -1163,7 +1163,6 @@ module mixing_length
       upwp_sfc,      &
       vpwp_sfc
     
-
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       um,                &
       vm,                &
@@ -1176,7 +1175,6 @@ module mixing_length
       ice_supersat_frac, &
       em,                &
       sqrt_em_zt
-
 
     real(kind = core_rknd), intent(in) :: &
       ufmin,         &
@@ -1225,8 +1223,18 @@ module mixing_length
    real( kind = core_rknd ) :: &
       ustar
 
+   ! Local Variables
+
+   logical, parameter :: l_smooth_Heaviside_tau_wpxp = .false.
+
+   integer :: k    ! Vertical level index
+
+   real( kind = core_rknd ), dimension(gr%nz) :: &
+     bvf_thresh,                  & ! temporatory array  
+     H_invrs_tau_wpxp_N2            ! Heaviside function for clippings of invrs_tau_wpxp_N2
 
 !-----------------------------------Begin Code---------------------------------------------------!
+
   call calc_brunt_vaisala_freq_sqd( gr, zm2zt( gr, zt2zm( gr, thlm )), & ! intent(in)
                                         exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                         ice_supersat_frac, & ! intent(in)
@@ -1309,13 +1317,46 @@ module mixing_length
 
         end if ! l_e3sm_config
 
+        if (l_smooth_Heaviside_tau_wpxp)  then
 
-        where( gr%zt > altitude_threshold &
-               .and. brunt_vaisala_freq_sqd_smth > C_invrs_tau_wpxp_N2_thresh )
+          bvf_thresh(1:gr%nz) = brunt_vaisala_freq_sqd_smth(1:gr%nz)/C_invrs_tau_wpxp_N2_thresh
+          bvf_thresh(1:gr%nz) = bvf_thresh(1:gr%nz) - 1.0_core_rknd 
+
+          do k = 1, gr%nz
+
+            if ( bvf_thresh(k) < -1.0_core_rknd ) then
+
+              H_invrs_tau_wpxp_N2(k) = 0.0_core_rknd
+
+            else if ( bvf_thresh(k) > 1.0_core_rknd ) then 
+
+              H_invrs_tau_wpxp_N2(k) = 1.0_core_rknd
+
+            else
+
+              H_invrs_tau_wpxp_N2(k) = 0.5_core_rknd * & 
+                                       ( 1.0_core_rknd +  bvf_thresh(k) &
+                                        + (1.0_core_rknd / pi) * sin ( pi * bvf_thresh(k) ) )
+
+            end if 
+
+          end do 
+
+        else ! l_smooth_Heaviside_tau_wpxp = .false.
+
+          H_invrs_tau_wpxp_N2 = 0.0_core_rknd  
+          where ( brunt_vaisala_freq_sqd_smth > C_invrs_tau_wpxp_N2_thresh)
+            H_invrs_tau_wpxp_N2 = 1.0_core_rknd 
+          end where 
+
+        end if ! l_smooth_Heaviside_tau_wpxp
+
+        where( gr%zt > altitude_threshold )
            invrs_tau_wpxp_zm &
            = invrs_tau_wpxp_zm &
-             * ( 1.0_core_rknd &
-                 + C_invrs_tau_wpxp_Ri * min( max( sqrt_Ri_zm, 0.0_core_rknd ), &
+             * ( 1.0_core_rknd  & 
+                 + H_invrs_tau_wpxp_N2 & 
+                   * C_invrs_tau_wpxp_Ri * min( max( sqrt_Ri_zm, 0.0_core_rknd), &
                                       12.0_core_rknd ) )
         end where
 
