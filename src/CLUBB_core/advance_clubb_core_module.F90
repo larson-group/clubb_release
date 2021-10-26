@@ -2214,7 +2214,8 @@ module advance_clubb_core_module
         zm2zt
 
     use constants_clubb, only: &
-        w_tol,          & ! Variable(s)
+        one_half,       & ! Variable(s)
+        w_tol,          & 
         w_tol_sqd,      &
         rt_tol,         &
         thl_tol,        &
@@ -2488,33 +2489,34 @@ module advance_clubb_core_module
 
     !!! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      wp2_zt,         & ! wp2 interpolated to thermodynamic levels   [m^2/s^2]
-      wp3_zm,         & ! wp3 interpolated to momentum levels        [m^3/s^3]
-      rtp2_zt,        & ! rtp2 interpolated to thermodynamic levels  [kg^2/kg^2]
-      rtp3_zm,        & ! rtp3 interpolated to momentum levels       [kg^3/kg^3]
-      thlp2_zt,       & ! thlp2 interpolated to thermodynamic levels [K^2]
-      thlp3_zm,       & ! thlp3 interpolated to momentum levels      [K^3]
-      wprtp_zt,       & ! wprtp interpolated to thermodynamic levels [m/s kg/kg]
-      wpthlp_zt,      & ! wpthlp interpolated to thermodynamic levs. [m/s K]
-      rtpthlp_zt,     & ! rtpthlp interp. to thermodynamic levels    [kg/kg K]
-      up2_zt,         & ! up2 interpolated to thermodynamic levels   [m^2/s^2]
-      up3_zm,         & ! up3 interpolated to momentum levels        [m^3/s^3]
-      vp2_zt,         & ! vp2 interpolated to thermodynamic levels   [m^2/s^2]
-      vp3_zm,         & ! vp3 interpolated to momentum levels        [m^3/s^3]
-      upwp_zt,        & ! upwp interpolated to thermodynamic levels  [m^2/s^2]
-      vpwp_zt,        & ! vpwp interpolated to thermodynamic levels  [m^2/s^2]
-      gamma_Skw_fnc,  & ! Gamma as a function of skewness            [-]
-      sigma_sqd_w_zt, & ! PDF width parameter (thermodynamic levels) [-]
-      Skw_zt,         & ! Skewness of w on thermodynamic levels      [-]
-      Skw_zm,         & ! Skewness of w on momentum levels           [-]
-      Skrt_zt,        & ! Skewness of rt on thermodynamic levels     [-]
-      Skrt_zm,        & ! Skewness of rt on momentum levels          [-]
-      Skthl_zt,       & ! Skewness of thl on thermodynamic levels    [-]
-      Skthl_zm,       & ! Skewness of thl on momentum levels         [-]
-      Sku_zt,         & ! Skewness of u on thermodynamic levels      [-]
-      Sku_zm,         & ! Skewness of u on momentum levels           [-]
-      Skv_zt,         & ! Skewness of v on thermodynamic levels      [-]
-      Skv_zm            ! Skewness of v on momentum levels           [-]
+      wp2_zt,           & ! wp2 interpolated to thermodynamic levels   [m^2/s^2]
+      wp3_zm,           & ! wp3 interpolated to momentum levels        [m^3/s^3]
+      rtp2_zt,          & ! rtp2 interpolated to thermodynamic levels  [kg^2/kg^2]
+      rtp3_zm,          & ! rtp3 interpolated to momentum levels       [kg^3/kg^3]
+      thlp2_zt,         & ! thlp2 interpolated to thermodynamic levels [K^2]
+      thlp3_zm,         & ! thlp3 interpolated to momentum levels      [K^3]
+      wprtp_zt,         & ! wprtp interpolated to thermodynamic levels [m/s kg/kg]
+      wpthlp_zt,        & ! wpthlp interpolated to thermodynamic levs. [m/s K]
+      rtpthlp_zt,       & ! rtpthlp interp. to thermodynamic levels    [kg/kg K]
+      up2_zt,           & ! up2 interpolated to thermodynamic levels   [m^2/s^2]
+      up3_zm,           & ! up3 interpolated to momentum levels        [m^3/s^3]
+      vp2_zt,           & ! vp2 interpolated to thermodynamic levels   [m^2/s^2]
+      vp3_zm,           & ! vp3 interpolated to momentum levels        [m^3/s^3]
+      upwp_zt,          & ! upwp interpolated to thermodynamic levels  [m^2/s^2]
+      vpwp_zt,          & ! vpwp interpolated to thermodynamic levels  [m^2/s^2]
+      gamma_Skw_fnc,    & ! Gamma as a function of skewness            [-]
+      gamma_Skw_fnc_zt, & ! Gamma as a function of skewness (t-levs.)  [-]
+      sigma_sqd_w_zt,   & ! PDF width parameter (thermodynamic levels) [-]
+      Skw_zt,           & ! Skewness of w on thermodynamic levels      [-]
+      Skw_zm,           & ! Skewness of w on momentum levels           [-]
+      Skrt_zt,          & ! Skewness of rt on thermodynamic levels     [-]
+      Skrt_zm,          & ! Skewness of rt on momentum levels          [-]
+      Skthl_zt,         & ! Skewness of thl on thermodynamic levels    [-]
+      Skthl_zm,         & ! Skewness of thl on momentum levels         [-]
+      Sku_zt,           & ! Skewness of u on thermodynamic levels      [-]
+      Sku_zm,           & ! Skewness of u on momentum levels           [-]
+      Skv_zt,           & ! Skewness of v on thermodynamic levels      [-]
+      Skv_zm              ! Skewness of v on momentum levels           [-]
 
     ! Interpolated values for optional second call to PDF closure.
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -2701,16 +2703,25 @@ module advance_clubb_core_module
     if ( l_gamma_Skw &
          .and. abs( gamma_coef - gamma_coefb ) &
                > abs( gamma_coef + gamma_coefb ) * eps/2 ) then
-      !----------------------------------------------------------------
-      ! Compute gamma as a function of Skw  - 14 April 06 dschanen
-      !----------------------------------------------------------------
 
-      gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) &
-            *exp( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm/gamma_coefc)**2 )
+       !----------------------------------------------------------------
+       ! Compute gamma as a function of Skw  - 14 April 06 dschanen
+       !----------------------------------------------------------------
+
+       gamma_Skw_fnc &
+       = gamma_coefb &
+         + ( gamma_coef - gamma_coefb ) &
+           * exp( -one_half * ( Skw_zm / gamma_coefc )**2 )
+
+       gamma_Skw_fnc_zt &
+       = gamma_coefb &
+         + ( gamma_coef - gamma_coefb ) &
+           * exp( -one_half * ( Skw_zt / gamma_coefc )**2 )
 
     else
 
-      gamma_Skw_fnc = gamma_coef
+       gamma_Skw_fnc = gamma_coef
+       gamma_Skw_fnc_zt = gamma_coef
 
     end if
 
@@ -2771,7 +2782,7 @@ module advance_clubb_core_module
 
 
     call pdf_closure &
-         ( gr, hydromet_dim, p_in_Pa, exner, thv_ds_zt,        & ! intent(in)
+         ( gr, hydromet_dim, p_in_Pa, exner, thv_ds_zt,    & ! intent(in)
            wm_zt, wp2_zt, wp3, sigma_sqd_w_zt,             & ! intent(in)
            Skw_zt, Skthl_zt, Skrt_zt, Sku_zt, Skv_zt,      & ! intent(in)
            rtm, rtp2_zt, wprtp_zt,                         & ! intent(in)
@@ -2781,6 +2792,7 @@ module advance_clubb_core_module
            rtpthlp_zt,                                     & ! intent(in)
            sclrm, wpsclrp_zt, sclrp2_zt,                   & ! intent(in)
            sclrprtp_zt, sclrpthlp_zt, Sksclr_zt,           & ! intent(in)
+           gamma_Skw_fnc_zt,                               & ! intent(in)
 #ifdef GFDL
            RH_crit, do_liquid_only_in_clubb,               & ! intent(in)
 #endif
@@ -2888,16 +2900,17 @@ module advance_clubb_core_module
       ! Call pdf_closure to output the variables which belong on the momentum grid.
 
       call pdf_closure &
-           ( gr, hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm,        & ! intent(in)
+           ( gr, hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm,    & ! intent(in)
              wm_zm, wp2, wp3_zm, sigma_sqd_w,                      & ! intent(in)
              Skw_zm, Skthl_zm, Skrt_zm, Sku_zm, Skv_zm,            & ! intent(in)
              rtm_zm, rtp2, wprtp,                                  & ! intent(in)
              thlm_zm, thlp2, wpthlp,                               & ! intent(in)
-             zt2zm( gr, um ), up2, upwp,                               & ! intent(in)
-             zt2zm( gr, vm ), vp2, vpwp,                               & ! intent(in)
+             zt2zm( gr, um ), up2, upwp,                           & ! intent(in)
+             zt2zm( gr, vm ), vp2, vpwp,                           & ! intent(in)
              rtpthlp,                                              & ! intent(in)
              sclrm_zm, wpsclrp, sclrp2,                            & ! intent(in)
              sclrprtp, sclrpthlp, Sksclr_zm,                       & ! intent(in)
+             gamma_Skw_fnc,                                        & ! intent(in)
 #ifdef GFDL
              RH_crit,  do_liquid_only_in_clubb,                    & ! intent(in)
 #endif

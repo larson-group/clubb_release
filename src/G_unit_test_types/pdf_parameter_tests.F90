@@ -165,7 +165,11 @@ module pdf_parameter_tests
         gamma_coef,  & ! Variable(s)
         gamma_coefb, &
         gamma_coefc, &
-        beta
+        beta, &
+        slope_coef_spread_DG_means_w, &
+        pdf_component_stdev_factor_w, &
+        coef_spread_DG_means_rt, &
+        coef_spread_DG_means_thl
 
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
@@ -352,6 +356,16 @@ module pdf_parameter_tests
       iter_param_sets, & ! Loop index for PDF parameter set
       iter_F_w,        & ! Loop index for value of F_w
       iter_zeta_w        ! Loop index for value of zeta_w
+
+!    real( kind = core_rknd ) :: &
+!      ! Slope coefficient for the spread between the PDF component means of w.
+!      slope_coef_spread_DG_means_w, &
+!      ! Parameter to adjust the PDF component standard deviations of w.
+!      pdf_component_stdev_factor_w
+!      ! Coefficient for the spread between the PDF component means of rt.
+!      coef_spread_DG_means_rt, &
+!      ! Coefficient for the spread between the PDF component means of thl.
+!      coef_spread_DG_means_thl
 
     ! Variables for ADG1
     real( kind = core_rknd ), dimension(nz) :: &
@@ -1404,17 +1418,21 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          call new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,    & ! In
-                               wprtp, wpthlp, rtpthlp,                  & ! In
-                               Skrt, Skthl,                             & ! I/O
-                               mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,        & ! Out
-                               mu_thl_1, mu_thl_2, sigma_w_1_sqd,       & ! Out
-                               sigma_w_2_sqd, sigma_rt_1_sqd,           & ! Out
-                               sigma_rt_2_sqd, sigma_thl_1_sqd,         & ! Out
-                               sigma_thl_2_sqd, mixt_frac,              & ! Out
-                               pdf_implicit_coefs_terms,                & ! Out
-                               F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
-                               min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
+          call new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw, & ! In
+                               wprtp, wpthlp, rtpthlp,                   & ! In
+                               slope_coef_spread_DG_means_w,             & ! In
+                               pdf_component_stdev_factor_w,             & ! In
+                               coef_spread_DG_means_rt,                  & ! In
+                               coef_spread_DG_means_thl,                 & ! In
+                               Skrt, Skthl,                              & ! I/O
+                               mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,         & ! Out
+                               mu_thl_1, mu_thl_2, sigma_w_1_sqd,        & ! Out
+                               sigma_w_2_sqd, sigma_rt_1_sqd,            & ! Out
+                               sigma_rt_2_sqd, sigma_thl_1_sqd,          & ! Out
+                               sigma_thl_2_sqd, mixt_frac,               & ! Out
+                               pdf_implicit_coefs_terms,                 & ! Out
+                               F_w, F_rt, F_thl, min_F_w, max_F_w,       & ! Out
+                               min_F_rt, max_F_rt, min_F_thl, max_F_thl  ) ! Out
 
           ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
           ! to be clipped in new_pdf_driver.
@@ -1428,10 +1446,21 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          call new_hybrid_pdf_driver( gr, wm, rtm, thlm, um, vm,              &! In
+          if ( l_gamma_Skw ) then
+             gamma_Skw_fnc = gamma_coefb &
+                             + ( gamma_coef - gamma_coefb ) &
+                               * exp( -one_half * ( Skw / gamma_coefc )**2 )
+          else
+             gamma_Skw_fnc = gamma_coef
+          endif
+
+          call new_hybrid_pdf_driver( gr, wm, rtm, thlm, um, vm,          &! In
                                       wp2, rtp2, thlp2, up2, vp2,         &! In
                                       Skw, wprtp, wpthlp, upwp, vpwp,     &! In
                                       sclrm, sclrp2, wpsclrp,             &! In
+                                      gamma_Skw_fnc,                      &! In
+                                      slope_coef_spread_DG_means_w,       &! In
+                                      pdf_component_stdev_factor_w,       &! In
                                       Skrt, Skthl, Sku, Skv, Sksclr,      &! I/O
                                       mu_w_1, mu_w_2,                     &! Out
                                       mu_rt_1, mu_rt_2,                   &! Out
