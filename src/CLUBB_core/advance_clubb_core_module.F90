@@ -4220,8 +4220,9 @@ module advance_clubb_core_module
 
 !===============================================================================
   pure subroutine calculate_thlp2_rad &
-                  ( nz, rcm_zm, thlprcp, radht_zm, &      ! Intent(in)
-                    thlp2_forcing )                       ! Intent(inout)
+                  ( nz, rcm_zm, thlprcp, radht_zm, & ! Intent(in)
+                    clubb_params,                  & ! Intent(in)
+                    thlp2_forcing )                  ! Intent(inout)
 
   ! Description:
   !   Computes the contribution of radiative cooling to thlp2
@@ -4240,8 +4241,9 @@ module advance_clubb_core_module
         two, &
         rc_tol
 
-    use parameters_tunable, only: &
-        thlp2_rad_coef
+    use parameter_indices, only: &
+        nparams, & ! Variable(s)
+        ithlp2_rad_coef
 
     implicit none
 
@@ -4253,6 +4255,9 @@ module advance_clubb_core_module
       rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
       thlprcp, &            ! thl'rc'                                        [K kg/kg]
       radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
   ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz), intent(inout) :: &
@@ -4269,8 +4274,9 @@ module advance_clubb_core_module
 
        if ( rcm_zm(k) > rc_tol ) then
 
-          thlp2_forcing(k) = thlp2_forcing(k) + &
-                    thlp2_rad_coef * ( two ) * radht_zm(k) / rcm_zm(k) * thlprcp(k)
+          thlp2_forcing(k) &
+          = thlp2_forcing(k) + &
+            clubb_params(ithlp2_rad_coef) * ( two ) * radht_zm(k) / rcm_zm(k) * thlprcp(k)
 
        end if
 

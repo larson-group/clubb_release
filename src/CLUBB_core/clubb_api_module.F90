@@ -2859,14 +2859,18 @@ contains
   ! calculate_thlp2_rad - Computes the contribution of radiative cooling to thlp2
   !================================================================================================
   pure subroutine calculate_thlp2_rad_api &
-                  ( nz, rcm_zm, thlprcp, radht_zm, &      ! Intent(in)
-                    thlp2_forcing )                       ! Intent(inout)
+                  ( nz, rcm_zm, thlprcp, radht_zm, & ! Intent(in)
+                    clubb_params,                  & ! Intent(in)
+                    thlp2_forcing )                  ! Intent(inout)
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
 
     use advance_clubb_core_module, only: &
         calculate_thlp2_rad
+
+    use parameter_indices, only: &
+        nparams
 
     implicit none
 
@@ -2879,13 +2883,17 @@ contains
       thlprcp, &            ! thl'rc'                                        [K kg/kg]
       radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
   ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz), intent(inout) :: &
       thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
   !----------------------------------------------------------------------
 
     call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, & ! intent(in)
-                    thlp2_forcing ) ! intent(inout)
+                              clubb_params,                  & ! intent(in)
+                              thlp2_forcing )                  ! intent(inout)
 
     return
   end subroutine calculate_thlp2_rad_api

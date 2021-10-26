@@ -2168,6 +2168,7 @@ module clubb_driver
       if ( clubb_config_flags%l_calc_thlp2_rad ) then
 
         call calculate_thlp2_rad( gr%nz, rcm_zm, thlprcp, radht_zm, & ! intent(in)
+                                  params,                           & ! intent(in)
                                   thlp2_forcing )                     ! intent(inout)
 
       end if
