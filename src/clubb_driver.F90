@@ -1290,6 +1290,7 @@ module clubb_driver
     ! Setup microphysical fields
     call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & ! Intent(in)
                          dummy_dx, dummy_dy, &                              ! Intent(in)
+                         params, &                                          ! Intent(in)
                          l_diagnose_correlations, &                         ! Intent(in)
                          l_const_Nc_in_cloud, &                             ! Intent(inout)
                          l_fix_w_chi_eta_correlations, &                    ! Intent(inout)
