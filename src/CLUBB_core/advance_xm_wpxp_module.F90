@@ -94,21 +94,22 @@ module advance_xm_wpxp_module
     !-----------------------------------------------------------------------
 
     use parameter_indices, only: &
-        nparams,        & ! Variable(s)
-        iC6rt,          &
-        iC6rtb,         &
-        iC6rtc,         &
-        iC6thl,         &
-        iC6thlb,        &
-        iC6thlc,        &
-        iC6rt_Lscale0,  &
-        iC6thl_Lscale0, &
-        iC7,            &
-        iC7b,           &
-        iC7c,           &
-        iC7_Lscale0,    &
-        ic_K6,          &
-        iwpxp_L_thresh, &
+        nparams,             & ! Variable(s)
+        iC6rt,               &
+        iC6rtb,              &
+        iC6rtc,              &
+        iC6thl,              &
+        iC6thlb,             &
+        iC6thlc,             &
+        iC6rt_Lscale0,       &
+        iC6thl_Lscale0,      &
+        iC7,                 &
+        iC7b,                &
+        iC7c,                &
+        iC7_Lscale0,         &
+        ic_K6,               &
+        iwpxp_L_thresh,      &
+        ialtitude_threshold, &
         iC_uu_shr
 
     use constants_clubb, only:  & 
@@ -343,20 +344,21 @@ module advance_xm_wpxp_module
     ! -------------------- Local Variables --------------------
 
     real( kind = core_rknd ) ::  &
-      C6rt,          & ! CLUBB tunable parameter C6rt
-      C6rtb,         & ! CLUBB tunable parameter C6rtb
-      C6rtc,         & ! CLUBB tunable parameter C6rtc
-      C6thl,         & ! CLUBB tunable parameter C6thl
-      C6thlb,        & ! CLUBB tunable parameter C6thlb
-      C6thlc,        & ! CLUBB tunable parameter C6thlc
-      C6rt_Lscale0,  & ! CLUBB tunable parameter C6rt_Lscale0
-      C6thl_Lscale0, & ! CLUBB tunable parameter C6thl_Lscale0
-      C7,            & ! CLUBB tunable parameter C7
-      C7b,           & ! CLUBB tunable parameter C7b
-      C7c,           & ! CLUBB tunable parameter C7c
-      C7_Lscale0,    & ! CLUBB tunable parameter C7_Lscale0
-      c_K6,          & ! CLUBB tunable parameter c_K6
-      wpxp_L_thresh    ! CLUBB tunable parameter wpxp_L_thresh
+      C6rt,               & ! CLUBB tunable parameter C6rt
+      C6rtb,              & ! CLUBB tunable parameter C6rtb
+      C6rtc,              & ! CLUBB tunable parameter C6rtc
+      C6thl,              & ! CLUBB tunable parameter C6thl
+      C6thlb,             & ! CLUBB tunable parameter C6thlb
+      C6thlc,             & ! CLUBB tunable parameter C6thlc
+      C6rt_Lscale0,       & ! CLUBB tunable parameter C6rt_Lscale0
+      C6thl_Lscale0,      & ! CLUBB tunable parameter C6thl_Lscale0
+      C7,                 & ! CLUBB tunable parameter C7
+      C7b,                & ! CLUBB tunable parameter C7b
+      C7c,                & ! CLUBB tunable parameter C7c
+      C7_Lscale0,         & ! CLUBB tunable parameter C7_Lscale0
+      c_K6,               & ! CLUBB tunable parameter c_K6
+      altitude_threshold, & ! CLUBB tunable parameter altitude_threshold
+      wpxp_L_thresh         ! CLUBB tunable parameter wpxp_L_thresh
 
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
       C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term
@@ -476,6 +478,7 @@ module advance_xm_wpxp_module
     ! Unpack CLUBB tunable parameters
     C6rt = clubb_params(iC6rt)
     C6thl = clubb_params(iC6thl)
+    altitude_threshold = clubb_params(ialtitude_threshold)
     wpxp_L_thresh = clubb_params(iwpxp_L_thresh)
 
     if ( .not. l_diag_Lscale_from_tau ) then
@@ -506,10 +509,12 @@ module advance_xm_wpxp_module
 
        ! Damp C6 as a function of Lscale in stably stratified regions
        C6rt_Skw_fnc = damp_coefficient( gr, C6rt, C6rt_Skw_fnc, &
-                                        C6rt_Lscale0, wpxp_L_thresh, Lscale )
+                                        C6rt_Lscale0, altitude_threshold, &
+                                        wpxp_L_thresh, Lscale )
 
        C6thl_Skw_fnc = damp_coefficient( gr, C6thl, C6thl_Skw_fnc, &
-                                         C6thl_Lscale0, wpxp_L_thresh, Lscale )
+                                         C6thl_Lscale0, altitude_threshold, &
+                                         wpxp_L_thresh, Lscale )
 
     else ! l_diag_Lscale_from_tau
 
@@ -542,7 +547,8 @@ module advance_xm_wpxp_module
 
       ! Damp C7 as a function of Lscale in stably stratified regions
       C7_Skw_fnc = damp_coefficient( gr, C7, C7_Skw_fnc, &
-                                     C7_Lscale0, wpxp_L_thresh, Lscale )
+                                     C7_Lscale0, altitude_threshold, &
+                                     wpxp_L_thresh, Lscale )
 
     end if ! l_use_C7_Richardson
 
@@ -4694,7 +4700,8 @@ module advance_xm_wpxp_module
 
 
   !=============================================================================
-  pure function damp_coefficient( gr, coefficient, Cx_Skw_fnc, max_coeff_value, &
+  pure function damp_coefficient( gr, coefficient, Cx_Skw_fnc, &
+                                  max_coeff_value, altitude_threshold, &
                                   threshold, Lscale ) &
     result( damped_value )
 
@@ -4705,10 +4712,6 @@ module advance_xm_wpxp_module
     use grid_class, only: & 
         grid ! Type
 
-    ! Added to prevent large damping at low altitudes where Lscale is small
-    use parameters_tunable, only: &
-        altitude_threshold    ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -4718,8 +4721,9 @@ module advance_xm_wpxp_module
 
     ! Input variables
     real( kind = core_rknd ), intent(in) :: &
-      coefficient,      &   ! The coefficient to be damped
-      max_coeff_value,  &   ! Maximum value the damped coefficient should have
+      coefficient,        & ! The coefficient to be damped
+      max_coeff_value,    & ! Maximum value the damped coefficient should have
+      altitude_threshold, & ! Minimum altitude where damping should occur 
       threshold             ! Value of Lscale below which the damping should occur
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
