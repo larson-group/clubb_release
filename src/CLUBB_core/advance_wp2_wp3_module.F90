@@ -31,6 +31,7 @@ module advance_wp2_wp3_module
              wp3_term_pr_turb_rhs, &
              wp3_term_pr_dfsn_rhs
 
+
   ! Private named constants to avoid string comparisons
   integer, parameter, private :: &
     clip_wp2 = 12 ! Named constant for wp2 clipping.
@@ -63,6 +64,7 @@ module advance_wp2_wp3_module
                               l_damp_wp3_Skw_squared,                        & ! In
                               l_lmm_stepping,                                & ! In
                               l_use_tke_in_wp3_pr_turb_term,                 & ! In
+                              l_use_tke_in_K_dfsn,                           & ! In
                               stats_zt, stats_zm, stats_sfc,                 & ! intent(inout)
                               wp2, wp3, wp3_zm, wp2_zt )                       ! Inout
 
@@ -235,7 +237,8 @@ module advance_wp2_wp3_module
       l_use_C11_Richardson,       & ! Parameterize C16 based on Richardson number
       l_damp_wp3_Skw_squared,     & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_lmm_stepping,             & ! Apply Linear Multistep Method (LMM) Stepping
-      l_use_tke_in_wp3_pr_turb_term ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_wp3_pr_turb_term, & ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_K_dfsn           ! Use TKE in eddy diffusion for wp2 and wp3
 
     ! Input/Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -400,6 +403,7 @@ module advance_wp2_wp3_module
                      l_damp_wp2_using_em,                                     & ! Intent(in)
                      l_damp_wp3_Skw_squared,                                  & ! Intent(in)
                      l_use_tke_in_wp3_pr_turb_term,                           & ! Intent(in)
+                     l_use_tke_in_K_dfsn,                                     & ! Intent(in)
                      stats_zt, stats_zm, stats_sfc,                           & ! intent(inout)
                      wp2, wp3, wp3_zm, wp2_zt )                                 ! Intent(inout)
 
@@ -528,6 +532,7 @@ module advance_wp2_wp3_module
                          l_damp_wp2_using_em,                                     & ! Intent(in)
                          l_damp_wp3_Skw_squared,                                  & ! Intent(in)
                          l_use_tke_in_wp3_pr_turb_term,                           & ! Intent(in)
+                         l_use_tke_in_K_dfsn,                                     & ! Intent(in)
                          stats_zt, stats_zm, stats_sfc,                           & ! intent(inout)
                          wp2, wp3, wp3_zm, wp2_zt )                                 ! Intent(inout)
 
@@ -749,7 +754,8 @@ module advance_wp2_wp3_module
                                     ! -(2/3)*em/tau_zm,
                                     ! as in Bougeault (1981)
       l_damp_wp3_Skw_squared,     & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_use_tke_in_wp3_pr_turb_term ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_wp3_pr_turb_term, & ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_K_dfsn           ! Use TKE in eddy diffusion for wp2 and wp3
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -810,6 +816,13 @@ module advance_wp2_wp3_module
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
+
+    if ( l_crank_nich_diff .and. l_use_tke_in_K_dfsn ) then
+      write(fstderr,*) "The l_crank_nich_diff flag and l_use_tke_in_K_dfsn flags cannot ", &
+                       "currently be used together."
+      err_code = clubb_fatal_error
+      return
+    end if
 
     if ( .not. l_explicit_turbulent_adv_wp3 ) then
 
@@ -873,6 +886,7 @@ module advance_wp2_wp3_module
                    l_damp_wp2_using_em, &                                            ! intent(in)
                    l_damp_wp3_Skw_squared, &                                         ! intent(in)
                    l_use_tke_in_wp3_pr_turb_term, &                                  ! intent(in)
+                   l_use_tke_in_K_dfsn, &                                            ! intent(in)
                    stats_zt, stats_zm, &                                             ! intent(inout)
                    rhs )                                                             ! intent(out)
 
@@ -1005,6 +1019,12 @@ module advance_wp2_wp3_module
             + zmscr03(k) * wp2(k) & 
             + zmscr04(k) * wp2(kp1), &             ! intent(in)
               stats_zm )                           ! intent(inout)
+        elseif ( l_use_tke_in_K_dfsn ) then
+           call stat_end_update_pt( iwp2_dp2, k, & ! intent(in)
+              zmscr02(k) * ( up2(km1) + vp2(km1) + wp2(km1) )  &
+            + zmscr03(k) * ( up2(k)   + vp2(k)   + wp2(k)   )  &
+            + zmscr04(k) * ( up2(kp1) + vp2(kp1) + wp2(kp1) ), &  ! intent(in)
+              stats_zm )
         else
            call stat_update_var_pt( iwp2_dp2, k, & ! intent(in)
               zmscr02(k) * wp2(km1) & 
@@ -1070,6 +1090,12 @@ module advance_wp2_wp3_module
             + ztscr03(k) * wp3(k) & 
             + ztscr04(k) * wp3(kp1), &             ! intent(in)
               stats_zt )                           ! intent(inout)
+        elseif ( l_use_tke_in_K_dfsn ) then
+           call stat_end_update_pt( iwp3_dp1, k, & ! intent(in)
+              ztscr02(k) * ( wpup2(km1) + wpvp2(km1) + wp3(km1) )  &
+            + ztscr03(k) * ( wpup2(k)   + wpvp2(k)   + wp3(k)   )  &
+            + ztscr04(k) * ( wpup2(kp1) + wpvp2(kp1) + wp3(kp1) ), & ! intent(in)
+              stats_zt )
         else
            call stat_update_var_pt( iwp3_dp1, k, & ! intent(in)
               ztscr02(k) * wp3(km1) & 
@@ -1898,6 +1924,7 @@ module advance_wp2_wp3_module
                        l_damp_wp2_using_em, &
                        l_damp_wp3_Skw_squared, &
                        l_use_tke_in_wp3_pr_turb_term, &
+                       l_use_tke_in_K_dfsn, &
                        stats_zt, stats_zm, &
                        rhs )
 
@@ -2067,7 +2094,8 @@ module advance_wp2_wp3_module
                                      ! -(2/3)*em/tau_zm,
                                      ! as in Bougeault (1981)
       l_damp_wp3_Skw_squared,     &  ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_use_tke_in_wp3_pr_turb_term  ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_wp3_pr_turb_term, &  ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_K_dfsn            ! Use TKE in eddy diffusion for wp2 and wp3
 
     ! Output Variable
     real( kind = core_rknd ), dimension(2*gr%nz), intent(out) :: & 
@@ -2226,6 +2254,35 @@ module advance_wp2_wp3_module
 
     endif
   
+    if ( l_use_tke_in_K_dfsn ) then
+
+      call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu1_vert_res_dep(:), & ! intent(in) 
+                             gr%invrs_dzt(:), gr%invrs_dzm(:), &           ! intent(in)
+                             invrs_rho_ds_zm(:), rho_ds_zt(:), &           ! intent(in)
+                             rhs_diff_zm(:,:) )                            ! intent(out)
+
+      do k = 2, gr%nz-1
+        k_wp2 = 2*k
+        rhs(k_wp2) = rhs(k_wp2) &
+                     - rhs_diff_zm(3,k) * ( up2(k-1) + vp2(k-1) ) &
+                     - rhs_diff_zm(2,k) * ( up2(k) + vp2(k) ) &
+                     - rhs_diff_zm(1,k) * ( up2(k+1) + vp2(k+1) )
+      end do
+
+      call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu8_vert_res_dep(:), & ! intent(in) 
+                             gr%invrs_dzm(:), gr%invrs_dzt(:), &           ! intent(in)
+                             invrs_rho_ds_zt(:), rho_ds_zm(:), &           ! intent(in)
+                             rhs_diff_zt(:,:) )                            ! intent(out)
+
+      do k = 2, gr%nz-1
+        k_wp3 = 2*k - 1
+        rhs(k_wp3) = rhs(k_wp3) &
+                     - rhs_diff_zt(3,k) * ( wpup2(k-1) + wpvp2(k-1) ) &
+                     - rhs_diff_zt(2,k) * ( wpup2(k) + wpvp2(k) ) &
+                     - rhs_diff_zt(1,k) * ( wpup2(k+1) + wpvp2(k+1) )
+      end do
+
+    end if
 
     if ( l_tke_aniso ) then
 
@@ -2536,6 +2593,18 @@ module advance_wp2_wp3_module
                 stats_zm )                              ! intent(inout)
             endif
 
+            if ( l_use_tke_in_K_dfsn ) then
+              call stat_begin_update_pt( iwp2_dp2, k, &
+                         + rhs_diff_zm(3,k) * ( up2(k-1) + vp2(k-1) + wp2(k-1) )  &
+                         + rhs_diff_zm(2,k) * ( up2(k)   + vp2(k)   + wp2(k)   )  &
+                         + rhs_diff_zm(1,k) * ( up2(k+1) + vp2(k+1) + wp2(k+1) ), &
+                           stats_zm )
+              call stat_begin_update_pt( iwp3_dp1, k, &
+                         + rhs_diff_zt(3,k) * ( wpup2(k-1) + wpvp2(k-1) + wp3(k-1) ) &
+                         + rhs_diff_zt(2,k) * ( wpup2(k)   + wpvp2(k)   + wp3(k)   ) &
+                         + rhs_diff_zt(1,k) * ( wpup2(k+1) + wpvp2(k+1) + wp3(k+1) ), &
+                           stats_zt )
+            endif
 
             ! w'^2 term bp is completely explicit; call stat_update_var_pt.
             ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the

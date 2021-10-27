@@ -250,7 +250,8 @@ module model_flags
                                       ! over which wpthlp is positive near the ground when true
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
-      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_wp3_pr_turb_term, &! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_K_dfsn             ! Use TKE in eddy diffusion for wp2 and wp3
 
   end type clubb_config_flags_type
 
@@ -364,7 +365,8 @@ module model_flags
                                              l_lmm_stepping, &
                                              l_e3sm_config, &
                                              l_vary_convect_depth, &
-                                             l_use_tke_in_wp3_pr_turb_term )
+                                             l_use_tke_in_wp3_pr_turb_term, &
+                                             l_use_tke_in_K_dfsn )
 
 ! Description:
 !   Sets all CLUBB flags to a default setting.
@@ -484,7 +486,8 @@ module model_flags
                                       ! over which wpthlp is positive near the ground when true
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
-      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_K_dfsn             ! Use TKE in eddy diffusion for wp2 and wp3
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -538,6 +541,7 @@ module model_flags
     l_e3sm_config = .false.
     l_vary_convect_depth = .false.
     l_use_tke_in_wp3_pr_turb_term = .false.
+    l_use_tke_in_K_dfsn = .false.
 
     return
   end subroutine set_default_clubb_config_flags
@@ -588,6 +592,7 @@ module model_flags
                                                  l_e3sm_config, &
                                                  l_vary_convect_depth, &
                                                  l_use_tke_in_wp3_pr_turb_term, &
+                                                 l_use_tke_in_K_dfsn, &
                                                  clubb_config_flags )
 
 ! Description:
@@ -708,7 +713,8 @@ module model_flags
                                       ! over which wpthlp is positive near the ground when true
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
-      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_K_dfsn             ! Use TKE in eddy diffusion for wp2 and wp3
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -762,6 +768,7 @@ module model_flags
     clubb_config_flags%l_e3sm_config = l_e3sm_config
     clubb_config_flags%l_vary_convect_depth = l_vary_convect_depth
     clubb_config_flags%l_use_tke_in_wp3_pr_turb_term = l_use_tke_in_wp3_pr_turb_term
+    clubb_config_flags%l_use_tke_in_K_dfsn = l_use_tke_in_K_dfsn
     return
   end subroutine initialize_clubb_config_flags_type
 
@@ -835,6 +842,7 @@ module model_flags
     write(iunit,*) "l_vary_convect_depth", clubb_config_flags%l_vary_convect_depth
     write(iunit,*) "l_use_tke_in_wp3_pr_turb_term = ", &
                    clubb_config_flags%l_use_tke_in_wp3_pr_turb_term
+    write(iunit,*) "l_use_tke_in_K_dfsn", clubb_config_flags%l_use_tke_in_K_dfsn
 
     return
   end subroutine print_clubb_config_flags

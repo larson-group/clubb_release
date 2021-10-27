@@ -3170,7 +3170,8 @@ contains
                                                  l_lmm_stepping, & ! Out
                                                  l_e3sm_config, & ! Out
                                                  l_vary_convect_depth, & ! Out
-                                                 l_use_tke_in_wp3_pr_turb_term ) ! Out
+                                                 l_use_tke_in_wp3_pr_turb_term, & ! Out
+                                                 l_use_tke_in_K_dfsn ) ! Out
 
     use model_flags, only: &
         set_default_clubb_config_flags  ! Procedure
@@ -3286,7 +3287,8 @@ contains
                                       ! over which wpthlp is positive near the ground when true
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
-      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_K_dfsn             ! Use TKE in eddy diffusion for wp2 and wp3
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -3332,7 +3334,8 @@ contains
                                          l_lmm_stepping, & ! Out
                                          l_e3sm_config, & ! Out
                                          l_vary_convect_depth, & ! Out
-                                         l_use_tke_in_wp3_pr_turb_term ) ! Out
+                                         l_use_tke_in_wp3_pr_turb_term, & ! Out
+                                         l_use_tke_in_K_dfsn ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -3384,6 +3387,7 @@ contains
                                                      l_e3sm_config, & ! In
                                                      l_vary_convect_depth, & ! In
                                                      l_use_tke_in_wp3_pr_turb_term, & ! In
+                                                     l_use_tke_in_K_dfsn, & ! In
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -3501,7 +3505,8 @@ contains
                                       ! over which wpthlp is positive near the ground when true
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
-      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
+      l_use_tke_in_K_dfsn             ! Use TKE in eddy diffusion for wp2 and wp3
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -3552,6 +3557,7 @@ contains
                                              l_e3sm_config, & ! In
                                              l_vary_convect_depth, & ! In
                                              l_use_tke_in_wp3_pr_turb_term, & ! In
+                                             l_use_tke_in_K_dfsn, & ! In
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api
