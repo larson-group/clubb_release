@@ -1587,7 +1587,7 @@ module advance_clubb_core_module
              clubb_config_flags%l_damp_wp3_Skw_squared,                 & ! intent(in)
              clubb_config_flags%l_lmm_stepping,                         & ! intent(in)
              clubb_config_flags%l_use_tke_in_wp3_pr_turb_term,          & ! intent(in)
-             clubb_config_flags%l_use_tke_in_K_dfsn,                    & ! intent(in)
+             clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn,            & ! intent(in)
              stats_zt, stats_zm, stats_sfc,                             & ! intent(inout)
              wp2, wp3, wp3_zm, wp2_zt )                                   ! intent(inout)
 

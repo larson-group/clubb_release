@@ -425,7 +425,7 @@ module spurious_source_test
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
-      l_use_tke_in_K_dfsn             ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_tke_in_wp2_wp3_K_dfsn     ! Use TKE in eddy diffusion for wp2 and wp3
 
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
@@ -472,7 +472,7 @@ module spurious_source_test
                                          l_e3sm_config, &
                                          l_vary_convect_depth, &
                                          l_use_tke_in_wp3_pr_turb_term, &
-                                         l_use_tke_in_K_dfsn )
+                                         l_use_tke_in_wp2_wp3_K_dfsn )
 
     write(*,*)
     write(*,*) "Performing spurious source unit test"
