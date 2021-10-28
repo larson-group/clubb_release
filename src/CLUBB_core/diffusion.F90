@@ -327,38 +327,38 @@ module diffusion
 
     ! k = 1 (bottom level); lower boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
-    ! These lines are currently commented out because they do not have any
-    ! effect on model results.  These k=1 level of this "lhs" array is not fed into
+    ! These k=1 lines currently do not have any effect on model results.  
+    ! These k=1 level of this "lhs" array is not fed into
     ! the final LHS matrix that will be used to solve for the next timestep.
 
-!    if ( .not. l_upwind_Kh_dp_term ) then
-!
-!      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-!      lhs(kp1_tdiag,1) = - invrs_dzt(1) * invrs_rho_ds_zt(1) &
-!                                        * ( K_zm(1) + nu(1) ) * rho_ds_zm(1) * invrs_dzm(1)
-!
-!      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-!      lhs(k_tdiag,1)   = + invrs_dzt(1) * invrs_rho_ds_zt(1) &
-!                                        * ( K_zm(1) + nu(1) ) * rho_ds_zm(1) * invrs_dzm(1)
-!
-!      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-!      lhs(km1_tdiag,1) = zero
-!
-!    else
-!
-!      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-!      lhs(kp1_tdiag,1) = - invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1) & 
-!                         + lhs_upwind(kp1_tdiag,1)
-!
-!      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-!      lhs(k_tdiag,1)   = + invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1) & 
-!                         + lhs_upwind(k_tdiag,1)
-!
-!      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-!      lhs(km1_tdiag,1) = zero & 
-!                         + lhs_upwind(km1_tdiag,1) 
-!
-!    end if 
+    if ( .not. l_upwind_Kh_dp_term ) then
+
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag,1) = - invrs_dzt(1) * invrs_rho_ds_zt(1) &
+                                        * ( K_zm(1) + nu(1) ) * rho_ds_zm(1) * invrs_dzm(1)
+
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag,1)   = + invrs_dzt(1) * invrs_rho_ds_zt(1) &
+                                        * ( K_zm(1) + nu(1) ) * rho_ds_zm(1) * invrs_dzm(1)
+
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag,1) = zero
+
+    else
+
+      ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+      lhs(kp1_tdiag,1) = - invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1) & 
+                         + lhs_upwind(kp1_tdiag,1)
+
+      ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+      lhs(k_tdiag,1)   = + invrs_dzt(1) * ( K_zt(1) + nu(1) ) * invrs_dzm(1) & 
+                         + lhs_upwind(k_tdiag,1)
+
+      ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+      lhs(km1_tdiag,1) = zero & 
+                         + lhs_upwind(km1_tdiag,1) 
+
+    end if 
 
     ! Most of the interior model; normal conditions.
     do k = 2, gr%nz-1, 1
@@ -910,38 +910,38 @@ module diffusion
 
     ! k = 1; lower boundary level at surface.
     ! Only relevant if zero-flux boundary conditions are used.
-    ! These lines are currently commented out because they do not have any
-    ! effect on model results.  These k=1 level of this "lhs" array is not fed into
+    ! These k=1 lines currently do not have any effect on model results.  
+    ! These k=1 level of this "lhs" array is not fed into
     ! the final LHS matrix that will be used to solve for the next timestep.
 
-!    if ( .not. l_upwind_Kh_dp_term ) then
-!
-!      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-!      lhs(kp1_mdiag,1) = - invrs_dzm(1) * invrs_rho_ds_zm(1) &
-!                                        * ( K_zt(2) + nu(2) ) * rho_ds_zt(2) * invrs_dzt(2)
-!
-!      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-!      lhs(k_mdiag,1)   = + invrs_dzm(1) * invrs_rho_ds_zm(1) &
-!                                        * ( K_zt(2) + nu(2) ) * rho_ds_zt(2) * invrs_dzt(2)
-!
-!      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-!      lhs(km1_mdiag,1) = zero
-!
-!    else
-!
-!      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-!      lhs(kp1_mdiag,1) = - invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2) &
-!                         + lhs_upwind(kp1_mdiag,1)
-!
-!      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-!      lhs(k_mdiag,1)   = + invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2) &
-!                         + lhs_upwind(k_mdiag,1)
-!
-!      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-!      lhs(km1_mdiag,1) =   zero &
-!                         + lhs_upwind(km1_mdiag,1)
-!
-!    end if
+    if ( .not. l_upwind_Kh_dp_term ) then
+
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag,1) = - invrs_dzm(1) * invrs_rho_ds_zm(1) &
+                                        * ( K_zt(2) + nu(2) ) * rho_ds_zt(2) * invrs_dzt(2)
+
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag,1)   = + invrs_dzm(1) * invrs_rho_ds_zm(1) &
+                                        * ( K_zt(2) + nu(2) ) * rho_ds_zt(2) * invrs_dzt(2)
+
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag,1) = zero
+
+    else
+
+      ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+      lhs(kp1_mdiag,1) = - invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2) &
+                         + lhs_upwind(kp1_mdiag,1)
+
+      ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+      lhs(k_mdiag,1)   = + invrs_dzm(1) * ( K_zm(1) + nu(1) ) * invrs_dzt(2) &
+                         + lhs_upwind(k_mdiag,1)
+
+      ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+      lhs(km1_mdiag,1) =   zero &
+                         + lhs_upwind(km1_mdiag,1)
+
+    end if
 
     ! Most of the interior model; normal conditions.
     do k = 2, gr%nz-1, 1
