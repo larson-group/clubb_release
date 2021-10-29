@@ -1285,6 +1285,9 @@ module mixing_length
            brunt_freq_out_cloud = 0.0_core_rknd
         end where
 
+        ! This time scale is used optionally for the return-to-isotropy term. It
+        ! omits invrs_tau_sfc based on the rationale that the isotropization
+        ! rate shouldn't be enhanced near the ground.
         invrs_tau_N2_iso = invrs_tau_bkgnd + invrs_tau_shear + C_invrs_tau_N2_wp2 * brunt_freq_pos
 
         invrs_tau_wp2_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2_wp2 * brunt_freq_pos
