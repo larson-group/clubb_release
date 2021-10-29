@@ -66,7 +66,8 @@ module clubb_driver
 
     use grid_class, only: read_grid_heights, zt2zm, zm2zt !------------------ Procedure(s)
 
-    use parameter_indices, only: nparams, ic_K !----------------------------- Variable(s)
+    use parameter_indices, only: &
+      nparams, ic_K, iSkw_denom_coef, iSkw_max_mag !------------------------- Variable(s)
 
     use numerical_check, only: invalid_model_arrays !------------------------ Procedure(s)
 
@@ -594,6 +595,9 @@ module clubb_driver
 
     real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
       params  ! Model parameters, C1, nu2, etc.
+
+    real( kind = core_rknd ) :: &
+      lmin    ! Min. value for the length scale    [m]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       rrm, & ! Overall mean rain water mixing ratio                  [kg/kg]
@@ -1289,6 +1293,7 @@ module clubb_driver
     ! Setup microphysical fields
     call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & ! Intent(in)
                          dummy_dx, dummy_dy, &                              ! Intent(in)
+                         params, &                                          ! Intent(in)
                          l_diagnose_correlations, &                         ! Intent(in)
                          l_const_Nc_in_cloud, &                             ! Intent(inout)
                          l_fix_w_chi_eta_correlations, &                    ! Intent(inout)
@@ -1390,7 +1395,7 @@ module clubb_driver
            l_prescribed_avg_deltaz,                           & ! intent(in)
            l_damp_wp2_using_em,                               & ! intent(in)
            l_stability_correct_tau_zm,                        & ! intent(in)
-           gr, err_code_dummy )                                     ! Intent(out)
+           gr, lmin, err_code_dummy )                           ! Intent(out)
 
     ! Allocate and initialize variables
 
@@ -2091,7 +2096,8 @@ module clubb_driver
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
           wp2_zt = max( zm2zt( gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
-          call clip_skewness_core( gr, sfc_elevation, wp2_zt, wp3 )
+          call clip_skewness_core( gr, sfc_elevation, params(iSkw_max_mag), &
+                                   wp2_zt, wp3 )
         end if
       end if
 
@@ -2167,6 +2173,7 @@ module clubb_driver
       if ( clubb_config_flags%l_calc_thlp2_rad ) then
 
         call calculate_thlp2_rad( gr%nz, rcm_zm, thlprcp, radht_zm, & ! intent(in)
+                                  params,                           & ! intent(in)
                                   thlp2_forcing )                     ! intent(inout)
 
       end if
@@ -2193,6 +2200,7 @@ module clubb_driver
              rfrzm, radf, wphydrometp, &                          ! Intent(in)
              wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
              dummy_dx, dummy_dy, &                                ! Intent(in)
+             params, lmin, &                                      ! Intent(in)
              clubb_config_flags, &                                ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
              um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
@@ -2232,6 +2240,7 @@ module clubb_driver
                         ice_supersat_frac, hydromet, wphydrometp,                   & ! Intent(in)
                         corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
                         pdf_params, l_stats_samp,                                   & ! Intent(in)
+                        params,                                                     & ! Intent(in)
                         clubb_config_flags%iiPDF_type,                              & ! Intent(in)
                         l_use_precip_frac,                                          & ! Intent(in)
                         clubb_config_flags%l_predict_upwp_vpwp,                     & ! Intent(in)
@@ -2325,6 +2334,7 @@ module clubb_driver
                mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,                 & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
                precip_fracs, silhs_config_flags,                             & ! In
+               params,                                                       & ! In
                clubb_config_flags%l_uv_nudge,                                & ! In
                clubb_config_flags%l_tke_aniso,                               & ! In
                clubb_config_flags%l_standard_term_ta,                        & ! In
@@ -2410,7 +2420,10 @@ module clubb_driver
       ! Calculate Skw_zm for use in advance_microphys.
       ! This field is smoothed by interpolating to thermodynamic levels and then
       ! interpolating back to momentum levels.
-      Skw_zm = zt2zm( gr, zm2zt( gr, Skx_func( gr, wp2, zt2zm( gr, wp3 ), w_tol ) ) )
+      Skw_zm &
+      = zt2zm( gr, zm2zt( gr, Skx_func( gr, wp2, zt2zm( gr, wp3 ), w_tol, &
+                                        params(iSkw_denom_coef), &
+                                        params(iSkw_max_mag) ) ) )
 
       ! Advance predictive microphysics fields one model timestep.
       call advance_microphys( gr, dt_main, time_current, wm_zt, wp2,          & ! In
@@ -2420,6 +2433,7 @@ module clubb_driver
                               hydromet_mc, Ncm_mc, Lscale(1,:),           & ! In
                               hydromet_vel_covar_zt_impc,                 & ! In
                               hydromet_vel_covar_zt_expc,                 & ! In
+                              params,                                     & ! In
                               clubb_config_flags%l_upwind_xm_ma,          & ! In
                               stats_zt, stats_zm, stats_sfc,              & ! intent(inout)
                               hydromet, hydromet_vel_zt, hydrometp2,      & ! Inout
@@ -2493,7 +2507,7 @@ module clubb_driver
                                        Frad_SW_down, Frad_LW_down )
 
       ! End statistics timestep
-      call stats_end_timestep( &
+      call stats_end_timestep( params, &                    ! intent(in)
                                stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                                stats_rad_zt, stats_rad_zm & ! intent(inout)

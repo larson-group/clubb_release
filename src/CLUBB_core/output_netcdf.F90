@@ -190,7 +190,8 @@ module output_netcdf
 
 !-------------------------------------------------------------------------------
 
-  subroutine write_netcdf( l_uv_nudge, &
+  subroutine write_netcdf( clubb_params, &
+                           l_uv_nudge, &
                            l_tke_aniso, &
                            l_standard_term_ta, &
                            ncf )
@@ -218,12 +219,19 @@ module output_netcdf
         err_code, &           ! Error Indicator
         clubb_fatal_error     ! Constant
 
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
+
     use clubb_precision, only: &
-        time_precision ! Constant(s)
+        time_precision, & ! Constant(s)
+        core_rknd
 
     implicit none
 
     ! Input
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
@@ -251,7 +259,8 @@ module output_netcdf
     ncf%ntimes = ncf%ntimes + 1
 
     if ( .not. ncf%l_defined ) then
-      call first_write( l_uv_nudge, & ! intent(in)
+      call first_write( clubb_params, & ! intent(in)
+                        l_uv_nudge, & ! intent(in)
                         l_tke_aniso, & ! intent(in)
                         l_standard_term_ta, & ! intent(in)
                         ncf ) ! finalize the variable definitions intent(inout)
@@ -562,7 +571,8 @@ module output_netcdf
   end subroutine close_netcdf
 
 !-------------------------------------------------------------------------------
-  subroutine first_write( l_uv_nudge, &
+  subroutine first_write( clubb_params, &
+                          l_uv_nudge, &
                           l_tke_aniso, &
                           l_standard_term_ta, &
                           ncf )
@@ -598,9 +608,6 @@ module output_netcdf
     use parameters_tunable, only: &
         params_list ! Variable names (characters)
 
-    use parameters_tunable, only: &
-        get_parameters ! Subroutine
-
     use parameter_indices, only: &
         nparams ! Integer
 
@@ -631,6 +638,9 @@ module output_netcdf
       l_output_file_run_date = .false.
 
     ! Input Variables
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
@@ -647,8 +657,6 @@ module output_netcdf
     integer, dimension(:), allocatable :: stat
     
     integer :: netcdf_precision ! Level of precision for netCDF output
-
-    real( kind = core_rknd ), dimension(nparams) :: params ! Tunable parameters
 
     integer :: i     ! Array index
 
@@ -837,10 +845,8 @@ module output_netcdf
     stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "ts_nudge", ts_nudge )
     stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "sclr_tol", sclr_tol )
 
-    call get_parameters( params ) ! intent(out)
-
     do i = 1, nparams, 1
-      stat(i) = nf90_put_att( ncf%iounit, NF90_GLOBAL, params_list(i), params(i) )
+      stat(i) = nf90_put_att( ncf%iounit, NF90_GLOBAL, params_list(i), clubb_params(i) )
     end do
 
     if ( any( stat /= NF90_NOERR ) ) then

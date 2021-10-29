@@ -27,6 +27,7 @@ module microphys_init_cleanup
   !=============================================================================
   subroutine init_microphys( iunit, runtype, namelist_file, case_info_file, &
                              host_dx, host_dy, &
+                             clubb_params, &
                              l_diagnose_correlations, &
                              l_const_Nc_in_cloud, &
                              l_fix_w_chi_eta_correlations, &
@@ -175,9 +176,10 @@ module microphys_init_cleanup
     use setup_clubb_pdf_params, only: &
         denorm_transform_corr    ! Procedure(s)
 
-    use parameters_tunable, only: &
-        omicron,        & ! Procedure(s)
-        zeta_vrnce_rat
+    use parameter_indices, only: &
+        nparams,         & ! Variable(s)
+        iomicron,        &
+        izeta_vrnce_rat
 
     use index_mapping, only: &
         pdf2hydromet_idx    ! Procedure(s)
@@ -222,6 +224,9 @@ module microphys_init_cleanup
     real( kind = core_rknd ), intent(in) :: &
       host_dx, &
       host_dy
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
       l_diagnose_correlations ! Diagnose correlations instead of using fixed ones
@@ -916,7 +921,7 @@ module microphys_init_cleanup
     ! hmp2_ip_on_hmm2_ip * omicron.  These printed arrays should be used as a
     ! GUIDE.  I still recommend using the GrADS or netCDF output file.
     if ( clubb_at_least_debug_level( 1 ) &
-         .and. abs(zeta_vrnce_rat) < eps &
+         .and. abs(clubb_params(izeta_vrnce_rat)) < eps &
          .and. trim( microphys_scheme ) /= "none" ) then
 
        ! Allocate variables.
@@ -952,7 +957,7 @@ module microphys_init_cleanup
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
           ! Hydrometeor sigma_hm_i^2/mu_hm_i^2
           sigma2_on_mu2_ip_cloud(ivar) &
-          = omicron * hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar))
+          = clubb_params(iomicron) * hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar))
           sigma2_on_mu2_ip_below(ivar) = sigma2_on_mu2_ip_cloud(ivar)
           ! Hydrometeor sigma_hm_i_n
           sigma_x_n_cloud(ivar) = stdev_L2N( sigma2_on_mu2_ip_cloud(ivar) )

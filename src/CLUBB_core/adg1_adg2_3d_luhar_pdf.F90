@@ -32,7 +32,7 @@ module adg1_adg2_3d_luhar_pdf
   subroutine ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,                & ! In
                               wp2, rtp2, thlp2, up2, vp2,               & ! In
                               Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, & ! In
-                              sigma_sqd_w, mixt_frac_max_mag_in,        & ! In
+                              sigma_sqd_w, beta, mixt_frac_max_mag_in,  & ! In
                               sclrm, sclrp2, wpsclrp, l_scalar_calc,    & ! In
                               w_1, w_2,                                 & ! Out
                               rt_1, rt_2,                               & ! Out
@@ -94,6 +94,7 @@ module adg1_adg2_3d_luhar_pdf
       sigma_sqd_w    ! Width of individual w plumes         [-]
 
     real( kind = core_rknd ), intent(in) ::  &
+      beta,                 & ! CLUBB tunable parameter beta         [-]
       mixt_frac_max_mag_in    ! Maximum allowable mag. of mixt_frac  [-]
 
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim), intent(in) ::  &
@@ -163,28 +164,28 @@ module adg1_adg2_3d_luhar_pdf
     ! Calculate the PDF component means and variances of rt.
     call ADG1_ADG2_responder_params( gr, rtm, rtp2, wp2, sqrt_wp2, &   ! In
                                      wprtp, w_1_n, w_2_n, mixt_frac, & ! In
-                                     sigma_sqd_w, rt_tol, &            ! In
+                                     sigma_sqd_w, beta, rt_tol, &      ! In
                                      rt_1, rt_2, varnce_rt_1, &        ! Out
                                      varnce_rt_2, alpha_rt )           ! Out
 
     ! Calculate the PDF component means and variances of thl.
     call ADG1_ADG2_responder_params( gr, thlm, thlp2, wp2, sqrt_wp2, &  ! In
                                      wpthlp, w_1_n, w_2_n, mixt_frac, & ! In
-                                     sigma_sqd_w, thl_tol, &            ! In
+                                     sigma_sqd_w, beta, thl_tol, &      ! In
                                      thl_1, thl_2, varnce_thl_1, &      ! Out
                                      varnce_thl_2, alpha_thl )          ! Out
 
     ! Calculate the PDF component means and variances of u wind.
     call ADG1_ADG2_responder_params( gr, um, up2, wp2, sqrt_wp2, &    ! In
                                      upwp, w_1_n, w_2_n, mixt_frac, & ! In
-                                     sigma_sqd_w, thl_tol, &          ! In
+                                     sigma_sqd_w, beta, thl_tol, &    ! In
                                      u_1, u_2, varnce_u_1, &          ! Out
                                      varnce_u_2, alpha_u )            ! Out
 
     ! Calculate the PDF component means and variances of v wind.
     call ADG1_ADG2_responder_params( gr, vm, vp2, wp2, sqrt_wp2, &    ! In
                                      vpwp, w_1_n, w_2_n, mixt_frac, & ! In
-                                     sigma_sqd_w, thl_tol, &          ! In
+                                     sigma_sqd_w, beta, thl_tol, &    ! In
                                      v_1, v_2, varnce_v_1, &          ! Out
                                      varnce_v_2, alpha_v )            ! Out
 
@@ -194,7 +195,8 @@ module adg1_adg2_3d_luhar_pdf
           call ADG1_ADG2_responder_params( gr, sclrm(:,i), sclrp2(:,i), & ! In
                                            wp2, sqrt_wp2, wpsclrp(:,i), & ! In
                                            w_1_n, w_2_n, mixt_frac,     & ! In
-                                           sigma_sqd_w, sclr_tol(i),    & ! In
+                                           sigma_sqd_w, beta,           & ! In
+                                           sclr_tol(i),                 & ! In
                                            sclr_1(:,i), sclr_2(:,i),    & ! Out
                                            varnce_sclr_1(:,i),          & ! Out
                                            varnce_sclr_2(:,i),          & ! Out
@@ -209,7 +211,7 @@ module adg1_adg2_3d_luhar_pdf
 
   !=============================================================================
   subroutine ADG2_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
-                              Skw, wprtp, wpthlp, sqrt_wp2,             & ! In
+                              Skw, wprtp, wpthlp, sqrt_wp2, beta,       & ! In
                               sclrm, sclrp2, wpsclrp, l_scalar_calc,    & ! In
                               w_1, w_2,                                 & ! Out
                               rt_1, rt_2,                               & ! Out
@@ -260,6 +262,9 @@ module adg1_adg2_3d_luhar_pdf
       wprtp,    & ! Covariance of w and r_t                       [(kg/kg)(m/s)]
       wpthlp,   & ! Covariance of w and th_l                      [K(m/s)]
       sqrt_wp2    ! Square root of variance of w                  [m/s]
+
+    real ( kind = core_rknd ), intent(in) :: &
+      beta       ! CLUBB tunable parameter beta               [-]
 
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim), intent(in) ::  &
       sclrm,   & ! Mean of passive scalar (overall)           [units vary]
@@ -325,26 +330,27 @@ module adg1_adg2_3d_luhar_pdf
     sigma_sqd_w = min( one / ( one + small_m_w**2 ), 0.99_core_rknd )
 
     ! Calculate the PDF component means and variances of rt.
-    call ADG1_ADG2_responder_params( gr, rtm, rtp2, wp2, sqrt_wp2, &       ! In
+    call ADG1_ADG2_responder_params( gr, rtm, rtp2, wp2, sqrt_wp2, &   ! In
                                      wprtp, w_1_n, w_2_n, mixt_frac, & ! In
-                                     sigma_sqd_w, rt_tol, &            ! In
+                                     sigma_sqd_w, beta, rt_tol, &      ! In
                                      rt_1, rt_2, varnce_rt_1, &        ! Out
                                      varnce_rt_2, alpha_rt )           ! Out
 
     ! Calculate the PDF component means and variances of thl.
-    call ADG1_ADG2_responder_params( gr, thlm, thlp2, wp2, sqrt_wp2, &      ! In
+    call ADG1_ADG2_responder_params( gr, thlm, thlp2, wp2, sqrt_wp2, &  ! In
                                      wpthlp, w_1_n, w_2_n, mixt_frac, & ! In
-                                     sigma_sqd_w, thl_tol, &            ! In
+                                     sigma_sqd_w, beta, thl_tol, &      ! In
                                      thl_1, thl_2, varnce_thl_1, &      ! Out
                                      varnce_thl_2, alpha_thl )          ! Out
 
     ! Calculate the PDF component means and variances of passive scalars.
     if ( l_scalar_calc ) then
        do i = 1, sclr_dim
-          call ADG1_ADG2_responder_params( gr, sclrm(:,i), sclrp2(:,i),     & ! In
+          call ADG1_ADG2_responder_params( gr, sclrm(:,i), sclrp2(:,i), & ! In
                                            wp2, sqrt_wp2, wpsclrp(:,i), & ! In
                                            w_1_n, w_2_n, mixt_frac,     & ! In
-                                           sigma_sqd_w, sclr_tol(i),    & ! In
+                                           sigma_sqd_w, beta,           & ! In
+                                           sclr_tol(i),                 & ! In
                                            sclr_1(:,i), sclr_2(:,i),    & ! Out
                                            varnce_sclr_1(:,i),          & ! Out
                                            varnce_sclr_2(:,i),          & ! Out
@@ -358,7 +364,7 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine ADG2_pdf_driver
 
   !=============================================================================
-  subroutine Luhar_3D_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
+  subroutine Luhar_3D_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,  & ! In
                                   Skw, Skrt, Skthl, wprtp, wpthlp,      & ! In
                                   w_1, w_2,                             & ! Out
                                   rt_1, rt_2,                           & ! Out
@@ -992,9 +998,9 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine close_Luhar_pdf
 
   !=============================================================================
-  subroutine ADG1_ADG2_responder_params( gr, xm, xp2, wp2, sqrt_wp2, &        ! In
+  subroutine ADG1_ADG2_responder_params( gr, xm, xp2, wp2, sqrt_wp2, &    ! In
                                          wpxp, w_1_n, w_2_n, mixt_frac, & ! In
-                                         sigma_sqd_w, x_tol, &            ! In
+                                         sigma_sqd_w, beta, x_tol, &      ! In
                                          x_1, x_2, varnce_x_1, &          ! Out
                                          varnce_x_2, alpha_x )            ! Out
 
@@ -1021,7 +1027,7 @@ module adg1_adg2_3d_luhar_pdf
 
     ! Vince Larson added a dimensionless factor so that the
     ! width of plumes in theta_l, rt can vary.
-    ! beta is a constant defined in module parameters_tunable
+    ! beta is a constant defined in CLUBB's tunable parameters.
     !   Set 0<beta<3.
     ! beta=1.5_core_rknd recovers Chris Golaz' simplified formula.
     ! 3 Nov 2003
@@ -1038,9 +1044,6 @@ module adg1_adg2_3d_luhar_pdf
         one_half,       &
         zero_threshold, &
         w_tol_sqd
-
-    use parameters_tunable, only: &
-        beta    ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -1062,6 +1065,7 @@ module adg1_adg2_3d_luhar_pdf
       sigma_sqd_w    ! Width of individual w plumes           [-]
 
     real ( kind = core_rknd ), intent(in) :: &
+      beta,        & ! CLUBB tunable parameter beta           [-]
       x_tol          ! Tolerance value for x                  [units vary]
 
     ! Output Variables

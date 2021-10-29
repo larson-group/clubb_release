@@ -138,6 +138,7 @@ contains
     mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     precip_fracs, silhs_config_flags, & ! In
+    clubb_params, & ! In
     l_uv_nudge, & ! In
     l_tke_aniso, & ! In
     l_standard_term_ta, & ! In
@@ -156,6 +157,9 @@ contains
 
     use parameters_silhs, only: &
       silhs_config_flags_type ! Type
+
+    use parameter_indices, only: &
+      nparams
 
     use clubb_precision, only: &
       core_rknd
@@ -225,6 +229,9 @@ contains
     type(silhs_config_flags_type), intent(in) :: &
       silhs_config_flags
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging.
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
@@ -293,6 +300,7 @@ contains
       mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
       corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, & ! In
       precip_fracs, silhs_config_flags, & ! In
+      clubb_params, & ! In
       l_uv_nudge, & ! In
       l_tke_aniso, & ! In
       l_standard_term_ta, & ! In
@@ -316,6 +324,7 @@ contains
     mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     precip_fracs, silhs_config_flags, & ! In
+    clubb_params, & ! In
     l_uv_nudge, & ! In
     l_tke_aniso, & ! In
     l_standard_term_ta, & ! In
@@ -334,6 +343,9 @@ contains
 
     use parameters_silhs, only: &
       silhs_config_flags_type ! Type
+
+    use parameter_indices, only: &
+      nparams
 
     use clubb_precision, only: &
       core_rknd
@@ -404,6 +416,9 @@ contains
     type(silhs_config_flags_type), intent(in) :: &
       silhs_config_flags
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging.
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
@@ -425,6 +440,7 @@ contains
       mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
       precip_fracs, silhs_config_flags, & ! In
+      clubb_params, & ! In
       l_uv_nudge, & ! In
       l_tke_aniso, & ! In
       l_standard_term_ta, & ! In

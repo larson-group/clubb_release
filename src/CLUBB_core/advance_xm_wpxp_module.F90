@@ -59,6 +59,7 @@ module advance_xm_wpxp_module
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
                               uprcp, vprcp, rc_coef, &
+                              clubb_params, &
                               iiPDF_type, &
                               l_predict_upwp_vpwp, &
                               l_diffuse_rtm_and_thlm, &
@@ -92,21 +93,24 @@ module advance_xm_wpxp_module
     !   /Implicit solutions for the means and fluxes/
     !-----------------------------------------------------------------------
 
-    use parameters_tunable, only:  & 
-        C6rt,  & ! Variable(s)
-        C6rtb,  & 
-        C6rtc,  & 
-        C6thl,  & 
-        C6thlb,  & 
-        C6thlc, & 
-        C7,  & 
-        C7b,  & 
-        C7c,  & 
-        c_K6,  & 
-        C6rt_Lscale0, &
-        C6thl_Lscale0, &
-        C7_Lscale0, &
-        wpxp_L_thresh
+    use parameter_indices, only: &
+        nparams,             & ! Variable(s)
+        iC6rt,               &
+        iC6rtb,              &
+        iC6rtc,              &
+        iC6thl,              &
+        iC6thlb,             &
+        iC6thlc,             &
+        iC6rt_Lscale0,       &
+        iC6thl_Lscale0,      &
+        iC7,                 &
+        iC7b,                &
+        iC7c,                &
+        iC7_Lscale0,         &
+        ic_K6,               &
+        iwpxp_L_thresh,      &
+        ialtitude_threshold, &
+        iC_uu_shr
 
     use constants_clubb, only:  & 
         fstderr, &  ! Constant
@@ -279,6 +283,9 @@ module advance_xm_wpxp_module
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
                     ! Gaussian) PDF type to use for the w, rt, and theta-l (or
@@ -335,6 +342,23 @@ module advance_xm_wpxp_module
       vpwp    ! <v'w'>:  momentum flux (momentum levels)               [m^2/s^2]
  
     ! -------------------- Local Variables --------------------
+
+    real( kind = core_rknd ) ::  &
+      C6rt,               & ! CLUBB tunable parameter C6rt
+      C6rtb,              & ! CLUBB tunable parameter C6rtb
+      C6rtc,              & ! CLUBB tunable parameter C6rtc
+      C6thl,              & ! CLUBB tunable parameter C6thl
+      C6thlb,             & ! CLUBB tunable parameter C6thlb
+      C6thlc,             & ! CLUBB tunable parameter C6thlc
+      C6rt_Lscale0,       & ! CLUBB tunable parameter C6rt_Lscale0
+      C6thl_Lscale0,      & ! CLUBB tunable parameter C6thl_Lscale0
+      C7,                 & ! CLUBB tunable parameter C7
+      C7b,                & ! CLUBB tunable parameter C7b
+      C7c,                & ! CLUBB tunable parameter C7c
+      C7_Lscale0,         & ! CLUBB tunable parameter C7_Lscale0
+      c_K6,               & ! CLUBB tunable parameter c_K6
+      altitude_threshold, & ! CLUBB tunable parameter altitude_threshold
+      wpxp_L_thresh         ! CLUBB tunable parameter wpxp_L_thresh
 
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
       C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term
@@ -451,9 +475,23 @@ module advance_xm_wpxp_module
        endif ! l_predict_upwp_vpwp
     endif ! l_lmm_stepping
 
+    ! Unpack CLUBB tunable parameters
+    C6rt = clubb_params(iC6rt)
+    C6thl = clubb_params(iC6thl)
+    altitude_threshold = clubb_params(ialtitude_threshold)
+    wpxp_L_thresh = clubb_params(iwpxp_L_thresh)
+
     if ( .not. l_diag_Lscale_from_tau ) then
 
-       ! Compute C6 and C7 as a function of Skw
+       ! Unpack CLUBB tunable parameters
+       C6rtb = clubb_params(iC6rtb)
+       C6rtc = clubb_params(iC6rtc)
+       C6thlb = clubb_params(iC6thlb)
+       C6thlc = clubb_params(iC6thlc)
+       C6rt_Lscale0 = clubb_params(iC6rt_Lscale0)
+       C6thl_Lscale0 = clubb_params(iC6thl_Lscale0)
+
+       ! Compute C6 as a function of Skw
        ! The if...then is just here to save compute time
        if ( abs(C6rt-C6rtb) > abs(C6rt+C6rtb)*eps/2 ) then
          C6rt_Skw_fnc(1:gr%nz) = C6rtb + (C6rt-C6rtb) & 
@@ -471,10 +509,12 @@ module advance_xm_wpxp_module
 
        ! Damp C6 as a function of Lscale in stably stratified regions
        C6rt_Skw_fnc = damp_coefficient( gr, C6rt, C6rt_Skw_fnc, &
-                                        C6rt_Lscale0, wpxp_L_thresh, Lscale )
+                                        C6rt_Lscale0, altitude_threshold, &
+                                        wpxp_L_thresh, Lscale )
 
        C6thl_Skw_fnc = damp_coefficient( gr, C6thl, C6thl_Skw_fnc, &
-                                         C6thl_Lscale0, wpxp_L_thresh, Lscale )
+                                         C6thl_Lscale0, altitude_threshold, &
+                                         wpxp_L_thresh, Lscale )
 
     else ! l_diag_Lscale_from_tau
 
@@ -485,9 +525,19 @@ module advance_xm_wpxp_module
 
     ! Compute C7_Skw_fnc
     if ( l_use_C7_Richardson ) then
+
       ! New formulation based on Richardson number
       C7_Skw_fnc = Cx_fnc_Richardson
+
     else
+
+      ! Unpack CLUBB tunable parameters
+      C7 = clubb_params(iC7)
+      C7b = clubb_params(iC7b)
+      C7c = clubb_params(iC7c)
+      C7_Lscale0 = clubb_params(iC7_Lscale0)
+
+      ! Compute C7 as a function of Skw
       if ( abs(C7-C7b) > abs(C7+C7b)*eps/2 ) then
         C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 
           *EXP( -one_half * (Skw_zm(1:gr%nz)/C7c)**2 )
@@ -497,10 +547,10 @@ module advance_xm_wpxp_module
 
       ! Damp C7 as a function of Lscale in stably stratified regions
       C7_Skw_fnc = damp_coefficient( gr, C7, C7_Skw_fnc, &
-                                     C7_Lscale0, wpxp_L_thresh, Lscale )
-    end if ! l_use_C7_Richardson
+                                     C7_Lscale0, altitude_threshold, &
+                                     wpxp_L_thresh, Lscale )
 
-!   C7_Skw_fnc = C7
+    end if ! l_use_C7_Richardson
 
     if ( l_stats_samp ) then
 
@@ -526,7 +576,7 @@ module advance_xm_wpxp_module
     ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
     ! Kw6 is located on thermodynamic levels.
     ! Kw6 = c_K6 * Kh_zt
-
+    c_K6 = clubb_params(ic_K6)
     Kw6(1:gr%nz) = c_K6 * Kh_zt(1:gr%nz)
 
     ! Find the number of grid levels, both upwards and downwards, that can
@@ -574,6 +624,7 @@ module advance_xm_wpxp_module
                                  rho_ds_zm, l_implemented, em,                     & ! In
                                  Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
                                  ice_supersat_frac,                                & ! In
+                                 clubb_params,                                     & ! In
                                  l_diffuse_rtm_and_thlm,                           & ! In
                                  l_stability_correct_Kh_N2_zm,                     & ! In
                                  l_upwind_xm_ma,                                   & ! In
@@ -627,6 +678,7 @@ module advance_xm_wpxp_module
                                           rhs_ta_wpvp, rhs_ta_wpsclrp,                     & ! In
                                           lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,    & ! In
                                           lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                 & ! In
+                                          clubb_params(iC_uu_shr),                         & ! In
                                           l_predict_upwp_vpwp,                             & ! In
                                           l_diffuse_rtm_and_thlm,                          & ! In
                                           l_upwind_xm_ma,                                  & ! In
@@ -1204,6 +1256,7 @@ module advance_xm_wpxp_module
                                      rho_ds_zm, l_implemented, em,                      & ! In
                                      Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,      & ! In
                                      ice_supersat_frac,                                 & ! In
+                                     clubb_params,                                      & ! In
                                      l_diffuse_rtm_and_thlm,                            & ! In
                                      l_stability_correct_Kh_N2_zm,                      & ! In
                                      l_upwind_xm_ma,                                    & ! In
@@ -1222,6 +1275,10 @@ module advance_xm_wpxp_module
         grid, & ! Type
         zm2zt, & ! Procedure(s)
         zt2zm
+
+    use parameter_indices, only: &
+        nparams, & ! Variable(s)
+        ilambda0_stability_coef
 
     use parameters_tunable, only:  & 
         nu6_vert_res_dep ! Variable(s)
@@ -1274,6 +1331,9 @@ module advance_xm_wpxp_module
 
     logical, intent(in) ::  & 
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
       l_diffuse_rtm_and_thlm,       & ! This flag determines whether or not we want CLUBB to do
@@ -1337,7 +1397,7 @@ module advance_xm_wpxp_module
                                 lhs_ac_pr2                       ) ! Intent(out)
 
     ! Calculate diffusion terms for all momentum grid level
-    call diffusion_zm_lhs( gr, Kw6(:), Kw6_zm(:), nu6_vert_res_dep(:),  & ! Intent(in)
+    call diffusion_zm_lhs( gr, Kw6(:), Kw6_zm(:), nu6_vert_res_dep(:), & ! Intent(in)
                            gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
                            invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
                            lhs_diff_zm(:,:)                  ) ! Intent(out)    
@@ -1352,6 +1412,7 @@ module advance_xm_wpxp_module
         if ( l_stability_correct_Kh_N2_zm ) then
           Kh_N2_zm = Kh_zm / calc_stability_correction( gr, thlm, Lscale, em, exner, rtm, rcm, &
                                                         p_in_Pa, thvm, ice_supersat_frac, &
+                                                        clubb_params(ilambda0_stability_coef), &
                                                         l_brunt_vaisala_freq_moist, &
                                                         l_use_thvm_in_bv_freq )
         else
@@ -2215,6 +2276,7 @@ module advance_xm_wpxp_module
                                             rhs_ta_wpvp, rhs_ta_wpsclrp, &
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp, &
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
+                                            C_uu_shr, &
                                             l_predict_upwp_vpwp, &
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
@@ -2265,9 +2327,6 @@ module advance_xm_wpxp_module
         sclr_dim, &  ! Variable(s)
         sclr_tol
 
-    use parameters_tunable, only: &
-        C_uu_shr    ! Parameter(s)
-        
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
@@ -2389,6 +2448,9 @@ module advance_xm_wpxp_module
 
     integer, intent(in) :: &
       nrhs         ! Number of RHS vectors
+
+    real( kind = core_rknd ), intent(in) ::  &
+      C_uu_shr    ! CLUBB tunable parameter C_uu_shr
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,    & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -4638,7 +4700,8 @@ module advance_xm_wpxp_module
 
 
   !=============================================================================
-  pure function damp_coefficient( gr, coefficient, Cx_Skw_fnc, max_coeff_value, &
+  pure function damp_coefficient( gr, coefficient, Cx_Skw_fnc, &
+                                  max_coeff_value, altitude_threshold, &
                                   threshold, Lscale ) &
     result( damped_value )
 
@@ -4649,10 +4712,6 @@ module advance_xm_wpxp_module
     use grid_class, only: & 
         grid ! Type
 
-    ! Added to prevent large damping at low altitudes where Lscale is small
-    use parameters_tunable, only: &
-        altitude_threshold    ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -4662,8 +4721,9 @@ module advance_xm_wpxp_module
 
     ! Input variables
     real( kind = core_rknd ), intent(in) :: &
-      coefficient,      &   ! The coefficient to be damped
-      max_coeff_value,  &   ! Maximum value the damped coefficient should have
+      coefficient,        & ! The coefficient to be damped
+      max_coeff_value,    & ! Maximum value the damped coefficient should have
+      altitude_threshold, & ! Minimum altitude where damping should occur 
       threshold             ! Value of Lscale below which the damping should occur
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &

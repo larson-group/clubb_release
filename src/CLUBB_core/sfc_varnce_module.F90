@@ -15,7 +15,7 @@ module sfc_varnce_module
   subroutine calc_sfc_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
                               um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
                               wp2_splat_sfc, tau_zm_sfc, &
-                              depth_pos_wpthlp, &
+                              depth_pos_wpthlp, up2_sfc_coef, &
                               l_vary_convect_depth, &
                               wp2_sfc, up2_sfc, vp2_sfc, & 
                               thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
@@ -74,9 +74,6 @@ module sfc_varnce_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use parameters_tunable, only: &
-        up2_sfc_coef ! Variable
-
     implicit none
 
     ! External
@@ -106,16 +103,17 @@ module sfc_varnce_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
-      upwp_sfc,      & ! Surface u momentum flux, <u'w'>|_sfc   [m^2/s^2]
-      vpwp_sfc,      & ! Surface v momentum flux, <v'w'>|_sfc   [m^2/s^2]
-      wpthlp_sfc,    & ! Surface thetal flux, <w'thl'>|_sfc     [K m/s]
-      wprtp_sfc,     & ! Surface moisture flux, <w'rt'>|_sfc    [kg/kg m/s]
-      um_sfc,        & ! Surface u wind component, <u>          [m/s]
-      vm_sfc,        & ! Surface v wind component, <v>          [m/s]
-      Lscale_up_sfc, & ! Upward component of Lscale at surface  [m] 
-      wp2_splat_sfc, & ! Tendency of <w'^2> due to splatting of eddies at zm(1) [m^2/s^3]
-      tau_zm_sfc,    & ! Turbulent dissipation time at level zm(1)  [s]
-      depth_pos_wpthlp  ! Thickness of the layer near the surface with wpthlp > 0 [m]
+      upwp_sfc,         & ! Surface u momentum flux, <u'w'>|_sfc   [m^2/s^2]
+      vpwp_sfc,         & ! Surface v momentum flux, <v'w'>|_sfc   [m^2/s^2]
+      wpthlp_sfc,       & ! Surface thetal flux, <w'thl'>|_sfc     [K m/s]
+      wprtp_sfc,        & ! Surface moisture flux, <w'rt'>|_sfc    [kg/kg m/s]
+      um_sfc,           & ! Surface u wind component, <u>          [m/s]
+      vm_sfc,           & ! Surface v wind component, <v>          [m/s]
+      Lscale_up_sfc,    & ! Upward component of Lscale at surface  [m] 
+      wp2_splat_sfc,    & ! Tendency of <w'^2> due to splatting of eddies at zm(1) [m^2/s^3]
+      tau_zm_sfc,       & ! Turbulent dissipation time at level zm(1)  [s]
+      depth_pos_wpthlp, & ! Thickness of the layer near the surface with wpthlp > 0 [m]
+      up2_sfc_coef        ! CLUBB tunable parameter up2_sfc_coef   [-]
 
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  & 
       wpsclrp_sfc    ! Passive scalar flux, <w'sclr'>|_sfc   [units m/s]

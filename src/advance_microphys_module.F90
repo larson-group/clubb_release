@@ -40,6 +40,7 @@ module advance_microphys_module
                                 hydromet_mc, Ncm_mc, Lscale, &             ! In
                                 hydromet_vel_covar_zt_impc, &              ! In
                                 hydromet_vel_covar_zt_expc, &              ! In
+                                clubb_params, &                            ! In
                                 l_upwind_xm_ma, &                          ! In
                                 stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
@@ -59,9 +60,9 @@ module advance_microphys_module
 
     use grid_class, only: grid ! Type
 
-
-    use parameters_tunable, only: & 
-        c_K_hm ! Variable(s) 
+    use parameter_indices, only: &
+        nparams, & ! Variable(s)
+        ic_K_hm 
 
     use parameters_model, only: & 
         hydromet_dim   ! Integer
@@ -164,6 +165,9 @@ module advance_microphys_module
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     logical, intent(in) :: &
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
                      ! approximation rather than a centered differencing for turbulent or
@@ -255,6 +259,7 @@ module advance_microphys_module
        ! hydrometeors.
        K_hm = calculate_K_hm( gr, wp2, Kh_zm, Skw_zm, Lscale, &
                               hydromet, hydrometp2, &
+                              clubb_params, &
                               l_use_non_local_diff_fac )
 
        do i = 1, hydromet_dim, 1
@@ -292,7 +297,7 @@ module advance_microphys_module
        ! Solve for the value of K_Nc, the coefficient of diffusion for cloud
        ! droplet concentration.
        do k = 1, gr%nz, 1
-          K_Nc(k) = c_K_hm * Kh_zm(k)
+          K_Nc(k) = clubb_params(ic_K_hm) * Kh_zm(k)
        enddo ! k = 1, gr%nz, 1
 
     endif ! l_predict_Nc
@@ -3245,6 +3250,7 @@ module advance_microphys_module
   !=============================================================================
   function calculate_K_hm( gr, wp2, Kh_zm, Skw_zm, Lscale, &
                            hydromet, hydrometp2, &
+                           clubb_params, &
                            l_use_non_local_diff_fac ) &
   result( K_hm )
 
@@ -3270,13 +3276,13 @@ module advance_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-       zt2zm    ! Procedure(s)
+        zt2zm    ! Procedure(s)
 
-
-    use parameters_tunable, only: & 
-        c_K_hm,        & ! Variable(s) 
-        c_K_hmb,       &  
-        K_hm_min_coef
+    use parameter_indices, only: &
+        nparams,        & ! Variable(s)
+        ic_K_hm,        & 
+        ic_K_hmb,       &  
+        iK_hm_min_coef
 
     use parameters_model, only: & 
         hydromet_dim   ! Variable(s)
@@ -3306,6 +3312,9 @@ module advance_microphys_module
       hydromet,   & ! Hydrometeor mean, <h_m> (thermo. levels)    [units]
       hydrometp2    ! Variance of hydrometeor (overall) (m-levs.) [units^2]
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     logical, intent(in) :: &
       l_use_non_local_diff_fac    ! Flag to use a non-local factor for
                                   ! eddy-diffusivity applied to hydrometeors.
@@ -3330,7 +3339,7 @@ module advance_microphys_module
           kp1 = min( k+1, gr%nz )
 
           K_hm(k,i) &
-          = c_K_hm * Kh_zm(k) &
+          = clubb_params(ic_K_hm) * Kh_zm(k) &
             * ( sqrt( hydrometp2(k,i) ) &
                 / max( zt2zm( gr, hydromet(:,i), k ), hydromet_tol(i) ) ) &
             * ( one + abs( Skw_zm(k) ) ) 
@@ -3338,13 +3347,14 @@ module advance_microphys_module
           if ( l_use_non_local_diff_fac ) then
              K_gamma(k,i) &
              = one &
-               - c_K_hmb &
+               - clubb_params(ic_K_hmb) &
                  * ( ( zt2zm( gr, Lscale(:), k ) &
                        / max( zt2zm( gr, hydromet(:,i), k ), hydromet_tol(i) ) ) &
                      * ( gr%invrs_dzm(k) &
                          * ( hydromet(kp1,i) - hydromet(k,i) ) ) )
 
-               K_hm(k,i) = K_hm(k,i) * max( K_gamma(k,i), K_hm_min_coef )
+               K_hm(k,i) &
+               = K_hm(k,i) * max( K_gamma(k,i), clubb_params(iK_hm_min_coef) )
           endif
 
           if ( abs( gr%invrs_dzm(k) &
