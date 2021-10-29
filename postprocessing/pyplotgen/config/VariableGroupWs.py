@@ -179,7 +179,7 @@ class VariableGroupWs(VariableGroup):
             {'var_names':
                  {
                  'clubb': ['w_up_in_cloud'],
-                 'sam': [''],
+                 'sam': ['WSUP'],
                  'coamps': [''],
                  'r408': [''],
                  'hoc': [''],
@@ -224,4 +224,3 @@ class VariableGroupWs(VariableGroup):
         output = 0.5 * ( wp2up2 + wp2vp2 + wp4 )
 
         return output, z
-
