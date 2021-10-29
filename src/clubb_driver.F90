@@ -2334,6 +2334,7 @@ module clubb_driver
                mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,                 & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
                precip_fracs, silhs_config_flags,                             & ! In
+               params,                                                       & ! In
                clubb_config_flags%l_uv_nudge,                                & ! In
                clubb_config_flags%l_tke_aniso,                               & ! In
                clubb_config_flags%l_standard_term_ta,                        & ! In
@@ -2506,7 +2507,7 @@ module clubb_driver
                                        Frad_SW_down, Frad_LW_down )
 
       ! End statistics timestep
-      call stats_end_timestep( &
+      call stats_end_timestep( params, &                    ! intent(in)
                                stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                                stats_rad_zt, stats_rad_zm & ! intent(inout)
