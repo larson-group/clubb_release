@@ -735,6 +735,10 @@ module advance_clubb_core_module
        invrs_tau_C6_zm,              & ! Inverse tau values used for C6 (pr1) term in wpxp [1/s]
        invrs_tau_C1_zm,              & ! Inverse tau values used for C1 (dp1) term in wp2 [1/s]
        invrs_tau_xp2_zm,             & ! Inverse tau values used for advance_xp2_wpxp [s^-1]
+       invrs_tau_N2_iso,             & ! Inverse tau values used for C4 when 
+                                       ! l_use_invrs_tau_N2_iso = .true.              [s^-1]
+       invrs_tau_C4_zm,              & ! Inverse tau values used for C4 terms         [s^-1]
+       invrs_tau_C14_zm,             & ! Inverse tau valuse used for C14 terms        [s^-1]
        invrs_tau_wp2_zm,             & ! Inverse tau values used for advance_wp2_wpxp [s^-1]
        invrs_tau_wpxp_zm,            & ! invrs_tau_C6_zm = invrs_tau_wpxp_zm
        invrs_tau_wp3_zm,             & ! Inverse tau values used for advance_wp3_wp2 [s^-1]
@@ -773,6 +777,9 @@ module advance_clubb_core_module
     ! Flag to sample stats in a particular call to subroutine
     ! pdf_closure_driver.
     logical :: l_samp_stats_in_pdf_call
+
+    ! Flag to determine whether invrs_tau_N2_iso is used in C4 terms.
+    logical, parameter :: l_use_invrs_tau_N2_iso = .false.
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
        wp2_splat, &   ! Tendency of <w'2> due to eddies compressing  [m^2/s^3]
@@ -1172,7 +1179,8 @@ module advance_clubb_core_module
                           sqrt_Ri_zm, & ! intent out
                           invrs_tau_zt, invrs_tau_zm, & ! intent out
                           invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
-                          invrs_tau_shear, invrs_tau_wp2_zm, invrs_tau_xp2_zm, & ! intent out
+                          invrs_tau_shear, invrs_tau_N2_iso, & ! intent out
+                          invrs_tau_wp2_zm, invrs_tau_xp2_zm, & ! intent out
                           invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm, & ! intent out
                           tau_max_zm, tau_max_zt, tau_zm, tau_zt, & !intent out
                           Lscale, Lscale_up, Lscale_down)! intent out
@@ -1384,6 +1392,14 @@ module advance_clubb_core_module
 
       end if ! l_stability_correction
 
+      ! Set invrs_tau variables for C4 and C14
+      invrs_tau_C14_zm = invrs_tau_wp2_zm
+      if ( .not. l_use_invrs_tau_N2_iso ) then
+        invrs_tau_C4_zm = invrs_tau_wp2_zm
+      else
+        invrs_tau_C4_zm = invrs_tau_N2_iso
+      end if
+
       if ( l_stats_samp ) then
          call stat_update_var(iinvrs_tau_zm, invrs_tau_zm, & ! intent(in)
                               stats_zm)                      ! intent(inout)
@@ -1499,7 +1515,8 @@ module advance_clubb_core_module
       ! Advance the prognostic equations
       !   for scalar variances and covariances,
       !   plus the horizontal wind variances by one time step, by one time step.
-      call advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm, & ! intent(in)
+      call advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_C4_zm,       & ! intent(in)
+                             invrs_tau_C14_zm, wm_zm,                     & ! intent(in)
                              rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,    & ! intent(in)
                              wp2, wp2_zt, wp3, upwp, vpwp,                & ! intent(in)
                              sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,        & ! intent(in)
@@ -1568,7 +1585,7 @@ module advance_clubb_core_module
              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,                    & ! intent(in)
              wpup2, wpvp2, wp2up2, wp2vp2, wp4,                         & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,                       & ! intent(in)
-             up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_wp2_zm,              & ! intent(in)
+             up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm,               & ! intent(in)
              invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,                 & ! intent(in)
              Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,             & ! intent(in)
              invrs_rho_ds_zt, radf, thv_ds_zm,                          & ! intent(in)
