@@ -1055,18 +1055,12 @@ module advance_wp2_wp3_module
         ! call stat_end_update_pt.  
         ! If neither of these flags is true, then w'^2 term dp2 is 
         ! completely implicit; call stat_update_var_pt.
-        if ( l_crank_nich_diff ) then
+        if ( l_crank_nich_diff .or. l_use_tke_in_wp2_wp3_K_dfsn ) then
            call stat_end_update_pt( iwp2_dp2, k, & ! intent(in)
               zmscr02(k) * wp2(km1) & 
             + zmscr03(k) * wp2(k) & 
             + zmscr04(k) * wp2(kp1), &             ! intent(in)
               stats_zm )                           ! intent(inout)
-        elseif ( l_use_tke_in_wp2_wp3_K_dfsn ) then
-           call stat_end_update_pt( iwp2_dp2, k, & ! intent(in)
-              zmscr02(k) * ( up2(km1) + vp2(km1) + wp2(km1) )  &
-            + zmscr03(k) * ( up2(k)   + vp2(k)   + wp2(k)   )  &
-            + zmscr04(k) * ( up2(kp1) + vp2(kp1) + wp2(kp1) ), &  ! intent(in)
-              stats_zm )
         else
            call stat_update_var_pt( iwp2_dp2, k, & ! intent(in)
               zmscr02(k) * wp2(km1) & 
@@ -1127,18 +1121,12 @@ module advance_wp2_wp3_module
         ! call stat_end_update_pt.  
         ! If neither of these flags is true, then w'^3 term dp1 is 
         ! completely implicit; call stat_update_var_pt.
-        if ( l_crank_nich_diff ) then
+        if ( l_crank_nich_diff .or. l_use_tke_in_wp2_wp3_K_dfsn ) then
            call stat_end_update_pt( iwp3_dp1, k, & ! intent(in) 
               ztscr02(k) * wp3(km1) & 
             + ztscr03(k) * wp3(k) & 
             + ztscr04(k) * wp3(kp1), &             ! intent(in)
               stats_zt )                           ! intent(inout)
-        elseif ( l_use_tke_in_wp2_wp3_K_dfsn ) then
-           call stat_end_update_pt( iwp3_dp1, k, & ! intent(in)
-              ztscr02(k) * ( wpup2(km1) + wpvp2(km1) + wp3(km1) )  &
-            + ztscr03(k) * ( wpup2(k)   + wpvp2(k)   + wp3(k)   )  &
-            + ztscr04(k) * ( wpup2(kp1) + wpvp2(kp1) + wp3(kp1) ), & ! intent(in)
-              stats_zt )
         else
            call stat_update_var_pt( iwp3_dp1, k, & ! intent(in)
               ztscr02(k) * wp3(km1) & 
@@ -2698,15 +2686,10 @@ module advance_wp2_wp3_module
             ! call stat_begin_update_pt.
             if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
               call stat_begin_update_pt( iwp2_dp2, k, &
-                         + rhs_diff_zm(3,k) * ( up2(k-1) + vp2(k-1) + wp2(k-1) )  &
-                         + rhs_diff_zm(2,k) * ( up2(k)   + vp2(k)   + wp2(k)   )  &
-                         + rhs_diff_zm(1,k) * ( up2(k+1) + vp2(k+1) + wp2(k+1) ), &
+                         + rhs_diff_zm(3,k) * ( up2(k-1) + vp2(k-1) )  &
+                         + rhs_diff_zm(2,k) * ( up2(k)   + vp2(k)   )  &
+                         + rhs_diff_zm(1,k) * ( up2(k+1) + vp2(k+1) ), &
                            stats_zm )
-              call stat_begin_update_pt( iwp3_dp1, k, &
-                         + rhs_diff_zt(3,k) * ( wpup2(k-1) + wpvp2(k-1) + wp3(k-1) ) &
-                         + rhs_diff_zt(2,k) * ( wpup2(k)   + wpvp2(k)   + wp3(k)   ) &
-                         + rhs_diff_zt(1,k) * ( wpup2(k+1) + wpvp2(k+1) + wp3(k+1) ), &
-                           stats_zt )
             endif
 
             ! w'^2 term bp is completely explicit; call stat_update_var_pt.
@@ -2898,6 +2881,17 @@ module advance_wp2_wp3_module
                                          + rhs_diff_zt(2,k) * wp3(k) & 
                                          + rhs_diff_zt(1,k) * wp3(k+1), & ! intent(in)
                                            stats_zt ) ! intent(inout)
+            endif
+
+            ! w'^2 term dp2 and w'^3 term dp1 have both implicit and explicit 
+            ! components (if the l_use_tke_in_wp2_wp3_K_dfsn flag is true;
+            ! call stat_begin_update_pt.
+            if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
+              call stat_begin_update_pt( iwp3_dp1, k, &
+                         + rhs_diff_zt(3,k) * ( wpup2(k-1) + wpvp2(k-1) ) &
+                         + rhs_diff_zt(2,k) * ( wpup2(k)   + wpvp2(k)   ) &
+                         + rhs_diff_zt(1,k) * ( wpup2(k+1) + wpvp2(k+1) ), &
+                           stats_zt )
             endif
                       
             ! Experimental bouyancy term
