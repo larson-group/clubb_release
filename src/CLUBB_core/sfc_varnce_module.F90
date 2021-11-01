@@ -164,7 +164,7 @@ module sfc_varnce_module
     if ( .not. l_vary_convect_depth ) then
        a_const = 1.8_core_rknd
     else
-       a_const = 0.6_core_rknd 
+       a_const = 0.404973659863937_core_rknd !0.6_core_rknd 
     end if
 
     if ( l_andre_1978 ) then

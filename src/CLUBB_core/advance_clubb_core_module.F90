@@ -779,7 +779,7 @@ module advance_clubb_core_module
     logical :: l_samp_stats_in_pdf_call
 
     ! Flag to determine whether invrs_tau_N2_iso is used in C4 terms.
-    logical, parameter :: l_use_invrs_tau_N2_iso = .false.
+    logical, parameter :: l_use_invrs_tau_N2_iso = .true.
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
        wp2_splat, &   ! Tendency of <w'2> due to eddies compressing  [m^2/s^3]
@@ -1206,9 +1206,11 @@ module advance_clubb_core_module
 
       ! Calculate CLUBB's eddy diffusivity as
       !   CLUBB's length scale times a velocity scale.
-      Kh_zt = c_K * Lscale * sqrt_em_zt
-      Kh_zm = c_K * max( zt2zm( gr, Lscale ), zero_threshold )  &
-                  * sqrt( max( em, em_min ) )
+!      Kh_zt = c_K * Lscale * sqrt_em_zt
+      Kh_zt = wp2_zt / invrs_tau_zt
+!      Kh_zm = c_K * max( zt2zm( gr, Lscale ), zero_threshold )  &
+!                  * sqrt( max( em, em_min ) )
+      Kh_zm = zt2zm( gr, Kh_zt )
 
       ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
       call term_wp2_splat( gr, C_wp2_splat, gr%nz, dt, wp2, wp2_zt, tau_zm, & ! Intent(in)

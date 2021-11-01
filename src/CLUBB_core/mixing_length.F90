@@ -1227,7 +1227,7 @@ module mixing_length
 
    ! Local Variables
 
-   logical, parameter :: l_smooth_Heaviside_tau_wpxp = .false.
+   logical, parameter :: l_smooth_Heaviside_tau_wpxp = .true.
 
    integer :: k    ! Vertical level index
 

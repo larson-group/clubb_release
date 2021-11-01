@@ -89,7 +89,7 @@ module model_flags
                                   ! spline interpolation as opposed to linear interpolation.
 
   logical, parameter, public :: &
-    l_upwind_Kh_dp_term = .false.
+    l_upwind_Kh_dp_term = .true.
 
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,
