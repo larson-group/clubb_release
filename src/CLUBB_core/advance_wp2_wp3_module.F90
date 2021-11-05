@@ -53,7 +53,7 @@ module advance_wp2_wp3_module
                               wp2_splat, wp3_splat,                          & ! In
                               pdf_implicit_coefs_terms,                      & ! In
                               wprtp, wpthlp, rtp2, thlp2,                    & ! In
-                              clubb_params,                                  & ! In
+                              clubb_params, nu_vert_res_dep,                 & ! In
                               iiPDF_type,                                    & ! In
                               l_min_wp2_from_corr_wx,                        & ! In
                               l_upwind_xm_ma,                                & ! In
@@ -100,6 +100,9 @@ module advance_wp2_wp3_module
         iC1,     & 
         ic_K1,   & 
         ic_K8
+
+    use parameters_tunable, only: &
+        nu_vertical_res_dep    ! Type(s)
 
     use sponge_layer_damping, only: &
         wp2_sponge_damp_settings, & ! Variable(s)
@@ -209,6 +212,9 @@ module advance_wp2_wp3_module
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+ 
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -422,7 +428,7 @@ module advance_wp2_wp3_module
                      wp2_splat, wp3_splat,                                    & ! Intent(in)
                      pdf_implicit_coefs_terms,                                & ! Intent(in)
                      wprtp, wpthlp, rtp2, thlp2,                              & ! Intent(in)
-                     clubb_params,                                            & ! Intent(in)
+                     clubb_params, nu_vert_res_dep,                           & ! Intent(in)
                      iiPDF_type,                                              & ! Intent(in)
                      l_min_wp2_from_corr_wx,                                  & ! Intent(in)
                      l_upwind_xm_ma,                                          & ! Intent(in)
@@ -553,7 +559,7 @@ module advance_wp2_wp3_module
                          wp2_splat, wp3_splat,                                    & ! Intent(in)
                          pdf_implicit_coefs_terms,                                & ! Intent(in)
                          wprtp, wpthlp, rtp2, thlp2,                              & ! Intent(in)
-                         clubb_params,                                            & ! Intent(in)
+                         clubb_params, nu_vert_res_dep,                           & ! Intent(in)
                          iiPDF_type,                                              & ! Intent(in)
                          l_min_wp2_from_corr_wx,                                  & ! Intent(in)
                          l_upwind_xm_ma,                                          & ! Intent(in)
@@ -612,6 +618,9 @@ module advance_wp2_wp3_module
     use parameter_indices, only: &
         nparams, & ! Variable(s)
         iSkw_max_mag
+
+    use parameters_tunable, only: &
+        nu_vertical_res_dep    ! Type(s)
 
     use fill_holes, only: & 
         fill_holes_vertical
@@ -761,6 +770,9 @@ module advance_wp2_wp3_module
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -918,7 +930,7 @@ module advance_wp2_wp3_module
                    invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &   ! intent(in)
                    wp2_splat, wp3_splat, &                                           ! intent(in)
                    l_crank_nich_diff, &                                              ! intent(in)
-                   clubb_params, &                                                   ! intent(in)
+                   clubb_params, nu_vert_res_dep, &                                  ! intent(in)
                    iiPDF_type, &                                                     ! intent(in)
                    l_tke_aniso, &                                                    ! intent(in)
                    l_standard_term_ta, &                                             ! intent(in)
@@ -942,7 +954,7 @@ module advance_wp2_wp3_module
                    invrs_tau_C4_zm, invrs_tau_wp3_zt, invrs_tau_C1_zm, C1_Skw_fnc, & !intent(in)
                    C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! intent(in)
                    invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, & ! intent(in)
-                   clubb_params, & ! intent(in)
+                   clubb_params, nu_vert_res_dep, & ! intent(in)
                    iiPDF_type, & ! intent(in)
                    l_upwind_xm_ma, & ! intent(in)
                    l_tke_aniso, & ! intent(in)
@@ -1296,7 +1308,7 @@ module advance_wp2_wp3_module
                        invrs_tau_C4_zm, invrs_tau_wp3_zt, invrs_tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
                        invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
-                       clubb_params, &
+                       clubb_params, nu_vert_res_dep, &
                        iiPDF_type, &
                        l_upwind_xm_ma, &
                        l_tke_aniso, &
@@ -1345,9 +1357,8 @@ module advance_wp2_wp3_module
         iC12, &
         iC_wp3_pr_tp
 
-    use parameters_tunable, only:  & 
-        nu1_vert_res_dep, & 
-        nu8_vert_res_dep
+    use parameters_tunable, only: &
+        nu_vertical_res_dep    ! Type(s)
 
     use constants_clubb, only:  & 
         one, & ! Constant(s)
@@ -1463,6 +1474,9 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
                     ! Gaussian) PDF type to use for the w, rt, and theta-l (or
@@ -1570,14 +1584,14 @@ module advance_wp2_wp3_module
 
 
     ! Calculate diffusion term for w'2 using a completely implicit time step
-    call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu1_vert_res_dep(:), & ! intent(in)
+    call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu_vert_res_dep%nu1, & ! intent(in)
                            gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
                            invrs_rho_ds_zm(:), rho_ds_zt(:), & ! intent(in)
                            lhs_diff_zm(:,:) ) ! intent(out)
 
 
     ! Calculate diffusion term for w'3 using a completely implicit time step
-    call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu8_vert_res_dep(:), & ! intent(in)
+    call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu_vert_res_dep%nu8, & ! intent(in)
                            gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
                            invrs_rho_ds_zt(:), rho_ds_zm(:), & ! intent(in)
                            lhs_diff_zt(:,:) ) ! intent(out)
@@ -1967,7 +1981,7 @@ module advance_wp2_wp3_module
                        invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &
                        wp2_splat, wp3_splat, & 
                        l_crank_nich_diff, &
-                       clubb_params, &
+                       clubb_params, nu_vert_res_dep, &
                        iiPDF_type, &
                        l_tke_aniso, &
                        l_standard_term_ta, &
@@ -2027,9 +2041,8 @@ module advance_wp2_wp3_module
         iC_wp3_pr_turb, &
         iC_wp3_pr_dfsn
 
-    use parameters_tunable, only:  & 
-        nu1_vert_res_dep, & 
-        nu8_vert_res_dep
+    use parameters_tunable, only: &
+        nu_vertical_res_dep    ! Type(s)
 
     use constants_clubb, only: & 
         w_tol_sqd,     & ! Variable(s)
@@ -2127,6 +2140,9 @@ module advance_wp2_wp3_module
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -2292,12 +2308,12 @@ module advance_wp2_wp3_module
 
         ! Calculate RHS eddy diffusion terms for w'2 and w'3
         
-        call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu1_vert_res_dep(:),      & ! intent(in) 
+        call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu_vert_res_dep%nu1, & ! intent(in) 
                                gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
                                invrs_rho_ds_zm(:), rho_ds_zt(:), & ! intent(in)
                                rhs_diff_zm(:,:) )                  ! inetnt(out)
 
-        call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu8_vert_res_dep(:),      & ! inetnt(in) 
+        call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu_vert_res_dep%nu8, & ! inetnt(in) 
                                gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
                                invrs_rho_ds_zt(:), rho_ds_zm(:), & ! intent(in)
                                rhs_diff_zt(:,:) )                  ! intent(out)
@@ -2341,7 +2357,7 @@ module advance_wp2_wp3_module
     if ( l_use_tke_in_wp2_wp3_K_dfsn ) then
 
       ! This part handles the wp2 equation terms.
-      call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu1_vert_res_dep(:), & ! intent(in) 
+      call diffusion_zm_lhs( gr, Kw1(:), Kw1_zm(:), nu_vert_res_dep%nu1, & ! intent(in) 
                              gr%invrs_dzt(:), gr%invrs_dzm(:), &           ! intent(in)
                              invrs_rho_ds_zm(:), rho_ds_zt(:), &           ! intent(in)
                              rhs_diff_zm(:,:) )                            ! intent(out)
@@ -2355,7 +2371,7 @@ module advance_wp2_wp3_module
       end do
 
       ! This part handles the wp3 equation terms.
-      call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu8_vert_res_dep(:), & ! intent(in) 
+      call diffusion_zt_lhs( gr, Kw8(:), Kw8_zt(:), nu_vert_res_dep%nu8, & ! intent(in) 
                              gr%invrs_dzm(:), gr%invrs_dzt(:), &           ! intent(in)
                              invrs_rho_ds_zt(:), rho_ds_zm(:), &           ! intent(in)
                              rhs_diff_zt(:,:) )                            ! intent(out)

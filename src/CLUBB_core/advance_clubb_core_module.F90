@@ -136,7 +136,7 @@ module advance_clubb_core_module
 #endif
                wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &        ! intent(in)
                host_dx, host_dy, &                                  ! intent(in)
-               clubb_params, lmin, &                                ! intent(in)
+               clubb_params, nu_vert_res_dep, lmin, &               ! intent(in)
                clubb_config_flags, &                                ! intent(in)
                stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! intent(inout)
@@ -212,6 +212,9 @@ module advance_clubb_core_module
         iSkw_denom_coef,         &
         iSkw_max_mag,            &
         iup2_sfc_coef
+
+    use parameters_tunable, only: &
+        nu_vertical_res_dep    ! Type(s)
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -493,6 +496,9 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     real( kind = core_rknd ), intent(in) :: &
       lmin    ! Min. value for the length scale    [m]
@@ -1506,7 +1512,7 @@ module advance_clubb_core_module
                             um_forcing, vm_forcing, ug, vg, wpthvp,               & ! intent(in)
                             fcor, um_ref, vm_ref, up2, vp2,                       & ! intent(in)
                             uprcp, vprcp, rc_coef,                                & ! intent(in)
-                            clubb_params,                                         & ! intent(in)
+                            clubb_params, nu_vert_res_dep,                        & ! intent(in)
                             clubb_config_flags%iiPDF_type,                        & ! intent(in)
                             clubb_config_flags%l_predict_upwp_vpwp,               & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,            & ! intent(in)
@@ -1575,7 +1581,7 @@ module advance_clubb_core_module
                              sclrm, wpsclrp,                              & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,           & ! intent(in)
                              wp2_splat,                                   & ! intent(in)
-                             clubb_params,                                & ! intent(in)
+                             clubb_params, nu_vert_res_dep,               & ! intent(in)
                              clubb_config_flags%iiPDF_type,               & ! intent(in)
                              clubb_config_flags%l_predict_upwp_vpwp,      & ! intent(in)
                              clubb_config_flags%l_min_xp2_from_corr_wx,   & ! intent(in)
@@ -1639,7 +1645,7 @@ module advance_clubb_core_module
              wp2_splat, wp3_splat,                                      & ! intent(in)
              pdf_implicit_coefs_terms,                                  & ! intent(in)
              wprtp, wpthlp, rtp2, thlp2,                                & ! intent(in)
-             clubb_params,                                              & ! intent(in)
+             clubb_params, nu_vert_res_dep,                             & ! intent(in)
              clubb_config_flags%iiPDF_type,                             & ! intent(in)
              clubb_config_flags%l_min_wp2_from_corr_wx,                 & ! intent(in)
              clubb_config_flags%l_upwind_xm_ma,                         & ! intent(in)
@@ -1873,6 +1879,7 @@ module advance_clubb_core_module
                                   edsclrm_forcing,                              & ! intent(in)
                                   rho_ds_zm, invrs_rho_ds_zt,                   & ! intent(in)
                                   fcor, l_implemented,                          & ! intent(in)
+                                  nu_vert_res_dep,                              & ! intent(in)
                                   clubb_config_flags%l_predict_upwp_vpwp,       & ! intent(in)
                                   clubb_config_flags%l_upwind_xm_ma,            & ! intent(in)
                                   clubb_config_flags%l_uv_nudge,                & ! intent(in)
@@ -3132,7 +3139,8 @@ module advance_clubb_core_module
 #ifdef GFDL
                  , cloud_frac_min                         & ! intent(in)  h1g, 2010-06-16
 #endif
-                 , gr , lmin, err_code_out )                ! intent(out)
+                 , gr, lmin, nu_vert_res_dep,             & ! intent(out)
+                 err_code_out                             ) ! intent(out)
 
       ! Description:
       !   Subroutine to set up the model for execution.
@@ -3152,7 +3160,8 @@ module advance_clubb_core_module
           iSkw_max_mag
 
       use parameters_tunable, only: &
-          setup_parameters ! Procedure
+          setup_parameters,    & ! Procedure
+          nu_vertical_res_dep    ! Type(s)
 
       use parameters_model, only: &
           setup_parameters_model ! Procedure
@@ -3290,6 +3299,9 @@ module advance_clubb_core_module
 
       real( kind = core_rknd ), intent(out) :: &
         lmin    ! Min. value for the length scale    [m]
+
+      type(nu_vertical_res_dep), intent(out) :: &
+        nu_vert_res_dep    ! Vertical resolution dependent nu values
 
       integer, intent(out) :: &
         err_code_out  ! Error code indicator
@@ -3538,11 +3550,11 @@ module advance_clubb_core_module
 
       ! Define tunable constant parameters
       call setup_parameters &
-           ( gr, deltaz, params, gr%nz,                            & ! intent(in)
+           ( deltaz, params, gr%nz,                                & ! intent(in)
              grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
              thermodynamic_heights(begin_height:end_height),       & ! intent(in)
              l_prescribed_avg_deltaz,                              & ! intent(in)
-             lmin, err_code_out )                                    ! intent(out)
+             lmin, nu_vert_res_dep, err_code_out )                   ! intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
@@ -3585,9 +3597,6 @@ module advance_clubb_core_module
         cleanup_grid, & ! Procedure
         grid            ! Type
 
-      use parameters_tunable, only: &
-        cleanup_nu ! Procedure
-
       implicit none
 
       type(grid), target, intent(inout) :: gr
@@ -3599,9 +3608,6 @@ module advance_clubb_core_module
 
       ! De-allocate the arrays for the grid
       call cleanup_grid( gr ) ! intent(in)
-
-      ! De-allocate the arrays for nu
-      call cleanup_nu( )
 
       return
     end subroutine cleanup_clubb_core

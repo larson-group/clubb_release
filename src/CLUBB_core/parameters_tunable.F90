@@ -36,25 +36,18 @@ module parameters_tunable
 
   public :: set_default_parameters, setup_parameters, read_parameters, &
             read_param_minmax, read_param_constraints, &
-            adj_low_res_nu, cleanup_nu
+            adj_low_res_nu, nu_vertical_res_dep
 
-  ! NOTE: In CLUBB standalone, as well as some host models, the hardcoded
-  !       default values of some or all of the parameters below have no effect,
-  !       as the values are simply read in using a namelist or set in host model
-  !       specific code.
-
-  ! Model constant parameters
-  real( kind = core_rknd ), public, allocatable, dimension(:) :: & 
-    nu1_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: wp2      [m^2/s]
-    nu2_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: xp2      [m^2/s]
-    nu6_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: wpxp     [m^2/s]
-    nu8_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: wp3      [m^2/s]
-    nu9_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: up2/vp2  [m^2/s]
-    nu10_vert_res_dep,  & ! Background Coef. of Eddy Diffusion: edsclrm  [m^2/s]
-    nu_hm_vert_res_dep    ! Background Coef. of Eddy Diffusion: hydromet [m^2/s]
-
-!$omp threadprivate(nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep, &
-!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, nu_hm_vert_res_dep)
+  type nu_vertical_res_dep
+    real( kind = core_rknd ) :: & 
+      nu1,   & ! Background Coefficient of Eddy Diffusion: wp2      [m^2/s]
+      nu2,   & ! Background Coefficient of Eddy Diffusion: xp2      [m^2/s]
+      nu6,   & ! Background Coefficient of Eddy Diffusion: wpxp     [m^2/s]
+      nu8,   & ! Background Coefficient of Eddy Diffusion: wp3      [m^2/s]
+      nu9,   & ! Background Coefficient of Eddy Diffusion: up2/vp2  [m^2/s]
+      nu10,  & ! Background Coefficient of Eddy Diffusion: edsclrm  [m^2/s]
+      nu_hm    ! Background Coefficient of Eddy Diffusion: hydromet [m^2/s]
+  end type nu_vertical_res_dep
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -458,10 +451,10 @@ module parameters_tunable
 
   !=============================================================================
   subroutine setup_parameters & 
-            ( gr, deltaz, params, nzmax, &
+            ( deltaz, params, nzmax, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
-              lmin, err_code_out )
+              lmin, nu_vert_res_dep, err_code_out )
 
     ! Description:
     ! Subroutine to setup model parameters
@@ -477,8 +470,6 @@ module parameters_tunable
         zero,    &
         fstderr
 
-    use grid_class, only: grid
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -490,9 +481,6 @@ module parameters_tunable
         izeta_vrnce_rat
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
-
 
     ! Constant Parameters
     real( kind = core_rknd ), parameter :: &
@@ -537,6 +525,9 @@ module parameters_tunable
 
     real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
+
+    type(nu_vertical_res_dep), intent(out) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
@@ -622,10 +613,11 @@ module parameters_tunable
 
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu &
-           ( gr, nzmax, grid_type, deltaz,  & ! Intent(in)
+           ( nzmax, grid_type, deltaz,  & ! Intent(in)
              momentum_heights, thermodynamic_heights, & ! Intent(in)
              l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-             nu1, nu2, nu6, nu8, nu9, nu10, nu_hm )  ! Intent(in)
+             nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
+             nu_vert_res_dep )  ! Intent(out)
 
     if ( beta < zero .or. beta > three ) then
 
@@ -800,10 +792,11 @@ module parameters_tunable
 
   !=============================================================================
   subroutine adj_low_res_nu &
-               ( gr, nzmax, grid_type, deltaz, & ! Intent(in)
+               ( nzmax, grid_type, deltaz, & ! Intent(in)
                  momentum_heights, thermodynamic_heights, & ! Intent(in)
                  l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-                 nu1, nu2, nu6, nu8, nu9, nu10, nu_hm )  ! Intent(in)
+                 nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, & ! Intent(out)
+                 nu_vert_res_dep )  ! Intent(out)
 
     ! Description:
     !   Adjust the values of background eddy diffusivity based on
@@ -814,7 +807,6 @@ module parameters_tunable
     !   and/or time.  This occurs, for example, when CLUBB is
     !   implemented in WRF.  --ldgrant Jul 2010
     !----------------------------------------------------------------------
-    use grid_class, only: grid
 
     use constants_clubb, only: &
         fstderr ! Constant(s)
@@ -823,10 +815,6 @@ module parameters_tunable
         core_rknd ! Variable(s)
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
-
-    ! Constant Parameters
 
     ! Flag for adjusting the values of the constant background eddy diffusivity
     ! coefficients based on the average vertical grid spacing.  If this flag is
@@ -891,39 +879,21 @@ module parameters_tunable
       nu10,      & ! CLUBB tunable parameter nu10
       nu_hm        ! CLUBB tunable parameter nu_hm
 
+    ! Output Variables
+    type(nu_vertical_res_dep), intent(out) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
     ! Local Variables
     real( kind = core_rknd ) :: avg_deltaz  ! Average grid box height   [m]
 
     ! The factor by which to multiply the coefficients of background eddy
     ! diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
     ! is turned on.
-    real( kind = core_rknd ),dimension(gr%nz) :: &
+    real( kind = core_rknd ) :: &
       mult_factor_zt, &  ! Uses gr%dzt for nu values on zt levels
       mult_factor_zm     ! Uses gr%dzm for nu values on zm levels
 
     !--------------- Begin code -------------------------
-
-    if ( .not. allocated( nu1_vert_res_dep ) ) then
-      allocate( nu1_vert_res_dep(1:gr%nz) )
-    end if
-    if ( .not. allocated( nu2_vert_res_dep ) ) then
-      allocate( nu2_vert_res_dep(1:gr%nz) )
-    end if
-    if ( .not. allocated( nu6_vert_res_dep ) ) then
-      allocate( nu6_vert_res_dep(1:gr%nz) )
-    end if
-    if ( .not. allocated( nu8_vert_res_dep ) ) then
-      allocate( nu8_vert_res_dep(1:gr%nz) )
-    end if
-    if ( .not. allocated( nu9_vert_res_dep ) ) then
-      allocate( nu9_vert_res_dep(1:gr%nz) )
-    end if
-    if ( .not. allocated( nu10_vert_res_dep ) ) then
-      allocate( nu10_vert_res_dep(1:gr%nz) )
-    end if
-    if ( .not. allocated( nu_hm_vert_res_dep ) ) then
-      allocate( nu_hm_vert_res_dep(1:gr%nz) )
-    end if
 
     ! Flag for adjusting the values of the constant diffusivity coefficients
     ! based on the grid spacing.  If this flag is turned off, the values of the
@@ -994,23 +964,23 @@ module parameters_tunable
       end if
 
       !mult_factor = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-      nu1_vert_res_dep   =  nu1 * mult_factor_zm
-      nu2_vert_res_dep   =  nu2 * mult_factor_zm
-      nu6_vert_res_dep   =  nu6 * mult_factor_zm
-      nu8_vert_res_dep   =  nu8 * mult_factor_zt
-      nu9_vert_res_dep   =  nu9 * mult_factor_zm
-      nu10_vert_res_dep  =  nu10 * mult_factor_zt !We're unsure of the grid
-      nu_hm_vert_res_dep =  nu_hm * mult_factor_zt
+      nu_vert_res_dep%nu1   =  nu1 * mult_factor_zm
+      nu_vert_res_dep%nu2   =  nu2 * mult_factor_zm
+      nu_vert_res_dep%nu6   =  nu6 * mult_factor_zm
+      nu_vert_res_dep%nu8   =  nu8 * mult_factor_zt
+      nu_vert_res_dep%nu9   =  nu9 * mult_factor_zm
+      nu_vert_res_dep%nu10  =  nu10 * mult_factor_zt !We're unsure of the grid
+      nu_vert_res_dep%nu_hm =  nu_hm * mult_factor_zt
 
     else ! nu values are not adjusted
 
-      nu1_vert_res_dep   =  nu1
-      nu2_vert_res_dep   =  nu2
-      nu6_vert_res_dep   =  nu6
-      nu8_vert_res_dep   =  nu8
-      nu9_vert_res_dep   =  nu9
-      nu10_vert_res_dep  = nu10
-      nu_hm_vert_res_dep = nu_hm
+      nu_vert_res_dep%nu1   =  nu1
+      nu_vert_res_dep%nu2   =  nu2
+      nu_vert_res_dep%nu6   =  nu6
+      nu_vert_res_dep%nu8   =  nu8
+      nu_vert_res_dep%nu9   =  nu9
+      nu_vert_res_dep%nu10  =  nu10
+      nu_vert_res_dep%nu_hm =  nu_hm
 
     end if  ! l_adj_low_res_nu
 
@@ -2706,38 +2676,6 @@ module parameters_tunable
     return
 
   end subroutine init_parameters_999
-
-  !=============================================================================
-  subroutine cleanup_nu( )
-
-    ! Description:
-    !  De-allocates memory used for the nu arrays
-    !
-    ! References:
-    !  None
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        fstderr  ! Constant
-
-    implicit none
-
-    ! Local Variable(s)
-    integer :: ierr
-
-    ! ----- Begin Code -----
-
-    deallocate( nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep,  &
-                nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, &
-                nu_hm_vert_res_dep, stat = ierr )
-
-    if ( ierr /= 0 ) then
-      write(fstderr,*) "Deallocation of vertically depedent nu arrays failed."
-    end if
-
-    return
-
-  end subroutine cleanup_nu
 
 !===============================================================================
 

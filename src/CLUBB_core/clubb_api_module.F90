@@ -133,7 +133,8 @@ module clubb_api_module
     hydromet_dim    ! Number of hydrometeor species
 
   use parameters_tunable, only : &
-    params_list
+    params_list,         & ! Variable(s)
+    nu_vertical_res_dep    ! Type(s)
 
   use parameter_indices, only:  &
     nparams, & ! Variable(s)
@@ -450,6 +451,7 @@ module clubb_api_module
     nvarmax_zt
     public &
     nparams, &
+    nu_vertical_res_dep, &
     setup_parameters_api, &
     stat_nknd, &
     stat_rknd, &
@@ -537,7 +539,7 @@ contains
 #endif
     wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
-    clubb_params, lmin, &                                   ! intent(in)
+    clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
@@ -678,6 +680,9 @@ contains
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
     real( kind = core_rknd ), intent(in) :: &
       lmin    ! Min. value for the length scale    [m]
 
@@ -796,7 +801,7 @@ contains
 #endif
       wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)
-      clubb_params, lmin, &                                   ! intent(in)
+      clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
       clubb_config_flags, &                                   ! intent(in)
       stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
       um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
@@ -853,7 +858,7 @@ contains
 #ifdef GFDL
     cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
-    gr, lmin, err_code_api )                              ! intent(out) 
+    gr, lmin, nu_vert_res_dep, err_code_api )             ! intent(out) 
 
     use advance_clubb_core_module, only : setup_clubb_core
 
@@ -970,8 +975,11 @@ contains
     real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
 
+    type(nu_vertical_res_dep), intent(out) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
     integer, intent(out) :: & 
-    err_code_api   ! Diagnostic for a problem with the setup 
+      err_code_api   ! Diagnostic for a problem with the setup 
 
     call setup_clubb_core &
       ( nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
@@ -995,7 +1003,7 @@ contains
 #ifdef GFDL
       , cloud_frac_min                                      & ! intent(in)  h1g, 2010-06-16
 #endif
-      gr, lmin, err_code_api )                                ! intent(out)
+      gr, lmin, nu_vert_res_dep, err_code_api )               ! intent(out)
 
   end subroutine setup_clubb_core_api
 
@@ -1561,11 +1569,11 @@ contains
   ! setup_parameters - Sets up model parameters.
   !================================================================================================
 
-  subroutine setup_parameters_api( gr, &
-    deltaz, params, nzmax, &
-    grid_type, momentum_heights, thermodynamic_heights, &
-    l_prescribed_avg_deltaz, &
-    lmin, err_code_api )
+  subroutine setup_parameters_api &
+           ( deltaz, params, nzmax, &
+             grid_type, momentum_heights, thermodynamic_heights, &
+             l_prescribed_avg_deltaz, &
+             lmin, nu_vert_res_dep, err_code_api )
 
     use parameters_tunable, only: &
         setup_parameters
@@ -1573,11 +1581,7 @@ contains
     use parameter_indices, only:  &
         nparams ! Variable(s)
 
-    
-
     implicit none
-
-    type(grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
@@ -1620,14 +1624,17 @@ contains
     real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
 
+    type(nu_vertical_res_dep), intent(out) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
     integer, intent(out) ::  & 	 	      
       err_code_api ! Error condition 
 
-    call setup_parameters( gr, & ! intent(in)
-      deltaz, params, nzmax, & ! intent(in)
-      grid_type, momentum_heights, thermodynamic_heights, & ! intent(in)
-      l_prescribed_avg_deltaz, & ! intent(in)
-      lmin, err_code_api ) ! intent(out)
+    call setup_parameters & 
+            ( deltaz, params, nzmax, &
+              grid_type, momentum_heights, thermodynamic_heights, &
+              l_prescribed_avg_deltaz, &
+              lmin, nu_vert_res_dep, err_code_api )
 
   end subroutine setup_parameters_api
 
@@ -1635,17 +1642,15 @@ contains
   ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
   !================================================================================================
 
-  subroutine adj_low_res_nu_api( gr, &
-    nzmax, grid_type, deltaz, & ! Intent(in)
-    momentum_heights, thermodynamic_heights, & ! Intent(in)
-    l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-    nu1, nu2, nu6, nu8, nu9, nu10, nu_hm )  ! Intent(in)
+  subroutine adj_low_res_nu_api( nzmax, grid_type, deltaz,  & ! Intent(in)
+                                 momentum_heights, thermodynamic_heights, & ! Intent(in)
+                                 l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
+                                 nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
+                                 nu_vert_res_dep )  ! Intent(out)
 
     use parameters_tunable, only : adj_low_res_nu
 
     implicit none
-
-    type(grid), target, intent(in) :: gr
 
     ! Input Variables
 
@@ -1692,11 +1697,15 @@ contains
       nu10,      & ! CLUBB tunable parameter nu10
       nu_hm        ! CLUBB tunable parameter nu_hm
 
-    call adj_low_res_nu( gr, & ! intent(in)
-      nzmax, grid_type, deltaz, & ! Intent(in)
-      momentum_heights, thermodynamic_heights, & ! Intent(in)
-      l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-      nu1, nu2, nu6, nu8, nu9, nu10, nu_hm )  ! Intent(in)
+    ! Output Variables
+    type(nu_vertical_res_dep), intent(out) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    call adj_low_res_nu( nzmax, grid_type, deltaz,  & ! Intent(in)
+                         momentum_heights, thermodynamic_heights, & ! Intent(in)
+                         l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
+                         nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
+                         nu_vert_res_dep )  ! Intent(out)
 
   end subroutine adj_low_res_nu_api
 

@@ -78,7 +78,8 @@ module clubb_driver
     use inputfields, only: stat_files
 
     use parameters_tunable, only: &
-      params_list !--------------------------------- Variable(s)
+        params_list, & !--------------------------------- Variable(s)
+        nu_vertical_res_dep !---------------------------- Type(s)
 
     use advance_clubb_core_module, only: &
       setup_clubb_core,  & !------------------------------------------------- Procedure(s)
@@ -684,6 +685,9 @@ module clubb_driver
     real( kind = core_rknd ) :: &
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
 
+    type(nu_vertical_res_dep) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+  
     integer :: &
       iiPDF_type,          & ! Selected option for the two-component normal
                              ! (double Gaussian) PDF type to use for the w, rt,
@@ -1395,7 +1399,7 @@ module clubb_driver
            l_prescribed_avg_deltaz,                           & ! intent(in)
            l_damp_wp2_using_em,                               & ! intent(in)
            l_stability_correct_tau_zm,                        & ! intent(in)
-           gr, lmin, err_code_dummy )                           ! Intent(out)
+           gr, lmin, nu_vert_res_dep, err_code_dummy )          ! Intent(out)
 
     ! Allocate and initialize variables
 
@@ -2200,7 +2204,7 @@ module clubb_driver
              rfrzm, radf, wphydrometp, &                          ! Intent(in)
              wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
              dummy_dx, dummy_dy, &                                ! Intent(in)
-             params, lmin, &                                      ! Intent(in)
+             params, nu_vert_res_dep, lmin, &                     ! Intent(in)
              clubb_config_flags, &                                ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
              um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
@@ -2426,14 +2430,14 @@ module clubb_driver
                                         params(iSkw_max_mag) ) ) )
 
       ! Advance predictive microphysics fields one model timestep.
-      call advance_microphys( gr, dt_main, time_current, wm_zt, wp2,          & ! In
+      call advance_microphys( gr, dt_main, time_current, wm_zt, wp2,      & ! In
                               exner, rho, rho_zm, rcm(1,:),               & ! In
                               cloud_frac, Kh_zm, Skw_zm,                  & ! In
                               rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zt, & ! In
                               hydromet_mc, Ncm_mc, Lscale(1,:),           & ! In
                               hydromet_vel_covar_zt_impc,                 & ! In
                               hydromet_vel_covar_zt_expc,                 & ! In
-                              params,                                     & ! In
+                              params, nu_vert_res_dep,                    & ! In
                               clubb_config_flags%l_upwind_xm_ma,          & ! In
                               stats_zt, stats_zm, stats_sfc,              & ! intent(inout)
                               hydromet, hydromet_vel_zt, hydrometp2,      & ! Inout

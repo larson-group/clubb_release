@@ -67,7 +67,8 @@ module spurious_source_test
     use parameters_tunable, only: &
         set_default_parameters, & ! Procedure(s)
         read_parameters, &
-        adj_low_res_nu
+        adj_low_res_nu, &
+        nu_vertical_res_dep    ! Type(s)
 
     use fill_holes, only: &
         vertical_integral    ! Procedure(s)
@@ -323,6 +324,9 @@ module spurious_source_test
     real( kind = core_rknd ), dimension(nparams) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    type(nu_vertical_res_dep) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+  
     integer, parameter :: iunit = 10
 
     character(len=13), parameter :: &
@@ -582,10 +586,11 @@ module spurious_source_test
                      gr, begin_height, end_height              )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
-    call adj_low_res_nu( gr, gr%nz, grid_type, deltaz, &
+    call adj_low_res_nu( gr%nz, grid_type, deltaz, &
                          momentum_heights, thermodynamic_heights, &
                          l_prescribed_avg_deltaz, mult_coef, &
-                         nu1, nu2, nu6, nu8, nu9, nu10, nu_hm )
+                         nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &
+                         nu_vert_res_dep )
 
     dt = 300.0_core_rknd
 
@@ -933,7 +938,7 @@ module spurious_source_test
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef, &
-                             clubb_params, &
+                             clubb_params, nu_vert_res_dep, &
                              iiPDF_type, &
                              l_predict_upwp_vpwp, &
                              l_diffuse_rtm_and_thlm, &

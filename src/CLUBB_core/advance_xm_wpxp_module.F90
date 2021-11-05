@@ -59,7 +59,7 @@ module advance_xm_wpxp_module
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
                               uprcp, vprcp, rc_coef, &
-                              clubb_params, &
+                              clubb_params, nu_vert_res_dep, &
                               iiPDF_type, &
                               l_predict_upwp_vpwp, &
                               l_diffuse_rtm_and_thlm, &
@@ -111,6 +111,9 @@ module advance_xm_wpxp_module
         iwpxp_L_thresh,      &
         ialtitude_threshold, &
         iC_uu_shr
+
+    use parameters_tunable, only: &
+        nu_vertical_res_dep    ! Type(s)
 
     use constants_clubb, only:  & 
         fstderr, &  ! Constant
@@ -285,6 +288,9 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -624,7 +630,7 @@ module advance_xm_wpxp_module
                                  rho_ds_zm, l_implemented, em,                     & ! In
                                  Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
                                  ice_supersat_frac,                                & ! In
-                                 clubb_params,                                     & ! In
+                                 clubb_params, nu_vert_res_dep,                    & ! In
                                  l_diffuse_rtm_and_thlm,                           & ! In
                                  l_stability_correct_Kh_N2_zm,                     & ! In
                                  l_upwind_xm_ma,                                   & ! In
@@ -1256,7 +1262,7 @@ module advance_xm_wpxp_module
                                      rho_ds_zm, l_implemented, em,                      & ! In
                                      Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,      & ! In
                                      ice_supersat_frac,                                 & ! In
-                                     clubb_params,                                      & ! In
+                                     clubb_params, nu_vert_res_dep,                     & ! In
                                      l_diffuse_rtm_and_thlm,                            & ! In
                                      l_stability_correct_Kh_N2_zm,                      & ! In
                                      l_upwind_xm_ma,                                    & ! In
@@ -1280,8 +1286,8 @@ module advance_xm_wpxp_module
         nparams, & ! Variable(s)
         ilambda0_stability_coef
 
-    use parameters_tunable, only:  & 
-        nu6_vert_res_dep ! Variable(s)
+    use parameters_tunable, only: &
+        nu_vertical_res_dep    ! Type(s)
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1301,7 +1307,8 @@ module advance_xm_wpxp_module
         diffusion_zm_lhs
 
     use constants_clubb, only: &
-        zero_threshold
+        zero_threshold, &
+        zero
 
     implicit none
 
@@ -1335,6 +1342,9 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
     logical, intent(in) :: &
       l_diffuse_rtm_and_thlm,       & ! This flag determines whether or not we want CLUBB to do
                                       ! diffusion on rtm and thlm
@@ -1365,7 +1375,6 @@ module advance_xm_wpxp_module
       
     !------------------- Local Variables -------------------
     real (kind = core_rknd), dimension(gr%nz) :: &
-      zero_nu, &
       Kh_N2_zm, &
       K_zm, &      ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
       K_zt, &      ! Eddy diffusivity coefficient, thermo. levels [m2/s]
@@ -1397,7 +1406,7 @@ module advance_xm_wpxp_module
                                 lhs_ac_pr2                       ) ! Intent(out)
 
     ! Calculate diffusion terms for all momentum grid level
-    call diffusion_zm_lhs( gr, Kw6(:), Kw6_zm(:), nu6_vert_res_dep(:), & ! Intent(in)
+    call diffusion_zm_lhs( gr, Kw6(:), Kw6_zm(:), nu_vert_res_dep%nu6, & ! Intent(in)
                            gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
                            invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
                            lhs_diff_zm(:,:)                  ) ! Intent(out)    
@@ -1419,11 +1428,10 @@ module advance_xm_wpxp_module
           Kh_N2_zm = Kh_zm
         end if
 
-        zero_nu(:) = 0.0_core_rknd
         K_zm(:) = Kh_N2_zm(:) + constant_nu
         K_zt = max( zm2zt ( gr, K_zm ), zero_threshold )
 
-        call diffusion_zt_lhs( gr, K_zm(:), K_zt(:), zero_nu(:), & ! Intent(in)
+        call diffusion_zt_lhs( gr, K_zm(:), K_zt(:), zero,       & ! Intent(in)
                                gr%invrs_dzm(:), gr%invrs_dzt(:), & ! Intent(in)
                                invrs_rho_ds_zt(:), rho_ds_zm(:), & ! intent(in)
                                lhs_diff_zt(:,:)                  ) ! Intent(out)

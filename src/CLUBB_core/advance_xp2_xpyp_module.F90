@@ -57,7 +57,7 @@ module advance_xp2_xpyp_module
                                sclrm, wpsclrp,                            & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,         & ! In
                                wp2_splat,                                 & ! In
-                               clubb_params,                              & ! In
+                               clubb_params, nu_vert_res_dep,             & ! In
                                iiPDF_type,                                & ! In
                                l_predict_upwp_vpwp,                       & ! In
                                l_min_xp2_from_corr_wx,                    & ! In
@@ -122,8 +122,7 @@ module advance_xp2_xpyp_module
         irtp2_clip_coef
 
     use parameters_tunable, only: &
-        nu2_vert_res_dep, &
-        nu9_vert_res_dep
+        nu_vertical_res_dep    ! Type(s)
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -258,6 +257,9 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -509,7 +511,7 @@ module advance_xp2_xpyp_module
                                  
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2). This is the 
     ! diffusion term for all LHS matrices except <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw2(:), Kw2_zm(:), nu2_vert_res_dep(:),  & ! In
+    call diffusion_zm_lhs( gr, Kw2(:), Kw2_zm(:), nu_vert_res_dep%nu2,  & ! In
                            gr%invrs_dzt(:), gr%invrs_dzm(:),            & ! In
                            invrs_rho_ds_zm(:), rho_ds_zt(:),            & ! In
                            lhs_diff(:,:)                     )            ! Out
@@ -580,7 +582,7 @@ module advance_xp2_xpyp_module
     !!!!!***** u'^2 / v'^2 *****!!!!!
     
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw9(:), Kw9_zm(:), nu9_vert_res_dep(:),  & !In
+    call diffusion_zm_lhs( gr, Kw9(:), Kw9_zm(:), nu_vert_res_dep%nu9,  & !In
                            gr%invrs_dzt(:), gr%invrs_dzm(:),            & ! In
                            invrs_rho_ds_zm(:), rho_ds_zt(:),            & ! In
                            lhs_diff_uv(:,:)                  )            ! Out

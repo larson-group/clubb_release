@@ -40,7 +40,7 @@ module advance_microphys_module
                                 hydromet_mc, Ncm_mc, Lscale, &             ! In
                                 hydromet_vel_covar_zt_impc, &              ! In
                                 hydromet_vel_covar_zt_expc, &              ! In
-                                clubb_params, &                            ! In
+                                clubb_params, nu_vert_res_dep, &           ! In
                                 l_upwind_xm_ma, &                          ! In
                                 stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
@@ -62,7 +62,10 @@ module advance_microphys_module
 
     use parameter_indices, only: &
         nparams, & ! Variable(s)
-        ic_K_hm 
+        ic_K_hm
+
+    use parameters_tunable, only: &
+        nu_vertical_res_dep    ! Type(s)
 
     use parameters_model, only: & 
         hydromet_dim   ! Integer
@@ -167,6 +170,9 @@ module advance_microphys_module
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     logical, intent(in) :: &
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
@@ -315,6 +321,7 @@ module advance_microphys_module
                                  rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                                  hydromet_mc, hydromet_vel_covar_zt_impc, &
                                  hydromet_vel_covar_zt_expc, &
+                                 nu_vert_res_dep, &
                                  l_upwind_xm_ma, &
                                  stats_zt, stats_zm, &
                                  hydromet, hydromet_vel_zt, &
@@ -344,6 +351,7 @@ module advance_microphys_module
 
        call advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
+                         nu_vert_res_dep, &
                          l_upwind_xm_ma, &
                          stats_zt, stats_zm, &
                          Ncm, Nc_in_cloud, &
@@ -504,6 +512,7 @@ module advance_microphys_module
                                   rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                                   hydromet_mc, hydromet_vel_covar_zt_impc, &
                                   hydromet_vel_covar_zt_expc, &
+                                  nu_vert_res_dep, &
                                   l_upwind_xm_ma, &
                                   stats_zt, stats_zm, & 
                                   hydromet, hydromet_vel_zt, &
@@ -542,7 +551,7 @@ module advance_microphys_module
         setup_stats_indices
 
     use parameters_tunable, only: & 
-        nu_hm_vert_res_dep  ! Variable(s)
+        nu_vertical_res_dep  ! Type(s)
 
     use parameters_microphys, only: &
         l_hydromet_sed,    & ! Variable(s)
@@ -611,6 +620,9 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     logical, intent(in) :: &
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
@@ -750,7 +762,7 @@ module advance_microphys_module
        ! This is the portion of the calculation using < h_m > from timestep t. 
        wphydrometp(1:gr%nz-1,i) &
        = - one_half &
-           * xpwp_fnc( K_hm(1:gr%nz-1,i)+nu_hm_vert_res_dep(1:gr%nz-1), &
+           * xpwp_fnc( K_hm(1:gr%nz-1,i)+nu_vert_res_dep%nu_hm, &
                        hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
                        gr%invrs_dzm(1:gr%nz-1) )
 
@@ -760,7 +772,7 @@ module advance_microphys_module
 
        ! Add implicit terms to the LHS matrix
        call microphys_lhs( gr, trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
-                           dt, K_hm(:,i), nu_hm_vert_res_dep, wm_zt,    & ! In
+                           dt, K_hm(:,i), nu_vert_res_dep%nu_hm, wm_zt, & ! In
                            hydromet_vel(:,i), hydromet_vel_zt(:,i),     & ! In
                            hydromet_vel_covar_zt_impc(:,i),             & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,       & ! In
@@ -770,7 +782,7 @@ module advance_microphys_module
        ! Set up explicit term in the RHS vector
        call microphys_rhs( gr, trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
                            hydromet(:,i), hydromet_mc(:,i), &
-                           K_hm(:,i), nu_hm_vert_res_dep, cloud_frac, &
+                           K_hm(:,i), nu_vert_res_dep%nu_hm, cloud_frac, &
                            hydromet_vel_covar_zt_expc(:,i), &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                            stats_zt, &
@@ -855,7 +867,7 @@ module advance_microphys_module
        wphydrometp(1:gr%nz-1,i) &
        = wphydrometp(1:gr%nz-1,i) &
          - one_half &
-           * xpwp_fnc( K_hm(1:gr%nz-1,i)+nu_hm_vert_res_dep(1:gr%nz-1), &
+           * xpwp_fnc( K_hm(1:gr%nz-1,i)+nu_vert_res_dep%nu_hm, &
                        hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
                        gr%invrs_dzm(1:gr%nz-1) )
 
@@ -945,6 +957,7 @@ module advance_microphys_module
   !=============================================================================
   subroutine advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
+                          nu_vert_res_dep, &
                           l_upwind_xm_ma, &
                           stats_zt, stats_zm, &
                           Ncm, Nc_in_cloud, &
@@ -979,7 +992,7 @@ module advance_microphys_module
         xpwp_fnc  ! Procedure(s)
 
     use parameters_tunable, only: & 
-        nu_hm_vert_res_dep  ! Variable(s)
+        nu_vertical_res_dep  ! Type(s)
 
     use parameters_microphys, only: &
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
@@ -1031,6 +1044,9 @@ module advance_microphys_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       Ncm_mc     ! Change in Ncm due to microphysics  [num/kg/s]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     logical, intent(in) :: &
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
@@ -1111,7 +1127,7 @@ module advance_microphys_module
     ! A Crank-Nicholson time-stepping scheme is used for this variable.
     ! This is the portion of the calculation using < N_c > from timestep t. 
     wpNcp(1:gr%nz-1) &
-    = - one_half * xpwp_fnc( K_Nc(1:gr%nz-1)+nu_hm_vert_res_dep(1:gr%nz-1), &
+    = - one_half * xpwp_fnc( K_Nc(1:gr%nz-1)+nu_vert_res_dep%nu_hm, &
                              Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
                              gr%invrs_dzm(1:gr%nz-1) )
 
@@ -1120,7 +1136,7 @@ module advance_microphys_module
 
     ! Add implicit terms to the LHS array
     call microphys_lhs( gr, "Ncm", l_Ncm_sed, & ! In
-                        dt, K_Nc, nu_hm_vert_res_dep, wm_zt, &  ! In
+                        dt, K_Nc, nu_vert_res_dep%nu_hm, wm_zt, &  ! In
                         Ncm_vel, Ncm_vel_zt, & ! In
                         Ncm_vel_covar_zt_impc, & ! In
                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
@@ -1133,7 +1149,7 @@ module advance_microphys_module
        call microphys_rhs( gr, "Ncm", dt, l_Ncm_sed, &
                            Nc_in_cloud, &
                            Ncm_mc / max( cloud_frac, cloud_frac_min ), &
-                           K_Nc, nu_hm_vert_res_dep, cloud_frac, &
+                           K_Nc, nu_vert_res_dep%nu_hm, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                            stats_zt, &
@@ -1143,7 +1159,7 @@ module advance_microphys_module
 
        call microphys_rhs( gr, "Ncm", dt, l_Ncm_sed, &
                            Ncm, Ncm_mc, &
-                           K_Nc, nu_hm_vert_res_dep, cloud_frac, &
+                           K_Nc, nu_vert_res_dep%nu_hm, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                            stats_zt, &
@@ -1249,7 +1265,7 @@ module advance_microphys_module
     ! This is the portion of the calculation using < N_c > from timestep t+1. 
     wpNcp(1:gr%nz-1) &
     = wpNcp(1:gr%nz-1) &
-      - one_half * xpwp_fnc( K_Nc(1:gr%nz-1)+nu_hm_vert_res_dep(1:gr%nz-1), &
+      - one_half * xpwp_fnc( K_Nc(1:gr%nz-1)+nu_vert_res_dep%nu_hm, &
                              Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
                              gr%invrs_dzm(1:gr%nz-1) )
 
@@ -1670,7 +1686,7 @@ module advance_microphys_module
     real( kind = core_rknd ), intent(in) ::  & 
       dt       ! Model timestep                                          [s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       nu       ! Background diffusion coefficient                        [m^2/s]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
@@ -1811,12 +1827,12 @@ module advance_microphys_module
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
     lhs_ta(kp1_tdiag,2) &
     = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
     lhs_ta(k_tdiag,2) &
     = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
     lhs_ta(km1_tdiag,2) = zero
@@ -2041,12 +2057,14 @@ module advance_microphys_module
       hmm,             & ! Mean value of hydrometeor (t-levs.)      [units]
       hmm_tndcy,       & ! Microphysics tendency (thermo. levels)   [units/s]
       K_hm,            & ! Coef. of diffusion for hydrometeor       [m^2/s]
-      nu,              & ! Background diffusion coefficient         [m^2/s]
       cloud_frac,      & ! Cloud fraction                           [-]
       Vhmphmp_zt_expc, & ! Explicit comp. of <V_hm'h_m'> on t-levs  [units(m/s)]
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
+
+    real( kind = core_rknd ), intent(in) :: &
+      nu                 ! Background diffusion coefficient         [m^2/s]
 
     ! Output Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
@@ -2142,12 +2160,12 @@ module advance_microphys_module
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
     lhs_ta(kp1_tdiag,2) &
     = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
     lhs_ta(k_tdiag,2) &
     = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu(2) ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( Kh_zm(2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
     lhs_ta(km1_tdiag,2) = zero
