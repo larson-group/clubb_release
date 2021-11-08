@@ -41,10 +41,8 @@ def main():
     # These filenames must be listed in the same order as the parameters (paramsNames).
     sensNcFilenames = \
     np.array([ \
-        #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_c82.ne30_ne30_GLBmean.nc', \
-        #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_n21.ne30_ne30_GLBmean.nc' \
         'sens0.nc', \
-        'sens1.nc'    
+        'sens1.nc'
               ])
 
     # Observed values of our metrics, from, e.g., CERES-EBAF.
@@ -58,9 +56,12 @@ def main():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, \
+    normlzdWeightedSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
     vhNormlzd, uNormlzd, sNormlzd, \
-    defaultParamValsOrigRow, dparamsSoln, \
+    magParamValsRow, \
+    defaultParamValsOrigRow, dparamsSoln, dnormlzdParamsSoln, \
+    dparamsSolnPC, dnormlzdParamsSolnPC, \
     paramsSoln, paramsLowVals, paramsHiVals, \
     paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
@@ -235,13 +236,13 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     # This gives the recommended changes to parameter values.
     svdInvrsNormlzdWeighted, svdInvrsNormlzdWeightedPC, \
     sValsTruncInvNormlzdWeighted, sValsTruncInvNormlzdWeightedPC, \
-    vhNormlzdWeighted = \
+    vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted = \
     calcSvdInvrs(normlzdWeightedSensMatrix)
 
     #print("\nNormalized, weighted SVD inverse =")
     #print(svdInvrsNormlzdWeighted)
 
-    paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, \
+    paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, dnormlzdParamsSoln, \
     defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals = \
     calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
                    sensMatrix, normlzdWeightedSensMatrix, \
@@ -249,7 +250,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                    sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames )
 
-    paramsSolnPC, paramsLowValsPC, paramsHiValsPC, dparamsSolnPC, \
+    paramsSolnPC, paramsLowValsPC, paramsHiValsPC, dparamsSolnPC, dnormlzdParamsSolnPC, \
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC = \
     calcParamsSoln(svdInvrsNormlzdWeightedPC, metricsWeights, magParamValsRow, \
                    sensMatrix, normlzdWeightedSensMatrix, \
@@ -292,9 +293,13 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
             defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
             normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
             defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-            sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
+            sensMatrixOrig, sensMatrix, normlzdSensMatrix, \
+            normlzdWeightedSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
             vhNormlzd, uNormlzd, sNormlzd, \
-            defaultParamValsOrigRow, dparamsSoln, \
+            vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted, \
+            magParamValsRow, \
+            defaultParamValsOrigRow, dparamsSoln, dnormlzdParamsSoln, \
+            dparamsSolnPC, dnormlzdParamsSolnPC, \
             paramsSoln, paramsLowVals, paramsHiVals, \
             paramsSolnPC, paramsLowValsPC, paramsHiValsPC)
 
@@ -460,7 +465,7 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
     sValsInvPC = np.zeros_like(sValsTruncInv)
     for idx, val in np.ndenumerate(sValsTruncInv):
         # If a singular value is much smaller than largest singular value, then zero it out.
-        if val/sValsTruncInv[0] > 10:
+        if val/sValsTruncInv[0] > 3.:
             sValsInvPC[idx] = 0.
         else:
             sValsInvPC[idx] = sValsTruncInv[idx]
@@ -480,7 +485,7 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
     #print("\neigVecs = ")
     #print(eigVecs)
 
-    return ( svdInvrs, svdInvrsPC, sValsTruncInv, sValsInvPC, vh )
+    return ( svdInvrs, svdInvrsPC, sValsTruncInv, sValsInvPC, vh, u, s )
 
 def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
                    sensMatrix, normlzdWeightedSensMatrix, \
@@ -529,17 +534,20 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
                          ] )
 
     # Calculate solution using transformed SVD matrix.  However, dparamsSoln is not normalized.
-    # dparamsSolnFrac = dparamsSoln / ( normalizing param value from default simulation )
-    dparamsSolnFrac = svdInvrsNormlzdWeighted @ \
+    # dnormlzdParamsSoln = dparamsSoln / ( normalizing param value from default simulation
+    #                                       (or sens sim if default param value is zero.) )
+    dnormlzdParamsSoln = svdInvrsNormlzdWeighted @ \
                       ( metricsWeights * (-defaultBiasesCol) / np.abs(obsMetricValsCol) )
     # Unnormalized parameter value perturbations from the default values, delta_p
-    dparamsSoln = dparamsSolnFrac * np.transpose(magParamValsRow)
+    dparamsSoln = dnormlzdParamsSoln * np.transpose(magParamValsRow)
 #    dparamsSoln = svdInvrsNormlzdWeighted @ ( metricsWeights * zero_obs ) * np.transpose(magParamValsRow)
     # defaultBiasesApprox = (forward model soln - default soln)
-    defaultBiasesApproxAlt = sensMatrix @ dparamsSoln
-    defaultBiasesApprox = ( normlzdWeightedSensMatrix @ dparamsSolnFrac ) \
+    defaultBiasesApprox = ( normlzdWeightedSensMatrix @ dnormlzdParamsSoln ) \
                           * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
 
+    # As a check, do an alternative calculation of defaultBiasesApprox based on
+    #    the unnormalized, unweighted sensitivity matrix:
+    defaultBiasesApproxAlt = sensMatrix @ dparamsSoln
     if ( not np.all( np.isclose(defaultBiasesApproxAlt, defaultBiasesApprox) ) ):
         print("\ndefaultBiasesApprox as computed from sensMatrix =")
         print(defaultBiasesApproxAlt)
@@ -584,7 +592,7 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
             paramsLowVals[idx,0] = np.exp(dparamsLowVals[idx,0]) * defaultParamValsOrigRow[0,idx]
             paramsHiVals[idx,0] = np.exp(dparamsHiVals[idx,0]) * defaultParamValsOrigRow[0,idx]
 
-    return (paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, \
+    return (paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, dnormlzdParamsSoln, \
             defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals)
 
 def setupObsCol(obsMetricValsDict, metricsNames):
@@ -745,7 +753,7 @@ def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
 def plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames):
 
     import numpy as np
-    import matplotlib.pyplot as plt    
+    import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(1,1)
     coloredMatrix = ax.imshow(normlzdSensMatrix, aspect='auto', cmap=plt.cm.RdBu)
@@ -799,6 +807,91 @@ def calcLinSolnDiff(linSolnNcFilename, defaultNcFilename,
     print(linSolnDiff)
 
     return linSolnDiff
+
+def findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
+                 defaultBiasesCol, obsMetricValsCol, magParamValsRow, defaultParamValsOrigRow):
+
+    import numpy as np
+    from sklearn import linear_model
+    import pdb
+
+#    ransac = linear_model.RANSACRegressor(max_trials=1000,random_state=0,
+#                                          base_estimator=linear_model.LinearRegression(), residual_threshold=None)
+#    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) )
+#    defaultBiasesApproxRansac = ransac.predict(normlzdSensMatrix) * np.abs(obsMetricValsCol)
+#    dnormlzdParamsSolnRansac = np.transpose( ransac.estimator_.coef_ )
+#    ransac = linear_model.RANSACRegressor(max_trials=10000,random_state=0,
+#             base_estimator=linear_model.ElasticNet(fit_intercept=False, random_state=0, tol=1e-3,
+#                                                    l1_ratio=0.0, alpha=5),
+#                                          residual_threshold=None)
+#    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) )
+#    defaultBiasesApproxRansac = np.transpose( np.atleast_2d( ransac.predict(normlzdSensMatrix) ) ) \
+#                                * np.abs(obsMetricValsCol)
+#    dnormlzdParamsSolnRansac = np.transpose( np.atleast_2d( ransac.estimator_.coef_ ) )
+#    inlier_mask = ransac.inlier_mask_
+#    outlier_mask = np.logical_not(inlier_mask)
+
+
+    ransac = linear_model.HuberRegressor(fit_intercept=False)
+    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) )
+    defaultBiasesApproxRansac = np.transpose( np.atleast_2d( ransac.predict(normlzdSensMatrix) ) ) \
+                                * np.abs(obsMetricValsCol)
+    dnormlzdParamsSolnRansac = np.transpose( np.atleast_2d( ransac.coef_ ) )
+#    defaultBiasesApproxRansac = ransac.predict(normlzdSensMatrix) * np.abs(obsMetricValsCol)
+#    dnormlzdParamsSolnRansac = np.transpose( ransac.coef_ )
+
+    dparamsSolnRansac = dnormlzdParamsSolnRansac * np.transpose(magParamValsRow)
+    paramsSolnRansac = np.transpose(defaultParamValsOrigRow) + dparamsSolnRansac
+
+    outlier_mask = ransac.outliers_
+    inlier_mask = np.logical_not(outlier_mask)
+
+    print( "paramsSolnRansac = ", paramsSolnRansac )
+    print( "dparamsSolnRansac = ", dparamsSolnRansac )
+
+    # If the solution were perfect, this variable would equal
+    #     the normalized, weighted right-hand side.
+    normlzdWeightedDefaultBiasesApproxRansac = \
+            normlzdWeightedSensMatrix @ dnormlzdParamsSolnRansac
+
+    #pdb.set_trace()
+
+    return (outlier_mask, defaultBiasesApproxRansac, normlzdWeightedDefaultBiasesApproxRansac, \
+            dnormlzdParamsSolnRansac, paramsSolnRansac)
+
+def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
+                 defaultBiasesCol, obsMetricValsCol, metricsWeights, magParamValsRow, defaultParamValsOrigRow):
+
+    import numpy as np
+    from sklearn.linear_model import ElasticNet, ElasticNetCV
+    from sklearn.linear_model import Lasso, LassoCV
+    import pdb
+
+    regr = ElasticNet(fit_intercept=False, random_state=0, tol=1e-10, l1_ratio=0.5, alpha=0.05)
+    #regr = Lasso(fit_intercept=False, random_state=0, tol=1e-10, alpha=0.01)
+    #regr = ElasticNetCV(fit_intercept=False, eps=1e-5, tol=1e-10)
+    regr.fit(normlzdWeightedSensMatrix, -metricsWeights * defaultBiasesCol / np.abs(obsMetricValsCol) )
+    #regr.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) )
+
+    defaultBiasesApproxElastic = np.transpose( np.atleast_2d(regr.predict(normlzdWeightedSensMatrix)) ) \
+                          * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
+    dnormlzdParamsSolnElastic = np.transpose( np.atleast_2d(regr.coef_) )
+    dparamsSolnElastic = dnormlzdParamsSolnElastic * np.transpose(magParamValsRow)
+    paramsSolnElastic = np.transpose(defaultParamValsOrigRow) + dparamsSolnElastic
+
+    print( "paramsSolnElastic = ", paramsSolnElastic )
+    print( "dparamsSolnElastic = ", dparamsSolnElastic )
+
+    #pdb.set_trace()
+
+    # If the solution were perfect, this variable would equal
+    #     the normalized, weighted right-hand side.
+    normlzdWeightedDefaultBiasesApproxElastic = \
+            normlzdWeightedSensMatrix @ dnormlzdParamsSolnElastic
+    #                      * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
+
+    return (defaultBiasesApproxElastic, normlzdWeightedDefaultBiasesApproxElastic, \
+            dnormlzdParamsSolnElastic, paramsSolnElastic)
 
 # Standard boilerplate to call the main() function to begin
 # the program.

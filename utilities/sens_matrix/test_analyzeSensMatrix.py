@@ -61,9 +61,13 @@ def test_3x2_C8transformed():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    vhNormlzdWeighted, uNormlzd, sNormlzd, \
-    defaultParamValsOrigRow, dparamsSoln, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, \
+    normlzdWeightedSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    vhNormlzd, uNormlzd, sNormlzd, \
+    vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted, \
+    magParamValsRow, \
+    defaultParamValsOrigRow, dparamsSoln, dnormlzdParamsSoln, \
+    dparamsSolnPC, dnormlzdParamsSolnPC, \
     paramsSoln, paramsLowVals, paramsHiVals, \
     paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
@@ -124,9 +128,13 @@ def test_3x2_novarstransformed():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    vhNormlzdWeighted, uNormlzd, sNormlzd, \
-    defaultParamValsOrigRow, dparamsSoln, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, \
+    normlzdWeightedSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    vhNormlzd, uNormlzd, sNormlzd, \
+    vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted, \
+    magParamValsRow, \
+    defaultParamValsOrigRow, dparamsSoln, dnormlzdParamsSoln, \
+    dparamsSolnPC, dnormlzdParamsSolnPC, \
     paramsSoln, paramsLowVals, paramsHiVals, \
     paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
@@ -181,9 +189,13 @@ def test_2x2_C8transformed():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    vhNormlzdWeighted, uNormlzd, sNormlzd, \
-    defaultParamValsOrigRow, dparamsSoln, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, \
+    normlzdWeightedSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    vhNormlzd, uNormlzd, sNormlzd, \
+    vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted, \
+    magParamValsRow, \
+    defaultParamValsOrigRow, dparamsSoln, dnormlzdParamsSoln, \
+    dparamsSolnPC, dnormlzdParamsSolnPC, \
     paramsSoln, paramsLowVals, paramsHiVals, \
     paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
@@ -214,7 +226,7 @@ def test_2x2_C8transformed():
         print("\nError: linSolnBias should equal defaultBiasesApprox, but it does not.")
         assert False
 
-    print("\nReached the end of function test_2x2_C8transformed in test harness.")
+    print("\n Reached the end of function test_2x2_C8transformed in test harness.")
 
 def test_2x2_novarstransformed():
 
@@ -248,9 +260,13 @@ def test_2x2_novarstransformed():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    vhNormlzdWeighted, uNormlzd, sNormlzd, \
-    defaultParamValsOrigRow, dparamsSoln, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, \
+    normlzdWeightedSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    vhNormlzd, uNormlzd, sNormlzd, \
+    vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted, \
+    magParamValsRow, \
+    defaultParamValsOrigRow, dparamsSoln, dnormlzdParamsSoln, \
+    dparamsSolnPC, dnormlzdParamsSolnPC, \
     paramsSoln, paramsLowVals, paramsHiVals, \
     paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
@@ -336,5 +352,7 @@ def write_test_netcdf_files(obsMetricValsDict, clubbC8Vals):
 # the program.
 if __name__ == '__main__':
     #test_3x2_C8transformed()
-    test_3x2_C8transformed()
+    test_3x2_novarstransformed()
+    test_2x2_C8transformed()
+    test_2x2_novarstransformed()
 

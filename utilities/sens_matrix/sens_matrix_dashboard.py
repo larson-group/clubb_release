@@ -14,8 +14,11 @@ def main():
 
     import numpy as np
     import pdb
+    import sklearn
 
-    from analyze_sensitivity_matrix import analyzeSensMatrix, setupObsCol, setupDefaultMetricValsCol
+    from analyze_sensitivity_matrix import \
+            analyzeSensMatrix, setupObsCol, setupDefaultMetricValsCol, \
+            findOutliers, findParamsUsingElastic
     from test_analyzeSensMatrix import write_test_netcdf_files
 
     # Metrics are observed quantities that we want a tuned simulation to match.
@@ -23,41 +26,40 @@ def main():
     # Column vector of (positive) weights.  A small value de-emphasizes
     #   the corresponding metric in the fit.
     metricsNamesAndWeights = [ \
-                        ['SWCF_GLB', 2.01], \
-                        ['SWCF_DYCOMS', 1.01], \
-                        ['SWCF_HAWAII', 1.01], \
+                        ['SWCF_GLB', 1.01], \
+                        ['SWCF_DYCOMS', 0.01], \
+                        ['SWCF_HAWAII', 0.01], \
                         ['SWCF_VOCAL', 1.01], \
                         ['SWCF_LBA', 1.01], \
                         ['SWCF_WP', 1.01], \
                         ['SWCF_EP', 1.01], \
-#                        ['SWCF_NP', 0.01], \
-#                        ['SWCF_SP', 0.01], \
-#                        ['SWCF_PA', 0.01], \
-#                        ['SWCF_CAF', 0.01], \
-                        ['LWCF_GLB', 2.01], \
-#                        ['LWCF_DYCOMS', 0.01], \
-#                        ['LWCF_HAWAII', 0.01], \
-#                        ['LWCF_VOCAL', 0.01], \
-                        ['LWCF_LBA', 1.01], \
+                        ['SWCF_NP', 1.01], \
+                        ['SWCF_SP', 1.01], \
+                        ['SWCF_PA', 0.01], \
+                        ['SWCF_CAF', 1.01], \
+                        ['LWCF_GLB', 1.01], \
+                        ['LWCF_DYCOMS', 0.01], \
+                        ['LWCF_HAWAII', 0.01], \
+                        ['LWCF_VOCAL', 0.01], \
+                        ['LWCF_LBA', 0.01], \
                         ['LWCF_WP', 1.01], \
-#                        ['LWCF_EP', 0.01], \
-#                        ['LWCF_NP', 0.01], \
-#                        ['LWCF_SP', 0.01], \
-#                        ['LWCF_PA', 0.01], \
-#                        ['LWCF_CAF', 0.01], \
-                        ['PRECT_GLB', 2.01], \
+                        ['LWCF_EP', 1.01], \
+                        ['LWCF_NP', 1.01], \
+                        ['LWCF_SP', 1.01], \
+                        ['LWCF_PA', 0.01], \
+                        ['LWCF_CAF', 0.01], \
+                        ['PRECT_GLB', 1.01], \
 #                        ['PRECT_DYCOMS', 0.01], \
 #                        ['PRECT_HAWAII', 0.01], \
 #                        ['PRECT_VOCAL', 0.01], \
-                        ['PRECT_LBA', 1.01], \
-#                        ['PRECT_WP', 0.01], \
-#                        ['PRECT_EP', 0.01], \
-#                        ['PRECT_NP', 0.01], \
-#                        ['PRECT_SP', 0.01], \
-#                        ['PRECT_PA', 0.01], \
-#                        ['PRECT_CAF', 0.01] \
+                        ['PRECT_LBA', 0.01], \
+                        ['PRECT_WP', 1.01], \
+                        ['PRECT_EP', 1.01], \
+                        ['PRECT_NP', 1.01], \
+                        ['PRECT_SP', 1.01], \
+#                        ['PRECT_PA', 1.01], \
+#                        ['PRECT_CAF', 1.01] \
                          ]
-
 
     dfMetricsNamesAndWeights =  \
         pd.DataFrame( metricsNamesAndWeights, columns = ['metricsNames', 'metricsWeights'] )
@@ -122,7 +124,7 @@ def main():
     # Metrics from simulation that use the SVD-recommended parameter values
     # Here, we use default simulation just as a placeholder.
     linSolnNcFilename = \
-        '20211010/anvil.0703.lmm_18.ne30pg2_r05_oECv3_Regional.nc'
+            '20211010/anvil.0703.lmm_20.ne30pg2_r05_oECv3_Regional.nc'
 
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
@@ -145,9 +147,9 @@ def main():
     # Estimate non-linearity of the global model to perturbations in parameter values.
     # To do so, calculate radius of curvature of the three points from the default simulation
     #   and the two sensitivity simulations.
-    calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames,
-                          metricsWeights,
-                          sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+    #calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames,
+    #                      metricsWeights,
+    #                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
 
     # Calculate changes in parameter values needed to match metrics.
@@ -156,9 +158,13 @@ def main():
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC, \
     normlzdWeightedDefaultBiasesApprox, normlzdWeightedDefaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, \
+    normlzdWeightedSensMatrix, biasNormlzdSensMatrix, svdInvrsNormlzdWeighted, \
     vhNormlzd, uNormlzd, sNormlzd, \
-    defaultParamValsOrigRow, dparamsSoln, \
+    vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted, \
+    magParamValsRow, \
+    defaultParamValsOrigRow, dparamsSoln, dnormlzdParamsSoln, \
+    dparamsSolnPC, dnormlzdParamsSolnPC, \
     paramsSoln, paramsLowVals, paramsHiVals, \
     paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
           analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
@@ -166,8 +172,28 @@ def main():
                             sensNcFilenames, defaultNcFilename,
                             obsMetricValsDict)
 
+
     # Set up a column vector of observed metrics
     obsMetricValsCol = setupObsCol(obsMetricValsDict, metricsNames)
+
+    # Create scatterplot to look at outliers
+    #createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, obsMetricValsCol, metricsNames, paramsNames)
+
+    # Find outliers by use of the ransac algorithm
+    outlier_mask, defaultBiasesApproxRansac, normlzdWeightedDefaultBiasesApproxRansac, \
+    dnormlzdParamsSolnRansac, paramsSolnRansac = \
+        findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
+                     defaultBiasesCol, obsMetricValsCol, magParamValsRow, defaultParamValsOrigRow)
+    print( "ransac_outliers = ", metricsNames[outlier_mask] )
+    print( "ransac_inliers = ", metricsNames[~outlier_mask] )
+    #pdb.set_trace()
+
+    # Find best-fit params by use of the Elastic Net algorithm
+    defaultBiasesApproxElastic, normlzdWeightedDefaultBiasesApproxElastic, \
+    dnormlzdParamsSolnElastic, paramsSolnElastic = \
+        findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
+                     defaultBiasesCol, obsMetricValsCol, metricsWeights, magParamValsRow, defaultParamValsOrigRow)
+    #pdb.set_trace()
 
     # Set up a column vector of metric values from the default simulation
     defaultMetricValsCol = setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
@@ -176,23 +202,56 @@ def main():
     #     parameter values.
     linSolnMetricValsCol = setupDefaultMetricValsCol(metricsNames, linSolnNcFilename)
 
-    # Store biases in default simulation
+    # Store biases in default simulation, ( global_model - default )
     linSolnBiasesCol = np.subtract(linSolnMetricValsCol, defaultMetricValsCol)
 
-    # Calculate the fraction of the default-sim bias that is removed by tuning.
+    # Calculate the fraction of the default-sim bias that remains after tuning.
     # This is unweighted and hence is not necessarily less than one.
-    # Bias = J*delta_p = ( fwd - obs ) = numerator
+    # defaultBiasesApprox = J*delta_p = ( fwd - def )
+    # numerator = ( fwd - def ) + ( def - obs ) = ( fwd - obs )
     Bias = ( defaultBiasesApprox + defaultBiasesCol )
-    # DefaultBiasesCol = -delta_b = - ( default - obs ) = denominator
-    BiasMagRatio = np.linalg.norm(Bias)**2 / np.linalg.norm(defaultBiasesCol)**2
+    # defaultBiasesCol = -delta_b = - ( default - obs ) = -denominator
+    BiasMagRatio = np.linalg.norm(Bias/np.abs(obsMetricValsCol))**2 / \
+                   np.linalg.norm(defaultBiasesCol/np.abs(obsMetricValsCol))**2
 
-    # Calculate the fraction of the default-sim bias that is removed by tuning.
+    # Calculate the fraction of the default-sim bias that remains after tuning,
+    #    but using a truncated PC observation.
     # This is unweighted and hence is not necessarily less than one.
-    # fracBiasPC = J*delta_p = ( fwd - obs ) = numerator
+    # defaultBiasesApproxPC = J*delta_p = ( fwd - def )
+    # numerator = ( fwd - def ) + ( def - obs ) = ( fwd - obs )
     BiasPC = ( defaultBiasesApproxPC + defaultBiasesCol )
-    # fracDefaultBiasesCol = -delta_b = - ( default - obs ) = denominator
-    #fracDefaultBiasesCol = defaultBiasesCol
-    BiasPCMagRatio = np.linalg.norm(BiasPC)**2 / np.linalg.norm(defaultBiasesCol)**2
+    # defaultBiasesCol = -delta_b = - ( default - obs ) = -denominator
+    BiasPCMagRatio = np.linalg.norm(BiasPC/np.abs(obsMetricValsCol))**2 / \
+                     np.linalg.norm(defaultBiasesCol/np.abs(obsMetricValsCol))**2
+
+    # Calculate the fraction of the default-sim bias that remains after tuning,
+    #    but using a truncated PC observation.
+    # This is unweighted and hence is not necessarily less than one.
+    # defaultBiasesApproxRansac = J*delta_p = ( fwd - def )
+    # numerator = ( fwd - def ) + ( def - obs ) = ( fwd - obs )
+    BiasRansac = ( defaultBiasesApproxRansac + defaultBiasesCol )
+    # defaultBiasesCol = -delta_b = - ( default - obs ) = -denominator
+    BiasRansacMagRatio = np.linalg.norm(BiasRansac/np.abs(obsMetricValsCol))**2 / \
+                     np.linalg.norm(defaultBiasesCol/np.abs(obsMetricValsCol))**2
+
+    # Calculate the fraction of the default-sim bias that remains after tuning,
+    #    but using a truncated PC observation.
+    # This is unweighted and hence is not necessarily less than one.
+    # defaultBiasesApproxElastic = J*delta_p = ( fwd - def )
+    # numerator = ( fwd - def ) + ( def - obs ) = ( fwd - obs )
+    BiasElastic = ( defaultBiasesApproxElastic + defaultBiasesCol )
+    # defaultBiasesCol = -delta_b = - ( default - obs ) = -denominator
+    BiasElasticMagRatio = np.linalg.norm(BiasElastic/np.abs(obsMetricValsCol))**2 / \
+                     np.linalg.norm(defaultBiasesCol/np.abs(obsMetricValsCol))**2
+
+    # Calculate the global-model bias relative to the default-sim bias.
+    # This is unweighted and hence is not necessarily less than one.
+    # defaultBiasesApprox = J*delta_p = ( fwd - def )
+    # numerator = ( linSoln - def ) + ( def - obs ) = ( linSoln - obs )
+    linSolnBias = ( linSolnBiasesCol + defaultBiasesCol )
+    # defaultBiasesCol = -delta_b = - ( default - obs ) = -denominator
+    linSolnBiasMagRatio = np.linalg.norm(linSolnBias/np.abs(obsMetricValsCol))**2 / \
+                          np.linalg.norm(defaultBiasesCol/np.abs(obsMetricValsCol))**2
 
     # Calculate the fraction of bias removed by the non-PC soln, but normalized and weighted,
     # like the equations that the SVD actually solves, so that according to theory,
@@ -211,6 +270,22 @@ def main():
     weightedBiasPCDenom = normlzdMDeltaB
     weightedBiasPCMagRatio = np.linalg.norm(weightedBiasPCNumer)**2 / np.linalg.norm(weightedBiasPCDenom)**2
 
+    # Calculate the fraction of bias removed by Ransac soln, but normalized and weighted,
+    # like the equations that the SVD actually solves, so that according to theory,
+    # the value should be < 1.
+    # But I'm not sure if it will be < 1 if the parameters are transformed to log space.
+    weightedBiasRansacNumer = normlzdWeightedDefaultBiasesApproxRansac + normlzdMDeltaB
+    weightedBiasRansacDenom = normlzdMDeltaB
+    weightedBiasRansacMagRatio = np.linalg.norm(weightedBiasRansacNumer)**2 / np.linalg.norm(weightedBiasRansacDenom)**2
+
+    # Calculate the fraction of bias removed by Elastic soln, but normalized and weighted,
+    # like the equations that the SVD actually solves, so that according to theory,
+    # the value should be < 1.
+    # But I'm not sure if it will be < 1 if the parameters are transformed to log space.
+    weightedBiasElasticNumer = normlzdWeightedDefaultBiasesApproxElastic + normlzdMDeltaB
+    weightedBiasElasticDenom = normlzdMDeltaB
+    weightedBiasElasticMagRatio = np.linalg.norm(weightedBiasElasticNumer)**2 / np.linalg.norm(weightedBiasElasticDenom)**2
+
 # Fraction of bias that is removed by the tuned, non-linear forward solution
 # weightedBiasLin = metricsWeights * ( fwd - obs ) / (def - obs )
 #weightedBiasLin = metricsWeights * ( 1.0 - linSolnBiasesCol / defaultBiasesCol )
@@ -222,9 +297,9 @@ def main():
 #                          np.dot( np.transpose(metricsWeights*defaultBiasesCol),
 #                                  metricsWeights*defaultBiasesCol )
 
-# weightedBiasLin = metricsWeights * ( lin - obs ) = numerator
-#weightedBiasLin = metricsWeights * ( linSolnBiasesCol - defaultBiasesCol )
-#weightedBiasLinMagRatio = np.linalg.norm(weightedBiasLin)**2 / np.linalg.norm(weightedDefaultBiasesCol)**2
+    # weightedBiasLin = metricsWeights * ( lin - obs ) = numerator
+    weightedBiasLinSoln = metricsWeights * ( linSolnBiasesCol + defaultBiasesCol ) / np.abs(obsMetricValsCol)
+    weightedBiasLinSolnMagRatio = np.linalg.norm(weightedBiasLinSoln)**2 / np.linalg.norm(normlzdMDeltaB)**2
 
 
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -234,8 +309,10 @@ def main():
     # Plot the biases of the default simulation and the SVD approximation of that
     biasesMatrix = np.dstack((-defaultBiasesCol,
                           defaultBiasesApprox,
-                          defaultBiasesApproxPC
-                          #linSolnBiasesCol
+                          defaultBiasesApproxPC,
+                          defaultBiasesApproxRansac,
+                          defaultBiasesApproxElastic,
+                          linSolnBiasesCol
                          )).squeeze()
     fracBiasesMatrix = np.diagflat(np.reciprocal(np.abs(obsMetricValsCol))) @ biasesMatrix
     df = pd.DataFrame(fracBiasesMatrix,
@@ -243,7 +320,9 @@ def main():
                   columns= ['fracDefBias',
                             'fracDefBiasesApprox',
                             'fracDefBiasesApproxPC',
-                            #'fracLinSolnBiasesCol'
+                            'fracDefBiasesApproxRansac',
+                            'fracDefBiasesApproxElastic',
+                            'fracLinSolnBiasesCol'
                            ])
     biasesFig = px.line(df, x=df.index, y=df.columns,
               title = """Fractional biases of default simulation and approximations thereof.<br>
@@ -257,8 +336,16 @@ def main():
                         + ", {:.2f}".format(BiasMagRatio)
     biasesFig.data[2].name = "fracDefBiasesApproxPC, " \
                         + "{:.2f}".format(weightedBiasPCMagRatio) \
-                        + ", {:.2f}".format(BiasPCMagRatio)
-    #biasesFig.data[3].name = "fracLinSolnBiasesCol, " #+ "{:.2f}".format(weightedBiasLinMagRatio)
+                         + ", {:.2f}".format(BiasPCMagRatio)
+    biasesFig.data[3].name = "fracDefBiasesApproxRansac, " \
+                        + "{:.2f}".format(weightedBiasRansacMagRatio) \
+                         + ", {:.2f}".format(BiasRansacMagRatio)
+    biasesFig.data[4].name = "fracDefBiasesApproxElastic, " \
+                        + "{:.2f}".format(weightedBiasElasticMagRatio) \
+                         + ", {:.2f}".format(BiasElasticMagRatio)
+    biasesFig.data[5].name = "fracLinSolnBiasesCol, " \
+                        + "{:.2f}".format(weightedBiasLinSolnMagRatio) \
+                         + ", {:.2f}".format(linSolnBiasMagRatio)
     #pdb.set_trace()
 
 
@@ -306,7 +393,7 @@ def main():
                   index=metricsNames,
                   columns=paramsNames)
     normlzdSensMatrixColsFig = px.line(df, x=df.index, y=df.columns,
-              title = """Columns of normalized sensitivity matrix.<br>
+              title =  """Columns of normalized, unweighted sensitivity matrix.<br>
                        Each column (line) shows how sensitive the metrics are to a change in a single parameter value.<br>
                        (A positive value means that an increase in parameter value brings the default simulation closer to obs.)""" )
     normlzdSensMatrixColsFig.update_yaxes(title="Norml sens, (|param|/|obsmetric|) * dmetric/dparam")
@@ -320,7 +407,7 @@ def main():
                   index=paramsNames,
                   columns=metricsNames)
     normlzdSensMatrixRowsFig = px.line(df, x=df.index, y=df.columns,
-              title = """Rows of normalized sensitivity matrix.<br>
+              title = """Rows of normalized, unweighted sensitivity matrix.<br>
                        Each row (line) tells us how a single metric varies with all parameters.<br>
                        (A positive value means that an increase in parameter value brings the default simulation closer to obs.)""" )
     normlzdSensMatrixRowsFig.update_yaxes(title="Norml sens, (|param|/|obsmetric|) * dmetric/dparam")
@@ -336,7 +423,7 @@ def main():
                   columns=rightSingVectorNums)
     vhNormlzdColsFig = px.line(df, x=df.index, y=df.columns,
               title = """Columns of normalized, unweighted right-singular vector matrix, V.<br>
-                       Each column (line) is a vector of parameter values associated with a singular value.<br>""" )
+                        Each column (line) is a vector of parameter values associated with a singular value.<br>""" )
     vhNormlzdColsFig.update_yaxes(title="Right-singular vector")
     vhNormlzdColsFig.update_xaxes(title="Parameter")
     vhNormlzdColsFig.layout.legend.title = "Singular vector"
@@ -344,9 +431,7 @@ def main():
     for idx, val in np.ndenumerate(sNormlzd):
         vhNormlzdColsFig.data[idx[0]].name = "{}".format(idx[0]+1) + ", " + "{:.2e}".format(val)
 
-    # Plot each column of left-singular vector matrix, U.
-    #pdb.set_trace()
-    #leftSingVectorNums = (np.arange(metricsNames.shape[0])+1).astype(str)
+    # Plot each column of normalized, unweighted left-singular vector matrix, U.
     df = pd.DataFrame(uNormlzd,
                   index=metricsNames,
                   columns=rightSingVectorNums)
@@ -360,9 +445,22 @@ def main():
     for idx, val in np.ndenumerate(sNormlzd):
         uNormlzdColsFig.data[idx[0]].name = "{}".format(idx[0]+1) + ", " + "{:.2e}".format(val)
 
-    # Plot each column of left-singular vector matrix, U.
-    #pdb.set_trace()
-    #leftSingVectorNums = (np.arange(metricsNames.shape[0])+1).astype(str)
+    # Plot each column of normalized, weighted left-singular vector matrix, U.
+    df = pd.DataFrame(uNormlzdWeighted,
+                  index=metricsNames,
+                  columns=rightSingVectorNums)
+    uNormlzdWeightedColsFig = px.line(df, x=df.index, y=df.columns,
+              title = """Columns of normalized, weighted left-singular vector matrix, U.<br>
+                       Each column (line) is a vector of metric values associated with a singular value.<br>""" )
+    uNormlzdWeightedColsFig.update_yaxes(title="Left-singular vector")
+    uNormlzdWeightedColsFig.update_xaxes(title="Parameter")
+    uNormlzdWeightedColsFig.layout.legend.title = "Singular vector"
+    uNormlzdWeightedColsFig.update_layout(hovermode="x")
+    for idx, val in np.ndenumerate(sNormlzdWeighted):
+        uNormlzdWeightedColsFig.data[idx[0]].name = "{}".format(idx[0]+1) + ", " + "{:.2e}".format(val)
+
+    # Plot each column of left-singular vector matrix, U, multiplied by biases.
+    # Plot each column of left-singular vector matrix, U, multiplied by biases.
     df = pd.DataFrame(uNormlzd*defaultBiasesCol/np.abs(obsMetricValsCol),
                    index=metricsNames,
                   columns=rightSingVectorNums)
@@ -384,8 +482,15 @@ def main():
                                name=r'$paramsSolnPC - \sigma$'))
     paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsHiValsPC[:,0]*paramsScales, fill='tonexty',
                                name=r'$paramsSolnPC + \sigma$'))
-    paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSoln[:,0]*paramsScales, name='paramsSoln'))
-    paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnPC[:,0]*paramsScales, name='paramsSolnPC'))
+    paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSoln[:,0]*paramsScales,
+                                   name='paramsSoln, |dp|=' + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSoln)) ))
+    paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnPC[:,0]*paramsScales,
+                                   name='paramsSolnPC, |dpPC|=' + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnPC)) ))
+    paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnRansac[:,0]*paramsScales,
+                                   name='paramsSolnRansac, |dpRansac|=' + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnRansac)) ))
+    paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnElastic[:,0]*paramsScales,
+                                   name='paramsSolnElastic, |dpElastic|='
+                                   + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnElastic)) ))
     paramsFig.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:]*paramsScales, name='defaultParamVals'))
     paramsFig.update_yaxes(title="User-scaled parameter value")
     paramsFig.update_xaxes(title="Parameter Name")
@@ -402,9 +507,10 @@ def main():
         dcc.Graph( id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig ),
         dcc.Graph( id='normlzdSensMatrixRowsFig', figure=normlzdSensMatrixRowsFig ),
         dcc.Graph( id='vhNormlzdColsFig', figure=vhNormlzdColsFig ),
+        dcc.Graph( id='uNormlzdWeightedColsFig', figure=uNormlzdWeightedColsFig ),
         dcc.Graph( id='uNormlzdColsFig', figure=uNormlzdColsFig ),
         dcc.Graph( id='uNormlzdBiasColsFig', figure=uNormlzdBiasColsFig ),
-        dcc.Graph( id='paramsFig', figure=paramsFig )
+         dcc.Graph( id='paramsFig', figure=paramsFig )
 
     ])
 
@@ -496,11 +602,19 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames,
                            (semi_perim-length_def_sensExt) *
                            (semi_perim-length_sens_sensExt)
                           )
+            if (area == 0.0):
+                print( '\nIn calcNormlzdRadiusCurv, area == 0.0 for param ', paramsNames[col],
+                        'and metric ', metricsNames[row] )
+
             # Greatest distance between parameter values in the 3 simulations:
             max_params_width = \
             np.max(np.abs([delta_params_def_sens[0][col],
                         delta_params_def_sensExt[0][col],
                         delta_params_sens_sensExt[0][col]]))
+            if (max_params_width == 0.0):
+                print( '\nIn calcNormlzdRadiusCurv, max_params_width == 0.0 for param ', paramsNames[col],
+                        'and metric ', metricsNames[row] )
+
             # Calculate Menger curvature from triangle area and distance between points:
             normlzd_radius_of_curv[row][col] = 0.25 * length_def_sens*length_def_sensExt*length_sens_sensExt \
                                                 / area / max_params_width
@@ -522,6 +636,44 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames,
 
     #pdb.set_trace()
 
+    return
+
+def createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, obsMetricValsCol, metricsNames, paramsNames):
+
+    import numpy as np
+    from pca import pca
+    import pdb
+
+    # reduce the data towards 2 PCs
+    model = pca(n_components=2, detect_outliers='ht2')
+
+    # Augmented array with LHS and RHS
+    augMatrix = np.concatenate((normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) ), axis=1)
+
+    paramsList = list(paramsNames)
+    paramsList.append('dbias')
+    augParamsNames = np.asarray(paramsList)
+
+    # Fit transform
+    results = model.fit_transform(augMatrix, row_labels=metricsNames, col_labels=augParamsNames)
+    #results = model.fit_transform(normlzdSensMatrix, row_labels=metricsNames, col_labels=paramsNames)
+
+    PC_test = model.transform(augMatrix)
+    #PC_test = model.transform(normlzdSensMatrix)
+    outliers, outliers_params = model.compute_outliers(PC=PC_test)
+    print("PCA outliers = ", outliers)
+
+    # Plot explained variance
+    #fig, ax = model.plot()
+
+    # Scatter first 2 PCs
+    #fig, ax = model.scatter()
+
+    # Make biplot with the number of features
+    fig, ax = model.biplot(n_feat=paramsNames.size+1)
+    #fig, ax = model.biplot(n_feat=paramsNames.size)
+
+    #pdb.set_trace()
 
     return
 
