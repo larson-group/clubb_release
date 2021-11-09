@@ -421,7 +421,7 @@ DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do',
                                       'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_do_sfc.nc'},
                    'e3sm_file': None,
                    'cam_file': None,
-                   'sam_file': None,
+                   'sam_file': {'sam': sam_output_root + "/DYCOMS_RF02_SAM_CLUBB.nc"},
                    'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
                                   VariableGroupKKMP]}
