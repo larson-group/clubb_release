@@ -3094,8 +3094,8 @@ endif
           * exp(-one_half * (w_2 / max(eps, stdev_w_2)) ** 2)
 
     w_up_in_cloud &
-    = (mixt_frac * max(eps, cloud_frac_1) * wHm_1 &
-        + (one - mixt_frac) * max(eps, cloud_frac_2) * wHm_2) &
+    = (mixt_frac * cloud_frac_1 * wHm_1 &
+        + (one - mixt_frac) * cloud_frac_2 * wHm_2) &
       / (mixt_frac * max(eps, cloud_frac_1) &
         + (one - mixt_frac) * max(eps, cloud_frac_2))
 

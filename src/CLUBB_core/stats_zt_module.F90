@@ -1424,7 +1424,7 @@ module stats_zt_module
       case ('w_up_in_cloud')
         iw_up_in_cloud = k
         call stat_assign( var_index=iw_up_in_cloud, var_name="w_up_in_cloud", &
-             var_description="mean of updraft within clouds", &
+             var_description="Mean W in saturated updrafts", &
              var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
          k = k + 1
 
