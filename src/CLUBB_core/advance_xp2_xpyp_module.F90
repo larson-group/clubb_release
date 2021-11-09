@@ -42,7 +42,8 @@ module advance_xp2_xpyp_module
   contains
 
   !=============================================================================
-  subroutine advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm, & ! In
+  subroutine advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_C4_zm,     & ! In
+                               invrs_tau_C14_zm, wm_zm,                   & ! In
                                rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,  & ! In
                                wp2, wp2_zt, wp3, upwp, vpwp,              & ! In
                                sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,      & ! In
@@ -56,6 +57,7 @@ module advance_xp2_xpyp_module
                                sclrm, wpsclrp,                            & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,         & ! In
                                wp2_splat,                                 & ! In
+                               clubb_params, nu_vert_res_dep,             & ! In
                                iiPDF_type,                                & ! In
                                l_predict_upwp_vpwp,                       & ! In
                                l_min_xp2_from_corr_wx,                    & ! In
@@ -105,19 +107,22 @@ module advance_xp2_xpyp_module
         l_hole_fill,      & ! logical constants
         l_explicit_turbulent_adv_xpyp
 
+    use parameter_indices, only: &
+        nparams,         & ! Variable(s)
+        iC2rt,           &
+        iC2thl,          &
+        iC2rtthl,        &
+        iC4,             &
+        iC14,            &
+        ic_K2,           &
+        ic_K9,           &
+        iC_uu_shr,       &
+        iC_uu_buoy,      &
+        ibeta,           &
+        irtp2_clip_coef
+
     use parameters_tunable, only: &
-        C2rt,     & ! Variable(s)
-        C2thl,    &
-        C2rtthl,  &
-        c_K2,     &
-        nu2_vert_res_dep, &
-        c_K9,     &
-        nu9_vert_res_dep, &
-        C4,       &
-        C14,      &
-        C_uu_shr, &
-        C_uu_buoy, &
-        rtp2_clip_coef
+        nu_vertical_res_dep    ! Type(s)
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -201,36 +206,37 @@ module advance_xp2_xpyp_module
     ! Input variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
-      invrs_tau_wp2_zm, & ! Inverse time-scale for wp2 (up2, vp2); m-levs [1/s]
-      wm_zm,           & ! w-wind component on momentum levels   [m/s]
-      rtm,             & ! Total water mixing ratio (t-levs)     [kg/kg]
-      wprtp,           & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
-      thlm,            & ! Liquid potential temp. (t-levs)       [K]
-      wpthlp,          & ! <w'th_l'> (momentum levels)           [(m K)/s]
-      wpthvp,          & ! <w'th_v'> (momentum levels)           [(m K)/s]
-      um,              & ! u wind (thermodynamic levels)         [m/s]
-      vm,              & ! v wind (thermodynamic levels)         [m/s]
-      wp2,             & ! <w'^2> (momentum levels)              [m^2/s^2]
-      wp2_zt,          & ! <w'^2> interpolated to thermo. levels [m^2/s^2]
-      wp3,             & ! <w'^3> (thermodynamic levels)         [m^3/s^3]
-      upwp,            & ! <u'w'> (momentum levels)              [m^2/s^2]
-      vpwp,            & ! <v'w'> (momentum levels)              [m^2/s^2]
-      sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)         [-]
-      Skw_zm,          & ! Skewness of w on momentum levels      [-]
-      wprtp2,          & ! <w'r_t'^2> (thermodynamic levels)     [m/s (kg/kg)^2]
-      wpthlp2,         & ! <w'th_l'^2> (thermodynamic levels)    [m/s K^2]
-      wprtpthlp,       & ! <w'r_t'th_l'> (thermodynamic levels)  [m/s (kg/kg) K]
-      Kh_zt,           & ! Eddy diffusivity on thermo. levels    [m^2/s]
-      rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
-      thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
-      rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
-      rho_ds_zm,       & ! Dry, static density on momentum levs. [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density on thermo. levels [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv. dry, static density @ mom. levs. [m^3/kg]
-      thv_ds_zm,       & ! Dry, base-state theta_v on mom. levs. [K]
-      cloud_frac,      & ! Cloud fraction (thermodynamic levels) [-]
-      wp3_on_wp2,      & ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
-      wp3_on_wp2_zt      ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
+      invrs_tau_C4_zm,  & ! Inverse time-scale for C4 terms on mom. levels [1/s]
+      invrs_tau_C14_zm, & ! Inverse time-scale for C14 terms on mom. levels [1/s]
+      wm_zm,            & ! w-wind component on momentum levels   [m/s]
+      rtm,              & ! Total water mixing ratio (t-levs)     [kg/kg]
+      wprtp,            & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
+      thlm,             & ! Liquid potential temp. (t-levs)       [K]
+      wpthlp,           & ! <w'th_l'> (momentum levels)           [(m K)/s]
+      wpthvp,           & ! <w'th_v'> (momentum levels)           [(m K)/s]
+      um,               & ! u wind (thermodynamic levels)         [m/s]
+      vm,               & ! v wind (thermodynamic levels)         [m/s]
+      wp2,              & ! <w'^2> (momentum levels)              [m^2/s^2]
+      wp2_zt,           & ! <w'^2> interpolated to thermo. levels [m^2/s^2]
+      wp3,              & ! <w'^3> (thermodynamic levels)         [m^3/s^3]
+      upwp,             & ! <u'w'> (momentum levels)              [m^2/s^2]
+      vpwp,             & ! <v'w'> (momentum levels)              [m^2/s^2]
+      sigma_sqd_w,      & ! sigma_sqd_w (momentum levels)         [-]
+      Skw_zm,           & ! Skewness of w on momentum levels      [-]
+      wprtp2,           & ! <w'r_t'^2> (thermodynamic levels)     [m/s (kg/kg)^2]
+      wpthlp2,          & ! <w'th_l'^2> (thermodynamic levels)    [m/s K^2]
+      wprtpthlp,        & ! <w'r_t'th_l'> (thermodynamic levels)  [m/s (kg/kg) K]
+      Kh_zt,            & ! Eddy diffusivity on thermo. levels    [m^2/s]
+      rtp2_forcing,     & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing,    & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing,  & ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
+      rho_ds_zm,        & ! Dry, static density on momentum levs. [kg/m^3]
+      rho_ds_zt,        & ! Dry, static density on thermo. levels [kg/m^3]
+      invrs_rho_ds_zm,  & ! Inv. dry, static density @ mom. levs. [m^3/kg]
+      thv_ds_zm,        & ! Dry, base-state theta_v on mom. levs. [K]
+      cloud_frac,       & ! Cloud fraction (thermodynamic levels) [-]
+      wp3_on_wp2,       & ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
+      wp3_on_wp2_zt       ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
 
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -248,6 +254,12 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wp2_splat    ! Gustiness tendency for wp2 equation
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -303,6 +315,13 @@ module advance_xp2_xpyp_module
       sclrp2_old,    & ! Saved value of <sclr'^2>     [units vary]
       sclrprtp_old,  & ! Saved value of <sclr'rt'>    [units vary]
       sclrpthlp_old    ! Saved value of <sclr'thl'>   [units vary]
+
+    real( kind = core_rknd ) :: & 
+      C2rt,    & ! CLUBB tunable parameter C2rt
+      C2thl,   & ! CLUBB tunable parameter C2thl
+      C2rtthl, & ! CLUBB tunable parameter C2rtthl
+      C4,      & ! CLUBB tunable parameter C4
+      C14        ! CLUBB tunable parameter C14
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, &
@@ -382,45 +401,54 @@ module advance_xp2_xpyp_module
     
     !---------------------------- Begin Code ----------------------------------
 
+    ! Unpack CLUBB tunable parameters
+    C2rt = clubb_params(iC2rt)
+    C2thl = clubb_params(iC2thl)
+    C2rtthl = clubb_params(iC2rtthl)
+    C4 = clubb_params(iC4)
+    C14 = clubb_params(iC14)
+
     if ( clubb_at_least_debug_level( 0 ) ) then
       ! Assertion check for C_uu_shr
-      if ( C_uu_shr > one .or. C_uu_shr < zero ) then
+      if ( clubb_params(iC_uu_shr) > one &
+           .or. clubb_params(iC_uu_shr) < zero ) then
         write(fstderr,*) "The C_uu_shr variable is outside the valid range"
         err_code = clubb_fatal_error
         return
       end if
-      if ( C_uu_buoy > one .or. C_uu_buoy < zero ) then
+      if ( clubb_params(iC_uu_buoy) > one &
+           .or. clubb_params(iC_uu_buoy) < zero ) then
         write(fstderr,*) "The C_uu_buoy variable is outside the valid range"
         err_code = clubb_fatal_error
         return
       end if
     end if
 
-     ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
-     if ( l_C2_cloud_frac ) then
+    ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
+    if ( l_C2_cloud_frac ) then
 
-        do k = 1, gr%nz, 1
-           if ( cloud_frac(k) >= cloud_frac_min ) then
-              C2rt_1d(k) = C2rt * max( min_cloud_frac_mult, cloud_frac(k) )
-              C2thl_1d(k) = C2thl * max( min_cloud_frac_mult, cloud_frac(k) )
-              C2rtthl_1d(k) = C2rtthl &
-                              * max( min_cloud_frac_mult, cloud_frac(k) )
-           else ! cloud_frac(k) < cloud_frac_min
-              C2rt_1d(k)    = C2rt
-              C2thl_1d(k)   = C2thl
-              C2rtthl_1d(k) = C2rtthl
-           endif ! cloud_frac(k) >= cloud_frac_min
-        enddo ! k = 1, gr%nz, 1
+       do k = 1, gr%nz, 1
+          if ( cloud_frac(k) >= cloud_frac_min ) then
+             C2rt_1d(k) = C2rt * max( min_cloud_frac_mult, cloud_frac(k) )
+             C2thl_1d(k) = C2thl * max( min_cloud_frac_mult, cloud_frac(k) )
+             C2rtthl_1d(k) = C2rtthl &
+                             * max( min_cloud_frac_mult, cloud_frac(k) )
+          else ! cloud_frac(k) < cloud_frac_min
+             C2rt_1d(k)    = C2rt
+             C2thl_1d(k)   = C2thl
+             C2rtthl_1d(k) = C2rtthl
+          endif ! cloud_frac(k) >= cloud_frac_min
+       enddo ! k = 1, gr%nz, 1
 
-     else
+    else
 
-        C2rt_1d    = C2rt
-        C2thl_1d   = C2thl
-        C2rtthl_1d = C2rtthl
+       C2rt_1d    = C2rt
+       C2thl_1d   = C2thl
+       C2rtthl_1d = C2rtthl
 
-     endif ! l_C2_cloud_frac
+    endif ! l_C2_cloud_frac
 
-     C2sclr_1d = C2rt  ! Use rt value for now
+    C2sclr_1d = C2rt  ! Use rt value for now
 
     C4_1d = two_thirds * C4
     C14_1d = one_third * C14
@@ -440,12 +468,12 @@ module advance_xp2_xpyp_module
       ! passive scalars.  The variances and covariances are located on the
       ! momentum levels.  Kw2 is located on the thermodynamic levels.
       ! Kw2 = c_K2 * Kh_zt
-      Kw2(k) = c_K2 * Kh_zt(k)
+      Kw2(k) = clubb_params(ic_K2) * Kh_zt(k)
 
       ! Kw9 is used for variances up2 and vp2.  The variances are located on
       ! the momentum levels.  Kw9 is located on the thermodynamic levels.
       ! Kw9 = c_K9 * Kh_zt
-      Kw9(k) = c_K9 * Kh_zt(k)
+      Kw9(k) = clubb_params(ic_K9) * Kh_zt(k)
 
     enddo
 
@@ -471,9 +499,9 @@ module advance_xp2_xpyp_module
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm,              & ! In
                                  wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w,             & ! In
                                  pdf_implicit_coefs_terms, l_scalar_calc,            & ! In
-                                 iiPDF_type, l_upwind_xpyp_ta,                       & ! In
+                                 clubb_params(ibeta), iiPDF_type, l_upwind_xpyp_ta,  & ! In
                                  l_godunov_upwind_xpyp_ta,                           & ! In 
-                                 stats_zt,                        & ! intent(inout)
+                                 stats_zt,                                           & ! InOut
                                  lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp,    & ! Out
                                  lhs_ta_wpup2, lhs_ta_wpvp2, lhs_ta_wpsclrp2,        & ! Out
                                  lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,              & ! Out
@@ -483,7 +511,7 @@ module advance_xp2_xpyp_module
                                  
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2). This is the 
     ! diffusion term for all LHS matrices except <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw2(:), Kw2_zm(:), nu2_vert_res_dep(:),  & ! In
+    call diffusion_zm_lhs( gr, Kw2(:), Kw2_zm(:), nu_vert_res_dep%nu2,  & ! In
                            gr%invrs_dzt(:), gr%invrs_dzm(:),            & ! In
                            invrs_rho_ds_zm(:), rho_ds_zt(:),            & ! In
                            lhs_diff(:,:)                     )            ! Out
@@ -554,7 +582,7 @@ module advance_xp2_xpyp_module
     !!!!!***** u'^2 / v'^2 *****!!!!!
     
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw9(:), Kw9_zm(:), nu9_vert_res_dep(:),  & !In
+    call diffusion_zm_lhs( gr, Kw9(:), Kw9_zm(:), nu_vert_res_dep%nu9,  & !In
                            gr%invrs_dzt(:), gr%invrs_dzm(:),            & ! In
                            invrs_rho_ds_zm(:), rho_ds_zt(:),            & ! In
                            lhs_diff_uv(:,:)                  )            ! Out
@@ -571,16 +599,17 @@ module advance_xp2_xpyp_module
        ! Solve for up2
 
        ! Implicit contributions to term up2
-       call xp2_xpyp_lhs( gr, invrs_tau_wp2_zm, C4_1d, invrs_tau_wp2_zm, C14_1d, dt, & ! In
+       call xp2_xpyp_lhs( gr, invrs_tau_C4_zm, C4_1d, invrs_tau_C14_zm, C14_1d, dt, & ! In
                           lhs_ta_wpup2, lhs_ma, lhs_diff_uv, & ! In
                           lhs ) ! Out
 
        ! Explicit contributions to up2
        call xp2_xpyp_uv_rhs( gr, xp2_xpyp_up2, dt, & ! In
                              wp2, wpthvp, & ! In
-                             C4_1d, C14_1d, invrs_tau_wp2_zm,  & ! In
+                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
+                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,1) ) ! Out
@@ -605,16 +634,17 @@ module advance_xp2_xpyp_module
        ! Solve for vp2
 
        ! Implicit contributions to term vp2
-       call xp2_xpyp_lhs( gr, invrs_tau_wp2_zm, C4_1d, invrs_tau_wp2_zm, C14_1d, dt, & ! In
+       call xp2_xpyp_lhs( gr, invrs_tau_C4_zm, C4_1d, invrs_tau_C14_zm, C14_1d, dt, & ! In
                           lhs_ta_wpvp2, lhs_ma, lhs_diff_uv, & ! In
                           lhs ) ! Out
 
        ! Explicit contributions to vp2
        call xp2_xpyp_uv_rhs( gr, xp2_xpyp_vp2, dt, & ! In
                              wp2, wpthvp, & ! In
-                             C4_1d, C14_1d, invrs_tau_wp2_zm, & ! In
+                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
+                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
                              lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,1) ) ! Out
@@ -641,16 +671,17 @@ module advance_xp2_xpyp_module
        ! ADG1 allows up2 and vp2 to use the same LHS.
 
        ! Implicit contributions to term up2/vp2
-       call xp2_xpyp_lhs( gr, invrs_tau_wp2_zm, C4_1d, invrs_tau_wp2_zm, C14_1d, dt, & ! In
+       call xp2_xpyp_lhs( gr, invrs_tau_C4_zm, C4_1d, invrs_tau_C14_zm, C14_1d, dt, & ! In
                           lhs_ta_wpup2, lhs_ma, lhs_diff_uv, & ! In
                           lhs ) ! Out
 
        ! Explicit contributions to up2
        call xp2_xpyp_uv_rhs( gr, xp2_xpyp_up2, dt, & ! In
                              wp2, wpthvp, & ! In
-                             C4_1d, C14_1d, invrs_tau_wp2_zm,  & ! In
+                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
+                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,1) ) ! Out
@@ -658,9 +689,10 @@ module advance_xp2_xpyp_module
        ! Explicit contributions to vp2
        call xp2_xpyp_uv_rhs( gr, xp2_xpyp_vp2, dt, & ! In
                              wp2, wpthvp, & ! In
-                             C4_1d, C14_1d, invrs_tau_wp2_zm,  & ! In
+                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
+                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
                              stats_zm, & ! intent(inout)
                              uv_rhs(:,2) ) ! Out
@@ -773,7 +805,9 @@ module advance_xp2_xpyp_module
       endif
       
       do k = 1, gr%nz
-        threshold = max( rt_tol**2, rtp2_clip_coef * zt2zm( gr, rtm, k )**2 )
+        threshold &
+        = max( rt_tol**2, &
+               clubb_params(irtp2_clip_coef) * zt2zm( gr, rtm, k )**2 )
         if ( rtp2(k) > threshold ) then
           rtp2(k) = threshold
         end if
@@ -1035,7 +1069,8 @@ module advance_xp2_xpyp_module
           write(fstderr,*) "Intent(in)"
 
           write(fstderr,*) "invrs_tau_xp2_zm = ", invrs_tau_xp2_zm
-          write(fstderr,*) "invrs_tau_wp2_zm = ", invrs_tau_wp2_zm
+          write(fstderr,*) "invrs_tau_C4_zm = ",invrs_tau_C4_zm
+          write(fstderr,*) "invrs_tau_C14_zm = ",invrs_tau_C14_zm
           write(fstderr,*) "wm_zm = ", wm_zm
           write(fstderr,*) "rtm = ", rtm
           write(fstderr,*) "wprtp = ", wprtp
@@ -2295,7 +2330,7 @@ module advance_xp2_xpyp_module
   !==================================================================================
   subroutine xp2_xpyp_uv_rhs( gr, solve_type, dt, & ! In
                               wp2, wpthvp, & ! In
-                              C4_1d, C14_1d, invrs_tau_wp2_zm,  & ! In
+                              C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
                               thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                               lhs_ta, rhs_ta, &
@@ -2386,20 +2421,21 @@ module advance_xp2_xpyp_module
      lhs_ta     ! LHS turbulent advection term
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      rhs_ta,                 & ! RHS turbulent advection terms
-      wp2,                    & ! w'^2 (momentum levels)              [m^2/s^2]
-      wpthvp,                 & ! w'th_v' (momentum levels)             [K m/s]
-      C4_1d,                  & ! C4 in a 1-d array                         [-]
-      C14_1d,                 & ! C14 in a 1-d array                        [-]
-      invrs_tau_wp2_zm,       & ! Inverse time-scale for wp2 (up2, vp2) on m-levs.  [1/s]
-      xam,                    & ! x_am (thermodynamic levels)             [m/s]
-      xbm,                    & ! x_bm (thermodynamic levels)             [m/s]
-      wpxap,                  & ! w'x_a' (momentum levels)            [m^2/s^2]
-      wpxbp,                  & ! w'x_b' (momentum levels)            [m^2/s^2]
-      xap2,                   & ! x_a'^2 (momentum levels)            [m^2/s^2]
-      xbp2,                   & ! x_b'^2 (momentum levels)            [m^2/s^2]
-      thv_ds_zm,              & ! Dry, base-state theta_v on momentum levs. [K]
-      wp2_splat    ! Tendency of <w'^2> due to splatting of eddies  [m^2/s^3]
+      rhs_ta,           & ! RHS turbulent advection terms
+      wp2,              & ! w'^2 (momentum levels)                      [m^2/s^2]
+      wpthvp,           & ! w'th_v' (momentum levels)                     [K m/s]
+      C4_1d,            & ! C4 in a 1-d array                                 [-]
+      C14_1d,           & ! C14 in a 1-d array                                [-]
+      invrs_tau_C4_zm,  & ! Inverse time-scale for C4 terms on mom. levels  [1/s]
+      invrs_tau_C14_zm, & ! Inverse time-scale for C14 terms on mom. levels [1/s]
+      xam,              & ! x_am (thermodynamic levels)                     [m/s]
+      xbm,              & ! x_bm (thermodynamic levels)                     [m/s]
+      wpxap,            & ! w'x_a' (momentum levels)                    [m^2/s^2]
+      wpxbp,            & ! w'x_b' (momentum levels)                    [m^2/s^2]
+      xap2,             & ! x_a'^2 (momentum levels)                    [m^2/s^2]
+      xbp2,             & ! x_b'^2 (momentum levels)                    [m^2/s^2]
+      thv_ds_zm,        & ! Dry, base-state theta_v on momentum levs.         [K]
+      wp2_splat           ! Tendency of <w'^2> due to splatting of eddies [m^2/s^3]
 
     real( kind = core_rknd ), intent(in) :: & 
       C4,        & ! Model parameter C_4                         [-]
@@ -2474,13 +2510,14 @@ module advance_xp2_xpyp_module
                                                 wpxap(k), wpxap(k), gr%invrs_dzm(k) )
 
         ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
-        rhs(k) = rhs(k) + term_pr1( C4, C14, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) )
+        rhs(k) = rhs(k) + term_pr1( C4, C14, xbp2(k), wp2(k), &
+                                    invrs_tau_C4_zm(k), invrs_tau_C14_zm(k) )
 
         ! RHS contribution from "over-implicit" weighted time step
         ! for LHS dissipation term 1 (dp1) and pressure term 1 (pr1).
         rhs(k) = rhs(k) + ( one - gamma_over_implicit_ts ) &
-                        * ( - term_dp1_lhs( C4_1d(k), invrs_tau_wp2_zm(k) ) * xap2(k) &
-                            - term_dp1_lhs( C14_1d(k), invrs_tau_wp2_zm(k) ) * xap2(k) )
+                        * ( - term_dp1_lhs( C4_1d(k), invrs_tau_C4_zm(k) ) * xap2(k) &
+                            - term_dp1_lhs( C14_1d(k), invrs_tau_C14_zm(k) ) * xap2(k) )
 
         ! RHS pressure term 2 (pr2).
         rhs(k) = rhs(k) + term_pr2( gr, C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), &
@@ -2521,14 +2558,15 @@ module advance_xp2_xpyp_module
 
               tmp  &
               = gamma_over_implicit_ts  &
-              * term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
+              * term_dp1_lhs( two_thirds*C4, invrs_tau_C4_zm(k) )
               zmscr11(k) = -tmp
               call stat_begin_update_pt( ixapxbp_pr1, k, & ! Intent(in)
-                   -term_pr1( C4, zero, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), & ! Intent(in)
+                   -term_pr1( C4, zero, xbp2(k), wp2(k), &
+                              invrs_tau_C4_zm(k), invrs_tau_C14_zm(k) ), & ! Intent(in)
                                          stats_zm )        ! Intent(inout)
 
               tmp  &
-              = term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
+              = term_dp1_lhs( two_thirds*C4, invrs_tau_C4_zm(k) )
               call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
                     + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
                     * ( - tmp * xap2(k) ),  &               ! Intent(in)
@@ -2539,14 +2577,15 @@ module advance_xp2_xpyp_module
             if ( ixapxbp_dp1 > 0 ) then
               tmp  &
               = gamma_over_implicit_ts  &
-              * term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
+              * term_dp1_lhs( one_third*C14, invrs_tau_C14_zm(k) )
               zmscr01(k) = -tmp
               call stat_begin_update_pt( ixapxbp_dp1, k, & ! Intent(in)  
-                   -term_pr1( zero, C14, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), &! Intent(in)
+                   -term_pr1( zero, C14, xbp2(k), wp2(k), &
+                              invrs_tau_C4_zm(k), invrs_tau_C14_zm(k) ), &! Intent(in)
                                          stats_zm )        ! Intent(inout)
 
               tmp  &
-              = term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
+              = term_dp1_lhs( one_third*C14, invrs_tau_C14_zm(k) )
               call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
                     + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
                     * ( - tmp * xap2(k) ),  &               ! Intent(in)
@@ -2944,7 +2983,7 @@ module advance_xp2_xpyp_module
                                      rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                      wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w, &
                                      pdf_implicit_coefs_terms, l_scalar_calc, &
-                                     iiPDF_type, l_upwind_xpyp_ta, &
+                                     beta, iiPDF_type, l_upwind_xpyp_ta, &
                                      l_godunov_upwind_xpyp_ta, & 
                                      stats_zt, &
                                      lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp, &
@@ -2977,9 +3016,6 @@ module advance_xp2_xpyp_module
         one_third, &
         zero, &
         zero_threshold
-      
-    use parameters_tunable, only: &
-        beta
       
     use parameters_model, only: &
         sclr_dim  ! Number of passive scalar variables
@@ -3061,6 +3097,9 @@ module advance_xp2_xpyp_module
     
     logical, intent(in) :: &
       l_scalar_calc
+
+    real( kind = core_rknd ), intent(in) :: &
+      beta    ! CLUBB tunable parameter beta
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -4562,7 +4601,7 @@ module advance_xp2_xpyp_module
   end function term_dp1_rhs
 
   !=============================================================================
-  pure function term_pr1( C4, C14, xbp2, wp2, invrs_tau_zm ) & 
+  pure function term_pr1( C4, C14, xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm ) & 
   result( rhs )
 
     ! Description:
@@ -4654,18 +4693,19 @@ module advance_xp2_xpyp_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      C4,          & ! Model parameter C_4                         [-]
-      C14,         & ! Model parameter C_14                        [-]
-      xbp2,        & ! v'^2(k) (if solving for u'^2) or vice versa [m^2/s^2]
-      wp2,         & ! w'^2(k)                                     [m^2/s^2]
-      invrs_tau_zm   ! Time-scale tau at momentum levels (k)       [1/s]
+      C4,              & ! Model parameter C_4                                 [-]
+      C14,             & ! Model parameter C_14                                [-]
+      xbp2,            & ! v'^2(k) (if solving for u'^2) or vice versa         [m^2/s^2]
+      wp2,             & ! w'^2(k)                                             [m^2/s^2]
+      invrs_tau_C4_zm, & ! Time-scale tau for C4 terms at momentum levels (k)  [1/s]
+      invrs_tau_C14_zm   ! Time-scale tau for C14 terms at momentum levels (k) [1/s]
 
     ! Return Variable
     real( kind = core_rknd ) :: rhs
 
-    rhs = + one_third * C4 * ( xbp2 + wp2 ) * invrs_tau_zm  &
-          - one_third * C14 * ( xbp2 + wp2 ) * invrs_tau_zm  &
-          + C14 * invrs_tau_zm * w_tol_sqd
+    rhs = + one_third * C4 * ( xbp2 + wp2 ) * invrs_tau_C4_zm  &
+          - one_third * C14 * ( xbp2 + wp2 ) * invrs_tau_C14_zm  &
+          + C14 * invrs_tau_C14_zm * w_tol_sqd
 
     return
   end function term_pr1

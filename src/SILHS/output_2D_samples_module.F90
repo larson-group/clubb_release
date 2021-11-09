@@ -114,6 +114,7 @@ module output_2D_samples_module
 !-------------------------------------------------------------------------------
   subroutine output_2D_lognormal_dist_file &
              ( nz, num_samples, pdf_dim, X_nl_all_levs, &
+               clubb_params, &
                l_uv_nudge, &
                l_tke_aniso, &
                l_standard_term_ta )
@@ -126,7 +127,9 @@ module output_2D_samples_module
     use output_netcdf, only: write_netcdf ! Procedure(s)
 #endif
 
-    use clubb_precision, only: stat_rknd ! Constant(s)
+    use clubb_precision, only: stat_rknd, core_rknd ! Constant(s)
+
+    use parameter_indices, only: nparams ! Constant(s)
 
     use stats_variables, only: l_stats_last !Time-to-print flag
 
@@ -140,6 +143,9 @@ module output_2D_samples_module
 
     real(kind=stat_rknd), intent(in), dimension(num_samples,nz,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging
@@ -167,7 +173,8 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( l_uv_nudge, &
+    call write_netcdf( clubb_params, &
+                       l_uv_nudge, &
                        l_tke_aniso, &
                        l_standard_term_ta, &
                        lognormal_sample_file )
@@ -186,6 +193,7 @@ module output_2D_samples_module
   subroutine output_2D_uniform_dist_file &
              ( nz, num_samples, dp2, X_u_all_levs, X_mixt_comp_all_levs, &
                lh_sample_point_weights, &
+               clubb_params, &
                l_uv_nudge, &
                l_tke_aniso, &
                l_standard_term_ta )
@@ -201,6 +209,8 @@ module output_2D_samples_module
     use clubb_precision, only: &
       core_rknd, &          ! Precision(s)
       stat_rknd
+
+    use parameter_indices, only: nparams
 
     use stats_variables, only: l_stats_last !Time-to-print flag
 
@@ -220,6 +230,9 @@ module output_2D_samples_module
 
     real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_sample_point_weights ! Weight of each sample
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging
@@ -254,7 +267,8 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( l_uv_nudge, &
+    call write_netcdf( clubb_params, &
+                       l_uv_nudge, &
                        l_tke_aniso, &
                        l_standard_term_ta, &
                        uniform_sample_file )

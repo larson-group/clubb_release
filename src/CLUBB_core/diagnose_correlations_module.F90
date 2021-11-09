@@ -115,9 +115,6 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-!    use parameters_tunable, only:  &
-!        alpha_corr ! Constant(s)
-
     use constants_clubb, only: &
         max_mag_correlation
 
@@ -339,9 +336,6 @@ module diagnose_correlations_module
 !
 !    use pdf_parameter_module, only:  &
 !        pdf_parameter  ! Type
-!
-!    use parameters_tunable, only: &
-!        c_K_hm ! Variable(s)
 !
 !    use constants_clubb, only: &
 !        one ! Constant(s)

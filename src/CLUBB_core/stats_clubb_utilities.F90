@@ -1603,7 +1603,7 @@ module stats_clubb_utilities
   end subroutine stats_begin_timestep
 
   !-----------------------------------------------------------------------
-  subroutine stats_end_timestep( &
+  subroutine stats_end_timestep( clubb_params, &              ! intent(in)
                                  stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                  stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                                  stats_rad_zt, stats_rad_zm & ! intent(inout)
@@ -1623,6 +1623,9 @@ module stats_clubb_utilities
     !   None
     !-----------------------------------------------------------------------
 
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
     use constants_clubb, only: &
         fstderr ! Constant(s)
 
@@ -1639,6 +1642,9 @@ module stats_clubb_utilities
         clubb_i, & ! Variable(s)
         clubb_j
 
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
+
 #ifdef NETCDF
     use output_netcdf, only: & 
         write_netcdf ! Procedure(s)
@@ -1651,6 +1657,9 @@ module stats_clubb_utilities
     use stats_type, only: stats ! Type
 
     implicit none
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type (stats), target, intent(inout) :: &
       stats_zt, &
@@ -1766,35 +1775,42 @@ module stats_clubb_utilities
       else ! l_netcdf
 
 #ifdef NETCDF
-        call write_netcdf( l_uv_nudge, & ! intent(in)
+        call write_netcdf( clubb_params, & ! intent(in)
+                           l_uv_nudge, & ! intent(in)
                            l_tke_aniso, & ! intent(in)
                            l_standard_term_ta, & ! intent(in)
                            stats_zt%file  ) ! intent(inout)
-        call write_netcdf( l_uv_nudge, & ! intent(in)
+        call write_netcdf( clubb_params, & ! intent(in)
+                           l_uv_nudge, & ! intent(in)
                            l_tke_aniso, & ! intent(in)
                            l_standard_term_ta, & ! intent(in)
                            stats_zm%file  ) ! intent(inout)
         if ( l_silhs_out ) then
-          call write_netcdf( l_uv_nudge, & ! intent(in)
+          call write_netcdf( clubb_params, & ! intent(in)
+                             l_uv_nudge, & ! intent(in)
                              l_tke_aniso, & ! intent(in)
                              l_standard_term_ta, & ! intent(in)
                              stats_lh_zt%file  ) ! intent(inout)
-          call write_netcdf( l_uv_nudge, & ! intent(in)
+          call write_netcdf( clubb_params, & ! intent(in)
+                             l_uv_nudge, & ! intent(in)
                              l_tke_aniso, & ! intent(in)
                              l_standard_term_ta, & ! intent(in)
                              stats_lh_sfc%file  ) ! intent(inout)
         end if
         if ( l_output_rad_files ) then
-          call write_netcdf( l_uv_nudge, & ! intent(in)
+          call write_netcdf( clubb_params, & ! intent(in)
+                             l_uv_nudge, & ! intent(in)
                              l_tke_aniso, & ! intent(in)
                              l_standard_term_ta, & ! intent(in)
                              stats_rad_zt%file  ) ! intent(inout)
-          call write_netcdf( l_uv_nudge, & ! intent(in)
+          call write_netcdf( clubb_params, & ! intent(in)
+                             l_uv_nudge, & ! intent(in)
                              l_tke_aniso, & ! intent(in)
                              l_standard_term_ta, & ! intent(in)
                              stats_rad_zm%file  ) ! intent(inout)
         end if
-        call write_netcdf( l_uv_nudge, & ! intent(in)
+        call write_netcdf( clubb_params, & ! intent(in)
+                           l_uv_nudge, & ! intent(in)
                            l_tke_aniso, & ! intent(in)
                            l_standard_term_ta, & ! intent(in)
                            stats_sfc%file  ) ! intent(inout)

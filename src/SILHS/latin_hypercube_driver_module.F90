@@ -34,6 +34,7 @@ module latin_hypercube_driver_module
                mu1, mu2, sigma1, sigma2, &                                 ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                 ! intent(in)
                precip_fracs, silhs_config_flags, &                         ! intent(in)
+               clubb_params, &                                             ! intent(in)
                l_uv_nudge, &                                               ! intent(in)
                l_tke_aniso, &                                              ! intent(in)
                l_standard_term_ta, &                                       ! intent(in)
@@ -78,6 +79,9 @@ module latin_hypercube_driver_module
 
     use parameters_silhs, only: &
       silhs_config_flags_type ! Type(s)
+
+    use parameter_indices, only: &
+      nparams    ! Constant(s)
 
     use error_code, only: &
       clubb_at_least_debug_level  ! Procedure
@@ -155,6 +159,9 @@ module latin_hypercube_driver_module
 
     type(silhs_config_flags_type), intent(in) :: &
       silhs_config_flags ! Flags for the SILHS sampling code [-]
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging.
@@ -408,6 +415,7 @@ module latin_hypercube_driver_module
       do i = 1, ngrdcol
         call output_2D_lognormal_dist_file( nz, num_samples, pdf_dim, &
                                             real(X_nl_all_levs(i,:,:,:), kind = stat_rknd), &
+                                            clubb_params, &
                                             l_uv_nudge, &
                                             l_tke_aniso, &
                                             l_standard_term_ta )
@@ -422,6 +430,7 @@ module latin_hypercube_driver_module
                                           X_u_all_levs(i,:,:,:), &
                                           X_mixt_comp_all_levs(i,:,:), &
                                           lh_sample_point_weights(i,:,:), &
+                                          clubb_params, &
                                           l_uv_nudge, &
                                           l_tke_aniso, &
                                           l_standard_term_ta )

@@ -23,8 +23,12 @@ module new_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,      & ! In
+  subroutine new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,  & ! In
                              wprtp, wpthlp, rtpthlp,                    & ! In
+                             slope_coef_spread_DG_means_w,              & ! In
+                             pdf_component_stdev_factor_w,              & ! In
+                             coef_spread_DG_means_rt,                   & ! In
+                             coef_spread_DG_means_thl,                  & ! In
                              Skrt, Skthl,                               & ! I/O
                              mu_w_1, mu_w_2,                            & ! Out
                              mu_rt_1, mu_rt_2,                          & ! Out
@@ -69,12 +73,6 @@ module new_pdf_main
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
-    use parameters_tunable, only: &
-        slope_coef_spread_DG_means_w, & ! Variable(s)
-        pdf_component_stdev_factor_w, &
-        coef_spread_DG_means_rt, &
-        coef_spread_DG_means_thl
-
     use model_flags, only: &
         l_explicit_turbulent_adv_wp3,  & ! Variable(s)
         l_explicit_turbulent_adv_wpxp, &
@@ -99,6 +97,16 @@ module new_pdf_main
       wprtp,   & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
       wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
       rtpthlp    ! Covariance of rt and thl (overall)  [(kg/kg)K]
+
+    real( kind = core_rknd ), intent(in) :: &
+      ! Slope coefficient for the spread between the PDF component means of w.
+      slope_coef_spread_DG_means_w, &
+      ! Parameter to adjust the PDF component standard deviations of w.
+      pdf_component_stdev_factor_w, &
+      ! Coefficient for the spread between the PDF component means of rt.
+      coef_spread_DG_means_rt, &
+      ! Coefficient for the spread between the PDF component means of thl.
+      coef_spread_DG_means_thl
 
     ! Input/Output Variables
     ! These variables are input/output because their values may be clipped.
@@ -230,7 +238,7 @@ module new_pdf_main
 
 
     ! Vertical velocity, w, will always be the setter variable.
-    call calc_F_x_zeta_x_setter( gr, Skw,                          & ! In
+    call calc_F_x_zeta_x_setter( gr, Skw,                      & ! In
                                  slope_coef_spread_DG_means_w, & ! In
                                  pdf_component_stdev_factor_w, & ! In
                                  lambda_w,                     & ! In
@@ -239,7 +247,7 @@ module new_pdf_main
 
     ! Calculate the PDF parameters, including mixture fraction, for the
     ! setter variable, w.
-    call calc_setter_var_params( gr, wm, wp2, Skw, sgn_wp2,     & ! In
+    call calc_setter_var_params( gr, wm, wp2, Skw, sgn_wp2, & ! In
                                  F_w, zeta_w,               & ! In
                                  mu_w_1, mu_w_2, sigma_w_1, & ! Out
                                  sigma_w_2, mixt_frac,      & ! Out

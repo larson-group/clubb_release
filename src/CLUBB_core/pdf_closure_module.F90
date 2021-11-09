@@ -37,7 +37,7 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure( gr, hydromet_dim, p_in_Pa, exner, thv_ds,     &
+  subroutine pdf_closure( gr, hydromet_dim, p_in_Pa, exner, thv_ds, &
                           wm, wp2, wp3, sigma_sqd_w,                &
                           Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,   &
                           rtm, rtp2, wprtp,                         &
@@ -47,11 +47,13 @@ module pdf_closure_module
                           rtpthlp,                                  &
                           sclrm, wpsclrp, sclrp2,                   &
                           sclrprtp, sclrpthlp, Sksclr_in,           &
+                          gamma_Skw_fnc,                            &
 #ifdef GFDL
                           RH_crit, do_liquid_only_in_clubb,         & ! h1g, 2010-06-15
 #endif
                           wphydrometp, wp2hmp,                      &
                           rtphmp, thlphmp,                          &
+                          clubb_params,                             &
                           iiPDF_type,                               &
                           wpup2, wpvp2,                             &
                           wp2up2, wp2vp2, wp4,                      &
@@ -115,8 +117,14 @@ module pdf_closure_module
         mixt_frac_max_mag, & ! Variable(s)
         sclr_dim             ! Number of passive scalar variables
 
-    use parameters_tunable, only: & 
-        Skw_denom_coef ! Variable(s)
+    use parameter_indices, only: &
+        nparams,                       & ! Variable(s)
+        ibeta,                         &
+        iSkw_denom_coef,               &
+        islope_coef_spread_DG_means_w, &
+        ipdf_component_stdev_factor_w, &
+        icoef_spread_DG_means_rt,      &
+        icoef_spread_DG_means_thl
 
     use pdf_parameter_module, only:  &
         pdf_parameter,        & ! Variable Type
@@ -217,6 +225,9 @@ module pdf_closure_module
       sclrpthlp,   & ! sclr' th_l'                [units vary]
       Sksclr_in      ! Skewness of sclr           [-]
 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      gamma_Skw_fnc    ! Gamma as a function of skewness            [-]
+
 #ifdef  GFDL
     ! critial relative humidity for nucleation
     real( kind = core_rknd ), dimension( min(1,sclr_dim), 2 ), intent(in) ::  & ! h1g, 2010-06-15
@@ -231,6 +242,9 @@ module pdf_closure_module
       wp2hmp,      & ! Third-order moment:  < w'^2 hm' >    [(m/s)^2 <hm units>]
       rtphmp,      & ! Covariance of rt and a hydrometeor   [(kg/kg) <hm units>]
       thlphmp        ! Covariance of thl and a hydrometeor  [K <hm units>]
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -382,21 +396,29 @@ module pdf_closure_module
     
     ! To test pdf parameters
     real( kind = core_rknd ), dimension(gr%nz) ::  &
-    wm_clubb_pdf,    &
-    rtm_clubb_pdf,   &
-    thlm_clubb_pdf,  &
-    wp2_clubb_pdf,   &
-    rtp2_clubb_pdf,  &
-    thlp2_clubb_pdf, &
-    wp3_clubb_pdf,   &
-    rtp3_clubb_pdf,  &
-    thlp3_clubb_pdf, &
-    Skw_clubb_pdf,   &
-    Skrt_clubb_pdf,  &
-    Skthl_clubb_pdf
+      wm_clubb_pdf,    &
+      rtm_clubb_pdf,   &
+      thlm_clubb_pdf,  &
+      wp2_clubb_pdf,   &
+      rtp2_clubb_pdf,  &
+      thlp2_clubb_pdf, &
+      wp3_clubb_pdf,   &
+      rtp3_clubb_pdf,  &
+      thlp3_clubb_pdf, &
+      Skw_clubb_pdf,   &
+      Skrt_clubb_pdf,  &
+      Skthl_clubb_pdf
 
     real( kind = core_rknd ) :: &
       chi_at_ice_sat1, chi_at_ice_sat2
+
+    real( kind = core_rknd ) :: &
+      beta,                         & ! CLUBB tunable parameter beta
+      Skw_denom_coef,               & ! CLUBB tunable parameter Skw_denom_coef
+      slope_coef_spread_DG_means_w, & ! CLUBB tunable parameter
+      pdf_component_stdev_factor_w, & ! CLUBB tunable parameter
+      coef_spread_DG_means_rt,      & ! CLUBB tunable parameter
+      coef_spread_DG_means_thl        ! CLUBB tunable parameter
 
     logical, parameter :: &
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
@@ -496,6 +518,19 @@ module pdf_closure_module
 
     endif
 
+    ! Unpack CLUBB's tunable parameters
+    if ( ( iiPDF_type == iiPDF_ADG1 ) .or. ( iiPDF_type == iiPDF_ADG2 ) ) then
+       beta = clubb_params(ibeta)
+    elseif ( iiPDF_type == iiPDF_new ) then
+       slope_coef_spread_DG_means_w = clubb_params(islope_coef_spread_DG_means_w)
+       pdf_component_stdev_factor_w = clubb_params(ipdf_component_stdev_factor_w)
+       coef_spread_DG_means_rt = clubb_params(icoef_spread_DG_means_rt)
+       coef_spread_DG_means_thl = clubb_params(icoef_spread_DG_means_thl)
+    elseif ( iiPDF_type == iiPDF_new_hybrid ) then
+       slope_coef_spread_DG_means_w = clubb_params(islope_coef_spread_DG_means_w)
+       pdf_component_stdev_factor_w = clubb_params(ipdf_component_stdev_factor_w)
+    endif
+    
 
     ! To avoid recomputing
     sqrt_wp2 = sqrt( wp2 )
@@ -507,39 +542,39 @@ module pdf_closure_module
     ! theta-l, and passive scalar variables.
     if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
 
-       call ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,                             & ! In
+       call ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,                         & ! In
                              wp2, rtp2, thlp2, up2, vp2,                        & ! In
                              Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,          & ! In
-                             sigma_sqd_w, mixt_frac_max_mag,                    & ! In
+                             sigma_sqd_w, beta, mixt_frac_max_mag,              & ! In
                              sclrm, sclrp2, wpsclrp, l_scalar_calc,             & ! In
-                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
-                             pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                  & ! Out
-                             pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                & ! Out
+                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),          & ! Out
+                             pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),        & ! Out
+                             pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),      & ! Out
                              u_1, u_2, v_1, v_2,                                & ! Out
-                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),      & ! Out
-                             pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),    & ! Out
-                             pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),  & ! Out
+                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),     & ! Out
+                             pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),   & ! Out
+                             pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:), & ! Out
                              varnce_u_1, varnce_u_2,                            & ! Out
                              varnce_v_1, varnce_v_2,                            & ! Out
-                             pdf_params%mixt_frac(1,:),                              & ! Out
-                             pdf_params%alpha_rt(1,:), pdf_params%alpha_thl(1,:),         & ! Out
+                             pdf_params%mixt_frac(1,:),                         & ! Out
+                             pdf_params%alpha_rt(1,:), pdf_params%alpha_thl(1,:), & ! Out
                              alpha_u, alpha_v,                                  & ! Out
                              sclr1, sclr2, varnce_sclr1,                        & ! Out
                              varnce_sclr2, alpha_sclr )                           ! Out
 
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
 
-       call ADG2_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,                   & ! In
-                             Skw, wprtp, wpthlp, sqrt_wp2,                      & ! In
+       call ADG2_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,               & ! In
+                             Skw, wprtp, wpthlp, sqrt_wp2, beta,                & ! In
                              sclrm, sclrp2, wpsclrp, l_scalar_calc,             & ! In
-                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
-                             pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                  & ! Out
-                             pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                & ! Out
-                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),      & ! Out
-                             pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),    & ! Out
-                             pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),  & ! Out
-                             pdf_params%mixt_frac(1,:),                              & ! Out
-                             pdf_params%alpha_rt(1,:), pdf_params%alpha_thl(1,:),         & ! Out
+                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),          & ! Out
+                             pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),        & ! Out
+                             pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),      & ! Out
+                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),     & ! Out
+                             pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),   & ! Out
+                             pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:), & ! Out
+                             pdf_params%mixt_frac(1,:),                         & ! Out
+                             pdf_params%alpha_rt(1,:), pdf_params%alpha_thl(1,:), & ! Out
                              sigma_sqd_w, sclr1, sclr2,                         & ! Out
                              varnce_sclr1, varnce_sclr2, alpha_sclr )             ! Out
 
@@ -558,19 +593,23 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
 
-       call new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,               & ! In
-                            wprtp, wpthlp, rtpthlp,                             & ! In
-                            Skrt, Skthl,                                        & ! In/Out
-                            pdf_params%w_1(1,:), pdf_params%w_2(1,:),                     & ! Out
-                            pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                   & ! Out
-                            pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                 & ! Out
-                            pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),       & ! Out
-                            pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),     & ! Out
-                            pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),   & ! Out
-                            pdf_params%mixt_frac(1,:),                               & ! Out
-                            pdf_implicit_coefs_terms,                           & ! Out
-                            F_w, F_rt, F_thl, min_F_w, max_F_w,                 & ! Out
-                            min_F_rt, max_F_rt, min_F_thl, max_F_thl )            ! Out
+       call new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,                   & ! In
+                            wprtp, wpthlp, rtpthlp,                                     & ! In
+                            slope_coef_spread_DG_means_w,                               & ! In
+                            pdf_component_stdev_factor_w,                               & ! In
+                            coef_spread_DG_means_rt,                                    & ! In
+                            coef_spread_DG_means_thl,                                   & ! In
+                            Skrt, Skthl,                                                & ! In/Out
+                            pdf_params%w_1(1,:), pdf_params%w_2(1,:),                   & ! Out
+                            pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                 & ! Out
+                            pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),               & ! Out
+                            pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),     & ! Out
+                            pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),   & ! Out
+                            pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:), & ! Out
+                            pdf_params%mixt_frac(1,:),                                  & ! Out
+                            pdf_implicit_coefs_terms,                                   & ! Out
+                            F_w, F_rt, F_thl, min_F_w, max_F_w,                         & ! Out
+                            min_F_rt, max_F_rt, min_F_thl, max_F_thl )                    ! Out
 
     elseif ( iiPDF_type == iiPDF_TSDADG ) then
 
@@ -599,26 +638,29 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
 
-       call new_hybrid_pdf_driver( gr, wm, rtm, thlm, um, vm,              & ! In
+       call new_hybrid_pdf_driver( gr, wm, rtm, thlm, um, vm,          & ! In
                                    wp2, rtp2, thlp2, up2, vp2,         & ! In
                                    Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
                                    sclrm, sclrp2, wpsclrp,             & ! In
+                                   gamma_Skw_fnc,                      & ! In
+                                   slope_coef_spread_DG_means_w,       & ! In
+                                   pdf_component_stdev_factor_w,       & ! In
                                    Skrt, Skthl, Sku, Skv, Sksclr,      & ! I/O
                                    pdf_params%w_1(1,:), pdf_params%w_2(1,:),     & ! Out
                                    pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),   & ! Out
                                    pdf_params%thl_1(1,:), pdf_params%thl_2(1,:), & ! Out
                                    u_1, u_2, v_1, v_2,                 & ! Out
-                                   pdf_params%varnce_w_1(1,:),              & ! Out
-                                   pdf_params%varnce_w_2(1,:),              & ! Out
-                                   pdf_params%varnce_rt_1(1,:),             & ! Out
-                                   pdf_params%varnce_rt_2(1,:),             & ! Out
-                                   pdf_params%varnce_thl_1(1,:),            & ! Out
-                                   pdf_params%varnce_thl_2(1,:),            & ! Out
+                                   pdf_params%varnce_w_1(1,:),         & ! Out
+                                   pdf_params%varnce_w_2(1,:),         & ! Out
+                                   pdf_params%varnce_rt_1(1,:),        & ! Out
+                                   pdf_params%varnce_rt_2(1,:),        & ! Out
+                                   pdf_params%varnce_thl_1(1,:),       & ! Out
+                                   pdf_params%varnce_thl_2(1,:),       & ! Out
                                    varnce_u_1, varnce_u_2,             & ! Out
                                    varnce_v_1, varnce_v_2,             & ! Out
                                    sclr1, sclr2,                       & ! Out
                                    varnce_sclr1, varnce_sclr2,         & ! Out
-                                   pdf_params%mixt_frac(1,:),               & ! Out
+                                   pdf_params%mixt_frac(1,:),          & ! Out
                                    pdf_implicit_coefs_terms,           & ! Out
                                    F_w, min_F_w, max_F_w               ) ! Out
 
@@ -1480,6 +1522,8 @@ endif
             * ( ( pdf_params%thl_2(1,:) - thlm )**2 + three * pdf_params%varnce_thl_2(1,:) )
 
         ! Skewness
+        Skw_denom_coef = clubb_params(iSkw_denom_coef)
+
         Skw_clubb_pdf &
         = wp3_clubb_pdf &
           / ( wp2_clubb_pdf + Skw_denom_coef * w_tol**2 )**1.5_core_rknd

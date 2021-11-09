@@ -57,6 +57,7 @@ module setup_clubb_pdf_params
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
                                    pdf_params, l_stats_samp, &                 ! Intent(in)
+                                   clubb_params, &                             ! Intent(in)
                                    iiPDF_type, &                               ! Intent(in)
                                    l_use_precip_frac, &                        ! Intent(in)
                                    l_predict_upwp_vpwp, &                      ! Intent(in)
@@ -119,8 +120,11 @@ module setup_clubb_pdf_params
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
 
-    use parameters_tunable, only: &
-        c_K_hm
+    use parameter_indices, only: &
+        nparams,         & ! Variable(s)
+        ic_K_hm,         &
+        iomicron,        &
+        izeta_vrnce_rat
 
     use pdf_utilities, only: &
         calc_xp2,                  &  ! Procedure(s)
@@ -206,6 +210,9 @@ module setup_clubb_pdf_params
 
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
       iiPDF_type    ! Selected option for the two-component normal (double
@@ -336,6 +343,10 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ), dimension(nz) :: &
       rtp2_zt_from_chi
+ 
+    real( kind = core_rknd ) :: &
+      omicron,        & ! Relative width parameter, omicron = R / Rmax    [-]
+      zeta_vrnce_rat    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2    [-]
 
     logical :: l_corr_array_scaling
 
@@ -418,7 +429,7 @@ module setup_clubb_pdf_params
                             hydromet(:,:,:), cloud_frac(:,:), cloud_frac_1(:,:), & ! In
                             cloud_frac_2(:,:), ice_supersat_frac(:,:),           & ! In
                             ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:),  & ! In
-                            mixt_frac(:,:), l_stats_samp,                        & ! In
+                            mixt_frac(:,:), clubb_params, l_stats_samp,          & ! In
                             stats_sfc,                                           & ! intent(inout)
                             precip_frac(:,:),                                    & ! Out
                             precip_frac_1(:,:),                                  & ! Out
@@ -572,8 +583,9 @@ module setup_clubb_pdf_params
       
       do j = 1, ngrdcol
 
-        wpNcnp_zm(j,1:nz-1) = xpwp_fnc( -c_K_hm * Kh_zm(j,1:nz-1), Ncnm(j,1:nz-1), &
-                                     Ncnm(j,2:nz), gr%invrs_dzm(1:nz-1) )
+        wpNcnp_zm(j,1:nz-1) &
+        = xpwp_fnc( -clubb_params(ic_K_hm) * Kh_zm(j,1:nz-1), Ncnm(j,1:nz-1), &
+                    Ncnm(j,2:nz), gr%invrs_dzm(1:nz-1) )
 
         ! Boundary conditions; We are assuming zero flux at the top.
         wpNcnp_zm(j,nz) = zero
@@ -592,6 +604,10 @@ module setup_clubb_pdf_params
 
       end do
     end if ! l_calc_w_corr
+
+    ! Unpack CLUBB parameters
+    omicron = clubb_params(iomicron)
+    zeta_vrnce_rat = clubb_params(izeta_vrnce_rat)
 
     !!! Calculate the means and standard deviations involving PDF variables
     !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm in-precip)
@@ -616,6 +632,7 @@ module setup_clubb_pdf_params
                              thl_1(:,:),                                    & ! Intent(in)
                              thl_2(:,:),                                    & ! Intent(in)
                              pdf_dim,                                       & ! Intent(in)
+                             omicron, zeta_vrnce_rat,                       & ! Intent(in)
                              l_const_Nc_in_cloud,                           & ! Intent(in)
                              mu_x_1(:,:,:), mu_x_2(:,:,:),                  & ! Intent(out)
                              sigma_x_1(:,:,:), sigma_x_2(:,:,:),            & ! Intent(out)
@@ -920,6 +937,7 @@ module setup_clubb_pdf_params
                                  stdev_eta_1, stdev_eta_2,      & ! Intent(in)
                                  thl_1, thl_2,                  & ! Intent(in)
                                  pdf_dim,                       & ! Intent(in)
+                                 omicron, zeta_vrnce_rat,       & ! Intent(in)
                                  l_const_Nc_in_cloud,           & ! Intent(in)
                                  mu_x_1, mu_x_2,                & ! Intent(out)
                                  sigma_x_1, sigma_x_2,          & ! Intent(out)
@@ -951,10 +969,6 @@ module setup_clubb_pdf_params
 
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
-
-    use parameters_tunable, only: &
-        omicron,        & ! Variable(s)
-        zeta_vrnce_rat
 
     use corr_varnce_module, only: &
         hmp2_ip_on_hmm2_ip, & ! Variable(s)
@@ -1001,6 +1015,10 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      omicron,        & ! Relative width parameter, omicron = R / Rmax    [-]
+      zeta_vrnce_rat    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2    [-]
 
     logical, intent(in) :: &
       l_const_Nc_in_cloud ! Use a constant cloud droplet conc. within cloud (K&K)

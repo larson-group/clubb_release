@@ -61,8 +61,14 @@ module spurious_source_test
     use advance_xm_wpxp_module, only: &
         advance_xm_wpxp    ! Procedure(s)
 
+    use parameter_indices, only: &
+        nparams
+
     use parameters_tunable, only: &
-        adj_low_res_nu    ! Procedure(s)
+        set_default_parameters, & ! Procedure(s)
+        read_parameters, &
+        adj_low_res_nu, &
+        nu_vertical_res_dep    ! Type(s)
 
     use fill_holes, only: &
         vertical_integral    ! Procedure(s)
@@ -315,6 +321,40 @@ module spurious_source_test
 
     integer :: iter, k, i  ! Loop indices
 
+    real( kind = core_rknd ), dimension(nparams) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+  
+    integer, parameter :: iunit = 10
+
+    character(len=13), parameter :: &
+      namelist_filename = ""
+
+    real( kind = core_rknd ) :: & 
+      C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
+      C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
+      C7, C7b, C7c, C8, C8b, C10, & 
+      C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
+      C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, & 
+      C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
+      c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
+      c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
+      slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
+      coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
+      gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+      omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
+      lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
+      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
+      Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
+      rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+      C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
+      C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+      C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max
+
     integer :: &
       iiPDF_type,          & ! Selected option for the two-component normal
                              ! (double Gaussian) PDF type to use for the w, rt,
@@ -427,6 +467,59 @@ module spurious_source_test
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn     ! Use TKE in eddy diffusion for wp2 and wp3
 
+    ! Set the default tunable parameter values
+    call set_default_parameters( &
+               C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
+               C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
+               C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
+               C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
+               C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+               C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
+               c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
+               c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
+               slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
+               coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
+               gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+               omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
+               lambda0_stability_coef, mult_coef, taumin, taumax, &
+               Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+               Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
+               thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
+               Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
+               altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
+               C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & 
+               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
+               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max )
+
+    ! Read in model parameter values
+    call read_parameters( iunit, namelist_filename, &
+                          C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
+                          C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
+                          C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
+                          C11, C11b, C11c, C12, C13, C14, C_wp2_pr_dfsn, C_wp3_pr_tp, &
+                          C_wp3_pr_turb, C_wp3_pr_dfsn, C_wp2_splat, &
+                          C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
+                          c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
+                          c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
+                          slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
+                          coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
+                          gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+                          omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
+                          lambda0_stability_coef, mult_coef, taumin, taumax, &
+                          Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+                          Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
+                          thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
+                          Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
+                          altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
+                          C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & 
+                          C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+                          C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+                          C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
+                          Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+                          clubb_params )
+
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
                                          l_use_precip_frac, &
@@ -493,9 +586,11 @@ module spurious_source_test
                      gr, begin_height, end_height              )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
-    call adj_low_res_nu( gr, gr%nz, grid_type, deltaz, &
+    call adj_low_res_nu( gr%nz, grid_type, deltaz, &
                          momentum_heights, thermodynamic_heights, &
-                         l_prescribed_avg_deltaz )
+                         l_prescribed_avg_deltaz, mult_coef, &
+                         nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &
+                         nu_vert_res_dep )
 
     dt = 300.0_core_rknd
 
@@ -843,6 +938,7 @@ module spurious_source_test
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef, &
+                             clubb_params, nu_vert_res_dep, &
                              iiPDF_type, &
                              l_predict_upwp_vpwp, &
                              l_diffuse_rtm_and_thlm, &
