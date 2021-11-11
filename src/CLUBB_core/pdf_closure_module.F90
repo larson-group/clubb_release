@@ -1274,8 +1274,7 @@ endif
 #endif
 
     if (iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
-                                 .or. iiPDF_type == iiPDF_new_hybrid &
-                                 .or. iiPDF_type == 7) then
+                                 .or. iiPDF_type == iiPDF_new_hybrid) then
       call calc_w_up_in_cloud( &
                      gr, pdf_params%mixt_frac(1,:), &                                    ! In
                      pdf_params%cloud_frac_1(1,:), pdf_params%cloud_frac_2(1,:), &       ! In
@@ -3076,26 +3075,26 @@ endif
 
     !----------- Local Variables -----------
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      wHm_1, wHm_2, &       ! product of w and Heaviside function
+      w_up_1, w_up_2, &       ! product of w and Heaviside function
       stdev_w_1, stdev_w_2  ! Standard deviation of w
       
     stdev_w_1 = sqrt(varnce_w_1)
     stdev_w_2 = sqrt(varnce_w_2)
     
-    wHm_1 &
+    w_up_1 &
     = one_half * w_1 &
         * (one + erf(w_1 / (sqrt_2 * max(eps, stdev_w_1)))) &
       + stdev_w_1 / sqrt_2pi &
           * exp(-one_half * (w_1 / max(eps, stdev_w_1)) ** 2)
-    wHm_2 &
+    w_up_2 &
     = one_half * w_2 &
         * (one + erf(w_2 / (sqrt_2 * max(eps, stdev_w_2)))) &
       + stdev_w_2 / sqrt_2pi &
           * exp(-one_half * (w_2 / max(eps, stdev_w_2)) ** 2)
 
     w_up_in_cloud &
-    = (mixt_frac * cloud_frac_1 * wHm_1 &
-        + (one - mixt_frac) * cloud_frac_2 * wHm_2) &
+    = (mixt_frac * cloud_frac_1 * w_up_1 &
+        + (one - mixt_frac) * cloud_frac_2 * w_up_2) &
       / (mixt_frac * max(eps, cloud_frac_1) &
         + (one - mixt_frac) * max(eps, cloud_frac_2))
 
