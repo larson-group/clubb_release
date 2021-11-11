@@ -191,7 +191,7 @@ program G_unit_tests
     l_pdf_parameter_tests = .true.,     & ! Flag for the PDF parameter tests
     l_spurious_source_test = .true.,    & ! Flag for the spurious source test
     l_tuner_tests = .true.,             & ! Flag for the tuner tests
-    l_w_up_in_cloud_test = .true.
+    l_w_up_in_cloud_test = .true.         ! Flag for the calc_w_up_in_cloud test
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &

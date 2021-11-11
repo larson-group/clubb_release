@@ -45,10 +45,7 @@ contains
     
     call w_up_in_cloud_setup_tests(gr, total_mismatches)
     
-    print *, "=================================================="
-    print *, " "
-    
-    if ( total_mismatches .eq. 0 ) then
+    if ( total_mismatches == 0 ) then
       print *, "Success!"
       w_up_in_cloud_tests_driver = 0 ! Exit Code = 0, Success!
     else  ! total_mismatches > 0
@@ -56,6 +53,9 @@ contains
       w_up_in_cloud_tests_driver = 1 ! Exit Code = 1, Fail
     endif
 
+    print *, " "
+    print *, "=================================================="
+    print *, " "
 
 return
 
@@ -87,7 +87,7 @@ return
     !
     !  Test cases for testing w_1 and w_2 simultaneously are:
     !  Case 1: C_1=C_2=1, a=0.5, sigma_w_1=sigma_w_2=0
-    !     Output is the average of w_1 and w_2
+    !     Output is the arithmetic average of w_1 and w_2
     ! References:
     !-----------------------------------------------------------------------
     use grid_class, only: &
@@ -131,12 +131,12 @@ return
       total_mismatches = 0
 
       ! For w_1:
-        ! Case 1
-      mixt_frac = one
-      cloud_frac_1 = zero
+      ! Case 1 - No clouds. Positive vertical velocity, with variation
+      mixt_frac = one         ! observe only comp. 1
+      cloud_frac_1 = zero     ! with no clouds
       cloud_frac_2 = zero
-      w_1 = one
-      varnce_w_1 = one
+      w_1 = one               ! with updraft
+      varnce_w_1 = one        ! and with variation in the vertical velocity
       w_2 = zero
       varnce_w_2 = zero
       result_cmp = zero
@@ -145,84 +145,113 @@ return
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
                               result)
-      total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) .ge. eps)
+      total_mismatches = total_mismatches &
+                          + COUNT(abs(result - result_cmp) >= eps)
       
-        ! Case 2
-      cloud_frac_1 = one
-      varnce_w_1 = zero
+      ! Case 2 - No variation. Positive vertical velocity.
+      mixt_frac = one
+      cloud_frac_1 = one    ! cloud_frac is now 1 for comp. 1
+      cloud_frac_2 = zero
+      varnce_w_1 = zero     ! and there is no variance in comp. 1
+      varnce_w_2 = zero
+      w_1 = one
+      w_2 = zero
       result_cmp = one
       call calc_w_up_in_cloud(gr, mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
                               result)
-      total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) .ge. eps)
+      total_mismatches = total_mismatches &
+                          + COUNT(abs(result - result_cmp) >= eps)
       
-        ! Case 3
-      w_1 = -one
+      ! Case 3 - Negative vertical velocity with sufficiently small sigma.
+      mixt_frac = one
+      cloud_frac_1 = one
+      cloud_frac_2 = zero
+      varnce_w_1 = zero
+      varnce_w_2 = zero
+      w_1 = -one            ! now we have purely downdraft
+      w_2 = -two        ! since, by convention, w_1 > w_2
       result_cmp = zero
       call calc_w_up_in_cloud(gr, mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
                               result)
-      total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) .ge. eps)
+      total_mismatches = total_mismatches &
+                          + COUNT(abs(result - result_cmp) >= eps)
       
       
       ! For w_2:
-        ! Case 1
-      mixt_frac = zero
+      ! Case 1 - No clouds. Positive vertical velocity, with variation
+      mixt_frac = zero      ! now we only observe comp. 2
       cloud_frac_1 = zero
-      w_1 = zero
+      cloud_frac_2 = zero   ! with no clouds
+      w_1 = two             ! w_1 has to be greater than w_2 by convention
+      w_2 = one             ! and updraft
       varnce_w_1 = zero
-      cloud_frac_2 = zero
-      w_2 = one
-      varnce_w_2 = one
+      varnce_w_2 = one      ! and variation in vertical velocity
       result_cmp = zero
       call calc_w_up_in_cloud(gr, mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
                               result)
-      total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) .ge. eps)
+      total_mismatches = total_mismatches &
+                          + COUNT(abs(result - result_cmp) >= eps)
       
-        ! Case 2
-      cloud_frac_2 = one
-      varnce_w_2 = zero
+      ! Case 2 - No variation. Positive vertical velocity.
+      mixt_frac = zero
+      cloud_frac_1 = zero  
+      cloud_frac_2 = one    ! now we have full clouds in comp. 2
+      varnce_w_1 = zero
+      varnce_w_2 = zero     ! and no variation
+      w_1 = two
+      w_2 = one
       result_cmp = one
       call calc_w_up_in_cloud(gr, mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
                               result)
-      total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) .ge. eps)
+      total_mismatches = total_mismatches &
+                          + COUNT(abs(result - result_cmp) >= eps)
       
-        ! Case 3
-      w_2 = -one
+      ! Case 3 - Negative vertical velocity with sufficiently small sigma.
+      mixt_frac = zero
+      cloud_frac_1 = zero  
+      cloud_frac_2 = one
+      varnce_w_1 = zero
+      varnce_w_2 = zero
+      w_1 = zero
+      w_2 = -one            ! now we have pure downdraft in comp. 2
       result_cmp = zero
       call calc_w_up_in_cloud(gr, mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
                               result)
-      total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) .ge. eps)
+      total_mismatches = total_mismatches &
+                          + COUNT(abs(result - result_cmp) >= eps)
       
       ! Test w_1 and w_2 together
-        ! Case 1
-      mixt_frac = one_half
-      cloud_frac_1 = one
-      w_1 = one
-      varnce_w_1 = zero
+      ! Equal weights, full clouds, pure updraft, no variation. 
+      mixt_frac = one_half  ! weigh both components equally
+      cloud_frac_1 = one    ! full clouds in both components
       cloud_frac_2 = one
-      w_2 = three
+      w_1 = three           ! updraft in both components
+      w_2 = one
+      varnce_w_1 = zero     ! no variation in both components
       varnce_w_2 = zero
-      result_cmp = two
+      result_cmp = two      ! so average updraft is just the arithmetic average
       call calc_w_up_in_cloud(gr, mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
                               result)
-      total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) .ge. eps)
+      total_mismatches = total_mismatches &
+                          + COUNT(abs(result - result_cmp) >= eps)
       
 
   end subroutine w_up_in_cloud_setup_tests

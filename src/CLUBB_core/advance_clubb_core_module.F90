@@ -678,7 +678,7 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Skw_velocity,  & ! Skewness velocity                                 [m/s]
-      w_up_in_cloud, & ! Upward velocity inside clouds                     [m/s]
+      w_up_in_cloud, & ! Average upward velocity within liquid clouds      [m/s]
       a3_coef,       & ! The a3 coefficient from CLUBB eqns                [-]
       a3_coef_zt       ! The a3 coefficient interpolated to the zt grid    [-]
 
