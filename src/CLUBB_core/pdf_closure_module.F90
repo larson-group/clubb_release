@@ -1281,7 +1281,7 @@ endif
                      gr, pdf_params%mixt_frac(1,:), &                                    ! In
                      pdf_params%cloud_frac_1(1,:), pdf_params%cloud_frac_2(1,:), &       ! In
                      pdf_params%w_1(1,:), pdf_params%w_2(1,:), &                         ! In
-                     pdf_params%varnce_w_1(1,:), pdf_paradms%varnce_w_2(1,:), &           ! In
+                     pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:), &           ! In
                      w_up_in_cloud )                                                     ! Out
     else
       w_up_in_cloud = zero
