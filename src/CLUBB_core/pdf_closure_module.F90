@@ -169,7 +169,8 @@ module pdf_closure_module
         ircp2,      & ! Variables
         iwprtp2,    &
         iwprtpthlp, &
-        iwpthlp2
+        iwpthlp2,   &
+        iw_up_in_cloud
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1273,13 +1274,14 @@ endif
     end if
 #endif
 
-    if (iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
-                                 .or. iiPDF_type == iiPDF_new_hybrid) then
+    if ((iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+                                 .or. iiPDF_type == iiPDF_new_hybrid) &
+                                 .and. iw_up_in_cloud > 0) then
       call calc_w_up_in_cloud( &
                      gr, pdf_params%mixt_frac(1,:), &                                    ! In
                      pdf_params%cloud_frac_1(1,:), pdf_params%cloud_frac_2(1,:), &       ! In
                      pdf_params%w_1(1,:), pdf_params%w_2(1,:), &                         ! In
-                     pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:), &           ! In
+                     pdf_params%varnce_w_1(1,:), pdf_paradms%varnce_w_2(1,:), &           ! In
                      w_up_in_cloud )                                                     ! Out
     else
       w_up_in_cloud = zero
