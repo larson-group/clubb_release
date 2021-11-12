@@ -1,0 +1,65 @@
+commit 335d83b7e89d00fa3cd1ce727356d6d7b006dd36
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Thu Nov 11 14:56:45 2021 -0600
+
+    fixed a typo in pdf_closure_module.f90, line 1284
+
+commit df3b263c7525b030ed469116534560eb74ae8ddf
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Thu Nov 11 14:54:14 2021 -0600
+
+    Included a check in pdf_closure_module.f90 to check if flag for iw_up_in_cloud is set. Removed iw_up_in_cloud from standard_stats.in to prevent binary diffs in CLUBB output files after merge
+
+commit 202f78110b0f343f565b8ac1ea633ded7b27ee11
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Thu Nov 11 11:31:26 2021 -0600
+
+    Resolved any issues in the pull request. See https://github.com/larson-group/clubb/pull/970 for details
+
+commit f7cd1d8ccc310129bfb3ceb243b0c47284eaccf5
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Tue Nov 9 15:03:36 2021 -0600
+
+    Added sam file name to DYCOMS_RF02_DO case, fixed the clipping in calc_w_up_in_cloud in pdf_closure_module.f90, and changed long name of w_up_in_cloud in stats_zt_module.f90
+
+commit 7a8e16c077839c803937a1346546fd5419c541a2
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Fri Oct 29 10:28:51 2021 -0500
+
+    Added WSUP from SAM to the VariableGroupWs.py in pyplotgen
+
+commit e33002f85d35ee72f9b155437f36e9c103765cc3
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Tue Oct 12 12:04:23 2021 -0500
+
+    See respective messages on the issue 958 on date 10/12/2021
+
+commit 6aa4ad30eef8b9bc2ce8dc46fb355d414b431542
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Thu Sep 30 08:48:51 2021 -0500
+
+    added some documentation in pdf_close_module.f90 and started writing of w_up_in_cloud to disk
+
+commit cea625cee42c8cbf6d1793eaae65f6bb136b16f9
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Fri Sep 24 12:33:43 2021 -0500
+
+    See ticket
+    #958
+
+commit 1c59a5018700023f704a46b68ad581445427d51f
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Wed Nov 10 18:07:38 2021 -0600
+
+    Turn off l_Lscale_vert_avg because this flag has been deprecated.
+    
+    We're not concerned about any damage to backwards compatibility because NCAR doesn't run SILHS.
+    Hopefully, this will allow the clubb_bin_diff_regression_backwards_compatibility_gfortran_test Jenkins test to pass.
+    
+    larson-group/sys_admin#763
+
+commit a931651e75fe59f3c0435a3b8d1ced442a89d9cc
+Author: pbroels <pbroels@uwm.edu>
+Date:   Mon Nov 8 14:57:38 2021 -0600
+
+    Updating tolerance_check.py to Python3.
