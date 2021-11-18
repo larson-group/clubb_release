@@ -161,7 +161,7 @@ module advance_clubb_core_module
 #ifdef CLUBB_CAM
                qclvar, &                                            ! intent(out)
 #endif
-               thlprcp, wprcp, ice_supersat_frac, &                 ! intent(out)
+               thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &  ! intent(out)
                rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! intent(out)
                err_code_out )                                       ! intent(out)
 
@@ -578,9 +578,10 @@ module advance_clubb_core_module
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      wprcp,             & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
-      ice_supersat_frac, & ! ice cloud fraction (thermodynamic levels) [-]
-      invrs_tau_zm         ! One divided by tau on zm levels           [1/s]
+      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
+      ice_supersat_frac, & ! ice cloud fraction (thermodynamic levels)     [-]
+      invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
 
     real( kind = core_rknd ), dimension(gr%nz) ::  &
       uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
@@ -677,10 +678,9 @@ module advance_clubb_core_module
       vpwp_zt       ! v'w' on thermo. grid     [m^2/s^2]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Skw_velocity,  & ! Skewness velocity                                 [m/s]
-      w_up_in_cloud, & ! Average upward velocity within liquid clouds      [m/s]
-      a3_coef,       & ! The a3 coefficient from CLUBB eqns                [-]
-      a3_coef_zt       ! The a3 coefficient interpolated to the zt grid    [-]
+      Skw_velocity,     & ! Skewness velocity                              [m/s]
+      a3_coef,          & ! The a3 coefficient from CLUBB eqns             [-]
+      a3_coef_zt          ! The a3 coefficient interpolated to the zt grid [-]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       wp3_on_wp2,   &  ! w'^3 / w'^2 on the zm grid [m/s]
@@ -2544,7 +2544,8 @@ module advance_clubb_core_module
       Sku_zt,           & ! Skewness of u on thermodynamic levels      [-]
       Sku_zm,           & ! Skewness of u on momentum levels           [-]
       Skv_zt,           & ! Skewness of v on thermodynamic levels      [-]
-      Skv_zm              ! Skewness of v on momentum levels           [-]
+      Skv_zm,           & ! Skewness of v on momentum levels           [-]
+      w_up_in_cloud_zm    ! Avg. upward vel. in liq. clouds; m-levs    [m/s]
 
     ! Interpolated values for optional second call to PDF closure.
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -2954,7 +2955,7 @@ module advance_clubb_core_module
              rcm_zm, wpthvp, wp2thvp_zm, rtpthvp,                  & ! intent(out)
              thlpthvp, wprcp, wp2rcp_zm, rtprcp,                   & ! intent(out)
              thlprcp, rcp2,                                        & ! intent(out)
-             uprcp, vprcp, w_up_in_cloud,                          & ! intent(out)
+             uprcp, vprcp, w_up_in_cloud_zm,                       & ! intent(out)
              pdf_params_zm, pdf_implicit_coefs_terms_zm,           & ! intent(out)
              F_w_zm, F_rt_zm, F_thl_zm,                            & ! intent(out)
              min_F_w_zm, max_F_w_zm,                               & ! intent(out)

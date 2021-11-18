@@ -491,6 +491,7 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(:), allocatable ::  &
       wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
       ice_supersat_frac, & ! ice cloud fraction (thermo. levels)   [-]
       rcm_in_layer,      & ! rcm within cloud layer                [kg/kg]
       cloud_cover,       & ! cloud cover                           [-]
@@ -1419,6 +1420,7 @@ module clubb_driver
     allocate( wprtp(1:gr%nz) )     ! w'rt'
     allocate( wpthlp(1:gr%nz) )    ! w'thl'
     allocate( wprcp(1:gr%nz) )     ! w'rc'
+    allocate( w_up_in_cloud(1:gr%nz) )
     allocate( wp2(1:gr%nz) )       ! w'^2
     allocate( wp3(1:gr%nz) )       ! w'^3
     allocate( rtp2(1:gr%nz) )      ! rt'^2
@@ -1553,6 +1555,7 @@ module clubb_driver
     thlp2(1:gr%nz)   = thl_tol**2    ! thl'^2
     rtpthlp(1:gr%nz) = zero          ! rt'thl'
     wprcp(1:gr%nz)   = zero          ! w'rc'
+    w_up_in_cloud(1:gr%nz) = zero
 
     p_in_Pa(1:gr%nz)= zero           ! pressure (Pa)
     exner(1:gr%nz) = zero            ! exner
@@ -2218,7 +2221,7 @@ module clubb_driver
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
-             thlprcp, wprcp, ice_supersat_frac, &                 ! Intent(out)
+             thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &  ! Intent(out)
              rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
              err_code_dummy )                                     ! Intent(out)
 
@@ -2610,6 +2613,7 @@ module clubb_driver
     deallocate( wprtp )     ! w'rt'
     deallocate( wpthlp )    ! w'thl'
     deallocate( wprcp )     ! w'rc'
+    deallocate( w_up_in_cloud )
     deallocate( wp2 )       ! w'^2
     deallocate( wp3 )       ! w'^3
     deallocate( rtp2 )      ! rt'^2

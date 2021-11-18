@@ -564,7 +564,7 @@ contains
 #ifdef CLUBB_CAM
     qclvar, &                                               ! intent(out)
 #endif
-    thlprcp, wprcp, ice_supersat_frac, &                    ! intent(out)
+    thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &     ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -758,9 +758,10 @@ contains
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      wprcp,             & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
-      ice_supersat_frac, & ! ice cloud fraction (thermodynamic levels) [-]
-      invrs_tau_zm         ! One divided by tau on zm levels           [1/s]
+      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
+      ice_supersat_frac, & ! ice cloud fraction (thermodynamic levels)     [-]
+      invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -826,7 +827,7 @@ contains
 #ifdef CLUBB_CAM
                qclvar, &                                      ! intent(out)
 #endif
-      thlprcp, wprcp, ice_supersat_frac, &                    ! intent(out)
+      thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &     ! intent(out)
       rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
       err_code_api )                                          ! intent(out)
 
