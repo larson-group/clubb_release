@@ -117,8 +117,8 @@ module stats_variables
      irho = 0
 !$omp threadprivate( iLscale_up, iLscale_down, &
 !$omp   iLscale_pert_1, iLscale_pert_2, &
-!$omp   itau_zt, iinvrs_tau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, irc_coef, &
-!$omp   isigma_sqd_w_zt, irho )
+!$omp   itau_zt, iinvrs_tau_zt, iKh_zt, iwp2thvp, iwp2rcp, iw_up_in_cloud, &
+!$omp   iwprtpthlp, irc_coef, isigma_sqd_w_zt, irho )
 
   integer, public :: &
      iinvrs_tau_zm       = 0, &
