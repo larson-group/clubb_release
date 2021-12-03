@@ -1112,7 +1112,7 @@ module advance_clubb_core_module
     ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
     ! than -1.4 -dschanen 4 Jan 2011
     !a3_coef = max( a3_coef, -1.4_core_rknd ) ! Known magic number
-    a3_coef = max( a3_coef, 1.6_core_rknd ) ! Known magic number
+    !a3_coef = max( a3_coef, 1.6_core_rknd ) ! Known magic number
 
     a3_coef_zt = zm2zt( gr, a3_coef )
 
