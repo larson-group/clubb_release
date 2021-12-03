@@ -73,6 +73,7 @@ module advance_xm_wpxp_module
                               l_brunt_vaisala_freq_moist, &
                               l_use_thvm_in_bv_freq, &
                               l_lmm_stepping, &
+                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                               stats_zt, stats_zm, stats_sfc, &
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp, um, upwp, vm, vpwp )
@@ -327,6 +328,11 @@ module advance_xm_wpxp_module
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_lmm_stepping                  ! Apply Linear Multistep Method (LMM) Stepping
+
+    integer, intent(in) :: &
+      order_xm_wpxp, &
+      order_xp2_xpyp, &
+      order_wp2_wp3
 
     ! -------------------- Input/Output Variables --------------------
     
@@ -661,6 +667,7 @@ module advance_xm_wpxp_module
                                             l_diffuse_rtm_and_thlm,                         & ! In
                                             l_upwind_xm_ma,                                 & ! In
                                             l_tke_aniso,                                    & ! In
+                                            order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,   & ! In
                                             stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )        ! Out
 
@@ -689,6 +696,7 @@ module advance_xm_wpxp_module
                                           l_diffuse_rtm_and_thlm,                          & ! In
                                           l_upwind_xm_ma,                                  & ! In
                                           l_tke_aniso,                                     & ! In
+                                          order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,    & ! In
                                           stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                           rtm, wprtp, thlm, wpthlp,                        & ! Out
                                           sclrm, wpsclrp, um, upwp, vm,vpwp )                ! Out
@@ -2289,6 +2297,7 @@ module advance_xm_wpxp_module
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
                                             l_tke_aniso, &
+                                            order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                                             stats_zt, stats_zm, stats_sfc, & 
                                             rtm, wprtp, thlm, wpthlp, &
                                             sclrm, wpsclrp, um, upwp, vm, vpwp )
@@ -2475,6 +2484,11 @@ module advance_xm_wpxp_module
       l_tke_aniso               ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                 ! (u'^2 + v'^2 + w'^2)
       
+    integer, intent(in) :: &
+      order_xm_wpxp, &
+      order_xp2_xpyp, &
+      order_wp2_wp3
+
     ! ------------------- Input/Output Variables -------------------
     
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
@@ -2774,6 +2788,8 @@ module advance_xm_wpxp_module
            l_predict_upwp_vpwp, &                 ! Intent(in)
            l_upwind_xm_ma, &                      ! Intent(in)
            l_tke_aniso, &                         ! Intent(in)
+           order_xm_wpxp, order_xp2_xpyp, &       ! Intent(in)
+           order_wp2_wp3, &                       ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &       ! intent(inout)
            rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
@@ -2794,6 +2810,8 @@ module advance_xm_wpxp_module
            l_predict_upwp_vpwp, &                 ! Intent(in)
            l_upwind_xm_ma, &                      ! Intent(in)
            l_tke_aniso, &                         ! Intent(in)
+           order_xm_wpxp, order_xp2_xpyp, &       ! Intent(in)
+           order_wp2_wp3, &                       ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &       ! intent(inout)
            thlm, thl_tol_mfl, wpthlp )            ! Intent(inout)
 
@@ -2825,6 +2843,8 @@ module advance_xm_wpxp_module
              l_predict_upwp_vpwp, &                   ! Intent(in)
              l_upwind_xm_ma, &                        ! Intent(in)
              l_tke_aniso, &                           ! Intent(in)
+             order_xm_wpxp, order_xp2_xpyp, &         ! Intent(in)
+             order_wp2_wp3, &                         ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &         ! intent(inout)
              sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
 
@@ -2851,6 +2871,8 @@ module advance_xm_wpxp_module
               l_predict_upwp_vpwp,                   & ! Intent(in)
               l_upwind_xm_ma,                        & ! Intent(in)
               l_tke_aniso,                           & ! Intent(in)
+              order_xm_wpxp, order_xp2_xpyp,         & ! Intent(in)
+              order_wp2_wp3,                         & ! Intent(in)
               stats_zt, stats_zm, stats_sfc,         & ! intent(inout)
               um, w_tol, upwp                        ) ! Intent(inout)
 
@@ -2871,6 +2893,8 @@ module advance_xm_wpxp_module
               l_predict_upwp_vpwp,                   & ! Intent(in)
               l_upwind_xm_ma,                        & ! Intent(in)
               l_tke_aniso,                           & ! Intent(in)
+              order_xm_wpxp, order_xp2_xpyp,         & ! Intent(in)
+              order_wp2_wp3,                         & ! Intent(in)
               stats_zt, stats_zm, stats_sfc,         & ! intent(inout)
               vm, w_tol, vpwp )                        ! Intent(inout)
 
@@ -2902,6 +2926,7 @@ module advance_xm_wpxp_module
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
                                             l_tke_aniso, &
+                                            order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                                             stats_zt, stats_zm, stats_sfc, & 
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )
     !            
@@ -3045,6 +3070,11 @@ module advance_xm_wpxp_module
       l_tke_aniso               ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                 ! (u'^2 + v'^2 + w'^2)
       
+    integer, intent(in) :: &
+      order_xm_wpxp, &
+      order_xp2_xpyp, &
+      order_wp2_wp3
+
     ! ------------------- Input/Output Variables -------------------
     
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
@@ -3159,6 +3189,8 @@ module advance_xm_wpxp_module
            l_predict_upwp_vpwp, &                 ! Intent(in)
            l_upwind_xm_ma, &                      ! Intent(in)
            l_tke_aniso, &                         ! Intent(in)
+           order_xm_wpxp, order_xp2_xpyp, &       ! Intent(in)
+           order_wp2_wp3, &                       ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &       ! intent(inout)
            rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
@@ -3234,6 +3266,8 @@ module advance_xm_wpxp_module
            l_predict_upwp_vpwp, &                  ! Intent(in)
            l_upwind_xm_ma, &                       ! Intent(in)
            l_tke_aniso, &                          ! Intent(in)
+           order_xm_wpxp, order_xp2_xpyp, &        ! Intent(in)
+           order_wp2_wp3, &                        ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &        ! intent(inout)
            thlm, thl_tol_mfl, wpthlp )             ! Intent(inout)
 
@@ -3321,6 +3355,8 @@ module advance_xm_wpxp_module
              l_predict_upwp_vpwp, &                   ! Intent(in)
              l_upwind_xm_ma, &                        ! Intent(in)
              l_tke_aniso, &                           ! Intent(in)
+             order_xm_wpxp, order_xp2_xpyp, &         ! Intent(in)
+             order_wp2_wp3, &                         ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &         ! intent(inout)
              sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
 
@@ -3418,6 +3454,8 @@ module advance_xm_wpxp_module
                l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
                l_tke_aniso, &
+               order_xm_wpxp, order_xp2_xpyp, &
+               order_wp2_wp3, &
                stats_zt, stats_zm, stats_sfc, & 
                xm, xm_tol, wpxp )
 
@@ -3557,9 +3595,13 @@ module advance_xm_wpxp_module
     ! Constant Parameters
     logical, parameter :: &
       l_mono_flux_lim = .true., &  ! Flag for monotonic turbulent flux limiter
-      l_enable_relaxed_clipping = .true., & ! Flag to relax clipping
-      l_first_clip_ts = .true., &
-      l_last_clip_ts  = .false.
+      l_enable_relaxed_clipping = .true.!, & ! Flag to relax clipping
+!      l_first_clip_ts = .true., &
+!      l_last_clip_ts  = .false.
+
+    logical :: &
+      l_first_clip_ts, &
+      l_last_clip_ts
 
     ! Input Variables
     integer, intent(in) ::  & 
@@ -3609,6 +3651,11 @@ module advance_xm_wpxp_module
                              ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
       l_tke_aniso            ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                              ! (u'^2 + v'^2 + w'^2)
+
+    integer, intent(in) :: &
+      order_xm_wpxp, &
+      order_xp2_xpyp, &
+      order_wp2_wp3
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
@@ -3994,6 +4041,19 @@ module advance_xm_wpxp_module
       xp2_relaxed = xp2
 
     end if
+
+    if ( order_xm_wpxp < order_wp2_wp3 &
+         .and. order_xm_wpxp < order_xp2_xpyp ) then
+       l_first_clip_ts = .true.
+       l_last_clip_ts = .false.
+    elseif ( order_xm_wpxp > order_wp2_wp3 &
+             .and. order_xm_wpxp > order_xp2_xpyp ) then
+       l_first_clip_ts = .false.
+       l_last_clip_ts = .true.
+    else
+       l_first_clip_ts = .false.
+       l_last_clip_ts = .false.
+    endif
 
     if ( solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm ) then
 

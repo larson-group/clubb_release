@@ -43,6 +43,7 @@ module advance_windm_edsclrm_module
                l_uv_nudge, &
                l_tke_aniso, &
                l_lmm_stepping, &
+               order_xp2_xpyp, order_wp2_wp3, order_windm, &
                stats_zt, stats_zm, stats_sfc, & 
                um, vm, edsclrm, &
                upwp, vpwp, wpedsclrp )
@@ -168,6 +169,11 @@ module advance_windm_edsclrm_module
       l_tke_aniso,         & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                              ! (u'^2 + v'^2 + w'^2)
       l_lmm_stepping         ! Apply Linear Multistep Method (LMM) Stepping
+
+    integer, intent(in) :: &
+      order_xp2_xpyp, &
+      order_wp2_wp3, &
+      order_windm
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
@@ -439,6 +445,19 @@ module advance_windm_edsclrm_module
                                 stats_zt )         ! intent(inout)
        endif
 
+       if ( order_windm < order_wp2_wp3 &
+            .and. order_windm < order_xp2_xpyp ) then
+          l_first_clip_ts = .true.
+          l_last_clip_ts = .false.
+       elseif ( order_windm > order_wp2_wp3 &
+                .and. order_windm > order_xp2_xpyp ) then
+          l_first_clip_ts = .false.
+          l_last_clip_ts = .true.
+       else
+          l_first_clip_ts = .false.
+          l_last_clip_ts = .false.
+       endif
+
        if ( l_tke_aniso ) then
 
           ! Clipping for u'w'
@@ -453,8 +472,8 @@ module advance_windm_edsclrm_module
           ! has to be done three times during each timestep (once after each
           ! variable has been updated).
           ! This is the third instance of u'w' clipping.
-          l_first_clip_ts = .false.
-          l_last_clip_ts = .true.
+          !l_first_clip_ts = .false.
+          !l_last_clip_ts = .true.
           call clip_covar( gr, clip_upwp, l_first_clip_ts,  & ! intent(in)
                            l_last_clip_ts, dt, wp2, up2,    & ! intent(in)
                            l_predict_upwp_vpwp,             & ! intent(in)
@@ -473,8 +492,8 @@ module advance_windm_edsclrm_module
           ! has to be done three times during each timestep (once after each
           ! variable has been updated).
           ! This is the third instance of v'w' clipping.
-          l_first_clip_ts = .false.
-          l_last_clip_ts = .true.
+          !l_first_clip_ts = .false.
+          !l_last_clip_ts = .true.
           call clip_covar( gr, clip_vpwp, l_first_clip_ts,  & ! intent(in)
                            l_last_clip_ts, dt, wp2, vp2,    & ! intent(in)
                            l_predict_upwp_vpwp,             & ! intent(in)
@@ -486,8 +505,8 @@ module advance_windm_edsclrm_module
           ! In this case, it is assumed that
           !   u'^2 == v'^2 == w'^2, and the variables `up2' and `vp2' do not
           ! interact with any other variables.
-          l_first_clip_ts = .false.
-          l_last_clip_ts = .true.
+          !l_first_clip_ts = .false.
+          !l_last_clip_ts = .true.
           call clip_covar( gr, clip_upwp, l_first_clip_ts,  & ! intent(in)
                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
                            l_predict_upwp_vpwp,             & ! intent(in)

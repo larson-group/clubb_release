@@ -467,6 +467,12 @@ module spurious_source_test
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn     ! Use TKE in eddy diffusion for wp2 and wp3
 
+    integer, parameter :: &
+      order_xm_wpxp = 1, &
+      order_xp2_xpyp = 2, &
+      order_wp2_wp3 =3
+
+
     ! Set the default tunable parameter values
     call set_default_parameters( &
                C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
@@ -952,6 +958,7 @@ module spurious_source_test
                              l_brunt_vaisala_freq_moist, &
                              l_use_thvm_in_bv_freq, &
                              l_lmm_stepping, &
+                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                              stats_zt, stats_zm, stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp )

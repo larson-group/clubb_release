@@ -829,6 +829,14 @@ module advance_clubb_core_module
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
 
+    ! Advance order test variables
+    integer :: &
+      order_xm_wpxp, &
+      order_xp2_xpyp, &
+      order_wp2_wp3, &
+      order_windm
+
+    integer :: adv_test_iter
 
     !----- Begin Code -----
 
@@ -1492,6 +1500,16 @@ module advance_clubb_core_module
           Cx_fnc_Richardson = 0.0
       end if
 
+      !!!!! LET'S TEST SOME ARRANGEMENTS
+      order_xm_wpxp = 1
+      order_xp2_xpyp = 2
+      order_wp2_wp3 = 3
+      order_windm = 4
+
+      do adv_test_iter = 1, 4, 1
+
+      if ( adv_test_iter == order_xm_wpxp ) then
+
       ! Advance the prognostic equations for
       !   the scalar grid means (rtm, thlm, sclrm) and
       !   scalar turbulent fluxes (wprtp, wpthlp, and wpsclrp)
@@ -1527,6 +1545,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_brunt_vaisala_freq_moist,        & ! intent(in)
                             clubb_config_flags%l_use_thvm_in_bv_freq,             & ! intent(in)
                             clubb_config_flags%l_lmm_stepping,                    & ! intent(in)
+                            order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,         & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
                             rtm, wprtp, thlm, wpthlp,                             & ! intent(inout)
                             sclrm, wpsclrp, um, upwp, vm, vpwp )                    ! intent(inout)
@@ -1551,6 +1570,8 @@ module advance_clubb_core_module
                                           sclrm, sclrm_trsport_only, & ! intent(inout)
                                           Kh_zm,  cloud_frac )         ! intent(in)
 #endif
+
+      elseif ( adv_test_iter == order_xp2_xpyp ) then
 
       !----------------------------------------------------------------
       ! Compute some of the variances and covariances.  These include the variance of
@@ -1607,16 +1628,48 @@ module advance_clubb_core_module
       ! after subroutine advance_xp2_xpyp updated xp2.
       !----------------------------------------------------------------
 
-      wprtp_cl_num   = 2 ! Second instance of w'r_t' clipping.
-      wpthlp_cl_num  = 2 ! Second instance of w'th_l' clipping.
-      wpsclrp_cl_num = 2 ! Second instance of w'sclr' clipping.
-      if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-         upwp_cl_num = 2 ! Second instance of u'w' clipping.
-         vpwp_cl_num = 2 ! Second instance of v'w' clipping.
+      if ( order_xp2_xpyp < order_xm_wpxp &
+           .and. order_xp2_xpyp < order_wp2_wp3 ) then
+         wprtp_cl_num   = 1 ! First instance of w'r_t' clipping.
+         wpthlp_cl_num  = 1 ! First instance of w'th_l' clipping.
+         wpsclrp_cl_num = 1 ! First instance of w'sclr' clipping.
+         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+            upwp_cl_num = 1 ! First instance of u'w' clipping.
+            vpwp_cl_num = 1 ! First instance of v'w' clipping.
+         endif
+      elseif ( order_xp2_xpyp > order_xm_wpxp &
+               .and. order_xp2_xpyp > order_wp2_wp3 ) then
+         wprtp_cl_num   = 3 ! Third instance of w'r_t' clipping.
+         wpthlp_cl_num  = 3 ! Third instance of w'th_l' clipping.
+         wpsclrp_cl_num = 3 ! Third instance of w'sclr' clipping.
+         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+            upwp_cl_num = 3 ! Third instance of u'w' clipping.
+            vpwp_cl_num = 3 ! Third instance of v'w' clipping.
+         endif
       else
-         upwp_cl_num = 1 ! First instance of u'w' clipping.
-         vpwp_cl_num = 1 ! First instance of v'w' clipping.
-      endif ! l_predict_upwp_vpwp
+         wprtp_cl_num   = 2 ! Second instance of w'r_t' clipping.
+         wpthlp_cl_num  = 2 ! Second instance of w'th_l' clipping.
+         wpsclrp_cl_num = 2 ! Second instance of w'sclr' clipping.
+         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+            upwp_cl_num = 2 ! Second instance of u'w' clipping.
+            vpwp_cl_num = 2 ! Second instance of v'w' clipping.
+         endif
+      endif
+
+      if ( .not. clubb_config_flags%l_predict_upwp_vpwp ) then
+         if ( order_xp2_xpyp < order_wp2_wp3 &
+              .and. order_xp2_xpyp < order_windm ) then
+            upwp_cl_num = 1 ! First instance of u'w' clipping.
+            vpwp_cl_num = 1 ! First instance of v'w' clipping.
+         elseif ( order_xp2_xpyp > order_wp2_wp3 &
+                  .and. order_xp2_xpyp > order_windm ) then
+            upwp_cl_num = 3 ! Third instance of u'w' clipping.
+            vpwp_cl_num = 3 ! Third instance of v'w' clipping.
+         else
+            upwp_cl_num = 2 ! Second instance of u'w' clipping.
+            vpwp_cl_num = 2 ! Second instance of v'w' clipping.
+         endif ! l_predict_upwp_vpwp
+      endif
 
       call clip_covars_denom( gr, dt, rtp2, thlp2, up2, vp2, wp2,       & ! intent(in)
                               sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
@@ -1626,6 +1679,7 @@ module advance_clubb_core_module
                               stats_zm,                                 & ! intent(inout)
                               wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
+      elseif ( adv_test_iter == order_wp2_wp3 ) then
 
       !----------------------------------------------------------------
       ! Advance the 2nd- and 3rd-order moments
@@ -1676,16 +1730,48 @@ module advance_clubb_core_module
       ! after subroutine advance_wp2_wp3 updated wp2.
       !----------------------------------------------------------------
 
-      wprtp_cl_num   = 3 ! Third instance of w'r_t' clipping.
-      wpthlp_cl_num  = 3 ! Third instance of w'th_l' clipping.
-      wpsclrp_cl_num = 3 ! Third instance of w'sclr' clipping.
-      if ( clubb_config_flags%l_predict_upwp_vpwp ) then
-         upwp_cl_num = 3 ! Third instance of u'w' clipping.
-         vpwp_cl_num = 3 ! Third instance of v'w' clipping.
+      if ( order_wp2_wp3 < order_xm_wpxp &
+           .and. order_wp2_wp3 < order_xp2_xpyp ) then
+         wprtp_cl_num   = 1 ! First instance of w'r_t' clipping.
+         wpthlp_cl_num  = 1 ! First instance of w'th_l' clipping.
+         wpsclrp_cl_num = 1 ! First instance of w'sclr' clipping.
+         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+            upwp_cl_num = 1 ! First instance of u'w' clipping.
+            vpwp_cl_num = 1 ! First instance of v'w' clipping.
+         endif
+      elseif ( order_wp2_wp3 > order_xm_wpxp &
+           .and. order_wp2_wp3 > order_xp2_xpyp ) then
+         wprtp_cl_num   = 3 ! Third instance of w'r_t' clipping.
+         wpthlp_cl_num  = 3 ! Third instance of w'th_l' clipping.
+         wpsclrp_cl_num = 3 ! Third instance of w'sclr' clipping.
+         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+            upwp_cl_num = 3 ! Third instance of u'w' clipping.
+            vpwp_cl_num = 3 ! Third instance of v'w' clipping.
+         endif
       else
-         upwp_cl_num = 2 ! Second instance of u'w' clipping.
-         vpwp_cl_num = 2 ! Second instance of v'w' clipping.
-      endif ! l_predict_upwp_vpwp
+         wprtp_cl_num   = 2 ! Second instance of w'r_t' clipping.
+         wpthlp_cl_num  = 2 ! Second instance of w'th_l' clipping.
+         wpsclrp_cl_num = 2 ! Second instance of w'sclr' clipping.
+         if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+            upwp_cl_num = 2 ! Second instance of u'w' clipping.
+            vpwp_cl_num = 2 ! Second instance of v'w' clipping.
+         endif
+      endif
+      
+      if ( .not. clubb_config_flags%l_predict_upwp_vpwp ) then
+         if ( order_wp2_wp3 < order_xp2_xpyp &
+              .and. order_wp2_wp3 < order_windm ) then
+            upwp_cl_num = 1 ! First instance of u'w' clipping.
+            vpwp_cl_num = 1 ! First instance of v'w' clipping.
+         elseif ( order_wp2_wp3 > order_xp2_xpyp &
+                  .and. order_wp2_wp3 > order_windm ) then
+            upwp_cl_num = 3 ! Third instance of u'w' clipping.
+            vpwp_cl_num = 3 ! Third instance of v'w' clipping.
+         else
+            upwp_cl_num = 2 ! Second instance of u'w' clipping.
+            vpwp_cl_num = 2 ! Second instance of v'w' clipping.
+         endif ! l_predict_upwp_vpwp
+      endif
 
       call clip_covars_denom( gr, dt, rtp2, thlp2, up2, vp2, wp2,       & ! intent(in)
                               sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
@@ -1694,6 +1780,8 @@ module advance_clubb_core_module
                               clubb_config_flags%l_tke_aniso,           & ! intent(in)
                               stats_zm,                                 & ! intent(inout)
                               wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
+
+      endif
 
       !----------------------------------------------------------------
       ! Advance or otherwise calculate <thl'^3>, <rt'^3>, and
@@ -1857,6 +1945,8 @@ module advance_clubb_core_module
 
       endif ! l_advance_xp3 .and. clubb_config_flags%iiPDF_type /= iiPDF_ADG1
 
+      if ( adv_test_iter == order_windm ) then
+
       !----------------------------------------------------------------
       ! Advance the horizontal mean winds (um, vm),
       !   the mean of the eddy-diffusivity scalars (i.e. edsclrm),
@@ -1886,9 +1976,15 @@ module advance_clubb_core_module
                                   clubb_config_flags%l_uv_nudge,                & ! intent(in)
                                   clubb_config_flags%l_tke_aniso,               & ! intent(in)
                                   clubb_config_flags%l_lmm_stepping,            & ! intent(in)
+                                  order_xp2_xpyp, order_wp2_wp3, order_windm,   & ! intent(in)
                                   stats_zt, stats_zm, stats_sfc,                & ! intent(inout)
                                   um, vm, edsclrm,                              & ! intent(inout)
                                   upwp, vpwp, wpedsclrp )                         ! intent(inout)
+
+      endif
+
+      enddo ! adv_test_iter = 1, 4, 1
+      !!!!! END OF TESTING
 
       if ( clubb_config_flags%l_do_expldiff_rtm_thlm ) then
         call pvertinterp(gr%nz, p_in_Pa, 70000.0_core_rknd, thlm, &  ! intent(in)
