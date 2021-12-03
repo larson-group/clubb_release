@@ -830,11 +830,11 @@ module advance_clubb_core_module
       err_code_out  ! Error code indicator
 
     ! Advance order test variables
-    integer :: &
-      order_xm_wpxp, &
-      order_xp2_xpyp, &
-      order_wp2_wp3, &
-      order_windm
+    integer, parameter :: &
+      order_xm_wpxp = 1, &
+      order_xp2_xpyp = 2, &
+      order_wp2_wp3 = 3, &
+      order_windm = 4
 
     integer :: adv_test_iter
 
@@ -1501,11 +1501,6 @@ module advance_clubb_core_module
       end if
 
       !!!!! LET'S TEST SOME ARRANGEMENTS
-      order_xm_wpxp = 1
-      order_xp2_xpyp = 2
-      order_wp2_wp3 = 3
-      order_windm = 4
-
       do adv_test_iter = 1, 4, 1
 
       if ( adv_test_iter == order_xm_wpxp ) then
