@@ -1776,7 +1776,65 @@ module advance_clubb_core_module
                               stats_zm,                                 & ! intent(inout)
                               wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
+      elseif ( adv_test_iter == order_windm ) then
+
+      !----------------------------------------------------------------
+      ! Advance the horizontal mean winds (um, vm),
+      !   the mean of the eddy-diffusivity scalars (i.e. edsclrm),
+      !   and their fluxes (upwp, vpwp, wpedsclrp) by one time step.
+      !----------------------------------------------------------------
+
+      Km_zm = Kh_zm * clubb_params(ic_K10)   ! Coefficient for momentum
+
+      Kmh_zm = Kh_zm * clubb_params(ic_K10h) ! Coefficient for thermo
+
+      if ( clubb_config_flags%l_do_expldiff_rtm_thlm ) then
+        edsclrm(:,edsclr_dim-1)=thlm(:)
+        edsclrm(:,edsclr_dim)=rtm(:)
       endif
+
+      call advance_windm_edsclrm( gr, dt, wm_zt, Km_zm, Kmh_zm,                 & ! intent(in)
+                                  ug, vg, um_ref, vm_ref,                       & ! intent(in)
+                                  wp2, up2, vp2, um_forcing, vm_forcing,        & ! intent(in)
+                                  edsclrm_forcing,                              & ! intent(in)
+                                  rho_ds_zm, invrs_rho_ds_zt,                   & ! intent(in)
+                                  fcor, l_implemented,                          & ! intent(in)
+                                  nu_vert_res_dep,                              & ! intent(in)
+                                  clubb_config_flags%l_predict_upwp_vpwp,       & ! intent(in)
+                                  clubb_config_flags%l_upwind_xm_ma,            & ! intent(in)
+                                  clubb_config_flags%l_uv_nudge,                & ! intent(in)
+                                  clubb_config_flags%l_tke_aniso,               & ! intent(in)
+                                  clubb_config_flags%l_lmm_stepping,            & ! intent(in)
+                                  order_xp2_xpyp, order_wp2_wp3, order_windm,   & ! intent(in)
+                                  stats_zt, stats_zm, stats_sfc,                & ! intent(inout)
+                                  um, vm, edsclrm,                              & ! intent(inout)
+                                  upwp, vpwp, wpedsclrp )                         ! intent(inout)
+
+      endif
+
+      if ( clubb_config_flags%l_do_expldiff_rtm_thlm ) then
+        call pvertinterp(gr%nz, p_in_Pa, 70000.0_core_rknd, thlm, &  ! intent(in)
+                         thlm700)                                    ! intent(out)
+        call pvertinterp(gr%nz, p_in_Pa, 100000.0_core_rknd, thlm, & ! intent(in)
+                         thlm1000)                                   ! intent(out)
+        if ( thlm700 - thlm1000 < 20.0_core_rknd ) then
+          thlm(:) = edsclrm(:,edsclr_dim-1)
+          rtm(:) = edsclrm(:,edsclr_dim)
+        end if
+      end if
+
+      ! Eric Raut: this seems dangerous to call without any attached flag.
+      ! Hence the preprocessor.
+#ifdef CLUBB_CAM
+      do ixind=1,edsclr_dim
+        call fill_holes_vertical( gr, 2,0.0_core_rknd,"zt", & ! intent(in)
+                                 rho_ds_zt, rho_ds_zm, & ! intent(in)
+                                 edsclrm(:,ixind))       ! intent(inout)
+      enddo
+#endif
+
+      enddo ! adv_test_iter = 1, 4, 1
+      !!!!! END OF TESTING
 
       !----------------------------------------------------------------
       ! Advance or otherwise calculate <thl'^3>, <rt'^3>, and
@@ -1939,68 +1997,6 @@ module advance_clubb_core_module
          endif ! clubb_config_flags%iiPDF_type == iiPDF_ADG1
 
       endif ! l_advance_xp3 .and. clubb_config_flags%iiPDF_type /= iiPDF_ADG1
-
-      if ( adv_test_iter == order_windm ) then
-
-      !----------------------------------------------------------------
-      ! Advance the horizontal mean winds (um, vm),
-      !   the mean of the eddy-diffusivity scalars (i.e. edsclrm),
-      !   and their fluxes (upwp, vpwp, wpedsclrp) by one time step.
-      !----------------------------------------------------------------
-
-      
-
-      Km_zm = Kh_zm * clubb_params(ic_K10)   ! Coefficient for momentum
-
-      Kmh_zm = Kh_zm * clubb_params(ic_K10h) ! Coefficient for thermo
-
-      if ( clubb_config_flags%l_do_expldiff_rtm_thlm ) then
-        edsclrm(:,edsclr_dim-1)=thlm(:)
-        edsclrm(:,edsclr_dim)=rtm(:)
-      endif
-
-      call advance_windm_edsclrm( gr, dt, wm_zt, Km_zm, Kmh_zm,                 & ! intent(in)
-                                  ug, vg, um_ref, vm_ref,                       & ! intent(in)
-                                  wp2, up2, vp2, um_forcing, vm_forcing,        & ! intent(in)
-                                  edsclrm_forcing,                              & ! intent(in)
-                                  rho_ds_zm, invrs_rho_ds_zt,                   & ! intent(in)
-                                  fcor, l_implemented,                          & ! intent(in)
-                                  nu_vert_res_dep,                              & ! intent(in)
-                                  clubb_config_flags%l_predict_upwp_vpwp,       & ! intent(in)
-                                  clubb_config_flags%l_upwind_xm_ma,            & ! intent(in)
-                                  clubb_config_flags%l_uv_nudge,                & ! intent(in)
-                                  clubb_config_flags%l_tke_aniso,               & ! intent(in)
-                                  clubb_config_flags%l_lmm_stepping,            & ! intent(in)
-                                  order_xp2_xpyp, order_wp2_wp3, order_windm,   & ! intent(in)
-                                  stats_zt, stats_zm, stats_sfc,                & ! intent(inout)
-                                  um, vm, edsclrm,                              & ! intent(inout)
-                                  upwp, vpwp, wpedsclrp )                         ! intent(inout)
-
-      endif
-
-      enddo ! adv_test_iter = 1, 4, 1
-      !!!!! END OF TESTING
-
-      if ( clubb_config_flags%l_do_expldiff_rtm_thlm ) then
-        call pvertinterp(gr%nz, p_in_Pa, 70000.0_core_rknd, thlm, &  ! intent(in)
-                         thlm700)                                    ! intent(out)
-        call pvertinterp(gr%nz, p_in_Pa, 100000.0_core_rknd, thlm, & ! intent(in)
-                         thlm1000)                                   ! intent(out)
-        if ( thlm700 - thlm1000 < 20.0_core_rknd ) then
-          thlm(:) = edsclrm(:,edsclr_dim-1)
-          rtm(:) = edsclrm(:,edsclr_dim)
-        end if
-      end if
-
-      ! Eric Raut: this seems dangerous to call without any attached flag.
-      ! Hence the preprocessor.
-#ifdef CLUBB_CAM
-      do ixind=1,edsclr_dim
-        call fill_holes_vertical( gr, 2,0.0_core_rknd,"zt", & ! intent(in)
-                                 rho_ds_zt, rho_ds_zm, & ! intent(in)
-                                 edsclrm(:,ixind))       ! intent(inout)
-      enddo
-#endif
 
     if ( clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields &
          .or. clubb_config_flags%ipdf_call_placement &
