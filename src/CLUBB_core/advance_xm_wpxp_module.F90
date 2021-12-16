@@ -40,6 +40,10 @@ module advance_xm_wpxp_module
     xm_wpxp_um = 4,     & ! Named constant for optional um and upwp solving
     xm_wpxp_vm = 5        ! Named constant for optional vm and vpwp solving
 
+  ! Flag to relax clipping on wpxp in xm_wpxp_clipping_and_stats
+  logical, parameter, public :: &
+    l_enable_relaxed_clipping = .true.
+
   contains
 
   !=============================================================================
@@ -3594,8 +3598,7 @@ module advance_xm_wpxp_module
 
     ! Constant Parameters
     logical, parameter :: &
-      l_mono_flux_lim = .true., &  ! Flag for monotonic turbulent flux limiter
-      l_enable_relaxed_clipping = .true.!, & ! Flag to relax clipping
+      l_mono_flux_lim = .true.!, &  ! Flag for monotonic turbulent flux limiter
 !      l_first_clip_ts = .true., &
 !      l_last_clip_ts  = .false.
 

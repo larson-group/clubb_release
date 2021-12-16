@@ -1397,6 +1397,7 @@ module clubb_driver
            iiPDF_type,                                        & ! intent(in)
            ipdf_call_placement,                               & ! intent(in)
            l_predict_upwp_vpwp,                               & ! intent(in)
+           l_min_xp2_from_corr_wx,                            & ! intent(in)
            l_prescribed_avg_deltaz,                           & ! intent(in)
            l_damp_wp2_using_em,                               & ! intent(in)
            l_stability_correct_tau_zm,                        & ! intent(in)

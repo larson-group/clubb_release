@@ -853,6 +853,7 @@ contains
     iiPDF_type,                                         & ! intent(in)
     ipdf_call_placement,                                & ! intent(in)
     l_predict_upwp_vpwp,                                & ! intent(in)
+    l_min_xp2_from_corr_wx,                             & ! intent(in)
     l_prescribed_avg_deltaz,                            & ! intent(in)
     l_damp_wp2_using_em,                                & ! intent(in)
     l_stability_correct_tau_zm,                         & ! intent(in)
@@ -960,6 +961,10 @@ contains
                                  ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
                                  ! diffusivity when <u> and <v> are advanced in subroutine
                                  ! advance_windm_edsclrm.
+      l_min_xp2_from_corr_wx,  & ! Flag to base the threshold minimum value of xp2 (rtp2 and
+                                 ! thlp2) on keeping the overall correlation of w and x within
+                                 ! the limits of -max_mag_correlation_flux to
+                                 ! max_mag_correlation_flux.
       l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_damp_wp2_using_em,     &
       l_stability_correct_tau_zm
@@ -998,6 +1003,7 @@ contains
       iiPDF_type,                                           & ! intent(in)
       ipdf_call_placement,                                  & ! intent(in)
       l_predict_upwp_vpwp,                                  & ! intent(in)
+      l_min_xp2_from_corr_wx,                               & ! intent(in)
       l_prescribed_avg_deltaz,                              & ! intent(in)
       l_damp_wp2_using_em,                                  & ! intent(in)
       l_stability_correct_tau_zm,                           & ! intent(in)

@@ -3223,6 +3223,7 @@ module advance_clubb_core_module
                  iiPDF_type,                              & ! intent(in)
                  ipdf_call_placement,                     & ! intent(in)
                  l_predict_upwp_vpwp,                     & ! intent(in)
+                 l_min_xp2_from_corr_wx,                  & ! intent(in)
                  l_prescribed_avg_deltaz,                 & ! intent(in)
                  l_damp_wp2_using_em,                     & ! intent(in)
                  l_stability_correct_tau_zm               & ! intent(in)
@@ -3279,6 +3280,9 @@ module advance_clubb_core_module
           iiPDF_LY93,       &
           iiPDF_new_hybrid, &
           l_explicit_turbulent_adv_wpxp
+
+      use advance_xm_wpxp_module, only: &
+          l_enable_relaxed_clipping
 
       use clubb_precision, only: &
           core_rknd ! Variable(s)
@@ -3376,6 +3380,10 @@ module advance_clubb_core_module
                                    ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
                                    ! diffusivity when <u> and <v> are advanced in subroutine
                                    ! advance_windm_edsclrm.
+        l_min_xp2_from_corr_wx,  & ! Flag to base the threshold minimum value of xp2 (rtp2 and
+                                   ! thlp2) on keeping the overall correlation of w and x within
+                                   ! the limits of -max_mag_correlation_flux to
+                                   ! max_mag_correlation_flux.
         l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
         l_damp_wp2_using_em,     &
         l_stability_correct_tau_zm
@@ -3583,6 +3591,28 @@ module advance_clubb_core_module
          endif
 
       endif ! l_predict_upwp_vpwp
+
+      ! The flags l_min_xp2_from_corr_wx and l_enable_relaxed_clipping must
+      ! have opposite values.
+      if ( ( l_min_xp2_from_corr_wx ) &
+         .and. ( l_enable_relaxed_clipping ) ) then
+         write(fstderr,*) "Invalid configuration: l_min_xp2_from_corr_wx = T " &
+                          // "and l_enable_relaxed_clipping = T"
+         write(fstderr,*) "They must have opposite values"
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      elseif ( ( .not. l_min_xp2_from_corr_wx ) &
+               .and. ( .not. l_enable_relaxed_clipping ) ) then
+         write(fstderr,*) "Invalid configuration: l_min_xp2_from_corr_wx = F " &
+                          // "and l_enable_relaxed_clipping = F"
+         write(fstderr,*) "They must have opposite values"
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      endif
 
       ! Setup grid
       call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)
