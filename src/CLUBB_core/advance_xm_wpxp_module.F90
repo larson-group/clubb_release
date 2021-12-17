@@ -42,7 +42,7 @@ module advance_xm_wpxp_module
 
   ! Flag to relax clipping on wpxp in xm_wpxp_clipping_and_stats
   logical, parameter, public :: &
-    l_enable_relaxed_clipping = .true.
+    l_enable_relaxed_clipping = .false.
 
   contains
 
