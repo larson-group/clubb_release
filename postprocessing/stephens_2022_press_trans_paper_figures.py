@@ -1,5 +1,5 @@
 ## python script to generate figures for Stephens, Larson, and Mironov 2022:  ``A parameterization 
-## of pressure transport terms in second- and third-order turbulence equations''
+## of non-hydrostatic pressure transport terms in second- and third-order turbulence equations''
 
 
 import numpy as np
@@ -158,7 +158,7 @@ cbwp3_cl=np.mean(np.array(cbzt.variables['wp3_cl']),(2,3))
 cbwp3_splat=np.mean(np.array(cbzt.variables['wp3_splat']),(2,3))
 cbwp3_pr_dfsn_tot = cbwp3_pr_dfsn + cbwp3_dp1
 cbwp3_pres_scram=cbwp3_pr1+cbwp3_pr2+cbwp3_pr3+cbwp3_pr_tp+cbwp3_splat
-cbwp3_adv=cbwp3_ma+cbwp3_ta+cbwp3_tp+cbwp3_ac
+cbwp3_adv=cbwp3_ma+cbwp3_ta+cbwp3_ac
 cbwp3_buoy=cbwp3_bp1
 cbwp3_diss=cbwp3_splat
 cbwp3_tot=cbwp3_bt
@@ -180,7 +180,7 @@ crwp3_cl=np.mean(np.array(crzt.variables['wp3_cl']),(2,3))
 crwp3_splat=np.mean(np.array(crzt.variables['wp3_splat']),(2,3))
 crwp3_pr_dfsn_tot = crwp3_pr_dfsn + crwp3_dp1
 crwp3_pres_scram=crwp3_pr1+crwp3_pr2+crwp3_pr3+crwp3_pr_tp+crwp3_splat
-crwp3_adv=crwp3_ma+crwp3_ta+crwp3_tp+crwp3_ac
+crwp3_adv=crwp3_ma+crwp3_ta+crwp3_ac
 crwp3_buoy=crwp3_bp1
 crwp3_diss=crwp3_splat
 crwp3_tot=crwp3_bt
@@ -202,7 +202,7 @@ cwwp3_cl=np.mean(np.array(cwzt.variables['wp3_cl']),(2,3))
 cwwp3_splat=np.mean(np.array(cwzt.variables['wp3_splat']),(2,3))
 cwwp3_pr_dfsn_tot = cwwp3_pr_dfsn + cwwp3_dp1
 cwwp3_pres_scram=cwwp3_pr1+cwwp3_pr2+cwwp3_pr3+cwwp3_pr_tp+cwwp3_splat
-cwwp3_adv=cwwp3_ma+cwwp3_ta+cwwp3_tp+cwwp3_ac
+cwwp3_adv=cwwp3_ma+cwwp3_ta+cwwp3_ac
 cwwp3_buoy=cwwp3_bp1
 cwwp3_diss=cwwp3_splat
 cwwp3_tot=cwwp3_bt
@@ -302,6 +302,7 @@ swtkebt=np.mean(np.array(sw.variables['BT']),(2,3))
 swtkeres=swtkebt-(swtkeshear+swtkebuoy+swtkeadv+swtkepres+swtkediftrplusdissip)
 
 sbwp3=np.mean(np.array(sb.variables['W3']),(2,3))
+sbwp3tp=np.mean(np.array(sb.variables['W3TP']),(2,3))
 sbwp3adv=np.mean(np.array(sb.variables['W3ADV']),(2,3))
 sbwp3pres=np.mean(np.array(sb.variables['W3PRES']),(2,3))
 sbwp3buoy=np.mean(np.array(sb.variables['W3BUOY']),(2,3))
@@ -309,9 +310,11 @@ sbwp3diff=np.mean(np.array(sb.variables['W3DFSN']),(2,3))
 sbwp3bt=np.mean(np.array(sb.variables['W3BT']),(2,3))
 sbwp3presdfsn=np.mean(np.array(sb.variables['W3PRESDFSN']),(2,3))
 sbwp3presscr=np.mean(np.array(sb.variables['W3PRESSCR']),(2,3))
-sbwp3res = sbwp3bt - (sbwp3adv + sbwp3pres + sbwp3buoy + sbwp3diff)
+sbwp3pres=sbwp3pres-sbwp3tp
+sbwp3res = sbwp3bt - (sbwp3adv + sbwp3pres + sbwp3buoy + sbwp3diff + sbwp3tp)
 
 srwp3=np.mean(np.array(sr.variables['W3']),(2,3))
+srwp3tp=np.mean(np.array(sr.variables['W3TP']),(2,3))
 srwp3adv=np.mean(np.array(sr.variables['W3ADV']),(2,3))
 srwp3pres=np.mean(np.array(sr.variables['W3PRES']),(2,3))
 srwp3buoy=np.mean(np.array(sr.variables['W3BUOY']),(2,3))
@@ -319,9 +322,11 @@ srwp3diff=np.mean(np.array(sr.variables['W3DFSN']),(2,3))
 srwp3bt=np.mean(np.array(sr.variables['W3BT']),(2,3))
 srwp3presdfsn=np.mean(np.array(sr.variables['W3PRESDFSN']),(2,3))
 srwp3presscr=np.mean(np.array(sr.variables['W3PRESSCR']),(2,3))
-srwp3res = srwp3bt - (srwp3adv + srwp3pres + srwp3buoy + srwp3diff)
+srwp3pres=srwp3pres-srwp3tp
+srwp3res = srwp3bt - (srwp3adv + srwp3pres + srwp3buoy + srwp3diff + srwp3tp)
 
 swwp3=np.mean(np.array(sw.variables['W3']),(2,3))
+swwp3tp=np.mean(np.array(sw.variables['W3TP']),(2,3))
 swwp3adv=np.mean(np.array(sw.variables['W3ADV']),(2,3))
 swwp3pres=np.mean(np.array(sw.variables['W3PRES']),(2,3))
 swwp3buoy=np.mean(np.array(sw.variables['W3BUOY']),(2,3))
@@ -329,7 +334,8 @@ swwp3diff=np.mean(np.array(sw.variables['W3DFSN']),(2,3))
 swwp3bt=np.mean(np.array(sw.variables['W3BT']),(2,3))
 swwp3presdfsn=np.mean(np.array(sw.variables['W3PRESDFSN']),(2,3))
 swwp3presscr=np.mean(np.array(sw.variables['W3PRESSCR']),(2,3))
-swwp3res = swwp3bt - (swwp3adv + swwp3pres + swwp3buoy + swwp3diff)
+swwp3pres=swwp3pres-swwp3tp
+swwp3res = swwp3bt - (swwp3adv + swwp3pres + swwp3buoy + swwp3diff + swwp3tp)
 
 #define averaging times & heights
 bs=180
@@ -471,11 +477,12 @@ ax.legend(frameon=False,loc='upper left',prop={'size': 7})
 ax=fig.add_subplot(2,3,4)
 ax.plot(np.mean(sbwp3presdfsn[bs:be,0:bh],0),sbh[0:bh],label='W3PRESDFSN')
 ax.plot(np.mean(sbwp3presscr[bs:be,0:bh],0),sbh[0:bh],label='W3PRESSCR')
-ax.plot(np.mean(sbwp3adv[bs:be,0:bh],0),sbh[0:bh],label='W3ADV')
-ax.plot(np.mean(sbwp3buoy[bs:be,0:bh],0),sbh[0:bh],label='W3BUOY')
-ax.plot(np.mean(sbwp3diff[bs:be,0:bh],0),sbh[0:bh],label='W3DFSN')
-ax.plot(np.mean(sbwp3bt[bs:be,0:bh],0),sbh[0:bh],label='W3BT')
-ax.plot(np.mean(sbwp3res[bs:be,0:bh],0),sbh[0:bh],label='W3_RES')
+ax.plot(np.mean(sbwp3tp[bs:be,0:bh],0),sbh[0:bh],color=cycle[9],label='W3TP')
+ax.plot(np.mean(sbwp3adv[bs:be,0:bh],0),sbh[0:bh],color=cycle[2],label='W3ADV')
+ax.plot(np.mean(sbwp3buoy[bs:be,0:bh],0),sbh[0:bh],color=cycle[3],label='W3BUOY')
+ax.plot(np.mean(sbwp3diff[bs:be,0:bh],0),sbh[0:bh],color=cycle[4],label='W3DFSN')
+ax.plot(np.mean(sbwp3bt[bs:be,0:bh],0),sbh[0:bh],color=cycle[5],label='W3BT')
+ax.plot(np.mean(sbwp3res[bs:be,0:bh],0),sbh[0:bh],color=cycle[6],label='W3_RES')
 ax.set_ylabel('Height [m]')
 ax.set_xlabel(r"$\overline{w'^3}$ budgets [m$^3$s$^{-4}$]")
 xmin,xmax = ax.get_xlim()
@@ -485,11 +492,12 @@ ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 ax=fig.add_subplot(2,3,5)
 ax.plot(np.mean(srwp3presdfsn[rs:re,0:rhs],0),srh[0:rhs],label='W3PRESDFSN')
 ax.plot(np.mean(srwp3presscr[rs:re,0:rhs],0),srh[0:rhs],label='W3PRESSCR')
-ax.plot(np.mean(srwp3adv[rs:re,0:rhs],0),srh[0:rhs],label='W3ADV')
-ax.plot(np.mean(srwp3buoy[rs:re,0:rhs],0),srh[0:rhs],label='W3BUOY')
-ax.plot(np.mean(srwp3diff[rs:re,0:rhs],0),srh[0:rhs],label='W3DFSN')
-ax.plot(np.mean(srwp3bt[rs:re,0:rhs],0),srh[0:rhs],label='W3BT')
-ax.plot(np.mean(srwp3res[rs:re,0:rhs],0),srh[0:rhs],label='W3_RES')
+ax.plot(np.mean(srwp3tp[rs:re,0:rhs],0),srh[0:rhs],color=cycle[9],label='W3TP')
+ax.plot(np.mean(srwp3adv[rs:re,0:rhs],0),srh[0:rhs],color=cycle[2],label='W3ADV')
+ax.plot(np.mean(srwp3buoy[rs:re,0:rhs],0),srh[0:rhs],color=cycle[3],label='W3BUOY')
+ax.plot(np.mean(srwp3diff[rs:re,0:rhs],0),srh[0:rhs],color=cycle[4],label='W3DFSN')
+ax.plot(np.mean(srwp3bt[rs:re,0:rhs],0),srh[0:rhs],color=cycle[5],label='W3BT')
+ax.plot(np.mean(srwp3res[rs:re,0:rhs],0),srh[0:rhs],color=cycle[6],label='W3_RES')
 ax.set_xlabel(r"$\overline{w'^3}$ budgets [m$^3$s$^{-4}$]")
 xmin,xmax = ax.get_xlim()
 ymin,ymax = ax.get_ylim()
@@ -498,11 +506,12 @@ ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 ax=fig.add_subplot(2,3,6)
 ax.plot(np.mean(swwp3presdfsn[ws:we,0:wh],0),swh[0:wh],label="\"pres. trans.\"")
 ax.plot(np.mean(swwp3presscr[ws:we,0:wh],0),swh[0:wh],label="\"pres. scram.\"")
-ax.plot(np.mean(swwp3adv[ws:we,0:wh],0),swh[0:wh],label='4th-ord. trans.')
-ax.plot(np.mean(swwp3buoy[ws:we,0:wh],0),swh[0:wh],label='buoy. prod.')
-ax.plot(np.mean(swwp3diff[ws:we,0:wh],0),swh[0:wh],label='diss.')
-ax.plot(np.mean(swwp3bt[ws:we,0:wh],0),swh[0:wh],label='tot. tend.')
-ax.plot(np.mean(swwp3res[ws:we,0:wh],0),swh[0:wh],label='resid.')
+ax.plot(np.mean(swwp3tp[ws:we,0:wh],0),swh[0:wh],color=cycle[9],label='turb. prod.')
+ax.plot(np.mean(swwp3adv[ws:we,0:wh],0),swh[0:wh],color=cycle[2],label='4th-ord. trans.')
+ax.plot(np.mean(swwp3buoy[ws:we,0:wh],0),swh[0:wh],color=cycle[3],label='buoy. prod.')
+ax.plot(np.mean(swwp3diff[ws:we,0:wh],0),swh[0:wh],color=cycle[4],label='diss.')
+ax.plot(np.mean(swwp3bt[ws:we,0:wh],0),swh[0:wh],color=cycle[5],label='tot. tend.')
+ax.plot(np.mean(swwp3res[ws:we,0:wh],0),swh[0:wh],color=cycle[6],label='resid.')
 ax.set_xlabel(r"$\overline{w'^3}$ budgets [m$^3$s$^{-4}$]")
 xmin,xmax = ax.get_xlim()
 ymin,ymax = ax.get_ylim()
@@ -571,12 +580,13 @@ ax.legend(frameon=False,loc='upper right',prop={'size': 7})
 ax=fig.add_subplot(2,3,4)
 ax.plot(np.mean(cbwp3_pr_dfsn_tot[bs:be,0:bh],0),cbhzt[0:bh],label='W3PRESDFSN')
 ax.plot(np.mean(cbwp3_pres_scram[bs:be,0:bh],0),cbhzt[0:bh],label='W3PRESSCR')
-ax.plot(np.mean(cbwp3_adv[bs:be,0:bh],0),cbhzt[0:bh],label='W3ADV')
-ax.plot(np.mean(cbwp3_buoy[bs:be,0:bh],0),cbhzt[0:bh],label='W3BUOY')
-ax.plot(np.mean(cbwp3_diss[bs:be,0:bh],0),cbhzt[0:bh],label='W3DFSN')
-ax.plot(np.mean(cbwp3_tot[bs:be,0:bh],0),cbhzt[0:bh],label='W3BT')
-ax.plot(np.mean(cbwp3_res[bs:be,0:bh],0),cbhzt[0:bh],label='W3_RES')
-ax.plot(np.mean(cbwp3_cl[bs:be,0:bh],0),cbhzt[0:bh],label='W3_RES')
+ax.plot(np.mean(cbwp3_tp[bs:be,0:bh],0),cbhzt[0:bh],color=cycle[9],label='W3TP')
+ax.plot(np.mean(cbwp3_adv[bs:be,0:bh],0),cbhzt[0:bh],color=cycle[2],label='W3ADV')
+ax.plot(np.mean(cbwp3_buoy[bs:be,0:bh],0),cbhzt[0:bh],color=cycle[3],label='W3BUOY')
+#ax.plot(np.mean(cbwp3_diss[bs:be,0:bh],0),cbhzt[0:bh],color=cycle[4],label='W3DFSN')
+ax.plot(np.mean(cbwp3_tot[bs:be,0:bh],0),cbhzt[0:bh],color=cycle[5],label='W3BT')
+ax.plot(np.mean(cbwp3_res[bs:be,0:bh],0),cbhzt[0:bh],color=cycle[6],label='W3_RES')
+ax.plot(np.mean(cbwp3_cl[bs:be,0:bh],0),cbhzt[0:bh],color=cycle[7],label='W3_RES')
 ax.set_ylabel('Height [m]')
 ax.set_xlabel(r"$\overline{w'^3}$ budgets [m$^3$s$^{-4}$]")
 xmin,xmax = ax.get_xlim()
@@ -586,12 +596,13 @@ ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 ax=fig.add_subplot(2,3,5)
 ax.plot(np.mean(crwp3_pr_dfsn_tot[rs:re,0:rhc],0),crhzt[0:rhc],label='W3PRESDFSN')
 ax.plot(np.mean(crwp3_pres_scram[rs:re,0:rhc],0),crhzt[0:rhc],label='W3PRESSCR')
-ax.plot(np.mean(crwp3_adv[rs:re,0:rhc],0),crhzt[0:rhc],label='W3ADV')
-ax.plot(np.mean(crwp3_buoy[rs:re,0:rhc],0),crhzt[0:rhc],label='W3BUOY')
-ax.plot(np.mean(crwp3_diss[rs:re,0:rhc],0),crhzt[0:rhc],label='W3DFSN')
-ax.plot(np.mean(crwp3_tot[rs:re,0:rhc],0),crhzt[0:rhc],label='W3BT')
-ax.plot(np.mean(crwp3_res[rs:re,0:rhc],0),crhzt[0:rhc],label='W3_RES')
-ax.plot(np.mean(crwp3_cl[rs:re,0:rhc],0),crhzt[0:rhc],label='W3_RES')
+ax.plot(np.mean(crwp3_tp[rs:re,0:rhc],0),crhzt[0:rhc],color=cycle[9],label='W3TP')
+ax.plot(np.mean(crwp3_adv[rs:re,0:rhc],0),crhzt[0:rhc],color=cycle[2],label='W3ADV')
+ax.plot(np.mean(crwp3_buoy[rs:re,0:rhc],0),crhzt[0:rhc],color=cycle[3],label='W3BUOY')
+#ax.plot(np.mean(crwp3_diss[rs:re,0:rhc],0),crhzt[0:rhc],color=cycle[4],label='W3DFSN')
+ax.plot(np.mean(crwp3_tot[rs:re,0:rhc],0),crhzt[0:rhc],color=cycle[5],label='W3BT')
+ax.plot(np.mean(crwp3_res[rs:re,0:rhc],0),crhzt[0:rhc],color=cycle[6],label='W3_RES')
+ax.plot(np.mean(crwp3_cl[rs:re,0:rhc],0),crhzt[0:rhc],color=cycle[7],label='W3_RES')
 ax.set_xlabel(r"$\overline{w'^3}$ budgets [m$^3$s$^{-4}$]")
 xmin,xmax = ax.get_xlim()
 ymin,ymax = ax.get_ylim()
@@ -600,12 +611,13 @@ ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 ax=fig.add_subplot(2,3,6)
 ax.plot(np.mean(cwwp3_pr_dfsn_tot[ws:we,0:wh],0),cwhzt[0:wh],label="\"pres. trans.\"")
 ax.plot(np.mean(cwwp3_pres_scram[ws:we,0:wh],0),cwhzt[0:wh],label="\"pres. scram.\"")
-ax.plot(np.mean(cwwp3_adv[ws:we,0:wh],0),cwhzt[0:wh],label='4th-ord. trans.')
-ax.plot(np.mean(cwwp3_buoy[ws:we,0:wh],0),cwhzt[0:wh],label='buoy. prod.')
-ax.plot(np.mean(cwwp3_diss[ws:we,0:wh],0),cwhzt[0:wh],label='diss.')
-ax.plot(np.mean(cwwp3_tot[ws:we,0:wh],0),cwhzt[0:wh],label='tot. tend.')
-ax.plot(np.mean(cwwp3_res[ws:we,0:wh],0),cwhzt[0:wh],label='resid.')
-ax.plot(np.mean(cwwp3_cl[ws:we,0:wh],0),cwhzt[0:wh],label='other')
+ax.plot(np.mean(cwwp3_tp[ws:we,0:wh],0),cwhzt[0:wh],color=cycle[9],label="turb. prod.")
+ax.plot(np.mean(cwwp3_adv[ws:we,0:wh],0),cwhzt[0:wh],color=cycle[2],label='4th-ord. trans.')
+ax.plot(np.mean(cwwp3_buoy[ws:we,0:wh],0),cwhzt[0:wh],color=cycle[3],label='buoy. prod.')
+#ax.plot(np.mean(cwwp3_diss[ws:we,0:wh],0),cwhzt[0:wh],color=cycle[4],label='diss.')
+ax.plot(np.mean(cwwp3_tot[ws:we,0:wh],0),cwhzt[0:wh],color=cycle[5],label='tot. tend.')
+ax.plot(np.mean(cwwp3_res[ws:we,0:wh],0),cwhzt[0:wh],color=cycle[6],label='resid.')
+ax.plot(np.mean(cwwp3_cl[ws:we,0:wh],0),cwhzt[0:wh],color=cycle[7],label='other')
 ax.set_xlabel(r"$\overline{w'^3}$ budgets [m$^3$s$^{-4}$]")
 xmin,xmax = ax.get_xlim()
 ymin,ymax = ax.get_ylim()
@@ -749,10 +761,8 @@ plt.show()
 ##########################################################
 ##########################################################
 #figure showing SAM w'p' and w'tke etc. for BOMEX
-coef1=-0.17
-coef2=-0.01
-coef3=-0.12
-coef4=-0.005
+coef1=-0.20
+coef2=-0.15
 
 fig=plt.figure(figsize=(7.,3.5))
 
@@ -767,7 +777,7 @@ ax.legend(frameon=False)
 
 ax=fig.add_subplot(1,2,2)
 ax.plot(np.mean(sbwp2pp[bs:be,0:bh],0),sbh[0:bh],label=r"$\overline{w'^2p'}/\rho$")
-ax.plot(coef3*np.mean(sbwp2tke[bs:be,0:bh],0),sbh[0:bh],label=r"$c_{wp3}(\overline{w'^2e}-\overline{w'^2}\overline{e})$")
+ax.plot(coef2*np.mean(sbwp2tke[bs:be,0:bh],0),sbh[0:bh],label=r"$c_{wp3}(\overline{w'^2e}-\overline{w'^2}\overline{e})$")
 ax.set_xlabel(r"[m$^4$s$^{-4}$]")
 xmin,xmax = ax.get_xlim()
 ymin,ymax = ax.get_ylim()
