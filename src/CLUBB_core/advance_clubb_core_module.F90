@@ -106,6 +106,13 @@ module advance_clubb_core_module
 
   private ! Default Scope
 
+  ! Advance subroutine ordering variables
+  integer, parameter, private :: &
+    order_xm_wpxp = 1, &
+    order_xp2_xpyp = 2, &
+    order_wp2_wp3 = 3, &
+    order_windm = 4
+
   contains
 
   !-----------------------------------------------------------------------
@@ -828,13 +835,6 @@ module advance_clubb_core_module
 
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
-
-    ! Advance order test variables
-    integer, parameter :: &
-      order_xm_wpxp = 1, &
-      order_xp2_xpyp = 2, &
-      order_wp2_wp3 = 3, &
-      order_windm = 4
 
     integer :: advance_order_loop_iter
 
@@ -3612,6 +3612,103 @@ module advance_clubb_core_module
          write(fstderr,*) "Invalid configuration: l_min_xp2_from_corr_wx = F " &
                           // "and l_enable_relaxed_clipping = F"
          write(fstderr,*) "They must have opposite values"
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      endif
+
+      ! Checking for the code that orders CLUBB's advance_ subroutines
+      if ( order_xm_wpxp < 1 .or. order_xm_wpxp > 4 ) then
+         write(fstderr,*) "The variable order_xm_wpxp must have a value " &
+                          // "between 1 and 4"
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      elseif ( order_xm_wpxp == order_wp2_wp3 &
+               .or. order_xm_wpxp == order_xp2_xpyp &
+               .or. order_xm_wpxp == order_windm ) then
+         write(fstderr,*) "The variable order_xm_wpxp has the same value " &
+                          // "as another order_ variable.  Please give each " &
+                          // "order index a unique value."
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      endif
+
+      if ( order_wp2_wp3 < 1 .or. order_wp2_wp3 > 4 ) then
+         write(fstderr,*) "The variable order_wp2_wp3 must have a value " &
+                          // "between 1 and 4"
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      elseif ( order_wp2_wp3 == order_xm_wpxp &
+               .or. order_wp2_wp3 == order_xp2_xpyp &
+               .or. order_wp2_wp3 == order_windm ) then
+         write(fstderr,*) "The variable order_wp2_wp3 has the same value " &
+                          // "as another order_ variable.  Please give each " &
+                          // "order index a unique value."
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      endif
+
+      if ( order_xp2_xpyp < 1 .or. order_xp2_xpyp > 4 ) then
+         write(fstderr,*) "The variable order_xp2_xpyp must have a value " &
+                          // "between 1 and 4"
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      elseif ( order_xp2_xpyp == order_wp2_wp3 &
+               .or. order_xp2_xpyp == order_xm_wpxp &
+               .or. order_xp2_xpyp == order_windm ) then
+         write(fstderr,*) "The variable order_xp2_xpyp has the same value " &
+                          // "as another order_ variable.  Please give each " &
+                          // "order index a unique value."
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      endif
+
+      if ( order_windm < 1 .or. order_windm > 4 ) then
+         write(fstderr,*) "The variable order_windm must have a value " &
+                          // "between 1 and 4"
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "Fatal error in setup_clubb_core"
+         err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
+         return
+      elseif ( order_windm == order_wp2_wp3 &
+               .or. order_windm == order_xp2_xpyp &
+               .or. order_windm == order_xm_wpxp ) then
+         write(fstderr,*) "The variable order_windm has the same value " &
+                          // "as another order_ variable.  Please give each " &
+                          // "order index a unique value."
+         write(fstderr,*) "order_windm = ", order_windm
+         write(fstderr,*) "order_wp2_wp3 = ", order_wp2_wp3
+         write(fstderr,*) "order_xp2_xpyp = ", order_xp2_xpyp
+         write(fstderr,*) "order_xm_wpxp = ", order_xm_wpxp
          write(fstderr,*) "Fatal error in setup_clubb_core"
          err_code = clubb_fatal_error
          err_code_out = clubb_fatal_error
