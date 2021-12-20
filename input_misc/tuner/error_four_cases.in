@@ -1,0 +1,183 @@
+&stats
+f_tol              = 0.001,
+l_results_stdout    = .true.,
+l_results_file      = .true.,
+l_stdout_on_invalid = .true.,
+l_keep_params_equal = .true.,
+t_variables       = "rcm", "QC", "cloud_frac", "CLD", "wp2_zt", "W2", "wp3", "W3"
+weight_var_nl     = 0.25, 0.25, 0.25, 0.25
+anneal_temp       = 100.0,
+max_final_temp      = 0.01,
+anneal_iter       = 100,
+tune_type = 2
+stp_adjst_center_in = 0.6
+stp_adjst_spread_in = 0.8
+/
+
+! clubb_stats_file is the name of clubb stats file;  This should be the same as
+!   fname_zm  or fname_zm in the statsnl namelist.
+! les_stats_file is the name of LES grads data file
+! z_i and z_f are levels to look at when tuning. This does not need
+!   to be 1 to nzmax if you wish to optimize for particular altitudes.
+!   Note that the first and last z-levels in CLUBB are not prognosed.
+! timestep_intvls_nl is the time interval(s) to tune for, in ordered pair form.
+
+&cases
+!  GCSS ARM
+hoc_stats_file_nl(1)    = "../output/arm_zt.nc"
+les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc"
+run_file_nl(1)          = "arm_hoc.in"
+z_i_nl(1)               = 2
+z_f_nl(1)               = 100
+timestep_intvls_nl(1,:) = 481, 540
+weight_case_nl(1)       = 0.25
+!
+!  GCSS BOMEX
+hoc_stats_file_nl(2)    = "../output/bomex_zt.nc",
+les_stats_file_nl(2)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
+run_file_nl(2)          = "bomex_hoc.in",
+z_i_nl(2)               = 2,
+z_f_nl(2)               = 75,
+timestep_intvls_nl(2,:) = 180, 360
+weight_case_nl(2)       = 0.25
+!
+! GCSS DYCOMS II RF 1
+hoc_stats_file_nl(3)    = "../output/dycoms2_rf01_zt.nc"
+les_stats_file_nl(3)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
+run_file_nl(3)          = "dycoms2_rf01_hoc.in"
+z_i_nl(3)               = 2,
+z_f_nl(3)               = 120,
+timestep_intvls_nl(3,:) = 61, 120, 121, 180, 181, 240
+weight_case_nl(3)       = 0.25
+!
+! WANGARA
+hoc_stats_file_nl(4)    = "../output/wangara_zt.nc"
+les_stats_file_nl(4)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/WANGARA/WANGARA_64x64x80_100m_40m_LES.nc"
+run_file_nl(4)          = "wangara_hoc.in"
+z_i_nl(4)               = 2,
+z_f_nl(4)               = 58,
+timestep_intvls_nl(4,:) = 181, 240
+weight_case_nl(4)       = 0.25
+/
+
+
+&init_minmax
+C1_minmax                           = 0., 0.
+C1b_minmax                          = 0., 0.
+C1c_minmax                          = 0., 0.
+C2rt_minmax                         = 0., 0.
+C2thl_minmax                        = 0., 0.
+C2rtthl_minmax                      = 0., 0.
+C4_minmax                           = 1., 3.
+C_uu_shr_minmax                     = 0.1, 1.
+C_uu_buoy_minmax                    = 0.1, 1.
+C6rt_minmax                         = 0., 0.
+C6rtb_minmax                        = 0., 0.
+C6rtc_minmax                        = 0., 0.
+C6thl_minmax                        = 0., 0.
+C6thlb_minmax                       = 0., 0.
+C6thlc_minmax                       = 0., 0.
+C7_minmax                           = 0., 0.
+C7b_minmax                          = 0., 0.
+C7c_minmax                          = 0., 0.
+C8_minmax                           = 0., 1.5
+C8b_minmax                          = 0., 0.
+C10_minmax                          = 0., 0.
+C11_minmax                          = 0., 0.9
+C11b_minmax                         = 0., 0.
+C11c_minmax                         = 0., 0.
+C12_minmax                          = 0., 0.
+C13_minmax                          = 0., 0.
+C14_minmax                          = 0., 0.
+C_wp2_pr_dfsn_minmax                = 0., 1.
+C_wp3_pr_tp_minmax                  = 0., 0.
+C_wp3_pr_turb_minmax                = 0., 0.
+C_wp3_pr_dfsn_minmax                = 0., 1.
+C_wp2_splat_minmax                  = 0., 0.
+C6rt_Lscale0_minmax                 = 0., 0.
+C6thl_Lscale0_minmax                = 0., 0.
+C7_Lscale0_minmax                   = 0., 0.
+wpxp_L_thresh_minmax                = 0., 0.
+c_K_minmax                          = 0., 0.
+c_K1_minmax                         = 0., 1.
+nu1_minmax                          = 0., 30.
+c_K2_minmax                         = 0., 0.
+nu2_minmax                          = 0., 0.
+c_K6_minmax                         = 0., 0.
+nu6_minmax                          = 0., 0.
+c_K8_minmax                         = 0., 1.
+nu8_minmax                          = 0., 30.
+c_K9_minmax                         = 0., 0.
+nu9_minmax                          = 0., 0.
+nu10_minmax                         = 0., 0.
+c_K_hm_minmax                       = 0., 0.
+c_K_hmb_minmax                      = 0., 0.
+K_hm_min_coef_minmax                = 0., 0.
+nu_hm_minmax                        = 0., 0.
+slope_coef_spread_DG_means_w_minmax = 0., 0.
+pdf_component_stdev_factor_w_minmax = 0., 0.
+coef_spread_DG_means_rt_minmax      = 0., 0.
+coef_spread_DG_means_thl_minmax     = 0., 0.
+beta_minmax                         = 1., 2.7
+gamma_coef_minmax                   = 0.2, 0.4
+gamma_coefb_minmax                  = 0., 0.
+gamma_coefc_minmax                  = 0., 0.
+taumin_minmax                       = 0., 0.
+taumax_minmax                       = 0., 0.
+lmin_coef_minmax                    = 0., 0.
+omicron_minmax                      = 0., 0.
+zeta_vrnce_rat_minmax               = 0., 0.
+upsilon_precip_frac_rat_minmax      = 0., 0.
+lambda0_stability_coef_minmax       = 0., 0.
+mult_coef_minmax                    = 0., 0.
+mu_minmax                           = 0., 0.
+Lscale_mu_coef_minmax               = 0., 0.
+Lscale_pert_coef_minmax             = 0., 0.
+alpha_corr_minmax                   = 0., 0.
+Skw_denom_coef_minmax               = 0., 0.
+c_K10_minmax                        = 0., 0.
+c_K10h_minmax                       = 0., 0.
+thlp2_rad_coef_minmax               = 0., 0.
+thlp2_rad_cloud_frac_thresh_minmax  = 0., 0.
+up2_sfc_coef_minmax                 = 0., 0.
+Skw_max_mag_minmax                  = 0., 0.
+C_invrs_tau_bkgnd_minmax            = 0.2, 1.5
+C_invrs_tau_sfc_minmax              = 0., 1.
+C_invrs_tau_shear_minmax            = 0., 1.
+C_invrs_tau_N2_minmax               = 0., 1.
+C_invrs_tau_N2_xp2_minmax           = 0., 1.
+C_invrs_tau_N2_wp2_minmax           = 0., 1.
+C_invrs_tau_N2_wpxp_minmax          = 0., 0.
+C_invrs_tau_N2_clear_wp3_minmax     = 0., 1.5
+C_invrs_tau_wpxp_Ri_minmax          = 0., 0.
+C_invrs_tau_wpxp_N2_thresh_minmax   = 0., 0.
+xp3_coef_base_minmax                = 0., 0.
+xp3_coef_slope_minmax               = 0., 0.
+altitude_threshold_minmax           = 0., 0.
+rtp2_clip_coef_minmax               = 0., 0.
+Richardson_num_min_minmax           = 0., 0.
+Richardson_num_max_minmax           = 0., 0.
+Cx_min_minmax                       = 0., 0.
+Cx_max_minmax                       = 0., 0.
+/
+
+&parameter_constraints
+C1_equals                             = ""
+C1b_equals                            = ""
+C6rt_equals                           = ""
+C6rtb_equals                          = ""
+C6rtc_equals                          = ""
+C6thl_equals                          = ""
+C6thlb_equals                         = ""
+C6thlc_equals                         = ""
+C7_equals                             = ""
+C7b_equals                            = ""
+C11_equals                            = ""
+C11b_equals                           = "C11"
+C14_equals                            = ""
+C6rt_Lscale0_equals                   = ""
+C6thl_Lscale0_equals                  = ""
+gamma_coef_equals                     = ""
+gamma_coefb_equals                    = "gamma_coef"
+/
+
