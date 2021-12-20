@@ -1097,19 +1097,26 @@ module error
         les_minmax = maxval( les_zl(z_i(c_run):z_f(c_run)) ) &
           - minval( les_zl(z_i(c_run):z_f(c_run)) )
 
+
+        ! The following three lines are commented out and the five lines
+        ! afterward are added, to avoid an error when the LES experiment has no
+        ! cloud or cloud water.  This would give an error about the LES variable
+        ! being zero and shut down the tuning process before, but with the new
+        ! lines it will keep going and just use a minimum threshold instead of
+        ! zero.
 !        if ( abs(les_minmax) < eps) then
 !          error stop "An LES variable was 0 from z_i to z_f."
 !        end if
-
-        ! Old code
-!     err_sum = err_sum &
-!      + mean_sqr_diff_zt( clubb_nz, clubb_zl, les_zl, les_minmax )
 
         if (hoc_v(i) == 'cloud_frac') then
           les_minmax = max( 0.01_core_rknd, les_minmax )
         elseif (hoc_v(i) == 'rcm' ) then
           les_minmax = max( 1.e-6_core_rknd, les_minmax )
         end if
+
+        ! Old code
+!     err_sum = err_sum &
+!      + mean_sqr_diff_zt( clubb_nz, clubb_zl, les_zl, les_minmax )
 
         ! Chris Golaz modification: mean_sqr_diff_2 was designed to try
         ! to limit time noise in tuning simulations.
