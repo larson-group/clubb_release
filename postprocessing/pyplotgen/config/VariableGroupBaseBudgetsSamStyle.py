@@ -69,9 +69,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['wp2_residual', self.getWp2Residual], 'legend_label': 'wp2_res'},
             {'var_names': ['wp2_adv',self.calc_wp2_adv], 'legend_label': 'wp2_adv'},
             {'var_names': ['wp2_pres',self.calc_wp2_pres], 'legend_label': 'wp2_pres'},
-            {'var_names': ['wp2_pr1'], 'legend_label': 'wp2_redis'},
+            {'var_names': ['wp2_redis',self.calc_wp2_redis], 'legend_label': 'wp2_redis'},
             {'var_names': ['wp2_bp'], 'legend_label': 'wp2_buoy'},
-            {'var_names': ['wp2_dfsn',self.calc_wp2_dfsn], 'legend_label': 'wp2_dfsn'},
+            {'var_names': ['wp2_dp1'], 'legend_label': 'wp2_dfsn'},
             {'var_names': ['wp2_sdmp'], 'legend_label': 'wp2_sdmp'},
             {'var_names': ['wp2_bt'], 'legend_label': 'wp2_bt'},
             {'var_names': ['wp2_limiters',self.calc_wp2_limiters], 'legend_label': 'wp2_limiters'},
@@ -83,7 +83,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['wp3_pres',self.calc_wp3_pres], 'legend_label': 'wp3_pres'},
             {'var_names': ['wp3_adv',self.calc_wp3_adv], 'legend_label': 'wp3_adv'},
             {'var_names': ['wp3_bp1'], 'legend_label': 'wp3_buoy'},
-            {'var_names': ['wp3_dp1'], 'legend_label': 'wp3_dfsn'},
+            {'var_names': ['wp3_scram',self.calc_wp3_scram], 'legend_label': 'wp3_scram'},
             {'var_names': ['wp3_bt'], 'legend_label': 'wp3_bt'},
             {'var_names': ['wp3_cl'], 'legend_label': 'wp3_limiters'},
         ]
@@ -704,12 +704,23 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         '''
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wp2_pr_dfsn, indep, dataset = self.getVarForCalculations('wp2_pr_dfsn', dataset_override)
+        wp2_dp2, indep, dataset = self.getVarForCalculations('wp2_dp2', dataset_override)
+
+        output_data = wp2_pr_dfsn + wp2_dp2
+
+        return output_data, indep
+
+    def calc_wp2_redis(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wp2_pr1, indep, dataset = self.getVarForCalculations('wp2_pr1', dataset_override)
         wp2_pr2, indep, dataset = self.getVarForCalculations('wp2_pr2', dataset_override)
         wp2_pr3, indep, dataset = self.getVarForCalculations('wp2_pr3', dataset)
         wp2_splat, indep, dataset = self.getVarForCalculations('wp2_splat', dataset)
-        wp2_pr_dfsn, indep, dataset = self.getVarForCalculations('wp2_pr_dfsn', dataset)
 
-        output_data = wp2_pr2 + wp2_pr3 + wp2_splat + wp2_pr_dfsn
+        output_data = wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_splat
 
         return output_data, indep
 
@@ -800,7 +811,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
     
-    def calc_wp3_pres(self, dataset_override=None):
+    def calc_wp3_scram(self, dataset_override=None):
         '''
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -809,11 +820,19 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp3_pr3, indep, dataset = self.getVarForCalculations('wp3_pr3', dataset)
         wp3_pr_tp, indep, dataset = self.getVarForCalculations('wp3_pr_tp', dataset)
         wp3_pr_turb, indep, dataset = self.getVarForCalculations('wp3_pr_turb', dataset)
-        wp3_pr_dfsn, indep, dataset = self.getVarForCalculations('wp3_pr_dfsn', dataset)
         wp3_splat, indep, dataset = self.getVarForCalculations('wp3_splat', dataset)
 
-        output_data = wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_pr_turb + wp3_pr_dfsn + wp3_splat + wp3_pr_tp
+        output_data = wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_pr_turb + wp3_splat + wp3_pr_tp
 
+        return output_data, indep
+
+    def calc_wp3_pres(self, dataset_override=None):
+
+        wp3_pr_dfsn, indep, dataset = self.getVarForCalculations('wp3_pr_dfsn', dataset_override )
+        wp3_dp1, indep, dataset = self.getVarForCalculations('wp3_dp1', dataset)
+
+        output_data = wp3_pr_dfsn + wp3_dp1
+ 
         return output_data, indep
 
     def getWp3Residual(self, dataset_override=None):
