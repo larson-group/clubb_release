@@ -1104,14 +1104,15 @@ module error
         ! being zero and shut down the tuning process before, but with the new
         ! lines it will keep going and just use a minimum threshold instead of
         ! zero.
-!        if ( abs(les_minmax) < eps) then
-!          error stop "An LES variable was 0 from z_i to z_f."
-!        end if
 
         if (hoc_v(i) == 'cloud_frac') then
           les_minmax = max( 0.01_core_rknd, les_minmax )
         elseif (hoc_v(i) == 'rcm' ) then
           les_minmax = max( 1.e-6_core_rknd, les_minmax )
+        end if
+
+        if ( abs(les_minmax) < eps) then
+          error stop "An LES variable was 0 from z_i to z_f."
         end if
 
         ! Old code
