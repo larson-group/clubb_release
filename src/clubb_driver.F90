@@ -421,13 +421,15 @@ module clubb_driver
       delta_zm
     
     real( kind = core_rknd ), dimension(:), allocatable :: &
-      p_in_Pa,    & ! Air pressure (thermodynamic levels)            [Pa]
-      exner,      & ! Exner function (thermodynamic levels)          [-]
-      cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
-      wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
-      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
-      rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
-      thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+      p_in_Pa,    & ! Air pressure (thermodynamic levels)       [Pa]
+      exner,      & ! Exner function (thermodynamic levels)     [-]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)     [-]
+      wpthvp,     & ! < w' th_v' > (momentum levels)            [kg/kg K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)     [m^2/s^2 K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)          [kg/kg K]
+      thlpthvp,   & ! < th_l' th_v' > (momentum levels)         [K^2]
+      uprcp,      & ! < u' r_c' >                               [(m kg)/(s kg)]
+      vprcp         ! < v' r_c' >                               [(m kg)/(s kg)]
 
     real( kind = core_rknd ), dimension(:,:), allocatable ::  &
       rho_ds_zt  ! Dry, static density on thermo. levels      [kg/m^3]
@@ -1505,6 +1507,9 @@ module clubb_driver
     allocate( wpthvp(1:gr%nz) )   ! w'thv'
     allocate( wp2thvp(1:gr%nz) )  ! w'^2thv'
 
+    allocate( uprcp(1:gr%nz) )  ! u'rc'
+    allocate( vprcp(1:gr%nz) )  ! v'rc'
+
     allocate( Kh_zt(1:gr%nz) )  ! Eddy diffusivity coefficient: thermo. levels
     allocate( Kh_zm(1:gr%nz) )  ! Eddy diffusivity coefficient: momentum levels
     allocate( K_hm(1:gr%nz,1:hydromet_dim) ) ! Eddy diff. coef. for hydromets.: mom. levs.
@@ -1618,6 +1623,9 @@ module clubb_driver
     thlpthvp = zero ! thl'thv'
     wpthvp   = zero ! w'thv'
     wp2thvp  = zero ! w'^2thv'
+
+    uprcp  = zero ! u'rc'
+    vprcp  = zero ! v'rc'
 
     ! Eddy diffusivity
     Kh_zt = zero  ! Eddy diffusivity coefficient: thermo. levels
@@ -2219,6 +2227,7 @@ module clubb_driver
              rcm(1,:), cloud_frac, &                              ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
              sclrpthvp, &                                         ! Intent(inout)
+             uprcp, vprcp, &                                      ! intent(inout)
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
@@ -2696,6 +2705,9 @@ module clubb_driver
     deallocate( thlpthvp ) ! thl'thv'
     deallocate( wpthvp )   ! w'thv'
     deallocate( wp2thvp )  ! w'^2thv'
+
+    deallocate( uprcp )  ! u'rc'
+    deallocate( vprcp )  ! v'rc'
 
     deallocate( Kh_zt )  ! Eddy diffusivity coefficient: thermo. levels
     deallocate( Kh_zm )  ! Eddy diffusivity coefficient: momentum levels

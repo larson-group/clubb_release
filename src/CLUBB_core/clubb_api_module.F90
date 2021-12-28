@@ -554,6 +554,7 @@ contains
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
+    uprcp, vprcp, &                                         ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
     pdf_implicit_coefs_terms, &                             ! intent(inout)
 #ifdef GFDL
@@ -737,6 +738,10 @@ contains
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
       sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+      uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
+      vprcp                 ! < v' r_c' >              [(m kg)/(s kg)]
+
     type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
       pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
@@ -817,6 +822,7 @@ contains
       rcm, cloud_frac, &                                      ! intent(inout)
       wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
       sclrpthvp, &                                            ! intent(inout)
+      uprcp, vprcp, &                                         ! intent(inout)
       pdf_params, pdf_params_zm, &                            ! intent(inout)
       pdf_implicit_coefs_terms, &                             ! intent(inout)
 #ifdef GFDL

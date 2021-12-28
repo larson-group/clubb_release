@@ -158,6 +158,7 @@ module advance_clubb_core_module
                rcm, cloud_frac, &                                   ! intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
                sclrpthvp, &                                         ! intent(inout)
+               uprcp, vprcp, &                                      ! intent(inout)
                pdf_params, pdf_params_zm, &                         ! intent(inout)
                pdf_implicit_coefs_terms, &                          ! intent(inout)
 #ifdef GFDL
@@ -558,7 +559,11 @@ module advance_clubb_core_module
       thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
-      sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
+      sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+      uprcp,      & ! < u' r_c' >              [(m kg)/(s kg)]
+      vprcp         ! < v' r_c' >              [(m kg)/(s kg)]
 
     type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! Fortran structure of PDF parameters on thermodynamic levels    [units vary]
@@ -589,10 +594,6 @@ module advance_clubb_core_module
       w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
       ice_supersat_frac, & ! ice cloud fraction (thermodynamic levels)     [-]
       invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
-
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
-      uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
-      vprcp                 ! < v' r_c' >              [(m kg)/(s kg)]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
