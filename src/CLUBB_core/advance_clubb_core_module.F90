@@ -3585,16 +3585,6 @@ module advance_clubb_core_module
             return
          endif ! iiPDF_type /= iiPDF_ADG1
 
-         if (  ipdf_call_placement == ipdf_post_advance_fields ) then
-            write(fstderr,*) "Currently,  ipdf_call_placement == ipdf_post_advance_fields" &
-                             // " is incompatible with the l_predict_upwp_vpwp code" &
-                             // " because uprcp has not been fed through advance_clubb_core."
-            write(fstderr,*) "Fatal error in setup_clubb_core"
-            err_code = clubb_fatal_error
-            err_code_out = clubb_fatal_error
-            return
-         endif
-
       endif ! l_predict_upwp_vpwp
 
       ! The flags l_min_xp2_from_corr_wx and l_enable_relaxed_clipping must
