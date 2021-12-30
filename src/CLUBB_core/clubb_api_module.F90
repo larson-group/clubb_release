@@ -554,7 +554,8 @@ contains
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
-    uprcp, vprcp, &                                         ! intent(inout)
+    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &               ! intent(inout)
+    wp4, wpup2, wpvp2, wp2up2, wp2vp2, &                    ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
     pdf_implicit_coefs_terms, &                             ! intent(inout)
 #ifdef GFDL
@@ -736,11 +737,19 @@ contains
       thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
-      sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
+      sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
-      uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
-      vprcp                 ! < v' r_c' >              [(m kg)/(s kg)]
+      wp2rtp,     & ! w'^2 rt' (thermodynamic levels)             [m^2/s^2 kg/kg]
+      wp2thlp,    & ! w'^2 thl' (thermodynamic levels)            [m^2/s^2 K]
+      uprcp,      & ! < u' r_c' > (momentum levels)               [(m/s)(kg/kg)]
+      vprcp,      & ! < v' r_c' > (momentum levels)               [(m/s)(kg/kg)]
+      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4,        & ! w'^4 (momentum levels)                      [m^4/s^4]
+      wpup2,      & ! w'u'^2 (thermodynamic levels)               [m^3/s^3]
+      wpvp2,      & ! w'v'^2 (thermodynamic levels)               [m^3/s^3]
+      wp2up2,     & ! w'^2 u'^2 (momentum levels)                 [m^4/s^4]
+      wp2vp2        ! w'^2 v'^2 (momentum levels)                 [m^4/s^4]
 
     type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
@@ -822,7 +831,8 @@ contains
       rcm, cloud_frac, &                                      ! intent(inout)
       wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
       sclrpthvp, &                                            ! intent(inout)
-      uprcp, vprcp, &                                         ! intent(inout)
+      wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &               ! intent(inout)
+      wp4, wpup2, wpvp2, wp2up2, wp2vp2, &                    ! intent(inout)
       pdf_params, pdf_params_zm, &                            ! intent(inout)
       pdf_implicit_coefs_terms, &                             ! intent(inout)
 #ifdef GFDL

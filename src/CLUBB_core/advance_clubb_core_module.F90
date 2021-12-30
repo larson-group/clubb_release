@@ -158,7 +158,8 @@ module advance_clubb_core_module
                rcm, cloud_frac, &                                   ! intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
                sclrpthvp, &                                         ! intent(inout)
-               uprcp, vprcp, &                                      ! intent(inout)
+               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &            ! intent(inout)
+               wp4, wpup2, wpvp2, wp2up2, wp2vp2, &                 ! intent(inout)
                pdf_params, pdf_params_zm, &                         ! intent(inout)
                pdf_implicit_coefs_terms, &                          ! intent(inout)
 #ifdef GFDL
@@ -562,8 +563,16 @@ module advance_clubb_core_module
       sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
-      uprcp,      & ! < u' r_c' >              [(m kg)/(s kg)]
-      vprcp         ! < v' r_c' >              [(m kg)/(s kg)]
+      wp2rtp,     & ! w'^2 rt' (thermodynamic levels)             [m^2/s^2 kg/kg]
+      wp2thlp,    & ! w'^2 thl' (thermodynamic levels)            [m^2/s^2 K]
+      uprcp,      & ! < u' r_c' > (momentum levels)               [(m/s)(kg/kg)]
+      vprcp,      & ! < v' r_c' > (momentum levels)               [(m/s)(kg/kg)]
+      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4,        & ! w'^4 (momentum levels)                      [m^4/s^4]
+      wpup2,      & ! w'u'^2 (thermodynamic levels)               [m^3/s^3]
+      wpvp2,      & ! w'v'^2 (thermodynamic levels)               [m^3/s^3]
+      wp2up2,     & ! w'^2 u'^2 (momentum levels)                 [m^4/s^4]
+      wp2vp2        ! w'^2 v'^2 (momentum levels)                 [m^4/s^4]
 
     type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! Fortran structure of PDF parameters on thermodynamic levels    [units vary]
@@ -639,19 +648,10 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       wpthlp2,   & ! w'thl'^2    [m K^2/s]
-      wp2thlp,   & ! w'^2 thl'   [m^2 K/s^2]
       wprtp2,    & ! w'rt'^2     [m kg^2/kg^2]
-      wp2rtp,    & ! w'^2rt'     [m^2 kg/kg]
       wprtpthlp, & ! w'rt'thl'   [m kg K/kg s]
       wp2rcp,    & ! w'^2 rc'    [m^2 kg/kg s^2]
       wp3_zm       ! w'^3        [m^3/s^3]
-
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      wpup2,    & ! w'u'^2    [m^3/s^3]
-      wpvp2,    & ! w'v'^2    [m^3/s^3]
-      wp2up2,   & ! w'^2u'^2  [m^4/s^4]
-      wp2vp2,   & ! w'^2v'^2  [m^4/s^4]
-      wp4         ! w'^4      [m^4/s^4]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Lscale,      & ! Length scale                          [m]
@@ -696,7 +696,6 @@ module advance_clubb_core_module
 
     ! Eric Raut declared this variable solely for output to disk
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.)   [K/(kg/kg)]
       rc_coef_zm    ! Coefficient of X'r_c' in Eq. (34) on m-levs.  [K/(kg/kg)]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &

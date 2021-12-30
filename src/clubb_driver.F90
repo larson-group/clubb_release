@@ -421,19 +421,26 @@ module clubb_driver
       delta_zm
     
     real( kind = core_rknd ), dimension(:), allocatable :: &
-      p_in_Pa,    & ! Air pressure (thermodynamic levels)       [Pa]
-      exner,      & ! Exner function (thermodynamic levels)     [-]
-      cloud_frac, & ! cloud fraction (thermodynamic levels)     [-]
-      wpthvp,     & ! < w' th_v' > (momentum levels)            [kg/kg K]
-      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)     [m^2/s^2 K]
-      rtpthvp,    & ! < r_t' th_v' > (momentum levels)          [kg/kg K]
-      thlpthvp,   & ! < th_l' th_v' > (momentum levels)         [K^2]
-      uprcp,      & ! < u' r_c' >                               [(m kg)/(s kg)]
-      vprcp         ! < v' r_c' >                               [(m kg)/(s kg)]
+      p_in_Pa,    & ! Air pressure (thermodynamic levels)         [Pa]
+      exner,      & ! Exner function (thermodynamic levels)       [-]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)       [-]
+      wpthvp,     & ! < w' th_v' > (momentum levels)              [kg/kg K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)       [m^2/s^2 K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)            [kg/kg K]
+      thlpthvp,   & ! < th_l' th_v' > (momentum levels)           [K^2]
+      wp2rtp,     & ! w'^2 rt' (thermodynamic levels)             [m^2/s^2 kg/kg]
+      wp2thlp,    & ! w'^2 thl' (thermodynamic levels)            [m^2/s^2 K]
+      uprcp,      & ! < u' r_c' > (momentum levels)               [(m/s)(kg/kg)]
+      vprcp,      & ! < v' r_c' > (momentum levels)               [(m/s)(kg/kg)]
+      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4,        & ! w'^4 (momentum levels)                      [m^4/s^4]
+      wpup2,      & ! w'u'^2 (thermodynamic levels)               [m^3/s^3]
+      wpvp2,      & ! w'v'^2 (thermodynamic levels)               [m^3/s^3]
+      wp2up2,     & ! w'^2 u'^2 (momentum levels)                 [m^4/s^4]
+      wp2vp2        ! w'^2 v'^2 (momentum levels)                 [m^4/s^4]
 
     real( kind = core_rknd ), dimension(:,:), allocatable ::  &
       rho_ds_zt  ! Dry, static density on thermo. levels      [kg/m^3]
-      
     
     real( kind = core_rknd ), dimension(:), allocatable ::  &
       wm_zm,           & ! vertical mean wind comp. on momentum levs  [m/s]
@@ -1507,8 +1514,16 @@ module clubb_driver
     allocate( wpthvp(1:gr%nz) )   ! w'thv'
     allocate( wp2thvp(1:gr%nz) )  ! w'^2thv'
 
-    allocate( uprcp(1:gr%nz) )  ! u'rc'
-    allocate( vprcp(1:gr%nz) )  ! v'rc'
+    allocate( wp2rtp(1:gr%nz) )  ! w'^2 rt'
+    allocate( wp2thlp(1:gr%nz) ) ! w'^2 thl'
+    allocate( uprcp(1:gr%nz) )   ! u'rc'
+    allocate( vprcp(1:gr%nz) )   ! v'rc'
+    allocate( rc_coef(1:gr%nz) ) ! Coefficient of X'r_c' in Eq. (34)
+    allocate( wp4(1:gr%nz) )     ! w'^4
+    allocate( wpup2(1:gr%nz) )   ! w'u'^2
+    allocate( wpvp2(1:gr%nz) )   ! w'v'^2
+    allocate( wp2up2(1:gr%nz) )  ! w'^2 u'^2
+    allocate( wp2vp2(1:gr%nz) )  ! w'^2 v'^2
 
     allocate( Kh_zt(1:gr%nz) )  ! Eddy diffusivity coefficient: thermo. levels
     allocate( Kh_zm(1:gr%nz) )  ! Eddy diffusivity coefficient: momentum levels
@@ -1624,8 +1639,16 @@ module clubb_driver
     wpthvp   = zero ! w'thv'
     wp2thvp  = zero ! w'^2thv'
 
-    uprcp  = zero ! u'rc'
-    vprcp  = zero ! v'rc'
+    wp2rtp  = zero ! w'^2 rt'
+    wp2thlp = zero ! w'^2 thl'
+    uprcp   = zero ! u'rc'
+    vprcp   = zero ! v'rc'
+    rc_coef = zero ! Coefficient of X'r_c' in Eq. (34)
+    wp4     = zero ! w'^4
+    wpup2   = zero ! w'u'^2
+    wpvp2   = zero ! w'v'^2
+    wp2up2  = zero ! w'^2 u'^2
+    wp2vp2  = zero! w'^2 v'^2
 
     ! Eddy diffusivity
     Kh_zt = zero  ! Eddy diffusivity coefficient: thermo. levels
@@ -2227,7 +2250,8 @@ module clubb_driver
              rcm(1,:), cloud_frac, &                              ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
              sclrpthvp, &                                         ! Intent(inout)
-             uprcp, vprcp, &                                      ! intent(inout)
+             wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &            ! intent(inout)
+             wp4, wpup2, wpvp2, wp2up2, wp2vp2, &                 ! intent(inout)
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
@@ -2706,8 +2730,16 @@ module clubb_driver
     deallocate( wpthvp )   ! w'thv'
     deallocate( wp2thvp )  ! w'^2thv'
 
-    deallocate( uprcp )  ! u'rc'
-    deallocate( vprcp )  ! v'rc'
+    deallocate( wp2rtp )  ! w'^2 rt'
+    deallocate( wp2thlp ) ! w'^2 thl'
+    deallocate( uprcp )   ! u'rc'
+    deallocate( vprcp )   ! v'rc'
+    deallocate( rc_coef ) ! Coefficient of X'r_c' in Eq. (34)
+    deallocate( wp4 )     ! w'^4
+    deallocate( wpup2 )   ! w'u'^2
+    deallocate( wpvp2 )   ! w'v'^2
+    deallocate( wp2up2 )  ! w'^2 u'^2
+    deallocate( wp2vp2 )  ! w'^2 v'^2
 
     deallocate( Kh_zt )  ! Eddy diffusivity coefficient: thermo. levels
     deallocate( Kh_zm )  ! Eddy diffusivity coefficient: momentum levels
