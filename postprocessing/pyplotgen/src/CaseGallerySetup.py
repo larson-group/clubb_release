@@ -108,8 +108,10 @@ class CaseGallerySetup:
         self.e3sm_datasets = self.__loadModelFiles__(e3sm_folders, case_definition, "e3sm")
         self.cam_file = self.__loadModelFiles__(cam_folders, case_definition, "cam")
 
-
-        self.__generateSubcolumnPanels__()
+        # Call generateSubcolumnPanels twice, once for CLUBB and once for WRF,
+        # since the WRF-LASSO cases may also have subcolumn output to plot
+        self.__generateSubcolumnPanels__(silhs_datasets=self.clubb_datasets)
+        self.__generateSubcolumnPanels__(silhs_datasets=self.wrf_datasets)
         self.__generateBudgetPanels__()
         total_panels = self.__generateVariableGroupPanels__()
         self.__generateDiffPanels__()
@@ -117,7 +119,7 @@ class CaseGallerySetup:
         self.total_panels_to_plot = total_panels
 
 
-    def __generateSubcolumnPanels__(self):
+    def __generateSubcolumnPanels__(self,silhs_datasets):
         """
         This function creates the subcolumn panels and adds them into self.panels.
         This function takes no parameters and will only work if both self.plot_subcolumns is True, and
@@ -126,15 +128,14 @@ class CaseGallerySetup:
         :return: None. Operates in-place
         """
         # Only attempt subcolumns if enabled and the case defines an output file
-        if self.plot_subcolumns and self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
-            # for folders_datasets in self.clubb_datasets.values():
-            for input_folder in self.clubb_datasets:
-                if "subcolumns" in self.clubb_datasets[input_folder].keys():
+        if self.plot_subcolumns and silhs_datasets is not None and len(silhs_datasets) != 0:
+            for input_folder in silhs_datasets:
+                if "subcolumns" in silhs_datasets[input_folder].keys():
                     folder_name = os.path.basename(input_folder)
-                    subcols_defined_for_this_folder = "subcolumns" in self.clubb_datasets[input_folder]
-                    if input_folder in self.clubb_datasets.keys() and subcols_defined_for_this_folder:
+                    subcols_defined_for_this_folder = "subcolumns" in silhs_datasets[input_folder]
+                    if input_folder in silhs_datasets.keys() and subcols_defined_for_this_folder:
                         subcolumn_variables = VariableGroupSubcolumns(self,
-                                                    clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
+                                                    clubb_datasets={folder_name:silhs_datasets[input_folder]})
                         self.panels.extend(subcolumn_variables.panels)
                     else:
                         logToFile("" + folder_name + " does not seem to contain data for case" + self.name)
