@@ -491,6 +491,8 @@ module model_flags
 
 !-----------------------------------------------------------------------
     ! Begin code
+    ! WARNING: THE DEFAULT VALUES OF THE FLAGS BELOW MAY BE OVERWRITTEN
+    !    BY NAMELIST VALUES FROM, E.G., configurable_clubb_flags_nl!!!
 
     iiPDF_type = iiPDF_ADG1
     ipdf_call_placement = ipdf_pre_advance_fields
