@@ -278,6 +278,8 @@ module parameters_tunable
     !       host model specific code.
 
     ! Model tunable parameters
+    ! WARNING: THE DEFAULT VALUES OF THE PARAMETERS BELOW MAY BE OVERWRITTEN
+    !    BY NAMELIST VALUES FROM, E.G., clubb_params_nl!!!
     C1          = 1.000000_core_rknd ! Low Skewness in C1 Skw. Function    [-]
     C1b         = 1.000000_core_rknd ! High Skewness in C1 Skw. Function   [-]
     C1c         = 1.000000_core_rknd ! Degree of Slope of C1 Skw. Function [-]
