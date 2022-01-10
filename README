@@ -1,8 +1,7 @@
 ********************************************************************************
 *                           Copyright Notice
-*                       This code is (C) 2006-2021
-*         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
-*            David P. Schanen, Adam J. Smith, and Michael J. Falk.
+*                       This code is (C) 2006-2022
+*                 Vincent E. Larson and Brian M. Griffin
 *
 *         The distribution of this code and derived works thereof 
 *                      should include this notice.
@@ -646,6 +645,10 @@ LES GrADS files (available only to larson group members):
 
 Input:
 -----
+
+Input values of parameters and flags can be set in various namelists, described below.
+NOTE: VALUES OF PARAMETERS AND FLAGS SET IN SOURCE CODE WILL BE OVERWRITTEN
+BY THE NAMELIST VALUES!!!
 
 Note that at the beginning of a run the run scripts combine all the namelist
 files into one file, named clubb.in, which is then fed into the CLUBB main code.
