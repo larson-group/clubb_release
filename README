@@ -647,8 +647,8 @@ Input:
 -----
 
 Input values of parameters and flags can be set in various namelists, described below.
-NOTE: VALUES OF PARAMETERS AND FLAGS SET IN SOURCE CODE WILL BE OVERWRITTEN
-BY THE NAMELIST VALUES!!!
+NOTE: DEFAULT VALUES OF PARAMETERS AND FLAGS SET IN SOURCE CODE MAY BE OVERWRITTEN
+BY NAMELIST VALUES!!!
 
 Note that at the beginning of a run the run scripts combine all the namelist
 files into one file, named clubb.in, which is then fed into the CLUBB main code.
