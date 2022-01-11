@@ -336,7 +336,8 @@ module clubb_api_module
   public &
     ! To Interact With CLUBB's Grid:
     ! For Varying Grids
-    setup_grid_heights_api    ! if heights vary with time
+    setup_grid_heights_api, &    ! if heights vary with time
+    setup_grid_api
 
   public &
     ! To Obtain More Output from CLUBB for Diagnostics:
@@ -1430,7 +1431,55 @@ contains
     if ( err_code == clubb_fatal_error ) error stop
 
   end subroutine setup_grid_heights_api
+  
+  !================================================================================================
+  ! setup_grid - This subroutine sets up the CLUBB vertical grid.
+  !================================================================================================
+  
+  subroutine setup_grid_api( nzmax, sfc_elevation, l_implemented, &
+                             grid_type, deltaz, zm_init, zm_top, &
+                             momentum_heights, thermodynamic_heights, &
+                             gr, begin_height, end_height )
+                            
+    use grid_class, only: & 
+        grid, & ! Type
+        setup_grid
 
+    implicit none
+
+    type(grid), target, intent(inout) :: gr
+
+    ! Input Variables
+    integer, intent(in) ::  & 
+      nzmax  ! Number of vertical levels in grid      [#]
+
+    real( kind = core_rknd ), intent(in) ::  &
+      sfc_elevation  ! Elevation of ground level    [m AMSL]
+      
+    logical, intent(in) :: l_implemented
+    
+    integer, intent(in) :: grid_type
+    
+    real( kind = core_rknd ), intent(in) ::  & 
+      deltaz,   & ! Vertical grid spacing                  [m]
+      zm_init,  & ! Initial grid altitude (momentum level) [m]
+      zm_top      ! Maximum grid altitude (momentum level) [m]
+      
+    real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
+      momentum_heights,   & ! Momentum level altitudes (input)      [m]
+      thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+
+    integer, intent(out) :: &
+      begin_height, &  ! Lower bound for *_heights arrays [-]
+      end_height       ! Upper bound for *_heights arrays [-]
+
+
+    call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)
+                     grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
+                     momentum_heights, thermodynamic_heights, & ! intent(in)
+                     gr, begin_height, end_height             ) ! intent(out)
+
+  end subroutine setup_grid_api
 
   !================================================================================================
   ! lin_interpolate_two_points - Computes a linear interpolation of the value of a variable.
