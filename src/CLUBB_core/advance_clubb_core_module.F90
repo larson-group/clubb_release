@@ -3603,9 +3603,9 @@ module advance_clubb_core_module
                           // "and l_enable_relaxed_clipping = F"
          write(fstderr,*) "They must have opposite values"
          write(fstderr,*) "Fatal error in setup_clubb_core"
-         err_code = clubb_fatal_error
-         err_code_out = clubb_fatal_error
-         return
+         !err_code = clubb_fatal_error
+         !err_code_out = clubb_fatal_error
+         !return
       endif
 
       ! Checking for the code that orders CLUBB's advance_ subroutines
