@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('Remove Idiot Proofing') {
       steps {
-	sh ' sed -i -e '/if ( ( l_min_xp2_from_corr_wx ) &/,/endif/d' src/CLUBB_core/advance_clubb_core_module.F90'
+	sh ''' sed -i -e '/if ( ( l_min_xp2_from_corr_wx ) &/,/endif/d' src/CLUBB_core/advance_clubb_core_module.F90'''
       }
     }
     stage('Compile') {
