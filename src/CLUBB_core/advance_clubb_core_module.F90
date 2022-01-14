@@ -1467,20 +1467,24 @@ module advance_clubb_core_module
                               stats_zm)                              ! intent(inout)
          call stat_update_var(iinvrs_tau_wpxp_zm, invrs_tau_wpxp_zm, & ! intent(in)
                               stats_zm)                                ! intent(inout)
-         call stat_update_var(iinvrs_tau_wp3_zm, invrs_tau_wp3_zm, &   ! intent(in)
-                              stats_zm)                                ! intent(inout)
-         call stat_update_var(iinvrs_tau_no_N2_zm, invrs_tau_no_N2_zm, & ! intent(in)
-                              stats_zm)                                  ! intent(inout)
-         call stat_update_var(iinvrs_tau_bkgnd, invrs_tau_bkgnd, & ! intent(in)
-                              stats_zm)                            ! intent(inout)
-         call stat_update_var(iinvrs_tau_sfc, invrs_tau_sfc, & ! intent(in)
-                              stats_zm)                        ! intent(inout)
-         call stat_update_var(iinvrs_tau_shear, invrs_tau_shear, & ! intent(in)
-                              stats_zm)                            ! intent(inout)
-         call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd, & ! intent(in)
-                              stats_zm)                                          ! intent(inout)
          call stat_update_var(isqrt_Ri_zm, sqrt_Ri_zm, & ! intent(in)
                               stats_zm)                  ! intent(inout)
+         
+         if ( clubb_config_flags%l_diag_Lscale_from_tau ) then
+           call stat_update_var(iinvrs_tau_wp3_zm, invrs_tau_wp3_zm, &   ! intent(in)
+                                stats_zm)                                ! intent(inout)
+           call stat_update_var(iinvrs_tau_no_N2_zm, invrs_tau_no_N2_zm, & ! intent(in)
+                                stats_zm)                                  ! intent(inout)
+           call stat_update_var(iinvrs_tau_bkgnd, invrs_tau_bkgnd, & ! intent(in)
+                                stats_zm)                            ! intent(inout)
+           call stat_update_var(iinvrs_tau_sfc, invrs_tau_sfc, & ! intent(in)
+                                stats_zm)                        ! intent(inout)
+           call stat_update_var(iinvrs_tau_shear, invrs_tau_shear, & ! intent(in)
+                                stats_zm)                            ! intent(inout)
+           call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd, & ! intent(in)
+                                stats_zm)                                          ! intent(inout)
+         end if
+
       end if
 
       ! Cx_fnc_Richardson is only used if one of these flags is true,
