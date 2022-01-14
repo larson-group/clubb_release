@@ -143,7 +143,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zt.nc' -a -e $dir2/"${RUN_CASE[$x]}"'_zt.nc' ] ; then
         # Compare the zt netCDF (*_zt.nc) files
-        diffZtNc=$(diff $dir1/"${RUN_CASE[$x]}"'_zt.nc' $dir2/"${RUN_CASE[$x]}"'_zt.nc')
+        diffZtNc=$(python diff_netcdf_outputs.py $dir1/"${RUN_CASE[$x]}"'_zt.nc' $dir2/"${RUN_CASE[$x]}"'_zt.nc')
 
         if [ -n "$diffZtNc" ] ; then
             differences=true
@@ -185,7 +185,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zm.nc' -a -e $dir2/"${RUN_CASE[$x]}"'_zm.nc' ] ; then
         # Compare the zm netCDF (*_zm.nc) files
-        diffZmNc=$(diff $dir1/"${RUN_CASE[$x]}"'_zm.nc' $dir2/"${RUN_CASE[$x]}"'_zm.nc')
+        diffZmNc=$(python diff_netcdf_outputs.py $dir1/"${RUN_CASE[$x]}"'_zm.nc' $dir2/"${RUN_CASE[$x]}"'_zm.nc')
 
         if [ -n "$diffZmNc" ] ; then
             differences=true
@@ -227,7 +227,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_sfc.nc' -a -e $dir2/"${RUN_CASE[$x]}"'_sfc.nc' ] ; then
         # Compare the sfc netCDF (*_sfc.nc) files
-        diffSfcNc=$(diff $dir1/"${RUN_CASE[$x]}"'_sfc.nc' $dir2/"${RUN_CASE[$x]}"'_sfc.nc')
+        diffSfcNc=$(python diff_netcdf_outputs.py $dir1/"${RUN_CASE[$x]}"'_sfc.nc' $dir2/"${RUN_CASE[$x]}"'_sfc.nc')
 
         if [ -n "$diffSfcNc" ] ; then
             differences=true
