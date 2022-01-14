@@ -351,7 +351,7 @@ module parameters_tunable
 
     C_invrs_tau_bkgnd          = 1.1_core_rknd 
     C_invrs_tau_sfc            = 0.1_core_rknd
-    C_invrs_tau_shear          = 0.15_core_rknd
+    C_invrs_tau_shear          = 0.16_core_rknd
     C_invrs_tau_N2             = 0.4_core_rknd 
     C_invrs_tau_N2_wp2         = 0.1_core_rknd
     C_invrs_tau_N2_xp2         = 0.05_core_rknd
