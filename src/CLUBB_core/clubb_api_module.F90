@@ -3462,7 +3462,8 @@ contains
                                                  l_e3sm_config, & ! Out
                                                  l_vary_convect_depth, & ! Out
                                                  l_use_tke_in_wp3_pr_turb_term, & ! Out
-                                                 l_use_tke_in_wp2_wp3_K_dfsn ) ! Out
+                                                 l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
+                                                 l_smooth_Heaviside_tau_wpxp ) ! Out
 
     use model_flags, only: &
         set_default_clubb_config_flags  ! Procedure
@@ -3579,7 +3580,10 @@ contains
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
-      l_use_tke_in_wp2_wp3_K_dfsn     ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_tke_in_wp2_wp3_K_dfsn, &  ! Use TKE in eddy diffusion for wp2 and wp3
+      l_smooth_Heaviside_tau_wpxp     ! Use smoothed Heaviside 'Peskin' function
+                                      ! in the calculation of H_invrs_tau_wpxp_N2
+                                      ! in src/CLUBB_core/mixing_length.F90
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -3626,7 +3630,8 @@ contains
                                          l_e3sm_config, & ! Out
                                          l_vary_convect_depth, & ! Out
                                          l_use_tke_in_wp3_pr_turb_term, & ! Out
-                                         l_use_tke_in_wp2_wp3_K_dfsn ) ! Out
+                                         l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
+                                         l_smooth_Heaviside_tau_wpxp ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -3679,6 +3684,7 @@ contains
                                                      l_vary_convect_depth, & ! In
                                                      l_use_tke_in_wp3_pr_turb_term, & ! In
                                                      l_use_tke_in_wp2_wp3_K_dfsn, & ! In
+                                                     l_smooth_Heaviside_tau_wpxp, & ! In
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -3797,7 +3803,10 @@ contains
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
-      l_use_tke_in_wp2_wp3_K_dfsn     ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_tke_in_wp2_wp3_K_dfsn, &  ! Use TKE in eddy diffusion for wp2 and wp3
+      l_smooth_Heaviside_tau_wpxp     ! Use smoothed Heaviside 'Peskin' function
+                                      ! in the calculation of H_invrs_tau_wpxp_N2
+                                      ! in src/CLUBB_core/mixing_length.F90
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -3849,6 +3858,7 @@ contains
                                              l_vary_convect_depth, & ! In
                                              l_use_tke_in_wp3_pr_turb_term, & ! In
                                              l_use_tke_in_wp2_wp3_K_dfsn, & ! In
+                                             l_smooth_Heaviside_tau_wpxp, & ! In
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api

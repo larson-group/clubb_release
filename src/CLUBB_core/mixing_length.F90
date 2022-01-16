@@ -114,7 +114,11 @@ module mixing_length
         grav,           & ! Gravitational acceleration                 [m/s^2]
         fstderr,        &
         zero_threshold, &
-        eps
+        eps,            &
+        one_half,       &
+        one,            &
+        two,            &
+        zero
 
     use grid_class, only:  &
         grid, & ! Type
@@ -238,17 +242,17 @@ module mixing_length
         invrs_dzm_on_mu(i) = ( gr%invrs_dzm(i) ) / mu
         grav_on_thvm(i) = grav / thvm(i)
         Lv_coef(i) = Lv / ( exner(i) * cp ) - ep2 * thv_ds(i)
-        entrain_coef(i) = ( 1.0_core_rknd - exp_mu_dzm(i) ) * invrs_dzm_on_mu(i)
+        entrain_coef(i) = ( one - exp_mu_dzm(i) ) * invrs_dzm_on_mu(i)
 
     end do
 
     ! Avoid uninitialized memory (these values are not used in Lscale)
-    Lscale_up(1)   = 0.0_core_rknd
-    Lscale_down(1) = 0.0_core_rknd
+    Lscale_up(1)   = zero
+    Lscale_down(1) = zero
 
     ! Precalculations of single values to avoid unnecessary calculations later
     Lv2_coef = ep * Lv**2 / ( Rd * cp )
-    invrs_Lscale_sfclyr_depth = 1.0_core_rknd / Lscale_sfclyr_depth
+    invrs_Lscale_sfclyr_depth = one / Lscale_sfclyr_depth
 
 
     ! Calculate initial turbulent kinetic energy for each grid level
@@ -320,7 +324,7 @@ module mixing_length
 
         ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
         ! Trapezoidal estimate between grid levels, dCAPE at z_0 = 0 for this initial calculation
-        CAPE_incr_1(j) = 0.5_core_rknd * dCAPE_dz_1(j) * gr%dzm(j-1)
+        CAPE_incr_1(j) = one_half * dCAPE_dz_1(j) * gr%dzm(j-1)
 
     end do
 
@@ -329,11 +333,11 @@ module mixing_length
     ! exhausted by the initial change then continue the exhaustion calculations here for a single
     ! grid level at a time until the TKE is exhausted.
 
-    Lscale_up_max_alt = 0._core_rknd    ! Set initial max value for Lscale_up to 0
+    Lscale_up_max_alt = zero    ! Set initial max value for Lscale_up to 0
     do i = 2, gr%nz-2
 
         ! If the initial turbulent kinetic energy (tke) has not been exhausted for this grid level
-        if ( tke_i(i) + CAPE_incr_1(i+1) > 0.0_core_rknd ) then
+        if ( tke_i(i) + CAPE_incr_1(i+1) > zero ) then
 
             ! Calculate new TKE for parcel
             tke = tke_i(i) + CAPE_incr_1(i+1)
@@ -404,10 +408,10 @@ module mixing_length
 
                 ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
                 ! Trapezoidal estimate between grid levels j and j-1
-                CAPE_incr = 0.5_core_rknd * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) * gr%dzm(j-1)
+                CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) * gr%dzm(j-1)
 
                 ! Exit loop early if tke has been exhaused between level j and j+1
-                if ( tke + CAPE_incr <= 0.0_core_rknd ) then
+                if ( tke + CAPE_incr <= zero ) then
                     exit
                 end if
 
@@ -446,12 +450,12 @@ module mixing_length
                     ! Find the remaining distance z - z_0 that it takes to exhaust the
                     ! remaining TKE (tke_i), using the quadratic formula (only the
                     ! negative (-) root works in this scenario).
-                    invrs_dCAPE_diff = 1.0_core_rknd / ( dCAPE_dz_j - dCAPE_dz_j_minus_1 )
+                    invrs_dCAPE_diff = one / ( dCAPE_dz_j - dCAPE_dz_j_minus_1 )
 
                     Lscale_up(i) = Lscale_up(i) &
                                    - dCAPE_dz_j_minus_1 * invrs_dCAPE_diff * gr%dzm(j-1)  &
                                    - sqrt( dCAPE_dz_j_minus_1**2 &
-                                            - 2.0_core_rknd * tke * gr%invrs_dzm(j-1) &
+                                            - two * tke * gr%invrs_dzm(j-1) &
                                               * ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) ) &
                                      * invrs_dCAPE_diff  * gr%dzm(j-1)
                 endif
@@ -463,7 +467,7 @@ module mixing_length
             ! Find the remaining distance z - z_0 that it takes to exhaust the
             ! remaining TKE (tke_i), using the quadratic formula. Simplified
             ! since dCAPE_dz_j_minus_1 = 0.0
-            Lscale_up(i) = Lscale_up(i) - sqrt( - 2.0_core_rknd * tke_i(i) &
+            Lscale_up(i) = Lscale_up(i) - sqrt( - two * tke_i(i) &
                                                   * gr%dzm(i) * dCAPE_dz_1(i+1) ) &
                                           / dCAPE_dz_1(i+1)
         endif
@@ -551,7 +555,7 @@ module mixing_length
 
         ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
         ! Trapezoidal estimate between grid levels, dCAPE at z_0 = 0 for this initial calculation
-        CAPE_incr_1(j) = 0.5_core_rknd * dCAPE_dz_1(j) * gr%dzm(j)
+        CAPE_incr_1(j) = one_half * dCAPE_dz_1(j) * gr%dzm(j)
 
     end do
 
@@ -564,7 +568,7 @@ module mixing_length
     do i = gr%nz, 3, -1
 
         ! If the initial turbulent kinetic energy (tke) has not been exhausted for this grid level
-        if ( tke_i(i) - CAPE_incr_1(i-1) > 0.0_core_rknd ) then
+        if ( tke_i(i) - CAPE_incr_1(i-1) > zero ) then
 
             ! Calculate new TKE for parcel
             tke = tke_i(i) - CAPE_incr_1(i-1)
@@ -634,10 +638,10 @@ module mixing_length
 
                 ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
                 ! Trapezoidal estimate between grid levels j+1 and j
-                CAPE_incr = 0.5_core_rknd * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) * gr%dzm(j)
+                CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) * gr%dzm(j)
 
                 ! Exit loop early if tke has been exhaused between level j+1 and j
-                if ( tke - CAPE_incr <= 0.0_core_rknd ) then
+                if ( tke - CAPE_incr <= zero ) then
                     exit
                 endif
 
@@ -678,12 +682,12 @@ module mixing_length
                     ! negative (-) root is divided by another negative (-) factor,
                     ! which results in an overall plus (+) sign in front of the
                     ! square root term in the equation below).
-                    invrs_dCAPE_diff = 1.0_core_rknd / ( dCAPE_dz_j - dCAPE_dz_j_plus_1 )
+                    invrs_dCAPE_diff = one / ( dCAPE_dz_j - dCAPE_dz_j_plus_1 )
 
                     Lscale_down(i) = Lscale_down(i) &
                                      - dCAPE_dz_j_plus_1 * invrs_dCAPE_diff * gr%dzm(j)  &
                                      + sqrt( dCAPE_dz_j_plus_1**2 &
-                                             + 2.0_core_rknd * tke * gr%invrs_dzm(j)  &
+                                             + two * tke * gr%invrs_dzm(j)  &
                                                * ( dCAPE_dz_j - dCAPE_dz_j_plus_1 ) )  &
                                        * invrs_dCAPE_diff * gr%dzm(j)
                 endif
@@ -695,7 +699,7 @@ module mixing_length
             ! Find the remaining distance z_0 - z that it takes to exhaust the
             ! remaining TKE (tke_i), using the quadratic formula. Simplified
             ! since dCAPE_dz_j_plus_1 = 0.0
-            Lscale_down(i) = Lscale_down(i) + sqrt( 2.0_core_rknd * tke_i(i) &
+            Lscale_down(i) = Lscale_down(i) + sqrt( two * tke_i(i) &
                                                     * gr%dzm(i-1) * dCAPE_dz_1(i-1) ) &
                                               / dCAPE_dz_1(i-1)
         endif
@@ -848,9 +852,11 @@ module mixing_length
                   Lscale, Lscale_up, Lscale_down)
 
     use constants_clubb, only: &
-        thl_tol, &
-        rt_tol, &
-        one, &
+        thl_tol,  &
+        rt_tol,   &
+        one_half, &
+        one,      &
+        three,    &
         unused_var
 
     use parameter_indices, only: &
@@ -1013,7 +1019,7 @@ module mixing_length
         ! Take the values of thl and rt based one 1st or 2nd plume
 
         do k = 1, gr%nz, 1
-          sign_rtpthlp(k) = sign(1.0_core_rknd, rtpthlp(k))
+          sign_rtpthlp(k) = sign(one, rtpthlp(k))
         end do
 
         where ( pdf_params%rt_1(1,:) > pdf_params%rt_2(1,:) )
@@ -1089,9 +1095,9 @@ module mixing_length
 !       (1.0_core_rknd-Lscale_weight)*Lscale_pert_2
 
           ! Un-weighted average of just the perturbed values
-          Lscale = 0.5_core_rknd*( Lscale_pert_1 + Lscale_pert_2 )
+          Lscale = one_half *( Lscale_pert_1 + Lscale_pert_2 )
         else
-          Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
+          Lscale = (one / three) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
         end if
       end if
 
@@ -1114,6 +1120,7 @@ module mixing_length
                         l_e3sm_config, & ! intent in
                         l_brunt_vaisala_freq_moist, & !intent in
                         l_use_thvm_in_bv_freq, &! intent in
+                        l_smooth_Heaviside_tau_wpxp, & ! intent in
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
                         brunt_vaisala_freq_sqd_plus, & !intent out
@@ -1132,17 +1139,19 @@ module mixing_length
 !--------------------------------------------------------------------------------------------------
 
     use advance_helper_module, only: &
-        calc_brunt_vaisala_freq_sqd
+        calc_brunt_vaisala_freq_sqd, &
+        smooth_heaviside_peskin
 
     use constants_clubb, only: &
         one_fourth,     &
+        one_half,       &
         vonk,           &
         zero,           &
         one,            & 
+        two,            &
         em_min,         &
         zero_threshold, &
-        eps,            &
-        pi
+        eps
 
     use grid_class, only: &
         grid, & ! Type
@@ -1201,8 +1210,10 @@ module mixing_length
     logical, intent(in) :: &
       l_e3sm_config,              &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
-                                  ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
+                                    ! saturated atmospheres (from Durran and Klemp, 1982)
+      l_use_thvm_in_bv_freq, &      ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_smooth_Heaviside_tau_wpxp   ! Use the smoothed Heaviside 'Peskin' function
+                                    ! to compute invrs_tau_wpxp_zm
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       brunt_vaisala_freq_sqd,       &
@@ -1248,14 +1259,10 @@ module mixing_length
       C_invrs_tau_wpxp_N2_thresh, &
       C_invrs_tau_N2_clear_wp3,   &
       C_invrs_tau_wpxp_Ri,        &
-      altitude_threshold
+      altitude_threshold,         &
+      smth_range
 
    ! Local Variables
-
-   logical, parameter :: l_smooth_Heaviside_tau_wpxp = .false.
-
-   integer :: k    ! Vertical level index
-
    real( kind = core_rknd ), dimension(gr%nz) :: &
      bvf_thresh,                  & ! temporatory array  
      H_invrs_tau_wpxp_N2            ! Heaviside function for clippings of invrs_tau_wpxp_N2
@@ -1300,16 +1307,14 @@ module mixing_length
 
         invrs_tau_no_N2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear
 
-        !brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
         !The min function below smooths the slope discontinuity in brunt freq
         !  and thereby allows tau to remain large in Sc layers in which thlm may
         !  be slightly stably stratified.
-
         brunt_vaisala_freq_sqd_smth = zt2zm( gr, zm2zt( gr, &
-              min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
-
-        sqrt_Ri_zm &
-        = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
+            min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd) ** 3 ) ) )
+        
+        sqrt_Ri_zm = &
+          sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
                 / max( ( ddzt( gr, um)**2 + ddzt(gr, vm)**2 ), 1.0e-7_core_rknd ) )
 
         brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
@@ -1319,7 +1324,7 @@ module mixing_length
               one - ( (zt2zm(gr, ice_supersat_frac) / 0.007_core_rknd) )))
 
         where ( gr%zt < altitude_threshold )
-           brunt_freq_out_cloud = 0.0_core_rknd
+           brunt_freq_out_cloud = zero
         end where
 
         ! This time scale is used optionally for the return-to-isotropy term. It
@@ -1334,18 +1339,18 @@ module mixing_length
 
         if ( l_e3sm_config ) then
 
-          invrs_tau_zm = 0.5_core_rknd * invrs_tau_zm
+          invrs_tau_zm = one_half * invrs_tau_zm
 
           invrs_tau_xp2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear &
                             + C_invrs_tau_N2_xp2 * brunt_freq_pos & ! 0
-                            + C_invrs_tau_sfc * 2.0_core_rknd &
+                            + C_invrs_tau_sfc * two &
                             * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
 
           invrs_tau_xp2_zm = min( max( sqrt( ( ddzt( gr, um)**2 + ddzt(gr, vm)**2 ) &
                             / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
-                            0.3_core_rknd ), 1.0_core_rknd ) * invrs_tau_xp2_zm
+                            0.3_core_rknd ), one ) * invrs_tau_xp2_zm
 
-          invrs_tau_wpxp_zm = 2.0_core_rknd * invrs_tau_zm &
+          invrs_tau_wpxp_zm = two * invrs_tau_zm &
                              + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
 
         else ! l_e3sm_config = false
@@ -1361,36 +1366,19 @@ module mixing_length
 
         end if ! l_e3sm_config
 
-        if (l_smooth_Heaviside_tau_wpxp)  then
+        if (l_smooth_Heaviside_tau_wpxp) then
 
           bvf_thresh(1:gr%nz) = brunt_vaisala_freq_sqd_smth(1:gr%nz)/C_invrs_tau_wpxp_N2_thresh
-          bvf_thresh(1:gr%nz) = bvf_thresh(1:gr%nz) - 1.0_core_rknd 
+          bvf_thresh(1:gr%nz) = bvf_thresh(1:gr%nz) - one
 
-          do k = 1, gr%nz
-
-            if ( bvf_thresh(k) < -1.0_core_rknd ) then
-
-              H_invrs_tau_wpxp_N2(k) = 0.0_core_rknd
-
-            else if ( bvf_thresh(k) > 1.0_core_rknd ) then 
-
-              H_invrs_tau_wpxp_N2(k) = 1.0_core_rknd
-
-            else
-
-              H_invrs_tau_wpxp_N2(k) = 0.5_core_rknd * & 
-                                       ( 1.0_core_rknd +  bvf_thresh(k) &
-                                        + (1.0_core_rknd / pi) * sin ( pi * bvf_thresh(k) ) )
-
-            end if 
-
-          end do 
+          smth_range = 0.1_core_rknd
+          H_invrs_tau_wpxp_N2 = smooth_heaviside_peskin(gr, bvf_thresh, smth_range)
 
         else ! l_smooth_Heaviside_tau_wpxp = .false.
 
-          H_invrs_tau_wpxp_N2 = 0.0_core_rknd  
+          H_invrs_tau_wpxp_N2 = zero
           where ( brunt_vaisala_freq_sqd_smth > C_invrs_tau_wpxp_N2_thresh)
-            H_invrs_tau_wpxp_N2 = 1.0_core_rknd 
+            H_invrs_tau_wpxp_N2 = one 
           end where 
 
         end if ! l_smooth_Heaviside_tau_wpxp
@@ -1398,9 +1386,9 @@ module mixing_length
         where( gr%zt > altitude_threshold )
            invrs_tau_wpxp_zm &
            = invrs_tau_wpxp_zm &
-             * ( 1.0_core_rknd  & 
+             * ( one  & 
                  + H_invrs_tau_wpxp_N2 & 
-                   * C_invrs_tau_wpxp_Ri * min( max( sqrt_Ri_zm, 0.0_core_rknd), &
+                   * C_invrs_tau_wpxp_Ri * min( max( sqrt_Ri_zm, zero), &
                                       12.0_core_rknd ) )
         end where
 

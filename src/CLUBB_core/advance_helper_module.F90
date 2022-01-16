@@ -17,7 +17,8 @@ module advance_helper_module
     compute_Cx_fnc_Richardson, &
     term_wp2_splat, term_wp3_splat, &
     smooth_min_zm, smooth_min_zt, &
-    smooth_max_zm, smooth_max_zt
+    smooth_max_zm, smooth_max_zt, &
+    smooth_heaviside_peskin
 
   private ! Set Default Scope
 
@@ -106,6 +107,9 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+        
+    use constants_clubb, only: &
+        one, zero
 
     implicit none
 
@@ -134,26 +138,26 @@ module advance_helper_module
     end if
 
     ! Set the lower boundaries for the first variable
-    lhs(:,low_bound) = 0.0_core_rknd
-    lhs(diag_index,low_bound) = 1.0_core_rknd
+    lhs(:,low_bound) = zero
+    lhs(diag_index,low_bound) = one
 
     ! Set the upper boundaries for the first variable
-    lhs(:,high_bound) = 0.0_core_rknd
-    lhs(diag_index,high_bound) = 1.0_core_rknd
+    lhs(:,high_bound) = zero
+    lhs(diag_index,high_bound) = one
 
     ! Set the lower boundaries for the second variable, if it is provided
     if ( present( low_bound2 ) ) then
 
-      lhs(:,low_bound2) = 0.0_core_rknd
-      lhs(diag_index2,low_bound2) = 1.0_core_rknd
+      lhs(:,low_bound2) = zero
+      lhs(diag_index2,low_bound2) = one
 
     end if
 
     ! Set the upper boundaries for the second variable, if it is provided
     if ( present( high_bound2 ) ) then
 
-      lhs(:,high_bound2) = 0.0_core_rknd
-      lhs(diag_index2,high_bound2) = 1.0_core_rknd
+      lhs(:,high_bound2) = zero
+      lhs(diag_index2,high_bound2) = one
 
     end if
 
@@ -247,7 +251,7 @@ module advance_helper_module
   !--------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero    ! Constant(s)
+        zero, one, three    ! Constant(s)
 
     use grid_class, only:  &
         grid, & ! Type
@@ -306,8 +310,8 @@ module advance_helper_module
 
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
-    stability_correction = 1.0_core_rknd &
-    + min( lambda0_stability * brunt_vaisala_freq_sqd * zt2zm(gr, Lscale)**2 / em, 3.0_core_rknd )
+    stability_correction = one &
+    + min( lambda0_stability * brunt_vaisala_freq_sqd * zt2zm(gr, Lscale)**2 / em, three )
 
     return
   end function calc_stability_correction
@@ -513,7 +517,7 @@ module advance_helper_module
 
     use constants_clubb, only: &
 !      one_third,  & ! Constant(s)
-        one
+        one, zero
 
     use interpolation, only: &
         linear_interp_factor ! Procedure
@@ -622,8 +626,8 @@ module advance_helper_module
     Richardson_num_max = clubb_params(iRichardson_num_max)
     Richardson_num_min = clubb_params(iRichardson_num_min)
 
-    invrs_min_max_diff = 1.0_core_rknd / ( Richardson_num_max - Richardson_num_min )
-    invrs_num_div_thresh = 1.0_core_rknd / Richardson_num_divisor_threshold
+    invrs_min_max_diff = one / ( Richardson_num_max - Richardson_num_min )
+    invrs_num_div_thresh = one / Richardson_num_divisor_threshold
 
     Lscale_zm = zt2zm( gr, Lscale )
 
@@ -677,7 +681,7 @@ module advance_helper_module
 
     ! On some compilers, roundoff error can result in Cx_fnc_Richardson being
     ! slightly outside the range [0,1]. Thus, it is clipped here.
-    Cx_fnc_Richardson = max( 0.0_core_rknd, min( 1.0_core_rknd, Cx_fnc_Richardson ) )
+    Cx_fnc_Richardson = max( zero, min( one, Cx_fnc_Richardson ) )
 
     ! Stats sampling
     if ( l_stats_samp ) then
@@ -703,6 +707,9 @@ module advance_helper_module
 
     use grid_class, only: &
         grid ! Type
+        
+    use constants_clubb, only: &
+        zero
 
     implicit none
 
@@ -823,8 +830,8 @@ module advance_helper_module
             ! below-ground levels should be included.
             n_below_ground_levels = 0
 
-            numer_integral = 0.0_core_rknd
-            denom_integral = 0.0_core_rknd
+            numer_integral = zero
+            denom_integral = zero
 
         else
 
@@ -1357,7 +1364,7 @@ module advance_helper_module
   end function smooth_max_zm_arrays
 
 !===============================================================================
-  function smooth_max_zt_sclr_array( gr, input_var1, input_var2 ) &
+  function smooth_max_zt_sclr_array( gr, input_var1, input_var2, smth_range ) &
   result( output_var )
 
   ! Description:
@@ -1382,7 +1389,8 @@ module advance_helper_module
 
   ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
-      input_var1          ! Units vary
+      input_var1, &       ! Units vary
+      smth_range          ! smoothing happens on interval [-smth_range, +smth_range]
 
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var2          ! Units vary
@@ -1390,16 +1398,21 @@ module advance_helper_module
   ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
+      
+  ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      diff
 
   !----------------------------------------------------------------------
-
-    output_var = max( input_var1, zm2zt( gr, zt2zm( gr, max( input_var1 , input_var2 ))))
+  
+  diff = input_var2 - input_var1
+  output_var = diff * smooth_heaviside_peskin(gr, diff, smth_range) + input_var1
 
     return
   end function smooth_max_zt_sclr_array
 
 !===============================================================================
-  function smooth_max_zt_array_sclr( gr, input_var1, input_var2 ) &
+  function smooth_max_zt_array_sclr( gr, input_var1, input_var2, smth_range ) &
   result( output_var )
 
   ! Description:
@@ -1427,21 +1440,27 @@ module advance_helper_module
       input_var1          ! Units vary
 
     real ( kind = core_rknd ), intent(in) :: &
-      input_var2          ! Units vary
+      input_var2, &       ! Units vary
+      smth_range          ! smoothing happens on interval [-smth_range, +smth_range]
 
   ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
+      
+  ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      diff
 
   !----------------------------------------------------------------------
 
-    output_var = max( input_var2, zm2zt( gr, zt2zm( gr, max( input_var1 , input_var2 ))))
+    diff = input_var2 - input_var1
+    output_var = diff * smooth_heaviside_peskin(gr, diff, smth_range) + input_var1
 
     return
   end function smooth_max_zt_array_sclr
 
 !===============================================================================
-  function smooth_max_zt_arrays( gr, input_var1, input_var2 ) &
+  function smooth_max_zt_arrays( gr, input_var1, input_var2, smth_range ) &
   result( output_var )
 
   ! Description:
@@ -1468,16 +1487,80 @@ module advance_helper_module
     real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
+      
+    real( kind = core_rknd ), intent(in) :: &
+      smth_range          ! smoothing happens on interval [-smth_range, +smth_range]
 
   ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       output_var          ! Units vary
+      
+  ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      diff
 
   !----------------------------------------------------------------------
 
-    output_var = zm2zt( gr, zt2zm( gr, max( input_var1 , input_var2 )))
+    diff = input_var2 - input_var1
+    output_var = diff * smooth_heaviside_peskin(gr, diff, smth_range) + input_var1
 
     return
   end function smooth_max_zt_arrays
+  
+  function smooth_heaviside_peskin( gr, input, smth_range ) &
+    result( smth_output )
+    
+  ! Description:
+  !   Computes a smoothed heaviside function as in 
+  !   [Lin, Lee et al., 2005, A level set characteristic Galerkin finite element 
+  !   method for free surface flows], equation (2)
+  
+  ! References:
+  !   See clubb:ticket:965
+  !----------------------------------------------------------------------
+  
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
+
+    use grid_class, only:  &
+        grid ! Type
+        
+    use constants_clubb, only: &
+        pi, invrs_pi, one, one_half, zero
+
+    implicit none
+
+    type (grid), target, intent(in) :: gr
+
+  ! Input Variables
+    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      input     ! Units vary
+    
+    real ( kind = core_rknd ), intent(in) :: &
+      smth_range    ! 
+    
+  ! Local Variables
+    integer :: k    ! Vertical level index
+    real ( kind = core_rknd ) :: input_over_smth_range  ! input(k) divided by smth_range
+
+  ! Output Variables
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      smth_output    ! Units vary
+  !----------------------------------------------------------------------
+  
+    do k = 1, gr%nz, 1
+      input_over_smth_range = input(k) / smth_range
+      if ( input_over_smth_range <= -one ) then
+        smth_output(k) = zero
+      else if ( input_over_smth_range > one ) then
+        smth_output(k) = one
+      else 
+        smth_output(k) = one_half * ( one + input_over_smth_range &
+                                          + invrs_pi &
+                                            * sin(pi * input_over_smth_range) )
+      end if
+    end do
+    return
+  end function smooth_heaviside_peskin
 
 end module advance_helper_module

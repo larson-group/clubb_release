@@ -1225,8 +1225,9 @@ module advance_clubb_core_module
                           sfc_elevation, Lscale_max, & ! intent in
                           clubb_params, & ! intent in
                           clubb_config_flags%l_e3sm_config, & ! intent in
-                          clubb_config_flags%l_brunt_vaisala_freq_moist, & !intent in
-                          clubb_config_flags%l_use_thvm_in_bv_freq, &! intent in
+                          clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent in
+                          clubb_config_flags%l_use_thvm_in_bv_freq, & ! intent in
+                          clubb_config_flags%l_smooth_Heaviside_tau_wpxp, & ! intent in
                           brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
                           brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
                           brunt_vaisala_freq_sqd_plus, & !intent out

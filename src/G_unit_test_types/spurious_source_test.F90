@@ -465,7 +465,10 @@ module spurious_source_test
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
-      l_use_tke_in_wp2_wp3_K_dfsn     ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_tke_in_wp2_wp3_K_dfsn, &  ! Use TKE in eddy diffusion for wp2 and wp3
+      l_smooth_Heaviside_tau_wpxp     ! Use smoothed Heaviside 'Preskin' function
+                                      ! in the calculation of H_invrs_tau_wpxp_N2
+                                      ! in src/CLUBB_core/mixing_length.F90
 
     integer, parameter :: &
       order_xm_wpxp = 1, &
@@ -571,7 +574,8 @@ module spurious_source_test
                                          l_e3sm_config, &
                                          l_vary_convect_depth, &
                                          l_use_tke_in_wp3_pr_turb_term, &
-                                         l_use_tke_in_wp2_wp3_K_dfsn )
+                                         l_use_tke_in_wp2_wp3_K_dfsn, &
+                                         l_smooth_Heaviside_tau_wpxp )
 
     write(*,*)
     write(*,*) "Performing spurious source unit test"

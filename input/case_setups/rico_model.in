@@ -34,6 +34,7 @@ zm_top = 10000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
 zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
+!zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../run_scripts/) and filename to data file that contains
