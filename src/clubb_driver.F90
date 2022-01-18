@@ -103,7 +103,8 @@ module clubb_driver
     use clubb_api_module, only: &
       setup_pdf_parameters_api, &
       precipitation_fractions, &
-      init_precip_fracs_api
+      init_precip_fracs_api, &
+      advance_clubb_core_api
 
     use pdf_parameter_module, only: &
         pdf_parameter,                 & !----------------------------------- Variable Type(s)
@@ -2229,7 +2230,7 @@ module clubb_driver
       call cpu_time(time_start) ! initialize timer for advance_clubb_core
       
       ! Call the parameterization one timestep
-      call advance_clubb_core &
+      call advance_clubb_core_api &
            ( gr, l_implemented, dt_main, fcor, sfc_elevation, hydromet_dim, & ! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
@@ -2251,7 +2252,7 @@ module clubb_driver
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
              sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
-             wpsclrp, edsclrm, &                                  ! Intent(inout)
+             wpsclrp, edsclrm, err_code_dummy, &                  ! Intent(inout)
              rcm(1,:), cloud_frac, &                              ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
              sclrpthvp, &                                         ! Intent(inout)
@@ -2261,8 +2262,7 @@ module clubb_driver
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
              thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &  ! Intent(out)
-             rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
-             err_code_dummy )                                     ! Intent(out)
+             rcm_in_layer, cloud_cover, invrs_tau_zm )            ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -5788,3 +5788,6 @@ module clubb_driver
   !-----------------------------------------------------------------------
 
 end module clubb_driver
+
+
+

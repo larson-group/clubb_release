@@ -20,6 +20,8 @@ module pdf_parameter_module
   public :: pdf_parameter,                 & ! Variable Type(s)
             implicit_coefs_terms,          &
             init_pdf_params,               & ! Procedure(s)
+            copy_single_pdf_params_to_multi, &
+            copy_multi_pdf_params_to_single, &
             init_pdf_implicit_coefs_terms
 
   ! CLUBB's PDF parameters.
@@ -542,6 +544,155 @@ module pdf_parameter_module
     pdf_params%ice_supersat_frac_2(1,k_start:k_end) = r_param_array(:,47)
 
   end subroutine unpack_pdf_params
+  
+  
+  !================================================================================================
+  ! copy_single_pdf_params_to_multi - copies values of a single column version of pdf_params
+  !   to a multiple column version for a specified column.
+  !
+  ! NOTE: THIS SUBROUTINE IS INTENDED TO BE TEMPORARY AND SHOULD BECOME UNNECESSARY ONCE 
+  !       CLUBB IS ABLE TO OPERATE OVER MULTIPLE COLUMNS.
+  !       See https://github.com/larson-group/cam/issues/129#issuecomment-827944454
+  !================================================================================================
+  subroutine copy_single_pdf_params_to_multi( pdf_params_single, icol, &
+                                              pdf_params_multi )
+    
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: &
+      icol   ! Column number to copy to
+      
+    type(pdf_parameter), intent(in) :: &
+      pdf_params_single  ! PDF parameters            [units vary]
+
+    ! Output Variable(s)
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params_multi  ! PDF parameters            [units vary]
+      
+    pdf_params_multi%w_1(icol,:)                  = pdf_params_single%w_1(1,:) 
+    pdf_params_multi%w_2(icol,:)                  = pdf_params_single%w_2(1,:) 
+    pdf_params_multi%varnce_w_1(icol,:)           = pdf_params_single%varnce_w_1(1,:) 
+    pdf_params_multi%varnce_w_2(icol,:)           = pdf_params_single%varnce_w_2(1,:) 
+    pdf_params_multi%rt_1(icol,:)                 = pdf_params_single%rt_1(1,:) 
+    pdf_params_multi%rt_2(icol,:)                 = pdf_params_single%rt_2(1,:) 
+    pdf_params_multi%varnce_rt_1(icol,:)          = pdf_params_single%varnce_rt_1(1,:) 
+    pdf_params_multi%varnce_rt_2(icol,:)          = pdf_params_single%varnce_rt_2(1,:) 
+    pdf_params_multi%thl_1(icol,:)                = pdf_params_single%thl_1(1,:) 
+    pdf_params_multi%thl_2(icol,:)                = pdf_params_single%thl_2(1,:) 
+    pdf_params_multi%varnce_thl_1(icol,:)         = pdf_params_single%varnce_thl_1(1,:) 
+    pdf_params_multi%varnce_thl_2(icol,:)         = pdf_params_single%varnce_thl_2(1,:) 
+    pdf_params_multi%corr_w_rt_1(icol,:)          = pdf_params_single%corr_w_rt_1(1,:) 
+    pdf_params_multi%corr_w_rt_2(icol,:)          = pdf_params_single%corr_w_rt_2(1,:) 
+    pdf_params_multi%corr_w_thl_1(icol,:)         = pdf_params_single%corr_w_thl_1(1,:) 
+    pdf_params_multi%corr_w_thl_2(icol,:)         = pdf_params_single%corr_w_thl_2(1,:) 
+    pdf_params_multi%corr_rt_thl_1(icol,:)        = pdf_params_single%corr_rt_thl_1(1,:) 
+    pdf_params_multi%corr_rt_thl_2(icol,:)        = pdf_params_single%corr_rt_thl_2(1,:) 
+    pdf_params_multi%alpha_thl(icol,:)            = pdf_params_single%alpha_thl(1,:) 
+    pdf_params_multi%alpha_rt(icol,:)             = pdf_params_single%alpha_rt(1,:) 
+    pdf_params_multi%crt_1(icol,:)                = pdf_params_single%crt_1(1,:) 
+    pdf_params_multi%crt_2(icol,:)                = pdf_params_single%crt_2(1,:) 
+    pdf_params_multi%cthl_1(icol,:)               = pdf_params_single%cthl_1(1,:) 
+    pdf_params_multi%cthl_2(icol,:)               = pdf_params_single%cthl_2(1,:) 
+    pdf_params_multi%chi_1(icol,:)                = pdf_params_single%chi_1(1,:) 
+    pdf_params_multi%chi_2(icol,:)                = pdf_params_single%chi_2(1,:) 
+    pdf_params_multi%stdev_chi_1(icol,:)          = pdf_params_single%stdev_chi_1(1,:) 
+    pdf_params_multi%stdev_chi_2(icol,:)          = pdf_params_single%stdev_chi_2(1,:) 
+    pdf_params_multi%stdev_eta_1(icol,:)          = pdf_params_single%stdev_eta_1(1,:) 
+    pdf_params_multi%stdev_eta_2(icol,:)          = pdf_params_single%stdev_eta_2(1,:) 
+    pdf_params_multi%covar_chi_eta_1(icol,:)      = pdf_params_single%covar_chi_eta_1(1,:) 
+    pdf_params_multi%covar_chi_eta_2(icol,:)      = pdf_params_single%covar_chi_eta_2(1,:) 
+    pdf_params_multi%corr_w_chi_1(icol,:)         = pdf_params_single%corr_w_chi_1(1,:) 
+    pdf_params_multi%corr_w_chi_2(icol,:)         = pdf_params_single%corr_w_chi_2(1,:) 
+    pdf_params_multi%corr_w_eta_1(icol,:)         = pdf_params_single%corr_w_eta_1(1,:) 
+    pdf_params_multi%corr_w_eta_2(icol,:)         = pdf_params_single%corr_w_eta_2(1,:) 
+    pdf_params_multi%corr_chi_eta_1(icol,:)       = pdf_params_single%corr_chi_eta_1(1,:) 
+    pdf_params_multi%corr_chi_eta_2(icol,:)       = pdf_params_single%corr_chi_eta_2(1,:) 
+    pdf_params_multi%rsatl_1(icol,:)              = pdf_params_single%rsatl_1(1,:) 
+    pdf_params_multi%rsatl_2(icol,:)              = pdf_params_single%rsatl_2(1,:) 
+    pdf_params_multi%rc_1(icol,:)                 = pdf_params_single%rc_1(1,:) 
+    pdf_params_multi%rc_2(icol,:)                 = pdf_params_single%rc_2(1,:) 
+    pdf_params_multi%cloud_frac_1(icol,:)         = pdf_params_single%cloud_frac_1(1,:) 
+    pdf_params_multi%cloud_frac_2(icol,:)         = pdf_params_single%cloud_frac_2(1,:) 
+    pdf_params_multi%mixt_frac(icol,:)            = pdf_params_single%mixt_frac(1,:) 
+    pdf_params_multi%ice_supersat_frac_1(icol,:)  = pdf_params_single%ice_supersat_frac_1(1,:) 
+    pdf_params_multi%ice_supersat_frac_2(icol,:)  = pdf_params_single%ice_supersat_frac_2(1,:) 
+    
+  end subroutine copy_single_pdf_params_to_multi
+  
+  !================================================================================================
+  ! copy_multi_pdf_params_to_single - copies values of a multiple column version of pdf_params
+  !   at a specified column to a single column version.
+  !
+  ! NOTE: THIS SUBROUTINE IS INTENDED TO BE TEMPORARY AND SHOULD BECOME UNNECESSARY ONCE 
+  !       CLUBB IS ABLE TO OPERATE OVER MULTIPLE COLUMNS.
+  !       See https://github.com/larson-group/cam/issues/129#issuecomment-827944454
+  !================================================================================================
+  subroutine copy_multi_pdf_params_to_single( pdf_params_multi, icol, &
+                                              pdf_params_single )
+    
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: &
+      icol   ! Column number to copy to
+      
+    type(pdf_parameter), intent(in) :: &
+      pdf_params_multi  ! PDF parameters            [units vary]
+
+    ! Output Variable(s)
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params_single   ! PDF parameters            [units vary]
+      
+    pdf_params_single%w_1(1,:)                  = pdf_params_multi%w_1(icol,:) 
+    pdf_params_single%w_2(1,:)                  = pdf_params_multi%w_2(icol,:) 
+    pdf_params_single%varnce_w_1(1,:)           = pdf_params_multi%varnce_w_1(icol,:) 
+    pdf_params_single%varnce_w_2(1,:)           = pdf_params_multi%varnce_w_2(icol,:) 
+    pdf_params_single%rt_1(1,:)                 = pdf_params_multi%rt_1(icol,:) 
+    pdf_params_single%rt_2(1,:)                 = pdf_params_multi%rt_2(icol,:) 
+    pdf_params_single%varnce_rt_1(1,:)          = pdf_params_multi%varnce_rt_1(icol,:) 
+    pdf_params_single%varnce_rt_2(1,:)          = pdf_params_multi%varnce_rt_2(icol,:) 
+    pdf_params_single%thl_1(1,:)                = pdf_params_multi%thl_1(icol,:) 
+    pdf_params_single%thl_2(1,:)                = pdf_params_multi%thl_2(icol,:) 
+    pdf_params_single%varnce_thl_1(1,:)         = pdf_params_multi%varnce_thl_1(icol,:) 
+    pdf_params_single%varnce_thl_2(1,:)         = pdf_params_multi%varnce_thl_2(icol,:) 
+    pdf_params_single%corr_w_rt_1(1,:)          = pdf_params_multi%corr_w_rt_1(icol,:) 
+    pdf_params_single%corr_w_rt_2(1,:)          = pdf_params_multi%corr_w_rt_2(icol,:) 
+    pdf_params_single%corr_w_thl_1(1,:)         = pdf_params_multi%corr_w_thl_1(icol,:) 
+    pdf_params_single%corr_w_thl_2(1,:)         = pdf_params_multi%corr_w_thl_2(icol,:) 
+    pdf_params_single%corr_rt_thl_1(1,:)        = pdf_params_multi%corr_rt_thl_1(icol,:) 
+    pdf_params_single%corr_rt_thl_2(1,:)        = pdf_params_multi%corr_rt_thl_2(icol,:) 
+    pdf_params_single%alpha_thl(1,:)            = pdf_params_multi%alpha_thl(icol,:) 
+    pdf_params_single%alpha_rt(1,:)             = pdf_params_multi%alpha_rt(icol,:) 
+    pdf_params_single%crt_1(1,:)                = pdf_params_multi%crt_1(icol,:) 
+    pdf_params_single%crt_2(1,:)                = pdf_params_multi%crt_2(icol,:) 
+    pdf_params_single%cthl_1(1,:)               = pdf_params_multi%cthl_1(icol,:) 
+    pdf_params_single%cthl_2(1,:)               = pdf_params_multi%cthl_2(icol,:) 
+    pdf_params_single%chi_1(1,:)                = pdf_params_multi%chi_1(icol,:) 
+    pdf_params_single%chi_2(1,:)                = pdf_params_multi%chi_2(icol,:) 
+    pdf_params_single%stdev_chi_1(1,:)          = pdf_params_multi%stdev_chi_1(icol,:) 
+    pdf_params_single%stdev_chi_2(1,:)          = pdf_params_multi%stdev_chi_2(icol,:) 
+    pdf_params_single%stdev_eta_1(1,:)          = pdf_params_multi%stdev_eta_1(icol,:) 
+    pdf_params_single%stdev_eta_2(1,:)          = pdf_params_multi%stdev_eta_2(icol,:) 
+    pdf_params_single%covar_chi_eta_1(1,:)      = pdf_params_multi%covar_chi_eta_1(icol,:) 
+    pdf_params_single%covar_chi_eta_2(1,:)      = pdf_params_multi%covar_chi_eta_2(icol,:) 
+    pdf_params_single%corr_w_chi_1(1,:)         = pdf_params_multi%corr_w_chi_1(icol,:) 
+    pdf_params_single%corr_w_chi_2(1,:)         = pdf_params_multi%corr_w_chi_2(icol,:) 
+    pdf_params_single%corr_w_eta_1(1,:)         = pdf_params_multi%corr_w_eta_1(icol,:) 
+    pdf_params_single%corr_w_eta_2(1,:)         = pdf_params_multi%corr_w_eta_2(icol,:) 
+    pdf_params_single%corr_chi_eta_1(1,:)       = pdf_params_multi%corr_chi_eta_1(icol,:) 
+    pdf_params_single%corr_chi_eta_2(1,:)       = pdf_params_multi%corr_chi_eta_2(icol,:) 
+    pdf_params_single%rsatl_1(1,:)              = pdf_params_multi%rsatl_1(icol,:) 
+    pdf_params_single%rsatl_2(1,:)              = pdf_params_multi%rsatl_2(icol,:) 
+    pdf_params_single%rc_1(1,:)                 = pdf_params_multi%rc_1(icol,:) 
+    pdf_params_single%rc_2(1,:)                 = pdf_params_multi%rc_2(icol,:) 
+    pdf_params_single%cloud_frac_1(1,:)         = pdf_params_multi%cloud_frac_1(icol,:) 
+    pdf_params_single%cloud_frac_2(1,:)         = pdf_params_multi%cloud_frac_2(icol,:) 
+    pdf_params_single%mixt_frac(1,:)            = pdf_params_multi%mixt_frac(icol,:) 
+    pdf_params_single%ice_supersat_frac_1(1,:)  = pdf_params_multi%ice_supersat_frac_1(icol,:) 
+    pdf_params_single%ice_supersat_frac_2(1,:)  = pdf_params_multi%ice_supersat_frac_2(icol,:) 
+    
+  end subroutine copy_multi_pdf_params_to_single
 
 !#endif /* CLUBB_CAM */
 
