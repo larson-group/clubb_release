@@ -319,8 +319,11 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['W3BUOY'], 'legend_label': 'W3BUOY'},
             {'var_names': ['W3DFSN'], 'legend_label': 'W3DFSN'},
             {'var_names': ['W3BT'], 'legend_label': 'W3BT'},
+            {'var_names': ['W3TP'], 'legend_label': 'W3TP'},
+            {'var_names': ['W3PRESDFSN'], 'legend_label': 'W3PRDFSN'},
+            {'var_names': ['W3PRESSCR'], 'legend_label': 'W3PRSCR'},
             {'var_names': ['W3_RES'], 'legend_label': 'W3_RES', 'sam_calc': self.getW3Residual},
-            {'var_names': ['W3PRESS'], 'legend_label': 'W3PRES', 'sam_calc': self.getW3PRESS},
+           
         ]
 
         ## Tau plots showing C_2/tau and C_14/tau ##
@@ -2116,6 +2119,8 @@ class VariableGroupSamBudgets(VariableGroup):
           the benchmark data for the given model
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
+
+        This code does not extract W3PRESDFSN, W3PRESSCR, and W3TP directly, but these three variables sum to W3PRES which is extracted here.
         """
         dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
@@ -2125,8 +2130,7 @@ class VariableGroupSamBudgets(VariableGroup):
         W3BUOY, indep, dataset = self.getVarForCalculations('W3BUOY', dataset)
         W3DFSN, indep, dataset = self.getVarForCalculations('W3DFSN', dataset)
         W3PRES, indep, dataset = self.getVarForCalculations('W3PRES', dataset)
-        W3REDIS, indep, dataset = self.getVarForCalculations('W3REDIS', dataset)
-        W3_RES = W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DFSN)
+        W3_RES = W3BT - (W3ADV + W3PRES + W3BUOY + W3DFSN)
         return W3_RES, indep
 
     def getUWPresPlusAniz(self, dataset_override=None):
