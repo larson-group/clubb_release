@@ -20,7 +20,8 @@ module advance_microphys_module
              advance_Ncm, &
              microphys_solve, &
              microphys_lhs, &
-             microphys_rhs
+             microphys_rhs, &
+             write_adv_micro_errors
 
   ! Functions
   private :: sed_centered_diff_lhs, &
@@ -333,11 +334,25 @@ module advance_microphys_module
 
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "calling advance_hydrometeor"
-            return
-        endif !  err_code == clubb_fatal_error 
-    end if
+       if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "calling advance_hydrometeor"
+          call write_adv_micro_errors( gr, dt, time_current, wm_zt, wp2, & ! In
+                                       exner, rho, rho_zm, rcm, &          ! In
+                                       cloud_frac, Kh_zm, Skw_zm, &        ! In
+                                       rho_ds_zm, rho_ds_zt, &             ! In
+                                       invrs_rho_ds_zt, &                  ! In
+                                       hydromet_mc, Ncm_mc, Lscale, &      ! In
+                                       hydromet_vel_covar_zt_impc, &       ! In
+                                       hydromet_vel_covar_zt_expc, &       ! In
+                                       clubb_params, nu_vert_res_dep, &    ! In
+                                       l_upwind_xm_ma, &                   ! In
+                                       hydromet, hydromet_vel_zt, &        ! In
+                                       hydrometp2, K_hm, Ncm, &            ! In
+                                       Nc_in_cloud, rvm_mc, thlm_mc, &     ! In
+                                       wphydrometp, wpNcp )                ! In
+          return
+       endif !  err_code == clubb_fatal_error 
+    endif
 
     !-----------------------------------------------------------------------
     ! When mean cloud droplet concentration, Ncm, is predicted, apply
@@ -348,7 +363,6 @@ module advance_microphys_module
     if ( l_predict_Nc ) then
 
        ! Nc is predicted.
-
        call advance_Ncm( gr, dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          nu_vert_res_dep, &
@@ -357,17 +371,26 @@ module advance_microphys_module
                          Ncm, Nc_in_cloud, &
                          wpNcp )
         
-        if ( clubb_at_least_debug_level( 0 ) ) then
-
-            if ( err_code == clubb_fatal_error ) then
-
-                write(fstderr,*) "in advance_Ncm"
-                write(fstderr,*) "Ncm = ", Ncm
-                return
-
-            endif
-
-        end if
+       if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( err_code == clubb_fatal_error ) then
+           write(fstderr,*) "in advance_Ncm"
+           call write_adv_micro_errors( gr, dt, time_current, wm_zt, wp2, & ! In
+                                        exner, rho, rho_zm, rcm, &          ! In
+                                        cloud_frac, Kh_zm, Skw_zm, &        ! In
+                                        rho_ds_zm, rho_ds_zt, &             ! In
+                                        invrs_rho_ds_zt, &                  ! In
+                                        hydromet_mc, Ncm_mc, Lscale, &      ! In
+                                        hydromet_vel_covar_zt_impc, &       ! In
+                                        hydromet_vel_covar_zt_expc, &       ! In
+                                        clubb_params, nu_vert_res_dep, &    ! In
+                                        l_upwind_xm_ma, &                   ! In
+                                        hydromet, hydromet_vel_zt, &        ! In
+                                        hydrometp2, K_hm, Ncm, &            ! In
+                                        Nc_in_cloud, rvm_mc, thlm_mc, &     ! In
+                                        wphydrometp, wpNcp )                ! In
+           return
+         endif
+       endif
 
     else
 
@@ -456,52 +479,20 @@ module advance_microphys_module
     call stats_accumulate_hydromet( gr, hydromet, rho_ds_zt, &
                                     stats_zt, stats_sfc )
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-
-           write(fstderr,*) "Error in advance_microphys"
-
-           write(fstderr,*) "Intent(in)"
-
-           write(fstderr,*) "wm_zt = ", wm_zt
-           write(fstderr,*) "exner = ", exner
-           write(fstderr,*) "rho = ", rho
-           write(fstderr,*) "rho_zm = ", rho_zm
-           write(fstderr,*) "cloud_frac = ", cloud_frac
-           write(fstderr,*) "Kh_zm = ", Kh_zm
-           write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
-           write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
-           write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt
-
-           write(fstderr,*) "hydromet_mc = ", hydromet_mc
-
-           write(fstderr,*) "Ncm_mc = ", Ncm_mc
-
-           write(fstderr,*) "hydromet_vel_covar_zt_impc = ", &
-                            hydromet_vel_covar_zt_impc
-           write(fstderr,*) "hydromet_vel_covar_zt_expc = ", &
-                            hydromet_vel_covar_zt_expc
-
-           write(fstderr,*) "Intent(inout)"
-
-           write(fstderr,*) "hydromet = ", hydromet
-           write(fstderr,*) "hydromet_vel_zt = ", hydromet_vel_zt
-
-           write(fstderr,*) "Ncm = ", Ncm
-           write(fstderr,*) "Nc_in_cloud = ", Nc_in_cloud
-
-           write(fstderr,*) "rvm_mc = ", rvm_mc
-           write(fstderr,*) "thlm_mc = ", thlm_mc
-
-           write(fstderr,*) "Intent(out)" 
-
-           write(fstderr,*) "wphydrometp = ", wphydrometp
-
-           write(fstderr,*) "wpNcp = ", wpNcp
-
-        end if
-    endif
-
+    call write_adv_micro_errors( gr, dt, time_current, wm_zt, wp2, & ! In
+                                 exner, rho, rho_zm, rcm, &          ! In
+                                 cloud_frac, Kh_zm, Skw_zm, &        ! In
+                                 rho_ds_zm, rho_ds_zt, &             ! In
+                                 invrs_rho_ds_zt, &                  ! In
+                                 hydromet_mc, Ncm_mc, Lscale, &      ! In
+                                 hydromet_vel_covar_zt_impc, &       ! In
+                                 hydromet_vel_covar_zt_expc, &       ! In
+                                 clubb_params, nu_vert_res_dep, &    ! In
+                                 l_upwind_xm_ma, &                   ! In
+                                 hydromet, hydromet_vel_zt, &        ! In
+                                 hydrometp2, K_hm, Ncm, &            ! In
+                                 Nc_in_cloud, rvm_mc, thlm_mc, &     ! In
+                                 wphydrometp, wpNcp )                ! In
 
     return
 
@@ -3483,6 +3474,190 @@ module advance_microphys_module
     return
 
   end function get_cloud_top_level
+
+  !=============================================================================
+  subroutine write_adv_micro_errors( gr, dt, time_current, wm_zt, wp2, & ! In
+                                     exner, rho, rho_zm, rcm, &          ! In
+                                     cloud_frac, Kh_zm, Skw_zm, &        ! In
+                                     rho_ds_zm, rho_ds_zt, &             ! In
+                                     invrs_rho_ds_zt, &                  ! In
+                                     hydromet_mc, Ncm_mc, Lscale, &      ! In
+                                     hydromet_vel_covar_zt_impc, &       ! In
+                                     hydromet_vel_covar_zt_expc, &       ! In
+                                     clubb_params, nu_vert_res_dep, &    ! In
+                                     l_upwind_xm_ma, &                   ! In
+                                     hydromet, hydromet_vel_zt, &        ! In
+                                     hydrometp2, K_hm, Ncm, &            ! In
+                                     Nc_in_cloud, rvm_mc, thlm_mc, &     ! In
+                                     wphydrometp, wpNcp )                ! In
+
+    ! Description:
+    ! Writes to screen the values of all variables that are passed into and out
+    ! of subroutine advance_microphys if a fatal error has been detected.
+
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        grid    ! Type
+
+    use constants_clubb, only: & 
+        fstderr    ! Variable(s)
+
+    use parameters_model, only: & 
+        hydromet_dim   ! Integer
+
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
+
+    use parameters_tunable, only: &
+        nu_vertical_res_dep    ! Type(s)
+
+    use error_code, only: &
+        clubb_at_least_debug_level, & ! Procedure
+        err_code,                   & ! Error Indicator
+        clubb_fatal_error             ! Constant
+
+    use clubb_precision, only:  & 
+        time_precision, & ! Variable(s)
+        core_rknd
+
+    implicit none
+
+    ! Input Variables
+    type (grid), target, intent(in) :: &
+      gr
+
+    real( kind = core_rknd ), intent(in) ::  & 
+      dt           ! Model timestep duration         [s]
+
+    real( kind = time_precision ), intent(in) ::  & 
+      time_current   ! Current time     [s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      wm_zt,      & ! w wind component on thermodynamic levels        [m/s]
+      wp2,        & ! Variance of vertical velocity (momentum levels) [m^2/s^2]
+      exner,      & ! Exner function                                  [-]
+      rho,        & ! Density on thermodynamic levels                 [kg/m^3]
+      rho_zm,     & ! Density on momentum levels                      [kg/m^3]
+      rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
+      cloud_frac, & ! Cloud fraction                                  [-]
+      Kh_zm,      & ! Kh Eddy diffusivity on momentum grid            [m^2/s]
+      Skw_zm        ! Skewness of w on momentum levels                [-]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: & 
+      hydromet_mc    ! Microphysics tendency for mean hydrometeors  [units/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      Ncm_mc, & ! Microphysics tendency for Ncm                     [num/kg/s]
+      Lscale    ! Length-scale                                      [m]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+      hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
+      hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+
+    ! Input/Output Variables for advance_microphys
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+      hydromet,        & ! Hydrometeor mean, <h_m> (thermo. levels)    [units]
+      hydromet_vel_zt, & ! Mean hydrometeor sed. vel. on thermo. levs. [m/s]
+      hydrometp2,      & ! Variance of hydrometeor (overall) (m-levs.) [units^2]
+      K_hm               ! hm eddy diffusivity on momentum grid        [m^2/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
+      Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
+      thlm_mc    ! Microphysics contributions to liquid potential temp.   [K/s]
+
+    ! Output Variables for advance_microphys
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+      wphydrometp    ! Covariance < w'h_m' > (momentum levels)   [(m/s)units]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      wpNcp          ! Covariance < w'N_c' > (momentum levels)   [(m/s)(num/kg)]
+
+    
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+       if ( err_code == clubb_fatal_error ) then
+
+          write(fstderr,*) "Error in advance_microphys"
+
+          write(fstderr,*) "Intent(in)"
+
+          write(fstderr,*) "dt = ", dt
+          write(fstderr,*) "time_current = ", time_current
+
+          write(fstderr,*) "wm_zt = ", wm_zt
+          write(fstderr,*) "wp2 = ", wp2
+          write(fstderr,*) "exner = ", exner
+          write(fstderr,*) "rho = ", rho
+          write(fstderr,*) "rho_zm = ", rho_zm
+          write(fstderr,*) "rcm = ", rcm
+          write(fstderr,*) "cloud_frac = ", cloud_frac
+          write(fstderr,*) "Kh_zm = ", Kh_zm
+          write(fstderr,*) "Skw_zm = ", Skw_zm
+          write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
+          write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
+          write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt
+
+          write(fstderr,*) "hydromet_mc = ", hydromet_mc
+
+          write(fstderr,*) "Ncm_mc = ", Ncm_mc
+          write(fstderr,*) "Lscale = ", Lscale
+
+          write(fstderr,*) "hydromet_vel_covar_zt_impc = ", &
+                           hydromet_vel_covar_zt_impc
+          write(fstderr,*) "hydromet_vel_covar_zt_expc = ", &
+                           hydromet_vel_covar_zt_expc
+
+          write(fstderr,*) "clubb_params = ", clubb_params
+          write(fstderr,*) "nu_vert_res_dep%nu_hm = ", nu_vert_res_dep%nu_hm
+          write(fstderr,*) "l_upwind_xm_ma = ", l_upwind_xm_ma
+
+          write(fstderr,*) "Intent(inout)"
+
+          write(fstderr,*) "hydromet = ", hydromet
+          write(fstderr,*) "hydromet_vel_zt = ", hydromet_vel_zt
+          write(fstderr,*) "hydrometp2 = ", hydrometp2
+          write(fstderr,*) "K_hm = ", K_hm
+
+          write(fstderr,*) "Ncm = ", Ncm
+          write(fstderr,*) "Nc_in_cloud = ", Nc_in_cloud
+
+          write(fstderr,*) "rvm_mc = ", rvm_mc
+          write(fstderr,*) "thlm_mc = ", thlm_mc
+
+          write(fstderr,*) "Intent(out)" 
+
+          write(fstderr,*) "wphydrometp = ", wphydrometp
+
+          write(fstderr,*) "wpNcp = ", wpNcp
+
+        endif
+    endif
+
+
+    return
+
+  end subroutine write_adv_micro_errors
 
 !===============================================================================
 
