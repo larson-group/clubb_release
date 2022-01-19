@@ -317,7 +317,7 @@ class VariableGroupBase(VariableGroup):
                     'hoc': ['vm'],
                     'e3sm': ['vm'],
                     'cam': ['V', 'vm'],
-                    'wrf': ['vm','CSP_v'],
+                    'wrf': ['vm','CSP_V'],
                 },
                 'sci_scale': 0,
             },
