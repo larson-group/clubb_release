@@ -275,7 +275,9 @@ module clubb_api_module
 
 
   public &
-    advance_clubb_core_api, &
+        advance_clubb_core_api, &
+        advance_clubb_core_api_single_col, &
+        advance_clubb_core_api_multi_col, &
         pdf_parameter, &
         implicit_coefs_terms, &
         ! A hydromet array is required, and these variables are required for a hydromet array:
