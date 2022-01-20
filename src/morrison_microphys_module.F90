@@ -5,6 +5,8 @@ module morrison_microphys_module
 
   public :: morrison_microphys_driver
 
+  private :: print_morr_error_output
+
   private
 
   contains
@@ -775,6 +777,42 @@ module morrison_microphys_module
            NIM_MORR_CL, QC_INST, QR_INST, QI_INST, QS_INST, QG_INST, &
            NC_INST, NR_INST, NI_INST, NS_INST, NG_INST )
 
+    if ( clubb_at_least_debug_level( 2 ) ) then
+       call print_morr_error_output( nz, gr, &
+                                     rcm_mc_r4, rim_mc_r4, rsm_mc_r4, &
+                                     rrm_mc_r4, rgm_mc_r4, Ncm_mc_r4, &
+                                     Nim_mc_r4, Nsm_mc_r4, Nrm_mc_r4, &
+                                     Ngm_mc_r4, rvm_mc_r4, T_in_K_mc, &
+                                     thlm, rvm, rcm, Ncm, hydromet, &
+                                     rgm_sten, rrm_sten, rim_sten, &
+                                     rsm_sten, rcm_sten, NGSTEN, NRSTEN, &
+                                     NISTEN, NSSTEN, NCSTEN, &
+                                     cloud_frac_in, PRC, PRA, &
+                                     PSMLT, EVPMS, PRACS, EVPMG, &
+                                     PRACG, PRE, PGMLT, MNUCCC, &
+                                     PSACWS, PSACWI, QMULTS, QMULTG, &
+                                     PSACWG, PGSACW, PRD, PRCI, &
+                                     PRAI, QMULTR, QMULTRG, MNUCCD, &
+                                     PRACI, PRACIS, EPRD, MNUCCR, &
+                                     PIACR, PIACRS, PGRACS, PRDS, &
+                                     EPRDS, PSACR, PRDG, EPRDG, &
+                                     NPRC1, NRAGG, NPRACG, NSUBR, NSMLTR, &
+                                     NGMLTR, NPRACS, NNUCCR, NIACR, &
+                                     NIACRS, NGRACS, NSMLTS, NSAGG, &
+                                     NPRCI, NSCNG, NSUBS, PCC, NNUCCC, &
+                                     NPSACWS, NPRA, NPRC, NPSACWI, &
+                                     NPSACWG, NPRAI, NMULTS, NMULTG, &
+                                     NMULTR, NMULTRG, NNUCCD, NSUBI, &
+                                     NGMLTG, NSUBG, NACT, &
+                                     SIZEFIX_NR, SIZEFIX_NC, SIZEFIX_NI, &
+                                     SIZEFIX_NS, SIZEFIX_NG, NEGFIX_NR, &
+                                     NEGFIX_NC, NEGFIX_NI, NEGFIX_NS, &
+                                     NEGFIX_NG, NIM_MORR_CL, QC_INST, &
+                                     QR_INST, QI_INST, QS_INST, QG_INST, &
+                                     NC_INST, NR_INST, NI_INST, NS_INST, &
+                                     NG_INST )
+    endif ! clubb_at_least_debug_level( 2 )
+
     hl_after = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
                - Lv * ( real( rcm_r4, kind = core_rknd) &
                         + real( rrm_r4, kind = core_rknd ) ) &
@@ -1028,5 +1066,465 @@ module morrison_microphys_module
 
     return
   end subroutine morrison_microphys_driver
+
+  !=============================================================================
+  subroutine print_morr_error_output( nz, gr, &
+                                      rcm_mc_r4, rim_mc_r4, rsm_mc_r4, &
+                                      rrm_mc_r4, rgm_mc_r4, Ncm_mc_r4, &
+                                      Nim_mc_r4, Nsm_mc_r4, Nrm_mc_r4, &
+                                      Ngm_mc_r4, rvm_mc_r4, T_in_K_mc, &
+                                      thlm, rvm, rcm, Ncm, hydromet, &
+                                      rgm_sten, rrm_sten, rim_sten, &
+                                      rsm_sten, rcm_sten, NGSTEN, NRSTEN, &
+                                      NISTEN, NSSTEN, NCSTEN, &
+                                      cloud_frac_in, PRC, PRA, &
+                                      PSMLT, EVPMS, PRACS, EVPMG, &
+                                      PRACG, PRE, PGMLT, MNUCCC, &
+                                      PSACWS, PSACWI, QMULTS, QMULTG, &
+                                      PSACWG, PGSACW, PRD, PRCI, &
+                                      PRAI, QMULTR, QMULTRG, MNUCCD, &
+                                      PRACI, PRACIS, EPRD, MNUCCR, &
+                                      PIACR, PIACRS, PGRACS, PRDS, &
+                                      EPRDS, PSACR, PRDG, EPRDG, &
+                                      NPRC1, NRAGG, NPRACG, NSUBR, NSMLTR, &
+                                      NGMLTR, NPRACS, NNUCCR, NIACR, &
+                                      NIACRS, NGRACS, NSMLTS, NSAGG, &
+                                      NPRCI, NSCNG, NSUBS, PCC, NNUCCC, &
+                                      NPSACWS, NPRA, NPRC, NPSACWI, &
+                                      NPSACWG, NPRAI, NMULTS, NMULTG, &
+                                      NMULTR, NMULTRG, NNUCCD, NSUBI, &
+                                      NGMLTG, NSUBG, NACT, &
+                                      SIZEFIX_NR, SIZEFIX_NC, SIZEFIX_NI, &
+                                      SIZEFIX_NS, SIZEFIX_NG, NEGFIX_NR, &
+                                      NEGFIX_NC, NEGFIX_NI, NEGFIX_NS, &
+                                      NEGFIX_NG, NIM_MORR_CL, QC_INST, &
+                                      QR_INST, QI_INST, QS_INST, QG_INST, &
+                                      NC_INST, NR_INST, NI_INST, NS_INST, &
+                                      NG_INST )
+
+    ! Description:
+    ! Prints all the relevant Morrison microphysics inputs and outputs when
+    ! a NaN has been detected in a output tendency from Morrison.
+
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        grid ! Type
+
+    use constants_clubb, only: &
+        fstderr    ! Constant(s)
+
+    use parameters_model, only: &
+        hydromet_dim    ! Variable(s)
+
+    use array_index, only: & 
+        iirr, & ! Variable(s)
+        iirs, &
+        iiri, &
+        iirg, &
+        iiNr, &
+        iiNs, &
+        iiNi, &
+        iiNg
+
+    use numerical_check, only: &
+        is_nan_2d,   & ! Procedure(s)
+        is_nan_sclr
+
+    use clubb_precision, only: &
+        core_rknd   ! Variable(s)
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: &
+      nz ! Points in the Vertical        [-]
+
+    type(grid), target, intent(in) :: &
+      gr
+
+    real, dimension(nz), intent(in) :: &
+      rcm_mc_r4, & ! Mean cloud water mixing ratio tendency  [kg/kg/s]
+      rim_mc_r4, & ! Mean ice mixing ratio tendency          [kg/kg/s]
+      rsm_mc_r4, & ! Mean snow mixing ratio tendency         [kg/kg/s]
+      rrm_mc_r4, & ! Mean rain water mixing ratio tendency   [kg/kg/s]
+      rgm_mc_r4, & ! Mean graupel mixing ratio tendency      [kg/kg/s]
+      Ncm_mc_r4, & ! Mean cloud droplet concentration tndcy  [num/kg/s]
+      Nim_mc_r4, & ! Mean ice crystal concentration tendency [num/kg/s]
+      Nsm_mc_r4, & ! Mean snow flake concentration tendency  [num/kg/s]
+      Nrm_mc_r4, & ! Mean rain drop concentration tendency   [num/kg/s]
+      Ngm_mc_r4, & ! Mean graupel concentration tendency     [num/kg/s]
+      rvm_mc_r4, & ! Mean water vapor mixing ratio tendency  [kg/kg/s]
+      T_in_K_mc    ! Temperature tendency                    [K/s]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      thlm, & ! Liquid potential temperature              [K]
+      rvm,  & ! Vapor water mixing ratio                  [kg/kg]
+      rcm,  & ! Cloud water mixing ratio                  [kg/kg]
+      Ncm     ! Grid mean value for cloud droplet conc.   [num/kg]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet    ! Hydrometeor species                   [units vary]
+
+    real, dimension(nz), intent(in) :: &
+      rcm_sten, & ! Mean rc sedimentation tendency             [kg/kg/s]
+      rrm_sten, & ! Mean rr sedimentation tendency             [kg/kg/s]
+      rim_sten, & ! Mean ri sedimentation tendency             [kg/kg/s]
+      rsm_sten, & ! Mean rs sedimentation tendency             [kg/kg/s]
+      rgm_sten, & ! Mean rg sedimentation tendency             [kg/kg/s]
+      NGSTEN,   & ! Graupel sedimentation tendency             [#/kg/s]
+      NRSTEN,   & ! Rain sedimentation tendency                [#/kg/s]
+      NISTEN,   & ! Cloud ice sedimentation tendency           [#/kg/s]
+      NSSTEN,   & ! Snow sedimentation tendency                [#/kg/s]
+      NCSTEN      ! Cloud water sedimentation tendency         [#/kg/s]
+
+    real, dimension(nz), intent(in) :: &
+      cloud_frac_in    ! Cloud frac used as input for the Morrison scheme [-]
+
+    ! In the comments below, by "adds to" we mean that if the quantity is
+    ! positive, it adds positively to the prognostic variable, but if the
+    ! quantity is negative, it subtracts from the prognostic variable.
+    real, dimension(nz), intent(in) :: &
+      PSMLT,  & ! Freezing of rain to form snow.
+                !    Adds to rsm, subtracts from rrm [kg/kg/s]
+      EVPMS,  & ! Evaporation of melted snow.
+                !    Adds to rsm, subtracts from rvm [kg/kg/s]
+      PRACS,  & ! Collection of rain by snow.
+                !    Adds to rsm, subtracts from rrm [kg/kg/s]
+      EVPMG,  & ! Evaporation of melted graupel.
+                !    Adds to rgm, subtracts from rvm [kg/kg/s]
+      PRACG,  & ! Negative of collection of rain by graupel.
+                !    Adds to rrm, subtracts from rgm [kg/kg/s]
+      PGMLT,  & ! Negative of melting of graupel.
+                !    Adds to rgm, subtracts from rrm [kg/kg/s]
+      MNUCCC, & ! Contact freezing of cloud droplets.
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
+      PSACWS, & ! Collection of cloud water by snow.
+                !    Adds to rsm, subtracts from rcm [kg/kg/s]
+      PSACWI, & ! Collection of cloud water by cloud ice.
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
+      QMULTS, & ! Splintering from cloud droplets accreted onto snow.
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
+      QMULTG, & ! Splintering from droplets accreted onto graupel.
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
+      PSACWG, & ! Collection of cloud water by graupel.
+                !    Adds to rgm, subtracts from rcm [kg/kg/s]
+      PGSACW, & ! Reclassification of rimed snow as graupel.
+                !    Adds to rgm, subtracts from rcm [kg/kg/s]
+      PRD,    & ! Depositional growth of cloud ice.
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
+      PRCI,   & ! Autoconversion of cloud ice to snow.
+                !    Adds to rsm, subtracts from rim [kg/kg/s]
+      PRAI,   & ! Collection of cloud ice by snow.
+                !    Adds to rsm, subtracts from rim [kg/kg/s]
+      QMULTR, & ! Splintering from rain droplets accreted onto snow.
+                !    Adds to rim, subtracts from rrm [kg/kg/s]
+      QMULTRG,& ! Splintering from rain droplets accreted onto graupel.
+                !    Adds to rim, subtracts from rrm [kg/kg/s]
+      MNUCCD, & ! Freezing of aerosol.
+                !    Adds to rim, subtracts from rvm [kg/kg/s]
+      PRACI,  & ! Collection of cloud ice by rain.
+                !    Adds to rgm, subtracts from rim [kg/kg/s]
+      PRACIS, & ! Collection of cloud ice by rain.
+                !    Adds to rsm, subtracts from rim [kg/kg/s]
+      EPRD,   & ! Negative of sublimation of cloud ice.
+                !    Adds to rim, subtracts from rvm [kg/kg/s]
+      MNUCCR, & ! Contact freezing of rain droplets.
+                !    Adds to rgm, subtracts from rrm [kg/kg/s]
+      PIACR,  & ! Collection of cloud ice by rain.
+                !    Adds to rgm, subtracts from rrm [kg/kg/s]
+      PIACRS, & ! Collection of cloud ice by rain.
+                !    Adds to rsm, subtracts from rrm [kg/kg/s]
+      PGRACS, & ! Collection of rain by snow.
+                !    Adds to rgm, subtracts from rrm [kg/kg/s]
+      PRDS,   & ! Depositional growth of snow.
+                !    Adds to rsm, subtracts from rvm [kg/kg/s]
+      EPRDS,  & ! Negative of sublimation of snow.
+                !    Adds to rsm, subtracts from rvm [kg/kg/s]
+      PSACR,  & ! Collection of snow by rain.
+                !    Adds to rgm, subtracts from rsm [kg/kg/s]
+      PRDG,   & ! Depositional growth of graupel.
+                !    Adds to rgm, subtracts from rvm [kg/kg/s]
+      EPRDG     ! Negative of sublimation of graupel.
+                !    Adds to rgm, subtracts from rvm [kg/kg/s]
+
+    real, dimension(nz), intent(in) :: &
+      NPRC1,  & ! Change in Nrm due to autoconversion of droplets. Adds to Nrm [#/kg/s]
+      NRAGG,  & ! Change in Nrm due to self-collection of raindrops. Adds to Nrm [#/kg/s]
+      NPRACG, & ! Collection of rainwater by graupel. Subtracts from Nrm [#/kg/s]
+      NSUBR,  & ! Loss of Nrm by evaporation. Adds to Nrm [#/kg/s]
+      NSMLTR, & ! Melting of snow to form rain. Subtracts from Nrm [#/kg/s]
+      NGMLTR, & ! Melting of graupel to form rain. Subtracts from Nrm [#/kg/s]
+      NPRACS, & ! Collection of rainwater by snow. Subtracts from Nrm [#/kg/s]
+      NNUCCR, & ! Contact freezing of rain. Adds to Ngm, subtracts from Nrm [#/kg/s]
+      NIACR,  & ! Collection of cloud ice by rain.
+                !    Adds to Ngm, subtracts from Nrm and Nim [#/kg/s] 
+      NIACRS, & ! Collection of cloud ice by rain.
+                !    Adds to Nsm, subtracts from Nrm and Nim [#/kg/s]
+      NGRACS, & ! Collection of rain by snow.
+                !    Adds to Ngm, subtracts from Nrm and Nsm [#/kg/s]
+      NSMLTS, & ! Melting of snow
+                !    Adds to Nsm [#/kg/s]
+      NSAGG, &  ! Self collection of snow
+                !    Adds to Nsm [#/kg/s]
+      NPRCI, &  ! Autoconversion of cloud ice to snow
+                !    Adds to Nsm, subtracts from Nim [#/kg/s]
+      NSCNG, &  ! Conversion of snow to graupel
+                !    Adds to Ngm, subtracts from Nsm [#/kg/s]
+      NSUBS, &  ! Loss of Nsm due to sublimation
+                !    Adds to Nsm [#/kg/s]
+      PRA,   &  ! Accretion. Adds to rrm, subtracts from rcm [kg/kg/s]
+      PRC,   &  ! Autoconversion. Adds to rrm, subtracts from rcm [kg/kg/s]
+      PRE       ! Rain evaporation. Subtracts from rrm [kg/kg/s]              
+          
+    real, dimension(nz), intent(in) :: &
+      PCC, &    ! Saturation adjustment 
+                !    Adds to rcm, substracts from rvm [kg/kg/s]
+      NNUCCC, & ! Contact freezing of cloud drops
+                !    Adds to Nim, subtracts from Ncm [#/kg/s]
+      NPSACWS,& ! Droplet accretion by snow. Subtracts from Ncm [#/kg/s] 
+      NPRA, &   ! Droplet accretion by rain. Subtracts from Ncm [#/kg/s]
+      NPRC, &   ! Autoconversion of cloud drops. Subtracts from Ncm [#/kg/s]
+      NPSACWI,& ! Droplet accretion by cloud ice. Subtracts from Ncm [#/kg/s]
+      NPSACWG,& ! Collection of cloud drops by graupel. Subtracts from Ncm [#/kg/s]
+      NPRAI, &  ! Accretion of cloud ice by snow. Subtracts from Nim [#/kg/s]
+      NMULTS, & ! Ice mult. due to riming of cloud drops by snow. Adds to Nim [#/kg/s]
+      NMULTG, & ! Ice mult. due to accretion of cloud drops by graupel. Adds to Nim [#/kg/s]
+      NMULTR, & ! Ice mult. due to riming of rain by snow. Adds to Nim [#/kg/s]
+      NMULTRG,& ! Ice mult. due to accretion of rain by graupel. Adds to Nim [#/kg/s]
+      NNUCCD, & ! Primary ice nucleation, freezing of aerosol. Adds to Nim [#/kg/s]
+      NSUBI, &  ! Loss of ice due to sublimation. Subtracts from Nim [#/kg/s]
+      NGMLTG, & ! Loss of graupel due to melting. Subtracts from Ngm [#/kg/s]
+      NSUBG, &  ! Loss of graupel due to sublimation. Subtracts from Ngm [#/kg/s]
+      NACT,  &  ! Cloud droplet formation by aerosol activation. Adds to Ncm [#/kg/s]
+      SIZEFIX_NR, &  ! Adjustment to rain drop number concentration for large/small drops 
+      SIZEFIX_NC, &  ! Adjustment to cloud drop number concentration for large/small drops
+      SIZEFIX_NI, &  ! Adjustment to ice number concentration for large/small drops
+      SIZEFIX_NS, &  ! Adjustment to snow number concentration for large/small drops
+      SIZEFIX_NG, &  ! Adjustment to graupel number concentration for large/small drops
+      NEGFIX_NI, &    ! Removal of negative ice number concentration 
+      NEGFIX_NS, &    ! Removal of negative snow number concentration 
+      NEGFIX_NC, &    ! Removal of negative cloud drop number concentration 
+      NEGFIX_NR, &    ! Removal of negative rain drop number concentration 
+      NEGFIX_NG, &    ! Removal of negative graupel number concentration 
+      NIM_MORR_CL, &   ! Clipping of large ice number concentrations
+      QC_INST, & ! Change in cloud mixing ratio due to instantaneous processes
+      QR_INST, & ! Change in rain mixing ratio due to instantaneous processes
+      QI_INST, & ! Change in ice mixing ratio due to instantaneous processes
+      QS_INST, & ! Change in snow mixing ratio due to instantaneous processes
+      QG_INST, & ! Change in graupel mixing ratio due to instantaneous processes
+      NC_INST, & ! Change in cloud number concentration due to instantaneous processes
+      NR_INST, & ! Change in rain number concentration due to instantaneous processes
+      NI_INST, & ! Change in ice number concentration due to instantaneous processes
+      NS_INST, & ! Change in snow number concentration due to instantaneous processes
+      NG_INST    ! Change in graupel number concentration due to instantaneous processes
+
+    ! Local variables
+    logical :: nan_at_lev
+
+    integer :: k
+     
+
+    ! Check for a NaN value in any of the major microphysics tendency variables
+    ! that are output from Morrison microphysics for use in the code.
+    if ( is_nan_2d( real( rcm_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( rim_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( rsm_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( rrm_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( rgm_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( Ncm_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( Nim_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( Nsm_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( Nrm_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( Ngm_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( rvm_mc_r4, kind=core_rknd ) ) &
+         .or. is_nan_2d( real( T_in_K_mc, kind=core_rknd ) ) ) then
+       write(fstderr,*) "NaN detected in a Morrison microphysics tendency"
+       do k = 1, nz, 1
+          nan_at_lev = .false.
+          if ( is_nan_sclr( real( rcm_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in rcm_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k)
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( rim_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in rim_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( rsm_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in rsm_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( rrm_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in rrm_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( rgm_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in rgm_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( Ncm_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in Ncm_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( Nim_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in Nim_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( Nsm_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in Nsm_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( Nrm_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in Nrm_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( Ngm_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in Ngm_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( rvm_mc_r4(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in rvm_mc_r4 at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( is_nan_sclr( real( T_in_K_mc(k), kind=core_rknd ) ) ) then
+             write(fstderr,*) "NaN detected in T_in_K_mc at k = ", k, &
+                              "altitude (m) = ", gr%zt(k) 
+             nan_at_lev = .true.
+          endif
+          if ( nan_at_lev ) then
+             write(fstderr,*) "At k = ", k, "Altitude (m) = ", gr%zt(k)
+             write(fstderr,*) "thlm (in) = ", thlm(k)
+             write(fstderr,*) "rvm (in) = ", rvm(k)
+             write(fstderr,*) "rcm (in) = ", rcm(k)
+             write(fstderr,*) "rrm (in) = ", hydromet(k,iirr)
+             write(fstderr,*) "rim (in) = ", hydromet(k,iiri)
+             write(fstderr,*) "rsm (in) = ", hydromet(k,iirs)
+             write(fstderr,*) "rgm (in) = ", hydromet(k,iirg)
+             write(fstderr,*) "Ncm (in) = ", Ncm(k)
+             write(fstderr,*) "Nrm (in) = ", hydromet(k,iiNr)
+             write(fstderr,*) "Nim (in) = ", hydromet(k,iiNi)
+             write(fstderr,*) "Nsm (in) = ", hydromet(k,iiNs)
+             write(fstderr,*) "Ngm (in) = ", hydromet(k,iiNg)
+             write(fstderr,*) "rgm_sten = ", rgm_sten(k)
+             write(fstderr,*) "rrm_sten = ", rrm_sten(k)
+             write(fstderr,*) "rim_sten = ", rim_sten(k)
+             write(fstderr,*) "rsm_sten = ", rsm_sten(k)
+             write(fstderr,*) "rcm_sten = ", rcm_sten(k)
+             write(fstderr,*) "NGSTEN = ", NGSTEN(k)
+             write(fstderr,*) "NRSTEN = ", NRSTEN(k)
+             write(fstderr,*) "NISTEN = ", NISTEN(k)
+             write(fstderr,*) "NSSTEN = ", NSSTEN(k)
+             write(fstderr,*) "NCSTEN = ", NCSTEN(k)
+             write(fstderr,*) "cloud_frac_in = ", cloud_frac_in(k)
+             write(fstderr,*) "PRC = ", PRC(k)
+             write(fstderr,*) "PRA = ", PRA(k)
+             write(fstderr,*) "PSMLT = ", PSMLT(k)
+             write(fstderr,*) "EVPMS = ", EVPMS(k)
+             write(fstderr,*) "PRACS = ", PRACS(k)
+             write(fstderr,*) "EVPMG = ", EVPMG(k)
+             write(fstderr,*) "PRACG = ", PRACG(k)
+             write(fstderr,*) "PRE = ", PRE(k)
+             write(fstderr,*) "PGMLT = ", PGMLT(k)
+             write(fstderr,*) "MNUCCC = ", MNUCCC(k)
+             write(fstderr,*) "PSACWS = ", PSACWS(k)
+             write(fstderr,*) "PSACWI = ", PSACWI(k)
+             write(fstderr,*) "QMULTS = ", QMULTS(k)
+             write(fstderr,*) "QMULTG = ", QMULTG(k)
+             write(fstderr,*) "PSACWG = ", PSACWG(k)
+             write(fstderr,*) "PGSACW = ", PGSACW(k)
+             write(fstderr,*) "PRD = ", PRD(k)
+             write(fstderr,*) "PRCI = ", PRCI(k)
+             write(fstderr,*) "PRAI = ", PRAI(k)
+             write(fstderr,*) "QMULTR = ", QMULTR(k)
+             write(fstderr,*) "QMULTRG = ", QMULTRG(k)
+             write(fstderr,*) "MNUCCD = ", MNUCCD(k)
+             write(fstderr,*) "PRACI = ", PRACI(k)
+             write(fstderr,*) "PRACIS = ", PRACIS(k)
+             write(fstderr,*) "EPRD = ", EPRD(k)
+             write(fstderr,*) "MNUCCR = ", MNUCCR(k)
+             write(fstderr,*) "PIACR = ", PIACR(k)
+             write(fstderr,*) "PIACRS = ", PIACRS(k)
+             write(fstderr,*) "PGRACS = ", PGRACS(k)
+             write(fstderr,*) "PRDS = ", PRDS(k)
+             write(fstderr,*) "EPRDS = ", EPRDS(k)
+             write(fstderr,*) "PSACR = ", PSACR(k)
+             write(fstderr,*) "PRDG = ", PRDG(k)
+             write(fstderr,*) "EPRDG = ", EPRDG(k)
+             write(fstderr,*) "NPRC1 = ", NPRC1(k)
+             write(fstderr,*) "NRAGG = ", NRAGG(k)
+             write(fstderr,*) "NPRACG = ", NPRACG(k)
+             write(fstderr,*) "NSUBR = ", NSUBR(k)
+             write(fstderr,*) "NSMLTR = ", NSMLTR(k)
+             write(fstderr,*) "NGMLTR = ", NGMLTR(k)
+             write(fstderr,*) "NPRACS = ", NPRACS(k)
+             write(fstderr,*) "NNUCCR = ", NNUCCR(k)
+             write(fstderr,*) "NIACR = ", NIACR(k)
+             write(fstderr,*) "NIACRS = ", NIACRS(k)
+             write(fstderr,*) "NGRACS = ", NGRACS(k)
+             write(fstderr,*) "NSMLTS = ", NSMLTS(k)
+             write(fstderr,*) "NSAGG = ", NSAGG(k)
+             write(fstderr,*) "NPRCI = ", NPRCI(k)
+             write(fstderr,*) "NSCNG = ", NSCNG(k)
+             write(fstderr,*) "NSUBS = ", NSUBS(k)
+             write(fstderr,*) "PCC = ", PCC(k)
+             write(fstderr,*) "NNUCCC = ", NNUCCC(k)
+             write(fstderr,*) "NPSACWS = ", NPSACWS(k)
+             write(fstderr,*) "NPRA = ", NPRA(k)
+             write(fstderr,*) "NPRC = ", NPRC(k)
+             write(fstderr,*) "NPSACWI = ", NPSACWI(k)
+             write(fstderr,*) "NPSACWG = ", NPSACWG(k)
+             write(fstderr,*) "NPRAI = ", NPRAI(k)
+             write(fstderr,*) "NMULTS = ", NMULTS(k)
+             write(fstderr,*) "NMULTG = ", NMULTG(k)
+             write(fstderr,*) "NMULTR = ", NMULTR(k)
+             write(fstderr,*) "NMULTRG = ", NMULTRG(k)
+             write(fstderr,*) "NNUCCD = ", NNUCCD(k)
+             write(fstderr,*) "NSUBI = ", NSUBI(k)
+             write(fstderr,*) "NGMLTG = ", NGMLTG(k)
+             write(fstderr,*) "NSUBG = ", NSUBG(k)
+             write(fstderr,*) "NACT = ", NACT(k)
+             write(fstderr,*) "SIZEFIX_NR = ", SIZEFIX_NR(k)
+             write(fstderr,*) "SIZEFIX_NC = ", SIZEFIX_NC(k)
+             write(fstderr,*) "SIZEFIX_NI = ", SIZEFIX_NI(k)
+             write(fstderr,*) "SIZEFIX_NS = ", SIZEFIX_NS(k)
+             write(fstderr,*) "SIZEFIX_NG = ", SIZEFIX_NG(k)
+             write(fstderr,*) "NEGFIX_NR = ", NEGFIX_NR(k)
+             write(fstderr,*) "NEGFIX_NC = ", NEGFIX_NC(k)
+             write(fstderr,*) "NEGFIX_NI = ", NEGFIX_NI(k)
+             write(fstderr,*) "NEGFIX_NS = ", NEGFIX_NS(k)
+             write(fstderr,*) "NEGFIX_NG = ", NEGFIX_NG(k)
+             write(fstderr,*) "NIM_MORR_CL = ", NIM_MORR_CL(k)
+             write(fstderr,*) "QC_INST = ", QC_INST(k)
+             write(fstderr,*) "QR_INST = ", QR_INST(k)
+             write(fstderr,*) "QI_INST = ", QI_INST(k)
+             write(fstderr,*) "QS_INST = ", QS_INST(k)
+             write(fstderr,*) "QG_INST = ", QG_INST(k)
+             write(fstderr,*) "NC_INST = ", NC_INST(k)
+             write(fstderr,*) "NR_INST = ", NR_INST(k)
+             write(fstderr,*) "NI_INST = ", NI_INST(k)
+             write(fstderr,*) "NS_INST = ", NS_INST(k)
+             write(fstderr,*) "NG_INST = ", NG_INST(k)
+             write(fstderr,*) "---------------------------------------------"
+          endif ! nan_at_lev
+       enddo ! k = 1, nz, 1
+    endif
+
+
+    return
+
+  end subroutine print_morr_error_output
+
+  !=============================================================================
 
 end module morrison_microphys_module
