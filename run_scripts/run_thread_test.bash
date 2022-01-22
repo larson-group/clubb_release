@@ -77,7 +77,7 @@ run_parallel()
 	# Run the CLUBB thread test
 	#####
 	# Added July 10th, 2018 to find parallel running errors.
-	echo "Checking clubb_thread_test"
+	echo "Checking existence of clubb_thread_test"
 	#####
 
 	if [ -e ../bin/clubb_thread_test ]; then
@@ -85,7 +85,7 @@ run_parallel()
 
 	#####
 	# Added July 10th, 2018 to find parallel running errors.
-	echo "Clubb_thread_test success"
+	echo "clubb_thread_test executable exists"
 	#####
 
 	else
