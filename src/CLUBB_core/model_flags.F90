@@ -504,7 +504,7 @@ module model_flags
     !    BY NAMELIST VALUES FROM, E.G., configurable_clubb_flags_nl!!!
 
     iiPDF_type = iiPDF_ADG1
-    ipdf_call_placement = ipdf_pre_advance_fields
+    ipdf_call_placement = ipdf_post_advance_fields
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.
     l_min_wp2_from_corr_wx = .true.
