@@ -857,15 +857,6 @@ module advance_clubb_core_module
        call init_pdf_params( nz, 1, pdf_params_single_col(i) )
        call init_pdf_params( nz, 1, pdf_params_zm_single_col(i) )
      end do
-    
-    do i = 1, ngrdcol
-      
-      call copy_multi_pdf_params_to_single( pdf_params, i, &
-                                            pdf_params_single_col(i) )
-                                            
-      call copy_multi_pdf_params_to_single( pdf_params_zm, i, &
-                                            pdf_params_zm_single_col(i) )
-    end do
 
     if ( clubb_config_flags%l_lmm_stepping ) then
       dt_advance = two * dt
@@ -1124,7 +1115,7 @@ module advance_clubb_core_module
                                rcm_supersat_adj,                            & ! Intent(out)
                                wp2sclrp, wpsclrp2, sclrprcp,                & ! Intent(out)
                                wpsclrprtp, wpsclrpthlp,                     & ! Intent(out)
-                               pdf_params_single_col, pdf_params_zm_single_col,                   & ! Intent(out)
+                               pdf_params, pdf_params_zm,                   & ! Intent(out)
                                pdf_implicit_coefs_terms )                     ! Intent(out)
       
     endif ! clubb_config_flags%ipdf_call_placement == ipdf_pre_advance_fields
@@ -1294,8 +1285,11 @@ module advance_clubb_core_module
 
     if ( .not. clubb_config_flags%l_diag_Lscale_from_tau ) then ! compute Lscale 1st, using
                                                                 ! buoyant parcel calc
-
       do i = 1, ngrdcol
+        
+        call copy_multi_pdf_params_to_single( pdf_params, i, &
+                                              pdf_params_single_col(i) )
+        
         call calc_Lscale_directly ( gr(i), l_implemented, p_in_Pa(i,:), &! intent(in)
                   exner(i,:), rtm(i,:), thlm(i,:), thvm(i,:), &                      ! intent(in)
                   newmu(i), rtp2(i,:), thlp2(i,:), rtpthlp(i,:), pdf_params_single_col(i), em(i,:), & ! intent(in)
@@ -1569,20 +1563,20 @@ module advance_clubb_core_module
     if ( clubb_config_flags%l_call_pdf_closure_twice ) then
       do k = 1, nz
         do i = 1, ngrdcol
-          w_1_zm(i,k)        = pdf_params_zm_single_col(i)%w_1(1,k)
-          w_2_zm(i,k)        = pdf_params_zm_single_col(i)%w_2(1,k)
-          varnce_w_1_zm(i,k) = pdf_params_zm_single_col(i)%varnce_w_1(1,k)
-          varnce_w_2_zm(i,k) = pdf_params_zm_single_col(i)%varnce_w_2(1,k)
-          mixt_frac_zm(i,k) = pdf_params_zm_single_col(i)%mixt_frac(1,k)
+          w_1_zm(i,k)        = pdf_params_zm%w_1(i,k)
+          w_2_zm(i,k)        = pdf_params_zm%w_2(i,k)
+          varnce_w_1_zm(i,k) = pdf_params_zm%varnce_w_1(i,k)
+          varnce_w_2_zm(i,k) = pdf_params_zm%varnce_w_2(i,k)
+          mixt_frac_zm(i,k)  = pdf_params_zm%mixt_frac(i,k)
         end do
       end do
     else
       do i = 1, ngrdcol
-        w_1_zm(i,:)        = zt2zm( gr(i), pdf_params_single_col(i)%w_1(1,:) )
-        w_2_zm(i,:)        = zt2zm( gr(i), pdf_params_single_col(i)%w_2(1,:) )
-        varnce_w_1_zm(i,:) = zt2zm( gr(i), pdf_params_single_col(i)%varnce_w_1(1,:) )
-        varnce_w_2_zm(i,:) = zt2zm( gr(i), pdf_params_single_col(i)%varnce_w_2(1,:) )
-        mixt_frac_zm(i,:)  = zt2zm( gr(i), pdf_params_single_col(i)%mixt_frac(1,:) )
+        w_1_zm(i,:)        = zt2zm( gr(i), pdf_params%w_1(i,:) )
+        w_2_zm(i,:)        = zt2zm( gr(i), pdf_params%w_2(i,:) )
+        varnce_w_1_zm(i,:) = zt2zm( gr(i), pdf_params%varnce_w_1(i,:) )
+        varnce_w_2_zm(i,:) = zt2zm( gr(i), pdf_params%varnce_w_2(i,:) )
+        mixt_frac_zm(i,:)  = zt2zm( gr(i), pdf_params%mixt_frac(i,:) )
       end do
     end if
 
@@ -1909,7 +1903,7 @@ module advance_clubb_core_module
                invrs_tau_wp3_zt(i,:), invrs_tau_C1_zm(i,:), Skw_zm(i,:),                 & ! intent(in)
                Skw_zt(i,:), rho_ds_zm(i,:), rho_ds_zt(i,:), invrs_rho_ds_zm(i,:),             & ! intent(in)
                invrs_rho_ds_zt(i,:), radf(i,:), thv_ds_zm(i,:),                          & ! intent(in)
-               thv_ds_zt(i,:), pdf_params_single_col(i)%mixt_frac(1,:), Cx_fnc_Richardson(i,:),   & ! intent(in)
+               thv_ds_zt(i,:), pdf_params%mixt_frac(i,:), Cx_fnc_Richardson(i,:),   & ! intent(in)
                wp2_splat(i,:), wp3_splat(i,:),                                      & ! intent(in)
                pdf_implicit_coefs_terms(i),                                  & ! intent(in)
                wprtp(i,:), wpthlp(i,:), rtp2(i,:), thlp2(i,:),                                & ! intent(in)
@@ -2332,8 +2326,10 @@ module advance_clubb_core_module
                                rcm_supersat_adj,                            & ! Intent(out)
                                wp2sclrp, wpsclrp2, sclrprcp,                & ! Intent(out)
                                wpsclrprtp, wpsclrpthlp,                     & ! Intent(out)
-                               pdf_params_single_col, pdf_params_zm_single_col,                   & ! Intent(out)
+                               pdf_params, pdf_params_zm,                   & ! Intent(out)
                                pdf_implicit_coefs_terms )                     ! Intent(out)
+                               
+      
 
     end if ! clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields
           ! or clubb_config_flags%ipdf_call_placement
@@ -2430,6 +2426,13 @@ module advance_clubb_core_module
     end if
     
     do i = 1, ngrdcol
+        
+      call copy_multi_pdf_params_to_single( pdf_params, i, &
+                                            pdf_params_single_col(i) )
+                                            
+      call copy_multi_pdf_params_to_single( pdf_params_zm, i, &
+                                            pdf_params_zm_single_col(i) )
+      
       call stats_accumulate( &
              gr(i), um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:),                      & ! intent(in)
              thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! intent(in)
@@ -2552,15 +2555,6 @@ module advance_clubb_core_module
                                  stats_sfc(i) )                               ! intent(inout)
       end do
     end if
-      
-    ! Copy single column versiosn of PDF params to multi column versions
-    do i=1, ngrdcol
-      call copy_single_pdf_params_to_multi( pdf_params_single_col(i), i, &
-                                            pdf_params  )
-                                            
-      call copy_single_pdf_params_to_multi( pdf_params_zm_single_col(i), i, &
-                                            pdf_params_zm  )
-    end do
 
     return
   end subroutine advance_clubb_core
@@ -2639,8 +2633,7 @@ module advance_clubb_core_module
 
     use pdf_parameter_module, only: &
         pdf_parameter,        & ! Variable Type
-        implicit_coefs_terms, & ! Variable Type
-        init_pdf_params         ! Procedure(s)
+        implicit_coefs_terms    ! Variable Type
 
     use parameters_model, only: &
         sclr_dim,               & ! Variable(s)
@@ -2897,7 +2890,7 @@ module advance_clubb_core_module
       wpsclrpthlp    ! < w' sclr' th_l' > (thermodynamic levels)  [units vary]
 
     ! Variable being passed back to and out of advance_clubb_core.
-    type(pdf_parameter), dimension(ngrdcol), intent(inout) :: &
+    type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! PDF parameters                           [units vary]
       pdf_params_zm    ! PDF parameters                           [units vary]
 
@@ -3537,11 +3530,9 @@ module advance_clubb_core_module
 
     ! Compute variables cloud_cover and rcm_in_layer.
     ! Added July 2009
-    do i = 1, ngrdcol
-      call compute_cloud_cover &
-         ( gr(i), pdf_params(i), cloud_frac(i,:), rcm(i,:), & ! intent(in)
-           cloud_cover(i,:), rcm_in_layer(i,:) )    ! intent(out)
-    end do
+    call compute_cloud_cover( gr, nz, ngrdcol,             & ! intent(in)
+                              pdf_params, cloud_frac, rcm, & ! intent(in)
+                              cloud_cover, rcm_in_layer )    ! intent(out)
 
     ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help
     ! increase cloudiness at coarser grid resolutions.
@@ -4546,9 +4537,9 @@ module advance_clubb_core_module
     end function trapezoid_zm
 
     !-----------------------------------------------------------------------
-    subroutine compute_cloud_cover &
-             ( gr, pdf_params, cloud_frac, rcm, & ! intent(in)
-               cloud_cover, rcm_in_layer )    ! intent(out)
+    subroutine compute_cloud_cover( gr, nz, ngrdcol, &
+                                    pdf_params, cloud_frac, rcm, & ! intent(in)
+                                    cloud_cover, rcm_in_layer )    ! intent(out)
       !
       ! Description:
       !   Subroutine to compute cloud cover (the amount of sky
@@ -4568,7 +4559,7 @@ module advance_clubb_core_module
           rc_tol, & ! Variable(s)
           fstderr
 
-    use grid_class, only: grid
+          use grid_class, only: grid
 
       use pdf_parameter_module, only: &
           pdf_parameter ! Derived data type
@@ -4580,14 +4571,18 @@ module advance_clubb_core_module
           clubb_at_least_debug_level  ! Procedure
 
       implicit none
+      
+      integer, intent(in) :: &
+        ngrdcol,  & ! Number of grid columns
+        nz          ! Number of vertical level
 
-    type (grid), target, intent(in) :: gr
+      type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
       ! External functions
       intrinsic :: abs, min, max
 
       ! Input variables
-      real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
         cloud_frac, & ! Cloud fraction             [-]
         rcm           ! Liquid water mixing ratio  [kg/kg]
 
@@ -4595,128 +4590,134 @@ module advance_clubb_core_module
         pdf_params    ! PDF Parameters  [units vary]
 
       ! Output variables
-      real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
         cloud_cover,  & ! Cloud cover                               [-]
         rcm_in_layer    ! Liquid water mixing ratio in cloud layer  [kg/kg]
 
       ! Local variables
-      real( kind = core_rknd ), dimension(gr%nz) :: &
+      real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
         chi_mean,                & ! Mean extended cloud water mixing ratio of the
     !                            two Gaussian distributions
         vert_cloud_frac_upper, & ! Fraction of cloud in top half of grid box
         vert_cloud_frac_lower, & ! Fraction of cloud in bottom half of grid box
         vert_cloud_frac          ! Fraction of cloud filling the grid box in the vertical
 
-      integer :: k
+      integer :: i, k
 
       ! ------------ Begin code ---------------
 
-      do k = 1, gr%nz
+      do k = 1, nz
+        do i = 1, ngrdcol
 
-        chi_mean(k) =      pdf_params%mixt_frac(1,k)  * pdf_params%chi_1(1,k) + &
-                    (1.0_core_rknd-pdf_params%mixt_frac(1,k)) * pdf_params%chi_2(1,k)
-
+          chi_mean(i,k) =      pdf_params%mixt_frac(i,k)  * pdf_params%chi_1(i,k) + &
+                      (1.0_core_rknd-pdf_params%mixt_frac(i,k)) * pdf_params%chi_2(i,k)
+        end do
       end do
 
-      do k = 2, gr%nz-1, 1
+      do k = 2, nz-1
+        do i = 1, ngrdcol
 
-        if ( rcm(k) < rc_tol ) then ! No cloud at this level
+          if ( rcm(i,k) < rc_tol ) then ! No cloud at this level
 
-          cloud_cover(k)  = cloud_frac(k)
-          rcm_in_layer(k) = rcm(k)
+            cloud_cover(i,k)  = cloud_frac(i,k)
+            rcm_in_layer(i,k) = rcm(i,k)
 
-        else if ( ( rcm(k+1) >= rc_tol ) .and. ( rcm(k-1) >= rc_tol ) ) then
-          ! There is cloud above and below,
-          !   so assume cloud fills grid box from top to bottom
+          else if ( ( rcm(i,k+1) >= rc_tol ) .and. ( rcm(i,k-1) >= rc_tol ) ) then
+            ! There is cloud above and below,
+            !   so assume cloud fills grid box from top to bottom
 
-          cloud_cover(k) = cloud_frac(k)
-          rcm_in_layer(k) = rcm(k)
+            cloud_cover(i,k) = cloud_frac(i,k)
+            rcm_in_layer(i,k) = rcm(i,k)
 
-        else if ( ( rcm(k+1) < rc_tol ) .or. ( rcm(k-1) < rc_tol) ) then
-          ! Cloud may fail to reach gridbox top or base or both
+          else if ( ( rcm(i,k+1) < rc_tol ) .or. ( rcm(i,k-1) < rc_tol) ) then
+            ! Cloud may fail to reach gridbox top or base or both
 
-          ! First let the cloud fill the entire grid box, then overwrite
-          ! vert_cloud_frac_upper(k) and/or vert_cloud_frac_lower(k)
-          ! for a cloud top, cloud base, or one-point cloud.
-          vert_cloud_frac_upper(k) = 0.5_core_rknd
-          vert_cloud_frac_lower(k) = 0.5_core_rknd
+            ! First let the cloud fill the entire grid box, then overwrite
+            ! vert_cloud_frac_upper(k) and/or vert_cloud_frac_lower(k)
+            ! for a cloud top, cloud base, or one-point cloud.
+            vert_cloud_frac_upper(i,k) = 0.5_core_rknd
+            vert_cloud_frac_lower(i,k) = 0.5_core_rknd
 
-          if ( rcm(k+1) < rc_tol ) then ! Cloud top
+            if ( rcm(i,k+1) < rc_tol ) then ! Cloud top
 
-            vert_cloud_frac_upper(k) = &
-                     ( ( 0.5_core_rknd / gr%invrs_dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) &
-                     * ( rcm(k) / ( rcm(k) + abs( chi_mean(k+1) ) ) )
+              vert_cloud_frac_upper(i,k) = &
+                       ( ( 0.5_core_rknd / gr(i)%invrs_dzm(k) ) / ( gr(i)%zm(k) - gr(i)%zt(k) ) ) &
+                       * ( rcm(i,k) / ( rcm(i,k) + abs( chi_mean(i,k+1) ) ) )
 
-            vert_cloud_frac_upper(k) = min( 0.5_core_rknd, vert_cloud_frac_upper(k) )
+              vert_cloud_frac_upper(i,k) = min( 0.5_core_rknd, vert_cloud_frac_upper(i,k) )
 
-            ! Make the transition in cloudiness more gradual than using
-            ! the above min statement alone.
-            vert_cloud_frac_upper(k) = vert_cloud_frac_upper(k) + &
-              ( ( rcm(k+1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_upper(k) ) )
+              ! Make the transition in cloudiness more gradual than using
+              ! the above min statement alone.
+              vert_cloud_frac_upper(i,k) = vert_cloud_frac_upper(i,k) + &
+                ( ( rcm(i,k+1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_upper(i,k) ) )
+
+            else
+
+              vert_cloud_frac_upper(i,k) = 0.5_core_rknd
+
+            end if
+
+            if ( rcm(i,k-1) < rc_tol ) then ! Cloud base
+
+              vert_cloud_frac_lower(i,k) = &
+                       ( ( 0.5_core_rknd / gr(i)%invrs_dzm(k-1) ) / ( gr(i)%zt(k) - gr(i)%zm(k-1) ) ) &
+                       * ( rcm(i,k) / ( rcm(i,k) + abs( chi_mean(i,k-1) ) ) )
+
+              vert_cloud_frac_lower(i,k) = min( 0.5_core_rknd, vert_cloud_frac_lower(i,k) )
+
+              ! Make the transition in cloudiness more gradual than using
+              ! the above min statement alone.
+              vert_cloud_frac_lower(i,k) = vert_cloud_frac_lower(i,k) + &
+                ( ( rcm(i,k-1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_lower(i,k) ) )
+
+            else
+
+              vert_cloud_frac_lower(i,k) = 0.5_core_rknd
+
+            end if
+
+            vert_cloud_frac(i,k) = &
+              vert_cloud_frac_upper(i,k) + vert_cloud_frac_lower(i,k)
+
+            vert_cloud_frac(i,k) = &
+              max( cloud_frac(i,k), min( 1.0_core_rknd, vert_cloud_frac(i,k) ) )
+
+            cloud_cover(i,k)  = cloud_frac(i,k) / vert_cloud_frac(i,k)
+            rcm_in_layer(i,k) = rcm(i,k) / vert_cloud_frac(i,k)
 
           else
 
-            vert_cloud_frac_upper(k) = 0.5_core_rknd
+            if ( clubb_at_least_debug_level( 0 ) ) then
 
-          end if
+              write(fstderr,*)  &
+                 "Error: Should not arrive here in computation of cloud_cover"
 
-          if ( rcm(k-1) < rc_tol ) then ! Cloud base
+              write(fstderr,*) "At grid level k = ", k
+              write(fstderr,*) "At column i = ", i
+              write(fstderr,*) "pdf_params%mixt_frac(i,k) = ", pdf_params%mixt_frac(i,k)
+              write(fstderr,*) "pdf_params%chi_1(i,k) = ", pdf_params%chi_1(i,k)
+              write(fstderr,*) "pdf_params%chi_2(i,k) = ", pdf_params%chi_2(i,k)
+              write(fstderr,*) "cloud_frac(i,k) = ", cloud_frac(i,k)
+              write(fstderr,*) "rcm(i,k) = ", rcm(i,k)
+              write(fstderr,*) "rcm(i,k+1) = ", rcm(i,k+1)
+              write(fstderr,*) "rcm(i,k-1) = ", rcm(i,k-1)
 
-            vert_cloud_frac_lower(k) = &
-                     ( ( 0.5_core_rknd / gr%invrs_dzm(k-1) ) / ( gr%zt(k) - gr%zm(k-1) ) ) &
-                     * ( rcm(k) / ( rcm(k) + abs( chi_mean(k-1) ) ) )
+              return
 
-            vert_cloud_frac_lower(k) = min( 0.5_core_rknd, vert_cloud_frac_lower(k) )
+            end if
 
-            ! Make the transition in cloudiness more gradual than using
-            ! the above min statement alone.
-            vert_cloud_frac_lower(k) = vert_cloud_frac_lower(k) + &
-              ( ( rcm(k-1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_lower(k) ) )
-
-          else
-
-            vert_cloud_frac_lower(k) = 0.5_core_rknd
-
-          end if
-
-          vert_cloud_frac(k) = &
-            vert_cloud_frac_upper(k) + vert_cloud_frac_lower(k)
-
-          vert_cloud_frac(k) = &
-            max( cloud_frac(k), min( 1.0_core_rknd, vert_cloud_frac(k) ) )
-
-          cloud_cover(k)  = cloud_frac(k) / vert_cloud_frac(k)
-          rcm_in_layer(k) = rcm(k) / vert_cloud_frac(k)
-
-        else
-
-          if ( clubb_at_least_debug_level( 0 ) ) then
-
-            write(fstderr,*)  &
-               "Error: Should not arrive here in computation of cloud_cover"
-
-            write(fstderr,*) "At grid level k = ", k
-            write(fstderr,*) "pdf_params(k)%mixt_frac = ", pdf_params%mixt_frac(1,k)
-            write(fstderr,*) "pdf_params(k)%chi_1 = ", pdf_params%chi_1(1,k)
-            write(fstderr,*) "pdf_params(k)%chi_2 = ", pdf_params%chi_2(1,k)
-            write(fstderr,*) "cloud_frac(k) = ", cloud_frac(k)
-            write(fstderr,*) "rcm(k) = ", rcm(k)
-            write(fstderr,*) "rcm(k+1) = ", rcm(k+1)
-            write(fstderr,*) "rcm(k-1) = ", rcm(k-1)
-
-            return
-
-          end if
-
-        end if ! rcm(k) < rc_tol
-
+          end if ! rcm(k) < rc_tol
+          
+        end do
       end do ! k = 2, gr%nz-1, 1
 
-      cloud_cover(1)       = cloud_frac(1)
-      cloud_cover(gr%nz) = cloud_frac(gr%nz)
+      do i = 1, ngrdcol
+        cloud_cover(i,1)  = cloud_frac(i,1)
+        cloud_cover(i,nz) = cloud_frac(i,nz)
 
-      rcm_in_layer(1)       = rcm(1)
-      rcm_in_layer(gr%nz) = rcm(gr%nz)
+        rcm_in_layer(i,1)  = rcm(i,1)
+        rcm_in_layer(i,nz) = rcm(i,nz)
+      end do
 
       return
     end subroutine compute_cloud_cover
