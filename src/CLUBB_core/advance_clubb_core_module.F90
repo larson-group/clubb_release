@@ -2633,7 +2633,8 @@ module advance_clubb_core_module
 
     use pdf_parameter_module, only: &
         pdf_parameter,        & ! Variable Type
-        implicit_coefs_terms    ! Variable Type
+        implicit_coefs_terms, &  ! Variable Type
+        init_pdf_implicit_coefs_terms ! Procedure
 
     use parameters_model, only: &
         sclr_dim,               & ! Variable(s)
@@ -2670,7 +2671,9 @@ module advance_clubb_core_module
         sat_mixrat_liq    ! Procedure(s)
 
     use model_flags, only: &
-        l_gamma_Skw    ! Variable(s)
+        l_gamma_Skw,      & ! Variable(s)
+        iiPDF_new,        & ! new PDF
+        iiPDF_new_hybrid    ! new hybrid PDF
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
@@ -3361,6 +3364,15 @@ module advance_clubb_core_module
         um_zm(i,:) = zt2zm( gr(i), um(i,:) )
         vm_zm(i,:) = zt2zm( gr(i), vm(i,:) )
       end do
+      
+      ! pdf_implicit_coefs_terms is only used in the iiPDF_new and iiPDF_new_hybrid closures.
+      ! So we only need to initialize our local _zm version if we're working with one of those.
+      if ( iiPDF_type == iiPDF_new .or. iiPDF_type == iiPDF_new_hybrid ) then
+        do i = 1, ngrdcol
+          call init_pdf_implicit_coefs_terms( nz, sclr_dim, &            ! Intent(in)
+                                              pdf_implicit_coefs_terms_zm(i) ) ! Intent(out)
+        end do
+      end if 
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       call pdf_closure( gr, nz, ngrdcol,                           & ! intent(in)

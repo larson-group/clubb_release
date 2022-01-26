@@ -484,49 +484,8 @@ module pdf_closure_module
     end if
 
 
-      ! Initialize to 0 to prevent a runtime error
+    ! Initialize to 0 to prevent a runtime error
     if ( iiPDF_type /= iiPDF_new .and. iiPDF_type /= iiPDF_new_hybrid ) then
-
-      do i = 1, ngrdcol
-        do k = 1, nz
-          pdf_implicit_coefs_terms(i)%coef_wp4_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%coef_wp2rtp_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%term_wp2rtp_explicit(k) = zero
-          pdf_implicit_coefs_terms(i)%coef_wp2thlp_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%term_wp2thlp_explicit(k) = zero
-          pdf_implicit_coefs_terms(i)%coef_wp2up_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%term_wp2up_explicit(k) = zero
-          pdf_implicit_coefs_terms(i)%coef_wp2vp_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%term_wp2vp_explicit(k) = zero
-          pdf_implicit_coefs_terms(i)%coef_wprtp2_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%term_wprtp2_explicit(k) = zero
-          pdf_implicit_coefs_terms(i)%coef_wpthlp2_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%term_wpthlp2_explicit(k) = zero
-          pdf_implicit_coefs_terms(i)%coef_wprtpthlp_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%term_wprtpthlp_explicit(k) = zero
-          pdf_implicit_coefs_terms(i)%coef_wpup2_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%term_wpup2_explicit(k) = zero
-          pdf_implicit_coefs_terms(i)%coef_wpvp2_implicit(k) = zero
-          pdf_implicit_coefs_terms(i)%term_wpvp2_explicit(k) = zero
-        end do
-      end do
-        
-      if ( sclr_dim > 0 ) then
-        do i = 1, ngrdcol
-          do j = 1, sclr_dim
-            do k = 1, nz
-              pdf_implicit_coefs_terms(i)%coef_wp2sclrp_implicit(k,j) = zero
-              pdf_implicit_coefs_terms(i)%term_wp2sclrp_explicit(k,j) = zero
-              pdf_implicit_coefs_terms(i)%coef_wpsclrp2_implicit(k,j) = zero
-              pdf_implicit_coefs_terms(i)%term_wpsclrp2_explicit(k,j) = zero
-              pdf_implicit_coefs_terms(i)%coef_wprtpsclrp_implicit(k,j) = zero
-              pdf_implicit_coefs_terms(i)%term_wprtpsclrp_explicit(k,j) = zero
-              pdf_implicit_coefs_terms(i)%coef_wpthlpsclrp_implicit(k,j) = zero
-              pdf_implicit_coefs_terms(i)%term_wpthlpsclrp_explicit(k,j) = zero
-            end do
-          end do
-        end do
-      end if ! sclr_dim > 0
 
       do k = 1, nz
         do i = 1, ngrdcol
@@ -595,7 +554,7 @@ module pdf_closure_module
                             
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
       
-      call ADG2_pdf_driver( gr(i), nz, ngrdcol,                               & ! In
+      call ADG2_pdf_driver( gr, nz, ngrdcol,                                  & ! In
                             wm, rtm, thlm, wp2, rtp2, thlp2,                  & ! In
                             Skw, wprtp, wpthlp, sqrt_wp2, beta,               & ! In
                             sclrm, sclrp2, wpsclrp, l_scalar_calc,            & ! In
