@@ -140,7 +140,8 @@ return
       w_2 = zero
       varnce_w_2 = zero
       result_cmp = zero
-      call calc_w_up_in_cloud(gr, mixt_frac, &
+      call calc_w_up_in_cloud(gr%nz, 1, & 
+                              mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
@@ -157,7 +158,8 @@ return
       w_1 = one
       w_2 = zero
       result_cmp = one
-      call calc_w_up_in_cloud(gr, mixt_frac, &
+      call calc_w_up_in_cloud(gr%nz, 1, & 
+                              mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
@@ -174,7 +176,8 @@ return
       w_1 = -one            ! now we have purely downdraft
       w_2 = -two        ! since, by convention, w_1 > w_2
       result_cmp = zero
-      call calc_w_up_in_cloud(gr, mixt_frac, &
+      call calc_w_up_in_cloud(gr%nz, 1, & 
+                              mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
@@ -193,7 +196,8 @@ return
       varnce_w_1 = zero
       varnce_w_2 = one      ! and variation in vertical velocity
       result_cmp = zero
-      call calc_w_up_in_cloud(gr, mixt_frac, &
+      call calc_w_up_in_cloud(gr%nz, 1, & 
+                              mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
@@ -210,7 +214,8 @@ return
       w_1 = two
       w_2 = one
       result_cmp = one
-      call calc_w_up_in_cloud(gr, mixt_frac, &
+      call calc_w_up_in_cloud(gr%nz, 1, & 
+                              mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
@@ -227,7 +232,8 @@ return
       w_1 = zero
       w_2 = -one            ! now we have pure downdraft in comp. 2
       result_cmp = zero
-      call calc_w_up_in_cloud(gr, mixt_frac, &
+      call calc_w_up_in_cloud(gr%nz, 1, & 
+                              mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
@@ -245,7 +251,8 @@ return
       varnce_w_1 = zero     ! no variation in both components
       varnce_w_2 = zero
       result_cmp = two      ! so average updraft is just the arithmetic average
-      call calc_w_up_in_cloud(gr, mixt_frac, &
+      call calc_w_up_in_cloud(gr%nz, 1, & 
+                              mixt_frac, &
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &

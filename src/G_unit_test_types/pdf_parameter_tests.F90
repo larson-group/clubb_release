@@ -1053,8 +1053,10 @@ module pdf_parameter_tests
                                        l_check_mu_w_1_gte_mu_w_2     ) ! Out
 
                 ! Calculate <w'^4> by integrating over the PDF.
-                wp4_pdf_calc = calc_wp4_pdf( gr, wm, mu_w_1, mu_w_2, sigma_w_1**2, &
-                                             sigma_w_2**2, mixt_frac )
+                call calc_wp4_pdf( gr%nz, 1, & 
+                                   wm, mu_w_1, mu_w_2, sigma_w_1**2, &
+                                   sigma_w_2**2, mixt_frac, &
+                                   wp4_pdf_calc )
 
                 ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
                 coef_wp4_implicit &
@@ -1203,8 +1205,10 @@ module pdf_parameter_tests
                                        l_check_mu_w_1_gte_mu_w_2     ) ! Out
 
                 ! Calculate <w'^4> by integrating over the PDF.
-                wp4_pdf_calc = calc_wp4_pdf( gr, wm, mu_w_1, mu_w_2, sigma_w_1**2, &
-                                             sigma_w_2**2, mixt_frac )
+                call calc_wp4_pdf( gr%nz, 1, & 
+                                   wm, mu_w_1, mu_w_2, sigma_w_1**2, &
+                                   sigma_w_2**2, mixt_frac, &
+                                   wp4_pdf_calc )
 
                 ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
                 coef_wp4_implicit &
@@ -1590,21 +1594,22 @@ module pdf_parameter_tests
                                  up2, vp2, wpthlp, wprtp, upwp, vpwp, &
                                  l_predict_upwp_vpwp )
 
-          call ADG1_pdf_driver( gr, wm, rtm, thlm, um, vm,              & ! In 
-                               wp2, rtp2, thlp2, up2, vp2,              & ! In 
-                               Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In 
-                               sigma_sqd_w, beta, mixt_frac_max_mag,    & ! In 
-                               sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In 
-                               mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2,& ! Out
-                               mu_u_1, mu_u_2, mu_v_1, mu_v_2,          & ! Out
-                               sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, & ! Out
-                               sigma_rt_2_sqd, sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
-                               sigma_u_1_sqd, sigma_u_2_sqd,            & ! Out
-                               sigma_v_1_sqd, sigma_v_2_sqd,            & ! Out
-                               mixt_frac, alpha_rt, alpha_thl,          & ! Out
-                               alpha_u, alpha_v,                        & ! Out
-                               mu_sclr_1, mu_sclr_2, sigma_sclr_1_sqd,  & ! Out
-                               sigma_sclr_2_sqd, alpha_sclr )             ! Out
+          call ADG1_pdf_driver( gr%nz, 1,                                & ! In 
+                                wm, rtm, thlm, um, vm,                   & ! In 
+                                wp2, rtp2, thlp2, up2, vp2,              & ! In 
+                                Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In 
+                                sigma_sqd_w, beta, mixt_frac_max_mag,    & ! In 
+                                sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In 
+                                mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2,& ! Out
+                                mu_u_1, mu_u_2, mu_v_1, mu_v_2,          & ! Out
+                                sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, & ! Out
+                                sigma_rt_2_sqd, sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
+                                sigma_u_1_sqd, sigma_u_2_sqd,            & ! Out
+                                sigma_v_1_sqd, sigma_v_2_sqd,            & ! Out
+                                mixt_frac, alpha_rt, alpha_thl,          & ! Out
+                                alpha_u, alpha_v,                        & ! Out
+                                mu_sclr_1, mu_sclr_2, sigma_sclr_1_sqd,  & ! Out
+                                sigma_sclr_2_sqd, alpha_sclr )             ! Out
 
        elseif ( test_PDF_type == iiPDF_TSDADG ) then
 
