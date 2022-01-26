@@ -295,7 +295,7 @@ module pdf_closure_module
     type(pdf_parameter), intent(inout) :: & 
       pdf_params     ! pdf paramters         [units vary]
 
-    type(implicit_coefs_terms), dimension(ngrdcol), intent(out) :: &
+    type(implicit_coefs_terms), dimension(ngrdcol), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Parameters output only for recording statistics (new PDF).
@@ -428,12 +428,6 @@ module pdf_closure_module
     logical, parameter :: &
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
 
-    real( kind = core_rknd ), dimension(nz) :: &
-      zeros    ! Vector of 0s (size gr%nz)    [-]
-
-    real( kind = core_rknd ), dimension(nz,sclr_dim) :: &
-      zero_array    ! Array of 0s (size gr%nz x sclr_dim)    [-]
-
     integer :: k, i, j, hm_idx   ! Indices
 
 #ifdef GFDL
@@ -455,9 +449,11 @@ module pdf_closure_module
     ! Initialize to default values to prevent a runtime error
     if ( ( iiPDF_type /= iiPDF_ADG1 ) .and. ( iiPDF_type /= iiPDF_ADG2 ) ) then
 
-      do i = 1, ngrdcol
-        pdf_params%alpha_thl(i,:) = one_half
-        pdf_params%alpha_rt(i,:) = one_half
+      do k = 1, nz
+        do i = 1, ngrdcol
+          pdf_params%alpha_thl(i,k) = one_half
+          pdf_params%alpha_rt(i,k) = one_half
+        end do
       end do
       
       ! This allows for skewness to be clipped locally without passing the updated
@@ -478,7 +474,7 @@ module pdf_closure_module
             Sksclr(i,k,j) = Sksclr_in(i,k,j)
             
             if ( l_scalar_calc ) then
-                alpha_sclr(i,:,:) = one_half
+                alpha_sclr(i,k,j) = one_half
             end if
             
           end do
@@ -491,43 +487,44 @@ module pdf_closure_module
       ! Initialize to 0 to prevent a runtime error
     if ( iiPDF_type /= iiPDF_new .and. iiPDF_type /= iiPDF_new_hybrid ) then
 
-       ! Set up a vector of 0s and an array of 0s to help write results back to
-       ! type variable pdf_implicit_coefs_terms.
-       zeros = zero
-       zero_array = zero
-
       do i = 1, ngrdcol
-        pdf_implicit_coefs_terms(i)%coef_wp4_implicit = zeros
-        pdf_implicit_coefs_terms(i)%coef_wp2rtp_implicit = zeros
-        pdf_implicit_coefs_terms(i)%term_wp2rtp_explicit = zeros
-        pdf_implicit_coefs_terms(i)%coef_wp2thlp_implicit = zeros
-        pdf_implicit_coefs_terms(i)%term_wp2thlp_explicit = zeros
-        pdf_implicit_coefs_terms(i)%coef_wp2up_implicit = zeros
-        pdf_implicit_coefs_terms(i)%term_wp2up_explicit = zeros
-        pdf_implicit_coefs_terms(i)%coef_wp2vp_implicit = zeros
-        pdf_implicit_coefs_terms(i)%term_wp2vp_explicit = zeros
-        pdf_implicit_coefs_terms(i)%coef_wprtp2_implicit = zeros
-        pdf_implicit_coefs_terms(i)%term_wprtp2_explicit = zeros
-        pdf_implicit_coefs_terms(i)%coef_wpthlp2_implicit = zeros
-        pdf_implicit_coefs_terms(i)%term_wpthlp2_explicit = zeros
-        pdf_implicit_coefs_terms(i)%coef_wprtpthlp_implicit = zeros
-        pdf_implicit_coefs_terms(i)%term_wprtpthlp_explicit = zeros
-        pdf_implicit_coefs_terms(i)%coef_wpup2_implicit = zeros
-        pdf_implicit_coefs_terms(i)%term_wpup2_explicit = zeros
-        pdf_implicit_coefs_terms(i)%coef_wpvp2_implicit = zeros
-        pdf_implicit_coefs_terms(i)%term_wpvp2_explicit = zeros
+        do k = 1, nz
+          pdf_implicit_coefs_terms(i)%coef_wp4_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%coef_wp2rtp_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%term_wp2rtp_explicit(k) = zero
+          pdf_implicit_coefs_terms(i)%coef_wp2thlp_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%term_wp2thlp_explicit(k) = zero
+          pdf_implicit_coefs_terms(i)%coef_wp2up_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%term_wp2up_explicit(k) = zero
+          pdf_implicit_coefs_terms(i)%coef_wp2vp_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%term_wp2vp_explicit(k) = zero
+          pdf_implicit_coefs_terms(i)%coef_wprtp2_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%term_wprtp2_explicit(k) = zero
+          pdf_implicit_coefs_terms(i)%coef_wpthlp2_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%term_wpthlp2_explicit(k) = zero
+          pdf_implicit_coefs_terms(i)%coef_wprtpthlp_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%term_wprtpthlp_explicit(k) = zero
+          pdf_implicit_coefs_terms(i)%coef_wpup2_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%term_wpup2_explicit(k) = zero
+          pdf_implicit_coefs_terms(i)%coef_wpvp2_implicit(k) = zero
+          pdf_implicit_coefs_terms(i)%term_wpvp2_explicit(k) = zero
+        end do
       end do
         
       if ( sclr_dim > 0 ) then
         do i = 1, ngrdcol
-          pdf_implicit_coefs_terms(i)%coef_wp2sclrp_implicit = zero_array
-          pdf_implicit_coefs_terms(i)%term_wp2sclrp_explicit = zero_array
-          pdf_implicit_coefs_terms(i)%coef_wpsclrp2_implicit = zero_array
-          pdf_implicit_coefs_terms(i)%term_wpsclrp2_explicit = zero_array
-          pdf_implicit_coefs_terms(i)%coef_wprtpsclrp_implicit = zero_array
-          pdf_implicit_coefs_terms(i)%term_wprtpsclrp_explicit = zero_array
-          pdf_implicit_coefs_terms(i)%coef_wpthlpsclrp_implicit = zero_array
-          pdf_implicit_coefs_terms(i)%term_wpthlpsclrp_explicit = zero_array
+          do j = 1, sclr_dim
+            do k = 1, nz
+              pdf_implicit_coefs_terms(i)%coef_wp2sclrp_implicit(k,j) = zero
+              pdf_implicit_coefs_terms(i)%term_wp2sclrp_explicit(k,j) = zero
+              pdf_implicit_coefs_terms(i)%coef_wpsclrp2_implicit(k,j) = zero
+              pdf_implicit_coefs_terms(i)%term_wpsclrp2_explicit(k,j) = zero
+              pdf_implicit_coefs_terms(i)%coef_wprtpsclrp_implicit(k,j) = zero
+              pdf_implicit_coefs_terms(i)%term_wprtpsclrp_explicit(k,j) = zero
+              pdf_implicit_coefs_terms(i)%coef_wpthlpsclrp_implicit(k,j) = zero
+              pdf_implicit_coefs_terms(i)%term_wpthlpsclrp_explicit(k,j) = zero
+            end do
+          end do
         end do
       end if ! sclr_dim > 0
 
@@ -574,43 +571,45 @@ module pdf_closure_module
     ! PDF component means and both PDF component variances for each of w, rt,
     ! theta-l, and passive scalar variables.
     if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
-      do i = 1, ngrdcol
-        call ADG1_pdf_driver( gr(i), wm(i,:), rtm(i,:), thlm(i,:), um(i,:), vm(i,:),                         & ! In
-                              wp2(i,:), rtp2(i,:), thlp2(i,:), up2(i,:), vp2(i,:),                        & ! In
-                              Skw(i,:), wprtp(i,:), wpthlp(i,:), upwp(i,:), vpwp(i,:), sqrt_wp2(i,:),          & ! In
-                              sigma_sqd_w(i,:), beta, mixt_frac_max_mag,              & ! In
-                              sclrm(i,:,:), sclrp2(i,:,:), wpsclrp(i,:,:), l_scalar_calc,             & ! In
-                              pdf_params%w_1(i,:), pdf_params%w_2(i,:),          & ! Out
-                              pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),        & ! Out
-                              pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),      & ! Out
-                              u_1(i,:), u_2(i,:), v_1(i,:), v_2(i,:),                                & ! Out
-                              pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),     & ! Out
-                              pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),   & ! Out
-                              pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:), & ! Out
-                              varnce_u_1(i,:), varnce_u_2(i,:),                            & ! Out
-                              varnce_v_1(i,:), varnce_v_2(i,:),                            & ! Out
-                              pdf_params%mixt_frac(i,:),                         & ! Out
-                              pdf_params%alpha_rt(i,:), pdf_params%alpha_thl(i,:), & ! Out
-                              alpha_u(i,:), alpha_v(i,:),                                  & ! Out
-                              sclr1(i,:,:), sclr2(i,:,:), varnce_sclr1(i,:,:),                        & ! Out
-                              varnce_sclr2(i,:,:), alpha_sclr(i,:,:) )                           ! Out
-      end do
+      
+      call ADG1_pdf_driver( nz, ngrdcol,                                        & ! In
+                            wm, rtm, thlm, um, vm,                              & ! In
+                            wp2, rtp2, thlp2, up2, vp2,                         & ! In
+                            Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,           & ! In
+                            sigma_sqd_w, beta, mixt_frac_max_mag,               & ! In
+                            sclrm, sclrp2, wpsclrp, l_scalar_calc,              & ! In
+                            pdf_params%w_1, pdf_params%w_2,                     & ! Out
+                            pdf_params%rt_1, pdf_params%rt_2,                   & ! Out
+                            pdf_params%thl_1, pdf_params%thl_2,                 & ! Out
+                            u_1, u_2, v_1, v_2,                                 & ! Out
+                            pdf_params%varnce_w_1, pdf_params%varnce_w_2,       & ! Out
+                            pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,     & ! Out
+                            pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,   & ! Out
+                            varnce_u_1, varnce_u_2,                             & ! Out
+                            varnce_v_1, varnce_v_2,                             & ! Out
+                            pdf_params%mixt_frac,                               & ! Out
+                            pdf_params%alpha_rt, pdf_params%alpha_thl,          & ! Out
+                            alpha_u, alpha_v,                                   & ! Out
+                            sclr1, sclr2, varnce_sclr1,                         & ! Out
+                            varnce_sclr2, alpha_sclr )                            ! Out
+                            
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
-      do i = 1, ngrdcol
-        call ADG2_pdf_driver( gr(i), wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:),               & ! In
-                              Skw(i,:), wprtp(i,:), wpthlp(i,:), sqrt_wp2(i,:), beta,                & ! In
-                              sclrm(i,:,:), sclrp2(i,:,:), wpsclrp(i,:,:), l_scalar_calc,             & ! In
-                              pdf_params%w_1(i,:), pdf_params%w_2(i,:),          & ! Out
-                              pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),        & ! Out
-                              pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),      & ! Out
-                              pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),     & ! Out
-                              pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),   & ! Out
-                              pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:), & ! Out
-                              pdf_params%mixt_frac(i,:),                         & ! Out
-                              pdf_params%alpha_rt(i,:), pdf_params%alpha_thl(i,:), & ! Out
-                              sigma_sqd_w(i,:), sclr1(i,:,:), sclr2(i,:,:),                         & ! Out
-                              varnce_sclr1(i,:,:), varnce_sclr2(i,:,:), alpha_sclr(i,:,:) )             ! Out
-      end do
+      
+      call ADG2_pdf_driver( gr(i), nz, ngrdcol,                               & ! In
+                            wm, rtm, thlm, wp2, rtp2, thlp2,                  & ! In
+                            Skw, wprtp, wpthlp, sqrt_wp2, beta,               & ! In
+                            sclrm, sclrp2, wpsclrp, l_scalar_calc,            & ! In
+                            pdf_params%w_1, pdf_params%w_2,                   & ! Out
+                            pdf_params%rt_1, pdf_params%rt_2,                 & ! Out
+                            pdf_params%thl_1, pdf_params%thl_2,               & ! Out
+                            pdf_params%varnce_w_1, pdf_params%varnce_w_2,     & ! Out
+                            pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,   & ! Out
+                            pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, & ! Out
+                            pdf_params%mixt_frac,                             & ! Out
+                            pdf_params%alpha_rt, pdf_params%alpha_thl,        & ! Out
+                            sigma_sqd_w, sclr1, sclr2,                        & ! Out
+                            varnce_sclr1, varnce_sclr2, alpha_sclr )            ! Out
+                            
     elseif ( iiPDF_type == iiPDF_3D_Luhar ) then ! use 3D Luhar
       do i = 1, ngrdcol
         call Luhar_3D_pdf_driver( gr(i), &
@@ -712,16 +711,14 @@ module pdf_closure_module
     end if ! iiPDF_type
     
     ! Calculate the PDF component correlations of rt and thl.
-    do i = 1, ngrdcol
-      call calc_comp_corrs_binormal( &
-                           rtpthlp(i,:), rtm(i,:), thlm(i,:),                                                & ! In
-                           pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                        & ! In
-                           pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                      & ! In
-                           pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),          & ! In
-                           pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),        & ! In
-                           pdf_params%mixt_frac(i,:),                                         & ! In
-                           pdf_params%corr_rt_thl_1(i,:), pdf_params%corr_rt_thl_2(i,:) )       ! Out
-    end do
+    call calc_comp_corrs_binormal( &
+                         rtpthlp, rtm, thlm,                                    & ! In
+                         pdf_params%rt_1, pdf_params%rt_2,                      & ! In
+                         pdf_params%thl_1, pdf_params%thl_2,                    & ! In
+                         pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,        & ! In
+                         pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,      & ! In
+                         pdf_params%mixt_frac,                                  & ! In
+                         pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2 )     ! Out
 
     if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
          .or. iiPDF_type == iiPDF_new_hybrid ) then
@@ -746,58 +743,50 @@ module pdf_closure_module
     else
 
       ! Calculate the PDF component correlations of w and rt.
-      do i = 1, ngrdcol
-        call calc_comp_corrs_binormal( &
-                                wprtp(i,:), wm(i,:), rtm(i,:),                                             & ! In
-                                pdf_params%w_1(i,:), pdf_params%w_2(i,:),                   & ! In
-                                pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                 & ! In
-                                pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),     & ! In
-                                pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),   & ! In
-                                pdf_params%mixt_frac(i,:),                                  & ! In
-                                pdf_params%corr_w_rt_1(i,:), pdf_params%corr_w_rt_2(i,:) )    ! Out
-      end do
-      
+      call calc_comp_corrs_binormal( & 
+                              wprtp, wm, rtm,                                   & ! In
+                              pdf_params%w_1, pdf_params%w_2,                   & ! In
+                              pdf_params%rt_1, pdf_params%rt_2,                 & ! In
+                              pdf_params%varnce_w_1, pdf_params%varnce_w_2,     & ! In
+                              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,   & ! In
+                              pdf_params%mixt_frac,                             & ! In
+                              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2 )    ! Out
+    
       ! Calculate the PDF component correlations of w and thl.
-      do i = 1, ngrdcol
-        call calc_comp_corrs_binormal( &
-                          wpthlp(i,:), wm(i,:), thlm(i,:),                                               & ! In
-                          pdf_params%w_1(i,:), pdf_params%w_2(i,:),                       & ! In
-                          pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                   & ! In
-                          pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),         & ! In
-                          pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),     & ! In
-                          pdf_params%mixt_frac(i,:),                                      & ! In
-                          pdf_params%corr_w_thl_1(i,:), pdf_params%corr_w_thl_2(i,:) )      ! Out
-      end do
+      call calc_comp_corrs_binormal( &
+                        wpthlp, wm, thlm,                                     & ! In
+                        pdf_params%w_1, pdf_params%w_2,                       & ! In
+                        pdf_params%thl_1, pdf_params%thl_2,                   & ! In
+                        pdf_params%varnce_w_1, pdf_params%varnce_w_2,         & ! In
+                        pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,     & ! In
+                        pdf_params%mixt_frac,                                 & ! In
+                        pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2 )      ! Out
     end if
       
     if ( l_scalar_calc ) then
 
       ! Calculate the PDF component correlations of a passive scalar and thl.
       do j = 1, sclr_dim
-        do i = 1, ngrdcol
-          call calc_comp_corrs_binormal( &
-                              sclrpthlp(i,:,j), sclrm(i,:,j), thlm(i,:),                             & ! In
-                               sclr1(i,:,j), sclr2(i,:,j),                                      & ! In
-                               pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                & ! In
-                               varnce_sclr1(i,:,j), varnce_sclr2(i,:,j),                        & ! In
-                               pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),  & ! In
-                               pdf_params%mixt_frac(i,:),                                   & ! In
-                               corr_sclr_thl_1(i,:,j), corr_sclr_thl_2(i,:,j) )                   ! Out
-        end do
+        call calc_comp_corrs_binormal( &
+                            sclrpthlp(:,:,j), sclrm(:,:,j), thlm,               & ! In
+                             sclr1(:,:,j), sclr2(:,:,j),                        & ! In
+                             pdf_params%thl_1, pdf_params%thl_2,                & ! In
+                             varnce_sclr1(:,:,j), varnce_sclr2(:,:,j),          & ! In
+                             pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,  & ! In
+                             pdf_params%mixt_frac,                              & ! In
+                             corr_sclr_thl_1(:,:,j), corr_sclr_thl_2(:,:,j) )     ! Out
       end do
 
       ! Calculate the PDF component correlations of a passive scalar and rt.
       do j = 1, sclr_dim
-        do i = 1, ngrdcol
-          call calc_comp_corrs_binormal( &
-                               sclrprtp(i,:,j), sclrm(i,:,j), rtm(i,:),                              & ! In
-                               sclr1(i,:,j), sclr2(i,:,j),                                      & ! In
-                               pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                  & ! In
-                               varnce_sclr1(i,:,j), varnce_sclr2(i,:,j),                        & ! In
-                               pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),    & ! In
-                               pdf_params%mixt_frac(i,:),                                   & ! In
-                               corr_sclr_rt_1(i,:,j), corr_sclr_rt_2(i,:,j) )                     ! Out
-        end do
+        call calc_comp_corrs_binormal( &
+                             sclrprtp(:,:,j), sclrm(:,:,j), rtm,                & ! In
+                             sclr1(:,:,j), sclr2(:,:,j),                        & ! In
+                             pdf_params%rt_1, pdf_params%rt_2,                  & ! In
+                             varnce_sclr1(:,:,j), varnce_sclr2(:,:,j),          & ! In
+                             pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,    & ! In
+                             pdf_params%mixt_frac,                              & ! In
+                             corr_sclr_rt_1(:,:,j), corr_sclr_rt_2(:,:,j) )       ! Out
       end do
 
       if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
@@ -818,16 +807,15 @@ module pdf_closure_module
 
         ! Calculate the PDF component correlations of w and a passive scalar.
         do j = 1, sclr_dim
-          do i = 1, ngrdcol
-            call calc_comp_corrs_binormal( &
-                                   wpsclrp(i,:,j), wm(i,:), sclrm(i,:,j),                            & ! In
-                                   pdf_params%w_1(i,:), pdf_params%w_2(i,:),                & ! In
-                                   sclr1(i,:,j), sclr2(i,:,j),                                  & ! In
-                                   pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),  & ! In
-                                   varnce_sclr1(i,:,j), varnce_sclr2(i,:,j),                    & ! In
-                                   pdf_params%mixt_frac(i,:),                               & ! In
-                                   corr_w_sclr_1(i,:,j), corr_w_sclr_2(i,:,j) )                   ! Out
-          end do
+          call calc_comp_corrs_binormal( &
+                                 wpsclrp(:,:,j), wm, sclrm(:,:,j),              & ! In
+                                 pdf_params%w_1, pdf_params%w_2,                & ! In
+                                 sclr1(:,:,j), sclr2(:,:,j),                    & ! In
+                                 pdf_params%varnce_w_1, pdf_params%varnce_w_2,  & ! In
+                                 varnce_sclr1(:,:,j), varnce_sclr2(:,:,j),      & ! In
+                                 pdf_params%mixt_frac,                          & ! In
+                                 corr_w_sclr_1(:,:,j), corr_w_sclr_2(:,:,j) )     ! Out
+
         end do
         
       end if
@@ -836,103 +824,103 @@ module pdf_closure_module
 
 
     ! Compute higher order moments (these are interactive)
-    do i = 1, ngrdcol
-      wp2rtp(i,:) = calc_wp2xp_pdf( gr(i), wm(i,:), rtm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:),           &
-                               pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                  &
-                               pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),      &
-                               pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),    &
-                               pdf_params%corr_w_rt_1(i,:), pdf_params%corr_w_rt_2(i,:),    &
-                               pdf_params%mixt_frac(i,:) )
-    end do
+    call calc_wp2xp_pdf( nz, ngrdcol,                                       &
+                         wm, rtm, pdf_params%w_1, pdf_params%w_2,           &
+                         pdf_params%rt_1, pdf_params%rt_2,                  &
+                         pdf_params%varnce_w_1, pdf_params%varnce_w_2,      &
+                         pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,    &
+                         pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,    &
+                         pdf_params%mixt_frac,                              &
+                         wp2rtp )
 
-    do i = 1, ngrdcol
-      wp2thlp(i,:) = calc_wp2xp_pdf( gr(i), wm(i,:), thlm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:),             &
-                                pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                   &
-                                pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),         &
-                                pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),     &
-                                pdf_params%corr_w_thl_1(i,:), pdf_params%corr_w_thl_2(i,:),     &
-                                pdf_params%mixt_frac(i,:) )
-    end do
+    call calc_wp2xp_pdf( nz, ngrdcol,                                          &
+                         wm, thlm, pdf_params%w_1, pdf_params%w_2,             &
+                         pdf_params%thl_1, pdf_params%thl_2,                   &
+                         pdf_params%varnce_w_1, pdf_params%varnce_w_2,         &
+                         pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,     &
+                         pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2,     &
+                         pdf_params%mixt_frac,                                 &
+                         wp2thlp )
     
     ! Compute higher order moments (these may be interactive)
-    do i = 1, ngrdcol
-      wpup2(i,:) = calc_wpxp2_pdf( gr(i), wm(i,:), um(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:), &
-                              u_1(i,:), u_2(i,:), &
-                              pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),   &
-                              varnce_u_1(i,:), varnce_u_2(i,:), &
-                              corr_u_w_1(i,:), corr_u_w_2(i,:), &
-                              pdf_params%mixt_frac(i,:) )
-    end do
+    call calc_wpxp2_pdf( nz, ngrdcol, &
+                         wm, um, pdf_params%w_1, pdf_params%w_2, &
+                         u_1, u_2, &
+                         pdf_params%varnce_w_1, pdf_params%varnce_w_2,   &
+                         varnce_u_1, varnce_u_2, &
+                         corr_u_w_1, corr_u_w_2, &
+                         pdf_params%mixt_frac, &
+                         wpup2 )
+                         
+    call calc_wpxp2_pdf( nz, ngrdcol, &
+                         wm, vm, pdf_params%w_1, pdf_params%w_2, &
+                         v_1, v_2, &
+                         pdf_params%varnce_w_1, pdf_params%varnce_w_2,   &
+                         varnce_v_1, varnce_v_2, &
+                         corr_v_w_1, corr_v_w_2, &
+                         pdf_params%mixt_frac, &
+                         wpvp2 )
     
-    do i = 1, ngrdcol
-      wpvp2(i,:) = calc_wpxp2_pdf( gr(i), wm(i,:), vm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:), &
-                              v_1(i,:), v_2(i,:), &
-                              pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),   &
-                              varnce_v_1(i,:), varnce_v_2(i,:), &
-                              corr_v_w_1(i,:), corr_v_w_2(i,:), &
-                              pdf_params%mixt_frac(i,:) )
-    end do
-  
-    do i = 1, ngrdcol
-      wp2up2(i,:) = calc_wp2xp2_pdf( gr(i), wm(i,:), um(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:), &
-                                u_1(i,:), u_2(i,:), &
-                                pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:), &
-                                varnce_u_1(i,:), varnce_u_2(i,:), &
-                                corr_u_w_1(i,:), corr_u_w_2(i,:), &
-                                pdf_params%mixt_frac(i,:) )
-    end do
-    
-    do i = 1, ngrdcol
-      wp2vp2(i,:) = calc_wp2xp2_pdf( gr(i), wm(i,:), vm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:), &
-                                v_1(i,:), v_2(i,:), &
-                                pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:), &
-                                varnce_v_1(i,:), varnce_v_2(i,:), &
-                                corr_v_w_1(i,:), corr_v_w_2(i,:), &
-                                pdf_params%mixt_frac(i,:) )
-    end do
-    
-    do i = 1, ngrdcol
-      wp4(i,:) = calc_wp4_pdf( gr(i), wm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:),              &
-                          pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),    &
-                          pdf_params%mixt_frac(i,:) )
-    end do
+    call calc_wp2xp2_pdf( nz, ngrdcol, &
+                          wm, um, pdf_params%w_1, pdf_params%w_2, &
+                          u_1, u_2, &
+                          pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+                          varnce_u_1, varnce_u_2, &
+                          corr_u_w_1, corr_u_w_2, &
+                          pdf_params%mixt_frac, &
+                          wp2up2 )
+
+    call calc_wp2xp2_pdf( nz, ngrdcol, &
+                          wm, vm, pdf_params%w_1, pdf_params%w_2, &
+                          v_1, v_2, &
+                          pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+                          varnce_v_1, varnce_v_2, &
+                          corr_v_w_1, corr_v_w_2, &
+                          pdf_params%mixt_frac, &
+                          wp2vp2 )
+                          
+    call calc_wp4_pdf( nz, ngrdcol, &
+                       wm, pdf_params%w_1, pdf_params%w_2, &
+                       pdf_params%varnce_w_1, pdf_params%varnce_w_2,    &
+                       pdf_params%mixt_frac, &
+                       wp4 )
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwprtp2 > 0 ) then
-      do i = 1, ngrdcol
-        wprtp2(i,:) = calc_wpxp2_pdf( gr(i), wm(i,:), rtm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:),        &
-                                  pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),               &
-                                  pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),   &
-                                  pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:), &
-                                  pdf_params%corr_w_rt_1(i,:), pdf_params%corr_w_rt_2(i,:), &
-                                  pdf_params%mixt_frac(i,:) )
-      end do
+      call calc_wpxp2_pdf( nz, ngrdcol, &
+                           wm, rtm, pdf_params%w_1, pdf_params%w_2,        &
+                           pdf_params%rt_1, pdf_params%rt_2,               &
+                           pdf_params%varnce_w_1, pdf_params%varnce_w_2,   &
+                           pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, &
+                           pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2, &
+                           pdf_params%mixt_frac, &
+                           wprtp2 )
     end if
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwpthlp2 > 0 ) then
-      do i = 1, ngrdcol
-        wpthlp2(i,:) = calc_wpxp2_pdf( gr(i), wm(i,:), thlm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:),      &
-                                 pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                &
-                                 pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),      &
-                                 pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),  &
-                                 pdf_params%corr_w_thl_1(i,:), pdf_params%corr_w_thl_2(i,:),  &
-                                 pdf_params%mixt_frac(i,:) )
-      end do
+      call calc_wpxp2_pdf( nz, ngrdcol, &
+                           wm, thlm, pdf_params%w_1, pdf_params%w_2,          &
+                           pdf_params%thl_1, pdf_params%thl_2,                &
+                           pdf_params%varnce_w_1, pdf_params%varnce_w_2,      &
+                           pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,  &
+                           pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2,  &
+                           pdf_params%mixt_frac, &
+                           wpthlp2 )
     end if
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwprtpthlp > 0 ) then
-      do i = 1, ngrdcol
-        wprtpthlp(i,:) = calc_wpxpyp_pdf( gr(i), wm(i,:), rtm(i,:), thlm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:),  &
-                                    pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                   &
-                                    pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                 &
-                                    pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),       &
-                                    pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),     &
-                                    pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),   &
-                                    pdf_params%corr_w_rt_1(i,:), pdf_params%corr_w_rt_2(i,:),     &
-                                    pdf_params%corr_w_thl_1(i,:), pdf_params%corr_w_thl_2(i,:),   &
-                                    pdf_params%corr_rt_thl_1(i,:), pdf_params%corr_rt_thl_2(i,:), &
-                                    pdf_params%mixt_frac(i,:) )
-      end do
-               
+      
+      call calc_wpxpyp_pdf( nz, ngrdcol, &
+                            wm, rtm, thlm, pdf_params%w_1, pdf_params%w_2,      &
+                            pdf_params%rt_1, pdf_params%rt_2,                   &
+                            pdf_params%thl_1, pdf_params%thl_2,                 &
+                            pdf_params%varnce_w_1, pdf_params%varnce_w_2,       &
+                            pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,     &
+                            pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,   &
+                            pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,     &
+                            pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2,   &
+                            pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2, &
+                            pdf_params%mixt_frac, &
+                            wprtpthlp )
     end if
 
 
@@ -940,60 +928,55 @@ module pdf_closure_module
     if ( l_scalar_calc ) then
 
       do j = 1, sclr_dim
-        do i = 1, ngrdcol
-          wp2sclrp(i,:,j) &
-          = calc_wp2xp_pdf( gr(i), wm(i,:), sclrm(i,:,j), pdf_params%w_1(i,:), pdf_params%w_2(i,:),        &
-                            sclr1(i,:,j), sclr2(i,:,j),                                     &
-                            pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),               &
-                            varnce_sclr1(i,:,j), varnce_sclr2(i,:,j),                       &
-                            corr_w_sclr_1(i,:,j), corr_w_sclr_2(i,:,j),                     &
-                            pdf_params%mixt_frac(i,:) )
-        end do
+        call calc_wp2xp_pdf( nz, ngrdcol,                                       &
+                             wm, sclrm(:,:,j), pdf_params%w_1, pdf_params%w_2,  &
+                             sclr1(:,:,j), sclr2(:,:,j),                        &
+                             pdf_params%varnce_w_1, pdf_params%varnce_w_2,      &
+                             varnce_sclr1(:,:,j), varnce_sclr2(:,:,j),          &
+                             corr_w_sclr_1(:,:,j), corr_w_sclr_2(:,:,j),        &
+                             pdf_params%mixt_frac,                              &
+                             wp2sclrp(:,:,j) )
       end do
       
       do j = 1, sclr_dim 
-        do i = 1, ngrdcol
-          wpsclrp2(i,:,j) &
-          = calc_wpxp2_pdf( gr(i), wm(i,:), sclrm(i,:,j), pdf_params%w_1(i,:), pdf_params%w_2(i,:), &
-                            sclr1(i,:,j), sclr2(i,:,j),                         &
-                            pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),   &
-                            varnce_sclr1(i,:,j), varnce_sclr2(i,:,j),           &
-                            corr_w_sclr_1(i,:,j), corr_w_sclr_2(i,:,j),         &
-                            pdf_params%mixt_frac(i,:) )
-        end do
+        call calc_wpxp2_pdf( nz, ngrdcol, &
+                             wm, sclrm(:,:,j), pdf_params%w_1, pdf_params%w_2, &
+                             sclr1(:,:,j), sclr2(:,:,j),                         &
+                             pdf_params%varnce_w_1, pdf_params%varnce_w_2,   &
+                             varnce_sclr1(:,:,j), varnce_sclr2(:,:,j),           &
+                             corr_w_sclr_1(:,:,j), corr_w_sclr_2(:,:,j),         &
+                             pdf_params%mixt_frac, &
+                             wpsclrp2(:,:,j) )
       end do
        
       do j = 1, sclr_dim
-        do i = 1, ngrdcol
-          wpsclrprtp(i,:,j) &
-          = calc_wpxpyp_pdf( gr(i), wm(i,:), sclrm(i,:,j), rtm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:),  &
-                             sclr1(i,:,j), sclr2(i,:,j),                                    &
-                             pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                          &
-                             pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),              &
-                             varnce_sclr1(i,:,j), varnce_sclr2(i,:,j),                      &
-                             pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),            &
-                             corr_w_sclr_1(i,:,j), corr_w_sclr_2(i,:,j),                    &
-                             pdf_params%corr_w_rt_1(i,:), pdf_params%corr_w_rt_2(i,:),            &
-                             corr_sclr_rt_1(i,:,j), corr_sclr_rt_2(i,:,j),                  &
-                             pdf_params%mixt_frac(i,:) )
-        end do
+        call calc_wpxpyp_pdf( nz, ngrdcol, &
+                              wm, sclrm(:,:,j), rtm, pdf_params%w_1, pdf_params%w_2,  &
+                              sclr1(:,:,j), sclr2(:,:,j),                             &
+                              pdf_params%rt_1, pdf_params%rt_2,                       &
+                              pdf_params%varnce_w_1, pdf_params%varnce_w_2,           &
+                              varnce_sclr1(:,:,j), varnce_sclr2(:,:,j),               &
+                              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,         &
+                              corr_w_sclr_1(:,:,j), corr_w_sclr_2(:,:,j),             &
+                              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,         &
+                              corr_sclr_rt_1(:,:,j), corr_sclr_rt_2(:,:,j),           &
+                              pdf_params%mixt_frac, &
+                              wpsclrprtp(:,:,j) )
       end do
         
       do j = 1, sclr_dim
-        do i = 1, ngrdcol
-          wpsclrpthlp(i,:,j) &
-          = calc_wpxpyp_pdf( gr(i), wm(i,:), sclrm(i,:,j), thlm(i,:), pdf_params%w_1(i,:), pdf_params%w_2(i,:),  &
-                             sclr1(i,:,j), sclr2(i,:,j),                                &
-                             pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                    &
-                             pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),          &
-                             varnce_sclr1(i,:,j), varnce_sclr2(i,:,j),                  &
-                             pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),      &
-                             corr_w_sclr_1(i,:,j), corr_w_sclr_2(i,:,j),                &
-                             pdf_params%corr_w_thl_1(i,:), pdf_params%corr_w_thl_2(i,:),      &
-                             corr_sclr_thl_1(i,:,j), corr_sclr_thl_2(i,:,j),            &
-                             pdf_params%mixt_frac(i,:) )
-
-        end do
+        call calc_wpxpyp_pdf( nz, ngrdcol, &
+                              wm, sclrm(:,:,j), thlm, pdf_params%w_1, pdf_params%w_2,   &
+                              sclr1(:,:,j), sclr2(:,:,j),                               &
+                              pdf_params%thl_1, pdf_params%thl_2,                       &
+                              pdf_params%varnce_w_1, pdf_params%varnce_w_2,             &
+                              varnce_sclr1(:,:,j), varnce_sclr2(:,:,j),                 &
+                              pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,         &
+                              corr_w_sclr_1(:,:,j), corr_w_sclr_2(:,:,j),               &
+                              pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2,         &
+                              corr_sclr_thl_1(:,:,j), corr_sclr_thl_2(:,:,j),           &
+                              pdf_params%mixt_frac, &
+                              wpsclrpthlp(:,:,j) )
       end do
       
     end if
@@ -1049,12 +1032,8 @@ module pdf_closure_module
 
     else ! sclr_dim <= 0  or  do_liquid_only_in_clubb = .T.
 
-      do k = 1, nz
-        do i = 1, ngrdcol
-          pdf_params%rsatl_1(i,k) = sat_mixrat_liq( p_in_Pa(i,k), tl1(i,k) )
-          pdf_params%rsatl_2(i,k) = sat_mixrat_liq( p_in_Pa(i,k), tl2(i,k) )
-        end do
-      end do
+      pdf_params%rsatl_1(:,:) = sat_mixrat_liq( p_in_Pa(:,:), tl1(:,:) )
+      pdf_params%rsatl_2(:,:) = sat_mixrat_liq( p_in_Pa(:,:), tl2(:,:) )
 
     end if !sclr_dim > 0
       
@@ -1068,35 +1047,26 @@ module pdf_closure_module
     end if
 
 #else
-    do k = 1, nz
-      do i = 1, ngrdcol
-        pdf_params%rsatl_1(i,k) = sat_mixrat_liq( p_in_Pa(i,k), tl1(i,k) )
-        pdf_params%rsatl_2(i,k) = sat_mixrat_liq( p_in_Pa(i,k), tl2(i,k) ) ! h1g, 2010-06-16 end mod
-      end do
-    end do
+    pdf_params%rsatl_1(:,:) = sat_mixrat_liq( p_in_Pa(:,:), tl1(:,:) )
+    pdf_params%rsatl_2(:,:) = sat_mixrat_liq( p_in_Pa(:,:), tl2(:,:) ) ! h1g, 2010-06-16 end mod
 
-      l_calc_ice_supersat_frac = .true.
+    l_calc_ice_supersat_frac = .true.
 #endif
 
-    do i = 1, ngrdcol
-      call transform_pdf_chi_eta_component( gr(i), &
-                                tl1(i,:), pdf_params%rsatl_1(i,:), pdf_params%rt_1(i,:), exner(i,:),  & ! In
-                                pdf_params%varnce_thl_1(i,:), pdf_params%varnce_rt_1(i,:),  & ! In
-                                pdf_params%corr_rt_thl_1(i,:), pdf_params%chi_1(i,:),       & ! In
-                                pdf_params%crt_1(i,:), pdf_params%cthl_1(i,:),              & ! Out
-                                pdf_params%stdev_chi_1(i,:), pdf_params%stdev_eta_1(i,:),   & ! Out
-                                pdf_params%covar_chi_eta_1(i,:),                            & ! Out
-                                pdf_params%corr_chi_eta_1(i,:) )                              ! Out
-    end do
-    
+    call transform_pdf_chi_eta_component( nz, ngrdcol, &
+                                          tl1, pdf_params%rsatl_1, pdf_params%rt_1, exner,  & ! In
+                                          pdf_params%varnce_thl_1, pdf_params%varnce_rt_1,  & ! In
+                                          pdf_params%corr_rt_thl_1, pdf_params%chi_1,       & ! In
+                                          pdf_params%crt_1, pdf_params%cthl_1,              & ! Out
+                                          pdf_params%stdev_chi_1, pdf_params%stdev_eta_1,   & ! Out
+                                          pdf_params%covar_chi_eta_1,                       & ! Out
+                                          pdf_params%corr_chi_eta_1 )                         ! Out
     
       
     ! Calculate cloud fraction component for pdf 1
-    do i = 1, ngrdcol
-      call calc_liquid_cloud_frac_component( gr(i), & ! intent(in)
-                                  pdf_params%chi_1(i,:), pdf_params%stdev_chi_1(i,:),    & ! In
-                                  pdf_params%cloud_frac_1(i,:), pdf_params%rc_1(i,:) )     ! Out
-    end do
+    call calc_liquid_cloud_frac_component( nz, ngrdcol, &
+                                           pdf_params%chi_1, pdf_params%stdev_chi_1,    & ! In
+                                           pdf_params%cloud_frac_1, pdf_params%rc_1 )     ! Out
 
     ! Calc ice_supersat_frac
     if ( l_calc_ice_supersat_frac ) then
@@ -1128,24 +1098,20 @@ module pdf_closure_module
 
     end if
 
-    do i = 1, ngrdcol
-      call transform_pdf_chi_eta_component( gr(i), &
-                                  tl2(i,:), pdf_params%rsatl_2(i,:), pdf_params%rt_2(i,:), exner(i,:),  & ! In
-                                  pdf_params%varnce_thl_2(i,:), pdf_params%varnce_rt_2(i,:),  & ! In
-                                  pdf_params%corr_rt_thl_2(i,:), pdf_params%chi_2(i,:),       & ! In
-                                  pdf_params%crt_2(i,:), pdf_params%cthl_2(i,:),              & ! Out
-                                  pdf_params%stdev_chi_2(i,:), pdf_params%stdev_eta_2(i,:),   & ! Out
-                                  pdf_params%covar_chi_eta_2(i,:),                            & ! Out
-                                  pdf_params%corr_chi_eta_2(i,:) )                              ! Out
-    end do
+    call transform_pdf_chi_eta_component( nz, ngrdcol, &
+                                          tl2, pdf_params%rsatl_2, pdf_params%rt_2, exner,  & ! In
+                                          pdf_params%varnce_thl_2, pdf_params%varnce_rt_2,  & ! In
+                                          pdf_params%corr_rt_thl_2, pdf_params%chi_2,       & ! In
+                                          pdf_params%crt_2, pdf_params%cthl_2,              & ! Out
+                                          pdf_params%stdev_chi_2, pdf_params%stdev_eta_2,   & ! Out
+                                          pdf_params%covar_chi_eta_2,                       & ! Out
+                                          pdf_params%corr_chi_eta_2 )                         ! Out
 
       
     ! Calculate cloud fraction component for pdf 2
-    do i = 1, ngrdcol
-      call calc_liquid_cloud_frac_component( gr(i), &
-                                      pdf_params%chi_2(i,:), pdf_params%stdev_chi_2(i,:),    & ! In
-                                      pdf_params%cloud_frac_2(i,:), pdf_params%rc_2(i,:) )     ! Out
-    end do
+    call calc_liquid_cloud_frac_component( nz, ngrdcol, &
+                                           pdf_params%chi_2, pdf_params%stdev_chi_2,    & ! In
+                                           pdf_params%cloud_frac_2, pdf_params%rc_2 )     ! Out
 
     ! Calc ice_supersat_frac
     if ( l_calc_ice_supersat_frac ) then
@@ -1178,10 +1144,13 @@ module pdf_closure_module
         end do
 
         ! Compute ice cloud fraction, ice_supersat_frac
-        do i = 1, ngrdcol
-          ice_supersat_frac(i,:) = pdf_params%mixt_frac(i,:) * pdf_params%ice_supersat_frac_1(i,:) &
-                              + ( one - pdf_params%mixt_frac(i,:) ) &
-                                * pdf_params%ice_supersat_frac_2(i,:)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            ice_supersat_frac(i,k) = pdf_params%mixt_frac(i,k) 
+                                     * pdf_params%ice_supersat_frac_1(i,k) &
+                                     + ( one - pdf_params%mixt_frac(i,k) ) &
+                                       * pdf_params%ice_supersat_frac_2(i,k)
+          end do
         end do
 
     else 
@@ -1230,39 +1199,31 @@ module pdf_closure_module
 
     else 
         
-        ! Correlation of w and chi for each component.
-      do i = 1, ngrdcol
-        pdf_params%corr_w_chi_1(i,:) &
-        = calc_corr_chi_x( pdf_params%crt_1(i,:), pdf_params%cthl_1(i,:), &
-                           sqrt(pdf_params%varnce_rt_1(i,:)), sqrt(pdf_params%varnce_thl_1(i,:)), &
-                           pdf_params%stdev_chi_1(i,:), &
-                           pdf_params%corr_w_rt_1(i,:), pdf_params%corr_w_thl_1(i,:) )
-      end do
+      ! Correlation of w and chi for each component.
+      pdf_params%corr_w_chi_1 &
+      = calc_corr_chi_x( pdf_params%crt_1, pdf_params%cthl_1, &
+                         sqrt(pdf_params%varnce_rt_1), sqrt(pdf_params%varnce_thl_1), &
+                         pdf_params%stdev_chi_1, &
+                         pdf_params%corr_w_rt_1, pdf_params%corr_w_thl_1 )
 
-      do i = 1, ngrdcol
-        pdf_params%corr_w_chi_2(i,:) &
-        = calc_corr_chi_x( pdf_params%crt_2(i,:), pdf_params%cthl_2(i,:), &
-                           sqrt(pdf_params%varnce_rt_2(i,:)), sqrt(pdf_params%varnce_thl_2(i,:)), &
-                           pdf_params%stdev_chi_2(i,:), pdf_params%corr_w_rt_2(i,:), &
-                           pdf_params%corr_w_thl_2(i,:) )
-      end do
+      pdf_params%corr_w_chi_2 &
+      = calc_corr_chi_x( pdf_params%crt_2, pdf_params%cthl_2, &
+                         sqrt(pdf_params%varnce_rt_2), sqrt(pdf_params%varnce_thl_2), &
+                         pdf_params%stdev_chi_2, pdf_params%corr_w_rt_2, &
+                         pdf_params%corr_w_thl_2 )
 
       ! Correlation of w and eta for each component.
-      do i = 1, ngrdcol
-        pdf_params%corr_w_eta_1(i,:) &
-        = calc_corr_eta_x( pdf_params%crt_1(i,:), pdf_params%cthl_1(i,:), &
-                           sqrt(pdf_params%varnce_rt_1(i,:)), sqrt(pdf_params%varnce_thl_1(i,:)), &
-                           pdf_params%stdev_eta_1(i,:), pdf_params%corr_w_rt_1(i,:), &
-                           pdf_params%corr_w_thl_1(i,:) )
-      end do
+      pdf_params%corr_w_eta_1 &
+      = calc_corr_eta_x( pdf_params%crt_1, pdf_params%cthl_1, &
+                         sqrt(pdf_params%varnce_rt_1), sqrt(pdf_params%varnce_thl_1), &
+                         pdf_params%stdev_eta_1, pdf_params%corr_w_rt_1, &
+                         pdf_params%corr_w_thl_1 )
 
-      do i = 1, ngrdcol
-        pdf_params%corr_w_eta_2(i,:) &
-        = calc_corr_eta_x( pdf_params%crt_2(i,:), pdf_params%cthl_2(i,:), &
-                           sqrt(pdf_params%varnce_rt_2(i,:)), sqrt(pdf_params%varnce_thl_2(i,:)), &
-                           pdf_params%stdev_eta_2(i,:), pdf_params%corr_w_rt_2(i,:), &
-                           pdf_params%corr_w_thl_2(i,:) )
-      end do
+      pdf_params%corr_w_eta_2 &
+      = calc_corr_eta_x( pdf_params%crt_2, pdf_params%cthl_2, &
+                         sqrt(pdf_params%varnce_rt_2), sqrt(pdf_params%varnce_thl_2), &
+                         pdf_params%stdev_eta_2, pdf_params%corr_w_rt_2, &
+                         pdf_params%corr_w_thl_2 )
 
     end if
 
@@ -1287,33 +1248,31 @@ module pdf_closure_module
     
     ! Calculate the contributions to <w'rc'>, <w'^2 rc'>, <rt'rc'>, and
     ! <thl'rc'> from the 1st PDF component.
-    do i = 1, ngrdcol
-      call calc_xprcp_component( gr(i), wm(i,:), rtm(i,:), thlm(i,:), um(i,:), vm(i,:), rcm(i,:),                          & ! In
-                                pdf_params%w_1(i,:), pdf_params%rt_1(i,:),                     & ! In
-                                pdf_params%thl_1(i,:), u_1(i,:), v_1(i,:),                          & ! In
-                                pdf_params%varnce_w_1(i,:), pdf_params%chi_1(i,:),             & ! In
-                                pdf_params%stdev_chi_1(i,:), pdf_params%stdev_eta_1(i,:),      & ! In
-                                pdf_params%corr_w_chi_1(i,:), pdf_params%corr_chi_eta_1(i,:),  & ! In
-                                pdf_params%crt_1(i,:), pdf_params%cthl_1(i,:),                 & ! In
-                                pdf_params%rc_1(i,:), pdf_params%cloud_frac_1(i,:), iiPDF_type,& ! In
-                                wprcp_contrib_comp_1(i,:), wp2rcp_contrib_comp_1(i,:),         & ! Out
-                                rtprcp_contrib_comp_1(i,:), thlprcp_contrib_comp_1(i,:),       & ! Out
-                                uprcp_contrib_comp_1(i,:), vprcp_contrib_comp_1(i,:) )           ! Out
-    end do
+    call calc_xprcp_component( nz, ngrdcol,                                          & ! In
+                               wm, rtm, thlm, um, vm, rcm,                           & ! In
+                               pdf_params%w_1, pdf_params%rt_1,                      & ! In
+                               pdf_params%thl_1, u_1, v_1,                           & ! In
+                               pdf_params%varnce_w_1, pdf_params%chi_1,              & ! In
+                               pdf_params%stdev_chi_1, pdf_params%stdev_eta_1,       & ! In
+                               pdf_params%corr_w_chi_1, pdf_params%corr_chi_eta_1,   & ! In
+                               pdf_params%crt_1, pdf_params%cthl_1,                  & ! In
+                               pdf_params%rc_1, pdf_params%cloud_frac_1, iiPDF_type, & ! In
+                               wprcp_contrib_comp_1, wp2rcp_contrib_comp_1,          & ! Out
+                               rtprcp_contrib_comp_1, thlprcp_contrib_comp_1,        & ! Out
+                               uprcp_contrib_comp_1, vprcp_contrib_comp_1 )            ! Out
 
-    do i = 1, ngrdcol
-      call calc_xprcp_component( gr(i), wm(i,:), rtm(i,:), thlm(i,:), um(i,:), vm(i,:), rcm(i,:),                          & ! In
-                                pdf_params%w_2(i,:), pdf_params%rt_2(i,:),                     & ! In
-                                pdf_params%thl_2(i,:), u_2(i,:), v_2(i,:),                          & ! In
-                                pdf_params%varnce_w_2(i,:), pdf_params%chi_2(i,:),             & ! In
-                                pdf_params%stdev_chi_2(i,:), pdf_params%stdev_eta_2(i,:),      & ! In
-                                pdf_params%corr_w_chi_2(i,:), pdf_params%corr_chi_eta_2(i,:),  & ! In
-                                pdf_params%crt_2(i,:), pdf_params%cthl_2(i,:),                 & ! In
-                                pdf_params%rc_2(i,:), pdf_params%cloud_frac_2(i,:), iiPDF_type,& ! In
-                                wprcp_contrib_comp_2(i,:), wp2rcp_contrib_comp_2(i,:),         & ! Out
-                                rtprcp_contrib_comp_2(i,:), thlprcp_contrib_comp_2(i,:),       & ! Out
-                                uprcp_contrib_comp_2(i,:), vprcp_contrib_comp_2(i,:) )           ! Out
-    end do
+    call calc_xprcp_component( nz, ngrdcol,                                          & ! In 
+                               wm, rtm, thlm, um, vm, rcm,                           & ! In
+                               pdf_params%w_2, pdf_params%rt_2,                      & ! In
+                               pdf_params%thl_2, u_2, v_2,                           & ! In
+                               pdf_params%varnce_w_2, pdf_params%chi_2,              & ! In
+                               pdf_params%stdev_chi_2, pdf_params%stdev_eta_2,       & ! In
+                               pdf_params%corr_w_chi_2, pdf_params%corr_chi_eta_2,   & ! In
+                               pdf_params%crt_2, pdf_params%cthl_2,                  & ! In
+                               pdf_params%rc_2, pdf_params%cloud_frac_2, iiPDF_type, & ! In
+                               wprcp_contrib_comp_2, wp2rcp_contrib_comp_2,          & ! Out
+                               rtprcp_contrib_comp_2, thlprcp_contrib_comp_2,        & ! Out
+                               uprcp_contrib_comp_2, vprcp_contrib_comp_2 )            ! Out
 
     
     ! Calculate rc_coef, which is the coefficient on <x'rc'> in the <x'thv'> equation.
@@ -1322,35 +1281,34 @@ module pdf_closure_module
         
         rc_coef(i,k) = Lv / ( exner(i,k) * Cp ) - ep2 * thv_ds(i,k)
 
-
         ! Calculate <w'rc'>, <w'^2 rc'>, <rt'rc'>, and <thl'rc'>.
         wprcp(i,k) = pdf_params%mixt_frac(i,k) * wprcp_contrib_comp_1(i,k) &
-                + ( one - pdf_params%mixt_frac(i,k) ) * wprcp_contrib_comp_2(i,k)
+                     + ( one - pdf_params%mixt_frac(i,k) ) * wprcp_contrib_comp_2(i,k)
 
         wp2rcp(i,k) = pdf_params%mixt_frac(i,k) * wp2rcp_contrib_comp_1(i,k) &
-                 + ( one - pdf_params%mixt_frac(i,k) ) * wp2rcp_contrib_comp_2(i,k)
+                      + ( one - pdf_params%mixt_frac(i,k) ) * wp2rcp_contrib_comp_2(i,k)
 
         rtprcp(i,k) = pdf_params%mixt_frac(i,k) * rtprcp_contrib_comp_1(i,k) & 
-                 + ( one - pdf_params%mixt_frac(i,k) ) * rtprcp_contrib_comp_2(i,k)
+                      + ( one - pdf_params%mixt_frac(i,k) ) * rtprcp_contrib_comp_2(i,k)
 
         thlprcp(i,k) = pdf_params%mixt_frac(i,k) * thlprcp_contrib_comp_1(i,k) &
-                  + ( one - pdf_params%mixt_frac(i,k) ) * thlprcp_contrib_comp_2(i,k)
+                       + ( one - pdf_params%mixt_frac(i,k) ) * thlprcp_contrib_comp_2(i,k)
 
         uprcp(i,k) = pdf_params%mixt_frac(i,k) * uprcp_contrib_comp_1(i,k) &
-                + ( one - pdf_params%mixt_frac(i,k) ) * uprcp_contrib_comp_2(i,k)
+                     + ( one - pdf_params%mixt_frac(i,k) ) * uprcp_contrib_comp_2(i,k)
 
         vprcp(i,k) = pdf_params%mixt_frac(i,k) * vprcp_contrib_comp_1(i,k) &
-                + ( one - pdf_params%mixt_frac(i,k) ) * vprcp_contrib_comp_2(i,k)
+                     + ( one - pdf_params%mixt_frac(i,k) ) * vprcp_contrib_comp_2(i,k)
+      end do
+    end do
 
-        ! Calculate <w'thv'>, <w'^2 thv'>, <rt'thv'>, and <thl'thv'>.
-        wpthvp(i,k) = wpthlp(i,k) + ep1 * thv_ds(i,k) * wprtp(i,k) + rc_coef(i,k) * wprcp(i,k)
-
-        wp2thvp(i,k) = wp2thlp(i,k) + ep1 * thv_ds(i,k) * wp2rtp(i,k) + rc_coef(i,k) * wp2rcp(i,k)
-
-        rtpthvp(i,k) = rtpthlp(i,k) + ep1 * thv_ds(i,k) * rtp2(i,k) + rc_coef(i,k) * rtprcp(i,k)
-
-        thlpthvp(i,k) = thlp2(i,k) + ep1 * thv_ds(i,k) * rtpthlp(i,k) + rc_coef(i,k) * thlprcp(i,k)
-        
+    ! Calculate <w'thv'>, <w'^2 thv'>, <rt'thv'>, and <thl'thv'>.
+    do k = 1, nz
+      do i = 1, ngrdcol
+        wpthvp(i,k)  = wpthlp(i,k)  + ep1 * thv_ds(i,k) * wprtp(i,k)   + rc_coef(i,k) * wprcp(i,k)
+        wp2thvp(i,k) = wp2thlp(i,k) + ep1 * thv_ds(i,k) * wp2rtp(i,k)  + rc_coef(i,k) * wp2rcp(i,k)
+        rtpthvp(i,k) = rtpthlp(i,k) + ep1 * thv_ds(i,k) * rtp2(i,k)    + rc_coef(i,k) * rtprcp(i,k)
+        thlpthvp(i,k)= thlp2(i,k)   + ep1 * thv_ds(i,k) * rtpthlp(i,k) + rc_coef(i,k) * thlprcp(i,k)
       end do
     end do
 
@@ -1428,7 +1386,8 @@ module pdf_closure_module
                         + pdf_params%cloud_frac_1(i,k)*pdf_params%stdev_chi_1(i,k)**2 ) &
                     + ( one-pdf_params%mixt_frac(i,k) ) &
                       * ( pdf_params%chi_2(i,k)*pdf_params%rc_2(i,k) &
-                          + pdf_params%cloud_frac_2(i,k)*pdf_params%stdev_chi_2(i,k)**2 ) - rcm(i,k)**2
+                          + pdf_params%cloud_frac_2(i,k)*pdf_params%stdev_chi_2(i,k)**2 ) &
+                    - rcm(i,k)**2
         rcp2(i,k) = max( zero_threshold, rcp2(i,k) )
         
       end do
@@ -1442,14 +1401,14 @@ module pdf_closure_module
     if ((iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
                                  .or. iiPDF_type == iiPDF_new_hybrid) &
                                  .and. iw_up_in_cloud > 0) then
-      do i = 1, ngrdcol                       
-        call calc_w_up_in_cloud( &
-                       gr(i), pdf_params%mixt_frac(i,:), &                                    ! In
-                       pdf_params%cloud_frac_1(i,:), pdf_params%cloud_frac_2(i,:), &       ! In
-                       pdf_params%w_1(i,:), pdf_params%w_2(i,:), &                         ! In
-                       pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:), &           ! In
-                       w_up_in_cloud(i,:) )                                                     ! Out
-      end do
+                 
+      call calc_w_up_in_cloud( nz, ngrdcol, &                                      ! In
+                               pdf_params%mixt_frac, &                             ! In
+                               pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, & ! In
+                               pdf_params%w_1, pdf_params%w_2, &                   ! In
+                               pdf_params%varnce_w_1, pdf_params%varnce_w_2, &     ! In
+                               w_up_in_cloud )                                     ! Out
+
     else
       w_up_in_cloud(:,:) = zero
     end if
@@ -1457,8 +1416,8 @@ module pdf_closure_module
     if ( clubb_at_least_debug_level( 2 ) ) then
       do i = 1, ngrdcol
           
-        call pdf_closure_check & 
-             ( gr(i), wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
+        call pdf_closure_check( & 
+               gr(i), wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
                wp2thlp(i,:), cloud_frac(i,:), rcm(i,:), wpthvp(i,:), wp2thvp(i,:), &  ! intent(in)
                rtpthvp(i,:), thlpthvp(i,:), wprcp(i,:), wp2rcp(i,:), & ! intent(in)
                rtprcp(i,:), thlprcp(i,:), rcp2(i,:), wprtpthlp(i,:), & ! intent(in)
@@ -1749,15 +1708,14 @@ module pdf_closure_module
   end subroutine pdf_closure
 
   !===============================================================================================
-  subroutine transform_pdf_chi_eta_component( gr, tl, rsatl, rt, exner,     & ! In
+  subroutine transform_pdf_chi_eta_component( nz, ngrdcol, &
+                                              tl, rsatl, rt, exner,     & ! In
                                               varnce_thl, varnce_rt,    & ! In
                                               corr_rt_thl, chi,         & ! In
                                               crt, cthl,                & ! Out
                                               stdev_chi, stdev_eta,     & ! Out
                                               covar_chi_eta,            & ! Out
                                               corr_chi_eta )              ! Out
-    use grid_class, only: &
-        grid ! Type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1771,10 +1729,12 @@ module pdf_closure_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
 
     ! ----------- Input Variables -----------
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       tl, &
       rsatl, &
       rt, &
@@ -1784,7 +1744,7 @@ module pdf_closure_module
       exner
     
     ! ----------- Output Variables -----------
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       chi, &            ! s from Lewellen and Yoh 1993 (LY) eqn. 1
       crt, &            ! Coefficients for s'
       cthl, &           ! Coefficients for s'
@@ -1809,41 +1769,45 @@ module pdf_closure_module
       Cp_on_Lv = Cp / Lv
 
     ! Loop variable
-    integer :: k
+    integer :: k, i
 
     ! ----------- Begin Code -----------
 
-    do k = 1, gr%nz
+    do k = 1, nz
+      do i = 1, ngrdcol
 
         ! SD's beta (eqn. 8)
-        beta = ep * Lv**2 / ( Rd * Cp * tl(k)**2 )
+        beta = ep * Lv**2 / ( Rd * Cp * tl(i,k)**2 )
 
-        invrs_beta_rsatl_p1 = one / ( one + beta * rsatl(k) )
+        invrs_beta_rsatl_p1 = one / ( one + beta * rsatl(i,k) )
 
         ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-        chi(k) = ( rt(k) - rsatl(k) ) * invrs_beta_rsatl_p1
+        chi(i,k) = ( rt(i,k) - rsatl(i,k) ) * invrs_beta_rsatl_p1
 
         ! For each normal distribution in the sum of two normal distributions,
         ! s' = crt * rt'  +  cthl * thl';
         ! therefore, x's' = crt * x'rt'  +  cthl * x'thl'.
         ! Larson et al. May, 2001.
-        crt(k)  = invrs_beta_rsatl_p1
-        cthl(k) = ( one + beta * rt(k) ) * invrs_beta_rsatl_p1**2 &
-                  * Cp_on_Lv * beta * rsatl(k) * exner(k)
+        crt(i,k)  = invrs_beta_rsatl_p1
+        cthl(i,k) = ( one + beta * rt(i,k) ) * invrs_beta_rsatl_p1**2 &
+                    * Cp_on_Lv * beta * rsatl(i,k) * exner(i,k)
+                  
+      end do
     end do
 
     ! Calculate covariance, correlation, and standard deviation of 
     ! chi and eta for each component
     ! Include subplume correlation of qt, thl
-    do k = 1, gr%nz
+    do k = 1, nz
+      do i = 1, ngrdcol
        
-        varnce_rt_term = crt(k)**2 * varnce_rt(k)
-        varnce_thl_term = cthl(k)**2 * varnce_thl(k)
+        varnce_rt_term = crt(i,k)**2 * varnce_rt(i,k)
+        varnce_thl_term = cthl(i,k)**2 * varnce_thl(i,k)
 
-        covar_chi_eta(k) = varnce_rt_term - varnce_thl_term
+        covar_chi_eta(i,k) = varnce_rt_term - varnce_thl_term
 
-        corr_rt_thl_term = two * corr_rt_thl(k) * crt(k) * cthl(k) &
-                           * sqrt( varnce_rt(k) * varnce_thl(k) )
+        corr_rt_thl_term = two * corr_rt_thl(i,k) * crt(i,k) * cthl(i,k) &
+                           * sqrt( varnce_rt(i,k) * varnce_thl(i,k) )
 
         varnce_chi = varnce_rt_term - corr_rt_thl_term + varnce_thl_term
         varnce_eta = varnce_rt_term + corr_rt_thl_term + varnce_thl_term
@@ -1852,39 +1816,41 @@ module pdf_closure_module
         if ( varnce_chi < chi_tol_sqd .or. varnce_eta < eta_tol_sqd ) then
 
             if ( varnce_chi < chi_tol_sqd ) then
-                stdev_chi(k) = zero  ! Treat chi as a delta function
+                stdev_chi(i,k) = zero  ! Treat chi as a delta function
             else
-                stdev_chi(k) = sqrt( varnce_chi )
+                stdev_chi(i,k) = sqrt( varnce_chi )
             end if
 
             if ( varnce_eta < eta_tol_sqd ) then
-                stdev_eta(k) = zero  ! Treat eta as a delta function
+                stdev_eta(i,k) = zero  ! Treat eta as a delta function
             else
-                stdev_eta(k) = sqrt( varnce_eta )
+                stdev_eta(i,k) = sqrt( varnce_eta )
             end if
 
-            corr_chi_eta(k) = zero
+            corr_chi_eta(i,k) = zero
 
         else
 
-            stdev_chi(k) = sqrt( varnce_chi )
-            stdev_eta(k) = sqrt( varnce_eta )
+            stdev_chi(i,k) = sqrt( varnce_chi )
+            stdev_eta(i,k) = sqrt( varnce_eta )
 
-            corr_chi_eta(k) = covar_chi_eta(k) / ( stdev_chi(k) * stdev_eta(k) )
-            corr_chi_eta(k) = min( max_mag_correlation, &
-                                   max( -max_mag_correlation, corr_chi_eta(k) ) )
+            corr_chi_eta(i,k) = covar_chi_eta(i,k) / ( stdev_chi(i,k) * stdev_eta(i,k) )
+            corr_chi_eta(i,k) = min( max_mag_correlation, &
+                                   max( -max_mag_correlation, corr_chi_eta(i,k) ) )
 
         end if
 
+      end do
     end do
 
   end subroutine transform_pdf_chi_eta_component
   
   !=============================================================================
-  function calc_wp4_pdf( gr, wm, w_1, w_2,              &
-                         varnce_w_1, varnce_w_2,    &
-                         mixt_frac ) &
-  result( wp4 )
+  subroutine calc_wp4_pdf( nz, ngrdcol, &
+                           wm, w_1, w_2, &
+                           varnce_w_1, varnce_w_2,    &
+                           mixt_frac, &
+                           wp4 )
 
     ! Description:
     ! Calculates <w'^4> by integrating over the PDF of w.  The integral is:
@@ -1910,9 +1876,6 @@ module pdf_closure_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         six,   & ! Variable(s)
         three, &
@@ -1923,10 +1886,12 @@ module pdf_closure_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       wm,         & ! Mean of w (overall)                           [m/s]
       w_1,        & ! Mean of w (1st PDF component)                 [m/s]
       w_2,        & ! Mean of w (2nd PDF component)                 [m/s]
@@ -1934,32 +1899,40 @@ module pdf_closure_module
       varnce_w_2, & ! Variance of w (2nd PDF component)             [m^2/s^2]
       mixt_frac     ! Mixture fraction                              [-]
 
-    ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+    ! Output Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
       wp4    ! <w'^4>                   [m^4/s^4]
+      
+    ! Local Variables
+    integer :: i, k
 
+    
+    do k = 1, nz
+      do i = 1, ngrdcol
 
-    ! Calculate <w'^4> by integrating over the PDF.
-    wp4 = mixt_frac * ( three * varnce_w_1**2 &
-                        + six * ( ( w_1 - wm )**2 ) * varnce_w_1 &
-                        + ( w_1 - wm )**4 ) & 
-          + ( one - mixt_frac ) * ( three * varnce_w_2**2 &
-                                    + six * ( (w_2 - wm )**2 )*varnce_w_2 &
-                                    + ( w_2 - wm )**4 )
-
+        ! Calculate <w'^4> by integrating over the PDF.
+        wp4(i,k) = mixt_frac(i,k) * ( three * varnce_w_1(i,k)**2 &
+                            + six * ( ( w_1(i,k) - wm(i,k) )**2 ) * varnce_w_1(i,k) &
+                            + ( w_1(i,k) - wm(i,k) )**4 ) & 
+                   + ( one - mixt_frac(i,k) ) * ( three * varnce_w_2(i,k)**2 &
+                                        + six * ( (w_2(i,k) - wm(i,k) )**2 )*varnce_w_2(i,k) &
+                                        + ( w_2(i,k) - wm(i,k) )**4 )
+      end do
+    end do
 
     return
 
-  end function calc_wp4_pdf
+  end subroutine calc_wp4_pdf
 
   !=============================================================================
-  function calc_wp2xp2_pdf( gr, wm, xm, w_1,             &
-                            w_2, x_1, x_2,           &
-                            varnce_w_1, varnce_w_2,  &
-                            varnce_x_1, varnce_x_2,  &
-                            corr_w_x_1, corr_w_x_2,  &
-                            mixt_frac ) &
-  result( wp2xp2 )
+  subroutine calc_wp2xp2_pdf( nz, ngrdcol,             &
+                              wm, xm, w_1,             &
+                              w_2, x_1, x_2,           &
+                              varnce_w_1, varnce_w_2,  &
+                              varnce_x_1, varnce_x_2,  &
+                              corr_w_x_1, corr_w_x_2,  &
+                              mixt_frac, &
+                              wp2xp2 )
 
     ! Description:
     ! Calculates <w'^2x'^2> by integrating over the PDF of w and x.  The
@@ -2001,9 +1974,6 @@ module pdf_closure_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         one,   & ! Variable(s)
         four
@@ -2013,10 +1983,12 @@ module pdf_closure_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       wm,         & ! Mean of w (overall)                       [m/s]
       xm,         & ! Mean of x (overall)                       [units vary]
       w_1,        & ! Mean of w (1st PDF component)             [m/s]
@@ -2031,33 +2003,46 @@ module pdf_closure_module
       corr_w_x_2, & ! Correlation of w and x (2nd PDF comp.)    [-]
       mixt_frac     ! Mixture fraction                          [-]
 
-    ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
+    ! Output Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       wp2xp2        ! <w'^2x'^2>                   [m^2/s^2 (units vary)^2]
+    
+    ! Local Variable
+    integer :: i, k
 
 
-    ! Calculate <w'x'^2> by integrating over the PDF.
-    wp2xp2 = mixt_frac &
-            * ( ( w_1 - wm )**2 * ( ( x_1 - xm )**2 + varnce_x_1 ) &
-            + four * corr_w_x_1 * sqrt( varnce_w_1 * varnce_x_1 ) * ( x_1 - xm ) * ( w_1 - wm ) &
-            + ( ( x_1 - xm )**2 + ( 1 + 2*corr_w_x_1**2 ) * varnce_x_1 ) * varnce_w_1 ) &
-            + ( one - mixt_frac ) &
-            * ( ( w_2 - wm )**2 * ( ( x_2 - xm )**2 + varnce_x_2 ) &
-            + four * corr_w_x_2 * sqrt( varnce_w_2 * varnce_x_2 ) * ( x_2 - xm ) * ( w_2 - wm ) &
-            + ( ( x_2 - xm )**2 + ( 1 + 2*corr_w_x_2**2 ) * varnce_x_2 ) * varnce_w_2 )
+    do k = 1, nz
+      do i = 1, ngrdcol
+
+        ! Calculate <w'x'^2> by integrating over the PDF.
+        wp2xp2(i,k) = mixt_frac(i,k) &
+                * ( ( w_1(i,k) - wm(i,k) )**2 * ( ( x_1(i,k) - xm(i,k) )**2 + varnce_x_1(i,k) ) &
+                + four * corr_w_x_1(i,k) * sqrt( varnce_w_1(i,k) * varnce_x_1(i,k) ) &
+                                         * ( x_1(i,k) - xm(i,k) ) * ( w_1(i,k) - wm(i,k) ) &
+                + ( ( x_1(i,k) - xm(i,k) )**2 &
+                + ( 1 + 2*corr_w_x_1(i,k)**2 ) * varnce_x_1(i,k) ) * varnce_w_1(i,k) ) &
+                + ( one - mixt_frac(i,k) ) &
+                * ( ( w_2(i,k) - wm(i,k) )**2 * ( ( x_2(i,k) - xm(i,k) )**2 + varnce_x_2(i,k) ) &
+                + four * corr_w_x_2(i,k) * sqrt( varnce_w_2(i,k) * varnce_x_2(i,k) ) &
+                                         * ( x_2(i,k) - xm(i,k) ) * ( w_2(i,k) - wm(i,k) ) &
+                + ( ( x_2(i,k) - xm(i,k) )**2 &
+                + ( 1 + 2*corr_w_x_2(i,k)**2 ) * varnce_x_2(i,k) ) * varnce_w_2(i,k) )
+      end do
+    end do
 
     return
 
-  end function calc_wp2xp2_pdf
+  end subroutine calc_wp2xp2_pdf
 
   !=============================================================================
-  function calc_wp2xp_pdf( gr, wm, xm, w_1, w_2,        &
-                           x_1, x_2,                &
-                           varnce_w_1, varnce_w_2,  &
-                           varnce_x_1, varnce_x_2,  &
-                           corr_w_x_1, corr_w_x_2,  &
-                           mixt_frac ) &
-  result( wp2xp )
+  subroutine calc_wp2xp_pdf( nz, ngrdcol,             &
+                             wm, xm, w_1, w_2,        &
+                             x_1, x_2,                &
+                             varnce_w_1, varnce_w_2,  &
+                             varnce_x_1, varnce_x_2,  &
+                             corr_w_x_1, corr_w_x_2,  &
+                             mixt_frac, &
+                             wp2xp ) 
 
     ! Description:
     ! Calculates <w'^2 x'> by integrating over the PDF of w and x.  The integral
@@ -2093,9 +2078,6 @@ module pdf_closure_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         two,   & ! Variable(s)
         one
@@ -2105,10 +2087,12 @@ module pdf_closure_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       wm,         & ! Mean of w (overall)                       [m/s]
       xm,         & ! Mean of x (overall)                       [units vary]
       w_1,        & ! Mean of w (1st PDF component)             [m/s]
@@ -2123,34 +2107,42 @@ module pdf_closure_module
       corr_w_x_2, & ! Correlation of w and x (2nd PDF comp.)    [-]
       mixt_frac     ! Mixture fraction                          [-]
 
-    ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+    ! Output Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  & 
       wp2xp    ! <w'^2 x'>                   [m^2/s^2 (units vary)]
+
+    ! Local Variables
+    integer :: i, k
 
 
     ! Calculate <w'^2 x'> by integrating over the PDF.
-    wp2xp  = mixt_frac &
-             * ( ( ( w_1 - wm )**2 + varnce_w_1 ) * ( x_1 - xm ) &
-                 + two * corr_w_x_1 * sqrt( varnce_w_1 * varnce_x_1 ) &
-                   * ( w_1 - wm ) ) &
-             + ( one - mixt_frac ) &
-               * ( ( ( w_2 - wm )**2 + varnce_w_2 ) * ( x_2 - xm ) &
-                   + two * corr_w_x_2 * sqrt( varnce_w_2 * varnce_x_2 ) &
-                     * ( w_2 - wm ) )
-
+    do k = 1, nz
+      do i = 1, ngrdcol
+        
+        wp2xp(i,k)  = mixt_frac(i,k) &
+                   * ( ( ( w_1(i,k) - wm(i,k) )**2 + varnce_w_1(i,k) ) * ( x_1(i,k) - xm(i,k) ) &
+                       + two * corr_w_x_1(i,k) * sqrt( varnce_w_1(i,k) * varnce_x_1(i,k) ) &
+                         * ( w_1(i,k) - wm(i,k) ) ) &
+                   + ( one - mixt_frac(i,k) ) &
+                     * ( ( ( w_2(i,k) - wm(i,k) )**2 + varnce_w_2(i,k) ) * ( x_2(i,k) - xm(i,k) ) &
+                         + two * corr_w_x_2(i,k) * sqrt( varnce_w_2(i,k) * varnce_x_2(i,k) ) &
+                           * ( w_2(i,k) - wm(i,k) ) )
+      end do
+    end do
 
     return
 
-  end function calc_wp2xp_pdf
+  end subroutine calc_wp2xp_pdf
 
   !=============================================================================
-  function calc_wpxp2_pdf( gr, wm, xm, w_1,             &
-                           w_2, x_1, x_2,           &
-                           varnce_w_1, varnce_w_2,  &
-                           varnce_x_1, varnce_x_2,  &
-                           corr_w_x_1, corr_w_x_2,  &
-                           mixt_frac ) &
-  result( wpxp2 )
+  subroutine calc_wpxp2_pdf( nz, ngrdcol,             &
+                             wm, xm, w_1,             &
+                             w_2, x_1, x_2,           &
+                             varnce_w_1, varnce_w_2,  &
+                             varnce_x_1, varnce_x_2,  &
+                             corr_w_x_1, corr_w_x_2,  &
+                             mixt_frac, &
+                             wpxp2 )
 
     ! Description:
     ! Calculates <w'x'^2> by integrating over the PDF of w and x.  The integral
@@ -2185,10 +2177,7 @@ module pdf_closure_module
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        grid ! Type
-
+    
     use constants_clubb, only: &
         two,   & ! Variable(s)
         one
@@ -2198,10 +2187,12 @@ module pdf_closure_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       wm,         & ! Mean of w (overall)                       [m/s]
       xm,         & ! Mean of x (overall)                       [units vary]
       w_1,        & ! Mean of w (1st PDF component)             [m/s]
@@ -2217,37 +2208,44 @@ module pdf_closure_module
       mixt_frac     ! Mixture fraction                          [-]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  & 
       wpxp2    ! <w'x'^2>                   [m/s (units vary)^2]
+      
+    ! Local Variables
+    integer :: i, k
 
+    do k = 1, nz
+      do i = 1, ngrdcol
 
-    ! Calculate <w'x'^2> by integrating over the PDF.
-    wpxp2 = mixt_frac &
-            * ( ( w_1 - wm ) * ( ( x_1 - xm )**2 + varnce_x_1 ) &
-                + two * corr_w_x_1 * sqrt( varnce_w_1 * varnce_x_1 ) &
-                  * ( x_1 - xm ) ) &
-            + ( one - mixt_frac ) &
-              * ( ( w_2 - wm ) * ( ( x_2 - xm )**2 + varnce_x_2 ) &
-                  + two * corr_w_x_2 * sqrt( varnce_w_2 * varnce_x_2 ) &
-                    * ( x_2 - xm ) )
-
+        ! Calculate <w'x'^2> by integrating over the PDF.
+        wpxp2(i,k) = mixt_frac(i,k) &
+                * ( ( w_1(i,k) - wm(i,k) ) * ( ( x_1(i,k) - xm(i,k) )**2 + varnce_x_1(i,k) ) &
+                    + two * corr_w_x_1(i,k) * sqrt( varnce_w_1(i,k) * varnce_x_1(i,k) ) &
+                      * ( x_1(i,k) - xm(i,k) ) ) &
+                + ( one - mixt_frac(i,k) ) &
+                  * ( ( w_2(i,k) - wm(i,k) ) * ( ( x_2(i,k) - xm(i,k) )**2 + varnce_x_2(i,k) ) &
+                      + two * corr_w_x_2(i,k) * sqrt( varnce_w_2(i,k) * varnce_x_2(i,k) ) &
+                        * ( x_2(i,k) - xm(i,k) ) )
+      end do
+    end do
 
     return
 
-  end function calc_wpxp2_pdf
+  end subroutine calc_wpxp2_pdf
 
   !=============================================================================
-  function calc_wpxpyp_pdf( gr, wm, xm, ym, w_1, w_2,   &
-                            x_1, x_2,               &
-                            y_1, y_2,               &
-                            varnce_w_1, varnce_w_2, &
-                            varnce_x_1, varnce_x_2, &
-                            varnce_y_1, varnce_y_2, &
-                            corr_w_x_1, corr_w_x_2, &
-                            corr_w_y_1, corr_w_y_2, &
-                            corr_x_y_1, corr_x_y_2, &
-                            mixt_frac ) &
-  result( wpxpyp )
+  subroutine calc_wpxpyp_pdf( nz, ngrdcol, &
+                              wm, xm, ym, w_1, w_2,   &
+                              x_1, x_2,               &
+                              y_1, y_2,               &
+                              varnce_w_1, varnce_w_2, &
+                              varnce_x_1, varnce_x_2, &
+                              varnce_y_1, varnce_y_2, &
+                              corr_w_x_1, corr_w_x_2, &
+                              corr_w_y_1, corr_w_y_2, &
+                              corr_x_y_1, corr_x_y_2, &
+                              mixt_frac, &
+                              wpxpyp )
 
     ! Description:
     ! Calculates <w'x'y'> by integrating over the PDF of w, x, and y.  The
@@ -2306,10 +2304,12 @@ module pdf_closure_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       wm,         & ! Mean of w (overall)                          [m/s]
       xm,         & ! Mean of x (overall)                          [x units]
       ym,         & ! Mean of y (overall)                          [y units]
@@ -2333,31 +2333,38 @@ module pdf_closure_module
       corr_x_y_2, & ! Correlation of x and y (2nd PDF component)   [-]
       mixt_frac     ! Mixture fraction                             [-]
 
-    ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+    ! Output Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
       wpxpyp    ! <w'x'y'>                   [m/s (units vary)]
 
+    ! Local Variables
+    integer :: i, k
+    
 
     ! Calculate <w'x'y'> by integrating over the PDF.
-    wpxpyp &
-    = mixt_frac &
-      * ( ( w_1 - wm ) * ( x_1 - xm ) * ( y_1 - ym ) &
-          + corr_x_y_1 * sqrt( varnce_x_1 * varnce_y_1 ) * ( w_1 - wm ) &
-          + corr_w_y_1 * sqrt( varnce_w_1 * varnce_y_1 ) * ( x_1 - xm ) &
-          + corr_w_x_1 * sqrt( varnce_w_1 * varnce_x_1 ) * ( y_1 - ym ) ) &
-      + ( one - mixt_frac ) &
-        * ( ( w_2 - wm ) * ( x_2 - xm ) * ( y_2 - ym ) &
-            + corr_x_y_2 * sqrt( varnce_x_2 * varnce_y_2 ) * ( w_2 - wm ) &
-            + corr_w_y_2 * sqrt( varnce_w_2 * varnce_y_2 ) * ( x_2 - xm ) &
-            + corr_w_x_2 * sqrt( varnce_w_2 * varnce_x_2 ) * ( y_2 - ym ) )
-
+    do k = 1, nz
+      do i = 1, ngrdcol
+        wpxpyp(i,k) &
+        = mixt_frac(i,k) &
+          * ( ( w_1(i,k) - wm(i,k) ) * ( x_1(i,k) - xm(i,k) ) * ( y_1(i,k) - ym(i,k) ) &
+              + corr_x_y_1(i,k)*sqrt( varnce_x_1(i,k)*varnce_y_1(i,k) )*( w_1(i,k)-wm(i,k) ) &
+              + corr_w_y_1(i,k)*sqrt( varnce_w_1(i,k)*varnce_y_1(i,k) )*( x_1(i,k)-xm(i,k) ) &
+              + corr_w_x_1(i,k)*sqrt( varnce_w_1(i,k)*varnce_x_1(i,k) )*( y_1(i,k)-ym(i,k) ) ) &
+          + ( one - mixt_frac(i,k) ) &
+            * ( ( w_2(i,k) - wm(i,k) )*( x_2(i,k) - xm(i,k) ) * ( y_2(i,k) - ym(i,k) ) &
+                + corr_x_y_2(i,k)*sqrt( varnce_x_2(i,k)*varnce_y_2(i,k) )*( w_2(i,k)-wm(i,k) ) &
+                + corr_w_y_2(i,k)*sqrt( varnce_w_2(i,k)*varnce_y_2(i,k) )*( x_2(i,k)-xm(i,k) ) &
+                + corr_w_x_2(i,k)*sqrt( varnce_w_2(i,k)*varnce_x_2(i,k) )*( y_2(i,k)-ym(i,k) ) )
+      end do
+    end do
 
     return
 
-  end function calc_wpxpyp_pdf
+  end subroutine calc_wpxpyp_pdf
 
   !=============================================================================
-  subroutine calc_liquid_cloud_frac_component( gr, mean_chi, stdev_chi, &
+  subroutine calc_liquid_cloud_frac_component( nz, ngrdcol, &
+                                               mean_chi, stdev_chi, &
                                                cloud_frac, rc )
     ! Description:
     ! Calculates the PDF component cloud water mixing ratio, rc_i, and cloud
@@ -2413,9 +2420,6 @@ module pdf_closure_module
     ! References:
     !----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
         sqrt_2pi,       & ! sqrt(2*pi)
@@ -2431,15 +2435,17 @@ module pdf_closure_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
 
     !----------- Input Variables -----------
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       mean_chi,  & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
       stdev_chi    ! Standard deviation of chi (ith PDF component)     [kg/kg]
 
     !----------- Output Variables -----------
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       cloud_frac, & ! Cloud fraction (ith PDF component)               [-]
       rc            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
 
@@ -2448,116 +2454,46 @@ module pdf_closure_module
       invrs_sqrt_2 = one / sqrt_2, &
       invrs_sqrt_2pi = one / sqrt_2pi
 
-#ifdef MKL
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      mean_chi_packed,      & ! Values of chi needed in expensive calculation           [kg/kg]
-      stdev_chi_packed,     & ! Values of stdev_chi needed in expensive calculation     [kg/kg]
-      cloud_frac_packed,    & ! Cloud fraction, only calculated values                  [-]
-      rc_packed,            & !  Mean cloud water mixing ratio, only calculated values  [kg/kg]
-      zeta, zeta_sqd,       &
-      exp_cache
-
-    integer, dimension(gr%nz) :: &
-      v_calc_mask    ! Mask to indicate which indicies need vectorizable calculations
-
-    integer :: &
-      v_num_calcs   ! Number of elements needing calculation, can act as an index variable
-#else
     real( kind = core_rknd ) :: &
       zeta
-#endif
 
-    integer :: k    ! Vertical loop index
+    integer :: k, i    ! Vertical loop index
 
     !----------- Begin Code -----------
 
-#ifdef MKL
-    v_calc_mask(:) = 0
-    v_num_calcs = 0
-#endif
+    do k = 1, nz
+      do i = 1, ngrdcol
 
-    do k = 1, gr%nz
-
-        if ( ( abs( mean_chi(k) ) <= eps .and. stdev_chi(k) <= chi_tol ) &
-               .or. ( mean_chi(k) < - max_num_stdevs * stdev_chi(k) ) ) then
+        if ( ( abs( mean_chi(i,k) ) <= eps .and. stdev_chi(i,k) <= chi_tol ) &
+               .or. ( mean_chi(i,k) < - max_num_stdevs * stdev_chi(i,k) ) ) then
 
             ! The mean of chi is at saturation and does not vary in the ith PDF component
-            cloud_frac(k) = zero
-            rc(k)         = zero
+            cloud_frac(i,k) = zero
+            rc(i,k)         = zero
 
-        elseif ( mean_chi(k) > max_num_stdevs * stdev_chi(k) ) then
+        elseif ( mean_chi(i,k) > max_num_stdevs * stdev_chi(i,k) ) then
 
             ! The mean of chi is multiple standard deviations above the saturation point.
             ! Thus, all cloud in the ith PDF component.
-            cloud_frac(k) = one
-            rc(k)         = mean_chi(k)
+            cloud_frac(i,k) = one
+            rc(i,k)         = mean_chi(i,k)
 
         else
 
             ! The mean of chi is within max_num_stdevs of the saturation point.
             ! Thus, layer is partly cloudy, requires calculation.
-#ifdef MKL
-            ! MKL functions are available, the calculations will be completed
-            ! over contiguous array sections, simply save needed values here
 
-            ! Increment count of elements needing calculation
-            v_num_calcs = v_num_calcs + 1
+            zeta = mean_chi(i,k) / stdev_chi(i,k)
 
-            ! Copy values which are needed in calculation into contiguous array section
-            mean_chi_packed(v_num_calcs) = mean_chi(k)
-            stdev_chi_packed(v_num_calcs) = stdev_chi(k)
+            cloud_frac(i,k) = one_half * ( one + erf( zeta * invrs_sqrt_2 )  )
 
-            ! Keep track of where result goes using this mask, so we can unpack
-            ! the contiguous array back into the output array after calculation
-            v_calc_mask(k) = 1
-#else
-            ! MKL functions are unavailable, use these scalar calculations instead
-
-            zeta = mean_chi(k) / stdev_chi(k)
-
-            cloud_frac(k) = one_half * ( one + erf( zeta * invrs_sqrt_2 )  )
-
-            rc(k) = mean_chi(k) * cloud_frac(k) &
-                    + stdev_chi(k) * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
-#endif
+            rc(i,k) = mean_chi(i,k) * cloud_frac(i,k) &
+                      + stdev_chi(i,k) * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
 
         end if
-
+        
+      end do
     end do
-
-#ifdef MKL
-    ! If there are any calculations to complete, then v_num_calcs > 0, and the values to
-    ! operate on are all stored in contiguous sections in the "packed" arrays. This means the
-    ! packed arrays are only valid on (1:v_num_calcs), and values outside that range may
-    ! be NaN. For more information on Intel's MKL_VML functions, see the Vector Mathematical
-    ! Functions section of the MKL developer reference for Fortran
-    if( v_num_calcs > 0 ) then
-
-        ! zeta = mean_chi_packed / stdev_chi_packed
-        call vddiv( v_num_calcs, mean_chi_packed , stdev_chi_packed, zeta )
-
-        ! Cumulative normal distribution function, erf_cache = 0.5*(1+erf(zeta/sqrt2))
-        call vdcdfnorm( v_num_calcs, zeta, cloud_frac_packed )
-
-        ! zeta_sqd = zeta**2
-        call vdsqr( v_num_calcs, zeta, zeta_sqd )
-
-        ! exp_cache = exp( -0.5*zeta**2 )
-        call vdexp( v_num_calcs, - one_half * zeta_sqd(1:v_num_calcs), exp_cache )
-
-        do k = 1, v_num_calcs
-            rc_packed(k) = mean_chi_packed(k) * cloud_frac_packed(k) &
-                           + stdev_chi_packed(k) * exp_cache(k) * invrs_sqrt_2pi
-        end do
-
-        ! Unpack results from contiguous array sections and put them into output arrays,
-        ! where to put them is defined by v_calc_mask
-        call vdunpackm( gr%nz, cloud_frac_packed, cloud_frac, v_calc_mask )
-        call vdunpackm( gr%nz, rc_packed, rc, v_calc_mask )
-
-    end if
-
-#endif
 
     return
 
@@ -2651,7 +2587,8 @@ module pdf_closure_module
   end subroutine calc_cloud_frac_component
 
   !=============================================================================
-  subroutine calc_xprcp_component( gr, wm, rtm, thlm, um, vm, rcm,                      & ! In
+  subroutine calc_xprcp_component( nz, ngrdcol,                                     & ! In
+                                   wm, rtm, thlm, um, vm, rcm,                      & ! In
                                    w_i, rt_i,                                       & ! In
                                    thl_i, u_i, v_i,                                 & ! In
                                    varnce_w_i, chi_i,                               & ! In
@@ -3034,10 +2971,12 @@ module pdf_closure_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,             & ! Mean of w (overall)                          [m/s]
       rtm,            & ! Mean of rt (overall)                         [kg/kg]
       thlm,           & ! Mean of thl (overall)                        [K]
@@ -3069,34 +3008,44 @@ module pdf_closure_module
                     ! two-component PDF.
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       wprcp_contrib_comp_i,   & ! <w'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
       wp2rcp_contrib_comp_i,  & ! <w'^2rc'> contrib. (ith comp) [m^2/s^2(kg/kg)]
       rtprcp_contrib_comp_i,  & ! <rt'rc'> contrib. (ith PDF comp.)  [kg^2/kg^2]
       thlprcp_contrib_comp_i, & ! <thl'rc'> contrib. (ith PDF comp.)  [K(kg/kg)]
       uprcp_contrib_comp_i,   & ! <u'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
       vprcp_contrib_comp_i      ! <v'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
+      
+    ! Local Variables
+    integer :: i, k
 
     ! ---------------------- Begin Code ------------------
     
     ! Changing these conditionals may result in inconsistencies with the conditional
     ! statements located in calc_cloud_frac_component
+    
+    do k = 1, nz
+      do i = 1, ngrdcol
 
-    wprcp_contrib_comp_i = ( w_i - wm ) * ( rc_i - rcm )
+        wprcp_contrib_comp_i(i,k) = ( w_i(i,k) - wm(i,k) ) * ( rc_i(i,k) - rcm(i,k) )
 
-    wp2rcp_contrib_comp_i = ( ( w_i - wm )**2 + varnce_w_i ) * ( rc_i - rcm )
+        wp2rcp_contrib_comp_i(i,k) = ( ( w_i(i,k) - wm(i,k) )**2 + varnce_w_i(i,k) ) &
+                                     * ( rc_i(i,k) - rcm(i,k) )
 
-    rtprcp_contrib_comp_i = ( rt_i - rtm ) * ( rc_i - rcm ) &
-                            + ( corr_chi_eta_i * stdev_eta_i + stdev_chi_i ) &
-                              / ( two * crt_i ) * stdev_chi_i * cloud_frac_i
+        rtprcp_contrib_comp_i(i,k) = ( rt_i(i,k) - rtm(i,k) ) * ( rc_i(i,k) - rcm(i,k) ) &
+                                + ( corr_chi_eta_i(i,k) * stdev_eta_i(i,k) + stdev_chi_i(i,k) ) &
+                                  / ( two * crt_i(i,k) ) * stdev_chi_i(i,k) * cloud_frac_i(i,k)
 
-    thlprcp_contrib_comp_i = ( thl_i - thlm ) * ( rc_i - rcm ) &
-                             + ( corr_chi_eta_i * stdev_eta_i - stdev_chi_i ) &
-                               / ( two * cthl_i ) * stdev_chi_i * cloud_frac_i
+        thlprcp_contrib_comp_i(i,k) = ( thl_i(i,k) - thlm(i,k) ) * ( rc_i(i,k) - rcm(i,k) ) &
+                                 + ( corr_chi_eta_i(i,k) * stdev_eta_i(i,k) - stdev_chi_i(i,k) ) &
+                                   / ( two * cthl_i(i,k) ) * stdev_chi_i(i,k) * cloud_frac_i(i,k)
 
-    uprcp_contrib_comp_i = ( u_i - um ) * ( rc_i - rcm )
+        uprcp_contrib_comp_i(i,k) = ( u_i(i,k) - um(i,k) ) * ( rc_i(i,k) - rcm(i,k) )
 
-    vprcp_contrib_comp_i = ( v_i - vm ) * ( rc_i - rcm )
+        vprcp_contrib_comp_i(i,k) = ( v_i(i,k) - vm(i,k) ) * ( rc_i(i,k) - rcm(i,k) )
+        
+      end do
+    end do
 
     ! If iiPDF_type isn't iiPDF_ADG1, iiPDF_ADG2, or iiPDF_new_hybrid, so
     ! corr_w_chi_i /= 0 (and perhaps corr_u_w_i /= 0).
@@ -3105,23 +3054,29 @@ module pdf_closure_module
 
         ! Chi varies significantly in the ith PDF component (stdev_chi > chi_tol)
         ! and there is some cloud (0 < cloud_frac <= 1)
-        where ( stdev_chi_i > chi_tol .and. cloud_frac_i > zero )
+        do k = 1, nz
+          do i = 1, ngrdcol
+            if ( stdev_chi_i(i,k) > chi_tol .and. cloud_frac_i(i,k) > zero ) then
 
-            wprcp_contrib_comp_i = wprcp_contrib_comp_i &
-                                   + corr_w_chi_i * sqrt( varnce_w_i ) * stdev_chi_i * cloud_frac_i
+              wprcp_contrib_comp_i(i,k) = wprcp_contrib_comp_i(i,k) &
+                                          + corr_w_chi_i(i,k) * sqrt( varnce_w_i(i,k) ) &
+                                            * stdev_chi_i(i,k) * cloud_frac_i(i,k)
 
-            wp2rcp_contrib_comp_i = wp2rcp_contrib_comp_i &
-                                    + two * ( w_i - wm ) * corr_w_chi_i &
-                                      * sqrt( varnce_w_i ) * stdev_chi_i * cloud_frac_i &
-                                    + corr_w_chi_i**2 * varnce_w_i * stdev_chi_i &
-                                      * exp( - chi_i**2 / ( two * stdev_chi_i**2 ) ) / sqrt_2pi
+              wp2rcp_contrib_comp_i(i,k) = wp2rcp_contrib_comp_i(i,k) &
+                                           + two * ( w_i(i,k) - wm(i,k) ) * corr_w_chi_i(i,k) &
+                                             * sqrt( varnce_w_i(i,k) ) * stdev_chi_i(i,k) &
+                                             * cloud_frac_i(i,k) &
+                                           + corr_w_chi_i(i,k)**2 * varnce_w_i(i,k) &
+                                             * stdev_chi_i(i,k) &
+                                             * exp( -chi_i(i,k)**2 / ( two*stdev_chi_i(i,k)**2 ) ) &
+                                               / sqrt_2pi
 
             ! In principle, uprcp_contrib_comp_i might depend on corr_u_w_i here.
-
-        end where
+          end if
+        end do
+      end do
 
     end if 
-
 
     return
 
@@ -3194,9 +3149,9 @@ module pdf_closure_module
   end subroutine calc_vert_avg_cf_component
 
   !=============================================================================
-  subroutine calc_w_up_in_cloud(gr, &
-                                mixt_frac, cloud_frac_1, cloud_frac_2, &
-                                w_1, w_2, varnce_w_1, varnce_w_2, w_up_in_cloud)
+  subroutine calc_w_up_in_cloud( nz, ngrdcol, &
+                                 mixt_frac, cloud_frac_1, cloud_frac_2, &
+                                 w_1, w_2, varnce_w_1, varnce_w_2, w_up_in_cloud)
     ! Description:
     ! Subroutine that computes the mean cloudy updraft.
     !
@@ -3213,9 +3168,6 @@ module pdf_closure_module
     ! References: https://www.overleaf.com/project/614a136d47846639af22ae34
     !----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         sqrt_2pi, & ! sqrt(2*pi)
         sqrt_2,   & ! sqrt(2)
@@ -3228,10 +3180,12 @@ module pdf_closure_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
 
     !----------- Input Variables -----------
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       mixt_frac, &      ! mixture fraction                             [-]
       cloud_frac_1, &   ! cloud fraction (1st PDF component)           [-]
       cloud_frac_2, &   ! cloud fraction (2nd PDF component)           [-]
@@ -3241,33 +3195,41 @@ module pdf_closure_module
       varnce_w_2        ! standard deviation of w (2nd PDF component)  [m^2/s^2]
 
     !----------- Output Variables -----------
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       w_up_in_cloud ! mean updraft over clouds                         [m/s]
 
     !----------- Local Variables -----------
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ) :: &
       w_up_1, w_up_2, &       ! product of w and Heaviside function
       stdev_w_1, stdev_w_2  ! Standard deviation of w
       
-    stdev_w_1 = sqrt(varnce_w_1)
-    stdev_w_2 = sqrt(varnce_w_2)
-    
-    w_up_1 &
-    = one_half * w_1 &
-        * (one + erf(w_1 / (sqrt_2 * max(eps, stdev_w_1)))) &
-      + stdev_w_1 / sqrt_2pi &
-          * exp(-one_half * (w_1 / max(eps, stdev_w_1)) ** 2)
-    w_up_2 &
-    = one_half * w_2 &
-        * (one + erf(w_2 / (sqrt_2 * max(eps, stdev_w_2)))) &
-      + stdev_w_2 / sqrt_2pi &
-          * exp(-one_half * (w_2 / max(eps, stdev_w_2)) ** 2)
+    integer :: i, k
+      
+    do k = 1, nz
+      do i = 1, ngrdcol
+        
+        stdev_w_1 = sqrt(varnce_w_1(i,k))
+        stdev_w_2 = sqrt(varnce_w_2(i,k))
+        
+        w_up_1 &
+        = one_half * w_1(i,k) &
+            * (one + erf(w_1(i,k) / (sqrt_2 * max(eps, stdev_w_1)))) &
+          + stdev_w_1 / sqrt_2pi &
+              * exp(-one_half * (w_1(i,k) / max(eps, stdev_w_1)) ** 2)
+        w_up_2 &
+        = one_half * w_2(i,k) &
+            * (one + erf(w_2(i,k) / (sqrt_2 * max(eps, stdev_w_2)))) &
+          + stdev_w_2 / sqrt_2pi &
+              * exp(-one_half * (w_2(i,k) / max(eps, stdev_w_2)) ** 2)
 
-    w_up_in_cloud &
-    = (mixt_frac * cloud_frac_1 * w_up_1 &
-        + (one - mixt_frac) * cloud_frac_2 * w_up_2) &
-      / (mixt_frac * max(eps, cloud_frac_1) &
-        + (one - mixt_frac) * max(eps, cloud_frac_2))
+        w_up_in_cloud &
+        = (mixt_frac(i,k) * cloud_frac_1(i,k) * w_up_1 &
+            + (one - mixt_frac(i,k)) * cloud_frac_2(i,k) * w_up_2) &
+          / (mixt_frac(i,k) * max(eps, cloud_frac_1(i,k)) &
+            + (one - mixt_frac(i,k)) * max(eps, cloud_frac_2(i,k)))
+            
+      end do
+    end do
 
   end subroutine calc_w_up_in_cloud
 

@@ -2894,7 +2894,7 @@ module advance_clubb_core_module
       pdf_params,    & ! PDF parameters                           [units vary]
       pdf_params_zm    ! PDF parameters                           [units vary]
 
-    type(implicit_coefs_terms), dimension(ngrdcol), intent(out) :: &
+    type(implicit_coefs_terms), dimension(ngrdcol), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     !!! Local Variables
