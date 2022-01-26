@@ -1146,7 +1146,7 @@ module pdf_closure_module
         ! Compute ice cloud fraction, ice_supersat_frac
         do k = 1, nz
           do i = 1, ngrdcol
-            ice_supersat_frac(i,k) = pdf_params%mixt_frac(i,k) 
+            ice_supersat_frac(i,k) = pdf_params%mixt_frac(i,k) &
                                      * pdf_params%ice_supersat_frac_1(i,k) &
                                      + ( one - pdf_params%mixt_frac(i,k) ) &
                                        * pdf_params%ice_supersat_frac_2(i,k)
