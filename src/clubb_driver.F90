@@ -2256,12 +2256,12 @@ module clubb_driver
              rcm(1,:), cloud_frac, &                              ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
              sclrpthvp, &                                         ! Intent(inout)
-             wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &            ! intent(inout)
-             wp4, wpup2, wpvp2, wp2up2, wp2vp2, &                 ! intent(inout)
+             wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &       ! intent(inout)
+             wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
-             thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &  ! Intent(out)
+             thlprcp, wprcp, w_up_in_cloud, &                     ! Intent(out)
              rcm_in_layer, cloud_cover, invrs_tau_zm )            ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then

@@ -562,8 +562,8 @@ contains
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
-    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &               ! intent(inout)
-    wp4, wpup2, wpvp2, wp2up2, wp2vp2, &                    ! intent(inout)
+    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &          ! intent(inout)
+    wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
     pdf_implicit_coefs_terms, &                             ! intent(inout)
 #ifdef GFDL
@@ -574,7 +574,7 @@ contains
 #ifdef CLUBB_CAM
     qclvar, &                                               ! intent(out)
 #endif
-    thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &     ! intent(out)
+    thlprcp, wprcp, w_up_in_cloud, &                        ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -755,16 +755,17 @@ contains
       sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
-      wp2rtp,     & ! w'^2 rt' (thermodynamic levels)             [m^2/s^2 kg/kg]
-      wp2thlp,    & ! w'^2 thl' (thermodynamic levels)            [m^2/s^2 K]
-      uprcp,      & ! < u' r_c' > (momentum levels)               [(m/s)(kg/kg)]
-      vprcp,      & ! < v' r_c' > (momentum levels)               [(m/s)(kg/kg)]
-      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
-      wp4,        & ! w'^4 (momentum levels)                      [m^4/s^4]
-      wpup2,      & ! w'u'^2 (thermodynamic levels)               [m^3/s^3]
-      wpvp2,      & ! w'v'^2 (thermodynamic levels)               [m^3/s^3]
-      wp2up2,     & ! w'^2 u'^2 (momentum levels)                 [m^4/s^4]
-      wp2vp2        ! w'^2 v'^2 (momentum levels)                 [m^4/s^4]
+      wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
 
     type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
@@ -789,7 +790,6 @@ contains
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
       wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
       w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
-      ice_supersat_frac, & ! ice cloud fraction (thermodynamic levels)     [-]
       invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -957,16 +957,17 @@ contains
       sclrpthvp_col     ! < sclr' th_v' > (momentum levels)   [units vary]
 
     real( kind = core_rknd ), dimension(1,gr%nz) ::  &
-      wp2rtp_col,     & ! w'^2 rt' (thermodynamic levels)             [m^2/s^2 kg/kg]
-      wp2thlp_col,    & ! w'^2 thl' (thermodynamic levels)            [m^2/s^2 K]
-      uprcp_col,      & ! < u' r_c' > (momentum levels)               [(m/s)(kg/kg)]
-      vprcp_col,      & ! < v' r_c' > (momentum levels)               [(m/s)(kg/kg)]
-      rc_coef_col,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
-      wp4_col,        & ! w'^4 (momentum levels)                      [m^4/s^4]
-      wpup2_col,      & ! w'u'^2 (thermodynamic levels)               [m^3/s^3]
-      wpvp2_col,      & ! w'v'^2 (thermodynamic levels)               [m^3/s^3]
-      wp2up2_col,     & ! w'^2 u'^2 (momentum levels)                 [m^4/s^4]
-      wp2vp2_col        ! w'^2 v'^2 (momentum levels)                 [m^4/s^4]
+      wp2rtp_col,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp_col,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      uprcp_col,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp_col,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef_col,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4_col,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wpup2_col,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2_col,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      wp2up2_col,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2_col,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+      ice_supersat_frac_col    ! ice cloud fraction (thermo. levels)  [-]
 
     type(implicit_coefs_terms), dimension(1) :: &
       pdf_implicit_coefs_terms_col    ! Implicit coefs / explicit terms [units vary]
@@ -987,7 +988,6 @@ contains
     real( kind = core_rknd ), dimension(1,gr%nz) ::  &
       wprcp_col,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
       w_up_in_cloud_col,     & ! Average upward velocity within liquid cloud   [m/s]
-      ice_supersat_frac_col, & ! ice cloud fraction (thermodynamic levels)     [-]
       invrs_tau_zm_col         ! One divided by tau on zm levels               [1/s]
 
     real( kind = core_rknd ), dimension(1,gr%nz) :: &
@@ -1125,6 +1125,7 @@ contains
     wpvp2_col(1,:) = wpvp2
     wp2up2_col(1,:) = wp2up2
     wp2vp2_col(1,:) = wp2vp2
+    ice_supersat_frac_col(1,:) = ice_supersat_frac
     pdf_implicit_coefs_terms_col(1) = pdf_implicit_coefs_terms
 #ifdef GFDL
     RH_crit_col(1,:,:,:) = RH_crit
@@ -1137,7 +1138,6 @@ contains
     thlprcp_col(1,:) = thlprcp
     wprcp_col(1,:) = wprcp
     w_up_in_cloud_col(1,:) = w_up_in_cloud
-    ice_supersat_frac_col(1,:) = ice_supersat_frac
     rcm_in_layer_col(1,:) = rcm_in_layer
     cloud_cover_col(1,:) = cloud_cover
     invrs_tau_zm_col(1,:) = invrs_tau_zm
@@ -1175,8 +1175,8 @@ contains
       rcm_col, cloud_frac_col, &                                      ! intent(inout)
       wpthvp_col, wp2thvp_col, rtpthvp_col, thlpthvp_col, &                   ! intent(inout)
       sclrpthvp_col, &                                            ! intent(inout)
-      wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, &               ! intent(inout)
-      wp4_col, wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, &                    ! intent(inout)
+      wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, wp4_col, & ! intent(inout)
+      wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, & ! intent(inout)
       pdf_params, pdf_params_zm, &                            ! intent(inout)
       pdf_implicit_coefs_terms_col, &                             ! intent(inout)
 #ifdef GFDL
@@ -1187,8 +1187,8 @@ contains
 #ifdef CLUBB_CAM
                qclvar_col, &                                      ! intent(out)
 #endif
-      thlprcp_col, wprcp_col, w_up_in_cloud_col, ice_supersat_frac_col, &     ! intent(out)
-      rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &              ! intent(out)
+      thlprcp_col, wprcp_col, w_up_in_cloud_col, &                ! intent(out)
+      rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &      ! intent(out)
       err_code_api )                                          ! intent(out)
     
     
@@ -1254,6 +1254,7 @@ contains
     wpvp2 = wpvp2_col(1,:)
     wp2vp2 = wp2vp2_col(1,:)
     wp2up2 = wp2up2_col(1,:)
+    ice_supersat_frac = ice_supersat_frac_col(1,:)
     pdf_implicit_coefs_terms = pdf_implicit_coefs_terms_col(1)
 #ifdef GFDL
     sclrm_trsport_only = sclrm_trsport_only_col(1,:,:)
@@ -1263,7 +1264,6 @@ contains
     cloud_cover  = cloud_cover_col(1,:)
     wprcp = wprcp_col(1,:)
     w_up_in_cloud = w_up_in_cloud_col(1,:)
-    ice_supersat_frac = ice_supersat_frac_col(1,:)
     invrs_tau_zm = invrs_tau_zm_col(1,:)
     Kh_zt = Kh_zt_col(1,:)
     Kh_zm = Kh_zm_col(1,:)
@@ -1310,8 +1310,8 @@ contains
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
-    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &               ! intent(inout)
-    wp4, wpup2, wpvp2, wp2up2, wp2vp2, &                    ! intent(inout)
+    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &          ! intent(inout)
+    wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
     pdf_implicit_coefs_terms, &                             ! intent(inout)
 #ifdef GFDL
@@ -1322,7 +1322,7 @@ contains
 #ifdef CLUBB_CAM
     qclvar, &                                               ! intent(out)
 #endif
-    thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &     ! intent(out)
+    thlprcp, wprcp, w_up_in_cloud, &                        ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -1500,16 +1500,17 @@ contains
       sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) ::  &
-      wp2rtp,     & ! w'^2 rt' (thermodynamic levels)             [m^2/s^2 kg/kg]
-      wp2thlp,    & ! w'^2 thl' (thermodynamic levels)            [m^2/s^2 K]
-      uprcp,      & ! < u' r_c' > (momentum levels)               [(m/s)(kg/kg)]
-      vprcp,      & ! < v' r_c' > (momentum levels)               [(m/s)(kg/kg)]
-      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
-      wp4,        & ! w'^4 (momentum levels)                      [m^4/s^4]
-      wpup2,      & ! w'u'^2 (thermodynamic levels)               [m^3/s^3]
-      wpvp2,      & ! w'v'^2 (thermodynamic levels)               [m^3/s^3]
-      wp2up2,     & ! w'^2 u'^2 (momentum levels)                 [m^4/s^4]
-      wp2vp2        ! w'^2 v'^2 (momentum levels)                 [m^4/s^4]
+      wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
 
     type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
@@ -1534,7 +1535,6 @@ contains
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) ::  &
       wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
       w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
-      ice_supersat_frac, & ! ice cloud fraction (thermodynamic levels)     [-]
       invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
@@ -1592,8 +1592,8 @@ contains
       rcm, cloud_frac, &                                      ! intent(inout)
       wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
       sclrpthvp, &                                            ! intent(inout)
-      wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &               ! intent(inout)
-      wp4, wpup2, wpvp2, wp2up2, wp2vp2, &                    ! intent(inout)
+      wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &          ! intent(inout)
+      wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
       pdf_params, pdf_params_zm, &                            ! intent(inout)
       pdf_implicit_coefs_terms, &                             ! intent(inout)
 #ifdef GFDL
@@ -1604,7 +1604,7 @@ contains
 #ifdef CLUBB_CAM
                qclvar, &                                      ! intent(out)
 #endif
-      thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &     ! intent(out)
+      thlprcp, wprcp, w_up_in_cloud, &                        ! intent(out)
       rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
       err_code_api )                                          ! intent(out)
 

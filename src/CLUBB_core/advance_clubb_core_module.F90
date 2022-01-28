@@ -158,8 +158,8 @@ module advance_clubb_core_module
                rcm, cloud_frac, &                                   ! intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
                sclrpthvp, &                                         ! intent(inout)
-               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &            ! intent(inout)
-               wp4, wpup2, wpvp2, wp2up2, wp2vp2, &                 ! intent(inout)
+               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &       ! intent(inout)
+               wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
                pdf_params, pdf_params_zm, &                         ! intent(inout)
                pdf_implicit_coefs_terms, &                          ! intent(inout)
 #ifdef GFDL
@@ -170,7 +170,7 @@ module advance_clubb_core_module
 #ifdef CLUBB_CAM
                qclvar, &                                            ! intent(out)
 #endif
-               thlprcp, wprcp, w_up_in_cloud, ice_supersat_frac, &  ! intent(out)
+               thlprcp, wprcp, w_up_in_cloud, &                     ! intent(out)
                rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! intent(out)
                err_code_out )                                       ! intent(out)
 
@@ -572,16 +572,17 @@ module advance_clubb_core_module
       sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
 
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) ::  &
-      wp2rtp,     & ! w'^2 rt' (thermodynamic levels)             [m^2/s^2 kg/kg]
-      wp2thlp,    & ! w'^2 thl' (thermodynamic levels)            [m^2/s^2 K]
-      uprcp,      & ! < u' r_c' > (momentum levels)               [(m/s)(kg/kg)]
-      vprcp,      & ! < v' r_c' > (momentum levels)               [(m/s)(kg/kg)]
-      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
-      wp4,        & ! w'^4 (momentum levels)                      [m^4/s^4]
-      wpup2,      & ! w'u'^2 (thermodynamic levels)               [m^3/s^3]
-      wpvp2,      & ! w'v'^2 (thermodynamic levels)               [m^3/s^3]
-      wp2up2,     & ! w'^2 u'^2 (momentum levels)                 [m^4/s^4]
-      wp2vp2        ! w'^2 v'^2 (momentum levels)                 [m^4/s^4]
+      wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
 
     type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! Fortran structure of PDF parameters on thermodynamic levels    [units vary]
@@ -610,7 +611,6 @@ module advance_clubb_core_module
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) ::  &
       wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
       w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
-      ice_supersat_frac, & ! ice cloud fraction (thermodynamic levels)     [-]
       invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
