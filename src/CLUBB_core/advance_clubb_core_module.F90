@@ -2199,6 +2199,13 @@ module advance_clubb_core_module
           ddzm_thvm_zm(i,:) = ddzm( gr(i), thvm_zm(i,:) )
           brunt_vaisala_freq_sqd_zt(i,:) = max( ( grav / thvm(i,:) ) * ddzm_thvm_zm(i,:), zero )
         end do
+        
+        ! Initialize sigma_sqd_w_zt to zero so we don't break output
+        do k = 1, nz
+          do i = 1, ngrdcol
+            sigma_sqd_w_zt(i,k) = zero
+          end do
+        end do
 
         ! The xp3_coef_fnc is used in place of sigma_sqd_w_zt when the
         ! ADG1 PDF is not being used.  The xp3_coef_fnc provides some extra
