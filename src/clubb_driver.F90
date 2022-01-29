@@ -1945,6 +1945,9 @@ module clubb_driver
              thlp2, thlp3, rtpthlp, wp2, wp3,          & ! Intent(inout)
              p_in_Pa, exner, rcm(1,:), cloud_frac,     & ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp,       & ! Intent(inout)
+             wp2rtp, wp2thlp, uprcp, vprcp,            & ! Intent(inout)
+             rc_coef, wp4, wpup2, wpvp2, wp2up2,       & ! Intent(inout)
+             wp2vp2, ice_supersat_frac,                & ! Intent(inout)
              wm_zt, rho, rho_zm, rho_ds_zm,            & ! Intent(inout)
              rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt,     & ! Intent(inout)
              thlm_forcing, rtm_forcing, wprtp_forcing, & ! Intent(inout)
@@ -2125,6 +2128,9 @@ module clubb_driver
                                  thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
                                  p_in_Pa, exner, rcm(1,:), cloud_frac, & ! Inout
                                  wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
+                                 wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
+                                 rc_coef, wp4, wpup2, wpvp2, wp2up2, & ! Inout
+                                 wp2vp2, ice_supersat_frac, & ! Inout
                                  wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
                                  rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt, & ! Inout
                                  thlm_forcing, rtm_forcing, wprtp_forcing, & !""
@@ -4088,6 +4094,9 @@ module clubb_driver
                thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
                p_in_Pa, exner, rcm, cloud_frac, & ! Inout
                wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
+               wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
+               rc_coef, wp4, wpup2, wpvp2, wp2up2, & ! Inout
+               wp2vp2, ice_supersat_frac, & ! Inout
                wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
                rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! Inout
                thlm_forcing, rtm_forcing, wprtp_forcing, & ! Inout
@@ -4122,6 +4131,9 @@ module clubb_driver
         l_input_Lscale, l_input_Lscale_up, l_input_Lscale_down, & 
         l_input_Kh_zt, l_input_Kh_zm, l_input_tau_zm, l_input_tau_zt, & 
         l_input_wpthvp, l_input_wp2thvp, l_input_rtpthvp, l_input_thlpthvp, &
+        l_input_wp2rtp, l_input_wp2thlp, l_input_uprcp, l_input_vprcp, &
+        l_input_rc_coef, l_input_wp4, l_input_wpup2, l_input_wpvp2, &
+        l_input_wp2up2, l_input_wp2vp2, l_input_iss_frac, &
         l_input_radht, &
         l_input_w_1, l_input_w_2, l_input_varnce_w_1, l_input_varnce_w_2, &
         l_input_rt_1, l_input_rt_2, l_input_varnce_rt_1, l_input_varnce_rt_2, &
@@ -4210,6 +4222,19 @@ module clubb_driver
       wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
       rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
       thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       wm_zt,     & ! vertical mean wind component on thermo. levels  [m/s]
@@ -4318,6 +4343,17 @@ module clubb_driver
     l_input_wp2thvp = .true.
     l_input_rtpthvp = .true.
     l_input_thlpthvp = .true.
+    l_input_wp2rtp = .true.
+    l_input_wp2thlp = .true.
+    l_input_uprcp = .true.
+    l_input_vprcp = .true.
+    l_input_rc_coef = .true.
+    l_input_wp4 = .true.
+    l_input_wpup2 = .true.
+    l_input_wpvp2 = .true.
+    l_input_wp2up2 = .true.
+    l_input_wp2vp2 = .true.
+    l_input_iss_frac = .true.
     l_input_w_1 = .true.
     l_input_w_2 = .true.
     l_input_varnce_w_1 = .true.
@@ -4463,6 +4499,9 @@ module clubb_driver
                              thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
                              p_in_Pa, exner, rcm, cloud_frac, & ! Inout
                              wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
+                             wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
+                             rc_coef, wp4, wpup2, wpvp2, wp2up2, & ! Inout
+                             wp2vp2, ice_supersat_frac, & ! Inout
                              wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
                              rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! Inout
                              thlm_forcing, rtm_forcing, wprtp_forcing, & ! Inout

@@ -35,6 +35,11 @@ module inputfields
     l_input_tau_zm = .false., l_input_tau_zt = .false., & 
     l_input_wpthvp = .false., l_input_wp2thvp = .false., &
     l_input_rtpthvp = .false., l_input_thlpthvp = .false., &
+    l_input_wp2rtp = .false., l_input_wp2thlp = .false., &
+    l_input_uprcp = .false., l_input_vprcp = .false., &
+    l_input_rc_coef = .false., l_input_wp4 = .false., &
+    l_input_wpup2 = .false., l_input_wpvp2 = .false., &
+    l_input_wp2up2 = .false., l_input_wp2vp2 = .false., l_input_iss_frac = .false., &
     l_input_radht = .false., &
     l_input_w_1 = .false., l_input_w_2 = .false., &
     l_input_varnce_w_1 = .false., l_input_varnce_w_2 = .false., &
@@ -214,6 +219,9 @@ module inputfields
                                  thlp2, thlp3, rtpthlp, wp2, wp3, &
                                  p_in_Pa, exner, rcm, cloud_frac, &
                                  wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                                 wp2rtp, wp2thlp, uprcp, vprcp, &
+                                 rc_coef, wp4, wpup2, wpvp2, wp2up2, &
+                                 wp2vp2, ice_supersat_frac, &
                                  wm_zt, rho, rho_zm, rho_ds_zm, &
                                  rho_ds_zt, thv_ds_zm, thv_ds_zt, &
                                  thlm_forcing, rtm_forcing, wprtp_forcing, &
@@ -311,6 +319,19 @@ module inputfields
       wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
       rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
       thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), dimension(gr%nz), target, intent(inout) :: &
+      wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
 
     real( kind = core_rknd ), dimension(gr%nz), target, intent(inout) :: &
       wm_zt,     & ! vertical mean wind component on thermo. levels  [m/s]
@@ -620,6 +641,42 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
+           ( l_input_wp2rtp, stat_files(clubb_zt), "wp2rtp", gr%nz, &
+             timestep, gr%zt, wp2rtp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wp2thlp, stat_files(clubb_zt), "wp2thlp", gr%nz, &
+             timestep, gr%zt, wp2thlp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wpup2, stat_files(clubb_zt), "wpup2", gr%nz, &
+             timestep, gr%zt, wpup2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wpvp2, stat_files(clubb_zt), "wpvp2", gr%nz, &
+             timestep, gr%zt, wpvp2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rc_coef, stat_files(clubb_zt), "rc_coef", gr%nz, &
+             timestep, gr%zt, rc_coef, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_iss_frac, stat_files(clubb_zt), "ice_supersat_frac", gr%nz, &
+             timestep, gr%zt, ice_supersat_frac, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
            ( l_input_radht, stat_files(clubb_zt), "radht", gr%nz, timestep, &
              gr%zt, radht, l_read_error )
 
@@ -859,6 +916,36 @@ module inputfields
       call get_clubb_variable_interpolated &
            ( l_input_vp2, stat_files(clubb_zm), "vp2", gr%nz, timestep, &
              gr%zm, vp2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wp4, stat_files(clubb_zm), "wp4", gr%nz, timestep, &
+             gr%zm, wp4, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_uprcp, stat_files(clubb_zm), "uprcp", gr%nz, timestep, &
+             gr%zm, uprcp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_vprcp, stat_files(clubb_zm), "vprcp", gr%nz, timestep, &
+             gr%zm, vprcp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wp2up2, stat_files(clubb_zm), "wp2up2", gr%nz, timestep, &
+             gr%zm, wp2up2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wp2vp2, stat_files(clubb_zm), "wp2vp2", gr%nz, timestep, &
+             gr%zm, wp2vp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
