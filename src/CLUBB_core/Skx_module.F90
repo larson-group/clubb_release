@@ -14,8 +14,9 @@ module Skx_module
   contains
 
   !-----------------------------------------------------------------------------
-  function Skx_func( gr, xp2, xp3, x_tol, Skw_denom_coef, Skw_max_mag ) &
-  result( Skx )
+  subroutine Skx_func( nz, ngrdcol, xp2, xp3, &
+                       x_tol, Skw_denom_coef, Skw_max_mag, &
+                       Skx )
 
     ! Description:
     ! Calculate the skewness of x
@@ -27,10 +28,11 @@ module Skx_module
     use clubb_precision, only: &
         core_rknd         ! Variable(s)
 
-    use grid_class, only: &
-        grid ! Type
-
     implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
     ! External
     intrinsic :: min, max
@@ -41,9 +43,7 @@ module Skx_module
       l_clipping_kluge = .false.
 
     ! Input Variables
-    type (grid), target, intent(in) :: gr
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       xp2,   & ! <x'^2>               [(x units)^2]
       xp3      ! <x'^3>               [(x units)^3]
 
@@ -53,12 +53,14 @@ module Skx_module
       Skw_max_mag       ! Max magnitude of skewness               [-]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       Skx      ! Skewness of x        [-]
 
     ! Local Variable
     real( kind = core_rknd ) :: &
       Skx_denom_tol
+      
+    integer :: i, k
 
     ! ---- Begin Code ----
 
@@ -67,7 +69,11 @@ module Skx_module
     !Skx = xp3 / ( max( xp2, x_tol**two ) )**three_halves
     ! Calculation of skewness to help reduce the sensitivity of this value to
     ! small values of xp2.
-    Skx = xp3 / ( ( xp2 + Skx_denom_tol ) * sqrt( xp2 + Skx_denom_tol ) )
+    do k = 1, nz
+      do i = 1, ngrdcol
+        Skx(i,k) = xp3(i,k) / ( ( xp2(i,k) + Skx_denom_tol ) * sqrt( xp2(i,k) + Skx_denom_tol ) )
+      end do
+    end do
 
     ! This is no longer needed since clipping is already
     ! imposed on wp2 and wp3 elsewhere in the code
@@ -79,7 +85,7 @@ module Skx_module
 
     return
 
-  end function Skx_func
+  end subroutine Skx_func
 
   !-----------------------------------------------------------------------------
   elemental function LG_2005_ansatz( Skw, wpxp, wp2, &

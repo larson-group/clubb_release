@@ -2470,12 +2470,13 @@ module clubb_driver
       call cpu_time(time_start) ! initialize timer for advance_microphys
 
       ! Calculate Skw_zm for use in advance_microphys.
+      call Skx_func( gr%nz, 1, wp2, zt2zm( gr, wp3 ), &
+                     w_tol, params(iSkw_denom_coef), params(iSkw_max_mag), &
+                     Skw_zm )
+      
       ! This field is smoothed by interpolating to thermodynamic levels and then
       ! interpolating back to momentum levels.
-      Skw_zm &
-      = zt2zm( gr, zm2zt( gr, Skx_func( gr, wp2, zt2zm( gr, wp3 ), w_tol, &
-                                        params(iSkw_denom_coef), &
-                                        params(iSkw_max_mag) ) ) )
+      Skw_zm = zt2zm( gr, zm2zt( gr, Skw_zm ) )
 
       ! Advance predictive microphysics fields one model timestep.
       call advance_microphys( gr, dt_main, time_current, wm_zt, wp2,      & ! In

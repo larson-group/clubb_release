@@ -1131,13 +1131,14 @@ module advance_clubb_core_module
     Skw_denom_coef = clubb_params(iSkw_denom_coef)
     Skw_max_mag = clubb_params(iSkw_max_mag)
 
-    do i = 1, ngrdcol
-      Skw_zt(i,1:nz) = Skx_func( gr(i), wp2_zt(i,1:nz), wp3(i,1:nz), w_tol, &
-                                  Skw_denom_coef, Skw_max_mag )
-      Skw_zm(i,1:nz) = Skx_func( gr(i), wp2(i,1:nz), wp3_zm(i,1:nz), w_tol, &
-                                  Skw_denom_coef, Skw_max_mag )
-    end do
-
+    call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
+                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skw_zt )
+                   
+    call Skx_func( nz, ngrdcol, wp2, wp3_zm, &
+                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skw_zm )
+   
     if ( clubb_config_flags%ipdf_call_placement &
          == ipdf_post_advance_fields ) then
 
@@ -2070,10 +2071,9 @@ module advance_clubb_core_module
 
       ! Use a modified form of the Larson and Golaz (2005) ansatz for the
       ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
-      do i = 1, ngrdcol
-        Skw_zt(i,1:nz) = Skx_func( gr(i), wp2_zt(i,1:nz), wp3(i,1:nz), w_tol, &
-                                   Skw_denom_coef, Skw_max_mag )
-      end do
+      call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
+                     w_tol, Skw_denom_coef, Skw_max_mag, &
+                     Skw_zt )
 
       upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
       vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
@@ -2114,10 +2114,9 @@ module advance_clubb_core_module
     else ! .not. l_advance_xp3 .or. clubb_config_flags%iiPDF_type = iiPDF_ADG1
 
       ! The ADG1 PDF must use this option.
-      do i = 1, ngrdcol
-        Skw_zt(i,1:nz) = Skx_func( gr(i), wp2_zt(i,1:nz), wp3(i,1:nz), w_tol, &
-                                   Skw_denom_coef, Skw_max_mag )
-      end do
+      call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
+                     w_tol, Skw_denom_coef, Skw_max_mag, &
+                     Skw_zt )
 
       wpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
       wprtp_zt(:,:)  = zm2zt( nz, ngrdcol, gr, wprtp(:,:) )
@@ -3037,42 +3036,56 @@ module advance_clubb_core_module
     Skw_denom_coef = clubb_params(iSkw_denom_coef)
     Skw_max_mag = clubb_params(iSkw_max_mag)
 
-    do i = 1, ngrdcol
-      Skw_zt(i,:) = Skx_func( gr(i), wp2_zt(i,:), wp3(i,:), w_tol, &
-                                  Skw_denom_coef, Skw_max_mag )
-      Skw_zm(i,:) = Skx_func( gr(i), wp2(i,:), wp3_zm(i,:), w_tol, &
-                                  Skw_denom_coef, Skw_max_mag )
-
-      Skthl_zt(i,:) = Skx_func( gr(i), thlp2_zt(i,:), thlp3(i,:), &
-                                    thl_tol, Skw_denom_coef, Skw_max_mag )
-      Skthl_zm(i,:) = Skx_func( gr(i), thlp2(i,:), thlp3_zm(i,:), &
-                                    thl_tol, Skw_denom_coef, Skw_max_mag )
-
-      Skrt_zt(i,:) = Skx_func( gr(i), rtp2_zt(i,:), rtp3(i,:), rt_tol, &
-                                   Skw_denom_coef, Skw_max_mag )
-      Skrt_zm(i,:) = Skx_func( gr(i), rtp2(i,:), rtp3_zm(i,:), rt_tol, &
-                                   Skw_denom_coef, Skw_max_mag )
-
-      Sku_zt(i,:) = Skx_func( gr(i), up2_zt(i,:), up3(i,:), w_tol, &
-                                  Skw_denom_coef, Skw_max_mag )
-      Sku_zm(i,:) = Skx_func( gr(i), up2(i,:), up3_zm(i,:), w_tol, &
-                                  Skw_denom_coef, Skw_max_mag )
-
-      Skv_zt(i,:) = Skx_func( gr(i), vp2_zt(i,:), vp3(i,:), w_tol, &
-                                  Skw_denom_coef, Skw_max_mag )
-      Skv_zm(i,:) = Skx_func( gr(i), vp2(i,:), vp3_zm(i,:), w_tol, &
-                                  Skw_denom_coef, Skw_max_mag )
-    end do
+    call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
+                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skw_zt )
+                   
+    call Skx_func( nz, ngrdcol, wp2, wp3_zm, &
+                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skw_zm )    
+                   
+    call Skx_func( nz, ngrdcol, thlp2_zt, thlp3, &
+                   thl_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skthl_zt )  
+                   
+    call Skx_func( nz, ngrdcol, thlp2, thlp3_zm, &
+                   thl_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skthl_zm )  
+                   
+    call Skx_func( nz, ngrdcol, rtp2_zt, rtp3, &
+                   rt_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skrt_zt )   
+                   
+    call Skx_func( nz, ngrdcol, rtp2, rtp3_zm, &
+                   rt_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skrt_zm )   
+                   
+    call Skx_func( nz, ngrdcol, up2_zt, up3, &
+                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   Sku_zt )   
+                                      
+    call Skx_func( nz, ngrdcol, up2, up3_zm, &
+                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   Sku_zm )   
+                   
+    call Skx_func( nz, ngrdcol, vp2_zt, vp3, &
+                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skv_zt )   
+                   
+    call Skx_func( nz, ngrdcol, vp2, vp3_zm, &
+                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   Skv_zm )      
 
     do j = 1, sclr_dim
-      do i = 1, ngrdcol
-         Sksclr_zt(i,:,j) &
-         = Skx_func( gr(i), sclrp2_zt(i,:,j), sclrp3(i,:,j), sclr_tol(j), &
-                     Skw_denom_coef, Skw_max_mag )
-         Sksclr_zm(i,:,j) &
-         = Skx_func( gr(i), sclrp2(i,:,j), sclrp3_zm(i,:,j), sclr_tol(j), &
-                     Skw_denom_coef, Skw_max_mag )
-      end do
+      
+      call Skx_func( nz, ngrdcol, sclrp2_zt(:,:,j), sclrp3(:,:,j), &
+                     sclr_tol(j), Skw_denom_coef, Skw_max_mag, &
+                     Sksclr_zt(:,:,j) )   
+                     
+      call Skx_func( nz, ngrdcol, sclrp2(:,:,j), sclrp3_zm(:,:,j), &
+                     sclr_tol(j), Skw_denom_coef, Skw_max_mag, &
+                     Sksclr_zm(:,:,j) )  
+                      
     end do ! i = 1, sclr_dim, 1
 
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
