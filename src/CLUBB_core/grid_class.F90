@@ -221,7 +221,9 @@ module grid_class
     ! ensured with a max statement.
     ! In the future, we could add a flag (lposdef) and, when needed, apply the
     ! max statement directly within interpolated_azm and interpolated_azmk.
-    module procedure redirect_interpolated_azmk, redirect_interpolated_azm
+    module procedure redirect_interpolated_azm
+    module procedure redirect_interpolated_azmk
+    module procedure redirect_interpolated_azm_2D
   end interface
 
   interface zm2zt
@@ -235,7 +237,9 @@ module grid_class
     ! ensured with a max statement.
     ! In the future, we could add a flag (lposdef) and, when needed, apply the
     ! max statement directly within interpolated_azt and interpolated_aztk.
-    module procedure redirect_interpolated_aztk, redirect_interpolated_azt
+    module procedure redirect_interpolated_azt
+    module procedure redirect_interpolated_aztk
+    module procedure redirect_interpolated_azt_2D
   end interface
 
   interface interp_weights_zt2zm_imp
@@ -1204,6 +1208,65 @@ module grid_class
 
     return
   end function redirect_interpolated_azm
+  
+  !=============================================================================
+  function redirect_interpolated_azm_2D( nz, ngrdcol, gr, azt )
+
+    ! Description:
+    ! Calls the appropriate corresponding function based on l_cubic_temp
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
+
+    use constants_clubb, only: &
+        fstdout ! Variable
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      redirect_interpolated_azm_2D    ! Variable when interp. to momentum levels
+
+    ! Local Variable
+    integer :: i
+      
+    ! ---- Begin Code ----
+
+    ! Sanity Check
+    if (l_quintic_poly_interp) then
+      if (.not. l_cubic_interp) then
+        write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
+                         //"l_cubic_interp is false."
+        error stop
+      end if
+    end if
+
+    ! Redirect
+    if (l_cubic_interp) then
+      do i = 1, ngrdcol
+        redirect_interpolated_azm_2D(i,:) = cubic_interpolated_azm( gr(i), azt(i,:) )
+      end do
+    else
+      redirect_interpolated_azm_2D = linear_interpolated_azm_2D( nz, ngrdcol, gr, azt )
+    end if
+
+    return
+  end function redirect_interpolated_azm_2D
 
   !=============================================================================
   function redirect_interpolated_aztk( gr, azt, k )
@@ -1307,10 +1370,67 @@ module grid_class
 
     return
   end function redirect_interpolated_azt
+  
+  !=============================================================================
+  function redirect_interpolated_azt_2D( nz, ngrdcol, gr, azt )
+
+    ! Description:
+    ! Calls the appropriate corresponding function based on l_cubic_temp
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+        l_cubic_interp, & ! Variable(s)
+        l_quintic_poly_interp
+
+    use constants_clubb, only: &
+        fstdout ! Variable
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      redirect_interpolated_azt_2D    ! Variable when interp. to momentum levels
+
+    ! Local Variable
+    integer :: i
+    
+    ! ---- Begin Code ----
+
+    ! Sanity Check
+    if (l_quintic_poly_interp) then
+      if (.not. l_cubic_interp) then
+        write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
+                         //"l_cubic_interp is false."
+        error stop
+      end if
+    end if
+
+    ! Redirect
+    if (l_cubic_interp) then
+      do i = 1, ngrdcol
+        redirect_interpolated_azt_2D(i,:) = cubic_interpolated_azt( gr(i), azt(i,:) )
+      end do
+    else
+      redirect_interpolated_azt_2D = linear_interpolated_azt_2D( nz, ngrdcol, gr, azt )
+    end if
+
+    return
+  end function redirect_interpolated_azt_2D
 
   !=============================================================================
-
-
   pure function linear_interpolated_azm( gr, azt )
 
     ! Description:
@@ -1366,6 +1486,67 @@ module grid_class
     return
 
   end function linear_interpolated_azm
+  
+  !=============================================================================
+  pure function linear_interpolated_azm_2D( nz, ngrdcol, gr, azt )
+
+    ! Description:
+    ! Function to interpolate a variable located on the thermodynamic grid
+    ! levels (azt) to the momentum grid levels (azm).  This function inputs the
+    ! entire azt array and outputs the results as an azm array.  The
+    ! formulation used is compatible with a stretched (unevenly-spaced) grid.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use interpolation, only: &
+        linear_interp_factor  ! Procedure(s)
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+
+    ! Input Variable
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      linear_interpolated_azm_2D    ! Variable when interp. to momentum levels
+
+    ! Local Variable
+    integer :: i, k  ! Grid level loop index
+
+    ! Interpolate the value of a thermodynamic-level variable to the central
+    ! momentum level, k, between two successive thermodynamic levels using
+    ! linear interpolation.
+    do k = 1, nz-1
+      do i = 1, ngrdcol
+        linear_interpolated_azm_2D(i,k) = gr(i)%weights_zt2zm(1, k) &
+                                          * ( azt(i,k+1) - azt(i,k) ) + azt(i,k)
+      end do
+    end do
+
+    ! Set the value of the thermodynamic-level variable, azt, at the uppermost
+    ! level of the model, which is a momentum level.  The name of the variable
+    ! when interpolated/extended to momentum levels is azm.
+    ! Use a linear extension based on the values of azt at levels gr%nz and
+    ! gr%nz-1 to find the value of azm at level gr%nz (the uppermost level
+    ! in the model).
+    do i = 1, ngrdcol
+      linear_interpolated_azm_2D(i,nz) &
+        = ( ( azt(i,nz) - azt(i,nz-1) ) / ( gr(i)%zt(nz) - gr(i)%zt(nz-1) ) ) & 
+          * ( gr(i)%zm(nz) - gr(i)%zt(nz) ) + azt(i,nz)
+    end do
+
+    return
+
+  end function linear_interpolated_azm_2D
 
   !=============================================================================
   pure function linear_interpolated_azmk( gr, azt, k )
@@ -1808,6 +1989,68 @@ module grid_class
     return
 
   end function linear_interpolated_azt
+  
+  !=============================================================================
+  pure function linear_interpolated_azt_2D( nz, ngrdcol, gr, azm )
+
+    ! Description:
+    ! Function to interpolate a variable located on the momentum grid levels
+    ! (azm) to the thermodynamic grid levels (azt).  This function inputs the
+    ! entire azm array and outputs the results as an azt array.  The formulation
+    ! used is compatible with a stretched (unevenly-spaced) grid.
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use interpolation, only: &
+        linear_interp_factor  ! Procedure(s)
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+
+    ! Input Variable
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azm    ! Variable on momentum grid levels    [units vary]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      linear_interpolated_azt_2D    ! Variable when interp. to thermodynamic levels
+
+    ! Local Variable
+    integer :: i, k  ! Grid level loop index
+
+
+    ! Set the value of the momentum-level variable, azm, at the lowermost level
+    ! of the model (below the model lower boundary), which is a thermodynamic
+    ! level.  The name of the variable when interpolated/extended to
+    ! thermodynamic levels is azt.
+    ! Use a linear extension based on the values of azm at levels 1 and 2 to
+    ! find the value of azt at level 1 (the lowermost level in the model).
+    do i = 1, ngrdcol
+      linear_interpolated_azt_2D(i,1) &
+        = ( ( azm(i,2) - azm(i,1) ) / ( gr(i)%zm(2) - gr(i)%zm(1) ) ) & 
+          * ( gr(i)%zt(1) - gr(i)%zm(1) ) + azm(i,1)
+    end do
+
+    ! Interpolate the value of a momentum-level variable to the central
+    ! thermodynamic level, k, between two successive momentum levels using
+    ! linear interpolation.
+    do k = 2, nz
+      do i = 1, ngrdcol
+        linear_interpolated_azt_2D(i,k) = gr(i)%weights_zm2zt(1, k) &
+                                          * ( azm(i,k) - azm(i,k-1) ) + azm(i,k-1)
+      end do
+    end do
+
+    return
+
+  end function linear_interpolated_azt_2D
 
   !=============================================================================
   pure function linear_interpolated_aztk( gr, azm, k )
