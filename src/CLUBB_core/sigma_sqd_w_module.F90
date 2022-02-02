@@ -210,7 +210,7 @@ module sigma_sqd_w_module
     upwp_col(1,:) = upwp(:)
     vpwp_col(1,:) = vpwp(:)
     
-    call compute_sigma_sqd_w( 1, nz, &
+    call compute_sigma_sqd_w( nz, 1, &
                               gamma_Skw_fnc_col, wp2_col, thlp2_col, rtp2_col, &
                               up2_col, vp2_col, wpthlp_col, wprtp_col, upwp_col, vpwp_col, &
                               l_predict_upwp_vpwp, &
