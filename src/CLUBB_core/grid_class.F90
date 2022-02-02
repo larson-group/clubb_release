@@ -254,10 +254,12 @@ module grid_class
   ! Vertical derivative functions
   interface ddzm
     module procedure gradzm
+    module procedure gradzm_2D
   end interface
 
   interface ddzt
     module procedure gradzt
+    module procedure gradzt_2D
   end interface
 
   contains
@@ -2506,6 +2508,49 @@ module grid_class
     return
 
   end function gradzm
+  
+  !=============================================================================
+  pure function gradzm_2D( nz, ngrdcol, gr, azm )
+
+    ! Description:
+    !  2D version of gradzm
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+
+    ! Input Variable
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azm    ! Variable on momentum grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      gradzm_2D    ! Vertical derivative of azm    [units vary / m]
+
+    ! Local Variable
+    integer :: i, k  ! Grid level loop index
+    
+    do i = 1, ngrdcol
+      gradzm_2D(i,1) = ( azm(i,2) - azm(i,1) ) * gr(i)%invrs_dzt(2)
+    end do
+
+    do k = 2, nz
+      do i = 1, ngrdcol
+        gradzm_2D(i,k) = ( azm(i,k) - azm(i,k-1) ) * gr(i)%invrs_dzt(k)
+      end do
+    end do
+
+    return
+
+  end function gradzm_2D
 
   !=============================================================================
   pure function gradzt( gr, azt )
@@ -2568,6 +2613,49 @@ module grid_class
     return
 
   end function gradzt
+  
+  !=============================================================================
+  pure function gradzt_2D( nz, ngrdcol, gr, azt )
+
+    ! Description:
+    !  2D version of gradzt
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+
+    ! Input Variable
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      gradzt_2D    ! Vertical derivative of azt    [units vary / m]
+
+    ! Local Variable
+    integer :: i, k  ! Grid level loop index
+
+    do i = 1, ngrdcol
+      gradzt_2D(i,nz) = ( azt(i,nz) - azt(i,nz-1) ) * gr(i)%invrs_dzm(nz-1)
+    end do
+    
+    do k = 1, nz-1
+      do i = 1, ngrdcol
+        gradzt_2D(i,k) = ( azt(i,k+1) - azt(i,k) ) * gr(i)%invrs_dzm(k)
+      end do
+    end do
+
+    return
+
+  end function gradzt_2D
 
   !=============================================================================
   pure function flip( x, xdim )

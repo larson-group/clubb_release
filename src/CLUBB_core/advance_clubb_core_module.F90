@@ -867,10 +867,8 @@ module advance_clubb_core_module
     err_code_out = clubb_no_error  ! Initialize to no error value
 
     ! Determine the maximum allowable value for Lscale (in meters).
-    do i = 1, ngrdcol
-      call set_Lscale_max( l_implemented, host_dx(i), host_dy(i), & ! intent(in)
-                           Lscale_max(i) )                       ! intent(out)
-    end do
+    call set_Lscale_max( ngrdcol, l_implemented, host_dx, host_dy, & ! intent(in)
+                         Lscale_max )                                   ! intent(out)
 
     if ( l_stats .and. l_stats_samp ) then
       ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
@@ -1166,12 +1164,11 @@ module advance_clubb_core_module
       endif
 
       ! Compute sigma_sqd_w (dimensionless PDF width parameter)
-      do i = 1, ngrdcol
-        sigma_sqd_w(i,:) &
-         = compute_sigma_sqd_w( gamma_Skw_fnc(i,:), wp2(i,:), thlp2(i,:), rtp2(i,:), &
-                                up2(i,:), vp2(i,:), wpthlp(i,:), wprtp(i,:), upwp(i,:), vpwp(i,:), &
-                                clubb_config_flags%l_predict_upwp_vpwp )
-      end do
+      call compute_sigma_sqd_w( nz, ngrdcol, &
+                                gamma_Skw_fnc, wp2, thlp2, rtp2, &
+                                up2, vp2, wpthlp, wprtp, upwp, vpwp, &
+                                clubb_config_flags%l_predict_upwp_vpwp, &
+                                sigma_sqd_w )
 
       ! Smooth in the vertical using interpolation
       sigma_sqd_w(:,:) = zt2zm( nz, ngrdcol, gr, zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:) ) )
@@ -1241,10 +1238,7 @@ module advance_clubb_core_module
     !----------------------------------------------------------------
     ! Compute thvm
     !----------------------------------------------------------------
-    do i = 1, ngrdcol
-      thvm(i,:) = calculate_thvm( thlm(i,:), rtm(i,:), rcm(i,:), exner(i,:), thv_ds_zt(i,:) )
-    end do
-
+    thvm = calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt )
 
     !----------------------------------------------------------------
     ! Compute tke (turbulent kinetic energy)
@@ -1385,22 +1379,17 @@ module advance_clubb_core_module
     end do
     
     Kh_zm(:,:) = c_K * max( zt2zm( nz, ngrdcol, gr, Lscale(:,:) ), zero_threshold )  &
-                * sqrt( max( em(:,:), em_min ) )
-
+                 * sqrt( max( em(:,:), em_min ) )
 
     ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
-    do i = 1, ngrdcol
-      call term_wp2_splat( gr(i), clubb_params(iC_wp2_splat), nz, & ! Intent(in)
-                           dt, wp2(i,:), wp2_zt(i,:), tau_zm(i,:),               & ! Intent(in)
-                           wp2_splat(i,:) )                                ! Intent(out)
-    end do
+    call term_wp2_splat( nz, ngrdcol, gr, clubb_params(iC_wp2_splat), dt, & ! Intent(in)
+                         wp2, wp2_zt, tau_zm,                             & ! Intent(in)
+                         wp2_splat )                                        ! Intent(out)
                            
     ! Vertical compression of eddies also diminishes w'3
-    do i = 1, ngrdcol
-      call term_wp3_splat( gr(i), clubb_params(iC_wp2_splat), nz, & ! Intent(in)
-                           dt, wp2(i,:), wp3(i,:), tau_zt(i,:),                  & ! Intent(in)
-                           wp3_splat(i,:) )                              ! Intent(out)
-    end do
+    call term_wp3_splat( nz, ngrdcol, gr, clubb_params(iC_wp2_splat), dt, & ! Intent(in)
+                         wp2, wp3, tau_zt,                                & ! Intent(in)
+                         wp3_splat )                                        ! Intent(out)
     
     !----------------------------------------------------------------
     ! Set Surface variances
@@ -1612,13 +1601,13 @@ module advance_clubb_core_module
     if ( .not. l_use_invrs_tau_N2_iso ) then
       do k = 1, nz
         do i = 1, ngrdcol
-          invrs_tau_C4_zm(i,:) = invrs_tau_wp2_zm(i,:)
+          invrs_tau_C4_zm(i,k) = invrs_tau_wp2_zm(i,k)
         end do
       end do
     else
       do k = 1, nz
         do i = 1, ngrdcol
-          invrs_tau_C4_zm(i,:) = invrs_tau_N2_iso(i,:)
+          invrs_tau_C4_zm(i,k) = invrs_tau_N2_iso(i,k)
         end do
       end do
     end if
@@ -1658,17 +1647,17 @@ module advance_clubb_core_module
     ! otherwise its value is irrelevant, set it to 0 to avoid NaN problems
     if ( clubb_config_flags%l_use_C7_Richardson .or. &
          clubb_config_flags%l_use_C11_Richardson ) then
-      do i = 1, ngrdcol
-        call compute_Cx_Fnc_Richardson( gr(i), thlm(i,:), um(i,:), vm(i,:), em(i,:), Lscale(i,:), exner(i,:), rtm(i,:),      & ! intent(in)
-                                        rcm(i,:), p_in_Pa(i,:), thvm(i,:), rho_ds_zm(i,:),                 & ! intent(in)
-                                        ice_supersat_frac(i,:),                             & ! intent(in)
-                                        clubb_params,                                  & ! intent(in)
-                                        clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
-                                        clubb_config_flags%l_use_thvm_in_bv_freq,      & ! intent(in
-                                        clubb_config_flags%l_use_shear_Richardson,     & ! intent(in)
-                                        stats_zm(i), & ! intent(inout)
-                                        Cx_fnc_Richardson(i,:) )                             ! intent(out)
-      end do
+         
+      call compute_Cx_Fnc_Richardson( nz, ngrdcol, gr,                               & ! intent(in)
+                                      thlm, um, vm, em, Lscale, exner, rtm,          & ! intent(in)
+                                      rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
+                                      ice_supersat_frac,                             & ! intent(in)
+                                      clubb_params,                                  & ! intent(in)
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
+                                      clubb_config_flags%l_use_thvm_in_bv_freq,      & ! intent(in
+                                      clubb_config_flags%l_use_shear_Richardson,     & ! intent(in)
+                                      stats_zm,                                      & ! intent(inout)
+                                      Cx_fnc_Richardson )                              ! intent(out)
     else
       do k = 1, nz
         do i = 1, ngrdcol
@@ -3141,11 +3130,11 @@ module advance_clubb_core_module
     end if
 
     ! Compute sigma_sqd_w (dimensionless PDF width parameter)
-    do i = 1, ngrdcol
-      sigma_sqd_w(i,:) = compute_sigma_sqd_w( gamma_Skw_fnc(i,:), wp2(i,:), thlp2(i,:), rtp2(i,:), &
-                                         up2(i,:), vp2(i,:), wpthlp(i,:), wprtp(i,:), upwp(i,:), vpwp(i,:), &
-                                         l_predict_upwp_vpwp )
-    end do
+    call compute_sigma_sqd_w( nz, ngrdcol, &
+                              gamma_Skw_fnc, wp2, thlp2, rtp2, &
+                              up2, vp2, wpthlp, wprtp, upwp, vpwp, &
+                              l_predict_upwp_vpwp, &
+                              sigma_sqd_w )
 
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       do i = 1, ngrdcol
@@ -4760,7 +4749,7 @@ module advance_clubb_core_module
     end subroutine clip_rcm
 
     !-----------------------------------------------------------------------------
-    subroutine set_Lscale_max( l_implemented, host_dx, host_dy, &
+    subroutine set_Lscale_max( ngrdcol, l_implemented, host_dx, host_dy, &
                                Lscale_max )
 
       ! Description:
@@ -4786,25 +4775,35 @@ module advance_clubb_core_module
       implicit none
 
       ! Input Variables
+      integer, intent(in) :: &
+        ngrdcol
+      
       logical, intent(in) :: &
         l_implemented    ! Flag to see if CLUBB is running on it's own,
       !                    or if it's implemented as part of a host model.
 
-      real( kind = core_rknd ), intent(in) :: &
+      real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
         host_dx, & ! Host model's east-west horizontal grid spacing     [m]
         host_dy    ! Host model's north-south horizontal grid spacing   [m]
 
       ! Output Variable
-      real( kind = core_rknd ), intent(out) :: &
+      real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
         Lscale_max    ! Maximum allowable value for Lscale   [m]
+
+      ! Local Variable
+      integer :: i
 
       ! ---- Begin Code ----
 
       ! Determine the maximum allowable value for Lscale (in meters).
       if ( l_implemented ) then
-        Lscale_max = 0.25_core_rknd * min( host_dx, host_dy )
+        do i = 1, ngrdcol
+          Lscale_max(i) = 0.25_core_rknd * min( host_dx(i), host_dy(i) )
+        end do
       else
-        Lscale_max = 1.0e5_core_rknd
+        do i = 1, ngrdcol
+          Lscale_max(i) = 1.0e5_core_rknd
+        end do
       end if
 
       return

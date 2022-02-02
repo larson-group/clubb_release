@@ -490,7 +490,8 @@ module advance_helper_module
   end subroutine calc_brunt_vaisala_freq_sqd
 
 !===============================================================================
-  subroutine compute_Cx_fnc_Richardson( gr, thlm, um, vm, em, Lscale, exner, rtm, &
+  subroutine compute_Cx_fnc_Richardson( nz, ngrdcol, gr, &
+                                        thlm, um, vm, em, Lscale, exner, rtm, &
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
                                         ice_supersat_frac, &
                                         clubb_params, &
@@ -516,7 +517,6 @@ module advance_helper_module
         zt2zm
 
     use constants_clubb, only: &
-!      one_third,  & ! Constant(s)
         one, zero
 
     use interpolation, only: &
@@ -540,11 +540,15 @@ module advance_helper_module
     use stats_type, only: stats ! Type
 
     implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    type (stats), target, intent(inout) :: &
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
     ! Constant Parameters
     real( kind = core_rknd ), parameter :: &
@@ -560,7 +564,7 @@ module advance_helper_module
                                          !  Richardson_num
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       thlm,      & ! th_l (liquid water potential temperature)      [K]
       um,        & ! u mean wind component (thermodynamic levels)   [m/s]
       vm,        & ! v mean wind component (thermodynamic levels)   [m/s]
@@ -584,11 +588,11 @@ module advance_helper_module
       l_use_shear_Richardson        ! Use shear in the calculation of Richardson number
 
     ! Output Variable
-    real( kind = core_rknd), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd), dimension(ngrdcol,nz), intent(out) :: &
       Cx_fnc_Richardson
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       brunt_vaisala_freq_sqd, &
       brunt_vaisala_freq_sqd_mixed,&
       brunt_vaisala_freq_sqd_dry, &
@@ -601,27 +605,32 @@ module advance_helper_module
       turb_freq_sqd, &
       Lscale_zm
 
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
-        invrs_min_max_diff, &
-        invrs_num_div_thresh
+    real ( kind = core_rknd ) :: &
+      invrs_min_max_diff, &
+      invrs_num_div_thresh
 
     real( kind = core_rknd ) :: &
       Richardson_num_max, & ! CLUBB tunable parameter Richardson_num_max
       Richardson_num_min    ! CLUBB tunable parameter Richardson_num_min
+      
+    integer :: i
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
+    
+    do i = 1, ngrdcol 
 
-    call calc_brunt_vaisala_freq_sqd( gr, thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
-                                      ice_supersat_frac, &                    ! intent(in)
-                                      l_brunt_vaisala_freq_moist, &           ! intent(in)
-                                      l_use_thvm_in_bv_freq, &                ! intent(in)
-                                      brunt_vaisala_freq_sqd, &               ! intent(out)
-                                      brunt_vaisala_freq_sqd_mixed,&          ! intent(out)
-                                      brunt_vaisala_freq_sqd_dry, &           ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist, &         ! intent(out)
-                                      brunt_vaisala_freq_sqd_plus )           ! intent(out)
+      call calc_brunt_vaisala_freq_sqd( gr(i), thlm(i,:), exner(i,:), rtm(i,:), rcm(i,:), p_in_Pa(i,:), thvm(i,:), & ! intent(in)
+                                        ice_supersat_frac(i,:), &                    ! intent(in)
+                                        l_brunt_vaisala_freq_moist, &           ! intent(in)
+                                        l_use_thvm_in_bv_freq, &                ! intent(in)
+                                        brunt_vaisala_freq_sqd(i,:), &               ! intent(out)
+                                        brunt_vaisala_freq_sqd_mixed(i,:),&          ! intent(out)
+                                        brunt_vaisala_freq_sqd_dry(i,:), &           ! intent(out)
+                                        brunt_vaisala_freq_sqd_moist(i,:), &         ! intent(out)
+                                        brunt_vaisala_freq_sqd_plus(i,:) )           ! intent(out)
+    end do
 
     Richardson_num_max = clubb_params(iRichardson_num_max)
     Richardson_num_min = clubb_params(iRichardson_num_min)
@@ -629,28 +638,33 @@ module advance_helper_module
     invrs_min_max_diff = one / ( Richardson_num_max - Richardson_num_min )
     invrs_num_div_thresh = one / Richardson_num_divisor_threshold
 
-    Lscale_zm = zt2zm( gr, Lscale )
+    Lscale_zm = zt2zm( nz, ngrdcol, gr, Lscale )
 
     if ( l_use_shear_turb_freq_sqd ) then
       ! Calculate shear_sqd
-      dum_dz = ddzt( gr, um )
-      dvm_dz = ddzt( gr, vm )
+      dum_dz = ddzt( nz, ngrdcol, gr, um )
+      dvm_dz = ddzt( nz, ngrdcol, gr, vm )
       shear_sqd = dum_dz**2 + dvm_dz**2
 
       turb_freq_sqd = em / Lscale_zm**2
       Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
                                                      Richardson_num_divisor_threshold )
 
-      if ( l_stats_samp ) &
-        call stat_update_var( ishear_sqd, shear_sqd, & ! intent(in)
-                              stats_zm )               ! intent(inout)
+      if ( l_stats_samp ) then
+        do i = 1, ngrdcol
+          call stat_update_var( ishear_sqd, shear_sqd(i,:), & ! intent(in)
+                                stats_zm(i) )               ! intent(inout)
+        end do
+      end if
+      
     else
 
       if ( l_use_shear_Richardson ) then
          Richardson_num = brunt_vaisala_freq_sqd_mixed * invrs_num_div_thresh
          Ri_zm &
          = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed ) &
-           / max( ( ddzt( gr, um)**2 + ddzt( gr, vm )**2 ), 1.0e-7_core_rknd )
+           / max( ( ddzt( nz, ngrdcol, gr, um)**2 &
+                    + ddzt( nz, ngrdcol, gr, vm )**2 ), 1.0e-7_core_rknd )
       else
          Richardson_num = brunt_vaisala_freq_sqd * invrs_num_div_thresh
          Ri_zm = Richardson_num
@@ -662,8 +676,10 @@ module advance_helper_module
       ! Clip below-min values of Richardson_num
       Richardson_num = max( Richardson_num, Richardson_num_min )
 
-      Richardson_num = Lscale_width_vert_avg( gr, Richardson_num, Lscale_zm, rho_ds_zm, &
-                                              Richardson_num_max )
+      do i = 1, ngrdcol
+        Richardson_num(i,:) = Lscale_width_vert_avg( gr(i), Richardson_num(i,:), Lscale_zm(i,:), rho_ds_zm(i,:), &
+                                                Richardson_num_max )
+      end do
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
@@ -675,8 +691,10 @@ module advance_helper_module
                                               clubb_params(iCx_max), clubb_params(iCx_min) )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
-      Cx_fnc_Richardson = Lscale_width_vert_avg( gr, Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
-                                                 Cx_fnc_Richardson_below_ground_value )
+      do i = 1, ngrdcol
+        Cx_fnc_Richardson(i,:) = Lscale_width_vert_avg( gr(i), Cx_fnc_Richardson(i,:), Lscale_zm(i,:), rho_ds_zm(i,:), &
+                                                   Cx_fnc_Richardson_below_ground_value )
+      end do
     end if
 
     ! On some compilers, roundoff error can result in Cx_fnc_Richardson being
@@ -685,8 +703,10 @@ module advance_helper_module
 
     ! Stats sampling
     if ( l_stats_samp ) then
-      call stat_update_var( iRichardson_num, Richardson_num, & ! intent(in)
-                            stats_zm )                         ! intent(inout)
+      do i = 1, ngrdcol
+        call stat_update_var( iRichardson_num, Richardson_num(i,:), & ! intent(in)
+                              stats_zm(i) )                      ! intent(inout)
+      end do
     end if
 
   end subroutine compute_Cx_fnc_Richardson
@@ -866,7 +886,8 @@ module advance_helper_module
   end function Lscale_width_vert_avg
 
  !============================================================================
-  subroutine term_wp2_splat( gr, C_wp2_splat, nz, dt, wp2, wp2_zt, tau_zm, &
+  subroutine term_wp2_splat( nz, ngrdcol, gr, C_wp2_splat, dt, &
+                             wp2, wp2_zt, tau_zm, &
                              wp2_splat )
 
 
@@ -891,44 +912,53 @@ module advance_helper_module
         five  ! Constant(s)
 
     implicit none 
-
-    type(grid), target, intent(in) :: gr
-
+    
     ! Input Variables
-    integer, intent(in) :: & 
-      nz          ! Number of vertical levels                    [-]
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+      
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: & 
       C_wp2_splat, &          ! Tuning parameter                    [-]
       dt                      ! CLUBB computational time step       [s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
       wp2_zt,  &  ! Variance of vertical velocity on the thermodynamic grid [m^2/s^2]
       tau_zm     ! Turbulent time scale on the momentum grid               [s]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: & 
       wp2_splat     ! Tendency of <w'^2> due to splatting of eddies (on zm grid) [m^2/s^3]
 
     ! Local Variable
-    real( kind = core_rknd ), dimension(nz) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
       d_sqrt_wp2_dz    ! d/dz( sqrt( w'2 ) )                 [1/s]
+
+    integer :: i, k
 
     ! ---- Begin Code ----
 
-    d_sqrt_wp2_dz = ddzt( gr, sqrt( wp2_zt ) )
+    d_sqrt_wp2_dz(:,:) = ddzt( nz, ngrdcol, gr, sqrt( wp2_zt ) )
+    
     ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
     !   value of wp2 itself.  This prevents spikes in wp2 from being propagated to up2 and vp2.
     !   However, it does introduce undesired dependence on the time step.
     !   Someday we may wish to treat this term using a semi-implicit discretization.
-    wp2_splat = - wp2 * min( five/dt, C_wp2_splat * tau_zm * d_sqrt_wp2_dz**2 )
-    !wp2_splat = - C_wp2_splat * wp2 * 900.0_core_rknd * d_sqrt_wp2_dz**2
+    do k = 1, nz
+      do i = 1, ngrdcol
+        wp2_splat(i,k) = - wp2(i,k) * min( five/dt, C_wp2_splat * tau_zm(i,k) &
+                                                    * d_sqrt_wp2_dz(i,k)**2 )
+      end do
+    end do
 
   end subroutine term_wp2_splat
 
   !============================================================================
-  subroutine term_wp3_splat( gr, C_wp2_splat, nz, dt, wp2, wp3, tau_zt, &
+  subroutine term_wp3_splat( nz, ngrdcol, gr, C_wp2_splat, dt, &
+                             wp2, wp3, tau_zt, &
                              wp3_splat )
 
   ! Description:
@@ -957,37 +987,46 @@ module advance_helper_module
 
     implicit none
    
-    type(grid), target, intent(in) :: gr 
-
     ! Input Variables
-    integer, intent(in) :: & 
-      nz          ! Number of vertical levels                    [-]
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+      
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: & 
       C_wp2_splat, &          ! Tuning parameter                    [-]
       dt                      ! CLUBB computational time step       [s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
       wp3,     &  ! Third moment of vertical velocity on the momentum grid [m^3/s^3]
       tau_zt      ! Turbulent time scale on the thermal grid               [s]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: & 
       wp3_splat     ! Tendency of <w'^3> due to splatting of eddies (on zt grid) [m^3/s^4]
 
     ! Local Variable
-    real( kind = core_rknd ), dimension(nz) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
       d_sqrt_wp2_dz    ! d/dz( sqrt( w'2 ) )                 [1/s]
+      
+    integer :: i, k
 
     ! ---- Begin Code ----
 
-    d_sqrt_wp2_dz = ddzm( gr, sqrt( wp2 ) )
+    d_sqrt_wp2_dz(:,:) = ddzm( nz, ngrdcol, gr, sqrt( wp2 ) )
+    
     ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
     ! value of wp3 itself. Someday we may wish to treat this term using a semi-implicit 
     ! discretization.
-    wp3_splat = - wp3 * min( five/dt, three * C_wp2_splat * tau_zt * d_sqrt_wp2_dz**2 )
-    !wp3_splat = - three * C_wp2_splat * wp3 * 900._core_rknd * d_sqrt_wp2_dz**2
+    do k = 1, nz
+      do i = 1, ngrdcol
+        wp3_splat(i,k) = - wp3(i,k) &
+                           * min( five/dt, three * C_wp2_splat * tau_zt(i,k) &
+                                           * d_sqrt_wp2_dz(i,k)**2 )
+      end do
+    end do
 
   end subroutine term_wp3_splat
 
