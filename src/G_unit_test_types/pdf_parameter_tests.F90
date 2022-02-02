@@ -1589,10 +1589,11 @@ module pdf_parameter_tests
              gamma_Skw_fnc = gamma_coef
           endif
 
-          sigma_sqd_w &
-          = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, &
-                                 up2, vp2, wpthlp, wprtp, upwp, vpwp, &
-                                 l_predict_upwp_vpwp )
+          call compute_sigma_sqd_w( nz, &
+                                    gamma_Skw_fnc, wp2, thlp2, rtp2, &
+                                    up2, vp2, wpthlp, wprtp, upwp, vpwp, &
+                                    l_predict_upwp_vpwp, &
+                                    sigma_sqd_w )
 
           call ADG1_pdf_driver( gr%nz, 1,                                & ! In 
                                 wm, rtm, thlm, um, vm,                   & ! In 
