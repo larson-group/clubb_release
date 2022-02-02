@@ -295,18 +295,60 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_moist, &
       brunt_vaisala_freq_sqd_plus, &
       lambda0_stability
+      
+    ! Locals
+    type (grid), target, dimension(1) :: gr_col
+    
+    ! Input Variables
+    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+      Lscale_col,          & ! Turbulent mixing length                   [m]
+      em_col,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
+      thlm_col,            & ! th_l (thermo. levels)                     [K]
+      exner_col,           & ! Exner function                            [-]
+      rtm_col,             & ! total water mixing ratio, r_t             [kg/kg]
+      rcm_col,             & ! cloud water mixing ratio, r_c             [kg/kg]
+      p_in_Pa_col,         & ! Air pressure                              [Pa]
+      thvm_col,            & ! Virtual potential temperature             [K]
+      ice_supersat_frac_col
+      
+    ! Result
+    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+      stability_correction_col
+
+    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+      brunt_vaisala_freq_sqd_col, & !  []
+      brunt_vaisala_freq_sqd_mixed_col, &
+      brunt_vaisala_freq_sqd_dry_col, & !  []
+      brunt_vaisala_freq_sqd_moist_col, &
+      brunt_vaisala_freq_sqd_plus_col, &
+      lambda0_stability_col
 
     !------------ Begin Code --------------
-    call calc_brunt_vaisala_freq_sqd( gr, thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
-                                      ice_supersat_frac, &                     ! intent(in)
-                                      l_brunt_vaisala_freq_moist, &            ! intent(in)
-                                      l_use_thvm_in_bv_freq, &                 ! intent(in)
-                                      brunt_vaisala_freq_sqd, &                ! intent(out)
-                                      brunt_vaisala_freq_sqd_mixed,&           ! intent(out)
-                                      brunt_vaisala_freq_sqd_dry, &            ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist, &          ! intent(out)
-                                      brunt_vaisala_freq_sqd_plus )            ! intent(out)
+    gr_col(1) = gr
+    thlm_col(1,:) = thlm
+    exner_col(1,:) = exner
+    rtm_col(1,:) = rtm
+    rcm_col(1,:) = rcm
+    p_in_Pa_col (1,:) = p_in_Pa
+    thvm_col(1,:) = thvm
+    ice_supersat_frac_col(1,:) = ice_supersat_frac
+    
+    call calc_brunt_vaisala_freq_sqd( gr%nz, 1, gr_col, thlm_col, &          ! intent(in)
+                                      exner_col, rtm_col, rcm_col, p_in_Pa_col, thvm_col, & ! intent(in)
+                                      ice_supersat_frac_col, &              ! intent(in)
+                                      l_brunt_vaisala_freq_moist, &     ! intent(in)
+                                      l_use_thvm_in_bv_freq, &          ! intent(in)
+                                      brunt_vaisala_freq_sqd_col, &         ! intent(out)
+                                      brunt_vaisala_freq_sqd_mixed_col,&    ! intent(out)
+                                      brunt_vaisala_freq_sqd_dry_col, &     ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist_col, &   ! intent(out)
+                                      brunt_vaisala_freq_sqd_plus_col )     ! intent(out)
  
+   brunt_vaisala_freq_sqd = brunt_vaisala_freq_sqd_col(1,:)
+   brunt_vaisala_freq_sqd_mixed = brunt_vaisala_freq_sqd_mixed_col(1,:)
+   brunt_vaisala_freq_sqd_dry = brunt_vaisala_freq_sqd_dry_col(1,:)
+   brunt_vaisala_freq_sqd_moist = brunt_vaisala_freq_sqd_moist_col(1,:)
+   brunt_vaisala_freq_sqd_plus = brunt_vaisala_freq_sqd_plus_col(1,:)
 
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
@@ -317,7 +359,7 @@ module advance_helper_module
   end function calc_stability_correction
 
   !===============================================================================
-  subroutine calc_brunt_vaisala_freq_sqd(  gr, thlm, &
+  subroutine calc_brunt_vaisala_freq_sqd(  nz, ngrdcol, gr, thlm, &
                                            exner, rtm, rcm, p_in_Pa, thvm, &
                                            ice_supersat_frac, &
                                            l_brunt_vaisala_freq_moist, &
@@ -358,11 +400,15 @@ module advance_helper_module
         sat_mixrat_liq ! Procedure
 
     implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       thlm,    &  ! th_l (thermo. levels)              [K]
       exner,   &  ! Exner function                     [-]
       rtm,     &  ! total water mixing ratio, r_t      [kg/kg]
@@ -377,7 +423,7 @@ module advance_helper_module
       l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry,&
@@ -385,101 +431,111 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_plus
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
       ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       stat_dry, stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, &
       stat_dry_virtual, stat_dry_virtual_zm,  ddzt_rtm_zm
 
 
-    integer :: k
+    integer :: i, k
 
   !---------------------------------------------------------------------
     !----- Begin Code -----
-    ddzt_thlm = ddzt( gr, thlm )
-    thvm_zm = zt2zm( gr, thvm )
-    ddzt_thvm = ddzt( gr, thvm )
+    ddzt_thlm = ddzt( nz, ngrdcol, gr, thlm )
+    thvm_zm = zt2zm( nz, ngrdcol, gr, thvm )
+    ddzt_thvm = ddzt( nz, ngrdcol, gr, thvm )
 
     if ( .not. l_brunt_vaisala_freq_moist ) then
 
         ! Dry Brunt-Vaisala frequency
         if ( l_use_thvm_in_bv_freq ) then
 
-          brunt_vaisala_freq_sqd(:) = ( grav / thvm_zm(:) ) * ddzt_thvm(:)
+          brunt_vaisala_freq_sqd(:,:) = ( grav / thvm_zm(:,:) ) * ddzt_thvm(:,:)
 
         else
 
-          brunt_vaisala_freq_sqd(:) = ( grav / T0 ) * ddzt_thlm(:)
+          brunt_vaisala_freq_sqd(:,:) = ( grav / T0 ) * ddzt_thlm(:,:)
 
         end if
 
         T_in_K = thlm2T_in_K( thlm, exner, rcm )
-        T_in_K_zm = zt2zm( gr, T_in_K )
-
+        T_in_K_zm = zt2zm( nz, ngrdcol, gr, T_in_K )
         rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
-        rsat_zm = zt2zm( gr, rsat )
-        ddzt_rsat = ddzt( gr, rsat )
+        rsat_zm = zt2zm( nz, ngrdcol, gr, rsat )
+        ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
         thm = thlm + Lv/(Cp*exner) * rcm
-        thm_zm = zt2zm( gr, thm )
-        ddzt_thm = ddzt( gr, thm )
-        ddzt_rtm = ddzt( gr, rtm )
+        thm_zm = zt2zm( nz, ngrdcol, gr, thm )
+        ddzt_thm = ddzt( nz, ngrdcol, gr, thm )
+        ddzt_rtm = ddzt( nz, ngrdcol, gr, rtm )
 
-        stat_dry  =  Cp * T_in_K + grav * gr%zt
+        do k = 1, nz
+          do i = 1, ngrdcol
+            stat_dry(i,k)  =  Cp * T_in_K(i,k) + grav * gr(i)%zt(k)
+          end do
+        end do
+        
         stat_liq  =  stat_dry -Lv * rcm
-        ddzt_stat_liq       = ddzt( gr, stat_liq )
-        ddzt_stat_liq_zm    = zt2zm( gr, ddzt_stat_liq)
+        ddzt_stat_liq       = ddzt( nz, ngrdcol, gr, stat_liq )
+        ddzt_stat_liq_zm    = zt2zm( nz, ngrdcol, gr, ddzt_stat_liq)
         stat_dry_virtual    = stat_dry + Cp * T_in_K *(0.608*(rtm-rcm)- rcm)
-        stat_dry_virtual_zm = zt2zm( gr, stat_dry_virtual)
-        ddzt_rtm_zm         = zt2zm( gr, ddzt_rtm )
+        stat_dry_virtual_zm = zt2zm( nz, ngrdcol, gr, stat_dry_virtual)
+        ddzt_rtm_zm         = zt2zm( nz, ngrdcol, gr, ddzt_rtm )
 
-         brunt_vaisala_freq_sqd_dry(:) = ( grav / thm_zm)* ddzt_thm(:)
+        brunt_vaisala_freq_sqd_dry = ( grav / thm_zm)* ddzt_thm
 
-        do k=1, gr%nz
-          brunt_vaisala_freq_sqd_plus(k) = grav/stat_dry_virtual (k) * &
-          ( (ice_supersat_frac(k) * 0.5 + (1- ice_supersat_frac(k))) * ddzt_stat_liq_zm (k) + &
-            (ice_supersat_frac(k) * Lv  - (1- ice_supersat_frac(k)) *0.608*Cp)* ddzt_rtm_zm(k) )
+        do k=1, nz
+          do i = 1, ngrdcol
+            brunt_vaisala_freq_sqd_plus(i,k) = grav/stat_dry_virtual(i,k) &
+                      * ( ( ice_supersat_frac(i,k) * 0.5 + (1-ice_supersat_frac(i,k))) &
+                          * ddzt_stat_liq_zm(i,k) &
+                          + ( ice_supersat_frac(i,k) * Lv - (1-ice_supersat_frac(i,k)) *0.608*Cp) &
+                            * ddzt_rtm_zm(i,k) )
+          end do
         end do ! k=1, gr%nz
 
-        do k=1, gr%nz
-
+        do k=1, nz
+          do i = 1, ngrdcol
             ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
             ! Klemp (1982)
-            brunt_vaisala_freq_sqd_moist(k) = &
-              grav * ( ((one + Lv*rsat_zm(k) / (Rd*T_in_K_zm(k))) / &
-              (one + ep*(Lv**2)*rsat_zm(k)/(Cp*Rd*T_in_K_zm(k)**2))) * &
-              ( (one/thm_zm(k) * ddzt_thm(k)) + (Lv/(Cp*T_in_K_zm(k)))*ddzt_rsat(k)) - &
-              ddzt_rtm(k) )
-
+            brunt_vaisala_freq_sqd_moist(i,k) = &
+              grav * ( ((one + Lv*rsat_zm(i,k) / (Rd*T_in_K_zm(i,k))) / &
+              (one + ep*(Lv**2)*rsat_zm(i,k)/(Cp*Rd*T_in_K_zm(i,k)**2))) * &
+              ( (one/thm_zm(i,k) * ddzt_thm(i,k)) + (Lv/(Cp*T_in_K_zm(i,k)))*ddzt_rsat(i,k)) - &
+              ddzt_rtm(i,k) )
+          end do
         end do ! k=1, gr%nz
 
-        brunt_vaisala_freq_sqd_mixed(:) =  &
+        brunt_vaisala_freq_sqd_mixed =  &
                merge (brunt_vaisala_freq_sqd_moist,brunt_vaisala_freq_sqd_dry,&
                ice_supersat_frac > 0 )
 
     else ! l_brunt_vaisala_freq_moist
 
         T_in_K = thlm2T_in_K( thlm, exner, rcm )
-        T_in_K_zm = zt2zm( gr, T_in_K )
+        T_in_K_zm = zt2zm( nz, ngrdcol, gr, T_in_K )
         rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
-        rsat_zm = zt2zm( gr, rsat )
-        ddzt_rsat = ddzt( gr, rsat )
+        rsat_zm = zt2zm( nz, ngrdcol, gr, rsat )
+        ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
         thm = thlm + Lv/(Cp*exner) * rcm
-        thm_zm = zt2zm( gr, thm )
-        ddzt_thm = ddzt( gr, thm )
-        ddzt_rtm = ddzt( gr, rtm )
+        thm_zm = zt2zm( nz, ngrdcol, gr, thm )
+        ddzt_thm = ddzt( nz, ngrdcol, gr, thm )
+        ddzt_rtm = ddzt( nz, ngrdcol, gr, rtm )
 
-        do k=1, gr%nz
+        do k=1, nz
+          do i = 1, ngrdcol
 
             ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
             ! Klemp (1982)
-            brunt_vaisala_freq_sqd(k) = &
-              grav * ( ((one + Lv*rsat_zm(k) / (Rd*T_in_K_zm(k))) / &
-                (one + ep*(Lv**2)*rsat_zm(k)/(Cp*Rd*T_in_K_zm(k)**2))) * &
-                ( (one/thm_zm(k) * ddzt_thm(k)) +(Lv/(Cp*T_in_K_zm(k)))*ddzt_rsat(k)) - &
-                ddzt_rtm(k) )
-
+            brunt_vaisala_freq_sqd(i,k) = &
+              grav * ( ((one + Lv*rsat_zm(i,k) / (Rd*T_in_K_zm(i,k))) / &
+                (one + ep*(Lv**2)*rsat_zm(i,k)/(Cp*Rd*T_in_K_zm(i,k)**2))) * &
+                ( (one/thm_zm(i,k) * ddzt_thm(i,k)) +(Lv/(Cp*T_in_K_zm(i,k)))*ddzt_rsat(i,k)) - &
+                ddzt_rtm(i,k) )
+                
+          end do
         end do ! k=1, gr%nz
 
 
@@ -618,19 +674,16 @@ module advance_helper_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    
-    do i = 1, ngrdcol 
-
-      call calc_brunt_vaisala_freq_sqd( gr(i), thlm(i,:), exner(i,:), rtm(i,:), rcm(i,:), p_in_Pa(i,:), thvm(i,:), & ! intent(in)
-                                        ice_supersat_frac(i,:), &                    ! intent(in)
-                                        l_brunt_vaisala_freq_moist, &           ! intent(in)
-                                        l_use_thvm_in_bv_freq, &                ! intent(in)
-                                        brunt_vaisala_freq_sqd(i,:), &               ! intent(out)
-                                        brunt_vaisala_freq_sqd_mixed(i,:),&          ! intent(out)
-                                        brunt_vaisala_freq_sqd_dry(i,:), &           ! intent(out)
-                                        brunt_vaisala_freq_sqd_moist(i,:), &         ! intent(out)
-                                        brunt_vaisala_freq_sqd_plus(i,:) )           ! intent(out)
-    end do
+    call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
+                                      exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+                                      ice_supersat_frac, &              ! intent(in)
+                                      l_brunt_vaisala_freq_moist, &     ! intent(in)
+                                      l_use_thvm_in_bv_freq, &          ! intent(in)
+                                      brunt_vaisala_freq_sqd, &         ! intent(out)
+                                      brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
+                                      brunt_vaisala_freq_sqd_dry, &     ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist, &   ! intent(out)
+                                      brunt_vaisala_freq_sqd_plus )     ! intent(out)
 
     Richardson_num_max = clubb_params(iRichardson_num_max)
     Richardson_num_min = clubb_params(iRichardson_num_min)
@@ -1445,7 +1498,7 @@ module advance_helper_module
   !----------------------------------------------------------------------
   
   diff = input_var2 - input_var1
-  output_var = diff * smooth_heaviside_peskin(gr, diff, smth_range) + input_var1
+  output_var = diff * smooth_heaviside_peskin(diff, smth_range) + input_var1
 
     return
   end function smooth_max_zt_sclr_array
@@ -1493,7 +1546,7 @@ module advance_helper_module
   !----------------------------------------------------------------------
 
     diff = input_var2 - input_var1
-    output_var = diff * smooth_heaviside_peskin(gr, diff, smth_range) + input_var1
+    output_var = diff * smooth_heaviside_peskin(diff, smth_range) + input_var1
 
     return
   end function smooth_max_zt_array_sclr
@@ -1541,12 +1594,12 @@ module advance_helper_module
   !----------------------------------------------------------------------
 
     diff = input_var2 - input_var1
-    output_var = diff * smooth_heaviside_peskin(gr, diff, smth_range) + input_var1
+    output_var = diff * smooth_heaviside_peskin(diff, smth_range) + input_var1
 
     return
   end function smooth_max_zt_arrays
   
-  function smooth_heaviside_peskin( gr, input, smth_range ) &
+  elemental function smooth_heaviside_peskin( input, smth_range ) &
     result( smth_output )
     
   ! Description:
@@ -1569,10 +1622,8 @@ module advance_helper_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
   ! Input Variables
-    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real ( kind = core_rknd ), intent(in) :: &
       input     ! Units vary
     
     real ( kind = core_rknd ), intent(in) :: &
@@ -1583,22 +1634,21 @@ module advance_helper_module
     real ( kind = core_rknd ) :: input_over_smth_range  ! input(k) divided by smth_range
 
   ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ) :: &
       smth_output    ! Units vary
   !----------------------------------------------------------------------
   
-    do k = 1, gr%nz, 1
-      input_over_smth_range = input(k) / smth_range
-      if ( input_over_smth_range <= -one ) then
-        smth_output(k) = zero
-      else if ( input_over_smth_range > one ) then
-        smth_output(k) = one
-      else 
-        smth_output(k) = one_half * ( one + input_over_smth_range &
-                                          + invrs_pi &
-                                            * sin(pi * input_over_smth_range) )
-      end if
-    end do
+    input_over_smth_range = input / smth_range
+    
+    if ( input_over_smth_range <= -one ) then
+      smth_output = zero
+    else if ( input_over_smth_range > one ) then
+      smth_output = one
+    else 
+      smth_output = one_half * ( one + input_over_smth_range &
+                                     + invrs_pi * sin(pi * input_over_smth_range) )
+    end if
+    
     return
   end function smooth_heaviside_peskin
 

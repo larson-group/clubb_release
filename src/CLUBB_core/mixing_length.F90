@@ -843,13 +843,14 @@ module mixing_length
 
 
 !===============================================================================
-  subroutine calc_Lscale_directly ( gr, l_implemented, p_in_Pa, exner, rtm,    &
-                  thlm, thvm, newmu, rtp2, thlp2, rtpthlp,                     &
-                  pdf_params, em, thv_ds_zt, Lscale_max, lmin,                 &
-                  clubb_params,                                                &
-                  l_Lscale_plume_centered,                                     &
-                  stats_zt, & 
-                  Lscale, Lscale_up, Lscale_down)
+  subroutine calc_Lscale_directly ( ngrdcol, nz, gr, &
+                                    l_implemented, p_in_Pa, exner, rtm,    &
+                                    thlm, thvm, newmu, rtp2, thlp2, rtpthlp, &
+                                    pdf_params, em, thv_ds_zt, Lscale_max, lmin, &
+                                    clubb_params, &
+                                    l_Lscale_plume_centered, &
+                                    stats_zt, & 
+                                    Lscale, Lscale_up, Lscale_down)
 
     use constants_clubb, only: &
         thl_tol,  &
@@ -894,11 +895,15 @@ module mixing_length
     use stats_type, only: stats ! Type
 
     implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    type (stats), target, intent(inout) :: &
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zt
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
     intrinsic :: sqrt, min, max, exp, real
 
@@ -907,7 +912,7 @@ module mixing_length
                     !   rather than a standalone single-column model.
 
     !!! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       rtp2,      &
       thlp2,     &
       rtpthlp,   &
@@ -919,7 +924,7 @@ module mixing_length
       exner,     &
       thv_ds_zt
 
-    real( kind = core_rknd ), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       newmu, &
       Lscale_max, &
       lmin
@@ -933,13 +938,13 @@ module mixing_length
     logical, intent(in) :: &
       l_Lscale_plume_centered    ! Alternate that uses the PDF to compute the perturbed values
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       Lscale,    & ! Mixing length      [m]
       Lscale_up, & ! Mixing length up   [m]
       Lscale_down  ! Mixing length down [m]
 
     ! Local Variables
-    integer :: k
+    integer :: k, i
 
     logical, parameter :: &
       l_avg_Lscale = .false.   ! Lscale is calculated in subroutine compute_mixing_length
@@ -949,7 +954,7 @@ module mixing_length
     ! from the three calls to compute_mixing_length is then calculated.
     ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
         sign_rtpthlp,         & ! Sign of the covariance rtpthlp       [-]
         Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
         thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
@@ -957,135 +962,148 @@ module mixing_length
         thlm_pert_pos_rt, thlm_pert_neg_rt, &     ! For avg. calculation of Lscale [K]
         rtm_pert_pos_rt, rtm_pert_neg_rt     ! For avg. calculation of Lscale [kg/kg]
 
-     real( kind = core_rknd ) :: &
-         mu_pert_1, mu_pert_2, &
-         mu_pert_pos_rt, mu_pert_neg_rt, & ! For l_Lscale_plume_centered
-         Lscale_mu_coef, Lscale_pert_coef
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+        mu_pert_1, mu_pert_2, &
+        mu_pert_pos_rt, mu_pert_neg_rt  ! For l_Lscale_plume_centered
+        
+    real( kind = core_rknd ) :: &
+        Lscale_mu_coef, Lscale_pert_coef
 
     !Lscale_weight Uncomment this if you need to use this vairable at some
     !point.
 
  ! ---- Begin Code ----
 
-      Lscale_mu_coef = clubb_params(iLscale_mu_coef)
-      Lscale_pert_coef = clubb_params(iLscale_pert_coef)
+    Lscale_mu_coef = clubb_params(iLscale_mu_coef)
+    Lscale_pert_coef = clubb_params(iLscale_pert_coef)
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
 
-        if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
-          write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
-          write(fstderr,*) "Fatal error in advance_clubb_core"
-          err_code = clubb_fatal_error
-          return
-        end if
-
+      if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
+        write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
+        write(fstderr,*) "Fatal error in advance_clubb_core"
+        err_code = clubb_fatal_error
+        return
       end if
 
-      if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
+    end if
 
-         ! Call compute length two additional times with perturbed values
-         ! of rtm and thlm so that an average value of Lscale may be calculated.
+    if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
 
-         do k = 1, gr%nz, 1
-            sign_rtpthlp(k) = sign( one, rtpthlp(k) )
-         enddo
+      ! Call compute length two additional times with perturbed values
+      ! of rtm and thlm so that an average value of Lscale may be calculated.
 
-         rtm_pert_1  = rtm &
-                       + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-         thlm_pert_1 = thlm &
-                       + sign_rtpthlp * Lscale_pert_coef &
-                         * sqrt( max( thlp2, thl_tol**2 ) )
-         mu_pert_1   = newmu / Lscale_mu_coef
-
-         rtm_pert_2  = rtm &
-                       - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-         thlm_pert_2 = thlm &
-                       - sign_rtpthlp * Lscale_pert_coef &
-                         * sqrt( max( thlp2, thl_tol**2 ) )
-         mu_pert_2   = newmu * Lscale_mu_coef
-
-
-         call compute_mixing_length( gr, thvm, thlm_pert_1,              & ! In
-                       rtm_pert_1, em, Lscale_max, p_in_Pa,              & ! In
-                       exner, thv_ds_zt, mu_pert_1, lmin, l_implemented, & ! In
-                       Lscale_pert_1, Lscale_up, Lscale_down             ) ! Out
-
-         call compute_mixing_length( gr, thvm, thlm_pert_2,              & ! In
-                       rtm_pert_2, em, Lscale_max, p_in_Pa,              & ! In
-                       exner, thv_ds_zt, mu_pert_2, lmin, l_implemented, & ! In
-                       Lscale_pert_2, Lscale_up, Lscale_down             ) ! Out
-
-      else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
-        ! Take the values of thl and rt based one 1st or 2nd plume
-
-        do k = 1, gr%nz, 1
-          sign_rtpthlp(k) = sign(one, rtpthlp(k))
+      do k = 1, nz, 1
+        do  i = 1, ngrdcol
+          sign_rtpthlp(i,k) = sign( one, rtpthlp(i,k) )
         end do
+      end do
 
-        where ( pdf_params%rt_1(1,:) > pdf_params%rt_2(1,:) )
-          rtm_pert_pos_rt = pdf_params%rt_1(1,:) &
-                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1(1,:), rt_tol**2 ) )
-          thlm_pert_pos_rt = pdf_params%thl_1(1,:) + ( sign_rtpthlp * Lscale_pert_coef &
-                     * sqrt( max( pdf_params%varnce_thl_1(1,:), thl_tol**2 ) ) )
-          thlm_pert_neg_rt = pdf_params%thl_2(1,:) - ( sign_rtpthlp * Lscale_pert_coef &
-                     * sqrt( max( pdf_params%varnce_thl_2(1,:), thl_tol**2 ) ) )
-          rtm_pert_neg_rt = pdf_params%rt_2(1,:) &
-                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2(1,:), rt_tol**2 ) )
-          !Lscale_weight = pdf_params%mixt_frac(1,:)
-        elsewhere
-          rtm_pert_pos_rt = pdf_params%rt_2(1,:) &
-                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2(1,:), rt_tol**2 ) )
-          thlm_pert_pos_rt = pdf_params%thl_2(1,:) + ( sign_rtpthlp * Lscale_pert_coef &
-                     * sqrt( max( pdf_params%varnce_thl_2(1,:), thl_tol**2 ) ) )
-          thlm_pert_neg_rt = pdf_params%thl_1(1,:) - ( sign_rtpthlp * Lscale_pert_coef &
-                     * sqrt( max( pdf_params%varnce_thl_1(1,:), thl_tol**2 ) ) )
-          rtm_pert_neg_rt = pdf_params%rt_1(1,:) &
-                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1(1,:), rt_tol**2 ) )
-          !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac(1,:)
-        endwhere
+      rtm_pert_1  = rtm + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+     
+      thlm_pert_1 = thlm + sign_rtpthlp * Lscale_pert_coef &
+                           * sqrt( max( thlp2, thl_tol**2 ) )
+                          
+      mu_pert_1   = newmu / Lscale_mu_coef
 
-        mu_pert_pos_rt  = newmu / Lscale_mu_coef
-        mu_pert_neg_rt  = newmu * Lscale_mu_coef
+      rtm_pert_2  = rtm - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+      
+      thlm_pert_2 = thlm - sign_rtpthlp * Lscale_pert_coef &
+                           * sqrt( max( thlp2, thl_tol**2 ) )
+                           
+      mu_pert_2   = newmu * Lscale_mu_coef
 
-        ! Call length with perturbed values of thl and rt
-        call compute_mixing_length( gr, thvm, thlm_pert_pos_rt,          & ! In
-                  rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,              & ! In
-                  exner, thv_ds_zt, mu_pert_pos_rt, lmin, l_implemented, & ! In
-                  Lscale_pert_1, Lscale_up, Lscale_down                  ) ! Out
+      do i = 1, ngrdcol
+        call compute_mixing_length( gr(i), thvm(i,:), thlm_pert_1(i,:),                 & ! In
+                      rtm_pert_1(i,:), em(i,:), Lscale_max(i), p_in_Pa(i,:),            & ! In
+                      exner(i,:), thv_ds_zt(i,:), mu_pert_1(i), lmin(i), l_implemented, & ! In
+                      Lscale_pert_1(i,:), Lscale_up(i,:), Lscale_down(i,:)              ) ! Out
 
-        call compute_mixing_length( gr, thvm, thlm_pert_neg_rt,          & ! In
-                  rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,              & ! In
-                  exner, thv_ds_zt, mu_pert_neg_rt, lmin, l_implemented, & ! In
-                  Lscale_pert_2, Lscale_up, Lscale_down                  ) ! Out
-      else
-        Lscale_pert_1 = unused_var ! Undefined
-        Lscale_pert_2 = unused_var ! Undefined
+        call compute_mixing_length( gr(i), thvm(i,:), thlm_pert_2(i,:),                   & ! In
+                      rtm_pert_2(i,:), em(i,:), Lscale_max(i), p_in_Pa(i,:),              & ! In
+                      exner(i,:), thv_ds_zt(i,:), mu_pert_2(i), lmin(i), l_implemented,   & ! In
+                      Lscale_pert_2(i,:), Lscale_up(i,:), Lscale_down(i,:)                ) ! Out
+      end do
 
-      end if ! l_avg_Lscale
+    else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
+      ! Take the values of thl and rt based one 1st or 2nd plume
 
-      if ( l_stats_samp ) then
-        call stat_update_var( iLscale_pert_1, Lscale_pert_1, & ! intent(in)
-                              stats_zt )                       ! intent(inout)
-        call stat_update_var( iLscale_pert_2, Lscale_pert_2, & ! intent(in)
-                              stats_zt )                       ! intent(inout)
-      end if ! l_stats_samp
+      do k = 1, nz
+        do i = 1, ngrdcol
+          sign_rtpthlp(i,k) = sign(one, rtpthlp(i,k))
+        end do
+      end do
+
+      where ( pdf_params%rt_1(i,:) > pdf_params%rt_2(i,:) )
+        rtm_pert_pos_rt(i,:) = pdf_params%rt_1(i,:) &
+                   + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1(i,:), rt_tol**2 ) )
+        thlm_pert_pos_rt(i,:) = pdf_params%thl_1(i,:) + ( sign_rtpthlp(i,:) * Lscale_pert_coef &
+                   * sqrt( max( pdf_params%varnce_thl_1(i,:), thl_tol**2 ) ) )
+        thlm_pert_neg_rt(i,:) = pdf_params%thl_2(i,:) - ( sign_rtpthlp(i,:) * Lscale_pert_coef &
+                   * sqrt( max( pdf_params%varnce_thl_2(i,:), thl_tol**2 ) ) )
+        rtm_pert_neg_rt(i,:) = pdf_params%rt_2(i,:) &
+                   - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2(i,:), rt_tol**2 ) )
+        !Lscale_weight = pdf_params%mixt_frac(i,:)
+      elsewhere
+        rtm_pert_pos_rt(i,:) = pdf_params%rt_2(i,:) &
+                   + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2(i,:), rt_tol**2 ) )
+        thlm_pert_pos_rt(i,:) = pdf_params%thl_2(i,:) + ( sign_rtpthlp(i,:) * Lscale_pert_coef &
+                   * sqrt( max( pdf_params%varnce_thl_2(i,:), thl_tol**2 ) ) )
+        thlm_pert_neg_rt(i,:) = pdf_params%thl_1(i,:) - ( sign_rtpthlp(i,:) * Lscale_pert_coef &
+                   * sqrt( max( pdf_params%varnce_thl_1(i,:), thl_tol**2 ) ) )
+        rtm_pert_neg_rt(i,:) = pdf_params%rt_1(i,:) &
+                   - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1(i,:), rt_tol**2 ) )
+        !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac(i,:)
+      endwhere
+
+      mu_pert_pos_rt  = newmu / Lscale_mu_coef
+      mu_pert_neg_rt  = newmu * Lscale_mu_coef
+
+      ! Call length with perturbed values of thl and rt
+      do i = 1, ngrdcol
+        call compute_mixing_length( gr(i), thvm(i,:), thlm_pert_pos_rt(i,:),               & ! In
+                  rtm_pert_pos_rt(i,:), em(i,:), Lscale_max(i), p_in_Pa(i,:),              & ! In
+                  exner(i,:), thv_ds_zt(i,:), mu_pert_pos_rt(i), lmin(i), l_implemented, & ! In
+                  Lscale_pert_1(i,:), Lscale_up(i,:), Lscale_down(i,:)                     ) ! Out
+
+        call compute_mixing_length( gr(i), thvm(i,:), thlm_pert_neg_rt(i,:),               & ! In
+                  rtm_pert_neg_rt(i,:), em(i,:), Lscale_max(i), p_in_Pa(i,:),              & ! In
+                  exner(i,:), thv_ds_zt(i,:), mu_pert_neg_rt(i), lmin(i), l_implemented, & ! In
+                  Lscale_pert_2(i,:), Lscale_up(i,:), Lscale_down(i,:)                     ) ! Out
+      end do
+    else
+      Lscale_pert_1 = unused_var ! Undefined
+      Lscale_pert_2 = unused_var ! Undefined
+
+    end if ! l_avg_Lscale
+
+    if ( l_stats_samp ) then
+      do i = 1, ngrdcol
+        call stat_update_var( iLscale_pert_1, Lscale_pert_1(i,:), & ! intent(in)
+                              stats_zt(i) )                       ! intent(inout)
+        call stat_update_var( iLscale_pert_2, Lscale_pert_2(i,:), & ! intent(in)
+                              stats_zt(i) )                       ! intent(inout)
+      end do
+    end if ! l_stats_samp
 
 
-      ! ********** NOTE: **********
-      ! This call to compute_mixing_length must be last.  Otherwise, the values
-      ! of
-      ! Lscale_up and Lscale_down in stats will be based on perturbation length
-      ! scales
-      ! rather than the mean length scale.
+    ! ********** NOTE: **********
+    ! This call to compute_mixing_length must be last.  Otherwise, the values
+    ! of
+    ! Lscale_up and Lscale_down in stats will be based on perturbation length
+    ! scales
+    ! rather than the mean length scale.
 
-      ! Diagnose CLUBB's turbulent mixing length scale.
-      call compute_mixing_length( gr, thvm, thlm,                        & ! In
-                           rtm, em, Lscale_max, p_in_Pa,                 & ! In
-                           exner, thv_ds_zt, newmu, lmin, l_implemented, & ! In
-                           Lscale, Lscale_up, Lscale_down                ) ! Out
+    ! Diagnose CLUBB's turbulent mixing length scale.
+    do i = 1, ngrdcol
+      call compute_mixing_length( gr(i), thvm(i,:), thlm(i,:),                            & ! In
+                            rtm(i,:), em(i,:), Lscale_max(i), p_in_Pa(i,:),               & ! In
+                            exner(i,:), thv_ds_zt(i,:), newmu(i), lmin(i), l_implemented, & ! In
+                            Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:)                 ) ! Out
+    end do
 
-      if ( l_avg_Lscale ) then
-        if ( l_Lscale_plume_centered ) then
+    if ( l_avg_Lscale ) then
+      if ( l_Lscale_plume_centered ) then
 ! Weighted average of mean, pert_1, & pert_2
 !       Lscale = 0.5_core_rknd * ( Lscale + Lscale_weight*Lscale_pert_1 &
 !                                  + (1.0_core_rknd-Lscale_weight)*Lscale_pert_2
@@ -1094,21 +1112,22 @@ module mixing_length
 !       Lscale = Lscale_weight*Lscale_pert_1 +
 !       (1.0_core_rknd-Lscale_weight)*Lscale_pert_2
 
-          ! Un-weighted average of just the perturbed values
-          Lscale = one_half *( Lscale_pert_1 + Lscale_pert_2 )
-        else
-          Lscale = (one / three) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
-        end if
+        ! Un-weighted average of just the perturbed values
+        Lscale = one_half *( Lscale_pert_1 + Lscale_pert_2 )
+      else
+        Lscale = (one / three) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
       end if
+    end if
 
-     return
+   return
+   
  end subroutine  calc_Lscale_directly
 
 
 
 !===============================================================================
 
- subroutine diagnose_Lscale_from_tau( gr, &
+ subroutine diagnose_Lscale_from_tau( nz, ngrdcol, gr, &
                         upwp_sfc, vpwp_sfc, um, vm, & !intent in
                         exner, p_in_Pa, & !intent in
                         rtm, thlm, thvm, & !intent in
@@ -1178,13 +1197,17 @@ module mixing_length
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    real( kind = core_rknd ), intent(in) :: &
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       upwp_sfc,      &
       vpwp_sfc
     
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       um,                &
       vm,                &
       exner,             &
@@ -1200,7 +1223,9 @@ module mixing_length
     real(kind = core_rknd), intent(in) :: &
       ufmin,         &
       z_displace,    &
-      tau_const,     &
+      tau_const
+      
+    real(kind = core_rknd), dimension(ngrdcol), intent(in) :: &
       sfc_elevation, &
       Lscale_max
 
@@ -1215,7 +1240,7 @@ module mixing_length
       l_smooth_Heaviside_tau_wpxp   ! Use the smoothed Heaviside 'Peskin' function
                                     ! to compute invrs_tau_wpxp_zm
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       brunt_vaisala_freq_sqd,       &
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry,   &
@@ -1242,13 +1267,16 @@ module mixing_length
       Lscale_up,                    &
       Lscale_down
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    ! Local Variables
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       brunt_freq_pos,               &
       brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
       brunt_freq_out_cloud
 
-   real( kind = core_rknd ) :: &
-      ustar,                      &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      ustar
+      
+    real( kind = core_rknd ) :: &
       C_invrs_tau_bkgnd,          &
       C_invrs_tau_shear,          &
       C_invrs_tau_sfc,            &
@@ -1262,158 +1290,193 @@ module mixing_length
       altitude_threshold,         &
       smth_range
 
-   ! Local Variables
-   real( kind = core_rknd ), dimension(gr%nz) :: &
-     bvf_thresh,                  & ! temporatory array  
-     H_invrs_tau_wpxp_N2            ! Heaviside function for clippings of invrs_tau_wpxp_N2
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      smooth_thlm,           & 
+      bvf_thresh,           & ! temporatory array  
+      H_invrs_tau_wpxp_N2     ! Heaviside function for clippings of invrs_tau_wpxp_N2
+
+    integer :: i, k
 
 !-----------------------------------Begin Code---------------------------------------------------!
 
-  call calc_brunt_vaisala_freq_sqd( gr, zm2zt( gr, zt2zm( gr, thlm )), & ! intent(in)
-                                        exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
-                                        ice_supersat_frac, & ! intent(in)
-                                        l_brunt_vaisala_freq_moist, & ! intent(in)
-                                        l_use_thvm_in_bv_freq, & ! intent(in)
-                                        brunt_vaisala_freq_sqd, & ! intent(out)
-                                        brunt_vaisala_freq_sqd_mixed,& ! intent(out)
-                                        brunt_vaisala_freq_sqd_dry, & ! intent(out)
-                                        brunt_vaisala_freq_sqd_moist, & ! intent(out)
-                                        brunt_vaisala_freq_sqd_plus ) ! intent(out)
+    ! Smooth thlm by interpolating to zm then back to zt
+    smooth_thlm = zm2zt( nz, ngrdcol, gr, zt2zm( nz, ngrdcol, gr, thlm ))
 
-        ! Unpack tunable parameters
-        C_invrs_tau_bkgnd = clubb_params(iC_invrs_tau_bkgnd)
-        C_invrs_tau_shear = clubb_params(iC_invrs_tau_shear)
-        C_invrs_tau_sfc = clubb_params(iC_invrs_tau_sfc)
-        C_invrs_tau_N2 = clubb_params(iC_invrs_tau_N2)
-        C_invrs_tau_N2_wp2 = clubb_params(iC_invrs_tau_N2_wp2)
-        C_invrs_tau_N2_wpxp = clubb_params(iC_invrs_tau_N2_wpxp)
-        C_invrs_tau_N2_xp2 = clubb_params(iC_invrs_tau_N2_xp2)
-        C_invrs_tau_wpxp_N2_thresh = clubb_params(iC_invrs_tau_wpxp_N2_thresh)
-        C_invrs_tau_N2_clear_wp3 = clubb_params(iC_invrs_tau_N2_clear_wp3)
-        C_invrs_tau_wpxp_Ri = clubb_params(iC_invrs_tau_wpxp_Ri)
-        altitude_threshold = clubb_params(ialtitude_threshold)
+    call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, smooth_thlm, & ! intent(in)
+                                      exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+                                      ice_supersat_frac, & ! intent(in)
+                                      l_brunt_vaisala_freq_moist, & ! intent(in)
+                                      l_use_thvm_in_bv_freq, & ! intent(in)
+                                      brunt_vaisala_freq_sqd, & ! intent(out)
+                                      brunt_vaisala_freq_sqd_mixed,& ! intent(out)
+                                      brunt_vaisala_freq_sqd_dry, & ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist, & ! intent(out)
+                                      brunt_vaisala_freq_sqd_plus ) ! intent(out)
 
-        ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
+    ! Unpack tunable parameters
+    C_invrs_tau_bkgnd = clubb_params(iC_invrs_tau_bkgnd)
+    C_invrs_tau_shear = clubb_params(iC_invrs_tau_shear)
+    C_invrs_tau_sfc = clubb_params(iC_invrs_tau_sfc)
+    C_invrs_tau_N2 = clubb_params(iC_invrs_tau_N2)
+    C_invrs_tau_N2_wp2 = clubb_params(iC_invrs_tau_N2_wp2)
+    C_invrs_tau_N2_wpxp = clubb_params(iC_invrs_tau_N2_wpxp)
+    C_invrs_tau_N2_xp2 = clubb_params(iC_invrs_tau_N2_xp2)
+    C_invrs_tau_wpxp_N2_thresh = clubb_params(iC_invrs_tau_wpxp_N2_thresh)
+    C_invrs_tau_N2_clear_wp3 = clubb_params(iC_invrs_tau_N2_clear_wp3)
+    C_invrs_tau_wpxp_Ri = clubb_params(iC_invrs_tau_wpxp_Ri)
+    altitude_threshold = clubb_params(ialtitude_threshold)
 
-        invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
+    ustar(:) = max( ( upwp_sfc(:)**2 + vpwp_sfc(:)**2 )**(one_fourth), ufmin )
 
-        invrs_tau_shear &
-        = C_invrs_tau_shear &
-          * zt2zm( gr, zm2zt( gr, sqrt( (ddzt( gr, um ))**2 + (ddzt( gr, vm ))**2 ) ) )
+    invrs_tau_bkgnd(:,:) = C_invrs_tau_bkgnd / tau_const
 
-        invrs_tau_sfc &
-        = C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace )
+    invrs_tau_shear(:,:) = C_invrs_tau_shear &
+                           * zt2zm( nz, ngrdcol, gr, zm2zt( nz, ngrdcol, gr, &
+                                                            sqrt( (ddzt( nz, ngrdcol, gr, um ))**2 & 
+                                                            + (ddzt( nz, ngrdcol, gr, vm ))**2 ) ) )
+
+    do k = 1, nz
+      do i = 1, ngrdcol
+        invrs_tau_sfc(i,k) = C_invrs_tau_sfc &
+                             * ( ustar(i) / vonk ) / ( gr(i)%zm(k) - sfc_elevation(i) + z_displace )
          !C_invrs_tau_sfc * ( wp2 / vonk /ustar ) / ( gr%zm -sfc_elevation + z_displace )
+      end do
+    end do
 
-        invrs_tau_no_N2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear
+    invrs_tau_no_N2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear
 
-        !The min function below smooths the slope discontinuity in brunt freq
-        !  and thereby allows tau to remain large in Sc layers in which thlm may
-        !  be slightly stably stratified.
-        brunt_vaisala_freq_sqd_smth = zt2zm( gr, zm2zt( gr, &
-            min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd) ** 3 ) ) )
-        
-        sqrt_Ri_zm = &
-          sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
-                / max( ( ddzt( gr, um)**2 + ddzt(gr, vm)**2 ), 1.0e-7_core_rknd ) )
+    !The min function below smooths the slope discontinuity in brunt freq
+    !  and thereby allows tau to remain large in Sc layers in which thlm may
+    !  be slightly stably stratified.
+    brunt_vaisala_freq_sqd_smth = zt2zm( nz, ngrdcol, gr, zm2zt( nz, ngrdcol, gr, &
+        min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd) ** 3 ) ) )
+    
+    sqrt_Ri_zm = &
+      sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
+            / max( ( ddzt( nz, ngrdcol, gr, um)**2 + ddzt(nz, ngrdcol, gr, vm)**2 ), 1.0e-7_core_rknd ) )
 
-        brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
+    brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
 
-        brunt_freq_out_cloud =  brunt_freq_pos &
-              * min(one, max(zero_threshold,&
-              one - ( (zt2zm(gr, ice_supersat_frac) / 0.007_core_rknd) )))
+    brunt_freq_out_cloud =  brunt_freq_pos &
+          * min(one, max(zero_threshold,&
+          one - ( (zt2zm(nz, ngrdcol, gr, ice_supersat_frac) / 0.007_core_rknd) )))
 
-        where ( gr%zt < altitude_threshold )
-           brunt_freq_out_cloud = zero
-        end where
-
-        ! This time scale is used optionally for the return-to-isotropy term. It
-        ! omits invrs_tau_sfc based on the rationale that the isotropization
-        ! rate shouldn't be enhanced near the ground.
-        invrs_tau_N2_iso = invrs_tau_bkgnd + invrs_tau_shear + C_invrs_tau_N2_wp2 * brunt_freq_pos
-
-        invrs_tau_wp2_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2_wp2 * brunt_freq_pos
-
-        invrs_tau_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos
-
-
-        if ( l_e3sm_config ) then
-
-          invrs_tau_zm = one_half * invrs_tau_zm
-
-          invrs_tau_xp2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear &
-                            + C_invrs_tau_N2_xp2 * brunt_freq_pos & ! 0
-                            + C_invrs_tau_sfc * two &
-                            * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
-
-          invrs_tau_xp2_zm = min( max( sqrt( ( ddzt( gr, um)**2 + ddzt(gr, vm)**2 ) &
-                            / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
-                            0.3_core_rknd ), one ) * invrs_tau_xp2_zm
-
-          invrs_tau_wpxp_zm = two * invrs_tau_zm &
-                             + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
-
-        else ! l_e3sm_config = false
-
-          invrs_tau_xp2_zm =  0.1_core_rknd * invrs_tau_bkgnd + invrs_tau_sfc &
-                + invrs_tau_shear + C_invrs_tau_N2_xp2 * brunt_freq_pos
-
-          invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
-                zt2zm(gr, ice_supersat_frac) <= 0.01_core_rknd &
-                .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
-
-          invrs_tau_wpxp_zm = invrs_tau_zm + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
-
-        end if ! l_e3sm_config
-
-        if (l_smooth_Heaviside_tau_wpxp) then
-
-          bvf_thresh(1:gr%nz) = brunt_vaisala_freq_sqd_smth(1:gr%nz)/C_invrs_tau_wpxp_N2_thresh
-          bvf_thresh(1:gr%nz) = bvf_thresh(1:gr%nz) - one
-
-          smth_range = 0.1_core_rknd
-          H_invrs_tau_wpxp_N2 = smooth_heaviside_peskin(gr, bvf_thresh, smth_range)
-
-        else ! l_smooth_Heaviside_tau_wpxp = .false.
-
-          H_invrs_tau_wpxp_N2 = zero
-          where ( brunt_vaisala_freq_sqd_smth > C_invrs_tau_wpxp_N2_thresh)
-            H_invrs_tau_wpxp_N2 = one 
-          end where 
-
-        end if ! l_smooth_Heaviside_tau_wpxp
-
-        where( gr%zt > altitude_threshold )
-           invrs_tau_wpxp_zm &
-           = invrs_tau_wpxp_zm &
-             * ( one  & 
-                 + H_invrs_tau_wpxp_N2 & 
-                   * C_invrs_tau_wpxp_Ri * min( max( sqrt_Ri_zm, zero), &
-                                      12.0_core_rknd ) )
-        end where
-
-        invrs_tau_wp3_zm = invrs_tau_wp2_zm + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
-
-        if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
-             error stop  "Lowest zm grid level is below ground in CLUBB."
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( gr(i)%zt(k) < altitude_threshold ) then
+          brunt_freq_out_cloud(i,k) = zero
         end if
+      end do
+    end do
 
-        ! Calculate the maximum allowable value of time-scale tau,
-        ! which depends of the value of Lscale_max.
-        tau_max_zt = Lscale_max / sqrt_em_zt
-        tau_max_zm = Lscale_max / sqrt( max( em, em_min ) )
+    ! This time scale is used optionally for the return-to-isotropy term. It
+    ! omits invrs_tau_sfc based on the rationale that the isotropization
+    ! rate shouldn't be enhanced near the ground.
+    invrs_tau_N2_iso = invrs_tau_bkgnd + invrs_tau_shear + C_invrs_tau_N2_wp2 * brunt_freq_pos
 
-        tau_zm           = min( one / invrs_tau_zm, tau_max_zm )
-        tau_zt           = min( zm2zt( gr, tau_zm ), tau_max_zt )
-        invrs_tau_zt     = zm2zt( gr, invrs_tau_zm )
-        invrs_tau_wp3_zt = zm2zt( gr, invrs_tau_wp3_zm )
+    invrs_tau_wp2_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2_wp2 * brunt_freq_pos
 
-        Lscale = tau_zt * sqrt_em_zt
+    invrs_tau_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos
 
-        ! Lscale_up and Lscale_down aren't calculated with this option.
-        ! They are set to 0 for stats output.
-        Lscale_up = zero
-        Lscale_down = zero
+
+    if ( l_e3sm_config ) then
+
+      invrs_tau_zm = one_half * invrs_tau_zm
+
+      do k = 1, nz
+        do i = 1, ngrdcol
+          invrs_tau_xp2_zm(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_sfc(i,k) + invrs_tau_shear(i,k) &
+                            + C_invrs_tau_N2_xp2 * brunt_freq_pos (i,k)& ! 0
+                            + C_invrs_tau_sfc * two &
+                            * sqrt(em(i,k)) / ( gr(i)%zm(k) - sfc_elevation(i) + z_displace )  ! small
+        end do
+      end do
+
+      invrs_tau_xp2_zm = min( max( sqrt( ( ddzt( nz, ngrdcol, gr, um)**2 + ddzt(nz, ngrdcol, gr, vm)**2 ) &
+                        / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
+                        0.3_core_rknd ), one ) * invrs_tau_xp2_zm
+
+      invrs_tau_wpxp_zm = two * invrs_tau_zm &
+                         + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
+
+    else ! l_e3sm_config = false
+
+      invrs_tau_xp2_zm =  0.1_core_rknd * invrs_tau_bkgnd + invrs_tau_sfc &
+            + invrs_tau_shear + C_invrs_tau_N2_xp2 * brunt_freq_pos
+
+      invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
+            zt2zm(nz, ngrdcol, gr, ice_supersat_frac) <= 0.01_core_rknd &
+            .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
+
+      invrs_tau_wpxp_zm = invrs_tau_zm + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
+
+    end if ! l_e3sm_config
+
+    if (l_smooth_Heaviside_tau_wpxp) then
+
+      bvf_thresh = brunt_vaisala_freq_sqd_smth/C_invrs_tau_wpxp_N2_thresh
+      bvf_thresh = bvf_thresh - one
+
+      smth_range = 0.1_core_rknd
+      
+      do i = 1, ngrdcol
+        H_invrs_tau_wpxp_N2(i,:) = smooth_heaviside_peskin(bvf_thresh(i,:), smth_range)
+      end do
+
+    else ! l_smooth_Heaviside_tau_wpxp = .false.
+      
+      do k = 1, nz
+        do i = 1, ngrdcol
+          if ( brunt_vaisala_freq_sqd_smth(i,k) > C_invrs_tau_wpxp_N2_thresh) then
+            H_invrs_tau_wpxp_N2(i,k) = one 
+          else 
+            H_invrs_tau_wpxp_N2(i,k) = zero 
+          end if
+        end do
+      end do
+
+    end if ! l_smooth_Heaviside_tau_wpxp
+
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( gr(i)%zt(k) > altitude_threshold ) then
+         invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
+                                  * ( one  + H_invrs_tau_wpxp_N2(i,k) & 
+                                             * C_invrs_tau_wpxp_Ri &
+                                             * min( max( sqrt_Ri_zm(i,k), zero), 12.0_core_rknd ) )
+        end if
+      end do 
+    end do
+
+    invrs_tau_wp3_zm = invrs_tau_wp2_zm + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
+
+    do i = 1, ngrdcol
+      if ( gr(i)%zm(1) - sfc_elevation(i) + z_displace < eps ) then
+        error stop  "Lowest zm grid level is below ground in CLUBB."
+      end if
+    end do
+
+    ! Calculate the maximum allowable value of time-scale tau,
+    ! which depends of the value of Lscale_max.
+    do k = 1, nz
+      do i = 1, ngrdcol
+        tau_max_zt(i,k) = Lscale_max(i) / sqrt_em_zt(i,k)
+        tau_max_zm(i,k) = Lscale_max(i) / sqrt( max( em(i,k), em_min ) )
+      end do
+    end do
+
+    tau_zm           = min( one / invrs_tau_zm, tau_max_zm )
+    tau_zt           = min( zm2zt( nz, ngrdcol, gr, tau_zm ), tau_max_zt )
+    invrs_tau_zt     = zm2zt( nz, ngrdcol, gr, invrs_tau_zm )
+    invrs_tau_wp3_zt = zm2zt( nz, ngrdcol, gr, invrs_tau_wp3_zm )
+
+    Lscale = tau_zt * sqrt_em_zt
+
+    ! Lscale_up and Lscale_down aren't calculated with this option.
+    ! They are set to 0 for stats output.
+    Lscale_up = zero
+    Lscale_down = zero
+    
   end subroutine diagnose_Lscale_from_tau
 
 end module mixing_length

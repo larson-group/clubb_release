@@ -1266,20 +1266,16 @@ module advance_clubb_core_module
 
     if ( .not. clubb_config_flags%l_diag_Lscale_from_tau ) then ! compute Lscale 1st, using
                                                                 ! buoyant parcel calc
-      do i = 1, ngrdcol
         
-        call copy_multi_pdf_params_to_single( pdf_params, i, &
-                                              pdf_params_single_col(i) )
-        
-        call calc_Lscale_directly ( gr(i), l_implemented, p_in_Pa(i,:), &! intent(in)
-                  exner(i,:), rtm(i,:), thlm(i,:), thvm(i,:), &                      ! intent(in)
-                  newmu(i), rtp2(i,:), thlp2(i,:), rtpthlp(i,:), pdf_params_single_col(i), em(i,:), & ! intent(in)
-                  thv_ds_zt(i,:), Lscale_max(i), lmin(i), &                 ! intent(in)
-                  clubb_params, &                                ! intent(in)
-                  clubb_config_flags%l_Lscale_plume_centered, &  ! intent(in)
-                  stats_zt(i), &                                    ! intent(inout)
-                  Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:) )               ! intent(out)
-      end do
+      call calc_Lscale_directly ( ngrdcol, nz, gr,                             & ! intent(in)
+                                  l_implemented, p_in_Pa,                      & ! intent(in)
+                                  exner, rtm, thlm, thvm,                      & ! intent(in)
+                                  newmu, rtp2, thlp2, rtpthlp, pdf_params, em, & ! intent(in)
+                                  thv_ds_zt, Lscale_max, lmin,                 & ! intent(in)
+                                  clubb_params,                                & ! intent(in)
+                                  clubb_config_flags%l_Lscale_plume_centered,  & ! intent(in)
+                                  stats_zt,                                    & ! intent(inout)
+                                  Lscale, Lscale_up, Lscale_down )               ! intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -1320,32 +1316,30 @@ module advance_clubb_core_module
 
     else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
-      do i = 1, ngrdcol
-        call diagnose_Lscale_from_tau( gr(i), & ! intent(in)
-                          upwp_sfc(i), vpwp_sfc(i), um(i,:), vm(i,:), & !intent in
-                          exner(i,:), p_in_Pa(i,:), & !intent in
-                          rtm(i,:), thlm(i,:), thvm(i,:), & !intent in
-                          rcm(i,:), ice_supersat_frac(i,:), &! intent in
-                          em(i,:), sqrt_em_zt(i,:), & ! intent in
-                          ufmin, z_displace, tau_const, & ! intent in
-                          sfc_elevation(i), Lscale_max(i), & ! intent in
-                          clubb_params, & ! intent in
-                          clubb_config_flags%l_e3sm_config, & ! intent in
-                          clubb_config_flags%l_brunt_vaisala_freq_moist, & !intent in
-                          clubb_config_flags%l_use_thvm_in_bv_freq, &! intent in
-                          clubb_config_flags%l_smooth_Heaviside_tau_wpxp, & ! intent in
-                          brunt_vaisala_freq_sqd(i,:), brunt_vaisala_freq_sqd_mixed(i,:), & ! intent out
-                          brunt_vaisala_freq_sqd_dry(i,:), brunt_vaisala_freq_sqd_moist(i,:), & ! intent out
-                          brunt_vaisala_freq_sqd_plus(i,:), & !intent out
-                          sqrt_Ri_zm(i,:), & ! intent out
-                          invrs_tau_zt(i,:), invrs_tau_zm(i,:), & ! intent out
-                          invrs_tau_sfc(i,:), invrs_tau_no_N2_zm(i,:), invrs_tau_bkgnd(i,:), & ! intent out
-                          invrs_tau_shear(i,:), invrs_tau_N2_iso(i,:), & ! intent out
-                          invrs_tau_wp2_zm(i,:), invrs_tau_xp2_zm(i,:), & ! intent out
-                          invrs_tau_wp3_zm(i,:), invrs_tau_wp3_zt(i,:), invrs_tau_wpxp_zm(i,:), & ! intent out
-                          tau_max_zm(i,:), tau_max_zt(i,:), tau_zm(i,:), tau_zt(i,:), & !intent out
-                          Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:))! intent out
-      end do
+      call diagnose_Lscale_from_tau( nz, ngrdcol, gr,                             & ! In
+                        upwp_sfc, vpwp_sfc, um, vm,                               & ! In
+                        exner, p_in_Pa,                                           & ! In
+                        rtm, thlm, thvm,                                          & ! In
+                        rcm, ice_supersat_frac,                                   & ! In
+                        em, sqrt_em_zt,                                           & ! In
+                        ufmin, z_displace, tau_const,                             & ! In
+                        sfc_elevation, Lscale_max,                                & ! In
+                        clubb_params,                                             & ! In
+                        clubb_config_flags%l_e3sm_config,                         & ! In
+                        clubb_config_flags%l_brunt_vaisala_freq_moist,            & ! In
+                        clubb_config_flags%l_use_thvm_in_bv_freq,                 & ! In
+                        clubb_config_flags%l_smooth_Heaviside_tau_wpxp,           & ! In
+                        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,     & ! Out
+                        brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! Out
+                        brunt_vaisala_freq_sqd_plus,                              & ! Out
+                        sqrt_Ri_zm,                                               & ! Out
+                        invrs_tau_zt, invrs_tau_zm,                               & ! Out
+                        invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd,       & ! Out
+                        invrs_tau_shear, invrs_tau_N2_iso,                        & ! Out
+                        invrs_tau_wp2_zm, invrs_tau_xp2_zm,                       & ! Out
+                        invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm,    & ! Out
+                        tau_max_zm, tau_max_zt, tau_zm, tau_zt,                   & ! Out
+                        Lscale, Lscale_up, Lscale_down )                            ! Out
 
     end if ! l_diag_Lscale_from_tau
     
