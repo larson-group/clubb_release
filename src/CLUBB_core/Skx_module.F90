@@ -88,9 +88,9 @@ module Skx_module
   end subroutine Skx_func
 
   !-----------------------------------------------------------------------------
-  elemental function LG_2005_ansatz( Skw, wpxp, wp2, &
-                                     xp2, beta, sigma_sqd_w, x_tol ) &
-  result( Skx )
+  subroutine LG_2005_ansatz( nz, ngrdcol, Skw, wpxp, wp2, &
+                             xp2, beta, sigma_sqd_w, x_tol, &
+                             Skx )
 
     ! Description:
     ! Calculate the skewness of x using the diagnostic ansatz of Larson and
@@ -111,53 +111,61 @@ module Skx_module
 
     implicit none
 
-    ! External
-    intrinsic :: sqrt
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Skw,         & ! Skewness of w                  [-]
       wpxp,        & ! Turbulent flux of x            [m/s (x units)]
       wp2,         & ! Variance of w                  [m^2/s^2]
       xp2,         & ! Variance of x                  [(x units)^2]
+      sigma_sqd_w    ! Normalized variance of w       [-]
+      
+    real( kind = core_rknd ), intent(in) :: &
       beta,        & ! Tunable parameter              [-]
-      sigma_sqd_w, & ! Normalized variance of w       [-]
       x_tol          ! Minimum tolerance of x         [(x units)]
 
     ! Output Variable
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Skx            ! Skewness of x                  [-]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
       nrmlzd_corr_wx, & ! Normalized correlation of w and x       [-]
       nrmlzd_Skw        ! Normalized skewness of w                [-]
+      
+    integer :: i, k
 
     ! ---- Begin Code ----
     ! weberjk, 8-July 2015. Commented this out for now. cgils was failing during some tests.
 
     ! Larson and Golaz (2005) eq. 16
-    nrmlzd_corr_wx &
-    = wpxp / sqrt( max( wp2, w_tol_sqd ) * max( xp2, x_tol**2 ) * ( one - sigma_sqd_w ) )
+    do k = 1, nz
+      do i = 1, ngrdcol
+        nrmlzd_corr_wx = &
+                wpxp(i,k) / sqrt( max( wp2(i,k), w_tol_sqd ) &
+                             * max( xp2(i,k), x_tol**2 ) * ( one - sigma_sqd_w(i,k) ) )
 
-    ! Larson and Golaz (2005) eq. 11
-    nrmlzd_Skw = Skw / ( ( one - sigma_sqd_w) * sqrt( one - sigma_sqd_w ) )
+        ! Larson and Golaz (2005) eq. 11
+        nrmlzd_Skw = Skw(i,k) / ( ( one - sigma_sqd_w(i,k)) * sqrt( one - sigma_sqd_w(i,k) ) )
 
-    ! Larson and Golaz (2005) eq. 33
-    Skx = nrmlzd_Skw * nrmlzd_corr_wx &
-          * ( beta + ( one - beta ) * nrmlzd_corr_wx**2 )
-
+        ! Larson and Golaz (2005) eq. 33
+        Skx(i,k) = nrmlzd_Skw * nrmlzd_corr_wx &
+              * ( beta + ( one - beta ) * nrmlzd_corr_wx**2 )
+      end do
+    end do
 
     return
 
-  end function LG_2005_ansatz
+  end subroutine LG_2005_ansatz
 
   !-----------------------------------------------------------------------------
-  function xp3_LG_2005_ansatz( gr, Skw_zt, wpxp_zt, wp2_zt, &
-                               xp2_zt, sigma_sqd_w_zt, &
-                               beta, Skw_denom_coef, x_tol ) &
-  result( xp3 )
-
+  subroutine xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
+                                 xp2_zt, sigma_sqd_w_zt, &
+                                 beta, Skw_denom_coef, x_tol, &
+                                 xp3 )
     ! Description:
     ! Calculate <x'^3> after calculating the skewness of x using the ansatz of
     ! Larson and Golaz (2005).
@@ -172,14 +180,13 @@ module Skx_module
         core_rknd ! Variable(s)
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
-
-    ! External
-    intrinsic :: sqrt
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Skw_zt,         & ! Skewness of w on thermodynamic levels   [-]
       wpxp_zt,        & ! Flux of x  (interp. to t-levs.)         [m/s(x units)]
       wp2_zt,         & ! Variance of w (interp. to t-levs.)      [m^2/s^2]
@@ -192,11 +199,11 @@ module Skx_module
       x_tol             ! Minimum tolerance of x                  [(x units)]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       xp3    ! <x'^3> (thermodynamic levels)    [(x units)^3]
 
     ! Local Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Skx_zt, &    ! Skewness of x on thermodynamic levels    [-]
       Skx_denom_tol
 
@@ -205,9 +212,9 @@ module Skx_module
     Skx_denom_tol = Skw_denom_coef * x_tol**2
 
     ! Calculate skewness of x using the ansatz of LG05.
-    Skx_zt(1:gr%nz) &
-    = LG_2005_ansatz( Skw_zt(1:gr%nz), wpxp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
-                      xp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), x_tol )
+    call LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
+                         xp2_zt, beta, sigma_sqd_w_zt, x_tol, &
+                         Skx_zt )
 
     ! Calculate <x'^3> using the reverse of the special sensitivity reduction
     ! formula in function Skx_func above.
@@ -216,7 +223,7 @@ module Skx_module
 
     return
 
-  end function xp3_LG_2005_ansatz
+  end subroutine xp3_LG_2005_ansatz
 
   !-----------------------------------------------------------------------------
 
