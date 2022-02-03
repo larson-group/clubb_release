@@ -20,6 +20,7 @@ module pdf_parameter_module
   public :: pdf_parameter,                 & ! Variable Type(s)
             implicit_coefs_terms,          &
             init_pdf_params,               & ! Procedure(s)
+            print_pdf_params,              &
             copy_single_pdf_params_to_multi, &
             copy_multi_pdf_params_to_single, &
             init_pdf_implicit_coefs_terms
@@ -386,6 +387,95 @@ module pdf_parameter_module
     return
 
   end subroutine init_pdf_implicit_coefs_terms
+
+  !=============================================================================
+  subroutine print_pdf_params( pdf_params, ngrdcol )
+
+    ! Description:
+    ! Prints every value found in type pdf_parameter
+
+    !-------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        fstderr
+
+    implicit none
+
+    ! Input Variable(s)
+    type(pdf_parameter), intent(in) :: &
+      pdf_params    ! PDF parameters            [units vary]
+
+    integer, intent(in) :: &
+      ngrdcol    ! Number of horizontal grid columns
+
+    ! Local Variable(s)
+    integer :: i    ! Loop index
+
+
+    do i = 1, ngrdcol
+
+       write(fstderr,*) "PDF parameters for column ", i
+       write(fstderr,*) "---------------------------------------------------"
+       write(fstderr,*) "w_1(i,:) = ", pdf_params%w_1(i,:)
+       write(fstderr,*) "w_2(i,:) = ", pdf_params%w_2(i,:)
+       write(fstderr,*) "varnce_w_1(i,:) = ", pdf_params%varnce_w_1(i,:)
+       write(fstderr,*) "varnce_w_2(i,:) = ", pdf_params%varnce_w_2(i,:)
+       write(fstderr,*) "rt_1(i,:) = ", pdf_params%rt_1(i,:)
+       write(fstderr,*) "rt_2(i,:) = ", pdf_params%rt_2(i,:)
+       write(fstderr,*) "varnce_rt_1(i,:) = ", pdf_params%varnce_rt_1(i,:)
+       write(fstderr,*) "varnce_rt_2(i,:) = ", pdf_params%varnce_rt_2(i,:)
+       write(fstderr,*) "thl_1(i,:) = ", pdf_params%thl_1(i,:)
+       write(fstderr,*) "thl_2(i,:) = ", pdf_params%thl_2(i,:)
+       write(fstderr,*) "varnce_thl_1(i,:) = ", pdf_params%varnce_thl_1(i,:)
+       write(fstderr,*) "varnce_thl_2(i,:) = ", pdf_params%varnce_thl_2(i,:)
+       write(fstderr,*) "corr_w_rt_1(i,:) = ", pdf_params%corr_w_rt_1(i,:)
+       write(fstderr,*) "corr_w_rt_2(i,:) = ", pdf_params%corr_w_rt_2(i,:)
+       write(fstderr,*) "corr_w_thl_1(i,:) = ", pdf_params%corr_w_thl_1(i,:)
+       write(fstderr,*) "corr_w_thl_2(i,:) = ", pdf_params%corr_w_thl_2(i,:)
+       write(fstderr,*) "corr_rt_thl_1(i,:) = ", pdf_params%corr_rt_thl_1(i,:)
+       write(fstderr,*) "corr_rt_thl_2(i,:) = ", pdf_params%corr_rt_thl_2(i,:)
+       write(fstderr,*) "alpha_thl(i,:) = ", pdf_params%alpha_thl(i,:)
+       write(fstderr,*) "alpha_rt(i,:) = ", pdf_params%alpha_rt(i,:)
+       write(fstderr,*) "crt_1(i,:) = ", pdf_params%crt_1(i,:)
+       write(fstderr,*) "crt_2(i,:) = ", pdf_params%crt_2(i,:)
+       write(fstderr,*) "cthl_1(i,:) = ", pdf_params%cthl_1(i,:)
+       write(fstderr,*) "cthl_2(i,:) = ", pdf_params%cthl_2(i,:)
+       write(fstderr,*) "chi_1(i,:) = ", pdf_params%chi_1(i,:)
+       write(fstderr,*) "chi_2(i,:) = ", pdf_params%chi_2(i,:)
+       write(fstderr,*) "stdev_chi_1(i,:) = ", pdf_params%stdev_chi_1(i,:)
+       write(fstderr,*) "stdev_chi_2(i,:) = ", pdf_params%stdev_chi_2(i,:)
+       write(fstderr,*) "stdev_eta_1(i,:) = ", pdf_params%stdev_eta_1(i,:)
+       write(fstderr,*) "stdev_eta_2(i,:) = ", pdf_params%stdev_eta_2(i,:)
+       write(fstderr,*) "covar_chi_eta_1(i,:) = ", &
+                        pdf_params%covar_chi_eta_1(i,:)
+       write(fstderr,*) "covar_chi_eta_2(i,:) = ", &
+                        pdf_params%covar_chi_eta_2(i,:)
+       write(fstderr,*) "corr_w_chi_1(i,:) = ", pdf_params%corr_w_chi_1(i,:)
+       write(fstderr,*) "corr_w_chi_2(i,:) = ", pdf_params%corr_w_chi_2(i,:)
+       write(fstderr,*) "corr_w_eta_1(i,:) = ", pdf_params%corr_w_eta_1(i,:)
+       write(fstderr,*) "corr_w_eta_2(i,:) = ", pdf_params%corr_w_eta_2(i,:)
+       write(fstderr,*) "corr_chi_eta_1(i,:) = ", &
+                        pdf_params%corr_chi_eta_1(i,:)
+       write(fstderr,*) "corr_chi_eta_2(i,:) = ", &
+                        pdf_params%corr_chi_eta_2(i,:)
+       write(fstderr,*) "rsatl_1(i,:) = ", pdf_params%rsatl_1(i,:)
+       write(fstderr,*) "rsatl_2(i,:) = ", pdf_params%rsatl_2(i,:)
+       write(fstderr,*) "rc_1(i,:) = ", pdf_params%rc_1(i,:)
+       write(fstderr,*) "rc_2(i,:) = ", pdf_params%rc_2(i,:)
+       write(fstderr,*) "cloud_frac_1(i,:) = ", pdf_params%cloud_frac_1(i,:)
+       write(fstderr,*) "cloud_frac_2(i,:) = ", pdf_params%cloud_frac_2(i,:)
+       write(fstderr,*) "mixt_frac(i,:) = ", pdf_params%mixt_frac(i,:)
+       write(fstderr,*) "ice_supersat_frac_1(i,:) = ", &
+                        pdf_params%ice_supersat_frac_1(i,:)
+       write(fstderr,*) "ice_supersat_frac_2(i,:) = ", &
+                        pdf_params%ice_supersat_frac_2(i,:)
+
+    enddo ! i = 1, ngrdcol
+
+
+    return
+
+  end subroutine print_pdf_params
 
   !=============================================================================
 
