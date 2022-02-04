@@ -1174,7 +1174,8 @@ module mono_flux_limiter
   end subroutine mfl_xm_solve
 
   !=============================================================================
-  subroutine calc_turb_adv_range( gr, dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+  subroutine calc_turb_adv_range( nz, ngrdcol, gr, dt, &
+                                  w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                                   mixt_frac_zm, &
                                   stats_zm, &
                                   low_lev_effect, high_lev_effect )
@@ -1217,11 +1218,12 @@ module mono_flux_limiter
     use stats_type, only: stats ! Type
 
     implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    type (stats), target, intent(inout) :: &
-      stats_zm
-
-    type (grid), target, intent(in) :: gr
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
    
     ! Constant parameters 
     logical, parameter ::  &
@@ -1234,20 +1236,24 @@ module mono_flux_limiter
     real( kind = core_rknd ), intent(in) ::  &
       dt ! Model timestep length                       [s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       w_1_zm,        & ! Mean w (1st PDF component)                   [m/s]
       w_2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
       varnce_w_1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
       varnce_w_2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
       mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
 
+    ! Inout Variable
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+      stats_zm
+
     ! Output Variables
-    integer, dimension(gr%nz), intent(out) ::  &
+    integer, dimension(ngrdcol,nz), intent(out) ::  &
       low_lev_effect, & ! Index of lowest level that has an effect (for lev. k)
       high_lev_effect   ! Index of highest level that has an effect (for lev. k)
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
       vert_vel_up,   & ! Average upwards vertical velocity component   [m/s]
       vert_vel_down, & ! Average downwards vertical velocity component [m/s]
       w_min            ! Minimum velocity to affect adjacent levels    [m/s]
@@ -1257,15 +1263,17 @@ module mono_flux_limiter
       dt_all_grid_levs, & ! Running count of amount of time taken to travel [s]
       invrs_dt            ! Inverse of timestep, used to reduce divides     [1/s]
 
-    integer :: k, j
+    integer :: k, i, j
 
     ! ---- Begin Code ----
 
     if ( l_constant_thickness ) then ! thickness is a constant value.
 
-       ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
-       do k = 3, gr%nz-2, 1
-
+      ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
+      do k = 3, nz-2, 1
+        
+        do i = 1, ngrdcol
+          
           ! Compute the number of levels that effect the central thermodynamic
           ! level through upwards motion (traveling from lower levels to reach
           ! the central thermodynamic level).
@@ -1276,11 +1284,11 @@ module mono_flux_limiter
 
           do ! loop downwards until answer is found.
 
-             if ( gr%zt(k) - gr%zt(j) >= const_thick ) then
+             if ( gr(i)%zt(k) - gr(i)%zt(j) >= const_thick ) then
 
                 ! Stop, the current grid level is the lowest level that can
                 ! be considered.
-                low_lev_effect(k) = j
+                low_lev_effect(i,k) = j
 
                 exit
 
@@ -1294,7 +1302,7 @@ module mono_flux_limiter
 
                    ! The current level (level 2) is the lowest level that can
                    ! be considered.
-                   low_lev_effect(k) = j
+                   low_lev_effect(i,k) = j
 
                    exit
 
@@ -1303,11 +1311,11 @@ module mono_flux_limiter
                    ! Increment to the next vertical level down.
                    j = j - 1
 
-                endif
+                end if
 
-             endif
+             end if
 
-          enddo ! downwards loop
+          end do ! downwards loop
 
 
           ! Compute the number of levels that effect the central thermodynamic
@@ -1320,11 +1328,11 @@ module mono_flux_limiter
 
           do ! loop upwards until answer is found.
 
-             if ( gr%zt(j) - gr%zt(k) >= const_thick ) then
+             if ( gr(i)%zt(j) - gr(i)%zt(k) >= const_thick ) then
 
                 ! Stop, the current grid level is the highest level that can
                 ! be considered.
-                high_lev_effect(k) = j
+                high_lev_effect(i,k) = j
 
                 exit
 
@@ -1332,11 +1340,11 @@ module mono_flux_limiter
 
                 ! The highest level that can be considered is thermodynamic
                 ! level gr%nz.
-                if ( j == gr%nz ) then
+                if ( j == nz ) then
 
                    ! The current level (level gr%nz) is the highest level
                    ! that can be considered.
-                   high_lev_effect(k) = j
+                   high_lev_effect(i,k) = j
 
                    exit
 
@@ -1345,31 +1353,39 @@ module mono_flux_limiter
                    ! Increment to the next vertical level up.
                    j = j + 1
 
-                endif
+                end if
 
-             endif
+             end if
 
-          enddo ! upwards loop
+          end do ! upwards loop
+          
+        end do
 
-       enddo ! k = 3, gr%nz-2
+      end do ! k = 3, gr%nz-2
 
 
     else ! thickness based on vertical velocity and time step length.
 
-       invrs_dt = 1.0_core_rknd / dt
-       w_min = gr%dzm * invrs_dt
+      invrs_dt = 1.0_core_rknd / dt
+      do k = 1, nz
+        do i = 1, ngrdcol
+          w_min(i,k) = gr(i)%dzm(k) * invrs_dt
+        end do
+      end do
 
-       ! Find the average upwards vertical velocity and the average downwards
-       ! vertical velocity.
-       ! Note:  A level that has all vertical wind moving downwards will have a
-       !        vert_vel_up value that is 0, and vice versa.
-       call mean_vert_vel_up_down( gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & !  In
-                                   mixt_frac_zm, 0.0_core_rknd, w_min, & ! In
-                                   stats_zm, & ! intent(inout)
-                                   vert_vel_down, vert_vel_up ) ! intent(out)
+      ! Find the average upwards vertical velocity and the average downwards
+      ! vertical velocity.
+      ! Note:  A level that has all vertical wind moving downwards will have a
+      !        vert_vel_up value that is 0, and vice versa.
+      call mean_vert_vel_up_down( nz, ngrdcol, &
+                                  w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & !  In
+                                  mixt_frac_zm, 0.0_core_rknd, w_min, & ! In
+                                  stats_zm, & ! intent(inout)
+                                  vert_vel_down, vert_vel_up ) ! intent(out)
 
-       ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
-       do k = 3, gr%nz-2, 1
+      ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
+      do k = 3, nz-2, 1
+        do i = 1, ngrdcol
 
           ! Compute the number of levels that effect the central thermodynamic
           ! level through upwards motion (traveling from lower levels to reach
@@ -1385,11 +1401,11 @@ module mono_flux_limiter
           do ! loop downwards until answer is found.
 
              ! Continue if there is some component of upwards vertical velocity.
-             if ( vert_vel_up(j) > 0.0_core_rknd ) then
+             if ( vert_vel_up(i,j) > 0.0_core_rknd ) then
 
                 ! Compute the amount of time it takes to travel one grid level
                 ! upwards:  delta_t = delta_z / vert_vel_up.
-                dt_one_grid_lev =  gr%dzm(j) / vert_vel_up(j)
+                dt_one_grid_lev =  gr(i)%dzm(j) / vert_vel_up(i,j)
                                        
 
                 ! Total time elapsed for crossing all grid levels that have been
@@ -1402,7 +1418,7 @@ module mono_flux_limiter
 
                    ! The current level is the lowest level that can be
                    ! considered.
-                   low_lev_effect(k) = j
+                   low_lev_effect(i,k) = j
 
                    exit
 
@@ -1418,7 +1434,7 @@ module mono_flux_limiter
 
                       ! The current level (level 2) is the lowest level that can
                       ! be considered.
-                      low_lev_effect(k) = j
+                      low_lev_effect(i,k) = j
 
                       exit
 
@@ -1436,7 +1452,7 @@ module mono_flux_limiter
 
                 ! The current level cannot be considered.  The lowest level that
                 ! can be considered is one-level-above the current level.
-                low_lev_effect(k) = j + 1
+                low_lev_effect(i,k) = j + 1
 
                 exit
 
@@ -1459,7 +1475,7 @@ module mono_flux_limiter
           do ! loop upwards until answer is found.
 
              ! Continue if there is some component of downwards vertical velocity.
-             if ( vert_vel_down(j-1) < 0.0_core_rknd ) then
+             if ( vert_vel_down(i,j-1) < 0.0_core_rknd ) then
 
                 ! Compute the amount of time it takes to travel one grid level
                 ! downwards:  delta_t = - delta_z / vert_vel_down.
@@ -1467,7 +1483,7 @@ module mono_flux_limiter
                 !        distance traveled is downwards.  Since vert_vel_down
                 !        has a negative value, dt_one_grid_lev will be a
                 !        positive value.
-                dt_one_grid_lev = -gr%dzm(j-1) / vert_vel_down(j-1)
+                dt_one_grid_lev = -gr(i)%dzm(j-1) / vert_vel_down(i,j-1)
 
                 ! Total time elapsed for crossing all grid levels that have been
                 ! passed, thus far.
@@ -1479,7 +1495,7 @@ module mono_flux_limiter
 
                    ! The current level is the highest level that can be
                    ! considered.
-                   high_lev_effect(k) = j
+                   high_lev_effect(i,k) = j
 
                    exit
 
@@ -1489,11 +1505,11 @@ module mono_flux_limiter
 
                    ! The highest level that can be considered is thermodynamic
                    ! level gr%nz.
-                   if ( j == gr%nz ) then
+                   if ( j == nz ) then
 
                       ! The current level (level gr%nz) is the highest level
                       ! that can be considered.
-                      high_lev_effect(k) = j
+                      high_lev_effect(i,k) = j
 
                       exit
 
@@ -1511,37 +1527,38 @@ module mono_flux_limiter
 
                 ! The current level cannot be considered.  The highest level
                 ! that can be considered is one-level-below the current level.
-                high_lev_effect(k) = j - 1
+                high_lev_effect(i,k) = j - 1
 
                 exit
 
-             endif
+             end if
 
-          enddo  ! upwards loop
-
-       enddo ! k = 3, gr%nz-2
-
-    endif ! l_constant_thickness
+          end do  ! upwards loop
+        end do
+      enddo ! k = 3, gr%nz-2
+    end if ! l_constant_thickness
 
 
     ! Information for levels 1, 2, gr%nz-1, and gr%nz is not needed.
     ! However, set the values at these levels for purposes of not having odd
     ! values in the arrays.
-    low_lev_effect(1)  = 1
-    high_lev_effect(1) = 1
-    low_lev_effect(2)  = 2
-    high_lev_effect(2) = 2
-    low_lev_effect(gr%nz-1)  = gr%nz-1
-    high_lev_effect(gr%nz-1) = gr%nz
-    low_lev_effect(gr%nz)    = gr%nz
-    high_lev_effect(gr%nz)   = gr%nz
-
+    do i = 1, ngrdcol
+      low_lev_effect(i,1)  = 1
+      high_lev_effect(i,1) = 1
+      low_lev_effect(i,2)  = 2
+      high_lev_effect(i,2) = 2
+      low_lev_effect(i,nz-1)  = nz-1
+      high_lev_effect(i,nz-1) = nz
+      low_lev_effect(i,nz)    = nz
+      high_lev_effect(i,nz)   = nz
+    end do
 
     return
   end subroutine calc_turb_adv_range
 
   !=============================================================================
-  subroutine mean_vert_vel_up_down( gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+  subroutine mean_vert_vel_up_down( nz, ngrdcol, &
+                                    w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                                     mixt_frac_zm, w_ref, w_min, &
                                     stats_zm, &
                                     mean_w_down, mean_w_up )
@@ -1753,14 +1770,13 @@ module mono_flux_limiter
     use stats_type, only: stats ! Type
 
     implicit none
-
-    type (stats), target, intent(inout) :: &
-      stats_zm
-
-    type (grid), target, intent(in) :: gr
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       w_1_zm,        & ! Mean w (1st PDF component)                   [m/s]
       w_2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
       varnce_w_1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
@@ -1772,24 +1788,32 @@ module mono_flux_limiter
       w_ref          ! Reference velocity, w|_ref (normally = 0)   [m/s]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       mean_w_down, & ! Overall mean w (<= w|_ref)                  [m/s]
       mean_w_up      ! Overall mean w (>= w|_ref)                  [m/s]
 
+    ! Inout Variables
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+      stats_zm
+
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       mean_w_down_1st, & ! Mean w (<= w|_ref) from 1st normal distribution [m/s]
       mean_w_down_2nd, & ! Mean w (<= w|_ref) from 2nd normal distribution [m/s]
       mean_w_up_1st, &   ! Mean w (>= w|_ref) from 1st normal distribution [m/s]
       mean_w_up_2nd      ! Mean w (>= w|_ref) from 2nd normal distribution [m/s]
 
+    integer :: i, k
+
     ! ---- Begin Code ----
 
-    call calc_mean_w_up_down_component( gr, w_1_zm, varnce_w_1_zm, & ! intent(in)
+    call calc_mean_w_up_down_component( nz, ngrdcol, & ! intent(in)
+                                        w_1_zm, varnce_w_1_zm, & ! intent(in)
                                         w_ref, w_min, & ! intent(in)
                                         mean_w_down_1st, mean_w_up_1st ) ! intent(out)
 
-    call calc_mean_w_up_down_component( gr, w_2_zm, varnce_w_2_zm, & ! intent(in)
+    call calc_mean_w_up_down_component( nz, ngrdcol, & ! intent(in)
+                                        w_2_zm, varnce_w_2_zm, & ! intent(in)
                                         w_ref, w_min, & ! intent(in)
                                         mean_w_down_2nd, mean_w_up_2nd ) ! intent(out)
 
@@ -1802,21 +1826,22 @@ module mono_flux_limiter
                    + ( 1.0_core_rknd - mixt_frac_zm ) * mean_w_up_2nd
 
     if ( l_stats_samp ) then
+      do i = 1, ngrdcol
+         call stat_update_var( imean_w_up, mean_w_up(i,:), & ! intent(in)
+                               stats_zm(i) ) ! intent(inout)
 
-       call stat_update_var( imean_w_up, mean_w_up, & ! intent(in)
-                             stats_zm ) ! intent(inout)
-
-       call stat_update_var( imean_w_down, mean_w_down, & ! intent(in)
-                             stats_zm ) ! intent(inout)
-
-    endif ! l_stats_samp
+         call stat_update_var( imean_w_down, mean_w_down(i,:), & ! intent(in)
+                               stats_zm(i) ) ! intent(inout)
+      end do
+    end if ! l_stats_samp
 
     return
 
   end subroutine mean_vert_vel_up_down
 
   !=============================================================================
-  subroutine calc_mean_w_up_down_component( gr, w_i_zm, varnce_w_i, &
+  subroutine calc_mean_w_up_down_component( nz, ngrdcol, & 
+                                            w_i_zm, varnce_w_i, &
                                             w_ref, w_min, &
                                             mean_w_down_i, mean_w_up_i )
 
@@ -1857,11 +1882,13 @@ module mono_flux_limiter
         core_rknd ! Variable(s)
 
       implicit none
-
-    type (grid), target, intent(in) :: gr
+      
+      integer, intent(in) :: &
+        nz, &
+        ngrdcol
 
       ! Input Variables
-      real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
         w_i_zm,     & ! Mean of w                                   [m/s]
         varnce_w_i, & ! Variance of w                                       [m^2/s^2]
         w_min         ! Minimum velocity required to affect adjacent level  [m/s]
@@ -1870,150 +1897,82 @@ module mono_flux_limiter
         w_ref         ! Reference velocity, w|_ref (normally = 0)   [m/s]
 
       ! Output Variables
-      real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
+      real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
         mean_w_down_i, & ! Mean w (<= w|_ref) from normal distribution [m/s]
         mean_w_up_i      ! Mean w (>= w|_ref) from normal distribution [m/s]
 
       ! Local Variables
-      real( kind = core_rknd ), dimension(gr%nz) :: &
-          sigma_w_i, & ! Variance of w (1st PDF component)            [m^2/s^2]
+      real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
           erf_cache, & ! erf/cdfnorm values
           exp_cache    ! exp() values
 
-#ifdef MKL
-      real( kind = core_rknd ), dimension(gr%nz) :: &
-          w_zm_packed,          & ! Values of w needed in expensive calculation      [m/s]
-          sigma_w_packed,       & ! Values of sigma needed in expensive calculation  [m/s]
-          mean_w_down_packed,   & ! Mean w (<= w|_ref), only calculated values       [m/s]
-          mean_w_up_packed,     & ! Mean w (>= w|_ref), only calculated values       [m/s]
-          zeta, zeta_sqd
-
-      integer, dimension(gr%nz) :: &
-         v_calc_mask    ! Mask to indicate which indicies need vectorizable calculations
-
-      integer :: &
-         v_num_calcs   ! Number of elements needing calculation, can act as an index variable
-#endif
-
       real( kind = core_rknd ) :: &
+        sigma_w_i,   & ! Variance of w (1st PDF component)            [m^2/s^2]
         invrs_sqrt_2pi ! The inverse of sqrt(2*pi), calculated to save divide operations
 
-      integer :: k  ! Vertical loop index
+      integer :: i, k  ! Vertical loop index
 
     ! ----------------- Begin Code -----------------
 
     invrs_sqrt_2pi = one / sqrt_2pi
 
-#ifdef MKL
-    v_calc_mask(:) = 0
-    v_num_calcs = 0
-#endif
 
-    ! Loop over momentum levels from 2 to gr%nz-1.  Levels 1 and gr%nz
+    ! Loop over momentum levels from 2 to nz-1.  Levels 1 and nz
     ! are not needed.
-    do k = 2, gr%nz-1
-
+    do k = 2, nz-1
+      
+      do i = 1, ngrdcol
+      
         ! Standard deviation of w for the normal distribution.
-        sigma_w_i(k) = sqrt( varnce_w_i(k) )
+        sigma_w_i = sqrt( varnce_w_i(i,k) )
 
-        if( abs( w_i_zm(k) ) + 3.0_core_rknd*sigma_w_i(k) <= w_min(k) ) then
+        if( abs( w_i_zm(i,k) ) + 3.0_core_rknd*sigma_w_i <= w_min(i,k) ) then
 
             ! The entire normal is too weak to affect adjacent grid levels
             ! w is considered to be 0 in both up and down directions
-            mean_w_down_i(k) = 0.0_core_rknd
-            mean_w_up_i(k)   = 0.0_core_rknd
+            mean_w_down_i(i,k) = 0.0_core_rknd
+            mean_w_up_i(i,k)   = 0.0_core_rknd
 
-        elseif ( w_i_zm(k) + 3._core_rknd*sigma_w_i(k) <= w_ref ) then
+        elseif ( w_i_zm(i,k) + 3._core_rknd*sigma_w_i <= w_ref ) then
 
            ! The entire normal is on the negative side of w|_ref.
-           mean_w_down_i(k) = w_i_zm(k)
-           mean_w_up_i(k)   = 0.0_core_rknd
+           mean_w_down_i(i,k) = w_i_zm(i,k)
+           mean_w_up_i(i,k)   = 0.0_core_rknd
 
-        elseif ( w_i_zm(k) - 3._core_rknd*sigma_w_i(k) >= w_ref ) then
+        elseif ( w_i_zm(i,k) - 3._core_rknd*sigma_w_i >= w_ref ) then
 
            ! The entire normal is on the positive side of w|_ref.
-           mean_w_down_i(k) = 0.0_core_rknd
-           mean_w_up_i(k)   = w_i_zm(k)
+           mean_w_down_i(i,k) = 0.0_core_rknd
+           mean_w_up_i(i,k)   = w_i_zm(i,k)
 
         else ! The normal has significant values on both sides of w_ref.
 
-#ifdef MKL
-           ! MKL functions are available, the calculations will be completed
-           ! over contiguous array sections, simply save needed values here
-
-           ! Increment count of elements needing calculation
-           v_num_calcs = v_num_calcs + 1
-
-           ! Copy values which are needed in calculation into contiguous array section
-           w_zm_packed(v_num_calcs) = w_i_zm(k)
-           sigma_w_packed(v_num_calcs) = sigma_w_i(k)
-
-           ! Keep track of where result goes using this mask, so we can unpack
-           ! the contiguous array back into the output array after calculation
-           v_calc_mask(k) = 1
-#else
            ! MKL functions are unavailable, use these scalar calculations instead
 
-           exp_cache(k) = exp( -(w_ref-w_i_zm(k))**2 / (2.0_core_rknd*sigma_w_i(k)**2) )
+           exp_cache(i,k) = exp( -(w_ref-w_i_zm(i,k))**2 / (2.0_core_rknd*sigma_w_i**2) )
 
-           erf_cache(k) = erf( (w_ref-w_i_zm(k)) / (sqrt_2*sigma_w_i(k)) )
+           erf_cache(i,k) = erf( (w_ref-w_i_zm(i,k)) / (sqrt_2*sigma_w_i ) )
 
-           mean_w_down_i(k) =  - sigma_w_i(k) * invrs_sqrt_2pi * exp_cache(k)  &
-                               + w_i_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache(k))
+           mean_w_down_i(i,k) =  - sigma_w_i * invrs_sqrt_2pi * exp_cache(i,k)  &
+                               + w_i_zm(i,k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache(i,k))
 
-           mean_w_up_i(k) =  + sigma_w_i(k) * invrs_sqrt_2pi * exp_cache(k)  &
-                             + w_i_zm(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache(k))
-#endif
+           mean_w_up_i(i,k) =  + sigma_w_i * invrs_sqrt_2pi * exp_cache(i,k)  &
+                             + w_i_zm(i,k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache(i,k))
+                             
+        end if
+        
+      end do
 
-        endif
+    end do ! k = 2, gr%nz
 
-    enddo ! k = 2, gr%nz
+    ! Upper and lower levels are not used, set to 0 to besafe and avoid NaN problems
+    do i = 1, ngrdcol
+      mean_w_down_i(i,1) = 0.0_core_rknd
+      mean_w_up_i(i,1) = 0.0_core_rknd
 
-
-#ifdef MKL
-    ! If there are any calculations to complete, then v_num_calcs > 0, and the values to 
-    ! operate on are all stored in contiguous sections in the "packed" arrays. This means the 
-    ! packed arrays are only valid on (1:v_num_calcs), and values outside that range may 
-    ! be NaN. For more information on Intel's MKL_VML functions, see the Vector Mathematical
-    ! Functions section of the MKL developer reference for Fortran
-    if( v_num_calcs > 0 ) then
-
-        ! zeta = w_zm_packed / sigma_w_packed
-        call vddiv( v_num_calcs, ( w_ref - w_zm_packed(1:v_num_calcs) ), sigma_w_packed, zeta )
-
-        ! Cumulative normal distribution function, erf_cache = 0.5*(1+erf(zeta/sqrt2))
-        call vdcdfnorm( v_num_calcs, zeta, erf_cache )
-
-        ! zeta_sqd = zeta**2
-        call vdsqr( v_num_calcs, zeta, zeta_sqd )
-
-        ! exp_cache = exp( -0.5*zeta**2 )
-        call vdexp( v_num_calcs, - one_half * zeta_sqd(1:v_num_calcs), exp_cache )
-
-        do k = 1, v_num_calcs
-
-            mean_w_down_packed(k) = - sigma_w_packed(k) * invrs_sqrt_2pi * exp_cache(k) &
-                                    + w_zm_packed(k) * erf_cache(k)
-
-            mean_w_up_packed(k) = + sigma_w_packed(k) * invrs_sqrt_2pi * exp_cache(k) &
-                                  + w_zm_packed(k) * ( one - erf_cache(k) )
-        end do
-
-        ! Unpack results from contiguous array sections and put them into output arrays,
-        ! where to put them is defined by v_calc_mask
-        call vdunpackm( gr%nz, mean_w_down_packed, mean_w_down_i, v_calc_mask )
-        call vdunpackm( gr%nz, mean_w_up_packed, mean_w_up_i, v_calc_mask )
-
-    end if
-
-#endif
-
-    ! Upper and lower levels are not used, set to 0 to be safe and avoid NaN problems
-    mean_w_down_i(1) = 0.0_core_rknd
-    mean_w_up_i(1) = 0.0_core_rknd
-
-    mean_w_down_i(gr%nz) = 0.0_core_rknd
-    mean_w_up_i(gr%nz) = 0.0_core_rknd
+      mean_w_down_i(i,nz) = 0.0_core_rknd
+      mean_w_up_i(i,nz) = 0.0_core_rknd
+    end do
 
     return
 

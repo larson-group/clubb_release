@@ -614,21 +614,17 @@ module advance_xm_wpxp_module
     ! have an effect on the central thermodynamic level during the course of
     ! one time step due to turbulent advection.  This is used as part of the
     ! monotonic turbulent advection scheme.
-    do i = 1, ngrdcol
-      call calc_turb_adv_range( gr(i), dt, w_1_zm(i,:), w_2_zm(i,:), varnce_w_1_zm(i,:), varnce_w_2_zm(i,:), & ! intent(in)
-                                mixt_frac_zm(i,:), &  ! intent(in)
-                                stats_zm(i), & ! intent(inout)
-                                low_lev_effect(i,:), high_lev_effect(i,:) ) ! intent(out)
-    end do
+    call calc_turb_adv_range( nz, ngrdcol, gr, dt, &
+                              w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
+                              mixt_frac_zm, &  ! intent(in)
+                              stats_zm, & ! intent(inout)
+                              low_lev_effect, high_lev_effect ) ! intent(out)
 
     
     ! Calculate 1st pressure terms for w'r_t', w'thl', and w'sclr'. 
-    do i = 1, ngrdcol
-      call wpxp_term_pr1_lhs( gr(i), C6rt_Skw_fnc(i,:), C6thl_Skw_fnc(i,:), C7_Skw_fnc(i,:),        & ! Intent(in)
-                              invrs_tau_C6_zm(i,:), l_scalar_calc,                 & ! Intent(in)
-                              lhs_pr1_wprtp(i,:), lhs_pr1_wpthlp(i,:), lhs_pr1_wpsclrp(i,:)  ) ! Intent(out)
-                                  
-    end do
+    call wpxp_term_pr1_lhs( nz, ngrdcol, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, & ! Intent(in)
+                            invrs_tau_C6_zm, l_scalar_calc,                       & ! Intent(in)
+                            lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp )        ! Intent(out)
     
     C6_term(:,:) = C6rt_Skw_fnc(:,:) * invrs_tau_C6_zm(:,:)
 
@@ -639,42 +635,36 @@ module advance_xm_wpxp_module
       end do
     end if
 
-          
-    do i = 1, ngrdcol        
-      call  calc_xm_wpxp_ta_terms( gr(i), wp2rtp(i,:), &  ! intent(in)
-                                   wp2thlp(i,:), wp2sclrp(i,:,:), & ! intent(in)
-                                   rho_ds_zt(i,:), invrs_rho_ds_zm(i,:), rho_ds_zm(i,:), & ! intent(in)
-                                   sigma_sqd_w(i,:), wp3_on_wp2_zt(i,:), & ! intent(in)
-                                   pdf_implicit_coefs_terms(i), & ! intent(in)
-                                   iiPDF_type, & ! intent(in)
-                                   l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, & ! intent(in)
-                                   l_scalar_calc, & ! intent(in)
-                                   l_godunov_upwind_wpxp_ta, & ! intent(in)
-                                   stats_zt(i), & ! intent(inout)
-                                   lhs_ta_wprtp(:,i,:), lhs_ta_wpthlp(:,i,:), lhs_ta_wpup(:,i,:), & ! intent(out)
-                                   lhs_ta_wpvp(:,i,:), lhs_ta_wpsclrp(:,i,:,:), & ! intent(out)
-                                   rhs_ta_wprtp(i,:), rhs_ta_wpthlp(i,:), rhs_ta_wpup(i,:), & ! intent(out)
-                                   rhs_ta_wpvp(i,:), rhs_ta_wpsclrp(i,:,:) ) ! intent(out)
-    end do
-
+    call  calc_xm_wpxp_ta_terms( nz, ngrdcol, gr, wp2rtp, &  ! intent(in)
+                                 wp2thlp, wp2sclrp, & ! intent(in)
+                                 rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, & ! intent(in)
+                                 sigma_sqd_w, wp3_on_wp2_zt, & ! intent(in)
+                                 pdf_implicit_coefs_terms, & ! intent(in)
+                                 iiPDF_type, & ! intent(in)
+                                 l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, & ! intent(in)
+                                 l_scalar_calc, & ! intent(in)
+                                 l_godunov_upwind_wpxp_ta, & ! intent(in)
+                                 stats_zt, & ! intent(inout)
+                                 lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, & ! intent(out)
+                                 lhs_ta_wpvp, lhs_ta_wpsclrp, & ! intent(out)
+                                 rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, & ! intent(out)
+                                 rhs_ta_wpvp, rhs_ta_wpsclrp ) ! intent(out)
 
     ! Calculate various terms that are the same between all LHS matricies
-    do i = 1, ngrdcol
-      call calc_xm_wpxp_lhs_terms( gr(i), Kh_zm(i,:), wm_zm(i,:), wm_zt(i,:), wp2(i,:),                     & ! In
-                                   Kw6(i,:), C7_Skw_fnc(i,:), invrs_rho_ds_zt(i,:),                 & ! In
-                                   invrs_rho_ds_zm(i,:), rho_ds_zt(i,:),                       & ! In
-                                   rho_ds_zm(i,:), l_implemented, em(i,:),                     & ! In
-                                   Lscale(i,:), thlm(i,:), exner(i,:), rtm(i,:), rcm(i,:), p_in_Pa(i,:), thvm(i,:),     & ! In
-                                   ice_supersat_frac(i,:),                                & ! In
-                                   clubb_params, nu_vert_res_dep(i),                    & ! In
-                                   l_diffuse_rtm_and_thlm,                           & ! In
-                                   l_stability_correct_Kh_N2_zm,                     & ! In
-                                   l_upwind_xm_ma,                                   & ! In
-                                   l_brunt_vaisala_freq_moist,                       & ! In
-                                   l_use_thvm_in_bv_freq,                            & ! In
-                                   lhs_diff_zm(:,i,:), lhs_diff_zt(:,i,:), lhs_ma_zt(:,i,:), lhs_ma_zm(:,i,:),   & ! Out
-                                   lhs_tp(:,i,:), lhs_ta_xm(:,i,:), lhs_ac_pr2(i,:) ) ! Out
-    end do
+    call calc_xm_wpxp_lhs_terms( nz, ngrdcol, gr, Kh_zm, wm_zm, wm_zt, wp2,        & ! In
+                                 Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                 & ! In
+                                 invrs_rho_ds_zm, rho_ds_zt,                       & ! In
+                                 rho_ds_zm, l_implemented, em,                     & ! In
+                                 Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
+                                 ice_supersat_frac,                                & ! In
+                                 clubb_params, nu_vert_res_dep,                    & ! In
+                                 l_diffuse_rtm_and_thlm,                           & ! In
+                                 l_stability_correct_Kh_N2_zm,                     & ! In
+                                 l_upwind_xm_ma,                                   & ! In
+                                 l_brunt_vaisala_freq_moist,                       & ! In
+                                 l_use_thvm_in_bv_freq,                            & ! In
+                                 lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,   & ! Out
+                                 lhs_tp, lhs_ta_xm, lhs_ac_pr2 ) ! Out
 
     ! Setup and decompose matrix for each variable.
 
@@ -1324,7 +1314,7 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_lhs
 
   !=============================================================================================
-  subroutine calc_xm_wpxp_lhs_terms( gr, Kh_zm, wm_zm, wm_zt, wp2,                      & ! In
+  subroutine calc_xm_wpxp_lhs_terms( nz, ngrdcol, gr, Kh_zm, wm_zm, wm_zt, wp2,         & ! In
                                      Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                  & ! In
                                      invrs_rho_ds_zm, rho_ds_zt,                        & ! In
                                      rho_ds_zm, l_implemented, em,                      & ! In
@@ -1379,11 +1369,15 @@ module advance_xm_wpxp_module
         zero
 
     implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
     !------------------- Input Variables -------------------
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: & 
       Kh_zm,                  & ! Eddy diffusivity on momentum levels    [m^2/s]
       Lscale,                 & ! Turbulent mixing length                    [m]
       em,                     & ! Turbulent Kinetic Energy (TKE)       [m^2/s^2]
@@ -1410,7 +1404,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    type(nu_vertical_res_dep), intent(in) :: &
+    type(nu_vertical_res_dep), dimension(ngrdcol), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     logical, intent(in) :: &
@@ -1427,22 +1421,22 @@ module advance_xm_wpxp_module
       l_use_thvm_in_bv_freq           ! Use thvm in the calculation of Brunt-Vaisala frequency
       
     !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: & 
       lhs_diff_zm,  & ! Diffusion term for w'x'
       lhs_diff_zt,  & ! Diffusion term for xm
       lhs_ma_zt,    & ! Mean advection contributions to lhs
       lhs_ma_zm       ! Mean advection contributions to lhs
 
-    real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(2,ngrdcol,nz), intent(out) :: & 
       lhs_tp,     & ! Turbulent production terms of w'x'
       lhs_ta_xm     ! Turbulent advection terms of xm
       
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: & 
       lhs_ac_pr2    ! Accumulation of w'x' and w'x' pressure term 2
       
       
     !------------------- Local Variables -------------------
-    real (kind = core_rknd), dimension(gr%nz) :: &
+    real (kind = core_rknd), dimension(ngrdcol,nz) :: &
       Kh_N2_zm, &
       K_zm, &      ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
       K_zt, &      ! Eddy diffusivity coefficient, thermo. levels [m2/s]
@@ -1450,69 +1444,82 @@ module advance_xm_wpxp_module
 
     real (kind = core_rknd) :: &
       constant_nu ! controls the magnitude of diffusion
+      
+    integer :: i
 
     !------------------- Begin Code -------------------
     
     ! Initializations/precalculations
-    constant_nu  = 0.1_core_rknd
-    Kw6_zm = max( zt2zm( gr, Kw6 ), zero_threshold )
+    constant_nu = 0.1_core_rknd
+    Kw6_zm      = max( zt2zm( nz, ngrdcol, gr, Kw6 ), zero_threshold )
  
     ! Calculate turbulent advection terms of xm for all grid levels
-    call xm_term_ta_lhs( gr, rho_ds_zm(:),       & ! Intent(in)
-                         invrs_rho_ds_zt(:), & ! Intent(in)
-                         gr%invrs_dzt(:),    & ! Intent(in)
-                         lhs_ta_xm(:,:)      ) ! Intent(out)         
+    call xm_term_ta_lhs( nz, ngrdcol, gr,            & ! Intent(in)
+                         rho_ds_zm, invrs_rho_ds_zt, & ! Intent(in)
+                         lhs_ta_xm )                   ! Intent(out) 
     
                                    
     ! Calculate turbulent production terms of w'x' for all grid level
-    call wpxp_term_tp_lhs( gr, wp2(:), gr%invrs_dzm(:), & ! Intent(in)
-                           lhs_tp(:,:) )              ! Intent(out)
+    call wpxp_term_tp_lhs( nz, ngrdcol, gr, wp2, & ! Intent(in)
+                           lhs_tp )                ! Intent(out)
 
     ! Calculate accumulation of w'x' and w'x' pressure term 2 of w'x' for all grid level
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wpxp_pr
-    call wpxp_terms_ac_pr2_lhs( gr, C7_Skw_fnc, wm_zt, gr%invrs_dzm, & ! Intent(in)
-                                lhs_ac_pr2                       ) ! Intent(out)
+    do i = 1, ngrdcol
+      call wpxp_terms_ac_pr2_lhs( gr(i), C7_Skw_fnc(i,:), wm_zt(i,:), gr(i)%invrs_dzm(:), & ! Intent(in)
+                                  lhs_ac_pr2(i,:)                       ) ! Intent(out)
+    end do        
 
     ! Calculate diffusion terms for all momentum grid level
-    call diffusion_zm_lhs( gr, Kw6(:), Kw6_zm(:), nu_vert_res_dep%nu6, & ! Intent(in)
-                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
-                           invrs_rho_ds_zm(:), rho_ds_zt(:), & ! Intent(in)
-                           lhs_diff_zm(:,:)                  ) ! Intent(out)    
+    do i = 1, ngrdcol
+      call diffusion_zm_lhs( gr(i), Kw6(i,:), Kw6_zm(i,:), nu_vert_res_dep(i)%nu6, & ! Intent(in)
+                             gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:), & ! Intent(in)
+                             invrs_rho_ds_zm(i,:), rho_ds_zt(i,:), & ! Intent(in)
+                             lhs_diff_zm(:,i,:)                  ) ! Intent(out)    
+    end do        
                               
     ! Calculate mean advection terms for all momentum grid level
-    call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
-                         lhs_ma_zm(:,:)             ) ! Intent(out) 
+    do i = 1, ngrdcol
+      call term_ma_zm_lhs( gr(i), wm_zm(i,:), gr(i)%invrs_dzm(:), & ! Intent(in)
+                           lhs_ma_zm(:,i,:)             ) ! Intent(out) 
+    end do        
                                
     ! Calculate diffusion terms for all thermodynamic grid level
     if ( l_diffuse_rtm_and_thlm ) then
         
         if ( l_stability_correct_Kh_N2_zm ) then
-          Kh_N2_zm = Kh_zm / calc_stability_correction( gr, thlm, Lscale, em, exner, rtm, rcm, &
-                                                        p_in_Pa, thvm, ice_supersat_frac, &
-                                                        clubb_params(ilambda0_stability_coef), &
-                                                        l_brunt_vaisala_freq_moist, &
-                                                        l_use_thvm_in_bv_freq )
+          do i = 1, ngrdcol
+            Kh_N2_zm(i,:) = Kh_zm(i,:) / &
+              calc_stability_correction( gr(i), thlm(i,:), Lscale(i,:), em(i,:), exner(i,:), rtm(i,:), rcm(i,:), &
+                                         p_in_Pa(i,:), thvm(i,:), ice_supersat_frac(i,:), &
+                                         clubb_params(ilambda0_stability_coef), &
+                                         l_brunt_vaisala_freq_moist, &
+                                         l_use_thvm_in_bv_freq )
+          end do
         else
-          Kh_N2_zm = Kh_zm
+          Kh_N2_zm(:,:) = Kh_zm(:,:)
         end if
 
-        K_zm(:) = Kh_N2_zm(:) + constant_nu
-        K_zt = max( zm2zt ( gr, K_zm ), zero_threshold )
+        K_zm(:,:) = Kh_N2_zm(:,:) + constant_nu
+        K_zt(:,:) = max( zm2zt ( nz, ngrdcol, gr, K_zm ), zero_threshold )
 
-        call diffusion_zt_lhs( gr, K_zm(:), K_zt(:), zero,       & ! Intent(in)
-                               gr%invrs_dzm(:), gr%invrs_dzt(:), & ! Intent(in)
-                               invrs_rho_ds_zt(:), rho_ds_zm(:), & ! intent(in)
-                               lhs_diff_zt(:,:)                  ) ! Intent(out)
+        do i = 1, ngrdcol
+          call diffusion_zt_lhs( gr(i), K_zm(i,:), K_zt(i,:), zero,       & ! Intent(in)
+                                 gr(i)%invrs_dzm(:), gr(i)%invrs_dzt(:), & ! Intent(in)
+                                 invrs_rho_ds_zt(i,:), rho_ds_zm(i,:), & ! intent(in)
+                                 lhs_diff_zt(:,i,:)                  ) ! Intent(out)
+        end do
         
     end if        
                              
     ! Calculate mean advection terms for all thermodynamic grid level
     if ( .not. l_implemented ) then
-
-        call term_ma_zt_lhs( gr, wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
+      do i = 1, ngrdcol
+        call term_ma_zt_lhs( gr(i), wm_zt(i,:), gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:), & ! Intent(in)
                              l_upwind_xm_ma,                             & ! Intent(in)
-                             lhs_ma_zt(:,:)                              ) ! Intent(out)
-    endif    
+                             lhs_ma_zt(:,i,:)                              ) ! Intent(out)
+      end do
+    end if    
      
     return
 
@@ -1850,7 +1857,7 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_rhs
   
   !=============================================================================================
-  subroutine calc_xm_wpxp_ta_terms( gr, wp2rtp, &
+  subroutine calc_xm_wpxp_ta_terms( nz, ngrdcol, gr, wp2rtp, &
                                     wp2thlp, wp2sclrp, &
                                     rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                     sigma_sqd_w, wp3_on_wp2_zt, &
@@ -1914,18 +1921,18 @@ module advance_xm_wpxp_module
     use stats_type, only: stats ! Type
 
     implicit none 
-
-    type (stats), target, intent(inout) :: &
-      stats_zt
-
-    type (grid), target, intent(in) :: gr
     
     !------------------- Input Variables -------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
     
-    type(implicit_coefs_terms), intent(in) :: &
+    type(implicit_coefs_terms), dimension(ngrdcol), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
                                 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wp2rtp, &
       wp2thlp, &
       rho_ds_zt, &
@@ -1934,7 +1941,7 @@ module advance_xm_wpxp_module
       sigma_sqd_w, &     
       wp3_on_wp2_zt
       
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: &
       wp2sclrp
       
     integer, intent(in) :: &
@@ -1960,26 +1967,29 @@ module advance_xm_wpxp_module
                               ! This stems from removing the l_upwind_wpxp_ta flag.
                               ! More information on this can be found on issue #926
                               ! on the clubb repository.
-
+                              
+    !------------------- Inout Variables -------------------
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+      stats_zt
       
     !------------------- Output Variables -------------------
         
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
       lhs_ta_wprtp, &
       lhs_ta_wpthlp, &
       lhs_ta_wpup, &
       lhs_ta_wpvp
       
-    real( kind = core_rknd ), dimension(3,gr%nz,sclr_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz,sclr_dim), intent(out) :: &
       lhs_ta_wpsclrp
       
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       rhs_ta_wprtp, &
       rhs_ta_wpthlp, &
       rhs_ta_wpup, &
       rhs_ta_wpvp
       
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(out) :: &
       rhs_ta_wpsclrp
     
     !------------------- Local Variables -------------------
@@ -1987,43 +1997,43 @@ module advance_xm_wpxp_module
     ! Variables for turbulent advection of predictive variances and covariances.
 
     ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
       term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
 
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       coef_wp2rtp_implicit_zm, & ! coef_wp2rtp_implicit interp. to m-levs. [m/s]
       term_wp2rtp_explicit_zm    ! term_wp2rtp_expl intrp m-levs [m^2/s^2 kg/kg]
 
     ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
       term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
 
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       coef_wp2thlp_implicit_zm, & ! coef_wp2thlp_implicit interp. m-levs.  [m/s]
       term_wp2thlp_explicit_zm    ! term_wp2thlp_expl interp. m-levs [m^2/s^2 K]
 
     ! <w'^2 sclr'> = coef_wp2sclrp_implicit * <w'sclr'> + term_wp2sclrp_explicit
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       term_wp2sclrp_explicit    ! Term that is on the RHS    [m^2/s^2(un. vary)]
 
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       term_wp2sclrp_explicit_zm    ! term_wp2sclrp_expl intrp zm [m^2/s^2(un v)]
 
     ! Sign of turbulent velocity (used for "upwind" turbulent advection)
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       sgn_t_vel_wprtp,  & ! Sign of the turbulent velocity for <w'rt'>       [-]
       sgn_t_vel_wpthlp    ! Sign of the turbulent velocity for <w'thl'>      [-]
 
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       sgn_t_vel_wpsclrp    ! Sign of the turbulent velocity for <w'sclr'>    [-]
     
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       a1, &
       a1_zt
       
-    integer :: i
+    integer :: i, j, k
     
     !------------------- Begin Code -------------------
     
@@ -2041,63 +2051,69 @@ module advance_xm_wpxp_module
        
       ! These coefficients only need to be set if stats output is on
       if ( l_stats_samp ) then
-        coef_wp2rtp_implicit = zero
-        coef_wp2thlp_implicit = zero
+        coef_wp2rtp_implicit(:,:)  = zero
+        coef_wp2thlp_implicit(:,:) = zero
       end if
        
       ! The turbulent advection terms are handled entirely explicitly. Thus the LHS
       ! terms can be set to zero.
-      lhs_ta_wprtp = zero
-      lhs_ta_wpthlp = zero
+      lhs_ta_wprtp(:,:,:) = zero
+      lhs_ta_wpthlp(:,:,:) = zero
        
       if ( l_scalar_calc ) then
-        lhs_ta_wpsclrp(:,:,i) = zero
+        lhs_ta_wpsclrp(:,:,:,:) = zero
       end if
        
-      term_wp2rtp_explicit = wp2rtp
-      term_wp2thlp_explicit = wp2thlp
+      term_wp2rtp_explicit(:,:)  = wp2rtp(:,:)
+      term_wp2thlp_explicit(:,:) = wp2thlp(:,:)
       
       ! Calculate the RHS turbulent advection term for <w'r_t'>
-      call xpyp_term_ta_pdf_rhs( gr, term_wp2rtp_explicit(:),       & ! Intent(in)
-                                 rho_ds_zt(:),                  & ! Intent(in)
-                                 invrs_rho_ds_zm(:),            & ! Intent(in)
-                                 gr%invrs_dzm(:),               & ! Intent(in)
-                                 l_dummy_false,                 & ! Intent(in)
-                                 sgn_t_vel_wprtp(:),            & ! Intent(in)
-                                 term_wp2rtp_explicit_zm(:),    & ! Intent(in)
-                                 rho_ds_zm(:),                  & ! Intent(in)
-                                 gr%invrs_dzt(:),               & ! Intent(in)
-                                 rhs_ta_wprtp(:)                ) ! Intent(out)
+      do i = 1, ngrdcol
+        call xpyp_term_ta_pdf_rhs( gr(i), term_wp2rtp_explicit(i,:),       & ! Intent(in)
+                                   rho_ds_zt(i,:),                  & ! Intent(in)
+                                   invrs_rho_ds_zm(i,:),            & ! Intent(in)
+                                   gr(i)%invrs_dzm(:),               & ! Intent(in)
+                                   l_dummy_false,                 & ! Intent(in)
+                                   sgn_t_vel_wprtp(i,:),            & ! Intent(in)
+                                   term_wp2rtp_explicit_zm(i,:),    & ! Intent(in)
+                                   rho_ds_zm(i,:),                  & ! Intent(in)
+                                   gr(i)%invrs_dzt(:),               & ! Intent(in)
+                                   rhs_ta_wprtp(i,:)                ) ! Intent(out)
+      end do
        
       ! Calculate the RHS turbulent advection term for <w'thl'>
-      call xpyp_term_ta_pdf_rhs( gr, term_wp2thlp_explicit(:),      & ! Intent(in)
-                                 rho_ds_zt(:),                  & ! Intent(in)
-                                 invrs_rho_ds_zm(:),            & ! Intent(in)
-                                 gr%invrs_dzm(:),               & ! Intent(in)
-                                 l_dummy_false,                 & ! Intent(in)
-                                 sgn_t_vel_wpthlp(:),           & ! Intent(in)
-                                 term_wp2thlp_explicit_zm(:),   & ! Intent(in)
-                                 rho_ds_zm(:),                  & ! Intent(in)
-                                 gr%invrs_dzt(:),               & ! Intent(in)
-                                 rhs_ta_wpthlp(:)               ) ! Intent(out)  
+      do i = 1, ngrdcol
+        call xpyp_term_ta_pdf_rhs( gr(i), term_wp2thlp_explicit(i,:),      & ! Intent(in)
+                                   rho_ds_zt(i,:),                  & ! Intent(in)
+                                   invrs_rho_ds_zm(i,:),            & ! Intent(in)
+                                   gr(i)%invrs_dzm(:),               & ! Intent(in)
+                                   l_dummy_false,                 & ! Intent(in)
+                                   sgn_t_vel_wpthlp(i,:),           & ! Intent(in)
+                                   term_wp2thlp_explicit_zm(i,:),   & ! Intent(in)
+                                   rho_ds_zm(i,:),                  & ! Intent(in)
+                                   gr(i)%invrs_dzt(:),               & ! Intent(in)
+                                   rhs_ta_wpthlp(i,:)               ) ! Intent(out)  
+      end do
                                      
-      do i = 1, sclr_dim, 1
+      do j = 1, sclr_dim, 1
         
-        term_wp2sclrp_explicit(:) = wp2sclrp(:,i)
+        term_wp2sclrp_explicit(:,:) = wp2sclrp(:,:,j)
         
         ! Calculate the RHS turbulent advection term for <w'thl'>
-        call xpyp_term_ta_pdf_rhs( gr, term_wp2sclrp_explicit(:),     & ! Intent(in)
-                                   rho_ds_zt(:),                  & ! Intent(in)
-                                   invrs_rho_ds_zm(:),            & ! Intent(in)
-                                   gr%invrs_dzm(:),               & ! Intent(in)
-                                   l_dummy_false,                 & ! Intent(in)
-                                   sgn_t_vel_wpsclrp(:),          & ! Intent(in)
-                                   term_wp2sclrp_explicit_zm(:),  & ! Intent(in)
-                                   rho_ds_zm(:),                  & ! Intent(in)
-                                   gr%invrs_dzt(:),               & ! Intent(in)
-                                   lhs_ta_wpsclrp(:,:,i)            ) ! Intent(out)  
+        do i = 1, ngrdcol
+          call xpyp_term_ta_pdf_rhs( gr(i), term_wp2sclrp_explicit(i,:),     & ! Intent(in)
+                                     rho_ds_zt(i,:),                  & ! Intent(in)
+                                     invrs_rho_ds_zm(i,:),            & ! Intent(in)
+                                     gr(i)%invrs_dzm(:),               & ! Intent(in)
+                                     l_dummy_false,                 & ! Intent(in)
+                                     sgn_t_vel_wpsclrp(i,:),          & ! Intent(in)
+                                     term_wp2sclrp_explicit_zm(i,:),  & ! Intent(in)
+                                     rho_ds_zm(i,:),                  & ! Intent(in)
+                                     gr(i)%invrs_dzt(:),               & ! Intent(in)
+                                     lhs_ta_wpsclrp(:,i,:,j)            ) ! Intent(out)  
+        end do
 
-      enddo ! i = 1, sclr_dim, 1
+      end do ! i = 1, sclr_dim, 1
 
     else ! .not. l_explicit_turbulent_adv_xpyp
 
@@ -2114,75 +2130,79 @@ module advance_xm_wpxp_module
         ! Calculate a_1.
         ! It is a variable that is a function of sigma_sqd_w (where
         ! sigma_sqd_w is located on momentum levels).
-        a1(1:gr%nz) = one / ( one - sigma_sqd_w(1:gr%nz) )
+        a1(:,:) = one / ( one - sigma_sqd_w(:,:) )
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the <w'x'> turbulent advection (ta) term.
-        a1_zt = max( zm2zt( gr, a1 ), zero_threshold )   ! Positive def. quantity
+        a1_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, a1 ), zero_threshold )   ! Positive def. quantity
         
-        coef_wp2rtp_implicit = a1_zt * wp3_on_wp2_zt
-        coef_wp2thlp_implicit = coef_wp2rtp_implicit
+        coef_wp2rtp_implicit(:,:) = a1_zt(:,:) * wp3_on_wp2_zt(:,:)
+        coef_wp2thlp_implicit(:,:) = coef_wp2rtp_implicit(:,:)
        
         if ( .not. l_godunov_upwind_wpxp_ta ) then
  
           ! Calculate the LHS turbulent advection term for <w'r_t'>
-          call xpyp_term_ta_pdf_lhs( gr, coef_wp2rtp_implicit(:),     & ! Intent(in)
-                                     rho_ds_zt(:),                & ! Intent(in)
-                                     invrs_rho_ds_zm(:),          & ! Intent(in)
-                                     gr%invrs_dzm(:),             & ! Intent(in)
-                                     l_dummy_false,               & ! Intent(in)
-                                     sgn_t_vel_wprtp(:),          & ! Intent(in)
-                                     coef_wp2rtp_implicit_zm(:),  & ! Intent(in)
-                                     rho_ds_zm(:),                & ! Intent(in)
-                                     gr%invrs_dzt(:),             & ! Intent(in)
-                                     lhs_ta_wprtp(:,:)           ) ! Intent(out)
+          do i = 1, ngrdcol
+            call xpyp_term_ta_pdf_lhs( gr(i), coef_wp2rtp_implicit(i,:),     & ! Intent(in)
+                                       rho_ds_zt(i,:),                & ! Intent(in)
+                                       invrs_rho_ds_zm(i,:),          & ! Intent(in)
+                                       gr(i)%invrs_dzm(:),             & ! Intent(in)
+                                       l_dummy_false,               & ! Intent(in)
+                                       sgn_t_vel_wprtp(i,:),          & ! Intent(in)
+                                       coef_wp2rtp_implicit_zm(i,:),  & ! Intent(in)
+                                       rho_ds_zm(i,:),                & ! Intent(in)
+                                       gr(i)%invrs_dzt(:),             & ! Intent(in)
+                                       lhs_ta_wprtp(:,i,:)           ) ! Intent(out)
+          end do
  
         else
 
           ! Godunov-like method for the vertical discretization of ta term  
-           coef_wp2rtp_implicit = a1_zt * wp3_on_wp2_zt
-           coef_wp2thlp_implicit = coef_wp2rtp_implicit
+          coef_wp2rtp_implicit(:,:) = a1_zt(:,:) * wp3_on_wp2_zt(:,:)
+          coef_wp2thlp_implicit(:,:) = coef_wp2rtp_implicit(:,:)
 
-           call xpyp_term_ta_pdf_lhs_godunov( gr, coef_wp2rtp_implicit(:),     & ! Intent(in)
-                                                  invrs_rho_ds_zm(:),          & ! Intent(in)
-                                                  gr%invrs_dzm(:),             & ! Intent(in)
-                                                  rho_ds_zm(:),                & ! Intent(in)
-                                                  lhs_ta_wprtp(:,:)           )  ! Intent(out)
+          do i = 1, ngrdcol
+            call xpyp_term_ta_pdf_lhs_godunov( gr(i), coef_wp2rtp_implicit(i,:),     & ! Intent(in)
+                                               invrs_rho_ds_zm(i,:),          & ! Intent(in)
+                                               gr(i)%invrs_dzm(:),             & ! Intent(in)
+                                               rho_ds_zm(i,:),                & ! Intent(in)
+                                               lhs_ta_wprtp(:,i,:)           )  ! Intent(out)
+          end do
       
-        endif
+        end if
  
         ! For ADG1, the LHS turbulent advection terms for 
         ! <w'r_t'>, <w'thl'>, <w'sclr'> are all equal
-        lhs_ta_wpthlp = lhs_ta_wprtp
+        lhs_ta_wpthlp(:,:,:) = lhs_ta_wprtp(:,:,:)
         
         if ( l_scalar_calc ) then
-          do i = 1, sclr_dim
-            lhs_ta_wpsclrp(:,:,i) = lhs_ta_wprtp
+          do j = 1, sclr_dim
+            lhs_ta_wpsclrp(:,:,:,j) = lhs_ta_wprtp(:,:,:)
           end do
         end if
         
         if ( l_stats_samp ) then
-          term_wp2rtp_explicit = zero
-          term_wp2thlp_explicit = zero
+          term_wp2rtp_explicit(:,:) = zero
+          term_wp2thlp_explicit(:,:) = zero
         end if
 
         ! The <w'r_t'>, <w'thl'>, <w'sclr'> turbulent advection terms are entirely implicit.
         ! Set the RHS turbulent advection terms to 0
-        rhs_ta_wprtp = zero
-        rhs_ta_wpthlp = zero
-        rhs_ta_wpsclrp = zero
+        rhs_ta_wprtp(:,:) = zero
+        rhs_ta_wpthlp(:,:) = zero
+        rhs_ta_wpsclrp(:,:,:) = zero
         
         if ( l_predict_upwp_vpwp ) then
             
           ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
           ! These terms are equal to the <w'r_t'> terms as well in this case
-          lhs_ta_wpup = lhs_ta_wprtp
-          lhs_ta_wpvp = lhs_ta_wprtp
+          lhs_ta_wpup(:,:,:) = lhs_ta_wprtp(:,:,:)
+          lhs_ta_wpvp(:,:,:) = lhs_ta_wprtp(:,:,:)
           
           ! The <w'u'> and <w'v'> turbulent advection terms are entirely implicit.
           ! Set the RHS turbulent advection terms to 0
-          rhs_ta_wpup = zero
-          rhs_ta_wpvp = zero
+          rhs_ta_wpup(:,:) = zero
+          rhs_ta_wpvp(:,:) = zero
 
         endif  
 
@@ -2195,65 +2215,74 @@ module advance_xm_wpxp_module
         ! pdf_implicit_coefs_terms.  The PDF parameters and the resulting
         ! implicit coefficients and explicit terms are calculated on
         ! thermodynamic levels.
-        
-        coef_wp2rtp_implicit = pdf_implicit_coefs_terms%coef_wp2rtp_implicit
-        coef_wp2thlp_implicit = pdf_implicit_coefs_terms%coef_wp2thlp_implicit
-        term_wp2rtp_explicit = pdf_implicit_coefs_terms%term_wp2rtp_explicit
-        term_wp2thlp_explicit = pdf_implicit_coefs_terms%term_wp2thlp_explicit
+        do i = 1, ngrdcol
+          coef_wp2rtp_implicit(i,:)  = pdf_implicit_coefs_terms(i)%coef_wp2rtp_implicit(:)
+          coef_wp2thlp_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wp2thlp_implicit(:)
+          term_wp2rtp_explicit(i,:)  = pdf_implicit_coefs_terms(i)%term_wp2rtp_explicit(:)
+          term_wp2thlp_explicit(i,:) = pdf_implicit_coefs_terms(i)%term_wp2thlp_explicit(:)
+        end do
 
 
         ! Calculate the LHS turbulent advection term for <w'rt'>
-        call xpyp_term_ta_pdf_lhs( gr, coef_wp2rtp_implicit(:),      & ! Intent(in)
-                                   rho_ds_zt(:),                 & ! Intent(in)
-                                   invrs_rho_ds_zm(:),           & ! Intent(in)
-                                   gr%invrs_dzm(:),              & ! Intent(in)
-                                   l_dummy_false,                & ! Intent(in)
-                                   sgn_t_vel_wprtp(:),           & ! Intent(in)
-                                   coef_wp2rtp_implicit_zm(:),   & ! Intent(in)
-                                   rho_ds_zm(:),                 & ! Intent(in)
-                                   gr%invrs_dzt(:),              & ! Intent(in)
-                                   lhs_ta_wprtp(:,:)             ) ! Intent(out) 
+        do i = 1, ngrdcol
+          call xpyp_term_ta_pdf_lhs( gr(i), coef_wp2rtp_implicit(i,:),      & ! Intent(in)
+                                     rho_ds_zt(i,:),                 & ! Intent(in)
+                                     invrs_rho_ds_zm(i,:),           & ! Intent(in)
+                                     gr(i)%invrs_dzm(:),              & ! Intent(in)
+                                     l_dummy_false,                & ! Intent(in)
+                                     sgn_t_vel_wprtp(i,:),           & ! Intent(in)
+                                     coef_wp2rtp_implicit_zm(i,:),   & ! Intent(in)
+                                     rho_ds_zm(i,:),                 & ! Intent(in)
+                                     gr(i)%invrs_dzt(:),              & ! Intent(in)
+                                     lhs_ta_wprtp(:,i,:)             ) ! Intent(out) 
+        end do
                                        
         ! Calculate the RHS turbulent advection term for <w'rt'>
-        call xpyp_term_ta_pdf_rhs( gr, term_wp2rtp_explicit(:),      & ! Intent(in)
-                                   rho_ds_zt(:),                 & ! Intent(in)
-                                   invrs_rho_ds_zm(:),           & ! Intent(in)
-                                   gr%invrs_dzm(:),              & ! Intent(in)
-                                   l_dummy_false,                & ! Intent(in)
-                                   sgn_t_vel_wprtp(:),           & ! Intent(in)
-                                   term_wp2rtp_explicit_zm(:),   & ! Intent(in)
-                                   rho_ds_zm(:),                 & ! Intent(in)
-                                   gr%invrs_dzt(:),              & ! Intent(in)
-                                   rhs_ta_wprtp(:)           ) ! Intent(out)
+        do i = 1, ngrdcol
+          call xpyp_term_ta_pdf_rhs( gr(i), term_wp2rtp_explicit(i,:),      & ! Intent(in)
+                                     rho_ds_zt(i,:),                 & ! Intent(in)
+                                     invrs_rho_ds_zm(i,:),           & ! Intent(in)
+                                     gr(i)%invrs_dzm(:),              & ! Intent(in)
+                                     l_dummy_false,                & ! Intent(in)
+                                     sgn_t_vel_wprtp(i,:),           & ! Intent(in)
+                                     term_wp2rtp_explicit_zm(i,:),   & ! Intent(in)
+                                     rho_ds_zm(i,:),                 & ! Intent(in)
+                                     gr(i)%invrs_dzt(:),              & ! Intent(in)
+                                     rhs_ta_wprtp(i,:)           ) ! Intent(out)
+        end do
 
         
         ! Calculate the LHS turbulent advection term for <w'thl'>
-        call xpyp_term_ta_pdf_lhs( gr, coef_wp2thlp_implicit(:),      & ! Intent(in)
-                                   rho_ds_zt(:),                  & ! Intent(in)
-                                   invrs_rho_ds_zm(:),            & ! Intent(in)
-                                   gr%invrs_dzm(:),               & ! Intent(in)
-                                   l_dummy_false,                 & ! Intent(in)
-                                   sgn_t_vel_wpthlp(:),           & ! Intent(in)
-                                   coef_wp2thlp_implicit_zm(:),   & ! Intent(in)
-                                   rho_ds_zm(:),                  & ! Intent(in)
-                                   gr%invrs_dzt(:),               & ! Intent(in)
-                                   lhs_ta_wpthlp(:,:)             ) ! Intent(out) 
+        do i = 1, ngrdcol
+          call xpyp_term_ta_pdf_lhs( gr(i), coef_wp2thlp_implicit(i,:),      & ! Intent(in)
+                                     rho_ds_zt(i,:),                  & ! Intent(in)
+                                     invrs_rho_ds_zm(i,:),            & ! Intent(in)
+                                     gr(i)%invrs_dzm(:),               & ! Intent(in)
+                                     l_dummy_false,                 & ! Intent(in)
+                                     sgn_t_vel_wpthlp(i,:),           & ! Intent(in)
+                                     coef_wp2thlp_implicit_zm(i,:),   & ! Intent(in)
+                                     rho_ds_zm(i,:),                  & ! Intent(in)
+                                     gr(i)%invrs_dzt(:),               & ! Intent(in)
+                                     lhs_ta_wpthlp(:,i,:)             ) ! Intent(out) 
+        end do
       
         ! Calculate the RHS turbulent advection term for <w'thl'>
-        call xpyp_term_ta_pdf_rhs( gr, term_wp2thlp_explicit(:),      & ! Intent(in)
-                                   rho_ds_zt(:),                  & ! Intent(in)
-                                   invrs_rho_ds_zm(:),            & ! Intent(in)
-                                   gr%invrs_dzm(:),               & ! Intent(in)
-                                   l_dummy_false,                 & ! Intent(in)
-                                   sgn_t_vel_wpthlp(:),           & ! Intent(in)
-                                   term_wp2thlp_explicit_zm(:),   & ! Intent(in)
-                                   rho_ds_zm(:),                  & ! Intent(in)
-                                   gr%invrs_dzt(:),               & ! Intent(in)
-                                   rhs_ta_wpthlp(:)               ) ! Intent(out)
+        do i = 1, ngrdcol
+          call xpyp_term_ta_pdf_rhs( gr(i), term_wp2thlp_explicit(i,:),      & ! Intent(in)
+                                     rho_ds_zt(i,:),                  & ! Intent(in)
+                                     invrs_rho_ds_zm(i,:),            & ! Intent(in)
+                                     gr(i)%invrs_dzm(:),               & ! Intent(in)
+                                     l_dummy_false,                 & ! Intent(in)
+                                     sgn_t_vel_wpthlp(i,:),           & ! Intent(in)
+                                     term_wp2thlp_explicit_zm(i,:),   & ! Intent(in)
+                                     rho_ds_zm(i,:),                  & ! Intent(in)
+                                     gr(i)%invrs_dzt(:),               & ! Intent(in)
+                                     rhs_ta_wpthlp(i,:)               ) ! Intent(out)
+        end do
 
         ! The code for the scalar variables will be set up later.
-        lhs_ta_wpsclrp = zero
-        rhs_ta_wpsclrp = zero
+        lhs_ta_wpsclrp(:,:,:,:) = zero
+        rhs_ta_wpsclrp(:,:,:) = zero
       
       elseif ( iiPDF_type == iiPDF_new_hybrid ) then
 
@@ -2265,71 +2294,76 @@ module advance_xm_wpxp_module
         ! are all equal to coef_wp2rtp_implicit.  The PDF parameters and the
         ! resulting implicit coefficients are calculated on thermodynamic
         ! levels.
-        
-         coef_wp2rtp_implicit = pdf_implicit_coefs_terms%coef_wp2rtp_implicit
-         coef_wp2thlp_implicit = coef_wp2rtp_implicit
+        do i = 1, ngrdcol
+          coef_wp2rtp_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wp2rtp_implicit(:)
+          coef_wp2thlp_implicit(i,:) = coef_wp2rtp_implicit(i,:)
+        end do
         
 
         ! Calculate the LHS turbulent advection term for <w'rt'>
-        call xpyp_term_ta_pdf_lhs( gr, coef_wp2rtp_implicit(:),      & ! Intent(in)
-                                   rho_ds_zt(:),                 & ! Intent(in)
-                                   invrs_rho_ds_zm(:),           & ! Intent(in)
-                                   gr%invrs_dzm(:),              & ! Intent(in)
-                                   l_dummy_false,                & ! Intent(in)
-                                   sgn_t_vel_wprtp(:),           & ! Intent(in)
-                                   coef_wp2rtp_implicit_zm(:),   & ! Intent(in)
-                                   rho_ds_zm(:),                 & ! Intent(in)
-                                   gr%invrs_dzt(:),              & ! Intent(in)
-                                   lhs_ta_wprtp(:,:)             ) ! Intent(out) 
+        do i = 1, ngrdcol
+          call xpyp_term_ta_pdf_lhs( gr(i), coef_wp2rtp_implicit(i,:),      & ! Intent(in)
+                                     rho_ds_zt(i,:),                 & ! Intent(in)
+                                     invrs_rho_ds_zm(i,:),           & ! Intent(in)
+                                     gr(i)%invrs_dzm(:),              & ! Intent(in)
+                                     l_dummy_false,                & ! Intent(in)
+                                     sgn_t_vel_wprtp(i,:),           & ! Intent(in)
+                                     coef_wp2rtp_implicit_zm(i,:),   & ! Intent(in)
+                                     rho_ds_zm(i,:),                 & ! Intent(in)
+                                     gr(i)%invrs_dzt(:),              & ! Intent(in)
+                                     lhs_ta_wprtp(:,i,:)             ) ! Intent(out) 
+        end do
                                        
         ! For the new hybrid PDF, the LHS turbulent advection terms for 
         ! <w'r_t'>, <w'thl'>, and <w'sclr'> are all the same.
-        lhs_ta_wpthlp = lhs_ta_wprtp
+        lhs_ta_wpthlp(:,:,:) = lhs_ta_wprtp(:,:,:)
         
         if ( l_scalar_calc ) then
-          do i = 1, sclr_dim
-            lhs_ta_wpsclrp(:,:,i) = lhs_ta_wprtp
+          do j = 1, sclr_dim
+            lhs_ta_wpsclrp(:,:,:,j) = lhs_ta_wprtp(:,:,:)
           end do
         end if
         
         if ( l_stats_samp ) then
-          term_wp2rtp_explicit = zero
-          term_wp2thlp_explicit = zero
+          term_wp2rtp_explicit(:,:) = zero
+          term_wp2thlp_explicit(:,:) = zero
         end if
 
         ! The <w'r_t'>, <w'thl'>, <w'sclr'> turbulent advection terms are
         ! entirely implicit.  Set the RHS turbulent advection terms to 0
-        rhs_ta_wprtp = zero
-        rhs_ta_wpthlp = zero
-        rhs_ta_wpsclrp = zero
+        rhs_ta_wprtp(:,:) = zero
+        rhs_ta_wpthlp(:,:) = zero
+        rhs_ta_wpsclrp(:,:,:) = zero
         
         if ( l_predict_upwp_vpwp ) then
             
           ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
           ! These terms are equal to the <w'r_t'> terms as well in this case
-          lhs_ta_wpup = lhs_ta_wprtp
-          lhs_ta_wpvp = lhs_ta_wprtp
+          lhs_ta_wpup(:,:,:) = lhs_ta_wprtp(:,:,:)
+          lhs_ta_wpvp(:,:,:) = lhs_ta_wprtp(:,:,:)
           
           ! The <w'u'> and <w'v'> turbulent advection terms are entirely
           ! implicit.  Set the RHS turbulent advection terms to 0
-          rhs_ta_wpup = zero
-          rhs_ta_wpvp = zero
+          rhs_ta_wpup(:,:) = zero
+          rhs_ta_wpvp(:,:) = zero
 
         endif  
 
       endif ! iiPDF_type
 
     endif ! l_explicit_turbulent_adv_xpyp
-    
+      
     if ( l_stats_samp ) then
-       call stat_update_var( icoef_wp2rtp_implicit, coef_wp2rtp_implicit, & ! intent(in)
-                             stats_zt )                                     ! intent(inout)
-       call stat_update_var( iterm_wp2rtp_explicit, term_wp2rtp_explicit, & ! intent(in)
-                             stats_zt )                                     ! intent(inout)
-       call stat_update_var( icoef_wp2thlp_implicit, coef_wp2thlp_implicit, & ! intent(in)
-                             stats_zt )                                       ! intent(inout)
-       call stat_update_var( iterm_wp2thlp_explicit, term_wp2thlp_explicit, & ! intent(in)
-                             stats_zt )                                       ! intent(inout)
+      do i = 1, ngrdcol
+        call stat_update_var( icoef_wp2rtp_implicit, coef_wp2rtp_implicit(i,:), & ! intent(in)
+                              stats_zt(i) )                                     ! intent(inout)
+        call stat_update_var( iterm_wp2rtp_explicit, term_wp2rtp_explicit(i,:), & ! intent(in)
+                              stats_zt(i) )                                     ! intent(inout)
+        call stat_update_var( icoef_wp2thlp_implicit, coef_wp2thlp_implicit(i,:), & ! intent(in)
+                              stats_zt(i) )                                       ! intent(inout)
+        call stat_update_var( iterm_wp2thlp_explicit, term_wp2thlp_explicit(i,:), & ! intent(in)
+                              stats_zt(i) )                                       ! intent(inout)
+      end do
     endif
     
   end subroutine calc_xm_wpxp_ta_terms
@@ -4156,9 +4190,8 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_clipping_and_stats
 
   !=============================================================================
-  pure subroutine xm_term_ta_lhs( gr, rho_ds_zm, &
-                                  invrs_rho_ds_zt, &
-                                  invrs_dzt, &
+  pure subroutine xm_term_ta_lhs( nz, ngrdcol, gr, &
+                                  rho_ds_zm, invrs_rho_ds_zt, &
                                   lhs_ta_xm )
 
     ! Description:
@@ -4217,7 +4250,11 @@ module advance_xm_wpxp_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -4225,43 +4262,42 @@ module advance_xm_wpxp_module
       km1_mdiag = 2       ! Momentum subdiagonal index.
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       rho_ds_zm,       & ! Dry, static density at momentum levels     [kg/m^3]
-      invrs_rho_ds_zt, & ! Inverse dry, static density at thermo levs [m^3/kg]
-      invrs_dzt          ! Inverse of grid spacing                    [1/m]
+      invrs_rho_ds_zt    ! Inverse dry, static density at thermo levs [m^3/kg]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(2,ngrdcol,nz), intent(out) :: &
       lhs_ta_xm    ! LHS coefficient of xm turbulent advection  [1/m]
 
     ! Local Variable
-    integer :: k    ! Vertical level index
+    integer :: i, k    ! Vertical level index
 
 
     ! Set lower boundary condition to 0
-    lhs_ta_xm(k_mdiag,1) = zero
-    lhs_ta_xm(km1_mdiag,1) = zero
+    do i = 1, ngrdcol
+      lhs_ta_xm(k_mdiag,i,1)   = zero
+      lhs_ta_xm(km1_mdiag,i,1) = zero
+    end do
 
     ! Calculate term at all other grid levels.
-    do k = 2, gr%nz 
+    do k = 2, nz 
+      do i = 1, ngrdcol
 
-       ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
-       lhs_ta_xm(k_mdiag,k) & 
-       = + invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k)
+        ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
+        lhs_ta_xm(k_mdiag,i,k) = + invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) * rho_ds_zm(i,k)
 
-       ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-       lhs_ta_xm(km1_mdiag,k) & 
-       = - invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k-1)
-
-    enddo ! k = 2, gr%nz 
-
+        ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
+        lhs_ta_xm(km1_mdiag,i,k) = - invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) * rho_ds_zm(i,k-1)
+      end do
+    end do ! k = 2, gr%nz 
 
     return
 
   end subroutine xm_term_ta_lhs
 
   !=============================================================================
-  pure subroutine wpxp_term_tp_lhs( gr, wp2, invrs_dzm, & 
+  pure subroutine wpxp_term_tp_lhs( nz, ngrdcol, gr, wp2, & 
                                     lhs_tp )
 
     ! Description:
@@ -4315,8 +4351,12 @@ module advance_xm_wpxp_module
         core_rknd ! Variable(s)
 
     implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -4324,39 +4364,41 @@ module advance_xm_wpxp_module
       k_tdiag = 2         ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      wp2,       & ! w'^2                       [m^2/s^2]
-      invrs_dzm    ! Inverse of grid spacing    [1/m]
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
+      wp2  ! w'^2                       [m^2/s^2]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(2,ngrdcol,nz), intent(out) :: &
         lhs_tp    ! LHS coefficient of xm for turbulent production  [1/s]
 
     ! Local Variable
-    integer :: k  ! Vertical level index
+    integer :: i, k  ! Vertical level index
 
 
     ! Set lower boundary to 0
-    lhs_tp(1,1) = zero
-    lhs_tp(2,1) = zero
+    do i = 1, ngrdcol
+      lhs_tp(1,i,1) = zero
+      lhs_tp(2,i,1) = zero
+    end do
 
     ! Calculate term at all interior grid levels.
-    do k = 2, gr%nz-1
+    do k = 2, nz-1
+      do i = 1, ngrdcol
 
        ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-       lhs_tp(kp1_tdiag,k) & 
-       = + wp2(k) * invrs_dzm(k)
+       lhs_tp(kp1_tdiag,i,k) = + wp2(i,k) * gr(i)%invrs_dzm(k)
 
        ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
-       lhs_tp(k_tdiag,k) & 
-       = - wp2(k) * invrs_dzm(k)
-
-    enddo ! k = 2, gr%nz-1
+       lhs_tp(k_tdiag,i,k)   = - wp2(i,k) * gr(i)%invrs_dzm(k)
+       
+      end do
+    end do ! k = 2, gr%nz-1
 
     ! Set upper boundary to 0
-    lhs_tp(1,gr%nz) = 0.0_core_rknd
-    lhs_tp(2,gr%nz) = 0.0_core_rknd
-
+    do i = 1, ngrdcol
+      lhs_tp(1,i,nz) = 0.0_core_rknd
+      lhs_tp(2,i,nz) = 0.0_core_rknd
+    end do
 
     return
 
@@ -4465,7 +4507,7 @@ module advance_xm_wpxp_module
   end subroutine wpxp_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure subroutine wpxp_term_pr1_lhs( gr, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
+  pure subroutine wpxp_term_pr1_lhs( nz, ngrdcol, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
                                      invrs_tau_C6_zm, l_scalar_calc, &
                                      lhs_pr1_wprtp, lhs_pr1_wpthlp, &
                                      lhs_pr1_wpsclrp )
@@ -4505,11 +4547,13 @@ module advance_xm_wpxp_module
         core_rknd    ! Variable(s)
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       C6rt_Skw_fnc,  & ! C_6rt parameter with Sk_w applied        [-]
       C6thl_Skw_fnc, & ! C_6thl parameter with Sk_w applied       [-]
       C7_Skw_fnc,    & ! C_7 parameter with Sk_w applied          [-]
@@ -4519,42 +4563,39 @@ module advance_xm_wpxp_module
       l_scalar_calc   ! True if sclr_dim > 0
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: & 
       lhs_pr1_wprtp,   & ! LHS coefficient for w'r_t' pressure term 1   [1/s]
       lhs_pr1_wpthlp,  & ! LHS coefficient for w'thl' pressure term 1   [1/s]
       lhs_pr1_wpsclrp    ! LHS coefficient for w'sclr' pressure term 1  [1/s]
 
     ! Set lower boundary to 0
-    lhs_pr1_wprtp(1) = zero
+    lhs_pr1_wprtp(:,1) = zero
 
     ! Momentum main diagonals: [ x wpxp(k,<t+1>) ]
-    lhs_pr1_wprtp(2:gr%nz-1) &
-    = C6rt_Skw_fnc(2:gr%nz-1) * invrs_tau_C6_zm(2:gr%nz-1)
+    lhs_pr1_wprtp(:,2:nz-1) = C6rt_Skw_fnc(:,2:nz-1) * invrs_tau_C6_zm(:,2:nz-1)
 
     ! Set upper boundary to 0
-    lhs_pr1_wprtp(gr%nz) = zero
+    lhs_pr1_wprtp(:,nz) = zero
     
     ! Set lower boundary to 0
-    lhs_pr1_wpthlp(1) = zero
+    lhs_pr1_wpthlp(:,1) = zero
 
     ! Momentum main diagonals: [ x wpxp(k,<t+1>) ]
-    lhs_pr1_wpthlp(2:gr%nz-1) &
-    = C6thl_Skw_fnc(2:gr%nz-1) * invrs_tau_C6_zm(2:gr%nz-1)
+    lhs_pr1_wpthlp(:,2:nz-1) = C6thl_Skw_fnc(:,2:nz-1) * invrs_tau_C6_zm(:,2:nz-1)
 
     ! Set upper boundary to 0
-    lhs_pr1_wpthlp(gr%nz) = zero
+    lhs_pr1_wpthlp(:,nz) = zero
         
     if ( l_scalar_calc ) then
 
        ! Set lower boundary to 0
-       lhs_pr1_wpsclrp(1) = zero
+       lhs_pr1_wpsclrp(:,1) = zero
 
        ! Momentum main diagonals: [ x wpxp(k,<t+1>) ]
-       lhs_pr1_wpsclrp(2:gr%nz-1) &
-       = C7_Skw_fnc(2:gr%nz-1) * invrs_tau_C6_zm(2:gr%nz-1)
+       lhs_pr1_wpsclrp(:,2:nz-1) = C7_Skw_fnc(:,2:nz-1) * invrs_tau_C6_zm(:,2:nz-1)
 
        ! Set upper boundary to 0
-       lhs_pr1_wpsclrp(gr%nz) = zero
+       lhs_pr1_wpsclrp(:,nz) = zero
 
     endif ! l_scalar_calc
 
