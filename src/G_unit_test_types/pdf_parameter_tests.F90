@@ -196,11 +196,6 @@ module pdf_parameter_tests
       thlm,    & ! Mean of thl (overall)               [K]
       um,      & ! Mean of eastward wind (overall)     [m/s]
       vm,      & ! Mean of northward wind (overall)    [m/s]
-      wp2,     & ! Variance of w (overall)             [m^2/s^2]
-      rtp2,    & ! Variance of rt (overall)            [kg^2/kg^2]
-      thlp2,   & ! Variance of thl (overall)           [K^2]
-      up2,     & ! Variance of u (overall)             [m^2/s^2]
-      vp2,     & ! Variance of v (overall)             [m^2/s^2]
       wp3,     & ! <w'^3>                              [m^3/s^3]
       rtp3,    & ! <rt'^3>                             [kg^3/kg^3]
       thlp3,   & ! <thl'^3>                            [K^3]
@@ -209,10 +204,6 @@ module pdf_parameter_tests
       Skthl,   & ! Skewness of thl (overall)           [-]
       Sku,     & ! Skewness of u (overall)             [-]
       Skv,     & ! Skewness of v (overall)             [-]
-      wprtp,   & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
-      wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
-      upwp,    & ! Covariance of u and w (overall)     [(m/s)^2]
-      vpwp,    & ! Covariance of v and w (overall)     [(m/s)^2]
       rtpthlp    ! Covariance of rt and thl (overall)  [(kg/kg)K]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -372,10 +363,22 @@ module pdf_parameter_tests
       alpha_thl,     & ! Factor relating to normalized variance for th_l [-]
       alpha_rt,      & ! Factor relating to normalized variance for r_t  [-]
       alpha_u,       & ! Factor relating to normalized variance for u    [-]
-      alpha_v,       & ! Factor relating to normalized variance for v    [-]
-      gamma_Skw_fnc, & ! Skewness function for tunable parameter gamma   [-]
-      sigma_sqd_w      ! Width of individual w plumes (ADG1)             [-]
+      alpha_v          ! Factor relating to normalized variance for v    [-]
 
+    ! Variables with dummy column dimension set to 1
+    real( kind = core_rknd ), dimension(1,nz) :: &
+      gamma_Skw_fnc,  & ! Skewness function for tunable parameter gamma   [-]
+      wp2,            & ! Variance of w (overall)             [m^2/s^2]
+      rtp2,           & ! Variance of rt (overall)            [kg^2/kg^2]
+      thlp2,          & ! Variance of thl (overall)           [K^2]
+      up2,            & ! Variance of u (overall)             [m^2/s^2]
+      vp2,            & ! Variance of v (overall)             [m^2/s^2]
+      wpthlp,         & ! Covariance of w and thl (overall)   [(m/s)K]
+      wprtp,          & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
+      upwp,           & ! Covariance of u and w (overall)     [(m/s)^2]
+      vpwp,           & ! Covariance of v and w (overall)     [(m/s)^2]
+      sigma_sqd_w       ! Width of individual w plumes (ADG1)             [-]
+    
     real( kind = core_rknd ) :: &
       mixt_frac_max_mag    ! Maximum magnitude of mixture fraction (ADG1)    [-]
 
@@ -716,9 +719,9 @@ module pdf_parameter_tests
     um =   0.00_core_rknd
     vm =   0.00_core_rknd
     up2 =  1.00_core_rknd
-    vp2 =  1.00_core_rknd
-    upwp = 0.00_core_rknd
-    vpwp = 0.00_core_rknd
+    vp2(1,:) =  1.00_core_rknd
+    upwp(1,:) = 0.00_core_rknd
+    vpwp(1,:) = 0.00_core_rknd
 
     ! Perform unit tests.
     do iter_param_sets = 1, num_param_sets, 1
@@ -727,157 +730,157 @@ module pdf_parameter_tests
           write(fstdout,*) "PDF parameter set 1:"
           ! SAM LES of RICO: t = 4200 minutes and z = 2780 meters.
           wm = -0.005_core_rknd
-          wp2 = 0.0337419_core_rknd
+          wp2(1,:) = 0.0337419_core_rknd
           wp3 = 0.0538501_core_rknd
-          Skw = wp3 / wp2**1.5
+          Skw = wp3 / wp2(1,:)**1.5
           rtm = 4.28684e-3_core_rknd
-          rtp2 = 1.17865e-6_core_rknd
+          rtp2(1,:) = 1.17865e-6_core_rknd
           Skrt = 1.48809_core_rknd
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 309.131_core_rknd
-          thlp2 = 0.05992_core_rknd
+          thlp2(1,:) = 0.05992_core_rknd
           Skthl = -1.45809_core_rknd
-          thlp3 = Skthl * thlp2**1.5
-          wprtp = 2.37254e-5_core_rknd
-          wpthlp = -5.55127e-3_core_rknd
+          thlp3 = Skthl * thlp2(1,:)**1.5
+          wprtp(1,:) = 2.37254e-5_core_rknd
+          wpthlp(1,:) = -5.55127e-3_core_rknd
        elseif ( iter_param_sets == 2 ) then
           write(fstdout,*) "PDF parameter set 2:"
           ! Large, negative skewness of w.
           wm = 0.01_core_rknd
-          wp2 = 0.1_core_rknd
+          wp2(1,:) = 0.1_core_rknd
           Skw = -4.5_core_rknd
-          wp3 = Skw * wp2**1.5
+          wp3 = Skw * wp2(1,:)**1.5
           rtm = 1.0e-2_core_rknd
-          rtp2 = 5.0e-6_core_rknd
+          rtp2(1,:) = 5.0e-6_core_rknd
           Skrt = 1.0_core_rknd
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 305.0_core_rknd
-          thlp2 = 0.1_core_rknd
+          thlp2(1,:) = 0.1_core_rknd
           Skthl = -2.5_core_rknd
-          thlp3 = Skthl * thlp2**1.5
-          wprtp = -5.0e-5_core_rknd
-          wpthlp = 5.0e-3_core_rknd
+          thlp3 = Skthl * thlp2(1,:)**1.5
+          wprtp(1,:) = -5.0e-5_core_rknd
+          wpthlp(1,:) = 5.0e-3_core_rknd
        elseif ( iter_param_sets == 3 ) then
           write(fstdout,*) "PDF parameter set 3:"
           ! Large, positive skewness of w.
           wm = -0.01_core_rknd
-          wp2 = 0.5_core_rknd
+          wp2(1,:) = 0.5_core_rknd
           Skw = 4.5_core_rknd
-          wp3 = Skw * wp2**1.5
+          wp3 = Skw * wp2(1,:)**1.5
           rtm = 1.0e-2_core_rknd
-          rtp2 = 5.0e-6_core_rknd
+          rtp2(1,:) = 5.0e-6_core_rknd
           Skrt = 2.5_core_rknd
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 305.0_core_rknd
-          thlp2 = 0.1_core_rknd
+          thlp2(1,:) = 0.1_core_rknd
           Skthl = -2.5_core_rknd
-          thlp3 = Skthl * thlp2**1.5
-          wprtp = 5.0e-5_core_rknd
-          wpthlp = -5.0e-3_core_rknd
+          thlp3 = Skthl * thlp2(1,:)**1.5
+          wprtp(1,:) = 5.0e-5_core_rknd
+          wpthlp(1,:) = -5.0e-3_core_rknd
        elseif ( iter_param_sets == 4 ) then
           write(fstdout,*) "PDF parameter set 4:"
           ! Large variance of w; moderate, positive skewness of w.
           wm = 0.1_core_rknd
-          wp2 = 5.0_core_rknd
+          wp2(1,:) = 5.0_core_rknd
           Skw = 2.0_core_rknd
-          wp3 = Skw * wp2**1.5
+          wp3 = Skw * wp2(1,:)**1.5
           rtm = 1.0e-2_core_rknd
-          rtp2 = 7.0e-6_core_rknd
+          rtp2(1,:) = 7.0e-6_core_rknd
           Skrt = 1.5_core_rknd
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 305.0_core_rknd
-          thlp2 = 1.0_core_rknd
+          thlp2(1,:) = 1.0_core_rknd
           Skthl = -1.5_core_rknd
-          thlp3 = Skthl * thlp2**1.5
-          wprtp = 5.0e-5_core_rknd
-          wpthlp = -1.0e-2_core_rknd
+          thlp3 = Skthl * thlp2(1,:)**1.5
+          wprtp(1,:) = 5.0e-5_core_rknd
+          wpthlp(1,:) = -1.0e-2_core_rknd
        elseif ( iter_param_sets == 5 ) then
           write(fstdout,*) "PDF parameter set 5:"
           ! Moderate, negative skewness of w; theta-l with greatest magnitude
           ! of skewness.
           wm = -0.001_core_rknd
-          wp2 = 0.3_core_rknd
+          wp2(1,:) = 0.3_core_rknd
           Skw = -2.0_core_rknd
-          wp3 = Skw * wp2**1.5
+          wp3 = Skw * wp2(1,:)**1.5
           rtm = 1.0e-2_core_rknd
-          rtp2 = 2.0e-6_core_rknd
+          rtp2(1,:) = 2.0e-6_core_rknd
           Skrt = -0.25_core_rknd
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 305.0_core_rknd
-          thlp2 = 0.2_core_rknd
+          thlp2(1,:) = 0.2_core_rknd
           Skthl = -3.5_core_rknd
-          thlp3 = Skthl * thlp2**1.5
-          wprtp = 5.0e-5_core_rknd
-          wpthlp = 5.0e-3_core_rknd
+          thlp3 = Skthl * thlp2(1,:)**1.5
+          wprtp(1,:) = 5.0e-5_core_rknd
+          wpthlp(1,:) = 5.0e-3_core_rknd
        elseif ( iter_param_sets == 6 ) then
           write(fstdout,*) "PDF parameter set 6:"
           ! w, rt, and theta-l are all unskewed.
           wm = -0.01_core_rknd
-          wp2 = 1.0_core_rknd
+          wp2(1,:) = 1.0_core_rknd
           Skw = 0.0_core_rknd
-          wp3 = Skw * wp2**1.5
+          wp3 = Skw * wp2(1,:)**1.5
           rtm = 5.0e-3_core_rknd
-          rtp2 = 5.0e-7_core_rknd
+          rtp2(1,:) = 5.0e-7_core_rknd
           Skrt = 0.0_core_rknd
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 305.0_core_rknd
-          thlp2 = 0.1_core_rknd
+          thlp2(1,:) = 0.1_core_rknd
           Skthl = 0.0_core_rknd
-          thlp3 = Skthl * thlp2**1.5
-          wprtp = 5.0e-5_core_rknd
-          wpthlp = -5.0e-3_core_rknd
+          thlp3 = Skthl * thlp2(1,:)**1.5
+          wprtp(1,:) = 5.0e-5_core_rknd
+          wpthlp(1,:) = -5.0e-3_core_rknd
        elseif ( iter_param_sets == 7 ) then
           write(fstdout,*) "PDF parameter set 7:"
           ! Small, positive skewness of w; rt with greatest magnitude of
           ! skewness.
           wm = 0.2_core_rknd
-          wp2 = 0.25_core_rknd
+          wp2(1,:) = 0.25_core_rknd
           Skw = 0.75_core_rknd
-          wp3 = Skw * wp2**1.5
+          wp3 = Skw * wp2(1,:)**1.5
           rtm = 1.0e-2_core_rknd
-          rtp2 = 5.0e-6_core_rknd
+          rtp2(1,:) = 5.0e-6_core_rknd
           Skrt = 3.0_core_rknd
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 305.0_core_rknd
-          thlp2 = 0.15_core_rknd
+          thlp2(1,:) = 0.15_core_rknd
           Skthl = -0.5_core_rknd
-          thlp3 = Skthl * thlp2**1.5
-          wprtp = 5.0e-5_core_rknd
-          wpthlp = -5.0e-3_core_rknd
+          thlp3 = Skthl * thlp2(1,:)**1.5
+          wprtp(1,:) = 5.0e-5_core_rknd
+          wpthlp(1,:) = -5.0e-3_core_rknd
        elseif ( iter_param_sets == 8 ) then
           write(fstdout,*) "PDF parameter set 8:"
           ! w, rt, and theta-l are all constant.
           wm = -0.002_core_rknd
-          wp2 = 0.0_core_rknd
+          wp2(1,:) = 0.0_core_rknd
           Skw = 0.0_core_rknd
-          wp3 = Skw * wp2**1.5
+          wp3 = Skw * wp2(1,:)**1.5
           rtm = 1.0e-2_core_rknd
-          rtp2 = 0.0_core_rknd
+          rtp2(1,:) = 0.0_core_rknd
           Skrt = 0.0_core_rknd
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 305.0_core_rknd
-          thlp2 = 0.0_core_rknd
+          thlp2(1,:) = 0.0_core_rknd
           Skthl = 0.0_core_rknd
-          thlp3 = Skthl * thlp2**1.5
-          wprtp = 0.0e-5_core_rknd
-          wpthlp = 0.0e-3_core_rknd
+          thlp3 = Skthl * thlp2(1,:)**1.5
+          wprtp(1,:) = 0.0e-5_core_rknd
+          wpthlp(1,:) = 0.0e-3_core_rknd
        elseif ( iter_param_sets == 9 ) then
           write(fstdout,*) "PDF parameter set 9:"
           ! w is constant.
           wm = 0.001_core_rknd
-          wp2 = 0.0_core_rknd
+          wp2(1,:) = 0.0_core_rknd
           Skw = 0.0_core_rknd
-          wp3 = Skw * wp2**1.5
+          wp3 = Skw * wp2(1,:)**1.5
           rtm = 1.0e-2_core_rknd
-          rtp2 = 2.0e-6_core_rknd
+          rtp2(1,:) = 2.0e-6_core_rknd
           Skrt = -1.0_core_rknd
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           thlm = 305.0_core_rknd
-          thlp2 = 0.7_core_rknd
+          thlp2(1,:) = 0.7_core_rknd
           Skthl = -2.0_core_rknd
-          thlp3 = Skthl * thlp2**1.5
-          wprtp = 0.0e-5_core_rknd
-          wpthlp = 0.0e-3_core_rknd
+          thlp3 = Skthl * thlp2(1,:)**1.5
+          wprtp(1,:) = 0.0e-5_core_rknd
+          wpthlp(1,:) = 0.0e-3_core_rknd
        elseif ( iter_param_sets == 10 ) then
           write(fstdout,*) "PDF parameter set 10 (randomly generated):"
           call random_seed( size=seed_size )
@@ -904,46 +907,46 @@ module pdf_parameter_tests
           ! The value of thlm can range from 290 K to 310 K.
           thlm = 20.0_core_rknd * rand3 + 290.0_core_rknd
           ! The value of wp2 can range from 0 m^2/s^2 to 1.0 m^2/s^2.
-          wp2 = 1.0_core_rknd * rand4
+          wp2(1,:) = 1.0_core_rknd * rand4
           ! The value of rtp2 can range from 0 kg^2/kg^2 to 0.25 * rtm^2
-          rtp2 = 0.25_core_rknd * rtm**2 * rand5
+          rtp2(1,:) = 0.25_core_rknd * rtm**2 * rand5
           ! The value of thlp2 can range from 0 K^2 to 3.0 K^2.
-          thlp2 = 3.0_core_rknd * rand6
+          thlp2(1,:) = 3.0_core_rknd * rand6
           ! The value of Skw can range from -4.5 to 4.5.
           Skw = 9.0_core_rknd * rand7 - 4.5_core_rknd
           ! Calculate wp3.
-          wp3 = Skw * wp2**1.5
+          wp3 = Skw * wp2(1,:)**1.5
           ! The value of Skrt can range from -4.5 to 4.5.
           Skrt = 9.0_core_rknd * rand8 - 4.5_core_rknd
           ! Calculate rtp3.
-          rtp3 = Skrt * rtp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
           ! The value of Skthl can range from -4.5 to 4.5.
           Skthl = 9.0_core_rknd * rand9 - 4.5_core_rknd
           ! Calculate thlp3.
-          thlp3 = Skthl * thlp2**1.5
+          thlp3 = Skthl * thlp2(1,:)**1.5
           ! Use a random number to calculate the value of wprtp.
           ! The random number term is the overall correlation of w and rt, and
           ! its value can range from -1 to 1.
-          wprtp = ( two * rand10 - one ) * sqrt( wp2 ) * sqrt( rtp2 )
+          wprtp(1,:) = ( two * rand10 - one ) * sqrt( wp2(1,:) ) * sqrt( rtp2(1,:) )
           ! Use a random number to calculate the value of wpthlp.
           ! The random number term is the overall correlation of w and thl, and
           ! its value can range from -1 to 1.
-          wpthlp = ( two * rand11 - one ) * sqrt( wp2 ) * sqrt( thlp2 )
+          wpthlp(1,:) = ( two * rand11 - one ) * sqrt( wp2(1,:) ) * sqrt( thlp2(1,:) )
        endif ! iter_param_sets == index
 
-       where ( sign( one, wprtp ) * sign( one, wpthlp ) < zero )
-          rtpthlp = -0.9_core_rknd * sqrt( rtp2 ) * sqrt( thlp2 )
+       where ( sign( one, wprtp(1,:) ) * sign( one, wpthlp(1,:) ) < zero )
+          rtpthlp = -0.9_core_rknd * sqrt( rtp2(1,:) ) * sqrt( thlp2(1,:) )
        elsewhere
-          rtpthlp = 0.9_core_rknd * sqrt( rtp2 ) * sqrt( thlp2 )
+          rtpthlp = 0.9_core_rknd * sqrt( rtp2(1,:) ) * sqrt( thlp2(1,:) )
        endwhere
 
-       where ( sign( one, upwp ) * sign( one, wp3 ) < zero )
+       where ( sign( one, upwp(1,:) ) * sign( one, wp3 ) < zero )
           Sku = -0.5_core_rknd * Skw 
        elsewhere
           Sku = 0.5_core_rknd * Skw
        endwhere
 
-       where ( sign( one, vpwp ) * sign( one, wp3 ) < zero )
+       where ( sign( one, vpwp(1,:) ) * sign( one, wp3 ) < zero )
           Skv = -0.5_core_rknd * Skw 
        elsewhere
           Skv = 0.5_core_rknd * Skw
@@ -953,17 +956,17 @@ module pdf_parameter_tests
        write(fstdout,*) "wm = ", wm
        write(fstdout,*) "rtm = ", rtm
        write(fstdout,*) "thlm = ", thlm
-       write(fstdout,*) "wp2 = ", wp2
-       write(fstdout,*) "rtp2 = ", rtp2
-       write(fstdout,*) "thlp2 = ", thlp2
+       write(fstdout,*) "wp2 = ", wp2(1,:)
+       write(fstdout,*) "rtp2 = ", rtp2(1,:)
+       write(fstdout,*) "thlp2 = ", thlp2(1,:)
        write(fstdout,*) "Skw = ", Skw
        write(fstdout,*) "wp3 = ", wp3
        write(fstdout,*) "Skrt = ", Skrt
        write(fstdout,*) "rtp3 = ", rtp3
        write(fstdout,*) "Skthl = ", Skthl
        write(fstdout,*) "thlp3 = ", thlp3
-       write(fstdout,*) "wprtp = ", wprtp
-       write(fstdout,*) "wpthlp = ", wpthlp
+       write(fstdout,*) "wprtp = ", wprtp(1,:)
+       write(fstdout,*) "wpthlp = ", wpthlp(1,:)
        write(fstdout,*) "rtpthlp = ", rtpthlp
        write(fstdout,*) ""
 
@@ -1029,7 +1032,7 @@ module pdf_parameter_tests
 
                 ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
                 ! sigma_w_2, and mixt_frac.
-                call calc_setter_var_params( gr, wm, wp2, Skw, sgn_wp2,     & ! In
+                call calc_setter_var_params( gr, wm, wp2(1,:), Skw, sgn_wp2,     & ! In
                                              F_w, zeta_w,               & ! In
                                              mu_w_1, mu_w_2, sigma_w_1, & ! Out
                                              sigma_w_2, mixt_frac,      & ! Out
@@ -1043,7 +1046,7 @@ module pdf_parameter_tests
 
                 ! Perform the tests for the "setter" variable, which is the
                 ! variable that is used to set the mixture fraction.
-                call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
+                call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
                                        mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                        sigma_w_2, mixt_frac, tol,    & ! In
                                        sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -1064,7 +1067,7 @@ module pdf_parameter_tests
                                           coef_sigma_w_1_sqd, &
                                           coef_sigma_w_2_sqd )
 
-                wp4_implicit_calc = coef_wp4_implicit * wp2**2
+                wp4_implicit_calc = coef_wp4_implicit * wp2(1,:)**2
 
                 ! Test 7
                 ! Compare the <w'^4> calculated by the PDF to its value
@@ -1182,7 +1185,7 @@ module pdf_parameter_tests
 
                 ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
                 ! sigma_w_2, and mixt_frac.
-                call calculate_w_params( wm, wp2, Skw, F_w, zeta_w, & ! In
+                call calculate_w_params( wm, wp2(1,:), Skw, F_w, zeta_w, & ! In
                                          mu_w_1, mu_w_2, sigma_w_1, & ! Out
                                          sigma_w_2, mixt_frac,      & ! Out
                                          coef_sigma_w_1_sqd,        & ! Out
@@ -1195,7 +1198,7 @@ module pdf_parameter_tests
 
                 ! Perform the tests for the "setter" variable, which is the
                 ! variable that is used to set the mixture fraction.
-                call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
+                call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
                                        mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                        sigma_w_2, mixt_frac, tol,    & ! In
                                        sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -1216,7 +1219,7 @@ module pdf_parameter_tests
                                                coef_sigma_w_1_sqd, &
                                                coef_sigma_w_2_sqd )
 
-                wp4_implicit_calc = coef_wp4_implicit * wp2**2
+                wp4_implicit_calc = coef_wp4_implicit * wp2(1,:)**2
 
                 ! Test 7
                 ! Compare the <w'^4> calculated by the PDF to its value
@@ -1286,7 +1289,7 @@ module pdf_parameter_tests
                            // "and 1 (or 0.99)."
           write(fstdout,*) ""
 
-          sqrt_wp2 = sqrt( wp2 )
+          sqrt_wp2 = sqrt( wp2(1,:) )
           mixt_frac_max_mag = 1.0_core_rknd
 
           do iter_sigma_sqd_w = 1, num_sigma_sqd_w, 1
@@ -1296,18 +1299,18 @@ module pdf_parameter_tests
                 where ( abs( Skw ) > zero )
                    ! The value of sigma_sqd_w needs to be less than than 1 when
                    ! | Skw | > 0 in order for the PDF to be valid.
-                   sigma_sqd_w = 0.99_core_rknd
+                   sigma_sqd_w(1,:) = 0.99_core_rknd
                 elsewhere ! Skw = 0
                    ! sigma_sqd_w can have a value of 0 when Skw = 0.
-                   sigma_sqd_w = one
+                   sigma_sqd_w(1,:) = one
                 endwhere ! | Skw | > 0
              else ! iter_sigma_sqd_w > 1
                 ! sigma_sqd_w ranges from 0 to 1.
-                sigma_sqd_w = 0.1_core_rknd * real( iter_sigma_sqd_w - 1, &
+                sigma_sqd_w(1,:) = 0.1_core_rknd * real( iter_sigma_sqd_w - 1, &
                                                     kind = core_rknd )
              endif ! iter_sigma_sqd_w
  
-             call ADG1_w_closure( wm, wp2, Skw, sigma_sqd_w,              &! In
+             call ADG1_w_closure( wm, wp2(1,:), Skw, sigma_sqd_w(1,:),              &! In
                                   sqrt_wp2, mixt_frac_max_mag,            &! In
                                   mu_w_1, mu_w_2, w_1_n, w_2_n,           &! Out
                                   sigma_w_1_sqd, sigma_w_2_sqd, mixt_frac )! Out
@@ -1320,7 +1323,7 @@ module pdf_parameter_tests
              ! Perform the tests for the "setter" variable, which is the
              ! variable that is used to set the mixture fraction.  This is
              ! always w for ADG1.
-             call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
+             call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
                                     mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                     sigma_w_2, mixt_frac, tol,    & ! In
                                     sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -1350,7 +1353,7 @@ module pdf_parameter_tests
                                        // "the following parameter set:  "
                       write(fstderr,*) "PDF parameter set index = ", &
                                        iter_param_sets
-                      write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w(idx)
+                      write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w(1,idx)
                       write(fstderr,*) ""
                    endif ! l_failed_sets(idx)
                 enddo ! idx = 1, nz, 1
@@ -1379,7 +1382,7 @@ module pdf_parameter_tests
                                         small_l_w_1, small_l_w_2,      & ! In
                                         big_L_w_1(idx), big_L_w_2(idx) ) ! Out
 
-                 call calc_setter_parameters( wm(idx), wp2(idx),        & ! In
+                 call calc_setter_parameters( wm(idx), wp2(1,idx),        & ! In
                                               Skw(idx), sgn_wp2(idx),   & ! In
                                               big_L_w_1(idx),           & ! In
                                               big_L_w_2(idx),           & ! In
@@ -1399,7 +1402,7 @@ module pdf_parameter_tests
 
               ! Perform the tests for the "setter" variable, which is the
               ! variable that is used to set the mixture fraction.
-              call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
+              call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
                                      mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                      sigma_w_2, mixt_frac, tol,    & ! In
                                      sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -1450,7 +1453,7 @@ module pdf_parameter_tests
 
           mixt_frac = calc_mixt_frac_LY93( gr, abs( Skw ) )
 
-          call calc_params_LY93( gr, wm, wp2, Skw, mixt_frac,     & ! In
+          call calc_params_LY93( gr, wm, wp2(1,:), Skw, mixt_frac,     & ! In
                                  mu_w_1, mu_w_2,              & ! Out
                                  sigma_w_1_sqd, sigma_w_2_sqd ) ! Out
 
@@ -1461,7 +1464,7 @@ module pdf_parameter_tests
 
           ! Perform the tests for the "setter" variable, which is the variable
           ! that is used to set the mixture fraction.
-          call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
+          call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
                                  mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                  sigma_w_2, mixt_frac, tol,    & ! In
                                  sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -1510,8 +1513,8 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          call new_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2, Skw, & ! In
-                               wprtp, wpthlp, rtpthlp,                   & ! In
+          call new_pdf_driver( gr, wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), Skw, & ! In
+                               wprtp(1,:), wpthlp(1,:), rtpthlp,                   & ! In
                                slope_coef_spread_DG_means_w,             & ! In
                                pdf_component_stdev_factor_w,             & ! In
                                coef_spread_DG_means_rt,                  & ! In
@@ -1528,8 +1531,8 @@ module pdf_parameter_tests
 
           ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
           ! to be clipped in new_pdf_driver.
-          rtp3 = Skrt * rtp2**1.5
-          thlp3 = Skthl * thlp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
+          thlp3 = Skthl * thlp2(1,:)**1.5
 
        elseif ( test_PDF_type == iiPDF_new_hybrid ) then
 
@@ -1539,18 +1542,18 @@ module pdf_parameter_tests
           write(fstdout,*) ""
 
           if ( l_gamma_Skw ) then
-             gamma_Skw_fnc = gamma_coefb &
+             gamma_Skw_fnc(1,:) = gamma_coefb &
                              + ( gamma_coef - gamma_coefb ) &
                                * exp( -one_half * ( Skw / gamma_coefc )**2 )
           else
-             gamma_Skw_fnc = gamma_coef
+             gamma_Skw_fnc(1,:) = gamma_coef
           endif
 
           call new_hybrid_pdf_driver( gr, wm, rtm, thlm, um, vm,          &! In
-                                      wp2, rtp2, thlp2, up2, vp2,         &! In
-                                      Skw, wprtp, wpthlp, upwp, vpwp,     &! In
+                                      wp2(1,:), rtp2(1,:), thlp2(1,:), up2(1,:), vp2(1,:),         &! In
+                                      Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:),     &! In
                                       sclrm, sclrp2, wpsclrp,             &! In
-                                      gamma_Skw_fnc,                      &! In
+                                      gamma_Skw_fnc(1,:),                 &! In
                                       slope_coef_spread_DG_means_w,       &! In
                                       pdf_component_stdev_factor_w,       &! In
                                       Skrt, Skthl, Sku, Skv, Sksclr,      &! I/O
@@ -1571,8 +1574,8 @@ module pdf_parameter_tests
 
           ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
           ! to be clipped in new_pdf_driver.
-          rtp3 = Skrt * rtp2**1.5
-          thlp3 = Skthl * thlp2**1.5
+          rtp3 = Skrt * rtp2(1,:)**1.5
+          thlp3 = Skthl * thlp2(1,:)**1.5
 
        elseif ( test_PDF_type == iiPDF_ADG1 ) then
 
@@ -1582,14 +1585,14 @@ module pdf_parameter_tests
           write(fstdout,*) ""
 
           if ( l_gamma_Skw ) then
-             gamma_Skw_fnc = gamma_coefb &
+             gamma_Skw_fnc(1,:) = gamma_coefb &
                              + ( gamma_coef - gamma_coefb ) &
                                * exp( -one_half * ( Skw / gamma_coefc )**2 )
           else
-             gamma_Skw_fnc = gamma_coef
+             gamma_Skw_fnc(1,:) = gamma_coef
           endif
 
-          call compute_sigma_sqd_w( nz, &
+          call compute_sigma_sqd_w( nz, 1, &
                                     gamma_Skw_fnc, wp2, thlp2, rtp2, &
                                     up2, vp2, wpthlp, wprtp, upwp, vpwp, &
                                     l_predict_upwp_vpwp, &
@@ -1597,9 +1600,9 @@ module pdf_parameter_tests
 
           call ADG1_pdf_driver( gr%nz, 1,                                & ! In 
                                 wm, rtm, thlm, um, vm,                   & ! In 
-                                wp2, rtp2, thlp2, up2, vp2,              & ! In 
-                                Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In 
-                                sigma_sqd_w, beta, mixt_frac_max_mag,    & ! In 
+                                wp2(1,:), rtp2(1,:), thlp2(1,:), up2(1,:), vp2(1,:),              & ! In 
+                                Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:), sqrt_wp2,& ! In 
+                                sigma_sqd_w(1,:), beta, mixt_frac_max_mag,    & ! In 
                                 sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In 
                                 mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2,& ! Out
                                 mu_u_1, mu_u_2, mu_v_1, mu_v_2,          & ! Out
@@ -1623,8 +1626,8 @@ module pdf_parameter_tests
                            // "the full PDF."
           write(fstdout,*) ""
 
-          call LY93_driver( gr, wm, rtm, thlm, wp2, rtp2,          & ! In
-                            thlp2, Skw, Skrt, Skthl,           & ! In
+          call LY93_driver( gr, wm, rtm, thlm, wp2(1,:), rtp2(1,:),          & ! In
+                            thlp2(1,:), Skw, Skrt, Skthl,           & ! In
                             mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
                             mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out
                             sigma_w_2_sqd, sigma_rt_1_sqd,     & ! Out
@@ -1691,7 +1694,7 @@ module pdf_parameter_tests
        !    | <w'^2>|_recalc - <w'^2> |  <=  | <w'^2> | * tol;
        ! and since <w'^2> is always positive:
        !    | <w'^2>|_recalc - <w'^2> |  <=  <w'^2> * tol.
-       where ( abs( recalc_wp2 - wp2 ) <= max( wp2, w_tol_sqd ) * tol )
+       where ( abs( recalc_wp2 - wp2(1,:) ) <= max( wp2(1,:), w_tol_sqd ) * tol )
           l_pass_test_9 = .true.
        elsewhere
           l_pass_test_9 = .false.
@@ -1702,7 +1705,7 @@ module pdf_parameter_tests
              if ( .not. l_pass_test_9(idx) ) then
                 write(fstderr,*) "Test 9 failed"
                 !write(fstderr,*) "index = ", idx
-                write(fstderr,*) "wp2 = ", wp2(idx)
+                write(fstderr,*) "wp2 = ", wp2(1,idx)
                 write(fstderr,*) "recalc_wp2 = ", recalc_wp2(idx)
                 write(fstderr,*) ""
              endif ! .not. l_pass_test_9(idx)
@@ -1786,7 +1789,7 @@ module pdf_parameter_tests
        !    | <rt'^2>|_recalc - <rt'^2> |  <=  | <rt'^2> | * tol;
        ! and since <rt'^2> is always positive:
        !    | <rt'^2>|_recalc - <rt'^2> |  <=  <rt'^2> * tol.
-       where ( abs( recalc_rtp2 - rtp2 ) <= max( rtp2, rt_tol**2 ) * tol )
+       where ( abs( recalc_rtp2 - rtp2(1,:) ) <= max( rtp2(1,:), rt_tol**2 ) * tol )
           l_pass_test_13 = .true.
        elsewhere
           l_pass_test_13 = .false.
@@ -1797,7 +1800,7 @@ module pdf_parameter_tests
              if ( .not. l_pass_test_13(idx) ) then
                 write(fstderr,*) "Test 13 failed"
                 !write(fstderr,*) "index = ", idx
-                write(fstderr,*) "rtp2 = ", rtp2(idx)
+                write(fstderr,*) "rtp2 = ", rtp2(1,idx)
                 write(fstderr,*) "recalc_rtp2 = ", recalc_rtp2(idx)
                 write(fstderr,*) ""
              endif ! .not. l_pass_test_13(idx)
@@ -1896,7 +1899,7 @@ module pdf_parameter_tests
        !    | <thl'^2>|_recalc - <thl'^2> |  <=  | <thl'^2> | * tol;
        ! and since <thl'^2> is always positive:
        !    | <thl'^2>|_recalc - <thl'^2> |  <=  <thl'^2> * tol.
-       where ( abs( recalc_thlp2 - thlp2 ) <= max( thlp2, thl_tol**2 ) * tol )
+       where ( abs( recalc_thlp2 - thlp2(1,:) ) <= max( thlp2(1,:), thl_tol**2 ) * tol )
           l_pass_test_17 = .true.
        elsewhere
           l_pass_test_17 = .false.
@@ -1907,7 +1910,7 @@ module pdf_parameter_tests
              if ( .not. l_pass_test_17(idx) ) then
                 write(fstderr,*) "Test 17 failed"
                 !write(fstderr,*) "index = ", idx
-                write(fstderr,*) "thlp2 = ", thlp2(idx)
+                write(fstderr,*) "thlp2 = ", thlp2(1,idx)
                 write(fstderr,*) "recalc_thlp2 = ", recalc_thlp2(idx)
                 write(fstderr,*) ""
              endif ! .not. l_pass_test_17(idx)
