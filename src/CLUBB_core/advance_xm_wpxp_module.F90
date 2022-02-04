@@ -458,173 +458,189 @@ module advance_xm_wpxp_module
     logical :: &
       l_scalar_calc   ! True if sclr_dim > 0
       
-    integer :: i, k
+    integer :: i, j, k
 
     ! -------------------- Begin Code --------------------
     
-    do i = 1, ngrdcol
-    
-      ! Check whether the passive scalars are present.
-      if ( sclr_dim > 0 ) then
-        l_scalar_calc = .true.
-      else
-        l_scalar_calc = .false.
-      end if
+    ! Check whether the passive scalars are present.
+    if ( sclr_dim > 0 ) then
+      l_scalar_calc = .true.
+    else
+      l_scalar_calc = .false.
+    end if
       
-      if ( iiPDF_type == iiPDF_new .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) then
-         nrhs = 1
+    if ( iiPDF_type == iiPDF_new .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) then
+       nrhs = 1
+    else
+      if ( l_predict_upwp_vpwp ) then
+        nrhs = 4+sclr_dim
       else
-        if ( l_predict_upwp_vpwp ) then
-          nrhs = 4+sclr_dim
-        else
-          nrhs = 2+sclr_dim
-        endif
-      end if
+        nrhs = 2+sclr_dim
+      endif
+    end if
 
-      ! Save values of predictive fields to be printed in case of crash.
-      if ( l_lmm_stepping ) then
-         rtm_old(i,:) = rtm(i,:)
-         wprtp_old(i,:) = wprtp(i,:)
-         thlm_old(i,:) = thlm(i,:)
-         wpthlp_old(i,:) = wpthlp(i,:)
-         if ( sclr_dim > 0 ) then
-            sclrm_old(i,:,:) = sclrm(i,:,:)
-            wpsclrp_old(i,:,:) = wpsclrp(i,:,:)
-         endif ! sclr_dim > 0
-         if ( l_predict_upwp_vpwp ) then
-            um_old(i,:) = um(i,:)
-            upwp_old(i,:) = upwp(i,:)
-            vm_old(i,:) = vm(i,:)
-            vpwp_old(i,:) = vpwp(i,:)
-         endif ! l_predict_upwp_vpwp
-      endif ! l_lmm_stepping
+    ! Save values of predictive fields to be printed in case of crash.
+    if ( l_lmm_stepping ) then
+      
+      rtm_old(:,:)    = rtm(:,:)
+      wprtp_old(:,:)  = wprtp(:,:)
+      thlm_old(:,:)   = thlm(:,:)
+      wpthlp_old(:,:) = wpthlp(:,:)
+          
+      if ( sclr_dim > 0 ) then
+        sclrm_old(:,:,:) = sclrm(:,:,:)
+        wpsclrp_old(:,:,:) = wpsclrp(:,:,:)
+      end if ! sclr_dim > 0
+       
+      if ( l_predict_upwp_vpwp ) then
+        um_old(:,:) = um(:,:)
+        upwp_old(:,:) = upwp(:,:)
+        vm_old(:,:) = vm(:,:)
+        vpwp_old(:,:) = vpwp(:,:)
+      end if ! l_predict_upwp_vpwp
+       
+    end if ! l_lmm_stepping
+
+    ! Unpack CLUBB tunable parameters
+    C6rt = clubb_params(iC6rt)
+    C6thl = clubb_params(iC6thl)
+    altitude_threshold = clubb_params(ialtitude_threshold)
+    wpxp_L_thresh = clubb_params(iwpxp_L_thresh)
+
+    if ( .not. l_diag_Lscale_from_tau ) then
 
       ! Unpack CLUBB tunable parameters
-      C6rt = clubb_params(iC6rt)
-      C6thl = clubb_params(iC6thl)
-      altitude_threshold = clubb_params(ialtitude_threshold)
-      wpxp_L_thresh = clubb_params(iwpxp_L_thresh)
+      C6rtb = clubb_params(iC6rtb)
+      C6rtc = clubb_params(iC6rtc)
+      C6thlb = clubb_params(iC6thlb)
+      C6thlc = clubb_params(iC6thlc)
+      C6rt_Lscale0 = clubb_params(iC6rt_Lscale0)
+      C6thl_Lscale0 = clubb_params(iC6thl_Lscale0)
 
-      if ( .not. l_diag_Lscale_from_tau ) then
-
-         ! Unpack CLUBB tunable parameters
-         C6rtb = clubb_params(iC6rtb)
-         C6rtc = clubb_params(iC6rtc)
-         C6thlb = clubb_params(iC6thlb)
-         C6thlc = clubb_params(iC6thlc)
-         C6rt_Lscale0 = clubb_params(iC6rt_Lscale0)
-         C6thl_Lscale0 = clubb_params(iC6thl_Lscale0)
-
-         ! Compute C6 as a function of Skw
-         ! The if...then is just here to save compute time
-         if ( abs(C6rt-C6rtb) > abs(C6rt+C6rtb)*eps/2 ) then
-           C6rt_Skw_fnc(i,:) = C6rtb + (C6rt-C6rtb) & 
-             *EXP( -one_half * (Skw_zm(i,:)/C6rtc)**2 )
-         else
-           C6rt_Skw_fnc(i,:) = C6rtb
-         endif
-
-         if ( abs(C6thl-C6thlb) > abs(C6thl+C6thlb)*eps/2 ) then
-           C6thl_Skw_fnc(i,:) = C6thlb + (C6thl-C6thlb) & 
-             *EXP( -one_half * (Skw_zm(i,:)/C6thlc)**2 )
-         else
-           C6thl_Skw_fnc(i,:) = C6thlb
-         endif
-
-         ! Damp C6 as a function of Lscale in stably stratified regions
-         C6rt_Skw_fnc(i,:) = damp_coefficient( gr(i), C6rt, C6rt_Skw_fnc(i,:), &
-                                          C6rt_Lscale0, altitude_threshold, &
-                                          wpxp_L_thresh, Lscale(i,:) )
-
-         C6thl_Skw_fnc(i,:) = damp_coefficient( gr(i), C6thl, C6thl_Skw_fnc(i,:), &
-                                           C6thl_Lscale0, altitude_threshold, &
-                                           wpxp_L_thresh, Lscale(i,:) )
-
-      else ! l_diag_Lscale_from_tau
-
-         C6rt_Skw_fnc(i,:) = C6rt
-         C6thl_Skw_fnc(i,:) = C6thl
-
-      endif ! .not. l_diag_Lscale_from_tau
-
-      ! Compute C7_Skw_fnc
-      if ( l_use_C7_Richardson ) then
-
-        ! New formulation based on Richardson number
-        C7_Skw_fnc(i,:) = Cx_fnc_Richardson(i,:)
-
+      ! Compute C6 as a function of Skw
+      ! The if...then is just here to save compute time
+      if ( abs(C6rt-C6rtb) > abs(C6rt+C6rtb)*eps/2 ) then
+        C6rt_Skw_fnc(:,:) = C6rtb + ( C6rt - C6rtb ) & 
+                                    * exp( -one_half * (Skw_zm(:,:)/C6rtc)**2 )
       else
+        C6rt_Skw_fnc(:,:) = C6rtb
+      end if
 
-        ! Unpack CLUBB tunable parameters
-        C7 = clubb_params(iC7)
-        C7b = clubb_params(iC7b)
-        C7c = clubb_params(iC7c)
-        C7_Lscale0 = clubb_params(iC7_Lscale0)
+      if ( abs(C6thl-C6thlb) > abs(C6thl+C6thlb)*eps/2 ) then
+        C6thl_Skw_fnc(:,:) = C6thlb + ( C6thl - C6thlb ) & 
+                                      * exp( -one_half * (Skw_zm(:,:)/C6thlc)**2 )
+      else
+        C6thl_Skw_fnc(:,:) = C6thlb
+      end if
 
-        ! Compute C7 as a function of Skw
-        if ( abs(C7-C7b) > abs(C7+C7b)*eps/2 ) then
-          C7_Skw_fnc(i,:) = C7b + (C7-C7b) & 
-            *EXP( -one_half * (Skw_zm(i,:)/C7c)**2 )
-        else
-          C7_Skw_fnc(i,:) = C7b
-        endif
+      ! Damp C6 as a function of Lscale in stably stratified regions
+      call damp_coefficient( nz, ngrdcol, gr, C6rt, C6rt_Skw_fnc, &
+                             C6rt_Lscale0, altitude_threshold, &
+                             wpxp_L_thresh, Lscale, &
+                             C6rt_Skw_fnc )
 
-        ! Damp C7 as a function of Lscale in stably stratified regions
-        C7_Skw_fnc(i,:) = damp_coefficient( gr(i), C7, C7_Skw_fnc(i,:), &
-                                       C7_Lscale0, altitude_threshold, &
-                                       wpxp_L_thresh, Lscale(i,:) )
+      call damp_coefficient( nz, ngrdcol, gr, C6thl, C6thl_Skw_fnc, &
+                             C6thl_Lscale0, altitude_threshold, &
+                             wpxp_L_thresh, Lscale, &
+                             C6thl_Skw_fnc )
 
-      end if ! l_use_C7_Richardson
+    else ! l_diag_Lscale_from_tau
 
-      if ( l_stats_samp ) then
+      C6rt_Skw_fnc(:,:) = C6rt
+      C6thl_Skw_fnc(:,:) = C6thl
 
+    endif ! .not. l_diag_Lscale_from_tau
+
+    ! Compute C7_Skw_fnc
+    if ( l_use_C7_Richardson ) then
+
+      ! New formulation based on Richardson number
+      C7_Skw_fnc(:,:) = Cx_fnc_Richardson(:,:)
+
+    else
+
+      ! Unpack CLUBB tunable parameters
+      C7 = clubb_params(iC7)
+      C7b = clubb_params(iC7b)
+      C7c = clubb_params(iC7c)
+      C7_Lscale0 = clubb_params(iC7_Lscale0)
+
+      ! Compute C7 as a function of Skw
+      if ( abs(C7-C7b) > abs(C7+C7b)*eps/2 ) then
+        C7_Skw_fnc(:,:) = C7b + ( C7 - C7b ) * exp( -one_half * (Skw_zm(:,:)/C7c)**2 )
+      else
+        C7_Skw_fnc(:,:) = C7b
+      endif
+
+      ! Damp C7 as a function of Lscale in stably stratified regions
+      call damp_coefficient( nz, ngrdcol, gr, C7, C7_Skw_fnc, &
+                             C7_Lscale0, altitude_threshold, &
+                             wpxp_L_thresh, Lscale, &
+                             C7_Skw_fnc )
+
+    end if ! l_use_C7_Richardson
+    
+    
+    if ( l_stats_samp ) then
+
+      do i = 1, ngrdcol
         call stat_update_var( iC7_Skw_fnc, C7_Skw_fnc(i,:), & ! intent(in)
                               stats_zm(i) )                 ! intent(inout)
         call stat_update_var( iC6rt_Skw_fnc, C6rt_Skw_fnc(i,:), & ! intent(in)
                               stats_zm(i) )                     ! intent(inout
         call stat_update_var( iC6thl_Skw_fnc, C6thl_Skw_fnc(i,:), & ! intent(in)
                               stats_zm(i) )                       ! intent(inout)
+      end do
 
+    end if
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      ! Assertion check for C7_Skw_fnc
+      if ( any( C7_Skw_fnc(:,:) > one ) .or. any( C7_Skw_fnc(:,:) < zero ) ) then
+        write(fstderr,*) "The C7_Skw_fnc variable is outside the valid range"
+        err_code = clubb_fatal_error
+        return
       end if
+    end if
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        ! Assertion check for C7_Skw_fnc
-        if ( any( C7_Skw_fnc(i,:) > one ) .or. any( C7_Skw_fnc(i,:) < zero ) ) then
-          write(fstderr,*) "The C7_Skw_fnc variable is outside the valid range"
-          err_code = clubb_fatal_error
-          return
-        end if
-      end if
+    ! Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
+    ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
+    ! Kw6 is located on thermodynamic levels.
+    ! Kw6 = c_K6 * Kh_zt
+    c_K6 = clubb_params(ic_K6)
+    Kw6(:,:) = c_K6 * Kh_zt(:,:)
 
-      ! Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
-      ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
-      ! Kw6 is located on thermodynamic levels.
-      ! Kw6 = c_K6 * Kh_zt
-      c_K6 = clubb_params(ic_K6)
-      Kw6(i,:) = c_K6 * Kh_zt(i,:)
-
-      ! Find the number of grid levels, both upwards and downwards, that can
-      ! have an effect on the central thermodynamic level during the course of
-      ! one time step due to turbulent advection.  This is used as part of the
-      ! monotonic turbulent advection scheme.
+    ! Find the number of grid levels, both upwards and downwards, that can
+    ! have an effect on the central thermodynamic level during the course of
+    ! one time step due to turbulent advection.  This is used as part of the
+    ! monotonic turbulent advection scheme.
+    do i = 1, ngrdcol
       call calc_turb_adv_range( gr(i), dt, w_1_zm(i,:), w_2_zm(i,:), varnce_w_1_zm(i,:), varnce_w_2_zm(i,:), & ! intent(in)
                                 mixt_frac_zm(i,:), &  ! intent(in)
                                 stats_zm(i), & ! intent(inout)
                                 low_lev_effect(i,:), high_lev_effect(i,:) ) ! intent(out)
+    end do
 
-      ! Calculate 1st pressure terms for w'r_t', w'thl', and w'sclr'. 
+    
+    ! Calculate 1st pressure terms for w'r_t', w'thl', and w'sclr'. 
+    do i = 1, ngrdcol
       call wpxp_term_pr1_lhs( gr(i), C6rt_Skw_fnc(i,:), C6thl_Skw_fnc(i,:), C7_Skw_fnc(i,:),        & ! Intent(in)
                               invrs_tau_C6_zm(i,:), l_scalar_calc,                 & ! Intent(in)
                               lhs_pr1_wprtp(i,:), lhs_pr1_wpthlp(i,:), lhs_pr1_wpsclrp(i,:)  ) ! Intent(out)
                                   
-      C6_term(i,:) = C6rt_Skw_fnc(i,:) * invrs_tau_C6_zm(i,:)
+    end do
+    
+    C6_term(:,:) = C6rt_Skw_fnc(:,:) * invrs_tau_C6_zm(:,:)
 
-      if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
+      do i = 1, ngrdcol
         call stat_update_var( iC6_term, C6_term(i,:), & ! intent(in)
                               stats_zm(i) )           ! intent(inout)
-      end if
+      end do
+    end if
 
-                      
+          
+    do i = 1, ngrdcol        
       call  calc_xm_wpxp_ta_terms( gr(i), wp2rtp(i,:), &  ! intent(in)
                                    wp2thlp(i,:), wp2sclrp(i,:,:), & ! intent(in)
                                    rho_ds_zt(i,:), invrs_rho_ds_zm(i,:), rho_ds_zm(i,:), & ! intent(in)
@@ -639,9 +655,11 @@ module advance_xm_wpxp_module
                                    lhs_ta_wpvp(:,i,:), lhs_ta_wpsclrp(:,i,:,:), & ! intent(out)
                                    rhs_ta_wprtp(i,:), rhs_ta_wpthlp(i,:), rhs_ta_wpup(i,:), & ! intent(out)
                                    rhs_ta_wpvp(i,:), rhs_ta_wpsclrp(i,:,:) ) ! intent(out)
+    end do
 
 
-      ! Calculate various terms that are the same between all LHS matricies
+    ! Calculate various terms that are the same between all LHS matricies
+    do i = 1, ngrdcol
       call calc_xm_wpxp_lhs_terms( gr(i), Kh_zm(i,:), wm_zm(i,:), wm_zt(i,:), wp2(i,:),                     & ! In
                                    Kw6(i,:), C7_Skw_fnc(i,:), invrs_rho_ds_zt(i,:),                 & ! In
                                    invrs_rho_ds_zm(i,:), rho_ds_zt(i,:),                       & ! In
@@ -655,14 +673,15 @@ module advance_xm_wpxp_module
                                    l_brunt_vaisala_freq_moist,                       & ! In
                                    l_use_thvm_in_bv_freq,                            & ! In
                                    lhs_diff_zm(:,i,:), lhs_diff_zt(:,i,:), lhs_ma_zt(:,i,:), lhs_ma_zm(:,i,:),   & ! Out
-                                   lhs_tp(:,i,:), lhs_ta_xm(:,i,:), lhs_ac_pr2(i,:) )                     ! Out
+                                   lhs_tp(:,i,:), lhs_ta_xm(:,i,:), lhs_ac_pr2(i,:) ) ! Out
+    end do
 
-      ! Setup and decompose matrix for each variable.
+    ! Setup and decompose matrix for each variable.
 
-      if ( ( iiPDF_type == iiPDF_new ) &
-                  .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) then
+    if ( ( iiPDF_type == iiPDF_new ) .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) then
 
-        ! LHS matrices are unique, multiple band solves required
+      ! LHS matrices are unique, multiple band solves required
+      do i = 1, ngrdcol
         call solve_xm_wpxp_with_multiple_lhs( gr(i), dt, l_iter, nrhs, wm_zt(i,:), wp2(i,:),               & ! In
                                               rtpthvp(i,:), rtm_forcing(i,:), wprtp_forcing(i,:), thlpthvp(i,:),  & ! In
                                               thlm_forcing(i,:),   wpthlp_forcing(i,:), rho_ds_zm(i,:),      & ! In
@@ -682,10 +701,11 @@ module advance_xm_wpxp_module
                                               order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,   & ! In
                                               stats_zt(i), stats_zm(i), stats_sfc(i), & ! intent(inout)
                                               rtm(i,:), wprtp(i,:), thlm(i,:), wpthlp(i,:), sclrm(i,:,:), wpsclrp(i,:,:) )        ! Out
-
-      else
+      end do
+    else
         
-        ! LHS matrices are equivalent, only one solve required
+      ! LHS matrices are equivalent, only one solve required
+      do i = 1, ngrdcol
         call solve_xm_wpxp_with_single_lhs( gr(i), dt, l_iter, nrhs, wm_zt(i,:), wp2(i,:),                & ! In 
                                             invrs_tau_C6_zm(i,:), tau_max_zm(i,:),                     & ! In
                                             rtpthvp(i,:), rtm_forcing(i,:), wprtp_forcing(i,:), thlpthvp(i,:),   & ! In
@@ -712,29 +732,33 @@ module advance_xm_wpxp_module
                                             stats_zt(i), stats_zm(i), stats_sfc(i), & ! intent(inout)
                                             rtm(i,:), wprtp(i,:), thlm(i,:), wpthlp(i,:),                        & ! Out
                                             sclrm(i,:,:), wpsclrp(i,:,:), um(i,:), upwp(i,:), vm(i,:),vpwp(i,:) )                ! Out
+      end do
+    end if ! ( ( iiPDF_type == iiPDF_new ) .and. ( .not. l_explicit_turbulent_adv_wpxp ) )
 
-      endif ! ( ( iiPDF_type == iiPDF_new ) &
-            !        .and. ( .not. l_explicit_turbulent_adv_wpxp ) )
+    if ( l_lmm_stepping ) then
+      
+      thlm(:,:) = one_half * ( thlm_old(:,:) + thlm(:,:) )
+      rtm(:,:) = one_half * ( rtm_old(:,:) + rtm(:,:) )
+      wpthlp(:,:) = one_half * ( wpthlp_old(:,:) + wpthlp(:,:) ) 
+      wprtp(:,:) = one_half * ( wprtp_old(:,:) + wprtp(:,:) )
+      
+      if ( sclr_dim > 0 ) then
+         sclrm(:,:,:) = one_half * ( sclrm_old(:,:,:) + sclrm(:,:,:) )
+         wpsclrp(:,:,:) = one_half * ( wpsclrp_old(:,:,:) + wpsclrp(:,:,:) )
+      endif ! sclr_dim > 0
+      
+      if ( l_predict_upwp_vpwp ) then
+        um(:,:) = one_half * ( um_old(:,:) + um(:,:) )
+        vm(:,:) = one_half * ( vm_old(:,:) + vm(:,:) )
+        upwp(:,:) = one_half * ( upwp_old(:,:) + upwp(:,:) )
+        vpwp(:,:) = one_half * ( vpwp_old(:,:) + vpwp(:,:) )    
+      end if ! l_predict_upwp_vpwp 
+      
+    end if ! l_lmm_stepping
 
-      if ( l_lmm_stepping ) then
-        thlm(i,:) = one_half * ( thlm_old(i,:) + thlm(i,:) )
-        rtm(i,:) = one_half * ( rtm_old(i,:) + rtm(i,:) )
-        wpthlp(i,:) = one_half * ( wpthlp_old(i,:) + wpthlp(i,:) ) 
-        wprtp(i,:) = one_half * ( wprtp_old(i,:) + wprtp(i,:) )
-        if ( sclr_dim > 0 ) then
-           sclrm(i,:,:) = one_half * ( sclrm_old(i,:,:) + sclrm(i,:,:) )
-           wpsclrp(i,:,:) = one_half * ( wpsclrp_old(i,:,:) + wpsclrp(i,:,:) )
-        endif ! sclr_dim > 0
-        if ( l_predict_upwp_vpwp ) then
-          um(i,:) = one_half * ( um_old(i,:) + um(i,:) )
-          vm(i,:) = one_half * ( vm_old(i,:) + vm(i,:) )
-          upwp(i,:) = one_half * ( upwp_old(i,:) + upwp(i,:) )
-          vpwp(i,:) = one_half * ( vpwp_old(i,:) + vpwp(i,:) )    
-        end if ! l_predict_upwp_vpwp 
-      end if ! l_lmm_stepping
-
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( err_code == clubb_fatal_error ) then
+        do i = 1, ngrdcol
           call error_prints_xm_wpxp( gr(i), dt, sigma_sqd_w(i,:), wm_zm(i,:), wm_zt(i,:), wp2(i,:), & ! intent(in)
                                      Lscale(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), & ! intent(in)
                                      Kh_zt(i,:), Kh_zm(i,:), invrs_tau_C6_zm(i,:), Skw_zm(i,:), & ! intent(in)
@@ -760,105 +784,128 @@ module advance_xm_wpxp_module
                                      sclrm_old(i,:,:), wpsclrp_old(i,:,:), um_old(i,:), & ! intent(in)
                                      upwp_old(i,:), vm_old(i,:), vpwp_old(i,:), & ! intent(in)
                                      l_predict_upwp_vpwp, l_lmm_stepping ) ! intent(in)
-        end if
+        end do
+      end if
+    end if
+
+    if ( rtm_sponge_damp_settings%l_sponge_damping ) then
+
+      if ( l_stats_samp ) then
+        do i = 1, ngrdcol
+          call stat_begin_update( gr(i), irtm_sdmp, rtm(i,:) / dt, & ! intent(in)
+                                  stats_zt(i) )             ! intent(inout)
+        end do
       end if
 
-      if ( rtm_sponge_damp_settings%l_sponge_damping ) then
+      do i = 1, ngrdcol
+        rtm(i,:) = sponge_damp_xm( gr(i), dt, gr(i)%zt, rtm_ref(i,:), &
+                                   rtm(i,:), rtm_sponge_damp_profile )
+      end do
 
-         if ( l_stats_samp ) then
-            call stat_begin_update( gr(i), irtm_sdmp, rtm(i,:) / dt, & ! intent(in)
-                                    stats_zt(i) )             ! intent(inout)
-         endif
+      if ( l_stats_samp ) then
+        do i = 1, ngrdcol
+          call stat_end_update( gr(i), irtm_sdmp, rtm(i,:) / dt, & ! intent(in)
+                                stats_zt(i) )             ! intent(inout)
+        end do
+      end if
 
-         rtm(i,:) = sponge_damp_xm( gr(i), dt, gr(i)%zt, rtm_ref(i,:), &
-                                        rtm(i,:), rtm_sponge_damp_profile )
+    endif ! rtm_sponge_damp_settings%l_sponge_damping
 
-         if ( l_stats_samp ) then
-            call stat_end_update( gr(i), irtm_sdmp, rtm(i,:) / dt, & ! intent(in)
-                                  stats_zt(i) )             ! intent(inout)
-         endif
+    if ( thlm_sponge_damp_settings%l_sponge_damping ) then
 
-      endif ! rtm_sponge_damp_settings%l_sponge_damping
-
-      if ( thlm_sponge_damp_settings%l_sponge_damping ) then
-
-         if ( l_stats_samp ) then
-            call stat_begin_update( gr(i), ithlm_sdmp, thlm(i,:) / dt, & ! intent(in)
-                                    stats_zt(i) )               ! intent(inout)
-         endif
-
-         thlm(i,:) = sponge_damp_xm( gr(i), dt, gr(i)%zt, thlm_ref(i,:), &
-                                         thlm(i,:), thlm_sponge_damp_profile )
-
-         if ( l_stats_samp ) then
-            call stat_end_update( gr(i), ithlm_sdmp, thlm(i,:) / dt, & ! intent(in)
+      if ( l_stats_samp ) then
+        do i = 1, ngrdcol
+          call stat_begin_update( gr(i), ithlm_sdmp, thlm(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )               ! intent(inout)
-         endif
+        end do
+      end if
 
-      endif ! thlm_sponge_damp_settings%l_sponge_damping
+      do i = 1, ngrdcol
+        thlm(i,:) = sponge_damp_xm( gr(i), dt, gr(i)%zt, thlm_ref(i,:), &
+                                    thlm(i,:), thlm_sponge_damp_profile )
+      end do
 
-      if ( l_predict_upwp_vpwp ) then
+      if ( l_stats_samp ) then
+        do i = 1, ngrdcol
+          call stat_end_update( gr(i), ithlm_sdmp, thlm(i,:) / dt, & ! intent(in)
+                                stats_zt(i) )               ! intent(inout)
+        end do
+      end if
 
-         if ( uv_sponge_damp_settings%l_sponge_damping ) then
+    end if ! thlm_sponge_damp_settings%l_sponge_damping
 
-            if ( l_stats_samp ) then
-               call stat_begin_update( gr(i), ium_sdmp, um(i,:) / dt, & ! intent(in)
-                                       stats_zt(i) )           ! intent(inout)
-               call stat_begin_update( gr(i), ivm_sdmp, vm(i,:) / dt, & ! intent(in)
-                                       stats_zt(i) )           ! intent(inout)
-            endif
+    if ( l_predict_upwp_vpwp ) then
 
-            um(i,:) = sponge_damp_xm( gr(i), dt, gr(i)%zt, um_ref(i,:), &
-                                          um(i,:), uv_sponge_damp_profile )
+      if ( uv_sponge_damp_settings%l_sponge_damping ) then
 
-            vm(i,:) = sponge_damp_xm( gr(i), dt, gr(i)%zt, vm_ref(i,:), &
-                                          vm(i,:), uv_sponge_damp_profile )
-
-            if ( l_stats_samp ) then
-               call stat_end_update( gr(i), ium_sdmp, um(i,:) / dt, & ! intent(in)
+        if ( l_stats_samp ) then
+          do i = 1, ngrdcol
+             call stat_begin_update( gr(i), ium_sdmp, um(i,:) / dt, & ! intent(in)
                                      stats_zt(i) )           ! intent(inout)
-               call stat_end_update( gr(i), ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+             call stat_begin_update( gr(i), ivm_sdmp, vm(i,:) / dt, & ! intent(in)
                                      stats_zt(i) )           ! intent(inout)
-            endif
+          end do
+        end if
 
-         endif ! uv_sponge_damp_settings%l_sponge_damping
-
-         ! Adjust um and vm if nudging is turned on.
-         if ( l_uv_nudge ) then
-
-            ! Reflect nudging in budget
-            if ( l_stats_samp ) then
-               call stat_begin_update( gr(i), ium_ndg, um(i,:) / dt, & ! intent(in)
-                                       stats_zt(i) )          ! intent(inout)
-               call stat_begin_update( gr(i), ivm_ndg, vm(i,:) / dt, & ! intent(in)
-                                       stats_zt(i) )          ! intent(inout)
-            endif
+        do i = 1, ngrdcol
+          um(i,:) = sponge_damp_xm( gr(i), dt, gr(i)%zt, um_ref(i,:), &
+                                    um(i,:), uv_sponge_damp_profile )
+        end do
         
-            um(i,:) &
-            = um(i,:) - ( ( um(i,:) - um_ref(i,:) ) * (dt/ts_nudge) )
-            vm(i,:) &
-            = vm(i,:) - ( ( vm(i,:) - vm_ref(i,:) ) * (dt/ts_nudge) )
+        do i = 1, ngrdcol
+          vm(i,:) = sponge_damp_xm( gr(i), dt, gr(i)%zt, vm_ref(i,:), &
+                                    vm(i,:), uv_sponge_damp_profile )
+        end do
 
-            ! Reflect nudging in budget
-            if ( l_stats_samp ) then
-               call stat_end_update( gr(i), ium_ndg, um(i,:) / dt, & ! intent(in)
-                                     stats_zt(i) )          ! intent(inout)
-               call stat_end_update( gr(i), ivm_ndg, vm(i,:) / dt, & ! intent(in)
-                                     stats_zt(i) )          ! intent(inout)
-            endif
+        if ( l_stats_samp ) then
+          do i = 1, ngrdcol
+            call stat_end_update( gr(i), ium_sdmp, um(i,:) / dt, & ! intent(in)
+                                  stats_zt(i) )           ! intent(inout)
+            call stat_end_update( gr(i), ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+                                  stats_zt(i) )           ! intent(inout)
+          end do
+        end if
 
-         endif ! l_uv_nudge
+      end if ! uv_sponge_damp_settings%l_sponge_damping
 
-         if ( l_stats_samp ) then
-            call stat_update_var( ium_ref, um_ref(i,:), & ! intent(in)
-                                  stats_zt(i) )         ! intent(inout)
-            call stat_update_var( ivm_ref, vm_ref(i,:), & ! intent(in)
-                                  stats_zt(i) )         ! intent(inout)
-         endif
+      ! Adjust um and vm if nudging is turned on.
+      if ( l_uv_nudge ) then
 
-      endif ! l_predict_upwp_vpwp
+        ! Reflect nudging in budget
+        if ( l_stats_samp ) then
+          do i = 1, ngrdcol
+            call stat_begin_update( gr(i), ium_ndg, um(i,:) / dt, & ! intent(in)
+                                    stats_zt(i) )          ! intent(inout)
+            call stat_begin_update( gr(i), ivm_ndg, vm(i,:) / dt, & ! intent(in)
+                                    stats_zt(i) )          ! intent(inout)
+          end do
+        end if
       
-    end do
+        um(:,:) = um(:,:) - ( ( um(:,:) - um_ref(:,:) ) * (dt/ts_nudge) )
+        vm(:,:) = vm(:,:) - ( ( vm(:,:) - vm_ref(:,:) ) * (dt/ts_nudge) )
+
+        ! Reflect nudging in budget
+        if ( l_stats_samp ) then
+          do i = 1, ngrdcol
+            call stat_end_update( gr(i), ium_ndg, um(i,:) / dt, & ! intent(in)
+                                  stats_zt(i) )          ! intent(inout)
+            call stat_end_update( gr(i), ivm_ndg, vm(i,:) / dt, & ! intent(in)
+                                  stats_zt(i) )          ! intent(inout)
+          end do
+        end if
+
+      end if ! l_uv_nudge
+
+      if ( l_stats_samp ) then
+        do i = 1, ngrdcol
+          call stat_update_var( ium_ref, um_ref(i,:), & ! intent(in)
+                                stats_zt(i) )         ! intent(inout)
+          call stat_update_var( ivm_ref, vm_ref(i,:), & ! intent(in)
+                                stats_zt(i) )         ! intent(inout)
+        end do
+      end if
+
+    end if ! l_predict_upwp_vpwp
 
     return
 
@@ -4780,10 +4827,10 @@ module advance_xm_wpxp_module
 
 
   !=============================================================================
-  pure function damp_coefficient( gr, coefficient, Cx_Skw_fnc, &
-                                  max_coeff_value, altitude_threshold, &
-                                  threshold, Lscale ) &
-    result( damped_value )
+  subroutine damp_coefficient( nz, ngrdcol, gr, coefficient, Cx_Skw_fnc, &
+                               max_coeff_value, altitude_threshold, &
+                               threshold, Lscale, &
+                               damped_value )
 
     ! Description:
     ! Damps a given coefficient linearly based on the value of Lscale.
@@ -4796,8 +4843,12 @@ module advance_xm_wpxp_module
         core_rknd ! Variable(s)
 
     implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
     ! Input variables
     real( kind = core_rknd ), intent(in) :: &
@@ -4806,24 +4857,33 @@ module advance_xm_wpxp_module
       altitude_threshold, & ! Minimum altitude where damping should occur 
       threshold             ! Value of Lscale below which the damping should occur
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Lscale,           &   ! Current value of Lscale
       Cx_Skw_fnc            ! Initial skewness function before damping
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: damped_value
-
-    damped_value = Cx_Skw_fnc
-
-    where( Lscale < threshold .and. gr%zt > altitude_threshold)
-      damped_value = max_coeff_value &
-                     + ( ( coefficient - max_coeff_value ) / threshold ) &
-                       * Lscale
-    end where
-
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: damped_value
+    
+    ! Local Variables
+    integer :: i, k
+    
+    do k = 1, nz
+      do i = 1, ngrdcol
+        
+        if ( Lscale(i,k) < threshold .and. gr(i)%zt(k) > altitude_threshold ) then
+          damped_value(i,k) = max_coeff_value &
+                              + ( ( coefficient - max_coeff_value ) / threshold ) &
+                                * Lscale(i,k)
+        else
+          damped_value(i,k) = Cx_Skw_fnc(i,k)
+        end if
+        
+      end do
+    end do
+    
     return
 
-  end function damp_coefficient
+  end subroutine damp_coefficient
   !-----------------------------------------------------------------------
 
   !=====================================================================================
