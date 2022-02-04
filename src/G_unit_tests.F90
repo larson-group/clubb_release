@@ -272,7 +272,7 @@ program G_unit_tests
   endif
 
   if ( l_spurious_source_test ) then
-     if ( spurious_source_unit_test( gr, stats_zt, stats_zm, stats_sfc ) /= 0 ) then
+     if ( spurious_source_unit_test( ) /= 0 ) then
         exit_code = 1
      endif
   endif

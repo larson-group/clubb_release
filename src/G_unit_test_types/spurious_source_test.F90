@@ -10,8 +10,7 @@ module spurious_source_test
   contains
 
   !=============================================================================
-  function spurious_source_unit_test( gr, &
-                                      stats_zt, stats_zm, stats_sfc )
+  function spurious_source_unit_test( )
 
     ! Description:
     !
@@ -98,18 +97,18 @@ module spurious_source_test
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
-
-    type (grid), target, intent(inout) :: gr
-
     ! Return Variable
     integer :: &
       spurious_source_unit_test    ! Pass/fail output for spurious source test
 
     ! Local Variables
+    type(stats), dimension(1) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
+
+    type (grid), target, dimension(1) :: gr
+    
     integer, parameter :: &
       nz = 76 ! Number of vertical grid levels
               ! Note:  this needs to match the number of grid levels calculated
@@ -163,7 +162,7 @@ module spurious_source_test
     real( kind = core_rknd ) ::  & 
       dt                 ! Timestep                                 [s]
 
-    real( kind = core_rknd ), dimension(nz) :: & 
+    real( kind = core_rknd ), dimension(1,nz) :: & 
       sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
       wm_zm,           & ! w wind component on momentum levels      [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
@@ -203,13 +202,13 @@ module spurious_source_test
       mixt_frac_zm       ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     ! Additional variables for passive scalars
-    real( kind = core_rknd ), dimension(nz,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(1,nz,sclr_dim) :: & 
       wp2sclrp,      & ! <w'^2 sclr'> (thermodynamic levels)   [Units vary]
       sclrpthvp,     & ! <sclr' th_v'> (momentum levels)       [Units vary]
       sclrm_forcing, & ! sclrm forcing (thermodynamic levels)  [Units vary]
       sclrp2           ! For clipping Vince Larson             [Units vary]
 
-    real( kind = core_rknd ), dimension(nz) ::  &
+    real( kind = core_rknd ), dimension(1,nz) ::  &
       exner,             & ! Exner function                            [-]
       rcm,               & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,           & ! Air pressure                              [Pa]
@@ -218,39 +217,39 @@ module spurious_source_test
       ice_supersat_frac      
 
 
-    type(implicit_coefs_terms) :: &
+    type(implicit_coefs_terms), dimension(1) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(nz) :: & 
+    real( kind = core_rknd ), dimension(1,nz) :: & 
       um_forcing, & ! <u> forcing term (thermodynamic levels)      [m/s^2]
       vm_forcing, & ! <v> forcing term (thermodynamic levels)      [m/s^2]
       ug,         & ! <u> geostrophic wind (thermodynamic levels)  [m/s]
       vg,         & ! <v> geostrophic wind (thermodynamic levels)  [m/s]
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
-     real( kind = core_rknd ) ::  &
+     real( kind = core_rknd ), dimension(1) ::  &
       fcor          ! Coriolis parameter                           [s^-1]
 
-    real( kind = core_rknd ), dimension(nz) :: & 
+    real( kind = core_rknd ), dimension(1,nz) :: & 
       um_ref, & ! Reference u wind component for nudging       [m/s]
       vm_ref, & ! Reference v wind component for nudging       [m/s]
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz) ::  & 
+    real( kind = core_rknd ), dimension(1,nz) ::  & 
       rtm,    & ! r_t  (total water mixing ratio)           [kg/kg]
       wprtp,  & ! w'r_t'                                    [(kg/kg) m/s]
       thlm,   & ! th_l (liquid water potential temperature) [K]
       wpthlp    ! w'th_l'                                   [K m/s]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz,sclr_dim) ::  & 
+    real( kind = core_rknd ), dimension(1,nz,sclr_dim) ::  & 
       sclrm, wpsclrp !                                     [Units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(nz) ::  & 
+    real( kind = core_rknd ), dimension(1,nz) ::  & 
       um,    & ! <u>:  mean west-east horiz. velocity (thermo. levs.)   [m/s]
       upwp,  & ! <u'w'>:  momentum flux (momentum levels)               [m^2/s^2]
       vm,    & ! <v>:  mean south-north horiz. velocity (thermo. levs.) [m/s]
@@ -259,7 +258,7 @@ module spurious_source_test
       vprcp, & ! < v' r_c' >              [(m kg)/(s kg)]
       rc_coef    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(1,nz) :: &
       w_1_n_zm, &
       w_2_n_zm
 
@@ -324,7 +323,7 @@ module spurious_source_test
     real( kind = core_rknd ), dimension(nparams) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    type(nu_vertical_res_dep) :: &
+    type(nu_vertical_res_dep), dimension(1) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
   
     integer, parameter :: iunit = 10
@@ -474,6 +473,8 @@ module spurious_source_test
       order_xm_wpxp = 1, &
       order_xp2_xpyp = 2, &
       order_wp2_wp3 =3
+       
+    
 
 
     ! Set the default tunable parameter values
@@ -593,14 +594,14 @@ module spurious_source_test
     call setup_grid( nz, sfc_elevation, l_implemented,        &
                      grid_type, deltaz, zm_init, zm_top,      &
                      momentum_heights, thermodynamic_heights, &
-                     gr, begin_height, end_height              )
+                     gr(1), begin_height, end_height          )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
-    call adj_low_res_nu( gr%nz, grid_type, deltaz, &
+    call adj_low_res_nu( gr(1)%nz, grid_type, deltaz, &
                          momentum_heights, thermodynamic_heights, &
                          l_prescribed_avg_deltaz, mult_coef, &
                          nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &
-                         nu_vert_res_dep )
+                         nu_vert_res_dep(1) )
 
     dt = 300.0_core_rknd
 
@@ -688,165 +689,165 @@ module spurious_source_test
        
 
        ! Loop over all momentum levels.
-       do k = 1, gr%nz, 1
+       do k = 1, gr(1)%nz, 1
 
           i = 1
 
-          do while ( z_snd(i) <= gr%zm(k) )
+          do while ( z_snd(i) <= gr(1)%zm(k) )
 
              i = i + 1
 
-             sigma_sqd_w(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             sigma_sqd_w(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            sigma_sqd_w_snd(i), &
                                            sigma_sqd_w_snd(i-1) )
 
-             wm_zm(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             wm_zm(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            wm_zm_snd(i), wm_zm_snd(i-1) )
 
-             wp2(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             wp2(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            wp2_snd(i), wp2_snd(i-1) )
 
-             wp3_on_wp2(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             wp3_on_wp2(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            wp3_on_wp2_snd(i), &
                                            wp3_on_wp2_snd(i-1) )
 
-             Kh_zm(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             Kh_zm(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            Kh_zm_snd(i), Kh_zm_snd(i-1) )
 
-             invrs_tau_C6_zm(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             invrs_tau_C6_zm(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            invrs_tau_C6_zm_snd(i), &
                                            invrs_tau_C6_zm_snd(i-1) )
 
-             tau_max_zm(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             tau_max_zm(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            tau_max_zm_snd(i), &
                                            tau_max_zm_snd(i-1) )
 
-             rtpthvp(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             rtpthvp(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            rtpthvp_snd(i), rtpthvp_snd(i-1) )
 
-             wprtp_forcing(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             wprtp_forcing(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            wprtp_forcing_snd(i), &
                                            wprtp_forcing_snd(i-1) )
 
-             thlpthvp(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             thlpthvp(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            thlpthvp_snd(i), thlpthvp_snd(i-1) )
 
-             wpthlp_forcing(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             wpthlp_forcing(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            wpthlp_forcing_snd(i), &
                                            wpthlp_forcing_snd(i-1) )
 
-             rho_ds_zm(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             rho_ds_zm(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            rho_ds_zm_snd(i), &
                                            rho_ds_zm_snd(i-1) )
 
-             rtp2(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             rtp2(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            rtp2_snd(i), rtp2_snd(i-1) )
 
-             thlp2(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             thlp2(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            thlp2_snd(i), thlp2_snd(i-1) )
 
-             Cx_fnc_Richardson(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             Cx_fnc_Richardson(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            Cx_fnc_Richardson_snd(i), &
                                            Cx_fnc_Richardson_snd(i-1) )
 
-             wprtp(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             wprtp(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            wprtp_snd(i), wprtp_snd(i-1) )
 
-             wpthlp(k) &
-             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+             wpthlp(1,k) &
+             = lin_interpolate_two_points( gr(1)%zm(k), z_snd(i), z_snd(i-1), &
                                            wpthlp_snd(i), wpthlp_snd(i-1) )
 
-          enddo ! while ( z_snd(i) < gr%zm(k) )
+          enddo ! while ( z_snd(i) < gr(1)%zm(k) )
 
-       enddo ! k = 1, gr%nz, 1
+       enddo ! k = 1, gr(1)%nz, 1
 
        ! Loop over all thermodynamic levels.
-       do k = 2, gr%nz, 1
+       do k = 2, gr(1)%nz, 1
 
           i = 1
 
-          do while ( z_snd(i) < gr%zt(k) )
+          do while ( z_snd(i) < gr(1)%zt(k) )
 
              i = i + 1
 
-             Lscale(k) &
-             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+             Lscale(1,k) &
+             = lin_interpolate_two_points( gr(1)%zt(k), z_snd(i), z_snd(i-1), &
                                            Lscale_snd(i), Lscale_snd(i-1) )
 
-             wp2rtp(k) &
-             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+             wp2rtp(1,k) &
+             = lin_interpolate_two_points( gr(1)%zt(k), z_snd(i), z_snd(i-1), &
                                            wp2rtp_snd(i), wp2rtp_snd(i-1) )
 
-             wp2thlp(k) &
-             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+             wp2thlp(1,k) &
+             = lin_interpolate_two_points( gr(1)%zt(k), z_snd(i), z_snd(i-1), &
                                            wp2thlp_snd(i), wp2thlp_snd(i-1) )
 
-             rcm(k) &
-             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+             rcm(1,k) &
+             = lin_interpolate_two_points( gr(1)%zt(k), z_snd(i), z_snd(i-1), &
                                            rcm_snd(i), rcm_snd(i-1) )
 
-             p_in_Pa(k) &
-             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+             p_in_Pa(1,k) &
+             = lin_interpolate_two_points( gr(1)%zt(k), z_snd(i), z_snd(i-1), &
                                            p_in_Pa_snd(i), p_in_Pa_snd(i-1) )
 
-             rtm_forcing(k) &
-             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+             rtm_forcing(1,k) &
+             = lin_interpolate_two_points( gr(1)%zt(k), z_snd(i), z_snd(i-1), &
                                            rtm_forcing_snd(i), &
                                            rtm_forcing_snd(i-1) )
 
-             thlm_forcing(k) &
-             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+             thlm_forcing(1,k) &
+             = lin_interpolate_two_points( gr(1)%zt(k), z_snd(i), z_snd(i-1), &
                                            thlm_forcing_snd(i), &
                                            thlm_forcing_snd(i-1) )
 
-             rtm(k) &
-             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+             rtm(1,k) &
+             = lin_interpolate_two_points( gr(1)%zt(k), z_snd(i), z_snd(i-1), &
                                            rtm_snd(i), rtm_snd(i-1) )
 
-             thlm(k) &
-             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+             thlm(1,k) &
+             = lin_interpolate_two_points( gr(1)%zt(k), z_snd(i), z_snd(i-1), &
                                            thlm_snd(i), thlm_snd(i-1) )
 
-          enddo ! while ( z_snd(i) < gr%zt(k) )
+          enddo ! while ( z_snd(i) < gr(1)%zt(k) )
 
-       enddo ! k = 1, gr%nz, 1
+       enddo ! k = 1, gr(1)%nz, 1
 
        ! Set the values of thermodynamic level variables below the model
        ! surface (thermodynamic level k = 1).
-       Lscale(1) = Lscale(2)
-       wp2rtp(1) = wp2rtp(2)
-       wp2thlp(1) = wp2thlp(2)
-       rcm(1) = rcm(2)
-       p_in_Pa(1) = p_in_Pa(2)
-       rtm(1) = rtm(2)
-       thlm(1) = thlm(2)
+       Lscale(1,1) = Lscale(1,2)
+       wp2rtp(1,1) = wp2rtp(1,2)
+       wp2thlp(1,1) = wp2thlp(1,2)
+       rcm(1,1) = rcm(1,2)
+       p_in_Pa(1,1) = p_in_Pa(1,2)
+       rtm(1,1) = rtm(1,2)
+       thlm(1,1) = thlm(1,2)
 
        ! The upper boundary conditions on <w'x'> must be set to 0 to match what
        ! is found in advance_xm_wpxp.
-       wprtp(gr%nz) = zero
-       wpthlp(gr%nz) = zero
+       wprtp(1,gr(1)%nz) = zero
+       wpthlp(1,gr(1)%nz) = zero
 
        ! Boundary conditions on wm.
-       wm_zm(1) = zero
-       wm_zm(2) = zero
-       wm_zm(gr%nz-1) = zero
-       wm_zm(gr%nz) = zero
+       wm_zm(1,1) = zero
+       wm_zm(1,2) = zero
+       wm_zm(1,gr(1)%nz-1) = zero
+       wm_zm(1,gr(1)%nz) = zero
 
        ! Overwriting the vertical profile of wm_zm to have a value of 0
        ! everywhere.  This is being done because the mean advection term does
@@ -854,85 +855,85 @@ module spurious_source_test
        ! spurious source or sink.  This issue will be corrected in the future.
        ! However, in order to backdate this test and have it pass correctly,
        ! the values of wm_zm and wm_zt must be 0 at all levels.
-       wm_zm = zero
+       wm_zm(1,:) = zero
 
        ! Interpolate fields set on momentum levels to thermodynamic levels.
-       wm_zt = zm2zt( gr, wm_zm )
-       wm_zt(1) = zero
-       wp3_on_wp2_zt = zm2zt( gr, wp3_on_wp2 )
-       wp3_on_wp2_zt(1) = zero
-       Kh_zt = zm2zt( gr, Kh_zm )
-       rho_ds_zt = zm2zt( gr, rho_ds_zm )
+       wm_zt(1,:) = zm2zt( gr(1), wm_zm(1,:) )
+       wm_zt(1,1) = zero
+       wp3_on_wp2_zt(1,:) = zm2zt( gr(1), wp3_on_wp2(1,:) )
+       wp3_on_wp2_zt(1,1) = zero
+       Kh_zt(1,:) = zm2zt( gr(1), Kh_zm(1,:) )
+       rho_ds_zt(1,:) = zm2zt( gr(1), rho_ds_zm(1,:) )
 
        ! Calculate the value of skewness of w (momentum levels).
-       Skw_zm = wp3_on_wp2 / sqrt( wp2 )
+       Skw_zm(1,:) = wp3_on_wp2(1,:) / sqrt( wp2(1,:) )
 
        ! Calculate the inverse values of dry, static air density.
-       invrs_rho_ds_zm = one / rho_ds_zm
-       invrs_rho_ds_zt = one / rho_ds_zt
+       invrs_rho_ds_zm(1,:) = one / rho_ds_zm(1,:)
+       invrs_rho_ds_zt(1,:) = one / rho_ds_zt(1,:)
 
-       rtm_ref = zero
-       thlm_ref = zero
+       rtm_ref(1,:) = zero
+       thlm_ref(1,:) = zero
 
-       wp2sclrp = zero
-       sclrpthvp = zero
-       sclrm_forcing = zero
-       sclrp2 = zero
+       wp2sclrp(1,:,:) = zero
+       sclrpthvp(1,:,:) = zero
+       sclrm_forcing(1,:,:) = zero
+       sclrp2(1,:,:) = zero
 
-       sclrm = zero
-       wpsclrp = zero
+       sclrm(1,:,:) = zero
+       wpsclrp(1,:,:) = zero
 
-       um_forcing = zero
-       vm_forcing = zero
-       ug = zero
-       vg = zero
-       wpthvp = zero
-       fcor = zero
-       um_ref = zero
-       vm_ref = zero
-       up2 = wp2
-       vp2 = wp2
+       um_forcing(1,:) = zero
+       vm_forcing(1,:) = zero
+       ug(1,:) = zero
+       vg(1,:) = zero
+       wpthvp(1,:) = zero
+       fcor(1) = zero
+       um_ref(1,:) = zero
+       vm_ref(1,:) = zero
+       up2(1,:) = wp2(1,:)
+       vp2(1,:) = wp2(1,:)
 
-       um = zero
-       vm = zero
-       upwp = zero
-       vpwp = zero
+       um(1,:) = zero
+       vm(1,:) = zero
+       upwp(1,:) = zero
+       vpwp(1,:) = zero
        ! Below I assume that the buoy term in the upwp eqn doesn't matter:
-       uprcp = zero
-       vprcp = zero
-       rc_coef = one
+       uprcp(1,:) = zero
+       vprcp(1,:) = zero
+       rc_coef(1,:) = one
 
        ! Calculate the value of em.
-       em = one_half * ( wp2 + up2 + vp2 )
+       em(1,:) = one_half * ( wp2(1,:) + up2(1,:) + vp2(1,:) )
 
        ! Calculate the PDF parameters on momentum levels (w_1_zm, w_2_zm,
        ! varnce_w_1_zm, varnce_w_2_zm, and mixt_frac).
-       call ADG1_w_closure( wm_zm, wp2, Skw_zm, sigma_sqd_w,           & ! In
-                            sqrt( wp2 ), 0.999_core_rknd,              & ! In
-                            w_1_zm, w_2_zm, w_1_n_zm, w_2_n_zm,        & ! Out
-                            varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm ) ! Out
+       call ADG1_w_closure( wm_zm(1,:), wp2(1,:), Skw_zm(1,:), sigma_sqd_w(1,:),           & ! In
+                            sqrt( wp2(1,:) ), 0.999_core_rknd,              & ! In
+                            w_1_zm(1,:), w_2_zm(1,:), w_1_n_zm(1,:), w_2_n_zm(1,:),        & ! Out
+                            varnce_w_1_zm(1,:), varnce_w_2_zm(1,:), mixt_frac_zm(1,:) ) ! Out
 
        ! Calculate the value of exner.
-       exner = ( p_in_Pa / 1.0e5_core_rknd )**(Rd/Cp)
+       exner(1,:) = ( p_in_Pa(1,:) / 1.0e5_core_rknd )**(Rd/Cp)
 
        ! Calculate thvm.
-       thvm = thlm + ep1 * 300.0_core_rknd * rtm &
-              + ( Lv / ( Cp * exner ) - ep2 * 300.0_core_rknd ) * rcm
+       thvm(1,:) = thlm(1,:) + ep1 * 300.0_core_rknd * rtm(1,:) &
+              + ( Lv / ( Cp * exner(1,:) ) - ep2 * 300.0_core_rknd ) * rcm(1,:)
 
        ! Interpolate fields set on thermodynamic levels to momentum levels.
-       thv_ds_zm = zt2zm( gr, thvm )
+       thv_ds_zm(1,:) = zt2zm( gr(1), thvm(1,:) )
 
        ! Calculate the vertical integrals of rtm and thlm before the call to
        ! advance_xm_wpxp so that spurious source can be calculated.
        rtm_integral_before &
-       = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            rtm(2:gr%nz), gr%dzt(2:gr%nz) )
+       = vertical_integral( gr(1)%nz-1, rho_ds_zt(1,2:gr(1)%nz), &
+                            rtm(1,2:gr(1)%nz), gr(1)%dzt(2:gr(1)%nz) )
 
        thlm_integral_before &
-       = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            thlm(2:gr%nz), gr%dzt(2:gr%nz) )
-
-       call advance_xm_wpxp( gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
+       = vertical_integral( gr(1)%nz-1, rho_ds_zt(1,2:gr(1)%nz), &
+                            thlm(1,2:gr(1)%nz), gr(1)%dzt(2:gr(1)%nz) )
+       
+       call advance_xm_wpxp( nz, 1, gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                              invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                              rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
@@ -966,19 +967,19 @@ module spurious_source_test
                              stats_zt, stats_zm, stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp )
-
+       
        ! Calculate the spurious source for rtm
-       rtm_flux_top = rho_ds_zm(gr%nz) * wprtp(gr%nz)
+       rtm_flux_top = rho_ds_zm(1,gr(1)%nz) * wprtp(1,gr(1)%nz)
 
-       rtm_flux_sfc = rho_ds_zm(1) * wprtp(1)
+       rtm_flux_sfc = rho_ds_zm(1,1) * wprtp(1,1)
 
        rtm_integral_after &
-       = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            rtm(2:gr%nz), gr%dzt(2:gr%nz) )
+       = vertical_integral( gr(1)%nz-1, rho_ds_zt(1,2:gr(1)%nz), &
+                            rtm(1,2:gr(1)%nz), gr(1)%dzt(2:gr(1)%nz) )
 
        rtm_integral_forcing &
-       = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            rtm_forcing(2:gr%nz), gr%dzt(2:gr%nz) )
+       = vertical_integral( gr(1)%nz-1, rho_ds_zt(1,2:gr(1)%nz), &
+                            rtm_forcing(1,2:gr(1)%nz), gr(1)%dzt(2:gr(1)%nz) )
 
        rtm_spur_src &
        = calculate_spurious_source( rtm_integral_after, &
@@ -998,7 +999,7 @@ module spurious_source_test
        write(*,*) ""
 
        ! Check if the calculated spurious source is within acceptable limits.
-       density_weighted_height = sum( rho_ds_zt(2:gr%nz) * gr%dzt(2:gr%nz) )
+       density_weighted_height = sum( rho_ds_zt(1,2:gr(1)%nz) * gr(1)%dzt(2:gr(1)%nz) )
 
        if ( abs( rtm_spur_src ) &
             <= tol * ( rtm_integral_before / density_weighted_height ) ) then
@@ -1014,17 +1015,17 @@ module spurious_source_test
        write(*,*) ""
        
        ! Calculate the spurious source for thlm
-       thlm_flux_top = rho_ds_zm(gr%nz) * wpthlp(gr%nz)
+       thlm_flux_top = rho_ds_zm(1,gr(1)%nz) * wpthlp(1,gr(1)%nz)
 
-       thlm_flux_sfc = rho_ds_zm(1) * wpthlp(1)
+       thlm_flux_sfc = rho_ds_zm(1,1) * wpthlp(1,1)
 
        thlm_integral_after &
-       = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            thlm(2:gr%nz), gr%dzt(2:gr%nz) )
+       = vertical_integral( gr(1)%nz-1, rho_ds_zt(1,2:gr(1)%nz), &
+                            thlm(1,2:gr(1)%nz), gr(1)%dzt(2:gr(1)%nz) )
 
        thlm_integral_forcing &
-       = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            thlm_forcing(2:gr%nz), gr%dzt(2:gr%nz) )
+       = vertical_integral( gr(1)%nz-1, rho_ds_zt(1,2:gr(1)%nz), &
+                            thlm_forcing(1,2:gr(1)%nz), gr(1)%dzt(2:gr(1)%nz) )
 
        thlm_spur_src &
        = calculate_spurious_source( thlm_integral_after, &
