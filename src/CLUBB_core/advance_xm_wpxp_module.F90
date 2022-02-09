@@ -2429,9 +2429,7 @@ module advance_xm_wpxp_module
         ivpthlp, &
         ivprtp,  &
         iupthvp, &
-        iuprcp,  &
         ivpthvp, &
-        ivprcp,  &
         l_stats_samp
         
     use parameters_model, only: & 
@@ -2790,11 +2788,7 @@ module advance_xm_wpxp_module
                                 stats_zm )         ! intent(inout)
           call stat_update_var( iupthvp, upthvp, & ! intent(in)
                                 stats_zm )         ! intent(inout)
-          call stat_update_var( iuprcp,  uprcp,  & ! intent(in)
-                                stats_zm )         ! intent(inout)
           call stat_update_var( ivpthvp, vpthvp, & ! intent(in)
-                                stats_zm )         ! intent(inout)
-          call stat_update_var( ivprcp,  vprcp,  & ! intent(in)
                                 stats_zm )         ! intent(inout)
        endif ! l_stats_samp
 

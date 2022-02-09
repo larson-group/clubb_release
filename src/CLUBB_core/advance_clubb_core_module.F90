@@ -2655,6 +2655,8 @@ module advance_clubb_core_module
         imax_F_rt,           &
         imin_F_thl,          &
         imax_F_thl,          &
+        ivprcp,  &
+        iuprcp,  &
         ircp2               
 
     use clubb_precision, only: &
@@ -3431,6 +3433,15 @@ module advance_clubb_core_module
       end do ! i=1, sclr_dim
 
     end if ! l_call_pdf_closure_twice
+    
+    if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
+      do i = 1, ngrdcol
+        call stat_update_var( iuprcp,  uprcp(i,:),  & ! intent(in)
+                              stats_zm(i) )           ! intent(inout)
+        call stat_update_var( ivprcp,  vprcp(i,:),  & ! intent(in)
+                              stats_zm(i) )           ! intent(inout)
+      end do
+    end if
     
     
 
