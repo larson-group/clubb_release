@@ -847,5 +847,9 @@ external code.
     needed just pass the specific components along in the argument list.
     This increases code readability and makes debugging easier because
     one can easily see which components are used where.
-
-
+    
+43. If a CLUBB variable needs to be written to disk, write it to disk 
+    either immediately after it is set or else at the end of 
+    advance_clubb_core.  Otherwise, the value of the variable stored 
+    on disk may be different than the value at the end of 
+    advance_clubb_core, and bit-for-bit restarts will be broken.
