@@ -363,8 +363,8 @@ module clubb_api_module
     lin_interpolate_on_grid_api, &
     T_in_K2thlm_api, &
     thlm2T_in_K_api, &
-    zt2zm_api, &
-    zm2zt_api
+    zm2zt_api, &
+    zt2zm_api
 
   public &
     ! To Check For and Handle CLUBB's Errors:
@@ -506,11 +506,11 @@ module clubb_api_module
    copy_multi_pdf_params_to_single
 
   interface zt2zm_api
-    module procedure zt2zm_scalar_api, zt2zm_prof_api
+    module procedure zt2zm_scalar_api, zt2zm_prof_api, zt2zm_2D_api
   end interface
 
   interface zm2zt_api
-    module procedure zm2zt_scalar_api, zm2zt_prof_api
+    module procedure zm2zt_scalar_api, zm2zt_prof_api, zm2zt_2D_api
   end interface
   
   interface setup_pdf_parameters_api
@@ -3777,6 +3777,64 @@ contains
     zm2zt_prof_api = zm2zt( gr, azm )
 
   end function zm2zt_prof_api
+  
+  !================================================================================================
+  ! zm2zt_2D - Interpolates a variable (profile) from zm to zt grid for all columns
+  !================================================================================================
+  function zm2zt_2D_api( nz, ngrdcol, gr, azm )
+
+    use grid_class, only: &
+        grid, & ! Type
+        zm2zt
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azm    ! Variable on momentum grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      zm2zt_2D_api   ! Variable when interp. to thermo. levels
+
+    zm2zt_2D_api = zm2zt( nz, ngrdcol, gr, azm )
+
+  end function zm2zt_2D_api
+  
+  !================================================================================================
+  ! zt2zm_2D - Interpolates a variable (profile) from zt to zm grid for all columns
+  !================================================================================================
+  function zt2zm_2D_api( nz, ngrdcol, gr, azm )
+
+    use grid_class, only: &
+        grid, & ! Type
+        zt2zm
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azm    ! Variable on momentum grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      zt2zm_2D_api   ! Variable when interp. to thermo. levels
+
+    zt2zm_2D_api = zt2zm( nz, ngrdcol, gr, azm )
+
+  end function zt2zm_2D_api
 
   !================================================================================================
   ! calculate_thlp2_rad - Computes the contribution of radiative cooling to thlp2
