@@ -853,3 +853,7 @@ external code.
     advance_clubb_core.  Otherwise, the value of the variable stored 
     on disk may be different than the value at the end of 
     advance_clubb_core, and bit-for-bit restarts will be broken.
+   
+44. CLUBB's index naming convention is as follows: 
+    k = vertical index, i = grid column index, j = scalar index, 
+    sample = subcolumn index, p = pdf dimension index.
