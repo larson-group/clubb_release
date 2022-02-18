@@ -695,34 +695,32 @@ module advance_xm_wpxp_module
     else
         
       ! LHS matrices are equivalent, only one solve required
-      do i = 1, ngrdcol
-        call solve_xm_wpxp_with_single_lhs( gr(i), dt, l_iter, nrhs, wm_zt(i,:), wp2(i,:),                & ! In 
-                                            invrs_tau_C6_zm(i,:), tau_max_zm(i,:),                     & ! In
-                                            rtpthvp(i,:), rtm_forcing(i,:), wprtp_forcing(i,:), thlpthvp(i,:),   & ! In
-                                            thlm_forcing(i,:), wpthlp_forcing(i,:), rho_ds_zm(i,:),         & ! In
-                                            rho_ds_zt(i,:), invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:),     & ! In
-                                            thv_ds_zm(i,:), rtp2(i,:), thlp2(i,:), l_implemented,           & ! In
-                                            sclrpthvp(i,:,:), sclrm_forcing(i,:,:), sclrp2(i,:,:), um_forcing(i,:),    & ! In
-                                            vm_forcing(i,:), ug(i,:), vg(i,:), uprcp(i,:), vprcp(i,:), rc_coef(i,:), fcor(i), & ! In
-                                            up2(i,:), vp2(i,:),                                        & ! In
-                                            low_lev_effect(i,:), high_lev_effect(i,:),                 & ! In
-                                            C6rt_Skw_fnc(i,:), C6thl_Skw_fnc(i,:), C7_Skw_fnc(i,:),         & ! In
-                                            lhs_diff_zm(:,i,:), lhs_diff_zt(:,i,:), lhs_ma_zt(:,i,:), lhs_ma_zm(:,i,:),  & ! In
-                                            lhs_ta_wprtp(:,i,:),                                    & ! In
-                                            rhs_ta_wprtp(i,:), rhs_ta_wpthlp(i,:), rhs_ta_wpup(i,:),        & ! In
-                                            rhs_ta_wpvp(i,:), rhs_ta_wpsclrp(i,:,:),                     & ! In
-                                            lhs_tp(:,i,:), lhs_ta_xm(:,i,:), lhs_ac_pr2(i,:), lhs_pr1_wprtp(i,:),    & ! In
-                                            lhs_pr1_wpthlp(i,:), lhs_pr1_wpsclrp(i,:),                 & ! In
-                                            clubb_params(iC_uu_shr),                         & ! In
-                                            l_predict_upwp_vpwp,                             & ! In
-                                            l_diffuse_rtm_and_thlm,                          & ! In
-                                            l_upwind_xm_ma,                                  & ! In
-                                            l_tke_aniso,                                     & ! In
-                                            order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,    & ! In
-                                            stats_zt(i), stats_zm(i), stats_sfc(i), & ! intent(inout)
-                                            rtm(i,:), wprtp(i,:), thlm(i,:), wpthlp(i,:),                        & ! Out
-                                            sclrm(i,:,:), wpsclrp(i,:,:), um(i,:), upwp(i,:), vm(i,:),vpwp(i,:) )                ! Out
-      end do
+      call solve_xm_wpxp_with_single_lhs( nz, ngrdcol, gr, dt, l_iter, nrhs, wm_zt, wp2,   & ! In 
+                                          invrs_tau_C6_zm, tau_max_zm,                     & ! In
+                                          rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,   & ! In
+                                          thlm_forcing, wpthlp_forcing, rho_ds_zm,         & ! In
+                                          rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,     & ! In
+                                          thv_ds_zm, rtp2, thlp2, l_implemented,           & ! In
+                                          sclrpthvp, sclrm_forcing, sclrp2, um_forcing,    & ! In
+                                          vm_forcing, ug, vg, uprcp, vprcp, rc_coef, fcor, & ! In
+                                          up2, vp2,                                        & ! In
+                                          low_lev_effect, high_lev_effect,                 & ! In
+                                          C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,         & ! In
+                                          lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,  & ! In
+                                          lhs_ta_wprtp,                                    & ! In
+                                          rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup,        & ! In
+                                          rhs_ta_wpvp, rhs_ta_wpsclrp,                     & ! In
+                                          lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,    & ! In
+                                          lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                 & ! In
+                                          clubb_params(iC_uu_shr),                         & ! In
+                                          l_predict_upwp_vpwp,                             & ! In
+                                          l_diffuse_rtm_and_thlm,                          & ! In
+                                          l_upwind_xm_ma,                                  & ! In
+                                          l_tke_aniso,                                     & ! In
+                                          order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,    & ! In
+                                          stats_zt, stats_zm, stats_sfc,                   & ! In
+                                          rtm, wprtp, thlm, wpthlp,                        & ! Out
+                                          sclrm, wpsclrp, um, upwp, vm,vpwp )                ! Out
     end if ! ( ( iiPDF_type == iiPDF_new ) .and. ( .not. l_explicit_turbulent_adv_wpxp ) )
 
     if ( l_lmm_stepping ) then
@@ -2369,7 +2367,7 @@ module advance_xm_wpxp_module
   end subroutine calc_xm_wpxp_ta_terms
   
   !==========================================================================================
-  subroutine solve_xm_wpxp_with_single_lhs( gr, dt, l_iter, nrhs, wm_zt, wp2, &
+  subroutine solve_xm_wpxp_with_single_lhs( nz, ngrdcol, gr, dt, l_iter, nrhs, wm_zt, wp2, &
                                             invrs_tau_C6_zm, tau_max_zm, &
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp, &
                                             thlm_forcing, wpthlp_forcing, rho_ds_zm, &
@@ -2454,20 +2452,19 @@ module advance_xm_wpxp_module
     use stats_type, only: stats ! Type
 
     implicit none
-
-    type (stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
-
-    type (grid), target, intent(in) :: gr
     
     ! ------------------- Input Variables -------------------
+
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: & 
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
       invrs_tau_C6_zm, & ! Inverse tau on momentum levels applied to C6 term [1/s]
@@ -2491,54 +2488,54 @@ module advance_xm_wpxp_module
       l_iter
 
     ! Additional variables for passive scalars
-    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,sclr_dim) :: & 
       sclrpthvp,     & ! <sclr' th_v'> (momentum levels)       [Units vary]
       sclrm_forcing, & ! sclrm forcing (thermodynamic levels)  [Units vary]
       sclrp2           ! For clipping Vince Larson             [Units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       um_forcing, & ! <u> forcing term (thermodynamic levels)      [m/s^2]
       vm_forcing, & ! <v> forcing term (thermodynamic levels)      [m/s^2]
       ug,         & ! <u> geostrophic wind (thermodynamic levels)  [m/s]
       vg            ! <v> geostrophic wind (thermodynamic levels)  [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
       vprcp,              & ! < v' r_c' >              [(m kg)/(s kg)]
       rc_coef               ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
-    real( kind = core_rknd ), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       fcor          ! Coriolis parameter                           [s^-1]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
 
     ! LHS/RHS terms
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(in) :: & 
       lhs_diff_zm,  & ! Diffusion term for w'x'
       lhs_diff_zt,  & ! Diffusion term for w'x'
       lhs_ma_zt,    & ! Mean advection contributions to lhs
       lhs_ma_zm       ! Mean advection contributions to lhs
       
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(in) :: & 
       lhs_ta_wpxp    ! w'r_t' turbulent advection contributions to lhs  
      
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       rhs_ta_wprtp,  & ! w'r_t' turbulent advection contributions to rhs  
       rhs_ta_wpthlp, & ! w'thl' turbulent advection contributions to rhs
       rhs_ta_wpup,   & ! w'u' turbulent advection contributions to rhs
       rhs_ta_wpvp      ! w'v' turbulent advection contributions to rhs
       
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: & 
       rhs_ta_wpsclrp    ! w'sclr' turbulent advection contributions to rhs
 
-    real( kind = core_rknd ), dimension(2,gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(2,ngrdcol,nz), intent(in) :: & 
       lhs_tp,     & ! Turbulent production terms of w'x'
       lhs_ta_xm     ! Turbulent advection terms of xm
     
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       lhs_ac_pr2,     & ! Accumulation of w'x' and w'x' pressure term 2
       lhs_pr1_wprtp,  & ! Pressure term 1 for w'r_t' for all grid levels
       lhs_pr1_wpthlp, & ! Pressure term 1 for w'thl' for all grid levels
@@ -2548,11 +2545,11 @@ module advance_xm_wpxp_module
     ! Find the lowermost and uppermost grid levels that can have an effect
     ! on the central thermodynamic level during the course of a time step,
     ! due to the effects of turbulent advection only.
-    integer, dimension(gr%nz), intent(in) ::  &
+    integer, dimension(ngrdcol,nz), intent(in) ::  &
       low_lev_effect, & ! Index of the lowest level that has an effect.
       high_lev_effect   ! Index of the highest level that has an effect.
       
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
       C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
 
     integer, intent(in) :: &
@@ -2583,32 +2580,37 @@ module advance_xm_wpxp_module
 
     ! ------------------- Input/Output Variables -------------------
     
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) ::  & 
       rtm,       & ! r_t  (total water mixing ratio)           [kg/kg]
       wprtp,     & ! w'r_t'                                    [(kg/kg) m/s]
       thlm,      & ! th_l (liquid water potential temperature) [K]
       wpthlp       ! w'th_l'                                   [K m/s]
       
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrm, wpsclrp !                                     [Units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) ::  & 
       um,   & ! <u>:  mean west-east horiz. velocity (thermo. levs.)   [m/s]
       upwp, & ! <u'w'>:  momentum flux (momentum levels)               [m^2/s^2]
       vm,   & ! <v>:  mean south-north horiz. velocity (thermo. levs.) [m/s]
       vpwp    ! <v'w'>:  momentum flux (momentum levels)               [m^2/s^2]
 
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
+
     ! ------------------- Local Variables -------------------
     
-    real( kind = core_rknd ), dimension(nsup+nsub+1,2*gr%nz) :: & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,2*nz) :: & 
       lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
     ! Additional variables for passive scalars
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: & 
       wpsclrp_forcing    ! <w'sclr'> forcing (momentum levels)  [m/s{un vary}]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
       um_tndcy,     & ! <u> forcing term + coriolis (thermo levs)        [m/s^2]
       vm_tndcy,     & ! <v> forcing term + coriolis (thermo levs)        [m/s^2]
       upwp_forcing, & ! <u'w'> extra RHS pressure term (mom levs)        [m^2/s^3]
@@ -2621,379 +2623,383 @@ module advance_xm_wpxp_module
       vprtp,        & ! northward horz turb flux of tot water (mom levs) [m/s kg/kg]
       tau_C6_zm       ! Time-scale tau on momentum levels applied to C6 term [s]
 
-    real( kind = core_rknd ), dimension(2*gr%nz,nrhs) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,2*nz,nrhs) :: & 
       rhs,      & ! Right-hand sides of band diag. matrix. (LAPACK)
       rhs_save, & ! Saved Right-hand sides of band diag. matrix. (LAPACK)
       solution    ! solution vectors of band diag. matrix. (LAPACK)
 
     ! Constant parameters as a function of Skw.
 
-    real( kind = core_rknd ) :: rcond
+    real( kind = core_rknd ), dimension(ngrdcol) :: rcond
       
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       zeros_vector
       
-    integer :: i, k
+    integer :: i, k, j
     
     ! ------------------- Begin Code -------------------
-
-      
-    ! This is initialized solely for the purpose of avoiding a compiler
-    ! warning about uninitialized variables.
-    zeros_vector = zero
     
-    ! Simple case, where the new PDF is
-    ! used, l_explicit_turbulent_adv_wpxp is enabled.
+    do i = 1, ngrdcol
+
       
-    ! Create the lhs once
-    call xm_wpxp_lhs( gr, l_iter, dt, zeros_vector, wm_zt, C7_Skw_fnc, & ! In
-                      zeros_vector, zeros_vector,                     & ! In
-                      l_implemented, lhs_diff_zm, lhs_diff_zt,        & ! In
-                      lhs_ma_zm, lhs_ma_zt, lhs_ta_wpxp, lhs_ta_xm,   & ! In
-                      lhs_tp, lhs_pr1_wprtp, lhs_ac_pr2,              & ! In
-                      l_diffuse_rtm_and_thlm,                         & ! In
-                      lhs )                                             ! Out
+      ! This is initialized solely for the purpose of avoiding a compiler
+      ! warning about uninitialized variables.
+      zeros_vector(i,:) = zero
+      
+      ! Simple case, where the new PDF is
+      ! used, l_explicit_turbulent_adv_wpxp is enabled.
+        
+      ! Create the lhs once
+      call xm_wpxp_lhs( gr(i), l_iter, dt, zeros_vector(i,:), wm_zt(i,:), C7_Skw_fnc(i,:), & ! In
+                        zeros_vector(i,:), zeros_vector(i,:),                     & ! In
+                        l_implemented, lhs_diff_zm(:,i,:), lhs_diff_zt(:,i,:),        & ! In
+                        lhs_ma_zm(:,i,:), lhs_ma_zt(:,i,:), lhs_ta_wpxp(:,i,:), lhs_ta_xm(:,i,:),   & ! In
+                        lhs_tp(:,i,:), lhs_pr1_wprtp(i,:), lhs_ac_pr2(i,:),              & ! In
+                        l_diffuse_rtm_and_thlm,                         & ! In
+                        lhs(:,i,:) )                                             ! Out
 
-    ! Compute the explicit portion of the r_t and w'r_t' equations.
-    ! Build the right-hand side vector.
-    call xm_wpxp_rhs( gr, xm_wpxp_rtm, l_iter, dt, rtm, wprtp,  & ! In
-                      rtm_forcing, wprtp_forcing, C7_Skw_fnc,   & ! In
-                      rtpthvp, rhs_ta_wprtp, thv_ds_zm,         & ! In
-                      lhs_pr1_wprtp, lhs_ta_wpxp,               & ! In
-                      stats_zt, stats_zm,                       & ! intent(inout)
-                      rhs(:,1) )                                  ! Out
-                      
-    ! Compute the explicit portion of the th_l and w'th_l' equations.
-    ! Build the right-hand side vector.
-    call xm_wpxp_rhs( gr, xm_wpxp_thlm, l_iter, dt, thlm, wpthlp, & ! In
-                      thlm_forcing, wpthlp_forcing, C7_Skw_fnc,   & ! In
-                      thlpthvp, rhs_ta_wpthlp, thv_ds_zm,         & ! In
-                      lhs_pr1_wpthlp, lhs_ta_wpxp,                & ! In
-                      stats_zt, stats_zm,                         & ! intent(inout)
-                      rhs(:,2) )                                    ! Out
-
-! ---> h1g, 2010-06-15
-! scalar transport, e.g, droplet and ice number concentration
-! are handled in  " advance_sclrm_Nd_module.F90 "
-#ifdef GFDL
-    do i = 1, 0, 1
-#else
-    do i = 1, sclr_dim, 1
-#endif
-! <--- h1g, 2010-06-15
-
-      ! Set <w'sclr'> forcing to 0 unless unless testing the wpsclrp code
-      ! using wprtp or wpthlp (then use wprtp_forcing or wpthlp_forcing).
-      wpsclrp_forcing(:,i) = zero
-
-      call xm_wpxp_rhs( gr, xm_wpxp_scalar, l_iter, dt, sclrm(:,i), wpsclrp(:,i), & ! In
-                        sclrm_forcing(:,i),               & ! In
-                        wpsclrp_forcing(:,i), C7_Skw_fnc,               & ! In
-                        sclrpthvp(:,i), rhs_ta_wpsclrp(:,i), thv_ds_zm, & ! In
-                        lhs_pr1_wpsclrp, lhs_ta_wpxp,                   & ! In
-                        stats_zt, stats_zm,                             & ! intent(inout)
-                        rhs(:,2+i) )                                      ! Out
-
-    enddo
-
-    if ( l_predict_upwp_vpwp ) then
-
-       ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
-       ! Currently, this requires the ADG1 PDF with implicit turbulent advection.
-       ! l_explicit_turbulent_adv_wpxp = false
-       ! and ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_new_hybrid )
-
-       ! Coriolis term for <u> and <v>
-       if ( .not. l_implemented ) then
-
-          ! Only compute the Coriolis term if the model is running on its own,
-          ! and is not part of a larger, host model.
-          um_tndcy = um_forcing - fcor * ( vg - vm )
-          vm_tndcy = vm_forcing + fcor * ( ug - um )
-
-          if ( l_stats_samp ) then
-
-             ! um or vm term gf is completely explicit; call stat_update_var.
-             call stat_update_var( ium_gf, - fcor * vg, & ! intent(in)
-                                   stats_zt )             ! intent(inout)
-             call stat_update_var( ivm_gf, fcor * ug, & ! intent(in)
-                                   stats_zt )           ! intent(inout)
-
-             ! um or vm term cf is completely explicit; call stat_update_var.
-             call stat_update_var( ium_cf, fcor * vm, & ! intent(in)
-                                   stats_zt )           ! intent(inout)
-             call stat_update_var( ivm_cf, - fcor * um, & ! intent(in)
-                                   stats_zt )             ! intent(inout)
-
-             ! um or vm forcing term
-             call stat_update_var( ium_f, um_forcing, & ! intent(in)
-                                   stats_zt )           ! intent(inout)
-             call stat_update_var( ivm_f, vm_forcing, & ! intent(in)
-                                   stats_zt )           ! intent(inout)
-
-          endif ! l_stats_samp
-
-       else ! implemented in a host model
-
-          um_tndcy = zero
-          vm_tndcy = zero
-
-       endif ! .not. l_implemented
-
-       ! Add "extra term" and optional Coriolis term for <u'w'> and <v'w'>.
-       upwp_forcing = C_uu_shr * wp2 * ddzt( gr, um )
-       vpwp_forcing = C_uu_shr * wp2 * ddzt( gr, vm )
-
-       if ( l_stats_samp ) then
-          call stat_update_var( iupwp_pr4, C_uu_shr * wp2 * ddzt( gr, um ), & ! intent(in)
-                                stats_zm )                                ! intent(inout)
-          call stat_update_var( ivpwp_pr4, C_uu_shr * wp2 * ddzt( gr, vm ), & ! intent(in)
-                                stats_zm )                                ! intent(inout)
-       endif ! l_stats_samp
-
-       ! need tau_C6_zm for these calls
-       tau_C6_zm = min ( one / invrs_tau_C6_zm, tau_max_zm )
-
-       call diagnose_upxp( gr, upwp, thlm, wpthlp, um, &               ! Intent(in)
-                           C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
-                           upthlp )                                ! Intent(out)
-       call diagnose_upxp( gr, upwp, rtm, wprtp, um, &                ! Intent(in)
-                           C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
-                           uprtp )                                ! Intent(out)
-       call diagnose_upxp( gr, vpwp, thlm, wpthlp, vm, &               ! Intent(in)
-                           C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
-                           vpthlp )                                ! Intent(out)
-       call diagnose_upxp( gr, vpwp, rtm, wprtp, vm, &                ! Intent(in)
-                           C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
-                           vprtp )                                ! Intent(out)
-
-       ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
-       !upthvp = upwp * wpthvp / max( wp2, w_tol_sqd )
-       !vpthvp = vpwp * wpthvp / max( wp2, w_tol_sqd )
-       !upthvp = 0.3_core_rknd * ( upthlp + 200.0_core_rknd * uprtp ) &
-       !         + 200._core_rknd * sign( one, upwp) * sqrt( up2 * rcm**2 )
-       !vpthvp = 0.3_core_rknd * ( vpthlp + 200.0_core_rknd * vprtp ) &
-       !         + 200._core_rknd * sign( one, vpwp ) * sqrt( vp2 * rcm**2 )
-       upthvp = upthlp + ep1 * thv_ds_zm * uprtp + rc_coef * uprcp
-       vpthvp = vpthlp + ep1 * thv_ds_zm * vprtp + rc_coef * vprcp
-
-       if ( l_stats_samp ) then
-          call stat_update_var( iupthlp, upthlp, & ! intent(in)
-                                stats_zm )         ! intent(inout)
-          call stat_update_var( iuprtp,  uprtp,  & ! intent(in)
-                                stats_zm )         ! intent(inout)
-          call stat_update_var( ivpthlp, vpthlp, & ! intent(in)
-                                stats_zm )         ! intent(inout)
-          call stat_update_var( ivprtp,  vprtp,  & ! intent(in)
-                                stats_zm )         ! intent(inout)
-          call stat_update_var( iupthvp, upthvp, & ! intent(in)
-                                stats_zm )         ! intent(inout)
-          call stat_update_var( ivpthvp, vpthvp, & ! intent(in)
-                                stats_zm )         ! intent(inout)
-       endif ! l_stats_samp
-
-       call xm_wpxp_rhs( gr, xm_wpxp_um, l_iter, dt, um, upwp, & ! In
-                         um_tndcy, upwp_forcing, C7_Skw_fnc,   & ! In
-                         upthvp, rhs_ta_wpup, thv_ds_zm,       & ! In
-                         lhs_pr1_wprtp, lhs_ta_wpxp,           & ! In
-                         stats_zt, stats_zm,                   & ! intent(inout)
-                         rhs(:,3+sclr_dim) )                     ! Out
-
-       call xm_wpxp_rhs( gr, xm_wpxp_vm, l_iter, dt, vm, vpwp, & ! In
-                         vm_tndcy, vpwp_forcing, C7_Skw_fnc,   & ! In
-                         vpthvp, rhs_ta_wpvp, thv_ds_zm,       & ! In
-                         lhs_pr1_wprtp, lhs_ta_wpxp,           & ! In
-                         stats_zt, stats_zm,                   & ! intent(inout)
-                         rhs(:,4+sclr_dim) )                     ! Out
-
-    endif ! l_predict_upwp_vpwp
-
-    ! Save the value of rhs, which will be overwritten with the solution as
-    ! part of the solving routine.
-    rhs_save = rhs
-
-    ! Solve for all fields
-    if ( l_stats_samp &
-         .and. ithlm_matrix_condt_num + irtm_matrix_condt_num > 0 ) then
-       call xm_wpxp_solve( gr, nrhs, &                     ! Intent(in)
-                           lhs, rhs, &                 ! Intent(inout)
-                           solution, rcond )           ! Intent(out)
-    else
-       call xm_wpxp_solve( gr, nrhs, &              ! Intent(in)
-                           lhs, rhs, &          ! Intent(inout)
-                           solution )           ! Intent(out)
-    endif
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "xm & wpxp LU decomp. failed"
-          write(fstderr,*) "General xm and wpxp LHS"
-          do k = 1, gr%nz
-             write(fstderr,*) "zt level = ", k, "height [m] = ", gr%zt(k), &
-                              "LHS = ", lhs(1:nsup+nsub+1,2*k-1)
-             write(fstderr,*) "zm level = ", k, "height [m] = ", gr%zm(k), &
-                              "LHS = ", lhs(1:nsup+nsub+1,2*k)
-          enddo ! k = 1, gr%nz
-          do i = 1, nrhs
-             if ( i == 1 ) then
-                write(fstderr,*) "rtm and wprtp RHS"
-             elseif ( i == 2 ) then
-                write(fstderr,*) "thlm and wpthlp RHS"
-             else ! i > 2
-                if ( sclr_dim > 0 ) then
-                   if ( i <= 2+sclr_dim ) then
-                      write(fstderr,*) "sclrm and wpsclrp RHS for sclr", i-2
-                   endif ! i <= 2+sclr_dim )
-                endif ! sclr_dim > 0
-                if ( l_predict_upwp_vpwp ) then
-                   if ( i == 3+sclr_dim ) then
-                      write(fstderr,*) "um and upwp RHS"
-                   elseif ( i == 4+sclr_dim ) then
-                      write(fstderr,*) "vm and vpwp RHS"
-                   endif
-                endif ! l_predict_upwp_vpwp
-             endif
-             do k = 1, gr%nz
-                write(fstderr,*) "zt level = ", k, &
-                                 "height [m] = ", gr%zt(k), &
-                                 "RHS = ", rhs_save(2*k-1,i)
-                write(fstderr,*) "zm level = ", k, &
-                                 "height [m] = ", gr%zm(k), &
-                                 "RHS = ", rhs_save(2*k,i)
-             enddo ! k = 1, gr%nz
-          enddo ! i = 1, nrhs
-          return
-       endif
-    endif
-
-    call xm_wpxp_clipping_and_stats &
-         ( gr, xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
-           rtm_forcing, rho_ds_zm, rho_ds_zt, &   ! Intent(in)
-           invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-           rt_tol**2, rt_tol, rcond, &            ! Intent(in)
-           low_lev_effect, high_lev_effect, &     ! Intent(in)
-           l_implemented, solution(:,1),  &       ! Intent(in)
-           l_predict_upwp_vpwp, &                 ! Intent(in)
-           l_upwind_xm_ma, &                      ! Intent(in)
-           l_tke_aniso, &                         ! Intent(in)
-           order_xm_wpxp, order_xp2_xpyp, &       ! Intent(in)
-           order_wp2_wp3, &                       ! Intent(in)
-           stats_zt, stats_zm, stats_sfc, &       ! intent(inout)
-           rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "rtm monotonic flux limiter:  tridag failed"
-          return
-       endif
-    endif
-
-    call xm_wpxp_clipping_and_stats &
-         ( gr, xm_wpxp_thlm, dt, wp2, thlp2, wm_zt, & ! Intent(in)
-           thlm_forcing, rho_ds_zm, rho_ds_zt, &  ! Intent(in)
-           invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
-           thl_tol**2, thl_tol, rcond, &          ! Intent(in)
-           low_lev_effect, high_lev_effect, &     ! Intent(in)
-           l_implemented, solution(:,2),  &       ! Intent(in)
-           l_predict_upwp_vpwp, &                 ! Intent(in)
-           l_upwind_xm_ma, &                      ! Intent(in)
-           l_tke_aniso, &                         ! Intent(in)
-           order_xm_wpxp, order_xp2_xpyp, &       ! Intent(in)
-           order_wp2_wp3, &                       ! Intent(in)
-           stats_zt, stats_zm, stats_sfc, &       ! intent(inout)
-           thlm, thl_tol_mfl, wpthlp )            ! Intent(inout)
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-       if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "thlm monotonic flux limiter:  tridag failed"
-          return
-       endif
-    endif
+      ! Compute the explicit portion of the r_t and w'r_t' equations.
+      ! Build the right-hand side vector.
+      call xm_wpxp_rhs( gr(i), xm_wpxp_rtm, l_iter, dt, rtm(i,:), wprtp(i,:),  & ! In
+                        rtm_forcing(i,:), wprtp_forcing(i,:), C7_Skw_fnc(i,:),   & ! In
+                        rtpthvp(i,:), rhs_ta_wprtp(i,:), thv_ds_zm(i,:),         & ! In
+                        lhs_pr1_wprtp(i,:), lhs_ta_wpxp(:,i,:),               & ! In
+                        stats_zt(i), stats_zm(i),                       & ! intent(inout)
+                        rhs(i,:,1) )                                  ! Out
+                        
+      ! Compute the explicit portion of the th_l and w'th_l' equations.
+      ! Build the right-hand side vector.
+      call xm_wpxp_rhs( gr(i), xm_wpxp_thlm, l_iter, dt, thlm(i,:), wpthlp(i,:), & ! In
+                        thlm_forcing(i,:), wpthlp_forcing(i,:), C7_Skw_fnc(i,:),   & ! In
+                        thlpthvp(i,:), rhs_ta_wpthlp(i,:), thv_ds_zm(i,:),         & ! In
+                        lhs_pr1_wpthlp(i,:), lhs_ta_wpxp(:,i,:),                & ! In
+                        stats_zt(i), stats_zm(i),                         & ! intent(inout)
+                        rhs(i,:,2) )                                    ! Out
 
 ! ---> h1g, 2010-06-15
 ! scalar transport, e.g, droplet and ice number concentration
 ! are handled in  " advance_sclrm_Nd_module.F90 "
 #ifdef GFDL
-    do i = 1, 0, 1
+      do j = 1, 0, 1
 #else
-    do i = 1, sclr_dim, 1
+      do j = 1, sclr_dim, 1
 #endif
 ! <--- h1g, 2010-06-15
 
-      call xm_wpxp_clipping_and_stats &
-           ( gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,i), wm_zt, &  ! Intent(in)
-             sclrm_forcing(:,i), &             ! Intent(in)
-             rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
-             invrs_rho_ds_zm, invrs_rho_ds_zt, &      ! Intent(in)
-             sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
-             low_lev_effect, high_lev_effect, &       ! Intent(in)
-             l_implemented, solution(:,2+i),  &       ! Intent(in)
-             l_predict_upwp_vpwp, &                   ! Intent(in)
-             l_upwind_xm_ma, &                        ! Intent(in)
-             l_tke_aniso, &                           ! Intent(in)
-             order_xm_wpxp, order_xp2_xpyp, &         ! Intent(in)
-             order_wp2_wp3, &                         ! Intent(in)
-             stats_zt, stats_zm, stats_sfc, &         ! intent(inout)
-             sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
+        ! Set <w'sclr'> forcing to 0 unless unless testing the wpsclrp code
+        ! using wprtp or wpthlp (then use wprtp_forcing or wpthlp_forcing).
+        wpsclrp_forcing(i,:,j) = zero
+
+        call xm_wpxp_rhs( gr(i), xm_wpxp_scalar, l_iter, dt, sclrm(i,:,j), wpsclrp(i,:,j), & ! In
+                          sclrm_forcing(i,:,j),               & ! In
+                          wpsclrp_forcing(i,:,j), C7_Skw_fnc(i,:),               & ! In
+                          sclrpthvp(i,:,j), rhs_ta_wpsclrp(i,:,j), thv_ds_zm(i,:), & ! In
+                          lhs_pr1_wpsclrp(i,:), lhs_ta_wpxp(:,i,:),                   & ! In
+                          stats_zt(i), stats_zm(i),                             & ! intent(inout)
+                          rhs(i,:,2+j) )                                      ! Out
+
+      enddo
+
+      if ( l_predict_upwp_vpwp ) then
+
+         ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
+         ! Currently, this requires the ADG1 PDF with implicit turbulent advection.
+         ! l_explicit_turbulent_adv_wpxp = false
+         ! and ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_new_hybrid )
+
+         ! Coriolis term for <u> and <v>
+         if ( .not. l_implemented ) then
+
+            ! Only compute the Coriolis term if the model is running on its own,
+            ! and is not part of a larger, host model.
+            um_tndcy(i,:) = um_forcing(i,:) - fcor(i) * ( vg(i,:) - vm(i,:) )
+            vm_tndcy(i,:) = vm_forcing(i,:) + fcor(i) * ( ug(i,:) - um(i,:) )
+
+            if ( l_stats_samp ) then
+
+               ! um or vm term gf is completely explicit; call stat_update_var.
+               call stat_update_var( ium_gf, - fcor(i) * vg(i,:), & ! intent(in)
+                                     stats_zt(i) )             ! intent(inout)
+               call stat_update_var( ivm_gf, fcor(i) * ug(i,:), & ! intent(in)
+                                     stats_zt(i) )           ! intent(inout)
+
+               ! um or vm term cf is completely explicit; call stat_update_var.
+               call stat_update_var( ium_cf, fcor(i) * vm(i,:), & ! intent(in)
+                                     stats_zt(i) )           ! intent(inout)
+               call stat_update_var( ivm_cf, - fcor(i) * um(i,:), & ! intent(in)
+                                     stats_zt(i) )             ! intent(inout)
+
+               ! um or vm forcing term
+               call stat_update_var( ium_f, um_forcing(i,:), & ! intent(in)
+                                     stats_zt(i) )           ! intent(inout)
+               call stat_update_var( ivm_f, vm_forcing(i,:), & ! intent(in)
+                                     stats_zt(i) )           ! intent(inout)
+
+            endif ! l_stats_samp
+
+         else ! implemented in a host model
+
+            um_tndcy(i,:) = zero
+            vm_tndcy(i,:) = zero
+
+         endif ! .not. l_implemented
+
+         ! Add "extra term" and optional Coriolis term for <u'w'> and <v'w'>.
+         upwp_forcing(i,:) = C_uu_shr * wp2(i,:) * ddzt( gr(i), um(i,:) )
+         vpwp_forcing(i,:) = C_uu_shr * wp2(i,:) * ddzt( gr(i), vm(i,:) )
+
+         if ( l_stats_samp ) then
+            call stat_update_var( iupwp_pr4, C_uu_shr * wp2(i,:) * ddzt( gr(i), um(i,:) ), & ! intent(in)
+                                  stats_zm(i) )                                ! intent(inout)
+            call stat_update_var( ivpwp_pr4, C_uu_shr * wp2(i,:) * ddzt( gr(i), vm(i,:) ), & ! intent(in)
+                                  stats_zm(i) )                                ! intent(inout)
+         endif ! l_stats_samp
+
+         ! need tau_C6_zm for these calls
+         tau_C6_zm(i,:) = min ( one / invrs_tau_C6_zm(i,:), tau_max_zm(i,:) )
+
+         call diagnose_upxp( gr(i), upwp(i,:), thlm(i,:), wpthlp(i,:), um(i,:), &               ! Intent(in)
+                             C6thl_Skw_fnc(i,:), tau_C6_zm(i,:), C7_Skw_fnc(i,:), & ! Intent(in)
+                             upthlp(i,:) )                                ! Intent(out)
+         call diagnose_upxp( gr(i), upwp(i,:), rtm(i,:), wprtp(i,:), um(i,:), &                ! Intent(in)
+                             C6rt_Skw_fnc(i,:), tau_C6_zm(i,:), C7_Skw_fnc(i,:), & ! Intent(in)
+                             uprtp(i,:) )                                ! Intent(out)
+         call diagnose_upxp( gr(i), vpwp(i,:), thlm(i,:), wpthlp(i,:), vm(i,:), &               ! Intent(in)
+                             C6thl_Skw_fnc(i,:), tau_C6_zm(i,:), C7_Skw_fnc(i,:), & ! Intent(in)
+                             vpthlp(i,:) )                                ! Intent(out)
+         call diagnose_upxp( gr(i), vpwp(i,:), rtm(i,:), wprtp(i,:), vm(i,:), &                ! Intent(in)
+                             C6rt_Skw_fnc(i,:), tau_C6_zm(i,:), C7_Skw_fnc(i,:), & ! Intent(in)
+                             vprtp(i,:) )                                ! Intent(out)
+
+         ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
+         !upthvp = upwp * wpthvp / max( wp2, w_tol_sqd )
+         !vpthvp = vpwp * wpthvp / max( wp2, w_tol_sqd )
+         !upthvp = 0.3_core_rknd * ( upthlp + 200.0_core_rknd * uprtp ) &
+         !         + 200._core_rknd * sign( one, upwp) * sqrt( up2 * rcm**2 )
+         !vpthvp = 0.3_core_rknd * ( vpthlp + 200.0_core_rknd * vprtp ) &
+         !         + 200._core_rknd * sign( one, vpwp ) * sqrt( vp2 * rcm**2 )
+         upthvp(i,:) = upthlp(i,:) + ep1 * thv_ds_zm(i,:) * uprtp(i,:) + rc_coef(i,:) * uprcp(i,:)
+         vpthvp(i,:) = vpthlp(i,:) + ep1 * thv_ds_zm(i,:) * vprtp(i,:) + rc_coef(i,:) * vprcp(i,:)
+
+         if ( l_stats_samp ) then
+            call stat_update_var( iupthlp, upthlp(i,:), & ! intent(in)
+                                  stats_zm(i) )         ! intent(inout)
+            call stat_update_var( iuprtp,  uprtp(i,:),  & ! intent(in)
+                                  stats_zm(i) )         ! intent(inout)
+            call stat_update_var( ivpthlp, vpthlp(i,:), & ! intent(in)
+                                  stats_zm(i) )         ! intent(inout)
+            call stat_update_var( ivprtp,  vprtp(i,:),  & ! intent(in)
+                                  stats_zm(i) )         ! intent(inout)
+            call stat_update_var( iupthvp, upthvp(i,:), & ! intent(in)
+                                  stats_zm(i) )         ! intent(inout)
+            call stat_update_var( ivpthvp, vpthvp(i,:), & ! intent(in)
+                                  stats_zm(i) )         ! intent(inout)
+         endif ! l_stats_samp
+
+         call xm_wpxp_rhs( gr(i), xm_wpxp_um, l_iter, dt, um(i,:), upwp(i,:), & ! In
+                           um_tndcy(i,:), upwp_forcing(i,:), C7_Skw_fnc(i,:),   & ! In
+                           upthvp(i,:), rhs_ta_wpup(i,:), thv_ds_zm(i,:),       & ! In
+                           lhs_pr1_wprtp(i,:), lhs_ta_wpxp(:,i,:),           & ! In
+                           stats_zt(i), stats_zm(i),                   & ! intent(inout)
+                           rhs(i,:,3+sclr_dim) )                     ! Out
+
+         call xm_wpxp_rhs( gr(i), xm_wpxp_vm, l_iter, dt, vm(i,:), vpwp(i,:), & ! In
+                           vm_tndcy(i,:), vpwp_forcing(i,:), C7_Skw_fnc(i,:),   & ! In
+                           vpthvp(i,:), rhs_ta_wpvp(i,:), thv_ds_zm(i,:),       & ! In
+                           lhs_pr1_wprtp(i,:), lhs_ta_wpxp(:,i,:),           & ! In
+                           stats_zt(i), stats_zm(i),                   & ! intent(inout)
+                           rhs(i,:,4+sclr_dim) )                     ! Out
+
+      endif ! l_predict_upwp_vpwp
+
+      ! Save the value of rhs, which will be overwritten with the solution as
+      ! part of the solving routine.
+      rhs_save = rhs
+
+      ! Solve for all fields
+      if ( l_stats_samp &
+           .and. ithlm_matrix_condt_num + irtm_matrix_condt_num > 0 ) then
+         call xm_wpxp_solve( gr(i), nrhs, &                     ! Intent(in)
+                             lhs(:,i,:), rhs(i,:,:), &                 ! Intent(inout)
+                             solution(i,:,:), rcond(i) )           ! Intent(out)
+      else
+         call xm_wpxp_solve( gr(i), nrhs, &              ! Intent(in)
+                             lhs(:,i,:), rhs(i,:,:), &          ! Intent(inout)
+                             solution(i,:,:) )           ! Intent(out)
+      endif
 
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "sclrm # ", i, "monotonic flux limiter: tridag failed"
+            write(fstderr,*) "xm & wpxp LU decomp. failed"
+            write(fstderr,*) "General xm and wpxp LHS"
+            do k = 1, nz
+               write(fstderr,*) "zt level = ", k, "height [m] = ", gr(i)%zt(k), &
+                                "LHS = ", lhs(1:nsup+nsub+1,i,2*k-1)
+               write(fstderr,*) "zm level = ", k, "height [m] = ", gr(i)%zm(k), &
+                                "LHS = ", lhs(1:nsup+nsub+1,i,2*k)
+            enddo ! k = 1, nz
+            do j = 1, nrhs
+               if ( j == 1 ) then
+                  write(fstderr,*) "rtm and wprtp RHS"
+               elseif ( j == 2 ) then
+                  write(fstderr,*) "thlm and wpthlp RHS"
+               else ! j > 2
+                  if ( sclr_dim > 0 ) then
+                     if ( j <= 2+sclr_dim ) then
+                        write(fstderr,*) "sclrm and wpsclrp RHS for sclr", j-2
+                     endif ! j <= 2+sclr_dim )
+                  endif ! sclr_dim > 0
+                  if ( l_predict_upwp_vpwp ) then
+                     if ( j == 3+sclr_dim ) then
+                        write(fstderr,*) "um and upwp RHS"
+                     elseif ( j == 4+sclr_dim ) then
+                        write(fstderr,*) "vm and vpwp RHS"
+                     endif
+                  endif ! l_predict_upwp_vpwp
+               endif
+               do k = 1, nz
+                  write(fstderr,*) "zt level = ", k, &
+                                   "height [m] = ", gr(i)%zt(k), &
+                                   "RHS = ", rhs_save(i,2*k-1,j)
+                  write(fstderr,*) "zm level = ", k, &
+                                   "height [m] = ", gr(i)%zm(k), &
+                                   "RHS = ", rhs_save(i,2*k,j)
+               enddo ! k = 1, nz
+            enddo ! j = 1, nrhs
             return
          endif
       endif
 
-    end do ! 1..sclr_dim
+      call xm_wpxp_clipping_and_stats &
+           ( gr(i), xm_wpxp_rtm, dt, wp2(i,:), rtp2(i,:), wm_zt(i,:),  &  ! Intent(in)
+             rtm_forcing(i,:), rho_ds_zm(i,:), rho_ds_zt(i,:), &   ! Intent(in)
+             invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), &    ! Intent(in)
+             rt_tol**2, rt_tol, rcond(i), &            ! Intent(in)
+             low_lev_effect(i,:), high_lev_effect(i,:), &     ! Intent(in)
+             l_implemented, solution(i,:,1),  &       ! Intent(in)
+             l_predict_upwp_vpwp, &                 ! Intent(in)
+             l_upwind_xm_ma, &                      ! Intent(in)
+             l_tke_aniso, &                         ! Intent(in)
+             order_xm_wpxp, order_xp2_xpyp, &       ! Intent(in)
+             order_wp2_wp3, &                       ! Intent(in)
+             stats_zt(i), stats_zm(i), stats_sfc(i), &       ! intent(inout)
+             rtm(i,:), rt_tol_mfl, wprtp(i,:) )               ! Intent(inout)
 
-    if ( l_predict_upwp_vpwp ) then
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( err_code == clubb_fatal_error ) then
+            write(fstderr,*) "rtm monotonic flux limiter:  tridag failed"
+            return
+         endif
+      endif
 
-       ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
+      call xm_wpxp_clipping_and_stats &
+           ( gr(i), xm_wpxp_thlm, dt, wp2(i,:), thlp2(i,:), wm_zt(i,:), & ! Intent(in)
+             thlm_forcing(i,:), rho_ds_zm(i,:), rho_ds_zt(i,:), &  ! Intent(in)
+             invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), &    ! Intent(in)
+             thl_tol**2, thl_tol, rcond(i), &          ! Intent(in)
+             low_lev_effect(i,:), high_lev_effect(i,:), &     ! Intent(in)
+             l_implemented, solution(i,:,2),  &       ! Intent(in)
+             l_predict_upwp_vpwp, &                 ! Intent(in)
+             l_upwind_xm_ma, &                      ! Intent(in)
+             l_tke_aniso, &                         ! Intent(in)
+             order_xm_wpxp, order_xp2_xpyp, &       ! Intent(in)
+             order_wp2_wp3, &                       ! Intent(in)
+             stats_zt(i), stats_zm(i), stats_sfc(i), &       ! intent(inout)
+             thlm(i,:), thl_tol_mfl, wpthlp(i,:) )            ! Intent(inout)
 
-       call xm_wpxp_clipping_and_stats &
-            ( gr, xm_wpxp_um, dt, wp2, up2, wm_zt,   & ! Intent(in)
-              um_tndcy, rho_ds_zm, rho_ds_zt,        & ! Intent(in)
-              invrs_rho_ds_zm, invrs_rho_ds_zt,      & ! Intent(in)
-              w_tol_sqd, w_tol, rcond,               & ! Intent(in)
-              low_lev_effect, high_lev_effect,       & ! Intent(in)
-              l_implemented, solution(:,3+sclr_dim), & ! Intent(in)
-              l_predict_upwp_vpwp,                   & ! Intent(in)
-              l_upwind_xm_ma,                        & ! Intent(in)
-              l_tke_aniso,                           & ! Intent(in)
-              order_xm_wpxp, order_xp2_xpyp,         & ! Intent(in)
-              order_wp2_wp3,                         & ! Intent(in)
-              stats_zt, stats_zm, stats_sfc,         & ! intent(inout)
-              um, w_tol, upwp                        ) ! Intent(inout)
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( err_code == clubb_fatal_error ) then
+            write(fstderr,*) "thlm monotonic flux limiter:  tridag failed"
+            return
+         endif
+      endif
 
-       if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
-             write(fstderr,*) "um monotonic flux limiter:  tridag failed"
-             return
-          endif
-       endif
+! ---> h1g, 2010-06-15
+! scalar transport, e.g, droplet and ice number concentration
+! are handled in  " advance_sclrm_Nd_module.F90 "
+#ifdef GFDL
+      do j = 1, 0, 1
+#else
+      do j = 1, sclr_dim, 1
+#endif
+! <--- h1g, 2010-06-15
 
-       call xm_wpxp_clipping_and_stats &
-            ( gr, xm_wpxp_vm, dt, wp2, vp2, wm_zt,   & ! Intent(in)
-              vm_tndcy, rho_ds_zm, rho_ds_zt,        & ! Intent(in)
-              invrs_rho_ds_zm, invrs_rho_ds_zt,      & ! Intent(in)
-              w_tol_sqd, w_tol, rcond,               & ! Intent(in)
-              low_lev_effect, high_lev_effect,       & ! Intent(in)
-              l_implemented, solution(:,4+sclr_dim), & ! Intent(in)
-              l_predict_upwp_vpwp,                   & ! Intent(in)
-              l_upwind_xm_ma,                        & ! Intent(in)
-              l_tke_aniso,                           & ! Intent(in)
-              order_xm_wpxp, order_xp2_xpyp,         & ! Intent(in)
-              order_wp2_wp3,                         & ! Intent(in)
-              stats_zt, stats_zm, stats_sfc,         & ! intent(inout)
-              vm, w_tol, vpwp )                        ! Intent(inout)
+        call xm_wpxp_clipping_and_stats &
+             ( gr(i), xm_wpxp_scalar, dt, wp2(i,:), sclrp2(i,:,j), wm_zt(i,:), &  ! Intent(in)
+               sclrm_forcing(i,:,j), &             ! Intent(in)
+               rho_ds_zm(i,:), rho_ds_zt(i,:), &                  ! Intent(in)
+               invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), &      ! Intent(in)
+               sclr_tol(j)**2, sclr_tol(j), rcond(i), &    ! Intent(in)
+               low_lev_effect(i,:), high_lev_effect(i,:), &       ! Intent(in)
+               l_implemented, solution(i,:,2+j),  &       ! Intent(in)
+               l_predict_upwp_vpwp, &                   ! Intent(in)
+               l_upwind_xm_ma, &                        ! Intent(in)
+               l_tke_aniso, &                           ! Intent(in)
+               order_xm_wpxp, order_xp2_xpyp, &         ! Intent(in)
+               order_wp2_wp3, &                         ! Intent(in)
+               stats_zt(i), stats_zm(i), stats_sfc(i), &         ! intent(inout)
+               sclrm(i,:,j), sclr_tol(j), wpsclrp(i,:,j) )  ! Intent(inout)
 
-       if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
-             write(fstderr,*) "vm monotonic flux limiter:  tridag failed"
-             return
-          endif
-       endif
+        if ( clubb_at_least_debug_level( 0 ) ) then
+           if ( err_code == clubb_fatal_error ) then
+              write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridag failed"
+              return
+           endif
+        endif
 
-    endif ! l_predict_upwp_vpwp
+      end do ! 1..sclr_dim
+
+      if ( l_predict_upwp_vpwp ) then
+
+         ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
+
+         call xm_wpxp_clipping_and_stats &
+              ( gr(i), xm_wpxp_um, dt, wp2(i,:), up2(i,:), wm_zt(i,:),   & ! Intent(in)
+                um_tndcy(i,:), rho_ds_zm(i,:), rho_ds_zt(i,:),        & ! Intent(in)
+                invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:),      & ! Intent(in)
+                w_tol_sqd, w_tol, rcond(i),               & ! Intent(in)
+                low_lev_effect(i,:), high_lev_effect(i,:),       & ! Intent(in)
+                l_implemented, solution(i,:,3+sclr_dim), & ! Intent(in)
+                l_predict_upwp_vpwp,                   & ! Intent(in)
+                l_upwind_xm_ma,                        & ! Intent(in)
+                l_tke_aniso,                           & ! Intent(in)
+                order_xm_wpxp, order_xp2_xpyp,         & ! Intent(in)
+                order_wp2_wp3,                         & ! Intent(in)
+                stats_zt(i), stats_zm(i), stats_sfc(i),         & ! intent(inout)
+                um(i,:), w_tol, upwp(i,:)                        ) ! Intent(inout)
+
+         if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( err_code == clubb_fatal_error ) then
+               write(fstderr,*) "um monotonic flux limiter:  tridag failed"
+               return
+            endif
+         endif
+
+         call xm_wpxp_clipping_and_stats &
+              ( gr(i), xm_wpxp_vm, dt, wp2(i,:), vp2(i,:), wm_zt(i,:),   & ! Intent(in)
+                vm_tndcy(i,:), rho_ds_zm(i,:), rho_ds_zt(i,:),        & ! Intent(in)
+                invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:),      & ! Intent(in)
+                w_tol_sqd, w_tol, rcond(i),               & ! Intent(in)
+                low_lev_effect(i,:), high_lev_effect(i,:),       & ! Intent(in)
+                l_implemented, solution(i,:,4+sclr_dim), & ! Intent(in)
+                l_predict_upwp_vpwp,                   & ! Intent(in)
+                l_upwind_xm_ma,                        & ! Intent(in)
+                l_tke_aniso,                           & ! Intent(in)
+                order_xm_wpxp, order_xp2_xpyp,         & ! Intent(in)
+                order_wp2_wp3,                         & ! Intent(in)
+                stats_zt(i), stats_zm(i), stats_sfc(i),         & ! intent(inout)
+                vm(i,:), w_tol, vpwp(i,:) )                        ! Intent(inout)
+
+         if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( err_code == clubb_fatal_error ) then
+               write(fstderr,*) "vm monotonic flux limiter:  tridag failed"
+               return
+            endif
+         endif
+
+      endif ! l_predict_upwp_vpwp
+      
+    end do
     
   end subroutine solve_xm_wpxp_with_single_lhs
   
