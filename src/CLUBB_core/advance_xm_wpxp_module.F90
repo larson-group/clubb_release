@@ -994,28 +994,6 @@ module advance_xm_wpxp_module
         clip_semi_imp_lhs ! Procedure(s)
 
     use stats_variables, only: & 
-        ztscr01, & ! Variable(s)
-        ztscr02, & 
-        ztscr03, & 
-        ztscr04, & 
-        ztscr05, & 
-        zmscr01, & 
-        zmscr02, & 
-        zmscr03, & 
-        zmscr04, & 
-        zmscr05, & 
-        zmscr06, & 
-        zmscr07, & 
-        zmscr08, & 
-        zmscr09, & 
-        zmscr10, & 
-        zmscr11, & 
-        zmscr12, & 
-        zmscr13, & 
-        zmscr14, & 
-        zmscr15
-
-    use stats_variables, only: & 
         l_stats_samp, & 
         ithlm_ma, & 
         ithlm_ta, & 
@@ -1191,119 +1169,6 @@ module advance_xm_wpxp_module
             lhs(3,k_xm) = lhs(3,k_xm) + lhs_ma_zt(2,k)
             lhs(5,k_xm) = lhs(5,k_xm) + lhs_ma_zt(3,k)
         end do
-
-    endif
-
-
-    ! Statistics contributions
-    if ( l_stats_samp ) then
-
-        zero_vector = zero
-
-        ! Statistics: implicit contributions for wprtp or wpthlp.
-
-        if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
-            ! Note:  An "over-implicit" weighted time step is applied to this
-            !        term.  A weighting factor of greater than 1 may be used to
-            !        make the term more numerically stable (see note above for
-            !        LHS turbulent advection (ta) term).
-            do k = 2, gr%nz-1
-                zmscr01(k) = - lhs_ma_zm(3,k)
-                zmscr02(k) = - lhs_ma_zm(2,k)
-                zmscr03(k) = - lhs_ma_zm(1,k)
-            end do
-        endif
-
-        if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
-            do k = 2, gr%nz-1
-                zmscr04(k) = - gamma_over_implicit_ts * lhs_ta_wpxp(3,k)
-                zmscr05(k) = - gamma_over_implicit_ts * lhs_ta_wpxp(2,k)
-                zmscr06(k) = - gamma_over_implicit_ts * lhs_ta_wpxp(1,k)
-            end do
-        endif
-
-        if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
-            do k = 2, gr%nz-1
-                zmscr07(k) = - lhs_tp(2,k)
-                zmscr08(k) = - lhs_tp(1,k)
-            end do
-        endif
-
-
-        if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
-           ! Note:  To find the contribution of w'x' term ac,
-           !        substitute 0 for the C_7 skewness function input
-           !        to function wpxp_terms_ac_pr2_lhs.
-           call wpxp_terms_ac_pr2_lhs( gr, zero_vector, wm_zt, gr%invrs_dzm, & ! intent(in)
-                                       zmscr09 ) ! intent(out)
-           zmscr09 = - zmscr09
-        endif
-
-
-        if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
-            ! Note:  An "over-implicit" weighted time step is applied to this term.
-            !        A weighting factor of greater than 1 may be used to make the
-            !        term more numerically stable (see note above for LHS turbulent
-            !        advection (ta) term).
-            do k = 2, gr%nz-1
-                zmscr10(k) = - gamma_over_implicit_ts * lhs_pr1(k)
-            end do
-        endif
-
-
-        if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
-           ! Note:  To find the contribution of w'x' term pr2,
-           !        add 1 to the C_7 skewness function input
-           !        to function wpxp_terms_ac_pr2_lhs.
-           call wpxp_terms_ac_pr2_lhs( gr, (one+C7_Skw_fnc), wm_zt, gr%invrs_dzm, & ! intent(in)
-                                       zmscr11 ) ! intent(out)
-           zmscr11 = - zmscr11
-        endif
-
-        if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
-            do k = 2, gr%nz-1
-                zmscr12(k) = - lhs_diff_zm(3,k)
-                zmscr13(k) = - lhs_diff_zm(2,k)
-                zmscr14(k) = - lhs_diff_zm(1,k)
-            end do
-        endif
-
-        if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
-            l_upper_thresh = .true.
-            l_lower_thresh = .true.
-
-            do k = 2, gr%nz-1
-                zmscr15(k) = - clip_semi_imp_lhs( dt, wpxp(k),  & 
-                                                  l_upper_thresh, wpxp_upper_lim(k), & 
-                                                  l_lower_thresh, wpxp_lower_lim(k) )
-            end do
-        endif
-
-        
-        ! Statistics: implicit contributions for rtm or thlm.
-
-        if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
-            if ( .not. l_implemented ) then
-                do k = 2, gr%nz
-                    ztscr01(k) = - lhs_ma_zt(3,k)
-                    ztscr02(k) = - lhs_ma_zt(2,k)
-                    ztscr03(k) = - lhs_ma_zt(1,k)
-                end do
-            else
-                do k = 2, gr%nz
-                    ztscr01(k) = zero
-                    ztscr02(k) = zero
-                    ztscr03(k) = zero
-                end do
-            endif
-        endif
-
-        if ( irtm_ta > 0 .or. ithlm_ta > 0 ) then
-            do k = 2, gr%nz
-                ztscr04(k) = - lhs_ta_xm(2,k)
-                ztscr05(k) = - lhs_ta_xm(1,k)
-            end do
-        endif
 
     endif
 
@@ -2876,6 +2741,9 @@ module advance_xm_wpxp_module
              invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), &    ! Intent(in)
              rt_tol**2, rt_tol, rcond(i), &            ! Intent(in)
              low_lev_effect(i,:), high_lev_effect(i,:), &     ! Intent(in)
+             lhs_ma_zt(:,i,:), lhs_ma_zm(:,i,:), lhs_ta_wpxp(:,i,:), & ! Intent(in)
+             lhs_diff_zm(:,i,:), C7_Skw_fnc(i,:), &
+             lhs_tp(:,i,:), lhs_ta_xm(:,i,:), lhs_pr1_wprtp(i,:), & ! Intent(in)
              l_implemented, solution(i,:,1),  &       ! Intent(in)
              l_predict_upwp_vpwp, &                 ! Intent(in)
              l_upwind_xm_ma, &                      ! Intent(in)
@@ -2898,6 +2766,9 @@ module advance_xm_wpxp_module
              invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), &    ! Intent(in)
              thl_tol**2, thl_tol, rcond(i), &          ! Intent(in)
              low_lev_effect(i,:), high_lev_effect(i,:), &     ! Intent(in)
+             lhs_ma_zt(:,i,:), lhs_ma_zm(:,i,:), lhs_ta_wpxp(:,i,:), & ! Intent(in)
+             lhs_diff_zm(:,i,:), C7_Skw_fnc(i,:), &
+             lhs_tp(:,i,:), lhs_ta_xm(:,i,:), lhs_pr1_wprtp(i,:), & ! Intent(in)
              l_implemented, solution(i,:,2),  &       ! Intent(in)
              l_predict_upwp_vpwp, &                 ! Intent(in)
              l_upwind_xm_ma, &                      ! Intent(in)
@@ -2931,6 +2802,9 @@ module advance_xm_wpxp_module
                invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), &      ! Intent(in)
                sclr_tol(j)**2, sclr_tol(j), rcond(i), &    ! Intent(in)
                low_lev_effect(i,:), high_lev_effect(i,:), &       ! Intent(in)
+               lhs_ma_zt(:,i,:), lhs_ma_zm(:,i,:), lhs_ta_wpxp(:,i,:), & ! Intent(in)
+               lhs_diff_zm(:,i,:), C7_Skw_fnc(i,:), &
+               lhs_tp(:,i,:), lhs_ta_xm(:,i,:), lhs_pr1_wprtp(i,:), & ! Intent(in)
                l_implemented, solution(i,:,2+j),  &       ! Intent(in)
                l_predict_upwp_vpwp, &                   ! Intent(in)
                l_upwind_xm_ma, &                        ! Intent(in)
@@ -2959,6 +2833,9 @@ module advance_xm_wpxp_module
                 invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:),      & ! Intent(in)
                 w_tol_sqd, w_tol, rcond(i),               & ! Intent(in)
                 low_lev_effect(i,:), high_lev_effect(i,:),       & ! Intent(in)
+                lhs_ma_zt(:,i,:), lhs_ma_zm(:,i,:), lhs_ta_wpxp(:,i,:), & ! Intent(in)
+                lhs_diff_zm(:,i,:), C7_Skw_fnc(i,:), &
+                lhs_tp(:,i,:), lhs_ta_xm(:,i,:), lhs_pr1_wprtp(i,:), & ! Intent(in)
                 l_implemented, solution(i,:,3+sclr_dim), & ! Intent(in)
                 l_predict_upwp_vpwp,                   & ! Intent(in)
                 l_upwind_xm_ma,                        & ! Intent(in)
@@ -2981,6 +2858,9 @@ module advance_xm_wpxp_module
                 invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:),      & ! Intent(in)
                 w_tol_sqd, w_tol, rcond(i),               & ! Intent(in)
                 low_lev_effect(i,:), high_lev_effect(i,:),       & ! Intent(in)
+                lhs_ma_zt(:,i,:), lhs_ma_zm(:,i,:), lhs_ta_wpxp(:,i,:), & ! Intent(in)
+                lhs_diff_zm(:,i,:), C7_Skw_fnc(i,:), &
+                lhs_tp(:,i,:), lhs_ta_xm(:,i,:), lhs_pr1_wprtp(i,:), & ! Intent(in)
                 l_implemented, solution(i,:,4+sclr_dim), & ! Intent(in)
                 l_predict_upwp_vpwp,                   & ! Intent(in)
                 l_upwind_xm_ma,                        & ! Intent(in)
@@ -3279,6 +3159,9 @@ module advance_xm_wpxp_module
            invrs_rho_ds_zm, invrs_rho_ds_zt, &    ! Intent(in)
            rt_tol**2, rt_tol, rcond, &            ! Intent(in)
            low_lev_effect, high_lev_effect, &     ! Intent(in)
+           lhs_ma_zt, lhs_ma_zm, lhs_ta_wprtp, & ! Intent(in)
+           lhs_diff_zm, C7_Skw_fnc, &
+           lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, & ! Intent(in)
            l_implemented, solution(:,1), &        ! Intent(in)
            l_predict_upwp_vpwp, &                 ! Intent(in)
            l_upwind_xm_ma, &                      ! Intent(in)
@@ -3356,6 +3239,9 @@ module advance_xm_wpxp_module
            invrs_rho_ds_zm, invrs_rho_ds_zt, &     ! Intent(in)
            thl_tol**2, thl_tol, rcond, &           ! Intent(in)
            low_lev_effect, high_lev_effect, &      ! Intent(in)
+           lhs_ma_zt, lhs_ma_zm, lhs_ta_wpthlp, & ! Intent(in)
+           lhs_diff_zm, C7_Skw_fnc, &
+           lhs_tp, lhs_ta_xm, lhs_pr1_wpthlp, & ! Intent(in)
            l_implemented, solution(:,1),  &        ! Intent(in)
            l_predict_upwp_vpwp, &                  ! Intent(in)
            l_upwind_xm_ma, &                       ! Intent(in)
@@ -3445,6 +3331,9 @@ module advance_xm_wpxp_module
              invrs_rho_ds_zm, invrs_rho_ds_zt, &      ! Intent(in)
              sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
              low_lev_effect, high_lev_effect, &       ! Intent(in)
+             lhs_ma_zt, lhs_ma_zm, lhs_ta_wpsclrp(:,:,i), & ! Intent(in)
+             lhs_diff_zm, C7_Skw_fnc, &
+             lhs_tp, lhs_ta_xm, lhs_pr1_wpsclrp, & ! Intent(in)
              l_implemented, solution(:,1),  &         ! Intent(in)
              l_predict_upwp_vpwp, &                   ! Intent(in)
              l_upwind_xm_ma, &                        ! Intent(in)
@@ -3544,6 +3433,9 @@ module advance_xm_wpxp_module
                invrs_rho_ds_zm, invrs_rho_ds_zt, &
                xp2_threshold, xm_threshold, rcond, &
                low_lev_effect, high_lev_effect, &
+               lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &
+               lhs_diff_zm, C7_Skw_fnc, &
+               lhs_tp, lhs_ta_xm, lhs_pr1, &
                l_implemented, solution, &
                l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
@@ -3589,7 +3481,8 @@ module advance_xm_wpxp_module
         fstderr, & ! Constant(s)
         one, &
         zero, &
-        eps
+        eps, &
+        gamma_over_implicit_ts
 
     use fill_holes, only: &
         fill_holes_vertical ! Procedure
@@ -3606,6 +3499,7 @@ module advance_xm_wpxp_module
         stat_modify
 
     use stats_variables, only: & 
+        l_stats_samp, & 
         irtm_ta, & 
         irtm_ma, & 
         irtm_matrix_condt_num, & 
@@ -3652,28 +3546,6 @@ module advance_xm_wpxp_module
         ivpwp_pr1, &
         ivpwp_pr2, &
         ivpwp_dp1
-
-    use stats_variables, only: & 
-        l_stats_samp, & 
-        ztscr01, & 
-        ztscr02, & 
-        ztscr03, & 
-        ztscr04, & 
-        ztscr05, & 
-        zmscr01, & 
-        zmscr02, & 
-        zmscr03, & 
-        zmscr04, & 
-        zmscr05, & 
-        zmscr06, & 
-        zmscr07, & 
-        zmscr08, & 
-        zmscr09, & 
-        zmscr10, & 
-        zmscr11, & 
-        zmscr12, & 
-        zmscr13, & 
-        zmscr14
 
     use stats_type, only: stats ! Type
 
@@ -3726,7 +3598,23 @@ module advance_xm_wpxp_module
     integer, dimension(gr%nz), intent(in) ::  &
       low_lev_effect, & ! Index of the lowest level that has an effect.
       high_lev_effect   ! Index of the highest level that has an effect.
-
+    
+    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+      lhs_diff_zm,  & ! Diffusion term for w'x'
+      lhs_ma_zt,    & ! Mean advection contributions to lhs
+      lhs_ma_zm,    & ! Mean advection contributions to lhs
+      lhs_ta_wpxp     ! Turbulent advection contributions to lhs
+      
+    real( kind = core_rknd ), dimension(2,gr%nz), intent(in) :: & 
+      lhs_tp,     & ! Turbulent production terms of w'x'
+      lhs_ta_xm     ! Turbulent advection terms of xm
+      
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      lhs_pr1       ! Pressure term 1 for w'x'
+      
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
+      C7_Skw_fnc
+      
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
@@ -3771,6 +3659,11 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       wpxp_chnge, &  ! Net change in w'x' due to clipping       [units vary]
       xp2_relaxed    ! Value of x'^2 * clip_factor               [units vary]
+      
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
+      zero_vector, &
+      wpxp_ac, &
+      wpxp_pr2
 
     ! Indices
     integer :: &
@@ -3929,16 +3822,18 @@ module advance_xm_wpxp_module
         ! Finalize implicit contributions for xm
 
         ! xm term ma is completely implicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixm_ma, k, & ! intent(in)
-            ztscr01(k) * xm(km1) & 
-          + ztscr02(k) * xm(k) & 
-          + ztscr03(k) * xm(kp1), & ! intent(in)
-            stats_zt ) ! intent(inout)
+        if ( .not. l_implemented ) then
+          call stat_update_var_pt( ixm_ma, k, & ! intent(in)
+              (-lhs_ma_zt(3,k)) * xm(km1) & 
+            + (-lhs_ma_zt(2,k)) * xm(k) & 
+            + (-lhs_ma_zt(1,k)) * xm(kp1), & ! intent(in)
+              stats_zt ) ! intent(inout)
+        end if
 
         ! xm term ta is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( ixm_ta, k, & ! intent(in)
-            ztscr04(k) * wpxp(km1) & 
-          + ztscr05(k) * wpxp(k), & ! intent(in)
+            (-lhs_ta_xm(2,k)) * wpxp(km1) & 
+          + (-lhs_ta_xm(1,k)) * wpxp(k), & ! intent(in)
             stats_zt ) ! intent(inout)
 
       enddo ! xm loop: 2..gr%nz
@@ -3948,6 +3843,20 @@ module advance_xm_wpxp_module
       ! is set to specified values at both the lowest level, k = 1, and the
       ! highest level, k = gr%nz.  Thus, the statistical code will run from
       ! levels 2 through gr%nz-1.
+      
+      zero_vector = 0.0_core_rknd
+      
+      ! Note:  To find the contribution of w'x' term ac,
+      !        substitute 0 for the C_7 skewness function input
+      !        to function wpxp_terms_ac_pr2_lhs.
+      call wpxp_terms_ac_pr2_lhs( gr, zero_vector, wm_zt, gr%invrs_dzm, & ! intent(in)
+                                  wpxp_ac ) ! intent(out)
+
+      ! Note:  To find the contribution of w'x' term pr2,
+      !        add 1 to the C_7 skewness function input
+      !        to function wpxp_terms_ac_pr2_lhs.
+      call wpxp_terms_ac_pr2_lhs( gr, (one+C7_Skw_fnc), wm_zt, gr%invrs_dzm, & ! intent(in)
+                                  wpxp_pr2 ) ! intent(out)
 
       do k = 2, gr%nz-1
 
@@ -3958,47 +3867,50 @@ module advance_xm_wpxp_module
 
         ! w'x' term ma is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_ma, k, & ! intent(in)
-            zmscr01(k) * wpxp(km1) & 
-          + zmscr02(k) * wpxp(k) & 
-          + zmscr03(k) * wpxp(kp1), & ! intent(in)
+            (-lhs_ma_zm(3,k)) * wpxp(km1) & 
+          + (-lhs_ma_zm(2,k)) * wpxp(k) & 
+          + (-lhs_ma_zm(1,k)) * wpxp(kp1), & ! intent(in)
             stats_zm ) ! intent(inout)
 
 
           call stat_end_update_pt( iwpxp_ta, k, & ! intent(in)
-              zmscr04(k) * wpxp(km1) & 
-            + zmscr05(k) * wpxp(k) & 
-            + zmscr06(k) * wpxp(kp1), & ! intent(in)
+              (-gamma_over_implicit_ts*lhs_ta_wpxp(3,k)) * wpxp(km1) & 
+            + (-gamma_over_implicit_ts*lhs_ta_wpxp(2,k)) * wpxp(k) & 
+            + (-gamma_over_implicit_ts*lhs_ta_wpxp(1,k)) * wpxp(kp1), & ! intent(in)
               stats_zm ) ! intent(inout)
 
         ! w'x' term tp is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_tp, k, & ! intent(in)
-            zmscr07(k) * xm(k) & 
-          + zmscr08(k) * xm(kp1), & ! intent(in)
+            (-lhs_tp(2,k)) * xm(k) & 
+          + (-lhs_tp(1,k)) * xm(kp1), & ! intent(in)
             stats_zm ) ! intent(inout)
 
         ! w'x' term ac is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_ac, k, & ! intent(in)
-            zmscr09(k) * wpxp(k), & ! intent(in)
-            stats_zm ) ! intent(inout)
+                                 -wpxp_ac(k) * wpxp(k), & ! intent(in)
+                                 stats_zm ) ! intent(inout)
 
         ! w'x' term pr1 is normally completely implicit.  However, due to the
         ! RHS contribution from the "over-implicit" weighted time step,
         ! w'x' term pr1 has both implicit and explicit components;
         ! call stat_end_update_pt.
+        ! Note:  An "over-implicit" weighted time step is applied to this term.
+        !        A weighting factor of greater than 1 may be used to make the
+        !        term more numerically stable (see note above for LHS turbulent
+        !        advection (ta) term).
         call stat_end_update_pt( iwpxp_pr1, k, & ! intent(in) 
-            zmscr10(k) * wpxp(k), & ! intent(in)
+            (-gamma_over_implicit_ts*lhs_pr1(k)) * wpxp(k), & ! intent(in)
             stats_zm ) ! intent(inout)
-
-        ! w'x' term pr2 is completely implicit; call stat_update_var_pt.
+            
         call stat_update_var_pt( iwpxp_pr2, k, & ! intent(in) 
-            zmscr11(k) * wpxp(k), & ! intent(in)
-            stats_zm ) ! intent(inout)
+                                -wpxp_pr2(k) * wpxp(k), & ! intent(in)
+                                 stats_zm ) ! intent(inout)
 
         ! w'x' term dp1 is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_dp1, k, & ! intent(in)
-            zmscr12(k) * wpxp(km1) & 
-          + zmscr13(k) * wpxp(k) & 
-          + zmscr14(k) * wpxp(kp1), & ! intent(in)
+            (-lhs_diff_zm(3,k)) * wpxp(km1) & 
+          + (-lhs_diff_zm(2,k)) * wpxp(k) & 
+          + (-lhs_diff_zm(1,k)) * wpxp(kp1), & ! intent(in)
             stats_zm ) ! intent(inout)
 
       enddo ! wpxp loop: 2..gr%nz-1
