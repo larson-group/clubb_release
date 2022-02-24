@@ -157,6 +157,12 @@ program G_unit_tests
       
   use w_up_in_cloud_tests, only: &
       w_up_in_cloud_tests_driver
+      
+  use smooth_heaviside_tests, only: &
+      smooth_heaviside_tests_driver
+      
+  use smooth_min_max_tests, only: &
+      smooth_min_max_tests_driver
 
   use grid_class, only: grid ! Type
 
@@ -191,14 +197,17 @@ program G_unit_tests
     l_pdf_parameter_tests = .true.,     & ! Flag for the PDF parameter tests
     l_spurious_source_test = .true.,    & ! Flag for the spurious source test
     l_tuner_tests = .true.,             & ! Flag for the tuner tests
-    l_w_up_in_cloud_test = .true.         ! Flag for the calc_w_up_in_cloud test
+    l_w_up_in_cloud_test = .true.,      & ! Flag for the calc_w_up_in_cloud test
+    l_smooth_heaviside_test = .true.,   & ! Flag for the smooth_heaviside test
+    l_smooth_min_max_test = .true.        ! Flag for the smooth_min_max test
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
     l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
     l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test, &
     l_mu_sigma_hm_tests, l_pdf_parameter_tests, l_spurious_source_test, &
-    l_tuner_tests, l_w_up_in_cloud_test
+    l_tuner_tests, l_w_up_in_cloud_test, l_smooth_heaviside_test, &
+    l_smooth_min_max_test
 
 
   ! Read namelist file
@@ -285,6 +294,18 @@ program G_unit_tests
   
   if ( l_w_up_in_cloud_test ) then
      if ( w_up_in_cloud_tests_driver(gr) /= 0 ) then
+        exit_code = 1
+     endif
+  endif
+  
+  if ( l_smooth_heaviside_test ) then
+     if ( smooth_heaviside_tests_driver() /= 0 ) then
+        exit_code = 1
+     endif
+  endif
+  
+  if ( l_smooth_min_max_test ) then
+     if ( smooth_min_max_tests_driver() /= 0 ) then
         exit_code = 1
      endif
   endif

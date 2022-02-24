@@ -10,3 +10,5 @@
 ../src/G_unit_test_types/spurious_source_test.F90
 ../src/G_unit_test_types/tuner_tests.F90
 ../src/G_unit_test_types/w_up_in_cloud_tests.F90
+../src/G_unit_test_types/smooth_heaviside_tests.F90
+../src/G_unit_test_types/smooth_min_max_tests.F90

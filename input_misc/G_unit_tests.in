@@ -11,4 +11,6 @@ l_mu_sigma_hm_tests = .true.       ! Flag for hydrometeor mu/sigma tests
 l_pdf_parameter_tests = .true.     ! Flag for PDF parameter tests
 l_spurious_source_test = .true.    ! Flag for spurious source test
 l_tuner_tests = .true.             ! Flag for PDF parameter tests
+l_smooth_heaviside_test = .true.   ! Flag for the smooth_heaviside test
+l_smooth_min_max_test = .true.     ! Flag for the smooth_min_max test
 /
