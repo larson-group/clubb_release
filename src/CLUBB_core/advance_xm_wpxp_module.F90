@@ -2851,7 +2851,7 @@ module advance_xm_wpxp_module
              sclrm_forcing(:,:,j), &                                ! Intent(in)
              rho_ds_zm, rho_ds_zt, &                                ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &                    ! Intent(in)
-             sclr_tol(j)**2, sclr_tol(j), rcond(i), &               ! Intent(in)
+             sclr_tol(j)**2, sclr_tol(j), rcond, &               ! Intent(in)
              low_lev_effect, high_lev_effect, &                     ! Intent(in)
              lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &                   ! Intent(in)
              lhs_diff_zm, C7_Skw_fnc, &                             ! Intent(in)
