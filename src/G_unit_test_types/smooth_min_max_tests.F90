@@ -179,11 +179,11 @@ contains
     end do
     result_pt2     = smooth_min(1000, 1, input_pt2, zero, smth_coef)
     result_cmp_pt2 = smooth_min(1000, 1, input_pt2, zero, zero)
-    total_mismatches = total_mismatches + COUNT(result_pt2 - result_cmp_pt2 >= zero)
+    total_mismatches = total_mismatches + COUNT(result_pt2 > result_cmp_pt2)
     
     result_pt2     = smooth_max(1000, 1, input_pt2, zero, smth_coef)
     result_cmp_pt2 = smooth_max(1000, 1, input_pt2, zero, zero)
-    total_mismatches = total_mismatches + COUNT(result_pt2 - result_cmp_pt2 <= zero)
+    total_mismatches = total_mismatches + COUNT(result_pt2 < result_cmp_pt2)
     
     
   end subroutine smooth_min_max_setup_tests
