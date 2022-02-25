@@ -162,7 +162,7 @@ contains
     result = smooth_max(4, 1, input, zero, smth_coef)
     print *, "Smooth max:"
     print *, "Expected outcome: ", result_cmp
-    print *, "True outcome:     ", result
+    print *, "True outcome:     ", result, NEW_LINE('A'), NEW_LINE('A')
     total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) >= eps)
     
     ! ================= The following code is broken. 
@@ -170,24 +170,20 @@ contains
     
     ! Case 3: Make sure that on a large number of arbitrarily chosen points with small smth_coef,
     !         smooth_min < min and smooth_max > max
-    !smth_coef = 1.e-1_core_rknd
-    !do i=1,1000
-    !  input_pt2(1, i) = -one + i / 500.0_core_rknd  ! input goes from -1 to 1 in even increments
-    !end do
-    !result_pt2     = smooth_min(1000, 1, input, zero, smth_coef)
-    !result_cmp_pt2 = smooth_min(1000, 1, input, zero, zero)
-    !
-    !print *, "Soft min:", NEW_LINE('A'), result_pt2
-    !print *, "Hard min:", NEW_LINE('A'), result_cmp_pt2, NEW_LINE('A'), NEW_LINE('A')
-    !
-    !total_mismatches = total_mismatches + COUNT(result_pt2 - result_cmp_pt2 >= zero)
-    !result_pt2     = smooth_max(1000, 1, input, zero, smth_coef)
-    !result_cmp_pt2 = smooth_max(1000, 1, input, zero, zero)
-    !
-    !print *, "Soft max:", NEW_LINE('A'), result_pt2
-    !print *, "Hard max:", NEW_LINE('A'), result_cmp_pt2, NEW_LINE('A'), NEW_LINE('A')
-    !
-    !total_mismatches = total_mismatches + COUNT(result_pt2 - result_cmp_pt2 <= zero)
+    print *, "Testing smooth min and max with smth_coef=1e-7, ", &
+             "input_var1 = equidistant grid on [-1, 1), input_var2 = 0", &
+             NEW_LINE('A')
+    smth_coef = 1.e-7_core_rknd
+    do i=1,1000
+      input_pt2(1, i) = -one + i / 500.0_core_rknd  ! input goes from -1 to 1 in even increments
+    end do
+    result_pt2     = smooth_min(1000, 1, input_pt2, zero, smth_coef)
+    result_cmp_pt2 = smooth_min(1000, 1, input_pt2, zero, zero)
+    total_mismatches = total_mismatches + COUNT(result_pt2 - result_cmp_pt2 >= zero)
+    
+    result_pt2     = smooth_max(1000, 1, input_pt2, zero, smth_coef)
+    result_cmp_pt2 = smooth_max(1000, 1, input_pt2, zero, zero)
+    total_mismatches = total_mismatches + COUNT(result_pt2 - result_cmp_pt2 <= zero)
     
     
   end subroutine smooth_min_max_setup_tests
