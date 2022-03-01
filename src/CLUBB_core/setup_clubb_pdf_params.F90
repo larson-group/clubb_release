@@ -174,12 +174,12 @@ module setup_clubb_pdf_params
     implicit none
 
     ! Input Variables
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
-    
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
       pdf_dim,     & ! Number of variables in the correlation array
       ngrdcol        ! Number of grid columns
+      
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]
