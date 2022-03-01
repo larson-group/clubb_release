@@ -173,14 +173,9 @@ module setup_clubb_pdf_params
 
     implicit none
 
-    type (stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
-
-    type (grid), target, intent(in) :: gr
-
     ! Input Variables
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
       pdf_dim,     & ! Number of variables in the correlation array
@@ -235,11 +230,16 @@ module setup_clubb_pdf_params
       l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
       l_fix_w_chi_eta_correlations    ! Use a fixed correlation for s and t Mellor(chi/eta)
 
+    ! Input/Output Variables
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
+      
     ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(out) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
-    ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
@@ -430,7 +430,7 @@ module setup_clubb_pdf_params
                             cloud_frac_2(:,:), ice_supersat_frac(:,:),           & ! In
                             ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:),  & ! In
                             mixt_frac(:,:), clubb_params, l_stats_samp,          & ! In
-                            stats_sfc,                                           & ! intent(inout)
+                            stats_sfc(j),                                           & ! intent(inout)
                             precip_frac(:,:),                                    & ! Out
                             precip_frac_1(:,:),                                  & ! Out
                             precip_frac_2(:,:),                                  & ! Out
@@ -513,7 +513,7 @@ module setup_clubb_pdf_params
     ! momentum grid levels.
     do i = 1, hydromet_dim, 1
       do j = 1, ngrdcol
-        hydrometp2(j,:,i)  = zt2zm( gr, hydrometp2_zt(j,:,i) )
+        hydrometp2(j,:,i)  = zt2zm( gr(j), hydrometp2_zt(j,:,i) )
         hydrometp2(j,nz,i) = zero
       end do
     end do
@@ -545,7 +545,7 @@ module setup_clubb_pdf_params
       ! hydrometeors to thermodynamic grid levels.
       do i = 1, hydromet_dim
         do j = 1, ngrdcol
-          wphydrometp_zt(j,:,i) = zm2zt( gr, wphydrometp(j,:,i) )
+          wphydrometp_zt(j,:,i) = zm2zt( gr(j), wphydrometp(j,:,i) )
         end do
       end do
           
@@ -573,7 +573,7 @@ module setup_clubb_pdf_params
                                    l_last_clip_ts, dt, wp2_zt(j,k),       & ! In
                                    hydrometp2_zt(j,k,i),                  & ! In
                                    l_predict_upwp_vpwp,                   & ! In
-                                   stats_zm,                              & ! intent(inout)
+                                   stats_zm(j),                              & ! intent(inout)
                                    wphydrometp_zt(j,k,i),                 & ! Inout
                                    wphydrometp_chnge(j,k,i) )               ! Out
 
@@ -585,13 +585,13 @@ module setup_clubb_pdf_params
 
         wpNcnp_zm(j,1:nz-1) &
         = xpwp_fnc( -clubb_params(ic_K_hm) * Kh_zm(j,1:nz-1), Ncnm(j,1:nz-1), &
-                    Ncnm(j,2:nz), gr%invrs_dzm(1:nz-1) )
+                    Ncnm(j,2:nz), gr(j)%invrs_dzm(1:nz-1) )
 
         ! Boundary conditions; We are assuming zero flux at the top.
         wpNcnp_zm(j,nz) = zero
 
         ! Interpolate the covariances to thermodynamic grid levels.
-        wpNcnp_zt(j,:) = zm2zt( gr, wpNcnp_zm(j,:) )
+        wpNcnp_zt(j,:) = zm2zt( gr(j), wpNcnp_zm(j,:) )
 
         ! When the mean value of Ncn is below tolerance value, it is considered
         ! to have a value of 0, and Ncn does not vary over the grid level.  Any
@@ -805,7 +805,7 @@ module setup_clubb_pdf_params
             do k = 1, nz, 1
               do j = 1, ngrdcol
                 call stat_update_var_pt( ihmp2_zt(i), k, hydrometp2_zt(j,k,i), & ! intent(in)
-                                         stats_zt ) ! intent(inout)
+                                         stats_zt(j) ) ! intent(inout)
              end do ! k = 1, nz, 1
            end do
         end if
@@ -817,7 +817,7 @@ module setup_clubb_pdf_params
                                  sigma_x_1(j,:,:), sigma_x_2(j,:,:), & ! intent(in)
                                  corr_array_1(j,:,:,:), corr_array_2(j,:,:,:), & ! intent(in)
                                  l_stats_samp, & ! intent(in)
-                                 stats_zt ) ! intent(inout)
+                                 stats_zt(j) ) ! intent(inout)
       end do
 
       !!! Statistics for normal space PDF parameters involving hydrometeors.
@@ -826,7 +826,7 @@ module setup_clubb_pdf_params
                                     mu_x_2_n(j,:,:), sigma_x_1_n(j,:,:), & ! intent(in)
                                     sigma_x_2_n(j,:,:), corr_array_1_n(j,:,:,:), & ! intent(in)
                                     corr_array_2_n(j,:,:,:), l_stats_samp, & ! intent(in)
-                                    stats_zt ) ! intent(inout)
+                                    stats_zt(j) ) ! intent(inout)
       end do
       
       if ( irtp2_from_chi > 0 ) then
@@ -846,8 +846,8 @@ module setup_clubb_pdf_params
           ! call stat_update_var( irtp2_from_chi, zt2zm( rtp2_zt_from_chi ), &
           ! stats_zm )
           do k = 1, nz, 1
-            call stat_update_var_pt( irtp2_from_chi, k, zt2zm( gr, rtp2_zt_from_chi, k ), & !in
-                                     stats_zm ) ! intent(inout)
+            call stat_update_var_pt( irtp2_from_chi, k, zt2zm( gr(j), rtp2_zt_from_chi, k ), & !in
+                                     stats_zm(j) ) ! intent(inout)
           end do ! k = 1, nz, 1
         end do
         
@@ -861,7 +861,7 @@ module setup_clubb_pdf_params
           ! call stat_update_var( iprecip_frac, precip_frac, stats_zt )
           do k = 1, nz, 1
             call stat_update_var_pt( iprecip_frac, k, precip_frac(j,k), & ! intent(in)
-                                     stats_zt ) ! intent(inout)
+                                     stats_zt(j) ) ! intent(inout)
           end do ! k = 1, nz, 1
        end if
 
@@ -870,7 +870,7 @@ module setup_clubb_pdf_params
           ! call stat_update_var( iprecip_frac_1, precip_frac_1, stats_zt )
           do k = 1, nz, 1
             call stat_update_var_pt( iprecip_frac_1, k, precip_frac_1(j,k), & ! intent(in)
-                                     stats_zt ) ! intent(inout)
+                                     stats_zt(j) ) ! intent(inout)
           end do ! k = 1, nz, 1
         end if
 
@@ -879,7 +879,7 @@ module setup_clubb_pdf_params
           ! call stat_update_var( iprecip_frac_2, precip_frac_2, stats_zt )
           do k = 1, nz, 1
             call stat_update_var_pt( iprecip_frac_2, k, precip_frac_2(j,k), & ! intent(in)
-                                     stats_zt ) ! intent(inout)
+                                     stats_zt(j) ) ! intent(inout)
           end do ! k = 1, nz, 1
         end if
 
@@ -888,7 +888,7 @@ module setup_clubb_pdf_params
           ! call stat_update_var( iNcnm, Ncnm, stats_zt )
           do k = 1, nz, 1
             call stat_update_var_pt( iNcnm, k, Ncnm(j,k), & ! intent(in)
-                                     stats_zt ) ! intent(inout)
+                                     stats_zt(j) ) ! intent(inout)
           end do ! k = 1, nz, 1
         end if
       end do
@@ -953,9 +953,6 @@ module setup_clubb_pdf_params
 
     ! References:
     !-----------------------------------------------------------------------
-
-    !use grid_class, only: &
-    !    gr    ! Variable(s)
 
     use constants_clubb, only:  &
         zero     ! Constant(s)

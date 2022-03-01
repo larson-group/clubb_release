@@ -3004,6 +3004,14 @@ contains
 
     type(hydromet_pdf_parameter), dimension(1,nz) :: &
       hydromet_pdf_params_col    ! Hydrometeor PDF parameters        [units vary]
+      
+    type(stats), dimension(1) :: &
+      stats_zt_col, &
+      stats_zm_col, &
+      stats_sfc_col
+
+    type(grid), target, dimension(1) :: &
+      gr_col
 
 
     Nc_in_cloud_col(1,:) = Nc_in_cloud
@@ -3014,8 +3022,14 @@ contains
     
     hydromet_col(1,:,:) = hydromet
     wphydrometp_col(1,:,:) = wphydrometp
+    
+    gr_col(1) = gr
+    
+    stats_zt_col(1) = stats_zt
+    stats_zm_col(1) = stats_zm
+    stats_sfc_col(1) = stats_sfc
 
-    call setup_pdf_parameters( gr, &                          ! intent(in)
+    call setup_pdf_parameters( gr_col, &                          ! intent(in)
       nz, 1, pdf_dim, dt, &                                   ! Intent(in)
       Nc_in_cloud_col, rcm_col, cloud_frac_col, Kh_zm_col, &  ! Intent(in)
       ice_supersat_frac_col, hydromet_col, wphydrometp_col, & ! Intent(in)
@@ -3029,7 +3043,7 @@ contains
       l_calc_w_corr, &                                        ! Intent(in)
       l_const_Nc_in_cloud, &                                  ! Intent(in)
       l_fix_w_chi_eta_correlations, &                         ! Intent(in)
-      stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
+      stats_zt_col, stats_zm_col, stats_sfc_col, &            ! Intent(inout)
       hydrometp2_col, &                                       ! Intent(inout)
       mu_x_1_n_col, mu_x_2_n_col, &                           ! Intent(out)
       sigma_x_1_n_col, sigma_x_2_n_col, &                     ! Intent(out)
@@ -3039,6 +3053,23 @@ contains
       hydromet_pdf_params_col )                               ! Optional(out)
 
     if ( err_code == clubb_fatal_error ) error stop
+    
+    ! The following does not work for stats 
+    !     stats_zt = stats_zt_col(1)
+    !     stats_zm = stats_zm_col(1) 
+    !     stats_sfc = stats_sfc_col(1)
+    ! because of some mysterious pointer issue. However, the only thing that 
+    ! updates in stats is the field values, so we can copy only those instead.
+    if ( l_stats ) then 
+      stats_zm%accum_field_values = stats_zm_col(1)%accum_field_values
+      stats_zm%accum_num_samples = stats_zm_col(1)%accum_num_samples
+      
+      stats_zt%accum_field_values = stats_zt_col(1)%accum_field_values
+      stats_zt%accum_num_samples = stats_zt_col(1)%accum_num_samples
+      
+      stats_sfc%accum_field_values = stats_sfc_col(1)%accum_field_values
+      stats_sfc%accum_num_samples = stats_sfc_col(1)%accum_num_samples
+    end if
     
     hydrometp2 = hydrometp2_col(1,:,:)
     mu_x_1_n = mu_x_1_n_col(1,:,:)
@@ -3094,14 +3125,9 @@ contains
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
-
-    type(grid), target, intent(in) :: gr
-
     ! Input Variables
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+    
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
       pdf_dim,     & ! Number of variables in the correlation array
@@ -3159,6 +3185,11 @@ contains
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(inout) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
+
+    type(stats), target, dimension(ngrdcol), intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
 
     ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim), intent(out) :: &
