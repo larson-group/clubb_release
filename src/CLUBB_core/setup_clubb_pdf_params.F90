@@ -266,23 +266,8 @@ module setup_clubb_pdf_params
     ! Local Variables
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      mu_w_1,       & ! Mean of w (1st PDF component)                    [m/s]
-      mu_w_2,       & ! Mean of w (2nd PDF component)                    [m/s]
-      mu_chi_1,     & ! Mean of chi (old s) (1st PDF component)          [kg/kg]
-      mu_chi_2,     & ! Mean of chi (old s) (2nd PDF component)          [kg/kg]
       sigma_w_1,    & ! Standard deviation of w (1st PDF component)      [m/s]
-      sigma_w_2,    & ! Standard deviation of w (2nd PDF component)      [m/s]
-      sigma_chi_1,  & ! Standard deviation of chi (1st PDF component)    [kg/kg]
-      sigma_chi_2,  & ! Standard deviation of chi (2nd PDF component)    [kg/kg]
-      sigma_eta_1,  & ! Standard deviation of chi (1st PDF component)    [kg/kg]
-      sigma_eta_2,  & ! Standard deviation of chi (2nd PDF component)    [kg/kg]
-      rc_1,         & ! Mean of r_c (1st PDF component)                  [kg/kg]
-      rc_2,         & ! Mean of r_c (2nd PDF component)                  [kg/kg]
-      thl_1,        & ! Mean of thl (1st PDF component)                [K]
-      thl_2,        & ! Mean of thl (2nd PDF component)                [K]
-      cloud_frac_1, & ! Cloud fraction (1st PDF component)               [-]
-      cloud_frac_2, & ! Cloud fraction (2nd PDF component)               [-]
-      mixt_frac       ! Mixture fraction                                 [-]
+      sigma_w_2       ! Standard deviation of w (2nd PDF component)      [m/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       ice_supersat_frac_1, & ! Ice supersaturation fraction (1st PDF comp.)  [-]
@@ -302,11 +287,6 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim) :: &
       hydrometp2_zt,  & ! Variance of a hydrometeor (overall); t-lev   [units^2]
       wphydrometp_zt    ! Covariance of w and hm interp. to t-levs. [(m/s)units]
-      
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim,pdf_dim) :: &
       corr_array_1, & ! Correlation array of PDF vars. (comp. 1)             [-]
@@ -385,25 +365,12 @@ module setup_clubb_pdf_params
       end if
     end if !clubb_at_least_debug_level( 0 )
 
-    do j = 1, ngrdcol
-      ! Setup some of the PDF parameters
-      mu_w_1(j,:)       = pdf_params%w_1(j,:)
-      mu_w_2(j,:)       = pdf_params%w_2(j,:)
-      mu_chi_1(j,:)     = pdf_params%chi_1(j,:)
-      mu_chi_2(j,:)     = pdf_params%chi_2(j,:)
-      sigma_w_1(j,:)    = sqrt( pdf_params%varnce_w_1(j,:) )
-      sigma_w_2(j,:)    = sqrt( pdf_params%varnce_w_2(j,:) )
-      sigma_chi_1(j,:)  = pdf_params%stdev_chi_1(j,:)
-      sigma_chi_2(j,:)  = pdf_params%stdev_chi_2(j,:)
-      sigma_eta_1(j,:)  = pdf_params%stdev_eta_1(j,:)
-      sigma_eta_2(j,:)  = pdf_params%stdev_eta_2(j,:)
-      rc_1(j,:)         = pdf_params%rc_1(j,:)
-      rc_2(j,:)         = pdf_params%rc_2(j,:)
-      thl_1(j,:)        = pdf_params%thl_1(j,:)
-      thl_2(j,:)        = pdf_params%thl_2(j,:)
-      cloud_frac_1(j,:) = pdf_params%cloud_frac_1(j,:)
-      cloud_frac_2(j,:) = pdf_params%cloud_frac_2(j,:)
-      mixt_frac(j,:)    = pdf_params%mixt_frac(j,:)
+    ! Setup some of the PDF parameters
+    do k = 1, nz
+      do j = 1, ngrdcol
+        sigma_w_1(j,k)    = sqrt( pdf_params%varnce_w_1(j,k) )
+        sigma_w_2(j,k)    = sqrt( pdf_params%varnce_w_2(j,k) )
+      end do
     end do
 
     ! Note on hydrometeor PDF shape:
@@ -420,22 +387,17 @@ module setup_clubb_pdf_params
     ! Calculate precipitation fraction.
     if ( l_use_precip_frac ) then
       
-      do j = 1, ngrdcol
-        ice_supersat_frac_1(j,:) = pdf_params%ice_supersat_frac_1(j,:)
-        ice_supersat_frac_2(j,:) = pdf_params%ice_supersat_frac_2(j,:)
-      end do
+      call precip_fraction( nz, ngrdcol,                                                  & ! In
+                hydromet(:,:,:), cloud_frac(:,:), pdf_params%cloud_frac_1(:,:),           & ! In
+                pdf_params%cloud_frac_2(:,:), ice_supersat_frac(:,:),                     & ! In
+                pdf_params%ice_supersat_frac_1(:,:), pdf_params%ice_supersat_frac_2(:,:), & ! In
+                pdf_params%mixt_frac(:,:), clubb_params, l_stats_samp,                    & ! In
+                stats_sfc(:),                                                             & ! Inout
+                precip_fracs%precip_frac(:,:),                                            & ! Out
+                precip_fracs%precip_frac_1(:,:),                                          & ! Out
+                precip_fracs%precip_frac_2(:,:),                                          & ! Out
+                precip_frac_tol(:) )                                                        ! Out
       
-      call precip_fraction( nz, ngrdcol,                                         & ! In
-                            hydromet(:,:,:), cloud_frac(:,:), cloud_frac_1(:,:), & ! In
-                            cloud_frac_2(:,:), ice_supersat_frac(:,:),           & ! In
-                            ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:),  & ! In
-                            mixt_frac(:,:), clubb_params, l_stats_samp,          & ! In
-                            stats_sfc(j),                                           & ! intent(inout)
-                            precip_frac(:,:),                                    & ! Out
-                            precip_frac_1(:,:),                                  & ! Out
-                            precip_frac_2(:,:),                                  & ! Out
-                            precip_frac_tol(:) )                                   ! Out
-        
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) " in setup_pdf_parameters after calling precip_fraction"
         return
@@ -443,16 +405,12 @@ module setup_clubb_pdf_params
 
     else
 
-      precip_frac(:,:)   = one
-      precip_frac_1(:,:) = one
-      precip_frac_2(:,:) = one
+      precip_fracs%precip_frac(:,:)   = one
+      precip_fracs%precip_frac_1(:,:) = one
+      precip_fracs%precip_frac_2(:,:) = one
       precip_frac_tol(:) = cloud_frac_min
 
     end if
-    
-    precip_fracs%precip_frac(:,:)   = precip_frac
-    precip_fracs%precip_frac_1(:,:) = precip_frac_1
-    precip_fracs%precip_frac_2(:,:) = precip_frac_2
     
     ! Calculate <N_cn> from Nc_in_cloud, whether Nc_in_cloud is predicted or
     ! based on a prescribed value, and whether the value is constant or varying
@@ -478,10 +436,11 @@ module setup_clubb_pdf_params
                      stdev_const_Ncnp2_on_Ncnm2(:,:), const_Ncnp2_on_Ncnm2(:,:), & ! intent(in)
                      const_corr_chi_Ncn(:,:)  ) ! intent(out)
 
-    Ncnm(:,:) = Nc_in_cloud_to_Ncnm( mu_chi_1(:,:), mu_chi_2(:,:), sigma_chi_1(:,:), &
-                                     sigma_chi_2(:,:), mixt_frac(:,:), Nc_in_cloud(:,:), &
-                                     cloud_frac_1(:,:), cloud_frac_2(:,:), &
-                                     const_Ncnp2_on_Ncnm2(:,:), const_corr_chi_Ncn(:,:) )
+    Ncnm(:,:) = Nc_in_cloud_to_Ncnm( &
+                    pdf_params%chi_1(:,:), pdf_params%chi_2(:,:), pdf_params%stdev_chi_1(:,:), &
+                    pdf_params%stdev_chi_2(:,:), pdf_params%mixt_frac(:,:), Nc_in_cloud(:,:), &
+                    pdf_params%cloud_frac_1(:,:), pdf_params%cloud_frac_2(:,:), &
+                    const_Ncnp2_on_Ncnm2(:,:), const_corr_chi_Ncn(:,:) )
 
     ! Boundary Condition.
     ! At thermodynamic level k = 1, which is below the model lower boundary, the
@@ -499,7 +458,7 @@ module setup_clubb_pdf_params
               ! There is some of the hydrometeor species found at level k.
               ! Calculate the variance (overall) of the hydrometeor.
               hydrometp2_zt(j,k,i) &
-              = ( ( hmp2_ip_on_hmm2_ip(i) + one ) / precip_frac(j,k) - one ) &
+              = ( ( hmp2_ip_on_hmm2_ip(i) + one ) / precip_fracs%precip_frac(j,k) - one ) &
                 * hydromet(j,k,i)**2
             else
               hydrometp2_zt(j,k,i) = zero
@@ -512,10 +471,8 @@ module setup_clubb_pdf_params
     ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
     ! momentum grid levels.
     do i = 1, hydromet_dim, 1
-      do j = 1, ngrdcol
-        hydrometp2(j,:,i)  = zt2zm( gr(j), hydrometp2_zt(j,:,i) )
-        hydrometp2(j,nz,i) = zero
-      end do
+      hydrometp2(:,:,i)  = zt2zm( nz, ngrdcol, gr, hydrometp2_zt(:,:,i) )
+      hydrometp2(:,nz,i) = zero
     end do
 
 
@@ -533,20 +490,20 @@ module setup_clubb_pdf_params
 
       ! Calculate the overall mean of vertical velocity, w, on thermodynamic
       ! levels.
-      wm_zt(:,:) = compute_mean_binormal( mu_w_1(:,:), mu_w_2(:,:), mixt_frac(:,:) )
+      wm_zt(:,:) = compute_mean_binormal( pdf_params%w_1(:,:), pdf_params%w_2(:,:), &
+                                          pdf_params%mixt_frac(:,:) )
 
       ! Calculate the overall variance of vertical velocity on thermodynamic
       ! levels.
-      wp2_zt(:,:) = compute_variance_binormal( wm_zt(:,:), mu_w_1(:,:), mu_w_2(:,:), &
+      wp2_zt(:,:) = compute_variance_binormal( wm_zt(:,:), &
+                                               pdf_params%w_1(:,:), pdf_params%w_2(:,:), &
                                                sigma_w_1(:,:), sigma_w_2(:,:), &
-                                               mixt_frac(:,:) )
+                                               pdf_params%mixt_frac(:,:) )
       
       ! Interpolate the covariances (overall) of w and precipitating
       ! hydrometeors to thermodynamic grid levels.
       do i = 1, hydromet_dim
-        do j = 1, ngrdcol
-          wphydrometp_zt(j,:,i) = zm2zt( gr(j), wphydrometp(j,:,i) )
-        end do
+        wphydrometp_zt(:,:,i) = zm2zt( nz, ngrdcol, gr, wphydrometp(:,:,i) )
       end do
           
       do i = 1, hydromet_dim
@@ -573,7 +530,7 @@ module setup_clubb_pdf_params
                                    l_last_clip_ts, dt, wp2_zt(j,k),       & ! In
                                    hydrometp2_zt(j,k,i),                  & ! In
                                    l_predict_upwp_vpwp,                   & ! In
-                                   stats_zm(j),                              & ! intent(inout)
+                                   stats_zm(j),                           & ! Inout
                                    wphydrometp_zt(j,k,i),                 & ! Inout
                                    wphydrometp_chnge(j,k,i) )               ! Out
 
@@ -589,20 +546,22 @@ module setup_clubb_pdf_params
 
         ! Boundary conditions; We are assuming zero flux at the top.
         wpNcnp_zm(j,nz) = zero
+      end do
 
-        ! Interpolate the covariances to thermodynamic grid levels.
-        wpNcnp_zt(j,:) = zm2zt( gr(j), wpNcnp_zm(j,:) )
+      ! Interpolate the covariances to thermodynamic grid levels.
+      wpNcnp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpNcnp_zm(:,:) )
 
-        ! When the mean value of Ncn is below tolerance value, it is considered
-        ! to have a value of 0, and Ncn does not vary over the grid level.  Any
-        ! covariance involving Ncn also has a value of 0 at that grid level.
-        do k = 1, nz, 1
+      ! When the mean value of Ncn is below tolerance value, it is considered
+      ! to have a value of 0, and Ncn does not vary over the grid level.  Any
+      ! covariance involving Ncn also has a value of 0 at that grid level.
+      do k = 1, nz, 1
+        do j = 1, ngrdcol
           if ( Ncnm(j,k) <= Ncn_tol ) then
             wpNcnp_zt(j,k) = zero
           end if
         end do ! k = 1, nz, 1
-
       end do
+      
     end if ! l_calc_w_corr
 
     ! Unpack CLUBB parameters
@@ -614,23 +573,23 @@ module setup_clubb_pdf_params
     !!! -- for each PDF component.
     call compute_mean_stdev( nz, ngrdcol, &
                              hydromet(:,:,:), hydrometp2_zt(:,:,:),         & ! Intent(in)
-                             Ncnm(:,:), mixt_frac(:,:),                     & ! Intent(in)
-                             precip_frac(:,:),                              & ! Intent(in)
-                             precip_frac_1(:,:),                            & ! Intent(in)
-                             precip_frac_2(:,:),                            & ! Intent(in)
+                             Ncnm(:,:), pdf_params%mixt_frac(:,:),          & ! Intent(in)
+                             precip_fracs%precip_frac(:,:),                 & ! Intent(in)
+                             precip_fracs%precip_frac_1(:,:),               & ! Intent(in)
+                             precip_fracs%precip_frac_2(:,:),               & ! Intent(in)
                              precip_frac_tol(:),                            & ! Intent(in)
-                             mu_w_1(:,:),                                   & ! Intent(in)
-                             mu_w_2(:,:),                                   & ! Intent(in)
+                             pdf_params%w_1(:,:),                           & ! Intent(in)
+                             pdf_params%w_2(:,:),                           & ! Intent(in)
                              sigma_w_1(:,:),                                & ! Intent(in)
                              sigma_w_1(:,:),                                & ! Intent(in)
-                             mu_chi_1(:,:),                                 & ! Intent(in)
-                             mu_chi_2(:,:),                                 & ! Intent(in)
-                             sigma_chi_1(:,:),                              & ! Intent(in)
-                             sigma_chi_2(:,:),                              & ! Intent(in)
-                             sigma_eta_1(:,:),                              & ! Intent(in)
-                             sigma_eta_2(:,:),                              & ! Intent(in)
-                             thl_1(:,:),                                    & ! Intent(in)
-                             thl_2(:,:),                                    & ! Intent(in)
+                             pdf_params%chi_1(:,:),                         & ! Intent(in)
+                             pdf_params%chi_2(:,:),                         & ! Intent(in)
+                             pdf_params%stdev_chi_1(:,:),                   & ! Intent(in)
+                             pdf_params%stdev_chi_2(:,:),                   & ! Intent(in)
+                             pdf_params%stdev_eta_1(:,:),                   & ! Intent(in)
+                             pdf_params%stdev_eta_2(:,:),                   & ! Intent(in)
+                             pdf_params%thl_1(:,:),                         & ! Intent(in)
+                             pdf_params%thl_2(:,:),                         & ! Intent(in)
                              pdf_dim,                                       & ! Intent(in)
                              omicron, zeta_vrnce_rat,                       & ! Intent(in)
                              l_const_Nc_in_cloud,                           & ! Intent(in)
@@ -721,7 +680,7 @@ module setup_clubb_pdf_params
         ! Cholesky decompositions, then use the value of rc at each grid box to determine whether
         ! we assign the in cloud or out of cloud matrices to that grid box. 
         call calc_corr_norm_and_cholesky_factor( nz, ngrdcol, pdf_dim, iiPDF_type, & ! intent(in)
-                                                 rc_1, rc_2, & ! intent(in)
+                                                 pdf_params%rc_1, pdf_params%rc_2, & ! intent(in)
                                                  corr_array_n_cloud, corr_array_n_below, &
                                                  corr_array_1_n, corr_array_2_n, & ! intent(out)
                                                  corr_cholesky_mtx_1, corr_cholesky_mtx_2 )!out
@@ -732,10 +691,11 @@ module setup_clubb_pdf_params
         ! correlation matrices up for each grid box, then find the Cholesky decomp for each
         ! grid box individually. This is very computationally expensive.
 
-        call comp_corr_norm( nz, pdf_dim, ngrdcol, wm_zt(:,:), rc_1(:,:), rc_2(:,:),  & ! In  
-                             mixt_frac(:,:),                                          & ! In
-                             precip_frac_1(:,:),                                      & ! In
-                             precip_frac_2(:,:),                                      & ! In
+        call comp_corr_norm( nz, pdf_dim, ngrdcol, wm_zt(:,:),                        & ! In  
+                             pdf_params%rc_1(:,:), pdf_params%rc_2(:,:),              & ! In  
+                             pdf_params%mixt_frac(:,:),                               & ! In
+                             precip_fracs%precip_frac_1(:,:),                         & ! In
+                             precip_fracs%precip_frac_2(:,:),                         & ! In
                              wpNcnp_zt(:,:), wphydrometp_zt(:,:,:),                   & ! In
                              mu_x_1(:,:,:), mu_x_2(:,:,:),                            & ! In
                              sigma_x_1(:,:,:), sigma_x_2(:,:,:),                      & ! In
@@ -860,7 +820,7 @@ module setup_clubb_pdf_params
           ! Overall precipitation fraction.
           ! call stat_update_var( iprecip_frac, precip_frac, stats_zt )
           do k = 1, nz, 1
-            call stat_update_var_pt( iprecip_frac, k, precip_frac(j,k), & ! intent(in)
+            call stat_update_var_pt( iprecip_frac, k, precip_fracs%precip_frac(j,k), & ! intent(in)
                                      stats_zt(j) ) ! intent(inout)
           end do ! k = 1, nz, 1
        end if
@@ -869,7 +829,7 @@ module setup_clubb_pdf_params
           ! Precipitation fraction in PDF component 1.
           ! call stat_update_var( iprecip_frac_1, precip_frac_1, stats_zt )
           do k = 1, nz, 1
-            call stat_update_var_pt( iprecip_frac_1, k, precip_frac_1(j,k), & ! intent(in)
+            call stat_update_var_pt( iprecip_frac_1, k, precip_fracs%precip_frac_1(j,k), & ! In
                                      stats_zt(j) ) ! intent(inout)
           end do ! k = 1, nz, 1
         end if
@@ -878,7 +838,7 @@ module setup_clubb_pdf_params
           ! Precipitation fraction in PDF component 2.
           ! call stat_update_var( iprecip_frac_2, precip_frac_2, stats_zt )
           do k = 1, nz, 1
-            call stat_update_var_pt( iprecip_frac_2, k, precip_frac_2(j,k), & ! intent(in)
+            call stat_update_var_pt( iprecip_frac_2, k, precip_fracs%precip_frac_2(j,k), & ! In
                                      stats_zt(j) ) ! intent(inout)
           end do ! k = 1, nz, 1
         end if
