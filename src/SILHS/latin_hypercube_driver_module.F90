@@ -208,13 +208,6 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(ngrdcol,num_samples,nz) :: &
       cloud_frac ! Cloud fraction for grid level and sample
       
-    real(kind = core_rknd), dimension(ngrdcol,nz) :: &
-      cloud_frac_1,  & ! Array used to store pdf_params(:)%cloud_frac_1
-      cloud_frac_2,  & ! Array used to store pdf_params(:)%cloud_frac_2
-      mixt_frac,     & ! Array used to store pdf_params(:)%mixt_frac
-      precip_frac_1, & ! Array used to store precip_fracs%precip_frac_1
-      precip_frac_2    ! Array used to store precip_fracs%precip_frac_2
-      
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Lscale_vert_avg, &  ! 3pt vertical average of Lscale                    [m]
       X_vert_corr         ! Vertical correlations between height levels       [-]
@@ -241,16 +234,6 @@ module latin_hypercube_driver_module
       error stop "CLUBB ERROR: Running SILHS with OpenACC requires lh_straight_mc=true"
     end if
 #endif
-
-    ! Copy type arrays to contiguous arrays, so they can be copied to the GPU
-    precip_frac_1 = precip_fracs%precip_frac_1
-    precip_frac_2 = precip_fracs%precip_frac_2
-    
-    do i = 1, ngrdcol
-      cloud_frac_1(i,:) = pdf_params%cloud_frac_1(i,:)
-      cloud_frac_2(i,:) = pdf_params%cloud_frac_2(i,:)
-      mixt_frac(i,:)    = pdf_params%mixt_frac(i,:)
-    end do
 
     ! Compute k_lh_start, the starting vertical grid level for SILHS sampling
     k_lh_start(:) = compute_k_lh_start( nz, ngrdcol, rcm, pdf_params, &
@@ -322,9 +305,9 @@ module latin_hypercube_driver_module
     call generate_all_uniform_samples( &
            iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
            nz, ngrdcol, k_lh_start, X_vert_corr, rand_pool,              & ! Intent(in)
-           cloud_frac_1,                                                 & ! Intent(in)
-           cloud_frac_2,                                                 & ! Intent(in)
-           mixt_frac, precip_fracs,                                      & ! Intent(in)
+           pdf_params%cloud_frac_1,                                      & ! Intent(in)
+           pdf_params%cloud_frac_2,                                      & ! Intent(in)
+           pdf_params%mixt_frac, precip_fracs,                           & ! Intent(in)
            silhs_config_flags%cluster_allocation_strategy,               & ! Intent(in)
            silhs_config_flags%l_lh_importance_sampling,                  & ! Intent(in)
            silhs_config_flags%l_lh_straight_mc,                          & ! Intent(in)
@@ -337,7 +320,9 @@ module latin_hypercube_driver_module
            
     
     !$acc data create( cloud_frac, l_in_precip ) &
-    !$acc&     copyin( mixt_frac, cloud_frac_1, cloud_frac_2, precip_frac_1, precip_frac_2 ) &
+    !$acc&     copyin( pdf_params, precip_fracs, &
+    !$acc&             pdf_params%mixt_frac, pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
+    !$acc&             precip_fracs%precip_frac_1, precip_fracs%precip_frac_2 ) &
     !$acc& async(3)
     
     !$acc parallel loop collapse(3) default(present) async(1) wait(3)
@@ -346,16 +331,16 @@ module latin_hypercube_driver_module
         do i = 1, ngrdcol
             
           ! Determine mixture component for all levels
-          if ( X_u_all_levs(i,sample,k,pdf_dim+1) < mixt_frac(i,k) ) then
+          if ( X_u_all_levs(i,sample,k,pdf_dim+1) < pdf_params%mixt_frac(i,k) ) then
             
             ! Set pdf component indicator to 1 for this sample and vertical level
             X_mixt_comp_all_levs(i,sample,k) = 1
             
             ! Copy 1st component values
-            cloud_frac(i,sample,k) = cloud_frac_1(i,k)
+            cloud_frac(i,sample,k) = pdf_params%cloud_frac_1(i,k)
             
             ! Determine precipitation
-            if ( X_u_all_levs(i,sample,k,pdf_dim+2) < precip_frac_1(i,k) ) then
+            if ( X_u_all_levs(i,sample,k,pdf_dim+2) < precip_fracs%precip_frac_1(i,k) ) then
               l_in_precip(i,sample,k) = .true.
             else
               l_in_precip(i,sample,k) = .false.
@@ -367,10 +352,10 @@ module latin_hypercube_driver_module
             X_mixt_comp_all_levs(i,sample,k) = 2
             
             ! Copy 2nd component values
-            cloud_frac(i,sample,k) = cloud_frac_2(i,k)
+            cloud_frac(i,sample,k) = pdf_params%cloud_frac_2(i,k)
             
             ! Determine precipitation
-            if ( X_u_all_levs(i,sample,k,pdf_dim+2) < precip_frac_2(i,k) ) then
+            if ( X_u_all_levs(i,sample,k,pdf_dim+2) < precip_fracs%precip_frac_2(i,k) ) then
               l_in_precip(i,sample,k) = .true.
             else
               l_in_precip(i,sample,k) = .false.
