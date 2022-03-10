@@ -3850,27 +3850,33 @@ module advance_xm_wpxp_module
 
     end select
     
-    do i = 1, ngrdcol
+    ! Copy result into output arrays
 
-      ! Copy result into output arrays
+    do k=1, nz, 1
 
-      do k=1, nz, 1
-
-        k_xm   = 2 * k - 1
-        k_wpxp = 2 * k
+      k_xm   = 2 * k - 1
+      k_wpxp = 2 * k
+      
+      do i = 1, ngrdcol
 
         xm_n(i,k) = xm(i,k)
 
         xm(i,k)   = solution(i,k_xm)
         wpxp(i,k) = solution(i,k_wpxp)
+        
+      end do
 
-      end do ! k=1..nz
+    end do ! k=1..nz
 
-      ! Lower boundary condition on xm
+    ! Lower boundary condition on xm
+    do i = 1, ngrdcol
       xm(i,1) = xm(i,2)
+    end do
 
 
-      if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
+      
+      do i = 1, ngrdcol
 
         if ( ixm_matrix_condt_num > 0 ) then
           ! Est. of the condition number of the mean/flux LHS matrix
@@ -3981,192 +3987,200 @@ module advance_xm_wpxp_module
             + (-lhs_diff_zm(1,i,k)) * wpxp(i,kp1), & ! intent(in)
               stats_zm(i) ) ! intent(inout)
 
-        enddo ! wpxp loop: 2..nz-1
+        end do ! wpxp loop: 2..nz-1
+        
+      end do
+
+    end if ! l_stats_samp
 
 
-      endif ! l_stats_samp
+    ! Apply a monotonic turbulent flux limiter to xm/w'x'.
+    if ( l_mono_flux_lim ) then
+      call monotonic_turbulent_flux_limit( nz, ngrdcol, gr, solve_type, dt, xm_n, & ! intent(in)
+                                           xp2, wm_zt, xm_forcing, & ! intent(in)
+                                           rho_ds_zm, rho_ds_zt, & ! intent(in)
+                                           invrs_rho_ds_zm, invrs_rho_ds_zt, & ! intent(in)
+                                           xp2_threshold, xm_tol, l_implemented, & ! intent(in)
+                                           low_lev_effect, high_lev_effect, & ! intent(in)
+                                           l_upwind_xm_ma, & ! intent(in)
+                                           stats_zt, stats_zm, & ! intent(inout)
+                                           xm, wpxp ) ! intent(inout)
+    end if ! l_mono_flux_lim
 
+    ! Apply a flux limiting positive definite scheme if the solution
+    ! for the mean field is negative and we're determining total water
+    if ( solve_type == xm_wpxp_rtm .and. l_pos_def ) then
+      do i = 1, ngrdcol
+        if ( any( xm(i,:) < zero ) ) then
+            call pos_definite_adj( gr(i), dt, "zt", xm(i,:), & ! intent(in) 
+                                   wpxp(i,:), xm_n(i,:), & ! intent(inout)
+                                   xm_pd(i,:), wpxp_pd(i,:) ) ! intent(out)
+        end if
+      end do
+    else
+      ! For stats purposes
+      xm_pd(:,:)   = zero
+      wpxp_pd(:,:) = zero
 
-      ! Apply a monotonic turbulent flux limiter to xm/w'x'.
-      if ( l_mono_flux_lim ) then
-        call monotonic_turbulent_flux_limit( gr(i), solve_type, dt, xm_n(i,:), & ! intent(in)
-                                             xp2(i,:), wm_zt(i,:), xm_forcing(i,:), & ! intent(in)
-                                             rho_ds_zm(i,:), rho_ds_zt(i,:), & ! intent(in)
-                                             invrs_rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), & ! intent(in)
-                                             xp2_threshold, xm_tol, l_implemented, & ! intent(in)
-                                             low_lev_effect(i,:), high_lev_effect(i,:), & ! intent(in)
-                                             l_upwind_xm_ma, & ! intent(in)
-                                             stats_zt(i), stats_zm(i), & ! intent(inout)
-                                             xm(i,:), wpxp(i,:) ) ! intent(inout)
-      end if ! l_mono_flux_lim
+    end if ! l_pos_def and solve_type == "rtm" and rtm <n+1> less than 0
 
-      ! Apply a flux limiting positive definite scheme if the solution
-      ! for the mean field is negative and we're determining total water
-      if ( solve_type == xm_wpxp_rtm .and. l_pos_def .and. any( xm(i,:) < zero ) ) then
-
-        call pos_definite_adj( gr(i), dt, "zt", xm(i,:), & ! intent(in) 
-                               wpxp(i,:), xm_n(i,:), & ! intent(inout)
-                               xm_pd(i,:), wpxp_pd(i,:) ) ! intent(out)
-
-      else
-        ! For stats purposes
-        xm_pd(i,:)   = zero
-        wpxp_pd(i,:) = zero
-
-      end if ! l_pos_def and solve_type == "rtm" and rtm <n+1> less than 0
-
-      if ( l_stats_samp ) then
-
+    if ( l_stats_samp ) then
+      do i = 1, ngrdcol
         call stat_update_var( iwpxp_pd, wpxp_pd(i,1:nz), & ! intent(in)
-                              stats_zm(i) )                    ! intent(inout)
+                              stats_zm(i) )                ! intent(inout)
 
         call stat_update_var( ixm_pd, xm_pd(i,1:nz), & ! intent(in)
-                              stats_zt(i) )                ! intent(inout)
-
-      end if
-
-      ! Computed value before clipping
-      if ( l_stats_samp ) then
+                              stats_zt(i) )            ! intent(inout)
+                          
+        ! Computed value before clipping    
         call stat_begin_update( gr(i), ixm_cl, xm(i,:) / dt, & ! Intent(in)
-                                stats_zt(i) )                       ! Intent(inout)
-      end if
+                                stats_zt(i) )                  ! Intent(inout)
+      end do
+    end if
+    
+    if ( solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm .and. l_hole_fill ) then 
 
-      if ( any( xm(i,:) < xm_threshold ) .and. l_hole_fill &
-           .and. solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm ) then
+      do i = 1, ngrdcol
+        
+        if ( any( xm(i,:) < xm_threshold) ) then
 
-        select case ( solve_type )
-        case ( xm_wpxp_rtm )
-          solve_type_str = "rtm"
-        case ( xm_wpxp_thlm )
-          solve_type_str = "thlm"
-        case default
-          solve_type_str = "scalars"
-        end select
+          if ( clubb_at_least_debug_level( 3 ) ) then
+            
+            select case ( solve_type )
+            case ( xm_wpxp_rtm )
+              solve_type_str = "rtm"
+            case ( xm_wpxp_thlm )
+              solve_type_str = "thlm"
+            case default
+              solve_type_str = "scalars"
+            end select
+            
+            do k = 1, nz
+              if ( xm(i,k) < zero ) then
+                write(fstderr,*) solve_type_str//" < ", xm_threshold, &
+                  " in advance_xm_wpxp_module at k= ", k
+              end if
+            end do
+          end if
 
-        if ( clubb_at_least_debug_level( 3 ) ) then
-          do k = 1, nz
-            if ( xm(i,k) < zero ) then
-              write(fstderr,*) solve_type_str//" < ", xm_threshold, &
-                " in advance_xm_wpxp_module at k= ", k
-            end if
-          end do
-        end if
+          call fill_holes_vertical( gr(i), 2, xm_threshold, "zt", & ! intent(in)
+                                    rho_ds_zt(i,:), rho_ds_zm(i,:), & ! intent(in)
+                                    xm(i,:) ) ! intent(inout)
 
-        call fill_holes_vertical( gr(i), 2, xm_threshold, "zt", & ! intent(in)
-                                  rho_ds_zt(i,:), rho_ds_zm(i,:), & ! intent(in)
-                                  xm(i,:) ) ! intent(inout)
+          ! Hole filling does not affect the below ground level, perform a blunt clipping
+          ! here on that level to prevent small values of xm(1)
+          xm(i,1) = max( xm(i,1), xm_tol )
 
-        ! Hole filling does not affect the below ground level, perform a blunt clipping
-        ! here on that level to prevent small values of xm(1)
-        xm(i,1) = max( xm(i,1), xm_tol )
+        endif ! any( xm < xm_threshold ) .and. l_hole_fill
+              ! .and. solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
+      end do
+      
+    end if
 
-      endif ! any( xm < xm_threshold ) .and. l_hole_fill
-            ! .and. solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
-
-      if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
+      do i = 1, ngrdcol
         call stat_end_update( gr(i), ixm_cl, xm(i,:) / dt, & ! Intent(in) 
                               stats_zt(i) )                       ! Intent(inout)
-      end if
+      end do                        
+    end if
 
-      ! Use solve_type to find solve_type_cl, which is used
-      ! in subroutine clip_covar.
-      select case ( solve_type )
-      case ( xm_wpxp_rtm )
-        solve_type_cl = clip_wprtp
-      case ( xm_wpxp_thlm )
-        solve_type_cl = clip_wpthlp
-      case ( xm_wpxp_um )
-        solve_type_cl = clip_upwp
-      case ( xm_wpxp_vm )
-        solve_type_cl = clip_vpwp
-      case default
-        solve_type_cl = clip_wpsclrp
-      end select
+    ! Clipping for w'x'
+    ! Clipping w'x' at each vertical level, based on the
+    ! correlation of w and x at each vertical level, such that:
+    ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ];
+    ! -1 <= corr_(w,x) <= 1.
+    ! Since w'^2, x'^2, and w'x' are updated in different places
+    ! from each other, clipping for w'x' has to be done three times
+    ! (three times each for w'r_t', w'th_l', and w'sclr').  This is
+    ! the second instance of w'x' clipping.
 
-      ! Clipping for w'x'
-      ! Clipping w'x' at each vertical level, based on the
-      ! correlation of w and x at each vertical level, such that:
-      ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ];
-      ! -1 <= corr_(w,x) <= 1.
-      ! Since w'^2, x'^2, and w'x' are updated in different places
-      ! from each other, clipping for w'x' has to be done three times
-      ! (three times each for w'r_t', w'th_l', and w'sclr').  This is
-      ! the second instance of w'x' clipping.
+    ! Compute a slightly larger value of rt'^2 for clipping purposes.  This was
+    ! added to prevent a situation in which both the variance and flux are small
+    ! and the simulation gets "stuck" at the rt_tol^2 value.
+    ! See ticket #389 on the CLUBB TRAC for further details.
+    ! -dschanen 10 Jan 2011
+    if ( l_enable_relaxed_clipping ) then
+      if ( solve_type == xm_wpxp_rtm ) then
+        xp2_relaxed(:,:) = max( 1e-7_core_rknd , xp2(:,:) )
 
-      ! Compute a slightly larger value of rt'^2 for clipping purposes.  This was
-      ! added to prevent a situation in which both the variance and flux are small
-      ! and the simulation gets "stuck" at the rt_tol^2 value.
-      ! See ticket #389 on the CLUBB TRAC for further details.
-      ! -dschanen 10 Jan 2011
-      if ( l_enable_relaxed_clipping ) then
-        if ( solve_type == xm_wpxp_rtm ) then
-          xp2_relaxed(i,:) = max( 1e-7_core_rknd , xp2(i,:) )
+      else if ( solve_type == xm_wpxp_thlm ) then
+        xp2_relaxed(:,:) = max( 0.01_core_rknd, xp2(:,:) )
 
-        else if ( solve_type == xm_wpxp_thlm ) then
-          xp2_relaxed(i,:) = max( 0.01_core_rknd, xp2(i,:) )
-
-        else ! This includes the passive scalars
-          xp2_relaxed(i,:) = max( 1e-7_core_rknd , xp2(i,:) )
-
-        end if
-
-      else  ! Don't relax clipping
-        xp2_relaxed(i,:) = xp2(i,:)
+      else ! This includes the passive scalars
+        xp2_relaxed(:,:) = max( 1e-7_core_rknd , xp2(:,:) )
 
       end if
 
-      if ( order_xm_wpxp < order_wp2_wp3 &
-           .and. order_xm_wpxp < order_xp2_xpyp ) then
-         l_first_clip_ts = .true.
-         l_last_clip_ts = .false.
-      elseif ( order_xm_wpxp > order_wp2_wp3 &
-               .and. order_xm_wpxp > order_xp2_xpyp ) then
-         l_first_clip_ts = .false.
-         l_last_clip_ts = .true.
+    else  ! Don't relax clipping
+      xp2_relaxed(:,:) = xp2(:,:)
+
+    end if
+
+    if ( order_xm_wpxp < order_wp2_wp3 .and. order_xm_wpxp < order_xp2_xpyp ) then
+       l_first_clip_ts = .true.
+       l_last_clip_ts = .false.
+    elseif ( order_xm_wpxp > order_wp2_wp3 .and. order_xm_wpxp > order_xp2_xpyp ) then
+       l_first_clip_ts = .false.
+       l_last_clip_ts = .true.
+    else
+       l_first_clip_ts = .false.
+       l_last_clip_ts = .false.
+    endif
+    
+    ! Use solve_type to find solve_type_cl, which is used
+    ! in subroutine clip_covar.
+    select case ( solve_type )
+    case ( xm_wpxp_rtm )
+      solve_type_cl = clip_wprtp
+    case ( xm_wpxp_thlm )
+      solve_type_cl = clip_wpthlp
+    case ( xm_wpxp_um )
+      solve_type_cl = clip_upwp
+    case ( xm_wpxp_vm )
+      solve_type_cl = clip_vpwp
+    case default
+      solve_type_cl = clip_wpsclrp
+    end select
+
+    if ( solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm ) then
+      do i = 1, ngrdcol
+        call clip_covar( gr(i), solve_type_cl, l_first_clip_ts, &  ! In
+                         l_last_clip_ts, dt, wp2(i,:), xp2_relaxed(i,:), &  ! In
+                         l_predict_upwp_vpwp, & ! In
+                         stats_zm(i), & ! intent(inout)
+                         wpxp(i,:), wpxp_chnge(i,:) ) ! In/Out
+      end do
+    else ! clipping for upwp or vpwp
+
+      if ( l_tke_aniso ) then
+        do i = 1, ngrdcol
+          call clip_covar( gr(i), solve_type_cl, l_first_clip_ts, &  ! In
+                           l_last_clip_ts, dt, wp2(i,:), xp2(i,:), &  ! In
+                           l_predict_upwp_vpwp, & ! In
+                           stats_zm(i), & ! intent(inout)
+                           wpxp(i,:), wpxp_chnge(i,:) ) ! In/Out
+        end do
       else
-         l_first_clip_ts = .false.
-         l_last_clip_ts = .false.
-      endif
+        do i = 1, ngrdcol
+          call clip_covar( gr(i), solve_type_cl, l_first_clip_ts, &  ! In
+                           l_last_clip_ts, dt, wp2(i,:), wp2(i,:), &  ! In
+                           l_predict_upwp_vpwp, & ! In
+                           stats_zm(i), & ! intent(inout)
+                           wpxp(i,:), wpxp_chnge(i,:) ) ! In/Out
+        end do
+       end if ! l_tke_aniso
+    end if ! solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
 
-      if ( solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm ) then
-
-         call clip_covar( gr(i), solve_type_cl, l_first_clip_ts, &  ! In
-                          l_last_clip_ts, dt, wp2(i,:), xp2_relaxed(i,:), &  ! In
-                          l_predict_upwp_vpwp, & ! In
-                          stats_zm(i), & ! intent(inout)
-                          wpxp(i,:), wpxp_chnge(i,:) ) ! In/Out
-
-      else ! clipping for upwp or vpwp
-
-         if ( l_tke_aniso ) then
-
-            call clip_covar( gr(i), solve_type_cl, l_first_clip_ts, &  ! In
-                             l_last_clip_ts, dt, wp2(i,:), xp2(i,:), &  ! In
-                             l_predict_upwp_vpwp, & ! In
-                             stats_zm(i), & ! intent(inout)
-                             wpxp(i,:), wpxp_chnge(i,:) ) ! In/Out
-
-         else
-
-            call clip_covar( gr(i), solve_type_cl, l_first_clip_ts, &  ! In
-                             l_last_clip_ts, dt, wp2(i,:), wp2(i,:), &  ! In
-                             l_predict_upwp_vpwp, & ! In
-                             stats_zm(i), & ! intent(inout)
-                             wpxp(i,:), wpxp_chnge(i,:) ) ! In/Out
-
-         endif ! l_tke_aniso
-
-      endif ! solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
-
-      ! Adjusting xm based on clipping for w'x'.
-      if ( any( abs(wpxp_chnge(i,:)) > eps ) .and. l_clip_turb_adv ) then
-        call xm_correction_wpxp_cl( gr(i), solve_type, dt, wpxp_chnge(i,:), gr(i)%invrs_dzt, & ! intent(in)
-                                    stats_zt(i), & ! intent(inout)
-                                    xm(i,:) ) ! intent(inout)
-      endif
-      
-    end do
-
+    ! Adjusting xm based on clipping for w'x'.
+    if ( l_clip_turb_adv ) then
+      do i = 1, ngrdcol
+        if ( any( abs(wpxp_chnge(i,:)) > eps ) ) then
+          call xm_correction_wpxp_cl( gr(i), solve_type, dt, wpxp_chnge(i,:), gr(i)%invrs_dzt, & ! intent(in)
+                                      stats_zt(i), & ! intent(inout)
+                                      xm(i,:) ) ! intent(inout)
+        endif
+      end do
+    end if
 
     return
   end subroutine xm_wpxp_clipping_and_stats
