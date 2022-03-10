@@ -614,8 +614,6 @@ contains
 
     implicit none
 
-    type(grid), target, intent(in) :: gr
-
     ! Input Variables
     logical, intent(in) :: l_use_Ncn_to_Nc
 
@@ -624,6 +622,8 @@ contains
       num_samples,  & ! Number of SILHS sample points
       pdf_dim,      & ! Number of variates in X_nl_one_lev
       hydromet_dim    ! Number of hydrometeor species
+
+    type(grid), target, intent(in) :: gr
 
     integer, dimension(num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
@@ -643,6 +643,8 @@ contains
       lh_Nc_clipped     ! Nc generated from silhs sample points
       
     ! -------------- Local Variables --------------
+
+    type(grid), target, dimension(1) :: gr_col
     
     integer, dimension(1,num_samples,nz) :: &
       X_mixt_comp_all_levs_col   ! Which component this sample is in (1 or 2)
@@ -662,9 +664,10 @@ contains
     
     X_mixt_comp_all_levs_col(1,:,:) = X_mixt_comp_all_levs
     X_nl_all_levs_col(1,:,:,:)      = X_nl_all_levs
+    
+    gr_col(1) = gr
 
-
-    call clip_transform_silhs_output( gr, nz, 1, num_samples,                     & ! In
+    call clip_transform_silhs_output( gr_col, nz, 1, num_samples,             & ! In
                                       pdf_dim, hydromet_dim,                  & ! In
                                       X_mixt_comp_all_levs_col,               & ! In
                                       X_nl_all_levs_col,                      & ! In
@@ -703,8 +706,6 @@ contains
 
     implicit none
 
-    type(grid), target, intent(in) :: gr
-
     ! Input Variables
     logical, intent(in) :: l_use_Ncn_to_Nc
 
@@ -714,6 +715,8 @@ contains
       num_samples,  & ! Number of SILHS sample points
       pdf_dim,      & ! Number of variates in X_nl_one_lev
       hydromet_dim    ! Number of hydrometeor species
+
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
 
     integer, dimension(ngrdcol,num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)

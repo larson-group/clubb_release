@@ -997,7 +997,7 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine clip_transform_silhs_output( gr, nz, ngrdcol, num_samples,       & ! In
+  subroutine clip_transform_silhs_output( gr, nz, ngrdcol, num_samples,   & ! In
                                           pdf_dim, hydromet_dim,          & ! In
                                           X_mixt_comp_all_levs,           & ! In
                                           X_nl_all_levs,                  & ! Inout
@@ -1005,9 +1005,6 @@ module latin_hypercube_driver_module
                                           lh_rt_clipped, lh_thl_clipped,  & ! Out
                                           lh_rc_clipped, lh_rv_clipped,   & ! Out
                                           lh_Nc_clipped                   ) ! Out
-
-
-    use grid_class, only: grid ! Type
 
   ! Description:
   !   Derives from the SILHS sampling structure X_nl_all_levs the variables
@@ -1046,8 +1043,6 @@ module latin_hypercube_driver_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
     ! ------------------- Input Variables -------------------
     logical, intent(in) :: &
       l_use_Ncn_to_Nc  ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
@@ -1061,6 +1056,8 @@ module latin_hypercube_driver_module
       num_samples,  & ! Number of SILHS sample points
       pdf_dim,      & ! Number of variates in X_nl
       hydromet_dim    ! Number of hydrometeor species
+
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
 
     integer, dimension(ngrdcol,num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
@@ -1198,7 +1195,7 @@ module latin_hypercube_driver_module
            ! maintaining the value of the hydrometeor mixing ratio sample points
            ! and satisfying the maximum allowable mean volume radius for that
            ! hydrometeor species.
-           call clip_hydromet_conc_mvr( gr, hydromet_dim, hydromet_pts, & ! In
+           call clip_hydromet_conc_mvr( gr(i), hydromet_dim, hydromet_pts, & ! In
                                         hydromet_pts_clipped )        ! Out
 
            ! Unpack the clipped SILHS hydrometeor sample points, which are stored
