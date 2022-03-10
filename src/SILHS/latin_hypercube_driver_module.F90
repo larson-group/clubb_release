@@ -1091,38 +1091,18 @@ module latin_hypercube_driver_module
     logical, parameter :: &
       l_clip_hydromet_samples = .false.
       
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      rt_1, rt_2,         & ! n dimensional column vector of rt         [kg/kg]
-      thl_1, thl_2,       & ! n dimensional column vector of thetal     [K]
-      crt_1, crt_2,       & ! Constants from plumes 1 & 2 of rt
-      cthl_1, cthl_2,     & ! Constants from plumes 1 & 2 of thetal
-      mu_chi_1, mu_chi_2    ! Mean for chi_1 and chi_2         [kg/kg]
-      
   !-----------------------------------------------------------------------
 
     ! Calculate (and clip) the SILHS sample point values of rt, thl, rc, rv,
     ! and Nc.
-    
-    do i = 1, ngrdcol
-      rt_1(i,:) = pdf_params%rt_1(i,:)
-      rt_2(i,:) = pdf_params%rt_2(i,:)
-      thl_1(i,:) = pdf_params%thl_1(i,:)
-      thl_2(i,:) = pdf_params%thl_2(i,:)
-      crt_1(i,:) = pdf_params%crt_1(i,:)
-      crt_2(i,:) = pdf_params%crt_2(i,:)
-      cthl_1(i,:) = pdf_params%cthl_1(i,:)
-      cthl_2(i,:) = pdf_params%cthl_2(i,:)
-      mu_chi_1(i,:) = pdf_params%chi_1(i,:)
-      mu_chi_2(i,:) = pdf_params%chi_2(i,:)
-    end do
         
     ! Compute lh_rt and lh_thl
     call chi_eta_2_rtthl( nz, ngrdcol, num_samples,                     & ! Intent(in)
-                          rt_1, thl_1,                                  & ! Intent(in)
-                          rt_2, thl_2,                                  & ! Intent(in)
-                          crt_1, cthl_1,                                & ! Intent(in)
-                          crt_2, cthl_2,                                & ! Intent(in)
-                          mu_chi_1, mu_chi_2,                           & ! Intent(in)
+                          pdf_params%rt_1, pdf_params%thl_1,            & ! Intent(in)
+                          pdf_params%rt_2, pdf_params%thl_2,            & ! Intent(in)
+                          pdf_params%crt_1, pdf_params%cthl_1,          & ! Intent(in)
+                          pdf_params%crt_2, pdf_params%cthl_2,          & ! Intent(in)
+                          pdf_params%chi_1, pdf_params%chi_2,           & ! Intent(in)
                           X_nl_all_levs(:,:,:,iiPDF_chi),               & ! Intent(in) 
                           X_nl_all_levs(:,:,:,iiPDF_eta),               & ! Intent(in)
                           X_mixt_comp_all_levs(:,:,:),                  & ! Intent(in)
