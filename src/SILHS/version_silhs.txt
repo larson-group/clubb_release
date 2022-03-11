@@ -1,0 +1,59 @@
+commit 9976b866185e562df3c99f7fbe96379192d3ad9d
+Author: huebler <huebler@uwm.edu>
+Date:   Thu Mar 10 14:47:26 2022 -0600
+
+    No more need for these data copies anymore now that pdf_params is allocated with ngrdcol rather than pcols.
+
+commit 985d685d77eabb001a1dfe0449f7b3e6716e5b66
+Author: huebler <huebler@uwm.edu>
+Date:   Thu Mar 10 14:31:23 2022 -0600
+
+    Making clip_transform_silhs_output use an array of gr. This is how it should have been once the column loop was pushed down into it, but at the time clubb was using gr through a use statement making that not possible.
+
+commit 4285ec7c9d036233e9c6921f7a4f7c457d669c46
+Author: huebler <huebler@uwm.edu>
+Date:   Wed Mar 9 14:53:33 2022 -0600
+
+    Removing data copies that we don't need anymore. This still runs correctly on GPUs.
+
+commit f785d337b24358ab17ad070a9ad2d5e85f2633bf
+Author: Peter Roels <56004443+pbroels@users.noreply.github.com>
+Date:   Wed Mar 9 16:43:59 2022 -0600
+
+    Adding a line to trigger the nightly tests.
+
+commit 352cf0e9c6565763b797ed8c6c17ed7e1be8920c
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Mar 1 16:56:50 2022 -0600
+
+    Changing column loop index from j to i. larson-group/cam#129
+
+commit 3b77fda2d4c4fb99bf4794b2fe98780b9f320d26
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Mar 1 16:40:55 2022 -0600
+
+    Removing need for data copies. larson-group/cam#129
+
+commit 8290cd1a1cc8c73e21add181c021ba1a551049ee
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Mar 1 16:02:50 2022 -0600
+
+    Forgot two small changes. larson-group/cam#129
+
+commit 0a489d994b4430f8c519223acd02000a34fa4547
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Mar 1 15:54:14 2022 -0600
+
+    Making setup_pdf_parameters accept ngrdcols size arrays of stats and grid types.
+
+commit f97155a62bca4366c819f2050e5ea2f2112aba73
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Fri Feb 25 09:47:52 2022 -0600
+
+    Modified the two inequalities in the final test. (for mostly aesthetic reasons)
+
+commit 510cec1ef1e792773c23dc4378d796bd97263aea
+Author: JanGrn <jan.gruenenwald@gmail.com>
+Date:   Fri Feb 25 09:44:47 2022 -0600
+
+    Fixed and added final test. Everything is now functional
