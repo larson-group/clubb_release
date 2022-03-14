@@ -42,11 +42,12 @@ module advance_xp2_xpyp_module
   contains
 
   !=============================================================================
-  subroutine advance_xp2_xpyp( gr, invrs_tau_xp2_zm, invrs_tau_C4_zm,     & ! In
+  subroutine advance_xp2_xpyp( nz, ngrdcol, gr,                           & ! In
+                               invrs_tau_xp2_zm, invrs_tau_C4_zm,         & ! In
                                invrs_tau_C14_zm, wm_zm,                   & ! In
                                rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,  & ! In
                                wp2, wp2_zt, wp3, upwp, vpwp,              & ! In
-                               sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,      & ! In
+                               sigma_sqd_w, wprtp2, wpthlp2,              & ! In
                                wprtpthlp, Kh_zt, rtp2_forcing,            & ! In
                                thlp2_forcing, rtpthlp_forcing,            & ! In
                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,     & ! In
@@ -189,9 +190,13 @@ module advance_xp2_xpyp_module
     implicit none
 
     ! Input variables
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
     
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  & 
       invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
       invrs_tau_C4_zm,  & ! Inverse time-scale for C4 terms on mom. levels [1/s]
       invrs_tau_C14_zm, & ! Inverse time-scale for C14 terms on mom. levels [1/s]
@@ -209,7 +214,6 @@ module advance_xp2_xpyp_module
       upwp,             & ! <u'w'> (momentum levels)              [m^2/s^2]
       vpwp,             & ! <v'w'> (momentum levels)              [m^2/s^2]
       sigma_sqd_w,      & ! sigma_sqd_w (momentum levels)         [-]
-      Skw_zm,           & ! Skewness of w on momentum levels      [-]
       wprtp2,           & ! <w'r_t'^2> (thermodynamic levels)     [m/s (kg/kg)^2]
       wpthlp2,          & ! <w'th_l'^2> (thermodynamic levels)    [m/s K^2]
       wprtpthlp,        & ! <w'r_t'th_l'> (thermodynamic levels)  [m/s (kg/kg) K]
@@ -225,27 +229,27 @@ module advance_xp2_xpyp_module
       wp3_on_wp2,       & ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
       wp3_on_wp2_zt       ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
 
-    type(implicit_coefs_terms), intent(in) :: &
+    type(implicit_coefs_terms), dimension(ngrdcol), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
       dt             ! Model timestep                                [s]
 
     ! Passive scalar input
-    real( kind = core_rknd ), intent(in), dimension(gr%nz, sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz, sclr_dim) ::  & 
       sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
       wpsclrp,     & ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
       wpsclrp2,    & ! <w'sclr'^2> (thermodynamic levels) [m/s{sclr units}^2]
       wpsclrprtp,  & ! <w'sclr'r_t'> (thermo. levels)     [m/s{sclr units)kg/kg]
       wpsclrpthlp    ! <w'sclr'th_l'> (thermo. levels)    [m/s{sclr units}K]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       wp2_splat    ! Gustiness tendency for wp2 equation
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    type(nu_vertical_res_dep), intent(in) :: &
+    type(nu_vertical_res_dep), dimension(ngrdcol), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
@@ -277,14 +281,14 @@ module advance_xp2_xpyp_module
       l_lmm_stepping               ! Apply Linear Multistep Method (LMM) Stepping
 
     ! Input/Output variables
-    type (stats), target, intent(inout) :: &
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
       
     ! An attribute of (inout) is also needed to import the value of the variances
     ! at the surface.  Brian.  12/18/05.
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) ::  & 
       rtp2,    & ! <r_t'^2>                      [(kg/kg)^2]
       thlp2,   & ! <th_l'^2>                     [K^2]
       rtpthlp, & ! <r_t'th_l'>                   [(kg K)/kg]
@@ -292,18 +296,18 @@ module advance_xp2_xpyp_module
       vp2        ! <v'^2>                        [m^2/s^2]
 
     ! Passive scalar output
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz, sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz, sclr_dim) ::  & 
       sclrp2, sclrprtp, sclrpthlp
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
       rtp2_old,    & ! Saved value of <r_t'^2>         [(kg/kg)^2]
       thlp2_old,   & ! Saved value of <th_l'^2>        [K^2]
       rtpthlp_old, & ! Saved value of <r_t'th_l'>      [(kg K)/kg]
       up2_old,     & ! Saved value of <u'^2>           [m^2/s^2]
       vp2_old        ! Saved value of <v'^2>           [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(gr%nz, sclr_dim) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz, sclr_dim) ::  & 
       sclrp2_old,    & ! Saved value of <sclr'^2>     [units vary]
       sclrprtp_old,  & ! Saved value of <sclr'rt'>    [units vary]
       sclrpthlp_old    ! Saved value of <sclr'thl'>   [units vary]
@@ -315,41 +319,41 @@ module advance_xp2_xpyp_module
       C4,      & ! CLUBB tunable parameter C4
       C14        ! CLUBB tunable parameter C14
 
-    real( kind = core_rknd ), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
       C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, &
       C4_1d, C14_1d
 
     real( kind = core_rknd ) :: & 
       threshold     ! Minimum value for variances                   [units vary]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       threshold_array ! Minimum value for variances [units vary]
 
-    real( kind = core_rknd ), dimension(3,gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz) ::  & 
       lhs ! Tridiagonal matrix
 
-    real( kind = core_rknd ), dimension(gr%nz,2) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,2) :: & 
       uv_rhs,    &! RHS vectors of tridiagonal system for up2/vp2
       uv_solution ! Solution to the tridiagonal system for up2/vp2
 
     ! Eddy Diffusion for Variances and Covariances.
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
       Kw2, & ! For rtp2, thlp2, rtpthlp, and passive scalars  [m^2/s]
       Kw9,    & ! For up2 and vp2                                [m^2/s]
       Kw2_zm, & ! Eddy diffusivity coefficient, momentum levels [m2/s]
       Kw9_zm    ! Eddy diffusivity coefficient, momentum levels [m2/s]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       rtpthlp_chnge    ! Net change in r_t'th_l' due to clipping [(kg/kg) K]
 
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       sclrprtp_chnge,  & ! Net change in sclr'r_t' due to clipping  [units vary]
       sclrpthlp_chnge    ! Net change in sclr'th_l' due to clipping [units vary]
       
     ! Turbulent advection terms
     
     ! Implicit (LHS) turbulent advection terms
-    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz) :: & 
       lhs_ta_wprtp2,    & ! For <w'rt'^2>
       lhs_ta_wpthlp2,   & ! For <w'thl'^2>
       lhs_ta_wprtpthlp, & ! For <w'rt'thl'>
@@ -357,7 +361,7 @@ module advance_xp2_xpyp_module
       lhs_ta_wpvp2        ! For <w'v'^2>
       
     ! Explicit (RHS) turbulent advection terms
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       rhs_ta_wprtp2,    & ! For <w'rt'^2>
       rhs_ta_wpthlp2,   & ! For <w'thl'^2>
       rhs_ta_wprtpthlp, & ! For <w'rt'thl'>
@@ -365,18 +369,18 @@ module advance_xp2_xpyp_module
       rhs_ta_wpvp2        ! For <w'v'^2>
     
     ! Implicit (LHS) turbulent advection terms for scalars
-    real( kind = core_rknd ), dimension(3,gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz,sclr_dim) :: & 
       lhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
       lhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
       lhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
 
     ! Explicit (RHS) turbulent advection terms for scalars
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
       rhs_ta_wprtpsclrp,    & ! For <w'sclr'rt'>
       rhs_ta_wpthlpsclrp      ! For <w'sclr'thl'>
       
-    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz) :: & 
       lhs_diff,     & ! Diffusion contributions to lhs, dissipation term 2
       lhs_diff_uv,  & ! Diffusion contributions to lhs for <w'u'^2> and <w'v'^2>
       lhs_ma          ! Mean advection contributions to lhs
@@ -393,741 +397,744 @@ module advance_xp2_xpyp_module
       min_cloud_frac_mult = 0.10_core_rknd
 
     ! Loop indices
-    integer :: sclr, k
+    integer :: sclr, k, i
     
     !---------------------------- Begin Code ----------------------------------
-
-    ! Unpack CLUBB tunable parameters
-    C2rt = clubb_params(iC2rt)
-    C2thl = clubb_params(iC2thl)
-    C2rtthl = clubb_params(iC2rtthl)
-    C4 = clubb_params(iC4)
-    C14 = clubb_params(iC14)
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-      ! Assertion check for C_uu_shr
-      if ( clubb_params(iC_uu_shr) > one &
-           .or. clubb_params(iC_uu_shr) < zero ) then
-        write(fstderr,*) "The C_uu_shr variable is outside the valid range"
-        err_code = clubb_fatal_error
-        return
-      end if
-      if ( clubb_params(iC_uu_buoy) > one &
-           .or. clubb_params(iC_uu_buoy) < zero ) then
-        write(fstderr,*) "The C_uu_buoy variable is outside the valid range"
-        err_code = clubb_fatal_error
-        return
-      end if
-    end if
-
-    ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
-    if ( l_C2_cloud_frac ) then
-
-       do k = 1, gr%nz, 1
-          if ( cloud_frac(k) >= cloud_frac_min ) then
-             C2rt_1d(k) = C2rt * max( min_cloud_frac_mult, cloud_frac(k) )
-             C2thl_1d(k) = C2thl * max( min_cloud_frac_mult, cloud_frac(k) )
-             C2rtthl_1d(k) = C2rtthl &
-                             * max( min_cloud_frac_mult, cloud_frac(k) )
-          else ! cloud_frac(k) < cloud_frac_min
-             C2rt_1d(k)    = C2rt
-             C2thl_1d(k)   = C2thl
-             C2rtthl_1d(k) = C2rtthl
-          endif ! cloud_frac(k) >= cloud_frac_min
-       enddo ! k = 1, gr%nz, 1
-
-    else
-
-       C2rt_1d    = C2rt
-       C2thl_1d   = C2thl
-       C2rtthl_1d = C2rtthl
-
-    endif ! l_C2_cloud_frac
-
-    C2sclr_1d = C2rt  ! Use rt value for now
-
-    C4_1d = two_thirds * C4
-    C14_1d = one_third * C14
-
-    ! Are we solving for passive scalars as well?
-    if ( sclr_dim > 0 ) then
-      l_scalar_calc = .true.
-    else
-      l_scalar_calc = .false.
-    end if
-
-    ! Define the Coefficent of Eddy Diffusivity for the variances
-    ! and covariances.
-    do k = 1, gr%nz, 1
-
-      ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp, and
-      ! passive scalars.  The variances and covariances are located on the
-      ! momentum levels.  Kw2 is located on the thermodynamic levels.
-      ! Kw2 = c_K2 * Kh_zt
-      Kw2(k) = clubb_params(ic_K2) * Kh_zt(k)
-
-      ! Kw9 is used for variances up2 and vp2.  The variances are located on
-      ! the momentum levels.  Kw9 is located on the thermodynamic levels.
-      ! Kw9 = c_K9 * Kh_zt
-      Kw9(k) = clubb_params(ic_K9) * Kh_zt(k)
-
-    enddo
-
-    Kw2_zm = max( zt2zm( gr, Kw2 ), zero )
-    Kw9_zm = max( zt2zm( gr, Kw9 ), zero )
-
-    if ( l_lmm_stepping ) then
-       thlp2_old = thlp2
-       rtp2_old = rtp2
-       rtpthlp_old = rtpthlp
-       if ( sclr_dim > 0 ) then
-          sclrp2_old = sclrp2
-          sclrprtp_old = sclrprtp
-          sclrpthlp_old = sclrpthlp
-       endif ! sclr_dim > 0
-    endif ! l_lmm_stepping
- 
-    ! Calculate all the explicit and implicit turbulent advection terms 
-    call calc_xp2_xpyp_ta_terms( gr, wprtp, wprtp2, wpthlp, wpthlp2, wprtpthlp,      & ! In
-                                 rtp2, thlp2, rtpthlp, upwp, vpwp, up2, vp2, wp2,    & ! In
-                                 wp2_zt, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, & ! In
-                                 sclrp2, sclrprtp, sclrpthlp,                        & ! In
-                                 rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm,              & ! In
-                                 wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w,             & ! In
-                                 pdf_implicit_coefs_terms, l_scalar_calc,            & ! In
-                                 clubb_params(ibeta), iiPDF_type, l_upwind_xpyp_ta,  & ! In
-                                 l_godunov_upwind_xpyp_ta,                           & ! In 
-                                 stats_zt,                                           & ! InOut
-                                 lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp,    & ! Out
-                                 lhs_ta_wpup2, lhs_ta_wpvp2, lhs_ta_wpsclrp2,        & ! Out
-                                 lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,              & ! Out
-                                 rhs_ta_wprtp2, rhs_ta_wpthlp2, rhs_ta_wprtpthlp,    & ! Out
-                                 rhs_ta_wpup2, rhs_ta_wpvp2, rhs_ta_wpsclrp2,        & ! Out
-                                 rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp               ) ! Out
-                                 
-    ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2). This is the 
-    ! diffusion term for all LHS matrices except <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw2(:), Kw2_zm(:), nu_vert_res_dep%nu2,  & ! In
-                           gr%invrs_dzt(:), gr%invrs_dzm(:),            & ! In
-                           invrs_rho_ds_zm(:), rho_ds_zt(:),            & ! In
-                           lhs_diff(:,:)                     )            ! Out
-                               
-    ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
-    call term_ma_zm_lhs( gr, wm_zm(:), gr%invrs_dzm(:), & ! In
-                         lhs_ma(:,:)                ) ! Out
-                             
-                             
-    if ( ( abs(C2rt - C2thl) < abs(C2rt + C2thl) / 2 * eps .and. &
-         abs(C2rt - C2rtthl) < abs(C2rt + C2rtthl) / 2 * eps ) .and. &
-         ( l_explicit_turbulent_adv_xpyp .or. &
-           .not. l_explicit_turbulent_adv_xpyp .and. iiPDF_type == iiPDF_ADG1 ) ) then
-           
-       ! All left hand side matricies are equal for rtp2, thlp2, rtpthlp, and scalars.
-       ! Thus only one solve is neccesary, using combined right hand sides
-       call solve_xp2_xpyp_with_single_lhs( gr, C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp,& ! In
-                                            wpthlp, rtp2_forcing, thlp2_forcing,            & ! In
-                                            rtpthlp_forcing, sclrm, wpsclrp,                & ! In
-                                            lhs_ta_wprtp2, lhs_ma, lhs_diff,                & ! In
-                                            rhs_ta_wprtp2, rhs_ta_wpthlp2,                  & ! In
-                                            rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,              & ! In
-                                            rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,          & ! In
-                                            dt, l_scalar_calc,                      & ! In
-                                            stats_zm, stats_sfc,                  & ! intent(inout)
-                                            rtp2, thlp2, rtpthlp,                           & ! Out
-                                            sclrp2, sclrprtp, sclrpthlp )                     ! Out
-    else
-        
-        ! Left hand sides are potentially different, this requires multiple solves
-        call solve_xp2_xpyp_with_multiple_lhs( gr, C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, & ! In
-                                               invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp,   & ! In
-                                               rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! In
-                                               sclrm, wpsclrp,                               & ! In
-                                               lhs_ta_wprtp2, lhs_ta_wpthlp2,                & ! In
-                                               lhs_ta_wprtpthlp, lhs_ta_wpsclrp2,            & ! In
-                                               lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,        & ! In
-                                               lhs_ma, lhs_diff,                             & ! In
-                                               rhs_ta_wprtp2, rhs_ta_wpthlp2,                & ! In
-                                               rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,            & ! In
-                                               rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,        & ! In
-                                               dt, iiPDF_type, l_scalar_calc,        & ! In
-                                               stats_zm, stats_sfc,                & ! intent(inout)
-                                               rtp2, thlp2, rtpthlp,                         & ! Out
-                                               sclrp2, sclrprtp, sclrpthlp )                   ! Out
-    end if
-
-    if ( l_lmm_stepping ) then
-       thlp2 = one_half * ( thlp2_old + thlp2 )
-       rtp2 = one_half * ( rtp2_old + rtp2 )
-       rtpthlp = one_half * ( rtpthlp_old + rtpthlp )
-       if ( sclr_dim > 0 ) then
-          sclrp2 = one_half * ( sclrp2_old + sclrp2 )
-          sclrprtp = one_half * ( sclrprtp_old + sclrprtp )
-          sclrpthlp = one_half * ( sclrpthlp_old + sclrpthlp )
-       endif ! sclr_dim > 0
-    endif ! l_lmm_stepping
- 
-    if ( l_stats_samp ) then
-      call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtp2, rtp2, & !intent(in)
-                                    stats_zm ) ! intent(inout)
-      call xp2_xpyp_implicit_stats( gr, xp2_xpyp_thlp2, thlp2, & !intent(in)
-                                    stats_zm ) ! intent(inout)
-      call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtpthlp, rtpthlp, & !intent(in)
-                                    stats_zm ) ! intent(inout)
-    end if
-
-    !!!!!***** u'^2 / v'^2 *****!!!!!
     
-    ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs( gr, Kw9(:), Kw9_zm(:), nu_vert_res_dep%nu9,  & !In
-                           gr%invrs_dzt(:), gr%invrs_dzm(:),            & ! In
-                           invrs_rho_ds_zm(:), rho_ds_zt(:),            & ! In
-                           lhs_diff_uv(:,:)                  )            ! Out
+    do i = 1, ngrdcol
 
-    if ( l_lmm_stepping ) then
-       up2_old = up2
-       vp2_old = vp2
-    endif ! l_lmm_stepping
+      ! Unpack CLUBB tunable parameters
+      C2rt = clubb_params(iC2rt)
+      C2thl = clubb_params(iC2thl)
+      C2rtthl = clubb_params(iC2rtthl)
+      C4 = clubb_params(iC4)
+      C14 = clubb_params(iC14)
 
-    if ( iiPDF_type == iiPDF_new_hybrid ) then
-
-       ! Different LHS required for up2 and vp2.
-
-       ! Solve for up2
-
-       ! Implicit contributions to term up2
-       call xp2_xpyp_lhs( gr, invrs_tau_C4_zm, C4_1d, invrs_tau_C14_zm, C14_1d, dt, & ! In
-                          lhs_ta_wpup2, lhs_ma, lhs_diff_uv, & ! In
-                          lhs ) ! Out
-
-       ! Explicit contributions to up2
-       call xp2_xpyp_uv_rhs( gr, xp2_xpyp_up2, dt, & ! In
-                             wp2, wpthvp, & ! In
-                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
-                             um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
-                             lhs_ta_wpup2, rhs_ta_wpup2, & ! In
-                             stats_zm, & ! intent(inout)
-                             uv_rhs(:,1) ) ! Out
-
-       ! Solve the tridiagonal system
-       call xp2_xpyp_solve( gr, xp2_xpyp_up2_vp2, 1, & ! Intent(in)
-                            stats_sfc,           & ! intent(inout)
-                            uv_rhs, lhs,         & ! Intent(inout)
-                            uv_solution )          ! Intent(out)
-
-       up2(1:gr%nz) = uv_solution(1:gr%nz,1)
-       
-       if ( l_lmm_stepping ) then 
-         up2 = one_half * ( up2_old + up2 )
-       end if
-
-       if ( l_stats_samp ) then
-          call xp2_xpyp_implicit_stats( gr, xp2_xpyp_up2, up2, & !intent(in)
-                                        stats_zm ) ! intent(inout)
-       endif
-
-       ! Solve for vp2
-
-       ! Implicit contributions to term vp2
-       call xp2_xpyp_lhs( gr, invrs_tau_C4_zm, C4_1d, invrs_tau_C14_zm, C14_1d, dt, & ! In
-                          lhs_ta_wpvp2, lhs_ma, lhs_diff_uv, & ! In
-                          lhs ) ! Out
-
-       ! Explicit contributions to vp2
-       call xp2_xpyp_uv_rhs( gr, xp2_xpyp_vp2, dt, & ! In
-                             wp2, wpthvp, & ! In
-                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
-                             vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
-                             lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
-                             stats_zm, & ! intent(inout)
-                             uv_rhs(:,1) ) ! Out
-
-       ! Solve the tridiagonal system
-       call xp2_xpyp_solve( gr, xp2_xpyp_up2_vp2, 1, & ! Intent(in)
-                            stats_sfc,           & ! intent(inout)
-                            uv_rhs, lhs,         & ! Intent(inout)
-                            uv_solution )          ! Intent(out)
-
-       vp2(1:gr%nz) = uv_solution(1:gr%nz,1)
-
-       if ( l_lmm_stepping ) then
-         vp2 = one_half * ( vp2_old + vp2 )
-       end if
-
-       if ( l_stats_samp ) then
-          call xp2_xpyp_implicit_stats( gr, xp2_xpyp_vp2, vp2, & !intent(in)
-                                        stats_zm ) ! intent(inout)
-       endif
-
-    else ! ADG1 and other types
-
-       ! ADG1 allows up2 and vp2 to use the same LHS.
-
-       ! Implicit contributions to term up2/vp2
-       call xp2_xpyp_lhs( gr, invrs_tau_C4_zm, C4_1d, invrs_tau_C14_zm, C14_1d, dt, & ! In
-                          lhs_ta_wpup2, lhs_ma, lhs_diff_uv, & ! In
-                          lhs ) ! Out
-
-       ! Explicit contributions to up2
-       call xp2_xpyp_uv_rhs( gr, xp2_xpyp_up2, dt, & ! In
-                             wp2, wpthvp, & ! In
-                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
-                             um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
-                             lhs_ta_wpup2, rhs_ta_wpup2, & ! In
-                             stats_zm, & ! intent(inout)
-                             uv_rhs(:,1) ) ! Out
-
-       ! Explicit contributions to vp2
-       call xp2_xpyp_uv_rhs( gr, xp2_xpyp_vp2, dt, & ! In
-                             wp2, wpthvp, & ! In
-                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
-                             vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                             clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
-                             lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
-                             stats_zm, & ! intent(inout)
-                             uv_rhs(:,2) ) ! Out
-
-       ! Solve the tridiagonal system
-       call xp2_xpyp_solve( gr, xp2_xpyp_up2_vp2, 2, & ! Intent(in)
-                            stats_sfc,           & ! intent(inout)
-                            uv_rhs, lhs,         & ! Intent(inout)
-                            uv_solution )          ! Intent(out)
-
-       up2(1:gr%nz) = uv_solution(1:gr%nz,1)
-       vp2(1:gr%nz) = uv_solution(1:gr%nz,2)
-
-       if ( l_lmm_stepping ) then
-         up2 = one_half * ( up2_old + up2 )
-         vp2 = one_half * ( vp2_old + vp2 )
-       end if
-
-       if ( l_stats_samp ) then
-          call xp2_xpyp_implicit_stats( gr, xp2_xpyp_up2, up2, & !intent(in)
-                                        stats_zm ) ! intent(inout)
-          call xp2_xpyp_implicit_stats( gr, xp2_xpyp_vp2, vp2, & !intent(in)
-                                        stats_zm ) ! intent(inout)
-       endif
-
-    endif ! iiPDF_type
-
-
-    ! Apply the positive definite scheme to variances
-    if ( l_hole_fill ) then
-      call pos_definite_variances( gr, xp2_xpyp_rtp2, dt, rt_tol**2, & ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &         ! Intent(in)
-                                   stats_zm,                     & ! intent(inout)
-                                   rtp2 )                          ! Intent(inout)
-      call pos_definite_variances( gr, xp2_xpyp_thlp2, dt, thl_tol**2, & ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &           ! Intent(in)
-                                   stats_zm,                       & ! intent(inout)
-                                   thlp2 )                           ! Intent(inout)
-      call pos_definite_variances( gr, xp2_xpyp_up2, dt, w_tol_sqd, & ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &        ! Intent(in)
-                                   stats_zm,                    & ! intent(inout)
-                                   up2 )                          ! Intent(inout)
-      call pos_definite_variances( gr, xp2_xpyp_vp2, dt, w_tol_sqd, & ! Intent(in)
-                                   rho_ds_zm, rho_ds_zt, &        ! Intent(in)
-                                   stats_zm,                    & ! intent(inout)
-                                   vp2 )                          ! Intent(inout)
-    endif
-
-
-    ! Clipping for r_t'^2
-
-    !threshold = zero_threshold
-    !
-    !where ( wp2 >= w_tol_sqd ) &
-    !   threshold = rt_tol*rt_tol
-
-    ! The value of rtp2 is not allowed to become smaller than the threshold
-    ! value of rt_tol^2.  Additionally, that threshold value may be boosted at
-    ! any grid level in order to keep the overall correlation of w and rt
-    ! between the values of -max_mag_correlation_flux and
-    ! max_mag_correlation_flux by boosting rtp2 rather than by limiting the
-    ! magnitude of wprtp.
-    if ( l_min_xp2_from_corr_wx ) then
-
-       ! The overall correlation of w and rt is:
-       !
-       ! corr_w_rt = wprtp / ( sqrt( wp2 ) * sqrt( rtp2 ) ).
-       !
-       ! Squaring both sides, the equation becomes:
-       !
-       ! corr_w_rt^2 = wprtp^2 / ( wp2 * rtp2 ).
-       !
-       ! Using max_mag_correlation_flux for the correlation and then solving for
-       ! the minimum of rtp2, the equation becomes:
-       !
-       ! rtp2|_min = wprtp^2 / ( wp2 * max_mag_correlation_flux^2 ).
-       do k = 1, gr%nz, 1
-
-          threshold_array(k) &
-          = max( rt_tol**2, &
-                 wprtp(k)**2 / ( wp2(k) * max_mag_correlation_flux**2 ) )
-
-       enddo ! k = 1, gr%nz, 1
-
-       call clip_variance_level( gr, xp2_xpyp_rtp2, dt, threshold_array, & ! In
-                                 stats_zm, & ! intent(inout)
-                                 rtp2 )                          ! In/out
-    else
-
-       ! Consider only the minimum tolerance threshold value for rtp2.
-       threshold = rt_tol**2
-
-       call clip_variance( gr, xp2_xpyp_rtp2, dt, threshold, & ! Intent(in)
-                           stats_zm, & ! intent(inout)
-                           rtp2 )                          ! Intent(inout)
-
-    endif ! l_min_xp2_from_corr_wx
-
-    ! Special clipping on the variance of rt to prevent a large variance at
-    ! higher altitudes.  This is done because we don't want the PDF to extend
-    ! into the negative, and found that for latin hypercube sampling a large
-    ! variance aloft leads to negative samples of total water.
-    ! -dschanen 8 Dec 2010
-    if ( l_clip_large_rtp2 ) then
-    
-      ! This overwrites stats clipping data from clip_variance
-      if ( l_stats_samp ) then
-        call stat_modify( gr, irtp2_cl, -rtp2 / dt, & ! intent(in)
-                          stats_zm )              ! intent(inout)
-      endif
-      
-      do k = 1, gr%nz
-        threshold &
-        = max( rt_tol**2, &
-               clubb_params(irtp2_clip_coef) * zt2zm( gr, rtm, k )**2 )
-        if ( rtp2(k) > threshold ) then
-          rtp2(k) = threshold
+      if ( clubb_at_least_debug_level( 0 ) ) then
+        ! Assertion check for C_uu_shr
+        if ( clubb_params(iC_uu_shr) > one &
+             .or. clubb_params(iC_uu_shr) < zero ) then
+          write(fstderr,*) "The C_uu_shr variable is outside the valid range"
+          err_code = clubb_fatal_error
+          return
         end if
-      end do ! k = 1..gr%nz
-      
+        if ( clubb_params(iC_uu_buoy) > one &
+             .or. clubb_params(iC_uu_buoy) < zero ) then
+          write(fstderr,*) "The C_uu_buoy variable is outside the valid range"
+          err_code = clubb_fatal_error
+          return
+        end if
+      end if
+
+      ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
+      if ( l_C2_cloud_frac ) then
+
+         do k = 1, nz, 1
+            if ( cloud_frac(i,k) >= cloud_frac_min ) then
+               C2rt_1d(i,k) = C2rt * max( min_cloud_frac_mult, cloud_frac(i,k) )
+               C2thl_1d(i,k) = C2thl * max( min_cloud_frac_mult, cloud_frac(i,k) )
+               C2rtthl_1d(i,k) = C2rtthl &
+                               * max( min_cloud_frac_mult, cloud_frac(i,k) )
+            else ! cloud_frac(k) < cloud_frac_min
+               C2rt_1d(i,k)    = C2rt
+               C2thl_1d(i,k)   = C2thl
+               C2rtthl_1d(i,k) = C2rtthl
+            endif ! cloud_frac(k) >= cloud_frac_min
+         enddo ! k = 1, nz, 1
+
+      else
+
+         C2rt_1d(i,:)    = C2rt
+         C2thl_1d(i,:)   = C2thl
+         C2rtthl_1d(i,:) = C2rtthl
+
+      endif ! l_C2_cloud_frac
+
+      C2sclr_1d(i,:) = C2rt  ! Use rt value for now
+
+      C4_1d(i,:) = two_thirds * C4
+      C14_1d(i,:) = one_third * C14
+
+      ! Are we solving for passive scalars as well?
+      if ( sclr_dim > 0 ) then
+        l_scalar_calc = .true.
+      else
+        l_scalar_calc = .false.
+      end if
+
+      ! Define the Coefficent of Eddy Diffusivity for the variances
+      ! and covariances.
+      do k = 1, nz, 1
+
+        ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp, and
+        ! passive scalars.  The variances and covariances are located on the
+        ! momentum levels.  Kw2 is located on the thermodynamic levels.
+        ! Kw2 = c_K2 * Kh_zt
+        Kw2(i,k) = clubb_params(ic_K2) * Kh_zt(i,k)
+
+        ! Kw9 is used for variances up2 and vp2.  The variances are located on
+        ! the momentum levels.  Kw9 is located on the thermodynamic levels.
+        ! Kw9 = c_K9 * Kh_zt
+        Kw9(i,k) = clubb_params(ic_K9) * Kh_zt(i,k)
+
+      enddo
+
+      Kw2_zm(i,:) = max( zt2zm( gr(i), Kw2(i,:) ), zero )
+      Kw9_zm(i,:) = max( zt2zm( gr(i), Kw9(i,:) ), zero )
+
+      if ( l_lmm_stepping ) then
+         thlp2_old(i,:) = thlp2(i,:)
+         rtp2_old(i,:) = rtp2(i,:)
+         rtpthlp_old(i,:) = rtpthlp(i,:)
+         if ( sclr_dim > 0 ) then
+            sclrp2_old(i,:,:) = sclrp2(i,:,:)
+            sclrprtp_old(i,:,:) = sclrprtp(i,:,:)
+            sclrpthlp_old(i,:,:) = sclrpthlp(i,:,:)
+         endif ! sclr_dim > 0
+      endif ! l_lmm_stepping
+   
+      ! Calculate all the explicit and implicit turbulent advection terms 
+      call calc_xp2_xpyp_ta_terms( gr(i), wprtp(i,:), wprtp2(i,:), wpthlp(i,:), wpthlp2(i,:), wprtpthlp(i,:),      & ! In
+                                   rtp2(i,:), thlp2(i,:), rtpthlp(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:), wp2(i,:),    & ! In
+                                   wp2_zt(i,:), wpsclrp(i,:,:), wpsclrp2(i,:,:), wpsclrprtp(i,:,:), wpsclrpthlp(i,:,:), & ! In
+                                   sclrp2(i,:,:), sclrprtp(i,:,:), sclrpthlp(i,:,:),                        & ! In
+                                   rho_ds_zt(i,:), invrs_rho_ds_zm(i,:), rho_ds_zm(i,:),              & ! In
+                                   wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), sigma_sqd_w(i,:),             & ! In
+                                   pdf_implicit_coefs_terms(i), l_scalar_calc,            & ! In
+                                   clubb_params(ibeta), iiPDF_type, l_upwind_xpyp_ta,  & ! In
+                                   l_godunov_upwind_xpyp_ta,                           & ! In 
+                                   stats_zt(i),                                           & ! InOut
+                                   lhs_ta_wprtp2(:,i,:), lhs_ta_wpthlp2(:,i,:), lhs_ta_wprtpthlp(:,i,:),    & ! Out
+                                   lhs_ta_wpup2(:,i,:), lhs_ta_wpvp2(:,i,:), lhs_ta_wpsclrp2(:,i,:,:),        & ! Out
+                                   lhs_ta_wprtpsclrp(:,i,:,:), lhs_ta_wpthlpsclrp(:,i,:,:),              & ! Out
+                                   rhs_ta_wprtp2(i,:), rhs_ta_wpthlp2(i,:), rhs_ta_wprtpthlp(i,:),    & ! Out
+                                   rhs_ta_wpup2(i,:), rhs_ta_wpvp2(i,:), rhs_ta_wpsclrp2(i,:,:),        & ! Out
+                                   rhs_ta_wprtpsclrp(i,:,:), rhs_ta_wpthlpsclrp(i,:,:)               ) ! Out
+                                   
+      ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2). This is the 
+      ! diffusion term for all LHS matrices except <w'u'^2> and <w'v'^2>
+      call diffusion_zm_lhs( gr(i), Kw2(i,:), Kw2_zm(i,:), nu_vert_res_dep(i)%nu2,  & ! In
+                             gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),            & ! In
+                             invrs_rho_ds_zm(i,:), rho_ds_zt(i,:),            & ! In
+                             lhs_diff(:,i,:)                     )            ! Out
+                                 
+      ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
+      call term_ma_zm_lhs( gr(i), wm_zm(i,:), gr(i)%invrs_dzm(:), & ! In
+                           lhs_ma(:,i,:)                ) ! Out
+                               
+                               
+      if ( ( abs(C2rt - C2thl) < abs(C2rt + C2thl) / 2 * eps .and. &
+           abs(C2rt - C2rtthl) < abs(C2rt + C2rtthl) / 2 * eps ) .and. &
+           ( l_explicit_turbulent_adv_xpyp .or. &
+             .not. l_explicit_turbulent_adv_xpyp .and. iiPDF_type == iiPDF_ADG1 ) ) then
+             
+         ! All left hand side matricies are equal for rtp2, thlp2, rtpthlp, and scalars.
+         ! Thus only one solve is neccesary, using combined right hand sides
+         call solve_xp2_xpyp_with_single_lhs( gr(i), C2rt_1d(i,:), invrs_tau_xp2_zm(i,:), rtm(i,:), thlm(i,:), wprtp(i,:),& ! In
+                                              wpthlp(i,:), rtp2_forcing(i,:), thlp2_forcing(i,:),            & ! In
+                                              rtpthlp_forcing(i,:), sclrm(i,:,:), wpsclrp(i,:,:),                & ! In
+                                              lhs_ta_wprtp2(:,i,:), lhs_ma(:,i,:), lhs_diff(:,i,:),                & ! In
+                                              rhs_ta_wprtp2(i,:), rhs_ta_wpthlp2(i,:),                  & ! In
+                                              rhs_ta_wprtpthlp(i,:), rhs_ta_wpsclrp2(i,:,:),              & ! In
+                                              rhs_ta_wprtpsclrp(i,:,:), rhs_ta_wpthlpsclrp(i,:,:),          & ! In
+                                              dt, l_scalar_calc,                      & ! In
+                                              stats_zm(i), stats_sfc(i),                  & ! intent(inout)
+                                              rtp2(i,:), thlp2(i,:), rtpthlp(i,:),                           & ! Out
+                                              sclrp2(i,:,:), sclrprtp(i,:,:), sclrpthlp(i,:,:) )                     ! Out
+      else
+          
+          ! Left hand sides are potentially different, this requires multiple solves
+          call solve_xp2_xpyp_with_multiple_lhs( gr(i), C2rt_1d(i,:), C2thl_1d(i,:), C2rtthl_1d(i,:), C2sclr_1d(i,:), & ! In
+                                                 invrs_tau_xp2_zm(i,:), rtm(i,:), thlm(i,:), wprtp(i,:), wpthlp(i,:),   & ! In
+                                                 rtp2_forcing(i,:), thlp2_forcing(i,:), rtpthlp_forcing(i,:), & ! In
+                                                 sclrm(i,:,:), wpsclrp(i,:,:),                               & ! In
+                                                 lhs_ta_wprtp2(:,i,:), lhs_ta_wpthlp2(:,i,:),                & ! In
+                                                 lhs_ta_wprtpthlp(:,i,:), lhs_ta_wpsclrp2(:,i,:,:),            & ! In
+                                                 lhs_ta_wprtpsclrp(:,i,:,:), lhs_ta_wpthlpsclrp(:,i,:,:),        & ! In
+                                                 lhs_ma(:,i,:), lhs_diff(:,i,:),                             & ! In
+                                                 rhs_ta_wprtp2(i,:), rhs_ta_wpthlp2(i,:),                & ! In
+                                                 rhs_ta_wprtpthlp(i,:), rhs_ta_wpsclrp2(i,:,:),            & ! In
+                                                 rhs_ta_wprtpsclrp(i,:,:), rhs_ta_wpthlpsclrp(i,:,:),        & ! In
+                                                 dt, iiPDF_type, l_scalar_calc,        & ! In
+                                                 stats_zm(i), stats_sfc(i),                & ! intent(inout)
+                                                 rtp2(i,:), thlp2(i,:), rtpthlp(i,:),                         & ! Out
+                                                 sclrp2(i,:,:), sclrprtp(i,:,:), sclrpthlp(i,:,:) )                   ! Out
+      end if
+
+      if ( l_lmm_stepping ) then
+         thlp2(i,:) = one_half * ( thlp2_old(i,:) + thlp2(i,:) )
+         rtp2(i,:) = one_half * ( rtp2_old(i,:) + rtp2(i,:) )
+         rtpthlp(i,:) = one_half * ( rtpthlp_old(i,:) + rtpthlp(i,:) )
+         if ( sclr_dim > 0 ) then
+            sclrp2(i,:,:) = one_half * ( sclrp2_old(i,:,:) + sclrp2(i,:,:) )
+            sclrprtp(i,:,:) = one_half * ( sclrprtp_old(i,:,:) + sclrprtp(i,:,:) )
+            sclrpthlp(i,:,:) = one_half * ( sclrpthlp_old(i,:,:) + sclrpthlp(i,:,:) )
+         endif ! sclr_dim > 0
+      endif ! l_lmm_stepping
+   
       if ( l_stats_samp ) then
-        call stat_modify( gr, irtp2_cl, rtp2 / dt, & ! intent(in)
-                          stats_zm )             ! intent(inout)
-      endif
+        call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_rtp2, rtp2(i,:), & !intent(in)
+                                      stats_zm(i) ) ! intent(inout)
+        call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_thlp2, thlp2(i,:), & !intent(in)
+                                      stats_zm(i) ) ! intent(inout)
+        call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_rtpthlp, rtpthlp(i,:), & !intent(in)
+                                      stats_zm(i) ) ! intent(inout)
+      end if
+
+      !!!!!***** u'^2 / v'^2 *****!!!!!
       
-    end if ! l_clip_large_rtp2
- 
+      ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
+      call diffusion_zm_lhs( gr(i), Kw9(i,:), Kw9_zm(i,:), nu_vert_res_dep(i)%nu9,  & !In
+                             gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),            & ! In
+                             invrs_rho_ds_zm(i,:), rho_ds_zt(i,:),            & ! In
+                             lhs_diff_uv(:,i,:)                  )            ! Out
 
-    ! Clipping for th_l'^2
+      if ( l_lmm_stepping ) then
+         up2_old(i,:) = up2(i,:)
+         vp2_old(i,:) = vp2(i,:)
+      endif ! l_lmm_stepping
 
-    !threshold = zero_threshold
-    !
-    !where ( wp2 >= w_tol_sqd ) &
-    !   threshold = thl_tol*thl_tol
+      if ( iiPDF_type == iiPDF_new_hybrid ) then
 
-    ! The value of thlp2 is not allowed to become smaller than the threshold
-    ! value of thl_tol^2.  Additionally, that threshold value may be boosted at
-    ! any grid level in order to keep the overall correlation of w and theta-l
-    ! between the values of -max_mag_correlation_flux and
-    ! max_mag_correlation_flux by boosting thlp2 rather than by limiting the
-    ! magnitude of wpthlp.
-    if ( l_min_xp2_from_corr_wx ) then
+         ! Different LHS required for up2 and vp2.
 
-       ! The overall correlation of w and theta-l is:
-       !
-       ! corr_w_thl = wpthlp / ( sqrt( wp2 ) * sqrt( thlp2 ) ).
-       !
-       ! Squaring both sides, the equation becomes:
-       !
-       ! corr_w_thl^2 = wpthlp^2 / ( wp2 * thlp2 ).
-       !
-       ! Using max_mag_correlation_flux for the correlation and then solving for
-       ! the minimum of thlp2, the equation becomes:
-       !
-       ! thlp2|_min = wpthlp^2 / ( wp2 * max_mag_correlation_flux^2 ).
-       do k = 1, gr%nz, 1
+         ! Solve for up2
 
-          threshold_array(k) &
-          = max( thl_tol**2, &
-                 wpthlp(k)**2 / ( wp2(k) * max_mag_correlation_flux**2 ) )
+         ! Implicit contributions to term up2
+         call xp2_xpyp_lhs( gr(i), invrs_tau_C4_zm(i,:), C4_1d(i,:), invrs_tau_C14_zm(i,:), C14_1d(i,:), dt, & ! In
+                            lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), lhs_diff_uv(:,i,:), & ! In
+                            lhs(:,i,:) ) ! Out
 
-       enddo ! k = 1, gr%nz, 1
+         ! Explicit contributions to up2
+         call xp2_xpyp_uv_rhs( gr(i), xp2_xpyp_up2, dt, & ! In
+                               wp2(i,:), wpthvp(i,:), & ! In
+                               C4_1d(i,:), invrs_tau_C4_zm(i,:), C14_1d(i,:), invrs_tau_C14_zm(i,:), & ! In
+                               um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:), & ! In
+                               thv_ds_zm(i,:), C4, clubb_params(iC_uu_shr), & ! In
+                               clubb_params(iC_uu_buoy), C14, wp2_splat(i,:), & ! In
+                               lhs_ta_wpup2(:,i,:), rhs_ta_wpup2(i,:), & ! In
+                               stats_zm(i), & ! intent(inout)
+                               uv_rhs(i,:,1) ) ! Out
 
-       call clip_variance_level( gr, xp2_xpyp_thlp2, dt, threshold_array, & ! In
-                                 stats_zm, & ! intent(inout)
-                                 thlp2 )                          ! In/out
+         ! Solve the tridiagonal system
+         call xp2_xpyp_solve( gr(i), xp2_xpyp_up2_vp2, 1, & ! Intent(in)
+                              stats_sfc(i),           & ! intent(inout)
+                              uv_rhs(i,:,:), lhs(:,i,:),         & ! Intent(inout)
+                              uv_solution(i,:,:) )          ! Intent(out)
 
-    else
+         up2(i,1:nz) = uv_solution(i,:,1)
+         
+         if ( l_lmm_stepping ) then 
+           up2(i,:) = one_half * ( up2_old(i,:) + up2(i,:) )
+         end if
 
-       ! Consider only the minimum tolerance threshold value for thlp2.
-       threshold = thl_tol**2
+         if ( l_stats_samp ) then
+            call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_up2, up2(i,:), & !intent(in)
+                                          stats_zm(i) ) ! intent(inout)
+         endif
 
-       call clip_variance( gr, xp2_xpyp_thlp2, dt, threshold, & ! Intent(in)
-                           stats_zm, & ! intent(inout)
-                           thlp2 )                          ! Intent(inout)
+         ! Solve for vp2
 
-    endif ! l_min_xp2_from_corr_wx
+         ! Implicit contributions to term vp2
+         call xp2_xpyp_lhs( gr(i), invrs_tau_C4_zm(i,:), C4_1d(i,:), invrs_tau_C14_zm(i,:), C14_1d(i,:), dt, & ! In
+                            lhs_ta_wpvp2(:,i,:), lhs_ma(:,i,:), lhs_diff_uv(:,i,:), & ! In
+                            lhs(:,i,:) ) ! Out
+
+         ! Explicit contributions to vp2
+         call xp2_xpyp_uv_rhs( gr(i), xp2_xpyp_vp2, dt, & ! In
+                               wp2(i,:), wpthvp(i,:), & ! In
+                               C4_1d(i,:), invrs_tau_C4_zm(i,:), C14_1d(i,:), invrs_tau_C14_zm(i,:), & ! In
+                               vm(i,:), um(i,:), vpwp(i,:), upwp(i,:), vp2(i,:), up2(i,:), & ! In
+                               thv_ds_zm(i,:), C4, clubb_params(iC_uu_shr), & ! In
+                               clubb_params(iC_uu_buoy), C14, wp2_splat(i,:), & ! In
+                               lhs_ta_wpvp2(:,i,:), rhs_ta_wpvp2(i,:), & ! In
+                               stats_zm(i), & ! intent(inout)
+                               uv_rhs(i,:,1) ) ! Out
+
+         ! Solve the tridiagonal system
+         call xp2_xpyp_solve( gr(i), xp2_xpyp_up2_vp2, 1, & ! Intent(in)
+                              stats_sfc(i),           & ! intent(inout)
+                              uv_rhs(i,:,:), lhs(:,i,:),         & ! Intent(inout)
+                              uv_solution(i,:,:) )          ! Intent(out)
+
+         vp2(i,1:nz) = uv_solution(i,:,1)
+
+         if ( l_lmm_stepping ) then
+           vp2(i,:) = one_half * ( vp2_old(i,:) + vp2(i,:) )
+         end if
+
+         if ( l_stats_samp ) then
+            call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_vp2, vp2(i,:), & !intent(in)
+                                          stats_zm(i) ) ! intent(inout)
+         endif
+
+      else ! ADG1 and other types
+
+         ! ADG1 allows up2 and vp2 to use the same LHS.
+
+         ! Implicit contributions to term up2/vp2
+         call xp2_xpyp_lhs( gr(i), invrs_tau_C4_zm(i,:), C4_1d(i,:), invrs_tau_C14_zm(i,:), C14_1d(i,:), dt, & ! In
+                            lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), lhs_diff_uv(:,i,:), & ! In
+                            lhs(:,i,:) ) ! Out
+
+         ! Explicit contributions to up2
+         call xp2_xpyp_uv_rhs( gr(i), xp2_xpyp_up2, dt, & ! In
+                               wp2(i,:), wpthvp(i,:), & ! In
+                               C4_1d(i,:), invrs_tau_C4_zm(i,:), C14_1d(i,:), invrs_tau_C14_zm(i,:), & ! In
+                               um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:), & ! In
+                               thv_ds_zm(i,:), C4, clubb_params(iC_uu_shr), & ! In
+                               clubb_params(iC_uu_buoy), C14, wp2_splat(i,:), & ! In
+                               lhs_ta_wpup2(:,i,:), rhs_ta_wpup2(i,:), & ! In
+                               stats_zm(i), & ! intent(inout)
+                               uv_rhs(i,:,1) ) ! Out
+
+         ! Explicit contributions to vp2
+         call xp2_xpyp_uv_rhs( gr(i), xp2_xpyp_vp2, dt, & ! In
+                               wp2(i,:), wpthvp(i,:), & ! In
+                               C4_1d(i,:), invrs_tau_C4_zm(i,:), C14_1d(i,:), invrs_tau_C14_zm(i,:), & ! In
+                               vm(i,:), um(i,:), vpwp(i,:), upwp(i,:), vp2(i,:), up2(i,:), & ! In
+                               thv_ds_zm(i,:), C4, clubb_params(iC_uu_shr), & ! In
+                               clubb_params(iC_uu_buoy), C14, wp2_splat(i,:), & ! In
+                               lhs_ta_wpup2(:,i,:), rhs_ta_wpvp2(i,:), & ! In
+                               stats_zm(i), & ! intent(inout)
+                               uv_rhs(i,:,2) ) ! Out
+
+         ! Solve the tridiagonal system
+         call xp2_xpyp_solve( gr(i), xp2_xpyp_up2_vp2, 2, & ! Intent(in)
+                              stats_sfc(i),           & ! intent(inout)
+                              uv_rhs(i,:,:), lhs(:,i,:),         & ! Intent(inout)
+                              uv_solution(i,:,:) )          ! Intent(out)
+
+         up2(i,1:nz) = uv_solution(i,:,1)
+         vp2(i,1:nz) = uv_solution(i,:,2)
+
+         if ( l_lmm_stepping ) then
+           up2(i,:) = one_half * ( up2_old(i,:) + up2(i,:) )
+           vp2(i,:) = one_half * ( vp2_old(i,:) + vp2(i,:) )
+         end if
+
+         if ( l_stats_samp ) then
+            call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_up2, up2(i,:), & !intent(in)
+                                          stats_zm(i) ) ! intent(inout)
+            call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_vp2, vp2(i,:), & !intent(in)
+                                          stats_zm(i) ) ! intent(inout)
+         endif
+
+      endif ! iiPDF_type
 
 
-    ! Clipping for u'^2
-
-    ! Clip negative values of up2
-    threshold = w_tol_sqd
-    call clip_variance( gr, xp2_xpyp_up2, dt, threshold, & ! Intent(in)
-                        stats_zm, & ! intent(inout)
-                        up2 )                          ! Intent(inout)
-
-    ! Clip excessively large values of up2
-    if ( l_stats_samp ) then
-      ! Store previous value in order to calculate clipping
-      call stat_modify( gr, iup2_cl, -up2 / dt, &   ! Intent(in)
-                              stats_zm )             ! Intent(inout)
-    endif
-
-    where (up2 > 1000._core_rknd)
-      up2 = 1000._core_rknd
-    end where
-
-    if ( l_stats_samp ) then
-      ! Store final value in order to calculate clipping
-      call stat_modify( gr, iup2_cl, up2 / dt, &   ! Intent(in)
-                              stats_zm )             ! Intent(inout)
-    endif
-
-    ! Clipping for v'^2
-
-    ! Clip negative values of vp2
-    threshold = w_tol_sqd
-    call clip_variance( gr, xp2_xpyp_vp2, dt, threshold, & ! Intent(in)
-                        stats_zm, & ! intent(inout)
-                        vp2 )                          ! Intent(inout)
-
-    if ( l_stats_samp ) then
-      ! Store previous value in order to calculate clipping
-      call stat_modify( gr, ivp2_cl, -vp2 / dt, &   ! Intent(in)
-                              stats_zm )             ! Intent(inout)
-    endif
-
-    where (vp2 > 1000._core_rknd)
-      vp2 = 1000._core_rknd
-    end where
-
-    if ( l_stats_samp ) then
-      ! Store final value in order to calculate clipping
-      call stat_modify( gr, ivp2_cl, vp2 / dt, &   ! Intent(in)
-                              stats_zm )             ! Intent(inout)
-    endif
-
-    ! When selected, apply sponge damping after up2 and vp2 have been advanced.
-    if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
-
-       if ( l_stats_samp ) then
-          call stat_begin_update( gr, iup2_sdmp, up2 / dt, & ! intent(in)
-                                  stats_zm )             ! intent(inout)
-          call stat_begin_update( gr, ivp2_sdmp, vp2 / dt, & ! intent(in)
-                                  stats_zm )             ! intent(inout)
-       endif
-
-       up2 = sponge_damp_xp2( gr, dt, gr%zm, up2, w_tol_sqd, &
-                              up2_vp2_sponge_damp_profile )
-
-       vp2 = sponge_damp_xp2( gr, dt, gr%zm, vp2, w_tol_sqd, &
-                              up2_vp2_sponge_damp_profile )
-
-       if ( l_stats_samp ) then
-          call stat_end_update( gr, iup2_sdmp, up2 / dt, & ! intent(in)
-                                stats_zm )             ! intent(inout)
-          call stat_end_update( gr, ivp2_sdmp, vp2 / dt, & ! intent(in)
-                                stats_zm )             ! intent(inout)
-       endif
-
-    endif ! up2_vp2_sponge_damp_settings%l_sponge_damping
-
-
-    ! Clipping for r_t'th_l'
-    ! Clipping r_t'th_l' at each vertical level, based on the
-    ! correlation of r_t and th_l at each vertical level, such that:
-    ! corr_(r_t,th_l) = r_t'th_l' / [ sqrt(r_t'^2) * sqrt(th_l'^2) ];
-    ! -1 <= corr_(r_t,th_l) <= 1.
-    ! Since r_t'^2, th_l'^2, and r_t'th_l' are all computed in the
-    ! same place, clipping for r_t'th_l' only has to be done once.
-    l_first_clip_ts = .true.
-    l_last_clip_ts = .true.
-    call clip_covar( gr, xp2_xpyp_rtpthlp, l_first_clip_ts,  & ! Intent(in)
-                     l_last_clip_ts, dt, rtp2, thlp2,  &  ! Intent(in)
-                     l_predict_upwp_vpwp, & ! Intent(in)
-                     stats_zm, & ! intent(inout)
-                     rtpthlp, rtpthlp_chnge )     ! Intent(inout)
-
-    if ( l_scalar_calc ) then
-
-      ! Apply hole filling algorithm to the scalar variance terms
+      ! Apply the positive definite scheme to variances
       if ( l_hole_fill ) then
-        do sclr = 1, sclr_dim, 1
-          call pos_definite_variances( gr, xp2_xpyp_sclrp2, dt, sclr_tol(sclr)**2, & ! Intent(in)
-                                       rho_ds_zm, rho_ds_zt, &                ! Intent(in)
-                                       stats_zm, & ! intent(inout)
-                                       sclrp2(:,sclr) )                          ! Intent(inout)
-          if ( sclr == iisclr_rt ) then
-            ! Here again, we do this kluge here to make sclr'rt' == rt'^2
-            call pos_definite_variances( gr, xp2_xpyp_sclrprtp, dt, sclr_tol(sclr)**2, & ! Intent(in)
-                                         rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
-                                         stats_zm, & ! intent(inout)
-                                         sclrprtp(:,sclr) )                          ! Intent(inout)
+        call pos_definite_variances( gr(i), xp2_xpyp_rtp2, dt, rt_tol**2, & ! Intent(in)
+                                     rho_ds_zm(i,:), rho_ds_zt(i,:), &         ! Intent(in)
+                                     stats_zm(i),                     & ! intent(inout)
+                                     rtp2(i,:) )                          ! Intent(inout)
+        call pos_definite_variances( gr(i), xp2_xpyp_thlp2, dt, thl_tol**2, & ! Intent(in)
+                                     rho_ds_zm(i,:), rho_ds_zt(i,:), &           ! Intent(in)
+                                     stats_zm(i),                       & ! intent(inout)
+                                     thlp2(i,:) )                           ! Intent(inout)
+        call pos_definite_variances( gr(i), xp2_xpyp_up2, dt, w_tol_sqd, & ! Intent(in)
+                                     rho_ds_zm(i,:), rho_ds_zt(i,:), &        ! Intent(in)
+                                     stats_zm(i),                    & ! intent(inout)
+                                     up2(i,:) )                          ! Intent(inout)
+        call pos_definite_variances( gr(i), xp2_xpyp_vp2, dt, w_tol_sqd, & ! Intent(in)
+                                     rho_ds_zm(i,:), rho_ds_zt(i,:), &        ! Intent(in)
+                                     stats_zm(i),                    & ! intent(inout)
+                                     vp2(i,:) )                          ! Intent(inout)
+      endif
+
+
+      ! Clipping for r_t'^2
+
+      !threshold = zero_threshold
+      !
+      !where ( wp2 >= w_tol_sqd ) &
+      !   threshold = rt_tol*rt_tol
+
+      ! The value of rtp2 is not allowed to become smaller than the threshold
+      ! value of rt_tol^2.  Additionally, that threshold value may be boosted at
+      ! any grid level in order to keep the overall correlation of w and rt
+      ! between the values of -max_mag_correlation_flux and
+      ! max_mag_correlation_flux by boosting rtp2 rather than by limiting the
+      ! magnitude of wprtp.
+      if ( l_min_xp2_from_corr_wx ) then
+
+         ! The overall correlation of w and rt is:
+         !
+         ! corr_w_rt = wprtp / ( sqrt( wp2 ) * sqrt( rtp2 ) ).
+         !
+         ! Squaring both sides, the equation becomes:
+         !
+         ! corr_w_rt^2 = wprtp^2 / ( wp2 * rtp2 ).
+         !
+         ! Using max_mag_correlation_flux for the correlation and then solving for
+         ! the minimum of rtp2, the equation becomes:
+         !
+         ! rtp2|_min = wprtp^2 / ( wp2 * max_mag_correlation_flux^2 ).
+         do k = 1, nz, 1
+
+            threshold_array(i,k) &
+            = max( rt_tol**2, &
+                   wprtp(i,k)**2 / ( wp2(i,k) * max_mag_correlation_flux**2 ) )
+
+         enddo ! k = 1, nz, 1
+
+         call clip_variance_level( gr(i), xp2_xpyp_rtp2, dt, threshold_array(i,:), & ! In
+                                   stats_zm(i), & ! intent(inout)
+                                   rtp2(i,:) )                          ! In/out
+      else
+
+         ! Consider only the minimum tolerance threshold value for rtp2.
+         threshold = rt_tol**2
+
+         call clip_variance( gr(i), xp2_xpyp_rtp2, dt, threshold, & ! Intent(in)
+                             stats_zm(i), & ! intent(inout)
+                             rtp2(i,:) )                          ! Intent(inout)
+
+      endif ! l_min_xp2_from_corr_wx
+
+      ! Special clipping on the variance of rt to prevent a large variance at
+      ! higher altitudes.  This is done because we don't want the PDF to extend
+      ! into the negative, and found that for latin hypercube sampling a large
+      ! variance aloft leads to negative samples of total water.
+      ! -dschanen 8 Dec 2010
+      if ( l_clip_large_rtp2 ) then
+      
+        ! This overwrites stats clipping data from clip_variance
+        if ( l_stats_samp ) then
+          call stat_modify( gr(i), irtp2_cl, -rtp2(i,:) / dt, & ! intent(in)
+                            stats_zm(i) )              ! intent(inout)
+        endif
+        
+        do k = 1, nz
+          threshold &
+          = max( rt_tol**2, &
+                 clubb_params(irtp2_clip_coef) * zt2zm( gr(i), rtm(i,:), k )**2 )
+          if ( rtp2(i,k) > threshold ) then
+            rtp2(i,k) = threshold
           end if
-          if ( sclr == iisclr_thl ) then
-            ! As with sclr'rt' above, but for sclr'thl'
-            call pos_definite_variances( gr, xp2_xpyp_sclrpthlp, dt, sclr_tol(sclr)**2, & ! Intent(in)
-                                         rho_ds_zm, rho_ds_zt, &                   ! Intent(in)
-                                         stats_zm, & ! intent(inout)
-                                         sclrpthlp(:,sclr) )                          ! Intent(inout)
+        end do ! k = 1..nz
+        
+        if ( l_stats_samp ) then
+          call stat_modify( gr(i), irtp2_cl, rtp2(i,:) / dt, & ! intent(in)
+                            stats_zm(i) )             ! intent(inout)
+        endif
+        
+      end if ! l_clip_large_rtp2
+   
+
+      ! Clipping for th_l'^2
+
+      !threshold = zero_threshold
+      !
+      !where ( wp2 >= w_tol_sqd ) &
+      !   threshold = thl_tol*thl_tol
+
+      ! The value of thlp2 is not allowed to become smaller than the threshold
+      ! value of thl_tol^2.  Additionally, that threshold value may be boosted at
+      ! any grid level in order to keep the overall correlation of w and theta-l
+      ! between the values of -max_mag_correlation_flux and
+      ! max_mag_correlation_flux by boosting thlp2 rather than by limiting the
+      ! magnitude of wpthlp.
+      if ( l_min_xp2_from_corr_wx ) then
+
+         ! The overall correlation of w and theta-l is:
+         !
+         ! corr_w_thl = wpthlp / ( sqrt( wp2 ) * sqrt( thlp2 ) ).
+         !
+         ! Squaring both sides, the equation becomes:
+         !
+         ! corr_w_thl^2 = wpthlp^2 / ( wp2 * thlp2 ).
+         !
+         ! Using max_mag_correlation_flux for the correlation and then solving for
+         ! the minimum of thlp2, the equation becomes:
+         !
+         ! thlp2|_min = wpthlp^2 / ( wp2 * max_mag_correlation_flux^2 ).
+         do k = 1, nz, 1
+
+            threshold_array(i,k) &
+            = max( thl_tol**2, &
+                   wpthlp(i,k)**2 / ( wp2(i,k) * max_mag_correlation_flux**2 ) )
+
+         enddo ! k = 1, nz, 1
+
+         call clip_variance_level( gr(i), xp2_xpyp_thlp2, dt, threshold_array(i,:), & ! In
+                                   stats_zm(i), & ! intent(inout)
+                                   thlp2(i,:) )                          ! In/out
+
+      else
+
+         ! Consider only the minimum tolerance threshold value for thlp2.
+         threshold = thl_tol**2
+
+         call clip_variance( gr(i), xp2_xpyp_thlp2, dt, threshold, & ! Intent(in)
+                             stats_zm(i), & ! intent(inout)
+                             thlp2(i,:) )                          ! Intent(inout)
+
+      endif ! l_min_xp2_from_corr_wx
+
+
+      ! Clipping for u'^2
+
+      ! Clip negative values of up2
+      threshold = w_tol_sqd
+      call clip_variance( gr(i), xp2_xpyp_up2, dt, threshold, & ! Intent(in)
+                          stats_zm(i), & ! intent(inout)
+                          up2(i,:) )                          ! Intent(inout)
+
+      ! Clip excessively large values of up2
+      if ( l_stats_samp ) then
+        ! Store previous value in order to calculate clipping
+        call stat_modify( gr(i), iup2_cl, -up2(i,:) / dt, &   ! Intent(in)
+                                stats_zm(i) )             ! Intent(inout)
+      endif
+
+      where (up2(i,:) > 1000._core_rknd)
+        up2(i,:) = 1000._core_rknd
+      end where
+
+      if ( l_stats_samp ) then
+        ! Store final value in order to calculate clipping
+        call stat_modify( gr(i), iup2_cl, up2(i,:) / dt, &   ! Intent(in)
+                                stats_zm(i) )             ! Intent(inout)
+      endif
+
+      ! Clipping for v'^2
+
+      ! Clip negative values of vp2
+      threshold = w_tol_sqd
+      call clip_variance( gr(i), xp2_xpyp_vp2, dt, threshold, & ! Intent(in)
+                          stats_zm(i), & ! intent(inout)
+                          vp2(i,:) )                          ! Intent(inout)
+
+      if ( l_stats_samp ) then
+        ! Store previous value in order to calculate clipping
+        call stat_modify( gr(i), ivp2_cl, -vp2(i,:) / dt, &   ! Intent(in)
+                                stats_zm(i) )             ! Intent(inout)
+      endif
+
+      where (vp2(i,:) > 1000._core_rknd)
+        vp2(i,:) = 1000._core_rknd
+      end where
+
+      if ( l_stats_samp ) then
+        ! Store final value in order to calculate clipping
+        call stat_modify( gr(i), ivp2_cl, vp2(i,:) / dt, &   ! Intent(in)
+                                stats_zm(i) )             ! Intent(inout)
+      endif
+
+      ! When selected, apply sponge damping after up2 and vp2 have been advanced.
+      if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
+
+         if ( l_stats_samp ) then
+            call stat_begin_update( gr(i), iup2_sdmp, up2(i,:) / dt, & ! intent(in)
+                                    stats_zm(i) )             ! intent(inout)
+            call stat_begin_update( gr(i), ivp2_sdmp, vp2(i,:) / dt, & ! intent(in)
+                                    stats_zm(i) )             ! intent(inout)
+         endif
+
+         up2(i,:) = sponge_damp_xp2( gr(i), dt, gr(i)%zm, up2(i,:), w_tol_sqd, &
+                                up2_vp2_sponge_damp_profile )
+
+         vp2(i,:) = sponge_damp_xp2( gr(i), dt, gr(i)%zm, vp2(i,:), w_tol_sqd, &
+                                up2_vp2_sponge_damp_profile )
+
+         if ( l_stats_samp ) then
+            call stat_end_update( gr(i), iup2_sdmp, up2(i,:) / dt, & ! intent(in)
+                                  stats_zm(i) )             ! intent(inout)
+            call stat_end_update( gr(i), ivp2_sdmp, vp2(i,:) / dt, & ! intent(in)
+                                  stats_zm(i) )             ! intent(inout)
+         endif
+
+      endif ! up2_vp2_sponge_damp_settings%l_sponge_damping
+
+
+      ! Clipping for r_t'th_l'
+      ! Clipping r_t'th_l' at each vertical level, based on the
+      ! correlation of r_t and th_l at each vertical level, such that:
+      ! corr_(r_t,th_l) = r_t'th_l' / [ sqrt(r_t'^2) * sqrt(th_l'^2) ];
+      ! -1 <= corr_(r_t,th_l) <= 1.
+      ! Since r_t'^2, th_l'^2, and r_t'th_l' are all computed in the
+      ! same place, clipping for r_t'th_l' only has to be done once.
+      l_first_clip_ts = .true.
+      l_last_clip_ts = .true.
+      call clip_covar( gr(i), xp2_xpyp_rtpthlp, l_first_clip_ts,  & ! Intent(in)
+                       l_last_clip_ts, dt, rtp2(i,:), thlp2(i,:),  &  ! Intent(in)
+                       l_predict_upwp_vpwp, & ! Intent(in)
+                       stats_zm(i), & ! intent(inout)
+                       rtpthlp(i,:), rtpthlp_chnge(i,:) )     ! Intent(inout)
+
+      if ( l_scalar_calc ) then
+
+        ! Apply hole filling algorithm to the scalar variance terms
+        if ( l_hole_fill ) then
+          do sclr = 1, sclr_dim, 1
+            call pos_definite_variances( gr(i), xp2_xpyp_sclrp2, dt, sclr_tol(sclr)**2, & ! Intent(in)
+                                         rho_ds_zm(i,:), rho_ds_zt(i,:), &                ! Intent(in)
+                                         stats_zm(i), & ! intent(inout)
+                                         sclrp2(i,:,sclr) )                          ! Intent(inout)
+            if ( sclr == iisclr_rt ) then
+              ! Here again, we do this kluge here to make sclr'rt' == rt'^2
+              call pos_definite_variances( gr(i), xp2_xpyp_sclrprtp, dt, sclr_tol(sclr)**2, & ! Intent(in)
+                                           rho_ds_zm(i,:), rho_ds_zt(i,:), &                  ! Intent(in)
+                                           stats_zm(i), & ! intent(inout)
+                                           sclrprtp(i,:,sclr) )                          ! Intent(inout)
+            end if
+            if ( sclr == iisclr_thl ) then
+              ! As with sclr'rt' above, but for sclr'thl'
+              call pos_definite_variances( gr(i), xp2_xpyp_sclrpthlp, dt, sclr_tol(sclr)**2, & ! Intent(in)
+                                           rho_ds_zm(i,:), rho_ds_zt(i,:), &                   ! Intent(in)
+                                           stats_zm(i), & ! intent(inout)
+                                           sclrpthlp(i,:,sclr) )                          ! Intent(inout)
+            end if
+          enddo
+        endif
+
+
+        ! Clipping for sclr'^2
+        do sclr = 1, sclr_dim, 1
+
+  !      threshold = zero_threshold
+  !
+  !      where ( wp2 >= w_tol_sqd ) &
+  !         threshold = sclr_tol(sclr)*sclr_tol(sclr)
+
+          threshold = sclr_tol(sclr)**2
+
+          call clip_variance( gr(i), clip_sclrp2, dt, threshold, & ! Intent(in)
+                              stats_zm(i), & ! intent(inout)
+                              sclrp2(i,:,sclr) )                 ! Intent(inout)
+
+        enddo
+
+
+        ! Clipping for sclr'r_t'
+        ! Clipping sclr'r_t' at each vertical level, based on the
+        ! correlation of sclr and r_t at each vertical level, such that:
+        ! corr_(sclr,r_t) = sclr'r_t' / [ sqrt(sclr'^2) * sqrt(r_t'^2) ];
+        ! -1 <= corr_(sclr,r_t) <= 1.
+        ! Since sclr'^2, r_t'^2, and sclr'r_t' are all computed in the
+        ! same place, clipping for sclr'r_t' only has to be done once.
+        do sclr = 1, sclr_dim, 1
+
+          if  ( sclr == iisclr_rt ) then
+            ! Treat this like a variance if we're emulating rt
+            threshold = sclr_tol(sclr) * rt_tol
+
+            call clip_variance( gr(i), clip_sclrprtp, dt, threshold, & ! Intent(in)
+                                stats_zm(i), & ! intent(inout)
+                                sclrprtp(i,:,sclr) )                 ! Intent(inout)
+          else
+            l_first_clip_ts = .true.
+            l_last_clip_ts = .true.
+            call clip_covar( gr(i), clip_sclrprtp, l_first_clip_ts,  &            ! Intent(in) 
+                             l_last_clip_ts, dt, sclrp2(i,:,sclr), rtp2(i,:), &  ! Intent(in)
+                             l_predict_upwp_vpwp, & ! Intent(in)
+                             stats_zm(i), & ! intent(inout)
+                             sclrprtp(i,:,sclr), sclrprtp_chnge(i,:,sclr) ) ! Intent(inout)
           end if
         enddo
-      endif
 
 
-      ! Clipping for sclr'^2
-      do sclr = 1, sclr_dim, 1
+        ! Clipping for sclr'th_l'
+        ! Clipping sclr'th_l' at each vertical level, based on the
+        ! correlation of sclr and th_l at each vertical level, such that:
+        ! corr_(sclr,th_l) = sclr'th_l' / [ sqrt(sclr'^2) * sqrt(th_l'^2) ];
+        ! -1 <= corr_(sclr,th_l) <= 1.
+        ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
+        ! same place, clipping for sclr'th_l' only has to be done once.
+        do sclr = 1, sclr_dim, 1
+          if ( sclr == iisclr_thl ) then
+            ! As above, but for thl
+            threshold = sclr_tol(sclr) * thl_tol
+            call clip_variance( gr(i), clip_sclrpthlp, dt, threshold, & ! Intent(in)
+                                stats_zm(i), & ! intent(inout)
+                                sclrpthlp(i,:,sclr) )                 ! Intent(inout)
+          else
+            l_first_clip_ts = .true.
+            l_last_clip_ts = .true.
+            call clip_covar( gr(i), clip_sclrpthlp, l_first_clip_ts,  &            ! Intent(in) 
+                             l_last_clip_ts, dt, sclrp2(i,:,sclr), thlp2(i,:), &   ! Intent(in)
+                             l_predict_upwp_vpwp, &                         ! Intent(in)
+                             stats_zm(i), & ! intent(inout)
+                             sclrpthlp(i,:,sclr), sclrpthlp_chnge(i,:,sclr) ) ! Intent(inout)
+          end if
+        enddo
 
-!      threshold = zero_threshold
-!
-!      where ( wp2 >= w_tol_sqd ) &
-!         threshold = sclr_tol(sclr)*sclr_tol(sclr)
+      endif ! l_scalar_calc
 
-        threshold = sclr_tol(sclr)**2
+      if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code == clubb_fatal_error ) then
 
-        call clip_variance( gr, clip_sclrp2, dt, threshold, & ! Intent(in)
-                            stats_zm, & ! intent(inout)
-                            sclrp2(:,sclr) )                 ! Intent(inout)
+            write(fstderr,*) "Error in advance_xp2_xpyp"
 
-      enddo
+            write(fstderr,*) "Intent(in)"
 
+            write(fstderr,*) "invrs_tau_xp2_zm = ", invrs_tau_xp2_zm(i,:)
+            write(fstderr,*) "invrs_tau_C4_zm = ",invrs_tau_C4_zm(i,:)
+            write(fstderr,*) "invrs_tau_C14_zm = ",invrs_tau_C14_zm(i,:)
+            write(fstderr,*) "wm_zm = ", wm_zm(i,:)
+            write(fstderr,*) "rtm = ", rtm(i,:)
+            write(fstderr,*) "wprtp = ", wprtp(i,:)
+            write(fstderr,*) "thlm = ", thlm(i,:)
+            write(fstderr,*) "wpthlp = ", wpthlp(i,:)
+            write(fstderr,*) "wpthvp = ", wpthvp(i,:)
+            write(fstderr,*) "um = ", um(i,:)
+            write(fstderr,*) "vm = ", vm(i,:)
+            write(fstderr,*) "wp2 = ", wp2(i,:)
+            write(fstderr,*) "wp3 = ", wp3(i,:)
+            write(fstderr,*) "upwp = ", upwp(i,:)
+            write(fstderr,*) "vpwp = ", vpwp(i,:)
+            write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w(i,:)
+            write(fstderr,*) "Kh_zt = ", Kh_zt(i,:)
+            write(fstderr,*) "rtp2_forcing = ", rtp2_forcing(i,:)
+            write(fstderr,*) "thlp2_forcing = ", thlp2_forcing(i,:)
+            write(fstderr,*) "rtpthlp_forcing = ", rtpthlp_forcing(i,:)
+            write(fstderr,*) "rho_ds_zm = ", rho_ds_zm(i,:)
+            write(fstderr,*) "rho_ds_zt = ", rho_ds_zt(i,:)
+            write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm(i,:)
+            write(fstderr,*) "thv_ds_zm = ", thv_ds_zm(i,:)
+            write(fstderr,*) "wp2_zt = ", wp2_zt(i,:)
 
-      ! Clipping for sclr'r_t'
-      ! Clipping sclr'r_t' at each vertical level, based on the
-      ! correlation of sclr and r_t at each vertical level, such that:
-      ! corr_(sclr,r_t) = sclr'r_t' / [ sqrt(sclr'^2) * sqrt(r_t'^2) ];
-      ! -1 <= corr_(sclr,r_t) <= 1.
-      ! Since sclr'^2, r_t'^2, and sclr'r_t' are all computed in the
-      ! same place, clipping for sclr'r_t' only has to be done once.
-      do sclr = 1, sclr_dim, 1
+            do sclr = 1, sclr_dim
+              write(fstderr,*) "sclrm = ", sclr, sclrm(i,:,sclr)
+              write(fstderr,*) "wpsclrp = ", sclr, wpsclrp(i,:,sclr)
+            enddo
 
-        if  ( sclr == iisclr_rt ) then
-          ! Treat this like a variance if we're emulating rt
-          threshold = sclr_tol(sclr) * rt_tol
+            write(fstderr,*) "Intent(In/Out)"
 
-          call clip_variance( gr, clip_sclrprtp, dt, threshold, & ! Intent(in)
-                              stats_zm, & ! intent(inout)
-                              sclrprtp(:,sclr) )                 ! Intent(inout)
-        else
-          l_first_clip_ts = .true.
-          l_last_clip_ts = .true.
-          call clip_covar( gr, clip_sclrprtp, l_first_clip_ts,  &            ! Intent(in) 
-                           l_last_clip_ts, dt, sclrp2(:,sclr), rtp2(:), &  ! Intent(in)
-                           l_predict_upwp_vpwp, & ! Intent(in)
-                           stats_zm, & ! intent(inout)
-                           sclrprtp(:,sclr), sclrprtp_chnge(:,sclr) ) ! Intent(inout)
-        end if
-      enddo
-
-
-      ! Clipping for sclr'th_l'
-      ! Clipping sclr'th_l' at each vertical level, based on the
-      ! correlation of sclr and th_l at each vertical level, such that:
-      ! corr_(sclr,th_l) = sclr'th_l' / [ sqrt(sclr'^2) * sqrt(th_l'^2) ];
-      ! -1 <= corr_(sclr,th_l) <= 1.
-      ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
-      ! same place, clipping for sclr'th_l' only has to be done once.
-      do sclr = 1, sclr_dim, 1
-        if ( sclr == iisclr_thl ) then
-          ! As above, but for thl
-          threshold = sclr_tol(sclr) * thl_tol
-          call clip_variance( gr, clip_sclrpthlp, dt, threshold, & ! Intent(in)
-                              stats_zm, & ! intent(inout)
-                              sclrpthlp(:,sclr) )                 ! Intent(inout)
-        else
-          l_first_clip_ts = .true.
-          l_last_clip_ts = .true.
-          call clip_covar( gr, clip_sclrpthlp, l_first_clip_ts,  &            ! Intent(in) 
-                           l_last_clip_ts, dt, sclrp2(:,sclr), thlp2(:), &   ! Intent(in)
-                           l_predict_upwp_vpwp, &                         ! Intent(in)
-                           stats_zm, & ! intent(inout)
-                           sclrpthlp(:,sclr), sclrpthlp_chnge(:,sclr) ) ! Intent(inout)
-        end if
-      enddo
-
-    endif ! l_scalar_calc
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-
-          write(fstderr,*) "Error in advance_xp2_xpyp"
-
-          write(fstderr,*) "Intent(in)"
-
-          write(fstderr,*) "invrs_tau_xp2_zm = ", invrs_tau_xp2_zm
-          write(fstderr,*) "invrs_tau_C4_zm = ",invrs_tau_C4_zm
-          write(fstderr,*) "invrs_tau_C14_zm = ",invrs_tau_C14_zm
-          write(fstderr,*) "wm_zm = ", wm_zm
-          write(fstderr,*) "rtm = ", rtm
-          write(fstderr,*) "wprtp = ", wprtp
-          write(fstderr,*) "thlm = ", thlm
-          write(fstderr,*) "wpthlp = ", wpthlp
-          write(fstderr,*) "wpthvp = ", wpthvp
-          write(fstderr,*) "um = ", um
-          write(fstderr,*) "vm = ", vm
-          write(fstderr,*) "wp2 = ", wp2
-          write(fstderr,*) "wp3 = ", wp3
-          write(fstderr,*) "upwp = ", upwp
-          write(fstderr,*) "vpwp = ", vpwp
-          write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-          write(fstderr,*) "Skw_zm = ", Skw_zm
-          write(fstderr,*) "Kh_zt = ", Kh_zt
-          write(fstderr,*) "rtp2_forcing = ", rtp2_forcing
-          write(fstderr,*) "thlp2_forcing = ", thlp2_forcing
-          write(fstderr,*) "rtpthlp_forcing = ", rtpthlp_forcing
-          write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
-          write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
-          write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm
-          write(fstderr,*) "thv_ds_zm = ", thv_ds_zm
-          write(fstderr,*) "wp2_zt = ", wp2_zt
-
-          do sclr = 1, sclr_dim
-            write(fstderr,*) "sclrm = ", sclr, sclrm(:,sclr)
-            write(fstderr,*) "wpsclrp = ", sclr, wpsclrp(:,sclr)
-          enddo
-
-          write(fstderr,*) "Intent(In/Out)"
-
-          if ( l_lmm_stepping ) &
-             write(fstderr,*) "rtp2 (pre-solve) = ", rtp2_old
-          write(fstderr,*) "rtp2 = ", rtp2
-          if ( l_lmm_stepping ) &
-             write(fstderr,*) "thlp2 (pre-solve) = ", thlp2_old
-          write(fstderr,*) "thlp2 = ", thlp2
-          if ( l_lmm_stepping ) &
-             write(fstderr,*) "rtpthlp (pre-solve) = ", rtpthlp_old
-          write(fstderr,*) "rtpthlp = ", rtpthlp
-          if ( l_lmm_stepping ) &
-             write(fstderr,*) "up2 (pre-solve) = ", up2_old
-          write(fstderr,*) "up2 = ", up2
-          if ( l_lmm_stepping ) &
-             write(fstderr,*) "vp2 (pre-solve) = ", vp2_old
-          write(fstderr,*) "vp2 = ", vp2
-
-          do sclr = 1, sclr_dim
             if ( l_lmm_stepping ) &
-               write(fstderr,*) "sclrp2 (pre-solve) = ", sclr, sclrp2_old(:,sclr)
-            write(fstderr,*) "sclrp2 = ", sclr, sclrp2(:,sclr)
+               write(fstderr,*) "rtp2 (pre-solve) = ", rtp2_old(i,:)
+            write(fstderr,*) "rtp2 = ", rtp2(i,:)
             if ( l_lmm_stepping ) &
-               write(fstderr,*) "sclrprtp (pre-solve) = ", sclr, sclrprtp_old(:,sclr)
-            write(fstderr,*) "sclrprtp = ", sclr, sclrprtp(:,sclr)
+               write(fstderr,*) "thlp2 (pre-solve) = ", thlp2_old(i,:)
+            write(fstderr,*) "thlp2 = ", thlp2(i,:)
             if ( l_lmm_stepping ) &
-               write(fstderr,*) "sclrthlp (pre-solve) = ", sclr, sclrpthlp_old(:,sclr)
-            write(fstderr,*) "sclrthlp = ", sclr, sclrpthlp(:,sclr)
-          enddo
+               write(fstderr,*) "rtpthlp (pre-solve) = ", rtpthlp_old(i,:)
+            write(fstderr,*) "rtpthlp = ", rtpthlp(i,:)
+            if ( l_lmm_stepping ) &
+               write(fstderr,*) "up2 (pre-solve) = ", up2_old(i,:)
+            write(fstderr,*) "up2 = ", up2(i,:)
+            if ( l_lmm_stepping ) &
+               write(fstderr,*) "vp2 (pre-solve) = ", vp2_old(i,:)
+            write(fstderr,*) "vp2 = ", vp2(i,:)
 
-        endif
-    end if
+            do sclr = 1, sclr_dim
+              if ( l_lmm_stepping ) &
+                 write(fstderr,*) "sclrp2 (pre-solve) = ", sclr, sclrp2_old(i,:,sclr)
+              write(fstderr,*) "sclrp2 = ", sclr, sclrp2(i,:,sclr)
+              if ( l_lmm_stepping ) &
+                 write(fstderr,*) "sclrprtp (pre-solve) = ", sclr, sclrprtp_old(i,:,sclr)
+              write(fstderr,*) "sclrprtp = ", sclr, sclrprtp(i,:,sclr)
+              if ( l_lmm_stepping ) &
+                 write(fstderr,*) "sclrthlp (pre-solve) = ", sclr, sclrpthlp_old(i,:,sclr)
+              write(fstderr,*) "sclrthlp = ", sclr, sclrpthlp(i,:,sclr)
+            enddo
+
+          endif
+      end if
+      
+    end do
 
     return
   end subroutine advance_xp2_xpyp
