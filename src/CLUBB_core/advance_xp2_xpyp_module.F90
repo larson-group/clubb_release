@@ -188,22 +188,9 @@ module advance_xp2_xpyp_module
 
     implicit none
 
-    type (stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
-
-    type (grid), target, intent(in) :: gr
-
-    ! Intrinsic functions
-    intrinsic :: &
-      exp, sqrt, min
-
-    ! Constant parameters
-    logical, parameter :: &
-      l_clip_large_rtp2 = .true. ! Clip rtp2 to be < rtm^2 * coef
-
     ! Input variables
+    type (grid), target, intent(in) :: gr
+    
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
       invrs_tau_C4_zm,  & ! Inverse time-scale for C4 terms on mom. levels [1/s]
@@ -290,6 +277,11 @@ module advance_xp2_xpyp_module
       l_lmm_stepping               ! Apply Linear Multistep Method (LMM) Stepping
 
     ! Input/Output variables
+    type (stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
+      
     ! An attribute of (inout) is also needed to import the value of the variances
     ! at the surface.  Brian.  12/18/05.
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
@@ -391,13 +383,17 @@ module advance_xp2_xpyp_module
 
     logical :: l_scalar_calc, l_first_clip_ts, l_last_clip_ts
 
+    ! Constant parameters
+    logical, parameter :: &
+      l_clip_large_rtp2 = .true. ! Clip rtp2 to be < rtm^2 * coef
+
     ! Minimum value of cloud fraction to multiply C2 by to calculate the
     ! adjusted value of C2.
     real( kind = core_rknd ), parameter ::  & 
       min_cloud_frac_mult = 0.10_core_rknd
 
     ! Loop indices
-    integer :: i, k
+    integer :: sclr, k
     
     !---------------------------- Begin Code ----------------------------------
 
@@ -966,42 +962,42 @@ module advance_xp2_xpyp_module
 
       ! Apply hole filling algorithm to the scalar variance terms
       if ( l_hole_fill ) then
-        do i = 1, sclr_dim, 1
-          call pos_definite_variances( gr, xp2_xpyp_sclrp2, dt, sclr_tol(i)**2, & ! Intent(in)
+        do sclr = 1, sclr_dim, 1
+          call pos_definite_variances( gr, xp2_xpyp_sclrp2, dt, sclr_tol(sclr)**2, & ! Intent(in)
                                        rho_ds_zm, rho_ds_zt, &                ! Intent(in)
                                        stats_zm, & ! intent(inout)
-                                       sclrp2(:,i) )                          ! Intent(inout)
-          if ( i == iisclr_rt ) then
+                                       sclrp2(:,sclr) )                          ! Intent(inout)
+          if ( sclr == iisclr_rt ) then
             ! Here again, we do this kluge here to make sclr'rt' == rt'^2
-            call pos_definite_variances( gr, xp2_xpyp_sclrprtp, dt, sclr_tol(i)**2, & ! Intent(in)
+            call pos_definite_variances( gr, xp2_xpyp_sclrprtp, dt, sclr_tol(sclr)**2, & ! Intent(in)
                                          rho_ds_zm, rho_ds_zt, &                  ! Intent(in)
                                          stats_zm, & ! intent(inout)
-                                         sclrprtp(:,i) )                          ! Intent(inout)
+                                         sclrprtp(:,sclr) )                          ! Intent(inout)
           end if
-          if ( i == iisclr_thl ) then
+          if ( sclr == iisclr_thl ) then
             ! As with sclr'rt' above, but for sclr'thl'
-            call pos_definite_variances( gr, xp2_xpyp_sclrpthlp, dt, sclr_tol(i)**2, & ! Intent(in)
+            call pos_definite_variances( gr, xp2_xpyp_sclrpthlp, dt, sclr_tol(sclr)**2, & ! Intent(in)
                                          rho_ds_zm, rho_ds_zt, &                   ! Intent(in)
                                          stats_zm, & ! intent(inout)
-                                         sclrpthlp(:,i) )                          ! Intent(inout)
+                                         sclrpthlp(:,sclr) )                          ! Intent(inout)
           end if
         enddo
       endif
 
 
       ! Clipping for sclr'^2
-      do i = 1, sclr_dim, 1
+      do sclr = 1, sclr_dim, 1
 
 !      threshold = zero_threshold
 !
 !      where ( wp2 >= w_tol_sqd ) &
-!         threshold = sclr_tol(i)*sclr_tol(i)
+!         threshold = sclr_tol(sclr)*sclr_tol(sclr)
 
-        threshold = sclr_tol(i)**2
+        threshold = sclr_tol(sclr)**2
 
         call clip_variance( gr, clip_sclrp2, dt, threshold, & ! Intent(in)
                             stats_zm, & ! intent(inout)
-                            sclrp2(:,i) )                 ! Intent(inout)
+                            sclrp2(:,sclr) )                 ! Intent(inout)
 
       enddo
 
@@ -1013,23 +1009,23 @@ module advance_xp2_xpyp_module
       ! -1 <= corr_(sclr,r_t) <= 1.
       ! Since sclr'^2, r_t'^2, and sclr'r_t' are all computed in the
       ! same place, clipping for sclr'r_t' only has to be done once.
-      do i = 1, sclr_dim, 1
+      do sclr = 1, sclr_dim, 1
 
-        if  ( i == iisclr_rt ) then
+        if  ( sclr == iisclr_rt ) then
           ! Treat this like a variance if we're emulating rt
-          threshold = sclr_tol(i) * rt_tol
+          threshold = sclr_tol(sclr) * rt_tol
 
           call clip_variance( gr, clip_sclrprtp, dt, threshold, & ! Intent(in)
                               stats_zm, & ! intent(inout)
-                              sclrprtp(:,i) )                 ! Intent(inout)
+                              sclrprtp(:,sclr) )                 ! Intent(inout)
         else
           l_first_clip_ts = .true.
           l_last_clip_ts = .true.
           call clip_covar( gr, clip_sclrprtp, l_first_clip_ts,  &            ! Intent(in) 
-                           l_last_clip_ts, dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
+                           l_last_clip_ts, dt, sclrp2(:,sclr), rtp2(:), &  ! Intent(in)
                            l_predict_upwp_vpwp, & ! Intent(in)
                            stats_zm, & ! intent(inout)
-                           sclrprtp(:,i), sclrprtp_chnge(:,i) ) ! Intent(inout)
+                           sclrprtp(:,sclr), sclrprtp_chnge(:,sclr) ) ! Intent(inout)
         end if
       enddo
 
@@ -1041,21 +1037,21 @@ module advance_xp2_xpyp_module
       ! -1 <= corr_(sclr,th_l) <= 1.
       ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
       ! same place, clipping for sclr'th_l' only has to be done once.
-      do i = 1, sclr_dim, 1
-        if ( i == iisclr_thl ) then
+      do sclr = 1, sclr_dim, 1
+        if ( sclr == iisclr_thl ) then
           ! As above, but for thl
-          threshold = sclr_tol(i) * thl_tol
+          threshold = sclr_tol(sclr) * thl_tol
           call clip_variance( gr, clip_sclrpthlp, dt, threshold, & ! Intent(in)
                               stats_zm, & ! intent(inout)
-                              sclrpthlp(:,i) )                 ! Intent(inout)
+                              sclrpthlp(:,sclr) )                 ! Intent(inout)
         else
           l_first_clip_ts = .true.
           l_last_clip_ts = .true.
           call clip_covar( gr, clip_sclrpthlp, l_first_clip_ts,  &            ! Intent(in) 
-                           l_last_clip_ts, dt, sclrp2(:,i), thlp2(:), &   ! Intent(in)
+                           l_last_clip_ts, dt, sclrp2(:,sclr), thlp2(:), &   ! Intent(in)
                            l_predict_upwp_vpwp, &                         ! Intent(in)
                            stats_zm, & ! intent(inout)
-                           sclrpthlp(:,i), sclrpthlp_chnge(:,i) ) ! Intent(inout)
+                           sclrpthlp(:,sclr), sclrpthlp_chnge(:,sclr) ) ! Intent(inout)
         end if
       enddo
 
@@ -1095,9 +1091,9 @@ module advance_xp2_xpyp_module
           write(fstderr,*) "thv_ds_zm = ", thv_ds_zm
           write(fstderr,*) "wp2_zt = ", wp2_zt
 
-          do i = 1, sclr_dim
-            write(fstderr,*) "sclrm = ", i, sclrm(:,i)
-            write(fstderr,*) "wpsclrp = ", i, wpsclrp(:,i)
+          do sclr = 1, sclr_dim
+            write(fstderr,*) "sclrm = ", sclr, sclrm(:,sclr)
+            write(fstderr,*) "wpsclrp = ", sclr, wpsclrp(:,sclr)
           enddo
 
           write(fstderr,*) "Intent(In/Out)"
@@ -1118,16 +1114,16 @@ module advance_xp2_xpyp_module
              write(fstderr,*) "vp2 (pre-solve) = ", vp2_old
           write(fstderr,*) "vp2 = ", vp2
 
-          do i = 1, sclr_dim
+          do sclr = 1, sclr_dim
             if ( l_lmm_stepping ) &
-               write(fstderr,*) "sclrp2 (pre-solve) = ", i, sclrp2_old(:,i)
-            write(fstderr,*) "sclrp2 = ", i, sclrp2(:,i)
+               write(fstderr,*) "sclrp2 (pre-solve) = ", sclr, sclrp2_old(:,sclr)
+            write(fstderr,*) "sclrp2 = ", sclr, sclrp2(:,sclr)
             if ( l_lmm_stepping ) &
-               write(fstderr,*) "sclrprtp (pre-solve) = ", i, sclrprtp_old(:,i)
-            write(fstderr,*) "sclrprtp = ", i, sclrprtp(:,i)
+               write(fstderr,*) "sclrprtp (pre-solve) = ", sclr, sclrprtp_old(:,sclr)
+            write(fstderr,*) "sclrprtp = ", sclr, sclrprtp(:,sclr)
             if ( l_lmm_stepping ) &
-               write(fstderr,*) "sclrthlp (pre-solve) = ", i, sclrpthlp_old(:,i)
-            write(fstderr,*) "sclrthlp = ", i, sclrpthlp(:,i)
+               write(fstderr,*) "sclrthlp (pre-solve) = ", sclr, sclrpthlp_old(:,sclr)
+            write(fstderr,*) "sclrthlp = ", sclr, sclrpthlp(:,sclr)
           enddo
 
         endif
@@ -1259,7 +1255,7 @@ module advance_xp2_xpyp_module
       real( kind = core_rknd ) :: & 
         threshold     ! Minimum value for variances                   [units vary]
         
-      integer :: i
+      integer :: sclr
       
       ! -------- Begin Code --------
      
@@ -1298,23 +1294,23 @@ module advance_xp2_xpyp_module
      
      if ( l_scalar_calc ) then
       
-       do i = 1, sclr_dim, 1
+       do sclr = 1, sclr_dim, 1
 
          ! Forcing for <sclr'^2>.
          sclrp2_forcing = zero
 
          !!!!!***** sclr'^2 *****!!!!!
          call xp2_xpyp_rhs( gr, xp2_xpyp_sclrp2, dt,     & ! In
-                            wpsclrp(:,i), wpsclrp(:,i),      & ! In
-                            sclrm(:,i), sclrm(:,i),          & ! In
-                            sclrp2(:,i), sclrp2_forcing,     & ! In
-                            C2x, invrs_tau_xp2_zm, sclr_tol(i)**2, & ! In
-                            lhs_ta, rhs_ta_wpsclrp2(:,i),    & ! In
+                            wpsclrp(:,sclr), wpsclrp(:,sclr),      & ! In
+                            sclrm(:,sclr), sclrm(:,sclr),          & ! In
+                            sclrp2(:,sclr), sclrp2_forcing,     & ! In
+                            C2x, invrs_tau_xp2_zm, sclr_tol(sclr)**2, & ! In
+                            lhs_ta, rhs_ta_wpsclrp2(:,sclr),    & ! In
                             stats_zm, & ! intent(inout)
-                            rhs(:,3+i) )                       ! Out
+                            rhs(:,3+sclr) )                       ! Out
 
          !!!!!***** sclr'r_t' *****!!!!!
-         if ( i == iisclr_rt ) then
+         if ( sclr == iisclr_rt ) then
             ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
             ! handle this as we would a variance, even though generally speaking
             ! the scalar is not rt
@@ -1326,16 +1322,16 @@ module advance_xp2_xpyp_module
          endif
          
          call xp2_xpyp_rhs( gr, xp2_xpyp_sclrprtp, dt,  & ! In
-                            wpsclrp(:,i), wprtp,            & ! In
-                            sclrm(:,i), rtm, sclrprtp(:,i), & ! In
+                            wpsclrp(:,sclr), wprtp,            & ! In
+                            sclrm(:,sclr), rtm, sclrprtp(:,sclr), & ! In
                             sclrprtp_forcing,               & ! In
                             C2x, invrs_tau_xp2_zm, threshold,     & ! In
-                            lhs_ta, rhs_ta_wprtpsclrp(:,i), & ! In
+                            lhs_ta, rhs_ta_wprtpsclrp(:,sclr), & ! In
                             stats_zm, & ! intent(inout)
-                            rhs(:,3+i+sclr_dim) )             ! Out
+                            rhs(:,3+sclr+sclr_dim) )             ! Out
 
          !!!!!***** sclr'th_l' *****!!!!!
-         if ( i == iisclr_thl ) then
+         if ( sclr == iisclr_thl ) then
             ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
             ! handle this as we did with sclr_rt, above.
             sclrpthlp_forcing = thlp2_forcing
@@ -1346,13 +1342,13 @@ module advance_xp2_xpyp_module
          endif
 
          call xp2_xpyp_rhs( gr, xp2_xpyp_sclrpthlp, dt,     & ! In
-                            wpsclrp(:,i), wpthlp,               & ! In
-                            sclrm(:,i), thlm, sclrpthlp(:,i),   & ! In
+                            wpsclrp(:,sclr), wpthlp,               & ! In
+                            sclrm(:,sclr), thlm, sclrpthlp(:,sclr),   & ! In
                             sclrpthlp_forcing,                  & ! In
                             C2x, invrs_tau_xp2_zm, threshold,         & ! In
-                            lhs_ta, rhs_ta_wpthlpsclrp(:,i),    & ! In
+                            lhs_ta, rhs_ta_wpthlpsclrp(:,sclr),    & ! In
                             stats_zm, & ! intent(inout)
-                            rhs(:,3+i+2*sclr_dim) )               ! Out
+                            rhs(:,3+sclr+2*sclr_dim) )               ! Out
 
        enddo ! 1..sclr_dim
        
@@ -1520,7 +1516,7 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ) :: & 
       threshold     ! Minimum value for variances                   [units vary]
         
-    integer :: i
+    integer :: sclr
       
     ! -------- Begin Code --------
 
@@ -1595,32 +1591,32 @@ module advance_xp2_xpyp_module
 
         ! Any PDF besides ADG1 is used
 
-        do i = 1, sclr_dim, 1
+        do sclr = 1, sclr_dim, 1
 
           ! Forcing for <sclr'^2>.
           sclrp2_forcing = zero
 
           !!!!!***** sclr'^2 *****!!!!!
           call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                             lhs_ta_wpsclrp2(:,:,i), lhs_ma, lhs_diff, & ! In
+                             lhs_ta_wpsclrp2(:,:,sclr), lhs_ma, lhs_diff, & ! In
                              lhs ) ! Out
 
           call xp2_xpyp_rhs( gr, xp2_xpyp_sclrp2, dt, & ! In
-                             wpsclrp(:,i), wpsclrp(:,i), & ! In
-                             sclrm(:,i), sclrm(:,i), & ! In
-                             sclrp2(:,i), sclrp2_forcing, & ! In
-                             C2sclr_1d, invrs_tau_xp2_zm, sclr_tol(i)**2, & ! In
-                             lhs_ta_wpsclrp2(:,:,i), rhs_ta_wpsclrp2(:,i), & ! In
+                             wpsclrp(:,sclr), wpsclrp(:,sclr), & ! In
+                             sclrm(:,sclr), sclrm(:,sclr), & ! In
+                             sclrp2(:,sclr), sclrp2_forcing, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, sclr_tol(sclr)**2, & ! In
+                             lhs_ta_wpsclrp2(:,:,sclr), rhs_ta_wpsclrp2(:,sclr), & ! In
                              stats_zm, & ! intent(inout)
                              rhs ) ! Out
 
           ! Solve the tridiagonal system
           call xp2_xpyp_solve( gr, xp2_xpyp_scalars, 1,  & ! Intent(in)
                                stats_sfc, & ! intent(inout)
-                               rhs, lhs, sclrp2(:,i) ) ! Intent(inout)
+                               rhs, lhs, sclrp2(:,sclr) ) ! Intent(inout)
       
           !!!!!***** sclr'r_t' *****!!!!!
-          if ( i == iisclr_rt ) then
+          if ( sclr == iisclr_rt ) then
              ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
              ! handle this as we would a variance, even though generally speaking
              ! the scalar is not rt
@@ -1632,26 +1628,26 @@ module advance_xp2_xpyp_module
           endif
           
           call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                             lhs_ta_wprtpsclrp(:,:,i), lhs_ma, lhs_diff, & ! In
+                             lhs_ta_wprtpsclrp(:,:,sclr), lhs_ma, lhs_diff, & ! In
                              lhs ) ! Out
 
           call xp2_xpyp_rhs( gr, xp2_xpyp_sclrprtp, dt, & ! In
-                             wpsclrp(:,i), wprtp, & ! In
-                             sclrm(:,i), rtm, sclrprtp(:,i), & ! In
+                             wpsclrp(:,sclr), wprtp, & ! In
+                             sclrm(:,sclr), rtm, sclrprtp(:,sclr), & ! In
                              sclrprtp_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
-                             lhs_ta_wprtpsclrp(:,:,i), rhs_ta_wprtpsclrp(:,i), & ! In
+                             lhs_ta_wprtpsclrp(:,:,sclr), rhs_ta_wprtpsclrp(:,sclr), & ! In
                              stats_zm, & ! intent(inout)
                              rhs ) ! Out
 
           ! Solve the tridiagonal system
           call xp2_xpyp_solve( gr, xp2_xpyp_scalars, 1,    & ! Intent(in)
                                stats_sfc, & ! intent(inout)
-                               rhs, lhs, sclrprtp(:,i) ) ! Intent(inout)
+                               rhs, lhs, sclrprtp(:,sclr) ) ! Intent(inout)
       
           !!!!!***** sclr'th_l' *****!!!!!
 
-          if ( i == iisclr_thl ) then
+          if ( sclr == iisclr_thl ) then
              ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
              ! handle this as we did with sclr_rt, above.
              sclrpthlp_forcing = thlp2_forcing
@@ -1662,22 +1658,22 @@ module advance_xp2_xpyp_module
           endif
 
           call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                             lhs_ta_wpthlpsclrp(:,:,i), lhs_ma, lhs_diff, & ! In
+                             lhs_ta_wpthlpsclrp(:,:,sclr), lhs_ma, lhs_diff, & ! In
                              lhs ) ! Out
 
           call xp2_xpyp_rhs( gr, xp2_xpyp_sclrpthlp, dt, & ! In
-                             wpsclrp(:,i), wpthlp, & ! In
-                             sclrm(:,i), thlm, sclrpthlp(:,i), & ! In
+                             wpsclrp(:,sclr), wpthlp, & ! In
+                             sclrm(:,sclr), thlm, sclrpthlp(:,sclr), & ! In
                              sclrpthlp_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
-                             lhs_ta_wpthlpsclrp(:,:,i), rhs_ta_wpthlpsclrp(:,i), & ! In
+                             lhs_ta_wpthlpsclrp(:,:,sclr), rhs_ta_wpthlpsclrp(:,sclr), & ! In
                              stats_zm, & ! intent(inout)
                              rhs ) ! Out
 
           ! Solve the tridiagonal system
           call xp2_xpyp_solve( gr, xp2_xpyp_scalars, 1,     & ! Intent(in)
                                stats_sfc, & ! intent(inout)
-                               rhs, lhs, sclrpthlp(:,i) ) ! Intent(inout)
+                               rhs, lhs, sclrpthlp(:,sclr) ) ! Intent(inout)
       
         enddo ! 1..sclr_dim
 
@@ -1697,23 +1693,23 @@ module advance_xp2_xpyp_module
 
 
         ! Explicit contributions to passive scalars
-        do i = 1, sclr_dim, 1
+        do sclr = 1, sclr_dim, 1
 
           ! Forcing for <sclr'^2>.
           sclrp2_forcing = zero
 
           !!!!!***** sclr'^2 *****!!!!!
           call xp2_xpyp_rhs( gr, xp2_xpyp_sclrp2, dt, & ! In
-                             wpsclrp(:,i), wpsclrp(:,i), & ! In
-                             sclrm(:,i), sclrm(:,i), & ! In
-                             sclrp2(:,i), sclrp2_forcing, & ! In
-                             C2sclr_1d, invrs_tau_xp2_zm, sclr_tol(i)**2, & ! In
-                             lhs_ta_wpsclrp2(:,:,1), rhs_ta_wpsclrp2(:,i), & ! In
+                             wpsclrp(:,sclr), wpsclrp(:,sclr), & ! In
+                             sclrm(:,sclr), sclrm(:,sclr), & ! In
+                             sclrp2(:,sclr), sclrp2_forcing, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, sclr_tol(sclr)**2, & ! In
+                             lhs_ta_wpsclrp2(:,:,1), rhs_ta_wpsclrp2(:,sclr), & ! In
                              stats_zm, & ! intent(inout)
-                             sclr_rhs(:,i) ) ! Out
+                             sclr_rhs(:,sclr) ) ! Out
 
           !!!!!***** sclr'r_t' *****!!!!!
-          if ( i == iisclr_rt ) then
+          if ( sclr == iisclr_rt ) then
              ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
              ! handle this as we would a variance, even though generally speaking
              ! the scalar is not rt
@@ -1725,17 +1721,17 @@ module advance_xp2_xpyp_module
           endif
           
           call xp2_xpyp_rhs( gr, xp2_xpyp_sclrprtp, dt, & ! In
-                             wpsclrp(:,i), wprtp, & ! In
-                             sclrm(:,i), rtm, sclrprtp(:,i), & ! In
+                             wpsclrp(:,sclr), wprtp, & ! In
+                             sclrm(:,sclr), rtm, sclrprtp(:,sclr), & ! In
                              sclrprtp_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
-                             lhs_ta_wpsclrp2(:,:,1), rhs_ta_wprtpsclrp(:,i), & ! In
+                             lhs_ta_wpsclrp2(:,:,1), rhs_ta_wprtpsclrp(:,sclr), & ! In
                              stats_zm, & ! intent(inout)
-                             sclr_rhs(:,i+sclr_dim) ) ! Out
+                             sclr_rhs(:,sclr+sclr_dim) ) ! Out
 
           !!!!!***** sclr'th_l' *****!!!!!
 
-          if ( i == iisclr_thl ) then
+          if ( sclr == iisclr_thl ) then
              ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
              ! handle this as we did with sclr_rt, above.
              sclrpthlp_forcing = thlp2_forcing
@@ -1746,13 +1742,13 @@ module advance_xp2_xpyp_module
           endif
 
           call xp2_xpyp_rhs( gr, xp2_xpyp_sclrpthlp, dt, & ! In
-                             wpsclrp(:,i), wpthlp, & ! In
-                             sclrm(:,i), thlm, sclrpthlp(:,i), & ! In
+                             wpsclrp(:,sclr), wpthlp, & ! In
+                             sclrm(:,sclr), thlm, sclrpthlp(:,sclr), & ! In
                              sclrpthlp_forcing, & ! In
                              C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
-                             lhs_ta_wpsclrp2(:,:,1), rhs_ta_wpthlpsclrp(:,i), & ! In
+                             lhs_ta_wpsclrp2(:,:,1), rhs_ta_wpthlpsclrp(:,sclr), & ! In
                              stats_zm, & ! intent(inout)
-                             sclr_rhs(:,i+2*sclr_dim) ) ! Out
+                             sclr_rhs(:,sclr+2*sclr_dim) ) ! Out
 
         enddo ! 1..sclr_dim
 
@@ -3249,7 +3245,7 @@ module advance_xp2_xpyp_module
       wpthlp_zt   ! w'th_l' interpolated to thermodyamnic levels  [K m/s]
                     
     integer :: &
-      i  ! Loop index
+      sclr  ! Loop index
 
     !------------------- Begin Code -------------------
     
@@ -3357,19 +3353,19 @@ module advance_xp2_xpyp_module
     
       if ( l_scalar_calc ) then
     
-        do i = 1, sclr_dim
+        do sclr = 1, sclr_dim
             
           ! Interpolate wpsclrp2 to momentum levels and calculate the sign of 
           ! vertical velocityif l_upwind_xpyp_ta, otherwise just use wpsclrp2 
           if ( l_upwind_xpyp_ta ) then
               
-            term_wpsclrp2_explicit_zm(:) = zt2zm( gr, wpsclrp2(:,i) )
+            term_wpsclrp2_explicit_zm(:) = zt2zm( gr, wpsclrp2(:,sclr) )
             
             sgn_t_vel_sclrp2(:) &
-            = sgn_turbulent_velocity( gr, term_wpsclrp2_explicit_zm(:), sclrp2(:,i) )
+            = sgn_turbulent_velocity( gr, term_wpsclrp2_explicit_zm(:), sclrp2(:,sclr) )
             
           else
-            term_wpsclrp2_explicit(:) = wpsclrp2(:,i)
+            term_wpsclrp2_explicit(:) = wpsclrp2(:,sclr)
           end if
         
           ! Calculate the RHS turbulent advection term for <w'sclr'^2>
@@ -3382,18 +3378,18 @@ module advance_xp2_xpyp_module
                                      term_wpsclrp2_explicit_zm(:), & ! Intent(in)
                                      rho_ds_zm(:),                 & ! Intent(in)
                                      gr%invrs_dzt(:),              & ! Intent(in)
-                                     rhs_ta_wpsclrp2(:,i)          ) ! Intent(out)
+                                     rhs_ta_wpsclrp2(:,sclr)          ) ! Intent(out)
         end do
         
         ! Interpolate wpsclrprtp to momentum levels and calculate the sign of 
         ! vertical velocityif l_upwind_xpyp_ta, otherwise just use wpsclrprtp 
-        do i = 1, sclr_dim
+        do sclr = 1, sclr_dim
           if ( l_upwind_xpyp_ta ) then
-            term_wprtpsclrp_explicit_zm(:) = zt2zm( gr, wpsclrprtp(:,i) )
+            term_wprtpsclrp_explicit_zm(:) = zt2zm( gr, wpsclrprtp(:,sclr) )
             sgn_t_vel_sclrprtp(:) = sgn_turbulent_velocity( gr, term_wprtpsclrp_explicit_zm(:), &
-                                                             sclrprtp(:,i) )
+                                                             sclrprtp(:,sclr) )
           else
-            term_wprtpsclrp_explicit(:) = wpsclrprtp(:,i)
+            term_wprtpsclrp_explicit(:) = wpsclrprtp(:,sclr)
                 
           end if
             
@@ -3407,19 +3403,19 @@ module advance_xp2_xpyp_module
                                      term_wprtpsclrp_explicit_zm(:), & ! Intent(in)
                                      rho_ds_zm(:),                   & ! Intent(in)
                                      gr%invrs_dzt(:),                & ! Intent(in)
-                                     rhs_ta_wprtpsclrp(:,i)          ) ! Intent(out)
+                                     rhs_ta_wprtpsclrp(:,sclr)          ) ! Intent(out)
           
         end do
         
         ! Interpolate wpsclrpthlp to momentum levels and calculate the sign of 
         ! vertical velocityif l_upwind_xpyp_ta, otherwise just use wpsclrpthlp 
-        do i = 1, sclr_dim
+        do sclr = 1, sclr_dim
           if ( l_upwind_xpyp_ta ) then
-            term_wpthlpsclrp_explicit_zm(:) = zt2zm( gr, wpsclrpthlp(:,i) )
+            term_wpthlpsclrp_explicit_zm(:) = zt2zm( gr, wpsclrpthlp(:,sclr) )
             sgn_t_vel_sclrpthlp(:) = sgn_turbulent_velocity( gr, term_wpthlpsclrp_explicit_zm(:), &
-                                                            sclrpthlp(:,i) )
+                                                            sclrpthlp(:,sclr) )
           else
-            term_wpthlpsclrp_explicit(:) = wpsclrpthlp(:,i)
+            term_wpthlpsclrp_explicit(:) = wpsclrpthlp(:,sclr)
           end if
     
           ! Calculate the RHS turbulent advection term for <w'sclr'thl'>
@@ -3432,7 +3428,7 @@ module advance_xp2_xpyp_module
                                      term_wpthlpsclrp_explicit_zm(:), & ! Intent(in)
                                      rho_ds_zm(:),                    & ! Intent(in)
                                      gr%invrs_dzt(:),                 & ! Intent(in)
-                                     rhs_ta_wpthlpsclrp(:,i)          ) ! Intent(out)
+                                     rhs_ta_wpthlpsclrp(:,sclr)          ) ! Intent(out)
           
         end do
         
@@ -3501,11 +3497,11 @@ module advance_xp2_xpyp_module
         lhs_ta_wprtpthlp = lhs_ta_wprtp2  
 
         if ( l_scalar_calc ) then
-          do i = 1, sclr_dim, 1
-            lhs_ta_wpsclrp2(:,:,i) = lhs_ta_wprtp2 
-            lhs_ta_wprtpsclrp(:,:,i) = lhs_ta_wprtp2 
-            lhs_ta_wpthlpsclrp(:,:,i) = lhs_ta_wprtp2 
-          enddo ! i = 1, sclr_dim, 1
+          do sclr = 1, sclr_dim, 1
+            lhs_ta_wpsclrp2(:,:,sclr) = lhs_ta_wprtp2 
+            lhs_ta_wprtpsclrp(:,:,sclr) = lhs_ta_wprtp2 
+            lhs_ta_wpthlpsclrp(:,:,sclr) = lhs_ta_wprtp2 
+          enddo ! sclr = 1, sclr_dim, 1
         end if
         
         ! Explicit contributions
@@ -3661,26 +3657,26 @@ module advance_xp2_xpyp_module
             
           ! Interpolate wpsclrp to thermo levels if not using l_upwind_xpyp_ta
           if ( .not. l_upwind_xpyp_ta ) then
-            do i = 1, sclr_dim
-              wpsclrp_zt(:,i) = zm2zt( gr, wpsclrp(:,i) )
+            do sclr = 1, sclr_dim
+              wpsclrp_zt(:,sclr) = zm2zt( gr, wpsclrp(:,sclr) )
             end do
           end if
             
-          do i = 1, sclr_dim
+          do sclr = 1, sclr_dim
               
             ! Calculate the momentum level terms and sign of vertical velocity if
             ! l_upwind_xpyp_ta is true, otherwise just calculate the thermo level terms
             if ( l_upwind_xpyp_ta ) then
                 
               term_wpsclrp2_explicit_zm &
-              = ( one - one_third * beta ) * a1**2 * wpsclrp(:,i)**2 * wp3_on_wp2 / wp2
+              = ( one - one_third * beta ) * a1**2 * wpsclrp(:,sclr)**2 * wp3_on_wp2 / wp2
               
               sgn_t_vel_sclrp2 = wp3_on_wp2
               
             else
                 
               term_wpsclrp2_explicit &
-              = ( one - one_third * beta ) * a1_zt**2 * wpsclrp_zt(:,i)**2 * wp3_on_wp2_zt / wp2_zt
+              = ( one - one_third * beta ) * a1_zt**2 * wpsclrp_zt(:,sclr)**2 * wp3_on_wp2_zt / wp2_zt
               
             end if
 
@@ -3696,14 +3692,14 @@ module advance_xp2_xpyp_module
                                          term_wpsclrp2_explicit_zm(:), & ! Intent(in)
                                          rho_ds_zm(:),                 & ! Intent(in)
                                          gr%invrs_dzt(:),              & ! Intent(in)
-                                         rhs_ta_wpsclrp2(:,i)          ) ! Intent(out)
+                                         rhs_ta_wpsclrp2(:,sclr)          ) ! Intent(out)
            
             else
 
               ! Using the godunov upwind scheme for the calculation of RHS
               ! turbulent
               ! advection term for <w'sclr'^2>. 
-              term_wpsclrp2_explicit_zm = wpsclrp(:,i)**2
+              term_wpsclrp2_explicit_zm = wpsclrp(:,sclr)**2
               sgn_t_vel_sclrp2 = ( one - one_third * beta ) * a1_zt**2 * wp3_on_wp2_zt / wp2_zt
 
               call xpyp_term_ta_pdf_rhs_godunov( gr, term_wpsclrp2_explicit_zm(:), & ! Intent(in)
@@ -3711,7 +3707,7 @@ module advance_xp2_xpyp_module
                                                  gr%invrs_dzm(:),              & ! Intent(in)
                                                  sgn_t_vel_sclrp2(:),          & ! Intent(in)
                                                  rho_ds_zm(:),                 & ! Intent(in)
-                                                 rhs_ta_wpsclrp2(:,i) )          ! Intent(out)
+                                                 rhs_ta_wpsclrp2(:,sclr) )          ! Intent(out)
 
              end if
  
@@ -3719,19 +3715,19 @@ module advance_xp2_xpyp_module
         
           ! Calculate the momentum level terms and sign of vertical velocity if
           ! l_upwind_xpyp_ta is true, otherwise just calculate the thermo level terms
-          do i = 1, sclr_dim
+          do sclr = 1, sclr_dim
               
             if ( l_upwind_xpyp_ta ) then
                 
               term_wprtpsclrp_explicit_zm(:) &
-              = ( one - one_third * beta ) * a1**2 * wpsclrp(:,i) * wprtp(:) * wp3_on_wp2 / wp2
+              = ( one - one_third * beta ) * a1**2 * wpsclrp(:,sclr) * wprtp(:) * wp3_on_wp2 / wp2
               
               sgn_t_vel_sclrprtp(:) = wp3_on_wp2(:)
               
             else
                 
               term_wprtpsclrp_explicit &
-              = ( one - one_third * beta ) * a1_zt**2 * wpsclrp_zt(:,i) * wprtp_zt(:) &
+              = ( one - one_third * beta ) * a1_zt**2 * wpsclrp_zt(:,sclr) * wprtp_zt(:) &
                 * wp3_on_wp2_zt / wp2_zt
               
             end if
@@ -3748,13 +3744,13 @@ module advance_xp2_xpyp_module
                                          term_wprtpsclrp_explicit_zm(:), & ! Intent(in)
                                          rho_ds_zm(:),                   & ! Intent(in)
                                          gr%invrs_dzt(:),                & ! Intent(in)
-                                         rhs_ta_wprtpsclrp(:,i)          ) ! Intent(out)
+                                         rhs_ta_wprtpsclrp(:,sclr)          ) ! Intent(out)
             
             else
 
               ! Using the godunov upwind scheme for the calculation of RHS
               ! turbulent advection term for <w'sclr'rt'>. 
-              term_wprtpsclrp_explicit_zm = wpsclrp(:,i) * wprtp(:) 
+              term_wprtpsclrp_explicit_zm = wpsclrp(:,sclr) * wprtp(:) 
               sgn_t_vel_sclrprtp = ( one - one_third * beta ) * a1_zt**2 * wp3_on_wp2_zt / wp2_zt
 
               call xpyp_term_ta_pdf_rhs_godunov( gr, term_wprtpsclrp_explicit_zm(:), & ! Intent(in)
@@ -3762,7 +3758,7 @@ module advance_xp2_xpyp_module
                                                  gr%invrs_dzm(:),                & ! Intent(in)
                                                  sgn_t_vel_sclrprtp(:),          & ! Intent(in)
                                                  rho_ds_zm(:),                   & ! Intent(in)
-                                                 rhs_ta_wprtpsclrp(:,i)          ) ! Intent(out)
+                                                 rhs_ta_wprtpsclrp(:,sclr)          ) ! Intent(out)
 
             endif
 
@@ -3770,19 +3766,19 @@ module advance_xp2_xpyp_module
           
           ! Calculate the momentum level terms and sign of vertical velocity if
           ! l_upwind_xpyp_ta is true, otherwise just calculate the thermo level terms
-          do i = 1, sclr_dim
+          do sclr = 1, sclr_dim
               
             if ( l_upwind_xpyp_ta ) then
                 
               term_wpthlpsclrp_explicit_zm(:) &
-              = ( one - one_third * beta ) * a1**2 * wpsclrp(:,i) * wpthlp(:) * wp3_on_wp2 / wp2
+              = ( one - one_third * beta ) * a1**2 * wpsclrp(:,sclr) * wpthlp(:) * wp3_on_wp2 / wp2
               
               sgn_t_vel_sclrpthlp(:) = wp3_on_wp2(:)
               
             else
                 
               term_wpthlpsclrp_explicit(:) &
-              = ( one - one_third * beta ) * a1_zt**2 * wpsclrp_zt(:,i) * wpthlp_zt(:) &
+              = ( one - one_third * beta ) * a1_zt**2 * wpsclrp_zt(:,sclr) * wpthlp_zt(:) &
                 * wp3_on_wp2_zt / wp2_zt
               
             end if
@@ -3799,13 +3795,13 @@ module advance_xp2_xpyp_module
                                          term_wpthlpsclrp_explicit_zm(:), & ! Intent(in)
                                          rho_ds_zm(:),                    & ! Intent(in)
                                          gr%invrs_dzt(:),                 & ! Intent(in)
-                                         rhs_ta_wpthlpsclrp(:,i)          ) ! Intent(out)
+                                         rhs_ta_wpthlpsclrp(:,sclr)          ) ! Intent(out)
             
             else
 
               ! Using the godunov upwind scheme for the calculation of RHS
               ! turbulent advection term for <w'sclr'thl'>. 
-              term_wpthlpsclrp_explicit_zm = wpsclrp(:,i) * wpthlp(:)
+              term_wpthlpsclrp_explicit_zm = wpsclrp(:,sclr) * wpthlp(:)
               sgn_t_vel_sclrpthlp = ( one - one_third * beta ) * a1_zt**2 * wp3_on_wp2_zt / wp2_zt
 
               call xpyp_term_ta_pdf_rhs_godunov( gr, term_wpthlpsclrp_explicit_zm(:), & ! Intent(in)
@@ -3813,7 +3809,7 @@ module advance_xp2_xpyp_module
                                                  gr%invrs_dzm(:),                 & ! Intent(in)
                                                  sgn_t_vel_sclrpthlp(:),          & ! Intent(in)
                                                  rho_ds_zm(:),                    & ! Intent(in)
-                                                 rhs_ta_wpthlpsclrp(:,i)          ) ! Intent(out)
+                                                 rhs_ta_wpthlpsclrp(:,sclr)          ) ! Intent(out)
 
             endif
 
@@ -4147,25 +4143,25 @@ module advance_xp2_xpyp_module
 
         if ( l_scalar_calc ) then
 
-          do i = 1, sclr_dim, 1
+          do sclr = 1, sclr_dim, 1
 
             if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
               coef_wpsclrp2_implicit &
-              = pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(:,i)
+              = pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(:,sclr)
               term_wpsclrp2_explicit &
-              = pdf_implicit_coefs_terms%term_wpsclrp2_explicit(:,i)
+              = pdf_implicit_coefs_terms%term_wpsclrp2_explicit(:,sclr)
             endif
 
             ! Calculate the momentum level terms and sign of turbulent velocity if
             ! l_upwind_xpyp_ta is true
             if ( l_upwind_xpyp_ta ) then
               coef_wpsclrp2_implicit_zm &
-              = zt2zm( gr, pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(:,i) )
+              = zt2zm( gr, pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(:,sclr) )
               term_wpsclrp2_explicit_zm &
-              = zt2zm( gr, pdf_implicit_coefs_terms%term_wpsclrp2_explicit(:,i) )
+              = zt2zm( gr, pdf_implicit_coefs_terms%term_wpsclrp2_explicit(:,sclr) )
               sgn_t_vel_sclrp2 &
-              = sgn_turbulent_velocity( gr, coef_wpsclrp2_implicit_zm * sclrp2(:,i) &
-                                        + term_wpsclrp2_explicit_zm, sclrp2(:,i) )
+              = sgn_turbulent_velocity( gr, coef_wpsclrp2_implicit_zm * sclrp2(:,sclr) &
+                                        + term_wpsclrp2_explicit_zm, sclrp2(:,sclr) )
             endif
 
             ! Calculate the LHS turbulent advection term for <w'sclr'^2>
@@ -4178,7 +4174,7 @@ module advance_xp2_xpyp_module
                                        coef_wpsclrp2_implicit_zm(:), & ! In
                                        rho_ds_zm(:),                 & ! In
                                        gr%invrs_dzt(:),              & ! In
-                                       lhs_ta_wpsclrp2(:,:,i)        ) ! Out
+                                       lhs_ta_wpsclrp2(:,:,sclr)        ) ! Out
 
             ! Calculate the RHS turbulent advection term for <w'sclr'^2>
             call xpyp_term_ta_pdf_rhs( gr, term_wpsclrp2_explicit(:),    & ! In
@@ -4190,25 +4186,25 @@ module advance_xp2_xpyp_module
                                        term_wpsclrp2_explicit_zm(:), & ! In
                                        rho_ds_zm(:),                 & ! In
                                        gr%invrs_dzt(:),              & ! In
-                                       rhs_ta_wpsclrp2(:,i)          ) ! Out
+                                       rhs_ta_wpsclrp2(:,sclr)          ) ! Out
 
             if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
               coef_wprtpsclrp_implicit &
-              = pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(:,i)
+              = pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(:,sclr)
               term_wprtpsclrp_explicit &
-              = pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(:,i)
+              = pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(:,sclr)
             endif
 
             ! Calculate the momentum level terms and sign of turbulent velocity if
             ! l_upwind_xpyp_ta is true
             if ( l_upwind_xpyp_ta ) then
               coef_wprtpsclrp_implicit_zm &
-              = zt2zm( gr, pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(:,i) )
+              = zt2zm( gr, pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(:,sclr) )
               term_wprtpsclrp_explicit_zm &
-              = zt2zm( gr, pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(:,i) )
+              = zt2zm( gr, pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(:,sclr) )
               sgn_t_vel_sclrprtp &
-              = sgn_turbulent_velocity( gr, coef_wprtpsclrp_implicit_zm * sclrprtp(:,i) &
-                                        + term_wprtpsclrp_explicit_zm, sclrprtp(:,i) )
+              = sgn_turbulent_velocity( gr, coef_wprtpsclrp_implicit_zm * sclrprtp(:,sclr) &
+                                        + term_wprtpsclrp_explicit_zm, sclrprtp(:,sclr) )
             endif
 
             ! Calculate the LHS turbulent advection term for <w'rt'sclr'>
@@ -4221,7 +4217,7 @@ module advance_xp2_xpyp_module
                                        coef_wprtpsclrp_implicit_zm(:), & ! In
                                        rho_ds_zm(:),                   & ! In
                                        gr%invrs_dzt(:),                & ! In
-                                       lhs_ta_wprtpsclrp(:,:,i)        ) ! Out
+                                       lhs_ta_wprtpsclrp(:,:,sclr)        ) ! Out
 
             ! Calculate the RHS turbulent advection term for <w'rt'sclr'>
             call xpyp_term_ta_pdf_rhs( gr, term_wprtpsclrp_explicit(:),    & ! In
@@ -4233,25 +4229,25 @@ module advance_xp2_xpyp_module
                                        term_wprtpsclrp_explicit_zm(:), & ! In
                                        rho_ds_zm(:),                   & ! In
                                        gr%invrs_dzt(:),                & ! In
-                                       rhs_ta_wprtpsclrp(:,i)          ) ! In
+                                       rhs_ta_wprtpsclrp(:,sclr)          ) ! In
 
             if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
               coef_wpthlpsclrp_implicit &
-              = pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(:,i)
+              = pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(:,sclr)
               term_wpthlpsclrp_explicit &
-              = pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(:,i)
+              = pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(:,sclr)
             endif
 
             ! Calculate the momentum level terms and sign of turbulent velocity if
             ! l_upwind_xpyp_ta is true
             if ( l_upwind_xpyp_ta ) then
               coef_wpthlpsclrp_implicit_zm &
-              = zt2zm( gr, pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(:,i) )
+              = zt2zm( gr, pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(:,sclr) )
               term_wpthlpsclrp_explicit_zm &
-              = zt2zm( gr, pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(:,i) )
+              = zt2zm( gr, pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(:,sclr) )
               sgn_t_vel_sclrpthlp &
-              = sgn_turbulent_velocity( gr, coef_wpthlpsclrp_implicit_zm * sclrpthlp(:,i) &
-                                        + term_wpthlpsclrp_explicit_zm, sclrpthlp(:,i) )
+              = sgn_turbulent_velocity( gr, coef_wpthlpsclrp_implicit_zm * sclrpthlp(:,sclr) &
+                                        + term_wpthlpsclrp_explicit_zm, sclrpthlp(:,sclr) )
             endif
 
             ! Calculate the LHS turbulent advection term for <w'thl'sclr'>
@@ -4264,7 +4260,7 @@ module advance_xp2_xpyp_module
                                        coef_wpthlpsclrp_implicit_zm(:), & ! In
                                        rho_ds_zm(:),                    & ! In
                                        gr%invrs_dzt(:),                 & ! In
-                                       lhs_ta_wpthlpsclrp(:,:,i)        ) ! Out
+                                       lhs_ta_wpthlpsclrp(:,:,sclr)        ) ! Out
 
             ! Calculate the RHS turbulent advection term for <w'thl'sclr'>
             call xpyp_term_ta_pdf_rhs( gr, term_wpthlpsclrp_explicit(:),    & ! In
@@ -4276,9 +4272,9 @@ module advance_xp2_xpyp_module
                                        term_wpthlpsclrp_explicit_zm(:), & ! In
                                        rho_ds_zm(:),                    & ! In
                                        gr%invrs_dzt(:),                 & ! In
-                                       rhs_ta_wpthlpsclrp(:,i)          ) ! Out
+                                       rhs_ta_wpthlpsclrp(:,sclr)          ) ! Out
 
-          enddo ! i = 1, sclr_dim, 1
+          enddo ! sclr = 1, sclr_dim, 1
 
         endif ! l_scalar_calc
 
