@@ -100,7 +100,8 @@ module advance_xp2_xpyp_module
         one_half, &
         one_third, &
         zero,   &
-        eps
+        eps, &
+        gamma_over_implicit_ts
 
     use model_flags, only: & 
         iiPDF_ADG1,       & ! integer constants
@@ -395,6 +396,9 @@ module advance_xp2_xpyp_module
     ! adjusted value of C2.
     real( kind = core_rknd ), parameter ::  & 
       min_cloud_frac_mult = 0.10_core_rknd
+      
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      lhs_dp1   ! LHS dissipation term 1
 
     ! Loop indices
     integer :: sclr, k, i
@@ -593,6 +597,15 @@ module advance_xp2_xpyp_module
          up2_old(i,:) = up2(i,:)
          vp2_old(i,:) = vp2(i,:)
       endif ! l_lmm_stepping
+      
+      do k = 1, nz
+        lhs_dp1(i,k) = term_dp1_lhs( C4_1d(i,k), invrs_tau_C4_zm(i,k) ) * gamma_over_implicit_ts
+                     
+      enddo ! k=2..gr%nz-1
+      
+      do k = 1, nz
+        lhs_dp1(i,k) = lhs_dp1(i,k)+ term_dp1_lhs( C14_1d(i,k), invrs_tau_C14_zm(i,k) ) * gamma_over_implicit_ts
+      enddo ! k=2..gr%nz-1
 
       if ( iiPDF_type == iiPDF_new_hybrid ) then
 
@@ -601,8 +614,8 @@ module advance_xp2_xpyp_module
          ! Solve for up2
 
          ! Implicit contributions to term up2
-         call xp2_xpyp_lhs( gr(i), invrs_tau_C4_zm(i,:), C4_1d(i,:), invrs_tau_C14_zm(i,:), C14_1d(i,:), dt, & ! In
-                            lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), lhs_diff_uv(:,i,:), & ! In
+         call xp2_xpyp_lhs( gr(i), dt, & ! In
+                            lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), lhs_diff_uv(:,i,:), lhs_dp1(i,:), & ! In
                             lhs(:,i,:) ) ! Out
 
          ! Explicit contributions to up2
@@ -633,11 +646,9 @@ module advance_xp2_xpyp_module
                                           stats_zm(i) ) ! intent(inout)
          endif
 
-         ! Solve for vp2
-
          ! Implicit contributions to term vp2
-         call xp2_xpyp_lhs( gr(i), invrs_tau_C4_zm(i,:), C4_1d(i,:), invrs_tau_C14_zm(i,:), C14_1d(i,:), dt, & ! In
-                            lhs_ta_wpvp2(:,i,:), lhs_ma(:,i,:), lhs_diff_uv(:,i,:), & ! In
+         call xp2_xpyp_lhs( gr(i), dt, & ! In
+                            lhs_ta_wpvp2(:,i,:), lhs_ma(:,i,:), lhs_diff_uv(:,i,:), lhs_dp1(i,:), & ! In
                             lhs(:,i,:) ) ! Out
 
          ! Explicit contributions to vp2
@@ -673,8 +684,8 @@ module advance_xp2_xpyp_module
          ! ADG1 allows up2 and vp2 to use the same LHS.
 
          ! Implicit contributions to term up2/vp2
-         call xp2_xpyp_lhs( gr(i), invrs_tau_C4_zm(i,:), C4_1d(i,:), invrs_tau_C14_zm(i,:), C14_1d(i,:), dt, & ! In
-                            lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), lhs_diff_uv(:,i,:), & ! In
+         call xp2_xpyp_lhs( gr(i), dt, & ! In
+                            lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), lhs_diff_uv(:,i,:), lhs_dp1(i,:), & ! In
                             lhs(:,i,:) ) ! Out
 
          ! Explicit contributions to up2
@@ -1171,7 +1182,8 @@ module advance_xp2_xpyp_module
         rt_tol, & 
         thl_tol, &
         zero, &
-        zero_threshold
+        zero_threshold, &
+        gamma_over_implicit_ts
       
       use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -1255,23 +1267,27 @@ module advance_xp2_xpyp_module
         sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
         sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
         sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
-
-      real( kind = core_rknd ), dimension(gr%nz) :: &
-        invrs_tau_dummy, Cn_dummy
         
       real( kind = core_rknd ) :: & 
         threshold     ! Minimum value for variances                   [units vary]
         
-      integer :: sclr
+      ! LHS dissipation term 1 (dp1). An "over-implicit" weighted time 
+      ! step is applied to this term (and to pressure term 1 for u'^2 and v'^2).
+      ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        lhs_dp1   ! LHS dissipation term 1
+        
+      integer :: sclr, k
       
       ! -------- Begin Code --------
-     
-      invrs_tau_dummy = 0.0_core_rknd
-      Cn_dummy = 0.0_core_rknd 
+      
+      do k = 1, gr%nz
+        lhs_dp1(k) = term_dp1_lhs( C2x(k), invrs_tau_xp2_zm(k) ) * gamma_over_implicit_ts
+      end do
 
       ! Calculate lhs matrix
-      call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2x, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                         lhs_ta, lhs_ma, lhs_diff,    & ! In
+      call xp2_xpyp_lhs( gr, dt, & ! In
+                         lhs_ta, lhs_ma, lhs_diff, lhs_dp1,    & ! In
                          lhs )                          ! Out
       
       ! Calculate rhs matricies
@@ -1412,7 +1428,8 @@ module advance_xp2_xpyp_module
         rt_tol, & 
         thl_tol, &
         zero, &
-        zero_threshold
+        zero_threshold, &
+        gamma_over_implicit_ts
       
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -1516,25 +1533,25 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim*3) ::  & 
       sclr_rhs,   & ! RHS vectors of tridiagonal system for the passive scalars
       sclr_solution ! Solution to tridiagonal system for the passive scalars
-
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      invrs_tau_dummy, Cn_dummy
  
     real( kind = core_rknd ) :: & 
       threshold     ! Minimum value for variances                   [units vary]
+      
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      lhs_dp1   ! LHS dissipation term 1
         
-    integer :: sclr
+    integer :: sclr, k
       
     ! -------- Begin Code --------
 
-    invrs_tau_dummy = 0.0_core_rknd
-    Cn_dummy = 0.0_core_rknd 
-
     !!!!!***** r_t'^2 *****!!!!!
+    do k = 1, gr%nz
+      lhs_dp1(k) = term_dp1_lhs( C2rt_1d(k), invrs_tau_xp2_zm(k) ) * gamma_over_implicit_ts
+    end do
     
     ! Implicit contributions to term rtp2
-    call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2rt_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                       lhs_ta_wprtp2, lhs_ma, lhs_diff, & ! In
+    call xp2_xpyp_lhs( gr, dt, & ! In
+                       lhs_ta_wprtp2, lhs_ma, lhs_diff, lhs_dp1, & ! In
                        lhs ) ! Out
 
     call xp2_xpyp_rhs( gr, xp2_xpyp_rtp2, dt, & ! In
@@ -1551,10 +1568,13 @@ module advance_xp2_xpyp_module
                          rhs, lhs, rtp2 )    ! Intent(inout)
       
     !!!!!***** th_l'^2 *****!!!!!
+    do k = 1, gr%nz
+      lhs_dp1(k) = term_dp1_lhs( C2thl_1d(k), invrs_tau_xp2_zm(k) ) * gamma_over_implicit_ts
+    end do
 
     ! Implicit contributions to term thlp2
-    call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2thl_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                       lhs_ta_wpthlp2, lhs_ma, lhs_diff, & ! In
+    call xp2_xpyp_lhs( gr, dt, & ! In
+                       lhs_ta_wpthlp2, lhs_ma, lhs_diff, lhs_dp1, & ! In
                        lhs ) ! Out
 
     ! Explicit contributions to thlp2
@@ -1572,10 +1592,13 @@ module advance_xp2_xpyp_module
                          rhs, lhs, thlp2 )    ! Intent(inout)
 
     !!!!!***** r_t'th_l' *****!!!!!
+    do k = 1, gr%nz
+      lhs_dp1(k) = term_dp1_lhs( C2rtthl_1d(k), invrs_tau_xp2_zm(k) ) * gamma_over_implicit_ts
+    end do
 
     ! Implicit contributions to term rtpthlp
-    call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2rtthl_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                       lhs_ta_wprtpthlp, lhs_ma, lhs_diff, & ! In
+    call xp2_xpyp_lhs( gr, dt, & ! In
+                       lhs_ta_wprtpthlp, lhs_ma, lhs_diff, lhs_dp1, & ! In
                        lhs ) ! Out
 
     ! Explicit contributions to rtpthlp
@@ -1593,6 +1616,10 @@ module advance_xp2_xpyp_module
                          rhs, lhs, rtpthlp )    ! Intent(inout)
     
     if ( l_scalar_calc ) then
+      
+      do k = 1, gr%nz
+        lhs_dp1(k) = term_dp1_lhs( C2sclr_1d(k), invrs_tau_xp2_zm(k) ) * gamma_over_implicit_ts
+      end do
 
       if ( iiPDF_type /= iiPDF_ADG1 ) then
 
@@ -1604,8 +1631,8 @@ module advance_xp2_xpyp_module
           sclrp2_forcing = zero
 
           !!!!!***** sclr'^2 *****!!!!!
-          call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                             lhs_ta_wpsclrp2(:,:,sclr), lhs_ma, lhs_diff, & ! In
+          call xp2_xpyp_lhs( gr, dt, & ! In
+                             lhs_ta_wpsclrp2(:,:,sclr), lhs_ma, lhs_diff, lhs_dp1, & ! In
                              lhs ) ! Out
 
           call xp2_xpyp_rhs( gr, xp2_xpyp_sclrp2, dt, & ! In
@@ -1634,8 +1661,8 @@ module advance_xp2_xpyp_module
              threshold = zero_threshold
           endif
           
-          call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                             lhs_ta_wprtpsclrp(:,:,sclr), lhs_ma, lhs_diff, & ! In
+          call xp2_xpyp_lhs( gr, dt, & ! In
+                             lhs_ta_wprtpsclrp(:,:,sclr), lhs_ma, lhs_diff, lhs_dp1, & ! In
                              lhs ) ! Out
 
           call xp2_xpyp_rhs( gr, xp2_xpyp_sclrprtp, dt, & ! In
@@ -1664,8 +1691,8 @@ module advance_xp2_xpyp_module
              threshold = zero_threshold
           endif
 
-          call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                             lhs_ta_wpthlpsclrp(:,:,sclr), lhs_ma, lhs_diff, & ! In
+          call xp2_xpyp_lhs( gr, dt, & ! In
+                             lhs_ta_wpthlpsclrp(:,:,sclr), lhs_ma, lhs_diff, lhs_dp1, & ! In
                              lhs ) ! Out
 
           call xp2_xpyp_rhs( gr, xp2_xpyp_sclrpthlp, dt, & ! In
@@ -1694,8 +1721,8 @@ module advance_xp2_xpyp_module
         !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
         ! Note:  For ADG1, the LHS arrays are the same for all scalar variables,
         !        and also for <sclr'^2>, <sclr'r_t'>, and <sclr'th_l'>.
-        call xp2_xpyp_lhs( gr, invrs_tau_xp2_zm, C2sclr_1d, invrs_tau_dummy, Cn_dummy, dt, & ! In
-                           lhs_ta_wpsclrp2(:,:,1), lhs_ma, lhs_diff, & ! In
+        call xp2_xpyp_lhs( gr, dt, & ! In
+                           lhs_ta_wpsclrp2(:,:,1), lhs_ma, lhs_diff, lhs_dp1, & ! In
                            lhs ) ! Out
 
 
@@ -1781,8 +1808,8 @@ module advance_xp2_xpyp_module
   end subroutine solve_xp2_xpyp_with_multiple_lhs
 
   !=============================================================================
-  subroutine xp2_xpyp_lhs( gr, invrs_tau_zm, Cn, invrs_tau_zm2, Cn2, dt, & ! In
-                           lhs_ta, lhs_ma, lhs_diff, & ! In
+  subroutine xp2_xpyp_lhs( gr, dt, & ! In
+                           lhs_ta, lhs_ma, lhs_diff, lhs_dp1, & ! In
                            lhs ) ! Out
 
   ! Description:
@@ -1863,25 +1890,18 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
      lhs_ta     ! Turbulent advection contributions to lhs
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      invrs_tau_zm,            & ! Inverse time-scale tau on momentum levels [1/s]
-      invrs_tau_zm2,           & ! Inverse time-scale tau on momentum levels 2 [1/s]
-      Cn,                      & ! Coefficient C_n                           [-]
-      Cn2                        ! Coefficient C_n2                          [-]
-
     real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
       lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
       lhs_ma      ! Mean advection contributions to lhs
+      
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      lhs_dp1   ! LHS dissipation term 1
 
     !------------------- Output Variables -------------------
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: & 
       lhs         ! Implicit contributions to the term
 
     !---------------- Local Variables -------------------
-    
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      lhs_dp1   ! LHS dissipation term 1
-
     real( kind = core_rknd ), intent(in) :: & 
       dt
 
@@ -1889,19 +1909,6 @@ module advance_xp2_xpyp_module
     integer :: k, low_bound, high_bound
 
     !---------------- Begin Code -------------------
-
-    ! LHS dissipation term 1 (dp1). An "over-implicit" weighted time 
-    ! step is applied to this term (and to pressure term 1 for u'^2 and v'^2).
-    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
-    do k = 2, gr%nz-1
-        lhs_dp1(k) = term_dp1_lhs( Cn(k), invrs_tau_zm(k) ) * gamma_over_implicit_ts
-    enddo ! k=2..gr%nz-1
-
-    if ( any( Cn2 > 0.0_core_rknd ) ) then
-      do k = 2, gr%nz-1
-        lhs_dp1(k) = lhs_dp1(k) + term_dp1_lhs( Cn2(k), invrs_tau_zm2(k) ) * gamma_over_implicit_ts
-      enddo ! k=2..gr%nz-1
-    endif
 
     ! Combine all lhs terms into lhs, should be fully vectorized
     do k = 2, gr%nz-1
