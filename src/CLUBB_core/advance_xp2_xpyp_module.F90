@@ -398,9 +398,9 @@ module advance_xp2_xpyp_module
       min_cloud_frac_mult = 0.10_core_rknd
       
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      lhs_dp1, &        ! LHS dissipation term 1
-      lhs_dp1_stats1, & ! LHS dissipation term 1 used for stats calls
-      lhs_dp1_stats2    ! LHS dissipation term 2 used for stats calls
+      lhs_dp1, &     ! LHS dissipation term 1
+      lhs_dp1_C14, & ! LHS dissipation term 1, for up2 vp2 using C14
+      lhs_dp1_C4     ! LHS dissipation term 1, for up2 vp2 using C4
 
     ! Loop indices
     integer :: sclr, k, i
@@ -590,16 +590,18 @@ module advance_xp2_xpyp_module
         lhs_dp1(i,k) = lhs_dp1(i,k) + term_dp1_lhs( C14_1d(i,k), invrs_tau_C14_zm(i,k) ) * gamma_over_implicit_ts
       enddo ! k=2..gr%nz-1
       
-      lhs_dp1_stats1(i,1) = zero
-      lhs_dp1_stats2(i,1) = zero
-      do k = 2, nz-1
-        lhs_dp1_stats1(i,k) = gamma_over_implicit_ts &
-                              * term_dp1_lhs( one_third*C14, invrs_tau_C14_zm(i,k) )
-        lhs_dp1_stats2(i,k) = gamma_over_implicit_ts &
-                              * term_dp1_lhs( two_thirds*C4, invrs_tau_C4_zm(i,k) )
-      enddo ! k=2..gr%nz-1
-      lhs_dp1_stats1(i,nz) = zero
-      lhs_dp1_stats2(i,nz) = zero
+      if ( l_stats_samp ) then
+        lhs_dp1_C14(i,1) = zero
+        lhs_dp1_C4(i,1) = zero
+        do k = 2, nz-1
+          lhs_dp1_C14(i,k) = gamma_over_implicit_ts &
+                             * term_dp1_lhs( one_third*C14, invrs_tau_C14_zm(i,k) )
+          lhs_dp1_C4(i,k)  = gamma_over_implicit_ts &
+                             * term_dp1_lhs( two_thirds*C4, invrs_tau_C4_zm(i,k) )
+        enddo ! k=2..gr%nz-1
+        lhs_dp1_C14(i,nz) = zero
+        lhs_dp1_C4(i,nz) = zero
+      end if
 
       if ( iiPDF_type == iiPDF_new_hybrid ) then
 
@@ -637,7 +639,7 @@ module advance_xp2_xpyp_module
 
          if ( l_stats_samp ) then
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_up2, up2(i,:), & !intent(in)
-                                          lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
+                                          lhs_dp1_C14(i,:), lhs_dp1_C4(i,:), &
                                           lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
                                           stats_zm(i) ) ! intent(inout)
          endif
@@ -672,7 +674,7 @@ module advance_xp2_xpyp_module
 
          if ( l_stats_samp ) then
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_vp2, vp2(i,:), & !intent(in)
-                                          lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
+                                          lhs_dp1_C14(i,:), lhs_dp1_C4(i,:), &
                                           lhs_diff_uv(:,i,:), lhs_ta_wpvp2(:,i,:), lhs_ma(:,i,:), &
                                           stats_zm(i) ) ! intent(inout)
          endif
@@ -724,11 +726,11 @@ module advance_xp2_xpyp_module
 
          if ( l_stats_samp ) then
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_up2, up2(i,:), & !intent(in)
-                                          lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
+                                          lhs_dp1_C14(i,:), lhs_dp1_C4(i,:), &
                                           lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
                                           stats_zm(i) ) ! intent(inout)
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_vp2, vp2(i,:), & !intent(in)
-                                          lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
+                                          lhs_dp1_C14(i,:), lhs_dp1_C4(i,:), &
                                           lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
                                           stats_zm(i) ) ! intent(inout)
          endif
@@ -2215,7 +2217,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine xp2_xpyp_implicit_stats( gr, solve_type, xapxbp, & !intent(in)
-                                      lhs_dp1_stats1, lhs_dp1_stats2, &
+                                      lhs_dp1_C14, lhs_dp1_C4, &
                                       lhs_diff, lhs_ta, lhs_ma, &
                                       stats_zm ) ! intent(inout)
 
@@ -2286,8 +2288,8 @@ module advance_xp2_xpyp_module
       xapxbp ! Computed value of the variable at <t+1> [units vary]
       
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
-      lhs_dp1_stats1, & ! LHS dissipation term 1
-      lhs_dp1_stats2    ! LHS dissipation term 2
+      lhs_dp1_C14, & ! LHS dissipation term 1
+      lhs_dp1_C4    ! LHS dissipation term 2
       
     real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
      lhs_ta     ! Turbulent advection contributions to lhs
@@ -2362,7 +2364,7 @@ module advance_xp2_xpyp_module
       ! x'y' term dp1 has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_dp1, k, &          ! Intent(in)
-                               (-lhs_dp1_stats1(k)) * xapxbp(k), & ! Intent(in)
+                               (-lhs_dp1_C14(k)) * xapxbp(k), & ! Intent(in)
                                stats_zm )                 ! Intent(inout)
 
       ! x'y' term dp2 is completely implicit; call stat_update_var_pt.
@@ -2390,7 +2392,7 @@ module advance_xp2_xpyp_module
       ! x'y' term pr1 has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_pr1, k, &          ! Intent(in)
-                               (-lhs_dp1_stats2(k)) * xapxbp(k), & ! Intent(in)
+                               (-lhs_dp1_C4(k)) * xapxbp(k), & ! Intent(in)
                                stats_zm )                 ! Intent(inout)
 
     end do ! k=2..gr%nz-1
