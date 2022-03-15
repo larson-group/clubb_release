@@ -398,7 +398,9 @@ module advance_xp2_xpyp_module
       min_cloud_frac_mult = 0.10_core_rknd
       
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      lhs_dp1   ! LHS dissipation term 1
+      lhs_dp1, &        ! LHS dissipation term 1
+      lhs_dp1_stats1, & ! LHS dissipation term 1 used for stats calls
+      lhs_dp1_stats2    ! LHS dissipation term 2 used for stats calls
 
     ! Loop indices
     integer :: sclr, k, i
@@ -579,14 +581,25 @@ module advance_xp2_xpyp_module
          vp2_old(i,:) = vp2(i,:)
       endif ! l_lmm_stepping
       
-      do k = 1, nz
+      do k = 2, nz-1
         lhs_dp1(i,k) = term_dp1_lhs( C4_1d(i,k), invrs_tau_C4_zm(i,k) ) * gamma_over_implicit_ts
                      
       enddo ! k=2..gr%nz-1
       
-      do k = 1, nz
-        lhs_dp1(i,k) = lhs_dp1(i,k)+ term_dp1_lhs( C14_1d(i,k), invrs_tau_C14_zm(i,k) ) * gamma_over_implicit_ts
+      do k = 2, nz-1
+        lhs_dp1(i,k) = lhs_dp1(i,k) + term_dp1_lhs( C14_1d(i,k), invrs_tau_C14_zm(i,k) ) * gamma_over_implicit_ts
       enddo ! k=2..gr%nz-1
+      
+      lhs_dp1_stats1(i,1) = zero
+      lhs_dp1_stats2(i,1) = zero
+      do k = 2, nz-1
+        lhs_dp1_stats1(i,k) = gamma_over_implicit_ts &
+                              * term_dp1_lhs( one_third*C14, invrs_tau_C14_zm(i,k) )
+        lhs_dp1_stats2(i,k) = gamma_over_implicit_ts &
+                              * term_dp1_lhs( two_thirds*C4, invrs_tau_C4_zm(i,k) )
+      enddo ! k=2..gr%nz-1
+      lhs_dp1_stats1(i,nz) = zero
+      lhs_dp1_stats2(i,nz) = zero
 
       if ( iiPDF_type == iiPDF_new_hybrid ) then
 
@@ -624,6 +637,8 @@ module advance_xp2_xpyp_module
 
          if ( l_stats_samp ) then
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_up2, up2(i,:), & !intent(in)
+                                          lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
+                                          lhs_diff_uv, lhs_ta_wpup2, lhs_ma, &
                                           stats_zm(i) ) ! intent(inout)
          endif
 
@@ -657,6 +672,8 @@ module advance_xp2_xpyp_module
 
          if ( l_stats_samp ) then
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_vp2, vp2(i,:), & !intent(in)
+                                          lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
+                                          lhs_diff_uv, lhs_ta_wpvp2, lhs_ma, &
                                           stats_zm(i) ) ! intent(inout)
          endif
 
@@ -707,8 +724,12 @@ module advance_xp2_xpyp_module
 
          if ( l_stats_samp ) then
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_up2, up2(i,:), & !intent(in)
+                                          lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
+                                          lhs_diff_uv, lhs_ta_wpup2, lhs_ma, &
                                           stats_zm(i) ) ! intent(inout)
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_vp2, vp2(i,:), & !intent(in)
+                                          lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
+                                          lhs_diff_uv, lhs_ta_wpup2, lhs_ma, &
                                           stats_zm(i) ) ! intent(inout)
          endif
 
@@ -1261,13 +1282,18 @@ module advance_xp2_xpyp_module
       real( kind = core_rknd ), dimension(gr%nz) :: &
         lhs_dp1   ! LHS dissipation term 1
         
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        zeros
+        
       integer :: sclr, k
       
       ! -------- Begin Code --------
       
+      lhs_dp1(1) = zero
       do k = 1, gr%nz
         lhs_dp1(k) = term_dp1_lhs( C2x(k), invrs_tau_xp2_zm(k) ) * gamma_over_implicit_ts
       end do
+      lhs_dp1(gr%nz) = zero
 
       ! Calculate lhs matrix
       call xp2_xpyp_lhs( gr, dt, & ! In
@@ -1393,11 +1419,20 @@ module advance_xp2_xpyp_module
      endif ! l_lmm_stepping
   
      if ( l_stats_samp ) then
+       
+       zeros = zero
+       
        call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtp2, rtp2, & !intent(in)
+                                     lhs_dp1, zeros, &
+                                     lhs_diff, lhs_ta, lhs_ma, &
                                      stats_zm ) ! intent(inout)
        call xp2_xpyp_implicit_stats( gr, xp2_xpyp_thlp2, thlp2, & !intent(in)
+                                     lhs_dp1, zeros, &
+                                     lhs_diff, lhs_ta, lhs_ma, &
                                      stats_zm ) ! intent(inout)
        call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtpthlp, rtpthlp, & !intent(in)
+                                     lhs_dp1, zeros, &
+                                     lhs_diff, lhs_ta, lhs_ma, &
                                      stats_zm ) ! intent(inout)
      end if
 
@@ -1558,15 +1593,20 @@ module advance_xp2_xpyp_module
         
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim) ::  & 
       sclrp2_solution, sclrprtp_solution, sclrpthlp_solution
+      
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+      zeros
         
     integer :: sclr, k
       
     ! -------- Begin Code --------
 
     !!!!!***** r_t'^2 *****!!!!!
-    do k = 1, gr%nz
+    lhs_dp1(1) = zero
+    do k = 2, gr%nz-1
       lhs_dp1(k) = term_dp1_lhs( C2rt_1d(k), invrs_tau_xp2_zm(k) ) * gamma_over_implicit_ts
     end do
+    lhs_dp1(gr%nz) = zero
     
     ! Implicit contributions to term rtp2
     call xp2_xpyp_lhs( gr, dt, & ! In
@@ -1593,14 +1633,19 @@ module advance_xp2_xpyp_module
     endif ! l_lmm_stepping
  
     if ( l_stats_samp ) then
+      zeros = zero
       call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtp2, rtp2, & !intent(in)
+                                    lhs_dp1, zeros, &
+                                    lhs_diff, lhs_ta_wprtp2, lhs_ma, &
                                     stats_zm ) ! intent(inout)
     end if
       
     !!!!!***** th_l'^2 *****!!!!!
+    lhs_dp1(1) = zero
     do k = 1, gr%nz
       lhs_dp1(k) = term_dp1_lhs( C2thl_1d(k), invrs_tau_xp2_zm(k) ) * gamma_over_implicit_ts
     end do
+    lhs_dp1(gr%nz) = zero
 
     ! Implicit contributions to term thlp2
     call xp2_xpyp_lhs( gr, dt, & ! In
@@ -1629,13 +1674,17 @@ module advance_xp2_xpyp_module
  
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( gr, xp2_xpyp_thlp2, thlp2, & !intent(in)
+                                    lhs_dp1, zeros, &
+                                    lhs_diff, lhs_ta_wpthlp2, lhs_ma, &
                                     stats_zm ) ! intent(inout)
     end if
 
     !!!!!***** r_t'th_l' *****!!!!!
-    do k = 1, gr%nz
+    lhs_dp1(1) = zero
+    do k = 2, gr%nz-1
       lhs_dp1(k) = term_dp1_lhs( C2rtthl_1d(k), invrs_tau_xp2_zm(k) ) * gamma_over_implicit_ts
     end do
+    lhs_dp1(gr%nz) = zero
 
     ! Implicit contributions to term rtpthlp
     call xp2_xpyp_lhs( gr, dt, & ! In
@@ -1664,6 +1713,8 @@ module advance_xp2_xpyp_module
  
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtpthlp, rtpthlp, & !intent(in)
+                                    lhs_dp1, zeros, &
+                                    lhs_diff, lhs_ta_wprtpthlp, lhs_ma, &
                                     stats_zm ) ! intent(inout)
     end if
     
@@ -1927,16 +1978,6 @@ module advance_xp2_xpyp_module
     
     use stats_variables, only: &
         l_stats_samp, &
-        zmscr01, &
-        zmscr02, &
-        zmscr03, &
-        zmscr04, &
-        zmscr05, &
-        zmscr06, &
-        zmscr07, &
-        zmscr08, &
-        zmscr09, &
-        zmscr10, &
         irtp2_ma, &
         irtp2_ta, &
         irtp2_dp1, &
@@ -1997,71 +2038,11 @@ module advance_xp2_xpyp_module
 
     enddo ! k=2..gr%nz-1
 
-
     ! LHS time tendency.
     do k =2, gr%nz-1
       lhs(2,k) = lhs(2,k) + (one / dt)
     end do
-
-
-    if ( l_stats_samp ) then
-
-        ! Statistics: implicit contributions for rtp2, thlp2,
-        !             rtpthlp, up2, or vp2.
-
-        if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
-
-            ! Note:  The statistical implicit contribution to term dp1
-            !        (as well as to term pr1) for up2 and vp2 is recorded
-            !        in xp2_xpyp_uv_rhs because up2 and vp2 use a special
-            !        dp1/pr1 combined term.
-            ! Note:  An "over-implicit" weighted time step is applied to this
-            !        term.  A weighting factor of greater than 1 may be used to
-            !        make the term more numerically stable (see note above for
-            !        LHS turbulent advection (ta) term).
-            do k = 2, gr%nz-1
-                zmscr01(k) = -lhs_dp1(k)
-            end do
-
-        endif
-
-        if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + iup2_dp2 + ivp2_dp2 > 0 ) then
-
-            do k = 2, gr%nz-1
-                zmscr02(k) = -lhs_diff(3,k)
-                zmscr03(k) = -lhs_diff(2,k)
-                zmscr04(k) = -lhs_diff(1,k)
-            end do
-
-        endif
-
-        if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + iup2_ta + ivp2_ta > 0 ) then
-
-            ! Note:  An "over-implicit" weighted time step is applied to this
-            !        term.  A weighting factor of greater than 1 may be used to
-            !        make the term more numerically stable (see note above for
-            !        LHS turbulent advection (ta) term).
-            do k = 2, gr%nz-1
-                zmscr05(k) = -gamma_over_implicit_ts * lhs_ta(3,k)
-                zmscr06(k) = -gamma_over_implicit_ts * lhs_ta(2,k)
-                zmscr07(k) = -gamma_over_implicit_ts * lhs_ta(1,k)
-            end do
-
-        endif
-
-        if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + iup2_ma + ivp2_ma > 0 ) then
-
-            do k = 2, gr%nz-1
-                zmscr08(k) = -lhs_ma(3,k)
-                zmscr09(k) = -lhs_ma(2,k)
-                zmscr10(k) = -lhs_ma(1,k)
-            end do
-
-        endif
-
-    end if
-
-
+    
     ! Boundary Conditions
     ! These are set so that the surface_varnce value of the variances and
     ! covariances can be used at the lowest boundary and the values of those
@@ -2234,6 +2215,8 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine xp2_xpyp_implicit_stats( gr, solve_type, xapxbp, & !intent(in)
+                                      lhs_dp1_stats1, lhs_dp1_stats2, &
+                                      lhs_diff, lhs_ta, lhs_ma, &
                                       stats_zm ) ! intent(inout)
 
     ! Description:
@@ -2275,21 +2258,13 @@ module advance_xp2_xpyp_module
         ivp2_dp2, &
         ivp2_ta, &
         ivp2_ma, &
-        ivp2_pr1, &
-        zmscr01, &
-        zmscr02, &
-        zmscr03, &
-        zmscr04, &
-        zmscr05, &
-        zmscr06, &
-        zmscr07, &
-        zmscr08, &
-        zmscr09, &
-        zmscr10, &
-        zmscr11
+        ivp2_pr1
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+        
+    use constants_clubb, only: &
+        gamma_over_implicit_ts
 
     use stats_type, only: stats ! Type
 
@@ -2309,6 +2284,17 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       xapxbp ! Computed value of the variable at <t+1> [units vary]
+      
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
+      lhs_dp1_stats1, & ! LHS dissipation term 1
+      lhs_dp1_stats2    ! LHS dissipation term 2
+      
+    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+     lhs_ta     ! Turbulent advection contributions to lhs
+
+    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+      lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
+      lhs_ma      ! Mean advection contributions to lhs
 
     ! Local variables
     integer :: k, kp1, km1 ! Array indices
@@ -2376,35 +2362,35 @@ module advance_xp2_xpyp_module
       ! x'y' term dp1 has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_dp1, k, &          ! Intent(in)
-                               zmscr01(k) * xapxbp(k), &  ! Intent(in)
+                               (-lhs_dp1_stats1(k)) * xapxbp(k), & ! Intent(in)
                                stats_zm )                 ! Intent(inout)
 
       ! x'y' term dp2 is completely implicit; call stat_update_var_pt.
       call stat_update_var_pt( ixapxbp_dp2, k, &            ! Intent(in)
-                                 zmscr02(k) * xapxbp(km1) & ! Intent(in)
-                               + zmscr03(k) * xapxbp(k) & 
-                               + zmscr04(k) * xapxbp(kp1), &
+                                 (-lhs_diff(3,k)) * xapxbp(km1) & ! Intent(in)
+                               + (-lhs_diff(2,k)) * xapxbp(k) & 
+                               + (-lhs_diff(1,k)) * xapxbp(kp1), &
                                stats_zm )                   ! Intent(inout)
 
       ! x'y' term ta has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_ta, k, &              ! Intent(in)
-                                 zmscr05(k) * xapxbp(km1) &  ! Intent(in)
-                               + zmscr06(k) * xapxbp(k) &  
-                               + zmscr07(k) * xapxbp(kp1), &
-                               stats_zm )                    ! Intent(inout)
+                               (-gamma_over_implicit_ts * lhs_ta(3,k)) * xapxbp(km1) &  ! Intent(in)
+                             + (-gamma_over_implicit_ts * lhs_ta(2,k)) * xapxbp(k) &  
+                             + (-gamma_over_implicit_ts * lhs_ta(1,k)) * xapxbp(kp1), &
+                             stats_zm )                    ! Intent(inout)
 
       ! x'y' term ma is completely implicit; call stat_update_var_pt.
       call stat_update_var_pt( ixapxbp_ma, k, &              ! Intent(in)
-                                 zmscr08(k) * xapxbp(km1) &  ! Intent(in)
-                               + zmscr09(k) * xapxbp(k) & 
-                               + zmscr10(k) * xapxbp(kp1), &
+                                 (-lhs_ma(3,k)) * xapxbp(km1) &  ! Intent(in)
+                               + (-lhs_ma(2,k)) * xapxbp(k) & 
+                               + (-lhs_ma(1,k)) * xapxbp(kp1), &
                                stats_zm )                    ! Intent(inout)
 
       ! x'y' term pr1 has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_pr1, k, &          ! Intent(in)
-                               zmscr11(k) * xapxbp(k), &  ! Intent(in)
+                               (-lhs_dp1_stats2(k)) * xapxbp(k), & ! Intent(in)
                                stats_zm )                 ! Intent(inout)
 
     end do ! k=2..gr%nz-1
@@ -2479,8 +2465,6 @@ module advance_xp2_xpyp_module
         iup2_pr1, & 
         iup2_pr2, & 
         iup2_splat, & 
-        zmscr01, & 
-        zmscr11, & 
         l_stats_samp
 
     use stats_type, only: stats ! Type
@@ -2640,11 +2624,6 @@ module advance_xp2_xpyp_module
                                  stats_zm )                 ! Intent(inout)
 
             if ( ixapxbp_pr1 > 0 ) then
-
-              tmp  &
-              = gamma_over_implicit_ts  &
-              * term_dp1_lhs( two_thirds*C4, invrs_tau_C4_zm(k) )
-              zmscr11(k) = -tmp
               call stat_begin_update_pt( ixapxbp_pr1, k, & ! Intent(in)
                    -term_pr1( C4, zero, xbp2(k), wp2(k), &
                               invrs_tau_C4_zm(k), invrs_tau_C14_zm(k) ), & ! Intent(in)
@@ -2660,10 +2639,6 @@ module advance_xp2_xpyp_module
             endif
 
             if ( ixapxbp_dp1 > 0 ) then
-              tmp  &
-              = gamma_over_implicit_ts  &
-              * term_dp1_lhs( one_third*C14, invrs_tau_C14_zm(k) )
-              zmscr01(k) = -tmp
               call stat_begin_update_pt( ixapxbp_dp1, k, & ! Intent(in)  
                    -term_pr1( zero, C14, xbp2(k), wp2(k), &
                               invrs_tau_C4_zm(k), invrs_tau_C14_zm(k) ), &! Intent(in)
