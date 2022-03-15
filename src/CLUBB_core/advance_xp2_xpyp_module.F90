@@ -638,7 +638,7 @@ module advance_xp2_xpyp_module
          if ( l_stats_samp ) then
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_up2, up2(i,:), & !intent(in)
                                           lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
-                                          lhs_diff_uv, lhs_ta_wpup2, lhs_ma, &
+                                          lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
                                           stats_zm(i) ) ! intent(inout)
          endif
 
@@ -673,7 +673,7 @@ module advance_xp2_xpyp_module
          if ( l_stats_samp ) then
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_vp2, vp2(i,:), & !intent(in)
                                           lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
-                                          lhs_diff_uv, lhs_ta_wpvp2, lhs_ma, &
+                                          lhs_diff_uv(:,i,:), lhs_ta_wpvp2(:,i,:), lhs_ma(:,i,:), &
                                           stats_zm(i) ) ! intent(inout)
          endif
 
@@ -725,11 +725,11 @@ module advance_xp2_xpyp_module
          if ( l_stats_samp ) then
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_up2, up2(i,:), & !intent(in)
                                           lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
-                                          lhs_diff_uv, lhs_ta_wpup2, lhs_ma, &
+                                          lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
                                           stats_zm(i) ) ! intent(inout)
             call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_vp2, vp2(i,:), & !intent(in)
                                           lhs_dp1_stats1(i,:), lhs_dp1_stats2(i,:), &
-                                          lhs_diff_uv, lhs_ta_wpup2, lhs_ma, &
+                                          lhs_diff_uv(:,i,:), lhs_ta_wpup2(:,i,:), lhs_ma(:,i,:), &
                                           stats_zm(i) ) ! intent(inout)
          endif
 
