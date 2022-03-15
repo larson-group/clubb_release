@@ -541,7 +541,7 @@ module advance_xp2_xpyp_module
                                               rhs_ta_wprtp2(i,:), rhs_ta_wpthlp2(i,:),                  & ! In
                                               rhs_ta_wprtpthlp(i,:), rhs_ta_wpsclrp2(i,:,:),              & ! In
                                               rhs_ta_wprtpsclrp(i,:,:), rhs_ta_wpthlpsclrp(i,:,:),          & ! In
-                                              dt, l_scalar_calc,                      & ! In
+                                              dt, l_scalar_calc, l_lmm_stepping, l_stats_samp, & ! In
                                               stats_zm(i), stats_sfc(i),                  & ! intent(inout)
                                               rtp2(i,:), thlp2(i,:), rtpthlp(i,:),                           & ! Out
                                               sclrp2(i,:,:), sclrprtp(i,:,:), sclrpthlp(i,:,:) )                     ! Out
@@ -560,29 +560,10 @@ module advance_xp2_xpyp_module
                                                  rhs_ta_wprtpthlp(i,:), rhs_ta_wpsclrp2(i,:,:),            & ! In
                                                  rhs_ta_wprtpsclrp(i,:,:), rhs_ta_wpthlpsclrp(i,:,:),        & ! In
                                                  dt, iiPDF_type, l_scalar_calc,        & ! In
+                                                 l_lmm_stepping, l_stats_samp, & ! In
                                                  stats_zm(i), stats_sfc(i),                & ! intent(inout)
                                                  rtp2(i,:), thlp2(i,:), rtpthlp(i,:),                         & ! Out
                                                  sclrp2(i,:,:), sclrprtp(i,:,:), sclrpthlp(i,:,:) )                   ! Out
-      end if
-
-      if ( l_lmm_stepping ) then
-         thlp2(i,:) = one_half * ( thlp2_old(i,:) + thlp2(i,:) )
-         rtp2(i,:) = one_half * ( rtp2_old(i,:) + rtp2(i,:) )
-         rtpthlp(i,:) = one_half * ( rtpthlp_old(i,:) + rtpthlp(i,:) )
-         if ( sclr_dim > 0 ) then
-            sclrp2(i,:,:) = one_half * ( sclrp2_old(i,:,:) + sclrp2(i,:,:) )
-            sclrprtp(i,:,:) = one_half * ( sclrprtp_old(i,:,:) + sclrprtp(i,:,:) )
-            sclrpthlp(i,:,:) = one_half * ( sclrpthlp_old(i,:,:) + sclrpthlp(i,:,:) )
-         endif ! sclr_dim > 0
-      endif ! l_lmm_stepping
-   
-      if ( l_stats_samp ) then
-        call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_rtp2, rtp2(i,:), & !intent(in)
-                                      stats_zm(i) ) ! intent(inout)
-        call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_thlp2, thlp2(i,:), & !intent(in)
-                                      stats_zm(i) ) ! intent(inout)
-        call xp2_xpyp_implicit_stats( gr(i), xp2_xpyp_rtpthlp, rtpthlp(i,:), & !intent(in)
-                                      stats_zm(i) ) ! intent(inout)
       end if
 
       !!!!!***** u'^2 / v'^2 *****!!!!!
@@ -1158,7 +1139,7 @@ module advance_xp2_xpyp_module
                                              rhs_ta_wprtp2, rhs_ta_wpthlp2, &
                                              rhs_ta_wprtpthlp, rhs_ta_wpsclrp2, &
                                              rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
-                                             dt, l_scalar_calc, &
+                                             dt, l_scalar_calc, l_lmm_stepping, l_stats_samp, &
                                              stats_zm, stats_sfc, & 
                                              rtp2, thlp2, rtpthlp, &
                                              sclrp2, sclrprtp, sclrpthlp )
@@ -1183,7 +1164,8 @@ module advance_xp2_xpyp_module
         thl_tol, &
         zero, &
         zero_threshold, &
-        gamma_over_implicit_ts
+        gamma_over_implicit_ts, &
+        one_half
       
       use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -1217,7 +1199,9 @@ module advance_xp2_xpyp_module
         rtpthlp_forcing     ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
 
       logical, intent(in) :: &
-        l_scalar_calc
+        l_scalar_calc, &
+        l_lmm_stepping, &
+        l_stats_samp
 
       real( kind = core_rknd ), intent(in) :: &
         dt             ! Model timestep                                [s]
@@ -1381,18 +1365,41 @@ module advance_xp2_xpyp_module
      call xp2_xpyp_solve( gr, xp2_xpyp_single_lhs, 3+3*sclr_dim, &      ! Intent(in)
                           stats_sfc, & ! intent(inout)
                           rhs, lhs, solution ) ! Intent(inout)
-                
-     ! Copy solutions to corresponding output variables                   
-     rtp2 = solution(:,1)
-     thlp2 = solution(:,2)
-     rtpthlp = solution(:,3)
-     
-     if ( l_scalar_calc ) then
-       sclrp2 = solution(:,4:3+sclr_dim)
-       sclrprtp = solution(:,3+sclr_dim+1:3+2*sclr_dim)
-       sclrpthlp = solution(:,3+2*sclr_dim+1:3+3*sclr_dim) 
+                          
+     if ( l_lmm_stepping ) then
+       
+        rtp2    = one_half * ( rtp2     + solution(:,1) )
+        thlp2   = one_half * ( thlp2    + solution(:,2) )
+        rtpthlp = one_half * ( rtpthlp  + solution(:,3) )
+        
+        if ( sclr_dim > 0 ) then
+           sclrp2     = one_half * ( sclrp2     + solution(:,4:3+sclr_dim) )
+           sclrprtp   = one_half * ( sclrprtp   + solution(:,3+sclr_dim+1:3+2*sclr_dim) )
+           sclrpthlp  = one_half * ( sclrpthlp  + solution(:,3+2*sclr_dim+1:3+3*sclr_dim) )
+        endif ! sclr_dim > 0
+        
+     else
+       
+       rtp2    = solution(:,1)
+       thlp2   = solution(:,2)
+       rtpthlp = solution(:,3)
+       
+       if ( sclr_dim > 0 ) then
+          sclrp2     = solution(:,4:3+sclr_dim)
+          sclrprtp   = solution(:,3+sclr_dim+1:3+2*sclr_dim)
+          sclrpthlp  = solution(:,3+2*sclr_dim+1:3+3*sclr_dim)
+       endif ! sclr_dim > 0
+        
+     endif ! l_lmm_stepping
+  
+     if ( l_stats_samp ) then
+       call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtp2, rtp2, & !intent(in)
+                                     stats_zm ) ! intent(inout)
+       call xp2_xpyp_implicit_stats( gr, xp2_xpyp_thlp2, thlp2, & !intent(in)
+                                     stats_zm ) ! intent(inout)
+       call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtpthlp, rtpthlp, & !intent(in)
+                                     stats_zm ) ! intent(inout)
      end if
-
 
      return
       
@@ -1410,6 +1417,7 @@ module advance_xp2_xpyp_module
                                     rhs_ta_wprtp2, rhs_ta_wpthlp2, rhs_ta_wprtpthlp, &
                                     rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
                                     dt, iiPDF_type, l_scalar_calc, &
+                                    l_lmm_stepping, l_stats_samp, &
                                     stats_zm, stats_sfc, & 
                                     rtp2, thlp2, rtpthlp, &
                                     sclrp2, sclrprtp, sclrpthlp )
@@ -1429,7 +1437,8 @@ module advance_xp2_xpyp_module
         thl_tol, &
         zero, &
         zero_threshold, &
-        gamma_over_implicit_ts
+        gamma_over_implicit_ts, &
+        one_half
       
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -1472,7 +1481,9 @@ module advance_xp2_xpyp_module
                     ! two-component PDF.
 
     logical, intent(in) :: &
-      l_scalar_calc
+      l_scalar_calc, &
+      l_lmm_stepping, &
+      l_stats_samp
 
     real( kind = core_rknd ), intent(in) :: &
       dt             ! Model timestep                                [s]
@@ -1539,6 +1550,14 @@ module advance_xp2_xpyp_module
       
     real( kind = core_rknd ), dimension(gr%nz) :: &
       lhs_dp1   ! LHS dissipation term 1
+      
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+      rtp2_solution,    & ! <r_t'^2>                      [(kg/kg)^2]
+      thlp2_solution,   & ! <th_l'^2>                     [K^2]
+      rtpthlp_solution    ! <r_t'th_l'>                   [(kg K)/kg]
+        
+    real( kind = core_rknd ), dimension(gr%nz, sclr_dim) ::  & 
+      sclrp2_solution, sclrprtp_solution, sclrpthlp_solution
         
     integer :: sclr, k
       
@@ -1565,7 +1584,18 @@ module advance_xp2_xpyp_module
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( gr, xp2_xpyp_rtp2, 1, & ! Intent(in)
                          stats_sfc, & ! intent(inout)
-                         rhs, lhs, rtp2 )    ! Intent(inout)
+                         rhs, lhs, rtp2_solution )    ! Intent(inout)
+                         
+    if ( l_lmm_stepping ) then
+      rtp2 = one_half * ( rtp2 + rtp2_solution )
+    else
+      rtp2 = rtp2_solution
+    endif ! l_lmm_stepping
+ 
+    if ( l_stats_samp ) then
+      call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtp2, rtp2, & !intent(in)
+                                    stats_zm ) ! intent(inout)
+    end if
       
     !!!!!***** th_l'^2 *****!!!!!
     do k = 1, gr%nz
@@ -1589,7 +1619,18 @@ module advance_xp2_xpyp_module
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( gr, xp2_xpyp_thlp2, 1, & ! Intent(in)
                          stats_sfc, & ! intent(inout)
-                         rhs, lhs, thlp2 )    ! Intent(inout)
+                         rhs, lhs, thlp2_solution )    ! Intent(inout)
+                         
+    if ( l_lmm_stepping ) then
+      thlp2 = one_half * ( thlp2 + thlp2_solution )
+    else
+      thlp2 = thlp2_solution
+    endif ! l_lmm_stepping
+ 
+    if ( l_stats_samp ) then
+      call xp2_xpyp_implicit_stats( gr, xp2_xpyp_thlp2, thlp2, & !intent(in)
+                                    stats_zm ) ! intent(inout)
+    end if
 
     !!!!!***** r_t'th_l' *****!!!!!
     do k = 1, gr%nz
@@ -1613,7 +1654,18 @@ module advance_xp2_xpyp_module
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( gr, xp2_xpyp_rtpthlp, 1, & ! Intent(in)
                          stats_sfc, & ! intent(inout)
-                         rhs, lhs, rtpthlp )    ! Intent(inout)
+                         rhs, lhs, rtpthlp_solution )    ! Intent(inout)
+                         
+    if ( l_lmm_stepping ) then
+      rtpthlp = one_half * ( rtpthlp + rtpthlp_solution )
+    else
+      rtpthlp = rtpthlp_solution
+    endif ! l_lmm_stepping
+ 
+    if ( l_stats_samp ) then
+      call xp2_xpyp_implicit_stats( gr, xp2_xpyp_rtpthlp, rtpthlp, & !intent(in)
+                                    stats_zm ) ! intent(inout)
+    end if
     
     if ( l_scalar_calc ) then
       
@@ -1647,7 +1699,13 @@ module advance_xp2_xpyp_module
           ! Solve the tridiagonal system
           call xp2_xpyp_solve( gr, xp2_xpyp_scalars, 1,  & ! Intent(in)
                                stats_sfc, & ! intent(inout)
-                               rhs, lhs, sclrp2(:,sclr) ) ! Intent(inout)
+                               rhs, lhs, sclrp2_solution(:,sclr) ) ! Intent(inout)
+                               
+          if ( l_lmm_stepping ) then
+            sclrp2(:,sclr) = one_half * ( sclrp2(:,sclr) + sclrp2_solution(:,sclr) )
+          else
+            sclrp2(:,sclr) = sclrp2_solution(:,sclr)
+          endif ! l_lmm_stepping
       
           !!!!!***** sclr'r_t' *****!!!!!
           if ( sclr == iisclr_rt ) then
@@ -1677,7 +1735,13 @@ module advance_xp2_xpyp_module
           ! Solve the tridiagonal system
           call xp2_xpyp_solve( gr, xp2_xpyp_scalars, 1,    & ! Intent(in)
                                stats_sfc, & ! intent(inout)
-                               rhs, lhs, sclrprtp(:,sclr) ) ! Intent(inout)
+                               rhs, lhs, sclrprtp_solution(:,sclr) ) ! Intent(inout)
+                               
+          if ( l_lmm_stepping ) then
+            sclrprtp(:,sclr) = one_half * ( sclrprtp(:,sclr) + sclrprtp_solution(:,sclr) )
+          else
+            sclrprtp(:,sclr) = sclrprtp_solution(:,sclr)
+          endif ! l_lmm_stepping
       
           !!!!!***** sclr'th_l' *****!!!!!
 
@@ -1707,7 +1771,13 @@ module advance_xp2_xpyp_module
           ! Solve the tridiagonal system
           call xp2_xpyp_solve( gr, xp2_xpyp_scalars, 1,     & ! Intent(in)
                                stats_sfc, & ! intent(inout)
-                               rhs, lhs, sclrpthlp(:,sclr) ) ! Intent(inout)
+                               rhs, lhs, sclrpthlp_solution(:,sclr) ) ! Intent(inout)
+                               
+          if ( l_lmm_stepping ) then
+            sclrpthlp(:,sclr) = one_half * ( sclrpthlp(:,sclr) + sclrpthlp_solution(:,sclr) )
+          else
+            sclrpthlp(:,sclr) = sclrpthlp_solution(:,sclr)
+          endif ! l_lmm_stepping
       
         enddo ! 1..sclr_dim
 
@@ -1791,11 +1861,16 @@ module advance_xp2_xpyp_module
                              stats_sfc, & ! intent(inout)
                              sclr_rhs, lhs, sclr_solution )    ! Intent(inout)
 
-        sclrp2(:,1:sclr_dim) = sclr_solution(:,1:sclr_dim)
-
-        sclrprtp(:,1:sclr_dim) = sclr_solution(:,sclr_dim+1:2*sclr_dim)
-
-        sclrpthlp(:,1:sclr_dim) = sclr_solution(:,2*sclr_dim+1:3*sclr_dim)
+        
+        if ( l_lmm_stepping ) then
+          sclrp2    = one_half * ( sclrp2    + sclr_solution(:,1:sclr_dim) )
+          sclrprtp  = one_half * ( sclrprtp  + sclr_solution(:,sclr_dim+1:2*sclr_dim) )
+          sclrpthlp = one_half * ( sclrpthlp + sclr_solution(:,2*sclr_dim+1:3*sclr_dim) )
+        else
+          sclrp2    = sclr_solution(:,1:sclr_dim)
+          sclrprtp  = sclr_solution(:,sclr_dim+1:2*sclr_dim)
+          sclrpthlp = sclr_solution(:,2*sclr_dim+1:3*sclr_dim)
+        endif ! l_lmm_stepping
 
 
       endif ! iiPDF_type
