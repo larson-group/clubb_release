@@ -808,9 +808,11 @@ module clubb_driver
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn,  & ! Use TKE in eddy diffusion for wp2 and wp3
-      l_smooth_Heaviside_tau_wpxp     ! Use smoothed Heaviside 'Preskin' function
+      l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Preskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp in
+                                      ! xm_wpxp_clipping_and_stats
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -855,7 +857,7 @@ module clubb_driver
       l_call_pdf_closure_twice, l_Lscale_plume_centered, &
       l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
       l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
-      l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp
+      l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, l_enable_relaxed_clipping
       
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -1003,7 +1005,8 @@ module clubb_driver
                                          l_vary_convect_depth, & ! Intent(out)
                                          l_use_tke_in_wp3_pr_turb_term, & ! Intent(out)
                                          l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(out)
-                                         l_smooth_Heaviside_tau_wpxp ) ! Intent(out)
+                                         l_smooth_Heaviside_tau_wpxp, & ! Intent(out)
+                                         l_enable_relaxed_clipping ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1374,6 +1377,7 @@ module clubb_driver
                                              l_use_tke_in_wp3_pr_turb_term, & ! Intent(in)
                                              l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(in)
                                              l_smooth_Heaviside_tau_wpxp, & ! Intent(in)
+                                             l_enable_relaxed_clipping, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
@@ -1415,7 +1419,8 @@ module clubb_driver
            l_prescribed_avg_deltaz,                           & ! intent(in)
            l_damp_wp2_using_em,                               & ! intent(in)
            l_stability_correct_tau_zm,                        & ! intent(in)
-           gr(1), lmin, nu_vert_res_dep, err_code_dummy )          ! Intent(out)
+           l_enable_relaxed_clipping,                         & ! intent(in)
+           gr(1), lmin, nu_vert_res_dep, err_code_dummy )       ! Intent(out)
 
     ! Allocate and initialize variables
 

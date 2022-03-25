@@ -532,9 +532,11 @@ module pdf_parameter_tests
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn,  & ! Use TKE in eddy diffusion for wp2 and wp3
-      l_smooth_Heaviside_tau_wpxp     ! Use smoothed Heaviside 'Preskin' function
+      l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Preskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp in
+                                      ! xm_wpxp_clipping_and_stats
 
     real( kind = core_rknd ) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
@@ -667,7 +669,8 @@ module pdf_parameter_tests
                                          l_vary_convect_depth, &
                                          l_use_tke_in_wp3_pr_turb_term, &
                                          l_use_tke_in_wp2_wp3_K_dfsn, &
-                                         l_smooth_Heaviside_tau_wpxp )
+                                         l_smooth_Heaviside_tau_wpxp, &
+                                         l_enable_relaxed_clipping )
 
     iiPDF_type = test_pdf_type
 

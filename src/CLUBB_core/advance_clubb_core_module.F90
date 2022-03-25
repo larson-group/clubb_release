@@ -1697,6 +1697,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_brunt_vaisala_freq_moist,        & ! intent(in)
                             clubb_config_flags%l_use_thvm_in_bv_freq,             & ! intent(in)
                             clubb_config_flags%l_lmm_stepping,                    & ! intent(in)
+                            clubb_config_flags%l_enable_relaxed_clipping,         & ! intent(in)
                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,         & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(i/o)
                             rtm, wprtp, thlm, wpthlp,                             & ! intent(i/o)
@@ -3565,7 +3566,8 @@ module advance_clubb_core_module
                  l_min_xp2_from_corr_wx,                  & ! intent(in)
                  l_prescribed_avg_deltaz,                 & ! intent(in)
                  l_damp_wp2_using_em,                     & ! intent(in)
-                 l_stability_correct_tau_zm               & ! intent(in)
+                 l_stability_correct_tau_zm,              & ! intent(in)
+                 l_enable_relaxed_clipping                & ! intent(in)
 
 #ifdef GFDL
                  , cloud_frac_min                         & ! intent(in)  h1g, 2010-06-16
@@ -3619,9 +3621,6 @@ module advance_clubb_core_module
           iiPDF_LY93,       &
           iiPDF_new_hybrid, &
           l_explicit_turbulent_adv_wpxp
-
-      use advance_xm_wpxp_module, only: &
-          l_enable_relaxed_clipping
 
       use clubb_precision, only: &
           core_rknd ! Variable(s)
@@ -3713,19 +3712,23 @@ module advance_clubb_core_module
                                ! CLUBB's PDF.
 
       logical, intent(in) :: &
-        l_predict_upwp_vpwp,     & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                   ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
-                                   ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
-                                   ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
-                                   ! diffusivity when <u> and <v> are advanced in subroutine
-                                   ! advance_windm_edsclrm.
-        l_min_xp2_from_corr_wx,  & ! Flag to base the threshold minimum value of xp2 (rtp2 and
-                                   ! thlp2) on keeping the overall correlation of w and x within
-                                   ! the limits of -max_mag_correlation_flux to
-                                   ! max_mag_correlation_flux.
-        l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-        l_damp_wp2_using_em,     &
-        l_stability_correct_tau_zm
+        l_predict_upwp_vpwp,        & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                      ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
+                                      ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
+                                      ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
+                                      ! diffusivity when <u> and <v> are advanced in subroutine
+                                      ! advance_windm_edsclrm.
+        l_min_xp2_from_corr_wx,     & ! Flag to base the threshold minimum value of xp2 (rtp2 and
+                                      ! thlp2) on keeping the overall correlation of w and x within
+                                      ! the limits of -max_mag_correlation_flux to
+                                      ! max_mag_correlation_flux.
+        l_prescribed_avg_deltaz,    & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+        l_stability_correct_tau_zm, & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1 stability
+                                      ! correction
+        l_damp_wp2_using_em,        & ! In wp2 equation, use a dissipation formula of
+                                      ! -(2/3)*em/tau_zm, as in Bougeault (1981)
+        l_enable_relaxed_clipping     ! Flag to relax clipping on wpxp in
+                                      ! xm_wpxp_clipping_and_stats
 
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod

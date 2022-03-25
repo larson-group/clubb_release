@@ -656,9 +656,11 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! Looking at issue #905 on the clubb repo
     l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
     l_use_tke_in_wp2_wp3_K_dfsn, &  ! Use TKE in eddy diffusion for wp2 and wp3
-    l_smooth_Heaviside_tau_wpxp     ! Use smoothed Heaviside 'Preskin' function
+    l_smooth_Heaviside_tau_wpxp, &  ! Use smoothed Heaviside 'Preskin' function
                                     ! in the calculation of H_invrs_tau_wpxp_N2
                                     ! in src/CLUBB_core/mixing_length.F90
+    l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp in
+                                    ! xm_wpxp_clipping_and_stats
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, &
@@ -724,7 +726,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_vary_convect_depth, & ! Intent(out)
                                        l_use_tke_in_wp3_pr_turb_term, & ! Intent(out)
                                        l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(out)
-                                       l_smooth_Heaviside_tau_wpxp ) ! Intent(out)
+                                       l_smooth_Heaviside_tau_wpxp, & ! Intent(out)
+                                       l_enable_relaxed_clipping ) ! Intent(out)
 
   ! Determine the current flags
   model_flags_default(1) = l_godunov_upwind_wpxp_ta

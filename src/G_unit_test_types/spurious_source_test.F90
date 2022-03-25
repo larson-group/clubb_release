@@ -465,9 +465,11 @@ module spurious_source_test
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn, &  ! Use TKE in eddy diffusion for wp2 and wp3
-      l_smooth_Heaviside_tau_wpxp     ! Use smoothed Heaviside 'Preskin' function
+      l_smooth_Heaviside_tau_wpxp, &  ! Use smoothed Heaviside 'Preskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp in
+                                      ! xm_wpxp_clipping_and_stats
 
     integer, parameter :: &
       order_xm_wpxp = 1, &
@@ -576,7 +578,8 @@ module spurious_source_test
                                          l_vary_convect_depth, &
                                          l_use_tke_in_wp3_pr_turb_term, &
                                          l_use_tke_in_wp2_wp3_K_dfsn, &
-                                         l_smooth_Heaviside_tau_wpxp )
+                                         l_smooth_Heaviside_tau_wpxp, &
+                                         l_enable_relaxed_clipping )
 
     write(*,*)
     write(*,*) "Performing spurious source unit test"
@@ -963,6 +966,7 @@ module spurious_source_test
                              l_brunt_vaisala_freq_moist, &
                              l_use_thvm_in_bv_freq, &
                              l_lmm_stepping, &
+                             l_enable_relaxed_clipping, &
                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                              stats_zt, stats_zm, stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, &

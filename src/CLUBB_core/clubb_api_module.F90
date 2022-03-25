@@ -1634,6 +1634,7 @@ contains
     l_prescribed_avg_deltaz,                            & ! intent(in)
     l_damp_wp2_using_em,                                & ! intent(in)
     l_stability_correct_tau_zm,                         & ! intent(in)
+    l_enable_relaxed_clipping,                          & ! intent(in)
 #ifdef GFDL
     cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
@@ -1732,19 +1733,21 @@ contains
                              ! CLUBB's PDF.
 
     logical, intent(in) :: &
-      l_predict_upwp_vpwp,     & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                 ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
-                                 ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
-                                 ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
-                                 ! diffusivity when <u> and <v> are advanced in subroutine
-                                 ! advance_windm_edsclrm.
-      l_min_xp2_from_corr_wx,  & ! Flag to base the threshold minimum value of xp2 (rtp2 and
-                                 ! thlp2) on keeping the overall correlation of w and x within
-                                 ! the limits of -max_mag_correlation_flux to
-                                 ! max_mag_correlation_flux.
-      l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_damp_wp2_using_em,     &
-      l_stability_correct_tau_zm
+      l_predict_upwp_vpwp,         & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                     ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
+                                     ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
+                                     ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
+                                     ! diffusivity when <u> and <v> are advanced in subroutine
+                                     ! advance_windm_edsclrm.
+      l_min_xp2_from_corr_wx,     & ! Flag to base the threshold minimum value of xp2 (rtp2 and
+                                    ! thlp2) on keeping the overall correlation of w and x within
+                                    ! the limits of -max_mag_correlation_flux to
+                                    ! max_mag_correlation_flux.
+      l_prescribed_avg_deltaz,    & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_damp_wp2_using_em,        &
+      l_stability_correct_tau_zm, &
+      l_enable_relaxed_clipping     ! Flag to relax clipping on wpxp in
+                                    ! xm_wpxp_clipping_and_stats
 
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
@@ -1784,8 +1787,9 @@ contains
       l_prescribed_avg_deltaz,                              & ! intent(in)
       l_damp_wp2_using_em,                                  & ! intent(in)
       l_stability_correct_tau_zm,                           & ! intent(in)
+      l_enable_relaxed_clipping,                            & ! intent(in)
 #ifdef GFDL
-      , cloud_frac_min                                      & ! intent(in)  h1g, 2010-06-16
+      cloud_frac_min,                                       & ! intent(in)  h1g, 2010-06-16
 #endif
       gr, lmin, nu_vert_res_dep, err_code_api )               ! intent(out)
 
@@ -4308,7 +4312,8 @@ contains
                                                  l_vary_convect_depth, & ! Out
                                                  l_use_tke_in_wp3_pr_turb_term, & ! Out
                                                  l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
-                                                 l_smooth_Heaviside_tau_wpxp ) ! Out
+                                                 l_smooth_Heaviside_tau_wpxp, & ! Out
+                                                 l_enable_relaxed_clipping ) ! Out
 
     use model_flags, only: &
         set_default_clubb_config_flags  ! Procedure
@@ -4426,9 +4431,11 @@ contains
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn, &  ! Use TKE in eddy diffusion for wp2 and wp3
-      l_smooth_Heaviside_tau_wpxp     ! Use smoothed Heaviside 'Peskin' function
+      l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp
+                                      ! in xm_wpxp_clipping_and_stats
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -4476,7 +4483,8 @@ contains
                                          l_vary_convect_depth, & ! Out
                                          l_use_tke_in_wp3_pr_turb_term, & ! Out
                                          l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
-                                         l_smooth_Heaviside_tau_wpxp ) ! Out
+                                         l_smooth_Heaviside_tau_wpxp, & ! Out
+                                         l_enable_relaxed_clipping ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -4530,6 +4538,7 @@ contains
                                                      l_use_tke_in_wp3_pr_turb_term, & ! In
                                                      l_use_tke_in_wp2_wp3_K_dfsn, & ! In
                                                      l_smooth_Heaviside_tau_wpxp, & ! In
+                                                     l_enable_relaxed_clipping, & ! In/
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -4649,9 +4658,11 @@ contains
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn, &  ! Use TKE in eddy diffusion for wp2 and wp3
-      l_smooth_Heaviside_tau_wpxp     ! Use smoothed Heaviside 'Peskin' function
+      l_smooth_Heaviside_tau_wpxp, &  ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp
+                                      ! in xm_wpxp_clipping_and_stats
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -4704,6 +4715,7 @@ contains
                                              l_use_tke_in_wp3_pr_turb_term, & ! In
                                              l_use_tke_in_wp2_wp3_K_dfsn, & ! In
                                              l_smooth_Heaviside_tau_wpxp, & ! In
+                                             l_enable_relaxed_clipping, & ! In
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api

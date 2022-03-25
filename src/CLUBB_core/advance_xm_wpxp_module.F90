@@ -40,10 +40,6 @@ module advance_xm_wpxp_module
     xm_wpxp_um = 4,     & ! Named constant for optional um and upwp solving
     xm_wpxp_vm = 5        ! Named constant for optional vm and vpwp solving
 
-  ! Flag to relax clipping on wpxp in xm_wpxp_clipping_and_stats
-  logical, parameter, public :: &
-    l_enable_relaxed_clipping = .false.
-
   contains
 
   !=============================================================================
@@ -77,6 +73,7 @@ module advance_xm_wpxp_module
                               l_brunt_vaisala_freq_moist, &
                               l_use_thvm_in_bv_freq, &
                               l_lmm_stepping, &
+                              l_enable_relaxed_clipping, &
                               order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                               stats_zt, stats_zm, stats_sfc, &
                               rtm, wprtp, thlm, wpthlp, &
@@ -326,7 +323,8 @@ module advance_xm_wpxp_module
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
-      l_lmm_stepping                  ! Apply Linear Multistep Method (LMM) Stepping
+      l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
+      l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp in xm_wpxp_clipping_and_stats
 
     integer, intent(in) :: &
       order_xm_wpxp, &
@@ -687,6 +685,7 @@ module advance_xm_wpxp_module
                                             l_diffuse_rtm_and_thlm,                         & ! In
                                             l_upwind_xm_ma,                                 & ! In
                                             l_tke_aniso,                                    & ! In
+                                            l_enable_relaxed_clipping,                      & ! In
                                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,   & ! In
                                             stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )        ! Out
@@ -715,6 +714,7 @@ module advance_xm_wpxp_module
                                           l_diffuse_rtm_and_thlm,                          & ! In
                                           l_upwind_xm_ma,                                  & ! In
                                           l_tke_aniso,                                     & ! In
+                                          l_enable_relaxed_clipping,                       & ! In
                                           order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,    & ! In
                                           stats_zt, stats_zm, stats_sfc,                   & ! In
                                           rtm, wprtp, thlm, wpthlp,                        & ! Out
@@ -2288,6 +2288,7 @@ module advance_xm_wpxp_module
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
                                             l_tke_aniso, &
+                                            l_enable_relaxed_clipping, &
                                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                                             stats_zt, stats_zm, stats_sfc, & 
                                             rtm, wprtp, thlm, wpthlp, &
@@ -2458,19 +2459,25 @@ module advance_xm_wpxp_module
       C_uu_shr    ! CLUBB tunable parameter C_uu_shr
 
     logical, intent(in) :: &
-      l_predict_upwp_vpwp,    & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
-                                ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise,
-                                ! <u'w'> and <v'w'> are still approximated by eddy diffusivity when
-                                ! <u> and <v> are advanced in subroutine advance_windm_edsclrm.
-      l_diffuse_rtm_and_thlm, & ! This flag determines whether or not we want CLUBB to do diffusion
-                                ! on rtm and thlm
-      l_upwind_xm_ma,         & ! This flag determines whether we want to use an upwind
-                                ! differencing approximation rather than a centered differencing
-                                ! for turbulent or mean advection terms. It affects rtm, thlm,
-                                ! sclrm, um and vm.
-      l_tke_aniso               ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                                ! (u'^2 + v'^2 + w'^2)
+      l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
+                                   ! with <u> and <v> alongside the advancement
+                                   ! of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>,
+                                   ! and <w'sclr'> in subroutine advance_xm_wpxp.
+                                   ! Otherwise, <u'w'> and <v'w'> are still
+                                   ! approximated by eddy diffusivity when <u>
+                                   ! and <v> are advanced in subroutine
+                                   ! advance_windm_edsclrm.
+      l_diffuse_rtm_and_thlm,    & ! This flag determines whether or not we want
+                                   ! CLUBB to do diffusion on rtm and thlm
+      l_upwind_xm_ma,            & ! This flag determines whether we want to use
+                                   ! an upwind differencing approximation rather
+                                   ! than a centered differencing for turbulent
+                                   ! or mean advection terms. It affects rtm,
+                                   ! thlm, sclrm, um and vm.
+      l_tke_aniso,               & ! For anisotropic turbulent kinetic energy,
+                                   ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_enable_relaxed_clipping    ! Flag to relax clipping on wpxp in
+                                   ! xm_wpxp_clipping_and_stats
       
     integer, intent(in) :: &
       order_xm_wpxp, &
@@ -2800,6 +2807,7 @@ module advance_xm_wpxp_module
            l_predict_upwp_vpwp, &                     ! Intent(in)
            l_upwind_xm_ma, &                          ! Intent(in)
            l_tke_aniso, &                             ! Intent(in)
+           l_enable_relaxed_clipping, &               ! Intent(in)
            order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
            order_wp2_wp3, &                           ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
@@ -2825,6 +2833,7 @@ module advance_xm_wpxp_module
            l_predict_upwp_vpwp, &                     ! Intent(in)
            l_upwind_xm_ma, &                          ! Intent(in)
            l_tke_aniso, &                             ! Intent(in)
+           l_enable_relaxed_clipping, &               ! Intent(in)
            order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
            order_wp2_wp3, &                           ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
@@ -2851,7 +2860,7 @@ module advance_xm_wpxp_module
              sclrm_forcing(:,:,j), &                                ! Intent(in)
              rho_ds_zm, rho_ds_zt, &                                ! Intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, &                    ! Intent(in)
-             sclr_tol(j)**2, sclr_tol(j), rcond, &               ! Intent(in)
+             sclr_tol(j)**2, sclr_tol(j), rcond, &                  ! Intent(in)
              low_lev_effect, high_lev_effect, &                     ! Intent(in)
              lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &                   ! Intent(in)
              lhs_diff_zm, C7_Skw_fnc, &                             ! Intent(in)
@@ -2860,6 +2869,7 @@ module advance_xm_wpxp_module
              l_predict_upwp_vpwp, &                                 ! Intent(in)
              l_upwind_xm_ma, &                                      ! Intent(in)
              l_tke_aniso, &                                         ! Intent(in)
+             l_enable_relaxed_clipping, &                           ! Intent(in)
              order_xm_wpxp, order_xp2_xpyp, &                       ! Intent(in)
              order_wp2_wp3, &                                       ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                       ! intent(inout)
@@ -2890,6 +2900,7 @@ module advance_xm_wpxp_module
             l_predict_upwp_vpwp,                      & ! Intent(in)
             l_upwind_xm_ma,                           & ! Intent(in)
             l_tke_aniso,                              & ! Intent(in)
+            l_enable_relaxed_clipping,                & ! Intent(in)
             order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
             order_wp2_wp3,                            & ! Intent(in)
             stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
@@ -2915,6 +2926,7 @@ module advance_xm_wpxp_module
             l_predict_upwp_vpwp,                      & ! Intent(in)
             l_upwind_xm_ma,                           & ! Intent(in)
             l_tke_aniso,                              & ! Intent(in)
+            l_enable_relaxed_clipping,                & ! Intent(in)
             order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
             order_wp2_wp3,                            & ! Intent(in)
             stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
@@ -2949,6 +2961,7 @@ module advance_xm_wpxp_module
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
                                             l_tke_aniso, &
+                                            l_enable_relaxed_clipping, &
                                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                                             stats_zt, stats_zm, stats_sfc, & 
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )
@@ -3077,19 +3090,25 @@ module advance_xm_wpxp_module
       nrhs         ! Number of RHS vectors
 
     logical, intent(in) :: &
-      l_predict_upwp_vpwp, &    ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
-                                ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise,
-                                ! <u'w'> and <v'w'> are still approximated by eddy diffusivity when
-                                ! <u> and <v> are advanced in subroutine advance_windm_edsclrm.
-      l_diffuse_rtm_and_thlm, & ! This flag determines whether or not we want CLUBB to do
-                                ! diffusion on rtm and thlm
-      l_upwind_xm_ma,         & ! This flag determines whether we want to use an upwind
-                                ! differencing approximation rather than a centered differencing
-                                ! for turbulent or mean advection terms. It affects rtm, thlm,
-                                ! sclrm, um and vm.
-      l_tke_aniso               ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                                ! (u'^2 + v'^2 + w'^2)
+      l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
+                                   ! with <u> and <v> alongside the advancement
+                                   ! of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>,
+                                   ! and <w'sclr'> in subroutine advance_xm_wpxp.
+                                   ! Otherwise, <u'w'> and <v'w'> are still
+                                   ! approximated by eddy diffusivity when <u>
+                                   ! and <v> are advanced in subroutine
+                                   ! advance_windm_edsclrm.
+      l_diffuse_rtm_and_thlm,    & ! This flag determines whether or not we want
+                                   ! CLUBB to do diffusion on rtm and thlm
+      l_upwind_xm_ma,            & ! This flag determines whether we want to use
+                                   ! an upwind differencing approximation rather
+                                   ! than a centered differencing for turbulent
+                                   ! or mean advection terms. It affects rtm,
+                                   ! thlm, sclrm, um and vm.
+      l_tke_aniso,               & ! For anisotropic turbulent kinetic energy,
+                                   ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_enable_relaxed_clipping    ! Flag to relax clipping on wpxp in
+                                   ! xm_wpxp_clipping_and_stats
       
     integer, intent(in) :: &
       order_xm_wpxp, &
@@ -3212,6 +3231,7 @@ module advance_xm_wpxp_module
            l_predict_upwp_vpwp, &                     ! Intent(in)
            l_upwind_xm_ma, &                          ! Intent(in)
            l_tke_aniso, &                             ! Intent(in)
+           l_enable_relaxed_clipping, &               ! Intent(in)
            order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
            order_wp2_wp3, &                           ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
@@ -3294,6 +3314,7 @@ module advance_xm_wpxp_module
            l_predict_upwp_vpwp, &                       ! Intent(in)
            l_upwind_xm_ma, &                            ! Intent(in)
            l_tke_aniso, &                               ! Intent(in)
+           l_enable_relaxed_clipping, &                 ! Intent(in)
            order_xm_wpxp, order_xp2_xpyp, &             ! Intent(in)
            order_wp2_wp3, &                             ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &             ! intent(inout)
@@ -3388,6 +3409,7 @@ module advance_xm_wpxp_module
              l_predict_upwp_vpwp, &                                 ! Intent(in)
              l_upwind_xm_ma, &                                      ! Intent(in)
              l_tke_aniso, &                                         ! Intent(in)
+             l_enable_relaxed_clipping, &                           ! Intent(in)
              order_xm_wpxp, order_xp2_xpyp, &                       ! Intent(in)
              order_wp2_wp3, &                                       ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                       ! intent(inout)
@@ -3503,6 +3525,7 @@ module advance_xm_wpxp_module
                l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
                l_tke_aniso, &
+               l_enable_relaxed_clipping, &
                order_xm_wpxp, order_xp2_xpyp, &
                order_wp2_wp3, &
                stats_zt, stats_zm, stats_sfc, & 
@@ -3686,16 +3709,23 @@ module advance_xm_wpxp_module
       solution ! The <t+1> value of xm and wpxp   [units vary]
 
     logical, intent(in) :: &
-      l_predict_upwp_vpwp, & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside
-                             ! the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and
-                             ! <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise, <u'w'> and
-                             ! <v'w'> are still approximated by eddy diffusivity when <u> and <v>
-                             ! are advanced in subroutine advance_windm_edsclrm.
-      l_upwind_xm_ma,      & ! This flag determines whether we want to use an upwind differencing
-                             ! approximation rather than a centered differencing for turbulent or
-                             ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
-      l_tke_aniso            ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                             ! (u'^2 + v'^2 + w'^2)
+      l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
+                                   ! with <u> and <v> alongside the advancement
+                                   ! of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>,
+                                   ! and <w'sclr'> in subroutine advance_xm_wpxp.
+                                   ! Otherwise, <u'w'> and <v'w'> are still
+                                   ! approximated by eddy diffusivity when <u>
+                                   ! and <v> are advanced in subroutine
+                                   ! advance_windm_edsclrm.
+      l_upwind_xm_ma,            & ! This flag determines whether we want to use
+                                   ! an upwind differencing approximation rather
+                                   ! than a centered differencing for turbulent
+                                   ! or mean advection terms. It affects rtm,
+                                   ! thlm, sclrm, um and vm.
+      l_tke_aniso,               & ! For anisotropic turbulent kinetic energy,
+                                   ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_enable_relaxed_clipping    ! Flag to relax clipping on wpxp in
+                                   ! xm_wpxp_clipping_and_stats
 
     integer, intent(in) :: &
       order_xm_wpxp, &
