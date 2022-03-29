@@ -102,4 +102,5 @@ Richardson_num_min = 0.25 ! Threshold on Richardson number
 Richardson_num_max = 400.0 ! Threshold on Richardson number
 Cx_min = 0.33              ! Threshold on Cx_fnc_Richardson
 Cx_max = 0.95               ! Threshold on Cx_fnc_Richardson
+a3_coef_min = 1.6         ! Minimum threshold on the a3 coefficient  [-]
 /

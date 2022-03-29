@@ -220,7 +220,8 @@ module advance_clubb_core_module
         ibeta,                   &
         iSkw_denom_coef,         &
         iSkw_max_mag,            &
-        iup2_sfc_coef
+        iup2_sfc_coef,           &
+        ia3_coef_min
 
     use parameters_tunable, only: &
         nu_vertical_res_dep    ! Type(s)
@@ -1196,7 +1197,7 @@ module advance_clubb_core_module
     ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
     ! than -1.4 -dschanen 4 Jan 2011
     !a3_coef = max( a3_coef, -1.4_core_rknd ) ! Known magic number
-    !a3_coef = max( a3_coef, 1.6_core_rknd ) ! Known magic number
+    a3_coef = max( a3_coef, clubb_params(ia3_coef_min) )
     a3_coef_zt(:,:) = zm2zt( nz, ngrdcol, gr, a3_coef(:,:) )
 
     ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels.

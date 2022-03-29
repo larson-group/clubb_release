@@ -158,7 +158,7 @@ module clubb_api_module
     iC_invrs_tau_sfc, iC_invrs_tau_shear, iC_invrs_tau_N2, &
     iC_invrs_tau_N2_wp2, iC_invrs_tau_N2_xp2, iC_invrs_tau_N2_wpxp, &
     iC_invrs_tau_N2_clear_wp3, ialtitude_threshold, irtp2_clip_coef, &
-    iRichardson_num_min, iRichardson_num_max, iCx_min, iCx_max
+    iRichardson_num_min, iRichardson_num_max, ia3_coef_min, iCx_min, iCx_max
 
 
   use pdf_parameter_module, only : &
@@ -270,7 +270,7 @@ module clubb_api_module
         iC_invrs_tau_sfc, iC_invrs_tau_shear, iC_invrs_tau_N2, &
         iC_invrs_tau_N2_wp2, iC_invrs_tau_N2_xp2, iC_invrs_tau_N2_wpxp, &
         iC_invrs_tau_N2_clear_wp3, ialtitude_threshold, irtp2_clip_coef, &
-        iRichardson_num_min, iRichardson_num_max, iCx_min, iCx_max
+        iRichardson_num_min, iRichardson_num_max, ia3_coef_min, iCx_min, iCx_max
 
 
 
@@ -2331,7 +2331,8 @@ contains
                                   C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                                   C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                                   C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-                                  Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+                                  Cx_min, Cx_max, Richardson_num_min, &
+                                  Richardson_num_max, a3_coef_min, &
                                   params )
 
     use parameters_tunable, only : read_parameters
@@ -2368,7 +2369,7 @@ contains
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -2396,7 +2397,8 @@ contains
                           C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                           C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                           C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-                          Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+                          Cx_min, Cx_max, Richardson_num_min, &
+                          Richardson_num_max, a3_coef_min, &
                           params ) ! intent(out)
 
   end subroutine read_parameters_api
@@ -4203,7 +4205,8 @@ contains
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max )
+               Cx_min, Cx_max, Richardson_num_min, &
+               Richardson_num_max, a3_coef_min )
 
     use parameters_tunable, only: &
         set_default_parameters    ! Procedure(s)
@@ -4232,7 +4235,7 @@ contains
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min
 
     call set_default_parameters( &
                C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
@@ -4257,7 +4260,8 @@ contains
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max )
+               Cx_min, Cx_max, Richardson_num_min, &
+               Richardson_num_max, a3_coef_min )
 
     return
 
