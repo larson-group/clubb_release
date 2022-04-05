@@ -3568,7 +3568,8 @@ module advance_clubb_core_module
                  l_prescribed_avg_deltaz,                 & ! intent(in)
                  l_damp_wp2_using_em,                     & ! intent(in)
                  l_stability_correct_tau_zm,              & ! intent(in)
-                 l_enable_relaxed_clipping                & ! intent(in)
+                 l_enable_relaxed_clipping,               & ! intent(in)
+                 l_diag_Lscale_from_tau                   & ! intent(in)
 
 #ifdef GFDL
                  , cloud_frac_min                         & ! intent(in)  h1g, 2010-06-16
@@ -3590,6 +3591,14 @@ module advance_clubb_core_module
       use parameter_indices, only:  &
           nparams,      & ! Variable(s)
           iC1,          & ! Constant(s)
+          iC1b,         &
+          iC2rt,        &
+          iC2thl,       &
+          iC2rtthl,     &
+          iC6rt,        &
+          iC6rtb,       &
+          iC6thl,       &
+          iC6thlb,      &
           iC14,         &
           iSkw_max_mag
 
@@ -3602,6 +3611,7 @@ module advance_clubb_core_module
 
       use constants_clubb, only:  &
           fstderr, &  ! Variable(s)
+          one, &
           eps
 
       use error_code, only: &
@@ -3728,8 +3738,11 @@ module advance_clubb_core_module
                                       ! correction
         l_damp_wp2_using_em,        & ! In wp2 equation, use a dissipation formula of
                                       ! -(2/3)*em/tau_zm, as in Bougeault (1981)
-        l_enable_relaxed_clipping     ! Flag to relax clipping on wpxp in
+        l_enable_relaxed_clipping,  & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
+        l_diag_Lscale_from_tau        ! First diagnose dissipation time tau, and
+                                      ! then diagnose the mixing length scale as
+                                      ! Lscale = tau * tke
 
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
@@ -4043,6 +4056,127 @@ module advance_clubb_core_module
          err_code_out = clubb_fatal_error
          return
       endif
+
+      ! Checking that when the l_diag_Lscale_from_tau is enabled, the
+      ! relevant Cx tunable parameters are all set to a value of 1 (as
+      ! you're supposed to tune the C_invrs_tau_ parameters instead).
+      if ( l_diag_Lscale_from_tau ) then
+
+         ! Note: someday when we can successfully run with all these parameters
+         ! having a value of 1, the "Warning" messages should be removed and the
+         ! "Fatal error" messages should be uncommented.
+
+         ! C1 must have a value of 1
+         if ( params(iC1) > one .or. params(iC1) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C1 must have a value of 1."
+            write(fstderr,*) "C1 = ", params(iC1)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C1 check
+
+         ! C1b must have a value of 1
+         if ( params(iC1b) > one .or. params(iC1b) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C1b must have a value of 1."
+            write(fstderr,*) "C1b = ", params(iC1b)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C1b check
+
+         ! C2rt must have a value of 1
+         if ( params(iC2rt) > one .or. params(iC2rt) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C2rt must have a value of 1."
+            write(fstderr,*) "C2rt = ", params(iC2rt)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C2rt check
+
+         ! C2thl must have a value of 1
+         if ( params(iC2thl) > one .or. params(iC2thl) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C2thl must have a value of 1."
+            write(fstderr,*) "C2thl = ", params(iC2thl)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C2thl check
+
+         ! C2rtthl must have a value of 1
+         if ( params(iC2rtthl) > one .or. params(iC2rtthl) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C2rtthl must have a value of 1."
+            write(fstderr,*) "C2rtthl = ", params(iC2rtthl)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C2rtthl check
+
+         ! C6rt must have a value of 1
+         if ( params(iC6rt) > one .or. params(iC6rt) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C6rt must have a value of 1."
+            write(fstderr,*) "C6rt = ", params(iC6rt)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C6rt check
+
+         ! C6rtb must have a value of 1
+         if ( params(iC6rtb) > one .or. params(iC6rtb) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C6rtb must have a value of 1."
+            write(fstderr,*) "C6rtb = ", params(iC6rtb)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C6rtb check
+
+         ! C6thl must have a value of 1
+         if ( params(iC6thl) > one .or. params(iC6thl) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C6thl must have a value of 1."
+            write(fstderr,*) "C6thl = ", params(iC6thl)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C6thl check
+
+         ! C6thlb must have a value of 1
+         if ( params(iC6thlb) > one .or. params(iC6thlb) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C6thlb must have a value of 1."
+            write(fstderr,*) "C6thlb = ", params(iC6thlb)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C6thlb check
+
+         ! C14 must have a value of 1
+         if ( params(iC14) > one .or. params(iC14) < one ) then
+            write(fstderr,*) "When the l_diag_Lscale_from_tau flag is " &
+                             // "enabled, C14 must have a value of 1."
+            write(fstderr,*) "C14 = ", params(iC14)
+            write(fstderr,*) "Warning in setup_clubb_core"
+            !write(fstderr,*) "Fatal error in setup_clubb_core"
+            !err_code = clubb_fatal_error
+            !err_code_out = clubb_fatal_error
+         endif ! C14 check
+
+      endif ! l_diag_Lscale_from_tau
 
       ! Setup grid
       call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)

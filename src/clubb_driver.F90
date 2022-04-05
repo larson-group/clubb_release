@@ -1420,6 +1420,7 @@ module clubb_driver
            l_damp_wp2_using_em,                               & ! intent(in)
            l_stability_correct_tau_zm,                        & ! intent(in)
            l_enable_relaxed_clipping,                         & ! intent(in)
+           l_diag_Lscale_from_tau,                            & ! intent(in)
            gr(1), lmin, nu_vert_res_dep, err_code_dummy )       ! Intent(out)
 
     ! Allocate and initialize variables

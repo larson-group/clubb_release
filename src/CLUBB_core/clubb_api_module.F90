@@ -1635,6 +1635,7 @@ contains
     l_damp_wp2_using_em,                                & ! intent(in)
     l_stability_correct_tau_zm,                         & ! intent(in)
     l_enable_relaxed_clipping,                          & ! intent(in)
+    l_diag_Lscale_from_tau,                             & ! intent(in)
 #ifdef GFDL
     cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
@@ -1746,8 +1747,11 @@ contains
       l_prescribed_avg_deltaz,    & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_damp_wp2_using_em,        &
       l_stability_correct_tau_zm, &
-      l_enable_relaxed_clipping     ! Flag to relax clipping on wpxp in
+      l_enable_relaxed_clipping,  & ! Flag to relax clipping on wpxp in
                                     ! xm_wpxp_clipping_and_stats
+      l_diag_Lscale_from_tau        ! First diagnose dissipation time tau, and
+                                    ! then diagnose the mixing length scale as
+                                    ! Lscale = tau * tke
 
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
@@ -1788,6 +1792,7 @@ contains
       l_damp_wp2_using_em,                                  & ! intent(in)
       l_stability_correct_tau_zm,                           & ! intent(in)
       l_enable_relaxed_clipping,                            & ! intent(in)
+      l_diag_Lscale_from_tau,                               & ! intent(in)
 #ifdef GFDL
       cloud_frac_min,                                       & ! intent(in)  h1g, 2010-06-16
 #endif
