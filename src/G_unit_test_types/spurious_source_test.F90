@@ -258,6 +258,13 @@ module spurious_source_test
       vprcp, & ! < v' r_c' >              [(m kg)/(s kg)]
       rc_coef    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
 
+    ! Variables used to track perturbed version of winds.
+    real( kind = core_rknd ), dimension(1,nz) :: &
+      um_pert,   & ! perturbed <u>       [m/s]
+      vm_pert,   & ! perturbed <v>       [m/s]
+      upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
+      vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
+
     real( kind = core_rknd ), dimension(1,nz) :: &
       w_1_n_zm, &
       w_2_n_zm
@@ -464,12 +471,13 @@ module spurious_source_test
                                       ! More information can be found by
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
-      l_use_tke_in_wp2_wp3_K_dfsn, &  ! Use TKE in eddy diffusion for wp2 and wp3
-      l_smooth_Heaviside_tau_wpxp, &  ! Use smoothed Heaviside 'Preskin' function
+      l_use_tke_in_wp2_wp3_K_dfsn,  & ! Use TKE in eddy diffusion for wp2 and wp3
+      l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Preskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
-      l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp in
+      l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
+      l_linearize_pbl_winds           ! Code to linearize PBL winds
 
     integer, parameter :: &
       order_xm_wpxp = 1, &
@@ -581,7 +589,8 @@ module spurious_source_test
                                          l_use_tke_in_wp3_pr_turb_term, &
                                          l_use_tke_in_wp2_wp3_K_dfsn, &
                                          l_smooth_Heaviside_tau_wpxp, &
-                                         l_enable_relaxed_clipping )
+                                         l_enable_relaxed_clipping, &
+                                         l_linearize_pbl_winds )
 
     write(*,*)
     write(*,*) "Performing spurious source unit test"
@@ -903,6 +912,11 @@ module spurious_source_test
        vm(1,:) = zero
        upwp(1,:) = zero
        vpwp(1,:) = zero
+       ! Variables used to track perturbed version of winds.
+       um_pert(1,:) = zero
+       vm_pert(1,:) = zero
+       upwp_pert(1,:) = zero
+       vpwp_pert(1,:) = zero
        ! Below I assume that the buoy term in the upwp eqn doesn't matter:
        uprcp(1,:) = zero
        vprcp(1,:) = zero
@@ -969,10 +983,12 @@ module spurious_source_test
                              l_use_thvm_in_bv_freq, &
                              l_lmm_stepping, &
                              l_enable_relaxed_clipping, &
+                             l_linearize_pbl_winds, &
                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                              stats_zt, stats_zm, stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, &
-                             sclrm, wpsclrp, um, upwp, vm, vpwp )
+                             sclrm, wpsclrp, um, upwp, vm, vpwp, &
+                             um_pert, vm_pert, upwp_pert, vpwp_pert )
        
        ! Calculate the spurious source for rtm
        rtm_flux_top = rho_ds_zm(1,gr(1)%nz) * wprtp(1,gr(1)%nz)

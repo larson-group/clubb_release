@@ -535,8 +535,9 @@ module pdf_parameter_tests
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Preskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
-      l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp in
+      l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
+      l_linearize_pbl_winds           ! Code to linearize PBL winds
 
     real( kind = core_rknd ) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
@@ -672,7 +673,8 @@ module pdf_parameter_tests
                                          l_use_tke_in_wp3_pr_turb_term, &
                                          l_use_tke_in_wp2_wp3_K_dfsn, &
                                          l_smooth_Heaviside_tau_wpxp, &
-                                         l_enable_relaxed_clipping )
+                                         l_enable_relaxed_clipping, &
+                                         l_linearize_pbl_winds )
 
     iiPDF_type = test_pdf_type
 

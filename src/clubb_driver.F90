@@ -464,6 +464,13 @@ module clubb_driver
       thlp2_forcing,   & ! liq pot temp variance forcing (m-levs)     [K^2/s]
       rtpthlp_forcing    ! <r_t'th_l'> covariance forcing (m-levs)    [K(kg/kg)/s]
 
+    ! Variables used to track perturbed version of winds.
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      um_pert,   & ! perturbed <u>       [m/s]
+      vm_pert,   & ! perturbed <v>       [m/s]
+      upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
+      vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
+
     type(pdf_parameter), allocatable :: &
       pdf_params ! PDF parameters (thermodynamic levels)    [units vary]
       
@@ -519,6 +526,10 @@ module clubb_driver
       wprtp_sfc,  & ! w' r_t' at surface       [(kg m)/( kg s)]
       upwp_sfc,   & ! u'w' at surface          [m^2/s^2]
       vpwp_sfc      ! v'w' at surface          [m^2/s^2]
+
+    real( kind = core_rknd ) :: &
+      upwp_sfc_pert, & ! pertubed u'w' at surface    [m^2/s^2]
+      vpwp_sfc_pert    ! pertubed v'w' at surface    [m^2/s^2]
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       rcm_mc, & ! Tendency of liquid water due to microphysics      [kg/kg/s]
@@ -811,8 +822,9 @@ module clubb_driver
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Preskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
-      l_enable_relaxed_clipping       ! Flag to relax clipping on wpxp in
+      l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
+      l_linearize_pbl_winds           ! Code to linearize PBL winds
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -857,7 +869,8 @@ module clubb_driver
       l_call_pdf_closure_twice, l_Lscale_plume_centered, &
       l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
       l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
-      l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, l_enable_relaxed_clipping
+      l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, &
+      l_enable_relaxed_clipping, l_linearize_pbl_winds
       
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -1006,7 +1019,8 @@ module clubb_driver
                                          l_use_tke_in_wp3_pr_turb_term, & ! Intent(out)
                                          l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(out)
                                          l_smooth_Heaviside_tau_wpxp, & ! Intent(out)
-                                         l_enable_relaxed_clipping ) ! Intent(out)
+                                         l_enable_relaxed_clipping, & ! Intent(out)
+                                         l_linearize_pbl_winds ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1378,6 +1392,7 @@ module clubb_driver
                                              l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(in)
                                              l_smooth_Heaviside_tau_wpxp, & ! Intent(in)
                                              l_enable_relaxed_clipping, & ! Intent(in)
+                                             l_linearize_pbl_winds, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
@@ -1468,6 +1483,12 @@ module clubb_driver
     allocate( rtp2_forcing(1:gr(1)%nz) )    ! <r_t'^2> forcing (microphysics)
     allocate( thlp2_forcing(1:gr(1)%nz) )   ! <th_l'^2> forcing (microphysics)
     allocate( rtpthlp_forcing(1:gr(1)%nz) ) ! <r_t'th_l'> forcing (microphysics)
+
+    ! Variables used to track perturbed version of winds.
+    allocate( um_pert(1:gr(1)%nz) )
+    allocate( vm_pert(1:gr(1)%nz) )
+    allocate( upwp_pert(1:gr(1)%nz) )
+    allocate( vpwp_pert(1:gr(1)%nz) )
 
     ! Imposed large scale w
     allocate( wm_zm(1:gr(1)%nz) )       ! momentum levels
@@ -1609,6 +1630,12 @@ module clubb_driver
     rtp2_forcing(1:gr(1)%nz)    = zero  ! <r_t'^2> forcing (microphysics)
     thlp2_forcing(1:gr(1)%nz)   = zero  ! <th_l'^2> forcing (microphysics)
     rtpthlp_forcing(1:gr(1)%nz) = zero  ! <r_t'th_l'> forcing (microphysics)
+
+    ! Variables used to track perturbed version of winds.
+    um_pert(1:gr(1)%nz)   = zero
+    vm_pert(1:gr(1)%nz)   = zero
+    upwp_pert(1:gr(1)%nz) = zero
+    vpwp_pert(1:gr(1)%nz) = zero
 
     ! Imposed large scale w
     wm_zm(1:gr(1)%nz) = zero      ! Momentum levels
@@ -2249,6 +2276,7 @@ module clubb_driver
              rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
+             upwp_sfc_pert, vpwp_sfc_pert, &                      ! intent(in)
              rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
              rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &        ! Intent(in)
@@ -2269,6 +2297,7 @@ module clubb_driver
              sclrpthvp, &                                         ! Intent(inout)
              wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &       ! intent(inout)
              wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
+             um_pert, vm_pert, upwp_pert, vpwp_pert, &            ! intent(inout)
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
@@ -2691,6 +2720,12 @@ module clubb_driver
     deallocate( rtp2_forcing )    ! <r_t'^2> forcing (microphysics)
     deallocate( thlp2_forcing )   ! <th_l'^2> forcing (microphysics)
     deallocate( rtpthlp_forcing ) ! <r_t'th_l'> forcing (microphysics)
+
+    ! Variables used to track perturbed version of winds.
+    deallocate( um_pert )
+    deallocate( vm_pert )
+    deallocate( upwp_pert )
+    deallocate( vpwp_pert )
 
     ! Imposed large scale w
     deallocate( wm_zm )       ! momentum levels

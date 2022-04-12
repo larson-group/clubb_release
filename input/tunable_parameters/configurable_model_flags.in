@@ -41,7 +41,8 @@ l_vary_convect_depth         = .false.,
 l_use_tke_in_wp3_pr_turb_term = .true.,
 l_use_tke_in_wp2_wp3_K_dfsn  = .false.,
 l_smooth_Heaviside_tau_wpxp  = .false.,
-l_enable_relaxed_clipping    = .false.
+l_enable_relaxed_clipping    = .false.,
+l_linearize_pbl_winds        = .false.
 /
 
 &configurable_silhs_flags_nl
