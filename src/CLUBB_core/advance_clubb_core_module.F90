@@ -2372,73 +2372,72 @@ module advance_clubb_core_module
         call stat_end_update( gr(i), iwp3_bt, wp3(i,:) / dt, & ! intent(in)
                               stats_zt(i) )           ! intent(inout)
       end do
+
+      if ( iwpthlp_zt > 0 ) then
+        wpthlp_zt(:,:)  = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
+      end if
+
+      if ( iwprtp_zt > 0 ) then
+        wprtp_zt(:,:)   = zm2zt( nz, ngrdcol, gr, wprtp(:,:) )
+      end if
+
+      if ( iup2_zt > 0 ) then
+        up2_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, up2(:,:) ), w_tol_sqd )
+      end if
+
+      if (ivp2_zt > 0 ) then
+        vp2_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, vp2(:,:) ), w_tol_sqd )
+      end if
+
+      if ( iupwp_zt > 0 ) then
+        upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
+      end if
+
+      if ( ivpwp_zt > 0 ) then
+        vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
+      end if
+      
+      do i = 1, ngrdcol
+        
+        ! Allocate arrays in single column versions of pdf_params
+        call init_pdf_params( nz, 1, pdf_params_single_col(i) )
+        call init_pdf_params( nz, 1, pdf_params_zm_single_col(i) )
+        
+        ! Copy multicolumn pdf_params to single column version  
+        call copy_multi_pdf_params_to_single( pdf_params, i, &
+                                              pdf_params_single_col(i) )
+                                              
+        call copy_multi_pdf_params_to_single( pdf_params_zm, i, &
+                                              pdf_params_zm_single_col(i) )
+        
+        call stats_accumulate( &
+               gr(i), um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:),                      & ! intent(in)
+               thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! intent(in)
+               wp2(i,:), wp3(i,:), rtp2(i,:), rtp3(i,:), thlp2(i,:), thlp3(i,:), rtpthlp(i,:),           & ! intent(in)
+               wpthvp(i,:), wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:),                    & ! intent(in)
+               p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:),                           & ! intent(in)
+               rho_ds_zm(i,:), rho_ds_zt(i,:), thv_ds_zm(i,:), thv_ds_zt(i,:),            & ! intent(in)
+               wm_zt(i,:), wm_zm(i,:), rcm(i,:), wprcp(i,:), rc_coef(i,:), rc_coef_zm(i,:),         & ! intent(in)
+               rcm_zm(i,:), rtm_zm(i,:), thlm_zm(i,:), cloud_frac(i,:), ice_supersat_frac(i,:),& ! intent(in)
+               cloud_frac_zm(i,:), ice_supersat_frac_zm(i,:), rcm_in_layer(i,:),     & ! intent(in)
+               cloud_cover(i,:), rcm_supersat_adj(i,:), sigma_sqd_w(i,:),            & ! intent(in)
+               thvm(i,:), ug(i,:), vg(i,:), Lscale(i,:), wpthlp2(i,:), wp2thlp(i,:), wprtp2(i,:), wp2rtp(i,:),& ! intent(in)
+               Lscale_up(i,:), Lscale_down(i,:), tau_zt(i,:), Kh_zt(i,:), wp2rcp(i,:),         & ! intent(in)
+               wprtpthlp(i,:), sigma_sqd_w_zt(i,:), rsat(i,:), wp2_zt(i,:), thlp2_zt(i,:),     & ! intent(in)
+               wpthlp_zt(i,:), wprtp_zt(i,:), rtp2_zt(i,:), rtpthlp_zt(i,:), up2_zt(i,:),      & ! intent(in)
+               vp2_zt(i,:), upwp_zt(i,:), vpwp_zt(i,:), wpup2(i,:), wpvp2(i,:),                & ! intent(in)
+               wp2up2(i,:), wp2vp2(i,:), wp4(i,:),                                   & ! intent(in)
+               tau_zm(i,:), Kh_zm(i,:), thlprcp(i,:),                                & ! intent(in)
+               rtprcp(i,:), rcp2(i,:), em(i,:), a3_coef(i,:), a3_coef_zt(i,:),                 & ! intent(in)
+               wp3_zm(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), Skw_velocity(i,:),       & ! intent(in)
+               w_up_in_cloud(i,:),                                         & ! intent(in)
+               pdf_params_single_col(i), pdf_params_zm_single_col(i), sclrm(i,:,:), sclrp2(i,:,:),              & ! intent(in)
+               sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), sclrpthvp(i,:,:),         & ! intent(in)
+               wpsclrp(i,:,:), sclrprcp(i,:,:), wp2sclrp(i,:,:), wpsclrp2(i,:,:), wpsclrprtp(i,:,:),     & ! intent(in)
+               wpsclrpthlp(i,:,:), wpedsclrp(i,:,:), edsclrm(i,:,:), edsclrm_forcing(i,:,:),      & ! intent(in)
+               stats_zt(i), stats_zm(i), stats_sfc(i) )                          ! intent(inout)
+      end do
     endif ! l_stats_samp
-
-
-    if ( iwpthlp_zt > 0 ) then
-      wpthlp_zt(:,:)  = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
-    end if
-
-    if ( iwprtp_zt > 0 ) then
-      wprtp_zt(:,:)   = zm2zt( nz, ngrdcol, gr, wprtp(:,:) )
-    end if
-
-    if ( iup2_zt > 0 ) then
-      up2_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, up2(:,:) ), w_tol_sqd )
-    end if
-
-    if (ivp2_zt > 0 ) then
-      vp2_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, vp2(:,:) ), w_tol_sqd )
-    end if
-
-    if ( iupwp_zt > 0 ) then
-      upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
-    end if
-
-    if ( ivpwp_zt > 0 ) then
-      vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
-    end if
-    
-    do i = 1, ngrdcol
-      
-      ! Allocate arrays in single column versions of pdf_params
-      call init_pdf_params( nz, 1, pdf_params_single_col(i) )
-      call init_pdf_params( nz, 1, pdf_params_zm_single_col(i) )
-      
-      ! Copy multicolumn pdf_params to single column version  
-      call copy_multi_pdf_params_to_single( pdf_params, i, &
-                                            pdf_params_single_col(i) )
-                                            
-      call copy_multi_pdf_params_to_single( pdf_params_zm, i, &
-                                            pdf_params_zm_single_col(i) )
-      
-      call stats_accumulate( &
-             gr(i), um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:),                      & ! intent(in)
-             thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! intent(in)
-             wp2(i,:), wp3(i,:), rtp2(i,:), rtp3(i,:), thlp2(i,:), thlp3(i,:), rtpthlp(i,:),           & ! intent(in)
-             wpthvp(i,:), wp2thvp(i,:), rtpthvp(i,:), thlpthvp(i,:),                    & ! intent(in)
-             p_in_Pa(i,:), exner(i,:), rho(i,:), rho_zm(i,:),                           & ! intent(in)
-             rho_ds_zm(i,:), rho_ds_zt(i,:), thv_ds_zm(i,:), thv_ds_zt(i,:),            & ! intent(in)
-             wm_zt(i,:), wm_zm(i,:), rcm(i,:), wprcp(i,:), rc_coef(i,:), rc_coef_zm(i,:),         & ! intent(in)
-             rcm_zm(i,:), rtm_zm(i,:), thlm_zm(i,:), cloud_frac(i,:), ice_supersat_frac(i,:),& ! intent(in)
-             cloud_frac_zm(i,:), ice_supersat_frac_zm(i,:), rcm_in_layer(i,:),     & ! intent(in)
-             cloud_cover(i,:), rcm_supersat_adj(i,:), sigma_sqd_w(i,:),            & ! intent(in)
-             thvm(i,:), ug(i,:), vg(i,:), Lscale(i,:), wpthlp2(i,:), wp2thlp(i,:), wprtp2(i,:), wp2rtp(i,:),& ! intent(in)
-             Lscale_up(i,:), Lscale_down(i,:), tau_zt(i,:), Kh_zt(i,:), wp2rcp(i,:),         & ! intent(in)
-             wprtpthlp(i,:), sigma_sqd_w_zt(i,:), rsat(i,:), wp2_zt(i,:), thlp2_zt(i,:),     & ! intent(in)
-             wpthlp_zt(i,:), wprtp_zt(i,:), rtp2_zt(i,:), rtpthlp_zt(i,:), up2_zt(i,:),      & ! intent(in)
-             vp2_zt(i,:), upwp_zt(i,:), vpwp_zt(i,:), wpup2(i,:), wpvp2(i,:),                & ! intent(in)
-             wp2up2(i,:), wp2vp2(i,:), wp4(i,:),                                   & ! intent(in)
-             tau_zm(i,:), Kh_zm(i,:), thlprcp(i,:),                                & ! intent(in)
-             rtprcp(i,:), rcp2(i,:), em(i,:), a3_coef(i,:), a3_coef_zt(i,:),                 & ! intent(in)
-             wp3_zm(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), Skw_velocity(i,:),       & ! intent(in)
-             w_up_in_cloud(i,:),                                         & ! intent(in)
-             pdf_params_single_col(i), pdf_params_zm_single_col(i), sclrm(i,:,:), sclrp2(i,:,:),              & ! intent(in)
-             sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), sclrpthvp(i,:,:),         & ! intent(in)
-             wpsclrp(i,:,:), sclrprcp(i,:,:), wp2sclrp(i,:,:), wpsclrp2(i,:,:), wpsclrprtp(i,:,:),     & ! intent(in)
-             wpsclrpthlp(i,:,:), wpedsclrp(i,:,:), edsclrm(i,:,:), edsclrm_forcing(i,:,:),      & ! intent(in)
-             stats_zt(i), stats_zm(i), stats_sfc(i) )                          ! intent(inout)
-    end do
 
     if ( clubb_at_least_debug_level( 2 ) ) then
       do i = 1, ngrdcol
@@ -3521,18 +3520,20 @@ module advance_clubb_core_module
     ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help
     ! increase cloudiness at coarser grid resolutions.
     if ( l_use_cloud_cover ) then
-      do i = 1, ngrdcol
-        cloud_frac(i,:) = cloud_cover(i,:)
-        rcm(i,:) = rcm_in_layer(i,:)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          cloud_frac(i,k) = cloud_cover(i,k)
+          rcm(i,k) = rcm_in_layer(i,k)
+        end do
       end do
     end if
 
     do k = 1, nz
       do i = 1, ngrdcol
         ! Clip cloud fraction here if it still exceeds 1.0 due to round off
-        cloud_frac(i,:) = min( 1.0_core_rknd, cloud_frac(i,:) )
+        cloud_frac(i,k) = min( 1.0_core_rknd, cloud_frac(i,k) )
         ! Ditto with ice cloud fraction
-        ice_supersat_frac(i,:) = min( 1.0_core_rknd, ice_supersat_frac(i,:) )
+        ice_supersat_frac(i,k) = min( 1.0_core_rknd, ice_supersat_frac(i,k) )
       end do
     end do
 

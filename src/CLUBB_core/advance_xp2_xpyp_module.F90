@@ -2638,6 +2638,9 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), intent(in) :: & 
       dt
+      
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      rhs_pr2
 
     integer :: & 
       ixapxbp_ta, & 
@@ -2678,6 +2681,12 @@ module advance_xp2_xpyp_module
     do i = 1, ngrdcol
       rhs(i,2:nz-1) = rhs_ta(i,2:nz-1) - 0.5_core_rknd*wp2_splat(i,2:nz-1)
     end do
+    
+    ! Calculate RHS pressure term 2 (pr2).
+    call term_pr2( nz, ngrdcol, gr, &
+                   C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, wpxap, &
+                   wpxbp, xam, xbm, &
+                   rhs_pr2 )
 
     ! Finish RHS calc with vectorizable loop, functions are in source file and should
     ! be inlined with an -O2 or above compiler optimization flag
@@ -2705,8 +2714,7 @@ module advance_xp2_xpyp_module
                             - term_dp1_lhs( C14_1d(i,k), invrs_tau_C14_zm(i,k) ) * xap2(i,k) )
 
         ! RHS pressure term 2 (pr2).
-        rhs(i,k) = rhs(i,k) + term_pr2( gr(i), C_uu_shr, C_uu_buoy, thv_ds_zm(i,k), wpthvp(i,k), wpxap(i,k), &
-                                  wpxbp(i,k), xam(i,:), xbm(i,:), gr(i)%invrs_dzm(k), k+1, k )
+        rhs(i,k) = rhs(i,k) + rhs_pr2(i,k)
                                   
       end do                    
     end do ! k=2..gr%nz-1
@@ -2771,10 +2779,9 @@ module advance_xp2_xpyp_module
           endif
 
           ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
-          call stat_update_var_pt( ixapxbp_pr2, k, & ! Intent(in)
-               term_pr2( gr(i), C_uu_shr, C_uu_buoy, thv_ds_zm(i,k), wpthvp(i,k), wpxap(i,k), & ! In
-                         wpxbp(i,k), xam(i,:), xbm(i,:), gr(i)%invrs_dzm(k), k+1, k ), & ! intent(in)
-                         stats_zm(i))                                     ! intent(inout)
+          call stat_update_var_pt( ixapxbp_pr2, k,  & ! Intent(in)
+                                   rhs_pr2(i,k),    & ! intent(in)
+                                   stats_zm(i))       ! intent(inout)
 
           ! x'y' term tp is completely explicit; call stat_update_var_pt.
           call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
@@ -5034,9 +5041,10 @@ module advance_xp2_xpyp_module
   end function term_pr1
 
   !=============================================================================
-  function term_pr2( gr, C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, & 
-                          vpwp, um, vm, invrs_dzm, kp1, k ) & 
-  result( rhs )
+  subroutine term_pr2( nz, ngrdcol, gr, &
+                       C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, & 
+                       vpwp, um, vm, &
+                       rhs_pr2 )
 
     ! Description:
     ! Pressure term 2 for x_a'x_b':  explicit portion of the code.
@@ -5091,59 +5099,69 @@ module advance_xp2_xpyp_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
     ! External
     intrinsic :: abs, max
 
-    ! Input Variables
+    ! ------------ Input Variables ------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type (grid), dimension(ngrdcol), intent(in) :: gr
+      
     real( kind = core_rknd ), intent(in) :: & 
       C_uu_shr,  & ! Model parameter C_uu_shr                       [-]
-      C_uu_buoy, & ! Model parameter C_uu_buoy                      [-]
+      C_uu_buoy    ! Model parameter C_uu_buoy                      [-]
+      
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
       wpthvp,    & ! w'th_v'(k)                                     [m/K/s]
       upwp,      & ! u'w'(k)                                        [m^2/s^2]
-      vpwp,      & ! v'w'(k)                                        [m^2/s^2]
-      invrs_dzm    ! Inverse of the grid spacing (k)                [1/m]
+      vpwp         ! v'w'(k)                                        [m^2/s^2]
 
     ! Note: Entire arrays of um and vm are now required rather than um and vm
     ! only at levels k and k+1.  The entire array is necessary when a vertical
     ! average calculation of d(um)/dz and d(vm)/dz is used. --ldgrant March 2010
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       um,  & ! mean zonal wind       [m/s]
       vm     ! mean meridional wind  [m/s]
 
-    integer, intent(in) :: &
-      kp1, & ! current level+1 in xp2_xpyp_uv_rhs loop
-      k      ! current level in xp2_xpyp_uv_rhs loop
-
-    ! Return Variable
-    real( kind = core_rknd ) :: rhs
+    ! ------------ Output Variable ------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      rhs_pr2
+    
+    ! ------------ Local Variables ------------
+    integer :: i, k
+    
 
     ! calculation for d(um)/dz and d(vm)/dz
 
-    !------ Begin code ------------
+    ! ------------ Begin code ------------
 
     ! use original version of term_pr2
 
     ! As applied to w'2
-    rhs = + two_thirds * &
-                    ( C_uu_buoy &
-                      * ( grav / thv_ds_zm ) * wpthvp &
-                    + C_uu_shr &
-                      * ( - upwp * invrs_dzm * ( um(kp1) - um(k) ) &
-                          - vpwp * invrs_dzm * ( vm(kp1) - vm(k) ) &
-                        ) &
-                    )
+    do k = 1, nz
+      do i = 1, ngrdcol
+        rhs_pr2(i,k) = + two_thirds &
+                       * ( C_uu_buoy &
+                          * ( grav / thv_ds_zm(i,k) ) * wpthvp(i,k) &
+                        + C_uu_shr &
+                          * ( - upwp(i,k) * gr(i)%invrs_dzm(k) * ( um(i,k+1) - um(i,k) ) &
+                              - vpwp(i,k) * gr(i)%invrs_dzm(k) * ( vm(i,k+1) - vm(i,k) ) &
+                            ) &
+                        )
+      end do
+    end do
 
     ! Added by dschanen for ticket #36
     ! We have found that when shear generation is zero this term will only be
     ! offset by hole-filling (up2_pd/vp2_pd) and reduces turbulence 
     ! unrealistically at lower altitudes to make up the difference.
-    rhs = max( rhs, zero_threshold )
+    rhs_pr2 = max( rhs_pr2, zero_threshold )
 
     return
-  end function term_pr2
+  end subroutine term_pr2
 
   !=============================================================================
   subroutine pos_definite_variances( nz, ngrdcol, gr, &
