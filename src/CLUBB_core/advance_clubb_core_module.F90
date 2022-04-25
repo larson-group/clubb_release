@@ -1557,15 +1557,15 @@ module advance_clubb_core_module
     end if
 
     ! Determine stability correction factor
-    do i = 1, ngrdcol
-      stability_correction(i,:) = calc_stability_correction( gr(i), thlm(i,:), Lscale(i,:), em(i,:), &
-                                              exner(i,:), rtm(i,:), rcm(i,:), & ! In
-                                              p_in_Pa(i,:),thvm(i,:), ice_supersat_frac(i,:), & ! In
-                                              clubb_params(ilambda0_stability_coef), &
-                                              clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
-                                              clubb_config_flags%l_use_thvm_in_bv_freq ) ! In
-    end do
-    
+    call calc_stability_correction( nz, ngrdcol, gr, & ! In
+                                    thlm, Lscale, em, & ! In
+                                    exner, rtm, rcm, & ! In
+                                    p_in_Pa, thvm, ice_supersat_frac, & ! In
+                                    clubb_params(ilambda0_stability_coef), & ! In
+                                    clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
+                                    clubb_config_flags%l_use_thvm_in_bv_freq, &
+                                    stability_correction ) ! In
+        
     if ( l_stats_samp ) then
       do i = 1, ngrdcol
         call stat_update_var( istability_correction, stability_correction(i,:), & ! In

@@ -200,13 +200,14 @@ module advance_helper_module
   end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
-  function calc_stability_correction( gr, thlm, Lscale, em, &
-                                      exner, rtm, rcm, &
-                                      p_in_Pa, thvm, ice_supersat_frac, &
-                                      lambda0_stability_coef, &
-                                      l_brunt_vaisala_freq_moist, &
-                                      l_use_thvm_in_bv_freq ) &
-    result ( stability_correction )
+  subroutine calc_stability_correction( nz, ngrdcol, gr, &
+                                        thlm, Lscale, em, &
+                                        exner, rtm, rcm, &
+                                        p_in_Pa, thvm, ice_supersat_frac, &
+                                        lambda0_stability_coef, &
+                                        l_brunt_vaisala_freq_moist, &
+                                        l_use_thvm_in_bv_freq, &
+                                        stability_correction )
   !
   ! Description:
   !   Stability Factor
@@ -227,10 +228,14 @@ module advance_helper_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    ! ---------------- Input Variables ----------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    ! Input Variables
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
       Lscale,          & ! Turbulent mixing length                   [m]
       em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
       thlm,            & ! th_l (thermo. levels)                     [K]
@@ -249,79 +254,40 @@ module advance_helper_module
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
-    ! Result
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    ! ---------------- Output Variables ----------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       stability_correction
-
-   real( kind = core_rknd ), dimension(gr%nz) :: &
+      
+    ! ---------------- Local Variables ----------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       brunt_vaisala_freq_sqd, & !  []
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry, & !  []
       brunt_vaisala_freq_sqd_moist, &
       brunt_vaisala_freq_sqd_plus, &
       lambda0_stability
-      
-    ! Locals
-    type (grid), target, dimension(1) :: gr_col
-    
-    ! Input Variables
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      Lscale_col,          & ! Turbulent mixing length                   [m]
-      em_col,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
-      thlm_col,            & ! th_l (thermo. levels)                     [K]
-      exner_col,           & ! Exner function                            [-]
-      rtm_col,             & ! total water mixing ratio, r_t             [kg/kg]
-      rcm_col,             & ! cloud water mixing ratio, r_c             [kg/kg]
-      p_in_Pa_col,         & ! Air pressure                              [Pa]
-      thvm_col,            & ! Virtual potential temperature             [K]
-      ice_supersat_frac_col
-      
-    ! Result
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      stability_correction_col
-
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      brunt_vaisala_freq_sqd_col, & !  []
-      brunt_vaisala_freq_sqd_mixed_col, &
-      brunt_vaisala_freq_sqd_dry_col, & !  []
-      brunt_vaisala_freq_sqd_moist_col, &
-      brunt_vaisala_freq_sqd_plus_col, &
-      lambda0_stability_col
 
     !------------ Begin Code --------------
-    gr_col(1) = gr
-    thlm_col(1,:) = thlm
-    exner_col(1,:) = exner
-    rtm_col(1,:) = rtm
-    rcm_col(1,:) = rcm
-    p_in_Pa_col (1,:) = p_in_Pa
-    thvm_col(1,:) = thvm
-    ice_supersat_frac_col(1,:) = ice_supersat_frac
     
-    call calc_brunt_vaisala_freq_sqd( gr%nz, 1, gr_col, thlm_col, &          ! intent(in)
-                                      exner_col, rtm_col, rcm_col, p_in_Pa_col, thvm_col, & ! intent(in)
-                                      ice_supersat_frac_col, &              ! intent(in)
+    call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
+                                      exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+                                      ice_supersat_frac, &              ! intent(in)
                                       l_brunt_vaisala_freq_moist, &     ! intent(in)
                                       l_use_thvm_in_bv_freq, &          ! intent(in)
-                                      brunt_vaisala_freq_sqd_col, &         ! intent(out)
-                                      brunt_vaisala_freq_sqd_mixed_col,&    ! intent(out)
-                                      brunt_vaisala_freq_sqd_dry_col, &     ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist_col, &   ! intent(out)
-                                      brunt_vaisala_freq_sqd_plus_col )     ! intent(out)
- 
-   brunt_vaisala_freq_sqd = brunt_vaisala_freq_sqd_col(1,:)
-   brunt_vaisala_freq_sqd_mixed = brunt_vaisala_freq_sqd_mixed_col(1,:)
-   brunt_vaisala_freq_sqd_dry = brunt_vaisala_freq_sqd_dry_col(1,:)
-   brunt_vaisala_freq_sqd_moist = brunt_vaisala_freq_sqd_moist_col(1,:)
-   brunt_vaisala_freq_sqd_plus = brunt_vaisala_freq_sqd_plus_col(1,:)
+                                      brunt_vaisala_freq_sqd, &         ! intent(out)
+                                      brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
+                                      brunt_vaisala_freq_sqd_dry, &     ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist, &   ! intent(out)
+                                      brunt_vaisala_freq_sqd_plus )     ! intent(out)
 
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
     stability_correction = one &
-    + min( lambda0_stability * brunt_vaisala_freq_sqd * zt2zm(gr, Lscale)**2 / em, three )
+        + min( lambda0_stability * brunt_vaisala_freq_sqd &
+                * zt2zm(nz, ngrdcol, gr(:), Lscale(:,:))**2 / em, three )
 
     return
-  end function calc_stability_correction
+  end subroutine calc_stability_correction
 
   !===============================================================================
   subroutine calc_brunt_vaisala_freq_sqd(  nz, ngrdcol, gr, thlm, &
