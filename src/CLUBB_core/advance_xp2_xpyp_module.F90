@@ -5141,7 +5141,7 @@ module advance_xp2_xpyp_module
     ! use original version of term_pr2
 
     ! As applied to w'2
-    do k = 1, nz
+    do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_pr2(i,k) = + two_thirds &
                        * ( C_uu_buoy &
