@@ -5151,14 +5151,14 @@ module advance_xp2_xpyp_module
                               - vpwp(i,k) * gr(i)%invrs_dzm(k) * ( vm(i,k+1) - vm(i,k) ) &
                             ) &
                         )
+
+        ! Added by dschanen for ticket #36
+        ! We have found that when shear generation is zero this term will only be
+        ! offset by hole-filling (up2_pd/vp2_pd) and reduces turbulence 
+        ! unrealistically at lower altitudes to make up the difference.
+        rhs_pr2(i,k) = max( rhs_pr2(i,k), zero_threshold )
       end do
     end do
-
-    ! Added by dschanen for ticket #36
-    ! We have found that when shear generation is zero this term will only be
-    ! offset by hole-filling (up2_pd/vp2_pd) and reduces turbulence 
-    ! unrealistically at lower altitudes to make up the difference.
-    rhs_pr2 = max( rhs_pr2, zero_threshold )
 
     return
   end subroutine term_pr2
