@@ -61,9 +61,9 @@ contains
     
     ! Description:
     !   Tests the function smooth_heaviside_peskin. Test cases are:
-    !   Case 1: smth_range=zero, output ought to be the same as Heaviside
+    !   Case 1: heaviside_smth_range=zero, output ought to be the same as Heaviside
     !           step function
-    !   Case 2: smth_range=one (arbitrary value), output values have been
+    !   Case 2: heaviside_smth_range=one (arbitrary value), output values have been
     !           calculated by hand
     !
     ! References:
@@ -92,7 +92,7 @@ contains
       result_cmp, result, input
     
     real( kind = core_rknd ) :: &
-      smth_range
+      heaviside_smth_range
       
     integer :: &
       i
@@ -100,8 +100,8 @@ contains
     !=========== Code ==================
     
     ! Case 1: Heaviside step function
-    print *, "Case 1: smth_range = 0, smooth Heaviside collapses to Heaviside"
-    smth_range = zero
+    print *, "Case 1: heaviside_smth_range = 0, smooth Heaviside collapses to Heaviside"
+    heaviside_smth_range = zero
     
     input(1, 1) = -one
     input(2, 1) = -eps
@@ -113,15 +113,15 @@ contains
     result_cmp(3, 1) = one
     result_cmp(4, 1) = one
       
-    result = smooth_heaviside_peskin(input, smth_range)
+    result = smooth_heaviside_peskin(input, heaviside_smth_range)
     print *, "Input: ", input
     print *, "Expected outcome: ", result_cmp
     print *, "True outcome:     ", result
     total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) >= eps)
                           
     ! Case 2: Testing arbitrary smoothing range for precomputed values
-    smth_range = two
-    print *, NEW_LINE('a'), "Case 2: smth_range = ", smth_range
+    heaviside_smth_range = two
+    print *, NEW_LINE('a'), "Case 2: heaviside_smth_range = ", heaviside_smth_range
     
     input(1, 1) = -two - eps
     input(2, 1) = -one
@@ -133,7 +133,7 @@ contains
     result_cmp(3, 1) = 0.9091549430900_core_rknd
     result_cmp(4, 1) = one
     
-    result = smooth_heaviside_peskin(input, smth_range)
+    result = smooth_heaviside_peskin(input, heaviside_smth_range)
     print *, "Input: ", input
     print *, "Expected outcome: ", result_cmp
     print *, "True outcome:     ", result

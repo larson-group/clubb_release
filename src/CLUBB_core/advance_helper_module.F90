@@ -1041,7 +1041,7 @@ module advance_helper_module
   ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
-      smth_coef          ! smoothing happens on interval [-smth_range, +smth_range]
+      smth_coef          
 
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var2          ! Units vary
@@ -1088,7 +1088,7 @@ module advance_helper_module
 
     real ( kind = core_rknd ), intent(in) :: &
       input_var2, &       ! Units vary
-      smth_coef          ! smoothing happens on interval [-smth_range, +smth_range]
+      smth_coef          
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
@@ -1132,7 +1132,7 @@ module advance_helper_module
       input_var2          ! Units vary
       
     real ( kind = core_rknd ), intent(in) :: &
-      smth_coef          ! smoothing happens on interval [-smth_range, +smth_range]
+      smth_coef          
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
@@ -1173,7 +1173,7 @@ module advance_helper_module
   ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
-      smth_coef          ! smoothing happens on interval [-smth_range, +smth_range]
+      smth_coef
 
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var2          ! Units vary
@@ -1220,7 +1220,7 @@ module advance_helper_module
 
     real ( kind = core_rknd ), intent(in) :: &
       input_var2, &       ! Units vary
-      smth_coef          ! smoothing happens on interval [-smth_range, +smth_range]
+      smth_coef          
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
@@ -1264,7 +1264,7 @@ module advance_helper_module
       input_var2          ! Units vary
       
     real( kind = core_rknd ), intent(in) :: &
-      smth_coef          ! smoothing happens on interval [-smth_range, +smth_range]
+      smth_coef          
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
@@ -1301,7 +1301,7 @@ module advance_helper_module
     ! Input Variables      
     real ( kind = core_rknd ), intent(in) :: &
       input, &    ! Units vary
-      smth_range  ! Outside of [-smth_range, smth_range], smooth Heaviside = Heaviside
+      smth_range  ! Smooth Heaviside function on [-smth_range, smth_range]
     
     ! Local Variables
     real ( kind = core_rknd ) :: &

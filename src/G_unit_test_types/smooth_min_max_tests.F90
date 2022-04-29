@@ -58,9 +58,9 @@ contains
     
     ! Description:
     !   Tests the interfaces smooth_min and smooth_max. Test cases are:
-    !   Case 1: smth_range=zero. The smooth min and max functions ought to
+    !   Case 1: smth_coef=zero. The smooth min and max functions ought to
     !           collapse to their standard min and max variants.
-    !   Case 2: smth_range=one (arbitrary value), output values have been
+    !   Case 2: smth_coef=one (arbitrary value), output values have been
     !           calculated by hand.
     !
     ! References:
