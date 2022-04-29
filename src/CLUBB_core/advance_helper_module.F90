@@ -32,8 +32,8 @@ module advance_helper_module
     ! 'min' is applied to guarantee that the smoothing did not violate
     ! the original min requirement.
 
-    module procedure smooth_min_sclr_array
-    module procedure smooth_min_array_sclr
+    module procedure smooth_min_scalar_array
+    module procedure smooth_min_array_scalar
     module procedure smooth_min_arrays
 
   end interface
@@ -49,8 +49,8 @@ module advance_helper_module
     ! 'max' is applied to guarantee that the smoothing did not violate
     ! the original max requirement.
 
-    module procedure smooth_max_sclr_array
-    module procedure smooth_max_array_sclr
+    module procedure smooth_max_scalar_array
+    module procedure smooth_max_array_scalar
     module procedure smooth_max_arrays
 
   end interface
@@ -1015,7 +1015,7 @@ module advance_helper_module
   end subroutine term_wp3_splat
 
 !===============================================================================
-  function smooth_min_sclr_array( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  function smooth_min_scalar_array( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
   result( output_var )
 
   ! Description:
@@ -1056,10 +1056,10 @@ module advance_helper_module
                               sqrt((input_var1-input_var2)**2 + smth_coef**2) )
 
     return
-  end function smooth_min_sclr_array
+  end function smooth_min_scalar_array
 
 !===============================================================================
-  function smooth_min_array_sclr( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  function smooth_min_array_scalar( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
   result( output_var )
 
   ! Description:
@@ -1100,7 +1100,7 @@ module advance_helper_module
                               sqrt((input_var1-input_var2)**2 + smth_coef**2) )
 
     return
-  end function smooth_min_array_sclr
+  end function smooth_min_array_scalar
 
 !===============================================================================
   function smooth_min_arrays( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
@@ -1147,7 +1147,7 @@ module advance_helper_module
   end function smooth_min_arrays
 
 !===============================================================================
-  function smooth_max_sclr_array( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  function smooth_max_scalar_array( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
   result( output_var )
 
   ! Description:
@@ -1188,10 +1188,10 @@ module advance_helper_module
                               sqrt((input_var1-input_var2)**2 + smth_coef**2) )
 
     return
-  end function smooth_max_sclr_array
+  end function smooth_max_scalar_array
 
 !===============================================================================
-  function smooth_max_array_sclr( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  function smooth_max_array_scalar( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
   result( output_var )
 
   ! Description:
@@ -1232,7 +1232,7 @@ module advance_helper_module
                               sqrt((input_var1-input_var2)**2 + smth_coef**2) )
 
     return
-  end function smooth_max_array_sclr
+  end function smooth_max_array_scalar
 
 !===============================================================================
   function smooth_max_arrays( nz, ngrdcol, input_var1, input_var2, smth_coef ) &

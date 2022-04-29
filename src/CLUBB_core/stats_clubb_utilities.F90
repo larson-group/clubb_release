@@ -2097,6 +2097,11 @@ module stats_clubb_utilities
         ia3_coef, & ! Variables
         ia3_coef_zt, &
         ircm_in_cloud
+        
+    use stats_variables, only: &
+        itot_vartn_normlzd_rtm, &
+        itot_vartn_normlzd_thlm, &
+        itot_vartn_normlzd_wprtp
 
     use grid_class, only: & 
         grid ! Type
@@ -2809,7 +2814,26 @@ module stats_clubb_utilities
                          thlp2(1:gr%nz), gr%dzm(1:gr%nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
-
+      if (itot_vartn_normlzd_rtm > 0) then
+        xtmp = abs(rtm(2 : gr%nz) - rtm(1 : gr%nz-1)) / abs(rtm(gr%nz) - rtm(1))
+      
+        call stat_update_var_pt( itot_vartn_normlzd_rtm, 1, xtmp, & ! intent(in)
+                                 stats_sfc ) ! intent(inout)
+      end if
+     
+      if (itot_vartn_normlzd_thlm > 0) then
+        xtmp = abs(thlm(2 : gr%nz) - thlm(1 : gr%nz-1)) / abs(thlm(gr%nz) - thlm(1))
+      
+        call stat_update_var_pt( itot_vartn_normlzd_thlm, 1, xtmp, & ! intent(in)
+                                 stats_sfc ) ! intent(inout)
+      end if
+     
+      if (itot_vartn_normlzd_wprtp > 0) then
+        xtmp = abs(wprtp(2 : gr%nz) - wprtp(1 : gr%nz-1)) / abs(wprtp(gr%nz) - wprtp(1))
+      
+        call stat_update_var_pt( itot_vartn_normlzd_wprtp, 1, xtmp, & ! intent(in)
+                                 stats_sfc ) ! intent(inout)
+      end if
     end if ! l_stats_samp
 
 

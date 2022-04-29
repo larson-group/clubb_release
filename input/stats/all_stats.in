@@ -207,7 +207,8 @@ vars_sfc =
 'rtm_spur_src', 'thlm_spur_src',
 'wp23_matrix_condt_num', 'rtm_matrix_condt_num', 'thlm_matrix_condt_num', 
 'rtp2_matrix_condt_num', 'thlp2_matrix_condt_num', 'rtpthlp_matrix_condt_num',
-'up2_vp2_matrix_condt_num', 'windm_matrix_condt_num', 'rs_sd_morr_int',
+'up2_vp2_matrix_condt_num', 'windm_matrix_condt_num', 'rs_sd_morr_int', 
+'tot_vartn_normlzd_rtm', 'tot_vartn_normlzd_thlm', 'tot_vartn_normlzd_wprtp',
 ''
 
 /

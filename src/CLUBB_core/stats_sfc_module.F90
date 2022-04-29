@@ -46,8 +46,7 @@ module stats_sfc_module
         iz_inversion, &
         iprecip_rate_sfc, &
         irain_flux_sfc, &
-        irrm_sfc, &
-        iprecip_frac_tol
+        irrm_sfc
 
     use stats_variables, only: &
         iwpthlp_sfc, &
@@ -82,6 +81,11 @@ module stats_sfc_module
         irtm_spur_src,            &
         ithlm_spur_src, &
         irsm_sd_morr_int
+        
+    use stats_variables, only: &
+        itot_vartn_normlzd_rtm, &
+        itot_vartn_normlzd_thlm, &
+        itot_vartn_normlzd_wprtp
 
     use stats_type_utilities, only: &
         stat_assign ! Procedure
@@ -476,6 +480,30 @@ module stats_sfc_module
         call stat_assign( var_index=irsm_sd_morr_int, var_name="rs_sd_morr_int", &
              var_description="rs_sd_morr_int, rsm_sd_morr vertical integral", &
              var_units="(kg/kg)/s", l_silhs=.true., grid_kind=stats_sfc )
+        k = k + 1
+        
+      case ('tot_vartn_normlzd_rtm')
+        itot_vartn_normlzd_rtm = k
+
+        call stat_assign( var_index=itot_vartn_normlzd_rtm, var_name="tot_vartn_normlzd_rtm", &
+             var_description="Total variation of rtm in the vertical", &
+             var_units="-", l_silhs=.false., grid_kind=stats_sfc )
+        k = k + 1
+        
+      case ('tot_vartn_normlzd_thlm')
+        itot_vartn_normlzd_thlm = k
+
+        call stat_assign( var_index=itot_vartn_normlzd_thlm, var_name="tot_vartn_normlzd_thlm", &
+             var_description="Total variation of thlm in the vertical", &
+             var_units="-", l_silhs=.false., grid_kind=stats_sfc )
+        k = k + 1
+        
+      case ('tot_vartn_normlzd_wprtp')
+        itot_vartn_normlzd_wprtp = k
+
+        call stat_assign( var_index=itot_vartn_normlzd_wprtp, var_name="tot_vartn_normlzd_wprtp", &
+             var_description="Total variation of wprtp in the vertical", &
+             var_units="-", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
       case default
