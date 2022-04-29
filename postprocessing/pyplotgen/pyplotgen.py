@@ -249,13 +249,15 @@ class PyPlotGen:
         """
         pdf_output_filename = self.output_folder + '/pyplotgen_output.pdf'
         case_descriptions = {}
+        case_times = {}
         for case in Case_definitions.ALL_CASES:
             case_descriptions[case['name']] = case['description']
+            case_times[case['name']] = [case['start_time'], case['end_time']]
         if self.pdf and self.pdf_filesize_limit is None:
             logToFileAndConsole('-------------------------------------------')
             logToFileAndConsole('Generating PDF file ' + pdf_output_filename)
             # config = pdfkit.configuration(wkhtmltopdf='/usr/bin/')
-            self.__writePdfToDisk__(pdf_output_filename, case_descriptions)
+            self.__writePdfToDisk__(pdf_output_filename, case_descriptions, case_times)
             # pdfkit.from_file(html_input_filename, pdf_output_filename)
             logToFileAndConsole("PDF Output can be viewed at file://" + pdf_output_filename + " with a web browser/ pdf viewer")
             logToFileAndConsole('-------------------------------------------')
@@ -271,7 +273,7 @@ class PyPlotGen:
             while pdf_too_large and not filesize_impossible:
                 attempted_prints += 1
                 bytes_to_mb = 1 / 1000000
-                self.__writePdfToDisk__(pdf_output_filename, case_descriptions)
+                self.__writePdfToDisk__(pdf_output_filename, case_descriptions, case_times)
                 pdf_filesize = os.path.getsize(pdf_output_filename) * bytes_to_mb
                 logToFileAndConsole("PDF generated using a DPI of " + str(Style_definitions.IMG_OUTPUT_DPI) +
                                     " with a filesize of " + str(pdf_filesize) + "MB.")
@@ -302,7 +304,7 @@ class PyPlotGen:
                     logToFileAndConsole("The most recent PDF output attempt can be found at: file://" + pdf_output_filename)
                     filesize_impossible = True
 
-    def __writePdfToDisk__(self, pdf_output_filename, case_desciptions):
+    def __writePdfToDisk__(self, pdf_output_filename, case_desciptions, case_times):
         """
         This is a helper function that actually writes the PDF to the disk. This uses the fpdf package to generate the
         pdf.
@@ -320,7 +322,7 @@ class PyPlotGen:
                 pdf.cell(0, 10, foldername)
                 pdf.ln()
                 pdf.set_font('Arial', '', 12)
-                pdf.multi_cell(0, 8, case_desciptions[foldername])
+                pdf.multi_cell(0, 8, case_desciptions[foldername] + " minutes " + str(case_times[foldername][0]) + "-" + str(case_times[foldername][1]))
                 current_date_time = datetime.now()
                 rounded_down_datetime = str(current_date_time.replace(microsecond=0))
                 pdf.set_font('Arial', '', 10)

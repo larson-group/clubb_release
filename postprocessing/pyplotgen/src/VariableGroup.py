@@ -353,22 +353,24 @@ class VariableGroup:
         :return: None
         """
         for variable in self.variables:
-            title = variable['title']
-            axis_label = variable['axis_title']
-            plotset = variable['plots']
-            centered = False
-            panel_type = self.default_panel_type
-            if self.time_height:
-                panel_type = Panel.TYPE_TIMEHEIGHT
-            elif 'type' in variable.keys():
-                panel_type = variable['type']
-            if 'sci_scale' in variable.keys():
-                sci_scale = variable['sci_scale']
-            else:
-                sci_scale = None
-            if 'centered' in variable.keys():
-                centered = variable['centered']
-            if not self.priority_vars or (self.priority_vars and 'priority' in variable.keys()):
+            # Only display a variable if we are either not doing a priority run or the priority flag has been set and is True
+            if not self.priority_vars or (self.priority_vars and 'priority' in variable.keys() and variable['priority']):
+                title = variable['title']
+                axis_label = variable['axis_title']
+                plotset = variable['plots']
+                centered = False
+                panel_type = self.default_panel_type
+                if self.time_height:
+                    panel_type = Panel.TYPE_TIMEHEIGHT
+                elif 'type' in variable.keys():
+                    panel_type = variable['type']
+                if 'sci_scale' in variable.keys():
+                    sci_scale = variable['sci_scale']
+                else:
+                    sci_scale = None
+                if 'centered' in variable.keys():
+                    centered = variable['centered']
+            
                 if panel_type == Panel.TYPE_TIMEHEIGHT:
                     panel = ContourPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type)
                 elif self.animation is not None:
