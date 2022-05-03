@@ -15,7 +15,7 @@ from multiprocessing import Pool
 from multiprocessing import freeze_support
 
 from config import Case_definitions
-from python_html_gallery import static
+from python_html_gallery import static_varbles
 from src.OutputHandler import logToFile, logToFileAndConsole
 
 try:
@@ -57,11 +57,11 @@ def RandomThumb(page,file_extension=".png"):
 def OrganizeRoot(output_dir,file_extension=".png"):
     """Creates directories for images in root directory."""
 
-    static.root = output_dir
+    static_varbles.root = output_dir
     try:
-        os.chdir(static.root)
+        os.chdir(static_varbles.root)
     except OSError:
-        print('Could not cd into %s' % static.root)
+        print('Could not cd into %s' % static_varbles.root)
         sys.exit(1)
 
     fs = ListFiles('*'+file_extension, '.')
@@ -91,9 +91,9 @@ def GenerateHtmlImages(page, jpgs, file_extension):
     for jpg in jpgs:
         jpg = page + '/' + jpg
         if file_extension in {'.png','.svg','.eps'}:
-            url_imgs.append(static.url_img % (jpg, jpg, jpg))
+            url_imgs.append(static_varbles.url_img % (jpg, jpg, jpg))
         elif file_extension in {'.mp4','.avi'}:
-            url_imgs.append(static.url_mov % (jpg))
+            url_imgs.append(static_varbles.url_mov % (jpg))
     return url_imgs
 
 
@@ -125,16 +125,16 @@ def WriteGalleryPage(page,file_extension=".png"):
   Args:
     page: str, name of page under root directory.
   """
-    # os.chdir(static.root)
+    # os.chdir(static_varbles.root)
 
-    with open(static.plots, 'a') as plots_file:
-        # plots_file.write(static.header % page)
-        # plots_file.write(static.case_title % page)
+    with open(static_varbles.plots_filename, 'a') as plots_file:
+        # plots_file.write(static_varbles.header % page)
+        # plots_file.write(static_varbles.case_title % page)
         start_time,end_time = get_start_end_minutes(page)
         case_title = page + " minutes " + str(start_time) + "-" + str(end_time)
-        plots_file.write(static.a_tag % (page, case_title))
+        plots_file.write(static_varbles.a_tag % (page, case_title))
         case_description = get_description(page)
-        plots_file.write(static.case_description % (case_description))
+        plots_file.write(static_varbles.case_description % (case_description))
 
         # Write case_setup.txt links
         for setup_file in glob.glob(page+'/*.txt'):
@@ -143,9 +143,9 @@ def WriteGalleryPage(page,file_extension=".png"):
             # The format for setup filenames is casename/casename_inputfoldername_setup.txt
             casename_prefix_len = len(page) * 2 + 2 # length is num characters in page/page_  including the '/' and '_'
             setup_file_src_folder = setup_file[casename_prefix_len: -setup_file_tail_len]
-            plots_file.write(static.setup_file_link % (setup_file, setup_file_src_folder) + "\n")
+            plots_file.write(static_varbles.setup_file_link % (setup_file, setup_file_src_folder) + "\n")
 
-        plots_file.write(static.timestamp % Now())
+        plots_file.write(static_varbles.timestamp % Now())
 
         try:
             img_paths = '*'+file_extension
@@ -162,15 +162,15 @@ def WriteGalleryPage(page,file_extension=".png"):
         for e in GenerateHtmlImages(page, jpgs, file_extension):
             plots_file.write(e)
 
-        # plots_file.write(static.footer)
+        # plots_file.write(static_varbles.footer)
 
 
 def WriteGalleryPages(multithreaded=False,file_extension=".png"):
     """Write gallery pages for directories in root path."""
-    with open(static.plots, 'w') as index_file:
-        index_file.write(static.header)
+    with open(static_varbles.plots_filename, 'w') as index_file:
+        index_file.write(static_varbles.header)
 
-    all_pages = sorted(ListDirs(static.root))
+    all_pages = sorted(ListDirs(static_varbles.root))
 
     if multithreaded:
         freeze_support()  # Required for multithreading
@@ -181,40 +181,40 @@ def WriteGalleryPages(multithreaded=False,file_extension=".png"):
         for page in all_pages:
             WriteGalleryPage(page,file_extension)
 
-    with open(static.plots, 'a') as index_file:
-        index_file.write(static.footer)
+    with open(static_varbles.plots_filename, 'a') as index_file:
+        index_file.write(static_varbles.footer)
 
 
 def WriteNavigation():
     """Write navigation file with gallery links and thumbnails in root path."""
-    os.chdir(static.root)
+    os.chdir(static_varbles.root)
 
-    with open(static.navigation, 'w') as nav_file:
-        nav_file.write(static.nav_header)
-        # nav_file.write(static.timestamp % Now())
+    with open(static_varbles.navigation, 'w') as nav_file:
+        nav_file.write(static_varbles.nav_header)
+        # nav_file.write(static_varbles.timestamp % Now())
 
         page_count = 0
-        for page in sorted(ListDirs(static.root)):
+        for page in sorted(ListDirs(static_varbles.root)):
             page_count += 1
             try:
-                nav_file.write(static.nav_a_tag % (page, page))
+                nav_file.write(static_varbles.nav_a_tag % (page, page))
             except IndexError:
                 print('%s: No thumbnails found, removing' % page)
                 os.unlink(page)
 
-        nav_file.write(static.nav_footer)
+        nav_file.write(static_varbles.nav_footer)
 
     logToFile('Wrote %s with %s gallery link(s)' % (
-        os.path.join(static.root, static.navigation), page_count))
+        os.path.join(static_varbles.root, static_varbles.navigation), page_count))
 
 def WriteIndex():
     """
 
     """
-    os.chdir(static.root)
+    os.chdir(static_varbles.root)
 
-    with open(static.index, 'w') as index_file:
-        index_file.write(static.idx_page)
+    with open(static_varbles.index, 'w') as index_file:
+        index_file.write(static_varbles.idx_page)
 
     logToFile("Wrote index.html")
 

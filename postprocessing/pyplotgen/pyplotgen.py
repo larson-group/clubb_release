@@ -247,7 +247,10 @@ class PyPlotGen:
 
         :return: None
         """
-        pdf_output_filename = self.output_folder + '/pyplotgen_output.pdf'
+        # pdf_output_filename = self.output_folder + '/pyplotgen_output.pdf'
+        
+        lowest_output_folder_level = str.split(self.output_folder, '/')[-1]
+        pdf_output_filename = self.output_folder + '/' + lowest_output_folder_level + '.pdf'
         case_descriptions = {}
         case_times = {}
         for case in Case_definitions.ALL_CASES:

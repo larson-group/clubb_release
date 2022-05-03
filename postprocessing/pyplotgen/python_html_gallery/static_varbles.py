@@ -4,7 +4,7 @@ import os
 root = os.path.dirname(os.path.realpath(__file__)) +'/../output'  # path to jpgs or folders of jpgs and output root
 tmp = '/tmp'              # temporary folder to move corrupt files to
 index = 'index.html'      # filename for html files
-plots = 'plots.html'
+plots_filename = 'plots.html'
 navigation = 'navigation.html'
 
 header = ("""<!doctype html>
