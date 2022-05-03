@@ -35,7 +35,7 @@ class VariableGroupNormalizedVariations(VariableGroup):
                  'wrf': [''],
                  },
                  'type': Panel.TYPE_TIMESERIES,
-                 'priority': True,
+                 'priority': False,
              },
              {'var_names':
                   {
@@ -49,7 +49,7 @@ class VariableGroupNormalizedVariations(VariableGroup):
                   'wrf': [''],
                   },
                   'type': Panel.TYPE_TIMESERIES,
-                  'priority': True,
+                  'priority': False,
               },
               {'var_names':
                    {
@@ -63,7 +63,7 @@ class VariableGroupNormalizedVariations(VariableGroup):
                    'wrf': [''],
                    },
                    'type': Panel.TYPE_TIMESERIES,
-                   'priority': True,
+                   'priority': False,
                }
         ]
 

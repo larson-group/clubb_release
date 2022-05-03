@@ -1893,7 +1893,8 @@ module stats_clubb_utilities
     !----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        cloud_frac_min  ! Constant
+        cloud_frac_min, &  ! Constant
+        eps
 
 
     use pdf_utilities, only: &
@@ -2813,23 +2814,36 @@ module stats_clubb_utilities
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), & ! intent(in)
                          thlp2(1:gr%nz), gr%dzm(1:gr%nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
-
-      if (itot_vartn_normlzd_rtm > 0 .and. (rtm(gr%nz) - rtm(1) .ne. 0.0_core_rknd)) then
-        xtmp = sum(abs(rtm(2 : gr%nz) - rtm(1 : gr%nz-1)) / abs(rtm(gr%nz) - rtm(1)))
       
+      
+      if (itot_vartn_normlzd_rtm > 0) then
+        if (abs(rtm(gr%nz) - rtm(1)) < eps) then
+          xtmp = -999_core_rknd  ! workaround to signify zero denominator 
+        else
+          xtmp = sum(abs(rtm(2 : gr%nz) - rtm(1 : gr%nz-1)) / abs(rtm(gr%nz) - rtm(1)))
+        end if
+        
         call stat_update_var_pt( itot_vartn_normlzd_rtm, 1, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
       end if
      
-      if (itot_vartn_normlzd_thlm > 0 .and. (thlm(gr%nz) - thlm(1) .ne. 0.0_core_rknd)) then
-        xtmp = sum(abs(thlm(2 : gr%nz) - thlm(1 : gr%nz-1)) / abs(thlm(gr%nz) - thlm(1)))
-      
+      if (itot_vartn_normlzd_thlm > 0) then
+        if (abs(thlm(gr%nz) - thlm(1)) < eps) then
+          xtmp = -999_core_rknd  ! workaround to signify zero denominator 
+        else
+          xtmp = sum(abs(thlm(2 : gr%nz) - thlm(1 : gr%nz-1)) / abs(thlm(gr%nz) - thlm(1)))
+        end if
+        
         call stat_update_var_pt( itot_vartn_normlzd_thlm, 1, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
       end if
      
-      if (itot_vartn_normlzd_wprtp > 0 .and. (wprtp(gr%nz) - wprtp(1) .ne. 0.0_core_rknd)) then
-        xtmp = sum(abs(wprtp(2 : gr%nz) - wprtp(1 : gr%nz-1)) / abs(wprtp(gr%nz) - wprtp(1)))
+      if (itot_vartn_normlzd_wprtp > 0) then
+        if (abs(wprtp(gr%nz) - wprtp(1)) < eps) then
+          xtmp = -999_core_rknd  ! workaround to signify zero denominator 
+        else
+          xtmp = sum(abs(wprtp(2 : gr%nz) - wprtp(1 : gr%nz-1)) / abs(wprtp(gr%nz) - wprtp(1)))
+        end if
         
         call stat_update_var_pt( itot_vartn_normlzd_wprtp, 1, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
