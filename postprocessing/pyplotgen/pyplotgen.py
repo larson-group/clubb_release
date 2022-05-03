@@ -304,14 +304,14 @@ class PyPlotGen:
                     logToFileAndConsole("The most recent PDF output attempt can be found at: file://" + pdf_output_filename)
                     filesize_impossible = True
 
-    def __writePdfToDisk__(self, pdf_output_filename, case_desciptions, case_times):
+    def __writePdfToDisk__(self, pdf_output_filename, case_descriptions, case_times):
         """
         This is a helper function that actually writes the PDF to the disk. This uses the fpdf package to generate the
         pdf.
 
         :param pdf_output_filename: Name of the file to be created. While it can be a relative name, it's recommended
             to use a full file path.
-        :param case_desciptions: A dict of name -> description maps. E.g. {'bomex': "I am the bomex case. Fear me!"}
+        :param case_descriptions: A dict of name -> description maps. E.g. {'bomex': "I am the bomex case. Fear me!"}
         :return: None
         """
         pdf = FPDF()
@@ -319,10 +319,10 @@ class PyPlotGen:
             if os.path.isdir(foldername):
                 pdf.add_page()
                 pdf.set_font('Arial', 'B', 18)
-                pdf.cell(0, 10, foldername)
+                pdf.cell(0, 10, foldername + " minutes " + str(case_times[foldername][0]) + "-" + str(case_times[foldername][1]))
                 pdf.ln()
                 pdf.set_font('Arial', '', 12)
-                pdf.multi_cell(0, 8, case_desciptions[foldername] + " minutes " + str(case_times[foldername][0]) + "-" + str(case_times[foldername][1]))
+                pdf.multi_cell(0, 8, case_descriptions[foldername])
                 current_date_time = datetime.now()
                 rounded_down_datetime = str(current_date_time.replace(microsecond=0))
                 pdf.set_font('Arial', '', 10)
