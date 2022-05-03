@@ -46,7 +46,8 @@ module stats_sfc_module
         iz_inversion, &
         iprecip_rate_sfc, &
         irain_flux_sfc, &
-        irrm_sfc
+        irrm_sfc, &
+        iprecip_frac_tol
 
     use stats_variables, only: &
         iwpthlp_sfc, &
@@ -486,7 +487,7 @@ module stats_sfc_module
         itot_vartn_normlzd_rtm = k
 
         call stat_assign( var_index=itot_vartn_normlzd_rtm, var_name="tot_vartn_normlzd_rtm", &
-             var_description="Total variation of rtm in the vertical", &
+             var_description="Total variation of rtm in the vertical normalized", &
              var_units="-", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
         
@@ -494,7 +495,7 @@ module stats_sfc_module
         itot_vartn_normlzd_thlm = k
 
         call stat_assign( var_index=itot_vartn_normlzd_thlm, var_name="tot_vartn_normlzd_thlm", &
-             var_description="Total variation of thlm in the vertical", &
+             var_description="Total variation of thlm in the vertical normalized", &
              var_units="-", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
         
@@ -502,7 +503,7 @@ module stats_sfc_module
         itot_vartn_normlzd_wprtp = k
 
         call stat_assign( var_index=itot_vartn_normlzd_wprtp, var_name="tot_vartn_normlzd_wprtp", &
-             var_description="Total variation of wprtp in the vertical", &
+             var_description="Total variation of wprtp in the vertical normalized", &
              var_units="-", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 

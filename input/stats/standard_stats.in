@@ -195,6 +195,7 @@ vars_sfc =
 'wp2_vert_avg', 'up2_vert_avg', 'vp2_vert_avg', 'rtp2_vert_avg', 
 'thlp2_vert_avg', 'T_sfc', 
 'rtm_spur_src', 'thlm_spur_src', 'rs_sd_morr_int',
+'tot_vartn_normlzd_rtm', 'tot_vartn_normlzd_thlm', 'tot_vartn_normlzd_wprtp',
 ''
 
 /

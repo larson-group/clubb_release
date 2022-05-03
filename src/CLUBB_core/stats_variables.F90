@@ -1430,9 +1430,9 @@ module stats_variables
 !$omp   iwp2_vert_avg, iup2_vert_avg, ivp2_vert_avg, irtp2_vert_avg, ithlp2_vert_avg, iT_sfc)
 
   integer, public :: &
-    itot_vartn_normlzd_rtm, &
-    itot_vartn_normlzd_thlm, &
-    itot_vartn_normlzd_wprtp
+    itot_vartn_normlzd_rtm = 0, &
+    itot_vartn_normlzd_thlm = 0, &
+    itot_vartn_normlzd_wprtp = 0
 !$omp threadprivate(itot_vartn_normlzd_rtm, itot_vartn_normlzd_thlm, itot_vartn_normlzd_wprtp)
 
   integer, public :: & 
