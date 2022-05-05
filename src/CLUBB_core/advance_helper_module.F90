@@ -41,6 +41,7 @@ module advance_helper_module
     module procedure smooth_min_scalar_array
     module procedure smooth_min_array_scalar
     module procedure smooth_min_arrays
+    module procedure smooth_min_scalars
 
   end interface
 
@@ -58,6 +59,7 @@ module advance_helper_module
     module procedure smooth_max_scalar_array
     module procedure smooth_max_array_scalar
     module procedure smooth_max_arrays
+    module procedure smooth_max_scalars
 
   end interface
 
@@ -1151,6 +1153,48 @@ module advance_helper_module
 
     return
   end function smooth_min_arrays
+  
+!===============================================================================
+  function smooth_min_scalars( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
+  !   two 1d arrays as inputs.
+
+  ! References:
+  !   See clubb:ticket:894, updated version: 965
+  !----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
+        
+    use constants_clubb, only: &
+        one_half
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+  ! Input Variables
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var1, &       ! Units vary
+      input_var2, &       ! Units vary
+      smth_coef           ! smoothing "intensity"
+
+  ! Output Variables
+    real( kind = core_rknd ) :: &
+      output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = one_half * ( (input_var1+input_var2) - &
+                              sqrt((input_var1-input_var2)**2 + smth_coef**2) )
+
+    return
+  end function smooth_min_scalars
 
 !===============================================================================
   function smooth_max_scalar_array( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
@@ -1283,6 +1327,48 @@ module advance_helper_module
 
     return
   end function smooth_max_arrays
+  
+!===============================================================================
+  function smooth_max_scalars( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the max function using zt2zm/zm2zt, using
+  !   two scalars as inputs.
+
+  ! References:
+  !   See clubb:ticket:894, updated version: 965
+  !----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
+        
+    use constants_clubb, only: &
+        one_half
+
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+  ! Input Variables
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var1, &       ! Units vary
+      input_var2, &       ! Units vary
+      smth_coef           ! "intensity" of the smoothing
+
+  ! Output Variables
+    real( kind = core_rknd ) :: &
+      output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = one_half * ( (input_var1+input_var2) + &
+                              sqrt((input_var1-input_var2)**2 + smth_coef**2) )
+
+    return
+  end function smooth_max_scalars
   
   elemental function smooth_heaviside_peskin( input, smth_range ) &
     result( smth_output )
