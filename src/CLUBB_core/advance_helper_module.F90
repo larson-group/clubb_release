@@ -17,7 +17,13 @@ module advance_helper_module
     compute_Cx_fnc_Richardson, &
     term_wp2_splat, term_wp3_splat, &
     smooth_min, smooth_max, &
-    smooth_heaviside_peskin
+    smooth_heaviside_peskin, &
+    calc_xpwp
+    
+  interface calc_xpwp
+    module procedure calc_xpwp_1D
+    module procedure calc_xpwp_2D
+  end interface
 
   private ! Set Default Scope
 
@@ -1327,5 +1333,98 @@ module advance_helper_module
     
     return
   end function smooth_heaviside_peskin
+  
+  !===============================================================================
+  subroutine calc_xpwp_1D( gr, Km_zm, xm, &
+                           xpwp )
+
+    ! Description:
+    ! Compute x'w' from x<k>, x<k+1>, Kh and invrs_dzm
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+        
+    use grid_class, only: &
+      grid
+
+    implicit none
+
+    ! ----------------------- Input variables -----------------------
+    type (grid), target, intent(in) :: gr
+      
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      Km_zm,     & ! Eddy diff. (k momentum level)                 [m^2/s]
+      xm           ! x (k thermo level)                            [units vary]
+      
+    ! ----------------------- Output variable -----------------------
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      xpwp ! x'w'   [(units vary)(m/s)]
+      
+    integer :: k
+
+    ! ----------------------- Begin Code -----------------------
+
+    ! Solve for x'w' at all intermediate model levels.
+    do k = 1, gr%nz-1
+      xpwp(k) = Km_zm(k) * gr%invrs_dzm(k) * ( xm(k+1) - xm(k) )
+    end do
+
+    return
+  end subroutine calc_xpwp_1D
+  
+  !===============================================================================
+  subroutine calc_xpwp_2D( nz, ngrdcol, gr, &
+                        Km_zm, xm, &
+                        xpwp )
+
+    ! Description:
+    ! Compute x'w' from x<k>, x<k+1>, Kh and invrs_dzm
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+        
+    use grid_class, only: &
+      grid
+
+    implicit none
+
+    ! ----------------------- Input variables -----------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+      
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+      
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      Km_zm,     & ! Eddy diff. (k momentum level)                 [m^2/s]
+      xm           ! x (k thermo level)                            [units vary]
+      
+    ! ----------------------- Output variable -----------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      xpwp ! x'w'   [(units vary)(m/s)]
+      
+    integer :: i, k
+
+    ! ----------------------- Begin Code -----------------------
+
+    ! Solve for x'w' at all intermediate model levels.
+    do k = 1, nz-1
+      do i = 1, ngrdcol
+        xpwp(i,k) = Km_zm(i,k) * gr(i)%invrs_dzm(k) * ( xm(i,k+1) - xm(i,k) )
+      end do
+    end do
+
+    return
+  end subroutine calc_xpwp_2D
+
+  !===============================================================================
 
 end module advance_helper_module

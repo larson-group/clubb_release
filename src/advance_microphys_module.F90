@@ -534,8 +534,8 @@ module advance_microphys_module
     use parameters_model, only: & 
         hydromet_dim   ! Variable(s)
 
-    use advance_windm_edsclrm_module, only : &
-        xpwp_fnc  ! Procedure(s)
+    use advance_helper_module, only : &
+        calc_xpwp  ! Procedure(s)
 
     use fill_holes, only: &
         fill_holes_driver,   & ! Procedure(s)
@@ -656,6 +656,10 @@ module advance_microphys_module
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
       ratio_hmp2_on_hmm2    ! Value of <hm'^2> / <hm>^2    [-]
+      
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      xpwp,       & ! x'w' for arbitrary x
+      K_hm_nu_hm    ! K_hm + nu_vert_res_dep%nu_hm
 
     logical :: l_fill_holes_hm = .true.
 
@@ -751,11 +755,12 @@ module advance_microphys_module
        ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
        ! A Crank-Nicholson time-stepping scheme is used for this variable.
        ! This is the portion of the calculation using < h_m > from timestep t. 
-       wphydrometp(1:gr%nz-1,i) &
-       = - one_half &
-           * xpwp_fnc( K_hm(1:gr%nz-1,i)+nu_vert_res_dep%nu_hm, &
-                       hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
-                       gr%invrs_dzm(1:gr%nz-1) )
+       K_hm_nu_hm(:) = K_hm(:,i) + nu_vert_res_dep%nu_hm
+       
+       call calc_xpwp( gr, K_hm_nu_hm, hydromet(:,i), &
+                       xpwp )
+        
+       wphydrometp(1:gr%nz-1,i) = - one_half * xpwp(1:gr%nz-1)
 
        ! A zero-flux boundary condition at the top of the model is used for
        ! hydrometeors.
@@ -855,13 +860,13 @@ module advance_microphys_module
        ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
        ! A Crank-Nicholson time-stepping scheme is used for this variable.
        ! This is the portion of the calculation using < h_m > from timestep t+1.
-       wphydrometp(1:gr%nz-1,i) &
-       = wphydrometp(1:gr%nz-1,i) &
-         - one_half &
-           * xpwp_fnc( K_hm(1:gr%nz-1,i)+nu_vert_res_dep%nu_hm, &
-                       hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
-                       gr%invrs_dzm(1:gr%nz-1) )
-
+       K_hm_nu_hm(:) = K_hm(:,i) + nu_vert_res_dep%nu_hm
+       
+       call calc_xpwp( gr, K_hm_nu_hm, hydromet(:,i), &
+                       xpwp )
+        
+       wphydrometp(1:gr%nz-1,i) = - one_half * xpwp(1:gr%nz-1)
+       
        ! A zero-flux boundary condition at the top of the model is used for
        ! hydrometeors.
        wphydrometp(gr%nz,i) = zero
@@ -979,8 +984,8 @@ module advance_microphys_module
         Nc_in_cloud_min, &
         fstderr
 
-    use advance_windm_edsclrm_module, only : &
-        xpwp_fnc  ! Procedure(s)
+    use advance_helper_module, only : &
+        calc_xpwp  ! Procedure(s)
 
     use parameters_tunable, only: & 
         nu_vertical_res_dep  ! Type(s)
@@ -1073,6 +1078,10 @@ module advance_microphys_module
       Ncm_min,     & ! Minimum allowable mean cloud droplet conc.       [num/kg]
       Ncic_min       ! Min. allowable in-cloud mean cloud droplet conc. [num/kg]
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      xpwp,       & ! x'w' for arbitrary x
+      K_Nc_nu_hm    ! K_Nc + nu_vert_res_dep%nu_hm
+
     ! Sedimentation velocity of cloud droplet concentration is not considered in
     ! the solution of N_c.
     logical, parameter :: &
@@ -1116,11 +1125,13 @@ module advance_microphys_module
     ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
     ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
     ! A Crank-Nicholson time-stepping scheme is used for this variable.
-    ! This is the portion of the calculation using < N_c > from timestep t. 
-    wpNcp(1:gr%nz-1) &
-    = - one_half * xpwp_fnc( K_Nc(1:gr%nz-1)+nu_vert_res_dep%nu_hm, &
-                             Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
-                             gr%invrs_dzm(1:gr%nz-1) )
+    ! This is the portion of the calculation using < N_c > from timestep t.
+    K_Nc_nu_hm(:) = K_Nc(:) + nu_vert_res_dep%nu_hm
+    
+    call calc_xpwp( gr, K_Nc_nu_hm, Ncm, &
+                    xpwp )
+     
+    wpNcp(1:gr%nz-1) = - one_half * xpwp(1:gr%nz-1)
 
     ! A zero-flux boundary condition at the top of the model is used for N_c.
     wpNcp(gr%nz) = zero
@@ -1254,11 +1265,12 @@ module advance_microphys_module
     ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
     ! A Crank-Nicholson time-stepping scheme is used for this variable.
     ! This is the portion of the calculation using < N_c > from timestep t+1. 
-    wpNcp(1:gr%nz-1) &
-    = wpNcp(1:gr%nz-1) &
-      - one_half * xpwp_fnc( K_Nc(1:gr%nz-1)+nu_vert_res_dep%nu_hm, &
-                             Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
-                             gr%invrs_dzm(1:gr%nz-1) )
+    K_Nc_nu_hm(:) = K_Nc(:) + nu_vert_res_dep%nu_hm
+    
+    call calc_xpwp( gr, K_Nc_nu_hm, Ncm, &
+                    xpwp )
+     
+    wpNcp(1:gr%nz-1) = - one_half * xpwp(1:gr%nz-1)
 
     ! A zero-flux boundary condition at the top of the model is used for N_c.
     wpNcp(gr%nz) = zero

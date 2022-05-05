@@ -1993,28 +1993,26 @@ module advance_clubb_core_module
           end do
         end do
       end if
-
-      do i = 1, ngrdcol
-        call advance_windm_edsclrm( gr(i), dt, wm_zt(i,:), Km_zm(i,:), Kmh_zm(i,:), & ! intent(in)
-                                    ug(i,:), vg(i,:), um_ref(i,:), vm_ref(i,:),     & ! intent(in)
-                                    wp2(i,:), up2(i,:), vp2(i,:), um_forcing(i,:), vm_forcing(i,:), & ! intent(in)
-                                    edsclrm_forcing(i,:,:),                         & ! intent(in)
-                                    rho_ds_zm(i,:), invrs_rho_ds_zt(i,:),           & ! intent(in)
-                                    fcor(i), l_implemented,                         & ! intent(in)
-                                    nu_vert_res_dep(i),                             & ! intent(in)
-                                    clubb_config_flags%l_predict_upwp_vpwp,         & ! intent(in)
-                                    clubb_config_flags%l_upwind_xm_ma,              & ! intent(in)
-                                    clubb_config_flags%l_uv_nudge,                  & ! intent(in)
-                                    clubb_config_flags%l_tke_aniso,                 & ! intent(in)
-                                    clubb_config_flags%l_lmm_stepping,              & ! intent(in)
-                                    clubb_config_flags%l_linearize_pbl_winds,       & ! intent(in)
-                                    order_xp2_xpyp, order_wp2_wp3, order_windm,     & ! intent(in)
-                                    stats_zt(i), stats_zm(i), stats_sfc(i),         & ! intent(inout)
-                                    um(i,:), vm(i,:), edsclrm(i,:,:),               & ! intent(inout)
-                                    upwp(i,:), vpwp(i,:), wpedsclrp(i,:,:),         & ! intent(inout)
-                                    um_pert(i,:), vm_pert(i,:), upwp_pert(i,:), vpwp_pert(i,:) ) ! intent(inout)
-
-      end do
+      
+      call advance_windm_edsclrm( nz, ngrdcol, gr, dt,                        & ! intent(in)
+                                  wm_zt, Km_zm, Kmh_zm,                       & ! intent(in)
+                                  ug, vg, um_ref, vm_ref,                     & ! intent(in)
+                                  wp2, up2, vp2, um_forcing, vm_forcing,      & ! intent(in)
+                                  edsclrm_forcing,                            & ! intent(in)
+                                  rho_ds_zm, invrs_rho_ds_zt,                 & ! intent(in)
+                                  fcor, l_implemented,                        & ! intent(in)
+                                  nu_vert_res_dep,                            & ! intent(in)
+                                  clubb_config_flags%l_predict_upwp_vpwp,     & ! intent(in)
+                                  clubb_config_flags%l_upwind_xm_ma,          & ! intent(in)
+                                  clubb_config_flags%l_uv_nudge,              & ! intent(in)
+                                  clubb_config_flags%l_tke_aniso,             & ! intent(in)
+                                  clubb_config_flags%l_lmm_stepping,          & ! intent(in)
+                                  clubb_config_flags%l_linearize_pbl_winds,   & ! intent(in)
+                                  order_xp2_xpyp, order_wp2_wp3, order_windm, & ! intent(in)
+                                  stats_zt, stats_zm, stats_sfc,              & ! intent(inout)
+                                  um, vm, edsclrm,                            & ! intent(inout)
+                                  upwp, vpwp, wpedsclrp,                      & ! intent(inout)
+                                  um_pert, vm_pert, upwp_pert, vpwp_pert )      ! intent(inout)
 
       if ( clubb_config_flags%l_do_expldiff_rtm_thlm ) then
         do i = 1, ngrdcol
