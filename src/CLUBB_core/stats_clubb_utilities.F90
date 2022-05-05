@@ -2117,7 +2117,7 @@ module stats_clubb_utilities
         thlm2T_in_K ! Procedure
 
     use constants_clubb, only: & 
-        rc_tol    ! Constant(s)
+        rc_tol, fstderr    ! Constant(s)
 
     use parameters_model, only: & 
         sclr_dim,  &        ! Variable(s)

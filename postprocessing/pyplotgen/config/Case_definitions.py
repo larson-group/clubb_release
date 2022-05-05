@@ -79,6 +79,7 @@ from config.VariableGroupScalars import VariableGroupScalars
 from config.VariableGroupWs import VariableGroupWs
 from config.VariableGroupTaus import VariableGroupTaus
 from config.VariableGroupNondimMoments import VariableGroupNondimMoments
+from config.VariableGroupNormalizedVariations import VariableGroupNormalizedVariations
 
 # ---------------------------
 BENCHMARK_OUTPUT_ROOT = "/home/pub/les_and_clubb_benchmark_runs/"
