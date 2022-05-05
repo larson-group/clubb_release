@@ -247,10 +247,9 @@ class PyPlotGen:
 
         :return: None
         """
-        # pdf_output_filename = self.output_folder + '/pyplotgen_output.pdf'
-        
+                
         lowest_output_folder_level = str.split(self.output_folder, '/')[-1]
-        pdf_output_filename = self.output_folder + '/' + lowest_output_folder_level + '.pdf'
+        pdf_output_path_plus_filename = self.output_folder + '/' + lowest_output_folder_level + '.pdf'
         case_descriptions = {}
         case_times = {}
         for case in Case_definitions.ALL_CASES:
@@ -258,33 +257,33 @@ class PyPlotGen:
             case_times[case['name']] = [case['start_time'], case['end_time']]
         if self.pdf and self.pdf_filesize_limit is None:
             logToFileAndConsole('-------------------------------------------')
-            logToFileAndConsole('Generating PDF file ' + pdf_output_filename)
+            logToFileAndConsole('Generating PDF file ' + pdf_output_path_plus_filename)
             # config = pdfkit.configuration(wkhtmltopdf='/usr/bin/')
-            self.__writePdfToDisk__(pdf_output_filename, case_descriptions, case_times)
-            # pdfkit.from_file(html_input_filename, pdf_output_filename)
-            logToFileAndConsole("PDF Output can be viewed at file://" + pdf_output_filename + " with a web browser/ pdf viewer")
+            self.__writePdfToDisk__(pdf_output_path_plus_filename, case_descriptions, case_times)
+            # pdfkit.from_file(html_input_filename, pdf_output_path_plus_filename)
+            logToFileAndConsole("PDF Output can be viewed at file://" + pdf_output_path_plus_filename + " with a web browser/ pdf viewer")
             logToFileAndConsole('-------------------------------------------')
         if self.pdf_filesize_limit is not None:
             output_dpi = Style_definitions.IMG_OUTPUT_DPI
             pdf_too_large = True
             filesize_impossible = False
             logToFileAndConsole('-------------------------------------------')
-            logToFileAndConsole('Generating PDF file ' + pdf_output_filename)
+            logToFileAndConsole('Generating PDF file ' + pdf_output_path_plus_filename)
             logToFileAndConsole('Searching for minimum viable DPI for output images to print within '
                   + str(self.pdf_filesize_limit) + 'MB')
             attempted_prints = 0
             while pdf_too_large and not filesize_impossible:
                 attempted_prints += 1
                 bytes_to_mb = 1 / 1000000
-                self.__writePdfToDisk__(pdf_output_filename, case_descriptions, case_times)
-                pdf_filesize = os.path.getsize(pdf_output_filename) * bytes_to_mb
+                self.__writePdfToDisk__(pdf_output_path_plus_filename, case_descriptions, case_times)
+                pdf_filesize = os.path.getsize(pdf_output_path_plus_filename) * bytes_to_mb
                 logToFileAndConsole("PDF generated using a DPI of " + str(Style_definitions.IMG_OUTPUT_DPI) +
                                     " with a filesize of " + str(pdf_filesize) + "MB.")
                 Style_definitions.IMG_OUTPUT_DPI = output_dpi
 
                 if pdf_filesize < self.pdf_filesize_limit:
                     pdf_too_large = False
-                    logToFileAndConsole("PDF output can be found at: file://" + pdf_output_filename)
+                    logToFileAndConsole("PDF output can be found at: file://" + pdf_output_path_plus_filename)
                     logToFileAndConsole("Printing PDF to the target filesize took " + str(attempted_prints) + 
                                         " attempts to find the right DPI.")
                 else:
@@ -292,7 +291,7 @@ class PyPlotGen:
                     # via the web page
                     if "_downscaled_for_pdf" not in self.output_folder:
                         self.output_folder = self.output_folder + "_downscaled_for_pdf"
-                        pdf_output_filename = self.output_folder + '/pyplotgen_output.pdf'
+                        pdf_output_path_plus_filename = self.output_folder + '/pyplotgen_output.pdf'
 
                     output_dpi = self.__getDecreasedDpiValue__(output_dpi, pdf_filesize)
                     logToFileAndConsole("Attempted to print but the file was too large (" + str(pdf_filesize) + 
@@ -304,7 +303,7 @@ class PyPlotGen:
                     self.run()
                 if output_dpi <= 1:
                     logToFileAndConsole("There is no possible dpi that fits within " + str(self.pdf_filesize_limit) + "MB.")
-                    logToFileAndConsole("The most recent PDF output attempt can be found at: file://" + pdf_output_filename)
+                    logToFileAndConsole("The most recent PDF output attempt can be found at: file://" + pdf_output_path_plus_filename)
                     filesize_impossible = True
 
     def __writePdfToDisk__(self, pdf_output_filename, case_descriptions, case_times):
