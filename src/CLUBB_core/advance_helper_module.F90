@@ -30,13 +30,16 @@ module advance_helper_module
 !===============================================================================
   interface smooth_min
 
-    ! These functions wrap the intrinsic Fortran 'min' function in 
-    ! zt2zm(zm2zt()), thus smoothing the result for a variable defined on the
-    ! momentum grid ("zm").  These functions can accept two 1d arrays,
-    ! or a scalar and a 1d array in either order. In the case of an 
-    ! array being compared with a scalar (eg zero), an additional
-    ! 'min' is applied to guarantee that the smoothing did not violate
-    ! the original min requirement.
+    ! These functions smooth the output of the min function 
+    ! by introducing a varyingly steep path between the two input variables.
+    ! The degree to which smoothing is applied depends on the value of 'smth_coef'.
+    ! If 'smth_coef' goes toward 0, the output of the min function will be 
+    !        0.5 * ((a+b) - abs(a-b))
+    ! If a > b, then this comes out to be b. Likewise, if a < b, abs(a-b)=b-a so we get a.
+    ! Increasing the smoothing coefficient will lead to a greater degree of smoothing
+    ! in the smooth min and max functions. Generally, the coefficient should roughly scale
+    ! with the magnitude of data in the data structure that is to be smoothed, in order to
+    ! obtain a sensible degree of smoothing (not too much, not too little).
 
     module procedure smooth_min_scalar_array
     module procedure smooth_min_array_scalar
@@ -48,13 +51,16 @@ module advance_helper_module
 !===============================================================================
   interface smooth_max
 
-    ! These functions wrap the intrinsic Fortran 'max' function in 
-    ! zt2zm(zm2zt()), thus smoothing the result for a variable defined on the
-    ! momentum grid ("zm").  These functions can accept two 1d arrays,
-    ! or a scalar and a 1d array in either order. In the case of an  
-    ! array being compared with a scalar (eg zero), an additional
-    ! 'max' is applied to guarantee that the smoothing did not violate
-    ! the original max requirement.
+    ! These functions smooth the output of the max functions 
+    ! by introducing a varyingly steep path between the two input variables.
+    ! The degree to which smoothing is applied depends on the value of 'smth_coef'.
+    ! If 'smth_coef' goes toward 0, the output of the max function will be 
+    !        0.5 * ((a+b) + abs(a-b))
+    ! If a > b, then this comes out to be a. Likewise, if a < b, abs(a-b)=b-a so we get b.
+    ! Increasing the smoothing coefficient will lead to a greater degree of smoothing
+    ! in the smooth min and max functions. Generally, the coefficient should roughly scale
+    ! with the magnitude of data in the data structure that is to be smoothed, in order to
+    ! obtain a sensible degree of smoothing (not too much, not too little).
 
     module procedure smooth_max_scalar_array
     module procedure smooth_max_array_scalar
@@ -1027,8 +1033,8 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
-  !   one scalar and one 1d array as inputs.
+  !   Computes a smoothed version of the min function, using one scalar and
+  !   one 1d array as inputs. For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1071,8 +1077,8 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
-  !   one scalar and one 1d array as inputs.
+  !   Computes a smoothed version of the min function, using one scalar and 
+  !   one 1d array as inputs. For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1115,8 +1121,8 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
-  !   two 1d arrays as inputs.
+  !   Computes a smoothed version of the min function, using two 1d arrays as inputs.
+  !   For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1159,11 +1165,11 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
-  !   two 1d arrays as inputs.
+  !   Computes a smoothed version of the min function, using two scalars as inputs.
+  !   For more details, see the interface in this file.
 
   ! References:
-  !   See clubb:ticket:894, updated version: 965
+  !   See clubb:ticket: 965
   !----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -1201,8 +1207,8 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the max function using zt2zm/zm2zt, 
-  !   using one scalar and one 1d array as inputs.
+  !   Computes a smoothed version of the max function, using one scalar and 
+  !   one 1d array as inputs. For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1245,8 +1251,8 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the max function using zt2zm/zm2zt, 
-  !   using one scalar and one 1d array as inputs.
+  !   Computes a smoothed version of the max function, using one scalar and 
+  !   one 1d array as inputs. For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1289,8 +1295,8 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the max function using zt2zm/zm2zt, using
-  !   two 1d arrays as inputs.
+  !   Computes a smoothed version of the max function, using two 1d arrays as inputs.
+  !   For more details, see the interface in this file.
 
   ! References:
   !   See clubb:ticket:894, updated version: 965
@@ -1333,11 +1339,11 @@ module advance_helper_module
   result( output_var )
 
   ! Description:
-  !   Computes a smoothed version of the max function using zt2zm/zm2zt, using
-  !   two scalars as inputs.
+  !   Computes a smoothed version of the max function, using two scalars as inputs.
+  !   For more details, see the interface in this file.
 
   ! References:
-  !   See clubb:ticket:894, updated version: 965
+  !   See clubb:ticket: 965
   !----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -1375,8 +1381,8 @@ module advance_helper_module
     
   ! Description:
   !   Computes a smoothed heaviside function as in 
-  !   [Lin, Lee et al., 2005, A level set characteristic Galerkin finite element 
-  !   method for free surface flows], equation (2)
+  !       [Lin, Lee et al., 2005, A level set characteristic Galerkin 
+  !       finite element method for free surface flows], equation (2)
   
   ! References:
   !   See clubb:ticket:965
