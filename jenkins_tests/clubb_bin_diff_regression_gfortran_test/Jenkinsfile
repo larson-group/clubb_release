@@ -3,12 +3,14 @@ pipeline {
   stages {
     stage('Clone SysAdmin to tmp') {
       steps {
+        // This clones the sys_admin repo to use later in the test
         sh '''rm -rf /home/pub/bitten/tmp/sys_admin
               git clone https://github.com/larson-group/sys_admin.git /home/pub/bitten/tmp/sys_admin'''
       }
     }
     stage('Clone Clubb to tmp') {
       steps {
+        // This clones the clubb repo to use later in the test, this is done into the bitten directory due to legacy carry over
         sh '''rm -rf /home/pub/bitten/tmp/clubb
               git clone https://github.com/larson-group/clubb.git /home/pub/bitten/tmp/clubb'''
       }
@@ -25,18 +27,24 @@ pipeline {
     }
     stage('Diff test') {
       steps {
+        // This script diffs the output from the run and checks them against the previous run
         sh '/home/pub/bitten/tmp/sys_admin/bitten_test_driver_scripts/bitten_bindiff_test.bash /home/pub/bitten/tmp/clubb'
       }
     }
     stage('Update the latest results') {
       steps {
+        // This script updates the archived files with the new run so the next run is compared to them
         sh '/home/pub/bitten_bindiff_test/update_last.bash'
       }
     }
   }
   post {
     always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
       script {
+      // This block cleans out the test workspace to ensure a clean workspace for later runs
+      // However it only does this when the name of the test is clubb_bin_diff_regression_gfortran_test
+      // This is done to preven branch or copy tests from cleaning thier workspaces so they are available for troubleshooting
       if ( "${env.JOB_NAME}" == "clubb_bin_diff_regression_gfortran_test" )
       	cleanWs(cleanWhenSuccess: true, cleanWhenFailure: true)
       }
@@ -44,6 +52,7 @@ pipeline {
     failure {
       script {
       if ( "${env.JOB_NAME}" ==	"clubb_bin_diff_regression_gfortran_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
     }

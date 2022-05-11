@@ -3,19 +3,25 @@ pipeline {
   stages {
     stage('Clone SysAdmin to tmp') {
       steps {
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
         sh '''rm -rf /home/jenkins/clubb_bit_diff_test_workspace/sys_admin
               git clone https://github.com/larson-group/sys_admin.git /home/jenkins/clubb_bit_diff_test_workspace/sys_admin'''
       }
     }
     stage('Run Python Test') {
       steps {
+        // Here we run the run_test.py script with the correct config, both are found in the sys_admin repo
         sh '''python3 /home/jenkins/clubb_bit_diff_test_workspace/sys_admin/python_nightly_test_suite/run_test.py -c /home/jenkins/clubb_bit_diff_test_workspace/bit_diff_clubb_config'''
       }
     }
   }
   post {
     always {
+      // Here we run the run_test.py script with the correct config, both are found in the sys_admin repo
       script {
+      // This cleans out the test workspace so the next run has a fresh start
+      // However this only occurs when the test is named clubb_bin_diff_regression_gfortran_test_new
+      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
       if ( "${env.JOB_NAME}" == "clubb_bin_diff_regression_gfortran_test_new" )
       	cleanWs(cleanWhenSuccess: true, cleanWhenFailure: true)
       }
@@ -23,6 +29,7 @@ pipeline {
     failure {
       script {
       if ( "${env.JOB_NAME}" ==	"clubb_bin_diff_regression_gfortran_test_new" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
     }

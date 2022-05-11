@@ -8,11 +8,15 @@ pipeline {
     }
     stage('Configure Clubb') {
       steps {
+        // This changes the older input parameters into the default 
+        // for the run to check if the code is still backwards compatible
         sh '''bash -c "cp input/tunable_parameters_compatible_r8029/* input/tunable_parameters"'''
       }
     }
     stage('Run Clubb') {
       steps {
+        // This edits the number of cases it runs then runs the model
+        // In this case it only runs bomex and dycoms2_rf01
         sh '''bash -c "echo bomex > run_scripts/RUN_CASES"
               bash -c "echo dycoms2_rf01 >> run_scripts/RUN_CASES"
               run_scripts/run_scm_all.bash'''
@@ -20,6 +24,7 @@ pipeline {
     }
     stage('Check output against tolerance') {
       steps {
+        // Here we run the tolerance test on the output generated during this run and archived output from before
         sh '''echo "Testing bomex" 
               bash -l -c "postprocessing/tolerance_compare/tolerance_check.py /home/jenkins/tolerance_test_benchmarks/clubb_r8029/bomex_sfc.nc output/bomex_sfc.nc lwp 0.01"
               echo "Testing dycoms2_rf01"
@@ -29,7 +34,11 @@ pipeline {
   }
   post {
     always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
       script {
+      // This block cleans out the test workspace to ensure a clean workspace for later runs
+      // However it only does this when the name of the test is clubb_backwards_compatibility_gfortran_test
+      // This is done to preven branch or copy tests from cleaning thier workspaces so they are available for troubleshooting
       if ( "${env.JOB_NAME}" == "clubb_backwards_compatibility_gfortran_test" )
       	cleanWs(cleanWhenSuccess: true, cleanWhenFailure: true)
       }
@@ -37,6 +46,7 @@ pipeline {
     failure {
       script {
       if ( "${env.JOB_NAME}" ==	"clubb_backwards_compatibility_gfortran_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
     }

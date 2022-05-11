@@ -8,6 +8,7 @@ pipeline {
     }
     stage('Display Tables') {
       steps {
+        // These display the tables the script produces
         sh 'cat utilities/api_analysis/log/apiCommitmentTable.txt'
         sh 'cat utilities/api_analysis/log/usageAnalyzerTable.txt'
       }
@@ -15,15 +16,18 @@ pipeline {
   }
   post {
     always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
       script {
-      if ( "${env.JOB_NAME}" == "clubb_api_commitment_test" )
-      	cleanWs(cleanWhenSuccess: true, cleanWhenFailure: true)
+        // This block removes the cloned repo in the workspace to ensure the next run has a clean environment
+        if ( "${env.JOB_NAME}" == "clubb_api_commitment_test" )
+      	  cleanWs(cleanWhenSuccess: true, cleanWhenFailure: true)
       }
     }
     failure {
       script {
-      if ( "${env.JOB_NAME}" ==	"clubb_api_commitment_test" )
-      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+        if ( "${env.JOB_NAME}" ==	"clubb_api_commitment_test" )
+      	  emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
     }  
   }

@@ -3,8 +3,10 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
+        // This command is directly modifying flags present in the compile configuration, these changes will linger after the test if the file is not reset
         sh '''sed -r 's/-ffpe-trap=(\\w,?)+\\s//g' -i clubb/compile/config/linux_x86_64_gfortran.bash
               clubb/compile/compile.bash'''
+        // This clones the sys_admin repo to the workspace for later, it uses the offcial clone command rather than simply git clone
         checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'sys_admin']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'Generic_Key', url: 'https://github.com/larson-group/sys_admin']]])
       }
     }
@@ -16,7 +18,11 @@ pipeline {
   }
   post {
     always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
       script {
+      // This cleans out the test workspace so the next run has a fresh start
+      // However this only occurs when the test is named clubb_fire_tuning_gfortran_test
+      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
       if ( "${env.JOB_NAME}" == "clubb_fire_tuning_gfortran_test" )
       	cleanWs(cleanWhenSuccess: true, cleanWhenFailure: true)
       }
@@ -24,6 +30,7 @@ pipeline {
     failure {
       script {
       if ( "${env.JOB_NAME}" ==	"clubb_fire_tuning_gfortran_test" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
     }
