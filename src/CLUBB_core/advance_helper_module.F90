@@ -1055,14 +1055,15 @@ module advance_helper_module
   ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
-      smth_coef          
+      smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                          ! that of the data structures input_var1 and input_var2
 
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var2          ! Units vary
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
-      output_var          ! Units vary
+      output_var          ! Same unit as input_var1 and input_var2
 
   !----------------------------------------------------------------------
 
@@ -1102,11 +1103,12 @@ module advance_helper_module
 
     real ( kind = core_rknd ), intent(in) :: &
       input_var2, &       ! Units vary
-      smth_coef          
+      smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                          ! that of the data structures input_var1 and input_var2
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
-      output_var          ! Units vary
+      output_var          ! Same unit as input_var1 and input_var2
 
   !----------------------------------------------------------------------
 
@@ -1146,11 +1148,12 @@ module advance_helper_module
       input_var2          ! Units vary
       
     real ( kind = core_rknd ), intent(in) :: &
-      smth_coef          
+      smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                          ! that of the data structures input_var1 and input_var2
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
-      output_var          ! Units vary
+      output_var          ! Same unit as input_var1 and input_var2
 
   !----------------------------------------------------------------------
 
@@ -1161,7 +1164,7 @@ module advance_helper_module
   end function smooth_min_arrays
   
 !===============================================================================
-  function smooth_min_scalars( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  function smooth_min_scalars( input_var1, input_var2, smth_coef ) &
   result( output_var )
 
   ! Description:
@@ -1179,20 +1182,17 @@ module advance_helper_module
         one_half
 
     implicit none
-    
-    integer, intent(in) :: &
-      nz, &
-      ngrdcol
 
   ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2, &       ! Units vary
-      smth_coef           ! smoothing "intensity"
+      smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                          ! that of the data structures input_var1 and input_var2
 
   ! Output Variables
     real( kind = core_rknd ) :: &
-      output_var          ! Units vary
+      output_var          ! Same unit as input_var1 and input_var2
 
   !----------------------------------------------------------------------
 
@@ -1229,14 +1229,15 @@ module advance_helper_module
   ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
-      smth_coef
+      smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                          ! that of the data structures input_var1 and input_var2
 
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var2          ! Units vary
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
-      output_var          ! Units vary
+      output_var          ! Same unit as input_var1 and input_var2
 
   !----------------------------------------------------------------------
   
@@ -1276,11 +1277,12 @@ module advance_helper_module
 
     real ( kind = core_rknd ), intent(in) :: &
       input_var2, &       ! Units vary
-      smth_coef          
+      smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                          ! that of the data structures input_var1 and input_var2
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
-      output_var          ! Units vary
+      output_var          ! Same unit as input_var1 and input_var2
 
   !----------------------------------------------------------------------
 
@@ -1320,11 +1322,12 @@ module advance_helper_module
       input_var2          ! Units vary
       
     real( kind = core_rknd ), intent(in) :: &
-      smth_coef          
+      smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                          ! that of the data structures input_var1 and input_var2
 
   ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
-      output_var          ! Units vary
+      output_var          ! Same unit as input_var1 and input_var2
 
   !----------------------------------------------------------------------
 
@@ -1335,7 +1338,7 @@ module advance_helper_module
   end function smooth_max_arrays
   
 !===============================================================================
-  function smooth_max_scalars( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  function smooth_max_scalars( input_var1, input_var2, smth_coef ) &
   result( output_var )
 
   ! Description:
@@ -1353,20 +1356,17 @@ module advance_helper_module
         one_half
 
     implicit none
-    
-    integer, intent(in) :: &
-      nz, &
-      ngrdcol
 
   ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2, &       ! Units vary
-      smth_coef           ! "intensity" of the smoothing
+      smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                          ! that of the data structures input_var1 and input_var2
 
   ! Output Variables
     real( kind = core_rknd ) :: &
-      output_var          ! Units vary
+      output_var          ! Same unit as input_var1 and input_var2
 
   !----------------------------------------------------------------------
 
@@ -1407,7 +1407,7 @@ module advance_helper_module
 
     ! Output Variables
     real( kind = core_rknd ) :: &
-      smth_output    ! Units vary
+      smth_output    ! Same units as input
       
   !----------------------------------------------------------------------
     if (input < -smth_range ) then 
