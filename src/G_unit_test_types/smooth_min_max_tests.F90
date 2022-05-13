@@ -67,6 +67,7 @@ contains
     !   Case 4: We check whether for input_var1 << input_var2, the smooth_min returns results
     !           that lie sufficiently close to input_var1. Similarly for input_var1 >> input_var2
     !           and the smooth_max.
+    !   Case 5: Test the scalar variants of smooth_min and smooth_max.
     !
     ! References:
     !-----------------------------------------------------------------------
@@ -97,7 +98,7 @@ contains
       result_cmp_pt2, result_pt2, input_pt2
     
     real( kind = core_rknd ) :: &
-      min_max_smth_mag
+      min_max_smth_mag, result_cmp_scalar, result_scalar
       
     integer :: &
       i
@@ -213,6 +214,48 @@ contains
     print *, "Expected outcome: ", -result_cmp
     print *, "True outcome:     ", result, NEW_LINE('A'), NEW_LINE('A')
     total_mismatches = total_mismatches + COUNT(abs(result - (-result_cmp)) >= eps)
+    
+    
+    ! Testing smooth_min and smooth_max for large values
+    result_cmp(1, 1) = -1.0000000000002501e6_core_rknd
+    result_cmp(1, 2) = -1.0000000000000026e7_core_rknd
+    result_cmp(1, 3) = -1.0000000000000000e8_core_rknd
+    result_cmp(1, 4) = -1.0000000000000000e9_core_rknd
+    
+    result = smooth_min(4, 1, -1.0e6_core_rknd * input, input, min_max_smth_mag)
+    print *, "Input_var1: ", -1.0e6_core_rknd * input
+    print *, "Input_var2: ", input
+    print *, "Smooth min:"
+    print *, "Expected outcome: ", result_cmp
+    print *, "True outcome:     ", result, NEW_LINE('A')
+    total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) >= eps)
+    
+    result_cmp(1, 1) = 1.0000002500019036e0_core_rknd
+    result_cmp(1, 2) = 1.0000000025145710e1_core_rknd
+    result_cmp(1, 3) = 1.0000000000000000e2_core_rknd
+    result_cmp(1, 4) = 1.0000000000000000e3_core_rknd
+    result = smooth_max(4, 1, -1.0e6_core_rknd * input, input, min_max_smth_mag)
+    print *, "Smooth max:"
+    print *, "Expected outcome: ", result_cmp
+    print *, "True outcome:     ", result, NEW_LINE('A')
+    total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) >= eps)
+    
+    ! Testing scalar versions of smooth_min and smooth_max
+    result_cmp_scalar = -1.0000000000002501e6_core_rknd
+    result_scalar = smooth_min(-1.0e6_core_rknd, one, min_max_smth_mag)
+    print *, "Input_var1: ", -1.0e6_core_rknd
+    print *, "Input_var2: ", one
+    print *, "Smooth min:"
+    print *, "Expected outcome: ", result_cmp_scalar
+    print *, "True outcome:     ", result_scalar, NEW_LINE('A')
+    if (abs(result_scalar - result_cmp_scalar) >= eps) total_mismatches = total_mismatches + 1
+    
+    result_cmp_scalar = 1.0000002500019036e0_core_rknd
+    result_scalar = smooth_max(-1.0e6_core_rknd, one, min_max_smth_mag)
+    print *, "Smooth max:"
+    print *, "Expected outcome: ", result_cmp_scalar
+    print *, "True outcome:     ", result_scalar, NEW_LINE('A')
+    if (abs(result_scalar - result_cmp_scalar) >= eps) total_mismatches = total_mismatches + 1
     
   end subroutine smooth_min_max_setup_tests
 end module smooth_min_max_tests
