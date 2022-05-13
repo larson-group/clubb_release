@@ -1294,13 +1294,13 @@ module mixing_length
       altitude_threshold
 
     real( kind = core_rknd ), parameter :: &
-      min_max_smth_mag = zero, &  ! "base" smoothing magnitude before scaling 
+      min_max_smth_mag = 1.0e-9_core_rknd, &  ! "base" smoothing magnitude before scaling 
                                               ! for the respective data structure. See
                                               ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
                                               ! for a plot on how output behaves with varying min_max_smth_mag
       heaviside_smth_range = 1.0e-0_core_rknd ! range where Heaviside function is smoothed
    
-    logical, parameter :: l_smooth_min_max = .true.  ! whether to apply smooth min and max functions
+    logical, parameter :: l_smooth_min_max = .false.  ! whether to apply smooth min and max functions
 
     integer :: i, k
 

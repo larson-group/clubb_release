@@ -58,10 +58,15 @@ contains
     
     ! Description:
     !   Tests the interfaces smooth_min and smooth_max. Test cases are:
-    !   Case 1: smth_coef=zero. The smooth min and max functions ought to
+    !   Case 1: min_max_smth_mag=zero. The smooth min and max functions ought to
     !           collapse to their standard min and max variants.
-    !   Case 2: smth_coef=one (arbitrary value), output values have been
+    !   Case 2: min_max_smth_mag=one (arbitrary value), output values have been
     !           calculated by hand.
+    !   Case 3: It is checked whether the smooth_min is consistently smaller than the hard min, 
+    !           and vice versa for the smooth_max and hard max.
+    !   Case 4: We check whether for input_var1 << input_var2, the smooth_min returns results
+    !           that lie sufficiently close to input_var1. Similarly for input_var1 >> input_var2
+    !           and the smooth_max.
     !
     ! References:
     !-----------------------------------------------------------------------
@@ -92,7 +97,7 @@ contains
       result_cmp_pt2, result_pt2, input_pt2
     
     real( kind = core_rknd ) :: &
-      smth_coef
+      min_max_smth_mag
       
     integer :: &
       i
@@ -100,7 +105,7 @@ contains
     total_mismatches = 0
     
     ! Case 1: Simple min / max function
-    smth_coef = zero
+    min_max_smth_mag = zero
     
     input(1, 1) = -one
     input(1, 2) = -eps
@@ -112,7 +117,7 @@ contains
     result_cmp(1, 2) = -eps
     result_cmp(1, 3) = zero
     result_cmp(1, 4) = zero
-    result = smooth_min(4, 1, input, zero, smth_coef) ! Order of nz and ngrdcol is opposite to order of indexing! This is very unintuitive!
+    result = smooth_min(4, 1, input, zero, min_max_smth_mag) ! Order of nz and ngrdcol is opposite to order of indexing! This is very unintuitive!
     print *, "Input: ", input
     print *, "(Simple) min:"
     print *, "Expected outcome: ", result_cmp
@@ -124,14 +129,14 @@ contains
     result_cmp(1, 2) = zero
     result_cmp(1, 3) = eps
     result_cmp(1, 4) = one
-    result = smooth_max(4, 1, input, zero, smth_coef)
+    result = smooth_max(4, 1, input, zero, min_max_smth_mag)
     print *, "(Simple) max:"
     print *, "Expected outcome: ", result_cmp
     print *, "True outcome:     ", result, NEW_LINE('A'), NEW_LINE('A')
     total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) >= eps)
                           
     ! Case 2: Testing arbitrary smoothing range for precomputed values
-    smth_coef = sqrt(two)
+    min_max_smth_mag = sqrt(two)
     
     input(1, 1) = -two - eps
     input(1, 2) = -one
@@ -147,7 +152,7 @@ contains
     result_cmp(1, 2) = -1.36602540378443880_core_rknd
     result_cmp(1, 3) = -0.36602540378443871_core_rknd
     result_cmp(1, 4) = -0.22474487138241406_core_rknd
-    result = smooth_min(4, 1, input, zero, smth_coef)
+    result = smooth_min(4, 1, input, zero, min_max_smth_mag)
     print *, "Input: ", input
     print *, "Smooth min:"
     print *, "Expected outcome: ", result_cmp
@@ -159,32 +164,55 @@ contains
     result_cmp(1, 2) = 0.36602540378443871_core_rknd
     result_cmp(1, 3) = 1.36602540378443880_core_rknd
     result_cmp(1, 4) = 2.22474487148241410_core_rknd
-    result = smooth_max(4, 1, input, zero, smth_coef)
+    result = smooth_max(4, 1, input, zero, min_max_smth_mag)
     print *, "Smooth max:"
     print *, "Expected outcome: ", result_cmp
     print *, "True outcome:     ", result, NEW_LINE('A'), NEW_LINE('A')
     total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) >= eps)
     
-    ! ================= The following code is broken. 
-    !     smooth_min and max return some NaNs and the reason is currently unknown!
-    
-    ! Case 3: Make sure that on a large number of arbitrarily chosen points with small smth_coef,
+    ! Case 3: Make sure that on a large number of arbitrarily chosen points with small min_max_smth_mag,
     !         smooth_min < min and smooth_max > max
-    print *, "Testing smooth min and max with smth_coef=1e-7, ", &
+    print *, "Testing smooth min and max with min_max_smth_mag=1e-7, ", &
              "input_var1 = equidistant grid on [-1, 1), input_var2 = 0", &
              NEW_LINE('A')
-    smth_coef = 1.e-7_core_rknd
+    min_max_smth_mag = 1.e-7_core_rknd
     do i=1,1000
       input_pt2(1, i) = -one + i / 500.0_core_rknd  ! input goes from -1 to 1 in even increments
     end do
-    result_pt2     = smooth_min(1000, 1, input_pt2, zero, smth_coef)
+    result_pt2     = smooth_min(1000, 1, input_pt2, zero, min_max_smth_mag)
     result_cmp_pt2 = smooth_min(1000, 1, input_pt2, zero, zero)
     total_mismatches = total_mismatches + COUNT(result_pt2 > result_cmp_pt2)
     
-    result_pt2     = smooth_max(1000, 1, input_pt2, zero, smth_coef)
+    result_pt2     = smooth_max(1000, 1, input_pt2, zero, min_max_smth_mag)
     result_cmp_pt2 = smooth_max(1000, 1, input_pt2, zero, zero)
     total_mismatches = total_mismatches + COUNT(result_pt2 < result_cmp_pt2)
     
+    ! Case 4: input_var1 << input_var2 or input_var1 >> input_var2
+    min_max_smth_mag = one
+    
+    input(1, 1) = one
+    input(1, 2) = 1.0e1_core_rknd * one
+    input(1, 3) = 1.0e2_core_rknd * one
+    input(1, 4) = 1.0e3_core_rknd * one
+    
+    ! part a) min function 
+    result_cmp(1, 1) = -1.1180339887498949_core_rknd
+    result_cmp(1, 2) = -1.0226805085936306_core_rknd
+    result_cmp(1, 3) = -1.0024751868658441_core_rknd
+    result_cmp(1, 4) = -1.0002497501874359_core_rknd
+    result = smooth_min(4, 1, input, -one, min_max_smth_mag)
+    print *, "Input: ", input
+    print *, "Smooth min:"
+    print *, "Expected outcome: ", result_cmp
+    print *, "True outcome:     ", result, NEW_LINE('A')
+    total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) >= eps)
+
+    ! part b) max function
+    result = smooth_max(4, 1, -input, one, min_max_smth_mag)
+    print *, "Smooth max:"
+    print *, "Expected outcome: ", -result_cmp
+    print *, "True outcome:     ", result, NEW_LINE('A'), NEW_LINE('A')
+    total_mismatches = total_mismatches + COUNT(abs(result - (-result_cmp)) >= eps)
     
   end subroutine smooth_min_max_setup_tests
 end module smooth_min_max_tests
