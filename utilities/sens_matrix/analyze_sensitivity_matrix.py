@@ -195,7 +195,6 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     for idx, elem in enumerate(defaultParamValsRow):
         if (np.abs(elem[idx]) <= np.finfo(elem[idx].dtype).eps): # if default value is zero
             magParamValsRow[idx] = np.abs(sensParamValsRow[idx]) # set to sensitivity value
-
     if np.any( np.isclose(magParamValsRow, np.zeros((1,numParams))) ):
         print("\nmagParamValsRow =")
         print(magParamValsRow)
@@ -232,12 +231,18 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     # by metricsWeights
     normlzdWeightedSensMatrix = np.diag(np.transpose(metricsWeights)[0]) @ normlzdSensMatrix
 
+    # sValsRatio = a threshold ratio of largest singular value
+    #              to the smallest retained singular value.
+    # If sValsRatio is large enough, then all singular vectors will be kept.
+    # If sValsRatio is 1, then only the first singular vector will be kept.
+    sValsRatio = 3.
+
     # Calculate inverse of the singular value decomposition.
     # This gives the recommended changes to parameter values.
     svdInvrsNormlzdWeighted, svdInvrsNormlzdWeightedPC, \
     sValsTruncInvNormlzdWeighted, sValsTruncInvNormlzdWeightedPC, \
     vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted = \
-    calcSvdInvrs(normlzdWeightedSensMatrix)
+    calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio)
 
     #print("\nNormalized, weighted SVD inverse =")
     #print(svdInvrsNormlzdWeighted)
@@ -406,7 +411,7 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     return  (defaultBiasesCol, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix)
 
 
-def calcSvdInvrs(normlzdWeightedSensMatrix):
+def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio):
     """
     Input: sensitivity matrix
     Output: singular value decomposition of sensitivity matrix
@@ -465,7 +470,7 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
     sValsInvPC = np.zeros_like(sValsTruncInv)
     for idx, val in np.ndenumerate(sValsTruncInv):
         # If a singular value is much smaller than largest singular value, then zero it out.
-        if val/sValsTruncInv[0] > 3.:
+        if val/sValsTruncInv[0] > sValsRatio:
             sValsInvPC[idx] = 0.
         else:
             sValsInvPC[idx] = sValsTruncInv[idx]
@@ -497,42 +502,6 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
     import pdb
 
 
-    zero_obs = np.array( [ \
-                         [1.], #SWCF_GLB
-                         [1.], #SWCF_DYCOMS
-                         [1.], #SWCF_HAWAII
-                         [1.], #SWCF_VOCAL
-                         [1.], #SWCF_LBA
-                         [1.], #SWCF_WP
-                         [1.], #SWCF_EP
-                         [1.], #SWCF_NP
-                         [1.], #SWCF_SP
-                         [1.], #SWCF_PA
-                         [1.], #SWCF_CAF
-                         [1.], #LWCF_GLB
-        #                        ['LWCF_DYCOMS', 0.01], \
-        #                        ['LWCF_HAWAII', 0.01], \
-        #                        ['LWCF_VOCAL', 0.01], \
-                         [1.], #LWCF_LBA
-                         [1.], #LWCF_WP
-                         [1.], #LWCF_EP
-                         [1.], #LWCF_NP
-                         [1.], #LWCF_SP
-                         [1.], #LWCF_PA
-                         [1.], #LWCF_CAF
-                         [1.], #PRECT_GLB
-        #                        ['PRECT_DYCOMS', 0.01], \
-        #                        ['PRECT_HAWAII', 0.01], \
-        #                        ['PRECT_VOCAL', 0.01], \
-                         [1.], #PRECT_LBA
-                         [1.], #PRECT_WP
-                         [1.], #PRECT_EP
-                         [1.], #PRECT_NP
-                         [1.], #PRECT_SP
-                         [1.], #PRECT_PA
-                         [1.]  #PRECT_CAF
-                         ] )
-
     # Calculate solution using transformed SVD matrix.  However, dparamsSoln is not normalized.
     # dnormlzdParamsSoln = dparamsSoln / ( normalizing param value from default simulation
     #                                       (or sens sim if default param value is zero.) )
@@ -540,7 +509,6 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
                       ( metricsWeights * (-defaultBiasesCol) / np.abs(obsMetricValsCol) )
     # Unnormalized parameter value perturbations from the default values, delta_p
     dparamsSoln = dnormlzdParamsSoln * np.transpose(magParamValsRow)
-#    dparamsSoln = svdInvrsNormlzdWeighted @ ( metricsWeights * zero_obs ) * np.transpose(magParamValsRow)
     # defaultBiasesApprox = (forward model soln - default soln)
     defaultBiasesApprox = ( normlzdWeightedSensMatrix @ dnormlzdParamsSoln ) \
                           * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
@@ -867,9 +835,10 @@ def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
     from sklearn.linear_model import Lasso, LassoCV
     import pdb
 
-    regr = ElasticNet(fit_intercept=False, random_state=0, tol=1e-10, l1_ratio=0.5, alpha=0.05)
-    #regr = Lasso(fit_intercept=False, random_state=0, tol=1e-10, alpha=0.01)
-    #regr = ElasticNetCV(fit_intercept=False, eps=1e-5, tol=1e-10)
+    #regr = ElasticNet(fit_intercept=True, random_state=0, tol=1e-10, l1_ratio=0.5, alpha=0.01)
+    regr = Lasso(fit_intercept=True, random_state=0, tol=1e-10, alpha=0.01)
+    #regr = LassoCV(fit_intercept=True, random_state=0, eps=1e-5, tol=1e-10, cv=metricsWeights.size)
+    #print( "alpha_ = ", regr.alpha_ )
     regr.fit(normlzdWeightedSensMatrix, -metricsWeights * defaultBiasesCol / np.abs(obsMetricValsCol) )
     #regr.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) )
 
