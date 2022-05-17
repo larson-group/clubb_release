@@ -4734,6 +4734,8 @@ module clubb_driver
 
     use rico, only: rico_tndcy, rico_sfclyr !---------------- Procedure(s)
 
+    use neutral_case, only: neutral_case_sfclyr   ! Procedure(s)
+
     use twp_ice, only: twp_ice_sfclyr !---------------------- Procedure(s)
 
     use wangara, only: wangara_tndcy, wangara_sfclyr !------- Procedure(s)
@@ -4937,6 +4939,12 @@ module clubb_driver
         call rico_tndcy( gr, rtm, exner, &                    ! Intent(in)
                          thlm_forcing, rtm_forcing, &     ! Intent(out)   
                          sclrm_forcing, edsclrm_forcing ) ! Intent(out)
+
+      case ( "neutral" )
+            thlm_forcing = 0.0_core_rknd
+            rtm_forcing = 0.0_core_rknd
+            sclrm_forcing = 0.0_core_rknd
+            edsclrm_forcing = 0.0_core_rknd
 
       case ( "wangara" ) ! Wangara dry CBL
         call wangara_tndcy( gr, wm_zt, wm_zm,  &                  ! Intent(out) compute_momentum
@@ -5160,6 +5168,14 @@ module clubb_driver
       l_set_sclr_sfc_rtm_thlm = .true.
       call mpace_b_sfclyr( time_current, rho_zm(1), &      ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
+
+    case ( "neutral" )
+      l_compute_momentum_flux = .true.
+      l_set_sclr_sfc_rtm_thlm = .true.
+      call neutral_case_sfclyr( time_current, gr%zt(2), thlm(2), & ! Intent(in)
+                                um(2), vm(2), ubar,              & ! Intent(in)
+                                upwp_sfc, vpwp_sfc, &              ! Intent(out)
+                                wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
 
     case ( "twp_ice" )
       l_compute_momentum_flux = .true.

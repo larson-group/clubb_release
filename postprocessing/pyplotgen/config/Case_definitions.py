@@ -883,6 +883,26 @@ RICO_SILHS = {'name': 'rico_silhs',
               'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
                              VariableGroupKKMP]}
 
+SHEAR = {'name': 'shear',
+        'description': "",
+        'start_time': 181, 'end_time': 360,
+        'height_min_value': 0, 'height_max_value': 1500,
+
+        'blacklisted_vars': [],
+        'sam_benchmark_file': None,
+        'clubb_file': {'zm': clubb_output_root + '/shear_zm.nc',
+                       'zt': clubb_output_root + '/shear_zt.nc',
+                       'sfc': clubb_output_root + '/shear_sfc.nc'},
+        'coamps_benchmark_file': None,
+        'wrf_benchmark_file': None,
+        'clubb_r408_benchmark_file': None,
+        'clubb_hoc_benchmark_file': None,
+        'e3sm_file': None, 
+        'cam_file': None,
+        'sam_file': None,
+        'wrf_file': None,
+        'var_groups': [VariableGroupBase, VariableGroupWs]}
+
 TWP_ICE = {'name': 'twp_ice',
            'description': "Copied from plotgen: Both vertical and horizontal fluxes applied to THLM and RTM for LES. "
                           "LES nudged U, V, RTM and THLM toward observed values. Forcings for LES derived from 10mb "
@@ -1120,6 +1140,7 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
                  MC3E, MPACE_A, MPACE_B, MPACE_B_SILHS,
                  NOV11_ALTOCU,
                  RICO, RICO_SILHS,
+                 SHEAR,
                  TWP_ICE,
                  WANGARA,
                  LASSO_20170627, LASSO_20170717, LASSO_20170728, LASSO_20170923,

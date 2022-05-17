@@ -1,0 +1,6 @@
+! Note that T_sfc is included here, but it is not currently used. It is
+! included here to facilitate a transition to using T_sfc in the future
+! if needed.
+Time[s]        T_sfc[K]
+77880.0       299.28
+99480.0       299.28
