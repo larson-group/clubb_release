@@ -215,7 +215,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 #                    'wrf': ['rtm'],
 #                },
 #                'lines': rtm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#                'priority': True,
+#                'priority': False,
 #            },
             {'var_names':
                 {
@@ -229,7 +229,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                     'wrf': ['wpthlp'],
                 },
                 'lines': wpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names':
                 {
@@ -243,7 +243,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                     'wrf': ['wprtp'],
                 },
                 'lines': wprtp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names':
                 {
@@ -257,7 +257,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                     'wrf': ['wp2'],
                 },
                 'lines': wp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names':
                 {
@@ -271,7 +271,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                     'wrf': ['wp3'],
                 },
                 'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names':
                 {
@@ -285,7 +285,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                     'wrf': ['thlp2'],
                 },
                 'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names':
                 {
@@ -299,7 +299,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                     'wrf': ['rtp2'],
                 },
                 'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names':
                 {
@@ -313,7 +313,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                     'wrf': ['rtpthlp'],
                 },
                 'lines': rtpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names':
                 {
@@ -327,7 +327,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                     'wrf': ['upwp'],
                 },
                 'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names':
                 {
@@ -341,7 +341,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                     'wrf': ['vpwp'],
                 },
                 'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names': {
                 'clubb': ['up2'],
@@ -353,7 +353,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                 'wrf': ['up2']
             },
                 'lines': up2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
             {'var_names': {
                 'clubb': ['vp2'],
@@ -365,7 +365,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                 'wrf': ['vp2']
             },
                 'lines': vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-                'priority': True,
+                'priority': False,
             },
         ]
 
