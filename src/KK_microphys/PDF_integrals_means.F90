@@ -761,6 +761,20 @@ module PDF_integrals_means
                           rho_x1x2_n, alpha_exp, beta_exp )
 
     ! Description:
+    ! Calculates the analytic solution to the integral:
+    !
+    ! INT(0:INF) INT(0:INF) x1^alpha x2^beta P_LL(i)(x1,x2) dx2 dx1;
+    !
+    ! where x1 and x2 are both variables that have a lognormal marginal
+    ! distribution in the ith component of the PDF.
+    !
+    ! The analytic solution to the integral is:
+    !
+    ! INT(0:INF) INT(0:INF) x1^alpha x2^beta P_LL(i)(x1,x2) dx2 dx1
+    ! = exp{ mu_x1_n * alpha + mu_x2_n * beta
+    !        + 1/2 * sigma_x1_n^2 * alpha_exp^2
+    !        + 1/2 * sigma_x2_n^2 * beta_exp^2
+    !        + rho_x1x2_n * sigma_x1_n * alpha * sigma_x2_n * beta }
 
     ! References:
     ! Eq. (26) of Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of
