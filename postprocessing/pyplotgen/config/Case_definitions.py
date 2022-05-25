@@ -883,25 +883,26 @@ RICO_SILHS = {'name': 'rico_silhs',
               'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
                              VariableGroupKKMP]}
 
-SHEAR = {'name': 'shear',
-        'description': "",
-        'start_time': 181, 'end_time': 360,
-        'height_min_value': 0, 'height_max_value': 1500,
-
-        'blacklisted_vars': [],
-        'sam_benchmark_file': None,
-        'clubb_file': {'zm': clubb_output_root + '/shear_zm.nc',
-                       'zt': clubb_output_root + '/shear_zt.nc',
-                       'sfc': clubb_output_root + '/shear_sfc.nc'},
-        'coamps_benchmark_file': None,
-        'wrf_benchmark_file': None,
-        'clubb_r408_benchmark_file': None,
-        'clubb_hoc_benchmark_file': None,
-        'e3sm_file': None, 
-        'cam_file': None,
-        'sam_file': None,
-        'wrf_file': None,
-        'var_groups': [VariableGroupBase, VariableGroupWs]}
+NEUTRAL = {'name': 'neutral',
+          'description': "",
+          'start_time': 181, 'end_time': 360,
+          'height_min_value': 0, 'height_max_value': 1500,
+  
+          'blacklisted_vars': [],
+          'sam_benchmark_file': {'sam_benchmark': SAM_BENCHMARK_OUTPUT_ROOT +
+                                                  "/NEUTRAL/NEUTRAL_96x96x96_32m_10m_LES.nc"},
+          'clubb_file': {'zm': clubb_output_root + '/neutral_zm.nc',
+                         'zt': clubb_output_root + '/neutral_zt.nc',
+                         'sfc': clubb_output_root + '/neutral_sfc.nc'},
+          'coamps_benchmark_file': None,
+          'wrf_benchmark_file': None,
+          'clubb_r408_benchmark_file': None,
+          'clubb_hoc_benchmark_file': None,
+          'e3sm_file': None, 
+          'cam_file': None,
+          'sam_file': None,
+          'wrf_file': None,
+          'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 TWP_ICE = {'name': 'twp_ice',
            'description': "Copied from plotgen: Both vertical and horizontal fluxes applied to THLM and RTM for LES. "
