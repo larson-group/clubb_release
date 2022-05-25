@@ -21,7 +21,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 #  standalone program, but this will not work when using the tuner.
 # These are the options for debugging symbols, bounds checking & IEEE-754 
 # standard floating-point arithmetic (for consistency).
-DEBUG="-g -fbounds-check -mieee-fp"
+DEBUG="-g -fbounds-check -dynamiclib"
 
 # == Warnings ==
 WARNINGS="-Wall -pedantic" # This enabled most compiler warnings
@@ -43,7 +43,7 @@ OPTIMIZE="-O2"
 # There's currently no netCDF for the Macs in W343.
 # Point this to the location of your copy of netCDF if you're using a 
 # different computer and use the lines below that have "netCDF v4" after them.
-NETCDF="/usr/local/NETCDF-Fortran-4.4.5-gfortran" # netCDF v4
+NETCDF="/usr/local/NETCDF-Fortran-4.5.3-gfortran" # netCDF v4
 
 # == LAPACK libraries ==
 LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
@@ -53,8 +53,8 @@ LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-#LDFLAGS="$ARCH $LAPACK -L$NETCDF/lib -Wl,-rpath $NETCDF/lib -lnetcdf -lnetcdff" # netCDF v4
-LDFLAGS="$ARCH $LAPACK" # No netCDF
+LDFLAGS="$ARCH $LAPACK -L$NETCDF/lib -Wl,-rpath $NETCDF/lib -lnetcdff" # netCDF v4
+#LDFLAGS="$ARCH $LAPACK" # No netCDF
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these.
@@ -65,10 +65,10 @@ FFLAGS="$ARCH $DEBUG"
 #   -DNETCDF enables netCDF output
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
-#NETCDF_INCLUDE="$NETCDF/include/" # netCDF v4
-#CPPFLAGS="-I$NETCDF_INCLUDE" # netCDF v4
-#CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8" # netCDF v4
-CPPDEFS="-DCLUBB_REAL_TYPE=8" # MacOS X (no netCDF)
+NETCDF_INCLUDE="$NETCDF/include/" # netCDF v4
+CPPFLAGS="-I$NETCDF_INCLUDE" # netCDF v4
+CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8" # netCDF v4
+#CPPDEFS="-DCLUBB_REAL_TYPE=8" # MacOS X (no netCDF)
 
 # == Static library processing ==
 AR=ar
