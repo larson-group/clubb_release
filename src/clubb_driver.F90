@@ -2321,8 +2321,8 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters_api( gr(1), gr(1)%nz, pdf_dim, dt_main,                & ! Intent(in)
-                        Nc_in_cloud, rcm(1,:), cloud_frac, Kh_zm,                   & ! Intent(in)
+         call setup_pdf_parameters_api( gr(1), gr(1)%nz, pdf_dim, dt_main,          & ! Intent(in)
+                        Nc_in_cloud, cloud_frac, Kh_zm,                             & ! Intent(in)
                         ice_supersat_frac, hydromet, wphydrometp,                   & ! Intent(in)
                         corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
                         pdf_params, l_stats_samp,                                   & ! Intent(in)
@@ -2334,13 +2334,13 @@ module clubb_driver
                         clubb_config_flags%l_calc_w_corr,                           & ! Intent(in)
                         clubb_config_flags%l_const_Nc_in_cloud,                     & ! Intent(in)
                         clubb_config_flags%l_fix_w_chi_eta_correlations,            & ! Intent(in)
-                        stats_zt, stats_zm, stats_sfc,                           & ! intent(inout)
+                        stats_zt, stats_zm, stats_sfc,                              & ! intent(inout)
                         hydrometp2,                                                 & ! Intent(out)
                         mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                           & ! Intent(out)
                         sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),                     & ! Intent(out)
                         corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:),           & ! Intent(out)
                         corr_cholesky_mtx_1(1,:,:,:), corr_cholesky_mtx_2(1,:,:,:), & ! Intent(out)
-                        precip_fracs,                                             & ! Intent(inout)
+                        precip_fracs,                                               & ! Intent(inout)
                         hydromet_pdf_params(1,:) )                                  ! Optional(out)
 
          if ( err_code == clubb_fatal_error ) error stop
@@ -2414,7 +2414,7 @@ module clubb_driver
         call generate_silhs_sample_api( &
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr(1)%nz, 1, & ! In
                l_calc_weights_all_levs_itime,                                & ! In
-               pdf_params, delta_zm, rcm, Lscale,                            & ! In
+               pdf_params, delta_zm, Lscale,                                 & ! In
                lh_seed,                                                      & ! In
                rho_ds_zt,                                                    & ! In
                mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,                 & ! In

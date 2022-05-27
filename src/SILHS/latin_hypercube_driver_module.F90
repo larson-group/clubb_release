@@ -28,7 +28,7 @@ module latin_hypercube_driver_module
   subroutine generate_silhs_sample &
              ( iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! intent(in)
                l_calc_weights_all_levs_itime, &                            ! intent(in)
-               pdf_params, delta_zm, rcm, Lscale, &                        ! intent(in)
+               pdf_params, delta_zm, Lscale, &                             ! intent(in)
                lh_seed, &                                                  ! intent(in)
 !              rho_ds_zt, &
                mu1, mu2, sigma1, sigma2, &                                 ! intent(in)
@@ -63,6 +63,9 @@ module latin_hypercube_driver_module
 
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
+
+    use pdf_utilities, only: &
+      compute_mean_binormal  ! Procedure
 
     use hydromet_pdf_parameter_module, only: &
       precipitation_fractions ! Type
@@ -128,8 +131,7 @@ module latin_hypercube_driver_module
       pdf_params ! PDF parameters       [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      delta_zm, &  ! Difference in momentum altitudes    [m]
-      rcm          ! Liquid water mixing ratio          [kg/kg]
+      delta_zm   ! Difference in momentum altitudes    [m]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Lscale       ! Turbulent mixing length            [m]
@@ -207,6 +209,9 @@ module latin_hypercube_driver_module
       
     real( kind = core_rknd ), dimension(ngrdcol,num_samples,nz) :: &
       cloud_frac ! Cloud fraction for grid level and sample
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      rcm_pdf    ! Liquid water mixing ratio          [kg/kg]
       
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Lscale_vert_avg, &  ! 3pt vertical average of Lscale                    [m]
@@ -218,6 +223,12 @@ module latin_hypercube_driver_module
     ! ---------------- Begin Code ----------------
 
     l_error = .false.
+
+    ! Compute rcm_pdf for use within SILHS
+    do i = 1, ngrdcol
+      rcm_pdf(i,:) = compute_mean_binormal( pdf_params%rc_1(i,:), pdf_params%rc_2(i,:), &
+                                       pdf_params%mixt_frac(i,:) )
+    end do
 
     ! Sanity checks for l_lh_importance_sampling
     if ( silhs_config_flags%l_lh_importance_sampling .and. sequence_length /= 1 ) then
@@ -236,7 +247,7 @@ module latin_hypercube_driver_module
 #endif
 
     ! Compute k_lh_start, the starting vertical grid level for SILHS sampling
-    k_lh_start(:) = compute_k_lh_start( nz, ngrdcol, rcm, pdf_params, &
+    k_lh_start(:) = compute_k_lh_start( nz, ngrdcol, rcm_pdf, pdf_params, &
                                         silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
                                         silhs_config_flags%l_random_k_lh_start )
                                      
@@ -273,7 +284,7 @@ module latin_hypercube_driver_module
     X_vert_corr(:,:) = exp( -vert_decorr_coef * ( delta_zm(:,:) / Lscale_vert_avg(:,:) ) )
 
     if ( silhs_config_flags%l_max_overlap_in_cloud ) then
-      where ( rcm > rc_tol )
+      where ( rcm_pdf > rc_tol )
         X_vert_corr = one
       end where
     end if
@@ -890,7 +901,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function compute_k_lh_start( nz, ngrdcol, rcm, pdf_params, &
+  function compute_k_lh_start( nz, ngrdcol, rcm_pdf, pdf_params, &
                                l_rcm_in_cloud_k_lh_start, &
                                l_random_k_lh_start ) result( k_lh_start )
 
@@ -925,7 +936,7 @@ module latin_hypercube_driver_module
       ngrdcol ! Number of grid columns
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      rcm         ! Liquid water mixing ratio               [kg/kg]
+      rcm_pdf      ! Liquid water mixing ratio               [kg/kg]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params  ! PDF parameters       [units vary]
@@ -944,7 +955,7 @@ module latin_hypercube_driver_module
       k_lh_start_rcm
 
     real( kind = core_rknd ), dimension(nz) :: &
-      rcm_pdf, cloud_frac_pdf
+      cloud_frac_pdf
       
     integer :: i  ! Loop iterator
 
@@ -953,16 +964,14 @@ module latin_hypercube_driver_module
     do i = 1, ngrdcol
 
       if ( l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-        rcm_pdf = compute_mean_binormal( pdf_params%rc_1(i,:), pdf_params%rc_2(i,:), &
-                                         pdf_params%mixt_frac(i,:) )
         cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1(i,:), &
                                                 pdf_params%cloud_frac_2(i,:), &
                                                 pdf_params%mixt_frac(i,:) )
-        k_lh_start_rcm_in_cloud = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
+        k_lh_start_rcm_in_cloud = maxloc( rcm_pdf(i,:) / max( cloud_frac_pdf, cloud_frac_min ), 1 )
       end if
 
       if ( .not. l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-        k_lh_start_rcm    = maxloc( rcm(i,:), 1 )
+        k_lh_start_rcm    = maxloc( rcm_pdf(i,:), 1 )
       end if
 
       if ( l_random_k_lh_start ) then

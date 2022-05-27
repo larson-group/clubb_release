@@ -136,7 +136,7 @@ contains
   subroutine generate_silhs_sample_api_single_col( &
     iter, pdf_dim, num_samples, sequence_length, nz, & ! In
     l_calc_weights_all_levs_itime, &
-    pdf_params, delta_zm, rcm, Lscale, & ! In
+    pdf_params, delta_zm, Lscale, & ! In
     lh_seed, & ! In
     rho_ds_zt, & ! In
     mu1, mu2, sigma1, sigma2, & ! In
@@ -191,8 +191,7 @@ contains
       pdf_params ! PDF parameters       [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      delta_zm, &  ! Difference in moment. altitudes    [m]
-      rcm          ! Liquid water mixing ratio          [kg/kg]
+      delta_zm     ! Difference in moment. altitudes    [m]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
@@ -252,8 +251,7 @@ contains
     ! -------------- Local Variables --------------
       
     real( kind = core_rknd ), dimension(1,nz) :: &
-      delta_zm_col, &  ! Difference in moment. altitudes, with column dimension 1    [m]
-      rcm_col          ! Liquid water mixing ratio, with column dimension 1          [kg/kg]
+      delta_zm_col    ! Difference in moment. altitudes, with column dimension 1    [m]
       
     real( kind = core_rknd ), dimension(1,nz) :: &
       rho_ds_zt_col    ! Dry, static density on thermo. levels, with column dimension 1    [kg/m^3]
@@ -285,7 +283,6 @@ contains
     ! -------------- Begin Code --------------
 
     delta_zm_col(1,:)                 = delta_zm
-    rcm_col(1,:)                      = rcm
     rho_ds_zt_col(1,:)                = rho_ds_zt
     Lscale_col(1,:)                   = Lscale
     corr_cholesky_mtx_1_col(1,:,:,:)  = corr_cholesky_mtx_1
@@ -298,7 +295,7 @@ contains
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nz, 1, & ! In
       l_calc_weights_all_levs_itime, & ! In
-      pdf_params, delta_zm_col, rcm_col, Lscale_col, & ! In
+      pdf_params, delta_zm_col, Lscale_col, & ! In
       lh_seed, & ! In
 !     rho_ds_zt_col, & ! Unused
       mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
@@ -322,7 +319,7 @@ contains
   subroutine generate_silhs_sample_api_multi_col( &
     iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! In
     l_calc_weights_all_levs_itime, &
-    pdf_params, delta_zm, rcm, Lscale, & ! In
+    pdf_params, delta_zm, Lscale, & ! In
     lh_seed, & ! In
     rho_ds_zt, & ! Unused
     mu1, mu2, sigma1, sigma2, & ! In
@@ -378,8 +375,7 @@ contains
       pdf_params ! PDF parameters       [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      delta_zm, &  ! Difference in moment. altitudes    [m]
-      rcm          ! Liquid water mixing ratio          [kg/kg]
+      delta_zm     ! Difference in moment. altitudes    [m]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
@@ -438,7 +434,7 @@ contains
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! In
       l_calc_weights_all_levs_itime, & ! In
-      pdf_params, delta_zm, rcm, Lscale, & ! In
+      pdf_params, delta_zm, Lscale, & ! In
       lh_seed, & ! In
 !     rho_ds_zt, &
       mu1, mu2, sigma1, sigma2, & ! In
