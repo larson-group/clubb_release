@@ -184,7 +184,7 @@ module stats_type_utilities
   end subroutine stat_update_var_pt
 
   !=============================================================================
-  subroutine stat_begin_update( gr, var_index, value, &
+  subroutine stat_begin_update(nz, var_index, value, &
                                 grid_kind )
 
     ! Description:
@@ -218,18 +218,16 @@ module stats_type_utilities
     ! component is sent into stat_end_update_pt.
     !---------------------------------------------------------------------
 
-    use grid_class, only: grid
-
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
     ! Input Variables(s)
+    integer, intent(in) :: &
+nz
 
     integer, intent(in) ::  &
       var_index      ! The index at which the variable is stored           []
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       value          ! Value of field being added to the statistic         [Units Vary]
 
     ! Input/Output Variable(s)
@@ -238,7 +236,7 @@ module stats_type_utilities
 
     integer :: i
 
-    do i = 1, gr%nz
+    do i = 1,nz
 
       call stat_begin_update_pt &
             ( var_index, i, value(i), & ! intent(in)
@@ -319,7 +317,7 @@ module stats_type_utilities
   end subroutine stat_begin_update_pt
 
   !=============================================================================
-  subroutine stat_end_update( gr, var_index, value, &
+  subroutine stat_end_update(nz, var_index, value, &
                               grid_kind )
 
     ! Description:
@@ -353,18 +351,16 @@ module stats_type_utilities
     ! component is sent into stat_end_update_pt.
     !---------------------------------------------------------------------
 
-    use grid_class, only: grid
-
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
     ! Input Variables(s)
+    integer, intent(in) :: &
+nz
 
     integer, intent(in) ::  &
       var_index ! The index at which the variable is stored           []
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       value ! Value of field being added to the statistic             [Units Vary]
 
     ! Input/Output Variable(s)
@@ -375,7 +371,7 @@ module stats_type_utilities
 
     ! ---- Begin Code ----
 
-    do k = 1,gr%nz
+    do k = 1,nz
       call stat_end_update_pt &
                ( var_index, k, value(k), & ! intent(in)
                  grid_kind ) ! intent(inout)
@@ -448,7 +444,7 @@ module stats_type_utilities
   end subroutine stat_end_update_pt
 
   !=============================================================================
-  subroutine stat_modify( gr, var_index, value, &
+  subroutine stat_modify(nz, var_index, value, &
                           grid_kind )
 
     ! Description:
@@ -461,18 +457,16 @@ module stats_type_utilities
     ! stat_begin_update and stat_end_update.
     !---------------------------------------------------------------------
 
-    use grid_class, only: grid
-
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
     ! Input Variables(s)
+    integer, intent(in) :: &
+nz
 
     integer, intent(in) ::  &
       var_index ! The index at which the variable is stored           []
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
      value     ! Value of field being added to the statistic         [Units Vary]
 
     ! Input/Output Variable(s)
@@ -483,7 +477,7 @@ module stats_type_utilities
 
     ! ---- Begin Code ----
 
-    do k = 1, gr%nz
+    do k = 1,nz
 
       call stat_modify_pt( var_index, k, value(k), & ! intent(in)
                            grid_kind ) ! intent(inout)

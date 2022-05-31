@@ -21,7 +21,7 @@ module LY93_pdf
   contains
 
   !=============================================================================
-  subroutine LY93_driver( gr, wm, rtm, thlm, wp2, rtp2,         & ! In
+  subroutine LY93_driver( nz, wm, rtm, thlm, wp2, rtp2,     & ! In
                           thlp2, Skw, Skrt, Skthl,          & ! In
                           mu_w_1, mu_w_2,                   & ! Out
                           mu_rt_1, mu_rt_2,                 & ! Out
@@ -40,18 +40,16 @@ module LY93_pdf
     ! Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real( kind = core_rknd), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd), dimension(nz), intent(in) :: &
       wm,    & ! Mean of w (overall)                      [m/s]
       wp2,   & ! Variance of w (overall)                  [m^2/s^2]
       Skw,   & ! Skewness of w (overall)                  [-]
@@ -63,7 +61,7 @@ module LY93_pdf
       Skthl    ! Skewness of thl (overall)                [-]
 
     ! Output Variables
-    real( kind = core_rknd), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd), dimension(nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)          [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)          [m/s]
       mu_rt_1,         & ! Mean of rt (1st PDF component)         [kg/kg]
@@ -79,7 +77,7 @@ module LY93_pdf
       mixt_frac          ! Mixture fraction                       [-]
 
     ! Local Variables
-    real( kind = core_rknd), dimension(gr%nz) :: &
+    real( kind = core_rknd), dimension(nz) :: &
       Sk_max    ! Maximum of magnitudes of skewness        [-]
 
 
@@ -87,20 +85,20 @@ module LY93_pdf
     Sk_max = max( abs( Skw ), abs( Skrt ), abs( Skthl ) )
 
     ! Calculate mixture fraction.
-    mixt_frac = calc_mixt_frac_LY93( gr, Sk_max )
+    mixt_frac = calc_mixt_frac_LY93( nz, Sk_max )
 
     ! Calculate the PDF parameters for w.
-    call calc_params_LY93( gr, wm, wp2, Skw, mixt_frac,     & ! In
+    call calc_params_LY93( nz, wm, wp2, Skw, mixt_frac,     & ! In
                            mu_w_1, mu_w_2,              & ! Out
                            sigma_w_1_sqd, sigma_w_2_sqd ) ! Out
 
     ! Calculate the PDF parameters for rt.
-    call calc_params_LY93( gr, rtm, rtp2, Skrt, mixt_frac,    & ! In
+    call calc_params_LY93( nz, rtm, rtp2, Skrt, mixt_frac,    & ! In
                            mu_rt_1, mu_rt_2,              & ! Out
                            sigma_rt_1_sqd, sigma_rt_2_sqd ) ! Out
 
     ! Calculate the PDF parameters for thl.
-    call calc_params_LY93( gr, thlm, thlp2, Skthl, mixt_frac,   & ! In
+    call calc_params_LY93( nz, thlm, thlp2, Skthl, mixt_frac,   & ! In
                            mu_thl_1, mu_thl_2,              & ! Out
                            sigma_thl_1_sqd, sigma_thl_2_sqd ) ! Out
 
@@ -110,7 +108,7 @@ module LY93_pdf
   end subroutine LY93_driver
 
   !=============================================================================
-  function calc_mixt_frac_LY93( gr, Sk_max ) &
+  function calc_mixt_frac_LY93( nz, Sk_max ) &
   result( mixt_frac )
 
     ! Description:
@@ -120,9 +118,6 @@ module LY93_pdf
     ! Eq. (21) of Lewellen, W. S. and Yoh, S., 1993.  Binormal Model of Ensemble
     ! Partial Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
     !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        grid ! Type
 
     use constants_clubb, only: &
         one,           & ! Constant(s)
@@ -135,14 +130,15 @@ module LY93_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variable
-    real( kind = core_rknd), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd), dimension(nz), intent(in) :: &
       Sk_max    ! Maximum of magnitudes of skewness        [-]
 
     ! Return Variable
-    real( kind = core_rknd), dimension(gr%nz) :: &
+    real( kind = core_rknd), dimension(nz) :: &
       mixt_frac    ! Mixture fraction                      [-]
 
     ! Local Variables
@@ -158,7 +154,7 @@ module LY93_pdf
     integer :: k    ! Vertical level index
 
 
-    do k = 1, gr%nz, 1
+    do k = 1, nz, 1
 
        if ( Sk_max(k) > 0.84_core_rknd ) then
 
@@ -192,7 +188,7 @@ module LY93_pdf
 
        endif
 
-    enddo ! k = 1, gr%nz, 1
+    enddo ! k = 1, nz, 1
 
 
     return
@@ -200,7 +196,7 @@ module LY93_pdf
   end function calc_mixt_frac_LY93
 
   !=============================================================================
-  subroutine calc_params_LY93( gr, xm, xp2, Skx, mixt_frac,     & ! In
+  subroutine calc_params_LY93( nz, xm, xp2, Skx, mixt_frac,     & ! In
                                mu_x_1, mu_x_2,              & ! Out
                                sigma_x_1_sqd, sigma_x_2_sqd ) ! Out
 
@@ -214,9 +210,6 @@ module LY93_pdf
     ! Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         three,     & ! Constant(s)
         one,       &
@@ -228,24 +221,25 @@ module LY93_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real( kind = core_rknd), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd), dimension(nz), intent(in) :: &
       xm,        & ! Mean of x (overall)        [units vary]
       xp2,       & ! Variance of x (overall)    [(units vary)^2]
       Skx,       & ! Skewness of x (overall)    [-]
       mixt_frac    ! Mixture fraction           [-]
 
     ! Output Variables
-    real( kind = core_rknd), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd), dimension(nz), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
       sigma_x_1_sqd, & ! Variance of x (1st PDF component)    [(units vary)^2]
       sigma_x_2_sqd    ! Variance of x (2nd PDF component)    [(units vary)^2]
 
     ! Local Variables
-    real( kind = core_rknd), dimension(gr%nz) :: &
+    real( kind = core_rknd), dimension(nz) :: &
        sgn_Skx, & ! Sign of Skx                                   [-]
        B_x        ! Spread of the PDF component means function    [units vary]
 

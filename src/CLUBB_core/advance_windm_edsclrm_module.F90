@@ -462,14 +462,16 @@ module advance_windm_edsclrm_module
       if ( l_stats_samp ) then
         do i = 1, ngrdcol
           ! Implicit contributions to um and vm
-          call windm_edsclrm_implicit_stats( gr(i), windm_edsclrm_um, um(i,:),    & ! intent(in)
+          call windm_edsclrm_implicit_stats( nz, windm_edsclrm_um, um(i,:),       & ! intent(in)
+                                             gr(i)%invrs_dzt,                     & ! intent(in)
                                              lhs_diff(:,i,:), lhs_ma_zt(:,i,:),   & ! intent(in)
                                              invrs_rho_ds_zt(i,:), u_star_sqd(i), & ! intent(in)
                                              rho_ds_zm(i,:), wind_speed(i,:),     & ! intent(in)
                                              l_imp_sfc_momentum_flux,             & ! intent(in)
                                              stats_zt(i) )                          ! intent(inout)
 
-          call windm_edsclrm_implicit_stats( gr(i), windm_edsclrm_vm, vm(i,:),    & ! intent(in)
+          call windm_edsclrm_implicit_stats( nz, windm_edsclrm_vm, vm(i,:),       & ! intent(in)
+                                             gr(i)%invrs_dzt,                     & ! intent(in)
                                              lhs_diff(:,i,:), lhs_ma_zt(:,i,:),   & ! intent(in)
                                              invrs_rho_ds_zt(i,:), u_star_sqd(i), & ! intent(in)
                                              rho_ds_zm(i,:), wind_speed(i,:),     & ! intent(in)
@@ -507,28 +509,28 @@ module advance_windm_edsclrm_module
           
         if ( l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_begin_update( gr(i), ium_sdmp, um(i,:) / dt, & ! intent(in)
+            call stat_begin_update( nz, ium_sdmp, um(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )           ! intent(inout)
-            call stat_begin_update( gr(i), ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+            call stat_begin_update( nz, ivm_sdmp, vm(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )           ! intent(inout)
           end do
         end if
 
         do i = 1, ngrdcol
-          um(i,1:nz) = sponge_damp_xm( gr(i), dt, gr(i)%zt, um_ref(i,1:nz), &
-                                        um(i,1:nz), uv_sponge_damp_profile )
+          um(i,1:nz) = sponge_damp_xm( nz, dt, gr(i)%zt, gr(i)%zm, &
+                                       um_ref(i,1:nz), um(i,1:nz), uv_sponge_damp_profile )
         end do
 
         do i = 1, ngrdcol
-          vm(i,1:nz) = sponge_damp_xm( gr(i), dt, gr(i)%zt, vm_ref(i,1:nz), &
-                                        vm(i,1:nz), uv_sponge_damp_profile )
+          vm(i,1:nz) = sponge_damp_xm( nz, dt, gr(i)%zt, gr(i)%zm, &
+                                       vm_ref(i,1:nz), vm(i,1:nz), uv_sponge_damp_profile )
         end do
 
         if ( l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_end_update( gr(i), ium_sdmp, um(i,:) / dt, & ! intent(in) 
+            call stat_end_update( nz, ium_sdmp, um(i,:) / dt, & ! intent(in) 
                                   stats_zt(i) )           ! intent(inout)
-            call stat_end_update( gr(i), ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+            call stat_end_update( nz, ivm_sdmp, vm(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
           end do
         end if
@@ -557,9 +559,9 @@ module advance_windm_edsclrm_module
         ! Reflect nudging in budget
         if ( l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_begin_update( gr(i), ium_ndg, um(i,:) / dt, & ! intent(in)
+            call stat_begin_update( nz, ium_ndg, um(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
-            call stat_begin_update( gr(i), ivm_ndg, vm(i,:) / dt, & ! intent(in)
+            call stat_begin_update( nz, ivm_ndg, vm(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
           end do
         end if
@@ -569,9 +571,9 @@ module advance_windm_edsclrm_module
 
         if ( l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_end_update( gr(i), ium_ndg, um(i,:) / dt, & ! intent(in)
+            call stat_end_update( nz, ium_ndg, um(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
-            call stat_end_update( gr(i), ivm_ndg, vm(i,:) / dt, & ! intent(in)
+            call stat_end_update( nz, ivm_ndg, vm(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
           end do
         end if
@@ -616,13 +618,11 @@ module advance_windm_edsclrm_module
         ! This is the third instance of u'w' clipping.
         !l_first_clip_ts = .false.
         !l_last_clip_ts = .true.
-        do i = 1, ngrdcol
-          call clip_covar( gr(i), clip_upwp, l_first_clip_ts,       & ! intent(in)
-                           l_last_clip_ts, dt, wp2(i,:), up2(i,:),  & ! intent(in)
-                           l_predict_upwp_vpwp,                     & ! intent(in)
-                           stats_zm(i),                             & ! intent(inout)
-                           upwp(i,:), upwp_chnge(i,:) )               ! intent(inout)
-        end do
+        call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, up2,                & ! intent(in)
+                         l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_zm,                                    & ! intent(inout)
+                         upwp, upwp_chnge )                             ! intent(inout)
 
         ! Clipping for v'w'
         !
@@ -638,13 +638,11 @@ module advance_windm_edsclrm_module
         ! This is the third instance of v'w' clipping.
         !l_first_clip_ts = .false.
         !l_last_clip_ts = .true.
-        do i = 1, ngrdcol
-          call clip_covar( gr(i), clip_vpwp, l_first_clip_ts,       & ! intent(in)
-                           l_last_clip_ts, dt, wp2(i,:), vp2(i,:),  & ! intent(in)
-                           l_predict_upwp_vpwp,                     & ! intent(in)
-                           stats_zm(i),                             & ! intent(inout)
-                           vpwp(i,:), vpwp_chnge(i,:) )               ! intent(inout)
-        end do
+        call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, vp2,                & ! intent(in)
+                         l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_zm,                                    & ! intent(inout)
+                         vpwp, vpwp_chnge )                             ! intent(inout)
       else
 
         ! intent(in) this case, it is assumed that
@@ -652,21 +650,17 @@ module advance_windm_edsclrm_module
         ! interact with any other variables.
         !l_first_clip_ts = .false.
         !l_last_clip_ts = .true.
-        do i = 1, ngrdcol
-          call clip_covar( gr(i), clip_upwp, l_first_clip_ts,       & ! intent(in)
-                           l_last_clip_ts, dt, wp2(i,:), wp2(i,:),  & ! intent(in)
-                           l_predict_upwp_vpwp,                     & ! intent(in)
-                           stats_zm(i),                             & ! intent(inout)
-                           upwp(i,:), upwp_chnge(i,:) )               ! intent(inout)
-        end do
+        call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
+                         l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_zm,                                    & ! intent(inout)
+                         upwp, upwp_chnge )                             ! intent(inout)
 
-        do i = 1, ngrdcol
-          call clip_covar( gr(i), clip_vpwp, l_first_clip_ts,       & ! intent(in)
-                           l_last_clip_ts, dt, wp2(i,:), wp2(i,:),  & ! intent(in)
-                           l_predict_upwp_vpwp,                     & ! intent(in)
-                           stats_zm(i),                             & ! intent(inout)
-                           vpwp(i,:), vpwp_chnge(i,:) )               ! intent(inout)
-        end do
+        call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
+                         l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_zm,                                    & ! intent(inout)
+                         vpwp, vpwp_chnge )                             ! intent(inout)
       endif ! l_tke_aniso
 
     endif ! .not. l_predict_upwp_vpwp
@@ -807,13 +801,11 @@ module advance_windm_edsclrm_module
         ! This is the third instance of u'w' clipping.
         l_first_clip_ts = .false.
         l_last_clip_ts = .true.
-        do i = 1, ngrdcol
-          call clip_covar( gr(i), clip_upwp, l_first_clip_ts,       & ! intent(in)
-                           l_last_clip_ts, dt, wp2(i,:), up2(i,:),  & ! intent(in)
-                           l_predict_upwp_vpwp,                     & ! intent(in)
-                           stats_zm(i),                             & ! intent(inout)
-                           upwp_pert(i,:), upwp_chnge(i,:) )          ! intent(inout)
-        end do
+        call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, up2,                & ! intent(in)
+                         l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_zm,                                    & ! intent(inout)
+                         upwp_pert, upwp_chnge )                        ! intent(inout)
         
         ! Clipping for v'w'
         !
@@ -829,13 +821,11 @@ module advance_windm_edsclrm_module
         ! This is the third instance of v'w' clipping.
         l_first_clip_ts = .false.
         l_last_clip_ts = .true.
-        do i = 1, ngrdcol
-          call clip_covar( gr(i), clip_vpwp, l_first_clip_ts,       & ! intent(in)
-                           l_last_clip_ts, dt, wp2(i,:), vp2(i,:),  & ! intent(in)
-                           l_predict_upwp_vpwp,                     & ! intent(in)
-                           stats_zm(i),                             & ! intent(inout)
-                           vpwp_pert(i,:), vpwp_chnge(i,:) )          ! intent(inout)
-        end do
+        call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, vp2,                & ! intent(in)
+                         l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_zm,                                    & ! intent(inout)
+                         vpwp_pert, vpwp_chnge )                        ! intent(inout)
       else
 
         ! intent(in) this case, it is assumed that
@@ -843,21 +833,17 @@ module advance_windm_edsclrm_module
         ! interact with any other variables.
         l_first_clip_ts = .false.
         l_last_clip_ts = .true.
-        do i = 1, ngrdcol
-          call clip_covar( gr(i), clip_upwp, l_first_clip_ts,         & ! intent(in)
-                           l_last_clip_ts, dt, wp2(i,:), wp2(i,:),    & ! intent(in)
-                           l_predict_upwp_vpwp,                       & ! intent(in)
-                           stats_zm(i),                               & ! intent(inout)
-                           upwp_pert(i,:), upwp_chnge(i,:) )            ! intent(inout)
-        end do
-        
-        do i = 1, ngrdcol
-          call clip_covar( gr(i), clip_vpwp, l_first_clip_ts,       & ! intent(in)
-                           l_last_clip_ts, dt, wp2(i,:), wp2(i,:),  & ! intent(in)
-                           l_predict_upwp_vpwp,                     & ! intent(in)
-                           stats_zm(i),                             & ! intent(inout)
-                           vpwp_pert(i,:), vpwp_chnge(i,:) )          ! intent(inout)
-        end do
+        call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
+                         l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_zm,                                    & ! intent(inout)
+                         upwp_pert, upwp_chnge )                        ! intent(inout)
+
+        call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, wp2,              & ! intent(in)
+                         l_predict_upwp_vpwp,                       & ! intent(in)
+                         stats_zm,                                  & ! intent(inout)
+                         vpwp_pert, vpwp_chnge )                      ! intent(inout)
         
       end if ! l_tke_aniso
     end if ! .not. l_predict_upwp_vpwp
@@ -1653,7 +1639,8 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_solve
 
   !=============================================================================
-  subroutine windm_edsclrm_implicit_stats( gr, solve_type, xm, & !intent(in)
+  subroutine windm_edsclrm_implicit_stats( nz, solve_type, xm, & !intent(in)
+                                           invrs_dzt, & 
                                            lhs_diff, lhs_ma_zt, & 
                                            invrs_rho_ds_zt, u_star_sqd,&
                                            rho_ds_zm, wind_speed, &
@@ -1683,9 +1670,6 @@ module advance_windm_edsclrm_module
     use clubb_precision, only:  & 
         core_rknd
 
-    use grid_class, only: &
-        grid ! Type
-
     use stats_type, only: stats ! Type
 
     implicit none
@@ -1693,20 +1677,23 @@ module advance_windm_edsclrm_module
     type (stats), target, intent(inout) :: &
       stats_zt
 
-    type (grid), target, intent(in) :: gr
-
     ! Input variables
+    integer, intent(in) :: &
+      nz
+    
     integer, intent(in) :: & 
       solve_type     ! Desc. of what is being solved for
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      xm !  Computed value um or vm at <t+1>    [m/s]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      xm,         & !  Computed value um or vm at <t+1>    [m/s]
+      invrs_dzt     ! The inverse spacing between momentum grid levels;
+                    ! centered over thermodynamic grid levels.
       
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(3,nz), intent(in) :: &
       lhs_diff, & ! LHS diffustion terms
       lhs_ma_zt   ! LHS mean advection terms
       
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
       wind_speed,      & ! wind speed; sqrt(u^2 + v^2)              [m/s]
       rho_ds_zm,       & ! Dry, static density on momentum levels      [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels  [m^3/kg]
@@ -1720,7 +1707,7 @@ module advance_windm_edsclrm_module
     ! Local variables
     integer :: k, kp1, km1 ! Array indices
     
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       imp_sfc_flux
 
     ! Budget indices
@@ -1751,7 +1738,7 @@ module advance_windm_edsclrm_module
       ! surface flux.  In this case, this effects the implicit portion of
       ! the term, which handles the main diagonal for the turbulent advection term 
       if ( ium_ta + ivm_ta > 0 ) then
-        imp_sfc_flux(2) =  - invrs_rho_ds_zt(2) * gr%invrs_dzt(2) &
+        imp_sfc_flux(2) =  - invrs_rho_ds_zt(2) * invrs_dzt(2) &
                              * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
       endif
 
@@ -1759,10 +1746,10 @@ module advance_windm_edsclrm_module
 
     ! Finalize implicit contributions for xm
 
-    do k = 2, gr%nz-1, 1
+    do k = 2, nz-1, 1
 
       km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nz )
+      kp1 = min( k+1, nz )
 
       ! xm mean advection
       ! xm term ma is completely implicit; call stat_update_var_pt.
@@ -1786,7 +1773,7 @@ module advance_windm_edsclrm_module
 
 
     ! Upper boundary conditions
-    k   = gr%nz
+    k   = nz
     km1 = max( k-1, 1 )
 
     ! xm mean advection

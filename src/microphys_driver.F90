@@ -690,7 +690,7 @@ module microphys_driver
 
         ! Save the initial Ncm mc value for the Ncm_act term
         if ( l_stats_samp ) then
-          call stat_begin_update( gr, iNcm_act, Ncm_mc, stats_zt )
+          call stat_begin_update( gr%nz, iNcm_act, Ncm_mc, stats_zt )
         endif
 
         call aer_act_clubb_quadrature_Gauss( gr, pdf_params, p_in_Pa, &
@@ -729,7 +729,7 @@ module microphys_driver
 
         ! Update the Ncm_act term
         if( l_stats_samp ) then
-          call stat_end_update( gr, iNcm_act, Ncm_mc, stats_zt )
+          call stat_end_update( gr%nz, iNcm_act, Ncm_mc, stats_zt )
         endif
 
       else

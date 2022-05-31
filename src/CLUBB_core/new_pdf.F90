@@ -345,7 +345,7 @@ module new_pdf
   ! Brian Griffin; September 2017.
   !
   !=============================================================================
-  function calc_mixture_fraction( gr, Skx, F_x, zeta_x, sgn_wpxp ) &
+  function calc_mixture_fraction( nz, Skx, F_x, zeta_x, sgn_wpxp ) &
   result( mixt_frac )
 
     ! Description:
@@ -354,9 +354,6 @@ module new_pdf
     ! References:
     ! Griffin and Larson (2018)
     !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        grid ! Type
 
     use constants_clubb, only: &
         thirty_six, & ! Constant(s)
@@ -375,22 +372,23 @@ module new_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Skx,      & ! Skewness of x                                            [-]
       F_x,      & ! Parameter for the spread of the PDF component means of x [-]
       zeta_x,   & ! Parameter for the PDF component variances of x           [-]
       sgn_wpxp    ! Sign of the covariance of w and x                        [-]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       mixt_frac    ! Mixture fraction    [-]
 
     ! Local Variable
     ! Flag that turns off when conditions aren't right for calculating mixt_frac
-    logical, dimension(gr%nz) :: &
+    logical, dimension(nz) :: &
       l_calc_mixt_frac
 
 
@@ -443,7 +441,7 @@ module new_pdf
   end function calc_mixture_fraction
 
   !=============================================================================
-  subroutine calc_setter_var_params( gr, xm, xp2, Skx, sgn_wpxp,    & ! In
+  subroutine calc_setter_var_params( nz, xm, xp2, Skx, sgn_wpxp,    & ! In
                                      F_x, zeta_x,               & ! In
                                      mu_x_1, mu_x_2, sigma_x_1, & ! Out
                                      sigma_x_2, mixt_frac,      & ! Out
@@ -458,9 +456,6 @@ module new_pdf
     ! Griffin and Larson (2018)
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         two, & ! Variable(s)
         one
@@ -470,10 +465,11 @@ module new_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       xm,       & ! Mean of x (overall)                             [units vary]
       xp2,      & ! Variance of x (overall)                     [(units vary)^2]
       Skx,      & ! Skewness of x                                            [-]
@@ -482,20 +478,20 @@ module new_pdf
       zeta_x      ! Parameter for the PDF component variances of x           [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       mu_x_1,    & ! Mean of x (1st PDF component)                  [units vary]
       mu_x_2,    & ! Mean of x (2nd PDF component)                  [units vary]
       sigma_x_1, & ! Standard deviation of x (1st PDF component)    [units vary]
       sigma_x_2, & ! Standard deviation of x (2nd PDF component)    [units vary]
       mixt_frac    ! Mixture fraction                                        [-]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
 
     ! Calculate the mixture fraction.
-    mixt_frac = calc_mixture_fraction( gr, Skx, F_x, zeta_x, sgn_wpxp )
+    mixt_frac = calc_mixture_fraction( nz, Skx, F_x, zeta_x, sgn_wpxp )
 
     ! Calculate the mean of x in the 1st PDF component.
     mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 ) &
@@ -811,7 +807,7 @@ module new_pdf
   ! Brian Griffin; September 2017.
   !
   !=============================================================================
-  subroutine calc_responder_params( gr, xm, xp2, Skx, sgn_wpxp,       & ! In
+  subroutine calc_responder_params( nz, xm, xp2, Skx, sgn_wpxp,       & ! In
                                     F_x, mixt_frac,               & ! In
                                     mu_x_1, mu_x_2,               & ! Out
                                     sigma_x_1_sqd, sigma_x_2_sqd, & ! Out
@@ -827,9 +823,6 @@ module new_pdf
     ! Griffin and Larson (2018)
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         three, & ! Variable(s)
         one,   &
@@ -840,10 +833,11 @@ module new_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       xm,       & ! Mean of x (overall)                             [units vary]
       xp2,      & ! Variance of x (overall)                     [(units vary)^2]
       Skx,      & ! Skewness of x                                            [-]
@@ -852,13 +846,13 @@ module new_pdf
       mixt_frac   ! Mixture fraction                                         [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
       sigma_x_1_sqd, & ! Variance of x (1st PDF component)      [(units vary)^2]
       sigma_x_2_sqd    ! Variance of x (2nd PDF component)      [(units vary)^2]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
@@ -925,7 +919,7 @@ module new_pdf
   end subroutine calc_responder_params
 
   !=============================================================================
-  subroutine calc_limits_F_x_responder( gr, mixt_frac, Skx, sgn_wpxp,  & ! In
+  subroutine calc_limits_F_x_responder( nz, mixt_frac, Skx, sgn_wpxp,  & ! In
                                         max_Skx2_pos_Skx_sgn_wpxp, & ! In
                                         max_Skx2_neg_Skx_sgn_wpxp, & ! In
                                         min_F_x, max_F_x )           ! Out
@@ -936,9 +930,6 @@ module new_pdf
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        grid ! Type
 
     use constants_clubb, only: &
         three, & ! Variable(s)
@@ -954,25 +945,26 @@ module new_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       mixt_frac, & ! Mixture fraction                 [-]
       Skx,       & ! Skewness of x                    [-]
       sgn_wpxp     ! Sign of covariance of w and x    [-]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
       max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       min_F_x, & ! Minimum allowable value of F_x    [-]
       max_F_x    ! Maximum allowable value of F_x    [-]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       coef_A_1, & ! Coef. A in Ax^3 + Bx^2 + Cx + D = 0 (1st PDF comp. lim.) [-]
       coef_B_1, & ! Coef. B in Ax^3 + Bx^2 + Cx + D = 0 (1st PDF comp. lim.) [-]
       coef_C_1, & ! Coef. C in Ax^3 + Bx^2 + Cx + D = 0 (1st PDF comp. lim.) [-]
@@ -982,15 +974,15 @@ module new_pdf
       coef_C_2, & ! Coef. C in Ax^3 + Bx^2 + Cx + D = 0 (2nd PDF comp. lim.) [-]
       coef_D_2    ! Coef. D in Ax^3 + Bx^2 + Cx + D = 0 (2nd PDF comp. lim.) [-]
 
-    complex( kind = core_rknd ), dimension(gr%nz,3) :: &
+    complex( kind = core_rknd ), dimension(nz,3) :: &
       sqrt_F_x_roots_1, & ! Roots of sqrt(F_x) for the sigma_x_1 term    [-]
       sqrt_F_x_roots_2    ! Roots of sqrt(F_x) for the sigma_x_2 term    [-]
 
-    real( kind = core_rknd ), dimension(gr%nz,3) :: &
+    real( kind = core_rknd ), dimension(nz,3) :: &
       sqrt_F_x_roots_1_sorted, & ! Sorted roots of sqrt(F_x): sigma_x_1 term [-]
       sqrt_F_x_roots_2_sorted    ! Sorted roots of sqrt(F_x): sigma_x_2 term [-]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       min_sqrt_F_x, & ! Minimum allowable value of sqrt(F_x)    [-]
       max_sqrt_F_x    ! Maximum allowable value of sqrt(F_x)    [-]
 
@@ -1006,14 +998,14 @@ module new_pdf
 
     ! Solve for the roots (values of sqrt(F_x)) that satisfy the above equation.
     sqrt_F_x_roots_1 &
-    = cubic_solve( gr%nz, coef_A_1, coef_B_1, coef_C_1, coef_D_1 )
+    = cubic_solve( nz, coef_A_1, coef_B_1, coef_C_1, coef_D_1 )
 
     ! Sort the values of the roots (values of sqrt(F_x)) from smallest to
     ! largest.  Ignore any complex component of the roots.  The code below that
     ! uses sqrt_F_x_roots_1_sorted already factors the appropriate roots to use
     ! into account.
     sqrt_F_x_roots_1_sorted &
-    = sort_roots( gr, real( sqrt_F_x_roots_1, kind = core_rknd ) )
+    = sort_roots( nz, real( sqrt_F_x_roots_1, kind = core_rknd ) )
 
     ! Set up the coefficients in the equation for the limit of sqrt(F_x) based
     ! on the 2nd PDF component standard deviation (sigma_x_2) being greater than
@@ -1026,14 +1018,14 @@ module new_pdf
 
     ! Solve for the roots (values of sqrt(F_x)) that satisfy the above equation.
     sqrt_F_x_roots_2 &
-    = cubic_solve( gr%nz, coef_A_2, coef_B_2, coef_C_2, coef_D_2 )
+    = cubic_solve( nz, coef_A_2, coef_B_2, coef_C_2, coef_D_2 )
 
     ! Sort the values of the roots (values of sqrt(F_x)) from smallest to
     ! largest.  Ignore any complex component of the roots.  The code below that
     ! uses sqrt_F_x_roots_2_sorted already factors the appropriate roots to use
     ! into account.
     sqrt_F_x_roots_2_sorted &
-    = sort_roots( gr, real( sqrt_F_x_roots_2, kind = core_rknd ) )
+    = sort_roots( nz, real( sqrt_F_x_roots_2, kind = core_rknd ) )
 
 
     ! Find the minimum and maximum allowable values of sqrt(F_x) based on Skx
@@ -1088,7 +1080,7 @@ module new_pdf
   end subroutine calc_limits_F_x_responder
 
   !=============================================================================
-  function sort_roots( gr, roots ) &
+  function sort_roots( nz, roots ) &
   result ( roots_sorted )
 
     ! Description:
@@ -1097,22 +1089,20 @@ module new_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variable
-    real( kind = core_rknd ), dimension(gr%nz,3), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,3), intent(in) :: &
       roots    ! Roots    [-]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz,3) :: &
+    real( kind = core_rknd ), dimension(nz,3) :: &
       roots_sorted    ! Roots sorted from smallest to largest    [-]
 
 
@@ -1187,7 +1177,7 @@ module new_pdf
   end function sort_roots
 
   !=============================================================================
-  function calc_coef_wp4_implicit( gr, mixt_frac, F_w, &
+  function calc_coef_wp4_implicit( nz, mixt_frac, F_w, &
                                    coef_sigma_w_1_sqd, &
                                    coef_sigma_w_2_sqd ) &
   result( coef_wp4_implicit )
@@ -1269,9 +1259,6 @@ module new_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         six,   & ! Variable(s)
         three, &
@@ -1282,17 +1269,18 @@ module new_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real ( kind = core_rknd ), dimension(nz), intent(in) :: &
       mixt_frac,          & ! Mixture fraction                               [-]
       F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
       coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
       coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
     ! Return Variable
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
 
 
@@ -1310,7 +1298,7 @@ module new_pdf
   end function calc_coef_wp4_implicit
 
   !=============================================================================
-  function calc_coef_wpxp2_implicit( gr, wp2, xp2, wpxp, sgn_wpxp, &
+  function calc_coef_wpxp2_implicit( nz, wp2, xp2, wpxp, sgn_wpxp, &
                                      mixt_frac, F_w, F_x, &
                                      coef_sigma_w_1_sqd, &
                                      coef_sigma_w_2_sqd, &
@@ -1499,9 +1487,6 @@ module new_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         two,  & ! Variable(s)
         one,  &
@@ -1512,10 +1497,11 @@ module new_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real ( kind = core_rknd ), dimension(nz), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
       xp2,                & ! Variance of x (overall)           [(units vary)^2]
       wpxp,               & ! Covariance of w and x           [m/s (units vary)]
@@ -1529,11 +1515,11 @@ module new_pdf
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
     ! Return Variable
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       coef_wpxp2_implicit ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> [m/s]
 
     ! Local Variable
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       coefs_factor    ! Factor involving coef_sigma_... coefficients         [-]
 
 
@@ -1577,7 +1563,7 @@ module new_pdf
   end function calc_coef_wpxp2_implicit
 
   !=============================================================================
-  subroutine calc_coefs_wp2xp_semiimpl( gr, wp2, xp2, sgn_wpxp,  & ! In
+  subroutine calc_coefs_wp2xp_semiimpl( nz, wp2, xp2, sgn_wpxp,  & ! In
                                         mixt_frac, F_w, F_x, & ! In
                                         coef_sigma_w_1_sqd,  & ! In
                                         coef_sigma_w_2_sqd,  & ! In
@@ -1792,9 +1778,6 @@ module new_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         two,  & ! Variable(s)
         one,  &
@@ -1805,10 +1788,11 @@ module new_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real ( kind = core_rknd ), dimension(nz), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
       xp2,                & ! Variance of x (overall)           [(units vary)^2]
       sgn_wpxp,           & ! Sign of the covariance of w and x              [-]
@@ -1822,12 +1806,12 @@ module new_pdf
 
     ! Output Variables
     ! Coefs.: <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit
-    real ( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real ( kind = core_rknd ), dimension(nz), intent(out) :: &
       coef_wp2xp_implicit, & ! Coefficient that is multiplied by <w'x'>    [m/s]
       term_wp2xp_explicit    ! Term that is on the RHS    [m^2/s^2 (units vary)]
 
     ! Local Variable
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       coefs_factor    ! Factor involving coef_sigma_... coefficients         [-]
 
 
@@ -1876,7 +1860,7 @@ module new_pdf
   end subroutine calc_coefs_wp2xp_semiimpl
 
   !=============================================================================
-  subroutine calc_coefs_wpxpyp_semiimpl( gr, wp2, xp2, yp2, wpxp,      & ! In
+  subroutine calc_coefs_wpxpyp_semiimpl( nz, wp2, xp2, yp2, wpxp,      & ! In
                                          wpyp, sgn_wpxp, sgn_wpyp, & ! In
                                          mixt_frac, F_w, F_x, F_y, & ! In
                                          coef_sigma_w_1_sqd,       & ! In
@@ -2148,9 +2132,6 @@ module new_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         one,  & ! Variable(s)
         zero
@@ -2160,10 +2141,11 @@ module new_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real ( kind = core_rknd ), dimension(nz), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
       xp2,                & ! Variance of x (overall)              [(x units)^2]
       yp2,                & ! Variance of y (overall)              [(y units)^2]
@@ -2184,12 +2166,12 @@ module new_pdf
 
     ! Output Variables
     ! Coefs.: <w'x'y'> = coef_wpxpyp_implicit * <x'y'> + term_wpxpyp_explicit
-    real ( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real ( kind = core_rknd ), dimension(nz), intent(out) :: &
       coef_wpxpyp_implicit, & ! Coefficient that is multiplied by <x'y'>   [m/s]
       term_wpxpyp_explicit    ! Term that is on the RHS  [m/s(x units)(y units)]
 
     ! Local Variables
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real ( kind = core_rknd ), dimension(nz) :: &
       coefs_factor_wx, & ! Factor involving coef_sigma_... w and x coefs     [-]
       coefs_factor_wy, & ! Factor involving coef_sigma_... w and y coefs     [-]
       coefs_factor_xy    ! Factor involving coef_sigma_... x and y coefs     [-]

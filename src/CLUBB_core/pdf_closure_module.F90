@@ -571,7 +571,7 @@ module pdf_closure_module
                             
     elseif ( iiPDF_type == iiPDF_3D_Luhar ) then ! use 3D Luhar
       do i = 1, ngrdcol
-        call Luhar_3D_pdf_driver( gr(i), &
+        call Luhar_3D_pdf_driver( nz, &
                            wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:),                             & ! In
                            Skw(i,:), Skrt(i,:), Skthl(i,:), wprtp(i,:), wpthlp(i,:),                             & ! In
                            pdf_params%w_1(i,:), pdf_params%w_2(i,:),                    & ! Out
@@ -584,7 +584,7 @@ module pdf_closure_module
       end do
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
       do i = 1, ngrdcol
-        call new_pdf_driver( gr(i), wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:), Skw(i,:),                   & ! In
+        call new_pdf_driver( nz, wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:), Skw(i,:),                   & ! In
                             wprtp(i,:), wpthlp(i,:), rtpthlp(i,:),                                     & ! In
                             slope_coef_spread_DG_means_w,                               & ! In
                             pdf_component_stdev_factor_w,                               & ! In
@@ -604,7 +604,7 @@ module pdf_closure_module
       end do
     elseif ( iiPDF_type == iiPDF_TSDADG ) then
       do i = 1, ngrdcol
-        call tsdadg_pdf_driver( gr(i), &
+        call tsdadg_pdf_driver( nz, &
                           wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:),                                & ! In
                           Skw(i,:), Skrt(i,:), Skthl(i,:), wprtp(i,:), wpthlp(i,:),                                & ! In
                           pdf_params%w_1(i,:), pdf_params%w_2(i,:),                       & ! Out
@@ -617,7 +617,7 @@ module pdf_closure_module
       end do
     elseif ( iiPDF_type == iiPDF_LY93 ) then ! use LY93
       do i = 1, ngrdcol
-        call LY93_driver( gr(i), wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:),                          & ! In
+        call LY93_driver( nz, wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:),                          & ! In
                           thlp2(i,:), Skw(i,:), Skrt(i,:), Skthl(i,:),                           & ! In
                           pdf_params%w_1(i,:), pdf_params%w_2(i,:),                    & ! Out
                           pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                  & ! Out
@@ -629,7 +629,7 @@ module pdf_closure_module
       end do
     elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
       do i = 1, ngrdcol
-        call new_hybrid_pdf_driver( gr(i), wm(i,:), rtm(i,:), thlm(i,:), um(i,:), vm(i,:),          & ! In
+        call new_hybrid_pdf_driver( nz, wm(i,:), rtm(i,:), thlm(i,:), um(i,:), vm(i,:),          & ! In
                                     wp2(i,:), rtp2(i,:), thlp2(i,:), up2(i,:), vp2(i,:),         & ! In
                                     Skw(i,:), wprtp(i,:), wpthlp(i,:), upwp(i,:), vpwp(i,:),     & ! In
                                     sclrm(i,:,:), sclrp2(i,:,:), wpsclrp(i,:,:),             & ! In
@@ -1376,7 +1376,7 @@ module pdf_closure_module
       do i = 1, ngrdcol
           
         call pdf_closure_check( & 
-               gr(i), wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
+               nz, wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
                wp2thlp(i,:), cloud_frac(i,:), rcm(i,:), wpthvp(i,:), wp2thvp(i,:), &  ! intent(in)
                rtpthvp(i,:), thlpthvp(i,:), wprcp(i,:), wp2rcp(i,:), & ! intent(in)
                rtprcp(i,:), thlprcp(i,:), rcp2(i,:), wprtpthlp(i,:), & ! intent(in)

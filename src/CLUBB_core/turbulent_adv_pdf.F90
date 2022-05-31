@@ -20,8 +20,7 @@ module turbulent_adv_pdf
   public :: xpyp_term_ta_pdf_lhs,         &
             xpyp_term_ta_pdf_lhs_godunov, &
             xpyp_term_ta_pdf_rhs,         &
-            xpyp_term_ta_pdf_rhs_godunov, &
-            sgn_turbulent_velocity
+            xpyp_term_ta_pdf_rhs_godunov
 
   private    ! Set default scope
 
@@ -949,93 +948,6 @@ module turbulent_adv_pdf
          return
 
   end subroutine xpyp_term_ta_pdf_rhs_godunov
-
-  !=============================================================================
-  pure function sgn_turbulent_velocity( gr, wpxpyp_zm, xpyp ) &
-  result( sgn_turbulent_vel )
-
-    ! Description:
-    ! Calculates the sign of the turbulent velocity for a predictive variance
-    ! or covariance, which is used for the "upwind" turbulent advection option.
-    !
-    ! The turbulent velocity for any predictive variance or covariance <x'y'> is
-    ! <w'x'y'> / <x'y'>, which has units of m/s.  The sign of the turbulent
-    ! velocity is sgn( <w'x'y'> / <x'y'> ), where:
-    !
-    ! sgn(x) = | 1; when x >= 0
-    !          | -1; when x < 0.
-    !
-    ! The sign of the turbulent velocity can also be rewritten as
-    ! sgn( <w'x'y'> ) / sgn( <x'y'> ).  When a variance (<x'^2>) is being solved
-    ! for, y = x, and sgn( <x'^2> ) is always 1.  The sign of the turbulent
-    ! velocity reduces to simply sgn( <w'x'^2> ).
-    !
-    ! The values of <x'y'> are found on momentum levels, while the values of
-    ! <w'x'y'> are found on thermodynamic levels.  The values of <w'x'y'> are
-    ! interpolated to momentum levels.  The sign of <x'y'> and the sign of
-    ! the interpolated value of <w'x'y'> are calculated on the central momentum
-    ! level, where sgn( <w'x'y'> ) is divided by sgn( <x'y'> ).
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        grid ! Type
-
-    use constants_clubb, only: &
-        one,  & ! Variable(s)
-        zero
-
-    use clubb_precision, only: &
-        core_rknd    ! Variable(s)
-
-    implicit none
-
-    type (grid), target, intent(in) :: gr
-
-    ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      wpxpyp_zm, & ! <w'x'y'> interpolated to momentum levels  [m/s(x un)(y un)]
-      xpyp         ! Predictive (co)variance <x'y'> (m-levs.)  [(x un)(y un)]
-
-    ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      sgn_turbulent_vel    ! Sign of the turbulent velocity    [-]
-
-    ! Local Variables
-    real( kind = core_rknd ) :: &
-      sgn_wpxpyp, & ! Sign of <w'x'y'>    [-]
-      sgn_xpyp      ! Sign of <x'y'>      [-]
-
-    integer :: k    ! Vertical level index
-
-
-    ! Calculate the sign on the turbulent velocity at every momentum level.
-    do k = 1, gr%nz, 1
-
-       ! Calculate the sign of <w'x'y'>.
-       if ( wpxpyp_zm(k) >= zero ) then
-          sgn_wpxpyp = one
-       else ! wpxpyp_zm(k) < 0
-          sgn_wpxpyp = -one
-       endif ! wpxpyp_zm(k) >= 0
-
-       ! Calculate the sign of <x'y'>.
-       if ( xpyp(k) >= zero ) then
-          sgn_xpyp = one
-       else ! xpyp(k) < 0
-          sgn_xpyp = -one
-       endif ! xpyp(k) >= 0
-
-       ! Calculate the sign on the turbulent velocity.
-       sgn_turbulent_vel(k) = sgn_wpxpyp / sgn_xpyp
-
-    enddo ! k = 1, gr%nz, 1
-
-
-    return
-
-  end function sgn_turbulent_velocity
 
 !===============================================================================
 

@@ -673,11 +673,9 @@ module advance_helper_module
     if ( l_Richardson_vert_avg ) then
       ! Clip below-min values of Richardson_num
       Richardson_num = max( Richardson_num, Richardson_num_min )
-
-      do i = 1, ngrdcol
-        Richardson_num(i,:) = Lscale_width_vert_avg( gr(i), Richardson_num(i,:), Lscale_zm(i,:), rho_ds_zm(i,:), &
-                                                Richardson_num_max )
-      end do
+      Richardson_num = Lscale_width_vert_avg( nz, ngrdcol, gr, &
+                                              Richardson_num, Lscale_zm, rho_ds_zm, &
+                                              Richardson_num_max )
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
@@ -689,10 +687,9 @@ module advance_helper_module
                                               clubb_params(iCx_max), clubb_params(iCx_min) )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
-      do i = 1, ngrdcol
-        Cx_fnc_Richardson(i,:) = Lscale_width_vert_avg( gr(i), Cx_fnc_Richardson(i,:), Lscale_zm(i,:), rho_ds_zm(i,:), &
-                                                   Cx_fnc_Richardson_below_ground_value )
-      end do
+      Cx_fnc_Richardson = Lscale_width_vert_avg( nz, ngrdcol, gr, &
+                                                 Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
+                                                 Cx_fnc_Richardson_below_ground_value )
     end if
 
     ! On some compilers, roundoff error can result in Cx_fnc_Richardson being
@@ -711,7 +708,9 @@ module advance_helper_module
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------
-  function Lscale_width_vert_avg( gr, var_profile, Lscale_zm, rho_ds_zm, var_below_ground_value )&
+  function Lscale_width_vert_avg( nz, ngrdcol, gr, &
+                                  var_profile, Lscale_zm, rho_ds_zm, &
+                                  var_below_ground_value )&
   result (Lscale_width_vert_avg_output)
 
   ! Description:
@@ -731,10 +730,14 @@ module advance_helper_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+      
+    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       var_profile, &      ! Profile on momentum levels
       Lscale_zm, &        ! Lscale on momentum levels
       rho_ds_zm           ! Dry static energy on momentum levels!
@@ -743,16 +746,17 @@ module advance_helper_module
       var_below_ground_value ! Value to use below ground
 
     ! Result Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Lscale_width_vert_avg_output ! Vertically averaged profile (on momentum levels)
 
     ! Local Variables
     integer :: &
         k, i,        & ! Loop variable
         k_avg_lower, &
-        k_avg_upper
+        k_avg_upper, &
+        k_avg
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       one_half_avg_width, &
       numer_terms, &
       denom_terms
@@ -770,16 +774,19 @@ module advance_helper_module
     one_half_avg_width = max( Lscale_zm, 500.0_core_rknd )
 
     ! Pre calculate numerator and denominator terms
-    do k=1, gr%nz
-        numer_terms(k) = rho_ds_zm(k) * gr%dzm(k) * var_profile(k)
-        denom_terms(k) = rho_ds_zm(k) * gr%dzm(k)
+    do k=1, nz
+      do i = 1, ngrdcol
+        numer_terms(i,k) = rho_ds_zm(i,k) * gr(i)%dzm(k) * var_profile(i,k)
+        denom_terms(i,k) = rho_ds_zm(i,k) * gr(i)%dzm(k)
+      end do
     end do
 
     k_avg_upper = 2
     k_avg_lower = 1
 
     ! For every grid level
-    do k=1, gr%nz
+    do k=1, nz
+      do i = 1, ngrdcol
 
         !-----------------------------------------------------------------------
         ! Hunt down all vertical levels with one_half_avg_width(k) of gr%zm(k).
@@ -796,21 +803,21 @@ module advance_helper_module
 
 
         ! Determine if k_avg_upper needs to increment or decrement
-        if ( gr%zm(k_avg_upper) - gr%zm(k) > one_half_avg_width(k) ) then
+        if ( gr(i)%zm(k_avg_upper) - gr(i)%zm(k) > one_half_avg_width(i,k) ) then
 
             ! k_avg_upper is too large, decrement it
-            do while ( gr%zm(k_avg_upper) - gr%zm(k) > one_half_avg_width(k) )
+            do while ( gr(i)%zm(k_avg_upper) - gr(i)%zm(k) > one_half_avg_width(i,k) )
                 k_avg_upper = k_avg_upper - 1
             end do
 
-        elseif ( k_avg_upper < gr%nz ) then
+        elseif ( k_avg_upper < nz ) then
 
             ! k_avg_upper is too small, increment it
-            do while ( gr%zm(k_avg_upper+1) - gr%zm(k) <= one_half_avg_width(k) )
+            do while ( gr(i)%zm(k_avg_upper+1) - gr(i)%zm(k) <= one_half_avg_width(i,k) )
 
                 k_avg_upper = k_avg_upper + 1
 
-                if ( k_avg_upper == gr%nz ) exit
+                if ( k_avg_upper == nz ) exit
 
             end do
 
@@ -818,10 +825,10 @@ module advance_helper_module
 
 
         ! Determine if k_avg_lower needs to increment or decrement
-        if ( gr%zm(k) - gr%zm(k_avg_lower) > one_half_avg_width(k) ) then
+        if ( gr(i)%zm(k) - gr(i)%zm(k_avg_lower) > one_half_avg_width(i,k) ) then
 
             ! k_avg_lower is too small, increment it
-            do while ( gr%zm(k) - gr%zm(k_avg_lower) > one_half_avg_width(k) )
+            do while ( gr(i)%zm(k) - gr(i)%zm(k_avg_lower) > one_half_avg_width(i,k) )
 
                 k_avg_lower = k_avg_lower + 1
 
@@ -830,7 +837,7 @@ module advance_helper_module
         elseif ( k_avg_lower > 1 ) then
 
             ! k_avg_lower is too large, decrement it
-            do while ( gr%zm(k) - gr%zm(k_avg_lower-1) <= one_half_avg_width(k) )
+            do while ( gr(i)%zm(k) - gr(i)%zm(k_avg_lower-1) <= one_half_avg_width(i,k) )
 
                 k_avg_lower = k_avg_lower - 1
 
@@ -858,25 +865,25 @@ module advance_helper_module
             ! divided by the distance between vertical levels below ground; the
             ! latter is assumed to be the same as the distance between the first and
             ! second vertical levels.
-            n_below_ground_levels = int( ( one_half_avg_width(k)-(gr%zm(k)-gr%zm(1)) ) / &
-                                        ( gr%zm(2)-gr%zm(1) ) )
+            n_below_ground_levels = int( ( one_half_avg_width(i,k)-(gr(i)%zm(k)-gr(i)%zm(1)) ) / &
+                                        ( gr(i)%zm(2)-gr(i)%zm(1) ) )
 
-            numer_integral = n_below_ground_levels * denom_terms(1) * var_below_ground_value
-            denom_integral = n_below_ground_levels * denom_terms(1)
+            numer_integral = n_below_ground_levels * denom_terms(i,1) * var_below_ground_value
+            denom_integral = n_below_ground_levels * denom_terms(i,1)
 
         end if
 
             
         ! Add numerator and denominator terms for all above-ground levels
-        do i = k_avg_lower, k_avg_upper
+        do k_avg = k_avg_lower, k_avg_upper
 
-            numer_integral = numer_integral + numer_terms(i)
-            denom_integral = denom_integral + denom_terms(i)
+            numer_integral = numer_integral + numer_terms(i,k_avg)
+            denom_integral = denom_integral + denom_terms(i,k_avg)
 
         end do
 
-        Lscale_width_vert_avg_output(k) = numer_integral / denom_integral
-
+        Lscale_width_vert_avg_output(i,k) = numer_integral / denom_integral
+      end do
     end do
 
     return

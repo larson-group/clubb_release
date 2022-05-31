@@ -885,19 +885,19 @@ module advance_wp2_wp3_module
 
       if ( l_stats_samp ) then
         do i = 1, ngrdcol
-          call stat_begin_update( gr(i), iwp2_sdmp, wp2(i,:) / dt, & ! intent(in)
+          call stat_begin_update( nz, iwp2_sdmp, wp2(i,:) / dt, & ! intent(in)
                                   stats_zm(i) )                      ! intent(inout)
         end do
       end if
 
       do i = 1, ngrdcol
-        wp2(i,:) = sponge_damp_xp2( gr(i), dt, gr(i)%zm, wp2(i,:), w_tol_sqd, &
+        wp2(i,:) = sponge_damp_xp2( nz, dt, gr(i)%zm, wp2(i,:), w_tol_sqd, &
                                     wp2_sponge_damp_profile )
       end do
 
       if ( l_stats_samp ) then
         do i = 1, ngrdcol
-          call stat_end_update( gr(i), iwp2_sdmp, wp2(i,:) / dt, & ! intent(in)
+          call stat_end_update( nz, iwp2_sdmp, wp2(i,:) / dt, & ! intent(in)
                                 stats_zm(i) )                      ! intent(inout)
         end do
       end if
@@ -908,19 +908,19 @@ module advance_wp2_wp3_module
 
       if ( l_stats_samp ) then
         do i = 1, ngrdcol
-          call stat_begin_update( gr(i), iwp3_sdmp, wp3(i,:) / dt, & ! intent(in)
+          call stat_begin_update( nz, iwp3_sdmp, wp3(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )                      ! intent(inout)
         end do
       end if
 
       do i = 1, ngrdcol
-        wp3(i,:) = sponge_damp_xp3( gr(i), dt, gr(i)%zt, wp3(i,:), &
+        wp3(i,:) = sponge_damp_xp3( nz, dt, gr(i)%zt, gr(i)%zm, wp3(i,:), &
                                     wp3_sponge_damp_profile )
       end do
 
       if ( l_stats_samp ) then
         do i = 1, ngrdcol
-          call stat_end_update( gr(i), iwp3_sdmp, wp3(i,:) / dt, & ! intent(in) 
+          call stat_end_update( nz, iwp3_sdmp, wp3(i,:) / dt, & ! intent(in) 
                                 stats_zt(i) )                      ! intent(inout)
         end do
       end if
@@ -1069,7 +1069,6 @@ module advance_wp2_wp3_module
 
     use clip_explicit, only: &
         clip_variance, & ! Procedure(s)
-        clip_variance_level, &
         clip_skewness
 
     use pdf_parameter_module, only: &
@@ -1489,7 +1488,7 @@ module advance_wp2_wp3_module
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
       do i = 1, ngrdcol
-        call stat_begin_update( gr(i), iwp2_pd, wp2(i,:) / dt,  & ! intent(in)
+        call stat_begin_update( nz, iwp2_pd, wp2(i,:) / dt,  & ! intent(in)
                                 stats_zm(i) )                     ! intent(inout)
       end do
     end if
@@ -1498,7 +1497,7 @@ module advance_wp2_wp3_module
       if ( l_hole_fill .and. any( wp2(i,:) < w_tol_sqd ) ) then
 
         ! Use a simple hole filling algorithm
-        call fill_holes_vertical( gr(i), 2, w_tol_sqd, "zm",        & ! intent(in)
+        call fill_holes_vertical( nz, gr(i)%dzm, gr(i)%dzt, 2, w_tol_sqd, "zm",        & ! intent(in)
                                   rho_ds_zt(i,:), rho_ds_zm(i,:),   & ! intent(in)
                                   wp2(i,:) )                          ! intent(inout)
 
@@ -1514,7 +1513,7 @@ module advance_wp2_wp3_module
     if ( l_stats_samp ) then
       ! Store updated value for effect of the positive definite scheme
       do i = 1, ngrdcol
-        call stat_end_update( gr(i), iwp2_pd, wp2(i,:) / dt,  & ! intent(in)
+        call stat_end_update( nz, iwp2_pd, wp2(i,:) / dt,  & ! intent(in)
                               stats_zm(i) )                     ! intent(inout)
       end do
     end if
@@ -1559,21 +1558,17 @@ module advance_wp2_wp3_module
         end do 
       end do
 
-      do i = 1, ngrdcol
-        call clip_variance_level( gr(i), clip_wp2, dt, threshold_array(i,:),  & ! intent(in)
-                                  stats_zm(i),                                & ! intent(inout)
-                                  wp2(i,:) )                                    ! intent(inout)
-      end do
+      call clip_variance( nz, ngrdcol, gr, clip_wp2, dt, threshold_array, & ! intent(in)
+                          stats_zm,                                       & ! intent(inout)
+                          wp2 )                                             ! intent(inout)
     else
 
       ! Consider only the minimum tolerance threshold value for wp2.
-      threshold = w_tol_sqd
+      threshold_array = w_tol_sqd
 
-      do i = 1, ngrdcol
-        call clip_variance( gr(i), clip_wp2, dt, threshold,   & ! intent(in)
-                            stats_zm(i),                      & ! intent(inout)
-                            wp2(i,:) )                          ! intent(inout)
-       end do
+      call clip_variance( nz, ngrdcol, gr, clip_wp2, dt, threshold_array, & ! intent(in)
+                          stats_zm,                                       & ! intent(inout)
+                          wp2 )                                             ! intent(inout)
     end if ! l_min_wp2_from_corr_wx
 
     ! Interpolate w'^2 from momentum levels to thermodynamic levels.
@@ -1582,12 +1577,10 @@ module advance_wp2_wp3_module
     wp2_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, wp2 ), w_tol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
-    do i = 1, ngrdcol
-      call clip_skewness( gr(i), dt, sfc_elevation(i),              & ! intent(in)
-                          clubb_params(iSkw_max_mag), wp2_zt(i,:),  & ! intent(in)
-                          stats_zt(i),                              & ! intent(inout)
-                          wp3(i,:) )                                  ! intent(inout)
-    end do
+    call clip_skewness( nz, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
+                        clubb_params(iSkw_max_mag), wp2_zt, & ! intent(in)
+                        stats_zt,                           & ! intent(inout)
+                        wp3 )                                 ! intent(inout)
 
     ! Compute wp3_zm for output purposes
     wp3_zm(:,:) = zt2zm(  nz, ngrdcol, gr, wp3 )

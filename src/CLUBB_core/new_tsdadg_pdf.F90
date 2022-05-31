@@ -19,7 +19,7 @@ module new_tsdadg_pdf
   contains
 
   !=============================================================================
-  subroutine tsdadg_pdf_driver( gr, wm, rtm, thlm, wp2, rtp2, thlp2,    & ! In
+  subroutine tsdadg_pdf_driver( nz, wm, rtm, thlm, wp2, rtp2, thlp2,    & ! In
                                 Skw, Skrt, Skthl, wprtp, wpthlp,    & ! In
                                 mu_w_1, mu_w_2,                     & ! Out
                                 mu_rt_1, mu_rt_2,                   & ! Out
@@ -40,9 +40,6 @@ module new_tsdadg_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         one,     & ! Variable(s)
         zero,    &
@@ -53,10 +50,11 @@ module new_tsdadg_pdf
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    integer, intent(in) :: &
+      nz
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wm,     & ! Mean of w (overall)                [m/s]
       rtm,    & ! Mean of rt (overall)               [kg/kg]
       thlm,   & ! Mean of thl (overall)              [K]
@@ -70,7 +68,7 @@ module new_tsdadg_pdf
       wpthlp    ! Covariance of w and thl (overall)  [(m/s)K]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
       mu_rt_1,         & ! Mean of rt (1st PDF component)       [kg/kg]
@@ -86,7 +84,7 @@ module new_tsdadg_pdf
       mixt_frac          ! Mixture fraction                     [-]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       big_L_w_1,   & ! Parameter for the 1st PDF comp. mean of w            [-]
       big_L_w_2,   & ! Parameter for the 2nd PDF comp. mean of w (setter)   [-]
       big_L_rt_1,  & ! Parameter for the 1st PDF comp. mean of rt           [-]
@@ -102,12 +100,12 @@ module new_tsdadg_pdf
       small_l_thl_1, & ! Param. for the 1st PDF comp. mean of thl          [-]
       small_l_thl_2    ! Param. for the 2nd PDF comp. mean of thl (setter) [-]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       sgn_wprtp,  & ! Sign of the covariance of w and rt (overall)         [-]
       sgn_wpthlp, & ! Sign of the covariance of w and thl (overall)        [-]
       sgn_wp2       ! Sign of the variance of w (overall); always positive [-]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       coef_sigma_w_1_sqd,   & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>    [-]
       coef_sigma_w_2_sqd,   & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>    [-]
       coef_sigma_rt_1_sqd,  & ! sigma_rt_1^2 = coef_sigma_rt_1_sqd * <rt'^2> [-]
@@ -142,7 +140,7 @@ module new_tsdadg_pdf
     small_l_thl_1 = 0.75_core_rknd
     small_l_thl_2 = 0.5_core_rknd
 
-    do k = 1, gr%nz, 1
+    do k = 1, nz, 1
 
        call calc_L_x_Skx_fnc( Skw(k), sgn_wp2(k),        & ! In
                               small_l_w_1, small_l_w_2,  & ! In
@@ -318,7 +316,7 @@ module new_tsdadg_pdf
           coef_sigma_thl_2_sqd(k) = zero
        endif ! sigma_thl_2_sqd < 0
 
-    enddo ! k = 1, gr%nz, 1
+    enddo ! k = 1, nz, 1
 
 
     return

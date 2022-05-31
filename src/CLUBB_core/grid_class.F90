@@ -1259,10 +1259,8 @@ module grid_class
     end if
 
     ! Redirect
-    if (l_cubic_interp) then
-      do i = 1, ngrdcol
-        redirect_interpolated_azm_2D(i,:) = cubic_interpolated_azm( gr(i), azt(i,:) )
-      end do
+    if ( l_cubic_interp .and. nz >= 3 ) then
+      redirect_interpolated_azm_2D = cubic_interpolated_azm_2D( nz, ngrdcol, gr, azt )
     else
       redirect_interpolated_azm_2D = linear_interpolated_azm_2D( nz, ngrdcol, gr, azt )
     end if
@@ -1421,10 +1419,8 @@ module grid_class
     end if
 
     ! Redirect
-    if (l_cubic_interp) then
-      do i = 1, ngrdcol
-        redirect_interpolated_azt_2D(i,:) = cubic_interpolated_azt( gr(i), azt(i,:) )
-      end do
+    if (l_cubic_interp .and. nz >= 3 ) then
+      redirect_interpolated_azt_2D = cubic_interpolated_azt_2D( nz, ngrdcol, gr, azt )
     else
       redirect_interpolated_azt_2D = linear_interpolated_azt_2D( nz, ngrdcol, gr, azt )
     end if
@@ -1652,6 +1648,88 @@ module grid_class
     return
 
   end function cubic_interpolated_azm
+  
+  !=============================================================================
+  function cubic_interpolated_azm_2D( nz, ngrdcol, gr, azt )
+
+    ! Description:
+    !   Function to interpolate a variable located on the momentum grid
+    !   levels (azt) to the thermodynamic grid levels (azm).  This function outputs the
+    !   value of azt at a all grid levels using Steffen's monotonic cubic
+    !   interpolation implemented by Tak Yamaguchi.
+    ! 
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use interpolation, only: &
+        mono_cubic_interp  ! Procedure(s)
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+    
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+    
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azt
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      cubic_interpolated_azm_2D
+
+    ! Local Variable(s)
+    integer :: &
+      k, i
+      
+    integer :: km1, k00, kp1, kp2
+
+    ! ---- Begin Code ----
+
+    do k = 1, nz 
+      do i = 1, ngrdcol
+
+        ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
+        if ( k == nz-1 ) then
+          km1 = nz-2
+          kp1 = nz
+          kp2 = nz
+          k00 = nz-1
+        else if ( k == nz ) then ! Extrapolation
+          km1 = nz
+          kp1 = nz
+          kp2 = nz
+          k00 = nz-1
+        else if ( k == 1 ) then
+          km1 = 1
+          kp1 = 2
+          kp2 = 3
+          k00 = 1
+        else
+          km1 = k-1
+          kp1 = k+1
+          kp2 = k+2
+          k00 = k
+        end if
+        
+        ! Do the actual interpolation.
+        ! Use a cubic monotonic spline interpolation.
+        cubic_interpolated_azm_2D(i,k) = &
+          mono_cubic_interp( gr(i)%zm(k), km1, k00, kp1, kp2, &
+                             gr(i)%zt(km1), gr(i)%zt(k00), gr(i)%zt(kp1), gr(i)%zt(kp2), &
+                             azt(i,km1), azt(i,k00), azt(i,kp1), azt(i,kp2) )
+      end do
+    end do
+
+    return
+
+  end function cubic_interpolated_azm_2D
 
   !=============================================================================
   function cubic_interpolated_azmk( gr, azt, k )
@@ -2158,6 +2236,88 @@ module grid_class
     return
 
   end function cubic_interpolated_azt
+  
+  !=============================================================================
+  function cubic_interpolated_azt_2D( nz, ngrdcol, gr, azm )
+
+    ! Description:
+    !   Function to interpolate a variable located on the momentum grid
+    !   levels (azm) to the thermodynamic grid levels (azt).  This function outputs the
+    !   value of azt at a all grid levels using Steffen's monotonic cubic
+    !   interpolation implemented by Tak Yamaguchi.
+    ! 
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use interpolation, only: &
+        mono_cubic_interp  ! Procedure(s)
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+    
+    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+    
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azm
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      cubic_interpolated_azt_2D
+
+    ! Local Variable(s)
+    integer :: &
+      k, i
+      
+    integer :: km1, k00, kp1, kp2
+
+    ! ---- Begin Code ----
+
+    do k = 1, nz 
+      do i = 1, ngrdcol
+
+        ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
+        if ( k == nz ) then
+          km1 = nz-2
+          kp1 = nz
+          kp2 = nz
+          k00 = nz-1
+        else if ( k == 2 ) then
+          km1 = 1
+          kp1 = 2
+          kp2 = 3
+          k00 = 1
+        else if ( k == 1 ) then ! Extrapolation for the ghost point
+          km1 = nz
+          k00 = 1
+          kp1 = 2
+          kp2 = 3
+        else
+          km1 = k-2
+          kp1 = k
+          kp2 = k+1
+          k00 = k-1
+        end if
+        
+        ! Do the actual interpolation.
+        ! Use a cubic monotonic spline interpolation.
+        cubic_interpolated_azt_2D(i,k) = &
+          mono_cubic_interp( gr(i)%zt(k), km1, k00, kp1, kp2, &
+                             gr(i)%zm(km1), gr(i)%zm(k00), gr(i)%zm(kp1), gr(i)%zm(kp2), &
+                             azm(i,km1), azm(i,k00), azm(i,kp1), azm(i,kp2) )
+      end do
+    end do
+
+    return
+
+  end function cubic_interpolated_azt_2D
 
 
   !=============================================================================

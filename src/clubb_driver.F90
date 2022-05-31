@@ -243,7 +243,6 @@ module clubb_driver
       day, month, year, &
       lat_vals, &
       lon_vals, &
-      sfc_elevation, &
       runtype, &
       sfctype, &
       dt_rad, &
@@ -413,11 +412,11 @@ module clubb_driver
       thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
       thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
       rtpthlp, & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
-      wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
-      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-
+      wp2        ! w'^2 (momentum levels)                         [m^2/s^2]
+    
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       rcm,      & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
       delta_zm
     
     real( kind = core_rknd ), dimension(:), allocatable :: &
@@ -563,9 +562,11 @@ module clubb_driver
       radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
                ! This is currently set to zero for CLUBB standalone
 
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      wp2_zt ! w'^2 on thermo. grid                                  [m^2/s^2]
+    
     real( kind = core_rknd ), dimension(:), allocatable :: &
       Skw_zm, & ! Skewness of w on momentum levels                      [-]
-      wp2_zt, & ! w'^2 on thermo. grid                                  [m^2/s^2]
       wpNcp     ! Covariance of w and N_c, <w'N_c'> (momentum levels)   [(m/s)(#/kg)]
 
     real( kind = core_rknd ), allocatable, dimension(:,:) :: &
@@ -828,6 +829,9 @@ module clubb_driver
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
+      
+    real( kind = core_rknd ), dimension(1) :: &
+      sfc_elevation
     
     ! Definition of namelists
     namelist /model_setting/  &
@@ -1426,7 +1430,7 @@ module clubb_driver
            l_input_fields,                                    & ! Intent(in)
            l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,           & ! Intent(in)
-           sfc_elevation,                                     & ! Intent(in)
+           sfc_elevation(1),                                  & ! Intent(in)
            iiPDF_type,                                        & ! intent(in)
            ipdf_call_placement,                               & ! intent(in)
            l_predict_upwp_vpwp,                               & ! intent(in)
@@ -1458,7 +1462,7 @@ module clubb_driver
     allocate( wprcp(1:gr(1)%nz) )     ! w'rc'
     allocate( w_up_in_cloud(1:gr(1)%nz) )
     allocate( wp2(1:gr(1)%nz) )       ! w'^2
-    allocate( wp3(1:gr(1)%nz) )       ! w'^3
+    allocate( wp3(1,1:gr(1)%nz) )       ! w'^3
     allocate( rtp2(1:gr(1)%nz) )      ! rt'^2
     allocate( thlp2(1:gr(1)%nz) )     ! thl'^2
     allocate( rtpthlp(1:gr(1)%nz) )   ! rt'thlp'
@@ -1522,7 +1526,7 @@ module clubb_driver
     allocate( sigma_sqd_w(1:gr(1)%nz) )    ! PDF width parameter (momentum levels)
     allocate( sigma_sqd_w_zt(1:gr(1)%nz) ) ! PDF width parameter interp. to t-levs.
     allocate( Skw_zm(1:gr(1)%nz) )         ! Skewness of w on momentum levels
-    allocate( wp2_zt(1:gr(1)%nz) )         ! wp2 interpolated to thermo. levels
+    allocate( wp2_zt(1,1:gr(1)%nz) )         ! wp2 interpolated to thermo. levels
     allocate( ug(1:gr(1)%nz) )             ! u geostrophic wind
     allocate( vg(1:gr(1)%nz) )             ! v geostrophic wind
     allocate( um_ref(1:gr(1)%nz) )         ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
@@ -1603,7 +1607,7 @@ module clubb_driver
     wprtp(1:gr(1)%nz)   = zero          ! w'rt'
     wpthlp(1:gr(1)%nz)  = zero          ! w'thl'
     wp2(1:gr(1)%nz)     = w_tol_sqd     ! w'^2
-    wp3(1:gr(1)%nz)     = zero          ! w'^3
+    wp3(1,1:gr(1)%nz)   = zero          ! w'^3
     rtp2(1:gr(1)%nz)    = rt_tol**2     ! rt'^2
     thlp2(1:gr(1)%nz)   = thl_tol**2    ! thl'^2
     rtpthlp(1:gr(1)%nz) = zero          ! rt'thl'
@@ -1652,7 +1656,7 @@ module clubb_driver
     sigma_sqd_w    = zero ! PDF width parameter (momentum levels)
     sigma_sqd_w_zt = zero ! PDF width parameter interp. to t-levs.
     Skw_zm         = zero ! Skewness of w on momentum levels
-    wp2_zt         = w_tol_sqd ! wp2 interpolated to thermo. levels
+    wp2_zt(1,:)    = w_tol_sqd ! wp2 interpolated to thermo. levels
     ug             = zero ! u geostrophic wind
     vg             = zero ! v geostrophic wind
     um_ref         = zero
@@ -1974,7 +1978,7 @@ module clubb_driver
              restart_path_case, time_restart,          & ! Intent(in)
              um, upwp, vm, vpwp, up2, vp2, rtm,        & ! Intent(inout)
              wprtp, thlm, wpthlp, rtp2, rtp3,          & ! Intent(inout)
-             thlp2, thlp3, rtpthlp, wp2, wp3,          & ! Intent(inout)
+             thlp2, thlp3, rtpthlp, wp2, wp3(1,:),     & ! Intent(inout)
              p_in_Pa, exner, rcm(1,:), cloud_frac,     & ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp,       & ! Intent(inout)
              wp2rtp, wp2thlp, uprcp, vprcp,            & ! Intent(inout)
@@ -2157,7 +2161,7 @@ module clubb_driver
         call stat_fields_reader( gr(1), max( itime_nearest, 1 ), & ! In
                                  um, upwp, vm, vpwp, up2, vp2, rtm, & ! Inout
                                  wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
-                                 thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
+                                 thlp2, thlp3, rtpthlp, wp2, wp3(1,:), & ! Inout
                                  p_in_Pa, exner, rcm(1,:), cloud_frac, & ! Inout
                                  wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
                                  wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
@@ -2178,15 +2182,15 @@ module clubb_driver
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
-          wp2_zt = max( zm2zt( gr(1), wp2 ), w_tol_sqd ) ! Positive definite quantity
-          call clip_skewness_core( gr(1), sfc_elevation, params(iSkw_max_mag), &
-                                   wp2_zt, wp3 )
+          wp2_zt(1,:) = max( zm2zt( gr(1), wp2 ), w_tol_sqd ) ! Positive definite quantity
+          call clip_skewness_core( 1, gr(1)%nz, gr(:), sfc_elevation(:), params(iSkw_max_mag), &
+                                   wp2_zt(1,:), wp3(1,:) )
         end if
       end if
 
       ! Check for NaN values in the model arrays
-      if ( invalid_model_arrays( gr(1), um, vm, rtm, wprtp, thlm, wpthlp, &
-                                 rtp2, thlp2, rtpthlp, wp2, wp3, &
+      if ( invalid_model_arrays( gr(1)%nz, um, vm, rtm, wprtp, thlm, wpthlp, &
+                                 rtp2, thlp2, rtpthlp, wp2, wp3(1,:), &
                                  wp2thvp, rtpthvp, thlpthvp, &
                                  hydromet, sclrm, edsclrm ) ) then
         err_code = clubb_fatal_error
@@ -2269,7 +2273,7 @@ module clubb_driver
       
       ! Call the parameterization one timestep
       call advance_clubb_core_api &
-           ( gr(1), l_implemented, dt_main, fcor, sfc_elevation, hydromet_dim, & ! Intent(in)
+           ( gr(1), l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, & ! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
@@ -2289,7 +2293,7 @@ module clubb_driver
              stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
              um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
-             wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
+             wp2, wp3(1,:), rtp2, rtp3, thlp2, thlp3, rtpthlp, &  ! Intent(inout)
              sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
              wpsclrp, edsclrm, err_code_dummy, &                  ! Intent(inout)
              rcm(1,:), cloud_frac, &                              ! Intent(inout)
@@ -2315,7 +2319,7 @@ module clubb_driver
       time_clubb_advance = time_clubb_advance + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for setup_pdf_parameters
       
-      wp2_zt = max( zm2zt( gr(1), wp2 ), w_tol_sqd ) ! Positive definite quantity
+      wp2_zt(1,:) = max( zm2zt( gr(1), wp2 ), w_tol_sqd ) ! Positive definite quantity
 
       
       if ( .not. trim( microphys_scheme ) == "none" ) then
@@ -2475,7 +2479,7 @@ module clubb_driver
       ! Call microphysics scheme and produce microphysics tendencies.
       call calc_microphys_scheme_tendcies( gr(1), dt_main, time_current, pdf_dim, runtype, & ! In
                               thlm, p_in_Pa, exner, rho, rho_zm, rtm, &               ! In
-                              rcm(1,:), cloud_frac, wm_zt, wm_zm, wp2_zt, &           ! In
+                              rcm(1,:), cloud_frac, wm_zt, wm_zm, wp2_zt(1,:), &           ! In
                               hydromet, Nc_in_cloud, &                                ! In
                               pdf_params, hydromet_pdf_params(1,:), &                 ! In
                               precip_fracs, &                                         ! In
@@ -2504,7 +2508,7 @@ module clubb_driver
       call cpu_time(time_start) ! initialize timer for advance_microphys
 
       ! Calculate Skw_zm for use in advance_microphys.
-      call Skx_func( gr(1)%nz, 1, wp2, zt2zm( gr(1), wp3 ), &
+      call Skx_func( gr(1)%nz, 1, wp2, zt2zm( gr(1), wp3(1,:) ), &
                      w_tol, params(iSkw_denom_coef), params(iSkw_max_mag), &
                      Skw_zm )
       
@@ -5495,7 +5499,7 @@ module clubb_driver
         end if
 
         ! Check for impossible negative values
-        call rad_check( gr, thlm, rcm, rtm, rim, &               ! Intent(in)
+        call rad_check( gr%nz, thlm, rcm, rtm, rim, &               ! Intent(in)
                         cloud_frac, p_in_Pa, exner, rho_zm ) ! Intent(in)
 
       end if  ! clubb_at_least_debug_level( 0 )

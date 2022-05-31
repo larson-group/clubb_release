@@ -1039,7 +1039,7 @@ module pdf_parameter_tests
 
                 ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
                 ! sigma_w_2, and mixt_frac.
-                call calc_setter_var_params( gr, wm, wp2(1,:), Skw, sgn_wp2,     & ! In
+                call calc_setter_var_params( gr%nz, wm, wp2(1,:), Skw, sgn_wp2,     & ! In
                                              F_w, zeta_w,               & ! In
                                              mu_w_1, mu_w_2, sigma_w_1, & ! Out
                                              sigma_w_2, mixt_frac,      & ! Out
@@ -1070,7 +1070,7 @@ module pdf_parameter_tests
 
                 ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
                 coef_wp4_implicit &
-                = calc_coef_wp4_implicit( gr, mixt_frac, F_w, &
+                = calc_coef_wp4_implicit( gr%nz, mixt_frac, F_w, &
                                           coef_sigma_w_1_sqd, &
                                           coef_sigma_w_2_sqd )
 
@@ -1458,9 +1458,9 @@ module pdf_parameter_tests
                            // "the setting variable (w is used here)."
           write(fstdout,*) ""
 
-          mixt_frac = calc_mixt_frac_LY93( gr, abs( Skw ) )
+          mixt_frac = calc_mixt_frac_LY93( gr%nz, abs( Skw ) )
 
-          call calc_params_LY93( gr, wm, wp2(1,:), Skw, mixt_frac,     & ! In
+          call calc_params_LY93( gr%nz, wm, wp2(1,:), Skw, mixt_frac,     & ! In
                                  mu_w_1, mu_w_2,              & ! Out
                                  sigma_w_1_sqd, sigma_w_2_sqd ) ! Out
 
@@ -1520,7 +1520,7 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          call new_pdf_driver( gr, wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), Skw, & ! In
+          call new_pdf_driver( gr%nz, wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), Skw, & ! In
                                wprtp(1,:), wpthlp(1,:), rtpthlp,                   & ! In
                                slope_coef_spread_DG_means_w,             & ! In
                                pdf_component_stdev_factor_w,             & ! In
@@ -1556,7 +1556,7 @@ module pdf_parameter_tests
              gamma_Skw_fnc(1,:) = gamma_coef
           endif
 
-          call new_hybrid_pdf_driver( gr, wm, rtm, thlm, um, vm,          &! In
+          call new_hybrid_pdf_driver( gr%nz, wm, rtm, thlm, um, vm,          &! In
                                       wp2(1,:), rtp2(1,:), thlp2(1,:), up2(1,:), vp2(1,:),         &! In
                                       Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:),     &! In
                                       sclrm, sclrp2, wpsclrp,             &! In
@@ -1633,7 +1633,7 @@ module pdf_parameter_tests
                            // "the full PDF."
           write(fstdout,*) ""
 
-          call LY93_driver( gr, wm, rtm, thlm, wp2(1,:), rtp2(1,:),          & ! In
+          call LY93_driver( gr%nz, wm, rtm, thlm, wp2(1,:), rtp2(1,:),          & ! In
                             thlp2(1,:), Skw, Skrt, Skthl,           & ! In
                             mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
                             mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out

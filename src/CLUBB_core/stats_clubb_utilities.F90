@@ -1857,8 +1857,9 @@ module stats_clubb_utilities
   end subroutine stats_end_timestep
 
   !----------------------------------------------------------------------
-  subroutine stats_accumulate & 
-                   ( gr, um, vm, upwp, vpwp, up2, vp2, &
+  subroutine stats_accumulate( &
+                     nz, invrs_dzm, zt, dzm, dzt, &
+                     um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
@@ -2105,9 +2106,6 @@ module stats_clubb_utilities
         itot_vartn_normlzd_wprtp
 
     use grid_class, only: & 
-        grid ! Type
-
-    use grid_class, only: & 
         zt2zm ! Procedure(s)
 
     use pdf_parameter_module, only: & 
@@ -2149,10 +2147,20 @@ module stats_clubb_utilities
       stats_zm, &
       stats_sfc
 
-    type (grid), target, intent(in) :: gr
-
     ! Input Variable(s)
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    integer, intent(in) :: &
+      nz
+    
+    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
+      invrs_dzm, & ! The inverse spacing between thermodynamic grid
+                   ! levels; centered over momentum grid levels.
+      zt,        & ! Thermo grid
+      dzm,       & ! Spacing between thermodynamic grid levels; centered over
+                   ! momentum grid levels
+      dzt          ! Spcaing between momentum grid levels; centered over
+                   ! thermodynamic grid levels
+                   
+    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
       um,       & ! u wind (thermodynamic levels)          [m/s]
       vm,       & ! v wind (thermodynamic levels)          [m/s]
       upwp,     & ! vertical u momentum flux (m levs.)     [m^2/s^2]
@@ -2175,7 +2183,7 @@ module stats_clubb_utilities
       rtpthvp,  & ! < r_t' th_v' > (momentum levels)       [kg/kg K]
       thlpthvp    ! < th_l' th_v' > (momentum levels)      [K^2]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
       p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
       exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
       rho,          & ! Density (thermodynamic levels)           [kg/m^3]
@@ -2187,7 +2195,7 @@ module stats_clubb_utilities
       wm_zt,        & ! w on thermodynamic levels                [m/s]
       wm_zm           ! w on momentum levels                     [m/s]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
       rcm_zm,               & ! Cloud water mixing ratio on m levs.      [kg/kg]
       rtm_zm,               & ! Total water mixing ratio on m levs.      [kg/kg]
       thlm_zm,              & ! Liquid potential temperature on m levs.  [K]
@@ -2203,10 +2211,10 @@ module stats_clubb_utilities
       cloud_cover,          & ! Cloud cover                              [-]
       rcm_supersat_adj        ! rcm adjustment due to supersaturation    [kg/kg]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz) :: &
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
         thvm,           & ! Virtual potential temperature        [K]
         ug,             & ! u geostrophic wind                   [m/s]
         vg,             & ! v geostrophic wind                   [m/s]
@@ -2224,7 +2232,7 @@ module stats_clubb_utilities
         sigma_sqd_w_zt, & ! PDF width parameter (thermo. levels) [-]
         rsat              ! Saturation mixing ratio              [kg/kg]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
         wp2_zt,        & ! w'^2 on thermo. grid                  [m^2/s^2]
         thlp2_zt,      & ! thl'^2 on thermo. grid                [K^2]
         wpthlp_zt,     & ! w'thl' on thermo. grid                [m K/s]
@@ -2258,7 +2266,7 @@ module stats_clubb_utilities
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
       pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nz,sclr_dim) :: & 
       sclrm,           & ! High-order passive scalar            [units vary]
       sclrp2,          & ! High-order passive scalar variance   [units^2]
       sclrprtp,        & ! High-order passive scalar covariance [units kg/kg]
@@ -2267,14 +2275,14 @@ module stats_clubb_utilities
       sclrpthvp,       & ! High-order passive scalar covariance [units K]
       wpsclrp            ! w'sclr'                              [units m/s]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nz,sclr_dim) :: & 
       sclrprcp,    & ! sclr'rc'     [units vary]
       wp2sclrp,    & ! w'^2 sclr'   [units vary]
       wpsclrp2,    & ! w'sclr'^2    [units vary]
       wpsclrprtp,  & ! w'sclr'rt'   [units vary]
       wpsclrpthlp    ! w'sclr'thl'  [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nz,edsclr_dim) :: & 
       wpedsclrp,       & ! w'edsclr'                        [units vary]
       edsclrm,         & ! Eddy-diff passive scalar         [units vary] 
       edsclrm_forcing    ! Large-scale forcing of edscalar  [units vary]
@@ -2284,7 +2292,7 @@ module stats_clubb_utilities
     integer :: isclr, k
     integer :: grid_level = 1  ! grid level for stats where there is only one sensible level (eg timeseries)
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       T_in_K,      &  ! Absolute temperature         [K]
       rsati,       &  ! Saturation w.r.t ice         [kg/kg]
       shear,       &  ! Wind shear production term   [m^2/s^3]
@@ -2679,11 +2687,11 @@ module stats_clubb_utilities
 
       ! Calculate shear production
       if ( ishear > 0 ) then
-        do k = 1, gr%nz-1, 1
-          shear(k) = - upwp(k) * ( um(k+1) - um(k) ) * gr%invrs_dzm(k)  &
-                     - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%invrs_dzm(k)
+        do k = 1, nz-1, 1
+          shear(k) = - upwp(k) * ( um(k+1) - um(k) ) * invrs_dzm(k)  &
+                     - vpwp(k) * ( vm(k+1) - vm(k) ) * invrs_dzm(k)
         enddo
-        shear(gr%nz) = 0.0_core_rknd
+        shear(nz) = 0.0_core_rknd
       end if
       call stat_update_var( ishear, shear, & ! intent(in)
                             stats_zm ) ! intent(inout)
@@ -2691,24 +2699,24 @@ module stats_clubb_utilities
       ! stats_sfc variables
 
       ! Cloud cover
-      call stat_update_var_pt( icc, grid_level, maxval( cloud_frac(1:gr%nz) ), & ! intent(in)
+      call stat_update_var_pt( icc, grid_level, maxval( cloud_frac(1:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Cloud base
       if ( iz_cloud_base > 0 ) then
 
         k = 1
-        do while ( rcm(k) < rc_tol .and. k < gr%nz )
+        do while ( rcm(k) < rc_tol .and. k < nz )
           k = k + 1
         enddo
 
-        if ( k > 1 .and. k < gr%nz) then
+        if ( k > 1 .and. k < nz) then
 
           ! Use linear interpolation to find the exact height of the
           ! rc_tol kg/kg level.  Brian.
           call stat_update_var_pt( iz_cloud_base, grid_level, & ! intent(in)
                                    lin_interpolate_two_points( rc_tol, rcm(k), & ! intent(in)
-                                   rcm(k-1), gr%zt(k), gr%zt(k-1) ), & ! intent(in)
+                                   rcm(k-1), zt(k), zt(k-1) ), & ! intent(in)
                                    stats_sfc ) ! intent(inout)
 
         else
@@ -2718,7 +2726,7 @@ module stats_clubb_utilities
           call stat_update_var_pt( iz_cloud_base, grid_level, -10.0_core_rknd , & ! intent(in)
                                    stats_sfc ) ! intent(inout)
  
-        end if ! k > 1 and k < gr%nz
+        end if ! k > 1 and k < nz
 
       end if ! iz_cloud_base > 0
 
@@ -2727,8 +2735,8 @@ module stats_clubb_utilities
 
         xtmp &
         = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 rcm(2:gr%nz), gr%dzt(2:gr%nz) )
+               ( (nz - 2 + 1), rho_ds_zt(2:nz), &
+                 rcm(2:nz), dzt(2:nz) )
 
         call stat_update_var_pt( ilwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2740,8 +2748,8 @@ module stats_clubb_utilities
 
         xtmp &
         = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 ( rtm(2:gr%nz) - rcm(2:gr%nz) ), gr%dzt(2:gr%nz) )
+               ( (nz - 2 + 1), rho_ds_zt(2:nz), &
+                 ( rtm(2:nz) - rcm(2:nz) ), dzt(2:nz) )
 
         call stat_update_var_pt( ivwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2753,77 +2761,77 @@ module stats_clubb_utilities
 
       ! Find the vertical average of thermodynamic level variables, averaged from
       ! level 2 (the first thermodynamic level above model surface) through
-      ! level gr%nz (the top of the model).  Use the vertical averaging function
+      ! level nz (the top of the model).  Use the vertical averaging function
       ! found in fill_holes.F90.
 
       ! Vertical average of thlm.
       call stat_update_var_pt( ithlm_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), & ! intent(in)
-                         thlm(2:gr%nz), gr%dzt(2:gr%nz) ), & ! intent(in)
+           vertical_avg( (nz-2+1), rho_ds_zt(2:nz), & ! intent(in)
+                         thlm(2:nz), dzt(2:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of rtm.
       call stat_update_var_pt( irtm_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), & ! intent(in)
-                         rtm(2:gr%nz), gr%dzt(2:gr%nz) ), & ! intent(in)
+           vertical_avg( (nz-2+1), rho_ds_zt(2:nz), & ! intent(in)
+                         rtm(2:nz), dzt(2:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of um.
       call stat_update_var_pt( ium_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), & ! intent(in)
-                         um(2:gr%nz), gr%dzt(2:gr%nz) ), & ! intent(in)
+           vertical_avg( (nz-2+1), rho_ds_zt(2:nz), & ! intent(in)
+                         um(2:nz), dzt(2:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of vm.
       call stat_update_var_pt( ivm_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), & ! intent(in)
-                         vm(2:gr%nz), gr%dzt(2:gr%nz) ), & ! intent(in)
+           vertical_avg( (nz-2+1), rho_ds_zt(2:nz), & ! intent(in)
+                         vm(2:nz), dzt(2:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of momentum level variables.
 
       ! Find the vertical average of momentum level variables, averaged over the
-      ! entire vertical profile (level 1 through level gr%nz).  Use the vertical
+      ! entire vertical profile (level 1 through level nz).  Use the vertical
       ! averaging function found in fill_holes.F90.
 
       ! Vertical average of wp2.
       call stat_update_var_pt( iwp2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), & ! intent(in)
-                         wp2(1:gr%nz), gr%dzm(1:gr%nz) ), & ! intent(in)
+           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
+                         wp2(1:nz), dzm(1:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of up2.
       call stat_update_var_pt( iup2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), & ! intent(in)
-                         up2(1:gr%nz), gr%dzm(1:gr%nz) ), & ! intent(in)
+           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
+                         up2(1:nz), dzm(1:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of vp2.
       call stat_update_var_pt( ivp2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), & ! intent(in)
-                         vp2(1:gr%nz), gr%dzm(1:gr%nz) ), & ! intent(in)
+           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
+                         vp2(1:nz), dzm(1:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of rtp2.
       call stat_update_var_pt( irtp2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), & ! intent(in)
-                         rtp2(1:gr%nz), gr%dzm(1:gr%nz) ), & ! intent(in)
+           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
+                         rtp2(1:nz), dzm(1:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of thlp2.
       call stat_update_var_pt( ithlp2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), & ! intent(in)
-                         thlp2(1:gr%nz), gr%dzm(1:gr%nz) ), & ! intent(in)
+           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
+                         thlp2(1:nz), dzm(1:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
       
       
       if (itot_vartn_normlzd_rtm > 0) then
-        if (abs(rtm(gr%nz) - rtm(1)) < eps) then
+        if (abs(rtm(nz) - rtm(1)) < eps) then
           write(fstderr, *) "Warning: tot_vartn_normlzd_rtm tried to divide by zero denominator ", &
                             "(surface level value was equal to top level value)"
           xtmp = -999_core_rknd  ! workaround to signify zero denominator 
         else
-          xtmp = sum(abs(rtm(2 : gr%nz) - rtm(1 : gr%nz-1)) / abs(rtm(gr%nz) - rtm(1)))
+          xtmp = sum(abs(rtm(2 : nz) - rtm(1 : nz-1)) / abs(rtm(nz) - rtm(1)))
         end if
         
         call stat_update_var_pt( itot_vartn_normlzd_rtm, grid_level, xtmp, & ! intent(in)
@@ -2831,12 +2839,12 @@ module stats_clubb_utilities
       end if
      
       if (itot_vartn_normlzd_thlm > 0) then
-        if (abs(thlm(gr%nz) - thlm(1)) < eps) then
+        if (abs(thlm(nz) - thlm(1)) < eps) then
           write(fstderr, *) "Warning: tot_vartn_normlzd_thlm tried to divide by zero denominator ", &
                             "(surface level value was equal to top level value)"
           xtmp = -999_core_rknd  ! workaround to signify zero denominator 
         else
-          xtmp = sum(abs(thlm(2 : gr%nz) - thlm(1 : gr%nz-1)) / abs(thlm(gr%nz) - thlm(1)))
+          xtmp = sum(abs(thlm(2 : nz) - thlm(1 : nz-1)) / abs(thlm(nz) - thlm(1)))
         end if
         
         call stat_update_var_pt( itot_vartn_normlzd_thlm, grid_level, xtmp, & ! intent(in)
@@ -2844,12 +2852,12 @@ module stats_clubb_utilities
       end if
      
       if (itot_vartn_normlzd_wprtp > 0) then
-        if (abs(wprtp(gr%nz) - wprtp(1)) < eps) then
+        if (abs(wprtp(nz) - wprtp(1)) < eps) then
           write(fstderr, *) "Warning: tot_vartn_normlzd_wprtp tried to divide by zero denominator ", &
                             "(surface level value was equal to top level value)"
           xtmp = -999_core_rknd  ! workaround to signify zero denominator 
         else
-          xtmp = sum(abs(wprtp(2 : gr%nz) - wprtp(1 : gr%nz-1)) / abs(wprtp(gr%nz) - wprtp(1)))
+          xtmp = sum(abs(wprtp(2 : nz) - wprtp(1 : nz-1)) / abs(wprtp(nz) - wprtp(1)))
         end if
         
         call stat_update_var_pt( itot_vartn_normlzd_wprtp, grid_level, xtmp, & ! intent(in)

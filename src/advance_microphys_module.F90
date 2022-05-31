@@ -687,7 +687,7 @@ module advance_microphys_module
           ! Save prior value of the hydrometeors for determining total time
           ! tendency.
           if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
-             call stat_begin_update( gr, ixrm_bt, &
+             call stat_begin_update( gr%nz, ixrm_bt, &
                                      hydromet(:,i) &
                                      / dt, stats_zt )
           else
@@ -927,7 +927,7 @@ module advance_microphys_module
 
           ! Total time tendency
           if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
-             call stat_end_update( gr, ixrm_bt, &
+             call stat_end_update( gr%nz, ixrm_bt, &
                                    hydromet(:,i) &
                                    / dt, stats_zt )
           else
@@ -1228,7 +1228,7 @@ module advance_microphys_module
 
     ! Store the previous value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
-       call stat_begin_update( gr, iNcm_cl, &
+       call stat_begin_update( gr%nz, iNcm_cl, &
                                Ncm / dt, stats_zt )
     endif
 
@@ -1244,7 +1244,7 @@ module advance_microphys_module
 
     ! Enter the new value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
-       call stat_end_update( gr, iNcm_cl, &
+       call stat_end_update( gr%nz, iNcm_cl, &
                              Ncm / dt, stats_zt )
     endif
 

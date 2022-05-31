@@ -475,9 +475,9 @@ module mono_flux_limiter
 
     if ( l_stats_samp ) then
       do i = 1, ngrdcol
-        call stat_begin_update( gr(i), iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
+        call stat_begin_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
-        call stat_begin_update( gr(i), ixm_mfl, xm(i,:) / dt, & ! intent(in)
+        call stat_begin_update( nz, ixm_mfl, xm(i,:) / dt, & ! intent(in)
                                 stats_zt(i) ) ! intent(inout)
       end do
     endif
@@ -771,12 +771,12 @@ module mono_flux_limiter
                              lhs_mfl_xm(:,i,:) ) ! intent(out)
 
             ! Set up the right-hand side of tridiagonal matrix equation.
-            call mfl_xm_rhs( gr(i), dt, xm_old(i,:), wpxp(i,:), xm_forcing(i,:), & ! intent(in)
-                             rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), & ! intent(in)
+            call mfl_xm_rhs( nz, dt, xm_old(i,:), wpxp(i,:), xm_forcing(i,:), & ! intent(in)
+                             gr(i)%invrs_dzt(:), rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), & ! intent(in)
                              rhs_mfl_xm(i,:) ) ! intent(out)
 
             ! Solve the tridiagonal matrix equation.
-            call mfl_xm_solve( gr(i), solve_type, & ! intent(in)
+            call mfl_xm_solve( nz, solve_type, & ! intent(in)
                                lhs_mfl_xm(:,i,:), rhs_mfl_xm(i,:),  & ! intent(inout)
                                xm(i,:) ) ! intent(inout)
 
@@ -884,10 +884,10 @@ module mono_flux_limiter
     if ( l_stats_samp ) then
       do i = 1, ngrdcol
 
-        call stat_end_update( gr(i), iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
+        call stat_end_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
                               stats_zm(i) ) ! intent(inout)
 
-        call stat_end_update( gr(i), ixm_mfl, xm(i,:) / dt, & ! intent(in)
+        call stat_end_update( nz, ixm_mfl, xm(i,:) / dt, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
 
         if ( solve_type == mono_flux_thlm ) then
@@ -1007,8 +1007,8 @@ module mono_flux_limiter
   end subroutine mfl_xm_lhs
 
   !=============================================================================
-  subroutine mfl_xm_rhs( gr, dt, xm_old, wpxp, xm_forcing, &
-                         rho_ds_zm, invrs_rho_ds_zt, &
+  subroutine mfl_xm_rhs( nz, dt, xm_old, wpxp, xm_forcing, &
+                         invrs_dzt, rho_ds_zm, invrs_rho_ds_zt, &
                          rhs )
 
     ! Description:
@@ -1022,21 +1022,21 @@ module mono_flux_limiter
     !
     ! Subroutine mfl_xm_rhs sets up the right-hand side of the matrix equation.
 
-    use grid_class, only: & 
-        grid ! Type
-
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
-
+    
     ! Input Variables
+    integer, intent(in) :: &
+      nz
+      
     real( kind = core_rknd ), intent(in) ::  &
       dt                 ! Model timestep length                    [s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+      invrs_dzt,       & ! The inverse spacing between momentum grid levels;
+                         ! centered over thermodynamic grid levels.
       xm_old,          & ! xm; timestep (t) (thermodynamic levels)  [units vary]
       wpxp,            & ! w'x'; timestep (t+1); limited (m-levs.)  [units vary]
       xm_forcing,      & ! xm forcings (thermodynamic levels)       [units vary]
@@ -1044,7 +1044,7 @@ module mono_flux_limiter
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(nz), intent(out) ::  &
       rhs         ! Right hand side of tridiagonal matrix equation
 
     ! Local Variables
@@ -1060,7 +1060,7 @@ module mono_flux_limiter
     ! level k = 1, which is below the model surface, is simply set equal to the
     ! value of xm at level k = 2 after the solve has been completed.
 
-    do k = 2, gr%nz, 1
+    do k = 2, nz, 1
 
        ! Define indices
        km1 = max( k-1, 1 )
@@ -1081,7 +1081,7 @@ module mono_flux_limiter
        rhs(k) &
        = rhs(k) &
        - invrs_rho_ds_zt(k)  &
-         * gr%invrs_dzt(k)  &
+         * invrs_dzt(k)  &
            * ( rho_ds_zm(k) * wpxp(k) - rho_ds_zm(km1) * wpxp(km1) )
 
        ! RHS xm forcings.
@@ -1105,7 +1105,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_rhs
 
   !=============================================================================
-  subroutine mfl_xm_solve( gr, solve_type, &
+  subroutine mfl_xm_solve( nz, solve_type, &
                            lhs, rhs,  &
                            xm )
 
@@ -1121,9 +1121,6 @@ module mono_flux_limiter
     ! Subroutine mfl_xm_solve solves the tridiagonal matrix equation for xm at
     ! timestep index (t+1).
 
-    use grid_class, only: &
-        grid ! Type
-
     use lapack_wrap, only:  & 
         tridag_solve  ! Procedure(s)
 
@@ -1137,8 +1134,6 @@ module mono_flux_limiter
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
     ! Constant parameters
     integer, parameter :: & 
       kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
@@ -1146,17 +1141,20 @@ module mono_flux_limiter
       km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
+    integer, intent(in) :: &
+      nz
+    
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
 
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(3,nz), intent(inout) ::  & 
       lhs  ! Left hand side of tridiagonal matrix
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(nz), intent(inout) ::  &
       rhs  ! Right hand side of tridiagonal matrix equation
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
       xm   ! Value of variable being solved for at timestep (t+1)   [units vary]
 
     ! Local variable
@@ -1176,7 +1174,7 @@ module mono_flux_limiter
 
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
     call tridag_solve & 
-         ( solve_type_str, gr%nz, 1, lhs(kp1_tdiag,:),  &  ! Intent(in)
+         ( solve_type_str, nz, 1, lhs(kp1_tdiag,:),  &  ! Intent(in)
            lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs,  &       ! Intent(inout)
            xm )                                            ! Intent(out)
 

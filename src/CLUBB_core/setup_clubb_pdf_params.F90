@@ -326,8 +326,9 @@ module setup_clubb_pdf_params
       wm_zt,  & ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
       wp2_zt    ! Variance of w, <w'^2> (interp. to t-levs.)      [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(nz) :: &
-      rtp2_zt_from_chi
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      rtp2_zt_from_chi, &
+      rtp2_zm_from_chi
  
     real( kind = core_rknd ) :: &
       omicron,        & ! Relative width parameter, omicron = R / Rmax    [-]
@@ -804,7 +805,7 @@ module setup_clubb_pdf_params
       if ( irtp2_from_chi > 0 ) then
 
         do i = 1, ngrdcol
-          rtp2_zt_from_chi &
+          rtp2_zt_from_chi(i,:) &
             = compute_rtp2_from_chi( pdf_params%stdev_chi_1(i,:), pdf_params%stdev_chi_2(i,:), &
                                      pdf_params%stdev_eta_1(i,:), pdf_params%stdev_eta_2(i,:), &
                                      pdf_params%rt_1(i,:), pdf_params%rt_2(j,:),               &
@@ -812,16 +813,20 @@ module setup_clubb_pdf_params
                                      pdf_params%mixt_frac(i,:),                                &   
                                      corr_array_1_n(i,:,iiPDF_chi,iiPDF_eta),                  &
                                      corr_array_2_n(i,:,iiPDF_chi,iiPDF_eta) )
-
-          ! Switch back to using stat_update_var once the code is generalized
-          ! to pass in the number of vertical levels.
-          ! call stat_update_var( irtp2_from_chi, zt2zm( rtp2_zt_from_chi ), &
-          ! stats_zm )
-          do k = 1, nz, 1
-            call stat_update_var_pt( irtp2_from_chi, k, zt2zm( gr(i), rtp2_zt_from_chi, k ), & !in
-                                     stats_zm(i) ) ! intent(inout)
-          end do ! k = 1, nz, 1
         end do
+        
+        rtp2_zm_from_chi = zt2zm( nz, ngrdcol, gr, rtp2_zt_from_chi )
+      
+        ! Switch back to using stat_update_var once the code is generalized
+        ! to pass in the number of vertical levels.
+        ! call stat_update_var( irtp2_from_chi, zt2zm( rtp2_zt_from_chi ), &
+        ! stats_zm )
+        do k = 1, nz, 1
+          do i = 1, ngrdcol
+            call stat_update_var_pt( irtp2_from_chi, k, rtp2_zm_from_chi(i,k), & !in
+                                     stats_zm(i) ) ! intent(inout)
+          end do
+        end do ! k = 1, nz, 1
         
       end if
 

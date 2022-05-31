@@ -2081,7 +2081,7 @@ contains
   ! fill_holes_vertical - clips values of 'field' that are below 'threshold' as much as possible.
   !================================================================================================
 
-  subroutine fill_holes_vertical_api( gr, &
+  subroutine fill_holes_vertical_api( nz, dzm, dzt, &
     num_pts, threshold, field_grid, &
     rho_ds, rho_ds_zm, &
     field )
@@ -2091,8 +2091,15 @@ contains
      ! Type
 
     implicit none
-
-    type(grid), target, intent(in) :: gr
+    
+    integer, intent(in) :: &
+      nz
+    
+    real( kind = core_rknd ), dimension(nz) :: &
+      dzm, &  ! Spacing between thermodynamic grid levels; centered over
+              ! momentum grid levels
+      dzt     ! Spcaing between momentum grid levels; centered over
+              ! thermodynamic grid levels
 
     ! Input variables
     integer, intent(in) :: &
@@ -2106,15 +2113,15 @@ contains
     character(len=2), intent(in) :: &
       field_grid ! The grid of the field, either stats_zt or stats_zm
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
       rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
       rho_ds_zm    ! Dry, static density on momentum levels         [kg/m^3]
 
     ! Input/Output variable
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
       field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
 
-    call fill_holes_vertical( gr, & ! intent(in)
+    call fill_holes_vertical( nz, dzm, dzt, & ! intent(in)
       num_pts, threshold, field_grid, & ! intent(in)
       rho_ds, rho_ds_zm, & ! intent(in)
       field ) ! intent(inout)
