@@ -1376,7 +1376,7 @@ do j = 1,ny
         if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(0,*) "M2005 has received a negative water vapor"
         end if
-        call fill_holes_vertical_api( gr, 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qv_clip )
+        call fill_holes_vertical_api( gr%nz, gr%dzm, gr%dzt, 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qv_clip )
         tmpqv = qv_clip(2:nz)
       end if
       if ( any( tmpqcl < 0. ) ) then
@@ -1385,7 +1385,7 @@ do j = 1,ny
         if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(0,*) "M2005 has received a negative liquid water"
         end if
-        call fill_holes_vertical_api( gr, 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qcl_clip )
+        call fill_holes_vertical_api( gr%nz, gr%dzm, gr%dzt, 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qcl_clip )
         tmpqcl = qcl_clip(2:nz)
       end if
 
@@ -1444,7 +1444,7 @@ do j = 1,ny
         if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(0,*) "M2005 has produced a negative water vapor"
         end if
-        call fill_holes_vertical_api( gr, 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qv_clip )
+        call fill_holes_vertical_api( gr%nz, gr%dzm, gr%dzt, 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qv_clip )
         tmpqv = qv_clip(2:nz)
       end if
       if ( any( tmpqcl < 0. ) ) then
@@ -1453,7 +1453,7 @@ do j = 1,ny
         if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(0,*) "M2005 has produced a negative liquid water"
         end if
-        call fill_holes_vertical_api( gr, 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qcl_clip )
+        call fill_holes_vertical_api( gr%nz, gr%dzm, gr%dzt, 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qcl_clip )
         tmpqcl = qcl_clip(2:nz)
       end if
 #endif /*CLUBB*/
