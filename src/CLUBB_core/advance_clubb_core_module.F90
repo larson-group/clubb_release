@@ -602,7 +602,7 @@ module advance_clubb_core_module
       pdf_params,    & ! Fortran structure of PDF parameters on thermodynamic levels    [units vary]
       pdf_params_zm    ! Fortran structure of PDF parameters on momentum levels        [units vary]
 
-    type(implicit_coefs_terms), intent(inout), dimension(ngrdcol) :: &
+    type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
 #ifdef GFDL
@@ -2867,7 +2867,7 @@ module advance_clubb_core_module
       pdf_params,    & ! PDF parameters                           [units vary]
       pdf_params_zm    ! PDF parameters                           [units vary]
 
-    type(implicit_coefs_terms), dimension(ngrdcol), intent(inout) :: &
+    type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     !!! Local Variables
@@ -2985,7 +2985,7 @@ module advance_clubb_core_module
       min_F_thl_zm, &
       max_F_thl_zm
 
-    type(implicit_coefs_terms), dimension(ngrdcol) :: &
+    type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms_zm
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -3328,10 +3328,8 @@ module advance_clubb_core_module
       ! pdf_implicit_coefs_terms is only used in the iiPDF_new and iiPDF_new_hybrid closures.
       ! So we only need to initialize our local _zm version if we're working with one of those.
       if ( iiPDF_type == iiPDF_new .or. iiPDF_type == iiPDF_new_hybrid ) then
-        do i = 1, ngrdcol
-          call init_pdf_implicit_coefs_terms( nz, sclr_dim, &            ! Intent(in)
-                                              pdf_implicit_coefs_terms_zm(i) ) ! Intent(out)
-        end do
+        call init_pdf_implicit_coefs_terms( nz, ngrdcol, sclr_dim, &      ! Intent(in)
+                                            pdf_implicit_coefs_terms_zm ) ! Intent(out)
       end if 
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.

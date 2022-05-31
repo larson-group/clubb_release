@@ -1520,7 +1520,7 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          call new_pdf_driver( gr%nz, wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), Skw, & ! In
+          call new_pdf_driver( gr%nz, 1, wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), Skw, & ! In
                                wprtp(1,:), wpthlp(1,:), rtpthlp,                   & ! In
                                slope_coef_spread_DG_means_w,             & ! In
                                pdf_component_stdev_factor_w,             & ! In
@@ -1556,7 +1556,7 @@ module pdf_parameter_tests
              gamma_Skw_fnc(1,:) = gamma_coef
           endif
 
-          call new_hybrid_pdf_driver( gr%nz, wm, rtm, thlm, um, vm,          &! In
+          call new_hybrid_pdf_driver( gr%nz, 1, wm, rtm, thlm, um, vm,          &! In
                                       wp2(1,:), rtp2(1,:), thlp2(1,:), up2(1,:), vp2(1,:),         &! In
                                       Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:),     &! In
                                       sclrm, sclrp2, wpsclrp,             &! In

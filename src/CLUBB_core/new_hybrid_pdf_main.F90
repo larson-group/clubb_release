@@ -24,7 +24,7 @@ module new_hybrid_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_hybrid_pdf_driver( nz, wm, rtm, thlm, um, vm,          & ! In
+  subroutine new_hybrid_pdf_driver( nz, ngrdcol, wm, rtm, thlm, um, vm, & ! In
                                     wp2, rtp2, thlp2, up2, vp2,         & ! In
                                     Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
                                     sclrm, sclrp2, wpsclrp,             & ! In
@@ -83,10 +83,11 @@ module new_hybrid_pdf_main
     implicit none
 
     integer, intent(in) :: &
-      nz
+      nz, &
+      ngrdcol
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wm,      & ! Mean of w (overall)                 [m/s]
       rtm,     & ! Mean of rt (overall)                [kg/kg]
       thlm,    & ! Mean of thl (overall)               [K]
@@ -103,7 +104,7 @@ module new_hybrid_pdf_main
       upwp,    & ! Covariance of u and w (overall)     [m^2/s^2]
       vpwp       ! Covariance of v and w (overall)     [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(nz,sclr_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: &
       sclrm,   & ! Mean of sclr (overall)                [units vary]
       sclrp2,  & ! Variance of sclr (overall)            [(units vary)^2]
       wpsclrp    ! Covariance of w and sclr (overall)    [(m/s)(units vary)]
@@ -115,7 +116,7 @@ module new_hybrid_pdf_main
     ! When gamma goes to 1, the standard deviations of w in each PDF component
     ! become large, and the spread between the two PDF component means of w
     ! becomes small.  F_w goes to max_F_w.
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       gamma_Skw_fnc    ! Value of parameter gamma from tunable Skw function  [-]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -128,17 +129,17 @@ module new_hybrid_pdf_main
     ! These variables are input/output because their values may be clipped.
     ! Otherwise, as long as it is not necessary to clip them, their values
     ! will stay the same.
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
       Skrt,  & ! Skewness of rt (overall)            [-]
       Skthl, & ! Skewness of thl (overall)           [-]
       Sku,   & ! Skewness of u (overall)             [-]
       Skv      ! Skewness of v (overall)             [-]
 
-    real( kind = core_rknd ), dimension(nz,sclr_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(inout) :: &
       Sksclr    ! Skewness of sclr (overall)         [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
       mu_rt_1,         & ! Mean of rt (1st PDF component)       [kg/kg]
@@ -161,7 +162,7 @@ module new_hybrid_pdf_main
       sigma_v_2_sqd,   & ! Variance of v (2nd PDF component)    [m^2/s^2]
       mixt_frac          ! Mixture fraction                     [-]
 
-    real( kind = core_rknd ), dimension(nz,sclr_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(out) :: &
       mu_sclr_1,        & ! Mean of sclr (1st PDF component)      [units vary]
       mu_sclr_2,        & ! Mean of sclr (2nd PDF component)      [units vary]
       sigma_sclr_1_sqd, & ! Variance of sclr (1st PDF component)  [(un. vary)^2]
@@ -171,7 +172,7 @@ module new_hybrid_pdf_main
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Output only for recording statistics.
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       F_w,     & ! Parameter for the spread of the PDF component means of w  [-]
       min_F_w, & ! Minimum allowable value of parameter F_w                  [-]
       max_F_w    ! Maximum allowable value of parameter F_w                  [-]
@@ -307,361 +308,363 @@ module new_hybrid_pdf_main
     real( kind = core_rknd ), dimension(nz,sclr_dim) :: &
       zero_array    ! Array of 0s (size nz x sclr_dim)    [-]
 
-    integer :: k, j  ! Loop indices
+    integer :: i, k, j  ! Loop indices
+    
+    do i = 1, ngrdcol
 
+      ! Calculate the maximum value of the square of the correlation of w and a
+      ! scalar when scalars are used.
+      ! Initialize max_corr_w_sclr_sqd to 0.  It needs to retain this value even
+      ! when sclr_dim = 0.
+      max_corr_w_sclr_sqd = zero
+      if ( sclr_dim > 0 ) then
+         do k = 1, nz, 1
+            do j = 1, sclr_dim, 1
+               if ( wp2(i,k) * sclrp2(i,k,j) > zero ) then
+                  max_corr_w_sclr_sqd(k) = max( wpsclrp(i,k,j)**2 &
+                                                / ( wp2(i,k) * sclrp2(i,k,j) ), &
+                                                max_corr_w_sclr_sqd(k) )
+               endif ! wp2(k) * sclrp2(k,j) > 0
+            enddo ! j = 1, sclr_dim, 1
+         enddo ! k = 1, nz, 1
+      endif ! sclr_dim > 0
 
-    ! Calculate the maximum value of the square of the correlation of w and a
-    ! scalar when scalars are used.
-    ! Initialize max_corr_w_sclr_sqd to 0.  It needs to retain this value even
-    ! when sclr_dim = 0.
-    max_corr_w_sclr_sqd = zero
-    if ( sclr_dim > 0 ) then
-       do k = 1, nz, 1
-          do j = 1, sclr_dim, 1
-             if ( wp2(k) * sclrp2(k,j) > zero ) then
-                max_corr_w_sclr_sqd(k) = max( wpsclrp(k,j)**2 &
-                                              / ( wp2(k) * sclrp2(k,j) ), &
-                                              max_corr_w_sclr_sqd(k) )
-             endif ! wp2(k) * sclrp2(k,j) > 0
-          enddo ! j = 1, sclr_dim, 1
-       enddo ! k = 1, nz, 1
-    endif ! sclr_dim > 0
+      slope_coef_spread_DG_means_w_in = slope_coef_spread_DG_means_w
+      pdf_component_stdev_factor_w_in = pdf_component_stdev_factor_w
 
-    slope_coef_spread_DG_means_w_in = slope_coef_spread_DG_means_w
-    pdf_component_stdev_factor_w_in = pdf_component_stdev_factor_w
+      ! Calculate the values of PDF tunable parameters F_w and zeta_w.
+      ! Vertical velocity, w, will always be the setter variable.
+      call calc_F_w_zeta_w( Skw(i,:), wprtp(i,:), wpthlp(i,:), upwp(i,:), vpwp(i,:),  & ! In
+                            wp2(i,:), rtp2(i,:), thlp2(i,:), up2(i,:), vp2(i,:),      & ! In
+                            gamma_Skw_fnc(i,:),                   & ! In
+                            slope_coef_spread_DG_means_w_in, & ! In
+                            pdf_component_stdev_factor_w_in, & ! In
+                            max_corr_w_sclr_sqd,             & ! In
+                            F_w(i,:), zeta_w, min_F_w(i,:), max_F_w(i,:)    ) ! Out
 
-    ! Calculate the values of PDF tunable parameters F_w and zeta_w.
-    ! Vertical velocity, w, will always be the setter variable.
-    call calc_F_w_zeta_w( Skw, wprtp, wpthlp, upwp, vpwp,  & ! In
-                          wp2, rtp2, thlp2, up2, vp2,      & ! In
-                          gamma_Skw_fnc,                   & ! In
-                          slope_coef_spread_DG_means_w_in, & ! In
-                          pdf_component_stdev_factor_w_in, & ! In
-                          max_corr_w_sclr_sqd,             & ! In
-                          F_w, zeta_w, min_F_w, max_F_w    ) ! Out
+      ! Calculate the PDF parameters, including mixture fraction, for the
+      ! setter variable, w.
+      call calculate_w_params( wm(i,:), wp2(i,:), Skw(i,:), F_w(i,:), zeta_w, & ! In
+                               mu_w_1(i,:), mu_w_2(i,:), sigma_w_1, & ! Out
+                               sigma_w_2, mixt_frac(i,:),      & ! Out
+                               coef_sigma_w_1_sqd,        & ! Out
+                               coef_sigma_w_2_sqd         ) ! Out
 
-    ! Calculate the PDF parameters, including mixture fraction, for the
-    ! setter variable, w.
-    call calculate_w_params( wm, wp2, Skw, F_w, zeta_w, & ! In
-                             mu_w_1, mu_w_2, sigma_w_1, & ! Out
-                             sigma_w_2, mixt_frac,      & ! Out
-                             coef_sigma_w_1_sqd,        & ! Out
-                             coef_sigma_w_2_sqd         ) ! Out
+      sigma_w_1_sqd(i,:) = sigma_w_1**2
+      sigma_w_2_sqd(i,:) = sigma_w_2**2
 
-    sigma_w_1_sqd = sigma_w_1**2
-    sigma_w_2_sqd = sigma_w_2**2
+      if ( any( mixt_frac(i,:) < zero ) ) then
+         write(fstderr,*) "Mixture fraction cannot be calculated."
+         write(fstderr,*) "The value of F_w must be greater than 0 when " &
+                          // "| Skw | > 0."
+         error stop
+      endif
 
-    if ( any( mixt_frac < zero ) ) then
-       write(fstderr,*) "Mixture fraction cannot be calculated."
-       write(fstderr,*) "The value of F_w must be greater than 0 when " &
-                        // "| Skw | > 0."
-       error stop
-    endif
+      ! Calculate the PDF parameters for responder variable rt.
+      call calc_responder_driver( rtm(i,:), rtp2(i,:), wprtp(i,:), wp2(i,:), & ! In
+                                  mixt_frac(i,:), F_w(i,:),        & ! In
+                                  Skrt(i,:),                  & ! In/Out
+                                  mu_rt_1(i,:), mu_rt_2(i,:),      & ! Out
+                                  sigma_rt_1_sqd(i,:),        & ! Out
+                                  sigma_rt_2_sqd(i,:),        & ! Out
+                                  coef_sigma_rt_1_sqd,   & ! Out
+                                  coef_sigma_rt_2_sqd    ) ! Out
 
-    ! Calculate the PDF parameters for responder variable rt.
-    call calc_responder_driver( rtm, rtp2, wprtp, wp2, & ! In
-                                mixt_frac, F_w,        & ! In
-                                Skrt,                  & ! In/Out
-                                mu_rt_1, mu_rt_2,      & ! Out
-                                sigma_rt_1_sqd,        & ! Out
-                                sigma_rt_2_sqd,        & ! Out
-                                coef_sigma_rt_1_sqd,   & ! Out
-                                coef_sigma_rt_2_sqd    ) ! Out
+      ! Calculate the PDF parameters for responder variable thl.
+      call calc_responder_driver( thlm(i,:), thlp2(i,:), wpthlp(i,:), wp2(i,:), & ! In
+                                  mixt_frac(i,:), F_w(i,:),           & ! In
+                                  Skthl(i,:),                    & ! In/Out
+                                  mu_thl_1(i,:), mu_thl_2(i,:),       & ! Out
+                                  sigma_thl_1_sqd(i,:),          & ! Out
+                                  sigma_thl_2_sqd(i,:),          & ! Out
+                                  coef_sigma_thl_1_sqd,     & ! Out
+                                  coef_sigma_thl_2_sqd      ) ! Out
 
-    ! Calculate the PDF parameters for responder variable thl.
-    call calc_responder_driver( thlm, thlp2, wpthlp, wp2, & ! In
-                                mixt_frac, F_w,           & ! In
-                                Skthl,                    & ! In/Out
-                                mu_thl_1, mu_thl_2,       & ! Out
-                                sigma_thl_1_sqd,          & ! Out
-                                sigma_thl_2_sqd,          & ! Out
-                                coef_sigma_thl_1_sqd,     & ! Out
-                                coef_sigma_thl_2_sqd      ) ! Out
+      ! Calculate the PDF parameters for responder variable u.
+      call calc_responder_driver( um(i,:), up2(i,:), upwp(i,:), wp2(i,:), & ! In
+                                  mixt_frac(i,:), F_w(i,:),     & ! In
+                                  Sku(i,:),                & ! In/Out
+                                  mu_u_1(i,:), mu_u_2(i,:),     & ! Out
+                                  sigma_u_1_sqd(i,:),      & ! Out
+                                  sigma_u_2_sqd(i,:),      & ! Out
+                                  coef_sigma_u_1_sqd, & ! Out
+                                  coef_sigma_u_2_sqd  ) ! Out
 
-    ! Calculate the PDF parameters for responder variable u.
-    call calc_responder_driver( um, up2, upwp, wp2, & ! In
-                                mixt_frac, F_w,     & ! In
-                                Sku,                & ! In/Out
-                                mu_u_1, mu_u_2,     & ! Out
-                                sigma_u_1_sqd,      & ! Out
-                                sigma_u_2_sqd,      & ! Out
-                                coef_sigma_u_1_sqd, & ! Out
-                                coef_sigma_u_2_sqd  ) ! Out
+      ! Calculate the PDF parameters for responder variable v.
+      call calc_responder_driver( vm(i,:), vp2(i,:), vpwp(i,:), wp2(i,:), & ! In
+                                  mixt_frac(i,:), F_w(i,:),     & ! In
+                                  Skv(i,:),                & ! In/Out
+                                  mu_v_1(i,:), mu_v_2(i,:),     & ! Out
+                                  sigma_v_1_sqd(i,:),      & ! Out
+                                  sigma_v_2_sqd(i,:),      & ! Out
+                                  coef_sigma_v_1_sqd, & ! Out
+                                  coef_sigma_v_2_sqd  ) ! Out
 
-    ! Calculate the PDF parameters for responder variable v.
-    call calc_responder_driver( vm, vp2, vpwp, wp2, & ! In
-                                mixt_frac, F_w,     & ! In
-                                Skv,                & ! In/Out
-                                mu_v_1, mu_v_2,     & ! Out
-                                sigma_v_1_sqd,      & ! Out
-                                sigma_v_2_sqd,      & ! Out
-                                coef_sigma_v_1_sqd, & ! Out
-                                coef_sigma_v_2_sqd  ) ! Out
-
-    ! Calculate the PDF parameters for responder variable sclr.
-    if ( sclr_dim > 0 ) then
-
-       do j = 1, sclr_dim, 1
-
-          do k = 1, nz, 1
-             sclrjm(k) = sclrm(k,j)
-             sclrjp2(k) = sclrp2(k,j)
-             wpsclrjp(k) = wpsclrp(k,j)
-             Sksclrj(k) = Sksclr(k,j)
-          enddo ! k = 1, nz, 1
-
-          call calc_responder_driver( sclrjm, sclrjp2, wpsclrjp, wp2, & ! In
-                                      mixt_frac, F_w,                 & ! In
-                                      Sksclrj,                        & ! In/Out
-                                      mu_sclrj_1, mu_sclrj_2,         & ! Out
-                                      sigma_sclrj_1_sqd,              & ! Out
-                                      sigma_sclrj_2_sqd,              & ! Out
-                                      coef_sigma_sclrj_1_sqd,         & ! Out
-                                      coef_sigma_sclrj_2_sqd          ) ! Out
-
-          do k = 1, nz, 1
-             Sksclr(k,j) = Sksclrj(k)
-             mu_sclr_1(k,j) = mu_sclrj_1(k)
-             mu_sclr_2(k,j) = mu_sclrj_2(k)
-             sigma_sclr_1_sqd(k,j) = sigma_sclrj_1_sqd(k)
-             sigma_sclr_2_sqd(k,j) = sigma_sclrj_2_sqd(k)
-             coef_sigma_sclr_1_sqd(k,j) = coef_sigma_sclrj_1_sqd(k)
-             coef_sigma_sclr_2_sqd(k,j) = coef_sigma_sclrj_2_sqd(k)
-          enddo ! k = 1, nz, 1
-
-       enddo ! j = 1, sclr_dim, 1
-
-    endif ! sclr_dim > 0
-
-
-    if ( .not. l_explicit_turbulent_adv_wp3 ) then
-
-       ! Turbulent advection of <w'^3> is being handled implicitly.
-
-       ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
-       coef_wp4_implicit &
-       = calculate_coef_wp4_implicit( mixt_frac, F_w, &
-                                      coef_sigma_w_1_sqd, &
-                                      coef_sigma_w_2_sqd )
-
-    else ! l_explicit_turbulent_adv_wp3
-
-       ! Turbulent advection of <w'^3> is being handled explicitly.
-       coef_wp4_implicit = zero
-
-    endif ! .not. l_explicit_turbulent_adv_wp3
-
-    if ( .not. l_explicit_turbulent_adv_wpxp ) then
-
-       ! Turbulent advection of <w'rt'>, <w'thl'>, <u'w'>, <v'w'>, and <w'sclr'>
-       ! are all being handled implicitly.
-
-       ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'>
-       coef_wp2rtp_implicit = calc_coef_wp2xp_implicit( wp2, mixt_frac, F_w, &
-                                                        coef_sigma_w_1_sqd,  &
-                                                        coef_sigma_w_2_sqd   )
-
-       ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'>;
-       ! <w'^2 u'> = coef_wp2up_implicit * <u'w'>; and
-       ! <w'^2 v'> = coef_wp2vp_implicit * <v'w'>;
-       ! where each coef_wp2xp_implicit is the same as coef_wp2rtp_implicit.
-       coef_wp2thlp_implicit = coef_wp2rtp_implicit
-       coef_wp2up_implicit = coef_wp2rtp_implicit
-       coef_wp2vp_implicit = coef_wp2rtp_implicit
-
-       ! <w'^2 sclr'> = coef_wp2sclrp_implicit * <w'sclr'>;
-       ! where each coef_wp2xp_implicit is the same as coef_wp2rtp_implicit.
-       if ( sclr_dim > 0 ) then
-          do k = 1, nz, 1
-             do j = 1, sclr_dim, 1
-                coef_wp2sclrp_implicit(k,j) = coef_wp2rtp_implicit(k)
-             enddo ! j = 1, sclr_dim, 1
-          enddo ! k = 1, nz, 1
-       endif ! sclr_dim > 0
-
-    else ! l_explicit_turbulent_adv_wpxp
-
-       ! Turbulent advection of <w'rt'>, <w'thl'>, <u'w'>, <v'w'>, and <w'sclr'>
-       ! are all being handled explicitly.
-       coef_wp2rtp_implicit = zero
-       coef_wp2thlp_implicit = zero
-       coef_wp2up_implicit = zero
-       coef_wp2vp_implicit = zero
-       if ( sclr_dim > 0 ) then
-          coef_wp2sclrp_implicit = zero
-       endif ! sclr_dim > 0
-
-    endif ! .not. l_explicit_turbulent_adv_wpxp
-
-    if ( .not. l_explicit_turbulent_adv_xpyp ) then
-
-       ! Turbulent advection of <rt'^2>, <thl'^2>, <rt'thl'>, <u'^2>, <v'^2>,
-       ! <sclr'^2>, <sclr'rt'>, and <sclr'thl'> are all being handled
-       ! semi-implicitly.
-
-       ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2> + term_wprtp2_explicit
-       call calc_coefs_wpxp2_semiimpl( wp2, wprtp,           & ! In
-                                       mixt_frac, F_w,       & ! In
-                                       coef_sigma_rt_1_sqd,  & ! In
-                                       coef_sigma_rt_2_sqd,  & ! In
-                                       coef_wprtp2_implicit, & ! Out
-                                       term_wprtp2_explicit )  ! Out
-
-       ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2> + term_wprtp2_explicit
-       call calc_coefs_wpxp2_semiimpl( wp2, wpthlp,           & ! In
-                                       mixt_frac, F_w,        & ! In
-                                       coef_sigma_thl_1_sqd,  & ! In
-                                       coef_sigma_thl_2_sqd,  & ! In
-                                       coef_wpthlp2_implicit, & ! Out
-                                       term_wpthlp2_explicit )  ! Out
-
-       ! <w'rt'thl'> = coef_wprtpthlp_implicit * <rt'thl'>
-       !               + term_wprtpthlp_explicit
-       call calc_coefs_wpxpyp_semiimpl( wp2, wprtp, wpthlp,      & ! In
-                                        mixt_frac, F_w,          & ! In
-                                        coef_sigma_rt_1_sqd,     & ! In
-                                        coef_sigma_rt_2_sqd,     & ! In
-                                        coef_sigma_thl_1_sqd,    & ! In
-                                        coef_sigma_thl_2_sqd,    & ! In
-                                        coef_wprtpthlp_implicit, & ! Out
-                                        term_wprtpthlp_explicit  ) ! Out
-
-       ! <w'u'^2> = coef_wpup2_implicit * <u'^2> + term_wpup2_explicit
-       call calc_coefs_wpxp2_semiimpl( wp2, upwp,           & ! In
-                                       mixt_frac, F_w,      & ! In
-                                       coef_sigma_u_1_sqd,  & ! In
-                                       coef_sigma_u_2_sqd,  & ! In
-                                       coef_wpup2_implicit, & ! Out
-                                       term_wpup2_explicit )  ! Out
-
-       ! <w'v'^2> = coef_wpvp2_implicit * <v'^2> + term_wpvp2_explicit
-       call calc_coefs_wpxp2_semiimpl( wp2, vpwp,           & ! In
-                                       mixt_frac, F_w,      & ! In
-                                       coef_sigma_v_1_sqd,  & ! In
-                                       coef_sigma_v_2_sqd,  & ! In
-                                       coef_wpvp2_implicit, & ! Out
-                                       term_wpvp2_explicit )  ! Out
-
-       if ( sclr_dim > 0 ) then
+      ! Calculate the PDF parameters for responder variable sclr.
+      if ( sclr_dim > 0 ) then
 
          do j = 1, sclr_dim, 1
 
             do k = 1, nz, 1
-               wpsclrjp(k) = wpsclrp(k,j)
-               coef_sigma_sclrj_1_sqd(k) = coef_sigma_sclr_1_sqd(k,j)
-               coef_sigma_sclrj_2_sqd(k) = coef_sigma_sclr_2_sqd(k,j)
+               sclrjm(k) = sclrm(i,k,j)
+               sclrjp2(k) = sclrp2(i,k,j)
+               wpsclrjp(k) = wpsclrp(i,k,j)
+               Sksclrj(k) = Sksclr(i,k,j)
             enddo ! k = 1, nz, 1
 
-            ! <w'sclr'^2> = coef_wpsclrp2_implicit * <sclr'^2>
-            !               + term_wpsclrp2_explicit
-            call calc_coefs_wpxp2_semiimpl( wp2, wpsclrjp,           & ! In
-                                            mixt_frac, F_w,          & ! In
-                                            coef_sigma_sclrj_1_sqd,  & ! In
-                                            coef_sigma_sclrj_2_sqd,  & ! In
-                                            coef_wpsclrjp2_implicit, & ! Out
-                                            term_wpsclrjp2_explicit )  ! Out
-
-            ! <w'rt'sclr'> = coef_wprtpsclrp_implicit * <sclr'rt'>
-            !                + term_wprtpsclrp_explicit
-            call calc_coefs_wpxpyp_semiimpl( wp2, wprtp, wpsclrjp,      & ! In
-                                             mixt_frac, F_w,            & ! In
-                                             coef_sigma_rt_1_sqd,       & ! In
-                                             coef_sigma_rt_2_sqd,       & ! In
-                                             coef_sigma_sclrj_1_sqd,    & ! In
-                                             coef_sigma_sclrj_2_sqd,    & ! In
-                                             coef_wprtpsclrjp_implicit, & ! Out
-                                             term_wprtpsclrjp_explicit  ) ! Out
-
-            ! <w'thl'sclr'> = coef_wpthlpsclrp_implicit * <sclr'thl'>
-            !                 + term_wpthlpsclrp_explicit
-            call calc_coefs_wpxpyp_semiimpl( wp2, wpthlp, wpsclrjp,      & ! In
-                                             mixt_frac, F_w,             & ! In
-                                             coef_sigma_thl_1_sqd,       & ! In
-                                             coef_sigma_thl_2_sqd,       & ! In
-                                             coef_sigma_sclrj_1_sqd,     & ! In
-                                             coef_sigma_sclrj_2_sqd,     & ! In
-                                             coef_wpthlpsclrjp_implicit, & ! Out
-                                             term_wpthlpsclrjp_explicit  ) ! Out
+            call calc_responder_driver( sclrjm, sclrjp2, wpsclrjp, wp2(i,:), & ! In
+                                        mixt_frac(i,:), F_w(i,:),                 & ! In
+                                        Sksclrj,                        & ! In/Out
+                                        mu_sclrj_1, mu_sclrj_2,         & ! Out
+                                        sigma_sclrj_1_sqd,              & ! Out
+                                        sigma_sclrj_2_sqd,              & ! Out
+                                        coef_sigma_sclrj_1_sqd,         & ! Out
+                                        coef_sigma_sclrj_2_sqd          ) ! Out
 
             do k = 1, nz, 1
-               coef_wpsclrp2_implicit(k,j) = coef_wpsclrjp2_implicit(k)
-               term_wpsclrp2_explicit(k,j) = term_wpsclrjp2_explicit(k)
-               coef_wprtpsclrp_implicit(k,j) = coef_wprtpsclrjp_implicit(k)
-               term_wprtpsclrp_explicit(k,j) = term_wprtpsclrjp_explicit(k)
-               coef_wpthlpsclrp_implicit(k,j) = coef_wpthlpsclrjp_implicit(k)
-               term_wpthlpsclrp_explicit(k,j) = term_wpthlpsclrjp_explicit(k)
+               Sksclr(i,k,j) = Sksclrj(k)
+               mu_sclr_1(i,k,j) = mu_sclrj_1(k)
+               mu_sclr_2(i,k,j) = mu_sclrj_2(k)
+               sigma_sclr_1_sqd(i,k,j) = sigma_sclrj_1_sqd(k)
+               sigma_sclr_2_sqd(i,k,j) = sigma_sclrj_2_sqd(k)
+               coef_sigma_sclr_1_sqd(k,j) = coef_sigma_sclrj_1_sqd(k)
+               coef_sigma_sclr_2_sqd(k,j) = coef_sigma_sclrj_2_sqd(k)
             enddo ! k = 1, nz, 1
 
          enddo ! j = 1, sclr_dim, 1
 
-       endif ! sclr_dim > 0
+      endif ! sclr_dim > 0
 
-    else ! l_explicit_turbulent_adv_xpyp
 
-       ! Turbulent advection of <rt'^2>, <thl'^2>, <rt'thl'>, <u'^2>, <v'^2>,
-       ! <sclr'^2>, <sclr'rt'>, and <sclr'thl'> are being handled explicitly.
-       coef_wprtp2_implicit = zero
-       term_wprtp2_explicit = zero
-       coef_wpthlp2_implicit = zero
-       term_wpthlp2_explicit = zero
-       coef_wprtpthlp_implicit = zero
-       term_wprtpthlp_explicit = zero
-       coef_wpup2_implicit = zero
-       term_wpup2_explicit = zero
-       coef_wpvp2_implicit = zero
-       term_wpvp2_explicit = zero
-       if ( sclr_dim > 0 ) then
-          coef_wpsclrp2_implicit = zero
-          term_wpsclrp2_explicit = zero
-          coef_wprtpsclrp_implicit = zero
-          term_wprtpsclrp_explicit = zero
-          coef_wpthlpsclrp_implicit = zero
-          term_wpthlpsclrp_explicit = zero
-       endif ! sclr_dim > 0
+      if ( .not. l_explicit_turbulent_adv_wp3 ) then
 
-    endif ! .not. l_explicit_turbulent_adv_xpyp
+         ! Turbulent advection of <w'^3> is being handled implicitly.
 
-    ! Set up a vector of 0s and an array of 0s to help write results back to
-    ! type variable pdf_implicit_coefs_terms.
-    zeros = zero
-    zero_array = zero
+         ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
+         coef_wp4_implicit &
+         = calculate_coef_wp4_implicit( mixt_frac(i,:), F_w(i,:), &
+                                        coef_sigma_w_1_sqd, &
+                                        coef_sigma_w_2_sqd )
 
-    ! Pack the implicit coefficients and explicit terms into a single type
-    ! variable for output.
-    pdf_implicit_coefs_terms%coef_wp4_implicit = coef_wp4_implicit
-    pdf_implicit_coefs_terms%coef_wp2rtp_implicit = coef_wp2rtp_implicit
-    pdf_implicit_coefs_terms%term_wp2rtp_explicit = zeros
-    pdf_implicit_coefs_terms%coef_wp2thlp_implicit = coef_wp2thlp_implicit
-    pdf_implicit_coefs_terms%term_wp2thlp_explicit = zeros
-    pdf_implicit_coefs_terms%coef_wp2up_implicit = coef_wp2up_implicit
-    pdf_implicit_coefs_terms%term_wp2up_explicit = zeros
-    pdf_implicit_coefs_terms%coef_wp2vp_implicit = coef_wp2vp_implicit
-    pdf_implicit_coefs_terms%term_wp2vp_explicit = zeros
-    pdf_implicit_coefs_terms%coef_wprtp2_implicit = coef_wprtp2_implicit
-    pdf_implicit_coefs_terms%term_wprtp2_explicit = term_wprtp2_explicit
-    pdf_implicit_coefs_terms%coef_wpthlp2_implicit = coef_wpthlp2_implicit
-    pdf_implicit_coefs_terms%term_wpthlp2_explicit = term_wpthlp2_explicit
-    pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = coef_wprtpthlp_implicit
-    pdf_implicit_coefs_terms%term_wprtpthlp_explicit = term_wprtpthlp_explicit
-    pdf_implicit_coefs_terms%coef_wpup2_implicit = coef_wpup2_implicit
-    pdf_implicit_coefs_terms%term_wpup2_explicit = term_wpup2_explicit
-    pdf_implicit_coefs_terms%coef_wpvp2_implicit = coef_wpvp2_implicit
-    pdf_implicit_coefs_terms%term_wpvp2_explicit = term_wpvp2_explicit
-    if ( sclr_dim > 0 ) then
-       pdf_implicit_coefs_terms%coef_wp2sclrp_implicit = coef_wp2sclrp_implicit
-       pdf_implicit_coefs_terms%term_wp2sclrp_explicit = zero_array
-       pdf_implicit_coefs_terms%coef_wpsclrp2_implicit = coef_wpsclrp2_implicit
-       pdf_implicit_coefs_terms%term_wpsclrp2_explicit = term_wpsclrp2_explicit
-       pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit &
-       = coef_wprtpsclrp_implicit
-       pdf_implicit_coefs_terms%term_wprtpsclrp_explicit &
-       = term_wprtpsclrp_explicit
-       pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit &
-       = coef_wpthlpsclrp_implicit
-       pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit &
-       = term_wpthlpsclrp_explicit
-    endif ! sclr_dim > 0
+      else ! l_explicit_turbulent_adv_wp3
 
+         ! Turbulent advection of <w'^3> is being handled explicitly.
+         coef_wp4_implicit = zero
+
+      endif ! .not. l_explicit_turbulent_adv_wp3
+
+      if ( .not. l_explicit_turbulent_adv_wpxp ) then
+
+         ! Turbulent advection of <w'rt'>, <w'thl'>, <u'w'>, <v'w'>, and <w'sclr'>
+         ! are all being handled implicitly.
+
+         ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'>
+         coef_wp2rtp_implicit = calc_coef_wp2xp_implicit( wp2(i,:), mixt_frac(i,:), F_w(i,:), &
+                                                          coef_sigma_w_1_sqd,  &
+                                                          coef_sigma_w_2_sqd   )
+
+         ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'>;
+         ! <w'^2 u'> = coef_wp2up_implicit * <u'w'>; and
+         ! <w'^2 v'> = coef_wp2vp_implicit * <v'w'>;
+         ! where each coef_wp2xp_implicit is the same as coef_wp2rtp_implicit.
+         coef_wp2thlp_implicit = coef_wp2rtp_implicit
+         coef_wp2up_implicit = coef_wp2rtp_implicit
+         coef_wp2vp_implicit = coef_wp2rtp_implicit
+
+         ! <w'^2 sclr'> = coef_wp2sclrp_implicit * <w'sclr'>;
+         ! where each coef_wp2xp_implicit is the same as coef_wp2rtp_implicit.
+         if ( sclr_dim > 0 ) then
+            do k = 1, nz, 1
+               do j = 1, sclr_dim, 1
+                  coef_wp2sclrp_implicit(k,j) = coef_wp2rtp_implicit(k)
+               enddo ! j = 1, sclr_dim, 1
+            enddo ! k = 1, nz, 1
+         endif ! sclr_dim > 0
+
+      else ! l_explicit_turbulent_adv_wpxp
+
+         ! Turbulent advection of <w'rt'>, <w'thl'>, <u'w'>, <v'w'>, and <w'sclr'>
+         ! are all being handled explicitly.
+         coef_wp2rtp_implicit = zero
+         coef_wp2thlp_implicit = zero
+         coef_wp2up_implicit = zero
+         coef_wp2vp_implicit = zero
+         if ( sclr_dim > 0 ) then
+            coef_wp2sclrp_implicit = zero
+         endif ! sclr_dim > 0
+
+      endif ! .not. l_explicit_turbulent_adv_wpxp
+
+      if ( .not. l_explicit_turbulent_adv_xpyp ) then
+
+         ! Turbulent advection of <rt'^2>, <thl'^2>, <rt'thl'>, <u'^2>, <v'^2>,
+         ! <sclr'^2>, <sclr'rt'>, and <sclr'thl'> are all being handled
+         ! semi-implicitly.
+
+         ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2> + term_wprtp2_explicit
+         call calc_coefs_wpxp2_semiimpl( wp2(i,:), wprtp(i,:),           & ! In
+                                         mixt_frac(i,:), F_w(i,:),       & ! In
+                                         coef_sigma_rt_1_sqd,  & ! In
+                                         coef_sigma_rt_2_sqd,  & ! In
+                                         coef_wprtp2_implicit, & ! Out
+                                         term_wprtp2_explicit )  ! Out
+
+         ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2> + term_wprtp2_explicit
+         call calc_coefs_wpxp2_semiimpl( wp2(i,:), wpthlp(i,:),           & ! In
+                                         mixt_frac(i,:), F_w(i,:),        & ! In
+                                         coef_sigma_thl_1_sqd,  & ! In
+                                         coef_sigma_thl_2_sqd,  & ! In
+                                         coef_wpthlp2_implicit, & ! Out
+                                         term_wpthlp2_explicit )  ! Out
+
+         ! <w'rt'thl'> = coef_wprtpthlp_implicit * <rt'thl'>
+         !               + term_wprtpthlp_explicit
+         call calc_coefs_wpxpyp_semiimpl( wp2(i,:), wprtp(i,:), wpthlp(i,:),      & ! In
+                                          mixt_frac(i,:), F_w(i,:),          & ! In
+                                          coef_sigma_rt_1_sqd,     & ! In
+                                          coef_sigma_rt_2_sqd,     & ! In
+                                          coef_sigma_thl_1_sqd,    & ! In
+                                          coef_sigma_thl_2_sqd,    & ! In
+                                          coef_wprtpthlp_implicit, & ! Out
+                                          term_wprtpthlp_explicit  ) ! Out
+
+         ! <w'u'^2> = coef_wpup2_implicit * <u'^2> + term_wpup2_explicit
+         call calc_coefs_wpxp2_semiimpl( wp2(i,:), upwp(i,:),           & ! In
+                                         mixt_frac(i,:), F_w(i,:),      & ! In
+                                         coef_sigma_u_1_sqd,  & ! In
+                                         coef_sigma_u_2_sqd,  & ! In
+                                         coef_wpup2_implicit, & ! Out
+                                         term_wpup2_explicit )  ! Out
+
+         ! <w'v'^2> = coef_wpvp2_implicit * <v'^2> + term_wpvp2_explicit
+         call calc_coefs_wpxp2_semiimpl( wp2(i,:), vpwp(i,:),           & ! In
+                                         mixt_frac(i,:), F_w(i,:),      & ! In
+                                         coef_sigma_v_1_sqd,  & ! In
+                                         coef_sigma_v_2_sqd,  & ! In
+                                         coef_wpvp2_implicit, & ! Out
+                                         term_wpvp2_explicit )  ! Out
+
+         if ( sclr_dim > 0 ) then
+
+           do j = 1, sclr_dim, 1
+
+              do k = 1, nz, 1
+                 wpsclrjp(k) = wpsclrp(i,k,j)
+                 coef_sigma_sclrj_1_sqd(k) = coef_sigma_sclr_1_sqd(k,j)
+                 coef_sigma_sclrj_2_sqd(k) = coef_sigma_sclr_2_sqd(k,j)
+              enddo ! k = 1, nz, 1
+
+              ! <w'sclr'^2> = coef_wpsclrp2_implicit * <sclr'^2>
+              !               + term_wpsclrp2_explicit
+              call calc_coefs_wpxp2_semiimpl( wp2(i,:), wpsclrjp,           & ! In
+                                              mixt_frac(i,:), F_w(i,:),          & ! In
+                                              coef_sigma_sclrj_1_sqd,  & ! In
+                                              coef_sigma_sclrj_2_sqd,  & ! In
+                                              coef_wpsclrjp2_implicit, & ! Out
+                                              term_wpsclrjp2_explicit )  ! Out
+
+              ! <w'rt'sclr'> = coef_wprtpsclrp_implicit * <sclr'rt'>
+              !                + term_wprtpsclrp_explicit
+              call calc_coefs_wpxpyp_semiimpl( wp2(i,:), wprtp(i,:), wpsclrjp,      & ! In
+                                               mixt_frac(i,:), F_w(i,:),            & ! In
+                                               coef_sigma_rt_1_sqd,       & ! In
+                                               coef_sigma_rt_2_sqd,       & ! In
+                                               coef_sigma_sclrj_1_sqd,    & ! In
+                                               coef_sigma_sclrj_2_sqd,    & ! In
+                                               coef_wprtpsclrjp_implicit, & ! Out
+                                               term_wprtpsclrjp_explicit  ) ! Out
+
+              ! <w'thl'sclr'> = coef_wpthlpsclrp_implicit * <sclr'thl'>
+              !                 + term_wpthlpsclrp_explicit
+              call calc_coefs_wpxpyp_semiimpl( wp2(i,:), wpthlp(i,:), wpsclrjp,      & ! In
+                                               mixt_frac(i,:), F_w(i,:),             & ! In
+                                               coef_sigma_thl_1_sqd,       & ! In
+                                               coef_sigma_thl_2_sqd,       & ! In
+                                               coef_sigma_sclrj_1_sqd,     & ! In
+                                               coef_sigma_sclrj_2_sqd,     & ! In
+                                               coef_wpthlpsclrjp_implicit, & ! Out
+                                               term_wpthlpsclrjp_explicit  ) ! Out
+
+              do k = 1, nz, 1
+                 coef_wpsclrp2_implicit(k,j) = coef_wpsclrjp2_implicit(k)
+                 term_wpsclrp2_explicit(k,j) = term_wpsclrjp2_explicit(k)
+                 coef_wprtpsclrp_implicit(k,j) = coef_wprtpsclrjp_implicit(k)
+                 term_wprtpsclrp_explicit(k,j) = term_wprtpsclrjp_explicit(k)
+                 coef_wpthlpsclrp_implicit(k,j) = coef_wpthlpsclrjp_implicit(k)
+                 term_wpthlpsclrp_explicit(k,j) = term_wpthlpsclrjp_explicit(k)
+              enddo ! k = 1, nz, 1
+
+           enddo ! j = 1, sclr_dim, 1
+
+         endif ! sclr_dim > 0
+
+      else ! l_explicit_turbulent_adv_xpyp
+
+         ! Turbulent advection of <rt'^2>, <thl'^2>, <rt'thl'>, <u'^2>, <v'^2>,
+         ! <sclr'^2>, <sclr'rt'>, and <sclr'thl'> are being handled explicitly.
+         coef_wprtp2_implicit = zero
+         term_wprtp2_explicit = zero
+         coef_wpthlp2_implicit = zero
+         term_wpthlp2_explicit = zero
+         coef_wprtpthlp_implicit = zero
+         term_wprtpthlp_explicit = zero
+         coef_wpup2_implicit = zero
+         term_wpup2_explicit = zero
+         coef_wpvp2_implicit = zero
+         term_wpvp2_explicit = zero
+         if ( sclr_dim > 0 ) then
+            coef_wpsclrp2_implicit = zero
+            term_wpsclrp2_explicit = zero
+            coef_wprtpsclrp_implicit = zero
+            term_wprtpsclrp_explicit = zero
+            coef_wpthlpsclrp_implicit = zero
+            term_wpthlpsclrp_explicit = zero
+         endif ! sclr_dim > 0
+
+      endif ! .not. l_explicit_turbulent_adv_xpyp
+
+      ! Set up a vector of 0s and an array of 0s to help write results back to
+      ! type variable pdf_implicit_coefs_terms.
+      zeros = zero
+      zero_array = zero
+
+      ! Pack the implicit coefficients and explicit terms into a single type
+      ! variable for output.
+      pdf_implicit_coefs_terms%coef_wp4_implicit(i,:) = coef_wp4_implicit
+      pdf_implicit_coefs_terms%coef_wp2rtp_implicit(i,:) = coef_wp2rtp_implicit
+      pdf_implicit_coefs_terms%term_wp2rtp_explicit(i,:) = zeros
+      pdf_implicit_coefs_terms%coef_wp2thlp_implicit(i,:) = coef_wp2thlp_implicit
+      pdf_implicit_coefs_terms%term_wp2thlp_explicit(i,:) = zeros
+      pdf_implicit_coefs_terms%coef_wp2up_implicit(i,:) = coef_wp2up_implicit
+      pdf_implicit_coefs_terms%term_wp2up_explicit(i,:) = zeros
+      pdf_implicit_coefs_terms%coef_wp2vp_implicit(i,:) = coef_wp2vp_implicit
+      pdf_implicit_coefs_terms%term_wp2vp_explicit(i,:) = zeros
+      pdf_implicit_coefs_terms%coef_wprtp2_implicit(i,:) = coef_wprtp2_implicit
+      pdf_implicit_coefs_terms%term_wprtp2_explicit(i,:) = term_wprtp2_explicit
+      pdf_implicit_coefs_terms%coef_wpthlp2_implicit(i,:) = coef_wpthlp2_implicit
+      pdf_implicit_coefs_terms%term_wpthlp2_explicit(i,:) = term_wpthlp2_explicit
+      pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(i,:) = coef_wprtpthlp_implicit
+      pdf_implicit_coefs_terms%term_wprtpthlp_explicit(i,:) = term_wprtpthlp_explicit
+      pdf_implicit_coefs_terms%coef_wpup2_implicit(i,:) = coef_wpup2_implicit
+      pdf_implicit_coefs_terms%term_wpup2_explicit(i,:) = term_wpup2_explicit
+      pdf_implicit_coefs_terms%coef_wpvp2_implicit(i,:) = coef_wpvp2_implicit
+      pdf_implicit_coefs_terms%term_wpvp2_explicit(i,:) = term_wpvp2_explicit
+      if ( sclr_dim > 0 ) then
+         pdf_implicit_coefs_terms%coef_wp2sclrp_implicit(i,:,:) = coef_wp2sclrp_implicit
+         pdf_implicit_coefs_terms%term_wp2sclrp_explicit(i,:,:) = zero_array
+         pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(i,:,:) = coef_wpsclrp2_implicit
+         pdf_implicit_coefs_terms%term_wpsclrp2_explicit(i,:,:) = term_wpsclrp2_explicit
+         pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(i,:,:) &
+         = coef_wprtpsclrp_implicit
+         pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(i,:,:) &
+         = term_wprtpsclrp_explicit
+         pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(i,:,:) &
+         = coef_wpthlpsclrp_implicit
+         pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(i,:,:) &
+         = term_wpthlpsclrp_explicit
+      endif ! sclr_dim > 0
+      
+    end do
 
     return
 

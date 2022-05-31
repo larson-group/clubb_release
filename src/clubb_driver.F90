@@ -1590,7 +1590,7 @@ module clubb_driver
     call init_pdf_params( gr(1)%nz, 1, pdf_params_zm )
 
     allocate( pdf_implicit_coefs_terms )
-    call init_pdf_implicit_coefs_terms( gr(1)%nz, sclr_dim, &         ! Intent(in)
+    call init_pdf_implicit_coefs_terms( gr(1)%nz, 1, sclr_dim, &   ! Intent(in)
                                         pdf_implicit_coefs_terms ) ! Intent(out)
 
     um(1:gr(1)%nz)      = zero          ! u wind

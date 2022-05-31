@@ -226,7 +226,7 @@ module advance_xp2_xpyp_module
       wp3_on_wp2,       & ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
       wp3_on_wp2_zt       ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
 
-    type(implicit_coefs_terms), dimension(ngrdcol), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -3227,7 +3227,7 @@ module advance_xp2_xpyp_module
     
     type (grid), target, dimension(ngrdcol), intent(in) :: gr
         
-    type(implicit_coefs_terms), dimension(ngrdcol), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
     
     real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: &
@@ -4030,9 +4030,9 @@ module advance_xp2_xpyp_module
         ! is false, or if stats output is on
         if( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
           do i = 1, ngrdcol
-            coef_wprtp2_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wprtp2_implicit
-            coef_wpthlp2_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wpthlp2_implicit
-            coef_wprtpthlp_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wprtpthlp_implicit
+            coef_wprtp2_implicit(i,:) = pdf_implicit_coefs_terms%coef_wprtp2_implicit(i,:)
+            coef_wpthlp2_implicit(i,:) = pdf_implicit_coefs_terms%coef_wpthlp2_implicit(i,:)
+            coef_wprtpthlp_implicit(i,:) = pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(i,:)
           end do
         end if
         
@@ -4040,7 +4040,7 @@ module advance_xp2_xpyp_module
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
           do i = 1, ngrdcol
-            coef_wprtp2_implicit_zm(i,:) = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wprtp2_implicit )
+            coef_wprtp2_implicit_zm(i,:) = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wprtp2_implicit(i,:) )
           end do
           sgn_t_vel_rtp2(:,:) = sign(one,coef_wprtp2_implicit_zm(:,:)*rtp2(:,:)*rtp2(:,:))
         end if
@@ -4063,7 +4063,7 @@ module advance_xp2_xpyp_module
        ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
           do i = 1, ngrdcol
-            coef_wpthlp2_implicit_zm(i,:) = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wpthlp2_implicit )
+            coef_wpthlp2_implicit_zm(i,:) = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wpthlp2_implicit(i,:) )
           end do
           sgn_t_vel_thlp2(:,:) = sign(one,coef_wpthlp2_implicit_zm(:,:)*thlp2(:,:)*thlp2(:,:))
         end if
@@ -4086,8 +4086,8 @@ module advance_xp2_xpyp_module
         ! l_upwind_xpyp_ta is true
         if ( l_upwind_xpyp_ta ) then
           do i = 1, ngrdcol
-            coef_wprtpthlp_implicit_zm(i,:) = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wprtpthlp_implicit )
-            term_wprtpthlp_explicit_zm(i,:) = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%term_wprtpthlp_explicit )
+            coef_wprtpthlp_implicit_zm(i,:) = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(i,:) )
+            term_wprtpthlp_explicit_zm(i,:) = zt2zm( gr(i), pdf_implicit_coefs_terms%term_wprtpthlp_explicit(i,:) )
           end do
           sgn_t_vel_rtpthlp(:,:) = sign(one, ( coef_wprtpthlp_implicit_zm(:,:) * rtpthlp(:,:) &
                                            + term_wprtpthlp_explicit_zm(:,:) ) * rtpthlp(:,:))
@@ -4121,7 +4121,7 @@ module advance_xp2_xpyp_module
           term_wprtp2_explicit(:,:) = zero
           term_wpthlp2_explicit(:,:) = zero
           do i = 1, ngrdcol
-            term_wprtpthlp_explicit(i,:) = pdf_implicit_coefs_terms(i)%term_wprtpthlp_explicit
+            term_wprtpthlp_explicit(i,:) = pdf_implicit_coefs_terms%term_wprtpthlp_explicit(i,:)
           end do
         end if
     
@@ -4157,8 +4157,8 @@ module advance_xp2_xpyp_module
 
         if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
           do i = 1, ngrdcol
-            coef_wprtp2_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wprtp2_implicit
-            term_wprtp2_explicit(i,:) = pdf_implicit_coefs_terms(i)%term_wprtp2_explicit
+            coef_wprtp2_implicit(i,:) = pdf_implicit_coefs_terms%coef_wprtp2_implicit(i,:)
+            term_wprtp2_explicit(i,:) = pdf_implicit_coefs_terms%term_wprtp2_explicit(i,:)
           end do
         endif
 
@@ -4167,9 +4167,9 @@ module advance_xp2_xpyp_module
         if ( l_upwind_xpyp_ta ) then
           do i = 1, ngrdcol
             coef_wprtp2_implicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wprtp2_implicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wprtp2_implicit(i,:) )
             term_wprtp2_explicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%term_wprtp2_explicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%term_wprtp2_explicit(i,:) )
           end do
           sgn_t_vel_rtp2(:,:) = sign(one, ( coef_wprtp2_implicit_zm(:,:) * rtp2(:,:) &
                                         + term_wprtpthlp_explicit_zm(:,:) ) * rtp2(:,:))
@@ -4205,8 +4205,8 @@ module advance_xp2_xpyp_module
 
         if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
           do i = 1, ngrdcol
-            coef_wpthlp2_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wpthlp2_implicit
-            term_wpthlp2_explicit(i,:) = pdf_implicit_coefs_terms(i)%term_wpthlp2_explicit
+            coef_wpthlp2_implicit(i,:) = pdf_implicit_coefs_terms%coef_wpthlp2_implicit(i,:)
+            term_wpthlp2_explicit(i,:) = pdf_implicit_coefs_terms%term_wpthlp2_explicit(i,:)
           end do
         endif
 
@@ -4215,9 +4215,9 @@ module advance_xp2_xpyp_module
         if ( l_upwind_xpyp_ta ) then
           do i = 1, ngrdcol
             coef_wpthlp2_implicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wpthlp2_implicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wpthlp2_implicit(i,:) )
             term_wpthlp2_explicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%term_wpthlp2_explicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%term_wpthlp2_explicit(i,:) )
           end do
           sgn_t_vel_thlp2(:,:) = sign(one, ( coef_wpthlp2_implicit_zm(:,:) * thlp2(:,:) &
                                          + term_wpthlp2_explicit_zm(:,:) ) * thlp2(:,:))
@@ -4253,8 +4253,8 @@ module advance_xp2_xpyp_module
 
         if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
           do i = 1, ngrdcol
-            coef_wprtpthlp_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wprtpthlp_implicit
-            term_wprtpthlp_explicit(i,:) = pdf_implicit_coefs_terms(i)%term_wprtpthlp_explicit
+            coef_wprtpthlp_implicit(i,:) = pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(i,:)
+            term_wprtpthlp_explicit(i,:) = pdf_implicit_coefs_terms%term_wprtpthlp_explicit(i,:)
           end do
         endif
 
@@ -4263,9 +4263,9 @@ module advance_xp2_xpyp_module
         if ( l_upwind_xpyp_ta ) then
           do i = 1, ngrdcol
             coef_wprtpthlp_implicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wprtpthlp_implicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(i,:) )
             term_wprtpthlp_explicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%term_wprtpthlp_explicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%term_wprtpthlp_explicit(i,:) )
           end do
           sgn_t_vel_rtpthlp(:,:) = sign(one, ( coef_wprtpthlp_implicit_zm(:,:) * rtpthlp(:,:) &
                                            + term_wprtpthlp_explicit_zm(:,:) ) * rtpthlp(:,:))
@@ -4301,8 +4301,8 @@ module advance_xp2_xpyp_module
 
         if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
           do i = 1, ngrdcol
-            coef_wpup2_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wpup2_implicit
-            term_wpup2_explicit(i,:) = pdf_implicit_coefs_terms(i)%term_wpup2_explicit
+            coef_wpup2_implicit(i,:) = pdf_implicit_coefs_terms%coef_wpup2_implicit(i,:)
+            term_wpup2_explicit(i,:) = pdf_implicit_coefs_terms%term_wpup2_explicit(i,:)
           end do
         endif
 
@@ -4311,9 +4311,9 @@ module advance_xp2_xpyp_module
         if ( l_upwind_xpyp_ta ) then
           do i = 1, ngrdcol
             coef_wpup2_implicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wpup2_implicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wpup2_implicit(i,:) )
             term_wpup2_explicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%term_wpup2_explicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%term_wpup2_explicit(i,:) )
           end do
           sgn_t_vel_up2(:,:) = sign(one, ( coef_wpup2_implicit_zm(:,:) * up2(:,:) &
                                        + term_wpup2_explicit_zm(:,:) ) * up2(:,:))
@@ -4349,8 +4349,8 @@ module advance_xp2_xpyp_module
 
         if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
           do i = 1, ngrdcol
-            coef_wpvp2_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wpvp2_implicit
-            term_wpvp2_explicit(i,:) = pdf_implicit_coefs_terms(i)%term_wpvp2_explicit
+            coef_wpvp2_implicit(i,:) = pdf_implicit_coefs_terms%coef_wpvp2_implicit(i,:)
+            term_wpvp2_explicit(i,:) = pdf_implicit_coefs_terms%term_wpvp2_explicit(i,:)
           end do
         endif
 
@@ -4359,9 +4359,9 @@ module advance_xp2_xpyp_module
         if ( l_upwind_xpyp_ta ) then
           do i = 1, ngrdcol
             coef_wpvp2_implicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wpvp2_implicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wpvp2_implicit(i,:) )
             term_wpvp2_explicit_zm(i,:) &
-            = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%term_wpvp2_explicit )
+            = zt2zm( gr(i), pdf_implicit_coefs_terms%term_wpvp2_explicit(i,:) )
           end do
           sgn_t_vel_vp2(:,:) = sign(one, ( coef_wpvp2_implicit_zm(:,:) * vp2(:,:) &
                                        + term_wpvp2_explicit_zm(:,:) ) * vp2(:,:))
@@ -4402,9 +4402,9 @@ module advance_xp2_xpyp_module
             if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
               do i = 1, ngrdcol
                 coef_wpsclrp2_implicit(i,:) &
-                = pdf_implicit_coefs_terms(i)%coef_wpsclrp2_implicit(:,sclr)
+                = pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(i,:,sclr)
                 term_wpsclrp2_explicit(i,:) &
-                = pdf_implicit_coefs_terms(i)%term_wpsclrp2_explicit(:,sclr)
+                = pdf_implicit_coefs_terms%term_wpsclrp2_explicit(i,:,sclr)
               end do
             endif
 
@@ -4413,9 +4413,9 @@ module advance_xp2_xpyp_module
             if ( l_upwind_xpyp_ta ) then
               do i = 1, ngrdcol
                 coef_wpsclrp2_implicit_zm(i,:) &
-                = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wpsclrp2_implicit(:,sclr) )
+                = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(i,:,sclr) )
                 term_wpsclrp2_explicit_zm(i,:) &
-                = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%term_wpsclrp2_explicit(:,sclr) )
+                = zt2zm( gr(i), pdf_implicit_coefs_terms%term_wpsclrp2_explicit(i,:,sclr) )
               end do
               sgn_t_vel_sclrp2(:,:) = sign(one, ( coef_wpsclrp2_implicit_zm(:,:) * sclrp2(:,:,sclr) &
                                                + term_wpsclrp2_explicit_zm(:,:) ) * sclrp2(:,:,sclr))
@@ -4452,9 +4452,9 @@ module advance_xp2_xpyp_module
             if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
               do i = 1, ngrdcol
                 coef_wprtpsclrp_implicit(i,:) &
-                = pdf_implicit_coefs_terms(i)%coef_wprtpsclrp_implicit(:,sclr)
+                = pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(i,:,sclr)
                 term_wprtpsclrp_explicit(i,:) &
-                = pdf_implicit_coefs_terms(i)%term_wprtpsclrp_explicit(:,sclr)
+                = pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(i,:,sclr)
               end do
             endif
 
@@ -4463,9 +4463,9 @@ module advance_xp2_xpyp_module
             if ( l_upwind_xpyp_ta ) then
               do i = 1, ngrdcol
                 coef_wprtpsclrp_implicit_zm(i,:) &
-                = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wprtpsclrp_implicit(:,sclr) )
+                = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(i,:,sclr) )
                 term_wprtpsclrp_explicit_zm(i,:) &
-                = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%term_wprtpsclrp_explicit(:,sclr) )
+                = zt2zm( gr(i), pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(i,:,sclr) )
               end do
               sgn_t_vel_sclrprtp(:,:) = sign(one, ( coef_wprtpsclrp_implicit_zm(:,:) * sclrprtp(:,:,sclr) &
                                                 + term_wprtpsclrp_explicit_zm(:,:) ) * sclrprtp(:,:,sclr))
@@ -4502,9 +4502,9 @@ module advance_xp2_xpyp_module
             if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
               do i = 1, ngrdcol
                 coef_wpthlpsclrp_implicit(i,:) &
-                = pdf_implicit_coefs_terms(i)%coef_wpthlpsclrp_implicit(:,sclr)
+                = pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(i,:,sclr)
                 term_wpthlpsclrp_explicit(i,:) &
-                = pdf_implicit_coefs_terms(i)%term_wpthlpsclrp_explicit(:,sclr)
+                = pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(i,:,sclr)
               end do
             endif
 
@@ -4513,9 +4513,9 @@ module advance_xp2_xpyp_module
             if ( l_upwind_xpyp_ta ) then
               do i = 1, ngrdcol
                 coef_wpthlpsclrp_implicit_zm(i,:) &
-                = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%coef_wpthlpsclrp_implicit(:,sclr) )
+                = zt2zm( gr(i), pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(i,:,sclr) )
                 term_wpthlpsclrp_explicit_zm(i,:) &
-                = zt2zm( gr(i), pdf_implicit_coefs_terms(i)%term_wpthlpsclrp_explicit(:,sclr) )
+                = zt2zm( gr(i), pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(i,:,sclr) )
               end do
               sgn_t_vel_sclrpthlp(:,:) = sign(one, ( coef_wpthlpsclrp_implicit_zm(:,:) * sclrpthlp(:,:,sclr) &
                                                  + term_wpthlpsclrp_explicit_zm(:,:) ) * sclrpthlp(:,:,sclr))

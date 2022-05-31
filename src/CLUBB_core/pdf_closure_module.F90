@@ -295,7 +295,7 @@ module pdf_closure_module
     type(pdf_parameter), intent(inout) :: & 
       pdf_params     ! pdf paramters         [units vary]
 
-    type(implicit_coefs_terms), dimension(ngrdcol), intent(inout) :: &
+    type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Parameters output only for recording statistics (new PDF).
@@ -583,25 +583,23 @@ module pdf_closure_module
                            pdf_params%mixt_frac(i,:) )                                    ! Out
       end do
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
-      do i = 1, ngrdcol
-        call new_pdf_driver( nz, wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:), Skw(i,:),                   & ! In
-                            wprtp(i,:), wpthlp(i,:), rtpthlp(i,:),                                     & ! In
-                            slope_coef_spread_DG_means_w,                               & ! In
-                            pdf_component_stdev_factor_w,                               & ! In
-                            coef_spread_DG_means_rt,                                    & ! In
-                            coef_spread_DG_means_thl,                                   & ! In
-                            Skrt(i,:), Skthl(i,:),                                                & ! In/Out
-                            pdf_params%w_1(i,:), pdf_params%w_2(i,:),                   & ! Out
-                            pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                 & ! Out
-                            pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),               & ! Out
-                            pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),     & ! Out
-                            pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),   & ! Out
-                            pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:), & ! Out
-                            pdf_params%mixt_frac(i,:),                                  & ! Out
-                            pdf_implicit_coefs_terms(i),                                   & ! Out
-                            F_w(i,:), F_rt(i,:), F_thl(i,:), min_F_w(i,:), max_F_w(i,:),                         & ! Out
-                            min_F_rt(i,:), max_F_rt(i,:), min_F_thl(i,:), max_F_thl(i,:) )                    ! Out
-      end do
+      call new_pdf_driver( nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, Skw, & ! In
+                           wprtp, wpthlp, rtpthlp,                            & ! In
+                           slope_coef_spread_DG_means_w,                      & ! In
+                           pdf_component_stdev_factor_w,                      & ! In
+                           coef_spread_DG_means_rt,                           & ! In
+                           coef_spread_DG_means_thl,                          & ! In
+                           Skrt, Skthl,                                       & ! In/Out
+                           pdf_params%w_1, pdf_params%w_2,                    & ! Out
+                           pdf_params%rt_1, pdf_params%rt_2,                  & ! Out
+                           pdf_params%thl_1, pdf_params%thl_2,                & ! Out
+                           pdf_params%varnce_w_1, pdf_params%varnce_w_2,      & ! Out
+                           pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,    & ! Out
+                           pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,  & ! Out
+                           pdf_params%mixt_frac,                              & ! Out
+                           pdf_implicit_coefs_terms,                          & ! Out
+                           F_w, F_rt, F_thl, min_F_w, max_F_w,                & ! Out
+                           min_F_rt, max_F_rt, min_F_thl, max_F_thl )           ! Out
     elseif ( iiPDF_type == iiPDF_TSDADG ) then
       do i = 1, ngrdcol
         call tsdadg_pdf_driver( nz, &
@@ -628,33 +626,31 @@ module pdf_closure_module
                           pdf_params%mixt_frac(i,:) )                               ! Out
       end do
     elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
-      do i = 1, ngrdcol
-        call new_hybrid_pdf_driver( nz, wm(i,:), rtm(i,:), thlm(i,:), um(i,:), vm(i,:),          & ! In
-                                    wp2(i,:), rtp2(i,:), thlp2(i,:), up2(i,:), vp2(i,:),         & ! In
-                                    Skw(i,:), wprtp(i,:), wpthlp(i,:), upwp(i,:), vpwp(i,:),     & ! In
-                                    sclrm(i,:,:), sclrp2(i,:,:), wpsclrp(i,:,:),             & ! In
-                                    gamma_Skw_fnc(i,:),                      & ! In
-                                    slope_coef_spread_DG_means_w,       & ! In
-                                    pdf_component_stdev_factor_w,       & ! In
-                                    Skrt(i,:), Skthl(i,:), Sku(i,:), Skv(i,:), Sksclr(i,:,:),      & ! I/O
-                                    pdf_params%w_1(i,:), pdf_params%w_2(i,:),     & ! Out
-                                    pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),   & ! Out
-                                    pdf_params%thl_1(i,:), pdf_params%thl_2(i,:), & ! Out
-                                    u_1(i,:), u_2(i,:), v_1(i,:), v_2(i,:),                 & ! Out
-                                    pdf_params%varnce_w_1(i,:),         & ! Out
-                                    pdf_params%varnce_w_2(i,:),         & ! Out
-                                    pdf_params%varnce_rt_1(i,:),        & ! Out
-                                    pdf_params%varnce_rt_2(i,:),        & ! Out
-                                    pdf_params%varnce_thl_1(i,:),       & ! Out
-                                    pdf_params%varnce_thl_2(i,:),       & ! Out
-                                    varnce_u_1(i,:), varnce_u_2(i,:),             & ! Out
-                                    varnce_v_1(i,:), varnce_v_2(i,:),             & ! Out
-                                    sclr1(i,:,:), sclr2(i,:,:),                       & ! Out
-                                    varnce_sclr1(i,:,:), varnce_sclr2(i,:,:),         & ! Out
-                                    pdf_params%mixt_frac(i,:),          & ! Out
-                                    pdf_implicit_coefs_terms(i),           & ! Out
-                                    F_w(i,:), min_F_w(i,:), max_F_w(i,:)               ) ! Out
-      end do
+      call new_hybrid_pdf_driver( nz, ngrdcol, wm, rtm, thlm, um, vm, & ! In
+                                  wp2, rtp2, thlp2, up2, vp2,         & ! In
+                                  Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
+                                  sclrm, sclrp2, wpsclrp,             & ! In
+                                  gamma_Skw_fnc,                      & ! In
+                                  slope_coef_spread_DG_means_w,       & ! In
+                                  pdf_component_stdev_factor_w,       & ! In
+                                  Skrt, Skthl, Sku, Skv, Sksclr,      & ! I/O
+                                  pdf_params%w_1, pdf_params%w_2,     & ! Out
+                                  pdf_params%rt_1, pdf_params%rt_2,   & ! Out
+                                  pdf_params%thl_1, pdf_params%thl_2, & ! Out
+                                  u_1, u_2, v_1, v_2,                 & ! Out
+                                  pdf_params%varnce_w_1,              & ! Out
+                                  pdf_params%varnce_w_2,              & ! Out
+                                  pdf_params%varnce_rt_1,             & ! Out
+                                  pdf_params%varnce_rt_2,             & ! Out
+                                  pdf_params%varnce_thl_1,            & ! Out
+                                  pdf_params%varnce_thl_2,            & ! Out
+                                  varnce_u_1, varnce_u_2,             & ! Out
+                                  varnce_v_1, varnce_v_2,             & ! Out
+                                  sclr1, sclr2,                       & ! Out
+                                  varnce_sclr1, varnce_sclr2,         & ! Out
+                                  pdf_params%mixt_frac,               & ! Out
+                                  pdf_implicit_coefs_terms,           & ! Out
+                                  F_w, min_F_w, max_F_w )               ! Out
       
       ! The calculation of skewness of rt, thl, u, v, and scalars is hard-wired
       ! for use with the ADG1 code, which contains the variable sigma_sqd_w.

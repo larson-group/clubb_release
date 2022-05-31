@@ -257,7 +257,7 @@ module advance_xm_wpxp_module
       Cx_fnc_Richardson,& ! Cx_fnc computed from Richardson_num       [-]
       ice_supersat_frac
 
-    type(implicit_coefs_terms), dimension(ngrdcol), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
@@ -777,7 +777,7 @@ module advance_xm_wpxp_module
                                      wp2sclrp(i,:,:), sclrpthvp(i,:,:), sclrm_forcing(i,:,:), & ! intent(in) 
                                      sclrp2(i,:,:), exner(i,:), rcm(i,:), p_in_Pa(i,:), thvm(i,:), & ! intent(in)
                                      Cx_fnc_Richardson(i,:), & ! intent(in)
-                                     pdf_implicit_coefs_terms(i), & ! intent(in)
+                                     pdf_implicit_coefs_terms, & ! intent(in)
                                      um_forcing(i,:), vm_forcing(i,:), ug(i,:), vg(i,:), & ! intent(in)
                                      wpthvp(i,:), fcor(i), um_ref(i,:), vm_ref(i,:), up2(i,:), & ! intent(in)
                                      vp2(i,:), uprcp(i,:), vprcp(i,:), rc_coef(i,:), rtm(i,:), & ! intent(in)
@@ -1846,7 +1846,7 @@ module advance_xm_wpxp_module
 
     type (grid), target, dimension(ngrdcol), intent(in) :: gr
     
-    type(implicit_coefs_terms), dimension(ngrdcol), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
                                 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
@@ -2133,10 +2133,10 @@ module advance_xm_wpxp_module
         ! implicit coefficients and explicit terms are calculated on
         ! thermodynamic levels.
         do i = 1, ngrdcol
-          coef_wp2rtp_implicit(i,:)  = pdf_implicit_coefs_terms(i)%coef_wp2rtp_implicit(:)
-          coef_wp2thlp_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wp2thlp_implicit(:)
-          term_wp2rtp_explicit(i,:)  = pdf_implicit_coefs_terms(i)%term_wp2rtp_explicit(:)
-          term_wp2thlp_explicit(i,:) = pdf_implicit_coefs_terms(i)%term_wp2thlp_explicit(:)
+          coef_wp2rtp_implicit(i,:)  = pdf_implicit_coefs_terms%coef_wp2rtp_implicit(i,:)
+          coef_wp2thlp_implicit(i,:) = pdf_implicit_coefs_terms%coef_wp2thlp_implicit(i,:)
+          term_wp2rtp_explicit(i,:)  = pdf_implicit_coefs_terms%term_wp2rtp_explicit(i,:)
+          term_wp2thlp_explicit(i,:) = pdf_implicit_coefs_terms%term_wp2thlp_explicit(i,:)
         end do
 
 
@@ -2212,7 +2212,7 @@ module advance_xm_wpxp_module
         ! resulting implicit coefficients are calculated on thermodynamic
         ! levels.
         do i = 1, ngrdcol
-          coef_wp2rtp_implicit(i,:) = pdf_implicit_coefs_terms(i)%coef_wp2rtp_implicit(:)
+          coef_wp2rtp_implicit(i,:) = pdf_implicit_coefs_terms%coef_wp2rtp_implicit(i,:)
           coef_wp2thlp_implicit(i,:) = coef_wp2rtp_implicit(i,:)
         end do
         

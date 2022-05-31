@@ -247,7 +247,7 @@ module advance_wp2_wp3_module
       wp2_splat,         & ! Tendency of <w'2> due to vertical compression of eddies [m^2/s^3]
       wp3_splat            ! Tendency of <w'3> due to vertical compression of eddies [m^3/s^4]
 
-    type(implicit_coefs_terms), dimension(ngrdcol), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
@@ -537,7 +537,7 @@ module advance_wp2_wp3_module
         ! implicit coefficient needs to be unpacked as coef_wp4_implicit_zt.
         do k = 1, nz
           do i = 1, ngrdcol
-            coef_wp4_implicit_zt(i,k) = pdf_implicit_coefs_terms(i)%coef_wp4_implicit(k)
+            coef_wp4_implicit_zt(i,k) = pdf_implicit_coefs_terms%coef_wp4_implicit(i,k)
           end do
         end do
 
@@ -980,7 +980,7 @@ module advance_wp2_wp3_module
         write(fstderr,*) "rtp2 = ", rtp2, new_line('c')
         write(fstderr,*) "thlp2 = ", thlp2, new_line('c')
         write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp4_implicit = ", &
-                         pdf_implicit_coefs_terms(1)%coef_wp4_implicit
+                         pdf_implicit_coefs_terms%coef_wp4_implicit
         write(fstderr,*) new_line('c')
 
         write(fstderr,*) "intent(in/out)"
