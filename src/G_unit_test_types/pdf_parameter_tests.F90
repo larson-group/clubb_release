@@ -147,7 +147,8 @@ module pdf_parameter_tests
         calc_wp4_pdf        ! Procedure(s)
 
     use pdf_parameter_module, only: &
-        implicit_coefs_terms    ! Variable Type
+        implicit_coefs_terms,   & ! Variable Type
+        init_pdf_implicit_coefs_terms
 
     use model_flags, only: &
         set_default_clubb_config_flags, & ! Procedure(s)
@@ -721,6 +722,10 @@ module pdf_parameter_tests
     ! Set gr%nz to nz.  This is for use within PDF subroutines that input and
     ! output variable arrays of size gr%nz.
     gr%nz = nz
+    
+    ! Initialize pdf_implicit_coefs_terms
+    call init_pdf_implicit_coefs_terms( nz, 1, sclr_dim, &
+                                        pdf_implicit_coefs_terms )
 
     ! Set dummy values of horz wind variables for ADG1 call
     um =   0.00_core_rknd

@@ -168,7 +168,7 @@ module new_hybrid_pdf_main
       sigma_sclr_1_sqd, & ! Variance of sclr (1st PDF component)  [(un. vary)^2]
       sigma_sclr_2_sqd    ! Variance of sclr (2nd PDF component)  [(un. vary)^2]
 
-    type(implicit_coefs_terms), intent(out) :: &
+    type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Output only for recording statistics.

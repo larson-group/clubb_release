@@ -82,7 +82,8 @@ module spurious_source_test
         ADG1_w_closure    ! Procedure(s)
 
     use pdf_parameter_module, only: &
-        implicit_coefs_terms    ! Variable type(s)
+        implicit_coefs_terms,   & ! Variable Type
+        init_pdf_implicit_coefs_terms
 
     use parameters_model, only: &
         sclr_dim    ! Variable(s)
@@ -591,6 +592,10 @@ module spurious_source_test
                                          l_smooth_Heaviside_tau_wpxp, &
                                          l_enable_relaxed_clipping, &
                                          l_linearize_pbl_winds )
+                                         
+    ! Initialize pdf_implicit_coefs_terms
+    call init_pdf_implicit_coefs_terms( nz, 1, sclr_dim, &
+                                        pdf_implicit_coefs_terms )
 
     write(*,*)
     write(*,*) "Performing spurious source unit test"

@@ -131,7 +131,7 @@ module new_pdf_main
       sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
       mixt_frac          ! Mixture fraction                     [-]
 
-    type(implicit_coefs_terms), intent(out) :: &
+    type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Output only for recording statistics.
