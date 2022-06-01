@@ -3564,10 +3564,6 @@ module advance_clubb_core_module
 #ifdef GFDL
                  I_sat_sphum,                             & ! intent(in)  h1g, 2010-06-16
 #endif
-                 l_implemented, grid_type, deltaz,        & ! intent(in)
-                 zm_init, zm_top,                         & ! intent(in)
-                 momentum_heights, thermodynamic_heights, & ! intent(in)
-                 sfc_elevation,                           & ! intent(in)
                  iiPDF_type,                              & ! intent(in)
                  ipdf_call_placement,                     & ! intent(in)
                  l_predict_upwp_vpwp,                     & ! intent(in)
@@ -3576,13 +3572,12 @@ module advance_clubb_core_module
                  l_damp_wp2_using_em,                     & ! intent(in)
                  l_stability_correct_tau_zm,              & ! intent(in)
                  l_enable_relaxed_clipping,               & ! intent(in)
-                 l_diag_Lscale_from_tau                   & ! intent(in)
+                 l_diag_Lscale_from_tau,                  & ! intent(in)
 
 #ifdef GFDL
-                 , cloud_frac_min                         & ! intent(in)  h1g, 2010-06-16
+                 cloud_frac_min,                          & ! intent(in)  h1g, 2010-06-16
 #endif
-                 , gr, lmin, nu_vert_res_dep,             & ! intent(out)
-                 err_code_out                             ) ! intent(out)
+                 err_code_out )                             ! intent(out)
 
       ! Description:
       !   Subroutine to set up the model for execution.
@@ -3645,8 +3640,6 @@ module advance_clubb_core_module
 
       implicit none
 
-    type(grid), target, intent(inout) :: gr
-
       ! Input Variables
 
       ! Grid definition
@@ -3655,46 +3648,6 @@ module advance_clubb_core_module
       !                      CLUBB determines what nzmax should be
       !                      given zm_init and zm_top when
       !                      running in standalone mode.
-
-      real( kind = core_rknd ), intent(in) ::  &
-        sfc_elevation  ! Elevation of ground level    [m AMSL]
-
-      ! Flag to see if CLUBB is running on it's own,
-      ! or if it's implemented as part of a host model.
-      logical, intent(in) :: l_implemented   ! (T/F)
-
-      ! If CLUBB is running on it's own, this option determines
-      ! if it is using:
-      ! 1) an evenly-spaced grid,
-      ! 2) a stretched (unevenly-spaced) grid entered on the
-      !    thermodynamic grid levels (with momentum levels set
-      !    halfway between thermodynamic levels), or
-      ! 3) a stretched (unevenly-spaced) grid entered on the
-      !    momentum grid levels (with thermodynamic levels set
-      !    halfway between momentum levels).
-      integer, intent(in) :: grid_type
-
-      ! If the CLUBB model is running by itself, and is using an
-      ! evenly-spaced grid (grid_type = 1), it needs the vertical
-      ! grid spacing, momentum-level starting altitude, and maximum
-      ! altitude as input.
-      real( kind = core_rknd ), intent(in) :: &
-        deltaz,   & ! Change in altitude per level           [m]
-        zm_init,  & ! Initial grid altitude (momentum level) [m]
-        zm_top      ! Maximum grid altitude (momentum level) [m]
-
-      ! If the CLUBB parameterization is implemented in a host model,
-      ! it needs to use the host model's momentum level altitudes
-      ! and thermodynamic level altitudes.
-      ! If the CLUBB model is running by itself, but is using a
-      ! stretched grid entered on thermodynamic levels (grid_type = 2),
-      ! it needs to use the thermodynamic level altitudes as input.
-      ! If the CLUBB model is running by itself, but is using a
-      ! stretched grid entered on momentum levels (grid_type = 3),
-      ! it needs to use the momentum level altitudes as input.
-      real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
-        momentum_heights,      & ! Momentum level altitudes (input)      [m]
-        thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
       ! Model parameters
       real( kind = core_rknd ), intent(in) ::  &
@@ -3759,17 +3712,8 @@ module advance_clubb_core_module
          cloud_frac_min         ! h1g, 2010-06-16 end mod
 #endif
 
-      real( kind = core_rknd ), intent(out) :: &
-        lmin    ! Min. value for the length scale    [m]
-
-      type(nu_vertical_res_dep), intent(out) :: &
-        nu_vert_res_dep    ! Vertical resolution dependent nu values
-
       integer, intent(out) :: &
         err_code_out  ! Error code indicator
-
-      ! Local variables
-      integer :: begin_height, end_height
 
       !----- Begin Code -----
 
@@ -4185,35 +4129,6 @@ module advance_clubb_core_module
 
       endif ! l_diag_Lscale_from_tau
 
-      ! Setup grid
-      call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)
-                       grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
-                       momentum_heights, thermodynamic_heights, & ! intent(in)
-                       gr, begin_height, end_height             ) ! intent(out)
-
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-          err_code_out = err_code
-
-          write(fstderr,*) "Error calling setup_grid"
-
-          write(fstderr,*) "Intent(in)"
-
-          write(fstderr,*) "deltaz = ", deltaz
-          write(fstderr,*) "zm_init = ", zm_init
-          write(fstderr,*) "zm_top = ", zm_top
-          write(fstderr,*) "momentum_heights = ", momentum_heights
-          write(fstderr,*) "thermodynamic_heights = ",  &
-              thermodynamic_heights
-          write(fstderr,*) "T0_in = ", T0_in
-          write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
-          write(fstderr,*) "params = ", params
-          write(fstderr,*) "Fatal error in setup_clubb_core"
-          return
-
-        end if
-    end if
-
       ! Setup flags
 #ifdef GFDL
       call setup_model_flags &
@@ -4239,37 +4154,6 @@ module advance_clubb_core_module
                                    hydromet_dim_in,                          & ! intent(in)
                                    sclr_dim_in, sclr_tol_in, edsclr_dim_in )   ! intent(in)
 #endif
-
-      ! Define tunable constant parameters
-      call setup_parameters &
-           ( deltaz, params, gr%nz,                                & ! intent(in)
-             grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
-             thermodynamic_heights(begin_height:end_height),       & ! intent(in)
-             l_prescribed_avg_deltaz,                              & ! intent(in)
-             lmin, nu_vert_res_dep, err_code_out )                   ! intent(out)
-
-      if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
-
-            write(fstderr,*) "Error calling setup_parameters"
-
-            write(fstderr,*) "Intent(in)"
-
-            write(fstderr,*) "deltaz = ", deltaz
-            write(fstderr,*) "zm_init = ", zm_init
-            write(fstderr,*) "zm_top = ", zm_top
-            write(fstderr,*) "momentum_heights = ", momentum_heights
-            write(fstderr,*) "thermodynamic_heights = ",  &
-              thermodynamic_heights
-            write(fstderr,*) "T0_in = ", T0_in
-            write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
-            write(fstderr,*) "params = ", params
-            write(fstderr,*) "Fatal error in setup_clubb_core"
-
-            return
-
-          end if
-      end if
 
       return
     end subroutine setup_clubb_core

@@ -79,8 +79,7 @@ module clubb_driver
         nu_vertical_res_dep !---------------------------- Type(s)
 
     use advance_clubb_core_module, only: &
-      setup_clubb_core,  & !------------------------------------------------- Procedure(s)
-      advance_clubb_core, &
+      advance_clubb_core, & !------------------------------------------------- Procedure(s)
       calculate_thlp2_rad
 
     use constants_clubb, only: &
@@ -101,7 +100,10 @@ module clubb_driver
       setup_pdf_parameters_api, &
       precipitation_fractions, &
       init_precip_fracs_api, &
-      advance_clubb_core_api
+      advance_clubb_core_api, &
+      setup_clubb_core_api, &
+      setup_grid_api, &
+      setup_parameters_api
 
     use pdf_parameter_module, only: &
         pdf_parameter,                 & !----------------------------------- Variable Type(s)
@@ -373,6 +375,8 @@ module clubb_driver
     ! Grid altitude arrays
     real( kind = core_rknd ), dimension(:), allocatable ::  & 
       momentum_heights, thermodynamic_heights ! [m]
+      
+    integer :: begin_height, end_height
 
     ! Dummy dx and dy horizontal grid spacing.
     real( kind = core_rknd ) :: dummy_dx, dummy_dy  ! [m]
@@ -1421,16 +1425,13 @@ module clubb_driver
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
 
-    call setup_clubb_core                                     & ! Intent(in)
-         ( nzmax, T0, ts_nudge,                               & ! Intent(in)
+    call setup_clubb_core_api(                                & ! Intent(in)
+           nzmax, T0, ts_nudge,                               & ! Intent(in)
            hydromet_dim, sclr_dim,                            & ! Intent(in)
            sclr_tol(1:sclr_dim), edsclr_dim, params,          & ! Intent(in)
            l_host_applies_sfc_fluxes,                         & ! Intent(in)
            saturation_formula,                                & ! Intent(in)
            l_input_fields,                                    & ! Intent(in)
-           l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
-           momentum_heights, thermodynamic_heights,           & ! Intent(in)
-           sfc_elevation(1),                                  & ! Intent(in)
            iiPDF_type,                                        & ! intent(in)
            ipdf_call_placement,                               & ! intent(in)
            l_predict_upwp_vpwp,                               & ! intent(in)
@@ -1440,7 +1441,21 @@ module clubb_driver
            l_stability_correct_tau_zm,                        & ! intent(in)
            l_enable_relaxed_clipping,                         & ! intent(in)
            l_diag_Lscale_from_tau,                            & ! intent(in)
-           gr(1), lmin, nu_vert_res_dep, err_code_dummy )       ! Intent(out)
+           err_code_dummy )                                     ! Intent(out)
+           
+    ! Setup grid
+    call setup_grid_api( nzmax, sfc_elevation(1), l_implemented,     & ! intent(in)
+                         grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
+                         momentum_heights, thermodynamic_heights, & ! intent(in)
+                         gr(1), begin_height, end_height  )         ! intent(out)
+              
+    ! Define tunable constant parameters
+    call setup_parameters_api( &
+           deltaz, params, gr(1)%nz,                                & ! intent(in)
+           grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
+           thermodynamic_heights(begin_height:end_height),       & ! intent(in)
+           l_prescribed_avg_deltaz,                              & ! intent(in)
+           lmin, nu_vert_res_dep, err_code_dummy )                 ! intent(out)  
 
     ! Allocate and initialize variables
 

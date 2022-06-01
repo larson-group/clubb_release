@@ -1667,9 +1667,6 @@ contains
 #ifdef GFDL
     I_sat_sphum,                                        & ! intent(in)  h1g, 2010-06-16
 #endif
-    l_implemented, grid_type, deltaz, zm_init, zm_top,  & ! intent(in)
-    momentum_heights, thermodynamic_heights,            & ! intent(in)
-    sfc_elevation,                                      & ! intent(in)
     iiPDF_type,                                         & ! intent(in)
     ipdf_call_placement,                                & ! intent(in)
     l_predict_upwp_vpwp,                                & ! intent(in)
@@ -1682,7 +1679,7 @@ contains
 #ifdef GFDL
     cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
-    gr, lmin, nu_vert_res_dep, err_code_api )             ! intent(out) 
+    err_code_api )             ! intent(out) 
 
     use advance_clubb_core_module, only : setup_clubb_core
 
@@ -1699,49 +1696,9 @@ contains
 
       implicit none
 
-      type(grid), target, intent(inout) :: gr
-
     ! Input Variables
 
     integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
-
-    real( kind = core_rknd ), intent(in) ::  &
-      sfc_elevation  ! Elevation of ground level    [m AMSL]
-
-    logical, intent(in) :: l_implemented   ! (T/F) CLUBB implemented in host model?
-
-    ! If CLUBB is running on it's own, this option determines
-    ! if it is using:
-    ! 1) an evenly-spaced grid,
-    ! 2) a stretched (unevenly-spaced) grid entered on the
-    !    thermodynamic grid levels (with momentum levels set
-    !    halfway between thermodynamic levels), or
-    ! 3) a stretched (unevenly-spaced) grid entered on the
-    !    momentum grid levels (with thermodynamic levels set
-    !    halfway between momentum levels).
-    integer, intent(in) :: grid_type
-
-    ! If the CLUBB model is running by itself, and is using an
-    ! evenly-spaced grid (grid_type = 1), it needs the vertical
-    ! grid spacing, momentum-level starting altitude, and maximum
-    ! altitude as input.
-    real( kind = core_rknd ), intent(in) :: &
-      deltaz,   & ! Change in altitude per level           [m]
-      zm_init,  & ! Initial grid altitude (momentum level) [m]
-      zm_top      ! Maximum grid altitude (momentum level) [m]
-
-    ! If the CLUBB parameterization is implemented in a host model,
-    ! it needs to use the host model's momentum level altitudes
-    ! and thermodynamic level altitudes.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on thermodynamic levels (grid_type = 2),
-    ! it needs to use the thermodynamic level altitudes as input.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on momentum levels (grid_type = 3),
-    ! it needs to use the momentum level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
-      momentum_heights,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     ! Model parameters
     real( kind = core_rknd ), intent(in) ::  &
@@ -1804,18 +1761,11 @@ contains
          cloud_frac_min         ! h1g, 2010-06-16 end mod
 #endif
 
-    ! Output variables 
-    real( kind = core_rknd ), intent(out) :: &
-      lmin    ! Min. value for the length scale    [m]
-
-    type(nu_vertical_res_dep), intent(out) :: &
-      nu_vert_res_dep    ! Vertical resolution dependent nu values
-
     integer, intent(out) :: & 
       err_code_api   ! Diagnostic for a problem with the setup 
 
-    call setup_clubb_core &
-      ( nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
+    call setup_clubb_core(  &
+      nzmax, T0_in, ts_nudge_in,                            & ! intent(in)
       hydromet_dim_in, sclr_dim_in,                         & ! intent(in)
       sclr_tol_in, edsclr_dim_in, params,                   & ! intent(in)
       l_host_applies_sfc_fluxes,                            & ! intent(in)
@@ -1824,9 +1774,6 @@ contains
 #ifdef GFDL
       I_sat_sphum,                                          & ! intent(in)  h1g, 2010-06-16
 #endif
-      l_implemented, grid_type, deltaz, zm_init, zm_top,    & ! intent(in)
-      momentum_heights, thermodynamic_heights,              & ! intent(in)
-      sfc_elevation,                                        & ! intent(in)
       iiPDF_type,                                           & ! intent(in)
       ipdf_call_placement,                                  & ! intent(in)
       l_predict_upwp_vpwp,                                  & ! intent(in)
@@ -1839,7 +1786,7 @@ contains
 #ifdef GFDL
       cloud_frac_min,                                       & ! intent(in)  h1g, 2010-06-16
 #endif
-      gr, lmin, nu_vert_res_dep, err_code_api )               ! intent(out)
+      err_code_api )                                          ! intent(out)
 
   end subroutine setup_clubb_core_api
 
