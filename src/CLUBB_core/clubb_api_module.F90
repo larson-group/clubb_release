@@ -533,6 +533,11 @@ module clubb_api_module
     module procedure setup_parameters_api_multi_col
   end interface
 
+  interface adj_low_res_nu_api
+    module procedure adj_low_res_nu_api_single_col
+    module procedure adj_low_res_nu_api_multi_col
+  end interface
+  
 contains
 
   !================================================================================================
@@ -929,9 +934,6 @@ contains
       host_dx_col,  & ! East-West horizontal grid spacing     [m]
       host_dy_col     ! North-South horizontal grid spacing   [m]
 
-    type(nu_vertical_res_dep), dimension(1) :: &
-      nu_vert_res_dep_col    ! Vertical resolution dependent nu values
-
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
@@ -1101,7 +1103,6 @@ contains
     
     host_dx_col(1) = host_dx
     host_dy_col(1) = host_dy
-    nu_vert_res_dep_col(1) = nu_vert_res_dep
     
     stats_zt_col(1) = stats_zt
     stats_zm_col(1) = stats_zm
@@ -1194,7 +1195,7 @@ contains
 #endif
       wphydrometp_col, wp2hmp_col, rtphmp_col, thlphmp_col, &                 ! intent(in)
       host_dx_col, host_dy_col, &                                     ! intent(in)
-      clubb_params, nu_vert_res_dep_col, lmin, &                  ! intent(in)
+      clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
       clubb_config_flags, &                                   ! intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col, &                        ! intent(inout)
       um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &               ! intent(inout)
@@ -1482,7 +1483,7 @@ contains
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    type(nu_vertical_res_dep), intent(in), dimension(ngrdcol) :: &
+    type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     real( kind = core_rknd ), intent(in) :: &
@@ -2556,9 +2557,6 @@ contains
     real( kind = core_rknd ), dimension(1,nzmax) :: &
       momentum_heights_col,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights_col    ! Thermodynamic level altitudes (input) [m]
-
-    type(nu_vertical_res_dep), dimension(1) :: &
-      nu_vert_res_dep_col    ! Vertical resolution dependent nu values
       
     real( kind = core_rknd ), dimension(1) ::  &
       deltaz_col  ! Change per height level        [m]
@@ -2571,9 +2569,7 @@ contains
               deltaz_col, params, nzmax, 1, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
-              lmin, nu_vert_res_dep_col, err_code_api )
-              
-    nu_vert_res_dep = nu_vert_res_dep_col(1)
+              lmin, nu_vert_res_dep, err_code_api )
 
   end subroutine setup_parameters_api_single_col
   
@@ -2638,7 +2634,7 @@ contains
     real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
 
-    type(nu_vertical_res_dep), dimension(ngrdcol), intent(out) :: &
+    type(nu_vertical_res_dep), intent(out) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(out) ::  & 	 	      
@@ -2656,7 +2652,7 @@ contains
   ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
   !================================================================================================
 
-  subroutine adj_low_res_nu_api( nzmax, grid_type, deltaz,  & ! Intent(in)
+  subroutine adj_low_res_nu_api_single_col( nzmax, grid_type, deltaz,  & ! Intent(in)
                                  momentum_heights, thermodynamic_heights, & ! Intent(in)
                                  l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
                                  nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
@@ -2714,14 +2710,99 @@ contains
     ! Output Variables
     type(nu_vertical_res_dep), intent(out) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
+      
+    ! Local variables
+    real( kind = core_rknd ), dimension(1) ::  &
+      deltaz_col  ! Change per height level        [m]
+      
+    real( kind = core_rknd ), dimension(1,nzmax) :: &
+      momentum_heights_col,      & ! Momentum level altitudes (input)      [m]
+      thermodynamic_heights_col    ! Thermodynamic level altitudes (input) [m]
 
-    call adj_low_res_nu( nzmax, grid_type, deltaz,  & ! Intent(in)
+    deltaz_col(1) = deltaz
+    momentum_heights_col(1,:) = momentum_heights
+    thermodynamic_heights_col(1,:) = thermodynamic_heights
+
+    call adj_low_res_nu( nzmax, 1, grid_type, deltaz_col, & ! Intent(in)
+                         momentum_heights_col, thermodynamic_heights_col, & ! Intent(in)
+                         l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
+                         nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
+                         nu_vert_res_dep )  ! Intent(out)
+
+  end subroutine adj_low_res_nu_api_single_col
+  
+  !================================================================================================
+  ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
+  !================================================================================================
+
+  subroutine adj_low_res_nu_api_multi_col( nzmax, ngrdcol, grid_type, deltaz,  & ! Intent(in)
+                                 momentum_heights, thermodynamic_heights, & ! Intent(in)
+                                 l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
+                                 nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
+                                 nu_vert_res_dep )  ! Intent(out)
+
+    use parameters_tunable, only : adj_low_res_nu
+
+    implicit none
+
+    ! Input Variables
+
+    ! Grid definition
+    integer, intent(in) :: &
+      nzmax, &  ! Vertical grid levels            [#]
+      ngrdcol
+
+    ! If CLUBB is running on it's own, this option determines
+    ! if it is using:
+    ! 1) an evenly-spaced grid,
+    ! 2) a stretched (unevenly-spaced) grid entered on the
+    !    thermodynamic grid levels (with momentum levels set
+    !    halfway between thermodynamic levels), or
+    ! 3) a stretched (unevenly-spaced) grid entered on the
+    !    momentum grid levels (with thermodynamic levels set
+    !    halfway between momentum levels).
+    integer, intent(in) :: grid_type
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      deltaz  ! Change per height level        [m]
+
+    ! If the CLUBB parameterization is implemented in a host model,
+    ! it needs to use the host model's momentum level altitudes
+    ! and thermodynamic level altitudes.
+    ! If the CLUBB model is running by itself, but is using a
+    ! stretched grid entered on thermodynamic levels (grid_type = 2),
+    ! it needs to use the thermodynamic level altitudes as input.
+    ! If the CLUBB model is running by itself, but is using a
+    ! stretched grid entered on momentum levels (grid_type = 3),
+    ! it needs to use the momentum level altitudes as input.
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) :: &
+      momentum_heights,      & ! Momentum level altitudes (input)      [m]
+      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
+
+    logical, intent(in) :: &
+      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+
+    real( kind = core_rknd ), intent(in) :: &
+      mult_coef, & ! CLUBB tunable parameter mult_coef
+      nu1,       & ! CLUBB tunable parameter nu1
+      nu2,       & ! CLUBB tunable parameter nu2
+      nu6,       & ! CLUBB tunable parameter nu6
+      nu8,       & ! CLUBB tunable parameter nu8
+      nu9,       & ! CLUBB tunable parameter nu9
+      nu10,      & ! CLUBB tunable parameter nu10
+      nu_hm        ! CLUBB tunable parameter nu_hm
+
+    ! Output Variables
+    type(nu_vertical_res_dep), intent(out) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    call adj_low_res_nu( nzmax, ngrdcol, grid_type, deltaz, & ! Intent(in)
                          momentum_heights, thermodynamic_heights, & ! Intent(in)
                          l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
                          nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
                          nu_vert_res_dep )  ! Intent(out)
 
-  end subroutine adj_low_res_nu_api
+  end subroutine adj_low_res_nu_api_multi_col
 
 ! The CLUBB_CAM preprocessor directives are being commented out because this
 ! code is now also used for WRF-CLUBB.

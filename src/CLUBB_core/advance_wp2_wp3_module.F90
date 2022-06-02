@@ -253,7 +253,7 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
  
-    type(nu_vertical_res_dep), dimension(ngrdcol), intent(in) :: &
+    type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
@@ -627,7 +627,7 @@ module advance_wp2_wp3_module
     
     ! This part handles the wp2 equation terms.
     do i = 1, ngrdcol
-      call diffusion_zm_lhs( gr(i), Kw1(i,:), Kw1_zm(i,:), nu_vert_res_dep(i)%nu1,  & ! intent(in) 
+      call diffusion_zm_lhs( gr(i), Kw1(i,:), Kw1_zm(i,:), nu_vert_res_dep%nu1(i),  & ! intent(in) 
                              gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),                & ! intent(in)
                              invrs_rho_ds_zm(i,:), rho_ds_zt(i,:),                  & ! intent(in)
                              lhs_diff_zm(:,i,:) )                                     ! intent(out)
@@ -635,7 +635,7 @@ module advance_wp2_wp3_module
     
     ! This part handles the wp3 equation terms.
     do i = 1, ngrdcol
-      call diffusion_zt_lhs( gr(i), Kw8(i,:), Kw8_zt(i,:), nu_vert_res_dep(i)%nu8,  & ! intent(in) 
+      call diffusion_zt_lhs( gr(i), Kw8(i,:), Kw8_zt(i,:), nu_vert_res_dep%nu8(i),  & ! intent(in) 
                              gr(i)%invrs_dzm(:), gr(i)%invrs_dzt(:),                & ! intent(in)
                              invrs_rho_ds_zt(i,:), rho_ds_zm(i,:),                  & ! intent(in)
                              lhs_diff_zt(:,i,:) )                                     ! intent(out)

@@ -39,7 +39,8 @@ module spurious_source_test
     !-----------------------------------------------------------------------
 
     use clubb_api_module, only: &
-        setup_grid_api  ! Procedure(s)
+        setup_grid_api, & ! Procedure(s)
+        adj_low_res_nu_api
 
     use grid_class, only: &
         zm2zt,      &
@@ -68,7 +69,6 @@ module spurious_source_test
     use parameters_tunable, only: &
         set_default_parameters, & ! Procedure(s)
         read_parameters, &
-        adj_low_res_nu, &
         nu_vertical_res_dep    ! Type(s)
 
     use fill_holes, only: &
@@ -333,7 +333,7 @@ module spurious_source_test
     real( kind = core_rknd ), dimension(nparams) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    type(nu_vertical_res_dep), dimension(1) :: &
+    type(nu_vertical_res_dep) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
   
     integer, parameter :: iunit = 10
@@ -618,11 +618,11 @@ module spurious_source_test
                          gr(1), begin_height, end_height          )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
-    call adj_low_res_nu( gr(1)%nz, grid_type, deltaz, &
-                         momentum_heights, thermodynamic_heights, &
-                         l_prescribed_avg_deltaz, mult_coef, &
-                         nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &
-                         nu_vert_res_dep(1) )
+    call adj_low_res_nu_api( gr(1)%nz, grid_type, deltaz, &
+                             momentum_heights, thermodynamic_heights, &
+                             l_prescribed_avg_deltaz, mult_coef, &
+                             nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &
+                             nu_vert_res_dep )
 
     dt = 300.0_core_rknd
 

@@ -39,7 +39,7 @@ module parameters_tunable
             adj_low_res_nu, nu_vertical_res_dep
 
   type nu_vertical_res_dep
-    real( kind = core_rknd ) :: & 
+    real( kind = core_rknd ), allocatable, dimension(:) :: & 
       nu1,   & ! Background Coefficient of Eddy Diffusion: wp2      [m^2/s]
       nu2,   & ! Background Coefficient of Eddy Diffusion: xp2      [m^2/s]
       nu6,   & ! Background Coefficient of Eddy Diffusion: wpxp     [m^2/s]
@@ -536,7 +536,7 @@ module parameters_tunable
     real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
 
-    type(nu_vertical_res_dep), dimension(ngrdcol), intent(out) :: &
+    type(nu_vertical_res_dep), intent(out) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(out) :: &
@@ -622,14 +622,12 @@ module parameters_tunable
     lmin = lmin_coef * lmin_deltaz ! New fixed value
 
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
-    do i = 1, ngrdcol
-      call adj_low_res_nu( &
-               nzmax, grid_type, deltaz(i),  & ! Intent(in)
-               momentum_heights(i,:), thermodynamic_heights(i,:), & ! Intent(in)
-               l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-               nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
-               nu_vert_res_dep(i) )  ! Intent(out)
-    end do
+    call adj_low_res_nu( &
+             nzmax, ngrdcol, grid_type, deltaz,  & ! Intent(in)
+             momentum_heights, thermodynamic_heights, & ! Intent(in)
+             l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
+             nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
+             nu_vert_res_dep )  ! Intent(out)
 
     if ( beta < zero .or. beta > three ) then
 
@@ -803,8 +801,8 @@ module parameters_tunable
   end subroutine setup_parameters
 
   !=============================================================================
-  subroutine adj_low_res_nu &
-               ( nzmax, grid_type, deltaz, & ! Intent(in)
+  subroutine adj_low_res_nu( &
+                 nzmax, ngrdcol, grid_type, deltaz, & ! Intent(in)
                  momentum_heights, thermodynamic_heights, & ! Intent(in)
                  l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
                  nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, & ! Intent(out)
@@ -849,7 +847,9 @@ module parameters_tunable
     ! Input Variables
 
     ! Grid definition
-    integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
+    integer, intent(in) :: &
+      nzmax, &  ! Vertical grid levels            [#]
+      ngrdcol
 
     ! If CLUBB is running on it's own, this option determines
     ! if it is using:
@@ -862,7 +862,7 @@ module parameters_tunable
     !    halfway between momentum levels).
     integer, intent(in) :: grid_type
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       deltaz  ! Change per height level        [m]
 
     ! If the CLUBB parameterization is implemented in a host model,
@@ -874,7 +874,7 @@ module parameters_tunable
     ! If the CLUBB model is running by itself, but is using a
     ! stretched grid entered on momentum levels (grid_type = 3),
     ! it needs to use the momentum level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) :: &
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
@@ -905,96 +905,110 @@ module parameters_tunable
       mult_factor_zt, &  ! Uses gr%dzt for nu values on zt levels
       mult_factor_zm     ! Uses gr%dzm for nu values on zm levels
 
+    integer :: i
+
     !--------------- Begin code -------------------------
+    
+    allocate( nu_vert_res_dep%nu1(1:ngrdcol), &
+              nu_vert_res_dep%nu2(1:ngrdcol), &
+              nu_vert_res_dep%nu6(1:ngrdcol), &
+              nu_vert_res_dep%nu8(1:ngrdcol), &
+              nu_vert_res_dep%nu9(1:ngrdcol), &
+              nu_vert_res_dep%nu10(1:ngrdcol), &
+              nu_vert_res_dep%nu_hm(1:ngrdcol) )
+              
+    do i = 1, ngrdcol
 
-    ! Flag for adjusting the values of the constant diffusivity coefficients
-    ! based on the grid spacing.  If this flag is turned off, the values of the
-    ! various nu coefficients will remain as they are declared in the
-    ! parameters.in file.
-    if ( l_adj_low_res_nu ) then
+      ! Flag for adjusting the values of the constant diffusivity coefficients
+      ! based on the grid spacing.  If this flag is turned off, the values of the
+      ! various nu coefficients will remain as they are declared in the
+      ! parameters.in file.
+      if ( l_adj_low_res_nu ) then
 
-      ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
+        ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
 
-      ! All of the background coefficients of eddy diffusivity, as well as the
-      ! constant coefficient for 4th-order hyper-diffusion, must be adjusted
-      ! based on the size of the grid spacing.  For a case that uses an
-      ! evenly-spaced grid, the adjustment is based on the constant grid
-      ! spacing deltaz.  For a case that uses a stretched grid, the adjustment
-      ! is based on avg_deltaz, which is the average grid spacing over the
-      ! vertical domain.
- 
-      if ( l_prescribed_avg_deltaz ) then
-        
-        avg_deltaz = deltaz
+        ! All of the background coefficients of eddy diffusivity, as well as the
+        ! constant coefficient for 4th-order hyper-diffusion, must be adjusted
+        ! based on the size of the grid spacing.  For a case that uses an
+        ! evenly-spaced grid, the adjustment is based on the constant grid
+        ! spacing deltaz.  For a case that uses a stretched grid, the adjustment
+        ! is based on avg_deltaz, which is the average grid spacing over the
+        ! vertical domain.
+   
+        if ( l_prescribed_avg_deltaz ) then
+          
+          avg_deltaz = deltaz(i)
 
-      else if ( grid_type == 3 ) then
+        else if ( grid_type == 3 ) then
 
-        ! CLUBB is implemented in a host model, or is using grid_type = 3
+          ! CLUBB is implemented in a host model, or is using grid_type = 3
 
-        ! Find the average deltaz over the grid based on momentum level
-        ! inputs.
+          ! Find the average deltaz over the grid based on momentum level
+          ! inputs.
 
-        avg_deltaz  &
-           = ( momentum_heights(nzmax) - momentum_heights(1) )  &
-             / real( nzmax - 1, kind = core_rknd )
+          avg_deltaz  &
+             = ( momentum_heights(i,nzmax) - momentum_heights(i,1) )  &
+               / real( nzmax - 1, kind = core_rknd )
 
-      else if ( grid_type == 1 ) then
+        else if ( grid_type == 1 ) then
 
-        ! Evenly-spaced grid.
+          ! Evenly-spaced grid.
 
-        avg_deltaz = deltaz
+          avg_deltaz = deltaz(i)
 
-      else if ( grid_type == 2 ) then
+        else if ( grid_type == 2 ) then
 
-        ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
-        ! input.
+          ! Stretched (unevenly-spaced) grid:  stretched thermodynamic level
+          ! input.
 
-        ! Find the average deltaz over the stretched grid based on
-        ! thermodynamic level inputs.
+          ! Find the average deltaz over the stretched grid based on
+          ! thermodynamic level inputs.
 
-        avg_deltaz  &
-          = ( thermodynamic_heights(nzmax) - thermodynamic_heights(1) )  &
-             / real( nzmax - 1, kind = core_rknd )
-      else
-        ! Eric Raut added to remove compiler warning. (Obviously, this value is not used)
-        avg_deltaz = 0.0_core_rknd
-        write(fstderr,*) "Invalid grid_type:", grid_type
-        error stop "Fatal error"
+          avg_deltaz  &
+            = ( thermodynamic_heights(i,nzmax) - thermodynamic_heights(i,1) )  &
+               / real( nzmax - 1, kind = core_rknd )
+        else
+          ! Eric Raut added to remove compiler warning. (Obviously, this value is not used)
+          avg_deltaz = 0.0_core_rknd
+          write(fstderr,*) "Invalid grid_type:", grid_type
+          error stop "Fatal error"
 
-      end if ! grid_type
+        end if ! grid_type
 
-      ! The nu's are chosen for deltaz <= 40 m. Looks like they must
-      ! be adjusted for larger grid spacings (Vince Larson)
+        ! The nu's are chosen for deltaz <= 40 m. Looks like they must
+        ! be adjusted for larger grid spacings (Vince Larson)
 
-      ! Use a constant mult_factor so nu does not depend on grid spacing
-      if( avg_deltaz > grid_spacing_thresh ) then
-        mult_factor_zt = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-        mult_factor_zm = mult_factor_zt
-      else
-        mult_factor_zt = 1.0_core_rknd
-        mult_factor_zm = 1.0_core_rknd
-      end if
+        ! Use a constant mult_factor so nu does not depend on grid spacing
+        if( avg_deltaz > grid_spacing_thresh ) then
+          mult_factor_zt = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
+          mult_factor_zm = mult_factor_zt
+        else
+          mult_factor_zt = 1.0_core_rknd
+          mult_factor_zm = 1.0_core_rknd
+        end if
 
-      !mult_factor = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-      nu_vert_res_dep%nu1   =  nu1 * mult_factor_zm
-      nu_vert_res_dep%nu2   =  nu2 * mult_factor_zm
-      nu_vert_res_dep%nu6   =  nu6 * mult_factor_zm
-      nu_vert_res_dep%nu8   =  nu8 * mult_factor_zt
-      nu_vert_res_dep%nu9   =  nu9 * mult_factor_zm
-      nu_vert_res_dep%nu10  =  nu10 * mult_factor_zt !We're unsure of the grid
-      nu_vert_res_dep%nu_hm =  nu_hm * mult_factor_zt
+        !mult_factor = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
+        nu_vert_res_dep%nu1(i)   =  nu1 * mult_factor_zm
+        nu_vert_res_dep%nu2(i)   =  nu2 * mult_factor_zm
+        nu_vert_res_dep%nu6(i)   =  nu6 * mult_factor_zm
+        nu_vert_res_dep%nu8(i)   =  nu8 * mult_factor_zt
+        nu_vert_res_dep%nu9(i)   =  nu9 * mult_factor_zm
+        nu_vert_res_dep%nu10(i)  =  nu10 * mult_factor_zt !We're unsure of the grid
+        nu_vert_res_dep%nu_hm(i) =  nu_hm * mult_factor_zt
 
-    else ! nu values are not adjusted
+      else ! nu values are not adjusted
 
-      nu_vert_res_dep%nu1   =  nu1
-      nu_vert_res_dep%nu2   =  nu2
-      nu_vert_res_dep%nu6   =  nu6
-      nu_vert_res_dep%nu8   =  nu8
-      nu_vert_res_dep%nu9   =  nu9
-      nu_vert_res_dep%nu10  =  nu10
-      nu_vert_res_dep%nu_hm =  nu_hm
+        nu_vert_res_dep%nu1(i)   =  nu1
+        nu_vert_res_dep%nu2(i)   =  nu2
+        nu_vert_res_dep%nu6(i)   =  nu6
+        nu_vert_res_dep%nu8(i)   =  nu8
+        nu_vert_res_dep%nu9(i)   =  nu9
+        nu_vert_res_dep%nu10(i)  =  nu10
+        nu_vert_res_dep%nu_hm(i) =  nu_hm
 
-    end if  ! l_adj_low_res_nu
+      end if  ! l_adj_low_res_nu
+      
+    end do
 
     return
   end subroutine adj_low_res_nu

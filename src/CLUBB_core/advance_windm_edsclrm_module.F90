@@ -165,7 +165,7 @@ module advance_windm_edsclrm_module
     logical, intent(in) ::  &
       l_implemented  ! Flag for CLUBB being implemented in a larger model.
 
-    type(nu_vertical_res_dep), dimension(ngrdcol), intent(in) :: &
+    type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     logical, intent(in) :: &
@@ -279,7 +279,7 @@ module advance_windm_edsclrm_module
 
     ! ------------------------ Begin Code ------------------------
     do i = 1, ngrdcol
-      nu10(i) = nu_vert_res_dep(i)%nu10
+      nu10(i) = nu_vert_res_dep%nu10(i)
       nu_zero(i) = zero
     end do
     

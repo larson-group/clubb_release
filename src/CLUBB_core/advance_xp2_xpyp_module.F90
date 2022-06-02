@@ -246,7 +246,7 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    type(nu_vertical_res_dep), dimension(ngrdcol), intent(in) :: &
+    type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
@@ -521,7 +521,7 @@ module advance_xp2_xpyp_module
       ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2). This is the 
       ! diffusion term for all LHS matrices except <w'u'^2> and <w'v'^2>
     do i = 1, ngrdcol
-      call diffusion_zm_lhs( gr(i), Kw2(i,:), Kw2_zm(i,:), nu_vert_res_dep(i)%nu2,  & ! In
+      call diffusion_zm_lhs( gr(i), Kw2(i,:), Kw2_zm(i,:), nu_vert_res_dep%nu2(i),  & ! In
                              gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),            & ! In
                              invrs_rho_ds_zm(i,:), rho_ds_zt(i,:),            & ! In
                              lhs_diff(:,i,:)                     )            ! Out
@@ -578,7 +578,7 @@ module advance_xp2_xpyp_module
       
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
     do i = 1, ngrdcol
-      call diffusion_zm_lhs( gr(i), Kw9(i,:), Kw9_zm(i,:), nu_vert_res_dep(i)%nu9,  & !In
+      call diffusion_zm_lhs( gr(i), Kw9(i,:), Kw9_zm(i,:), nu_vert_res_dep%nu9(i),  & !In
                              gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),            & ! In
                              invrs_rho_ds_zm(i,:), rho_ds_zt(i,:),            & ! In
                              lhs_diff_uv(:,i,:)                  )            ! Out

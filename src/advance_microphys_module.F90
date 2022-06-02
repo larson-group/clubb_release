@@ -755,7 +755,7 @@ module advance_microphys_module
        ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
        ! A Crank-Nicholson time-stepping scheme is used for this variable.
        ! This is the portion of the calculation using < h_m > from timestep t. 
-       K_hm_nu_hm(:) = K_hm(:,i) + nu_vert_res_dep%nu_hm
+       K_hm_nu_hm(:) = K_hm(:,i) + nu_vert_res_dep%nu_hm(1)
        
        call calc_xpwp( gr, K_hm_nu_hm, hydromet(:,i), &
                        xpwp )
@@ -768,7 +768,7 @@ module advance_microphys_module
 
        ! Add implicit terms to the LHS matrix
        call microphys_lhs( gr, trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
-                           dt, K_hm(:,i), nu_vert_res_dep%nu_hm, wm_zt, & ! In
+                           dt, K_hm(:,i), nu_vert_res_dep%nu_hm(1), wm_zt, & ! In
                            hydromet_vel(:,i), hydromet_vel_zt(:,i),     & ! In
                            hydromet_vel_covar_zt_impc(:,i),             & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,       & ! In
@@ -778,7 +778,7 @@ module advance_microphys_module
        ! Set up explicit term in the RHS vector
        call microphys_rhs( gr, trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
                            hydromet(:,i), hydromet_mc(:,i), &
-                           K_hm(:,i), nu_vert_res_dep%nu_hm, cloud_frac, &
+                           K_hm(:,i), nu_vert_res_dep%nu_hm(1), cloud_frac, &
                            hydromet_vel_covar_zt_expc(:,i), &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                            stats_zt, &
@@ -860,7 +860,7 @@ module advance_microphys_module
        ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
        ! A Crank-Nicholson time-stepping scheme is used for this variable.
        ! This is the portion of the calculation using < h_m > from timestep t+1.
-       K_hm_nu_hm(:) = K_hm(:,i) + nu_vert_res_dep%nu_hm
+       K_hm_nu_hm(:) = K_hm(:,i) + nu_vert_res_dep%nu_hm(1)
        
        call calc_xpwp( gr, K_hm_nu_hm, hydromet(:,i), &
                        xpwp )
@@ -1126,7 +1126,7 @@ module advance_microphys_module
     ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
     ! A Crank-Nicholson time-stepping scheme is used for this variable.
     ! This is the portion of the calculation using < N_c > from timestep t.
-    K_Nc_nu_hm(:) = K_Nc(:) + nu_vert_res_dep%nu_hm
+    K_Nc_nu_hm(:) = K_Nc(:) + nu_vert_res_dep%nu_hm(1)
     
     call calc_xpwp( gr, K_Nc_nu_hm, Ncm, &
                     xpwp )
@@ -1138,7 +1138,7 @@ module advance_microphys_module
 
     ! Add implicit terms to the LHS array
     call microphys_lhs( gr, "Ncm", l_Ncm_sed, & ! In
-                        dt, K_Nc, nu_vert_res_dep%nu_hm, wm_zt, &  ! In
+                        dt, K_Nc, nu_vert_res_dep%nu_hm(1), wm_zt, &  ! In
                         Ncm_vel, Ncm_vel_zt, & ! In
                         Ncm_vel_covar_zt_impc, & ! In
                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
@@ -1151,7 +1151,7 @@ module advance_microphys_module
        call microphys_rhs( gr, "Ncm", dt, l_Ncm_sed, &
                            Nc_in_cloud, &
                            Ncm_mc / max( cloud_frac, cloud_frac_min ), &
-                           K_Nc, nu_vert_res_dep%nu_hm, cloud_frac, &
+                           K_Nc, nu_vert_res_dep%nu_hm(1), cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                            stats_zt, &
@@ -1161,7 +1161,7 @@ module advance_microphys_module
 
        call microphys_rhs( gr, "Ncm", dt, l_Ncm_sed, &
                            Ncm, Ncm_mc, &
-                           K_Nc, nu_vert_res_dep%nu_hm, cloud_frac, &
+                           K_Nc, nu_vert_res_dep%nu_hm(1), cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                            stats_zt, &
@@ -1265,7 +1265,7 @@ module advance_microphys_module
     ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
     ! A Crank-Nicholson time-stepping scheme is used for this variable.
     ! This is the portion of the calculation using < N_c > from timestep t+1. 
-    K_Nc_nu_hm(:) = K_Nc(:) + nu_vert_res_dep%nu_hm
+    K_Nc_nu_hm(:) = K_Nc(:) + nu_vert_res_dep%nu_hm(1)
     
     call calc_xpwp( gr, K_Nc_nu_hm, Ncm, &
                     xpwp )
@@ -3641,7 +3641,7 @@ module advance_microphys_module
                            hydromet_vel_covar_zt_expc
 
           write(fstderr,*) "clubb_params = ", clubb_params
-          write(fstderr,*) "nu_vert_res_dep%nu_hm = ", nu_vert_res_dep%nu_hm
+          write(fstderr,*) "nu_vert_res_dep%nu_hm = ", nu_vert_res_dep%nu_hm(1)
           write(fstderr,*) "l_upwind_xm_ma = ", l_upwind_xm_ma
 
           write(fstderr,*) "Intent(inout)"

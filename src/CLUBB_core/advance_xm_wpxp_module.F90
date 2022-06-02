@@ -285,7 +285,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    type(nu_vertical_res_dep), dimension(ngrdcol), intent(in) :: &
+    type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
@@ -1296,7 +1296,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    type(nu_vertical_res_dep), dimension(ngrdcol), intent(in) :: &
+    type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     logical, intent(in) :: &
@@ -1364,7 +1364,7 @@ module advance_xm_wpxp_module
 
     ! Calculate diffusion terms for all momentum grid level
     do i = 1, ngrdcol
-      call diffusion_zm_lhs( gr(i), Kw6(i,:), Kw6_zm(i,:), nu_vert_res_dep(i)%nu6, & ! Intent(in)
+      call diffusion_zm_lhs( gr(i), Kw6(i,:), Kw6_zm(i,:), nu_vert_res_dep%nu6(i), & ! Intent(in)
                              gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:), & ! Intent(in)
                              invrs_rho_ds_zm(i,:), rho_ds_zt(i,:), & ! Intent(in)
                              lhs_diff_zm(:,i,:)                  ) ! Intent(out)    

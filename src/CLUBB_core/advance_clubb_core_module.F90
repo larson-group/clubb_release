@@ -522,7 +522,7 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    type(nu_vertical_res_dep), intent(in), dimension(ngrdcol) :: &
+    type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     real( kind = core_rknd ), intent(in) :: &
