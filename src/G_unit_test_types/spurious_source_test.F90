@@ -38,8 +38,10 @@ module spurious_source_test
     ! References:
     !-----------------------------------------------------------------------
 
+    use clubb_api_module, only: &
+        setup_grid_api  ! Procedure(s)
+
     use grid_class, only: &
-        setup_grid, & ! Procedure(s)
         zm2zt,      &
         zt2zm
 
@@ -610,10 +612,10 @@ module spurious_source_test
     thermodynamic_heights = zero
 
     ! Set up the vertical grid.
-    call setup_grid( nz, sfc_elevation, l_implemented,        &
-                     grid_type, deltaz, zm_init, zm_top,      &
-                     momentum_heights, thermodynamic_heights, &
-                     gr(1), begin_height, end_height          )
+    call setup_grid_api( nz, sfc_elevation, l_implemented,        &
+                         grid_type, deltaz, zm_init, zm_top,      &
+                         momentum_heights, thermodynamic_heights, &
+                         gr(1), begin_height, end_height          )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
     call adj_low_res_nu( gr(1)%nz, grid_type, deltaz, &

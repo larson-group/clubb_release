@@ -457,8 +457,8 @@ module parameters_tunable
   end subroutine set_default_parameters
 
   !=============================================================================
-  subroutine setup_parameters & 
-            ( deltaz, params, nzmax, &
+  subroutine setup_parameters( & 
+              deltaz, params, nzmax, ngrdcol, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
               lmin, nu_vert_res_dep, err_code_out )
@@ -494,14 +494,17 @@ module parameters_tunable
       lmin_deltaz = 40.0_core_rknd ! Fixed value for minimum value for the length scale.
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  & 
+
+    ! Grid definition
+    integer, intent(in) :: &
+      nzmax,  & ! Vertical grid levels            [#]
+      ngrdcol   ! Number of grid columns          [#]
+      
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       deltaz  ! Change per height level        [m]
 
     real( kind = core_rknd ), intent(in), dimension(nparams) :: & 
       params  ! Tuneable model parameters      [-]
-
-    ! Grid definition
-    integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
 
     ! If CLUBB is running on its own, this option determines
     ! if it is using:
@@ -523,23 +526,23 @@ module parameters_tunable
     ! If the CLUBB model is running by itself, but is using a
     ! stretched grid entered on momentum levels (grid_type = 3),
     ! it needs to use the momentum level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) :: &
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
 
-    type(nu_vertical_res_dep), intent(out) :: &
+    type(nu_vertical_res_dep), dimension(ngrdcol), intent(out) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
 
-    integer :: k    ! loop variable
+    integer :: k, i    ! loop variable
 
     real( kind = core_rknd ) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
@@ -619,12 +622,14 @@ module parameters_tunable
     lmin = lmin_coef * lmin_deltaz ! New fixed value
 
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
-    call adj_low_res_nu &
-           ( nzmax, grid_type, deltaz,  & ! Intent(in)
-             momentum_heights, thermodynamic_heights, & ! Intent(in)
-             l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-             nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
-             nu_vert_res_dep )  ! Intent(out)
+    do i = 1, ngrdcol
+      call adj_low_res_nu( &
+               nzmax, grid_type, deltaz(i),  & ! Intent(in)
+               momentum_heights(i,:), thermodynamic_heights(i,:), & ! Intent(in)
+               l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
+               nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
+               nu_vert_res_dep(i) )  ! Intent(out)
+    end do
 
     if ( beta < zero .or. beta > three ) then
 
@@ -712,10 +717,10 @@ module parameters_tunable
 
     endif ! mu < 0.0
 
-    if ( lmin < 1.0_core_rknd ) then
+    if ( lmin(1) < 1.0_core_rknd ) then
 
        ! Constraints on mixing length
-       write(fstderr,*) "lmin = ", lmin
+       write(fstderr,*) "lmin = ", lmin(1)
        write(fstderr,*) "lmin is < 1.0_core_rknd"
        err_code = clubb_fatal_error
 

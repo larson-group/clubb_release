@@ -265,10 +265,10 @@ module grid_class
   contains
 
   !=============================================================================
-  subroutine setup_grid( nzmax, sfc_elevation, l_implemented,      &
-                         grid_type, deltaz, zm_init, zm_top,      &
-                         momentum_heights, thermodynamic_heights, &
-                         gr, begin_height, end_height                 )
+  subroutine setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented,  &
+                         grid_type, deltaz, zm_init, zm_top,            &
+                         momentum_heights, thermodynamic_heights,       &
+                         gr, begin_height, end_height )
 
     ! Description:
     !   Grid Constructor
@@ -293,17 +293,18 @@ module grid_class
 
     implicit none
 
-    type(grid), target, intent(inout) :: gr
-
     ! Constant parameters
     integer, parameter :: & 
       NWARNING = 250 ! Issue a warning if nzmax exceeds this number.
 
     ! Input Variables
     integer, intent(in) ::  & 
-      nzmax  ! Number of vertical levels in grid      [#]
+      nzmax, &  ! Number of vertical levels in grid      [#]
+      ngrdcol
 
-    real( kind = core_rknd ), intent(in) ::  &
+    type(grid), target, dimension(ngrdcol), intent(inout) :: gr
+
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       sfc_elevation  ! Elevation of ground level    [m AMSL]
 
     ! Flag to see if CLUBB is running on it's own,
@@ -322,7 +323,7 @@ module grid_class
     ! If the CLUBB model is running by itself, and is using an evenly-spaced
     ! grid (grid_type = 1), it needs the vertical grid spacing and
     ! momentum-level starting altitude as input.
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       deltaz,   & ! Vertical grid spacing                  [m]
       zm_init,  & ! Initial grid altitude (momentum level) [m]
       zm_top      ! Maximum grid altitude (momentum level) [m]
@@ -336,17 +337,17 @@ module grid_class
     ! If the CLUBB model is running by itself, but is using a stretched grid
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) ::  & 
       momentum_heights,   & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-    integer, intent(out) :: &
+    integer, dimension(ngrdcol), intent(out) :: &
       begin_height, &  ! Lower bound for *_heights arrays [-]
       end_height       ! Upper bound for *_heights arrays [-]
 
     ! Local Variables
     integer :: ierr, & ! Allocation stat
-               i       ! Loop index
+               i, k    ! Loop index
 
 
     ! ---- Begin Code ----
@@ -359,12 +360,15 @@ module grid_class
       write(fstderr,*) "This may take a lot of CPU time and memory."
     end if
 
-    gr%nz = nzmax
+    do i = 1, ngrdcol
+      gr(i)%nz = nzmax
+    end do
 
     ! Default bounds
-    begin_height = 1
-
-    end_height = gr%nz
+    do i = 1, ngrdcol
+      begin_height(i) = 1
+      end_height(i) = gr(i)%nz
+    end do
 
     !---------------------------------------------------
     if ( .not. l_implemented ) then
@@ -373,103 +377,117 @@ module grid_class
 
         ! Determine the number of grid points given the spacing
         ! to fit within the bounds without going over.
-        gr%nz = floor( ( zm_top - zm_init + deltaz ) / deltaz )
+        do i = 1, ngrdcol
+          gr(i)%nz = floor( ( zm_top(i) - zm_init(i) + deltaz(i) ) / deltaz(i) )
+        end do
 
       else if( grid_type == 2 ) then! Thermo
 
         ! Find begin_height (lower bound)
+        do i = 1, ngrdcol
+          
+          k = gr(i)%nz
 
-        i = gr%nz
+          do while( thermodynamic_heights(i,k) >= zm_init(i) .and. k > 1 )
 
-        do while( thermodynamic_heights(i) >= zm_init .and. i > 1 )
+            k = k - 1
 
-          i = i - 1
+          end do
+
+          if( thermodynamic_heights(i,k) >= zm_init(i) ) then
+
+            write(fstderr,*) err_header, "Stretched zt grid cannot fulfill zm_init requirement"
+            err_code = clubb_fatal_error
+            return
+
+          else
+
+            begin_height(i) = k
+
+          end if
 
         end do
-
-        if( thermodynamic_heights(i) >= zm_init ) then
-
-          write(fstderr,*) err_header, "Stretched zt grid cannot fulfill zm_init requirement"
-          err_code = clubb_fatal_error
-          return
-
-        else
-
-          begin_height = i
-
-        end if
 
         ! Find end_height (upper bound)
+        do i = 1, ngrdcol
+          
+          k = gr(i)%nz
 
-        i = gr%nz
+          do while( thermodynamic_heights(i,k) > zm_top(i) .and. k > 1 )
 
-        do while( thermodynamic_heights(i) > zm_top .and. i > 1 )
+            k = k - 1
 
-          i = i - 1
+          end do
 
+          if( zm_top(i) < thermodynamic_heights(i,k) ) then
+
+            write(fstderr,*) err_header, "Stretched zt grid cannot fulfill zm_top requirement"
+            err_code = clubb_fatal_error
+            return
+
+          else
+
+            end_height(i) = k
+
+            gr(i)%nz = size( thermodynamic_heights(i,begin_height(i):end_height(i)) )
+
+          end if
+          
         end do
-
-        if( zm_top < thermodynamic_heights(i) ) then
-
-          write(fstderr,*) err_header, "Stretched zt grid cannot fulfill zm_top requirement"
-          err_code = clubb_fatal_error
-          return
-
-        else
-
-          end_height = i
-
-          gr%nz = size( thermodynamic_heights(begin_height:end_height) )
-
-        end if
 
       else if( grid_type == 3 ) then ! Momentum
 
         ! Find begin_height (lower bound)
+        do i = 1, ngrdcol
+          
+          k = 1
 
-        i = 1
+          do while( momentum_heights(i,k) < zm_init(i) .and. k < gr(i)%nz )
 
-        do while( momentum_heights(i) < zm_init .and. i < gr%nz )
+            k = k + 1
 
-          i = i + 1
+          end do
 
+          if( momentum_heights(i,k) < zm_init(i) ) then
+
+            write(fstderr,*) err_header, "Stretched zm grid cannot fulfill zm_init requirement"
+            err_code = clubb_fatal_error
+            return
+
+          else
+
+            begin_height(i) = k
+
+          end if
+          
         end do
-
-        if( momentum_heights(i) < zm_init ) then
-
-          write(fstderr,*) err_header, "Stretched zm grid cannot fulfill zm_init requirement"
-          err_code = clubb_fatal_error
-          return
-
-        else
-
-          begin_height = i
-
-        end if
 
         ! Find end_height (lower bound)
+        do i = 1, ngrdcol
+          
+          k = gr(i)%nz
 
-        i = gr%nz
+          do while( momentum_heights(i,k) > zm_top(i) .and. k > 1 )
 
-        do while( momentum_heights(i) > zm_top .and. i > 1 )
+            k = k - 1
 
-          i = i - 1
+          end do
 
+          if( momentum_heights(i,k) > zm_top(i) ) then
+
+            write(fstderr,*) err_header, "Stretched zm grid cannot fulfill zm_top requirement"
+            err_code = clubb_fatal_error
+            return
+
+          else
+
+            end_height(i) = k
+
+            gr(i)%nz = size( momentum_heights(i,begin_height(i):end_height(i)) )
+
+          end if
+          
         end do
-
-        if( momentum_heights(i) > zm_top ) then
-
-          write(fstderr,*) err_header, "Stretched zm grid cannot fulfill zm_top requirement"
-          err_code = clubb_fatal_error
-          return
-
-        else
-
-          end_height = i
-
-          gr%nz = size( momentum_heights(begin_height:end_height) )
-
-        end if
 
       endif ! grid_type
 
@@ -478,12 +496,14 @@ module grid_class
     !---------------------------------------------------
 
     ! Allocate memory for the grid levels
-    allocate( gr%zm(gr%nz), gr%zt(gr%nz), & 
-              gr%dzm(gr%nz), gr%dzt(gr%nz), &
-              gr%invrs_dzm(gr%nz), gr%invrs_dzt(gr%nz),  & 
-              gr%weights_zm2zt(m_above:m_below,gr%nz), & 
-              gr%weights_zt2zm(t_above:t_below,gr%nz), & 
-              stat=ierr )
+    do i = 1, ngrdcol
+      allocate( gr(i)%zm(gr(i)%nz), gr(i)%zt(gr(i)%nz), & 
+                gr(i)%dzm(gr(i)%nz), gr(i)%dzt(gr(i)%nz), &
+                gr(i)%invrs_dzm(gr(i)%nz), gr(i)%invrs_dzt(gr(i)%nz),  & 
+                gr(i)%weights_zm2zt(m_above:m_below,gr(i)%nz), & 
+                gr(i)%weights_zt2zm(t_above:t_below,gr(i)%nz), & 
+                stat=ierr )
+    end do
 
     if ( ierr /= 0 ) then
       write(fstderr,*) err_header, "In setup_grid: allocation of grid variables failed."
@@ -493,23 +513,27 @@ module grid_class
 
     ! Set the values for the derived types used for heights, derivatives, and
     ! interpolation from the momentum/thermodynamic grid
-    call setup_grid_heights &
-               ( l_implemented, grid_type,  & ! intent(in)
-                 deltaz, zm_init,  & ! intent(in)
-                 momentum_heights(begin_height:end_height),  & ! intent(in) 
-                 thermodynamic_heights(begin_height:end_height), & ! intent(in)
-                 gr ) ! intent(inout)
+    do i = 1, ngrdcol
+      call setup_grid_heights( &
+                   l_implemented, grid_type,  & ! intent(in)
+                   deltaz(i), zm_init(i),  & ! intent(in)
+                   momentum_heights(i,begin_height(i):end_height(i)),  & ! intent(in) 
+                   thermodynamic_heights(i,begin_height(i):end_height(i)), & ! intent(in)
+                   gr(i) ) ! intent(inout)
+    end do
 
-    if ( sfc_elevation > gr%zm(1) ) then
-      write(fstderr,*) "The altitude of the lowest momentum level, "        &
-                       // "gr%zm(1), must be at or above the altitude of "  &
-                       // "the surface, sfc_elevation.  The lowest model "  &
-                       // "momentum level cannot be below the surface."
-      write(fstderr,*) "Altitude of lowest momentum level =", gr%zm(1)
-      write(fstderr,*) "Altitude of the surface =", sfc_elevation
-      err_code = clubb_fatal_error
-      return
-    endif
+    do i = 1, ngrdcol
+      if ( sfc_elevation(i) > gr(i)%zm(1) ) then
+        write(fstderr,*) "The altitude of the lowest momentum level, "        &
+                         // "gr%zm(1), must be at or above the altitude of "  &
+                         // "the surface, sfc_elevation.  The lowest model "  &
+                         // "momentum level cannot be below the surface."
+        write(fstderr,*) "Altitude of lowest momentum level =", gr(i)%zm(1)
+        write(fstderr,*) "Altitude of the surface =", sfc_elevation(i)
+        err_code = clubb_fatal_error
+        return
+      endif
+    end do
 
     return
 
