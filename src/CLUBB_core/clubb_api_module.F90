@@ -932,9 +932,6 @@ contains
     type(nu_vertical_res_dep), dimension(1) :: &
       nu_vert_res_dep_col    ! Vertical resolution dependent nu values
 
-    real( kind = core_rknd ), dimension(1) :: &
-      lmin_col    ! Min. value for the length scale    [m]
-
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
@@ -1105,7 +1102,6 @@ contains
     host_dx_col(1) = host_dx
     host_dy_col(1) = host_dy
     nu_vert_res_dep_col(1) = nu_vert_res_dep
-    lmin_col(1) = lmin
     
     stats_zt_col(1) = stats_zt
     stats_zm_col(1) = stats_zm
@@ -1198,7 +1194,7 @@ contains
 #endif
       wphydrometp_col, wp2hmp_col, rtphmp_col, thlphmp_col, &                 ! intent(in)
       host_dx_col, host_dy_col, &                                     ! intent(in)
-      clubb_params, nu_vert_res_dep_col, lmin_col, &                  ! intent(in)
+      clubb_params, nu_vert_res_dep_col, lmin, &                  ! intent(in)
       clubb_config_flags, &                                   ! intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col, &                        ! intent(inout)
       um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &               ! intent(inout)
@@ -1489,7 +1485,7 @@ contains
     type(nu_vertical_res_dep), intent(in), dimension(ngrdcol) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
+    real( kind = core_rknd ), intent(in) :: &
       lmin    ! Min. value for the length scale    [m]
 
     type( clubb_config_flags_type ), intent(in) :: &
@@ -2561,9 +2557,6 @@ contains
       momentum_heights_col,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights_col    ! Thermodynamic level altitudes (input) [m]
 
-    real( kind = core_rknd ), dimension(1) :: &
-      lmin_col    ! Min. value for the length scale    [m]
-
     type(nu_vertical_res_dep), dimension(1) :: &
       nu_vert_res_dep_col    ! Vertical resolution dependent nu values
       
@@ -2578,9 +2571,8 @@ contains
               deltaz_col, params, nzmax, 1, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
-              lmin_col, nu_vert_res_dep_col, err_code_api )
+              lmin, nu_vert_res_dep_col, err_code_api )
               
-    lmin = lmin_col(1)
     nu_vert_res_dep = nu_vert_res_dep_col(1)
 
   end subroutine setup_parameters_api_single_col
@@ -2643,7 +2635,7 @@ contains
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
     ! Output Variables 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
 
     type(nu_vertical_res_dep), dimension(ngrdcol), intent(out) :: &

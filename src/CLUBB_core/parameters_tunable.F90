@@ -533,7 +533,7 @@ module parameters_tunable
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
-    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
 
     type(nu_vertical_res_dep), dimension(ngrdcol), intent(out) :: &
@@ -717,10 +717,10 @@ module parameters_tunable
 
     endif ! mu < 0.0
 
-    if ( lmin(1) < 1.0_core_rknd ) then
+    if ( lmin < 1.0_core_rknd ) then
 
        ! Constraints on mixing length
-       write(fstderr,*) "lmin = ", lmin(1)
+       write(fstderr,*) "lmin = ", lmin
        write(fstderr,*) "lmin is < 1.0_core_rknd"
        err_code = clubb_fatal_error
 

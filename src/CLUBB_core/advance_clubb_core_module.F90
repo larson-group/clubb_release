@@ -525,7 +525,7 @@ module advance_clubb_core_module
     type(nu_vertical_res_dep), intent(in), dimension(ngrdcol) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
+    real( kind = core_rknd ), intent(in) :: &
       lmin    ! Min. value for the length scale    [m]
 
     type( clubb_config_flags_type ), intent(in) :: &

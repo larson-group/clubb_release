@@ -166,7 +166,9 @@ module mixing_length
       Lscale_max ! Maximum allowable value for Lscale             [m]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
-      mu,   & ! mu Fractional extrainment rate per unit altitude  [1/m]
+      mu      ! mu Fractional extrainment rate per unit altitude  [1/m]
+      
+    real( kind = core_rknd ), intent(in) :: &
       lmin    ! CLUBB tunable parameter lmin
 
     logical, intent(in) :: &
@@ -732,12 +734,12 @@ module mixing_length
 
               ! Within a host model, increase mixing length in 500 m layer above *ground*
               lminh = max( zero_threshold, Lscale_sfclyr_depth - ( gr(i)%zt(k) - gr(i)%zm(1) ) ) &
-                      * lmin(i) * invrs_Lscale_sfclyr_depth
+                      * lmin * invrs_Lscale_sfclyr_depth
           else
 
               ! In standalone mode, increase mixing length in 500 m layer above *mean sea level*
               lminh = max( zero_threshold, Lscale_sfclyr_depth - gr(i)%zt(k) ) &
-                      * lmin(i) * invrs_Lscale_sfclyr_depth
+                      * lmin * invrs_Lscale_sfclyr_depth
           end if
 
           Lscale_up(i,k)    = max( lminh, Lscale_up(i,k) )
@@ -935,7 +937,9 @@ module mixing_length
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       newmu, &
-      Lscale_max, &
+      Lscale_max
+      
+    real( kind = core_rknd ), intent(in) ::  &
       lmin
 
     type (pdf_parameter), intent(in) :: &
