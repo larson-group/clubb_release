@@ -259,8 +259,8 @@ module mixing_length
       end do
 
       ! Avoid uninitialized memory (these values are not used in Lscale)
-      Lscale_up(:,1)   = zero
-      Lscale_down(:,1) = zero
+      Lscale_up(i,1)   = zero
+      Lscale_down(i,1) = zero
 
       ! Precalculations of single values to avoid unnecessary calculations later
       Lv2_coef = ep * Lv**2 / ( Rd * cp )
@@ -754,12 +754,12 @@ module mixing_length
       enddo
 
       ! Set the value of Lscale at the upper and lower boundaries.
-      Lscale(:,1) = Lscale(:,2)
-      Lscale(:,nz) = Lscale(:,nz-1)
+      Lscale(i,1) = Lscale(i,2)
+      Lscale(i,nz) = Lscale(i,nz-1)
 
       ! Vince Larson limited Lscale to allow host
       ! model to take over deep convection.  13 Feb 2008.
-      Lscale = min( Lscale, Lscale_max(i) )
+      Lscale(i,:) = min( Lscale(i,:), Lscale_max(i) )
       
     end do
 
