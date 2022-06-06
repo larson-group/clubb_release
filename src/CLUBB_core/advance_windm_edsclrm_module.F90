@@ -293,8 +293,8 @@ module advance_windm_edsclrm_module
     
     if ( .not. l_implemented ) then
       do i = 1, ngrdcol
-        call term_ma_zt_lhs( gr(i), wm_zt(i,:),                       & ! intent(in)
-                             gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),  & ! intent(in)
+        call term_ma_zt_lhs( nz, wm_zt(i,:), gr(i)%weights_zt2zm(:,:),  & ! intent(in)
+                             gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),    & ! intent(in)
                              l_upwind_xm_ma,                          & ! intent(in)
                              lhs_ma_zt(:,i,:) )                         ! intent(out)
       end do
@@ -307,12 +307,9 @@ module advance_windm_edsclrm_module
       Km_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, Km_zm(:,:) ), zero )
 
       ! Calculate diffusion terms
-      do i = 1, ngrdcol
-        call diffusion_zt_lhs( gr(i), Km_zm(i,:), Km_zt(i,:), nu10(i),  & ! intent(in)
-                               gr(i)%invrs_dzm(:), gr(i)%invrs_dzt(:),  & ! intent(in)
-                               invrs_rho_ds_zt(i,:), rho_ds_zm(i,:),    & ! intent(in)
-                               lhs_diff(:,i,:) )                          ! intent(out)
-      end do
+      call diffusion_zt_lhs( nz, ngrdcol, gr, Km_zm, Km_zt, nu10,   & ! intent(in)
+                             invrs_rho_ds_zt, rho_ds_zm,            & ! intent(in)
+                             lhs_diff )                               ! intent(out)
       
       ! The lower boundary condition needs to be applied here at level 2.
       if ( .not. l_upwind_Kh_dp_term ) then 
@@ -857,12 +854,9 @@ module advance_windm_edsclrm_module
       Kmh_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, Kmh_zm(:,:) ), zero )
 
       ! Calculate diffusion terms
-      do i = 1, ngrdcol
-        call diffusion_zt_lhs( gr(i), Kmh_zm(i,:), Kmh_zt(i,:), nu_zero(i), & ! intent(in)
-                               gr(i)%invrs_dzm(:), gr(i)%invrs_dzt(:),      & ! intent(in)
-                               invrs_rho_ds_zt(i,:), rho_ds_zm(i,:),        & ! intent(in)
-                               lhs_diff(:,i,:) )                              ! intent(out)
-      end do
+      call diffusion_zt_lhs( nz, ngrdcol, gr, Kmh_zm, Kmh_zt, nu_zero,  & ! intent(in)
+                             invrs_rho_ds_zt, rho_ds_zm,                & ! intent(in)
+                             lhs_diff )                                   ! intent(out)
       
       ! The lower boundary condition needs to be applied here at level 2.
       if ( .not. l_upwind_Kh_dp_term ) then 

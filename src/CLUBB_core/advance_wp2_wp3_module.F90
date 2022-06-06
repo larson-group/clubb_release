@@ -626,20 +626,14 @@ module advance_wp2_wp3_module
                                rhs_pr_dfsn_wp2 )                                ! intent(out)
     
     ! This part handles the wp2 equation terms.
-    do i = 1, ngrdcol
-      call diffusion_zm_lhs( gr(i), Kw1(i,:), Kw1_zm(i,:), nu_vert_res_dep%nu1(i),  & ! intent(in) 
-                             gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),                & ! intent(in)
-                             invrs_rho_ds_zm(i,:), rho_ds_zt(i,:),                  & ! intent(in)
-                             lhs_diff_zm(:,i,:) )                                     ! intent(out)
-    end do
+    call diffusion_zm_lhs( nz, ngrdcol, gr, Kw1, Kw1_zm, nu_vert_res_dep%nu1, & ! intent(in) 
+                           invrs_rho_ds_zm, rho_ds_zt,                        & ! intent(in)
+                           lhs_diff_zm )                                        ! intent(out)
     
     ! This part handles the wp3 equation terms.
-    do i = 1, ngrdcol
-      call diffusion_zt_lhs( gr(i), Kw8(i,:), Kw8_zt(i,:), nu_vert_res_dep%nu8(i),  & ! intent(in) 
-                             gr(i)%invrs_dzm(:), gr(i)%invrs_dzt(:),                & ! intent(in)
-                             invrs_rho_ds_zt(i,:), rho_ds_zm(i,:),                  & ! intent(in)
-                             lhs_diff_zt(:,i,:) )                                     ! intent(out)
-    end do
+    call diffusion_zt_lhs( nz, ngrdcol, gr, Kw8, Kw8_zt, nu_vert_res_dep%nu8, & ! intent(in) 
+                           invrs_rho_ds_zt, rho_ds_zm,                        & ! intent(in)
+                           lhs_diff_zt )                                        ! intent(out)
     
     ! Calculate RHS eddy diffusion terms for w'2 and w'3
     if ( l_crank_nich_diff ) then
@@ -796,15 +790,17 @@ module advance_wp2_wp3_module
     
     ! Calculated mean advection term for w'2
     do i = 1, ngrdcol
-      call term_ma_zm_lhs( gr(i), wm_zm(i,:), gr(i)%invrs_dzm(:), & ! intent(in)
+      call term_ma_zm_lhs( nz, wm_zm(i,:), & ! intent(in)
+                           gr(i)%invrs_dzm(:), gr(i)%weights_zm2zt(:,:), & ! In
                            lhs_ma_zm(:,i,:) )                       ! intent(out)
     end do
 
     ! Calculated mean advection term for w'3
     do i = 1, ngrdcol
-      call term_ma_zt_lhs( gr(i), wm_zt(i,:), gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:), & ! intent(in)
-                           l_upwind_xm_ma,                                            & ! intent(in)
-                           lhs_ma_zt(:,i,:) )                                           ! intent(out)
+      call term_ma_zt_lhs( nz, wm_zt(i,:), gr(i)%weights_zt2zm(:,:),  & ! intent(in)
+                           gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),    & ! intent(in)
+                           l_upwind_xm_ma,                            & ! intent(in)
+                           lhs_ma_zt(:,i,:) )                           ! intent(out)
     end do
 
     lhs_diff_zt(:,:,:) = lhs_diff_zt(:,:,:) * C12

@@ -978,7 +978,8 @@ module mono_flux_limiter
     ! LHS xm mean advection (ma) term.
     if ( .not. l_implemented ) then
 
-       call term_ma_zt_lhs( gr, wm_zt, gr%invrs_dzt, gr%invrs_dzm, & ! intent(in)
+       call term_ma_zt_lhs( gr%nz, wm_zt, gr%weights_zt2zm(:,:),  & ! intent(in)
+                            gr%invrs_dzt(:), gr%invrs_dzm(:),    & ! intent(in)
                             l_upwind_xm_ma, & ! intent(in)
                             lhs ) ! intent(out)
 
