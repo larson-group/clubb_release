@@ -767,7 +767,9 @@ module mono_flux_limiter
             ! values of xm at timestep index (t+1).
 
             ! Set up the left-hand side of the tridiagonal matrix equation.
-            call mfl_xm_lhs( gr(i), dt, wm_zt(i,:), l_implemented, l_upwind_xm_ma, & ! intent(in)
+            call mfl_xm_lhs( nz, dt, gr(i)%weights_zt2zm(:,:),  & ! intent(in)
+                             gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),    & ! intent(in)
+                             wm_zt(i,:), l_implemented, l_upwind_xm_ma, & ! intent(in)
                              lhs_mfl_xm(:,i,:) ) ! intent(out)
 
             ! Set up the right-hand side of tridiagonal matrix equation.
@@ -909,7 +911,9 @@ module mono_flux_limiter
   end subroutine monotonic_turbulent_flux_limit
 
   !=============================================================================
-  subroutine mfl_xm_lhs( gr, dt, wm_zt, l_implemented, l_upwind_xm_ma, &
+  subroutine mfl_xm_lhs( nz, dt, weights_zt2zm, & 
+                         invrs_dzt, invrs_dzm, & 
+                         wm_zt, l_implemented, l_upwind_xm_ma, &
                          lhs )
 
     ! Description:
@@ -934,18 +938,28 @@ module mono_flux_limiter
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
     ! Constant parameters
+    integer, parameter :: & 
+      t_above = 1, & ! Index for upper thermodynamic level grid weight.
+      t_below = 2    ! Index for lower thermodynamic level grid weight.
+      
     integer, parameter :: & 
       k_tdiag = 2    ! Thermodynamic main diagonal index.
 
     ! Input Variables
+    integer, intent(in) :: &
+      nz
+    
     real( kind = core_rknd ), intent(in) ::  &
       dt     ! Model timestep length                      [s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
-      wm_zt  ! w wind component on thermodynamic levels   [m/s]
+    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+      wm_zt,      & ! w wind component on thermodynamic levels   [m/s]
+      invrs_dzt,  &
+      invrs_dzm
+      
+    real( kind = core_rknd ), dimension(t_above:t_below,nz), intent(in) ::  &
+      weights_zt2zm
 
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
@@ -956,7 +970,7 @@ module mono_flux_limiter
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(3,gr%nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(3,nz), intent(out) ::  & 
       lhs    ! Left hand side of tridiagonal matrix
 
     ! Local Variables
@@ -968,8 +982,7 @@ module mono_flux_limiter
     ! Initialize the left-hand side matrix to 0.
     lhs = 0.0_core_rknd
 
-
-    ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
+    ! The xm loop runs between k = 2 and k = nz.  The value of xm at
     ! level k = 1, which is below the model surface, is simply set equal to the
     ! value of xm at level k = 2 after the solve has been completed.
 
@@ -977,32 +990,24 @@ module mono_flux_limiter
 
     ! LHS xm mean advection (ma) term.
     if ( .not. l_implemented ) then
-
-       call term_ma_zt_lhs( gr%nz, wm_zt, gr%weights_zt2zm(:,:),  & ! intent(in)
-                            gr%invrs_dzt(:), gr%invrs_dzm(:),    & ! intent(in)
-                            l_upwind_xm_ma, & ! intent(in)
-                            lhs ) ! intent(out)
-
+      call term_ma_zt_lhs( nz, wm_zt(:), weights_zt2zm(:,:),  & ! intent(in)
+                           invrs_dzt(:), invrs_dzm(:),    & ! intent(in)
+                           l_upwind_xm_ma, & ! intent(in)
+                           lhs(:,:) ) ! intent(out)
     else
-
-       lhs = 0.0_core_rknd
-
+      lhs = 0.0_core_rknd
     endif
 
-    do k = 2, gr%nz, 1
-
-       ! LHS xm time tendency.
-       lhs(k_tdiag,k) &
-       = lhs(k_tdiag,k) + 1.0_core_rknd / dt
-
-    enddo ! xm loop: 2..gr%nz
+    do k = 2, nz, 1
+      ! LHS xm time tendency.
+      lhs(k_tdiag,k) = lhs(k_tdiag,k) + 1.0_core_rknd / dt
+    end do ! xm loop: 2..nz
 
     ! Boundary conditions.
 
     ! Lower boundary
-    k = 1
-    lhs(:,k)       = 0.0_core_rknd
-    lhs(k_tdiag,k) = 1.0_core_rknd
+    lhs(:,1)       = 0.0_core_rknd
+    lhs(k_tdiag,1) = 1.0_core_rknd
 
     return
   end subroutine mfl_xm_lhs
