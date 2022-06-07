@@ -1088,7 +1088,7 @@ module fill_holes
     enddo ! i = 1, hydromet_dim, 1
 
     ! Calculate clipping for hydrometeor concentrations.
-    call clip_hydromet_conc_mvr( gr, hydromet_dim, hydromet, & ! Intent(in)
+    call clip_hydromet_conc_mvr( gr%nz, hydromet_dim, hydromet, & ! Intent(in)
                                  hydromet_clipped )        ! Intent(out)
 
     ! Clip hydrometeor concentrations and output stats.
@@ -1130,7 +1130,7 @@ module fill_holes
   end subroutine fill_holes_driver
 
   !=============================================================================
-  subroutine clip_hydromet_conc_mvr( gr, hydromet_dim, hydromet, & ! Intent(in)
+  subroutine clip_hydromet_conc_mvr( nz, hydromet_dim, hydromet, & ! Intent(in)
                                      hydromet_clipped )        ! Intent(out)
 
     ! Description:
@@ -1166,17 +1166,18 @@ module fill_holes
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
-
     ! Input Variables
+    integer, intent(in) :: &
+      nz
+    
     integer, intent(in) :: &
       hydromet_dim    ! Number of hydrometeor fields
 
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor fields    [units vary]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydromet_clipped    ! Clipped mean of hydrometeor fields    [units vary]
 
     ! Local Variables
@@ -1242,7 +1243,7 @@ module fill_holes
 
           ! Loop over vertical levels and increase hydrometeor concentrations
           ! when necessary.
-          do k = 2, gr%nz, 1
+          do k = 2, nz, 1
 
              if ( hydromet(k,Nx2rx_hm_idx(idx)) > zero ) then
 
@@ -1257,7 +1258,7 @@ module fill_holes
 
              endif ! hydromet(k,Nx2rx_hm_idx(idx)) > 0
 
-          enddo ! k = 2, gr%nz, 1
+          enddo ! k = 2, nz, 1
 
           ! The lowest thermodynamic level is below the model's lower boundary.
           hydromet_clipped(1,idx) = hydromet(1,idx)

@@ -1184,7 +1184,7 @@ module latin_hypercube_driver_module
            ! maintaining the value of the hydrometeor mixing ratio sample points
            ! and satisfying the maximum allowable mean volume radius for that
            ! hydrometeor species.
-           call clip_hydromet_conc_mvr( gr(i), hydromet_dim, hydromet_pts, & ! In
+           call clip_hydromet_conc_mvr( nz, hydromet_dim, hydromet_pts, & ! In
                                         hydromet_pts_clipped )        ! Out
 
            ! Unpack the clipped SILHS hydrometeor sample points, which are stored
