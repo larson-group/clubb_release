@@ -538,6 +538,11 @@ module clubb_api_module
     module procedure adj_low_res_nu_api_multi_col
   end interface
   
+  interface setup_grid_heights_api
+    module procedure setup_grid_heights_api_single_col
+    module procedure setup_grid_heights_api_multi_col
+  end interface
+  
 contains
 
   !================================================================================================
@@ -2143,7 +2148,7 @@ contains
   ! setup_grid_heights - Sets the heights and interpolation weights of the column.
   !================================================================================================
 
-  subroutine setup_grid_heights_api( &
+  subroutine setup_grid_heights_api_single_col( &
     l_implemented, grid_type,  &
     deltaz, zm_init, momentum_heights,  &
     gr, thermodynamic_heights )
@@ -2156,10 +2161,10 @@ contains
         clubb_fatal_error       ! Constant
 
     implicit none
-   
-    type(grid), target, intent(inout) :: gr
 
     ! Input Variables
+   
+    type(grid), target, intent(inout) :: gr
 
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
@@ -2194,8 +2199,100 @@ contains
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  &
       momentum_heights,   & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+      
+    ! ------------------- Local Variables -------------------
+      
+    type(grid), target, dimension(1) :: gr_col
+    
+    real( kind = core_rknd ), dimension(1) ::  &
+      deltaz_col,   & ! Vertical grid spacing                  [m]
+      zm_init_col     ! Initial grid altitude (momentum level) [m]
+      
+    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
+      momentum_heights_col,   & ! Momentum level altitudes (input)      [m]
+      thermodynamic_heights_col ! Thermodynamic level altitudes (input) [m]
+      
+    gr_col(1) = gr
+    deltaz_col(1) = deltaz
+    zm_init_col(1) = zm_init
+    momentum_heights_col(1,:) = momentum_heights
+    thermodynamic_heights_col(1,:) = thermodynamic_heights
 
     call setup_grid_heights( &
+      gr%nz, 1, & ! intent(in)
+      l_implemented, grid_type,  & ! intent(in)
+      deltaz_col, zm_init_col, momentum_heights_col,  & ! intent(in)
+      thermodynamic_heights_col, & ! intent(in)
+      gr_col ) ! intent(inout)
+      
+    gr = gr_col(1)
+
+    if ( err_code == clubb_fatal_error ) error stop
+
+  end subroutine setup_grid_heights_api_single_col
+  
+  !================================================================================================
+  ! setup_grid_heights - Sets the heights and interpolation weights of the column.
+  !================================================================================================
+
+  subroutine setup_grid_heights_api_multi_col( &
+      nz, ngrdcol, &
+      l_implemented, grid_type,  &
+      deltaz, zm_init, momentum_heights,  &
+      gr, thermodynamic_heights )
+
+    use grid_class, only: & 
+        grid, & ! Type
+        setup_grid_heights
+    
+    use error_code, only : &
+        clubb_fatal_error       ! Constant
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type(grid), target, dimension(ngrdcol), intent(inout) :: gr
+
+    ! Flag to see if CLUBB is running on it's own,
+    ! or if it's implemented as part of a host model.
+    logical, intent(in) :: l_implemented
+
+    ! If CLUBB is running on it's own, this option determines if it is using:
+    ! 1) an evenly-spaced grid;
+    ! 2) a stretched (unevenly-spaced) grid entered on the thermodynamic grid
+    !    levels (with momentum levels set halfway between thermodynamic levels);
+    !    or
+    ! 3) a stretched (unevenly-spaced) grid entered on the momentum grid levels
+    !    (with thermodynamic levels set halfway between momentum levels).
+    integer, intent(in) :: grid_type
+
+    ! If the CLUBB model is running by itself, and is using an evenly-spaced
+    ! grid (grid_type = 1), it needs the vertical grid spacing and
+    ! momentum-level starting altitude as input.
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      deltaz,   & ! Vertical grid spacing                  [m]
+      zm_init     ! Initial grid altitude (momentum level) [m]
+
+
+    ! If the CLUBB parameterization is implemented in a host model, it needs to
+    ! use the host model's momentum level altitudes and thermodynamic level
+    ! altitudes.
+    ! If the CLUBB model is running by itself, but is using a stretched grid
+    ! entered on thermodynamic levels (grid_type = 2), it needs to use the
+    ! thermodynamic level altitudes as input.
+    ! If the CLUBB model is running by itself, but is using a stretched grid
+    ! entered on momentum levels (grid_type = 3), it needs to use the momentum
+    ! level altitudes as input.
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  &
+      momentum_heights,   & ! Momentum level altitudes (input)      [m]
+      thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
+
+    call setup_grid_heights( &
+      nz, ngrdcol, & ! intent(in)
       l_implemented, grid_type,  & ! intent(in)
       deltaz, zm_init, momentum_heights,  & ! intent(in)
       thermodynamic_heights, & ! intent(in)
@@ -2203,7 +2300,7 @@ contains
 
     if ( err_code == clubb_fatal_error ) error stop
 
-  end subroutine setup_grid_heights_api
+  end subroutine setup_grid_heights_api_multi_col
   
   !================================================================================================
   ! setup_grid - This subroutine sets up the CLUBB vertical grid for a single column
