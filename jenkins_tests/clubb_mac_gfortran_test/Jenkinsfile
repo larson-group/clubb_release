@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
-        sh '''compile/compile.bash'''
+        sh '''compile/compile.bash -c config/macosx_x86_64_gfortran.bash'''
       }
     }
     stage('Run Clubb') {
