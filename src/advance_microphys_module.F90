@@ -1735,7 +1735,7 @@ module advance_microphys_module
       
     type (grid), target, dimension(1) :: gr_col
 
-    integer :: k, km1, kp1  ! Array indices
+    integer :: k, km1, kp1, i  ! Array indices
 
     integer :: & 
       ihmm_ma, & ! Mean advection budget stats toggle
@@ -1803,6 +1803,12 @@ module advance_microphys_module
       ihmm_sd = 0
       ihmm_ts = 0
     end select
+    
+    ! Some procedures expect arrays that are dimension(ngrdcol,nz), so the aruments 
+    ! to be passed to those procedures have a dummy dimension hardcoded to 1.
+    ! For visual clarity and consistency with other routines, we use i to index
+    ! those dummy dimensions, but we always want i=1.
+    i = 1
 
 
     ! Interpolate the implicit component of < V_hm'h_m' >, a momentum-level
@@ -1819,19 +1825,19 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    Kh_zm(1,:) = K_hm
-    Kh_zt(1,:) = max( zm2zt(gr,K_hm), 0._core_rknd )
-    invrs_rho_ds_zt_col(1,:) = invrs_rho_ds_zt
-    rho_ds_zm_col(1,:) = rho_ds_zm
-    nu_col(1) = nu
-    gr_col(1) = gr
+    Kh_zm(i,:) = K_hm
+    Kh_zt(i,:) = max( zm2zt(gr,K_hm), 0._core_rknd )
+    invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
+    rho_ds_zm_col(i,:) = rho_ds_zm
+    nu_col(i) = nu
+    gr_col(i) = gr
 
-    call diffusion_zt_lhs( gr%nz, 1, gr_col, Kh_zm, Kh_zt, nu_col, &
+    call diffusion_zt_lhs( gr%nz, i, gr_col, Kh_zm, Kh_zt, nu_col, &
                            invrs_rho_ds_zt_col, rho_ds_zm_col, &
                            lhs_ta )
 
     do k = 2, gr%nz, 1
-       lhs_ta(:,1,k) = one_half * lhs_ta(:,1,k)
+       lhs_ta(:,i,k) = one_half * lhs_ta(:,i,k)
     enddo ! k = 1, gr%nz, 1
 
     ! The lower boundary condition needs to be applied here at level 2.  The
@@ -1842,19 +1848,19 @@ module advance_microphys_module
     ! The lower boundary condition needs to be applied here at level 2.
 
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-    lhs_ta(kp1_tdiag,1,2) &
+    lhs_ta(kp1_tdiag,i,2) &
     = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(1,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-    lhs_ta(k_tdiag,1,2) &
+    lhs_ta(k_tdiag,i,2) &
     = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(1,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-    lhs_ta(km1_tdiag,1,2) = zero
+    lhs_ta(km1_tdiag,i,2) = zero
 
-    lhs_ta(:,1,1) = zero
+    lhs_ta(:,i,1) = zero
 
 
     ! LHS mean advection term.
@@ -1872,7 +1878,7 @@ module advance_microphys_module
        ! LHS time tendency.
        lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / dt )
 
-       lhs(:,k) = lhs(:,k) + lhs_ta(:,1,k)
+       lhs(:,k) = lhs(:,k) + lhs_ta(:,i,k)
 
        ! LHS mean advection term.
        lhs(kp1_tdiag:km1_tdiag,k) &
@@ -1955,7 +1961,7 @@ module advance_microphys_module
           endif
 
           if ( ihmm_ta > 0 ) then
-             tmp(1:3) = lhs_ta(:,1,k)
+             tmp(1:3) = lhs_ta(:,i,k)
              ztscr10(k) = -tmp(3)
              ztscr11(k) = -tmp(2)
              ztscr12(k) = -tmp(1)
@@ -2107,7 +2113,7 @@ module advance_microphys_module
       lhs_ta    ! LHS corresponding to contribution from turbulent advection
 
 
-    integer :: k, kp1, km1  ! Array indices
+    integer :: i, k, kp1, km1  ! Array indices
 
     integer :: ihmm_ta, & ! Turbulent advection budget toggle.
                ihmm_ts    ! Turbulent sedimentation budget toggle.
@@ -2149,7 +2155,12 @@ module advance_microphys_module
       ihmm_ta = 0
       ihmm_ts = 0
     end select
-
+    
+    ! Some procedures expect arrays that are dimension(ngrdcol,nz), so the aruments 
+    ! to be passed to those procedures have a dummy dimension hardcoded to 1.
+    ! For visual clarity and consistency with other routines, we use i to index
+    ! those dummy dimensions, but we always want i=1.
+    i = 1
 
     ! Interpolate the explicit component of < V_hm'h_m' >, a momentum-level
     ! variable that is calculated on thermodynamic levels, from thermodynamic
@@ -2165,14 +2176,14 @@ module advance_microphys_module
     !        the turbulent advection term is solved as an eddy-diffusion
     !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
     ! A Crank-Nicholson time-stepping scheme is used for this term.
-    Kh_zm(1,:) = K_hm
-    Kh_zt(1,:) = max( zm2zt(gr,K_hm), zero ) 
-    invrs_rho_ds_zt_col(1,:) = invrs_rho_ds_zt
-    rho_ds_zm_col(1,:) = rho_ds_zm
-    nu_col(1) = nu
-    gr_col(1) = gr
+    Kh_zm(i,:) = K_hm
+    Kh_zt(i,:) = max( zm2zt(gr,K_hm), zero ) 
+    invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
+    rho_ds_zm_col(i,:) = rho_ds_zm
+    nu_col(i) = nu
+    gr_col(i) = gr
 
-    call diffusion_zt_lhs( gr%nz, 1, gr_col, Kh_zm, Kh_zt, nu_col, &
+    call diffusion_zt_lhs( gr%nz, i, gr_col, Kh_zm, Kh_zt, nu_col, &
                            invrs_rho_ds_zt_col, rho_ds_zm_col, &
                            lhs_ta )
 
@@ -2190,12 +2201,12 @@ module advance_microphys_module
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
     lhs_ta(kp1_tdiag,2) &
     = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(1,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
     lhs_ta(k_tdiag,2) &
     = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(1,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
     lhs_ta(km1_tdiag,2) = zero
