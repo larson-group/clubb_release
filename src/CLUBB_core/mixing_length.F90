@@ -150,7 +150,7 @@ module mixing_length
       nz, &
       ngrdcol  
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
@@ -250,8 +250,8 @@ module mixing_length
         Lscale_down(i,k) = zlmin
 
         ! Precalculate values to avoid unnecessary calculations later
-        exp_mu_dzm(k) = exp( -mu(i) * gr(i)%dzm(k) )
-        invrs_dzm_on_mu(k) = ( gr(i)%invrs_dzm(k) ) / mu(i)
+        exp_mu_dzm(k) = exp( -mu(i) * gr%dzm(i,k) )
+        invrs_dzm_on_mu(k) = ( gr%invrs_dzm(i,k) ) / mu(i)
         grav_on_thvm(k) = grav / thvm(i,k)
         Lv_coef(k) = Lv / ( exner(i,k) * cp ) - ep2 * thv_ds(i,k)
         entrain_coef(k) = ( one - exp_mu_dzm(k) ) * invrs_dzm_on_mu(k)
@@ -332,7 +332,7 @@ module mixing_length
 
           ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
           ! Trapezoidal estimate between grid levels, dCAPE at z_0 = 0 for this initial calculation
-          CAPE_incr_1(j) = one_half * dCAPE_dz_1(j) * gr(i)%dzm(j-1)
+          CAPE_incr_1(j) = one_half * dCAPE_dz_1(j) * gr%dzm(i,j-1)
 
       end do
 
@@ -416,7 +416,7 @@ module mixing_length
 
                   ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
                   ! Trapezoidal estimate between grid levels j and j-1
-                  CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) * gr(i)%dzm(j-1)
+                  CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) * gr%dzm(i,j-1)
 
                   ! Exit loop early if tke has been exhaused between level j and j+1
                   if ( tke + CAPE_incr <= zero ) then
@@ -435,7 +435,7 @@ module mixing_length
 
               ! Add full grid level thickness for each grid level that was passed without the TKE
               ! being exhausted, difference between starting level (k) and last level passed (j-1)
-              Lscale_up(i,k) = Lscale_up(i,k) + gr(i)%zt(j-1) - gr(i)%zt(k)
+              Lscale_up(i,k) = Lscale_up(i,k) + gr%zt(i,j-1) - gr%zt(i,k)
 
 
               if ( j < nz ) then
@@ -461,11 +461,11 @@ module mixing_length
                       invrs_dCAPE_diff = one / ( dCAPE_dz_j - dCAPE_dz_j_minus_1 )
 
                       Lscale_up(i,k) = Lscale_up(i,k) &
-                                     - dCAPE_dz_j_minus_1 * invrs_dCAPE_diff * gr(i)%dzm(j-1)  &
+                                     - dCAPE_dz_j_minus_1 * invrs_dCAPE_diff * gr%dzm(i,j-1)  &
                                      - sqrt( dCAPE_dz_j_minus_1**2 &
-                                              - two * tke * gr(i)%invrs_dzm(j-1) &
+                                              - two * tke * gr%invrs_dzm(i,j-1) &
                                                 * ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) ) &
-                                       * invrs_dCAPE_diff  * gr(i)%dzm(j-1)
+                                       * invrs_dCAPE_diff  * gr%dzm(i,j-1)
                   endif
 
               end if
@@ -476,7 +476,7 @@ module mixing_length
               ! remaining TKE (tke_i), using the quadratic formula. Simplified
               ! since dCAPE_dz_j_minus_1 = 0.0
               Lscale_up(i,k) = Lscale_up(i,k) - sqrt( - two * tke_i(i,k) &
-                                                    * gr(i)%dzm(k) * dCAPE_dz_1(k+1) ) &
+                                                    * gr%dzm(i,k) * dCAPE_dz_1(k+1) ) &
                                             / dCAPE_dz_1(k+1)
           endif
 
@@ -484,15 +484,15 @@ module mixing_length
           ! If a parcel at a previous grid level can rise past the parcel at this grid level
           ! then this one should also be able to rise up to that height. This feature insures
           ! that the profile of Lscale_up will be smooth, thus reducing numerical instability.
-          if ( gr(i)%zt(k) + Lscale_up(i,k) < Lscale_up_max_alt ) then
+          if ( gr%zt(i,k) + Lscale_up(i,k) < Lscale_up_max_alt ) then
 
               ! A lower starting parcel can ascend higher than this one, set height to the max
               ! that any lower starting parcel can ascend to
-              Lscale_up(i,k) = Lscale_up_max_alt - gr(i)%zt(k)
+              Lscale_up(i,k) = Lscale_up_max_alt - gr%zt(i,k)
           else
 
               ! This parcel can ascend higher than any below it, save final height
-              Lscale_up_max_alt = Lscale_up(i,k) + gr(i)%zt(k)
+              Lscale_up_max_alt = Lscale_up(i,k) + gr%zt(i,k)
           end if
 
 
@@ -563,7 +563,7 @@ module mixing_length
 
           ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
           ! Trapezoidal estimate between grid levels, dCAPE at z_0 = 0 for this initial calculation
-          CAPE_incr_1(j) = one_half * dCAPE_dz_1(j) * gr(i)%dzm(j)
+          CAPE_incr_1(j) = one_half * dCAPE_dz_1(j) * gr%dzm(i,j)
 
       end do
 
@@ -572,7 +572,7 @@ module mixing_length
       ! exhausted by the initial change then continue the exhaustion calculations here for a single
       ! grid level at a time until the TKE is exhausted.
 
-      Lscale_down_min_alt = gr(i)%zt(nz)  ! Set initial min value for Lscale_down to max zt
+      Lscale_down_min_alt = gr%zt(i,nz)  ! Set initial min value for Lscale_down to max zt
       do k = nz, 3, -1
 
           ! If the initial turbulent kinetic energy (tke) has not been exhausted for this grid level
@@ -646,7 +646,7 @@ module mixing_length
 
                   ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
                   ! Trapezoidal estimate between grid levels j+1 and j
-                  CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) * gr(i)%dzm(j)
+                  CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) * gr%dzm(i,j)
 
                   ! Exit loop early if tke has been exhaused between level j+1 and j
                   if ( tke - CAPE_incr <= zero ) then
@@ -664,7 +664,7 @@ module mixing_length
 
               ! Add full grid level thickness for each grid level that was passed without the TKE
               ! being exhausted, difference between starting level (k) and last level passed (j+1)
-              Lscale_down(i,k) = Lscale_down(i,k) + gr(i)%zt(k) - gr(i)%zt(j+1)
+              Lscale_down(i,k) = Lscale_down(i,k) + gr%zt(i,k) - gr%zt(i,j+1)
 
 
               if ( j >= 2 ) then
@@ -693,11 +693,11 @@ module mixing_length
                       invrs_dCAPE_diff = one / ( dCAPE_dz_j - dCAPE_dz_j_plus_1 )
 
                       Lscale_down(i,k) = Lscale_down(i,k) &
-                                       - dCAPE_dz_j_plus_1 * invrs_dCAPE_diff * gr(i)%dzm(j)  &
+                                       - dCAPE_dz_j_plus_1 * invrs_dCAPE_diff * gr%dzm(i,j)  &
                                        + sqrt( dCAPE_dz_j_plus_1**2 &
-                                               + two * tke * gr(i)%invrs_dzm(j)  &
+                                               + two * tke * gr%invrs_dzm(i,j)  &
                                                  * ( dCAPE_dz_j - dCAPE_dz_j_plus_1 ) )  &
-                                         * invrs_dCAPE_diff * gr(i)%dzm(j)
+                                         * invrs_dCAPE_diff * gr%dzm(i,j)
                   endif
 
               end if
@@ -708,17 +708,17 @@ module mixing_length
               ! remaining TKE (tke_i), using the quadratic formula. Simplified
               ! since dCAPE_dz_j_plus_1 = 0.0
               Lscale_down(i,k) = Lscale_down(i,k) + sqrt( two * tke_i(i,k) &
-                                                      * gr(i)%dzm(k-1) * dCAPE_dz_1(k-1) ) &
+                                                      * gr%dzm(i,k-1) * dCAPE_dz_1(k-1) ) &
                                                 / dCAPE_dz_1(k-1)
           endif
 
           ! If a parcel at a previous grid level can descend past the parcel at this grid level
           ! then this one should also be able to descend down to that height. This feature insures
           ! that the profile of Lscale_down will be smooth, thus reducing numerical instability.
-          if ( gr(i)%zt(k) - Lscale_down(i,k) > Lscale_down_min_alt ) then
-              Lscale_down(i,k) = gr(i)%zt(k) - Lscale_down_min_alt
+          if ( gr%zt(i,k) - Lscale_down(i,k) > Lscale_down_min_alt ) then
+              Lscale_down(i,k) = gr%zt(i,k) - Lscale_down_min_alt
           else
-              Lscale_down_min_alt = gr(i)%zt(k) - Lscale_down(i,k)
+              Lscale_down_min_alt = gr%zt(i,k) - Lscale_down(i,k)
           end if
 
       end do
@@ -733,12 +733,12 @@ module mixing_length
           if( l_implemented ) then
 
               ! Within a host model, increase mixing length in 500 m layer above *ground*
-              lminh = max( zero_threshold, Lscale_sfclyr_depth - ( gr(i)%zt(k) - gr(i)%zm(1) ) ) &
+              lminh = max( zero_threshold, Lscale_sfclyr_depth - ( gr%zt(i,k) - gr%zm(i,1) ) ) &
                       * lmin * invrs_Lscale_sfclyr_depth
           else
 
               ! In standalone mode, increase mixing length in 500 m layer above *mean sea level*
-              lminh = max( zero_threshold, Lscale_sfclyr_depth - gr(i)%zt(k) ) &
+              lminh = max( zero_threshold, Lscale_sfclyr_depth - gr%zt(i,k) ) &
                       * lmin * invrs_Lscale_sfclyr_depth
           end if
 
@@ -914,7 +914,7 @@ module mixing_length
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zt
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     intrinsic :: sqrt, min, max, exp, real
 
@@ -1209,7 +1209,7 @@ module mixing_length
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       upwp_sfc,      &
@@ -1358,8 +1358,8 @@ module mixing_length
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_sfc(i,k) = C_invrs_tau_sfc &
-                             * ( ustar(i) / vonk ) / ( gr(i)%zm(k) - sfc_elevation(i) + z_displace )
-         !C_invrs_tau_sfc * ( wp2 / vonk /ustar ) / ( gr%zm -sfc_elevation + z_displace )
+                             * ( ustar(i) / vonk ) / ( gr%zm(i,k) - sfc_elevation(i) + z_displace )
+         !C_invrs_tau_sfc * ( wp2 / vonk /ustar ) / ( gr%zm(1,:) -sfc_elevation + z_displace )
       end do
     end do
 
@@ -1426,7 +1426,7 @@ module mixing_length
 
     do k = 1, nz
       do i = 1, ngrdcol
-        if ( gr(i)%zt(k) < altitude_threshold ) then
+        if ( gr%zt(i,k) < altitude_threshold ) then
           brunt_freq_out_cloud(i,k) = zero
         end if
       end do
@@ -1451,7 +1451,7 @@ module mixing_length
           invrs_tau_xp2_zm(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_sfc(i,k) + invrs_tau_shear(i,k) &
                             + C_invrs_tau_N2_xp2 * brunt_freq_pos (i,k)& ! 0
                             + C_invrs_tau_sfc * two &
-                            * sqrt(em(i,k)) / ( gr(i)%zm(k) - sfc_elevation(i) + z_displace )  ! small
+                            * sqrt(em(i,k)) / ( gr%zm(i,k) - sfc_elevation(i) + z_displace )  ! small
         end do
       end do
 
@@ -1513,7 +1513,7 @@ module mixing_length
 
     do k = 1, nz
       do i = 1, ngrdcol
-        if ( gr(i)%zt(k) > altitude_threshold ) then
+        if ( gr%zt(i,k) > altitude_threshold ) then
           if ( l_smooth_min_max ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
              * ( one  + H_invrs_tau_wpxp_N2(i,k) & 
@@ -1533,7 +1533,7 @@ module mixing_length
     invrs_tau_wp3_zm = invrs_tau_wp2_zm + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
 
     do i = 1, ngrdcol
-      if ( gr(i)%zm(1) - sfc_elevation(i) + z_displace < eps ) then
+      if ( gr%zm(i,1) - sfc_elevation(i) + z_displace < eps ) then
         error stop  "Lowest zm grid level is below ground in CLUBB."
       end if
     end do

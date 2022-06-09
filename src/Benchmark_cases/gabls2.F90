@@ -71,8 +71,8 @@ module gabls2
     if ( time > (time_initial + 93600._time_precision ) ) then 
       ! per GABLS2 specification
       do k=1,gr%nz
-        if ( gr%zt(k) <= 1000._core_rknd ) then
-          wm_zt(k) = -0.005_core_rknd * (gr%zt(k) / 1000._core_rknd ) ! Known magic number
+        if ( gr%zt(1,k) <= 1000._core_rknd ) then
+          wm_zt(k) = -0.005_core_rknd * (gr%zt(1,k) / 1000._core_rknd ) ! Known magic number
         else
           wm_zt(k) = -0.005_core_rknd
         end if

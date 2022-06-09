@@ -77,12 +77,12 @@ module bomex
     ! terms of total water specific humidity.
     do k = 2, gr%nz
 
-      if ( gr%zt(k) >= 0._core_rknd .and. gr%zt(k) < 300._core_rknd ) then
+      if ( gr%zt(1,k) >= 0._core_rknd .and. gr%zt(1,k) < 300._core_rknd ) then
         qtm_forcing(k) = -1.2e-8_core_rknd
-      else if ( gr%zt(k) >= 300._core_rknd .and. gr%zt(k) < 500._core_rknd ) then
+      else if ( gr%zt(1,k) >= 300._core_rknd .and. gr%zt(1,k) < 500._core_rknd ) then
         qtm_forcing(k)  & 
           = - 1.2e-8_core_rknd  & 
-              * ( 1._core_rknd - ( gr%zt(k) - 300._core_rknd )/ &
+              * ( 1._core_rknd - ( gr%zt(1,k) - 300._core_rknd )/ &
               ( 500._core_rknd - 300._core_rknd ) ) !Known magic number
       else
         qtm_forcing(k) = 0._core_rknd

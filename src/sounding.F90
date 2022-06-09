@@ -232,14 +232,14 @@ module sounding
     end if
 
     ! Error check: if lowest above-model-surface themodynamic grid height
-    ! (gr%zt(2)) is lower than the lowest value from the input sounding,
+    ! (gr%zt(1,2)) is lower than the lowest value from the input sounding,
     ! then the linear interpolation scheme will fail.
 
-    if ( gr%zt(2) < z(1) ) then
+    if ( gr%zt(1,2) < z(1) ) then
       write(fstderr,*) "Lowest level of input sounding, z(1), must be",  &
-      " below the first above-model-surface thermodynamic level, gr%zt(2)"
+      " below the first above-model-surface thermodynamic level, gr%zt(1,2)"
       write(fstderr,*) " First sounding level z(1) = ", z(1)
-      write(fstderr,*) " First thermodynamic level gr%zt(2) = ", gr%zt(2)
+      write(fstderr,*) " First thermodynamic level gr%zt(1,2) = ", gr%zt(1,2)
       error stop 'STOP in read_sounding'
     endif
 
@@ -299,14 +299,14 @@ module sounding
     ! (one above and one below) to initialize mean quantities in the model
     ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
     do i=1, gr%nz
-      if ( i == 1 .and. gr%zt(i) < z(1) ) then
+      if ( i == 1 .and. gr%zt(1,i) < z(1) ) then
          ! Thermodynamic level 1 is below the model lower boundary.
          ! If it's below the lowest sounding level, just skip setting it,
          ! since it is already initialized above.
          cycle
       endif
       k=1
-      do while ( z(k) < gr%zt(i) )
+      do while ( z(k) < gr%zt(1,i) )
         k=k+1
         if ( k > nlevels ) then
               write(fstderr,*) 'STOP Not enough sounding data to ',&
@@ -314,7 +314,7 @@ module sounding
               write(fstderr,'(a,f7.1,/a,f7.1)') &
                '  highest sounding level', z(nlevels),&
                '  should be higher than highest thermodynamic point',&
-               gr%zt(gr%nz)
+               gr%zt(1,gr%nz)
               error stop 'STOP in sounding'
           exit
         end if  ! k > nlevels
@@ -322,35 +322,35 @@ module sounding
         ! Regular situation w/ linear int.
         IF ( trim( runtype ) /= "dycoms2_rf02" ) THEN
 
-          um(i)   = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
-          vm(i)   = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
-          ugm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
-          vgm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
-          thlm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), theta(k), theta(k-1) )
-          rtm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
-          press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
-          wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+          um(i)   = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), u(k), u(k-1) )
+          vm(i)   = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), v(k), v(k-1) )
+          ugm(i)  = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), ug(k), ug(k-1) )
+          vgm(i)  = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), vg(k), vg(k-1) )
+          thlm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), theta(k), theta(k-1) )
+          rtm(i)  = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), rt(k), rt(k-1) )
+          press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
+          wm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), subs(k), subs(k-1) )
 
           if ( sclr_dim > 0 ) then
             do j = 1, sclr_dim
-              sclrm(i,j) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1),  & 
+              sclrm(i,j) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1),  & 
                                     sclr(k,j), sclr(k-1,j) )
             end do
           end if
           if ( edsclr_dim > 0 ) then
             do j = 1, edsclr_dim
-              edsclrm(i,j) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1),  & 
+              edsclrm(i,j) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1),  & 
                                       edsclr(k,j), edsclr(k-1,j) )
             end do
           end if
 
         ELSE  ! DYCOMS II RF02 case
 
-          IF ( gr%zt(i) < 795.0_core_rknd ) THEN
+          IF ( gr%zt(1,i) < 795.0_core_rknd ) THEN
             ! (Wyant, et al. 2007, eq 1--4)
-            um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(i))/ &
+            um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(1,i))/ &
                 1000.0_core_rknd ! Known magic number
-            vm(i)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(i))/ &
+            vm(i)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(1,i))/ &
                 1000.0_core_rknd ! Known magic number
             ugm(i)  = um(i)
             vgm(i)  = vm(i)
@@ -366,21 +366,21 @@ module sounding
               sclrm(i, iisclr_rt)    = rtm(i)
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
-            press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), &
+            press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), &
                                                    p_in_Pa(k), p_in_Pa(k-1) )
-            wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+            wm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), subs(k), subs(k-1) )
           ELSE
             ! (Wyant, et al. 2007, eq 1--4)
-            um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(i))/ &
+            um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(1,i))/ &
                           1000.0_core_rknd ! Known magic number
-            vm(i)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(i))/ &
+            vm(i)   = -9.0_core_rknd + (5.6_core_rknd*gr%zt(1,i))/ &
                           1000.0_core_rknd ! Known magic number
             ugm(i)  = um(i)
             vgm(i)  = vm(i)
-            thlm(i) = 295.0_core_rknd + ( (gr%zt(i) - 795.0_core_rknd)** &
+            thlm(i) = 295.0_core_rknd + ( (gr%zt(1,i) - 795.0_core_rknd)** &
                         (1.0_core_rknd/3.0_core_rknd) ) ! Known magic number
             rtm(i)  = (  5.0_core_rknd - 3.0_core_rknd  & 
-            * ( 1.0_core_rknd - EXP( (795.0_core_rknd - gr%zt(i))/ &
+            * ( 1.0_core_rknd - EXP( (795.0_core_rknd - gr%zt(1,i))/ &
             500.0_core_rknd ) )  )/g_per_kg ! Known magic number
             ! Passive Scalars
             ! Same as above
@@ -392,24 +392,24 @@ module sounding
               sclrm(i, iisclr_rt)    = rtm(i)
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
-            press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), &
+            press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), &
                                                    p_in_Pa(k), p_in_Pa(k-1) )
-            wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+            wm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), subs(k), subs(k-1) )
           END IF
 
         END IF ! runtype
 
-      end do ! do while ( z(k) < gr%zt(i) )
+      end do ! do while ( z(k) < gr%zt(1,i) )
 
     end do   ! i=1, gr%nz
 
 
     ! The sounding will be initialized to thermodynamic grid levels successfully
-    ! as long as the thermodynamic level 2 (at altitude gr%zt(2)) is at or above
+    ! as long as the thermodynamic level 2 (at altitude gr%zt(1,2)) is at or above
     ! the lowest sounding level (z(1)).  However, it is advantageous to know the
     ! initial surface values of a few variables, as long as the sounding extends
-    ! to the surface, which is found at momentum level 1 (at altitude gr%zm(1)).
-    if ( gr%zm(1) < z(1) ) then
+    ! to the surface, which is found at momentum level 1 (at altitude gr%zm(1,1)).
+    if ( gr%zm(1,1) < z(1) ) then
 
        ! The surface (or model lower boundary) is below the lowest sounding
        ! level.  Initialize the values of rtm_sfc and thlm_sfc to negative
@@ -417,25 +417,25 @@ module sounding
        rtm_sfc  = -999.0_core_rknd
        thlm_sfc = -999.0_core_rknd
 
-    else ! gr%zm(1) >= z(1)
+    else ! gr%zm(1,1) >= z(1)
 
        ! The surface (or model lower boundary) is above the lowest sounding
        ! level.  Use linear interpolation to find the values of rtm_sfc and
        ! thlm_sfc.
 
        ! Perform a binary search to find the two sounding levels that the
-       ! surface (gr%zm(1)) is found between.  The value returned (idx) is the
-       ! index of the closest value greater than or equal to gr%zm(1).
-       idx = binary_search( nlevels, z, gr%zm(1) )
+       ! surface (gr%zm(1,1)) is found between.  The value returned (idx) is the
+       ! index of the closest value greater than or equal to gr%zm(1,1).
+       idx = binary_search( nlevels, z, gr%zm(1,1) )
 
        ! The surface is found between sounding levels idx and idx-1.  Find the
        ! value of rtm_sfc.
-       rtm_sfc = lin_interpolate_two_points( gr%zm(1), z(idx), z(idx-1), rt(idx), rt(idx-1) )
+       rtm_sfc = lin_interpolate_two_points( gr%zm(1,1), z(idx), z(idx-1), rt(idx), rt(idx-1) )
 
        ! The surface is found between sounding levels idx and idx-1.  Find the
        ! value of thlm_sfc.
        thlm_sfc &
-          = lin_interpolate_two_points( gr%zm(1), z(idx), z(idx-1), theta(idx), theta(idx-1) )
+          = lin_interpolate_two_points( gr%zm(1,1), z(idx), z(idx-1), theta(idx), theta(idx-1) )
 
     end if
 
@@ -772,14 +772,14 @@ module sounding
     endif
 
     ! Error check: if lowest above-model-surface themodynamic grid height
-    ! (gr%zt(2)) is lower than the lowest value from the input sounding,
+    ! (gr%zt(1,2)) is lower than the lowest value from the input sounding,
     ! then the linear interpolation scheme will fail.
 
-    if ( gr%zt(2) < z(1) ) then
+    if ( gr%zt(1,2) < z(1) ) then
       write(fstderr,*) "Lowest level of input sounding, z(1), must be",  &
-      " below the first above-model-surface thermodynamic level, gr%zt(2)"
+      " below the first above-model-surface thermodynamic level, gr%zt(1,2)"
       write(fstderr,*) " First sounding level z(1) = ", z(1)
-      write(fstderr,*) " First thermodynamic level gr%zt(2) = ", gr%zt(2)
+      write(fstderr,*) " First thermodynamic level gr%zt(1,2) = ", gr%zt(1,2)
       error stop 'STOP in read_profile (sounding.F90)'
     endif
 
@@ -789,7 +789,7 @@ module sounding
 
     do i = 2, gr%nz
       k = 1
-      do while ( z(k) < gr%zt(i) )
+      do while ( z(k) < gr%zt(1,i) )
         k = k + 1
         if ( k > nlevels ) then
           write(fstderr,*) 'STOP Not enough sounding data to ',  & 
@@ -797,11 +797,11 @@ module sounding
           write(fstderr,'(a,f7.1,/a,f7.1)') ' Highest sounding level',  &
                z(nlevels),  &
                'should be higher than highest thermodynamic point',  &
-               gr%zt(gr%nz)
+               gr%zt(1,gr%nz)
           write(*,*) ' Filename: ', fname
           error stop 'STOP in read_profile (sounding.F90)'
         endif
-        x(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
+        x(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), var(k), var(k-1) )
       enddo ! while
     enddo ! i=2, gr%nzzp
 

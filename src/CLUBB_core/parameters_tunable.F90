@@ -902,8 +902,8 @@ module parameters_tunable
     ! diffusivity if the grid spacing threshold is exceeded and l_adj_low_res_nu
     ! is turned on.
     real( kind = core_rknd ) :: &
-      mult_factor_zt, &  ! Uses gr%dzt for nu values on zt levels
-      mult_factor_zm     ! Uses gr%dzm for nu values on zm levels
+      mult_factor_zt, &  ! Uses gr%dzt(1,:) for nu values on zt levels
+      mult_factor_zm     ! Uses gr%dzm(1,:) for nu values on zm levels
 
     integer :: i
 

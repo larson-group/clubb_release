@@ -194,7 +194,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
   
     real( kind = core_rknd ), intent(in) ::  & 
@@ -791,14 +791,14 @@ module advance_wp2_wp3_module
     ! Calculated mean advection term for w'2
     do i = 1, ngrdcol
       call term_ma_zm_lhs( nz, wm_zm(i,:), & ! intent(in)
-                           gr(i)%invrs_dzm(:), gr(i)%weights_zm2zt(:,:), & ! In
+                           gr%invrs_dzm(i,:), gr%weights_zm2zt(i,:,:),& ! In
                            lhs_ma_zm(:,i,:) )                       ! intent(out)
     end do
 
     ! Calculated mean advection term for w'3
     do i = 1, ngrdcol
-      call term_ma_zt_lhs( nz, wm_zt(i,:), gr(i)%weights_zt2zm(:,:),  & ! intent(in)
-                           gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),    & ! intent(in)
+      call term_ma_zt_lhs( nz, wm_zt(i,:), gr%weights_zt2zm(i,:,:), & ! intent(in)
+                           gr%invrs_dzt(i,:), gr%invrs_dzm(i,:),    & ! intent(in)
                            l_upwind_xm_ma,                            & ! intent(in)
                            lhs_ma_zt(:,i,:) )                           ! intent(out)
     end do
@@ -887,7 +887,7 @@ module advance_wp2_wp3_module
       end if
 
       do i = 1, ngrdcol
-        wp2(i,:) = sponge_damp_xp2( nz, dt, gr(i)%zm, wp2(i,:), w_tol_sqd, &
+        wp2(i,:) = sponge_damp_xp2( nz, dt, gr%zm(i,:), wp2(i,:), w_tol_sqd, &
                                     wp2_sponge_damp_profile )
       end do
 
@@ -910,7 +910,7 @@ module advance_wp2_wp3_module
       end if
 
       do i = 1, ngrdcol
-        wp3(i,:) = sponge_damp_xp3( nz, dt, gr(i)%zt, gr(i)%zm, wp3(i,:), &
+        wp3(i,:) = sponge_damp_xp3( nz, dt, gr%zt(i,:), gr%zm(i,:), wp3(i,:), &
                                     wp3_sponge_damp_profile )
       end do
 
@@ -930,7 +930,7 @@ module advance_wp2_wp3_module
 
         write(fstderr,*) "intent(in)"
 
-        write(fstderr,*) "gr%zt = ", gr(1)%zt, new_line('c')
+        write(fstderr,*) "gr%zt(1,:) = ", gr%zt, new_line('c')
         write(fstderr,*) "dt = ", dt, new_line('c')
         write(fstderr,*) "sfc_elevation = ", sfc_elevation, new_line('c')
         write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w, new_line('c')
@@ -1111,7 +1111,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
       
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
     
     real( kind = core_rknd ), intent(in) ::  & 
@@ -1256,18 +1256,18 @@ module advance_wp2_wp3_module
         do k = 1, nz
           do i = 1, ngrdcol
             write(fstderr,*) "zt level = ", k, "height [m] = ", &
-                              gr(i)%zt(k), "LHS = ", lhs(1:5,i,2*k-1)
+                              gr%zt(i,k), "LHS = ", lhs(1:5,i,2*k-1)
             write(fstderr,*) "zm level = ", k, "height [m] = ", &
-                              gr(i)%zm(k), "LHS = ", lhs(1:5,i,2*k)
+                              gr%zm(i,k), "LHS = ", lhs(1:5,i,2*k)
           end do
         end do ! k = 1, gr%nz
         write(fstderr,*) "wp2 and wp3 RHS"
         do k = 1, nz
           do i = 1, ngrdcol
             write(fstderr,*) "i = ", i, "zt level = ", k, "height [m] = ", &
-                              gr(i)%zt(k), "RHS = ", rhs_save(i,2*k-1)
+                              gr%zt(i,k), "RHS = ", rhs_save(i,2*k-1)
             write(fstderr,*) "zm level = ", k, "height [m] = ", &
-                              gr(i)%zm(k), "RHS = ", rhs_save(i,2*k)
+                              gr%zm(i,k), "RHS = ", rhs_save(i,2*k)
           end do
         end do ! k = 1, gr%nz
         return
@@ -1493,7 +1493,7 @@ module advance_wp2_wp3_module
       if ( l_hole_fill .and. any( wp2(i,:) < w_tol_sqd ) ) then
 
         ! Use a simple hole filling algorithm
-        call fill_holes_vertical( nz, gr(i)%dzm, gr(i)%dzt, 2, w_tol_sqd, "zm",        & ! intent(in)
+        call fill_holes_vertical( nz, gr%dzm(i,:), gr%dzt(i,:), 2, w_tol_sqd, "zm",        & ! intent(in)
                                   rho_ds_zt(i,:), rho_ds_zm(i,:),   & ! intent(in)
                                   wp2(i,:) )                          ! intent(inout)
 
@@ -1641,7 +1641,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
       
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
     
     real( kind = core_rknd ), intent(in) ::  & 
@@ -1944,7 +1944,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
       
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
     
     real( kind = core_rknd ), intent(in) ::  & 
@@ -2632,7 +2632,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       rho_ds_zt,       & ! Dry, static density at thermodynamic levels  [kg/m^3]
@@ -2655,11 +2655,11 @@ module advance_wp2_wp3_module
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
         lhs_ta_wp2(kp1_tdiag,i,k) &
-          = + invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) * rho_ds_zt(i,k+1)
+          = + invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) * rho_ds_zt(i,k+1)
 
         ! Thermodynamic subdiagonal: [ x wp3(k,<t+1>) ]
         lhs_ta_wp2(k_tdiag,i,k) &
-          = - invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) * rho_ds_zt(i,k)
+          = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) * rho_ds_zt(i,k)
       end do
     end do
 
@@ -2745,7 +2745,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       wm_zt   ! w wind component at thermodynamic levels    [m/s]
@@ -2769,7 +2769,7 @@ module advance_wp2_wp3_module
     do k = 2, nz-1
       do i = 1, ngrdcol
         ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-        lhs_ac_pr2_wp2(i,k) = + ( one - C_uu_shr ) * two * gr(i)%invrs_dzm(k) &
+        lhs_ac_pr2_wp2(i,k) = + ( one - C_uu_shr ) * two * gr%invrs_dzm(i,k) &
                                 * ( wm_zt(i,k+1) - wm_zt(i,k) )
       end do
     end do
@@ -2834,7 +2834,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       C1_Skw_fnc, & ! C_1 parameter with Sk_w applied    [-]
@@ -2924,7 +2924,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       invrs_tau_C4_zm    ! Inverse time-scale tau at momentum levels  [1/s]
@@ -3008,7 +3008,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) :: & 
       C_uu_buoy    ! Model parameter C_uu_buoy                         [-]
@@ -3097,7 +3097,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied                  [-]
@@ -3210,7 +3210,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) :: & 
       C_uu_shr,  & ! Model parameter                            [-]
@@ -3247,8 +3247,8 @@ module advance_wp2_wp3_module
                         ( C_uu_buoy &
                           * ( grav / thv_ds_zm(i,k) ) * wpthvp(i,k) &
                         + C_uu_shr &
-                          * ( - upwp(i,k) * gr(i)%invrs_dzm(k) * ( um(i,k+1) - um(i,k) ) &
-                              - vpwp(i,k) * gr(i)%invrs_dzm(k) * ( vm(i,k+1) - vm(i,k) ) &
+                          * ( - upwp(i,k) * gr%invrs_dzm(i,k) * ( um(i,k+1) - um(i,k) ) &
+                              - vpwp(i,k) * gr%invrs_dzm(i,k) * ( vm(i,k+1) - vm(i,k) ) &
                             ) &
                         )
         ! Use the following code for alternate mixing, with c_k=0.1 or 0.2
@@ -3324,7 +3324,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) :: & 
       C4    ! Model parameter C_4                      [-]
@@ -3406,7 +3406,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) :: &
@@ -3439,7 +3439,7 @@ module advance_wp2_wp3_module
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_pr_dfsn_wp2(i,k) &
-         = + C_wp2_pr_dfsn * invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) &
+         = + C_wp2_pr_dfsn * invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
            * ( rho_ds_zt(i,k+1) * wpuip2(i,k+1) - rho_ds_zt(i,k) * wpuip2(i,k) )
       end do
     end do
@@ -3554,7 +3554,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       coef_wp4_implicit, & ! <w'^4>=coef_wp4_implicit*<w'^2>^2; m-levs [-]
@@ -3580,12 +3580,12 @@ module advance_wp2_wp3_module
 
         ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
         lhs_ta_wp3(k_mdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) * rho_ds_zm(i,k) &
+          = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) * rho_ds_zm(i,k) &
               * coef_wp4_implicit(i,k) * wp2(i,k)
 
         ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
         lhs_ta_wp3(km1_mdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) * rho_ds_zm(i,k-1) &
+          = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) * rho_ds_zm(i,k-1) &
               * coef_wp4_implicit(i,k-1) * wp2(i,k-1)
 
       end do
@@ -3722,7 +3722,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
       wp2,             & ! w'^2                                     [m^2/s^2]
@@ -3778,35 +3778,35 @@ module advance_wp2_wp3_module
             ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
             lhs_ta_wp3(kp1_tdiag,i,k) &
             = + invrs_rho_ds_zt(i,k) &
-                * gr(i)%invrs_dzt(k) &
+                * gr%invrs_dzt(i,k) &
                   * rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
-                  * gr(i)%weights_zt2zm(t_above,k)
+                  * gr%weights_zt2zm(i,t_above,k)
 
            ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
            lhs_ta_wp3(k_mdiag,i,k) &
-           = + invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) &
+           = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
                * rho_ds_zm(i,k) * a3(i,k) * wp2(i,k)
 
            ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
            lhs_ta_wp3(k_tdiag,i,k) &
            = + invrs_rho_ds_zt(i,k) &
-               * gr(i)%invrs_dzt(k) &
+               * gr%invrs_dzt(i,k) &
                  * ( rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
-                     * gr(i)%weights_zt2zm(t_below,k) &
+                     * gr%weights_zt2zm(i,t_below,k) &
                      - rho_ds_zm(i,k-1) * a1(i,k-1) * wp3_on_wp2(i,k-1) &
-                       * gr(i)%weights_zt2zm(t_above,k-1) )
+                       * gr%weights_zt2zm(i,t_above,k-1) )
 
            ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
            lhs_ta_wp3(km1_mdiag,i,k) &
-           = - invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) &
+           = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
                * rho_ds_zm(i,k-1) * a3(i,k-1) * wp2(i,k-1)
 
            ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
            lhs_ta_wp3(km1_tdiag,i,k) &
            = - invrs_rho_ds_zt(i,k) &
-               * gr(i)%invrs_dzt(k) &
+               * gr%invrs_dzt(i,k) &
                  * rho_ds_zm(i,k-1) * a1(i,k-1) * wp3_on_wp2(i,k-1) &
-                 * gr(i)%weights_zt2zm(t_below,k-1)
+                 * gr%weights_zt2zm(i,t_below,k-1)
 
           end do
         end do
@@ -3826,30 +3826,30 @@ module advance_wp2_wp3_module
             ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
             lhs_ta_wp3(kp1_tdiag,i,k) &
             = + invrs_rho_ds_zt(i,k) &
-                * gr(i)%invrs_dzt(k) * rho_ds_zt(i,k+1) &
+                * gr%invrs_dzt(i,k) * rho_ds_zt(i,k+1) &
                 * min( a1(i,k) * wp3_on_wp2(i,k), zero )
 
             ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
             lhs_ta_wp3(k_mdiag,i,k) &
-            = + invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) &
+            = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
                 * rho_ds_zm(i,k) * a3(i,k) * wp2(i,k)
 
             ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
             lhs_ta_wp3(k_tdiag,i,k) &
             = + invrs_rho_ds_zt(i,k) &
-                * gr(i)%invrs_dzt(k) * rho_ds_zt(i,k) &
+                * gr%invrs_dzt(i,k) * rho_ds_zt(i,k) &
                 * ( max( a1(i,k) * wp3_on_wp2(i,k), zero ) &
                     - min( a1(i,k-1) * wp3_on_wp2(i,k-1), zero ) )
 
             ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
             lhs_ta_wp3(km1_mdiag,i,k) &
-            = - invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) &
+            = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
                 * rho_ds_zm(i,k-1) * a3(i,k-1) * wp2(i,k-1)
 
             ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
             lhs_ta_wp3(km1_tdiag,i,k) &
             = - invrs_rho_ds_zt(i,k) &
-                * gr(i)%invrs_dzt(k) * rho_ds_zt(i,k-1) &
+                * gr%invrs_dzt(i,k) * rho_ds_zt(i,k-1) &
                 * max( a1(i,k-1) * wp3_on_wp2(i,k-1), zero )
 
           end do
@@ -3880,35 +3880,35 @@ module advance_wp2_wp3_module
           ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
           lhs_ta_wp3(kp1_tdiag,i,k) &
           = + invrs_rho_ds_zt(i,k) &
-              * a1_zt(i,k) * gr(i)%invrs_dzt(k) &
+              * a1_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
-              * gr(i)%weights_zt2zm(t_above,k)
+              * gr%weights_zt2zm(i,t_above,k)
 
           ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
           lhs_ta_wp3(k_mdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr(i)%invrs_dzt(k) &
+          = + invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k) * wp2(i,k)
 
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_ta_wp3(k_tdiag,i,k) &
           = + invrs_rho_ds_zt(i,k) &
-              * a1_zt(i,k) * gr(i)%invrs_dzt(k) &
+              * a1_zt(i,k) * gr%invrs_dzt(i,k) &
                 * ( rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
-                    * gr(i)%weights_zt2zm(t_below,k) &
+                    * gr%weights_zt2zm(i,t_below,k) &
                     - rho_ds_zm(i,k-1) * wp3_on_wp2(i,k-1) &
-                      * gr(i)%weights_zt2zm(t_above,k-1) )
+                      * gr%weights_zt2zm(i,t_above,k-1) )
 
           ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
           lhs_ta_wp3(km1_mdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr(i)%invrs_dzt(k) &
+          = - invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k-1) * wp2(i,k-1)
 
           ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
           lhs_ta_wp3(km1_tdiag,i,k) &
           = - invrs_rho_ds_zt(i,k) &
-              * a1_zt(i,k) * gr(i)%invrs_dzt(k) &
+              * a1_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k-1) * wp3_on_wp2(i,k-1) &
-              * gr(i)%weights_zt2zm(t_below,k-1)
+              * gr%weights_zt2zm(i,t_below,k-1)
 
         end do
       end do
@@ -4014,7 +4014,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
     
     real( kind = core_rknd ), intent(in) :: &
@@ -4042,15 +4042,15 @@ module advance_wp2_wp3_module
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
         lhs_tp_wp3(k_mdiag,i,k) &
-          = - coef_wp3_tp * three * invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) &
+          = - coef_wp3_tp * three * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k) * wp2(i,k) &
-            + coef_wp3_tp * three_halves * gr(i)%invrs_dzt(k) * wp2(i,k)
+            + coef_wp3_tp * three_halves * gr%invrs_dzt(i,k) * wp2(i,k)
 
         ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
         lhs_tp_wp3(km1_mdiag,i,k) &
-          = + coef_wp3_tp * three * invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) &
+          = + coef_wp3_tp * three * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k-1) * wp2(i,k-1) &
-            - coef_wp3_tp * three_halves * gr(i)%invrs_dzt(k) * wp2(i,k-1)
+            - coef_wp3_tp * three_halves * gr%invrs_dzt(i,k) * wp2(i,k-1)
       end do
     end do
 
@@ -4134,7 +4134,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied       [-]
@@ -4158,7 +4158,7 @@ module advance_wp2_wp3_module
 
        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
        lhs_ac_pr2_wp3(i,k) = + ( one - C11_Skw_fnc(i,k) ) &
-                               * three * gr(i)%invrs_dzt(k) * ( wm_zm(i,k) - wm_zm(i,k-1) )
+                               * three * gr%invrs_dzt(i,k) * ( wm_zm(i,k) - wm_zm(i,k-1) )
            
       end do
     end do
@@ -4238,7 +4238,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       invrs_tau_wp3_zt,  & ! Inverse time-scale tau at thermodynamic levels  [1/s]
@@ -4360,7 +4360,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wp4,             & ! <w'^4>                                   [m^4/s^4]
@@ -4382,7 +4382,7 @@ module advance_wp2_wp3_module
     ! Calculate term at all interior grid levels.
     do k = 2, nz
       do i = 1, ngrdcol
-        rhs_ta_wp3(i,k) = - invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) &
+        rhs_ta_wp3(i,k) = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
                             * ( rho_ds_zm(i,k) * wp4(i,k) - rho_ds_zm(i,k-1) * wp4(i,k-1) )
       end do
     end do
@@ -4440,7 +4440,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       C11_Skw_fnc, & ! C_11 parameter with Sk_w applied         [-]
@@ -4515,7 +4515,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
     
     real( kind = core_rknd ), intent(in) :: &
@@ -4555,7 +4555,7 @@ module advance_wp2_wp3_module
         if ( .not. l_use_tke_in_wp3_pr_turb_term ) then
 
           rhs_pr_turb_wp3(i,k) &
-          = - C_wp3_pr_turb * Kh_zt(i,k) * gr(i)%invrs_dzt(k) &
+          = - C_wp3_pr_turb * Kh_zt(i,k) * gr%invrs_dzt(i,k) &
               * ( grav / thv_ds_zt(i,k) * ( wpthvp(i,k) - wpthvp(i,k-1) ) &
                   - ( upwp(i,k) * dum_dz(i,k) - upwp(i,k-1) * dum_dz(i,k-1) ) &
                   - ( vpwp(i,k) * dvm_dz(i,k) - vpwp(i,k-1) * dvm_dz(i,k-1) ) )
@@ -4563,7 +4563,7 @@ module advance_wp2_wp3_module
         else
 
           rhs_pr_turb_wp3(i,k) &
-          = - C_wp3_pr_turb * invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) &
+          = - C_wp3_pr_turb * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
               * ( rho_ds_zm(i,k) * wp2(i,k) * em(i,k) - rho_ds_zm(i,k-1) * wp2(i,k-1) * em(i,k-1) )
 
         endif
@@ -4624,7 +4624,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) :: &
       C_wp3_pr_dfsn      ! Model parameter C_wp3_pr_dfsn              [-]
@@ -4661,7 +4661,7 @@ module advance_wp2_wp3_module
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_pr_dfsn_wp3(i,k) &
-         = + C_wp3_pr_dfsn * invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) &
+         = + C_wp3_pr_dfsn * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
            * ( rho_ds_zm(i,k) * ( wp2uip2(i,k) - wp2_uip2(i,k) ) &
              - rho_ds_zm(i,k-1) * ( wp2uip2(i,k-1) - wp2_uip2(i,k-1) ) )
       end do
@@ -4737,7 +4737,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) :: & 
       C8,  & ! Model parameter C_8                        [-]

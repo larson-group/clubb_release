@@ -258,7 +258,7 @@ module adg1_adg2_3d_luhar_pdf
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
@@ -328,11 +328,11 @@ module adg1_adg2_3d_luhar_pdf
     ! Reproduce ADG2_w_closure using separate functions
     do i = 1, ngrdcol
       
-      call calc_Luhar_params( gr(i)%nz, Skw(i,:), wp2(i,:), &                   ! intent(in)
+      call calc_Luhar_params( gr%nz, Skw(i,:), wp2(i,:), &                   ! intent(in)
                               wp2(i,:), w_tol_sqd, &                         ! intent(in)
                               mixt_frac(i,:), big_m_w(i,:), small_m_w(i,:) ) ! intent(out)
 
-      call close_Luhar_pdf( gr(i)%nz, wm(i,:), wp2(i,:), mixt_frac(i,:),    & ! intent(in)
+      call close_Luhar_pdf( gr%nz, wm(i,:), wp2(i,:), mixt_frac(i,:),    & ! intent(in)
                             small_m_w(i,:), wp2(i,:), w_tol_sqd,         & ! intent(in)
                             sigma_sqd_w_1(i,:), sigma_sqd_w_2(i,:),      & ! intent(out)
                             varnce_w_1(i,:), varnce_w_2(i,:),            & ! intent(out)

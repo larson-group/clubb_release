@@ -227,7 +227,7 @@ module ice_dfsn_module
         Denom(k) = Diff_denom( T_in_K(k), p_in_Pa(k), e_i(k) )
 
         ! Change in mass of a single ice crystal, m,
-        ! as it falls a distance gr%invrs_dzt in meters
+        ! as it falls a distance gr%invrs_dzt(1,:) in meters
 
         !---------------Brian's comment--------------------------------------!
         ! dm/dt = 4*pi*C*(Si-1)/Denom; Rogers and Yau, Eq. 9.4.              !
@@ -257,7 +257,7 @@ module ice_dfsn_module
         dmass_ice_cryst(k) = ( 4._core_rknd * (S_i(k) - 1._core_rknd) / Denom(k) ) & 
            * (1.0_core_rknd/k_u_coef) * ( rho(k)**q_expn ) & 
            * ( (mass_ice_cryst(k)/a_coef)**((1.0_core_rknd-n_expn)/b_expn) ) & 
-           * (1.0_core_rknd/gr%invrs_dzm(k-1))
+           * (1.0_core_rknd/gr%invrs_dzm(1,k-1))
         mass_ice_cryst(k-1) = mass_ice_cryst(k)  & 
                                      + dmass_ice_cryst(k)
 

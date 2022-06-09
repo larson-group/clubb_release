@@ -411,7 +411,7 @@ module advance_clubb_core_module
       stats_zm, &
       stats_sfc
 
-    type (grid), target, intent(in), dimension(ngrdcol) :: gr
+    type (grid), target, intent(in) :: gr
 
     !!! External
     intrinsic :: sqrt, min, max, exp, mod, real
@@ -889,11 +889,11 @@ module advance_clubb_core_module
           ! so that spurious source can be calculated
           rtm_integral_before(i)  &
           = vertical_integral( (nz - 2 + 1), rho_ds_zt(i,2:nz), &
-                               rtm(i,2:nz), gr(i)%dzt(2:nz) )
+                               rtm(i,2:nz), gr%dzt(i,2:nz) )
 
           thlm_integral_before(i)  &
           = vertical_integral( (nz - 2 + 1), rho_ds_zt(i,2:nz), &
-                               thlm(i,2:nz), gr(i)%dzt(2:nz) )
+                               thlm(i,2:nz), gr%dzt(i,2:nz) )
         end if
       end do
     end if
@@ -1407,7 +1407,7 @@ module advance_clubb_core_module
     ! level is not the ground level.  Brian Griffin.  December 22, 2005.
     do i = 1, ngrdcol
       
-      if ( abs(gr(i)%zm(1)-sfc_elevation(i)) <= abs(gr(i)%zm(1)+sfc_elevation(i))*eps/2) then
+      if ( abs(gr%zm(i,1)-sfc_elevation(i)) <= abs(gr%zm(i,1)+sfc_elevation(i))*eps/2) then
 
         ! Reflect surface varnce changes in budget
         if ( l_stats_samp ) then
@@ -1438,10 +1438,10 @@ module advance_clubb_core_module
            depth_pos_wpthlp(i) = one ! When sfc heat flux is negative, set depth to 1 m.
         else ! When sfc heat flux is positive, march up sounding until wpthlp 1st becomes negative.
            k = 1
-           do while ( wpthlp(i,k) > zero .and. (gr(i)%zm(k)-sfc_elevation(i)) < 1000._core_rknd )
+           do while ( wpthlp(i,k) > zero .and. (gr%zm(i,k)-sfc_elevation(i)) < 1000._core_rknd )
               k = k + 1
            end do
-           depth_pos_wpthlp(i) = max( one, gr(i)%zm(k)-sfc_elevation(i) )
+           depth_pos_wpthlp(i) = max( one, gr%zm(i,k)-sfc_elevation(i) )
         end if
 
         ! Diagnose surface variances based on surface fluxes.
@@ -1503,7 +1503,7 @@ module advance_clubb_core_module
           sclrpthlp(i,1,j) = 0.0_core_rknd
         end do
 
-      end if ! gr%zm(1) == sfc_elevation
+      end if ! gr%zm(1,1) == sfc_elevation
         
     end do
 
@@ -2028,7 +2028,7 @@ module advance_clubb_core_module
 #ifdef CLUBB_CAM
       do ixind=1,edsclr_dim
         do i = 1, ngrdcol
-          call fill_holes_vertical( nz, gr(i)%dzm, gr(i)%dzt, 2,0.0_core_rknd,"zt", & ! intent(in)
+          call fill_holes_vertical( nz, gr%dzm(i,:), gr%dzt(i,:), 2,0.0_core_rknd,"zt", & ! intent(in)
                                    rho_ds_zt(i,:), rho_ds_zm(i,:), & ! intent(in)
                                    edsclrm(i,:,ixind))       ! intent(inout)
         end do
@@ -2400,7 +2400,7 @@ module advance_clubb_core_module
                                               pdf_params_zm_single_col(i) )
         
         call stats_accumulate( &
-               nz, gr(i)%invrs_dzm(:), gr(i)%zt(:), gr(i)%dzm(:), gr(i)%dzt(:), & ! intent(in)
+               nz, gr%invrs_dzm(i,:), gr%zt(i,:), gr%dzm(i,:), gr%dzt(i,:), & ! intent(in)
                um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:),                      & ! intent(in)
                thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! intent(in)
                wp2(i,:), wp3(i,:), rtp2(i,:), rtp3(i,:), thlp2(i,:), thlp3(i,:), rtpthlp(i,:),           & ! intent(in)
@@ -2473,11 +2473,11 @@ module advance_clubb_core_module
 
           rtm_integral_after(i)  &
           = vertical_integral( (nz - 2 + 1), rho_ds_zt(i,2:nz), &
-                               rtm(i,2:nz), gr(i)%dzt(2:nz) )
+                               rtm(i,2:nz), gr%dzt(i,2:nz) )
 
           rtm_integral_forcing(i)  &
           = vertical_integral( (nz - 2 + 1), rho_ds_zt(i,2:nz), &
-                               rtm_forcing(i,2:nz), gr(i)%dzt(2:nz) )
+                               rtm_forcing(i,2:nz), gr%dzt(i,2:nz) )
 
           rtm_spur_src(i)  &
           = calculate_spurious_source( rtm_integral_after(i), &
@@ -2497,11 +2497,11 @@ module advance_clubb_core_module
 
           thlm_integral_after(i)  &
           = vertical_integral( (nz - 2 + 1), rho_ds_zt(i,2:nz), &
-                               thlm(i,2:nz), gr(i)%dzt(2:nz) )
+                               thlm(i,2:nz), gr%dzt(i,2:nz) )
 
           thlm_integral_forcing(i)  &
           = vertical_integral( (nz - 2 + 1), rho_ds_zt(i,2:nz), &
-                               thlm_forcing(i,2:nz), gr(i)%dzt(2:nz) )
+                               thlm_forcing(i,2:nz), gr%dzt(i,2:nz) )
 
           thlm_spur_src(i)  &
           = calculate_spurious_source( thlm_integral_after(i), &
@@ -2690,7 +2690,7 @@ module advance_clubb_core_module
       stats_zt, &
       stats_zm
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
 
     !!! External
@@ -3272,7 +3272,7 @@ module advance_clubb_core_module
       ! Nudge rtm to prevent excessive drying
       do k = 1, nz
         do i = 1, ngrdcol
-          if ( rtm(i,k) < rtm_min .and. gr(i)%zt(k) < rtm_nudge_max_altitude ) then
+          if ( rtm(i,k) < rtm_min .and. gr%zt(i,k) < rtm_nudge_max_altitude ) then
             rtm(i,k) = rtm(i,k) + (rtm_ref(i,k) - rtm(i,k)) * ( dt / ts_nudge )
           end if
         end do
@@ -4251,7 +4251,7 @@ module advance_clubb_core_module
         nz, &
         ngrdcol
 
-      type (grid), target, dimension(ngrdcol), intent(in) :: gr
+      type (grid), target, intent(in) :: gr
     
       logical, intent(in) :: l_call_pdf_closure_twice
 
@@ -4432,7 +4432,7 @@ module advance_clubb_core_module
         nz, &
         ngrdcol
 
-      type (grid), target, dimension(ngrdcol), intent(in) :: gr
+      type (grid), target, intent(in) :: gr
     
       real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
         wpthvp_zt,   & ! Buoyancy flux (on thermo. grid)  [(K m)/s]
@@ -4485,7 +4485,7 @@ module advance_clubb_core_module
         nz, &
         ngrdcol
 
-      type (grid), target, dimension(ngrdcol), intent(in) :: gr
+      type (grid), target, intent(in) :: gr
       
       real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
         variable_zt, & ! Variable on the zt grid
@@ -4506,9 +4506,9 @@ module advance_clubb_core_module
         do i = 1, ngrdcol
           ! Trapezoidal rule from calculus
           trapezoid_zt(i,k) =  0.5_core_rknd * ( variable_zm(i,k) + variable_zt(i,k) ) &
-                               * ( gr(i)%zm(k) - gr(i)%zt(k) ) * gr(i)%invrs_dzt(k) &
+                               * ( gr%zm(i,k) - gr%zt(i,k) ) * gr%invrs_dzt(i,k) &
                                + 0.5_core_rknd * ( variable_zt(i,k) + variable_zm(i,k-1) ) &
-                                 * ( gr(i)%zt(k) - gr(i)%zm(k-1) ) * gr(i)%invrs_dzt(k)
+                                 * ( gr%zt(i,k) - gr%zm(i,k-1) ) * gr%invrs_dzt(i,k)
         end do
       end do ! k = 2, gr%nz
 
@@ -4540,7 +4540,7 @@ module advance_clubb_core_module
         nz, &
         ngrdcol
 
-      type (grid), target, dimension(ngrdcol), intent(in) :: gr
+      type (grid), target, intent(in) :: gr
       
       real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
         variable_zm, & ! Variable on the zm grid
@@ -4563,9 +4563,9 @@ module advance_clubb_core_module
         do i = 1, ngrdcol
           ! Trapezoidal rule from calculus
           trapezoid_zm(i,k) =  0.5_core_rknd * ( variable_zt(i,k+1) + variable_zm(i,k) ) &
-                               * ( gr(i)%zt(k+1) - gr(i)%zm(k) ) * gr(i)%invrs_dzm(k) &
+                               * ( gr%zt(i,k+1) - gr%zm(i,k) ) * gr%invrs_dzm(i,k) &
                                + 0.5_core_rknd * ( variable_zm(i,k) + variable_zt(i,k) ) &
-                                 * ( gr(i)%zm(k) - gr(i)%zt(k) ) * gr(i)%invrs_dzm(k)
+                                 * ( gr%zm(i,k) - gr%zt(i,k) ) * gr%invrs_dzm(i,k)
         end do
       end do 
       
@@ -4614,7 +4614,7 @@ module advance_clubb_core_module
         ngrdcol,  & ! Number of grid columns
         nz          ! Number of vertical level
 
-      type (grid), target, dimension(ngrdcol), intent(in) :: gr
+      type (grid), target, intent(in) :: gr
 
       ! External functions
       intrinsic :: abs, min, max
@@ -4679,7 +4679,7 @@ module advance_clubb_core_module
             if ( rcm(i,k+1) < rc_tol ) then ! Cloud top
 
               vert_cloud_frac_upper(i,k) = &
-                       ( ( 0.5_core_rknd / gr(i)%invrs_dzm(k) ) / ( gr(i)%zm(k) - gr(i)%zt(k) ) ) &
+                       ( ( 0.5_core_rknd / gr%invrs_dzm(i,k) ) / ( gr%zm(i,k) - gr%zt(i,k) ) ) &
                        * ( rcm(i,k) / ( rcm(i,k) + abs( chi_mean(i,k+1) ) ) )
 
               vert_cloud_frac_upper(i,k) = min( 0.5_core_rknd, vert_cloud_frac_upper(i,k) )
@@ -4698,7 +4698,7 @@ module advance_clubb_core_module
             if ( rcm(i,k-1) < rc_tol ) then ! Cloud base
 
               vert_cloud_frac_lower(i,k) = &
-                       ( ( 0.5_core_rknd / gr(i)%invrs_dzm(k-1) ) / ( gr(i)%zt(k) - gr(i)%zm(k-1) ) ) &
+                       ( ( 0.5_core_rknd / gr%invrs_dzm(i,k-1) ) / ( gr%zt(i,k) - gr%zm(i,k-1) ) ) &
                        * ( rcm(i,k) / ( rcm(i,k) + abs( chi_mean(i,k-1) ) ) )
 
               vert_cloud_frac_lower(i,k) = min( 0.5_core_rknd, vert_cloud_frac_lower(i,k) )
@@ -4794,7 +4794,7 @@ module advance_clubb_core_module
         nz, &
         ngrdcol
 
-      type (grid), target, dimension(ngrdcol), intent(in) :: gr
+      type (grid), target, intent(in) :: gr
     
       real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
         rtm           ! Total water mixing ratio             [kg/kg]

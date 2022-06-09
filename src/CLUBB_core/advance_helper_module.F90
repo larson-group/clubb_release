@@ -247,7 +247,7 @@ module advance_helper_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
       Lscale,          & ! Turbulent mixing length                   [m]
@@ -298,7 +298,7 @@ module advance_helper_module
 
     stability_correction = one &
         + min( lambda0_stability * brunt_vaisala_freq_sqd &
-                * zt2zm(nz, ngrdcol, gr(:), Lscale(:,:))**2 / em, three )
+                * zt2zm(nz, ngrdcol, gr, Lscale(:,:))**2 / em, three )
 
     return
   end subroutine calc_stability_correction
@@ -350,7 +350,7 @@ module advance_helper_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
@@ -418,7 +418,7 @@ module advance_helper_module
 
         do k = 1, nz
           do i = 1, ngrdcol
-            stat_dry(i,k)  =  Cp * T_in_K(i,k) + grav * gr(i)%zt(k)
+            stat_dry(i,k)  =  Cp * T_in_K(i,k) + grav * gr%zt(i,k)
           end do
         end do
         
@@ -549,7 +549,7 @@ module advance_helper_module
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Constant Parameters
     real( kind = core_rknd ), parameter :: &
@@ -735,7 +735,7 @@ module advance_helper_module
       nz, &
       ngrdcol
       
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       var_profile, &      ! Profile on momentum levels
@@ -776,8 +776,8 @@ module advance_helper_module
     ! Pre calculate numerator and denominator terms
     do k=1, nz
       do i = 1, ngrdcol
-        numer_terms(i,k) = rho_ds_zm(i,k) * gr(i)%dzm(k) * var_profile(i,k)
-        denom_terms(i,k) = rho_ds_zm(i,k) * gr(i)%dzm(k)
+        numer_terms(i,k) = rho_ds_zm(i,k) * gr%dzm(i,k) * var_profile(i,k)
+        denom_terms(i,k) = rho_ds_zm(i,k) * gr%dzm(i,k)
       end do
     end do
 
@@ -789,7 +789,7 @@ module advance_helper_module
       do i = 1, ngrdcol
 
         !-----------------------------------------------------------------------
-        ! Hunt down all vertical levels with one_half_avg_width(k) of gr%zm(k).
+        ! Hunt down all vertical levels with one_half_avg_width(k) of gr%zm(1,k).
         ! 
         !     k_avg_upper and k_avg_lower are saved each loop iteration, this 
         !     improves computational efficiency since their values are likely
@@ -803,17 +803,17 @@ module advance_helper_module
 
 
         ! Determine if k_avg_upper needs to increment or decrement
-        if ( gr(i)%zm(k_avg_upper) - gr(i)%zm(k) > one_half_avg_width(i,k) ) then
+        if ( gr%zm(i,k_avg_upper) - gr%zm(i,k) > one_half_avg_width(i,k) ) then
 
             ! k_avg_upper is too large, decrement it
-            do while ( gr(i)%zm(k_avg_upper) - gr(i)%zm(k) > one_half_avg_width(i,k) )
+            do while ( gr%zm(i,k_avg_upper) - gr%zm(i,k) > one_half_avg_width(i,k) )
                 k_avg_upper = k_avg_upper - 1
             end do
 
         elseif ( k_avg_upper < nz ) then
 
             ! k_avg_upper is too small, increment it
-            do while ( gr(i)%zm(k_avg_upper+1) - gr(i)%zm(k) <= one_half_avg_width(i,k) )
+            do while ( gr%zm(i,k_avg_upper+1) - gr%zm(i,k) <= one_half_avg_width(i,k) )
 
                 k_avg_upper = k_avg_upper + 1
 
@@ -825,10 +825,10 @@ module advance_helper_module
 
 
         ! Determine if k_avg_lower needs to increment or decrement
-        if ( gr(i)%zm(k) - gr(i)%zm(k_avg_lower) > one_half_avg_width(i,k) ) then
+        if ( gr%zm(i,k) - gr%zm(i,k_avg_lower) > one_half_avg_width(i,k) ) then
 
             ! k_avg_lower is too small, increment it
-            do while ( gr(i)%zm(k) - gr(i)%zm(k_avg_lower) > one_half_avg_width(i,k) )
+            do while ( gr%zm(i,k) - gr%zm(i,k_avg_lower) > one_half_avg_width(i,k) )
 
                 k_avg_lower = k_avg_lower + 1
 
@@ -837,7 +837,7 @@ module advance_helper_module
         elseif ( k_avg_lower > 1 ) then
 
             ! k_avg_lower is too large, decrement it
-            do while ( gr(i)%zm(k) - gr(i)%zm(k_avg_lower-1) <= one_half_avg_width(i,k) )
+            do while ( gr%zm(i,k) - gr%zm(i,k_avg_lower-1) <= one_half_avg_width(i,k) )
 
                 k_avg_lower = k_avg_lower - 1
 
@@ -865,8 +865,8 @@ module advance_helper_module
             ! divided by the distance between vertical levels below ground; the
             ! latter is assumed to be the same as the distance between the first and
             ! second vertical levels.
-            n_below_ground_levels = int( ( one_half_avg_width(i,k)-(gr(i)%zm(k)-gr(i)%zm(1)) ) / &
-                                        ( gr(i)%zm(2)-gr(i)%zm(1) ) )
+            n_below_ground_levels = int( ( one_half_avg_width(i,k)-(gr%zm(i,k)-gr%zm(i,1)) ) / &
+                                        ( gr%zm(i,2)-gr%zm(i,1) ) )
 
             numer_integral = n_below_ground_levels * denom_terms(i,1) * var_below_ground_value
             denom_integral = n_below_ground_levels * denom_terms(i,1)
@@ -923,7 +923,7 @@ module advance_helper_module
       nz, &
       ngrdcol
       
-    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: & 
       C_wp2_splat, &          ! Tuning parameter                    [-]
@@ -997,7 +997,7 @@ module advance_helper_module
       nz, &
       ngrdcol
       
-    type(grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: & 
       C_wp2_splat, &          ! Tuning parameter                    [-]
@@ -1469,7 +1469,7 @@ module advance_helper_module
 
     ! Solve for x'w' at all intermediate model levels.
     do k = 1, gr%nz-1
-      xpwp(k) = Km_zm(k) * gr%invrs_dzm(k) * ( xm(k+1) - xm(k) )
+      xpwp(k) = Km_zm(k) * gr%invrs_dzm(1,k) * ( xm(k+1) - xm(k) )
     end do
 
     return
@@ -1500,7 +1500,7 @@ module advance_helper_module
       nz, &
       ngrdcol
       
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
       
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Km_zm,     & ! Eddy diff. (k momentum level)                 [m^2/s]
@@ -1517,7 +1517,7 @@ module advance_helper_module
     ! Solve for x'w' at all intermediate model levels.
     do k = 1, nz-1
       do i = 1, ngrdcol
-        xpwp(i,k) = Km_zm(i,k) * gr(i)%invrs_dzm(k) * ( xm(i,k+1) - xm(i,k) )
+        xpwp(i,k) = Km_zm(i,k) * gr%invrs_dzm(i,k) * ( xm(i,k+1) - xm(i,k) )
       end do
     end do
 

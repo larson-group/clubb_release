@@ -410,7 +410,7 @@ module microphys_driver
     wtmp(:) = sqrt( wp2_zt(:) )
 
     ! Compute difference in thermodynamic height levels
-    delta_zt(1:gr%nz) = one / gr%invrs_dzm(1:gr%nz)
+    delta_zt(1:gr%nz) = one / gr%invrs_dzm(1,1:gr%nz)
 
     ! Calculate T_in_K
     T_in_K = thlm2T_in_K( thlm, exner, rcm )

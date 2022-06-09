@@ -179,7 +179,7 @@ module setup_clubb_pdf_params
       pdf_dim,     & ! Number of variables in the correlation array
       ngrdcol        ! Number of grid columns
       
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]

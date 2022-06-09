@@ -170,7 +170,7 @@ module calc_pressure
 
           exner_zm(gr%nz) &
           = exner(gr%nz) &
-            - g_ov_Cp * ( gr%zm(gr%nz) - gr%zt(gr%nz) ) &
+            - g_ov_Cp * ( gr%zm(1,gr%nz) - gr%zt(1,gr%nz) ) &
               / ( thvm_zm(gr%nz) - thvm(gr%nz) ) &
               * log( thvm_zm(gr%nz) / thvm(gr%nz) )
 
@@ -178,7 +178,7 @@ module calc_pressure
 
           exner_zm(gr%nz) &
           = exner(gr%nz) &
-            - g_ov_Cp * ( gr%zm(gr%nz) - gr%zt(gr%nz) ) / thvm_zm(gr%nz)
+            - g_ov_Cp * ( gr%zm(1,gr%nz) - gr%zt(1,gr%nz) ) / thvm_zm(gr%nz)
 
        endif
 
@@ -208,12 +208,12 @@ module calc_pressure
 
           exner(k) &
           = exner(k+1) &
-            + g_ov_Cp * ( gr%zt(k+1) - gr%zt(k) ) / ( thvm(k+1) - thvm(k) ) &
+            + g_ov_Cp * ( gr%zt(1,k+1) - gr%zt(1,k) ) / ( thvm(k+1) - thvm(k) ) &
               * log( thvm(k+1) / thvm(k) )
 
        else ! thvm(k+1) = thvm(k)
 
-          exner(k) = exner(k+1) + g_ov_Cp * ( gr%zt(k+1) - gr%zt(k) ) / thvm(k)
+          exner(k) = exner(k+1) + g_ov_Cp * ( gr%zt(1,k+1) - gr%zt(1,k) ) / thvm(k)
 
        endif
 
@@ -225,14 +225,14 @@ module calc_pressure
 
              exner_zm(k) &
              = exner(k+1) &
-               + g_ov_Cp * ( gr%zt(k+1) - gr%zm(k) ) &
+               + g_ov_Cp * ( gr%zt(1,k+1) - gr%zm(1,k) ) &
                  / ( thvm(k+1) - thvm_zm(k) ) &
                  * log( thvm(k+1) / thvm_zm(k) )
 
           else ! thvm(k+1) = thvm_zm(k)
 
              exner_zm(k) &
-             = exner(k+1) + g_ov_Cp * ( gr%zt(k+1) - gr%zm(k) ) / thvm_zm(k)
+             = exner(k+1) + g_ov_Cp * ( gr%zt(1,k+1) - gr%zm(1,k) ) / thvm_zm(k)
 
           endif
 
@@ -277,13 +277,13 @@ module calc_pressure
 
        exner_zm(1) &
        = exner(2) &
-         + g_ov_Cp * ( gr%zt(2) - gr%zm(1) ) / ( thvm(2) - thvm_zm(1) ) &
+         + g_ov_Cp * ( gr%zt(1,2) - gr%zm(1,1) ) / ( thvm(2) - thvm_zm(1) ) &
            * log( thvm(2) / thvm_zm(1) )
 
      else ! thvm(k+1) = thvm_zm(k)
 
        exner_zm(1) &
-       = exner(2) + g_ov_Cp * ( gr%zt(2) - gr%zm(1) ) / thvm_zm(1)
+       = exner(2) + g_ov_Cp * ( gr%zt(1,2) - gr%zm(1,1) ) / thvm_zm(1)
 
     endif
 
@@ -418,12 +418,12 @@ module calc_pressure
 
        exner(2) &
        = exner_zm(1) &
-         - g_ov_Cp * ( gr%zt(2) - gr%zm(1) ) / ( thvm(2) - thvm_zm(1) ) &
+         - g_ov_Cp * ( gr%zt(1,2) - gr%zm(1,1) ) / ( thvm(2) - thvm_zm(1) ) &
            * log( thvm(2) / thvm_zm(1) )
 
     else ! thvm(2) = thvm_zm(1)
 
-       exner(2) = exner_zm(1) - g_ov_Cp * ( gr%zt(2) - gr%zm(1) ) / thvm(2)
+       exner(2) = exner_zm(1) - g_ov_Cp * ( gr%zt(1,2) - gr%zm(1,1) ) / thvm(2)
 
     endif
 
@@ -438,12 +438,12 @@ module calc_pressure
 
           exner(k) &
           = exner(k-1) &
-            - g_ov_Cp * ( gr%zt(k) - gr%zt(k-1) ) / ( thvm(k) - thvm(k-1) ) &
+            - g_ov_Cp * ( gr%zt(1,k) - gr%zt(1,k-1) ) / ( thvm(k) - thvm(k-1) ) &
               * log( thvm(k) / thvm(k-1) )
 
        else ! thvm(k+1) = thvm(k)
 
-          exner(k) = exner(k-1) - g_ov_Cp * ( gr%zt(k) - gr%zt(k-1) ) / thvm(k)
+          exner(k) = exner(k-1) - g_ov_Cp * ( gr%zt(1,k) - gr%zt(1,k-1) ) / thvm(k)
 
        endif
 
@@ -460,13 +460,13 @@ module calc_pressure
 
           exner_zm(k) &
           = exner(k) &
-            - g_ov_Cp * ( gr%zm(k) - gr%zt(k) ) / ( thvm_zm(k) - thvm(k) ) &
+            - g_ov_Cp * ( gr%zm(1,k) - gr%zt(1,k) ) / ( thvm_zm(k) - thvm(k) ) &
               * log( thvm_zm(k) / thvm(k) )
 
        else ! thvm(k) = thvm_zm(k)
 
           exner_zm(k) &
-          = exner(k) - g_ov_Cp * ( gr%zm(k) - gr%zt(k) ) / thvm_zm(k)
+          = exner(k) - g_ov_Cp * ( gr%zm(1,k) - gr%zt(1,k) ) / thvm_zm(k)
 
        endif
 

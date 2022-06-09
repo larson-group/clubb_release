@@ -2987,7 +2987,7 @@ module stats_clubb_utilities
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirs), gr%dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iirs), gr%dzt(1,2:gr%nz) )
 
         call stat_update_var_pt( iswp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -3000,7 +3000,7 @@ module stats_clubb_utilities
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iiri), gr%dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iiri), gr%dzt(1,2:gr%nz) )
 
         call stat_update_var_pt( iiwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -3013,7 +3013,7 @@ module stats_clubb_utilities
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirr), gr%dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iirr), gr%dzt(1,2:gr%nz) )
 
         call stat_update_var_pt( irwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)

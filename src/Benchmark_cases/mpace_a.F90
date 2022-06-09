@@ -174,17 +174,17 @@ module mpace_a
 
 !     Do linear interpolation in space
 !     using zlinterp_fnc
-    dTdt_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt, & 
+    dTdt_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt(1,:), & 
                              file_heights,dTdt_column)
-    dqdt_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt, & 
+    dqdt_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt(1,:), & 
                              file_heights,dqdt_column)
-    vertT_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt, & 
+    vertT_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt(1,:), & 
                              file_heights,vertT_column)
-    vertq_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt, & 
+    vertq_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt(1,:), & 
                              file_heights,vertq_column)
-    um_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt, & 
+    um_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt(1,:), & 
                              file_heights,um_column)
-    vm_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt, & 
+    vm_hoc_grid  = zlinterp_fnc(gr%nz, file_nlevels, gr%zt(1,:), & 
                              file_heights,vm_column)
 
     um_hoc_grid (1) = um_hoc_grid(2)

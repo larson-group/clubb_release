@@ -64,7 +64,7 @@ module gabls3_night
       vm_sfc,       & ! vm at zt(2)                     [m/s]
       thlm_sfc,     & ! Theta_l at zt(2)                [K]
       rtm_sfc,      & ! rt at zt(2)                     [kg/kg]
-      lowest_level    ! gr%zt(2), height of the lowest
+      lowest_level    ! gr%zt(1,2), height of the lowest
                       ! above-ground gridpoint          [m]
 
     ! Output variables

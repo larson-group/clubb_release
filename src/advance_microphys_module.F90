@@ -1732,8 +1732,6 @@ module advance_microphys_module
       
     real( kind = core_rknd ), dimension(1) :: &
       nu_col
-      
-    type (grid), target, dimension(1) :: gr_col
 
     integer :: k, km1, kp1, i  ! Array indices
 
@@ -1830,9 +1828,8 @@ module advance_microphys_module
     invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
     rho_ds_zm_col(i,:) = rho_ds_zm
     nu_col(i) = nu
-    gr_col(i) = gr
 
-    call diffusion_zt_lhs( gr%nz, i, gr_col, Kh_zm, Kh_zt, nu_col, &
+    call diffusion_zt_lhs( gr%nz, i, gr, Kh_zm, Kh_zt, nu_col, &
                            invrs_rho_ds_zt_col, rho_ds_zm_col, &
                            lhs_ta )
 
@@ -1850,12 +1847,12 @@ module advance_microphys_module
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
     lhs_ta(kp1_tdiag,i,2) &
     = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(i,2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(i,2) )
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
     lhs_ta(k_tdiag,i,2) &
     = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(i,2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(i,2) )
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
     lhs_ta(km1_tdiag,i,2) = zero
@@ -1864,8 +1861,8 @@ module advance_microphys_module
 
 
     ! LHS mean advection term.
-    call term_ma_zt_lhs( gr%nz, wm_zt, gr%weights_zt2zm(:,:),  & ! intent(in)
-                         gr%invrs_dzt(:), gr%invrs_dzm(:),    & ! intent(in)
+    call term_ma_zt_lhs( gr%nz, wm_zt, gr%weights_zt2zm(i,:,:),  & ! intent(in)
+                         gr%invrs_dzt(i,:), gr%invrs_dzm(i,:),    & ! intent(in)
                          l_upwind_xm_ma, &
                          lhs_ma )
 
@@ -1899,7 +1896,7 @@ module advance_microphys_module
              = lhs(kp1_tdiag:km1_tdiag,k) & 
                + sed_centered_diff_lhs( gr, V_hm(k), V_hm(km1), rho_ds_zm(k), &
                                         rho_ds_zm(km1), invrs_rho_ds_zt(k), &
-                                        gr%invrs_dzt(k), k )
+                                        gr%invrs_dzt(i,k), k )
 
           else
 
@@ -1909,7 +1906,7 @@ module advance_microphys_module
              = lhs(kp1_tdiag:km1_tdiag,k) & 
                + sed_upwind_diff_lhs( gr, V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
                                       rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
-                                      gr%invrs_dzm(k), k )
+                                      gr%invrs_dzm(i,k), k )
 
           endif
 
@@ -1920,7 +1917,7 @@ module advance_microphys_module
                                   Vhmphmp_zt_impc(kp1), Vhmphmp_zt_impc(k), &
                                   rho_ds_zm(k), rho_ds_zm(km1), &
                                   rho_ds_zt(kp1), rho_ds_zt(k), &
-                                  gr%invrs_dzt(k), gr%invrs_dzm(k), &
+                                  gr%invrs_dzt(i,k), gr%invrs_dzm(i,k), &
                                   invrs_rho_ds_zt(k), k )
 
        endif ! l_sed
@@ -1933,12 +1930,12 @@ module advance_microphys_module
                 tmp(1:3) &
                 = sed_centered_diff_lhs( gr, V_hm(k), V_hm(km1), rho_ds_zm(k), &
                                          rho_ds_zm(km1), invrs_rho_ds_zt(k), &
-                                         gr%invrs_dzt(k), k )
+                                         gr%invrs_dzt(i,k), k )
              else
                 tmp(1:3) &
                 = sed_upwind_diff_lhs( gr, V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
                                        rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
-                                       gr%invrs_dzm(k), k )
+                                       gr%invrs_dzm(i,k), k )
              endif
 
              ztscr04(k) = -tmp(3)
@@ -1953,7 +1950,7 @@ module advance_microphys_module
                                   Vhmphmp_zt_impc(kp1), Vhmphmp_zt_impc(k), &
                                   rho_ds_zm(k), rho_ds_zm(km1), &
                                   rho_ds_zt(kp1), rho_ds_zt(k), &
-                                  gr%invrs_dzt(k), gr%invrs_dzm(k), &
+                                  gr%invrs_dzt(i,k), gr%invrs_dzm(i,k), &
                                   invrs_rho_ds_zt(k), k )
              ztscr07(k) = -tmp(3)
              ztscr08(k) = -tmp(2)
@@ -2106,8 +2103,6 @@ module advance_microphys_module
       
     real( kind = core_rknd ), dimension(1) :: &
       nu_col
-      
-    type (grid), target, dimension(1) :: gr_col
 
     real( kind = core_rknd ), dimension(3,gr%nz) :: & 
       lhs_ta    ! LHS corresponding to contribution from turbulent advection
@@ -2181,9 +2176,8 @@ module advance_microphys_module
     invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
     rho_ds_zm_col(i,:) = rho_ds_zm
     nu_col(i) = nu
-    gr_col(i) = gr
 
-    call diffusion_zt_lhs( gr%nz, i, gr_col, Kh_zm, Kh_zt, nu_col, &
+    call diffusion_zt_lhs( gr%nz, i, gr, Kh_zm, Kh_zt, nu_col, &
                            invrs_rho_ds_zt_col, rho_ds_zm_col, &
                            lhs_ta )
 
@@ -2201,12 +2195,12 @@ module advance_microphys_module
     ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
     lhs_ta(kp1_tdiag,2) &
     = - one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(i,2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(i,2) )
 
     ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
     lhs_ta(k_tdiag,2) &
     = + one_half * invrs_rho_ds_zt(2) &
-        * ( gr%invrs_dzt(2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(2) )
+        * ( gr%invrs_dzt(i,2) * ( Kh_zm(i,2) + nu ) * rho_ds_zm(2) * gr%invrs_dzm(i,2) )
 
     ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
     lhs_ta(km1_tdiag,2) = zero
@@ -2240,7 +2234,7 @@ module advance_microphys_module
                                  Vhmphmp_zt_expc(kp1), Vhmphmp_zt_expc(k), &
                                  rho_ds_zm(k), rho_ds_zm(km1), &
                                  rho_ds_zt(kp1), rho_ds_zt(k), &
-                                 gr%invrs_dzt(k), gr%invrs_dzm(k), &
+                                 gr%invrs_dzt(i,k), gr%invrs_dzm(i,k), &
                                  invrs_rho_ds_zt(k), k )
        endif
 
@@ -2286,7 +2280,7 @@ module advance_microphys_module
                                      Vhmphmp_zt_expc(kp1), Vhmphmp_zt_expc(k), &
                                      rho_ds_zm(k), rho_ds_zm(km1), &
                                      rho_ds_zt(kp1), rho_ds_zt(k), &
-                                     gr%invrs_dzt(k), gr%invrs_dzm(k), &
+                                     gr%invrs_dzt(i,k), gr%invrs_dzm(i,k), &
                                      invrs_rho_ds_zt(k), k ), &
                                         stats_zt )
           endif ! ihmm_ts > 0 and l_sed
@@ -2504,8 +2498,16 @@ module advance_microphys_module
     integer :: & 
       mk,   & ! Momentum level directly above central thermodynamic level.
       mkm1    ! Momentum level directly below central thermodynamic level.
+      
+    integer :: i
 
     ! ---- Begin Code ----
+    
+    ! Some procedures expect arrays that are dimension(ngrdcol,nz), so the aruments 
+    ! to be passed to those procedures have a dummy dimension hardcoded to 1.
+    ! For visual clarity and consistency with other routines, we use i to index
+    ! those dummy dimensions, but we always want i=1.
+    i = 1
 
     ! Momentum level (k) is between thermodynamic level (k+1)
     ! and thermodynamic level (k).
@@ -2535,19 +2537,19 @@ module advance_microphys_module
        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
        lhs(kp1_tdiag)  & 
        = + invrs_rho_ds_zt * invrs_dzt &
-           * rho_ds_zm * V_hm * gr%weights_zt2zm(t_above,mk)
+           * rho_ds_zm * V_hm * gr%weights_zt2zm(i,t_above,mk)
 
        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
        lhs(k_tdiag)  & 
        = + invrs_rho_ds_zt &
            * invrs_dzt &
-           * ( rho_ds_zm * V_hm * gr%weights_zt2zm(t_below,mk) & 
-               - rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
+           * ( rho_ds_zm * V_hm * gr%weights_zt2zm(i,t_below,mk) & 
+               - rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(i,t_above,mkm1)  )
 
        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
        lhs(km1_tdiag)  & 
        = - invrs_rho_ds_zt * invrs_dzt &
-           * rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
+           * rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(i,t_below,mkm1)
 
 
     elseif ( level == gr%nz ) then
@@ -2948,7 +2950,15 @@ module advance_microphys_module
     integer :: & 
       mk,   & ! Momentum level directly above central thermodynamic level.
       mkm1    ! Momentum level directly below central thermodynamic level.
+      
+    integer :: i
 
+
+    ! Some procedures expect arrays that are dimension(ngrdcol,nz), so the aruments 
+    ! to be passed to those procedures have a dummy dimension hardcoded to 1.
+    ! For visual clarity and consistency with other routines, we use i to index
+    ! those dummy dimensions, but we always want i=1.
+    i = 1
 
     ! Momentum level (k) is between thermodynamic level (k+1)
     ! and thermodynamic level (k).
@@ -2989,22 +2999,22 @@ module advance_microphys_module
           lhs(kp1_tdiag)  & 
           = + invrs_rho_ds_zt &
               * invrs_dzt &
-              * rho_ds_zm * Vhmphmp_impcm * gr%weights_zt2zm(t_above,mk)
+              * rho_ds_zm * Vhmphmp_impcm * gr%weights_zt2zm(i,t_above,mk)
 
           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
           lhs(k_tdiag)  & 
           = + invrs_rho_ds_zt &
               * invrs_dzt &
               * ( rho_ds_zm * Vhmphmp_impcm &
-                            * gr%weights_zt2zm(t_below,mk) & 
+                            * gr%weights_zt2zm(i,t_below,mk) & 
                   - rho_ds_zmm1 * Vhmphmp_impcm1 &
-                                * gr%weights_zt2zm(t_above,mkm1)  )
+                                * gr%weights_zt2zm(i,t_above,mkm1)  )
 
           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
           lhs(km1_tdiag)  & 
           = - invrs_rho_ds_zt &
               * invrs_dzt &
-              * rho_ds_zmm1 * Vhmphmp_impcm1 * gr%weights_zt2zm(t_below,mkm1)
+              * rho_ds_zmm1 * Vhmphmp_impcm1 * gr%weights_zt2zm(i,t_below,mkm1)
 
 
        elseif ( level == gr%nz ) then
@@ -3386,46 +3396,52 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim) :: &
       K_gamma ! Non-local factor of diffusion (t. adv.) for hydrometeors [m^2/s]
 
-    integer :: k, kp1, i    ! Loop indices
+    integer :: k, kp1, i, h    ! Loop indices
 
+
+    ! Some procedures expect arrays that are dimension(ngrdcol,nz), so the aruments 
+    ! to be passed to those procedures have a dummy dimension hardcoded to 1.
+    ! For visual clarity and consistency with other routines, we use i to index
+    ! those dummy dimensions, but we always want i=1.
+    i = 1
 
     ! Loop over all hydrometeors.
-    do i = 1, hydromet_dim, 1
+    do h = 1, hydromet_dim, 1
 
        ! Loop over all vertical levels for each hydrometeor.
        do k = 1, gr%nz, 1
 
           kp1 = min( k+1, gr%nz )
 
-          K_hm(k,i) &
+          K_hm(k,h) &
           = clubb_params(ic_K_hm) * Kh_zm(k) &
-            * ( sqrt( hydrometp2(k,i) ) &
-                / max( zt2zm( gr, hydromet(:,i), k ), hydromet_tol(i) ) ) &
+            * ( sqrt( hydrometp2(k,h) ) &
+                / max( zt2zm( gr, hydromet(:,h), k ), hydromet_tol(h) ) ) &
             * ( one + abs( Skw_zm(k) ) ) 
 
           if ( l_use_non_local_diff_fac ) then
-             K_gamma(k,i) &
+             K_gamma(k,h) &
              = one &
                - clubb_params(ic_K_hmb) &
                  * ( ( zt2zm( gr, Lscale(:), k ) &
-                       / max( zt2zm( gr, hydromet(:,i), k ), hydromet_tol(i) ) ) &
-                     * ( gr%invrs_dzm(k) &
-                         * ( hydromet(kp1,i) - hydromet(k,i) ) ) )
+                       / max( zt2zm( gr, hydromet(:,h), k ), hydromet_tol(h) ) ) &
+                     * ( gr%invrs_dzm(i,k) &
+                         * ( hydromet(kp1,h) - hydromet(k,h) ) ) )
 
-               K_hm(k,i) &
-               = K_hm(k,i) * max( K_gamma(k,i), clubb_params(iK_hm_min_coef) )
+               K_hm(k,h) &
+               = K_hm(k,h) * max( K_gamma(k,h), clubb_params(iK_hm_min_coef) )
           endif
 
-          if ( abs( gr%invrs_dzm(k) &
-                    * ( hydromet(kp1,i) - hydromet(k,i) ) ) > eps ) then
+          if ( abs( gr%invrs_dzm(i,k) &
+                    * ( hydromet(kp1,h) - hydromet(k,h) ) ) > eps ) then
 
              ! Ensure the abs( correlation ) between w and hydromet does not
              ! have a value greater than one.
-             K_hm(k,i) &
-             = min( K_hm(k,i), &
-                    ( sqrt( wp2(k) ) * sqrt( hydrometp2(k,i) ) ) &
-                    / abs( gr%invrs_dzm(k) &
-                           * ( hydromet(kp1,i) - hydromet(k,i) ) ) )
+             K_hm(k,h) &
+             = min( K_hm(k,h), &
+                    ( sqrt( wp2(k) ) * sqrt( hydrometp2(k,h) ) ) &
+                    / abs( gr%invrs_dzm(i,k) &
+                           * ( hydromet(kp1,h) - hydromet(k,h) ) ) )
 
           endif ! | d<hm>/dz | > 0
 

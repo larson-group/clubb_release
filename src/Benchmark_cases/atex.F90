@@ -102,18 +102,18 @@ module atex
        err_code = clubb_fatal_error
        return
      end if
-     z_inversion = gr%zt(i-1)
+     z_inversion = gr%zt(1,i-1)
 
   !          Large scale subsidence
 
      do i = 2, gr%nz
 
-        if ( gr%zt(i) > 0._core_rknd .and. gr%zt(i) <= z_inversion ) then
+        if ( gr%zt(1,i) > 0._core_rknd .and. gr%zt(1,i) <= z_inversion ) then
            wm_zt(i)  & 
-             = -0.0065_core_rknd * gr%zt(i)/z_inversion ! Known magic number
-        else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300._core_rknd ) then
+             = -0.0065_core_rknd * gr%zt(1,i)/z_inversion ! Known magic number
+        else if ( gr%zt(1,i) > z_inversion .and. gr%zt(1,i) <= z_inversion+300._core_rknd ) then
            wm_zt(i) & 
-             = - 0.0065_core_rknd * ( 1._core_rknd - (gr%zt(i)-z_inversion)/&
+             = - 0.0065_core_rknd * ( 1._core_rknd - (gr%zt(1,i)-z_inversion)/&
                  300._core_rknd ) ! Known magic number
         else
            wm_zt(i) = 0._core_rknd
@@ -132,12 +132,12 @@ module atex
 
      do i = 2, gr%nz
 
-        if ( gr%zt(i) > 0._core_rknd .and. gr%zt(i) < z_inversion ) then
+        if ( gr%zt(1,i) > 0._core_rknd .and. gr%zt(1,i) < z_inversion ) then
            thlm_forcing(i) = -1.1575e-5_core_rknd * ( 3._core_rknd - &
-             gr%zt(i)/z_inversion ) ! Known magic number
-        else if ( gr%zt(i) > z_inversion .and. gr%zt(i) <= z_inversion+300._core_rknd ) then
+             gr%zt(1,i)/z_inversion ) ! Known magic number
+        else if ( gr%zt(1,i) > z_inversion .and. gr%zt(1,i) <= z_inversion+300._core_rknd ) then
            thlm_forcing(i) = -2.315e-5_core_rknd * ( 1._core_rknd - &
-             (gr%zt(i)-z_inversion)/300._core_rknd ) ! Known magic number
+             (gr%zt(1,i)-z_inversion)/300._core_rknd ) ! Known magic number
         else
            thlm_forcing(i) = 0.0_core_rknd
         end if
@@ -147,9 +147,9 @@ module atex
      ! Moisture tendency
      do i = 2, gr%nz
 
-        if ( gr%zt(i) > 0._core_rknd .and. gr%zt(i) < z_inversion ) then
+        if ( gr%zt(1,i) > 0._core_rknd .and. gr%zt(1,i) < z_inversion ) then
            rtm_forcing(i) = -1.58e-8_core_rknd * ( 1._core_rknd - &
-             gr%zt(i)/z_inversion )  ! Brian - known magic number
+             gr%zt(1,i)/z_inversion )  ! Brian - known magic number
         else
            rtm_forcing(i) = 0.0_core_rknd       ! Brian
         end if

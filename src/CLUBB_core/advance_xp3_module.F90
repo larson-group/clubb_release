@@ -67,7 +67,7 @@ module advance_xp3_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
   
     real( kind = core_rknd ), intent(in) :: &
       dt                 ! Model timestep                            [s]
@@ -296,7 +296,7 @@ module advance_xp3_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
   
     integer, intent(in) :: &
       solve_type    ! Flag for solving for rtp3, thlp3, or sclrp3
@@ -408,11 +408,11 @@ module advance_xp3_module
         term_tp(i,k) = term_tp_rhs( xp2_zt(i,k), wpxp(i,k), wpxp(i,km1), &
                                     rho_ds_zm(i,k), rho_ds_zm(i,km1), &
                                     invrs_rho_ds_zt(i,k), &
-                                    gr(i)%invrs_dzt(k) )
+                                    gr%invrs_dzt(i,k) )
 
         ! Calculate the <x'^3> accumulation (ac) term.
         term_ac(i,k) = term_ac_rhs( xm_zm(i,k), xm_zm(i,km1), wpxp2(i,k), &
-                                  gr(i)%invrs_dzt(k) )
+                                  gr%invrs_dzt(i,k) )
 
         if ( l_predict_xp3 ) then
 

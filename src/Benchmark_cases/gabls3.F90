@@ -74,7 +74,7 @@ module gabls3
       thlm_sfc,     & ! Theta_l at zt(2)       [K]
       rtm_sfc,      & ! rt at zt(2)            [kg/kg]
       veg_T_in_K,   & ! Vegetation temperature [K]
-      lowest_level, & ! gr%zt(2)               [m]
+      lowest_level, & ! gr%zt(1,2)               [m]
       exner_sfc       ! Exner function         [-]
 
     ! Output variables

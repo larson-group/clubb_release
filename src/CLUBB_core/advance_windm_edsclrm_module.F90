@@ -134,7 +134,7 @@ module advance_windm_edsclrm_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
   
     real( kind = core_rknd ), intent(in) ::  &
@@ -293,8 +293,8 @@ module advance_windm_edsclrm_module
     
     if ( .not. l_implemented ) then
       do i = 1, ngrdcol
-        call term_ma_zt_lhs( nz, wm_zt(i,:), gr(i)%weights_zt2zm(:,:),  & ! intent(in)
-                             gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),    & ! intent(in)
+        call term_ma_zt_lhs( nz, wm_zt(i,:), gr%weights_zt2zm(i,:,:), & ! intent(in)
+                             gr%invrs_dzt(i,:), gr%invrs_dzm(i,:),    & ! intent(in)
                              l_upwind_xm_ma,                          & ! intent(in)
                              lhs_ma_zt(:,i,:) )                         ! intent(out)
       end do
@@ -316,12 +316,12 @@ module advance_windm_edsclrm_module
         
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-          lhs_diff(kp1_tdiag,i,2) = - gr(i)%invrs_dzt(2) * invrs_rho_ds_zt(i,2) &
-                                    * ( Km_zm(i,2) + nu10(i) ) * rho_ds_zm(i,2) * gr(i)%invrs_dzm(2)
+          lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
+                                    * ( Km_zm(i,2) + nu10(i) ) * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
 
           ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-          lhs_diff(k_tdiag,i,2) = + gr(i)%invrs_dzt(2) * invrs_rho_ds_zt(i,2) &
-                                  * ( Km_zm(i,2) + nu10(i) ) * rho_ds_zm(i,2) * gr(i)%invrs_dzm(2)
+          lhs_diff(k_tdiag,i,2) = + gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
+                                  * ( Km_zm(i,2) + nu10(i) ) * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
 
           ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
           lhs_diff(km1_tdiag,i,2) = zero
@@ -331,12 +331,12 @@ module advance_windm_edsclrm_module
 
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-          lhs_diff(kp1_tdiag,i,2) = - gr(i)%invrs_dzt(2) &
-                                      * ( Km_zt(i,2) + nu10(i) ) * gr(i)%invrs_dzm(2)
+          lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) &
+                                      * ( Km_zt(i,2) + nu10(i) ) * gr%invrs_dzm(i,2)
 
           ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-          lhs_diff(k_tdiag,i,2) = + gr(i)%invrs_dzt(2) &
-                                    * ( Km_zt(i,2) + nu10(i) ) * gr(i)%invrs_dzm(2)
+          lhs_diff(k_tdiag,i,2) = + gr%invrs_dzt(i,2) &
+                                    * ( Km_zt(i,2) + nu10(i) ) * gr%invrs_dzm(i,2)
 
           ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
           lhs_diff(km1_tdiag,i,2) = zero
@@ -460,7 +460,7 @@ module advance_windm_edsclrm_module
         do i = 1, ngrdcol
           ! Implicit contributions to um and vm
           call windm_edsclrm_implicit_stats( nz, windm_edsclrm_um, um(i,:),       & ! intent(in)
-                                             gr(i)%invrs_dzt,                     & ! intent(in)
+                                             gr%invrs_dzt(i,:),                     & ! intent(in)
                                              lhs_diff(:,i,:), lhs_ma_zt(:,i,:),   & ! intent(in)
                                              invrs_rho_ds_zt(i,:), u_star_sqd(i), & ! intent(in)
                                              rho_ds_zm(i,:), wind_speed(i,:),     & ! intent(in)
@@ -468,7 +468,7 @@ module advance_windm_edsclrm_module
                                              stats_zt(i) )                          ! intent(inout)
 
           call windm_edsclrm_implicit_stats( nz, windm_edsclrm_vm, vm(i,:),       & ! intent(in)
-                                             gr(i)%invrs_dzt,                     & ! intent(in)
+                                             gr%invrs_dzt(i,:),                     & ! intent(in)
                                              lhs_diff(:,i,:), lhs_ma_zt(:,i,:),   & ! intent(in)
                                              invrs_rho_ds_zt(i,:), u_star_sqd(i), & ! intent(in)
                                              rho_ds_zm(i,:), wind_speed(i,:),     & ! intent(in)
@@ -514,12 +514,12 @@ module advance_windm_edsclrm_module
         end if
 
         do i = 1, ngrdcol
-          um(i,1:nz) = sponge_damp_xm( nz, dt, gr(i)%zt, gr(i)%zm, &
+          um(i,1:nz) = sponge_damp_xm( nz, dt, gr%zt(i,:), gr%zm(i,:), &
                                        um_ref(i,1:nz), um(i,1:nz), uv_sponge_damp_profile )
         end do
 
         do i = 1, ngrdcol
-          vm(i,1:nz) = sponge_damp_xm( nz, dt, gr(i)%zt, gr(i)%zm, &
+          vm(i,1:nz) = sponge_damp_xm( nz, dt, gr%zt(i,:), gr%zm(i,:), &
                                        vm_ref(i,1:nz), vm(i,1:nz), uv_sponge_damp_profile )
         end do
 
@@ -863,14 +863,14 @@ module advance_windm_edsclrm_module
         
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-          lhs_diff(kp1_tdiag,i,2) = - gr(i)%invrs_dzt(2) * invrs_rho_ds_zt(i,2) &
+          lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
                                     * ( Kmh_zm(i,2) + nu_zero(i) ) &
-                                    * rho_ds_zm(i,2) * gr(i)%invrs_dzm(2)
+                                    * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
 
           ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-          lhs_diff(k_tdiag,i,2) = + gr(i)%invrs_dzt(2) * invrs_rho_ds_zt(i,2) &
+          lhs_diff(k_tdiag,i,2) = + gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
                                   * ( Kmh_zm(i,2) + nu_zero(i) ) &
-                                  * rho_ds_zm(i,2) * gr(i)%invrs_dzm(2)
+                                  * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
 
           ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
           lhs_diff(km1_tdiag,i,2) = zero
@@ -879,12 +879,12 @@ module advance_windm_edsclrm_module
       else
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-          lhs_diff(kp1_tdiag,i,2) = - gr(i)%invrs_dzt(2) &
-                                      * ( Kmh_zt(i,2) + nu_zero(i) ) * gr(i)%invrs_dzm(2)
+          lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) &
+                                      * ( Kmh_zt(i,2) + nu_zero(i) ) * gr%invrs_dzm(i,2)
 
           ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-          lhs_diff(k_tdiag,i,2) = + gr(i)%invrs_dzt(2) &
-                                    * ( Kmh_zt(i,2) + nu_zero(i) ) * gr(i)%invrs_dzm(2)
+          lhs_diff(k_tdiag,i,2) = + gr%invrs_dzt(i,2) &
+                                    * ( Kmh_zt(i,2) + nu_zero(i) ) * gr%invrs_dzm(i,2)
 
           ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
           lhs_diff(km1_tdiag,i,2) = zero
@@ -1389,7 +1389,7 @@ module advance_windm_edsclrm_module
     ! condition needs to be applied.  Thus, an adjuster will have to be used at
     ! level 2 to call diffusion_zt_lhs with level 1 as the input level (the last
     ! variable being passed in during the function call).  However, the other
-    ! variables passed in (rho_ds_zm*K_zm, gr%dzt, and gr%dzm variables) will
+    ! variables passed in (rho_ds_zm*K_zm, gr%dzt(1,:), and gr%dzm(1,:) variables) will
     ! have to be passed in as solving for level 2.
     !
     ! The value of xm(1) is located below the model surface and does not effect
@@ -1575,7 +1575,7 @@ module advance_windm_edsclrm_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     integer, intent(in) :: &
       nrhs ! Number of right-hand side (explicit) vectors & Number of solution vectors.
@@ -1851,7 +1851,7 @@ module advance_windm_edsclrm_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     integer, intent(in) ::  &
       solve_type      ! Description of what is being solved for
@@ -2012,7 +2012,7 @@ module advance_windm_edsclrm_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) :: & 
       dt                 ! Model timestep                             [s]
@@ -2084,7 +2084,7 @@ module advance_windm_edsclrm_module
 
       ! LHS momentum surface flux.
       do i = 1, ngrdcol
-        lhs(2,i,2) = lhs(2,i,2) + invrs_rho_ds_zt(i,2) * gr(i)%invrs_dzt(2) &
+        lhs(2,i,2) = lhs(2,i,2) + invrs_rho_ds_zt(i,2) * gr%invrs_dzt(i,2) &
                                   * rho_ds_zm(i,1) * ( u_star_sqd(i) / wind_speed(i,2) )
       end do
       
@@ -2151,7 +2151,7 @@ module advance_windm_edsclrm_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     integer, intent(in) :: &
       solve_type ! Description of what is being solved for
@@ -2260,7 +2260,7 @@ module advance_windm_edsclrm_module
       ! RHS generalized surface flux.
       do i = 1, ngrdcol
         rhs(i,2) = rhs(i,2) + invrs_rho_ds_zt(i,2)  &
-                              * gr(i)%invrs_dzt(2)  &
+                              * gr%invrs_dzt(i,2)  &
                               * rho_ds_zm(i,1) * xpwp_sfc(i)
       end do
 
@@ -2268,7 +2268,7 @@ module advance_windm_edsclrm_module
         do i = 1, ngrdcol
           call stat_modify_pt( ixm_ta, 2,  &                    ! intent(in)  
                              + invrs_rho_ds_zt(i,2)  &  
-                             * gr(i)%invrs_dzt(2)  &
+                             * gr%invrs_dzt(i,2)  &
                              * rho_ds_zm(i,1) * xpwp_sfc(i),  & ! intent(in)
                                stats_zt(i) )                    ! intent(inout)
         end do

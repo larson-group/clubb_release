@@ -63,7 +63,7 @@ module astex_a209
 
     do i=2,gr%nz
 
-      wm_zt(i) = - 5.e-6_core_rknd * gr%zt(i)
+      wm_zt(i) = - 5.e-6_core_rknd * gr%zt(1,i)
 
     end do
 

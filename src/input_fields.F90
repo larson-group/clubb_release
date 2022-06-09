@@ -423,44 +423,44 @@ module inputfields
 
       call get_clubb_variable_interpolated &
            ( l_input_um, stat_files(clubb_zt), "um", gr%nz, timestep, &
-             gr%zt, um, l_read_error )
+             gr%zt(1,:), um, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_vm, stat_files(clubb_zt), "vm", gr%nz, timestep, &
-             gr%zt, vm, l_read_error )
+             gr%zt(1,:), vm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rtm, stat_files(clubb_zt), "rtm", gr%nz, timestep, &
-             gr%zt, rtm, l_read_error )
+             gr%zt(1,:), rtm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
            ( l_input_thlm, stat_files(clubb_zt), "thlm", gr%nz, timestep, &
-             gr%zt, thlm, l_read_error )
+             gr%zt(1,:), thlm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wp3, stat_files(clubb_zt), "wp3", gr%nz, timestep, &
-             gr%zt, wp3, l_read_error )
+             gr%zt(1,:), wp3, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_tau_zt, stat_files(clubb_zt), "tau_zt", gr%nz, timestep, &
-             gr%zt, tau_zt, l_read_error )
+             gr%zt(1,:), tau_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rrm, stat_files(clubb_zt), "rrm", gr%nz, timestep, & 
-             gr%zt, tmp1(1:gr%nz), l_read_error )
+             gr%zt(1,:), tmp1(1:gr%nz), l_read_error )
       if ( l_input_rrm ) then
         hydromet(1:gr%nz,iirr) = tmp1(1:gr%nz)
       end if
@@ -468,7 +468,7 @@ module inputfields
 
       call get_clubb_variable_interpolated &
            ( l_input_rsm, stat_files(clubb_zt), "rsm", gr%nz, timestep, & 
-             gr%zt, tmp1(1:gr%nz), l_read_error )
+             gr%zt(1,:), tmp1(1:gr%nz), l_read_error )
       if ( l_input_rsm ) then
         hydromet(1:gr%nz,iirs) = tmp1(1:gr%nz)
       end if
@@ -476,7 +476,7 @@ module inputfields
 
       call get_clubb_variable_interpolated &
            ( l_input_rim, stat_files(clubb_zt), "rim", gr%nz, timestep, & 
-             gr%zt, tmp1(1:gr%nz), l_read_error )
+             gr%zt(1,:), tmp1(1:gr%nz), l_read_error )
       if ( l_input_rim ) then
         hydromet(1:gr%nz,iiri) = tmp1(1:gr%nz)
       end if
@@ -484,7 +484,7 @@ module inputfields
 
       call get_clubb_variable_interpolated &
            ( l_input_rgm, stat_files(clubb_zt), "rgm", gr%nz, timestep, & 
-             gr%zt, tmp1(1:gr%nz), l_read_error )
+             gr%zt(1,:), tmp1(1:gr%nz), l_read_error )
       if ( l_input_rgm ) then
         hydromet(1:gr%nz,iirg) = tmp1(1:gr%nz)
       end if
@@ -494,104 +494,104 @@ module inputfields
 ! Added variables for clubb_restart
       call get_clubb_variable_interpolated &
            ( l_input_p, stat_files(clubb_zt), "p_in_Pa", gr%nz, timestep, &
-             gr%zt, p_in_Pa, l_read_error )
+             gr%zt(1,:), p_in_Pa, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_exner, stat_files(clubb_zt), "exner", gr%nz, timestep, &
-             gr%zt, exner, l_read_error )
+             gr%zt(1,:), exner, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_ug, stat_files(clubb_zt), "ug", gr%nz, timestep, &
-             gr%zt, ug, l_read_error )
+             gr%zt(1,:), ug, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_vg, stat_files(clubb_zt), "vg", gr%nz, timestep, &
-             gr%zt, vg, l_read_error )
+             gr%zt(1,:), vg, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rcm, stat_files(clubb_zt), "rcm", gr%nz, timestep, &
-             gr%zt, rcm, l_read_error )
+             gr%zt(1,:), rcm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wm_zt, stat_files(clubb_zt), "wm", gr%nz, timestep, &
-             gr%zt, wm_zt, l_read_error )
+             gr%zt(1,:), wm_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
            ( l_input_rho, stat_files(clubb_zt), "rho", gr%nz, timestep, &
-             gr%zt, rho, l_read_error )
+             gr%zt(1,:), rho, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rho_ds_zt, stat_files(clubb_zt), "rho_ds_zt", gr%nz, timestep, &
-             gr%zt, rho_ds_zt, l_read_error )
+             gr%zt(1,:), rho_ds_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_thv_ds_zt, stat_files(clubb_zt), "thv_ds_zt", gr%nz, timestep, &
-             gr%zt, thv_ds_zt, l_read_error )
+             gr%zt(1,:), thv_ds_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_Lscale, stat_files(clubb_zt), "Lscale", gr%nz, timestep, &
-             gr%zt, Lscale, l_read_error )
+             gr%zt(1,:), Lscale, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_Lscale_up, stat_files(clubb_zt), "Lscale_up", gr%nz, timestep, &
-             gr%zt, Lscale_up, l_read_error )
+             gr%zt(1,:), Lscale_up, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_Lscale_down, stat_files(clubb_zt), "Lscale_down", gr%nz, timestep, &
-             gr%zt, Lscale_down, l_read_error )
+             gr%zt(1,:), Lscale_down, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_Kh_zt, stat_files(clubb_zt), "Kh_zt", gr%nz, timestep, &
-             gr%zt, Kh_zt, l_read_error )
+             gr%zt(1,:), Kh_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_thvm, stat_files(clubb_zt), "thvm", gr%nz, timestep, &
-             gr%zt, thvm, l_read_error )
+             gr%zt(1,:), thvm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_thlm_forcing, stat_files(clubb_zt), "thlm_forcing", gr%nz, timestep, &
-             gr%zt, thlm_forcing, l_read_error )
+             gr%zt(1,:), thlm_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rtm_forcing, stat_files(clubb_zt), "rtm_forcing", gr%nz, timestep, &
-             gr%zt, rtm_forcing, l_read_error )
+             gr%zt(1,:), rtm_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_Ncm, stat_files(clubb_zt), "Ncm", gr%nz, timestep, &
-             gr%zt, tmp1(1:gr%nz), l_read_error )
+             gr%zt(1,:), tmp1(1:gr%nz), l_read_error )
       if ( l_input_Ncm ) then
          Ncm(1:gr%nz) = tmp1(1:gr%nz)
       end if
@@ -600,13 +600,13 @@ module inputfields
 
       call get_clubb_variable_interpolated &
            ( l_input_Nccnm, stat_files(clubb_zt), "Nccnm", gr%nz, timestep, &
-             gr%zt, Nccnm, l_read_error )
+             gr%zt(1,:), Nccnm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_Nim, stat_files(clubb_zt), "Nim", gr%nz, timestep, &
-             gr%zt, tmp1(1:gr%nz), l_read_error )
+             gr%zt(1,:), tmp1(1:gr%nz), l_read_error )
       if ( l_input_Nim ) then
         hydromet(1:gr%nz, iiNi) = tmp1(1:gr%nz)
       end if
@@ -615,13 +615,13 @@ module inputfields
 
       call get_clubb_variable_interpolated &
            ( l_input_cloud_frac, stat_files(clubb_zt), "cloud_frac", gr%nz, timestep, &
-             gr%zt, cloud_frac, l_read_error )
+             gr%zt(1,:), cloud_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_Nrm, stat_files(clubb_zt), "Nrm", gr%nz, timestep, &
-             gr%zt, tmp1(1:gr%nz), l_read_error )
+             gr%zt(1,:), tmp1(1:gr%nz), l_read_error )
       if ( l_input_Nrm ) then
         hydromet(1:gr%nz, iiNr) = tmp1(1:gr%nz)
       end if
@@ -630,170 +630,170 @@ module inputfields
 
       call get_clubb_variable_interpolated &
            ( l_input_sigma_sqd_w_zt, stat_files(clubb_zt), "sigma_sqd_w_zt", &
-             gr%nz, timestep, gr%zt, sigma_sqd_w_zt, l_read_error )
+             gr%nz, timestep, gr%zt(1,:), sigma_sqd_w_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wp2thvp, stat_files(clubb_zt), "wp2thvp", gr%nz, &
-             timestep, gr%zt, wp2thvp, l_read_error )
+             timestep, gr%zt(1,:), wp2thvp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wp2rtp, stat_files(clubb_zt), "wp2rtp", gr%nz, &
-             timestep, gr%zt, wp2rtp, l_read_error )
+             timestep, gr%zt(1,:), wp2rtp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wp2thlp, stat_files(clubb_zt), "wp2thlp", gr%nz, &
-             timestep, gr%zt, wp2thlp, l_read_error )
+             timestep, gr%zt(1,:), wp2thlp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wpup2, stat_files(clubb_zt), "wpup2", gr%nz, &
-             timestep, gr%zt, wpup2, l_read_error )
+             timestep, gr%zt(1,:), wpup2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wpvp2, stat_files(clubb_zt), "wpvp2", gr%nz, &
-             timestep, gr%zt, wpvp2, l_read_error )
+             timestep, gr%zt(1,:), wpvp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rc_coef, stat_files(clubb_zt), "rc_coef", gr%nz, &
-             timestep, gr%zt, rc_coef, l_read_error )
+             timestep, gr%zt(1,:), rc_coef, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_iss_frac, stat_files(clubb_zt), "ice_supersat_frac", gr%nz, &
-             timestep, gr%zt, ice_supersat_frac, l_read_error )
+             timestep, gr%zt(1,:), ice_supersat_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_radht, stat_files(clubb_zt), "radht", gr%nz, timestep, &
-             gr%zt, radht, l_read_error )
+             gr%zt(1,:), radht, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       ! PDF Parameters (needed for CLUBB restarts)
       call get_clubb_variable_interpolated &
            ( l_input_w_1, stat_files(clubb_zt), "w_1", gr%nz, timestep, &
-             gr%zt, pdf_params%w_1(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%w_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_w_2, stat_files(clubb_zt), "w_2", gr%nz, timestep, &
-             gr%zt, pdf_params%w_2(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%w_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_varnce_w_1, stat_files(clubb_zt), "varnce_w_1", gr%nz, &
-             timestep, gr%zt, pdf_params%varnce_w_1(1,:), l_read_error )
+             timestep, gr%zt(1,:), pdf_params%varnce_w_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_varnce_w_2, stat_files(clubb_zt), "varnce_w_2", gr%nz, &
-             timestep, gr%zt, pdf_params%varnce_w_2(1,:), l_read_error )
+             timestep, gr%zt(1,:), pdf_params%varnce_w_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rt_1, stat_files(clubb_zt), "rt_1", gr%nz, timestep, &
-             gr%zt, pdf_params%rt_1(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%rt_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rt_2, stat_files(clubb_zt), "rt_2", gr%nz, timestep, &
-             gr%zt, pdf_params%rt_2(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%rt_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_varnce_rt_1, stat_files(clubb_zt), "varnce_rt_1", gr%nz, &
-             timestep, gr%zt, pdf_params%varnce_rt_1(1,:), l_read_error )
+             timestep, gr%zt(1,:), pdf_params%varnce_rt_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_varnce_rt_2, stat_files(clubb_zt), "varnce_rt_2", gr%nz, &
-             timestep, gr%zt, pdf_params%varnce_rt_2(1,:), l_read_error )
+             timestep, gr%zt(1,:), pdf_params%varnce_rt_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_thl_1, stat_files(clubb_zt), "thl_1", gr%nz, timestep, &
-             gr%zt, pdf_params%thl_1(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%thl_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_thl_2, stat_files(clubb_zt), "thl_2", gr%nz, timestep, &
-             gr%zt, pdf_params%thl_2(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%thl_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_varnce_thl_1, stat_files(clubb_zt), "varnce_thl_1", &
-             gr%nz, timestep, gr%zt, pdf_params%varnce_thl_1(1,:), l_read_error )
+             gr%nz, timestep, gr%zt(1,:), pdf_params%varnce_thl_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_varnce_thl_2, stat_files(clubb_zt), "varnce_thl_2", &
-             gr%nz, timestep, gr%zt, pdf_params%varnce_thl_2(1,:), l_read_error )
+             gr%nz, timestep, gr%zt(1,:), pdf_params%varnce_thl_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_mixt_frac, stat_files(clubb_zt), "mixt_frac", gr%nz, &
-             timestep, gr%zt, pdf_params%mixt_frac(1,:), l_read_error )
+             timestep, gr%zt(1,:), pdf_params%mixt_frac(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_chi_1, stat_files(clubb_zt), "chi_1", gr%nz, timestep, &
-             gr%zt, pdf_params%chi_1(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%chi_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_chi_2, stat_files(clubb_zt), "chi_2", gr%nz, timestep, &
-             gr%zt, pdf_params%chi_2(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%chi_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_stdev_chi_1, stat_files(clubb_zt), "stdev_chi_1", gr%nz, &
-             timestep, gr%zt, pdf_params%stdev_chi_1(1,:), l_read_error )
+             timestep, gr%zt(1,:), pdf_params%stdev_chi_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_stdev_chi_2, stat_files(clubb_zt), "stdev_chi_2", gr%nz, &
-             timestep, gr%zt, pdf_params%stdev_chi_2(1,:), l_read_error )
+             timestep, gr%zt(1,:), pdf_params%stdev_chi_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rc_1, stat_files(clubb_zt), "rc_1", gr%nz, timestep, &
-             gr%zt, pdf_params%rc_1(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%rc_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rc_2, stat_files(clubb_zt), "rc_2", gr%nz, timestep, &
-             gr%zt, pdf_params%rc_2(1,:), l_read_error )
+             gr%zt(1,:), pdf_params%rc_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -806,223 +806,223 @@ module inputfields
 
       call get_clubb_variable_interpolated &
            ( l_input_wp2, stat_files(clubb_zm), "wp2", gr%nz, timestep, &
-             gr%zm, wp2, l_read_error )
+             gr%zm(1,:), wp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wprtp, stat_files(clubb_zm), "wprtp", gr%nz, timestep, &
-             gr%zm, wprtp, l_read_error )
+             gr%zm(1,:), wprtp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wpthlp, stat_files(clubb_zm), "wpthlp", gr%nz, timestep, &
-             gr%zm, wpthlp, l_read_error )
+             gr%zm(1,:), wpthlp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wpthvp, stat_files(clubb_zm), "wpthvp", gr%nz, timestep, &
-             gr%zm, wpthvp, l_read_error )
+             gr%zm(1,:), wpthvp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rtpthvp, stat_files(clubb_zm), "rtpthvp", gr%nz, &
-             timestep, gr%zm, rtpthvp, l_read_error )
+             timestep, gr%zm(1,:), rtpthvp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_thlpthvp, stat_files(clubb_zm), "thlpthvp", gr%nz, &
-             timestep, gr%zm, thlpthvp, l_read_error )
+             timestep, gr%zm(1,:), thlpthvp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rtp2, stat_files(clubb_zm), "rtp2", gr%nz, timestep, &
-             gr%zm, rtp2, l_read_error )
+             gr%zm(1,:), rtp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_thlp2, stat_files(clubb_zm), "thlp2", gr%nz, timestep, &
-             gr%zm, thlp2, l_read_error )
+             gr%zm(1,:), thlp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rtpthlp, stat_files(clubb_zm), "rtpthlp", gr%nz, timestep, &
-             gr%zm, rtpthlp, l_read_error )
+             gr%zm(1,:), rtpthlp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_upwp, stat_files(clubb_zm), "upwp", gr%nz, timestep, &
-             gr%zm, upwp, l_read_error )
+             gr%zm(1,:), upwp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_vpwp, stat_files(clubb_zm), "vpwp", gr%nz, timestep, &
-             gr%zm, vpwp, l_read_error )
+             gr%zm(1,:), vpwp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 !-----------------------------------------------------------
       call get_clubb_variable_interpolated &
            ( l_input_em, stat_files(clubb_zm), "em", gr%nz, timestep, &
-             gr%zm, em, l_read_error )
+             gr%zm(1,:), em, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rho_zm, stat_files(clubb_zm), "rho_zm", gr%nz, timestep, &
-             gr%zm, rho_zm, l_read_error )
+             gr%zm(1,:), rho_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rho_ds_zm, stat_files(clubb_zm), "rho_ds_zm", gr%nz, timestep, &
-             gr%zm, rho_ds_zm, l_read_error )
+             gr%zm(1,:), rho_ds_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_thv_ds_zm, stat_files(clubb_zm), "thv_ds_zm", gr%nz, timestep, &
-             gr%zm, thv_ds_zm, l_read_error )
+             gr%zm(1,:), thv_ds_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_Kh_zm, stat_files(clubb_zm), "Kh_zm", gr%nz, timestep, &
-             gr%zm, Kh_zm, l_read_error )
+             gr%zm(1,:), Kh_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_tau_zm, stat_files(clubb_zm), "tau_zm", gr%nz, timestep, &
-             gr%zm, tau_zm, l_read_error )
+             gr%zm(1,:), tau_zm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_up2, stat_files(clubb_zm), "up2", gr%nz, timestep, &
-             gr%zm, up2, l_read_error )
+             gr%zm(1,:), up2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_vp2, stat_files(clubb_zm), "vp2", gr%nz, timestep, &
-             gr%zm, vp2, l_read_error )
+             gr%zm(1,:), vp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wp4, stat_files(clubb_zm), "wp4", gr%nz, timestep, &
-             gr%zm, wp4, l_read_error )
+             gr%zm(1,:), wp4, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_uprcp, stat_files(clubb_zm), "uprcp", gr%nz, timestep, &
-             gr%zm, uprcp, l_read_error )
+             gr%zm(1,:), uprcp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_vprcp, stat_files(clubb_zm), "vprcp", gr%nz, timestep, &
-             gr%zm, vprcp, l_read_error )
+             gr%zm(1,:), vprcp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wp2up2, stat_files(clubb_zm), "wp2up2", gr%nz, timestep, &
-             gr%zm, wp2up2, l_read_error )
+             gr%zm(1,:), wp2up2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wp2vp2, stat_files(clubb_zm), "wp2vp2", gr%nz, timestep, &
-             gr%zm, wp2vp2, l_read_error )
+             gr%zm(1,:), wp2vp2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_sigma_sqd_w, stat_files(clubb_zm), "sigma_sqd_w", gr%nz, timestep, &
-             gr%zm, sigma_sqd_w, l_read_error )
+             gr%zm(1,:), sigma_sqd_w, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wprtp_forcing, stat_files(clubb_zm), "wprtp_forcing", &
-             gr%nz, timestep, gr%zm, wprtp_forcing, l_read_error )
+             gr%nz, timestep, gr%zm(1,:), wprtp_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
            ( l_input_wpthlp_forcing, stat_files(clubb_zm), "wpthlp_forcing", &
-             gr%nz, timestep, gr%zm, wpthlp_forcing, l_read_error )
+             gr%nz, timestep, gr%zm(1,:), wpthlp_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
            ( l_input_rtp2_forcing, stat_files(clubb_zm), "rtp2_forcing", &
-             gr%nz, timestep, gr%zm, rtp2_forcing, l_read_error )
+             gr%nz, timestep, gr%zm(1,:), rtp2_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
            ( l_input_thlp2_forcing, stat_files(clubb_zm), "thlp2_forcing", &
-             gr%nz, timestep, gr%zm, thlp2_forcing, l_read_error )
+             gr%nz, timestep, gr%zm(1,:), thlp2_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rtpthlp_forcing, stat_files(clubb_zm), "rtpthlp_forcing", &
-             gr%nz, timestep, gr%zm, rtpthlp_forcing, l_read_error )
+             gr%nz, timestep, gr%zm(1,:), rtpthlp_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
            ( l_input_thlprcp, stat_files(clubb_zm), "thlprcp", gr%nz, timestep, &
-             gr%zm, thlprcp, l_read_error )
+             gr%zm(1,:), thlprcp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       ! PDF Parameters (needed for CLUBB restarts)
       call get_clubb_variable_interpolated &
            ( l_input_w_1_zm, stat_files(clubb_zm), "w_1_zm", gr%nz, timestep, &
-             gr%zm, pdf_params_zm%w_1(1,:), l_read_error )
+             gr%zm(1,:), pdf_params_zm%w_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_w_2_zm, stat_files(clubb_zm), "w_2_zm", gr%nz, timestep, &
-             gr%zm, pdf_params_zm%w_2(1,:), l_read_error )
+             gr%zm(1,:), pdf_params_zm%w_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_varnce_w_1_zm, stat_files(clubb_zm), "varnce_w_1_zm", &
-             gr%nz, timestep, gr%zm, pdf_params_zm%varnce_w_1(1,:), l_read_error )
+             gr%nz, timestep, gr%zm(1,:), pdf_params_zm%varnce_w_1(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_varnce_w_2_zm, stat_files(clubb_zm), "varnce_w_2_zm", &
-             gr%nz, timestep, gr%zm, pdf_params_zm%varnce_w_2(1,:), l_read_error )
+             gr%nz, timestep, gr%zm(1,:), pdf_params_zm%varnce_w_2(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_mixt_frac_zm, stat_files(clubb_zm), "mixt_frac_zm", &
-             gr%nz, timestep, gr%zm, pdf_params_zm%mixt_frac(1,:), l_read_error )
+             gr%nz, timestep, gr%zm(1,:), pdf_params_zm%mixt_frac(1,:), l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -1648,7 +1648,7 @@ module inputfields
         if ( k_lowest_zt(coamps_sm) == 2 ) then
           um(1)  & 
           = lin_ext_zt_bottom( um(3), um(2), & 
-                               gr%zt(3), gr%zt(2), gr%zt(1) )
+                               gr%zt(1,3), gr%zt(1,2), gr%zt(1,1) )
 
         endif
       endif
@@ -1660,7 +1660,7 @@ module inputfields
         ! thermodynamic level 1 through the use of a linear extension.
         if ( k_lowest_zt(coamps_sm) == 2 ) then
           vm(1) = lin_ext_zt_bottom( vm(3), vm(2), & 
-                                     gr%zt(3), gr%zt(2), gr%zt(1) )
+                                     gr%zt(1,3), gr%zt(1,2), gr%zt(1,1) )
         endif
       endif
 
@@ -1738,7 +1738,7 @@ module inputfields
         ! like surface_varnce.
         if ( k_lowest_zm(coamps_sm) == 2 ) then
           wprtp(1) = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
-                                        gr%zm(3), gr%zm(2), gr%zm(1) )
+                                        gr%zm(1,3), gr%zm(1,2), gr%zm(1,1) )
         endif
       endif
 
@@ -1751,7 +1751,7 @@ module inputfields
         ! like surface_varnce.
         if ( k_lowest_zm(coamps_sm) == 2 ) then
           wpthlp(1) = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
-                                         gr%zm(3), gr%zm(2), gr%zm(1) )
+                                         gr%zm(1,3), gr%zm(1,2), gr%zm(1,1) )
         endif
       endif
 
@@ -1792,7 +1792,7 @@ module inputfields
         ! like surface_varnce.
         if ( k_lowest_zm(coamps_sm) == 2 ) then
           rtpthlp(1) = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
-                                          gr%zm(3), gr%zm(2), gr%zm(1) )
+                                          gr%zm(1,3), gr%zm(1,2), gr%zm(1,1) )
         endif
       endif
 
@@ -2490,23 +2490,23 @@ module inputfields
         ! grid to the momentum grid. See CLUBB Equations 170 and 171.
         if( k < gr%nz) then
           if(l_input_up2) then
-            up2(k) = ( (up2(k+1) - up2(k))/(gr%zt(k+1) - gr%zt(k)) ) &
-                     * (gr%zm(k) - gr%zt(k)) + up2(k)
+            up2(k) = ( (up2(k+1) - up2(k))/(gr%zt(1,k+1) - gr%zt(1,k)) ) &
+                     * (gr%zm(1,k) - gr%zt(1,k)) + up2(k)
           end if
 
           if(l_input_vp2) then
-            vp2(k) = ( (vp2(k+1) - vp2(k))/(gr%zt(k+1) - gr%zt(k)) ) &
-                     * (gr%zm(k) - gr%zt(k)) + vp2(k)
+            vp2(k) = ( (vp2(k+1) - vp2(k))/(gr%zt(1,k+1) - gr%zt(1,k)) ) &
+                     * (gr%zm(1,k) - gr%zt(1,k)) + vp2(k)
           end if
         else ! k = gr%nz
           if(l_input_up2) then
-            up2(k) = ( (up2(k) - up2(k-1))/(gr%zt(k) - gr%zt(k-1)) ) &
-                     * (gr%zm(k) - gr%zt(k)) + up2(k)
+            up2(k) = ( (up2(k) - up2(k-1))/(gr%zt(1,k) - gr%zt(1,k-1)) ) &
+                     * (gr%zm(1,k) - gr%zt(1,k)) + up2(k)
           end if
 
           if(l_input_vp2) then
-            vp2(k) = ( (vp2(k) - vp2(k-1))/(gr%zt(k) - gr%zt(k-1)) ) &
-                     * (gr%zm(k) - gr%zt(k)) + vp2(k)
+            vp2(k) = ( (vp2(k) - vp2(k-1))/(gr%zt(1,k) - gr%zt(1,k-1)) ) &
+                     * (gr%zm(1,k) - gr%zt(1,k)) + vp2(k)
           end if
         end if
       end do
@@ -3006,12 +3006,12 @@ module inputfields
     do file_index=1, size(stat_files)
       ! Find the lowest and highest indices of CLUBB thermodynamic levels that
       ! fall within the domain of the LES output.
-      call CLUBB_levels_within_LES_domain( fread_vars(file_index), gr%zt,  &
+      call CLUBB_levels_within_LES_domain( fread_vars(file_index), gr%zt(1,:),  &
                       k_lowest_zt(file_index), k_highest_zt(file_index) )
 
       ! Find the lowest and highest indices of CLUBB momentum levels that
       ! fall within the domain of the LES output.
-      call CLUBB_levels_within_LES_domain( fread_vars(file_index), gr%zm,  &
+      call CLUBB_levels_within_LES_domain( fread_vars(file_index), gr%zm(1,:),  &
                       k_lowest_zm(file_index), k_highest_zm(file_index) )
 
       ! update the min and max variables to allocate LES_tmp
@@ -3167,9 +3167,9 @@ module inputfields
     !----------------BEGIN CODE----------------
 
     if ( clubb_grid_type == "zt" ) then
-      grid_var => gr%zt
+      grid_var => gr%zt(1,:)
     else if ( clubb_grid_type == "zm" ) then
-      grid_var => gr%zm
+      grid_var => gr%zm(1,:)
     end if
 
     ! For all CLUBB levels, k, that are within the LES domain,

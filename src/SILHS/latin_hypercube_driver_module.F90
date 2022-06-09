@@ -1066,7 +1066,7 @@ module latin_hypercube_driver_module
       pdf_dim,      & ! Number of variates in X_nl
       hydromet_dim    ! Number of hydrometeor species
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     integer, dimension(ngrdcol,num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
@@ -2099,7 +2099,7 @@ module latin_hypercube_driver_module
           xtmp &
           = vertical_integral &
                ( (nz - 2 + 1), rho_ds_zt(2:nz), &
-                 lh_rcm(2:nz), gr%dzt(2:nz) )
+                 lh_rcm(2:nz), gr%dzt(1,2:nz) )
 
           call stat_update_var_pt( ilh_lwp, 1, xtmp, stats_lh_sfc )
         end if
@@ -2139,7 +2139,7 @@ module latin_hypercube_driver_module
           xtmp &
           = vertical_integral &
                ( (nz - 2 + 1), rho_ds_zt(2:nz), &
-                 lh_rvm(2:nz), gr%dzt(2:nz) )
+                 lh_rvm(2:nz), gr%dzt(1,2:nz) )
 
           call stat_update_var_pt( ilh_vwp, 1, xtmp, stats_lh_sfc )
         end if

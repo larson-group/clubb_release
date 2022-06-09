@@ -191,7 +191,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  & 
       invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
@@ -527,7 +527,7 @@ module advance_xp2_xpyp_module
       ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
     do i = 1, ngrdcol
       call term_ma_zm_lhs( nz, wm_zm(i,:), & ! In
-                           gr(i)%invrs_dzm(:), gr(i)%weights_zm2zt(:,:), & ! In
+                           gr%invrs_dzm(i,:), gr%weights_zm2zt(i,:,:),& ! In
                            lhs_ma(:,i,:)                ) ! Out
     end do
                                
@@ -987,12 +987,12 @@ module advance_xp2_xpyp_module
       end if
 
       do i = 1, ngrdcol
-        up2(i,:) = sponge_damp_xp2( nz, dt, gr(i)%zm, up2(i,:), w_tol_sqd, &
+        up2(i,:) = sponge_damp_xp2( nz, dt, gr%zm(i,:), up2(i,:), w_tol_sqd, &
                                     up2_vp2_sponge_damp_profile )
       end do
 
       do i = 1, ngrdcol
-        vp2(i,:) = sponge_damp_xp2( nz, dt, gr(i)%zm, vp2(i,:), w_tol_sqd, &
+        vp2(i,:) = sponge_damp_xp2( nz, dt, gr%zm(i,:), vp2(i,:), w_tol_sqd, &
                                     up2_vp2_sponge_damp_profile )
       end do
 
@@ -1246,7 +1246,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  & 
       C2x,              &
@@ -1543,7 +1543,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
       
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  & 
       C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
@@ -2066,7 +2066,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
       
     real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(in) :: & 
      lhs_ta     ! Turbulent advection contributions to lhs
@@ -2553,7 +2553,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     integer, intent(in) :: solve_type
       
@@ -2671,7 +2671,7 @@ module advance_xp2_xpyp_module
         ! RHS turbulent production (tp) term.
         ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_pr 
         rhs(i,k) = rhs(i,k) + ( one - C_uu_shr ) * term_tp( xam(i,k+1), xam(i,k), xam(i,k+1), xam(i,k), & 
-                                                wpxap(i,k), wpxap(i,k), gr(i)%invrs_dzm(k) )
+                                                wpxap(i,k), wpxap(i,k), gr%invrs_dzm(i,k) )
 
         ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
         rhs(i,k) = rhs(i,k) + term_pr1( C4, C14, xbp2(i,k), wp2(i,k), &
@@ -2757,7 +2757,7 @@ module advance_xp2_xpyp_module
           call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
                 ( one - C_uu_shr ) &                ! Intent(in)
                  * term_tp( xam(i,k+1), xam(i,k), xam(i,k+1), xam(i,k), & ! intent(in)
-                            wpxap(i,k), wpxap(i,k), gr(i)%invrs_dzm(k) ), &  ! intent(in)
+                            wpxap(i,k), wpxap(i,k), gr%invrs_dzm(i,k) ), &  ! intent(in)
                                    stats_zm(i) )       ! Intent(inout)
 
           ! Vertical compression of eddies.
@@ -2862,7 +2862,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     integer, intent(in) :: solve_type
 
@@ -2976,7 +2976,7 @@ module advance_xp2_xpyp_module
 
         ! RHS turbulent production (tp) term.
         rhs(i,k) = rhs(i,k) + term_tp( xam(i,k+1), xam(i,k), xbm(i,k+1), xbm(i,k), &
-                                   wpxbp(i,k), wpxap(i,k), gr(i)%invrs_dzm(k) )
+                                   wpxbp(i,k), wpxap(i,k), gr%invrs_dzm(i,k) )
 
         ! RHS dissipation term 1 (dp1)
         rhs(i,k) = rhs(i,k) + term_dp1_rhs( Cn(i,k), invrs_tau_zm(i,k), threshold )
@@ -2996,7 +2996,7 @@ module advance_xp2_xpyp_module
       do k = 2, nz-1
         do i = 1, ngrdcol
           turbulent_prod = term_tp( xam(i,k+1), xam(i,k), xbm(i,k+1), xbm(i,k), &
-                                    wpxbp(i,k), wpxap(i,k), gr(i)%invrs_dzm(k) )
+                                    wpxbp(i,k), wpxap(i,k), gr%invrs_dzm(i,k) )
 
           ! Limit the variance-depleting effects of excessively large
           ! microphysics terms on rtp2 and thlp2 in order to reduce oscillations.
@@ -3080,7 +3080,7 @@ module advance_xp2_xpyp_module
           ! x'y' term tp is completely explicit; call stat_update_var_pt.
           call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
                 term_tp( xam(i,k+1), xam(i,k), xbm(i,k+1), xbm(i,k), &  ! Intent(in)
-                         wpxbp(i,k), wpxap(i,k), gr(i)%invrs_dzm(k) ), & 
+                         wpxbp(i,k), wpxap(i,k), gr%invrs_dzm(i,k) ), & 
                                    stats_zm(i) )                         ! Intent(inout)
 
           ! rtpthlp case (2 turbulent production terms)
@@ -3089,7 +3089,7 @@ module advance_xp2_xpyp_module
           !        the xam inputs and the wpxbp input to function term_tp.
           call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
                 term_tp( zero, zero, xbm(i,k+1), xbm(i,k), &  ! Intent(in)
-                         zero, wpxap(i,k), gr(i)%invrs_dzm(k) ), &
+                         zero, wpxap(i,k), gr%invrs_dzm(i,k) ), &
                                    stats_zm(i) )                 ! Intent(inout)
 
           ! x'y' term tp2 is completely explicit; call stat_update_var_pt.
@@ -3097,7 +3097,7 @@ module advance_xp2_xpyp_module
           !        the xbm inputs and the wpxap input to function term_tp.
           call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
                 term_tp( xam(i,k+1), xam(i,k), zero, zero, &  ! Intent(in)
-                         wpxbp(i,k), zero, gr(i)%invrs_dzm(k) ), &
+                         wpxbp(i,k), zero, gr%invrs_dzm(i,k) ), &
                                    stats_zm(i) )                 ! Intent(inout)
 
           ! x'y' forcing term is completely explicit; call stat_update_var_pt.
@@ -3220,7 +3220,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
         
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -3431,7 +3431,7 @@ module advance_xp2_xpyp_module
     
     ! Interpolate a_1 from the momentum levels to the thermodynamic levels.
     ! Positive definite quantity
-    a1_zt(:,:) = max( zm2zt( nz, ngrdcol, gr(:), a1(:,:) ), zero_threshold ) 
+    a1_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, a1(:,:) ), zero_threshold ) 
     
     
     if ( l_explicit_turbulent_adv_xpyp ) then
@@ -3471,7 +3471,7 @@ module advance_xp2_xpyp_module
         
       ! Interpolate wprtp2 to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_xpyp_ta ) then
-        term_wprtp2_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr(:), wprtp2(:,:) )
+        term_wprtp2_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr, wprtp2(:,:) )
         sgn_t_vel_rtp2(:,:) = sign(one,term_wprtp2_explicit_zm(:,:)*rtp2(:,:))
       end if
             
@@ -3486,7 +3486,7 @@ module advance_xp2_xpyp_module
           
       ! Interpolate wpthlp2 to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_xpyp_ta ) then
-        term_wpthlp2_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr(:), wpthlp2(:,:) )
+        term_wpthlp2_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr, wpthlp2(:,:) )
         sgn_t_vel_thlp2(:,:) = sign(one,term_wpthlp2_explicit_zm(:,:)*thlp2(:,:))
       end if
     
@@ -3501,7 +3501,7 @@ module advance_xp2_xpyp_module
                                      
       ! Interpolate wprtpthlp to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_xpyp_ta ) then
-        term_wprtpthlp_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr(:), wprtpthlp(:,:) )
+        term_wprtpthlp_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr, wprtpthlp(:,:) )
         sgn_t_vel_rtpthlp(:,:) = sign(one,term_wprtpthlp_explicit_zm(:,:)*rtpthlp(:,:))
       end if    
     
@@ -3521,7 +3521,7 @@ module advance_xp2_xpyp_module
           ! Interpolate wpsclrp2 to momentum levels and calculate the sign of 
           ! vertical velocityif l_upwind_xpyp_ta, otherwise just use wpsclrp2 
           if ( l_upwind_xpyp_ta ) then
-            term_wpsclrp2_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr(:), wpsclrp2(:,:,sclr) )
+            term_wpsclrp2_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr, wpsclrp2(:,:,sclr) )
             sgn_t_vel_sclrp2(:,:) = sign(one,term_wpsclrp2_explicit_zm(:,:)*sclrp2(:,:,sclr))
           else
             term_wpsclrp2_explicit(:,:) = wpsclrp2(:,:,sclr)
@@ -3541,7 +3541,7 @@ module advance_xp2_xpyp_module
         ! vertical velocityif l_upwind_xpyp_ta, otherwise just use wpsclrprtp 
         do sclr = 1, sclr_dim
           if ( l_upwind_xpyp_ta ) then
-            term_wprtpsclrp_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr(:), wpsclrprtp(:,:,sclr) )
+            term_wprtpsclrp_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr, wpsclrprtp(:,:,sclr) )
             sgn_t_vel_sclrprtp(:,:) = sign(one,term_wprtpsclrp_explicit_zm(:,:)*sclrprtp(:,:,sclr))
           else
             term_wprtpsclrp_explicit(:,:) = wpsclrprtp(:,:,sclr)
@@ -3562,7 +3562,7 @@ module advance_xp2_xpyp_module
         ! vertical velocityif l_upwind_xpyp_ta, otherwise just use wpsclrpthlp 
         do sclr = 1, sclr_dim
           if ( l_upwind_xpyp_ta ) then
-            term_wpthlpsclrp_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr(:), wpsclrpthlp(:,:,sclr) )
+            term_wpthlpsclrp_explicit_zm(:,:) = zt2zm( nz, ngrdcol, gr, wpsclrpthlp(:,:,sclr) )
             sgn_t_vel_sclrpthlp(:,:) = sign(one,term_wpthlpsclrp_explicit_zm(:,:)*sclrpthlp(:,:,sclr))
           else
             term_wpthlpsclrp_explicit(:,:) = wpsclrpthlp(:,:,sclr)
@@ -3653,8 +3653,8 @@ module advance_xp2_xpyp_module
         ! is false, or if stats output is on
         if( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
             
-          wprtp_zt(:,:)  = zm2zt( nz, ngrdcol, gr(:), wprtp(:,:) )
-          wpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr(:), wpthlp(:,:) )
+          wprtp_zt(:,:)  = zm2zt( nz, ngrdcol, gr, wprtp(:,:) )
+          wpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
           
           term_wprtp2_explicit(:,:) &
           = ( one - one_third * beta ) * a1_zt(:,:)**2 * wprtp_zt(:,:)**2 * wp3_on_wp2_zt(:,:) / wp2_zt(:,:)
@@ -3791,7 +3791,7 @@ module advance_xp2_xpyp_module
           ! Interpolate wpsclrp to thermo levels if not using l_upwind_xpyp_ta
           if ( .not. l_upwind_xpyp_ta ) then
             do sclr = 1, sclr_dim
-              wpsclrp_zt(:,:,sclr) = zm2zt( nz, ngrdcol, gr(:), wpsclrp(:,:,sclr) )
+              wpsclrp_zt(:,:,sclr) = zm2zt( nz, ngrdcol, gr, wpsclrp(:,:,sclr) )
             end do
           end if
             
@@ -4372,8 +4372,8 @@ module advance_xp2_xpyp_module
         ! Interpolate <u'w'> and <v'w'> from the momentum levels to the
         ! thermodynamic levels.  These will be used for the turbulent
         ! advection terms in each equation.
-        upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr(:), upwp(:,:) )
-        vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr(:), vpwp(:,:) )
+        upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
+        vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
       
         ! Implicit coefficient on <u'^2> or <v'^2> in <w'u'^2> or <w'v'^2>
         ! equation.
@@ -4818,7 +4818,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
 
-    type (grid), dimension(ngrdcol), intent(in) :: gr
+    type (grid), intent(in) :: gr
       
     real( kind = core_rknd ), intent(in) :: & 
       C_uu_shr,  & ! Model parameter C_uu_shr                       [-]
@@ -4858,8 +4858,8 @@ module advance_xp2_xpyp_module
                        * ( C_uu_buoy &
                           * ( grav / thv_ds_zm(i,k) ) * wpthvp(i,k) &
                         + C_uu_shr &
-                          * ( - upwp(i,k) * gr(i)%invrs_dzm(k) * ( um(i,k+1) - um(i,k) ) &
-                              - vpwp(i,k) * gr(i)%invrs_dzm(k) * ( vm(i,k+1) - vm(i,k) ) &
+                          * ( - upwp(i,k) * gr%invrs_dzm(i,k) * ( um(i,k+1) - um(i,k) ) &
+                              - vpwp(i,k) * gr%invrs_dzm(i,k) * ( vm(i,k+1) - vm(i,k) ) &
                             ) &
                         )
 
@@ -4905,7 +4905,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     integer, intent(in) :: & 
       solve_type
@@ -4958,7 +4958,7 @@ module advance_xp2_xpyp_module
         ! Call the hole-filling scheme.
         ! The first pass-through should draw from only two levels on either side
         ! of the hole.
-        call fill_holes_vertical( nz, gr(i)%dzm, gr(i)%dzt, 2, tolerance, "zm",      & ! Intent(in)
+        call fill_holes_vertical( nz, gr%dzm(i,:), gr%dzt(i,:), 2, tolerance, "zm",      & ! Intent(in)
                                   rho_ds_zt(i,:), rho_ds_zm(i,:), & ! Intent(in)
                                   xp2_np1(i,:) )                    ! Intent(inout)
 

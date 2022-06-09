@@ -195,7 +195,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
       
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
@@ -761,7 +761,7 @@ module advance_xm_wpxp_module
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
         do i = 1, ngrdcol
-          call error_prints_xm_wpxp( nz, gr(i)%zm, gr(i)%zt, & ! intent(in) 
+          call error_prints_xm_wpxp( nz, gr%zm(i,:), gr%zt(i,:), & ! intent(in) 
                                      dt, sigma_sqd_w(i,:), wm_zm(i,:), wm_zt(i,:), wp2(i,:), & ! intent(in)
                                      Lscale(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), & ! intent(in)
                                      Kh_zt(i,:), Kh_zm(i,:), invrs_tau_C6_zm(i,:), Skw_zm(i,:), & ! intent(in)
@@ -801,7 +801,7 @@ module advance_xm_wpxp_module
       end if
 
       do i = 1, ngrdcol
-        rtm(i,:) = sponge_damp_xm( nz, dt, gr(i)%zt, gr(i)%zm, &
+        rtm(i,:) = sponge_damp_xm( nz, dt, gr%zt(i,:), gr%zm(i,:), &
                                    rtm_ref(i,:), rtm(i,:), rtm_sponge_damp_profile )
       end do
 
@@ -824,7 +824,7 @@ module advance_xm_wpxp_module
       end if
 
       do i = 1, ngrdcol
-        thlm(i,:) = sponge_damp_xm( nz, dt, gr(i)%zt, gr(i)%zm, &
+        thlm(i,:) = sponge_damp_xm( nz, dt, gr%zt(i,:), gr%zm(i,:), &
                                     thlm_ref(i,:), thlm(i,:), thlm_sponge_damp_profile )
       end do
 
@@ -851,12 +851,12 @@ module advance_xm_wpxp_module
         end if
 
         do i = 1, ngrdcol
-          um(i,:) = sponge_damp_xm( nz, dt, gr(i)%zt, gr(i)%zm, &
+          um(i,:) = sponge_damp_xm( nz, dt, gr%zt(i,:), gr%zm(i,:), &
                                     um_ref(i,:), um(i,:), uv_sponge_damp_profile )
         end do
         
         do i = 1, ngrdcol
-          vm(i,:) = sponge_damp_xm( nz, dt, gr(i)%zt, gr(i)%zm, &
+          vm(i,:) = sponge_damp_xm( nz, dt, gr%zt(i,:), gr%zm(i,:), &
                                     vm_ref(i,:), vm(i,:), uv_sponge_damp_profile )
         end do
 
@@ -1042,7 +1042,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) ::  & 
       dt    ! Timestep                                  [s]
@@ -1266,7 +1266,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     !------------------- Input Variables -------------------
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: & 
@@ -1361,7 +1361,7 @@ module advance_xm_wpxp_module
     ! Calculate accumulation of w'x' and w'x' pressure term 2 of w'x' for all grid level
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wpxp_pr
     do i = 1, ngrdcol
-      call wpxp_terms_ac_pr2_lhs( nz, C7_Skw_fnc(i,:), wm_zt(i,:), gr(i)%invrs_dzm(:), & ! Intent(in)
+      call wpxp_terms_ac_pr2_lhs( nz, C7_Skw_fnc(i,:), wm_zt(i,:), gr%invrs_dzm(i,:), & ! Intent(in)
                                   lhs_ac_pr2(i,:)                       ) ! Intent(out)
     end do        
 
@@ -1373,7 +1373,7 @@ module advance_xm_wpxp_module
     ! Calculate mean advection terms for all momentum grid level
     do i = 1, ngrdcol
       call term_ma_zm_lhs( nz, wm_zm(i,:), & ! Intent(in)
-                           gr(i)%invrs_dzm(:), gr(i)%weights_zm2zt(:,:), & ! In
+                           gr%invrs_dzm(i,:), gr%weights_zm2zt(i,:,:),& ! In
                            lhs_ma_zm(:,i,:)             ) ! Intent(out) 
     end do        
                                
@@ -1411,8 +1411,8 @@ module advance_xm_wpxp_module
     ! Calculate mean advection terms for all thermodynamic grid level
     if ( .not. l_implemented ) then
       do i = 1, ngrdcol
-        call term_ma_zt_lhs( nz, wm_zt(i,:), gr(i)%weights_zt2zm(:,:),  & ! intent(in)
-                             gr(i)%invrs_dzt(:), gr(i)%invrs_dzm(:),    & ! intent(in)
+        call term_ma_zt_lhs( nz, wm_zt(i,:), gr%weights_zt2zm(i,:,:), & ! intent(in)
+                             gr%invrs_dzt(i,:), gr%invrs_dzm(i,:),    & ! intent(in)
                              l_upwind_xm_ma,                             & ! Intent(in)
                              lhs_ma_zt(:,i,:)                              ) ! Intent(out)
       end do
@@ -1516,7 +1516,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol 
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
   
     integer, intent(in) :: & 
       solve_type  ! Variables being solved for.
@@ -1845,7 +1845,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -2334,7 +2334,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
@@ -2650,11 +2650,11 @@ module advance_xm_wpxp_module
       end if ! .not. l_implemented
 
       ! Add "extra term" and optional Coriolis term for <u'w'> and <v'w'>.
-      upwp_forcing(:,:) = C_uu_shr * wp2(:,:) * ddzt( nz, ngrdcol, gr(:), um(:,:) )
-      vpwp_forcing(:,:) = C_uu_shr * wp2(:,:) * ddzt( nz, ngrdcol, gr(:), vm(:,:) )
+      upwp_forcing(:,:) = C_uu_shr * wp2(:,:) * ddzt( nz, ngrdcol, gr, um(:,:) )
+      vpwp_forcing(:,:) = C_uu_shr * wp2(:,:) * ddzt( nz, ngrdcol, gr, vm(:,:) )
       if ( l_perturbed_wind ) then
-         upwp_forcing_pert(:,:) = C_uu_shr * wp2(:,:) * ddzt( nz, ngrdcol, gr(:), um_pert(:,:) )
-         vpwp_forcing_pert(:,:) = C_uu_shr * wp2(:,:) * ddzt( nz, ngrdcol, gr(:), vm_pert(:,:) )
+         upwp_forcing_pert(:,:) = C_uu_shr * wp2(:,:) * ddzt( nz, ngrdcol, gr, um_pert(:,:) )
+         vpwp_forcing_pert(:,:) = C_uu_shr * wp2(:,:) * ddzt( nz, ngrdcol, gr, vm_pert(:,:) )
       endif ! l_perturbed_wind
 
       if ( l_stats_samp ) then
@@ -2802,9 +2802,9 @@ module advance_xm_wpxp_module
         
         do k = 1, nz
           do i = 1, ngrdcol
-            write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr(i)%zt(k), &
+            write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr%zt(i,k), &
                              "LHS = ", lhs(1:nsup+nsub+1,i,2*k-1)
-            write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr(i)%zm(k), &
+            write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr%zm(i,k), &
                              "LHS = ", lhs(1:nsup+nsub+1,i,2*k)
           end do
         end do ! k = 1, nz
@@ -2831,10 +2831,10 @@ module advance_xm_wpxp_module
           do k = 1, nz
             do i = 1, ngrdcol
               write(fstderr,*) "grid col = ",i,"zt level = ", k, &
-                               "height [m] = ", gr(i)%zt(k), &
+                               "height [m] = ", gr%zt(i,k), &
                                "RHS = ", rhs_save(i,2*k-1,j)
               write(fstderr,*) "grid col = ",i,"zm level = ", k, &
-                               "height [m] = ", gr(i)%zm(k), &
+                               "height [m] = ", gr%zm(i,k), &
                                "RHS = ", rhs_save(i,2*k,j)
             end do
           end do ! k = 1, nz
@@ -3117,7 +3117,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
@@ -3306,16 +3306,16 @@ module advance_xm_wpxp_module
           write(fstderr,*) "Mean total water & total water flux LU decomp. failed"
           write(fstderr,*) "rtm and wprtp LHS"
           do k = 1, nz
-            write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr(i)%zt(k), &
+            write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr%zt(i,k), &
                              "LHS = ", lhs(1:nsup+nsub+1,i,2*k-1)
-            write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr(i)%zm(k), &
+            write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr%zm(i,k), &
                              "LHS = ", lhs(1:nsup+nsub+1,i,2*k)
           end do ! k = 1, nz
           write(fstderr,*) "rtm and wprtp RHS"
           do k = 1, nz
-            write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr(i)%zt(k), &
+            write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr%zt(i,k), &
                              "RHS = ", rhs_save(i,2*k-1,1)
-            write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr(i)%zm(k), &
+            write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr%zm(i,k), &
                              "RHS = ", rhs_save(i,2*k,1)
           end do ! k = 1, nz
         end do
@@ -3389,16 +3389,16 @@ module advance_xm_wpxp_module
           write(fstderr,*) "Liquid pot. temp & thetal flux LU decomp. failed"
           write(fstderr,*) "thlm and wpthlp LHS"
           do k = 1, nz
-             write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr(i)%zt(k), &
+             write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr%zt(i,k), &
                               "LHS = ", lhs(1:nsup+nsub+1,i,2*k-1)
-             write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr(i)%zm(k), &
+             write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr%zm(i,k), &
                               "LHS = ", lhs(1:nsup+nsub+1,i,2*k)
           end do ! k = 1, nz
           write(fstderr,*) "thlm and wpthlp RHS"
           do k = 1, nz
-             write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr(i)%zt(k), &
+             write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr%zt(i,k), &
                               "RHS = ", rhs_save(i,2*k-1,1)
-             write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr(i)%zm(k), &
+             write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr%zm(i,k), &
                               "RHS = ", rhs_save(i,2*k,1)
           end do ! k = 1, nz
         end do
@@ -3483,16 +3483,16 @@ module advance_xm_wpxp_module
             write(fstderr,*) "Passive scalar # ", j, " LU decomp. failed."
             write(fstderr,*) "sclrm and wpsclrp LHS"
             do k = 1, nz
-               write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr(i)%zt(k), &
+               write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr%zt(i,k), &
                                 "LHS = ", lhs(1:nsup+nsub+1,i,2*k-1)
-               write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr(i)%zm(k), &
+               write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr%zm(i,k), &
                                 "LHS = ", lhs(1:nsup+nsub+1,i,2*k)
             end do ! k = 1, nz
             write(fstderr,*) "sclrm and wpsclrp RHS"
             do k = 1, nz
-               write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr(i)%zt(k), &
+               write(fstderr,*) "grid col = ",i,"zt level = ", k, "height [m] = ", gr%zt(i,k), &
                                 "RHS = ", rhs_save(i,2*k-1,1)
-               write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr(i)%zm(k), &
+               write(fstderr,*) "grid col = ",i,"zm level = ", k, "height [m] = ", gr%zm(i,k), &
                                 "RHS = ", rhs_save(i,2*k,1)
             end do ! k = 1, nz
           end do
@@ -3567,7 +3567,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) :: &
@@ -3747,7 +3747,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Constant Parameters
     logical, parameter :: &
@@ -4058,13 +4058,13 @@ module advance_xm_wpxp_module
         ! Note:  To find the contribution of w'x' term ac,
         !        substitute 0 for the C_7 skewness function input
         !        to function wpxp_terms_ac_pr2_lhs.
-        call wpxp_terms_ac_pr2_lhs( nz, zero_vector(i,:), wm_zt(i,:), gr(i)%invrs_dzm, & ! intent(in)
+        call wpxp_terms_ac_pr2_lhs( nz, zero_vector(i,:), wm_zt(i,:), gr%invrs_dzm(i,:), & ! intent(in)
                                     wpxp_ac(i,:) ) ! intent(out)
 
         ! Note:  To find the contribution of w'x' term pr2,
         !        add 1 to the C_7 skewness function input
         !        to function wpxp_terms_ac_pr2_lhs.
-        call wpxp_terms_ac_pr2_lhs( nz, (one+C7_Skw_fnc(i,:)), wm_zt(i,:), gr(i)%invrs_dzm, & ! intent(in)
+        call wpxp_terms_ac_pr2_lhs( nz, (one+C7_Skw_fnc(i,:)), wm_zt(i,:), gr%invrs_dzm(i,:), & ! intent(in)
                                     wpxp_pr2(i,:) ) ! intent(out)
 
         do k = 2, nz-1
@@ -4198,7 +4198,7 @@ module advance_xm_wpxp_module
             end do
           end if
 
-          call fill_holes_vertical( nz, gr(i)%dzm, gr(i)%dzt, 2, xm_threshold, "zt", & ! intent(in)
+          call fill_holes_vertical( nz, gr%dzm(i,:), gr%dzt(i,:), 2, xm_threshold, "zt", & ! intent(in)
                                     rho_ds_zt(i,:), rho_ds_zm(i,:), & ! intent(in)
                                     xm(i,:) ) ! intent(inout)
 
@@ -4304,7 +4304,7 @@ module advance_xm_wpxp_module
     if ( l_clip_turb_adv ) then
       do i = 1, ngrdcol
         if ( any( abs(wpxp_chnge(i,:)) > eps ) ) then
-          call xm_correction_wpxp_cl( nz, solve_type, dt, wpxp_chnge(i,:), gr(i)%invrs_dzt, & ! intent(in)
+          call xm_correction_wpxp_cl( nz, solve_type, dt, wpxp_chnge(i,:), gr%invrs_dzt(i,:), & ! intent(in)
                                       stats_zt(i), & ! intent(inout)
                                       xm(i,:) ) ! intent(inout)
         endif
@@ -4379,7 +4379,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -4410,10 +4410,10 @@ module advance_xm_wpxp_module
       do i = 1, ngrdcol
 
         ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
-        lhs_ta_xm(k_mdiag,i,k) = + invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) * rho_ds_zm(i,k)
+        lhs_ta_xm(k_mdiag,i,k) = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) * rho_ds_zm(i,k)
 
         ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-        lhs_ta_xm(km1_mdiag,i,k) = - invrs_rho_ds_zt(i,k) * gr(i)%invrs_dzt(k) * rho_ds_zm(i,k-1)
+        lhs_ta_xm(km1_mdiag,i,k) = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) * rho_ds_zm(i,k-1)
       end do
     end do ! k = 2, nz 
 
@@ -4481,7 +4481,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -4511,10 +4511,10 @@ module advance_xm_wpxp_module
       do i = 1, ngrdcol
 
        ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-       lhs_tp(kp1_tdiag,i,k) = + wp2(i,k) * gr(i)%invrs_dzm(k)
+       lhs_tp(kp1_tdiag,i,k) = + wp2(i,k) * gr%invrs_dzm(i,k)
 
        ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
-       lhs_tp(k_tdiag,i,k)   = - wp2(i,k) * gr(i)%invrs_dzm(k)
+       lhs_tp(k_tdiag,i,k)   = - wp2(i,k) * gr%invrs_dzm(i,k)
        
       end do
     end do ! k = 2, nz-1
@@ -4767,7 +4767,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
@@ -5016,7 +5016,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Input variables
     real( kind = core_rknd ), intent(in) :: &
@@ -5038,7 +5038,7 @@ module advance_xm_wpxp_module
     do k = 1, nz
       do i = 1, ngrdcol
         
-        if ( Lscale(i,k) < threshold .and. gr(i)%zt(k) > altitude_threshold ) then
+        if ( Lscale(i,k) < threshold .and. gr%zt(i,k) > altitude_threshold ) then
           damped_value(i,k) = max_coeff_value &
                               + ( ( coefficient - max_coeff_value ) / threshold ) &
                                 * Lscale(i,k)
@@ -5084,7 +5084,7 @@ module advance_xm_wpxp_module
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &

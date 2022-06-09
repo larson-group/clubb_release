@@ -257,7 +257,7 @@ module hydrostatic_module
       ! all the levels of the sounding), use a linear extension of thvm to find
       ! thvm at the surface.  Thus, d(thvm)/d(exner) is the same as its value
       ! between sounding levels 1 and 2.  If the surface is so far below the
-      ! sounding that gr%zt(2) is below the first sounding level, the code in
+      ! sounding that gr%zt(1,2) is below the first sounding level, the code in
       ! subroutine read_sounding (found in sounding.F90) will stop the run.
 
       ! Calculate the difference between the altitude of the surface (or model

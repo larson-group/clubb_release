@@ -466,9 +466,9 @@ module sponge_layer_damping
     allocate( damping_profile%tau_sponge_damp(1:gr%nz) )
 
     ! Calculate the depth of the sponge layer.
-    ! The height of the model top is gr%zm(gr%nz).
+    ! The height of the model top is gr%zm(1,gr%nz).
     damping_profile%sponge_layer_depth &
-    = settings%sponge_damp_depth * gr%zm(gr%nz)
+    = settings%sponge_damp_depth * gr%zm(1,gr%nz)
 
     ! Check the value of tau_sponge_damp_min.
     if ( settings%tau_sponge_damp_min < two * dt ) then
@@ -481,15 +481,15 @@ module sponge_layer_damping
     ! that are within the sponge damping layer.
     do k = gr%nz, 1, -1
 
-       ! The height of the model top is gr%zm(gr%nz).
-       if ( gr%zm(gr%nz) - z(k) < damping_profile%sponge_layer_depth ) then
+       ! The height of the model top is gr%zm(1,gr%nz).
+       if ( gr%zm(1,gr%nz) - z(k) < damping_profile%sponge_layer_depth ) then
 
           ! Vince Larson added code to use standard linear interpolation.
           ! Brian Griffin reverted the linear interpolation in order to use code
           ! that is similar to what is found in SAM LES.
 
           tau_sponge_damp_exponent &
-          = ( gr%zm(gr%nz) - z(k) ) / damping_profile%sponge_layer_depth
+          = ( gr%zm(1,gr%nz) - z(k) ) / damping_profile%sponge_layer_depth
 
           damping_profile%tau_sponge_damp(k) &
           = settings%tau_sponge_damp_min &
@@ -497,8 +497,8 @@ module sponge_layer_damping
                 / settings%tau_sponge_damp_min )**tau_sponge_damp_exponent
 
           !damping_profile%tau_sponge_damp(k) &
-          != lin_interpolate_two_points( z(k), gr%zm(gr%nz), &
-          !                              gr%zm(gr%nz) &
+          != lin_interpolate_two_points( z(k), gr%zm(1,gr%nz), &
+          !                              gr%zm(1,gr%nz) &
           !                              - damping_profile%sponge_layer_depth, &
           !                              settings%tau_sponge_damp_min, &
           !                              settings%tau_sponge_damp_max )
@@ -506,12 +506,12 @@ module sponge_layer_damping
           ! End Vince Larson's change
           ! End Brian Griffin's rebellious reversion.
 
-       else ! gr%zm(gr%nz) - z(k) >= damping_profile%sponge_layer_depth
+       else ! gr%zm(1,gr%nz) - z(k) >= damping_profile%sponge_layer_depth
 
           ! Below sponge damping layer; exit loop.
           exit
 
-       endif ! gr%zm(gr%nz) - z(k) < damping_profile%sponge_layer_depth
+       endif ! gr%zm(1,gr%nz) - z(k) < damping_profile%sponge_layer_depth
 
     enddo ! k = gr%nz, 1, -1
 

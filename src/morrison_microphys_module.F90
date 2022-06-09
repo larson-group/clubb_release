@@ -734,7 +734,7 @@ module morrison_microphys_module
 
     endif ! l_ice_microphys
 
-    hl_before = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
+    hl_before = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt(1,:) &
                 - Lv * ( rcm + rrm ) &
                 - Ls * ( rim + rsm + rgm )
 
@@ -813,7 +813,7 @@ module morrison_microphys_module
                                      NG_INST )
     endif ! clubb_at_least_debug_level( 2 )
 
-    hl_after = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
+    hl_after = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt(1,:) &
                - Lv * ( real( rcm_r4, kind = core_rknd) &
                         + real( rrm_r4, kind = core_rknd ) ) &
                - Ls * ( real( rim_r4, kind = core_rknd ) &
@@ -915,7 +915,7 @@ module morrison_microphys_module
 
     rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho(2:nz), &
                             real( rsm_sten(2:nz), kind=core_rknd ), &
-                            gr%dzt(2:nz) )
+                            gr%dzt(1,2:nz) )
 
     call microphys_put_var( irsm_sd_morr_int, (/rsm_sd_morr_int/), microphys_stats_sfc )
 
@@ -1344,66 +1344,66 @@ module morrison_microphys_module
           nan_at_lev = .false.
           if ( is_nan_sclr( real( rcm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rcm_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k)
+                              "altitude (m) = ", gr%zt(1,k)
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( rim_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rim_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( rsm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rsm_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( rrm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rrm_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( rgm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rgm_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( Ncm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Ncm_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( Nim_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Nim_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( Nsm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Nsm_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( Nrm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Nrm_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( Ngm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in Ngm_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( rvm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rvm_mc_r4 at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( is_nan_sclr( real( T_in_K_mc(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in T_in_K_mc at k = ", k, &
-                              "altitude (m) = ", gr%zt(k) 
+                              "altitude (m) = ", gr%zt(1,k) 
              nan_at_lev = .true.
           endif
           if ( nan_at_lev ) then
-             write(fstderr,*) "At k = ", k, "Altitude (m) = ", gr%zt(k)
+             write(fstderr,*) "At k = ", k, "Altitude (m) = ", gr%zt(1,k)
              write(fstderr,*) "thlm (in) = ", thlm(k)
              write(fstderr,*) "rvm (in) = ", rvm(k)
              write(fstderr,*) "rcm (in) = ", rcm(k)

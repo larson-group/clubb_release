@@ -340,7 +340,7 @@ module turbulent_adv_pdf
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       coef_wpxpyp_implicit,   & ! Coef. of <x'y'> in <w'x'y'>; t-levs  [m/s]
@@ -374,23 +374,23 @@ module turbulent_adv_pdf
           
           ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
           lhs_ta(kp1_mdiag,i,k) &
-          = invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) &
+          = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
             * rho_ds_zt(i,k+1) * coef_wpxpyp_implicit(i,k+1) &
-            * gr(i)%weights_zm2zt(m_above,k+1)
+            * gr%weights_zm2zt(i,m_above,k+1)
 
           ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
           lhs_ta(k_mdiag,i,k) &
-          = invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) &
+          = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
             * ( rho_ds_zt(i,k+1) * coef_wpxpyp_implicit(i,k+1) &
-                * gr(i)%weights_zm2zt(m_below,k+1) &
+                * gr%weights_zm2zt(i,m_below,k+1) &
                 - rho_ds_zt(i,k) * coef_wpxpyp_implicit(i,k) &
-                  * gr(i)%weights_zm2zt(m_above,k) )
+                  * gr%weights_zm2zt(i,m_above,k) )
 
           ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
           lhs_ta(km1_mdiag,i,k) &
-          = - invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) &
+          = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
               * rho_ds_zt(i,k) * coef_wpxpyp_implicit(i,k) &
-              * gr(i)%weights_zm2zt(m_below,k)
+              * gr%weights_zm2zt(i,m_below,k)
 
         end do
       end do
@@ -410,12 +410,12 @@ module turbulent_adv_pdf
 
             ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
             lhs_ta(k_mdiag,i,k) &
-             = invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzt(k) &
+             = invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k) &
                * rho_ds_zm(i,k) * coef_wpxpyp_implicit_zm(i,k)
 
             ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
             lhs_ta(km1_mdiag,i,k) &
-             = - invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzt(k) &
+             = - invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k) &
                  * rho_ds_zm(i,k-1) * coef_wpxpyp_implicit_zm(i,k-1)
 
           else ! sgn_turbulent_vel < 0
@@ -424,12 +424,12 @@ module turbulent_adv_pdf
 
             ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
             lhs_ta(kp1_mdiag,i,k) &
-             = invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzt(k+1) &
+             = invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k+1) &
                * rho_ds_zm(i,k+1) * coef_wpxpyp_implicit_zm(i,k+1)
 
             ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
             lhs_ta(k_mdiag,i,k) &
-             = - invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzt(k+1) &
+             = - invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k+1) &
                  * rho_ds_zm(i,k) * coef_wpxpyp_implicit_zm(i,k)
 
             ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
@@ -490,7 +490,7 @@ module turbulent_adv_pdf
           nz, &
           ngrdcol
 
-        type (grid), target, dimension(ngrdcol), intent(in) :: gr
+        type (grid), target, intent(in) :: gr
     
         real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
             coef_wpxpyp_implicit,     & ! Coef. of <x'y'> in <w'x'y'>; t-lev [m/s]
@@ -515,18 +515,18 @@ module turbulent_adv_pdf
           do i = 1, ngrdcol
             
             ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
-            lhs_ta(kp1_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) &
+            lhs_ta(kp1_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                                     * rho_ds_zm(i,k+1) &
                                     * min(0.0_core_rknd,coef_wpxpyp_implicit(i,k+1))
 
             ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
-            lhs_ta(k_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) &
+            lhs_ta(k_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                                   * rho_ds_zm(i,k) &
                                   * ( max(0.0_core_rknd,coef_wpxpyp_implicit(i,k+1)) - &
                                       min(0.0_core_rknd,coef_wpxpyp_implicit(i,k)) )
 
             ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
-            lhs_ta(km1_mdiag,i,k) = - invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) &
+            lhs_ta(km1_mdiag,i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                                       * rho_ds_zm(i,k-1) &
                                       * max(0.0_core_rknd,coef_wpxpyp_implicit(i,k) )
           end do
@@ -812,7 +812,7 @@ module turbulent_adv_pdf
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       term_wpxpyp_explicit, & ! RHS: <w'x'y'> eq; t-levs      [m/s(x un)(y un)]
@@ -846,7 +846,7 @@ module turbulent_adv_pdf
           
           rhs_ta(i,k) &
           = - invrs_rho_ds_zm(i,k) &
-              * gr(i)%invrs_dzm(k) * ( rho_ds_zt(i,k+1) * term_wpxpyp_explicit(i,k+1) &
+              * gr%invrs_dzm(i,k) * ( rho_ds_zt(i,k+1) * term_wpxpyp_explicit(i,k+1) &
                                  - rho_ds_zt(i,k) * term_wpxpyp_explicit(i,k) )
         end do
       end do ! k = 2, nz-1, 1
@@ -863,7 +863,7 @@ module turbulent_adv_pdf
              ! The "wind" is blowing upward.
              rhs_ta(i,k) &
              = - invrs_rho_ds_zm(i,k) &
-                 * gr(i)%invrs_dzt(k) &
+                 * gr%invrs_dzt(i,k) &
                  * ( rho_ds_zm(i,k) * term_wpxpyp_explicit_zm(i,k) &
                      - rho_ds_zm(i,k-1) * term_wpxpyp_explicit_zm(i,k-1) )
 
@@ -872,7 +872,7 @@ module turbulent_adv_pdf
              ! The "wind" is blowing downward.
              rhs_ta(i,k) &
              = - invrs_rho_ds_zm(i,k) &
-                 * gr(i)%invrs_dzt(k+1) &
+                 * gr%invrs_dzt(i,k+1) &
                  * ( rho_ds_zm(i,k+1) * term_wpxpyp_explicit_zm(i,k+1) &
                      - rho_ds_zm(i,k) * term_wpxpyp_explicit_zm(i,k) )
 
@@ -926,7 +926,7 @@ module turbulent_adv_pdf
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       term_wpxpyp_explicit_zm,      & ! RHS: <w'x'y'> eq; m-lev(k)   [m/s(x un)(y un)]
@@ -949,7 +949,7 @@ module turbulent_adv_pdf
 
     do k = 2, nz-1
       do i = 1, ngrdcol 
-        rhs_ta(i,k) = - invrs_rho_ds_zm(i,k) * gr(i)%invrs_dzm(k) &
+        rhs_ta(i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                     * ( min(0.0_core_rknd, sgn_turbulent_vel(i,k+1)) &
                           * rho_ds_zm(i,k+1) * term_wpxpyp_explicit_zm(i,k+1) &
                       + max(0.0_core_rknd, sgn_turbulent_vel(i,k+1)) &   

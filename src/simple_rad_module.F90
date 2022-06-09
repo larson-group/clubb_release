@@ -254,7 +254,7 @@ module simple_rad_module
 
     ! ---- Begin Code ----
 
-    LWP(1:gr%nz) = liq_water_path( gr%nz, rho, rcm, gr%invrs_dzt )
+    LWP(1:gr%nz) = liq_water_path( gr%nz, rho, rcm, gr%invrs_dzt(1,:) )
 
     do k = 1, gr%nz, 1
 
@@ -289,17 +289,17 @@ module simple_rad_module
         end if
     end if
 
-      z_i = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(k), rtm(k-1), gr%zt(k), gr%zt(k-1) )
+      z_i = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(k), rtm(k-1), gr%zt(1,k), gr%zt(1,k-1) )
 
       ! Compute the Heaviside step function for z - z_i.
       do k = 1, gr%nz, 1
-        !if gr%zm(k) > z_i
-        if ( gr%zm(k)-z_i < -eps ) then
+        !if gr%zm(1,k) > z_i
+        if ( gr%zm(1,k)-z_i < -eps ) then
           Heaviside(k) = 0.0_core_rknd
-        !if gr%zm(k) < z_i
-        else if ( gr%zm(k)-z_i > eps) then
+        !if gr%zm(1,k) < z_i
+        else if ( gr%zm(1,k)-z_i > eps) then
           Heaviside(k) = 1.0_core_rknd
-        else !gr%zm(k) and z_i are equal within eps
+        else !gr%zm(1,k) and z_i are equal within eps
           Heaviside(k) = 0.5_core_rknd
         end if       
       end do
@@ -308,8 +308,8 @@ module simple_rad_module
         if ( Heaviside(k) > 0.0_core_rknd ) then
           Frad_LW(k) = Frad_LW(k) & 
                   + rho_zm(k) * Cp * ls_div * Heaviside(k) & 
-                    * ( 0.25_core_rknd * ((gr%zm(k)-z_i)**(4.0_core_rknd/3.0_core_rknd)) & 
-                  + z_i * ((gr%zm(k)-z_i)**(1.0_core_rknd/3.0_core_rknd)) )
+                    * ( 0.25_core_rknd * ((gr%zm(1,k)-z_i)**(4.0_core_rknd/3.0_core_rknd)) & 
+                  + z_i * ((gr%zm(1,k)-z_i)**(1.0_core_rknd/3.0_core_rknd)) )
         end if
       end do ! k=1..gr%nz
 
@@ -327,7 +327,7 @@ module simple_rad_module
 
     do k = 2, gr%nz, 1
       radht_LW(k) = ( 1.0_core_rknd / exner(k) ) * ( -1.0_core_rknd/(Cp*rho(k)) ) & 
-               * ( Frad_LW(k) - Frad_LW(k-1) ) * gr%invrs_dzt(k)
+               * ( Frad_LW(k) - Frad_LW(k-1) ) * gr%invrs_dzt(1,k)
     end do
     radht_LW(1) = radht_LW(2)
 
@@ -363,14 +363,14 @@ module simple_rad_module
     ! Radiative theta-l tendency
     do k = 2, gr%nz
 
-      if ( gr%zt(k) >= 0._core_rknd .and. gr%zt(k) < 1500._core_rknd ) then
+      if ( gr%zt(1,k) >= 0._core_rknd .and. gr%zt(1,k) < 1500._core_rknd ) then
         radht(k) = -2.315e-5_core_rknd
-      else if ( gr%zt(k) >= 1500._core_rknd .and. gr%zt(k) < 2500._core_rknd ) then
+      else if ( gr%zt(1,k) >= 1500._core_rknd .and. gr%zt(1,k) < 2500._core_rknd ) then
         ! From bomex specification, section 3.4
         radht(k) & 
           = - 2.315e-5_core_rknd  & 
             + 2.315e-5_core_rknd  & 
-              * ( gr%zt(k) - 1500._core_rknd ) / &
+              * ( gr%zt(1,k) - 1500._core_rknd ) / &
               ( 2500._core_rknd - 1500._core_rknd ) ! Known magic number
       else
         radht(k) = 0._core_rknd
@@ -443,7 +443,7 @@ module simple_rad_module
     end if ! time <= times(1)
 
     ! Radiative theta-l tendency
-    radht = zlinterp_fnc( gr%nz, lba_nzrad, gr%zt, lba_zrad, radhtz )
+    radht = zlinterp_fnc( gr%nz, lba_nzrad, gr%zt(1,:), lba_zrad, radhtz )
 
     return
   end subroutine simple_rad_lba
@@ -598,15 +598,15 @@ module simple_rad_module
       kflip = gr%nz+1-k
       rcm_flipped(k) = rcm(kflip)
       rho_flipped(k) = rho(kflip)
-      dzt_flipped(k) = 1.0_core_rknd / gr%invrs_dzt(kflip)
+      dzt_flipped(k) = 1.0_core_rknd / gr%invrs_dzt(1,kflip)
     end do
 
     ! The zt array does have a ghost point, but it looks like it's not
     ! referenced within the sunray_sw code.  We set it anyway just in case.
     do k = 1, gr%nz
       kflip = gr%nz+1-k
-      zt_flipped(k) = gr%zt(kflip)
-      zm_flipped(k) = gr%zm(kflip)
+      zt_flipped(k) = gr%zt(1,kflip)
+      zm_flipped(k) = gr%zm(1,kflip)
     end do
 
     ! Call the old sunray_sw code

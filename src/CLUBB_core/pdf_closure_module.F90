@@ -191,7 +191,7 @@ module pdf_closure_module
       nz, &
       ngrdcol
       
-    type (grid), target, dimension(ngrdcol), intent(in) :: &
+    type (grid), target, intent(in) :: &
       gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 

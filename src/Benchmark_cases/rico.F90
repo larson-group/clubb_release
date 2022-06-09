@@ -79,14 +79,14 @@ module rico
   ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
   ! Equations located in 1D models > Set up short composite run on reference site
   do k=1,gr%nz
-    if (gr%zt(k) < 4000._core_rknd ) then
+    if (gr%zt(1,k) < 4000._core_rknd ) then
       t_tendency = -2.51_core_rknd / 86400._core_rknd + & 
         (-2.18_core_rknd + 2.51_core_rknd) / (86400._core_rknd*4000._core_rknd) &
-        * gr%zt(k)  ! Units [K s^-1] - known magic number
-    else if (gr%zt(k) < 5000._core_rknd ) then
+        * gr%zt(1,k)  ! Units [K s^-1] - known magic number
+    else if (gr%zt(1,k) < 5000._core_rknd ) then
       t_tendency = -2.18_core_rknd / 86400._core_rknd + & 
         (2.18_core_rknd) / (86400._core_rknd*(5000._core_rknd-4000._core_rknd)) &
-        * (gr%zt(k)-4000._core_rknd)  ! Units [K s^-1] - known magic number
+        * (gr%zt(1,k)-4000._core_rknd)  ! Units [K s^-1] - known magic number
     else
       t_tendency = 0._core_rknd  ! Units [K s^-1]
     end if
@@ -99,17 +99,17 @@ module rico
   ! Compute large-scale horizontal moisture advection [g kg^-1 s^-1]
   ! Equations located in 1D models > Set up short composite run on reference site
   do k=1,gr%nz
-    if (gr%zt(k) < 3000._core_rknd) then
+    if (gr%zt(1,k) < 3000._core_rknd) then
       qtm_forcing = - 1.0_core_rknd / 86400._core_rknd + & 
         (0.345_core_rknd+1.0_core_rknd) / (86400._core_rknd * 3000._core_rknd) &
-        * gr%zt(k)  ! Units [g kg^-1 s^-1] - known magic number
-    else if (gr%zt(k) < 4000._core_rknd ) then
+        * gr%zt(1,k)  ! Units [g kg^-1 s^-1] - known magic number
+    else if (gr%zt(1,k) < 4000._core_rknd ) then
       qtm_forcing = 0.345_core_rknd / 86400._core_rknd  
                 ! Units [g kg^-1 s^-1] - known magic number
-    else if (gr%zt(k) < 5000._core_rknd ) then
+    else if (gr%zt(1,k) < 5000._core_rknd ) then
       qtm_forcing = 0.345_core_rknd / 86400._core_rknd + & 
        (-0.345_core_rknd) / (86400._core_rknd*(5000._core_rknd-4000._core_rknd)) &
-       * (gr%zt(k)-4000._core_rknd)! Units [g kg^-1 s^-1] known magic number
+       * (gr%zt(1,k)-4000._core_rknd)! Units [g kg^-1 s^-1] known magic number
     else
       qtm_forcing = 0._core_rknd  ! Units [g kg^-1 s^-1]
     end if

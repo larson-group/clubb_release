@@ -85,7 +85,7 @@ module nov11
          time <  time_initial + 3600.0_time_precision + real(dt,kind=time_precision) ) then
 
       do k = 1, gr%nz, 1
-        if ( gr%zt(k) > ( 2900.0_core_rknd + gr%zm(1) ) ) then
+        if ( gr%zt(1,k) > ( 2900.0_core_rknd + gr%zm(1,1) ) ) then
           rtm(k) = 0.89_core_rknd * rtm(k) ! Known magic number
         end if
       end do
@@ -225,19 +225,19 @@ module nov11
 !    ! Subsidence Parameters
 !    !----------------------
 !    wmax =  -0.03_core_rknd
-!    z_inversion = 2500.00_core_rknd + gr%zm(1)
+!    z_inversion = 2500.00_core_rknd + gr%zm(1,1)
 !    daz_inversion = 1500.0_core_rknd
 !    dbz_inversion = 2000.0_core_rknd
 !    dbc =  300.0_core_rknd
 !    dac =  200.0_core_rknd
 !
-!    zsubs(1) = 0._core_rknd + gr%zm(1)
+!    zsubs(1) = 0._core_rknd + gr%zm(1,1)
 !    zsubs(2) = z_inversion-dbz_inversion-dbc
 !    zsubs(3) = z_inversion-dbz_inversion
 !    zsubs(4) = z_inversion
 !    zsubs(5) = z_inversion+daz_inversion
 !    zsubs(6) = z_inversion+daz_inversion+dac
-!    zsubs(7) = 4500._core_rknd + gr%zm(1)
+!    zsubs(7) = 4500._core_rknd + gr%zm(1,1)
 !
 !    wt1(1) = 0._core_rknd
 !    wt1(2) = 0._core_rknd
@@ -261,7 +261,7 @@ module nov11
 !         time <  time_initial + 3600.0_time_precision + real(dt,kind=time_precision) ) then
 !
 !      do k = 1, gr%nz, 1
-!        if ( gr%zt(k) > ( 2900.0_core_rknd + gr%zm(1) ) ) then
+!        if ( gr%zt(1,k) > ( 2900.0_core_rknd + gr%zm(1,1) ) ) then
 !          rtm(k) = 0.89_core_rknd * rtm(k) ! Known magic number
 !        end if
 !      end do
@@ -316,14 +316,14 @@ module nov11
 !
 !    do k=2,gr%nz
 !      if ( (time >= time_initial + 3600.0_time_precision ) .and. l_subs_on ) then
-!        if ( gr%zt(k) <= zsubs(7) ) then
+!        if ( gr%zt(1,k) <= zsubs(7) ) then
 !          nparam = 7
-!          call lin_interpolate_on_grid( nparam, zsubs, wt1, gr%zt(k), wm_zt(k) )
+!          call lin_interpolate_on_grid( nparam, zsubs, wt1, gr%zt(1,k), wm_zt(k) )
 !        else
 !          wm_zt(k) = 0.0_core_rknd
 !          if ( clubb_at_least_debug_level( 1 ) ) then
 !            write(fstderr,*) "Thermodynamic grid level", k, "at height",  &
-!                             gr%zt(k), "m. is above the highest level ",  &
+!                             gr%zt(1,k), "m. is above the highest level ",  &
 !                             "specified in the subsidence sounding, which ",  &
 !                             "is at height", zsubs(7), "m."
 !            write(fstderr,*) "The value of subsidence is being set to 0 at ",  &

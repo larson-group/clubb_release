@@ -83,7 +83,7 @@ module clip_explicit
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) :: &
       dt ! Timestep [s]
@@ -478,7 +478,7 @@ module clip_explicit
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
   
     integer, intent(in) :: & 
       solve_type       ! Variable being solved; used for STATS.
@@ -879,7 +879,7 @@ module clip_explicit
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
   
     integer, intent(in) :: & 
       solve_type  ! Variable being solved; used for STATS.
@@ -1027,7 +1027,7 @@ module clip_explicit
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
   
     real( kind = core_rknd ), intent(in) :: & 
       dt               ! Model timestep; used here for STATS        [s]
@@ -1092,7 +1092,7 @@ module clip_explicit
       nz, &
       ngrdcol
 
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       sfc_elevation  ! Elevation of ground level                  [m AMSL]
@@ -1141,7 +1141,7 @@ module clip_explicit
 
     do k = 1, nz
       do i = 1, ngrdcol
-        if ( gr(i)%zt(k) - sfc_elevation(i) <= 100.0_core_rknd ) then ! Clip for 100 m. AGL.
+        if ( gr%zt(i,k) - sfc_elevation(i) <= 100.0_core_rknd ) then ! Clip for 100 m. AGL.
          !wp3_upper_lim(k) =  0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
          !wp3_lower_lim(k) = -0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
           wp3_lim_sqd(i,k) = 0.0021_core_rknd * Skw_max_mag**2 * wp2_zt_cubed(i,k)

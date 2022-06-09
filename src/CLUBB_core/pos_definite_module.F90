@@ -69,7 +69,7 @@ module pos_definite_module
       nz, &
       ngrdcol
     
-    type (grid), target, dimension(ngrdcol), intent(in) :: gr
+    type (grid), target, intent(in) :: gr
         
     real( kind = core_rknd ), intent(in) :: & 
       dt ! Timestep    [s]
@@ -137,10 +137,10 @@ module pos_definite_module
         flux_minus(i,k) = -min( zero_threshold, flux_np1(i,k) ) ! defined on flux levels
 
         if ( field_grid == "zm" ) then
-          dz_over_dt(i,k) = ( 1._core_rknd/gr(i)%invrs_dzm(k) ) / dt
+          dz_over_dt(i,k) = ( 1._core_rknd/gr%invrs_dzm(i,k) ) / dt
 
         else if ( field_grid == "zt" ) then
-          dz_over_dt(i,k) = ( 1._core_rknd/gr(i)%invrs_dzt(k) ) / dt
+          dz_over_dt(i,k) = ( 1._core_rknd/gr%invrs_dzt(i,k) ) / dt
 
         end if
         

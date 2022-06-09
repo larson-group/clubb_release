@@ -328,7 +328,7 @@ module fill_holes
     ! is desired, or where statistics over the entire (global) vertical
     ! domain are desired, the lower (thermodynamic-level) index of k = 2 and
     ! the upper (thermodynamic-level) index of k = gr%nz, means that the
-    ! overall vertical domain will be gr%zm(gr%nz) - gr%zm(1).
+    ! overall vertical domain will be gr%zm(1,gr%nz) - gr%zm(1,1).
     !
     !
     ! Momentum-level computation:
@@ -978,7 +978,7 @@ module fill_holes
          if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
 
             ! Apply the hole filling algorithm
-            call fill_holes_vertical( gr%nz, gr%dzm, gr%dzt, 2, zero_threshold, "zt", & ! intent(in)
+            call fill_holes_vertical( gr%nz, gr%dzm(1,:), gr%dzt(1,:), 2, zero_threshold, "zt", & ! intent(in)
                                       rho_ds_zt, rho_ds_zm, & ! intent(in)
                                       hydromet(:,i) ) ! intent(inout)
 
