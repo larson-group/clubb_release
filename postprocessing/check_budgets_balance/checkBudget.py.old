@@ -1,22 +1,15 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Author: Cavyn VonDeylen
 # Date: September 2010
 # Larson-Group UWM
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
-from builtins import zip
-from builtins import str
-from builtins import range
 import sys  # Handles command line arguments
 import re   # Regular expressions
-import futurizedReadBinaryData  # Reads GrADS .dat files
-from netCDF4 import Dataset
+import readBinaryData  # Reads GrADS .dat files
+from pupynere import NetCDFFile # Read NetCDF .cdf / .nc files
 from numpy import * # External library for handling large data sets
 from time import strftime
-import random
-import pdb
+
 # NOTE: This script contains some kludges to hide budget errors we don't have time to fix, marked with TODO
 
 # Modify this to point to the directory containing the output files
@@ -147,50 +140,48 @@ def checkNetcdfBudgets(fileName, iteration):
 
     # Open File
     try:
-        ncFile = Dataset(FILEPATH + fileName, 'r+', format="NETCDF3")
+        ncFile = NetCDFFile(FILEPATH + fileName, 'r')
     except IOError:
         sys.stderr.write("\nCannot find file " + FILEPATH + fileName + "\n\n")
         sys.exit(1)
 
     # Find number of z levels
     try:
-        numLevels = len(ncFile.dimensions['altitude'])
-        
-    except Exception:
+        numLevels = ncFile.dimensions['altitude']
+    except StandardError:
         sys.stderr.write("Error parsing number of z levels\n")
         sys.exit(1)
     
     # Find the number of iterations
     try:
         # Pick a random variable and see how many timesteps it has
-        varName = random.choice(list(ncFile.variables.keys()))
+        varName = ncFile.variables.keys()[0]
         numIterations = ncFile.variables[varName].shape[0]
-    except Exception:
+    except StandardError:
         sys.stderr.write("Error parsing number of iterations\n")
         sys.exit(1)
         
     # Find the timestep
     try:
         if "seconds" in ncFile.variables['time'].units.lower():
-            timestep = (ncFile.variables['time'][numIterations-1:numIterations] - \
-                        ncFile.variables['time'][numIterations-2:numIterations-1])
+            timestep = (ncFile.variables['time'].getValue(numIterations-1) - \
+                        ncFile.variables['time'].getValue(numIterations-2))
         elif "minutes" in ncFile.variables['time'].units.lower():
-           timestep = 60 * (ncFile.variables['time'][numIterations-1:numIterations] - \
-                            ncFile.variables['time'][numIterations-2:numIterations-1])
+           timestep = 60 * (ncFile.variables['time'].getValue(numIterations-1) - \
+                            ncFile.variables['time'].getValue(numIterations-2))
         else:
             sys.stderr.write("Invalid units for timestep\n")
             sys.exit(1)
-    except Exception:
+    except StandardError:
         sys.stderr.write("Error parsing timestep\n")
         sys.exit(1)
 
     # Find number of variables (VARS)
     try:
-        numVars = list(ncFile.variables.keys())
-        #print(numVars)
+        numVars = ncFile.variables.keys()
         # List includes the 4 dimensions. We don't want these
         numVars = len(numVars) - 4
-    except Exception:
+    except StandardError:
         sys.stderr.write("Error parsing number of variables\n")
         sys.exit(1)
     
@@ -200,9 +191,8 @@ def checkNetcdfBudgets(fileName, iteration):
         sys.exit(1)
     
     #Prep for finding budget variables
-    varList =  list(ncFile.variables.keys())
+    varList =  ncFile.variables.keys()
     varList.sort()
-    
     
     # Check the budgets for errors. Loop through all timesteps if iteration <= 0, otherwise
     # just test the specified timestep
@@ -213,9 +203,9 @@ def checkNetcdfBudgets(fileName, iteration):
     else:
         testSuccess = findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, \
                                                  timestep, numIterations, testSuccess)
-    #print(varList)
-    #print(numVars)
+
     ncFile.close()
+    
     return testSuccess
 
 #--------------------------------------------------------------------------------------------------
@@ -322,14 +312,15 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
     """
     
     rightHandValue = array( [0]*numLevels ) # RHS of budget equation. Each z level is treated separately
+    
     # Find a budget variable (_bt)
     for varName in varList:
         try:
             # If varName is not budget var, exception will be thrown and next var checked
             budgetVarName = re.match("\w+_bt", varName).group()
             
-            budgetVar = ncFile.variables[varName]           
-            leftHandValue = budgetVar[iteration-1:iteration] # First index of list is 0 
+            budgetVar = ncFile.variables[varName]
+            leftHandValue = budgetVar.getValue(iteration-1) # First index of list is 0
             
             # Can't do completeness check when iteration is 1
             if iteration != 1 and COMPLETENESS_TEST == True:
@@ -347,7 +338,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
                             
                             # Vars in the budget have descriptions that include eg. "thlm budget:"
                             if var.long_name.find("budget:") != -1:
-                                componentValue = array(var[iteration-1:iteration] )
+                                componentValue = array( var.getValue(iteration-1) )
                                 rightHandValue = rightHandValue + componentValue
                         
                 except AttributeError:
@@ -358,7 +349,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
             allowedTolerance = calcTolerance(budgetVar.units, TIME_SCALE_DENOMINATOR, budgetVarName[0:-3])
 
             # Ignore zt(1) since it is below ground. Still use zm(1) however
-            if ncFile.filepath().find("_zt") != -1:
+            if ncFile.filename.find("_zt") != -1:
                 zLevel = 1
                 errorDifference = errorDifference[1:]
             else:
@@ -366,11 +357,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
 
             testSuccess = dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, iteration, zLevel, budgetVarName[:-3], \
                 budgetVar.units, testSuccess)
-            #print(varName)
-            #set_printoptions(threshold=sys.maxsize)
-            #print(errorDifference)
-            
-    
+                
             # Clear old data
             rightHandValue = [0]*numLevels 
            
@@ -452,15 +439,13 @@ def checkNetcdfCompleteness(ncFile, numLevels, iteration, numVars, \
         if termName == varName:
         
             statVar = ncFile.variables[varName]
-            varAfter = statVar[iteration-1:iteration].flatten()  # First index in python list is 0
-            varBefore = statVar[iteration-2:iteration-1].flatten() # while iteration starts at t = 1
-
+            
+            varAfter = array( statVar.getValue(iteration-1) )  # First index in python list is 0
+            varBefore = array( statVar.getValue(iteration-2) ) # while iteration starts at t = 1
+            
             rightHandValue = (varAfter - varBefore) / timestep
-
+            
             errorDifference = leftHandValue - rightHandValue
-            #print(varName)
-            #set_printoptions(threshold=sys.maxsize)
-            #print(errorDifference.flatten())
             allowedTolerance = calcTolerance(termUnits, timestep, termName)
             
             # Specify that this is the completeness test when printing to stdout
@@ -485,12 +470,11 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
            testSuccess: Whether the test is succeeding or failing
     """
     global numFails
-
+    
     for value in errorDifference:
         zLevel += 1
         if(zLevel > 1): #TODO: Hides errors at z level 1. See ticket 360 for more info.
-            # Check to make sure tolerance is not smaller than a values precision   
-
+            # Check to make sure tolerance is not smaller than a values precision
             valuePrecision = calcPrecision(leftHandValue[zLevel-1], rightHandValue[zLevel-1])
             allowedTolerance = max( abs(allowedTolerance), abs(valuePrecision) )
             
@@ -500,12 +484,12 @@ def dispError(leftHandValue, rightHandValue, errorDifference, allowedTolerance, 
             if abs(percentError[zLevel-1]) >= TEST_LENIENCY: # [zLevel-1] because array starts at 0
                 testSuccess = False
                 numFails += 1
-                print(" ".join([ termName, "fails at t=", \
+                print " ".join([ termName, "fails at t=", \
                     str(iteration), "and z=", str(zLevel), "with a difference of", "%e" % value, \
-                    termUnits, "and error", "%.9f" % percentError[zLevel-1], "%" ]))
+                    termUnits, "and error", "%.9f" % percentError[zLevel-1], "%" ])
                 
                 if numFails >= MAX_FAILURES:
-                    print("Too many failures: exiting test. (Change MAX_FAILURES variable to view more)")
+                    print "Too many failures: exiting test. (Change MAX_FAILURES variable to view more)"
                     sys.exit(1)
                 
     return testSuccess
@@ -518,7 +502,7 @@ def calcPercentError(experimental, accepted, denominator):
            accepted: The correct values in list form
            denominator: Integer same as accepted unless accepted is extremely small (i.e. 0)
     """
-    return (experimental - accepted) / (denominator * 100)
+    return (experimental - accepted) / denominator * 100
     
 #--------------------------------------------------------------------------------------------------
 def calcTolerance(termUnits, timestep, termName):
@@ -613,18 +597,18 @@ if __name__ == "__main__":
     
     # If wrong arguments were given, print a helpful message
     if len(sys.argv) != 3:
-        print("Program Help:")
-        print("Arguments must be: filename iteration")
-        print("")
-        print("Filename can be either a NetCDF file (.nc or .cdf) or grads files (.ctl/.dat)")
-        print("Set filename to 'all' for all files in the directory specified by the FILEPATH variable")
-        print("Set iteration to '0' for all iterations")
-        print("")
-        print("This script verifies that the budget variable equals the sum of the budget terms")
-        print("e.g. vm_bt = vm_ma + vm_gf + vm_cf +...+ vm_sf")
-        print("The completeness test verifies that the budgets are consistent")
-        print("e.g. rtm_bt(t=5) = ( rtm(t=6) - rtm(t=5) ) / timestep")
-        print("")
+        print "Program Help:"
+        print "Arguments must be: filename iteration"
+        print ""
+        print "Filename can be either a NetCDF file (.nc or .cdf) or grads files (.ctl/.dat)"
+        print "Set filename to 'all' for all files in the directory specified by the FILEPATH variable"
+        print "Set iteration to '0' for all iterations"
+        print ""
+        print "This script verifies that the budget variable equals the sum of the budget terms"
+        print "e.g. vm_bt = vm_ma + vm_gf + vm_cf +...+ vm_sf"
+        print "The completeness test verifies that the budgets are consistent"
+        print "e.g. rtm_bt(t=5) = ( rtm(t=6) - rtm(t=5) ) / timestep"
+        print ""
         sys.exit(1)
         
     testSuccess = True
@@ -652,12 +636,12 @@ if __name__ == "__main__":
         
         # Make sure data exists
         if len(testableFiles) == 0:
-            print("Unable to find testable data")
+            print "Unable to find testable data"
             testSuccess = False
         
         # Test all remaining files
         for dataFile in testableFiles:
-            print("".join(["\n", strftime("%H:%M:%S"), " - Testing ", dataFile]))
+            print "".join(["\n", strftime("%H:%M:%S"), " - Testing ", dataFile])
             
             # Check if file is NetCDF, otherwise assume GrADS
             if dataFile.find(".nc") != -1 or dataFile.find(".cdf") != -1:
@@ -669,7 +653,7 @@ if __name__ == "__main__":
                     
     # Only check 1 file
     else:
-        print("\nTesting " +  sys.argv[1])
+        print "\nTesting " +  sys.argv[1]
         
         # Check if file is NetCDF, otherwise assume GrADS
         if sys.argv[1].find(".nc") != -1 or sys.argv[1].find(".cdf") != -1:
@@ -681,8 +665,8 @@ if __name__ == "__main__":
             
     # Print resolution to the screen
     if testSuccess == True:
-        print("Budgets successfully balance!")
+        print "Budgets successfully balance!"
         sys.exit(0)
     else:
-        print("Budgets fail to balance")
+        print "Budgets fail to balance"
         sys.exit(1)
