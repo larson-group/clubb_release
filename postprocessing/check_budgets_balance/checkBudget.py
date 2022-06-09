@@ -2,6 +2,7 @@
 # Author: Cavyn VonDeylen
 # Date: September 2010
 # Larson-Group UWM
+# Updated to python 3 by Tyler Cernik
 
 from __future__ import print_function
 from __future__ import division
