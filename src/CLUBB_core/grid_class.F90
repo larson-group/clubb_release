@@ -471,8 +471,8 @@ module grid_class
     allocate( gr%zm(ngrdcol,gr%nz), gr%zt(ngrdcol,gr%nz), & 
               gr%dzm(ngrdcol,gr%nz), gr%dzt(ngrdcol,gr%nz), &
               gr%invrs_dzm(ngrdcol,gr%nz), gr%invrs_dzt(ngrdcol,gr%nz),  & 
-              gr%weights_zm2zt(ngrdcol,m_above:m_below,gr%nz), & 
-              gr%weights_zt2zm(ngrdcol,t_above:t_below,gr%nz), & 
+              gr%weights_zm2zt(ngrdcol,gr%nz,m_above:m_below), & 
+              gr%weights_zt2zm(ngrdcol,gr%nz,t_above:t_below), & 
               stat=ierr )
 
     if ( ierr /= 0 ) then
@@ -1493,7 +1493,7 @@ module grid_class
     ! linear interpolation.
     do k = 1, nz-1
       do i = 1, ngrdcol
-        linear_interpolated_azm_2D(i,k) = gr%weights_zt2zm(i,1,k) &
+        linear_interpolated_azm_2D(i,k) = gr%weights_zt2zm(i,k,1) &
                                           * ( azt(i,k+1) - azt(i,k) ) + azt(i,k)
       end do
     end do
@@ -1784,11 +1784,11 @@ module grid_class
         ! momentum level is above the top thermodynamic level.  A linear
         ! extension is required, rather than linear interpolation.
         ! Note:  Variable "factor" will be greater than 1 in this situation.
-        gr%weights_zt2zm(i,t_above,k) = ( gr%zm(i,k) - gr%zt(i,k) ) &
+        gr%weights_zt2zm(i,k,t_above) = ( gr%zm(i,k) - gr%zt(i,k) ) &
                                           / ( gr%zt(i,k+1) - gr%zt(i,k) )
 
         ! Weight of lower thermodynamic level on momentum level.
-        gr%weights_zt2zm(i,t_below,k) = one - gr%weights_zt2zm(i,t_above,k)
+        gr%weights_zt2zm(i,k,t_below) = one - gr%weights_zt2zm(i,k,t_above)
         
       end do
     end do
@@ -1796,10 +1796,10 @@ module grid_class
     ! At most levels, the momentum level is found in-between two
     ! thermodynamic levels.  Linear interpolation is used.
     do i = 1, ngrdcol
-      gr%weights_zt2zm(i,t_above,nz) = ( gr%zm(i,nz) - gr%zt(i,nz-1) ) &
+      gr%weights_zt2zm(i,nz,t_above) = ( gr%zm(i,nz) - gr%zt(i,nz-1) ) &
                                         / ( gr%zt(i,nz) - gr%zt(i,nz-1) )
                                         
-      gr%weights_zt2zm(i,t_below,nz) = one - gr%weights_zt2zm(i,t_above,nz)
+      gr%weights_zt2zm(i,nz,t_below) = one - gr%weights_zt2zm(i,nz,t_above)
     end do
 
     return
@@ -1859,7 +1859,7 @@ module grid_class
     ! linear interpolation.
     do k = 2, nz
       do i = 1, ngrdcol
-        linear_interpolated_azt_2D(i,k) = gr%weights_zm2zt(i,1, k) &
+        linear_interpolated_azt_2D(i,k) = gr%weights_zm2zt(i,k,1) &
                                           * ( azm(i,k) - azm(i,k-1) ) + azm(i,k-1)
       end do
     end do
@@ -2136,10 +2136,10 @@ module grid_class
     ! At most levels, the momentum level is found in-between two
     ! thermodynamic levels.  Linear interpolation is used.
     do i = 1, ngrdcol
-      gr%weights_zm2zt(i,m_above,1) = ( gr%zt(i,1) - gr%zm(i,1) ) &
+      gr%weights_zm2zt(i,1,m_above) = ( gr%zt(i,1) - gr%zm(i,1) ) &
                                         / ( gr%zm(i,2) - gr%zm(i,1) )
                                         
-      gr%weights_zm2zt(i,m_below,1) = one - gr%weights_zm2zt(i,m_above,1)
+      gr%weights_zm2zt(i,1,m_below) = one - gr%weights_zm2zt(i,1,m_above)
     end do
 
     do k = 2, nz
@@ -2149,11 +2149,11 @@ module grid_class
         ! momentum level is above the top thermodynamic level.  A linear
         ! extension is required, rather than linear interpolation.
         ! Note:  Variable "factor" will be greater than 1 in this situation.
-        gr%weights_zm2zt(i,m_above,k) = ( gr%zt(i,k) - gr%zm(i,k-1) ) &
+        gr%weights_zm2zt(i,k,m_above) = ( gr%zt(i,k) - gr%zm(i,k-1) ) &
                                          / ( gr%zm(i,k) - gr%zm(i,k-1) )
 
         ! Weight of lower thermodynamic level on momentum level.
-        gr%weights_zm2zt(i,m_below,k) = one - gr%weights_zm2zt(i,m_above,k)
+        gr%weights_zm2zt(i,k,m_below) = one - gr%weights_zm2zt(i,k,m_above)
         
       end do
     end do

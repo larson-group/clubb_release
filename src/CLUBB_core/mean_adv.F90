@@ -205,7 +205,7 @@ module mean_adv
       invrs_dzt, & ! Inverse of grid spacing      [1/m]
       invrs_dzm    ! Inverse of grid spacing      [1/m]
       
-    real( kind = core_rknd ), dimension(ngrdcol,t_above:t_below,nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,t_above:t_below), intent(in) :: & 
       weights_zt2zm
 
     logical, intent(in) :: &
@@ -233,14 +233,14 @@ module mean_adv
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-          lhs_ma(kp1_tdiag,i,k) = + wm_zt(i,k) * invrs_dzt(i,k) * weights_zt2zm(i,t_above,k)
+          lhs_ma(kp1_tdiag,i,k) = + wm_zt(i,k) * invrs_dzt(i,k) * weights_zt2zm(i,k,t_above)
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-          lhs_ma(k_tdiag,i,k) = + wm_zt(i,k) * invrs_dzt(i,k) * ( weights_zt2zm(i,t_below,k) & 
-                              - weights_zt2zm(i,t_above,k-1) )
+          lhs_ma(k_tdiag,i,k) = + wm_zt(i,k) * invrs_dzt(i,k) * ( weights_zt2zm(i,k,t_below) & 
+                              - weights_zt2zm(i,k-1,t_above) )
 
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-          lhs_ma(km1_tdiag,i,k) = - wm_zt(i,k) * invrs_dzt(i,k) * weights_zt2zm(i,t_below,k-1)
+          lhs_ma(km1_tdiag,i,k) = - wm_zt(i,k) * invrs_dzt(i,k) * weights_zt2zm(i,k-1,t_below)
         end do
       end do ! k = 2, nz, 1
 
@@ -257,11 +257,11 @@ module mean_adv
           
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
           lhs_ma(k_tdiag,i,nz) = + wm_zt(i,nz) * invrs_dzt(i,nz) &
-                                   * ( one - weights_zt2zm(i,t_above,nz-1) )
+                                   * ( one - weights_zt2zm(i,nz-1,t_above) )
 
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs_ma(km1_tdiag,i,nz) = - wm_zt(i,nz) * invrs_dzt(i,nz) &
-                                     * weights_zt2zm(i,t_below,nz-1)
+                                     * weights_zt2zm(i,nz-1,t_below)
         end do
 
     else ! l_upwind_xm_ma == .true.; use "upwind" differencing
@@ -416,7 +416,7 @@ module mean_adv
       wm_zm,     & ! wm_zm                        [m/s]
       invrs_dzm    ! Inverse of grid spacing      [1/m]
       
-    real( kind = core_rknd ), dimension(ngrdcol,m_above:m_below,nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,m_above:m_below), intent(in) :: & 
       weights_zm2zt
 
     ! Return Variable
@@ -434,14 +434,14 @@ module mean_adv
       do i = 1, ngrdcol
         
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-        lhs_ma(kp1_mdiag,i,k) = + wm_zm(i,k) * invrs_dzm(i,k) * weights_zm2zt(i,m_above,k+1)
+        lhs_ma(kp1_mdiag,i,k) = + wm_zm(i,k) * invrs_dzm(i,k) * weights_zm2zt(i,k+1,m_above)
 
         ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-        lhs_ma(k_mdiag,i,k) = + wm_zm(i,k) * invrs_dzm(i,k) * ( weights_zm2zt(i,m_below,k+1) & 
-                                       - weights_zm2zt(i,m_above,k) )
+        lhs_ma(k_mdiag,i,k) = + wm_zm(i,k) * invrs_dzm(i,k) * ( weights_zm2zt(i,k+1,m_below) & 
+                                       - weights_zm2zt(i,k,m_above) )
 
         ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-        lhs_ma(km1_mdiag,i,k) = - wm_zm(i,k) * invrs_dzm(i,k) * weights_zm2zt(i,m_below,k)
+        lhs_ma(km1_mdiag,i,k) = - wm_zm(i,k) * invrs_dzm(i,k) * weights_zm2zt(i,k,m_below)
         
       end do
     end do ! k = 2, nz-1, 1

@@ -958,7 +958,7 @@ module mono_flux_limiter
       invrs_dzt,  &
       invrs_dzm
       
-    real( kind = core_rknd ), dimension(t_above:t_below,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nz,t_above:t_below), intent(in) ::  &
       weights_zt2zm
 
     logical, intent(in) :: &
@@ -981,7 +981,7 @@ module mono_flux_limiter
       invrs_dzt_col,  &
       invrs_dzm_col
       
-    real( kind = core_rknd ), dimension(1,t_above:t_below,nz) ::  &
+    real( kind = core_rknd ), dimension(1,nz,t_above:t_below) ::  &
       weights_zt2zm_col
 
     real( kind = core_rknd ), dimension(3,1,nz) ::  & 

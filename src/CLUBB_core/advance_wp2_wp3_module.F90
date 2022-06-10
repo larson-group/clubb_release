@@ -3776,7 +3776,7 @@ module advance_wp2_wp3_module
             = + invrs_rho_ds_zt(i,k) &
                 * gr%invrs_dzt(i,k) &
                   * rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
-                  * gr%weights_zt2zm(i,t_above,k)
+                  * gr%weights_zt2zm(i,k,t_above)
 
            ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
            lhs_ta_wp3(k_mdiag,i,k) &
@@ -3788,9 +3788,9 @@ module advance_wp2_wp3_module
            = + invrs_rho_ds_zt(i,k) &
                * gr%invrs_dzt(i,k) &
                  * ( rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
-                     * gr%weights_zt2zm(i,t_below,k) &
+                     * gr%weights_zt2zm(i,k,t_below) &
                      - rho_ds_zm(i,k-1) * a1(i,k-1) * wp3_on_wp2(i,k-1) &
-                       * gr%weights_zt2zm(i,t_above,k-1) )
+                       * gr%weights_zt2zm(i,k-1,t_above) )
 
            ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
            lhs_ta_wp3(km1_mdiag,i,k) &
@@ -3802,7 +3802,7 @@ module advance_wp2_wp3_module
            = - invrs_rho_ds_zt(i,k) &
                * gr%invrs_dzt(i,k) &
                  * rho_ds_zm(i,k-1) * a1(i,k-1) * wp3_on_wp2(i,k-1) &
-                 * gr%weights_zt2zm(i,t_below,k-1)
+                 * gr%weights_zt2zm(i,k-1,t_below)
 
           end do
         end do
@@ -3878,7 +3878,7 @@ module advance_wp2_wp3_module
           = + invrs_rho_ds_zt(i,k) &
               * a1_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
-              * gr%weights_zt2zm(i,t_above,k)
+              * gr%weights_zt2zm(i,k,t_above)
 
           ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
           lhs_ta_wp3(k_mdiag,i,k) &
@@ -3890,9 +3890,9 @@ module advance_wp2_wp3_module
           = + invrs_rho_ds_zt(i,k) &
               * a1_zt(i,k) * gr%invrs_dzt(i,k) &
                 * ( rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
-                    * gr%weights_zt2zm(i,t_below,k) &
+                    * gr%weights_zt2zm(i,k,t_below) &
                     - rho_ds_zm(i,k-1) * wp3_on_wp2(i,k-1) &
-                      * gr%weights_zt2zm(i,t_above,k-1) )
+                      * gr%weights_zt2zm(i,k-1,t_above) )
 
           ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
           lhs_ta_wp3(km1_mdiag,i,k) &
@@ -3904,7 +3904,7 @@ module advance_wp2_wp3_module
           = - invrs_rho_ds_zt(i,k) &
               * a1_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k-1) * wp3_on_wp2(i,k-1) &
-              * gr%weights_zt2zm(i,t_below,k-1)
+              * gr%weights_zt2zm(i,k-1,t_below)
 
         end do
       end do

@@ -376,21 +376,21 @@ module turbulent_adv_pdf
           lhs_ta(kp1_mdiag,i,k) &
           = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
             * rho_ds_zt(i,k+1) * coef_wpxpyp_implicit(i,k+1) &
-            * gr%weights_zm2zt(i,m_above,k+1)
+            * gr%weights_zm2zt(i,k+1,m_above)
 
           ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
           lhs_ta(k_mdiag,i,k) &
           = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
             * ( rho_ds_zt(i,k+1) * coef_wpxpyp_implicit(i,k+1) &
-                * gr%weights_zm2zt(i,m_below,k+1) &
+                * gr%weights_zm2zt(i,k+1,m_below) &
                 - rho_ds_zt(i,k) * coef_wpxpyp_implicit(i,k) &
-                  * gr%weights_zm2zt(i,m_above,k) )
+                  * gr%weights_zm2zt(i,k,m_above) )
 
           ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
           lhs_ta(km1_mdiag,i,k) &
           = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
               * rho_ds_zt(i,k) * coef_wpxpyp_implicit(i,k) &
-              * gr%weights_zm2zt(i,m_below,k)
+              * gr%weights_zm2zt(i,k,m_below)
 
         end do
       end do
