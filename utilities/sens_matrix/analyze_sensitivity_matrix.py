@@ -95,6 +95,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     import sys
     import netCDF4
     import pdb
+    from sklearn.preprocessing import normalize
 
     if ( len(paramsNames) != len(sensNcFilenames)   ):
         print("Number of parameters must equal number of netcdf files.")
@@ -186,6 +187,8 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
                     sensNcFilenames)
 
+    #pdb.set_trace()
+
     # Calculate the magnitude of the maximum value of parameters
     #    from the default run (and sensitivity runs as a backup), for later use
     #    in scaling the normalized sensitivity matrix.
@@ -231,11 +234,40 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     # by metricsWeights
     normlzdWeightedSensMatrix = np.diag(np.transpose(metricsWeights)[0]) @ normlzdSensMatrix
 
+    # Compute dot products of  bias vector and matrix columns
+    normlzdDefaultBiasesCol = ( metricsWeights * (-defaultBiasesCol) /
+                                np.abs(obsMetricValsCol) )
+    augSensMatrix = np.hstack( (normlzdDefaultBiasesCol, normlzdWeightedSensMatrix) )
+    augSensMatrixColNorm = normalize(augSensMatrix, axis=0, norm='l2')
+    # Normalized this way, dotMatrix = cos(angle between columns).
+    # The first column is the normalized bias; the other columns are the sensitivity matrix.
+    dotMatrix = augSensMatrixColNorm.T @ augSensMatrixColNorm
+
+    print("\ndotMatrix =")
+    print(dotMatrix)
+
+    # Calculate lower bound on normalized parameter perturbations
+    sensMatrixRowMag = np.linalg.norm(normlzdWeightedSensMatrix, axis=1)
+    dpMin = np.abs(normlzdDefaultBiasesCol) / np.atleast_2d(sensMatrixRowMag).T
+
+    print("\nsensMatrixRowMag =")
+    print(np.atleast_2d(sensMatrixRowMag).T)
+
+    print("\nnormlzdDefaultBiasesCol =")
+    print(normlzdDefaultBiasesCol)
+
+    print("\n U*b =")
+    print(np.atleast_2d(sensMatrixRowMag).T * normlzdDefaultBiasesCol)
+
+    print("\ndpMin =")
+    print(dpMin)
+    #pdb.set_trace()
+
     # sValsRatio = a threshold ratio of largest singular value
     #              to the smallest retained singular value.
     # If sValsRatio is large enough, then all singular vectors will be kept.
     # If sValsRatio is 1, then only the first singular vector will be kept.
-    sValsRatio = 3.
+    sValsRatio = 30.
 
     # Calculate inverse of the singular value decomposition.
     # This gives the recommended changes to parameter values.
@@ -265,6 +297,12 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
     print("\ndefaultBiasesApprox =")
     print(defaultBiasesApprox)
+
+    print("\nmag(dnormlzdParamsSoln) =")
+    print(np.linalg.norm(dnormlzdParamsSoln))
+
+    print("\nmag(dnormlzdParamsSolnPC) =")
+    print(np.linalg.norm(dnormlzdParamsSolnPC))
 
     print("\ndparamsSoln =")
     print(dparamsSoln)
@@ -332,6 +370,7 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     #print(defaultMetricValsMatrix)
 
     # Sensitivity simulation metrics minus default simulation metrics
+    #pdb.set_trace()
     dmetricsMatrix = np.subtract(sensMetricValsMatrix, defaultMetricValsMatrix)
 
     if beVerbose:
@@ -381,6 +420,7 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
 
     # Matrix of inverse biases.
     # Used for forming normalized sensitivity derivatives.
+    #pdb.set_trace()
     invrsObsMatrix = np.reciprocal(np.abs(obsMetricValsCol)) @ np.ones((1,numParams))
 
 #    if beVerbose:
@@ -836,7 +876,8 @@ def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
     import pdb
 
     #regr = ElasticNet(fit_intercept=True, random_state=0, tol=1e-10, l1_ratio=0.5, alpha=0.01)
-    regr = Lasso(fit_intercept=True, random_state=0, tol=1e-10, alpha=0.01)
+    #regr =Lasso(fit_intercept=True, random_state=0, tol=1e-10, alpha=0.01) # don't fit intercept!
+    regr = Lasso(fit_intercept=False, random_state=0, tol=1e-10, alpha=0.01)
     #regr = LassoCV(fit_intercept=True, random_state=0, eps=1e-5, tol=1e-10, cv=metricsWeights.size)
     #print( "alpha_ = ", regr.alpha_ )
     regr.fit(normlzdWeightedSensMatrix, -metricsWeights * defaultBiasesCol / np.abs(obsMetricValsCol) )

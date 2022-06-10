@@ -17,6 +17,8 @@ def main():
     import numpy as np
     import pdb
     import sklearn
+    from plotly.figure_factory import create_quiver
+    from itertools import chain
 
     from analyze_sensitivity_matrix import \
             analyzeSensMatrix, setupObsCol, setupDefaultMetricValsCol, \
@@ -28,36 +30,36 @@ def main():
     # Column vector of (positive) weights.  A small value de-emphasizes
     #   the corresponding metric in the fit.
     metricsNamesAndWeights = [ \
-#                        ['SWCF_GLB', 1.01], \
-#                        ['SWCF_DYCOMS', 1.01], \
+                        ['SWCF_GLB', 4.01], \
+                        ['SWCF_DYCOMS', 1.01], \
                         ['SWCF_HAWAII', 1.01], \
-#                        ['SWCF_VOCAL', 1.01], \
+                        ['SWCF_VOCAL', 1.01], \
                         ['SWCF_LBA', 1.01], \
-#                        ['SWCF_WP', 1.01], \
+                        ['SWCF_WP', 1.01], \
                         ['SWCF_EP', 1.01], \
-#                        ['SWCF_NP', 1.01], \
+                        ['SWCF_NP', 1.01], \
                         ['SWCF_SP', 1.01], \
 ##                        ['SWCF_PA', 1.01], \
-                        ['SWCF_CAF', 1.01] \
-#                        ['LWCF_GLB', 1.01], \
+                        ['SWCF_CAF', 1.01], \
+                        ['LWCF_GLB', 4.01], \
 #                        ['LWCF_DYCOMS', 1.01], \
 #                        ['LWCF_HAWAII', 1.01], \
 #                        ['LWCF_VOCAL', 1.01], \
-#                        ['LWCF_LBA', 1.01], \
-#                        ['LWCF_WP', 1.01], \
+                        ['LWCF_LBA', 1.01], \
+                        ['LWCF_WP', 1.01], \
 #                        ['LWCF_EP', 1.01], \
 #                        ['LWCF_NP', 1.01], \
 #                        ['LWCF_SP', 1.01], \
 ##                        ['LWCF_PA',  1.01], \
 #                        ['LWCF_CAF', 1.01], \
-#                        ['PRECT_GLB', 1.01], \
-#                        ['PRECT_LBA', 1.01], \
-#                        ['PRECT_WP', 1.01], \
+                        ['PRECT_GLB', 4.01], \
+                        ['PRECT_LBA', 1.01], \
+                        ['PRECT_WP', 1.01], \
 #                        ['PRECT_EP', 1.01], \
 #                        ['PRECT_NP', 1.01], \
 #                        ['PRECT_SP', 1.01], \
 ##                        ['PRECT_PA', 1.01], \
-#                        ['PRECT_CAF', 1.01] \
+                        ['PRECT_CAF', 1.01] \
                          ]
 
 
@@ -78,30 +80,30 @@ def main():
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
     paramsNamesScalesAndFilenames = [ \
-#                    ['clubb_c7', 1.0, \
-#                     '20211010/anvil.0703.lmm_2.ne30pg2_r05_oECv3_Regional.nc',  \
-#                     '20211010/anvil.0703.lmm_3.ne30pg2_r05_oECv3_Regional.nc'], \
+##                    ['clubb_c7', 1.0, \
+##                     '20220516/sens.tau_2_Regional.nc',  \
+##                     '20220516/sens.tau_3_Regional.nc'], \
                     ['clubb_c11', 1.0, \
-                     '20211010/anvil.0703.lmm_5.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20211010/anvil.0703.lmm_4.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220516/sens.tau_4_Regional.nc',  \
+                     '20220516/sens.tau_5_Regional.nc'], \
                     ['clubb_gamma_coef', 1.0, \
-                     '20211010/anvil.0703.lmm_6.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20211010/anvil.0703.lmm_7.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c8', 1.0, \
-#                     '20211010/anvil.0703.lmm_9.ne30pg2_r05_oECv3_Regional.nc',  \
-#                     '20211010/anvil.0703.lmm_8.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220516/sens.tau_6_Regional.nc',  \
+                     '20220516/sens.tau_7_Regional.nc'], \
+##                    ['clubb_c8', 1.0, \
+##                     '20220516/sens.tau_9_Regional.nc',  \
+##                     '20220516/sens.tau_8_Regional.nc'], \
                     ['clubb_c_k10', 1.0, \
-                     '20211010/anvil.0703.lmm_10.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20211010/anvil.0703.lmm_11.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220516/sens.tau_10_Regional.nc', \
+                     '20220516/sens.tau_11_Regional.nc'], \
                     ['clubb_c_invrs_tau_n2', 1.0, \
-                     '20211010/anvil.0703.lmm_12.ne30pg2_r05_oECv3_Regional.nc',
-                     '20211010/anvil.0703.lmm_13.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-#                     '20211010/anvil.0703.lmm_14.ne30pg2_r05_oECv3_Regional.nc', \
-#                     '20211010/anvil.0703.lmm_15.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['micro_vqit', 1.0, \
-#                     '20211010/anvil.0703.lmm_16.ne30pg2_r05_oECv3_Regional.nc', \
-#                     '20211010/anvil.0703.lmm_17.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220516/sens.tau_12_Regional.nc',
+                     '20220516/sens.tau_13_Regional.nc'], \
+##                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
+##                     '20220516/sens.tau_14_Regional.nc', \
+##                     '20220516/sens.tau_15_Regional.nc'], \
+##                    ['micro_vqit', 1.0, \
+##                     '20220516/sens.tau_16_Regional.nc', \
+##                     '20220516/sens.tau_17_Regional.nc'], \
                         ]
 
     dfparamsNamesScalesAndFilenames =  \
@@ -123,12 +125,12 @@ def main():
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
-        '20211010/anvil.0703.lmm_1.ne30pg2_r05_oECv3_Regional.nc'
+        '20220516/sens.tau_1_Regional.nc'
 
     # Metrics from simulation that use the SVD-recommended parameter values
     # Here, we use default simulation just as a placeholder.
     linSolnNcFilename = \
-            '20211010/anvil.0703.lmm_20.ne30pg2_r05_oECv3_Regional.nc'
+            '20220516/sens.tau_1_Regional.nc'
 
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
@@ -202,6 +204,13 @@ def main():
     dnormlzdParamsSolnElastic, paramsSolnElastic = \
         findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
                      defaultBiasesCol, obsMetricValsCol, metricsWeights, magParamValsRow, defaultParamValsOrigRow)
+
+    defaultBiasesApproxElasticCheck = ( normlzdWeightedSensMatrix @ dnormlzdParamsSolnElastic ) \
+                            * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
+
+    print("defaultBiasesApproxElastic = ", defaultBiasesApproxElastic)
+    print("defaultBiasesApproxElasticCheck = ", defaultBiasesApproxElasticCheck)
+
     #pdb.set_trace()
 
     # Set up a column vector of metric values from the default simulation
@@ -364,8 +373,8 @@ def main():
     # Plot a scatterplot of default-simulation bias and SVD approximation of that bias.
     # Each column tells us how all metrics vary with a single parameter.
     biasSensMatrix = np.concatenate((-defaultBiasesCol/np.abs(obsMetricValsCol),
-                                     #(-defaultBiasesApproxElastic-defaultBiasesCol)/np.abs(obsMetricValsCol)), axis=1)
-                                     defaultBiasesApproxElastic/np.abs(obsMetricValsCol)), axis=1)
+                                    (-defaultBiasesApproxElastic-defaultBiasesCol)/np.abs(obsMetricValsCol)), axis=1)
+                                     #defaultBiasesApproxElastic/np.abs(obsMetricValsCol)), axis=1)
     biasAndParamsNames = ["bias", "bias_approx_pc"]
     #biasAndParamsNames = np.append(["bias", "bias_approx_pc"], paramsNames)
     df = pd.DataFrame(biasSensMatrix,
@@ -379,13 +388,44 @@ def main():
     biasSensMatrixOneOneLine = px.line(df, x="bias", y="bias")
     biasSensMatrixOneMOneLine = px.line(df, x="bias", y=-df.loc[:,"bias"])
     biasSensMatrixScatterFig = go.Figure(data=biasSensMatrixScatter.data
-                                              + biasSensMatrixOneOneLine.data)
-                                              #+ biasSensMatrixOneMOneLine.data)
+                                              + biasSensMatrixOneOneLine.data
+                                              + biasSensMatrixOneMOneLine.data)
+    biasRange = (max(df.loc[:,"bias"]), min(df.loc[:,"bias"]))
+    biasSensMatrixScatterFig.add_trace(go.Scatter(x=biasRange, y=biasRange, fill='tozeroy',
+                               name='Region of improvement', mode='none',
+                               fillcolor='rgba(253,253,150,0.7)'))
     biasSensMatrixScatterFig.update_yaxes(title="(-defaultBiasesApproxElastic-defaultBiasesCol)/obs")
     biasSensMatrixScatterFig.update_xaxes(title="-defaultBiasesCol/obs")
     biasSensMatrixScatterFig.update_traces(textposition='top center')
     #normlzdSensMatrixColsFig.layout.legend.title = "Parameter"
     #pdb.set_trace()
+
+
+    # Plot a scatterplot of minimum parameter perturbation vs. fractional default bias approximation
+    # Calculate lower bound on normalized parameter perturbations
+    #normlzdDefaultBiasesCol = ( metricsWeights * (-defaultBiasesCol) /
+    normlzdDefaultBiasesCol = ( (-defaultBiasesCol) /
+                                np.abs(obsMetricValsCol) )
+    sensMatrixRowMag = np.linalg.norm(normlzdWeightedSensMatrix, axis=1)
+    dpMin = np.abs(normlzdDefaultBiasesCol) / np.atleast_2d(sensMatrixRowMag).T
+    u_dot_b = np.atleast_2d(sensMatrixRowMag).T * normlzdDefaultBiasesCol
+    #dpMinMatrix = np.dstack((np.reciprocal(dpMin),
+    dpMinMatrix = np.dstack((np.abs(u_dot_b),
+    #dpMinMatrix = np.dstack((np.atleast_2d(sensMatrixRowMag).T,
+                          np.abs(defaultBiasesApproxElastic)/np.abs(obsMetricValsCol)
+                         )).squeeze()
+    biasAndParamsNames = ["dpMinInvrs", "bias_approx"]
+    df = pd.DataFrame(dpMinMatrix,
+                  index=metricsNames,
+                  columns=biasAndParamsNames)
+    dpMinMatrixScatter = px.scatter(df, x="dpMinInvrs", y="bias_approx", text=metricsNames,
+              title = """dpMinInvrs  vs. |approx bias vector|.<br>
+                       """ )
+    dpMinMatrixScatterFig = go.Figure(data=dpMinMatrixScatter.data)
+    dpMinMatrixScatterFig.update_yaxes(title="|defaultBiasesApproxElastic|")
+    dpMinMatrixScatterFig.update_xaxes(title="dpMinInvrs")
+    dpMinMatrixScatterFig.update_traces(textposition='top center')
+
 
     # Plot the sensitivity of each regional metric.
     #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
@@ -400,19 +440,14 @@ def main():
     maxSensMetricsFig.update_layout(hovermode="x")
     maxSensMetricsFig.update_traces(mode='lines+markers')
 
+
     # Plot the biases versus sensitivity of each regional metric.
     #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
-    #pdb.set_trace()
     #df = pd.DataFrame({'Max abs normlzd sensitivity': np.max(np.abs(normlzdSensMatrix), axis=1), # max |row elements|
-    #                   'default bias': -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0]),
-    #                   'approx bias': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(obsMetricValsCol[:,0])
-    #                  }, index=metricsNames )
-    #biasesVsSensFig = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:],
-    #                             text=metricsNames, title = """Default simulation and approximated biases versus sensitivity.""" )
-    #biasesVsSensFig.update_yaxes(title="Biases")
-    #biasesVsSensFig.update_xaxes(title="Max abs normlzd sensitivity")
-    #biasesVsSensFig.update_layout(hovermode="x")
-    df = pd.DataFrame({'Max abs normlzd sensitivity': np.max(np.abs(normlzdSensMatrix), axis=1), # max |row elements|
+    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.sum(normlzdWeightedSensMatrix, axis=1), # sum of row elements
+    df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdWeightedSensMatrix, axis=1), # sum of row elements
+    #df = pd.DataFrame({'Max abs normlzd sensitivity':
+    #                    -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0])*np.linalg.norm(normlzdWeightedSensMatrix, axis=1), # sum of row elements
                        'default tuning': -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0]),
                        'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(obsMetricValsCol[:,0])
                       }, index=metricsNames )
@@ -421,8 +456,70 @@ def main():
     biasesVsSensFig.update_yaxes(title="Regional biases")
     biasesVsSensFig.update_xaxes(title="Sensitivity of regional metrics to parameter changes")
     biasesVsSensFig.update_layout(hovermode="x")
-    #maxSensMetricsFig.update_traces(mode='lines+markers')
-    #pdb.set_trace()
+
+    # Compute length of arrows between default and tuned biases
+    #metricsNamesPadded = ",,".join(metricsNames).split(",")
+    #metricsNamesPadded = ",,".join(metricsNamesPadded).split(",")
+    #metricsNamesPadded = np.append(metricsNamesPadded, ["", "", ""], axis=0)
+    xArrow = np.linalg.norm(normlzdWeightedSensMatrix, axis=1)
+    yArrow = -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0])
+    uArrow = np.zeros_like(xArrow)
+    vArrow = (-defaultBiasesApproxElastic)[:,0]/np.abs(obsMetricValsCol[:,0])
+    #arrowFig = create_quiver(xArrow, yArrow, uArrow, vArrow,
+    #                         scale=1,text=metricsNamesPadded)
+    #arrowFig.update_yaxes(title="Regional biases")
+    #arrowFig.update_traces(mode='lines+text')  # make labels appear in plot, not just hovermode
+
+    # Plot biases vs. sensitivity, but with arrows indicating the degree of bias reduction
+    df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdWeightedSensMatrix, axis=1), # sum of row elements
+
+                       'default tuning': -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0]),
+                       'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(obsMetricValsCol[:,0])
+                      }, index=metricsNames )
+    biasesVsSensArrowFig = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
+                                 text=metricsNames,
+                                 title = """Regional biases with default and revised tuning with
+                                      arrows, versus sensitivity.""" )
+    biasesVsSensArrowFig.update_traces(textposition="middle right")
+    for i, item in enumerate(metricsNames):
+        biasesVsSensArrowFig.add_annotation(
+        x=  xArrow[i],  # arrows' head
+        y= (-defaultBiasesApproxElastic-defaultBiasesCol)[i,0]/np.abs(obsMetricValsCol[i,0]),  # arrows' tail
+        ax= xArrow[i],  # arrows' tail
+        ay=  yArrow[i],  # arrows' head
+        xref='x',
+        yref='y',
+        axref='x',
+        ayref='y',
+        text='',  # if you want only the arrow
+        showarrow=True,
+        arrowhead=3,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor='black'
+        )
+    biasesVsSensArrowFig.update_yaxes(title="Regional biases")
+    biasesVsSensArrowFig.update_xaxes(title="Sensitivity of regional metrics to parameter changes")
+    biasesVsSensArrowFig.update_layout(hovermode="x")
+    biasesVsSensArrowFig.update_traces(cliponaxis=False)
+    biasesVsSensArrowFig.update_yaxes(automargin=True)
+
+
+    # Plot the residual*sensitivity vs. bias*sensitivity
+    # The goal is to separate out which regional are amenable to tuning
+    normlzdBias = -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0])
+    normlzdResid = (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(obsMetricValsCol[:,0])
+    df = pd.DataFrame({'bias times sensitivity': normlzdBias*np.sum(normlzdSensMatrix, axis=1), # sum of row elements
+                       'residual times sensitivity': normlzdResid*np.sum(normlzdSensMatrix, axis=1) # sum of row elements
+                      }, index=metricsNames )
+    residVsBiasScatter = px.scatter(df, x='bias times sensitivity', y=df.columns[1:],
+                                 text=metricsNames, title = """Residual times sensitivity versus bias times sensitivity.""" )
+    residVsBiasOneOneLine = px.line(df, x="bias times sensitivity", y="bias times sensitivity")
+    residVsBiasFig = go.Figure(data=residVsBiasScatter.data
+                                    + residVsBiasOneOneLine.data)
+    residVsBiasFig.update_yaxes(title="Residual times sensitivity")
+    residVsBiasFig.update_xaxes(title="Bias times sensitivity")
+    residVsBiasFig.update_layout(hovermode="x")
 
     # Plot the relative biases versus sensitivity of each regional metric.
     #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
@@ -440,7 +537,6 @@ def main():
 
     # Plot the relative biases versus sensitivity of each regional metric.
     #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
-    #pdb.set_trace()
     absBiasTuned = np.abs(-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(obsMetricValsCol[:,0])
     absBiasDefault = np.abs(-defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0]))
     df = pd.DataFrame({'Max abs normlzd sensitivity': np.max(np.abs(normlzdSensMatrix), axis=1), # max |row elements|
@@ -455,17 +551,19 @@ def main():
 
     # Plot each column of normalized sensitivity matrix as a separate line.
     # Each column tells us how all metrics vary with a single parameter.
-    df = pd.DataFrame(normlzdSensMatrix,
+    df = pd.DataFrame( np.hstack( (-defaultBiasesCol/np.abs(obsMetricValsCol),normlzdSensMatrix) ),
                   index=metricsNames,
-                  columns=paramsNames)
+                  columns=np.append('Norm bias', paramsNames) )
     normlzdSensMatrixColsFig = px.line(df, x=df.index, y=df.columns,
-              title =  """Columns of normalized, unweighted sensitivity matrix.<br>
+              title =  """Columns of normalized, unweighted sensitivity matrix (plus the bias
+                                       vector).<br>
                        Each column (line) shows how sensitive the metrics are to a change in a single parameter value.<br>
                        (A positive value means that an increase in parameter value brings the default simulation closer to obs.)""" )
     normlzdSensMatrixColsFig.update_yaxes(title="Norml sens, (|param|/|obsmetric|) * dmetric/dparam")
     normlzdSensMatrixColsFig.update_xaxes(title="Metric and region")
     normlzdSensMatrixColsFig.layout.legend.title = "Parameter"
     normlzdSensMatrixColsFig.update_layout(hovermode="x")
+    #pdb.set_trace()
 
     # Plot each row of normalized sensitivity matrix as a separate line.
     # Each row tells us how a single metric varies with all parameters.
@@ -482,7 +580,6 @@ def main():
     normlzdSensMatrixRowsFig.update_layout(hovermode="x")
 
     # Plot each column of right-singular vector matrix, V.
-    #pdb.set_trace()
     rightSingVectorNums = (np.arange(paramsNames.shape[0])+1).astype(str)
     df = pd.DataFrame(np.transpose(vhNormlzd),
                   index=paramsNames,
@@ -528,6 +625,7 @@ def main():
     # Plot each column of left-singular vector matrix, U, multiplied by biases.
     # Plot each column of left-singular vector matrix, U, multiplied by biases.
     df = pd.DataFrame(uNormlzd*defaultBiasesCol/np.abs(obsMetricValsCol),
+
                    index=metricsNames,
                   columns=rightSingVectorNums)
     uNormlzdBiasColsFig = px.line(df, x=df.index, y=df.columns,
@@ -577,9 +675,12 @@ def main():
 
         dcc.Graph( id='biasesFig', figure=biasesFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
+        dcc.Graph( id='dpMinScatterFig', figure=dpMinMatrixScatterFig ),
         dcc.Graph( id='paramsFig', figure=paramsFig ),
         dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ),
         dcc.Graph( id='biasesVsSensFig', figure=biasesVsSensFig ),
+        dcc.Graph( id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig ),
+        dcc.Graph( id='residVsBiasFig', figure=residVsBiasFig ),
         dcc.Graph( id='diffBiasesVsSensFig', figure=diffBiasesVsSensFig ),
         dcc.Graph( id='relBiasesVsSensFig', figure=relBiasesVsSensFig ),
         dcc.Graph( id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig ),
