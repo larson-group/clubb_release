@@ -1360,10 +1360,9 @@ module advance_xm_wpxp_module
 
     ! Calculate accumulation of w'x' and w'x' pressure term 2 of w'x' for all grid level
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wpxp_pr
-    do i = 1, ngrdcol
-      call wpxp_terms_ac_pr2_lhs( nz, C7_Skw_fnc(i,:), wm_zt(i,:), gr%invrs_dzm(i,:), & ! Intent(in)
-                                  lhs_ac_pr2(i,:)                       ) ! Intent(out)
-    end do        
+    call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, C7_Skw_fnc,  & ! Intent(in)
+                                wm_zt, gr%invrs_dzm,      & ! Intent(in)
+                                lhs_ac_pr2 )                ! Intent(out)
 
     ! Calculate diffusion terms for all momentum grid level
     call diffusion_zm_lhs( nz, ngrdcol, gr, Kw6, Kw6_zm, nu_vert_res_dep%nu6, & ! Intent(in)
@@ -4006,7 +4005,23 @@ module advance_xm_wpxp_module
 
 
     if ( l_stats_samp ) then
+    
+      zero_vector(:,:) = 0.0_core_rknd
       
+      ! Note:  To find the contribution of w'x' term ac,
+      !        substitute 0 for the C_7 skewness function input
+      !        to function wpxp_terms_ac_pr2_lhs.
+      call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, zero_vector, & ! intent(in)
+                                  wm_zt, gr%invrs_dzm,      & ! intent(in)
+                                  wpxp_ac )                   ! intent(out)
+
+      ! Note:  To find the contribution of w'x' term pr2,
+      !        add 1 to the C_7 skewness function input
+      !        to function wpxp_terms_ac_pr2_lhs.
+      call wpxp_terms_ac_pr2_lhs( nz, ngrdcol, (one+C7_Skw_fnc), & ! intent(in)
+                                  wm_zt, gr%invrs_dzm,           & ! intent(in)
+                                  wpxp_pr2 )                       ! intent(out)
+    
       do i = 1, ngrdcol
 
         if ( ixm_matrix_condt_num > 0 ) then
@@ -4048,20 +4063,6 @@ module advance_xm_wpxp_module
         ! is set to specified values at both the lowest level, k = 1, and the
         ! highest level, k = nz.  Thus, the statistical code will run from
         ! levels 2 through nz-1.
-        
-        zero_vector(i,:) = 0.0_core_rknd
-        
-        ! Note:  To find the contribution of w'x' term ac,
-        !        substitute 0 for the C_7 skewness function input
-        !        to function wpxp_terms_ac_pr2_lhs.
-        call wpxp_terms_ac_pr2_lhs( nz, zero_vector(i,:), wm_zt(i,:), gr%invrs_dzm(i,:), & ! intent(in)
-                                    wpxp_ac(i,:) ) ! intent(out)
-
-        ! Note:  To find the contribution of w'x' term pr2,
-        !        add 1 to the C_7 skewness function input
-        !        to function wpxp_terms_ac_pr2_lhs.
-        call wpxp_terms_ac_pr2_lhs( nz, (one+C7_Skw_fnc(i,:)), wm_zt(i,:), gr%invrs_dzm(i,:), & ! intent(in)
-                                    wpxp_pr2(i,:) ) ! intent(out)
 
         do k = 2, nz-1
 
@@ -4526,7 +4527,8 @@ module advance_xm_wpxp_module
   end subroutine wpxp_term_tp_lhs
     
   !=============================================================================
-  pure subroutine wpxp_terms_ac_pr2_lhs( nz, C7_Skw_fnc, wm_zt, invrs_dzm, &
+  pure subroutine wpxp_terms_ac_pr2_lhs( nz, ngrdcol, C7_Skw_fnc, &
+                                         wm_zt, invrs_dzm, &
                                          lhs_ac_pr2  ) 
 
     ! Description:
@@ -4590,35 +4592,36 @@ module advance_xm_wpxp_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz
+      nz, &
+      ngrdcol 
       
-    real( kind = core_rknd ), dimension(nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied              [-]
       wm_zt,       & ! w wind component on thermodynamic levels     [m/s]
       invrs_dzm      ! Inverse of grid spacing                      [1/m]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       lhs_ac_pr2    ! LHS coefficient of accumulation and pressure term 2 [1/s]
 
     ! Local Variable
-    integer :: k    ! Vertical level index
+    integer :: i, k    ! Vertical level index
 
 
     ! Set lower boundary to 0
-    lhs_ac_pr2(1) = zero
+    lhs_ac_pr2(:,1) = zero
 
     ! Calculate term at all interior grid levels.
     do k = 2, nz-1
-
-       ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
-       lhs_ac_pr2(k) &
-       = ( one - C7_Skw_fnc(k) ) * invrs_dzm(k) * ( wm_zt(k+1) - wm_zt(k) )
-
-    enddo ! k = 2, gr%nz-1 
+      do i = 1, ngrdcol 
+        ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
+        lhs_ac_pr2(i,k) = ( one - C7_Skw_fnc(i,k) ) &
+                          * invrs_dzm(i,k) * ( wm_zt(i,k+1) - wm_zt(i,k) )
+      end do
+    end do ! k = 2, gr%nz-1 
 
     ! Set upper boundary to 0
-    lhs_ac_pr2(nz) = zero
+    lhs_ac_pr2(:,nz) = zero
 
     return
 
