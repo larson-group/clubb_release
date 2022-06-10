@@ -524,12 +524,10 @@ module advance_xp2_xpyp_module
                            invrs_rho_ds_zm, rho_ds_zt,                        & ! In
                            lhs_diff )                                           ! Out
                                  
-      ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
-    do i = 1, ngrdcol
-      call term_ma_zm_lhs( nz, wm_zm(i,:), & ! In
-                           gr%invrs_dzm(i,:), gr%weights_zm2zt(i,:,:),& ! In
-                           lhs_ma(:,i,:)                ) ! Out
-    end do
+    ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
+    call term_ma_zm_lhs( nz, ngrdcol, wm_zm,              & ! In
+                         gr%invrs_dzm, gr%weights_zm2zt,  & ! In
+                         lhs_ma )                           ! Out
                                
                                
     if ( ( abs(C2rt - C2thl)   < abs(C2rt + C2thl)   / 2 * eps   .and. &

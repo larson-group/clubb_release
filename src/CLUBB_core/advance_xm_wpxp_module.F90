@@ -1371,11 +1371,9 @@ module advance_xm_wpxp_module
                            lhs_diff_zm )                                        ! Intent(out)    
                               
     ! Calculate mean advection terms for all momentum grid level
-    do i = 1, ngrdcol
-      call term_ma_zm_lhs( nz, wm_zm(i,:), & ! Intent(in)
-                           gr%invrs_dzm(i,:), gr%weights_zm2zt(i,:,:),& ! In
-                           lhs_ma_zm(:,i,:)             ) ! Intent(out) 
-    end do        
+    call term_ma_zm_lhs( nz, ngrdcol, wm_zm,              & ! Intent(in)
+                         gr%invrs_dzm, gr%weights_zm2zt,  & ! In
+                         lhs_ma_zm )                        ! Intent(out) 
                                
     ! Calculate diffusion terms for all thermodynamic grid level
     if ( l_diffuse_rtm_and_thlm ) then
@@ -1410,12 +1408,10 @@ module advance_xm_wpxp_module
                              
     ! Calculate mean advection terms for all thermodynamic grid level
     if ( .not. l_implemented ) then
-      do i = 1, ngrdcol
-        call term_ma_zt_lhs( nz, wm_zt(i,:), gr%weights_zt2zm(i,:,:), & ! intent(in)
-                             gr%invrs_dzt(i,:), gr%invrs_dzm(i,:),    & ! intent(in)
-                             l_upwind_xm_ma,                             & ! Intent(in)
-                             lhs_ma_zt(:,i,:)                              ) ! Intent(out)
-      end do
+      call term_ma_zt_lhs( nz, ngrdcol, wm_zt, gr%weights_zt2zm,  & ! intent(in)
+                           gr%invrs_dzt, gr%invrs_dzm,            & ! intent(in)
+                           l_upwind_xm_ma,                        & ! Intent(in)
+                           lhs_ma_zt )                              ! Intent(out)
     end if    
      
     return

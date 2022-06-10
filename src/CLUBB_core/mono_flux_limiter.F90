@@ -975,7 +975,17 @@ module mono_flux_limiter
 
     ! Local Variables
     integer :: k    ! Array index
+    
+    real( kind = core_rknd ), dimension(1,nz) ::  &
+      wm_zt_col,      & ! w wind component on thermodynamic levels   [m/s]
+      invrs_dzt_col,  &
+      invrs_dzm_col
+      
+    real( kind = core_rknd ), dimension(1,t_above:t_below,nz) ::  &
+      weights_zt2zm_col
 
+    real( kind = core_rknd ), dimension(3,1,nz) ::  & 
+      lhs_col    ! Left hand side of tridiagonal matrix
 
     !-----------------------------------------------------------------------
 
@@ -990,10 +1000,19 @@ module mono_flux_limiter
 
     ! LHS xm mean advection (ma) term.
     if ( .not. l_implemented ) then
-      call term_ma_zt_lhs( nz, wm_zt(:), weights_zt2zm(:,:),  & ! intent(in)
-                           invrs_dzt(:), invrs_dzm(:),    & ! intent(in)
+      
+      wm_zt_col(1,:)            = wm_zt
+      invrs_dzt_col(1,:)        = invrs_dzt
+      invrs_dzm_col(1,:)        = invrs_dzm
+      weights_zt2zm_col(1,:,:)  = weights_zt2zm
+      lhs_col(:,1,:)            = lhs
+    
+      call term_ma_zt_lhs( nz, 1, wm_zt_col, weights_zt2zm_col,  & ! intent(in)
+                           invrs_dzt_col, invrs_dzm_col,    & ! intent(in)
                            l_upwind_xm_ma, & ! intent(in)
-                           lhs(:,:) ) ! intent(out)
+                           lhs_col ) ! intent(out)
+                           
+      lhs = lhs_col(:,1,:)
     else
       lhs = 0.0_core_rknd
     endif

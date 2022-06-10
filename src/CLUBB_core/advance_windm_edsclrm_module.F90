@@ -285,19 +285,17 @@ module advance_windm_edsclrm_module
     
     do k = 1, nz
       do i = 1, ngrdcol
-        Km_zm_p_nu10(i,:) = Km_zm(i,:) + nu10(i)
+        Km_zm_p_nu10(i,k) = Km_zm(i,k) + nu10(i)
       end do
     end do
 
     l_perturbed_wind = ( .not. l_predict_upwp_vpwp ) .and. l_linearize_pbl_winds
     
     if ( .not. l_implemented ) then
-      do i = 1, ngrdcol
-        call term_ma_zt_lhs( nz, wm_zt(i,:), gr%weights_zt2zm(i,:,:), & ! intent(in)
-                             gr%invrs_dzt(i,:), gr%invrs_dzm(i,:),    & ! intent(in)
-                             l_upwind_xm_ma,                          & ! intent(in)
-                             lhs_ma_zt(:,i,:) )                         ! intent(out)
-      end do
+      call term_ma_zt_lhs( nz, ngrdcol, wm_zt, gr%weights_zt2zm, & ! intent(in)
+                           gr%invrs_dzt, gr%invrs_dzm,    & ! intent(in)
+                           l_upwind_xm_ma,                          & ! intent(in)
+                           lhs_ma_zt )                         ! intent(out)
     else
       lhs_ma_zt(:,:,:) = zero
     end if
