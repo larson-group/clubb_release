@@ -1732,6 +1732,9 @@ module advance_microphys_module
       
     real( kind = core_rknd ), dimension(1) :: &
       nu_col
+      
+    real( kind = core_rknd ), dimension(1,gr%nz) ::  & 
+      wm_zt_col
 
     integer :: k, km1, kp1, i  ! Array indices
 
@@ -1858,11 +1861,12 @@ module advance_microphys_module
     lhs_ta(km1_tdiag,i,2) = zero
 
     lhs_ta(:,i,1) = zero
-
+    
+    wm_zt_col(i,:) = wm_zt
 
     ! LHS mean advection term.
-    call term_ma_zt_lhs( gr%nz, wm_zt, gr%weights_zt2zm(i,:,:),  & ! intent(in)
-                         gr%invrs_dzt(i,:), gr%invrs_dzm(i,:),    & ! intent(in)
+    call term_ma_zt_lhs( gr%nz, 1, wm_zt_col, gr%weights_zt2zm,  & ! intent(in)
+                         gr%invrs_dzt, gr%invrs_dzm,    & ! intent(in)
                          l_upwind_xm_ma, &
                          lhs_ma )
 
