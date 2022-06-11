@@ -2541,19 +2541,19 @@ module advance_microphys_module
        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
        lhs(kp1_tdiag)  & 
        = + invrs_rho_ds_zt * invrs_dzt &
-           * rho_ds_zm * V_hm * gr%weights_zt2zm(i,t_above,mk)
+           * rho_ds_zm * V_hm * gr%weights_zt2zm(i,mk,t_above)
 
        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
        lhs(k_tdiag)  & 
        = + invrs_rho_ds_zt &
            * invrs_dzt &
-           * ( rho_ds_zm * V_hm * gr%weights_zt2zm(i,t_below,mk) & 
-               - rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(i,t_above,mkm1)  )
+           * ( rho_ds_zm * V_hm * gr%weights_zt2zm(i,mk,t_below) & 
+               - rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(i,mkm1,t_above)  )
 
        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
        lhs(km1_tdiag)  & 
        = - invrs_rho_ds_zt * invrs_dzt &
-           * rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(i,t_below,mkm1)
+           * rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(i,mkm1,t_below)
 
 
     elseif ( level == gr%nz ) then
@@ -3003,22 +3003,22 @@ module advance_microphys_module
           lhs(kp1_tdiag)  & 
           = + invrs_rho_ds_zt &
               * invrs_dzt &
-              * rho_ds_zm * Vhmphmp_impcm * gr%weights_zt2zm(i,t_above,mk)
+              * rho_ds_zm * Vhmphmp_impcm * gr%weights_zt2zm(i,mk,t_above)
 
           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
           lhs(k_tdiag)  & 
           = + invrs_rho_ds_zt &
               * invrs_dzt &
               * ( rho_ds_zm * Vhmphmp_impcm &
-                            * gr%weights_zt2zm(i,t_below,mk) & 
+                            * gr%weights_zt2zm(i,mk,t_below) & 
                   - rho_ds_zmm1 * Vhmphmp_impcm1 &
-                                * gr%weights_zt2zm(i,t_above,mkm1)  )
+                                * gr%weights_zt2zm(i,mkm1,t_above)  )
 
           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
           lhs(km1_tdiag)  & 
           = - invrs_rho_ds_zt &
               * invrs_dzt &
-              * rho_ds_zmm1 * Vhmphmp_impcm1 * gr%weights_zt2zm(i,t_below,mkm1)
+              * rho_ds_zmm1 * Vhmphmp_impcm1 * gr%weights_zt2zm(i,mkm1,t_below)
 
 
        elseif ( level == gr%nz ) then
