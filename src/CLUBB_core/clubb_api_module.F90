@@ -2026,10 +2026,9 @@ contains
   ! fill_holes_vertical - clips values of 'field' that are below 'threshold' as much as possible.
   !================================================================================================
 
-  subroutine fill_holes_vertical_api( nz, dzm, dzt, &
-    num_pts, threshold, field_grid, &
-    rho_ds, rho_ds_zm, &
-    field )
+  subroutine fill_holes_vertical_api( nz, ngrdcol, num_pts, threshold, field_grid, &
+                                      dzm, dzt, rho_ds, rho_ds_zm, &
+                                      field )
 
     use fill_holes, only : fill_holes_vertical
 
@@ -2038,9 +2037,10 @@ contains
     implicit none
     
     integer, intent(in) :: &
-      nz
+      nz, &
+      ngrdcol
     
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       dzm, &  ! Spacing between thermodynamic grid levels; centered over
               ! momentum grid levels
       dzt     ! Spcaing between momentum grid levels; centered over
@@ -2058,18 +2058,18 @@ contains
     character(len=2), intent(in) :: &
       field_grid ! The grid of the field, either stats_zt or stats_zm
 
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
       rho_ds_zm    ! Dry, static density on momentum levels         [kg/m^3]
 
     ! Input/Output variable
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
       field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
 
-    call fill_holes_vertical( nz, dzm, dzt, & ! intent(in)
-      num_pts, threshold, field_grid, & ! intent(in)
-      rho_ds, rho_ds_zm, & ! intent(in)
-      field ) ! intent(inout)
+    call fill_holes_vertical( nz, ngrdcol, num_pts, threshold, field_grid, & ! intent(in)
+                              dzm, dzt, rho_ds, rho_ds_zm, & ! intent(in)
+                              field ) ! intent(inout)
+      
   end subroutine fill_holes_vertical_api
 
   !=============================================================================

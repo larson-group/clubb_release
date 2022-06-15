@@ -2027,11 +2027,9 @@ module advance_clubb_core_module
       ! Hence the preprocessor.
 #ifdef CLUBB_CAM
       do ixind=1,edsclr_dim
-        do i = 1, ngrdcol
-          call fill_holes_vertical( nz, gr%dzm(i,:), gr%dzt(i,:), 2,0.0_core_rknd,"zt", & ! intent(in)
-                                   rho_ds_zt(i,:), rho_ds_zm(i,:), & ! intent(in)
-                                   edsclrm(i,:,ixind))       ! intent(inout)
-        end do
+        call fill_holes_vertical( nz, ngrdcol, 2,0.0_core_rknd,"zt", & ! intent(in)
+                                 gr%dzm, gr%dzt, rho_ds_zt, rho_ds_zm, & ! intent(in)
+                                 edsclrm(:,:,ixind))       ! intent(inout)
       enddo
 #endif
 

@@ -4950,18 +4950,12 @@ module advance_xp2_xpyp_module
       end do
     endif
 
-    do i = 1, ngrdcol
-      if ( any( xp2_np1(i,:) < tolerance ) ) then
-
-        ! Call the hole-filling scheme.
-        ! The first pass-through should draw from only two levels on either side
-        ! of the hole.
-        call fill_holes_vertical( nz, gr%dzm(i,:), gr%dzt(i,:), 2, tolerance, "zm",      & ! Intent(in)
-                                  rho_ds_zt(i,:), rho_ds_zm(i,:), & ! Intent(in)
-                                  xp2_np1(i,:) )                    ! Intent(inout)
-
-      endif
-    end do
+    ! Call the hole-filling scheme.
+    ! The first pass-through should draw from only two levels on either side
+    ! of the hole.
+    call fill_holes_vertical( nz, ngrdcol, 2, tolerance, "zm",      & ! Intent(in)
+                              gr%dzm, gr%dzt,rho_ds_zt, rho_ds_zm, & ! Intent(in)
+                              xp2_np1 )                    ! Intent(inout)
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme

@@ -22,8 +22,8 @@ module fill_holes
   contains
 
   !=============================================================================
-  subroutine fill_holes_vertical( nz, dzm, dzt, num_draw_pts, threshold, field_grid, &
-                                  rho_ds, rho_ds_zm, &
+  subroutine fill_holes_vertical( nz, ngrdcol, num_draw_pts, threshold, field_grid, &
+                                  dzm, dzt, rho_ds, rho_ds_zm, &
                                   field )
 
     ! Description:
@@ -50,11 +50,12 @@ module fill_holes
 
     implicit none
     
-    ! Input variables
+    ! --------------------- Input variables ---------------------
     integer, intent(in) :: &
-      nz
+      nz, &
+      ngrdcol
     
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       dzm, &  ! Spacing between thermodynamic grid levels; centered over
               ! momentum grid levels
       dzt     ! Spcaing between momentum grid levels; centered over
@@ -71,22 +72,23 @@ module fill_holes
     character(len=2), intent(in) :: & 
       field_grid ! The grid of the field, either zt or zm
 
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
       rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
       rho_ds_zm    ! Dry, static density on momentum levels         [kg/m^3]
 
-    ! Input/Output variable
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: & 
+    ! --------------------- Input/Output variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
       field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
-
-    ! Local Variables
+ 
+    ! --------------------- Local Variables ---------------------
     integer :: & 
+      i,             & ! Loop index for column                           []
       k,             & ! Loop index for absolute grid level              []
       begin_idx,     & ! Lower grid level of local hole-filling range    []
       end_idx,       & ! Upper grid level of local hole-filling range    []
       upper_hf_level   ! Upper grid level of global hole-filling range   []
 
-    !-----------------------------------------------------------------------
+    ! --------------------- Begin Code --------------------- 
 
     ! Check whether any holes exist in the entire profile.
     ! The lowest level (k=1) should not be included, as the hole-filling scheme
@@ -103,71 +105,75 @@ module fill_holes
       ! 'field' is on the zm (momentum level) grid
       upper_hf_level = nz-1
     endif
+    
+    do i = 1, ngrdcol
+      
+      if ( any( field(i,2:upper_hf_level) < threshold ) ) then
 
-    if ( any( field( 2:upper_hf_level ) < threshold ) ) then
+        ! Make one pass up the profile, filling holes as much as we can using
+        ! nearby mass.
+        ! The lowest level (k=1) should not be included in the loop, as the
+        ! hole-filling scheme should not alter the set value of 'field' at the
+        ! surface (for momentum level variables), or consider the value of
+        ! 'field' at a level below the surface (for thermodynamic level
+        ! variables).  For momentum level variables only, the hole-filling scheme
+        ! should not alter the set value of 'field' at the upper boundary
+        ! level (k=nz).
+        do k = 2+num_draw_pts, upper_hf_level-num_draw_pts, 1
 
-      ! Make one pass up the profile, filling holes as much as we can using
-      ! nearby mass.
-      ! The lowest level (k=1) should not be included in the loop, as the
-      ! hole-filling scheme should not alter the set value of 'field' at the
-      ! surface (for momentum level variables), or consider the value of
-      ! 'field' at a level below the surface (for thermodynamic level
-      ! variables).  For momentum level variables only, the hole-filling scheme
-      ! should not alter the set value of 'field' at the upper boundary
-      ! level (k=nz).
-      do k = 2+num_draw_pts, upper_hf_level-num_draw_pts, 1
+          begin_idx = k - num_draw_pts
+          end_idx   = k + num_draw_pts
 
-        begin_idx = k - num_draw_pts
-        end_idx   = k + num_draw_pts
+          if ( any( field( i, begin_idx:end_idx ) < threshold ) ) then
 
-        if ( any( field( begin_idx:end_idx ) < threshold ) ) then
+            ! 'field' is on the zt (thermodynamic level) grid
+            if ( field_grid == "zt" ) then
+              call fill_holes_multiplicative( &
+                        begin_idx, end_idx, threshold, & ! intent(in)
+                        rho_ds(i,begin_idx:end_idx), dzt(i,begin_idx:end_idx), & ! intent(in)
+                        field(i,begin_idx:end_idx) ) ! intent(inout)
+                        
+            ! 'field' is on the zm (momentum level) grid
+            elseif ( field_grid == "zm" )  then
+              call fill_holes_multiplicative( &
+                        begin_idx, end_idx, threshold, & ! intent(in)
+                        rho_ds_zm(i,begin_idx:end_idx), dzm(i,begin_idx:end_idx), & ! intent(in)
+                        field(i,begin_idx:end_idx) ) ! intent(inout)
+            endif
+
+          endif
+
+        enddo
+
+        ! Fill holes globally, to maximize the chance that all holes are filled.
+        ! The lowest level (k=1) should not be included, as the hole-filling
+        ! scheme should not alter the set value of 'field' at the surface (for
+        ! momentum level variables), or consider the value of 'field' at a level
+        ! below the surface (for thermodynamic level variables).  For momentum
+        ! level variables only, the hole-filling scheme should not alter the set
+        ! value of 'field' at the upper boundary level (k=nz).
+        if ( any( field(i,2:upper_hf_level) < threshold ) ) then
 
           ! 'field' is on the zt (thermodynamic level) grid
           if ( field_grid == "zt" ) then
-            call fill_holes_multiplicative &
-                    ( begin_idx, end_idx, threshold, & ! intent(in)
-                      rho_ds(begin_idx:end_idx), dzt(begin_idx:end_idx), & ! intent(in)
-                      field(begin_idx:end_idx) ) ! intent(inout)
-                      
+            call fill_holes_multiplicative( &
+                     2, upper_hf_level, threshold, & ! intent(in)
+                     rho_ds(i,2:upper_hf_level), dzt(i,2:upper_hf_level), & ! intent(in)
+                     field(i,2:upper_hf_level) ) ! intent(inout)
+                     
           ! 'field' is on the zm (momentum level) grid
           elseif ( field_grid == "zm" )  then
-            call fill_holes_multiplicative &
-                    ( begin_idx, end_idx, threshold, & ! intent(in)
-                      rho_ds_zm(begin_idx:end_idx), dzm(begin_idx:end_idx), & ! intent(in)
-                      field(begin_idx:end_idx) ) ! intent(inout)
+              call fill_holes_multiplicative( &
+                     2, upper_hf_level, threshold, & ! intent(in)
+                     rho_ds_zm(i,2:upper_hf_level), dzm(i,2:upper_hf_level), & ! intent(in)
+                     field(i,2:upper_hf_level) ) ! intent(inout)
           endif
 
         endif
 
-      enddo
-
-      ! Fill holes globally, to maximize the chance that all holes are filled.
-      ! The lowest level (k=1) should not be included, as the hole-filling
-      ! scheme should not alter the set value of 'field' at the surface (for
-      ! momentum level variables), or consider the value of 'field' at a level
-      ! below the surface (for thermodynamic level variables).  For momentum
-      ! level variables only, the hole-filling scheme should not alter the set
-      ! value of 'field' at the upper boundary level (k=nz).
-      if ( any( field( 2:upper_hf_level ) < threshold ) ) then
-
-        ! 'field' is on the zt (thermodynamic level) grid
-        if ( field_grid == "zt" ) then
-          call fill_holes_multiplicative &
-                 ( 2, upper_hf_level, threshold, & ! intent(in)
-                   rho_ds(2:upper_hf_level), dzt(2:upper_hf_level), & ! intent(in)
-                   field(2:upper_hf_level) ) ! intent(inout)
-                   
-        ! 'field' is on the zm (momentum level) grid
-        elseif ( field_grid == "zm" )  then
-            call fill_holes_multiplicative &
-                 ( 2, upper_hf_level, threshold, & ! intent(in)
-                   rho_ds_zm(2:upper_hf_level), dzm(2:upper_hf_level), & ! intent(in)
-                   field(2:upper_hf_level) ) ! intent(inout)
-        endif
-
-      endif
-
-    endif  ! End overall check for existence of holes
+      endif  ! End overall check for existence of holes
+      
+    end do
 
     return
 
@@ -978,8 +984,8 @@ module fill_holes
          if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
 
             ! Apply the hole filling algorithm
-            call fill_holes_vertical( gr%nz, gr%dzm(1,:), gr%dzt(1,:), 2, zero_threshold, "zt", & ! intent(in)
-                                      rho_ds_zt, rho_ds_zm, & ! intent(in)
+            call fill_holes_vertical( gr%nz, 1, 2, zero_threshold, "zt", & ! intent(in)
+                                      gr%dzm, gr%dzt, rho_ds_zt, rho_ds_zm, & ! intent(in)
                                       hydromet(:,i) ) ! intent(inout)
 
          endif ! Variable is a mixing ratio and l_hole_fill is true

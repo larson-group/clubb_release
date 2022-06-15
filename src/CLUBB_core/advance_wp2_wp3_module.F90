@@ -1485,16 +1485,12 @@ module advance_wp2_wp3_module
       end do
     end if
 
-    do i = 1, ngrdcol
-      if ( l_hole_fill .and. any( wp2(i,:) < w_tol_sqd ) ) then
-
-        ! Use a simple hole filling algorithm
-        call fill_holes_vertical( nz, gr%dzm(i,:), gr%dzt(i,:), 2, w_tol_sqd, "zm",        & ! intent(in)
-                                  rho_ds_zt(i,:), rho_ds_zm(i,:),   & ! intent(in)
-                                  wp2(i,:) )                          ! intent(inout)
-
-      end if ! wp2
-    end do
+    if ( l_hole_fill ) then
+      ! Use a simple hole filling algorithm
+      call fill_holes_vertical( nz, ngrdcol, 2, w_tol_sqd, "zm",        & ! intent(in)
+                                gr%dzm, gr%dzt, rho_ds_zt, rho_ds_zm,   & ! intent(in)
+                                wp2 )                          ! intent(inout)
+    end if ! wp2
 
     ! Here we attempt to clip extreme values of wp2 to prevent a crash of the
     ! type found on the Climate Process Team ticket #49.  Chris Golaz found that

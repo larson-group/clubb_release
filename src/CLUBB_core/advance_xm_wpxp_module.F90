@@ -4172,39 +4172,40 @@ module advance_xm_wpxp_module
     
     if ( solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm .and. l_hole_fill ) then 
 
-      do i = 1, ngrdcol
-        
-        if ( any( xm(i,:) < xm_threshold) ) then
-
-          if ( clubb_at_least_debug_level( 3 ) ) then
-            
-            select case ( solve_type )
-            case ( xm_wpxp_rtm )
-              solve_type_str = "rtm"
-            case ( xm_wpxp_thlm )
-              solve_type_str = "thlm"
-            case default
-              solve_type_str = "scalars"
-            end select
-            
+      if ( clubb_at_least_debug_level( 3 ) ) then
+        if ( any( xm < xm_threshold) ) then
+          
+          select case ( solve_type )
+          case ( xm_wpxp_rtm )
+            solve_type_str = "rtm"
+          case ( xm_wpxp_thlm )
+            solve_type_str = "thlm"
+          case default
+            solve_type_str = "scalars"
+          end select
+          
+          do i = 1, ngrdcol 
             do k = 1, nz
-              if ( xm(i,k) < zero ) then
+              if ( xm(i,k) < xm_threshold ) then
                 write(fstderr,*) solve_type_str//" < ", xm_threshold, &
-                  " in advance_xm_wpxp_module at k= ", k
+                  " in advance_xm_wpxp_module at k= ", k, "i=", i
               end if
             end do
-          end if
+          end do
+          
+        end if
+      end if
 
-          call fill_holes_vertical( nz, gr%dzm(i,:), gr%dzt(i,:), 2, xm_threshold, "zt", & ! intent(in)
-                                    rho_ds_zt(i,:), rho_ds_zm(i,:), & ! intent(in)
-                                    xm(i,:) ) ! intent(inout)
+      call fill_holes_vertical( nz, ngrdcol, 2, xm_threshold, "zt", & ! intent(in)
+                                gr%dzm, gr%dzt, rho_ds_zt, rho_ds_zm, & ! intent(in)
+                                xm ) ! intent(inout)
 
-          ! Hole filling does not affect the below ground level, perform a blunt clipping
-          ! here on that level to prevent small values of xm(1)
-          xm(i,1) = max( xm(i,1), xm_tol )
-
-        endif ! any( xm < xm_threshold ) .and. l_hole_fill
-              ! .and. solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
+      ! Hole filling does not affect the below ground level, perform a blunt clipping
+      ! here on that level to prevent small values of xm(1)
+      do i = 1, ngrdcol
+        if ( any( xm(i,:) < xm_threshold) ) then
+          xm(:,1) = max( xm(:,1), xm_tol )
+        end if
       end do
       
     end if
