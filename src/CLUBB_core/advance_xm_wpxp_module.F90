@@ -4204,7 +4204,7 @@ module advance_xm_wpxp_module
       ! here on that level to prevent small values of xm(1)
       do i = 1, ngrdcol
         if ( any( xm(i,:) < xm_threshold) ) then
-          xm(:,1) = max( xm(:,1), xm_tol )
+          xm(i,1) = max( xm(i,1), xm_tol )
         end if
       end do
       
