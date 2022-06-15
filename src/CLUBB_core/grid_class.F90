@@ -1195,7 +1195,8 @@ module grid_class
     if ( l_cubic_interp .and. nz >= 3 ) then
       redirect_interpolated_azm_2D = cubic_interpolated_azm_2D( nz, ngrdcol, gr, azt )
     else
-      redirect_interpolated_azm_2D = linear_interpolated_azm_2D( nz, ngrdcol, gr, azt )
+      call linear_interpolated_azm_2D( nz, ngrdcol, gr, azt, &
+                                       redirect_interpolated_azm_2D )
     end if
 
     return
@@ -1447,14 +1448,16 @@ module grid_class
     if (l_cubic_interp .and. nz >= 3 ) then
       redirect_interpolated_azt_2D = cubic_interpolated_azt_2D( nz, ngrdcol, gr, azt )
     else
-      redirect_interpolated_azt_2D = linear_interpolated_azt_2D( nz, ngrdcol, gr, azt )
+      call linear_interpolated_azt_2D( nz, ngrdcol, gr, azt, &
+                                       redirect_interpolated_azt_2D )
     end if
 
     return
   end function redirect_interpolated_azt_2D
   
   !=============================================================================
-  pure function linear_interpolated_azm_2D( nz, ngrdcol, gr, azt )
+  pure subroutine linear_interpolated_azm_2D( nz, ngrdcol, gr, azt, &
+                                              linear_interpolated_azm )
 
     ! Description:
     ! Function to interpolate a variable located on the thermodynamic grid
@@ -1482,8 +1485,8 @@ module grid_class
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      linear_interpolated_azm_2D    ! Variable when interp. to momentum levels
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
+      linear_interpolated_azm    ! Variable when interp. to momentum levels
 
     ! Local Variable
     integer :: i, k  ! Grid level loop index
@@ -1493,7 +1496,7 @@ module grid_class
     ! linear interpolation.
     do k = 1, nz-1
       do i = 1, ngrdcol
-        linear_interpolated_azm_2D(i,k) = gr%weights_zt2zm(i,k,1) &
+        linear_interpolated_azm(i,k) = gr%weights_zt2zm(i,k,1) &
                                           * ( azt(i,k+1) - azt(i,k) ) + azt(i,k)
       end do
     end do
@@ -1505,14 +1508,14 @@ module grid_class
     ! gr%nz-1 to find the value of azm at level gr%nz (the uppermost level
     ! in the model).
     do i = 1, ngrdcol
-      linear_interpolated_azm_2D(i,nz) &
+      linear_interpolated_azm(i,nz) &
         = ( ( azt(i,nz) - azt(i,nz-1) ) / ( gr%zt(i,nz) - gr%zt(i,nz-1) ) ) & 
           * ( gr%zm(i,nz) - gr%zt(i,nz) ) + azt(i,nz)
     end do
 
     return
 
-  end function linear_interpolated_azm_2D
+  end subroutine linear_interpolated_azm_2D
   
   !=============================================================================
   function cubic_interpolated_azm_2D( nz, ngrdcol, gr, azt )
@@ -1807,7 +1810,8 @@ module grid_class
   end subroutine calc_zt2zm_weights
   
   !=============================================================================
-  pure function linear_interpolated_azt_2D( nz, ngrdcol, gr, azm )
+  pure subroutine linear_interpolated_azt_2D( nz, ngrdcol, gr, azm, &
+                                              linear_interpolated_azt )
 
     ! Description:
     ! Function to interpolate a variable located on the momentum grid levels
@@ -1835,8 +1839,8 @@ module grid_class
       azm    ! Variable on momentum grid levels    [units vary]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      linear_interpolated_azt_2D    ! Variable when interp. to thermodynamic levels
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
+      linear_interpolated_azt    ! Variable when interp. to thermodynamic levels
 
     ! Local Variable
     integer :: i, k  ! Grid level loop index
@@ -1849,7 +1853,7 @@ module grid_class
     ! Use a linear extension based on the values of azm at levels 1 and 2 to
     ! find the value of azt at level 1 (the lowermost level in the model).
     do i = 1, ngrdcol
-      linear_interpolated_azt_2D(i,1) &
+      linear_interpolated_azt(i,1) &
         = ( ( azm(i,2) - azm(i,1) ) / ( gr%zm(i,2) - gr%zm(i,1) ) ) & 
           * ( gr%zt(i,1) - gr%zm(i,1) ) + azm(i,1)
     end do
@@ -1859,14 +1863,14 @@ module grid_class
     ! linear interpolation.
     do k = 2, nz
       do i = 1, ngrdcol
-        linear_interpolated_azt_2D(i,k) = gr%weights_zm2zt(i,k,1) &
-                                          * ( azm(i,k) - azm(i,k-1) ) + azm(i,k-1)
+        linear_interpolated_azt(i,k) = gr%weights_zm2zt(i,k,1) &
+                                       * ( azm(i,k) - azm(i,k-1) ) + azm(i,k-1)
       end do
     end do
 
     return
 
-  end function linear_interpolated_azt_2D
+  end subroutine linear_interpolated_azt_2D
   
   !=============================================================================
   function cubic_interpolated_azt_2D( nz, ngrdcol, gr, azm )
