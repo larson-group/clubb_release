@@ -914,7 +914,7 @@ real df(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)
 real f0(nzm),df0(nzm)
 
 #ifdef CLUBB
-real(kind=core_rknd), dimension(nz) :: &
+real(kind=core_rknd), dimension(1,nz) :: &
      qv_clip, qcl_clip
 
 !real, dimension(nzm) :: & These variables were renamed PRC, PRA, and PRE respectively as per ticket #552 and are declared below
@@ -974,6 +974,10 @@ real thel_avg(nzm), thel_before_avg(nzm)
 real qtog_before(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm) 
 real qtog_avg(nzm), qtog_before_avg(nzm)
 #endif /*PNNL_STATS*/
+
+real(kind=core_rknd), dimension(1,nz) :: &
+  rho_ds_zt_col, & ! Variable(s)
+  rho_ds_zm_col
 
 call t_startf ('micro_proc')
 
@@ -1371,22 +1375,33 @@ do j = 1,ny
 
 #ifdef CLUBB
       if ( any( tmpqv < 0. ) ) then
-        qv_clip(2:nz) = tmpqv(1:nzm)
-        qv_clip(1) = 0.0_core_rknd
+        qv_clip(1,2:nz) = tmpqv(1:nzm)
+        qv_clip(1,1) = 0.0_core_rknd
         if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(0,*) "M2005 has received a negative water vapor"
         end if
-        call fill_holes_vertical_api( gr%nz, gr%dzm(1,:), gr%dzt(1,:), 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qv_clip )
-        tmpqv = qv_clip(2:nz)
+        
+        rho_ds_zt_col(1,:) = rho_ds_zt
+        rho_ds_zm_col(1,:) = rho_ds_zm
+        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, "zt", &
+                                      gr%dzm, gr%dzt, rho_ds_zt_col, rho_ds_zm_col, &
+                                      qv_clip )
+        tmpqv = qv_clip(1,2:nz)
       end if
       if ( any( tmpqcl < 0. ) ) then
-        qcl_clip(2:nz) = tmpqcl(1:nzm)
-        qcl_clip(1) = 0.0_core_rknd
+        qcl_clip(1,2:nz) = tmpqcl(1:nzm)
+        qcl_clip(1,1) = 0.0_core_rknd
         if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(0,*) "M2005 has received a negative liquid water"
         end if
-        call fill_holes_vertical_api( gr%nz, gr%dzm(1,:), gr%dzt(1,:), 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qcl_clip )
-        tmpqcl = qcl_clip(2:nz)
+        
+        rho_ds_zt_col(1,:) = rho_ds_zt
+        rho_ds_zm_col(1,:) = rho_ds_zm
+        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, "zt", &
+                                      gr%dzm, gr%dzt, rho_ds_zt_col, rho_ds_zm_col, &
+                                      qcl_clip )
+                                      
+        tmpqcl = qcl_clip(1,2:nz)
       end if
 
       ! Set autoconversion and accretion rates to 0;  these are diagnostics and
@@ -1439,22 +1454,33 @@ do j = 1,ny
            NC_INST, NR_INST, NI_INST, NS_INST, NG_INST   )
 #ifdef CLUBB
       if ( any( tmpqv < 0. ) ) then
-        qv_clip(2:nz) = tmpqv(1:nzm)
-        qv_clip(1) = 0.0_core_rknd
+        qv_clip(1,2:nz) = tmpqv(1:nzm)
+        qv_clip(1,1) = 0.0_core_rknd
         if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(0,*) "M2005 has produced a negative water vapor"
         end if
-        call fill_holes_vertical_api( gr%nz, gr%dzm(1,:), gr%dzt(1,:), 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qv_clip )
-        tmpqv = qv_clip(2:nz)
+        
+        rho_ds_zt_col(1,:) = rho_ds_zt
+        rho_ds_zm_col(1,:) = rho_ds_zm
+        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, "zt", &
+                                      gr%dzm, gr%dzt, rho_ds_zt_col, rho_ds_zm_col, &
+                                      qv_clip )
+        tmpqv = qv_clip(1,2:nz)
       end if
       if ( any( tmpqcl < 0. ) ) then
-        qcl_clip(2:nz) = tmpqcl(1:nzm)
-        qcl_clip(1) = 0.0_core_rknd
+        qcl_clip(1,2:nz) = tmpqcl(1:nzm)
+        qcl_clip(1,1) = 0.0_core_rknd
         if ( clubb_at_least_debug_level_api( 1 ) ) then
           write(0,*) "M2005 has produced a negative liquid water"
         end if
-        call fill_holes_vertical_api( gr%nz, gr%dzm(1,:), gr%dzt(1,:), 2, 0._core_rknd, "zt", rho_ds_zt, rho_ds_zm, qcl_clip )
-        tmpqcl = qcl_clip(2:nz)
+        
+        rho_ds_zt_col(1,:) = rho_ds_zt
+        rho_ds_zm_col(1,:) = rho_ds_zm
+        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, "zt", &
+                                      gr%dzm, gr%dzt, rho_ds_zt_col, rho_ds_zm_col, &
+                                      qcl_clip )
+                                      
+        tmpqcl = qcl_clip(1,2:nz)
       end if
 #endif /*CLUBB*/
 
