@@ -539,6 +539,11 @@ module clubb_api_module
     module procedure setup_grid_heights_api_multi_col
   end interface
   
+  interface update_xp2_mc_api
+    module procedure update_xp2_mc_api_single_col
+    module procedure update_xp2_mc_api_multi_col
+  end interface
+  
 contains
 
   !================================================================================================
@@ -4067,10 +4072,10 @@ contains
   !================================================================================================
   ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2
   !================================================================================================
-  subroutine update_xp2_mc_api( gr, nz, dt, cloud_frac, rcm, rvm, thlm,        &
-                            wm, exner, rrm_evap, pdf_params,        &
-                            rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
-                            rtpthlp_mc )
+  subroutine update_xp2_mc_api_multi_col( gr, nz, ngrdcol, dt, cloud_frac, rcm, rvm, thlm, &
+                                          wm, exner, rrm_evap, pdf_params,        &
+                                          rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
+                                          rtpthlp_mc )
 
     use advance_xp2_xpyp_module, only: &
         update_xp2_mc
@@ -4079,10 +4084,64 @@ contains
 
     implicit none
 
+    ! -------------------- Input Variables --------------------
+    integer, intent(in) :: &
+      nz, & ! Points in the Vertical        [-]
+      ngrdcol
+
     type(grid), target, intent(in) :: gr
 
-    !input parameters
-    integer, intent(in) :: nz ! Points in the Vertical        [-]
+    real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      cloud_frac, &       !Cloud fraction                        [-]
+      rcm, &              !Cloud water mixing ratio              [kg/kg]
+      rvm, &              !Vapor water mixing ratio              [kg/kg]
+      thlm, &             !Liquid potential temperature          [K]
+      wm, &               !Mean vertical velocity                [m/s]
+      exner, &            !Exner function                        [-]
+      rrm_evap         !Evaporation of rain                   [kg/kg/s]
+                          !It is expected that this variable is negative, as
+                          !that is the convention in Morrison microphysics
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params ! PDF parameters
+
+    ! -------------------- Input/Output Variables --------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+      rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
+      thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
+      wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
+      wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
+      rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
+      
+    call update_xp2_mc( gr, nz, ngrdcol, dt, cloud_frac, rcm, rvm, thlm,        & ! intent(in)
+                        wm, exner, rrm_evap, pdf_params,        & ! intent(in)
+                        rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    & ! intent(inout)
+                        rtpthlp_mc ) ! intent(inout)
+    return
+  end subroutine update_xp2_mc_api_multi_col
+  
+  !================================================================================================
+  ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2
+  !================================================================================================
+  subroutine update_xp2_mc_api_single_col( gr, nz, dt, cloud_frac, rcm, rvm, thlm, &
+                                           wm, exner, rrm_evap, pdf_params,        &
+                                           rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
+                                           rtpthlp_mc )
+
+    use advance_xp2_xpyp_module, only: &
+        update_xp2_mc
+
+     ! Type
+
+    implicit none
+
+    ! -------------------- Input Variables --------------------
+    integer, intent(in) :: &
+      nz ! Points in the Vertical        [-]
+
+    type(grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
@@ -4100,20 +4159,59 @@ contains
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters
 
-    !input/output variables
+    ! -------------------- Input/Output Variables --------------------
     real( kind = core_rknd ), dimension(nz), intent(inout) :: &
       rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
       thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
       wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
       wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
       rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
-
-    call update_xp2_mc( gr, nz, dt, cloud_frac, rcm, rvm, thlm,        & ! intent(in)
-                        wm, exner, rrm_evap, pdf_params,        & ! intent(in)
-                        rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    & ! intent(inout)
-                        rtpthlp_mc ) ! intent(inout)
+      
+    ! -------------------- Local Variables --------------------
+    real( kind = core_rknd ), dimension(1,nz) :: &
+      cloud_frac_col, &       !Cloud fraction                        [-]
+      rcm_col, &              !Cloud water mixing ratio              [kg/kg]
+      rvm_col, &              !Vapor water mixing ratio              [kg/kg]
+      thlm_col, &             !Liquid potential temperature          [K]
+      wm_col, &               !Mean vertical velocity                [m/s]
+      exner_col, &            !Exner function                        [-]
+      rrm_evap_col         !Evaporation of rain                   [kg/kg/s]
+                          !It is expected that this variable is negative, as
+                          !that is the convention in Morrison microphysics
+                          
+    real( kind = core_rknd ), dimension(1,nz) :: &
+      rtp2_mc_col, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
+      thlp2_mc_col, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
+      wprtp_mc_col, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
+      wpthlp_mc_col, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
+      rtpthlp_mc_col    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
+      
+    cloud_frac_col(1,:) = cloud_frac
+    rcm_col(1,:) = rcm
+    rvm_col(1,:) = rvm
+    thlm_col(1,:) = thlm
+    wm_col(1,:) = wm
+    exner_col(1,:) = exner
+    rrm_evap_col(1,:) = rrm_evap
+    rtp2_mc_col(1,:) = rtp2_mc
+    thlp2_mc_col(1,:) = thlp2_mc
+    wprtp_mc_col(1,:) = wprtp_mc
+    wpthlp_mc_col(1,:) = wpthlp_mc
+    rtpthlp_mc_col(1,:) = rtpthlp_mc
+      
+    call update_xp2_mc( gr, nz, 1, dt, cloud_frac_col, rcm_col, rvm_col, thlm_col, & ! intent(in)
+                        wm_col, exner_col, rrm_evap_col, pdf_params,        & ! intent(in)
+                        rtp2_mc_col, thlp2_mc_col, wprtp_mc_col, wpthlp_mc_col,    & ! intent(inout)
+                        rtpthlp_mc_col ) ! intent(inout)
+                        
+    rtp2_mc = rtp2_mc_col(1,:)
+    thlp2_mc = thlp2_mc_col(1,:)
+    wprtp_mc = wprtp_mc_col(1,:)
+    wpthlp_mc = wpthlp_mc_col(1,:)
+    rtpthlp_mc = rtpthlp_mc_col(1,:)
+    
     return
-  end subroutine update_xp2_mc_api
+  end subroutine update_xp2_mc_api_single_col
 
   !================================================================================================
   ! sat_mixrat_liq - computes the saturation mixing ratio of liquid water

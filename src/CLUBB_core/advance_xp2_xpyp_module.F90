@@ -4969,7 +4969,7 @@ module advance_xp2_xpyp_module
   end subroutine pos_definite_variances
 
   !============================================================================
-  subroutine update_xp2_mc( gr, nz, dt, cloud_frac, rcm, rvm, thlm,        &
+  subroutine update_xp2_mc( gr, nz, ngrdcol, dt, cloud_frac, rcm, rvm, thlm, &
                             wm, exner, rrm_evap, pdf_params,        &
                             rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
                             rtpthlp_mc )
@@ -4999,14 +4999,16 @@ module advance_xp2_xpyp_module
 
     implicit none
 
-    type(grid), target, intent(in) :: gr
+    ! -------------------- Input Variables --------------------
+    integer, intent(in) :: &
+      nz, & ! Points in the Vertical        [-]
+      ngrdcol
 
-    !input parameters
-    integer, intent(in) :: nz ! Points in the Vertical        [-]
+    type(grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       cloud_frac, &       !Cloud fraction                        [-]
       rcm, &              !Cloud water mixing ratio              [kg/kg]
       rvm, &              !Vapor water mixing ratio              [kg/kg]
@@ -5020,16 +5022,16 @@ module advance_xp2_xpyp_module
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters
 
-    !input/output variables
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    ! -------------------- Input/Output Variables --------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
       rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
       thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
       wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
       wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
       rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
 
-    !local variables
-    real( kind = core_rknd ), dimension(nz) :: &
+    ! -------------------- Local Variables --------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       temp_rtp2, &          !Used only to calculate rtp2_mc  [(kg/kg)^2]
       temp_thlp2, &         !Used to calculate thlp2_mc      [K^2/s]
       temp_wp2,  &          !Used to calculate wpxp_mc       [m^2/s^2]
@@ -5041,76 +5043,100 @@ module advance_xp2_xpyp_module
       precip_frac_double_delta, &!Precipitation fraction for a double delta [-]
       pf_const              ! ( 1 - pf )/( pf )                    [-]
 
-    integer :: k
+    integer :: i, k
 
-    ! ---- Begin Code ----
+    ! -------------------- Begin Code --------------------
 
     ! Calculate precip_frac_double_delta
-    precip_frac_double_delta(nz) = 0.0_core_rknd
+    precip_frac_double_delta(:,nz) = 0.0_core_rknd
     do k = nz-1, 1, -1
-      if ( cloud_frac(k) > cloud_frac_min ) then
-        precip_frac_double_delta(k) = cloud_frac(k)
-      else
-        precip_frac_double_delta(k) = precip_frac_double_delta(k+1)
-      end if
+      do i = 1, ngrdcol
+        if ( cloud_frac(i,k) > cloud_frac_min ) then
+          precip_frac_double_delta(i,k) = cloud_frac(i,k)
+        else
+          precip_frac_double_delta(i,k) = precip_frac_double_delta(i,k+1)
+        end if
+      end do
     end do
 
 
     !pf_const is calculated so that when precip_frac_double_delta = 0, rtp2_mc and 
     !thlp2_mc will both be zero.  This also avoids a divide by zero error
-    where ( precip_frac_double_delta > cloud_frac_min )
-      pf_const = ( 1.0_core_rknd - precip_frac_double_delta ) / precip_frac_double_delta
-    elsewhere
-      pf_const = 0.0_core_rknd
-    endwhere
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( precip_frac_double_delta(i,k) > cloud_frac_min ) then
+          pf_const(i,k) = ( 1.0_core_rknd - precip_frac_double_delta(i,k) ) &
+                          / precip_frac_double_delta(i,k)
+        else
+          pf_const(i,k) = 0.0_core_rknd
+        end if
+      end do
+    end do
 
     ! Include effects of rain evaporation on rtp2
-    temp_rtp2 = pdf_params%mixt_frac(1,:) &
-                * ( ( pdf_params%rt_1(1,:) - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_1(1,:) ) &
-                + ( 1.0_core_rknd - pdf_params%mixt_frac(1,:) ) &
-                    * ( ( pdf_params%rt_2(1,:) - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_2(1,:) )
+    do k = 1, nz
+      do i = 1, ngrdcol
+        temp_rtp2(i,k) = pdf_params%mixt_frac(i,k) &
+                    * ( ( pdf_params%rt_1(i,k) - ( rcm(i,k) + rvm(i,k) ) )**2 &
+                        + pdf_params%varnce_rt_1(i,k) ) &
+                    + ( 1.0_core_rknd - pdf_params%mixt_frac(i,k) ) &
+                        * ( ( pdf_params%rt_2(i,k) - ( rcm(i,k) + rvm(i,k) ) )**2 &
+                            + pdf_params%varnce_rt_2(i,k) )
 
-    rtp2_mc_zt = rrm_evap**2 * pf_const * dt &
-                       + 2.0_core_rknd * abs(rrm_evap) * sqrt(temp_rtp2 * pf_const)
-                       !use absolute value of evaporation, as evaporation will add
-                       !to rt_1
-    rtp2_mc = zt2zm( gr, rtp2_mc_zt )
+        rtp2_mc_zt(i,k) = rrm_evap(i,k)**2 * pf_const(i,k) * dt &
+                           + 2.0_core_rknd * abs(rrm_evap(i,k)) &
+                             * sqrt(temp_rtp2(i,k) * pf_const(i,k))
+                           !use absolute value of evaporation, as evaporation will add
+                           !to rt_1
+      end do
+    end do
+    
+    rtp2_mc = zt2zm( nz, ngrdcol, gr, rtp2_mc_zt )
 
     !Include the effects of rain evaporation on thlp2
-    temp_thlp2 = pdf_params%mixt_frac(1,:) &
-                    * ( ( pdf_params%thl_1(1,:) - thlm )**2 + pdf_params%varnce_thl_1(1,:) ) &
-                 + ( 1.0_core_rknd - pdf_params%mixt_frac(1,:) ) &
-                    * ( ( pdf_params%thl_2(1,:) - thlm )**2 + pdf_params%varnce_thl_2(1,:) )
+    do k = 1, nz
+      do i = 1, ngrdcol
+        temp_thlp2(i,k) = pdf_params%mixt_frac(i,k) &
+                        * ( ( pdf_params%thl_1(i,k) - thlm(i,k) )**2 &
+                            + pdf_params%varnce_thl_1(i,k) ) &
+                     + ( 1.0_core_rknd - pdf_params%mixt_frac(i,k) ) &
+                        * ( ( pdf_params%thl_2(i,k) - thlm(i,k) )**2 &
+                            + pdf_params%varnce_thl_2(i,k) )
 
-    thlp2_mc_zt = ( rrm_evap * Lv / ( Cp * exner) )**2 &
-                       * pf_const * dt &
-                       + 2.0_core_rknd * abs(rrm_evap) * Lv / ( Cp * exner ) &
-                       * sqrt(temp_thlp2 * pf_const)
+        thlp2_mc_zt(i,k) = ( rrm_evap(i,k) * Lv / ( Cp * exner(i,k) ) )**2 &
+                           * pf_const(i,k) * dt &
+                           + 2.0_core_rknd * abs(rrm_evap(i,k)) * Lv / ( Cp * exner(i,k) ) &
+                           * sqrt(temp_thlp2(i,k) * pf_const(i,k))
+      end do
+    end do
     
-    thlp2_mc = zt2zm( gr, thlp2_mc_zt )
+    thlp2_mc = zt2zm( nz, ngrdcol, gr, thlp2_mc_zt )
 
     ! Include effects of rain evaporation on other moments (wprtp, wpthlp, and 
     ! rtpthlp - added 07/13 rstorer
+    do k = 1, nz
+      do i = 1, ngrdcol
+        temp_wp2(i,k) = pdf_params%mixt_frac(i,k) &
+                      * ( ( pdf_params%w_1(i,k) - wm(i,k) )**2 + pdf_params%varnce_w_1(i,k) ) &
+                   + ( 1.0_core_rknd - pdf_params%mixt_frac(i,k) ) &
+                      * ( ( pdf_params%w_2(i,k) - wm(i,k) )**2 + pdf_params%varnce_w_2(i,k) )
 
-    temp_wp2 = pdf_params%mixt_frac(1,:) &
-                  * ( ( pdf_params%w_1(1,:) - wm )**2 + pdf_params%varnce_w_1(1,:) ) &
-               + ( 1.0_core_rknd - pdf_params%mixt_frac(1,:) ) &
-                  * ( ( pdf_params%w_2(1,:) - wm )**2 + pdf_params%varnce_w_2(1,:) )
+        wprtp_mc_zt(i,k) = abs(rrm_evap(i,k)) * sqrt(pf_const(i,k)) * sqrt(temp_wp2(i,k))
 
-    wprtp_mc_zt = abs(rrm_evap) * sqrt(pf_const) * sqrt(temp_wp2)
+        wpthlp_mc_zt(i,k) = -1.0_core_rknd * Lv / ( Cp * exner(i,k)) * abs(rrm_evap(i,k)) &
+                                    * sqrt(pf_const(i,k)) * sqrt(temp_wp2(i,k))
 
-    wpthlp_mc_zt = -1.0_core_rknd * Lv / ( Cp * exner) * abs(rrm_evap) &
-                                * sqrt(pf_const) * sqrt(temp_wp2)
-
-    rtpthlp_mc_zt = -1.0_core_rknd * abs(rrm_evap) * sqrt( pf_const ) &
-                              * ( ( Lv / (cp * exner ) ) * sqrt( temp_rtp2 ) &
-                                + sqrt( temp_thlp2 ) ) &
-                            - ( Lv / (cp * exner ) ) * pf_const &
-                                * ( rrm_evap )**2 * dt
-
-    wprtp_mc = zt2zm( gr, wprtp_mc_zt )
-    wpthlp_mc = zt2zm( gr, wpthlp_mc_zt )
-    rtpthlp_mc = zt2zm( gr, rtpthlp_mc_zt )
+        rtpthlp_mc_zt(i,k) = -1.0_core_rknd * abs(rrm_evap(i,k)) * sqrt( pf_const(i,k) ) &
+                                  * ( ( Lv / (cp * exner(i,k) ) ) * sqrt( temp_rtp2(i,k) ) &
+                                    + sqrt( temp_thlp2(i,k) ) ) &
+                                - ( Lv / (cp * exner(i,k) ) ) * pf_const(i,k) &
+                                    * ( rrm_evap(i,k) )**2 * dt
+      end do
+    end do
+    
+    wprtp_mc    = zt2zm( nz, ngrdcol, gr, wprtp_mc_zt )
+    wpthlp_mc   = zt2zm( nz, ngrdcol, gr, wpthlp_mc_zt )
+    rtpthlp_mc  = zt2zm( nz, ngrdcol, gr, rtpthlp_mc_zt )
   end subroutine update_xp2_mc
 
 !===============================================================================
