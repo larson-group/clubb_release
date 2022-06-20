@@ -110,8 +110,8 @@ module microphys_driver
         aer_act_clubb_quadrature_Gauss, & ! Procedure(s)
         aeromass_value                    ! Variable(s)
 
-    use advance_xp2_xpyp_module, only: &
-        update_xp2_mc  ! Procedure(s)
+    use clubb_api_module, only: &
+      update_xp2_mc_api
 
     use parameters_model, only: & 
         hydromet_dim   ! Variable(s)
@@ -543,10 +543,10 @@ module microphys_driver
 
           rrm_evap = microphys_get_var( irrm_evap, microphys_stats_zt )
 
-          call update_xp2_mc( gr, gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
-                              wm_zt, exner, rrm_evap, pdf_params,         & ! Intent(in)
-                              rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,     & ! Intent(out)
-                              rtpthlp_mc )                                  ! Intent(out)
+          call update_xp2_mc_api( gr, gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
+                                  wm_zt, exner, rrm_evap, pdf_params,         & ! Intent(in)
+                                  rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,     & ! Intent(out)
+                                  rtpthlp_mc )                                  ! Intent(out)
 
         else
 
