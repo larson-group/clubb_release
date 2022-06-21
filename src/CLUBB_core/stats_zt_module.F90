@@ -1313,14 +1313,14 @@ module stats_zt_module
       case ('thlp3')
         ithlp3 = k
         call stat_assign( var_index=ithlp3, var_name="thlp3", &
-             var_description="thl'^3, Third-order moment of theta_l", var_units="m^3/s^3", &
+             var_description="thl'^3, Third-order moment of theta_l", var_units="K^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('rtp3')
         irtp3 = k
         call stat_assign( var_index=irtp3, var_name="rtp3", &
-             var_description="rt'^3, Third-order moment of total water, rt", var_units="m^3/s^3", &
+             var_description="rt'^3, Third-order moment of total water, rt", var_units="(kg/kg)^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
