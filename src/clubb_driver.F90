@@ -4090,7 +4090,7 @@ module clubb_driver
       l_input_fields
       
     ! Output Variables
-    type(grid), target, intent(out) :: &
+    type(grid), target, intent(inout) :: &
       gr
 
     !----- Begin Code -----
