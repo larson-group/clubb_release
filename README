@@ -884,7 +884,7 @@ discussed in CLUBB issue #939.
 
 The "tuner" code is used to optimize CLUBB's parameters in order to better match
 output from a 3D large-eddy simulation (LES) model.  The default optimization 
-technique is the downhill-simplex method of Needler and Mead, as implemented in 
+technique is the downhill-simplex method of Nelder and Mead, as implemented in 
 Numerical Recipes In Fortran 90, 3rd Ed. (amoeba.f90).  You will either need special
 access to the CLUBB repository, or your own license from Numerical Recipes to
 use the default algorithm.  In the latter case, the files that need to be placed in
