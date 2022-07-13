@@ -201,28 +201,38 @@ module enhanced_simann
 
             end do
 
-            ! use all at first
+            ! use every variable for the first iteration
             where( abs(attempted) < eps) xpartition = .true.
 
-            ! if none selected, select all
+            ! if no variables were selected to be used, select all
             if ( .not. any( xpartition(:) ) ) xpartition(:) = .true.
 
             ! randomly change x values a little bit, starting at last accepted values
+            ! then call fobj with new x values
             xtry = xstart
             call exec_movement( xpartition, xmax, xmin, stp_cur, fobj, &
                                 xtry, new_nrgy )
 
+            ! increment attempt counter for used variables
             where ( xpartition ) attempted = attempted + 1
-            delta_nrgy = new_nrgy - old_nrgy
+
+            ! calculate difference between old and new energy
+            delta_nrgy = new_nrgy - old_nrgy                
+
+            ! add new energy to total
             tot_nrgy = tot_nrgy + new_nrgy                                     
+
+            ! increment iterations
             iter = iter + 1
             if ( present(iter_in) ) iter_in = iter
 
             ! if energy decreased
             if ( delta_nrgy <= 0.0_core_rknd ) then
 
-                ! accept values and increment improvement counter
+                ! accept values and increment improvement counter for used variables
                 where(xpartition) improved = improved + 1
+
+                ! save energy value and x values
                 old_nrgy = new_nrgy
                 xstart = xtry
 
@@ -248,7 +258,8 @@ module enhanced_simann
 
                 end if
 
-            else    ! energy increased (worsened), but randomly accept it with temp based chance
+            else    
+               ! energy increased (answer worsened), but randomly accept it with temp based chance
            
                call random_number( rand )                               
                if ( rand <= exp( -delta_nrgy / temp ) ) then
@@ -263,6 +274,8 @@ module enhanced_simann
 
             ! If there has not been much improvement, and not many attempts, 
             ! keep going at this step size and temperature.
+            ! If there has been either a lot of improvement, or too many attempts, 
+            ! move onto the next temperature stage
             if ( sum(improved) <  n1*vars .and. sum(attempted) < n2*vars ) then
                 cycle                   
             end if
@@ -278,7 +291,9 @@ module enhanced_simann
             improvement_ratio(:) = improved(:) / attempted(:)
 
             ! adjust variable based on improvement ratio
-            stp_cur(:) = stp_cur(:) * ( stp_adjst_spread * &
+            ! if improvement_ratio == stp_adjst_center, then step size will
+            ! remain the same. 
+            stp_cur(:) = stp_cur(:) * (  stp_adjst_spread* &
                          ( improvement_ratio(:) - stp_adjst_center ) + 1 )
 
             ! too many iterations, so let's stop.
