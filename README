@@ -894,16 +894,18 @@ amoeba.f90  nrtype.f90  ran1_s.f90  ran_state.f90
 You may need to separate out any USE statements delimited by a semicolon in
 order to make the files work properly with the mkmf script.
 
-Do steps 1, 2, & 3 as outlined in the standalone run.
+Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
 
 4. Edit input_misc/tuner/error_<CASE NAME>.in or select an existing one. Note that
    there are two tuning subroutines, specified by tune_type in the 
    error_<CASE NAME>.in /stats/ namelist.  
    If tune_type = 0, then the amoeba subroutine, which implements the downhill 
-   simplex algorithm, will be used.  If runtype is any other value, then amebsa, 
+   simplex algorithm, will be used.  If runtype is 1, then amebsa, 
    a variant of amoeba which uses simulated annealing instead, is used.  A complete 
    explanation of these minimization algorithms can be found 
    in "Numerical Recipes" by Press et al., .
+   The current default is tune_type = iesa = 2 and l_esa_siarry = .false.,
+   which runs a variant of simulated annealing developed by Gunther Huebler.
    The parameters whose values are adjusted by the tuner 
    are the non-zero entries in namelist initmax.
    Sometimes the names of the optimized variable in the CLUBB and LES output
@@ -929,7 +931,7 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
    in the error_<CASE_NAME>.in file.
 
 7. Ensure that the directory /home/pub/les_and_clubb_benchmark_runs exists on the
-   machine you are using.  (All group computers should have this directory.)  
+   machine you are using.  (All group computers at UWM should have this directory.)  
    This directory should contain the benchmark LES output that CLUBB is trying
    to match.  Using this output, along with setting debug_level to 0, 
    will produce identical output to the nightly tests tuning run.
