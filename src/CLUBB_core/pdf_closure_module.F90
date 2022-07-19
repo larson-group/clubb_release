@@ -3177,7 +3177,7 @@ module pdf_closure_module
           + stdev_w_2 / sqrt_2pi &
               * exp(-one_half * (w_2(i,k) / max(eps, stdev_w_2)) ** 2)
 
-        w_up_in_cloud &
+        w_up_in_cloud(i,k) &
         = (mixt_frac(i,k) * cloud_frac_1(i,k) * w_up_1 &
             + (one - mixt_frac(i,k)) * cloud_frac_2(i,k) * w_up_2) &
           / (mixt_frac(i,k) * max(eps, cloud_frac_1(i,k)) &
