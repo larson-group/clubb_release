@@ -271,7 +271,7 @@ module stats_zm_module
         irtpthlp_mc
 
     use stats_variables, only: &
-        iwpthlp_entermfl, & ! Variable(s)
+        iwpthlp_enter_mfl, & ! Variable(s)
         iwpthlp_exit_mfl, &
         iwpthlp_mfl_min, &
         iwpthlp_mfl_max, &
@@ -2295,10 +2295,10 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
-      case ('wpthlp_entermfl')
-        iwpthlp_entermfl = k
-        call stat_assign( var_index=iwpthlp_entermfl, var_name="wpthlp_entermfl", &
-             var_description="w'thl'_entermfl, Wpthlp entering flux limiter", &
+      case ('wpthlp_enter_mfl')
+        iwpthlp_enter_mfl = k
+        call stat_assign( var_index=iwpthlp_enter_mfl, var_name="wpthlp_enter_mfl", &
+             var_description="w'thl'_enter_mfl, Wpthlp entering flux limiter", &
              var_units="(m K)/s", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1

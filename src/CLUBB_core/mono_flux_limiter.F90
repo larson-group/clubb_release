@@ -331,7 +331,7 @@ module mono_flux_limiter
         irtm_exit_mfl, &
         iwpthlp_mfl_min, &
         iwpthlp_mfl_max, &
-        iwpthlp_entermfl, &
+        iwpthlp_enter_mfl, &
         iwpthlp_exit_mfl, &
         iwprtp_mfl_min, &
         iwprtp_mfl_max, &
@@ -487,7 +487,7 @@ module mono_flux_limiter
                               stats_zt(i) ) ! intent(inout)
         call stat_update_var( ithlm_old, xm_old(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( iwpthlp_entermfl, xm(i,:), & ! intent(in)
+        call stat_update_var( iwpthlp_enter_mfl, wpxp(i,:), & ! intent(in)
                               stats_zm(i) ) ! intent(inout)
       end do
     elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
@@ -496,7 +496,7 @@ module mono_flux_limiter
                               stats_zt(i) ) ! intent(inout)
         call stat_update_var( irtm_old, xm_old(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( iwprtp_enter_mfl, xm(i,:), & ! intent(in)
+        call stat_update_var( iwprtp_enter_mfl, wpxp(i,:), & ! intent(in)
                               stats_zm(i) ) ! intent(inout)
       end do
     endif
@@ -895,12 +895,12 @@ module mono_flux_limiter
         if ( solve_type == mono_flux_thlm ) then
           call stat_update_var( ithlm_exit_mfl, xm(i,:), & ! intent(in)
                                 stats_zt(i) ) ! intent(inout)
-          call stat_update_var( iwpthlp_exit_mfl, xm(i,:), & ! intent(in)
+          call stat_update_var( iwpthlp_exit_mfl, wpxp(i,:), & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
         elseif ( solve_type == mono_flux_rtm ) then
           call stat_update_var( irtm_exit_mfl, xm(i,:), & ! intent(in)
                                 stats_zt(i) ) ! intent(inout)
-          call stat_update_var( iwprtp_exit_mfl, xm(i,:), & ! intent(in)
+          call stat_update_var( iwprtp_exit_mfl, wpxp(i,:), & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
         endif
       end do

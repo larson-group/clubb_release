@@ -378,7 +378,7 @@ module stats_variables
   integer, public :: &
     ithlm_mfl_min = 0, &
     ithlm_mfl_max = 0, &
-    iwpthlp_entermfl = 0, &
+    iwpthlp_enter_mfl = 0, &
     iwpthlp_exit_mfl = 0, &
     iwpthlp_mfl_min = 0, &
     iwpthlp_mfl_max = 0, &
@@ -397,7 +397,7 @@ module stats_variables
     irtm_old = 0, &
     irtm_without_ta = 0
 
-!$omp   threadprivate(ithlm_mfl_min, ithlm_mfl_max, iwpthlp_entermfl)
+!$omp   threadprivate(ithlm_mfl_min, ithlm_mfl_max, iwpthlp_enter_mfl)
 !$omp   threadprivate(iwpthlp_exit_mfl, iwpthlp_mfl_min, iwpthlp_mfl_max)
 !$omp   threadprivate(irtm_mfl_min, irtm_mfl_max, iwprtp_enter_mfl)
 !$omp   threadprivate(iwprtp_exit_mfl, iwprtp_mfl_min, iwprtp_mfl_max)
