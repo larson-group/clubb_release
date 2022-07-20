@@ -30,18 +30,18 @@ def main():
     # Column vector of (positive) weights.  A small value de-emphasizes
     #   the corresponding metric in the fit.
     metricsNamesAndWeights = [ \
-                        ['SWCF_GLB', 4.00], \
+                        ['SWCF_GLB', 8.01], \
                         ['SWCF_DYCOMS', 1.00], \
                         ['SWCF_HAWAII', 1.00], \
                         ['SWCF_VOCAL', 1.00], \
-#                        ['SWCF_LBA', 1.00], \
-#                        ['SWCF_WP', 1.00], \
-#                        ['SWCF_EP', 1.00], \
-#                        ['SWCF_NP', 1.00], \
-#                        ['SWCF_SP', 1.00],  \
+                        ['SWCF_LBA', 1.00], \
+                        ['SWCF_WP', 1.00], \
+                        ['SWCF_EP', 1.00], \
+                        ['SWCF_NP', 1.00], \
+                        ['SWCF_SP', 1.00],  \
 ##                        ['SWCF_PA', 1.01], \
-#                        ['SWCF_CAF', 1.00], \
-                        ['LWCF_GLB', 4.00], \
+                        ['SWCF_CAF', 1.00], \
+                        ['LWCF_GLB', 8.00], \
 ##                        ['LWCF_DYCOMS', 1.01], \
 ##                        ['LWCF_HAWAII', 1.01], \
 ##                        ['LWCF_VOCAL', 1.01], \
@@ -52,7 +52,7 @@ def main():
 ##                        ['LWCF_SP', 1.01], \
 ###                        ['LWCF_PA',  1.01], \
 ##                        ['LWCF_CAF', 1.01], \
-                        ['PRECT_GLB', 4.00], \
+                        ['PRECT_GLB', 8.00] \
 #                        ['PRECT_LBA', 1.00], \
 #                        ['PRECT_WP', 1.00], \
 ##                        ['PRECT_EP', 1.01], \
@@ -79,9 +79,9 @@ def main():
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
     paramsNamesScalesAndFilenames = [ \
-#                    ['clubb_c7', 1.0, \
-#                     '20220627/sens625.tau_2_Regional.nc',  \
-#                     '20220627/sens625.tau_3_Regional.nc'], \
+                    ['clubb_c7', 1.0, \
+                     '20220627/sens625.tau_2_Regional.nc',  \
+                     '20220627/sens625.tau_3_Regional.nc'], \
                     ['clubb_c11', 1.0, \
                      '20220627/sens625.tau_4_Regional.nc',  \
                      '20220627/sens625.tau_5_Regional.nc'], \
@@ -91,9 +91,9 @@ def main():
                     ['clubb_c8', 1.0, \
                      '20220627/sens625.tau_9_Regional.nc',  \
                      '20220627/sens625.tau_8_Regional.nc'], \
-#                    ['clubb_c_k10', 1.0, \
-#                     '20220627/sens625.tau_10_Regional.nc', \
-#                     '20220627/sens625.tau_11_Regional.nc'], \
+                    ['clubb_c_k10', 1.0, \
+                     '20220627/sens625.tau_10_Regional.nc', \
+                     '20220627/sens625.tau_11_Regional.nc'], \
                     ['clubb_c_invrs_tau_n2', 1.0, \
                      '20220627/sens625.tau_12_Regional.nc',
                      '20220627/sens625.tau_13_Regional.nc'], \
@@ -130,8 +130,7 @@ def main():
     # Metrics from simulation that use the SVD-recommended parameter values
     # Here, we use default simulation just as a placeholder.
     linSolnNcFilename = \
-            '20220627/sens625.tau_1_Regional.nc'
-
+            '20220627/sens625.tau_18_Regional.nc'
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
 # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -386,10 +385,81 @@ def main():
                           + "{:.2f}".format(weightedBiasLinSolnMagRatio) \
                           + ", {:.2f}".format(linSolnBiasMagRatio)
 
-    #percentBiases = ( defaultBiasesApprox + defaultBiasesCol ) / np.abs(defaultBiasesCol)
 
+    # Create plot showing how well the regional biases are actually removed
+    metricsSens = np.linalg.norm(normlzdWeightedSensMatrix, axis=1) # measure of sensitivity of each metric
+    # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
+    metricsSensOrdered = metricsSens.argsort()
+    metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
+    # Plot a black dot for each default-run bias
+    biasesOrderMatrix = np.dstack(( -defaultBiasesCol[metricsSensOrdered] )).squeeze()
+    fracBiasesOrderMatrix = np.diagflat(np.reciprocal(np.abs(obsMetricValsCol[metricsSensOrdered]))) @ biasesOrderMatrix
+    df = pd.DataFrame(fracBiasesOrderMatrix,
+                      index=metricsNamesOrdered,
+                      columns= ['fracDefBias'])
+    biasesOrderFig = px.line(df, x=df.index, y=df.columns,
+              title = """Predicted and actual removal of regional biases""")
+    biasesOrderFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
+    biasesOrderFig.update_xaxes(title="Metric and region")
+    biasesOrderFig.update_layout(hovermode="x")
+    biasesOrderFig.update_layout(showlegend=False)
+    biasesOrderFig.update_traces(mode='markers', line_color='black')  # Plot default biases as black dots
+    biasesOrderFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    biasesOrderFig.update_layout( width=500, height=500  )
+    # Now plot an arrow for each region that points from default-run bias to new bias after tuning
+    xArrow = np.arange(len(metricsNamesOrdered)) # x-coordinate of arrows
+    yArrow = -defaultBiasesCol[metricsSensOrdered,0]/np.abs(obsMetricValsCol[metricsSensOrdered,0])
+    gap = 0.1  # horizontal spacing between arrows
+    # Plot arrows showing the tuner's nonlinear predicted bias removal
+    for i, item in enumerate(metricsNamesOrdered):
+        biasesOrderFig.add_annotation(
+        x=  xArrow[i] - gap,  # ith arrow's head
+        # ith arrow's length:
+        y= (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+        ax= xArrow[i] - gap,  # ith arrow's tail
+        ay=  yArrow[i],  # ith arrow's tail
+        xref='x',
+        yref='y',
+        axref='x',
+        ayref='y',
+        text='',  # blank because we want only the arrow
+        showarrow=True,
+        arrowhead=3,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor='blue'
+        )
+    # Add a hand-made legend
+    biasesOrderFig.add_annotation(text='tuner prediction of bias removal',
+                                  font=dict(color='blue'),
+                                  align='left', xref='paper', yref='paper', x=0.05, y=0.9, showarrow=False)
+    biasesOrderFig.add_annotation(text='realized E3SM bias removal',
+                                  font=dict(color='red'),
+                                  align='left', xref='paper', yref='paper', x=0.05, y=0.8, showarrow=False)
+    # Plot arrows showing the bias removal of E3SM's solution
+    for i, item in enumerate(metricsNamesOrdered):
+        print("i=", i)
+        print("xArrow[i]", xArrow[i])
+        print("yArrow[i]", yArrow[i])
+        print("y",(-defaultBiasesApproxNonlin-defaultBiasesCol)[i,0]/np.abs(obsMetricValsCol[i,0]) )
+        biasesOrderFig.add_annotation(
+        x=  xArrow[i]+gap,  # ith arrow's head
+        # ith arrow's length:
+        y= (-linSolnBiasesCol-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+        ax= xArrow[i]+gap,  # ith arrow's tail
+        ay=  yArrow[i],  # ith arrow's tail
+        xref='x',
+        yref='y',
+        axref='x',
+        ayref='y',
+        text='',  # blank because we want only the arrow
+        showarrow=True,
+        arrowhead=3,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor='red'
+        )
     #pdb.set_trace()
-
 
     # Plot a scatterplot of default-simulation bias and SVD approximation of that bias.
     # Each column tells us how all metrics vary with a single parameter.
@@ -504,11 +574,11 @@ def main():
     biasesVsSensArrowFig.update_traces(textposition="middle right")
     for i, item in enumerate(metricsNames):
         biasesVsSensArrowFig.add_annotation(
-        x=  xArrow[i],  # arrows' head
-        y= (-defaultBiasesApproxNonlin-defaultBiasesCol)[i,0]/np.abs(obsMetricValsCol[i,0]),  # arrows' tail
-        #y= (-defaultBiasesApproxNonlin2x-defaultBiasesCol)[i,0]/np.abs(obsMetricValsCol[i,0]),  # arrows' tail
-        ax= xArrow[i],  # arrows' tail
-        ay=  yArrow[i],  # arrows' head
+        x=  xArrow[i],  # ith arrow's head
+        y= (-defaultBiasesApproxNonlin-defaultBiasesCol)[i,0]/np.abs(obsMetricValsCol[i,0]),  # ith arrow's length
+        #y= (-defaultBiasesApproxNonlin2x-defaultBiasesCol)[i,0]/np.abs(obsMetricValsCol[i,0]),  # ith arrow's length
+        ax= xArrow[i],  # ith arrow's tail
+        ay=  yArrow[i],  # ith arrow's tail
         xref='x',
         yref='y',
         axref='x',
@@ -697,6 +767,7 @@ def main():
         html.Div(children=''' '''),
 
         dcc.Graph( id='biasesFig', figure=biasesFig ),
+        dcc.Graph( id='biasesOrderFig', figure=biasesOrderFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
         dcc.Graph( id='dpMinScatterFig', figure=dpMinMatrixScatterFig ),
         dcc.Graph( id='paramsFig', figure=paramsFig ),
@@ -746,11 +817,12 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
                                   - 0.5 * normlzdCurvMatrix @ (dnormlzdParams * dnormlzdParams) \
                                  ) * metricsWeights \
                                )**2  \
-                + 0.0 * np.linalg.norm( dnormlzdParams, ord=1 )
+                + 0.2 * np.linalg.norm( dnormlzdParams, ord=1 )
         #chisqdOrig = np.linalg.norm( (-normlzdDefaultBiasesCol ) * np.reciprocal(metricsWeights) )**2
         #pdb.set_trace()
 
         return chisqd
+
 
     # Perform nonlinear optimization
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(obsMetricValsCol)
