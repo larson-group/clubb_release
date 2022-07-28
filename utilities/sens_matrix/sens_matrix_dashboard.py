@@ -30,7 +30,7 @@ def main():
     # Column vector of (positive) weights.  A small value de-emphasizes
     #   the corresponding metric in the fit.
     metricsNamesAndWeights = [ \
-                        ['SWCF_GLB', 8.01], \
+                        ['SWCF_GLB', 8.00], \
                         ['SWCF_DYCOMS', 1.00], \
                         ['SWCF_HAWAII', 1.00], \
                         ['SWCF_VOCAL', 1.00], \
@@ -80,29 +80,44 @@ def main():
     #    Each netcdf file contains metric values and parameter values for a single simulation.
     paramsNamesScalesAndFilenames = [ \
                     ['clubb_c7', 1.0, \
-                     '20220627/sens625.tau_2_Regional.nc',  \
-                     '20220627/sens625.tau_3_Regional.nc'], \
-                    ['clubb_c11', 1.0, \
-                     '20220627/sens625.tau_4_Regional.nc',  \
-                     '20220627/sens625.tau_5_Regional.nc'], \
+                     '20220720/anvil.bmg20220630.sens720_2.ne30pg2_r05_oECv3_Regional.nc',  \
+                     '20220720/anvil.bmg20220630.sens720_3.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_c11', 1.0, \
+#                     '20220720/anvil.bmg20220630.sens720_4.ne30pg2_r05_oECv3_Regional.nc',  \
+#                     '20220720/anvil.bmg20220630.sens720_5.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_gamma_coef', 1.0, \
-                     '20220627/sens625.tau_6_Regional.nc',  \
-                     '20220627/sens625.tau_7_Regional.nc'], \
+                     '20220720/anvil.bmg20220630.sens720_6.ne30pg2_r05_oECv3_Regional.nc',  \
+                     '20220720/anvil.bmg20220630.sens720_7.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c8', 1.0, \
-                     '20220627/sens625.tau_9_Regional.nc',  \
-                     '20220627/sens625.tau_8_Regional.nc'], \
+                     '20220720/anvil.bmg20220630.sens720_9.ne30pg2_r05_oECv3_Regional.nc',  \
+                     '20220720/anvil.bmg20220630.sens720_8.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_k10', 1.0, \
-                     '20220627/sens625.tau_10_Regional.nc', \
-                     '20220627/sens625.tau_11_Regional.nc'], \
+                     '20220720/anvil.bmg20220630.sens720_10.ne30pg2_r05_oECv3_Regional.nc', \
+                     '20220720/anvil.bmg20220630.sens720_11.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_n2', 1.0, \
-                     '20220627/sens625.tau_12_Regional.nc',
-                     '20220627/sens625.tau_13_Regional.nc'], \
-                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-                     '20220627/sens625.tau_14_Regional.nc', \
-                     '20220627/sens625.tau_15_Regional.nc'], \
+                     '20220720/anvil.bmg20220630.sens720_12.ne30pg2_r05_oECv3_Regional.nc',
+                     '20220720/anvil.bmg20220630.sens720_13.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_altitude_threshold', 1.0, \
+#                     '20220720/anvil.bmg20220630.sens720_19.ne30pg2_r05_oECv3_Regional.nc',
+#                     '20220720/anvil.bmg20220630.sens720_20.ne30pg2_r05_oECv3_Regional.nc'], \
+                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
+                     '20220720/anvil.bmg20220630.sens720_21.ne30pg2_r05_oECv3_Regional.nc',
+                     '20220720/anvil.bmg20220630.sens720_22.ne30pg2_r05_oECv3_Regional.nc'], \
+                    ['clubb_c_invrs_tau_sfc', 1.0, \
+                     '20220720/anvil.bmg20220630.sens720_23.ne30pg2_r05_oECv3_Regional.nc',
+                     '20220720/anvil.bmg20220630.sens720_24.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
+#                     '20220720/anvil.bmg20220630.sens720_14.ne30pg2_r05_oECv3_Regional.nc', \
+#                     '20220720/anvil.bmg20220630.sens720_15.ne30pg2_r05_oECv3_Regional.nc'], \
+                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
+                     '20220720/anvil.bmg20220630.sens720_25.ne30pg2_r05_oECv3_Regional.nc',
+                     '20220720/anvil.bmg20220630.sens720_26.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
+#                     '20220720/anvil.bmg20220630.sens720_27.ne30pg2_r05_oECv3_Regional.nc', \
+#                     '20220720/anvil.bmg20220630.sens720_28.ne30pg2_r05_oECv3_Regional.nc'], \
 ##                    ['micro_vqit', 1.0, \
-##                     '20220627/sens625.tau_16_Regional.nc', \
-##                     '20220627/sens625.tau_17_Regional.nc'], \
+##                     '20220720/anvil.bmg20220630.sens720_16.ne30pg2_r05_oECv3_Regional.nc', \
+##                     '20220720/anvil.bmg20220630.sens720_17.ne30pg2_r05_oECv3_Regional.nc'], \
                         ]
 
     dfparamsNamesScalesAndFilenames =  \
@@ -125,12 +140,12 @@ def main():
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
-        '20220627/sens625.tau_1_Regional.nc'
+        '20220720/anvil.bmg20220630.sens720_1.ne30pg2_r05_oECv3_Regional.nc'
 
     # Metrics from simulation that use the SVD-recommended parameter values
     # Here, we use default simulation just as a placeholder.
     linSolnNcFilename = \
-            '20220627/sens625.tau_18_Regional.nc'
+            '20220720/anvil.bmg20220630.sens720_1.ne30pg2_r05_oECv3_Regional.nc'
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
 # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -139,8 +154,8 @@ def main():
     'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_GLB': -45.81, 'TMQ_GLB': 24.423, \
     'LWCF_DYCOMS': 19.36681938, 'PRECT_DYCOMS':0.000000007141516, 'SWCF_DYCOMS': -63.49394226, 'TMQ_DYCOMS':20.33586884,\
     'LWCF_LBA': 43.83245087, 'PRECT_LBA':0.000000063727875, 'SWCF_LBA': -55.10041809, 'TMQ_LBA': 44.27890396,\
-    'LWCF_HAWAII': 24.78801537, 'PRECT_HAWAII':0.000000020676041, 'SWCF_HAWAII': -36.49626541, 'TMQ_HAWAII': 33.17501068,\
-    'LWCF_WP': 54.73321152, 'PRECT_WP':0.000000078688704, 'SWCF_WP': -62.09819031, 'TMQ_WP':51.13026810,\
+    'LWCF_HAWAII': 23.6855, 'PRECT_HAWAII':0.00000002087774, 'SWCF_HAWAII': -33.1536, 'TMQ_HAWAII': 32.4904,\
+    'LWCF_WP': 54.5056, 'PRECT_WP':0.000000077433568, 'SWCF_WP': 62.3644, 'TMQ_WP':50.5412,\
     'LWCF_EP': 33.42149734, 'PRECT_EP': 0.000000055586694, 'SWCF_EP': -51.79394531, 'TMQ_EP':44.34251404,\
     'LWCF_NP': 26.23941231, 'PRECT_NP':0.000000028597503, 'SWCF_NP': -50.92364502, 'TMQ_NP':12.72111988,\
     'LWCF_SP': 31.96141052, 'PRECT_SP':0.000000034625369, 'SWCF_SP': -70.26461792, 'TMQ_SP':10.95032024,\
@@ -434,14 +449,10 @@ def main():
                                   font=dict(color='blue'),
                                   align='left', xref='paper', yref='paper', x=0.05, y=0.9, showarrow=False)
     biasesOrderFig.add_annotation(text='realized E3SM bias removal',
-                                  font=dict(color='red'),
+                                  font=dict(color='rgba(255,0,0,0.0)'),
                                   align='left', xref='paper', yref='paper', x=0.05, y=0.8, showarrow=False)
     # Plot arrows showing the bias removal of E3SM's solution
     for i, item in enumerate(metricsNamesOrdered):
-        print("i=", i)
-        print("xArrow[i]", xArrow[i])
-        print("yArrow[i]", yArrow[i])
-        print("y",(-defaultBiasesApproxNonlin-defaultBiasesCol)[i,0]/np.abs(obsMetricValsCol[i,0]) )
         biasesOrderFig.add_annotation(
         x=  xArrow[i]+gap,  # ith arrow's head
         # ith arrow's length:
@@ -457,8 +468,9 @@ def main():
         arrowhead=3,
         arrowsize=1,
         arrowwidth=2,
-        arrowcolor='red'
-        )
+        arrowcolor='red',
+        opacity=0.0
+	    )
     #pdb.set_trace()
 
     # Plot a scatterplot of default-simulation bias and SVD approximation of that bias.
@@ -768,9 +780,9 @@ def main():
 
         dcc.Graph( id='biasesFig', figure=biasesFig ),
         dcc.Graph( id='biasesOrderFig', figure=biasesOrderFig ),
+        dcc.Graph( id='paramsFig', figure=paramsFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
         dcc.Graph( id='dpMinScatterFig', figure=dpMinMatrixScatterFig ),
-        dcc.Graph( id='paramsFig', figure=paramsFig ),
         dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ),
         dcc.Graph( id='biasesVsSensFig', figure=biasesVsSensFig ),
         dcc.Graph( id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig ),
