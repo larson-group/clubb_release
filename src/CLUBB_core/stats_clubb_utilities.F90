@@ -1878,8 +1878,8 @@ module stats_clubb_utilities
                      tau_zm, Kh_zm, thlprcp, &
                      rtprcp, rcp2, em, a3_coef, a3_coef_zt, &
                      wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
-                     w_up_in_cloud, pdf_params, pdf_params_zm, sclrm, sclrp2, &
-                     sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
+                     w_up_in_cloud, w_down_in_cloud, pdf_params, pdf_params_zm, &
+                     sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
                      wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp, &
                      wpsclrpthlp, wpedsclrp, edsclrm, edsclrm_forcing, &
                      stats_zt, stats_zm, stats_sfc )
@@ -1941,6 +1941,7 @@ module stats_clubb_utilities
         iwp2thvp, &  ! Variable(s)
         iwp2rcp, & 
         iw_up_in_cloud, &
+        iw_down_in_cloud, &
         iwprtpthlp, &
         irc_coef, &
         isigma_sqd_w_zt, & 
@@ -2260,7 +2261,8 @@ module stats_clubb_utilities
         wp3_on_wp2,    & ! w'^3 / w'^2 on the zm grid            [m/s]
         wp3_on_wp2_zt, & ! w'^3 / w'^2 on the zt grid            [m/s]
         Skw_velocity,  & ! Skewness velocity                     [m/s]
-        w_up_in_cloud    ! Upward velocity inside Clouds         [m/s]
+        w_up_in_cloud, & ! Mean cloudy updraft speed             [m/s]
+        w_down_in_cloud  ! Mean cloudy downdraft speed           [m/s]
 
     type(pdf_parameter), intent(in) :: & 
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
@@ -2387,6 +2389,8 @@ module stats_clubb_utilities
       call stat_update_var( iwp2rcp, wp2rcp, & ! intent(in)
                             stats_zt ) ! intent(inout)
       call stat_update_var( iw_up_in_cloud, w_up_in_cloud, & ! intent(in)
+                            stats_zt ) ! intent(inout)
+      call stat_update_var( iw_down_in_cloud, w_down_in_cloud, & ! intent(in)
                             stats_zt ) ! intent(inout)
       call stat_update_var( iwprtpthlp, wprtpthlp, & ! intent(in)
                             stats_zt ) ! intent(inout)

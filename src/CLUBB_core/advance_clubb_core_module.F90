@@ -2421,7 +2421,7 @@ module advance_clubb_core_module
                tau_zm(i,:), Kh_zm(i,:), thlprcp(i,:),                                & ! intent(in)
                rtprcp(i,:), rcp2(i,:), em(i,:), a3_coef(i,:), a3_coef_zt(i,:),                 & ! intent(in)
                wp3_zm(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), Skw_velocity(i,:),       & ! intent(in)
-               w_up_in_cloud(i,:),                                         & ! intent(in)
+               w_up_in_cloud(i,:), w_down_in_cloud(i,:),                                  & ! intent(in)
                pdf_params_single_col(i), pdf_params_zm_single_col(i), sclrm(i,:,:), sclrp2(i,:,:),              & ! intent(in)
                sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), sclrpthvp(i,:,:),         & ! intent(in)
                wpsclrp(i,:,:), sclrprcp(i,:,:), wp2sclrp(i,:,:), wpsclrp2(i,:,:), wpsclrprtp(i,:,:),     & ! intent(in)

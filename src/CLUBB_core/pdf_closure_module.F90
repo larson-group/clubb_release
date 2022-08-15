@@ -168,11 +168,12 @@ module pdf_closure_module
         sat_mixrat_ice
 
     use stats_variables, only: &
-        ircp2,      & ! Variables
-        iwprtp2,    &
-        iwprtpthlp, &
-        iwpthlp2,   &
-        iw_up_in_cloud
+        ircp2,          & ! Variables
+        iwprtp2,        &
+        iwprtpthlp,     &
+        iwpthlp2,       &
+        iw_up_in_cloud, &
+        iw_down_in_cloud
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1357,7 +1358,7 @@ module pdf_closure_module
 
     if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
            .or. iiPDF_type == iiPDF_new_hybrid ) &
-         .and. iw_up_in_cloud > 0 ) then
+         .and. ( iw_up_in_cloud > 0 .or. iw_down_in_cloud > 0 ) ) then
                  
       call calc_w_up_in_cloud( nz, ngrdcol, &                                      ! In
                                pdf_params%mixt_frac, &                             ! In

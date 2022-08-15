@@ -76,6 +76,7 @@ module stats_zt_module
         iwp2thvp, &
         iwp2rcp, &
         iw_up_in_cloud, &
+        iw_down_in_cloud, &
         iwprtpthlp, &
         irc_coef, &
         isigma_sqd_w_zt, &
@@ -1425,6 +1426,13 @@ module stats_zt_module
         iw_up_in_cloud = k
         call stat_assign( var_index=iw_up_in_cloud, var_name="w_up_in_cloud", &
              var_description="Mean W in saturated updrafts", &
+             var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+         k = k + 1
+
+      case ('w_down_in_cloud')
+        iw_down_in_cloud = k
+        call stat_assign( var_index=iw_down_in_cloud, var_name="w_down_in_cloud", &
+             var_description="Mean W in saturated downdrafts", &
              var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
          k = k + 1
 
