@@ -510,7 +510,8 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(:), allocatable ::  &
       wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
+      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
       ice_supersat_frac, & ! ice cloud fraction (thermo. levels)   [-]
       rcm_in_layer,      & ! rcm within cloud layer                [kg/kg]
       cloud_cover,       & ! cloud cover                           [-]
@@ -1476,6 +1477,7 @@ module clubb_driver
     allocate( wpthlp(1:gr%nz) )    ! w'thl'
     allocate( wprcp(1:gr%nz) )     ! w'rc'
     allocate( w_up_in_cloud(1:gr%nz) )
+    allocate( w_down_in_cloud(1:gr%nz) )
     allocate( wp2(1:gr%nz) )       ! w'^2
     allocate( wp3(1,1:gr%nz) )       ! w'^3
     allocate( rtp2(1:gr%nz) )      ! rt'^2
@@ -1628,6 +1630,7 @@ module clubb_driver
     rtpthlp(1:gr%nz) = zero          ! rt'thl'
     wprcp(1:gr%nz)   = zero          ! w'rc'
     w_up_in_cloud(1:gr%nz) = zero
+    w_down_in_cloud(1:gr%nz) = zero
 
     p_in_Pa(1:gr%nz)= zero           ! pressure (Pa)
     exner(1:gr%nz) = zero            ! exner
@@ -2320,7 +2323,7 @@ module clubb_driver
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
-             thlprcp, wprcp, w_up_in_cloud, &                     ! Intent(out)
+             thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! Intent(out)
              rcm_in_layer, cloud_cover, invrs_tau_zm )            ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2713,6 +2716,7 @@ module clubb_driver
     deallocate( wpthlp )    ! w'thl'
     deallocate( wprcp )     ! w'rc'
     deallocate( w_up_in_cloud )
+    deallocate( w_down_in_cloud )
     deallocate( wp2 )       ! w'^2
     deallocate( wp3 )       ! w'^3
     deallocate( rtp2 )      ! rt'^2

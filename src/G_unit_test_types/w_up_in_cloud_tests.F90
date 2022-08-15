@@ -126,7 +126,8 @@ return
       w_2, &            ! upward velocity (2nd PDF component)          [m/s]
       varnce_w_1, &     ! standard deviation of w (1st PDF component)  [m^2/s^2]
       varnce_w_2, &     ! standard deviation of w (2nd PDF component)  [m^2/s^2]
-      result_cmp        ! correct result for w_up_in_cloud
+      result_cmp, &     ! correct result for w_up_in_cloud             [m/s]
+      w_down_in_cloud   ! Output for mean cloudy downdraft velocity    [m/s]
 
       total_mismatches = 0
 
@@ -145,7 +146,7 @@ return
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
-                              result)
+                              result, w_down_in_cloud)
       total_mismatches = total_mismatches &
                           + COUNT(abs(result - result_cmp) >= eps)
       
@@ -163,7 +164,7 @@ return
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
-                              result)
+                              result, w_down_in_cloud)
       total_mismatches = total_mismatches &
                           + COUNT(abs(result - result_cmp) >= eps)
       
@@ -181,7 +182,7 @@ return
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
-                              result)
+                              result, w_down_in_cloud)
       total_mismatches = total_mismatches &
                           + COUNT(abs(result - result_cmp) >= eps)
       
@@ -201,7 +202,7 @@ return
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
-                              result)
+                              result, w_down_in_cloud)
       total_mismatches = total_mismatches &
                           + COUNT(abs(result - result_cmp) >= eps)
       
@@ -219,7 +220,7 @@ return
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
-                              result)
+                              result, w_down_in_cloud)
       total_mismatches = total_mismatches &
                           + COUNT(abs(result - result_cmp) >= eps)
       
@@ -237,7 +238,7 @@ return
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
-                              result)
+                              result, w_down_in_cloud)
       total_mismatches = total_mismatches &
                           + COUNT(abs(result - result_cmp) >= eps)
       
@@ -256,7 +257,7 @@ return
                               cloud_frac_1, cloud_frac_2, &
                               w_1, w_2, &
                               varnce_w_1, varnce_w_2, &
-                              result)
+                              result, w_down_in_cloud)
       total_mismatches = total_mismatches &
                           + COUNT(abs(result - result_cmp) >= eps)
       

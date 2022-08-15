@@ -64,7 +64,8 @@ module pdf_closure_module
                           rcm, wpthvp, wp2thvp, rtpthvp,            &
                           thlpthvp, wprcp, wp2rcp, rtprcp,          &
                           thlprcp, rcp2,                            &
-                          uprcp, vprcp, w_up_in_cloud,              &
+                          uprcp, vprcp,                             &
+                          w_up_in_cloud, w_down_in_cloud,           &
                           pdf_params, pdf_implicit_coefs_terms,     &
                           F_w, F_rt, F_thl,                         &
                           min_F_w, max_F_w,                         &
@@ -286,7 +287,8 @@ module pdf_closure_module
       thlprcp,            & ! th_l' r_c'            [(K kg)/kg]
       rcp2,               & ! r_c'^2                [(kg^2)/(kg^2)]
       wprtpthlp,          & ! w' r_t' th_l'         [(m kg K)/(s kg)]
-      w_up_in_cloud         ! wm over Clouds        [m/s] TODO Correct place?
+      w_up_in_cloud,      & ! cloudy updraft vel    [m/s] TODO Correct place?
+      w_down_in_cloud       ! cloudy downdraft vel  [m/s] TODO Correct place?
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       uprcp,              & ! u' r_c'               [(m kg)/(s kg)]
@@ -1353,19 +1355,20 @@ module pdf_closure_module
       end if
 #endif
 
-    if ((iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
-                                 .or. iiPDF_type == iiPDF_new_hybrid) &
-                                 .and. iw_up_in_cloud > 0) then
+    if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+           .or. iiPDF_type == iiPDF_new_hybrid ) &
+         .and. iw_up_in_cloud > 0 ) then
                  
       call calc_w_up_in_cloud( nz, ngrdcol, &                                      ! In
                                pdf_params%mixt_frac, &                             ! In
                                pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, & ! In
                                pdf_params%w_1, pdf_params%w_2, &                   ! In
                                pdf_params%varnce_w_1, pdf_params%varnce_w_2, &     ! In
-                               w_up_in_cloud )                                     ! Out
+                               w_up_in_cloud, w_down_in_cloud )                    ! Out
 
     else
       w_up_in_cloud(:,:) = zero
+      w_down_in_cloud(:,:) = zero
     end if
 
     if ( clubb_at_least_debug_level( 2 ) ) then
@@ -3106,9 +3109,12 @@ module pdf_closure_module
   !=============================================================================
   subroutine calc_w_up_in_cloud( nz, ngrdcol, &
                                  mixt_frac, cloud_frac_1, cloud_frac_2, &
-                                 w_1, w_2, varnce_w_1, varnce_w_2, w_up_in_cloud)
+                                 w_1, w_2, varnce_w_1, varnce_w_2, &
+                                 w_up_in_cloud, w_down_in_cloud )
+
     ! Description:
-    ! Subroutine that computes the mean cloudy updraft.
+    ! Subroutine that computes the mean cloudy updraft (and also calculates
+    ! the mean cloudy downdraft).
     !
     ! In order to activate aerosol, we'd like to feed the activation scheme
     ! a vertical velocity that's representative of cloudy updrafts. For skewed
@@ -3151,40 +3157,83 @@ module pdf_closure_module
 
     !----------- Output Variables -----------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      w_up_in_cloud ! mean updraft over clouds                         [m/s]
+      w_up_in_cloud,   & ! mean cloudy updraft speed                   [m/s]
+      w_down_in_cloud    ! mean cloudy downdraft speed                 [m/s]
 
     !----------- Local Variables -----------
     real( kind = core_rknd ) :: &
-      w_up_1, w_up_2, &       ! product of w and Heaviside function
-      stdev_w_1, stdev_w_2  ! Standard deviation of w
+      w_up_1, w_up_2, &       ! integral of w and Heaviside fnc, where w > 0
+      w_down_1, w_down_2, &   ! integral of w and Heaviside fnc, where w < 0
+      stdev_w_1, stdev_w_2, & ! Standard deviation of w
+      updraft_frac_1, &       ! Fraction of 1st PDF comp. where w > 0
+      updraft_frac_2, &       ! Fraction of 2nd PDF comp. where w > 0
+      downdraft_frac_1, &     ! Fraction of 1st PDF comp. where w < 0
+      downdraft_frac_2        ! Fraction of 2nd PDF comp. where w < 0
       
     integer :: i, k
       
     do k = 1, nz
       do i = 1, ngrdcol
-        
+
         stdev_w_1 = sqrt(varnce_w_1(i,k))
         stdev_w_2 = sqrt(varnce_w_2(i,k))
-        
+
+        ! Calculate the mean vertical velocity found in a cloudy updraft. 
         w_up_1 &
         = one_half * w_1(i,k) &
-            * (one + erf(w_1(i,k) / (sqrt_2 * max(eps, stdev_w_1)))) &
+            * ( one + erf( w_1(i,k) / ( sqrt_2 * max(eps, stdev_w_1) ) ) ) &
           + stdev_w_1 / sqrt_2pi &
-              * exp(-one_half * (w_1(i,k) / max(eps, stdev_w_1)) ** 2)
+              * exp( -one_half * ( w_1(i,k) / max(eps, stdev_w_1) )**2 )
+
         w_up_2 &
         = one_half * w_2(i,k) &
-            * (one + erf(w_2(i,k) / (sqrt_2 * max(eps, stdev_w_2)))) &
+            * ( one + erf( w_2(i,k) / ( sqrt_2 * max(eps, stdev_w_2) ) ) ) &
           + stdev_w_2 / sqrt_2pi &
-              * exp(-one_half * (w_2(i,k) / max(eps, stdev_w_2)) ** 2)
+              * exp( -one_half * ( w_2(i,k) / max(eps, stdev_w_2) )**2 )
+
+        updraft_frac_1 &
+        = one_half * ( one + erf( w_1(i,k) / max( sqrt_2 * stdev_w_1, eps ) ) )
+
+        updraft_frac_2 &
+        = one_half * ( one + erf( w_2(i,k) / max( sqrt_2 * stdev_w_2, eps ) ) )
 
         w_up_in_cloud(i,k) &
-        = (mixt_frac(i,k) * cloud_frac_1(i,k) * w_up_1 &
-            + (one - mixt_frac(i,k)) * cloud_frac_2(i,k) * w_up_2) &
-          / (mixt_frac(i,k) * max(eps, cloud_frac_1(i,k)) &
-            + (one - mixt_frac(i,k)) * max(eps, cloud_frac_2(i,k)))
-            
+        = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_up_1 &
+            + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_up_2 ) &
+          / ( mixt_frac(i,k) * max(eps, cloud_frac_1(i,k) * updraft_frac_1) &
+            + ( one - mixt_frac(i,k) ) * max(eps, cloud_frac_2(i,k) * updraft_frac_2) )
+
+        ! Calculate the mean vertical velocity found in a cloudy downdraft. 
+        w_down_1 &
+        = one_half * w_1(i,k) &
+            * ( one + erf( -w_1(i,k) / ( sqrt_2 * max(eps, stdev_w_1) ) ) ) &
+          - stdev_w_1 / sqrt_2pi &
+              * exp( -one_half * ( w_1(i,k) / max(eps, stdev_w_1) )**2 )
+
+        w_down_2 &
+        = one_half * w_2(i,k) &
+            * ( one + erf( -w_2(i,k) / (sqrt_2 * max(eps, stdev_w_2) ) ) ) &
+          - stdev_w_2 / sqrt_2pi &
+              * exp( -one_half * ( w_2(i,k) / max(eps, stdev_w_2) )**2 )
+
+        !downdraft_frac_1 &
+        != one_half * ( one - erf( w_1(i,k) / max( sqrt_2 * stdev_w_1, eps ) ) )
+        downdraft_frac_1 = one - updraft_frac_1
+
+        !downdraft_frac_2 &
+        != one_half * ( one - erf( w_2(i,k) / max( sqrt_2 * stdev_w_2, eps ) ) )
+        downdraft_frac_2 = one - updraft_frac_2
+
+        w_down_in_cloud(i,k) &
+        = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_down_1 &
+            + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_down_2 ) &
+          / ( mixt_frac(i,k) * max(eps, cloud_frac_1(i,k) * downdraft_frac_1) &
+            + ( one - mixt_frac(i,k) ) * max(eps, cloud_frac_2(i,k) * downdraft_frac_2) )
+
       end do
     end do
+
+    return
 
   end subroutine calc_w_up_in_cloud
 

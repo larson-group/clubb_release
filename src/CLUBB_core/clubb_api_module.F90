@@ -597,7 +597,7 @@ contains
 #ifdef CLUBB_CAM
     qclvar, &                                               ! intent(out)
 #endif
-    thlprcp, wprcp, w_up_in_cloud, &                        ! intent(out)
+    thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -823,7 +823,8 @@ contains
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
       wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
+      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
       invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -1020,7 +1021,8 @@ contains
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), dimension(1,gr%nz) ::  &
       wprcp_col,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud_col,     & ! Average upward velocity within liquid cloud   [m/s]
+      w_up_in_cloud_col,     & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud_col,   & ! Average cloudy downdraft velocity     [m/s]
       invrs_tau_zm_col         ! One divided by tau on zm levels               [1/s]
 
     real( kind = core_rknd ), dimension(1,gr%nz) :: &
@@ -1173,6 +1175,7 @@ contains
     thlprcp_col(1,:) = thlprcp
     wprcp_col(1,:) = wprcp
     w_up_in_cloud_col(1,:) = w_up_in_cloud
+    w_down_in_cloud_col(1,:) = w_down_in_cloud
     rcm_in_layer_col(1,:) = rcm_in_layer
     cloud_cover_col(1,:) = cloud_cover
     invrs_tau_zm_col(1,:) = invrs_tau_zm
@@ -1224,7 +1227,7 @@ contains
 #ifdef CLUBB_CAM
                qclvar_col, &                                      ! intent(out)
 #endif
-      thlprcp_col, wprcp_col, w_up_in_cloud_col, &                ! intent(out)
+      thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, & ! intent(out)
       rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &      ! intent(out)
       err_code_api )                                          ! intent(out)
     
@@ -1300,6 +1303,7 @@ contains
     cloud_cover  = cloud_cover_col(1,:)
     wprcp = wprcp_col(1,:)
     w_up_in_cloud = w_up_in_cloud_col(1,:)
+    w_down_in_cloud = w_down_in_cloud_col(1,:)
     invrs_tau_zm = invrs_tau_zm_col(1,:)
     Kh_zt = Kh_zt_col(1,:)
     Kh_zm = Kh_zm_col(1,:)
@@ -1360,7 +1364,7 @@ contains
 #ifdef CLUBB_CAM
     qclvar, &                                               ! intent(out)
 #endif
-    thlprcp, wprcp, w_up_in_cloud, &                        ! intent(out)
+    thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -1583,7 +1587,8 @@ contains
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) ::  &
       wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average upward velocity within liquid cloud   [m/s]
+      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
       invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
@@ -1655,7 +1660,7 @@ contains
 #ifdef CLUBB_CAM
                qclvar, &                                      ! intent(out)
 #endif
-      thlprcp, wprcp, w_up_in_cloud, &                        ! intent(out)
+      thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
       rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
       err_code_api )                                          ! intent(out)
 
