@@ -188,6 +188,18 @@ class VariableGroupWs(VariableGroup):
                  'wrf': [''],
                  },
              },
+            {'var_names':
+                 {
+                 'clubb': ['w_down_in_cloud'],
+                 'sam': [''],
+                 'coamps': [''],
+                 'r408': [''],
+                 'hoc': [''],
+                 'e3sm': [''],
+                 'cam': [''],
+                 'wrf': [''],
+                 },
+             },
         ]
 
         # Call ctor of parent class
