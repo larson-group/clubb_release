@@ -3131,10 +3131,12 @@ module pdf_closure_module
     !----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        sqrt_2pi, & ! sqrt(2*pi)
-        sqrt_2,   & ! sqrt(2)
-        one,      & ! 1
-        one_half, & ! 1/2
+        sqrt_2pi,       & ! sqrt(2*pi)
+        sqrt_2,         & ! sqrt(2)
+        one,            & ! 1
+        one_half,       & ! 1/2
+        zero,           & ! 0
+        max_num_stdevs, &
         eps
 
     use clubb_precision, only: &
@@ -3179,25 +3181,97 @@ module pdf_closure_module
         stdev_w_1 = sqrt(varnce_w_1(i,k))
         stdev_w_2 = sqrt(varnce_w_2(i,k))
 
+        ! Calculate quantities in the 1st PDF component.
+        if ( w_1(i,k) > max_num_stdevs * stdev_w_1 ) then
+
+           ! The mean of w in the 1st PDF component is more than
+           ! max_num_stdevs standard deviations above 0.
+           ! The entire 1st PDF component is found in an updraft (w > 0).
+           w_up_1 = w_1(i,k)
+           updraft_frac_1 = one
+           w_down_1 = zero
+           downdraft_frac_1 = zero
+
+        elseif ( w_1(i,k) < - max_num_stdevs * stdev_w_1 ) then
+
+           ! The mean of w in the 1st PDF component is more than
+           ! max_num_stdevs standard deviations below 0.
+           ! The entire 1st PDF component is found in a downdraft (w < 0).
+           w_up_1 = zero
+           updraft_frac_1 = zero
+           w_down_1 = w_1(i,k)
+           downdraft_frac_1 = one
+
+        else
+
+           ! The 1st PDF component contains both updraft and downdraft.
+           w_up_1 &
+           = one_half * w_1(i,k) &
+               * ( one + erf( w_1(i,k) / ( sqrt_2 * max(eps, stdev_w_1) ) ) ) &
+             + stdev_w_1 / sqrt_2pi &
+               * exp( -one_half * ( w_1(i,k) / max(eps, stdev_w_1) )**2 )
+
+           updraft_frac_1 &
+           = one_half * ( one + erf( w_1(i,k) / max( sqrt_2 * stdev_w_1, eps ) ) )
+
+           w_down_1 &
+           = one_half * w_1(i,k) &
+               * ( one + erf( -w_1(i,k) / ( sqrt_2 * max(eps, stdev_w_1) ) ) ) &
+             - stdev_w_1 / sqrt_2pi &
+               * exp( -one_half * ( w_1(i,k) / max(eps, stdev_w_1) )**2 )
+
+           !downdraft_frac_1 &
+           != one_half * ( one - erf( w_1(i,k) / max( sqrt_2 * stdev_w_1, eps ) ) )
+           downdraft_frac_1 = one - updraft_frac_1
+
+        endif
+
+        ! Calculate quantities in the 2nd PDF component.
+        if ( w_2(i,k) > max_num_stdevs * stdev_w_2 ) then
+
+           ! The mean of w in the 2nd PDF component is more than
+           ! max_num_stdevs standard deviations above 0.
+           ! The entire 2nd PDF component is found in an updraft (w > 0).
+           w_up_2 = w_2(i,k)
+           updraft_frac_2 = one
+           w_down_2 = zero
+           downdraft_frac_2 = zero
+
+        elseif ( w_2(i,k) < - max_num_stdevs * stdev_w_2 ) then
+
+           ! The mean of w in the 2nd PDF component is more than
+           ! max_num_stdevs standard deviations below 0.
+           ! The entire 2nd PDF component is found in a downdraft (w < 0).
+           w_up_2 = zero
+           updraft_frac_2 = zero
+           w_down_2 = w_2(i,k)
+           downdraft_frac_2 = one
+
+        else
+
+           ! The 2nd PDF component contains both updraft and downdraft.
+           w_up_2 &
+           = one_half * w_2(i,k) &
+               * ( one + erf( w_2(i,k) / ( sqrt_2 * max(eps, stdev_w_2) ) ) ) &
+             + stdev_w_2 / sqrt_2pi &
+               * exp( -one_half * ( w_2(i,k) / max(eps, stdev_w_2) )**2 )
+
+           updraft_frac_2 &
+           = one_half * ( one + erf( w_2(i,k) / max( sqrt_2 * stdev_w_2, eps ) ) )
+
+           w_down_2 &
+           = one_half * w_2(i,k) &
+               * ( one + erf( -w_2(i,k) / (sqrt_2 * max(eps, stdev_w_2) ) ) ) &
+             - stdev_w_2 / sqrt_2pi &
+               * exp( -one_half * ( w_2(i,k) / max(eps, stdev_w_2) )**2 )
+
+           !downdraft_frac_2 &
+           != one_half * ( one - erf( w_2(i,k) / max( sqrt_2 * stdev_w_2, eps ) ) )
+           downdraft_frac_2 = one - updraft_frac_2
+
+        endif
+
         ! Calculate the mean vertical velocity found in a cloudy updraft. 
-        w_up_1 &
-        = one_half * w_1(i,k) &
-            * ( one + erf( w_1(i,k) / ( sqrt_2 * max(eps, stdev_w_1) ) ) ) &
-          + stdev_w_1 / sqrt_2pi &
-              * exp( -one_half * ( w_1(i,k) / max(eps, stdev_w_1) )**2 )
-
-        w_up_2 &
-        = one_half * w_2(i,k) &
-            * ( one + erf( w_2(i,k) / ( sqrt_2 * max(eps, stdev_w_2) ) ) ) &
-          + stdev_w_2 / sqrt_2pi &
-              * exp( -one_half * ( w_2(i,k) / max(eps, stdev_w_2) )**2 )
-
-        updraft_frac_1 &
-        = one_half * ( one + erf( w_1(i,k) / max( sqrt_2 * stdev_w_1, eps ) ) )
-
-        updraft_frac_2 &
-        = one_half * ( one + erf( w_2(i,k) / max( sqrt_2 * stdev_w_2, eps ) ) )
-
         w_up_in_cloud(i,k) &
         = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_up_1 &
             + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_up_2 ) &
@@ -3205,26 +3279,6 @@ module pdf_closure_module
             + ( one - mixt_frac(i,k) ) * max(eps, cloud_frac_2(i,k) * updraft_frac_2) )
 
         ! Calculate the mean vertical velocity found in a cloudy downdraft. 
-        w_down_1 &
-        = one_half * w_1(i,k) &
-            * ( one + erf( -w_1(i,k) / ( sqrt_2 * max(eps, stdev_w_1) ) ) ) &
-          - stdev_w_1 / sqrt_2pi &
-              * exp( -one_half * ( w_1(i,k) / max(eps, stdev_w_1) )**2 )
-
-        w_down_2 &
-        = one_half * w_2(i,k) &
-            * ( one + erf( -w_2(i,k) / (sqrt_2 * max(eps, stdev_w_2) ) ) ) &
-          - stdev_w_2 / sqrt_2pi &
-              * exp( -one_half * ( w_2(i,k) / max(eps, stdev_w_2) )**2 )
-
-        !downdraft_frac_1 &
-        != one_half * ( one - erf( w_1(i,k) / max( sqrt_2 * stdev_w_1, eps ) ) )
-        downdraft_frac_1 = one - updraft_frac_1
-
-        !downdraft_frac_2 &
-        != one_half * ( one - erf( w_2(i,k) / max( sqrt_2 * stdev_w_2, eps ) ) )
-        downdraft_frac_2 = one - updraft_frac_2
-
         w_down_in_cloud(i,k) &
         = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_down_1 &
             + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_down_2 ) &
