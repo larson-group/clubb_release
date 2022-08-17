@@ -3165,13 +3165,19 @@ module pdf_closure_module
 
     !----------- Local Variables -----------
     real( kind = core_rknd ) :: &
-      w_up_1, w_up_2, &       ! integral of w and Heaviside fnc, where w > 0
-      w_down_1, w_down_2, &   ! integral of w and Heaviside fnc, where w < 0
-      stdev_w_1, stdev_w_2, & ! Standard deviation of w
-      updraft_frac_1, &       ! Fraction of 1st PDF comp. where w > 0
-      updraft_frac_2, &       ! Fraction of 2nd PDF comp. where w > 0
-      downdraft_frac_1, &     ! Fraction of 1st PDF comp. where w < 0
-      downdraft_frac_2        ! Fraction of 2nd PDF comp. where w < 0
+      w_up_1, w_up_2, &        ! integral of w and Heaviside fnc, where w > 0
+      w_down_1, w_down_2, &    ! integral of w and Heaviside fnc, where w < 0
+      stdev_w_1, stdev_w_2, &  ! Standard deviation of w
+      ratio_w_1, &             ! mu_w_1 / ( sqrt(2) * sigma_w_1 )
+      ratio_w_2, &             ! mu_w_2 / ( sqrt(2) * sigma_w_2 )
+      erf_ratio_w_1, &         ! erf( ratio_w_1 )
+      erf_ratio_w_2, &         ! erf( ratio_w_2 )
+      exp_neg_ratio_w_1_sqd, & ! exp( -ratio_w_1^2 )
+      exp_neg_ratio_w_2_sqd, & ! exp( -ratio_w_2^2 )
+      updraft_frac_1, &        ! Fraction of 1st PDF comp. where w > 0
+      updraft_frac_2, &        ! Fraction of 2nd PDF comp. where w > 0
+      downdraft_frac_1, &      ! Fraction of 1st PDF comp. where w < 0
+      downdraft_frac_2         ! Fraction of 2nd PDF comp. where w < 0
       
     integer :: i, k
       
@@ -3205,23 +3211,21 @@ module pdf_closure_module
         else
 
            ! The 1st PDF component contains both updraft and downdraft.
-           w_up_1 &
-           = one_half * w_1(i,k) &
-               * ( one + erf( w_1(i,k) / ( sqrt_2 * max(eps, stdev_w_1) ) ) ) &
-             + stdev_w_1 / sqrt_2pi &
-               * exp( -one_half * ( w_1(i,k) / max(eps, stdev_w_1) )**2 )
+           ratio_w_1 = w_1(i,k) / ( sqrt_2 * max(eps, stdev_w_1) )
+           erf_ratio_w_1 = erf( ratio_w_1 )
+           exp_neg_ratio_w_1_sqd = exp( -ratio_w_1**2 )
 
-           updraft_frac_1 &
-           = one_half * ( one + erf( w_1(i,k) / max( sqrt_2 * stdev_w_1, eps ) ) )
+           w_up_1 &
+           = one_half * w_1(i,k) * ( one + erf_ratio_w_1 ) &
+             + ( stdev_w_1 / sqrt_2pi ) * exp_neg_ratio_w_1_sqd
+
+           updraft_frac_1 = one_half * ( one + erf_ratio_w_1 )
 
            w_down_1 &
-           = one_half * w_1(i,k) &
-               * ( one + erf( -w_1(i,k) / ( sqrt_2 * max(eps, stdev_w_1) ) ) ) &
-             - stdev_w_1 / sqrt_2pi &
-               * exp( -one_half * ( w_1(i,k) / max(eps, stdev_w_1) )**2 )
+           = one_half * w_1(i,k) * ( one - erf_ratio_w_1 ) &
+             - ( stdev_w_1 / sqrt_2pi ) * exp_neg_ratio_w_1_sqd
 
-           !downdraft_frac_1 &
-           != one_half * ( one - erf( w_1(i,k) / max( sqrt_2 * stdev_w_1, eps ) ) )
+           !downdraft_frac_1 = one_half * ( one - erf_ratio_w_1 )
            downdraft_frac_1 = one - updraft_frac_1
 
         endif
@@ -3250,23 +3254,21 @@ module pdf_closure_module
         else
 
            ! The 2nd PDF component contains both updraft and downdraft.
-           w_up_2 &
-           = one_half * w_2(i,k) &
-               * ( one + erf( w_2(i,k) / ( sqrt_2 * max(eps, stdev_w_2) ) ) ) &
-             + stdev_w_2 / sqrt_2pi &
-               * exp( -one_half * ( w_2(i,k) / max(eps, stdev_w_2) )**2 )
+           ratio_w_2 = w_2(i,k) / ( sqrt_2 * max(eps, stdev_w_2) )
+           erf_ratio_w_2 = erf( ratio_w_2 )
+           exp_neg_ratio_w_2_sqd = exp( -ratio_w_2**2 )
 
-           updraft_frac_2 &
-           = one_half * ( one + erf( w_2(i,k) / max( sqrt_2 * stdev_w_2, eps ) ) )
+           w_up_2 &
+           = one_half * w_2(i,k) * ( one + erf_ratio_w_2 ) &
+             + ( stdev_w_2 / sqrt_2pi ) * exp_neg_ratio_w_2_sqd
+
+           updraft_frac_2 = one_half * ( one + erf_ratio_w_2 )
 
            w_down_2 &
-           = one_half * w_2(i,k) &
-               * ( one + erf( -w_2(i,k) / (sqrt_2 * max(eps, stdev_w_2) ) ) ) &
-             - stdev_w_2 / sqrt_2pi &
-               * exp( -one_half * ( w_2(i,k) / max(eps, stdev_w_2) )**2 )
+           = one_half * w_2(i,k) * ( one - erf_ratio_w_2 ) &
+             - ( stdev_w_2 / sqrt_2pi ) * exp_neg_ratio_w_2_sqd
 
-           !downdraft_frac_2 &
-           != one_half * ( one - erf( w_2(i,k) / max( sqrt_2 * stdev_w_2, eps ) ) )
+           !downdraft_frac_2 = one_half * ( one - erf_ratio_w_2 )
            downdraft_frac_2 = one - updraft_frac_2
 
         endif
@@ -3275,15 +3277,19 @@ module pdf_closure_module
         w_up_in_cloud(i,k) &
         = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_up_1 &
             + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_up_2 ) &
-          / ( mixt_frac(i,k) * max(eps, cloud_frac_1(i,k) * updraft_frac_1) &
-            + ( one - mixt_frac(i,k) ) * max(eps, cloud_frac_2(i,k) * updraft_frac_2) )
+          / ( mixt_frac(i,k) &
+                * max(eps, cloud_frac_1(i,k) * updraft_frac_1) &
+              + ( one - mixt_frac(i,k) ) &
+                * max(eps, cloud_frac_2(i,k) * updraft_frac_2) )
 
         ! Calculate the mean vertical velocity found in a cloudy downdraft. 
         w_down_in_cloud(i,k) &
         = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_down_1 &
             + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_down_2 ) &
-          / ( mixt_frac(i,k) * max(eps, cloud_frac_1(i,k) * downdraft_frac_1) &
-            + ( one - mixt_frac(i,k) ) * max(eps, cloud_frac_2(i,k) * downdraft_frac_2) )
+          / ( mixt_frac(i,k) &
+                * max(eps, cloud_frac_1(i,k) * downdraft_frac_1) &
+            + ( one - mixt_frac(i,k) ) &
+              * max(eps, cloud_frac_2(i,k) * downdraft_frac_2) )
 
       end do
     end do
