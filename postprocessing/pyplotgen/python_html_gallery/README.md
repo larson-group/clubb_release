@@ -1,8 +1,10 @@
 # _CLUBB Users_
-You should be able to ignore this folder.
 
-This folder is included as a dependancy for generating a webpage to display pyplotgen output images.  
+You should be able to ignore this folder!
+
+This folder is included as a dependency for generating a webpage to display pyplotgen output images.  
 Please see their documentation from the git repo below. 
+
 ----
 # python-html-gallery
 
