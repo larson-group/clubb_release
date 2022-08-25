@@ -1,6 +1,7 @@
+#!usr/bin/env python3
 # To use this script, edit caseName, ztVariable, sfcVariable, and dirRoot. Then type
-# /usr/bin/python timestep_convergence_test.py
-
+# python timestep_convergence_test.py
+# You will have to run the timestep_convergence_test.bash to create the input files for this script. Make sure clubb is compiled when you do this. After that, move all output files from the timestep_convergence_test.bash in clubb/output into the the location specified in the dirRoot var in this script. 
 import pdb
 
 def main():
@@ -31,7 +32,7 @@ def main():
     dirRoot = '../output/bomex_restarted'
     ztFilenameSuffix = 'zt.nc'
     listOfZtFilenames = constructListOfFilenames(dirRoot,caseName,ztFilenameSuffix)
-    print listOfZtFilenames
+    print(listOfZtFilenames)
 
     numFiles = len(listOfZtFilenames)
 
@@ -41,6 +42,7 @@ def main():
     timestepArrayMinus1 = np.array([0.2, 0.3, 0.5, 1, 2, 3, 5, 10, 20, 30, 60, 100, 150, 300])
 
     # Find number of vertical levels in netcdf file
+    print(listOfZtFilenames[0])
     data = Dataset( listOfZtFilenames[0], "r" )
     altitudes = data.variables['altitude']
     numAltitudes = len(altitudes)
@@ -57,11 +59,11 @@ def main():
     convergenceExponent = np.polyfit( np.log(timestepArrayMinus1), np.log(ztRmseArray), 1 )[0]
     convergenceExponent = np.array([convergenceExponent])
 
-    print listOfZtFilenames
+    print(listOfZtFilenames)
 
-    print ztVariableArray
+    print(ztVariableArray)
 
-    print ztRmseArray
+    print(ztRmseArray)
 
     sfcVariableArray = extractSfcVariableFromNetcdfFiles(sfcVariable, listOfSfcFilenames, numFiles, 1)
 
