@@ -4953,9 +4953,10 @@ module advance_xp2_xpyp_module
     ! Call the hole-filling scheme.
     ! The first pass-through should draw from only two levels on either side
     ! of the hole.
-    call fill_holes_vertical( nz, ngrdcol, 2, tolerance, "zm",      & ! Intent(in)
-                              gr%dzm, gr%dzt,rho_ds_zt, rho_ds_zm, & ! Intent(in)
-                              xp2_np1 )                    ! Intent(inout)
+    ! upper_hf_level = nz-1 since we are filling the zm levels
+    call fill_holes_vertical( nz, ngrdcol, 2, tolerance, nz-1,  & ! intent(in)
+                              gr%dzm, rho_ds_zm,                & ! intent(in)
+                              xp2_np1 )                           ! intent(inout)
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
