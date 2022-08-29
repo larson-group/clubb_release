@@ -89,7 +89,7 @@ module latin_hypercube_driver_module
     use error_code, only: &
       clubb_at_least_debug_level  ! Procedure
       
-    use fill_holes, only: &
+    use advance_helper_module, only: &
       vertical_avg  ! Procedure
       
     use stats_variables, only: &
@@ -2008,8 +2008,8 @@ module latin_hypercube_driver_module
     use clubb_precision, only: & 
       core_rknd    ! Constant
 
-   use fill_holes, only: &
-     vertical_integral ! Procedure(s)
+   use advance_helper_module, only: &
+      vertical_integral ! Procedure(s)
 
    use stats_type, only: stats ! Type
 

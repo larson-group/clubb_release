@@ -277,7 +277,7 @@ module clubb_driver
         init_hydromet_pdf_params, & !------------------------------------- Procedure(s)
         init_precip_fracs
 
-    use fill_holes, only: &
+    use advance_helper_module, only: &
         vertical_avg  !--------------------------------------------------- Procedure(s)
 
     use parameters_silhs, only: &

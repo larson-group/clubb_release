@@ -100,7 +100,8 @@ module clubb_api_module
     rs_tol, & ! Tolerance value for r_s [kg/kg]
     rt_tol, & ! [kg/kg]
     thl_tol, & ! [K]
-    w_tol_sqd ! [m^2/s^2]
+    w_tol_sqd, & ! [m^2/s^2]
+    num_hf_draw_points ! Neighboring points to use in hole filling algorithm
 
   use corr_varnce_module, only : &
       corr_array_n_cloud, & ! Variable(s)
@@ -380,7 +381,8 @@ module clubb_api_module
     fill_holes_vertical_api, &
     fill_holes_hydromet_api, &
     set_clubb_debug_level_api, &
-    vertical_integral_api
+    vertical_integral_api, &
+    num_hf_draw_points
 
   public &
     ! Constants That May be Helpful:
@@ -2119,7 +2121,7 @@ contains
     total_idx, rho_ds, &
     field, dz )
 
-    use fill_holes, only : vertical_integral
+    use advance_helper_module, only : vertical_integral
 
     implicit none
 

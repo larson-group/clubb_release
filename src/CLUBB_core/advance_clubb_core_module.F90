@@ -382,14 +382,14 @@ module advance_clubb_core_module
         istability_correction
 
     use fill_holes, only: &
-        vertical_integral, & ! Procedure(s)
         fill_holes_vertical
 
     use advance_helper_module, only: &
         calc_stability_correction, & ! Procedure(s)
         compute_Cx_fnc_Richardson, &
         calc_brunt_vaisala_freq_sqd, &
-        term_wp2_splat, term_wp3_splat
+        term_wp2_splat, term_wp3_splat, &
+        vertical_integral
 
     use interpolation, only: &
         pvertinterp
