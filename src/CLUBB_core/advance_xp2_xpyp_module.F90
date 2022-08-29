@@ -4883,6 +4883,7 @@ module advance_xp2_xpyp_module
     ! Use the hole filling code to make a variance term positive definite
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: num_hf_draw_points
     use fill_holes, only: fill_holes_vertical
     use grid_class, only: grid
     use clubb_precision, only: core_rknd
@@ -4954,9 +4955,9 @@ module advance_xp2_xpyp_module
     ! The first pass-through should draw from only two levels on either side
     ! of the hole.
     ! upper_hf_level = nz-1 since we are filling the zm levels
-    call fill_holes_vertical( nz, ngrdcol, 2, tolerance, nz-1,  & ! intent(in)
-                              gr%dzm, rho_ds_zm,                & ! intent(in)
-                              xp2_np1 )                           ! intent(inout)
+    call fill_holes_vertical( nz, ngrdcol, num_hf_draw_points, tolerance, nz-1, & ! In
+                              gr%dzm, rho_ds_zm,                                & ! In
+                              xp2_np1 )                                           ! InOut
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme

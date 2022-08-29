@@ -1030,8 +1030,9 @@ module advance_wp2_wp3_module
         max_mag_correlation_flux, &
         one,                      &
         zero,                     &
-        fstderr, &
-        gamma_over_implicit_ts
+        fstderr,                  &
+        gamma_over_implicit_ts,   &
+        num_hf_draw_points
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
@@ -1488,9 +1489,9 @@ module advance_wp2_wp3_module
     if ( l_hole_fill ) then
       ! Use a simple hole filling algorithm
       ! upper_hf_level = nz-1 since we are filling the zm levels
-      call fill_holes_vertical( nz, ngrdcol, 2, w_tol_sqd, nz-1,  & ! intent(in)
-                                gr%dzm, rho_ds_zm,                & ! intent(in)
-                                wp2 )                               ! intent(inout)
+      call fill_holes_vertical( nz, ngrdcol, num_hf_draw_points, w_tol_sqd, nz-1, & ! In
+                                gr%dzm, rho_ds_zm,                                & ! In
+                                wp2 )                                               ! InOut
     end if ! wp2
 
     ! Here we attempt to clip extreme values of wp2 to prevent a crash of the

@@ -15,8 +15,6 @@ module fill_holes
             clip_hydromet_conc_mvr, &
             setup_stats_indices
 
-  private :: fill_holes_multiplicative
-
   private ! Set Default Scope
 
   contains
@@ -277,108 +275,6 @@ module fill_holes
     return
 
   end subroutine fill_holes_vertical
-
-  !=============================================================================
-  subroutine fill_holes_multiplicative &
-                 ( k_start, k_end, threshold, &
-                   rho, dz, &
-                   field )
-
-    ! Description:
-    ! This subroutine clips values of 'field' that are below 'threshold' as much
-    ! as possible (i.e. "fills holes"), but conserves the total integrated mass
-    ! of 'field'.  This prevents clipping from acting as a spurious source.
-    !
-    ! Mass is conserved by reducing the clipped field everywhere by a constant
-    ! multiplicative coefficient.
-    !
-    ! This subroutine does not guarantee that the clipped field will exceed
-    ! threshold everywhere; blunt clipping is needed for that.
-
-    ! References:
-    ! ``Numerical Methods for Wave Equations in Geophysical Fluid
-    ! Dynamics", Durran (1999), p. 292.
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        eps
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input variables
-    integer, intent(in) :: & 
-      k_start, & ! The beginning index (e.g. k=2) of the range of hole-filling 
-      k_end      ! The end index (e.g. k=gr%nz) of the range of hole-filling
-
-    real( kind = core_rknd ), intent(in) :: & 
-      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not fall
-                 !                              [Units vary; same as field]
-
-    real( kind = core_rknd ), dimension(k_end-k_start+1), intent(in) ::  & 
-      rho,     &  ! Dry, static density on either thermodynamic or momentum levels   [kg/m^3]
-      dz          ! Reciprocal of thermodynamic or momentum level thickness depending on whether
-                  ! we're on zt or zm grid.
-
-    ! Input/Output variable
-    real( kind = core_rknd ), dimension(k_end-k_start+1), intent(inout) ::  & 
-      field  ! The field (e.g. wp2) that contains holes
-             !                                  [Units same as threshold]
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(k_end-k_start+1)  ::  & 
-      field_clipped  ! The raw field (e.g. wp2) that contains no holes
-                     !                          [Units same as threshold]
-
-    real( kind = core_rknd ) ::  & 
-      field_avg,  &        ! Vertical average of field [Units of field]
-      field_clipped_avg, & ! Vertical average of clipped field [Units of field]
-      mass_fraction        ! Coefficient that multiplies clipped field
-                           ! in order to conserve mass.                      []
-
-    !-----------------------------------------------------------------------
-
-    ! Compute the field's vertical average, which we must conserve.
-    field_avg = vertical_avg( (k_end-k_start+1), rho, &
-                                  field, dz )
-
-    ! Clip small or negative values from field.
-    if ( field_avg >= threshold ) then
-      ! We know we can fill in holes completely
-      field_clipped = max( threshold, field )
-    else
-      ! We can only fill in holes partly;
-      ! to do so, we remove all mass above threshold.
-      field_clipped = min( threshold, field )
-    endif
-
-    ! Compute the clipped field's vertical integral.
-    ! clipped_total_mass >= original_total_mass
-    field_clipped_avg = vertical_avg( (k_end-k_start+1), rho, &
-                                      field_clipped, dz )
-
-    ! If the difference between the field_clipped_avg and the threshold is so
-    ! small that it falls within numerical round-off, return to the parent
-    ! subroutine without altering the field in order to avoid divide-by-zero
-    ! error.
-    if ( abs(field_clipped_avg-threshold) <= abs(field_clipped_avg+threshold)*eps/2) then
-      return
-    endif
-
-    ! Compute coefficient that makes the clipped field have the same mass as the
-    ! original field.  We should always have mass_fraction > 0.
-    mass_fraction = ( field_avg - threshold ) / & 
-                          ( field_clipped_avg - threshold )
-
-    ! Output normalized, filled field
-    field = mass_fraction * ( field_clipped - threshold )  & 
-                 + threshold
-
-    return
-
-  end subroutine fill_holes_multiplicative
 
   !=============================================================================
   function vertical_avg( total_idx, rho_ds, field, dz )
@@ -932,7 +828,8 @@ module fill_holes
         Lv,              &
         Ls,              &
         Cp,              &
-        fstderr
+        fstderr,         &
+        num_hf_draw_points
 
     use array_index, only: &
         hydromet_list, & ! Names of the hydrometeor species
@@ -1085,9 +982,9 @@ module fill_holes
 
             ! Apply the hole filling algorithm
             ! upper_hf_level = nz since we are filling the zt levels
-            call fill_holes_vertical( gr%nz, 1, 2, zero_threshold, gr%nz, & ! intent(in)
-                                      gr%dzt, rho_ds_zt,                  & ! intent(in)
-                                      hydromet(:,i) )                       ! intent(inout)
+            call fill_holes_vertical( gr%nz, 1, num_hf_draw_points, zero_threshold, gr%nz, & ! In
+                                      gr%dzt, rho_ds_zt,                                   & ! In
+                                      hydromet(:,i) )                                      ! InOut
 
          endif ! Variable is a mixing ratio and l_hole_fill is true
 

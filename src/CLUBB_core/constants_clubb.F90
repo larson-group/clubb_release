@@ -53,6 +53,11 @@ module constants_clubb
   ! Maximum variable name length in CLUBB GrADS or netCDF output
   integer, parameter, public ::  & 
     var_length = 30
+
+  ! Number of neighboring points to draw from in the hole filling algorithm
+  integer, parameter, public :: &
+    num_hf_draw_points = 2
+
   ! The parameter parab_cyl_max_input is the largest magnitude that the input to
   ! the parabolic cylinder function is allowed to have.  When the value of the
   ! input to the parabolic cylinder function is too large in magnitude

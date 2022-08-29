@@ -873,7 +873,10 @@ use clubb_api_module, only: &
   clubb_at_least_debug_level_api, &
   fill_holes_vertical_api, &
   core_rknd, &
-  grid
+  grid, &
+  zero_threshold, &
+  num_hf_draw_points
+
 use clubbvars, only: wp2, cloud_frac, rho_ds_zt, rho_ds_zm ! are used, but not modified here
 use vars, only: qcl ! Used here and updated in micro_diagnose
 use vars, only: prespot ! exner^-1
@@ -1385,7 +1388,7 @@ do j = 1,ny
         rho_ds_zm_col(1,:) = rho_ds_zm
         
         ! upper_hf_level = nz since we are filling the zt levels
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, gr%nz, &
+        call fill_holes_vertical_api( gr%nz, 1, num_hf_draw_points, zero_threshold, gr%nz, &
                                       gr%dzt, rho_ds_zt_col, &
                                       qv_clip )
         tmpqv = qv_clip(1,2:nz)
@@ -1401,7 +1404,7 @@ do j = 1,ny
         rho_ds_zm_col(1,:) = rho_ds_zm
 
         ! upper_hf_level = nz since we are filling the zt levels
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, gr%nz, &
+        call fill_holes_vertical_api( gr%nz, 1, num_hf_draw_points, zero_threshold, gr%nz, &
                                       gr%dzt, rho_ds_zt_col, &
                                       qcl_clip )
                                       
@@ -1468,7 +1471,7 @@ do j = 1,ny
         rho_ds_zm_col(1,:) = rho_ds_zm
 
         ! upper_hf_level = nz since we are filling the zt levels
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, gr%nz, &
+        call fill_holes_vertical_api( gr%nz, 1, num_hf_draw_points, zero_threshold, gr%nz, &
                                       gr%dzt, rho_ds_zt_col, &
                                       qv_clip )
         tmpqv = qv_clip(1,2:nz)
@@ -1484,7 +1487,7 @@ do j = 1,ny
         rho_ds_zm_col(1,:) = rho_ds_zm
 
         ! upper_hf_level = nz since we are filling the zt levels
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, gr%nz, &
+        call fill_holes_vertical_api( gr%nz, 1, num_hf_draw_points, zero_threshold, gr%nz, &
                                       gr%dzt, rho_ds_zt_col, &
                                       qcl_clip )
                                       

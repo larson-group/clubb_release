@@ -3668,7 +3668,8 @@ module advance_xm_wpxp_module
         one, &
         zero, &
         eps, &
-        gamma_over_implicit_ts
+        gamma_over_implicit_ts, &
+        num_hf_draw_points
 
     use fill_holes, only: &
         fill_holes_vertical ! Procedure
@@ -4197,9 +4198,9 @@ module advance_xm_wpxp_module
       end if
 
       ! upper_hf_level = nz since we are filling the zt levels
-      call fill_holes_vertical( nz, ngrdcol, 2, xm_threshold, nz, & ! intent(in)
-                                gr%dzt, rho_ds_zt,                & ! intent(in)
-                                xm )                                ! intent(inout)
+      call fill_holes_vertical( nz, ngrdcol, num_hf_draw_points, xm_threshold, nz,  & ! In
+                                gr%dzt, rho_ds_zt,                                  & ! In
+                                xm )                                                  ! InOut
 
       ! Hole filling does not affect the below ground level, perform a blunt clipping
       ! here on that level to prevent small values of xm(1)
