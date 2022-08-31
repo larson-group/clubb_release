@@ -157,7 +157,7 @@ module bugsrad_driver
 
     ! Convert theta_l to temperature
 
-    T_in_K(1,1:(nz-1)) = real( thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) ),kind=dp )
+    T_in_K(1,1:(nz-1)) = real( thlm2T_in_K( nz-1, thlm(2:nz), exner(2:nz), rcm(2:nz) ),kind=dp )
 
     ! Derive Specific humidity from rc & rt.
     do z = 2, nz

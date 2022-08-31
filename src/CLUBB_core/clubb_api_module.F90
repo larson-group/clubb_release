@@ -237,6 +237,13 @@ module clubb_api_module
     zm2zt_api => zm2zt, &
     zt2zm_api => zt2zm
 
+  use saturation, only: &
+    sat_mixrat_liq_api => sat_mixrat_liq
+
+  use T_in_K_module, only : &
+    thlm2T_in_K_api => thlm2T_in_K, &
+    T_in_K2thlm_api => T_in_K2thlm
+
   use stats_type, only: stats ! Type
 
   implicit none
@@ -3949,58 +3956,6 @@ contains
   end subroutine stats_init_sfc_api
 
   !================================================================================================
-  ! thlm2T_in_K - Calculates absolute temperature from liquid water potential temperature.
-  !================================================================================================
-
-  elemental function thlm2T_in_K_api( &
-    thlm, exner, rcm )  &
-    result( T_in_K )
-
-    use T_in_K_module, only : thlm2T_in_K
-
-    implicit none
-
-    ! Input
-    real( kind = core_rknd ), intent(in) :: &
-      thlm,   & ! Liquid potential temperature  [K]
-      exner,  & ! Exner function                [-]
-      rcm       ! Liquid water mixing ratio     [kg/kg]
-
-    real( kind = core_rknd ) :: &
-      T_in_K ! Result temperature [K]
-
-    T_in_K = thlm2T_in_K( &
-      thlm, exner, rcm )
-
-  end function thlm2T_in_K_api
-
-  !================================================================================================
-  ! T_in_K2thlm - Calculates liquid water potential temperature from absolute temperature
-  !================================================================================================
-
-  elemental function T_in_K2thlm_api( &
-    T_in_K, exner, rcm )  &
-    result( thlm )
-
-    use T_in_K_module, only : T_in_K2thlm
-
-    implicit none
-
-    ! Input
-    real( kind = core_rknd ), intent(in) :: &
-      T_in_K, &! Result temperature [K]
-      exner,  & ! Exner function                [-]
-      rcm       ! Liquid water mixing ratio     [kg/kg]
-
-    real( kind = core_rknd ) :: &
-      thlm    ! Liquid potential temperature  [K]
-
-    thlm = T_in_K2thlm( &
-      T_in_K, exner, rcm )
-
-  end function T_in_K2thlm_api
-
-  !================================================================================================
   ! calculate_spurious_source - Checks whether there is conservation within the column.
   !================================================================================================
   function calculate_spurious_source_api ( &
@@ -4217,25 +4172,6 @@ contains
     
     return
   end subroutine update_xp2_mc_api_single_col
-
-  !================================================================================================
-  ! sat_mixrat_liq - computes the saturation mixing ratio of liquid water
-  !================================================================================================
-  elemental real( kind = core_rknd ) function sat_mixrat_liq_api( p_in_Pa, T_in_K )
-
-    use saturation, only: sat_mixrat_liq
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  & 
-      p_in_Pa,  & ! Pressure    [Pa]
-      T_in_K      ! Temperature [K]
-
-    sat_mixrat_liq_api = sat_mixrat_liq( p_in_Pa, T_in_K )
-    return
-  end function sat_mixrat_liq_api
-
     
   !================================================================================================
   ! subroutine init_pdf_hydromet_arrays_api

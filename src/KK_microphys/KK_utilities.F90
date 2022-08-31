@@ -235,7 +235,8 @@ module KK_utilities
     Dv = Dv / 10000.0_core_rknd               ! Dv in (m.^2)/sec.
 
     ! Calculate saturation mixing ratio and saturation vapor pressure.
-    esatv = sat_vapor_press_liq( T_in_K )
+    call sat_vapor_press_liq( T_in_K, &
+                              esatv )
 
     ! The values of F_k and F_d are found in Rogers and Yau (1989);
     ! Eq. 7.17 and 7.18.

@@ -413,7 +413,7 @@ module microphys_driver
     delta_zt(1:gr%nz) = one / gr%invrs_dzm(1,1:gr%nz)
 
     ! Calculate T_in_K
-    T_in_K = thlm2T_in_K( thlm, exner, rcm )
+    T_in_K = thlm2T_in_K( gr%nz, thlm, exner, rcm )
 
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),

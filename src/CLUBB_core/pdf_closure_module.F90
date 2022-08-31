@@ -957,9 +957,9 @@ module pdf_closure_module
 
       do i = 1, ngrdcol
         where ( tl1(i,:) > t1_combined )
-          pdf_params%rsatl_1(i,:) = sat_mixrat_liq( p_in_Pa(i,:), tl1(i,:) )
+          pdf_params%rsatl_1(i,:) = sat_mixrat_liq( nz, p_in_Pa(i,:), tl1(i,:) )
         elsewhere ( tl1(i,:) > t2_combined )
-          pdf_params%rsatl_1(i,:) = sat_mixrat_liq( p_in_Pa(i,:), tl1(i,:) ) &
+          pdf_params%rsatl_1(i,:) = sat_mixrat_liq( nz, p_in_Pa(i,:), tl1(i,:) ) &
                     * (tl1(i,:) - t2_combined)/(t1_combined - t2_combined) &
                     + sat_mixrat_ice( p_in_Pa(i,:), tl1(i,:) ) &
                       * (t1_combined - tl1(i,:))/(t1_combined - t2_combined)
@@ -972,9 +972,9 @@ module pdf_closure_module
         endwhere
 
         where ( tl2(i,:) > t1_combined )
-          pdf_params%rsatl_2(i,:) = sat_mixrat_liq( p_in_Pa(i,:), tl2(i,:) )
+          pdf_params%rsatl_2(i,:) = sat_mixrat_liq( nz, p_in_Pa(i,:), tl2(i,:) )
         elsewhere ( tl2(i,:) > t2_combined )
-          pdf_params%rsatl_2(i,:) = sat_mixrat_liq( p_in_Pa(i,:), tl2(i,:) ) &
+          pdf_params%rsatl_2(i,:) = sat_mixrat_liq( nz, p_in_Pa(i,:), tl2(i,:) ) &
                     * (tl2(i,:) - t2_combined)/(t1_combined - t2_combined) &
                     + sat_mixrat_ice( p_in_Pa(i,:), tl2(i,:) ) &
                       * (t1_combined - tl2(i,:))/(t1_combined - t2_combined)
@@ -990,8 +990,8 @@ module pdf_closure_module
 
     else ! sclr_dim <= 0  or  do_liquid_only_in_clubb = .T.
 
-      pdf_params%rsatl_1(:,:) = sat_mixrat_liq( p_in_Pa(:,:), tl1(:,:) )
-      pdf_params%rsatl_2(:,:) = sat_mixrat_liq( p_in_Pa(:,:), tl2(:,:) )
+      pdf_params%rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1 )
+      pdf_params%rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2 )
 
     end if !sclr_dim > 0
       
@@ -1005,8 +1005,8 @@ module pdf_closure_module
     end if
 
 #else
-    pdf_params%rsatl_1(:,:) = sat_mixrat_liq( p_in_Pa(:,:), tl1(:,:) )
-    pdf_params%rsatl_2(:,:) = sat_mixrat_liq( p_in_Pa(:,:), tl2(:,:) ) ! h1g, 2010-06-16 end mod
+    pdf_params%rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1 )
+    pdf_params%rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2 ) ! h1g, 2010-06-16 end mod
 
     l_calc_ice_supersat_frac = .true.
 #endif

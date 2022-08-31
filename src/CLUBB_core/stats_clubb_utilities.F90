@@ -2314,7 +2314,7 @@ module stats_clubb_utilities
 
 
       if ( iT_in_K > 0 .or. irsati > 0 ) then
-        T_in_K = thlm2T_in_K( thlm, exner, rcm )
+        T_in_K = thlm2T_in_K( nz, thlm, exner, rcm )
       else
         T_in_K = -999._core_rknd
       end if

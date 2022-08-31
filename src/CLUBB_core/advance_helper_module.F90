@@ -408,9 +408,9 @@ module advance_helper_module
 
         end if
 
-        T_in_K = thlm2T_in_K( thlm, exner, rcm )
+        T_in_K = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
         T_in_K_zm = zt2zm( nz, ngrdcol, gr, T_in_K )
-        rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
+        rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K )
         rsat_zm = zt2zm( nz, ngrdcol, gr, rsat )
         ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
         thm = thlm + Lv/(Cp*exner) * rcm
@@ -461,9 +461,9 @@ module advance_helper_module
 
     else ! l_brunt_vaisala_freq_moist
 
-        T_in_K = thlm2T_in_K( thlm, exner, rcm )
+        T_in_K = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
         T_in_K_zm = zt2zm( nz, ngrdcol, gr, T_in_K )
-        rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
+        rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K )
         rsat_zm = zt2zm( nz, ngrdcol, gr, rsat )
         ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
         thm = thlm + Lv/(Cp*exner) * rcm

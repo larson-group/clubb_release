@@ -137,7 +137,7 @@ module ice_dfsn_module
     ! ---- Begin Code ----
 
     ! Determine absolute temperature
-    T_in_K = thlm2T_in_K( thlm, exner, rcm )
+    T_in_K = thlm2T_in_K( gr%nz, thlm, exner, rcm )
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !                                                                     !

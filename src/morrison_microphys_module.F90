@@ -500,7 +500,7 @@ module morrison_microphys_module
 
 
     ! Determine temperature
-    T_in_K = real( thlm2T_in_K( thlm, exner, rcm ) )
+    T_in_K = real( thlm2T_in_K( nz, thlm, exner, rcm ) )
 
     if ( l_latin_hypercube ) then
       ! Don't use sgs cloud fraction to weight the tendencies

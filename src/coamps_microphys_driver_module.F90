@@ -541,7 +541,7 @@ module coamps_microphys_driver_module
                   + ( Lv /( Cp * exner(1:kk+1) )* rcm(1:kk+1) ))
 
       ! Determine absolute temperature
-      T_in_K = real(thlm2T_in_K( thlm, exner, rcm ))
+      T_in_K = real(thlm2T_in_K( gr%nz, thlm, exner, rcm ))
 
       ! Setup COAMPS verical velocity / mass grid variables
       w3(1,1,1:kk+1) = real(wm_zm(1:kk+1))

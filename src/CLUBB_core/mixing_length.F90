@@ -135,6 +135,14 @@ module mixing_length
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
+    use model_flags, only: &
+        l_sat_mixrat_lookup ! Variable(s)
+
+    use saturation, only:  &
+        sat_mixrat_liq, & ! Procedure(s)
+        sat_mixrat_liq_lookup, &
+        sat_mixrat_ice
+
     implicit none
 
     ! External
@@ -303,8 +311,11 @@ module mixing_length
 
 
       ! Caclculate initial rsatl for parcels at each grid level, this function is elemental
-      rsatl_par_1(3:) = compute_rsat_parcel( p_in_Pa(i,3:), tl_par_1(3:) )
-
+      if ( l_sat_mixrat_lookup ) then
+        rsatl_par_1(3:) = sat_mixrat_liq_lookup( p_in_Pa(i,3:), tl_par_1(3:) )
+      else
+        rsatl_par_1(3:) = sat_mixrat_liq( nz-2, p_in_Pa(i,3:), tl_par_1(3:) )
+      end if
 
       ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
       do j = 3, nz
@@ -391,7 +402,11 @@ module mixing_length
 
                   tl_par_j = thl_par_j*exner(i,j)
 
-                  rsatl_par_j = compute_rsat_parcel( p_in_Pa(i,j), tl_par_j )
+                  if ( l_sat_mixrat_lookup ) then
+                    rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(i,j), tl_par_j )
+                  else
+                    rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j )
+                  end if
 
                   tl_par_j_sqd = tl_par_j**2
 
@@ -535,7 +550,11 @@ module mixing_length
 
 
       ! Caclculate initial rsatl for parcels at each grid level, this function is elemental
-      rsatl_par_1(2:) = compute_rsat_parcel( p_in_Pa(i,2:), tl_par_1(2:) )
+      if ( l_sat_mixrat_lookup ) then
+        rsatl_par_1(2:) = sat_mixrat_liq_lookup( p_in_Pa(i,2:), tl_par_1(2:) )
+      else
+        rsatl_par_1(2:) = sat_mixrat_liq( nz-1, p_in_Pa(i,2:), tl_par_1(2:) )
+      end if
 
 
       ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
@@ -622,7 +641,11 @@ module mixing_length
 
                   tl_par_j = thl_par_j*exner(i,j)
 
-                  rsatl_par_j = compute_rsat_parcel( p_in_Pa(i,j), tl_par_j )
+                  if ( l_sat_mixrat_lookup ) then
+                    rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(i,j), tl_par_j )
+                  else
+                    rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j )
+                  end if
 
                   tl_par_j_sqd = tl_par_j**2
 
@@ -797,61 +820,6 @@ module mixing_length
     return
 
   end subroutine compute_mixing_length
-
-!===============================================================================
-
-  elemental function compute_rsat_parcel( p_in_Pa, tl_par ) result( rsatl_par )
-
-  ! Description:
-  !   Computes rsat for a parcel
-
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Precision
-
-    use model_flags, only: &
-        l_sat_mixrat_lookup ! Variable(s)
-
-    use saturation, only:  &
-        sat_mixrat_liq, & ! Procedure(s)
-        sat_mixrat_liq_lookup, &
-        sat_mixrat_ice
-
-    use error_code, only: &
-        clubb_at_least_debug_level
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      p_in_Pa, &    ! Pressure at this grid level           [Pa]
-      tl_par        ! tl at this grid level                 [K]
-
-    ! Result variable
-    real( kind = core_rknd ) :: &
-      rsatl_par
-
-    real( kind = core_rknd ) :: &
-      sat_mixrat_liq_res
-
-  !-----------------------------------------------------------------------
-    !----- Begin Code -----
-
-    ! Include liquid.
-    if ( l_sat_mixrat_lookup ) then
-      sat_mixrat_liq_res = sat_mixrat_liq_lookup( p_in_Pa, tl_par )
-    else
-      sat_mixrat_liq_res = sat_mixrat_liq( p_in_Pa, tl_par )
-    end if
-    
-    rsatl_par = sat_mixrat_liq_res 
-
-    return
-  end function compute_rsat_parcel
-
 
 !===============================================================================
   subroutine calc_Lscale_directly ( ngrdcol, nz, gr, &

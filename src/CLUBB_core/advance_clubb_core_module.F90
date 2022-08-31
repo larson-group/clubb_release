@@ -1527,9 +1527,11 @@ module advance_clubb_core_module
       ! when stat_update_var is called for rel_humidity.  ldgrant
       if ( irel_humidity > 0 ) then
         
+        rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, &
+                               thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm ) )
+
         ! Recompute rsat and rel_humidity. They might have changed.
         do i = 1, ngrdcol
-          rsat(i,:) = sat_mixrat_liq( p_in_Pa(i,:), thlm2T_in_K( thlm(i,:), exner(i,:), rcm(i,:) ) )
           rel_humidity(i,:) = (rtm(i,:) - rcm(i,:)) / rsat(i,:)
 
           call stat_update_var( irel_humidity, rel_humidity(i,:), &             ! intent(in)
@@ -3526,9 +3528,11 @@ module advance_clubb_core_module
       end do
     end do
 
+    rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, &
+                           thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm ) )
+
     do k = 1, nz
       do i = 1, ngrdcol
-        rsat(i,k) = sat_mixrat_liq( p_in_Pa(i,k), thlm2T_in_K( thlm(i,k), exner(i,k), rcm(i,k) ) )
         rel_humidity(i,k) = (rtm(i,k) - rcm(i,k)) / rsat(i,k)
         rcm_supersat_adj(i,k) = zero
       end do
