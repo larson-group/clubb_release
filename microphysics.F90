@@ -1383,8 +1383,10 @@ do j = 1,ny
         
         rho_ds_zt_col(1,:) = rho_ds_zt
         rho_ds_zm_col(1,:) = rho_ds_zm
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, "zt", &
-                                      gr%dzm, gr%dzt, rho_ds_zt_col, rho_ds_zm_col, &
+
+        ! upper_hf_level = nz since we are filling the zt levels
+        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, nz,  & ! In
+                                      gr%dzt, rho_ds_zt_col,                                  & ! In
                                       qv_clip )
         tmpqv = qv_clip(1,2:nz)
       end if
@@ -1397,8 +1399,10 @@ do j = 1,ny
         
         rho_ds_zt_col(1,:) = rho_ds_zt
         rho_ds_zm_col(1,:) = rho_ds_zm
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, "zt", &
-                                      gr%dzm, gr%dzt, rho_ds_zt_col, rho_ds_zm_col, &
+        
+        ! upper_hf_level = nz since we are filling the zt levels
+        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, nz,  & ! In
+                                      gr%dzt, rho_ds_zt_col,                                  & ! In
                                       qcl_clip )
                                       
         tmpqcl = qcl_clip(1,2:nz)
@@ -1462,8 +1466,10 @@ do j = 1,ny
         
         rho_ds_zt_col(1,:) = rho_ds_zt
         rho_ds_zm_col(1,:) = rho_ds_zm
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, "zt", &
-                                      gr%dzm, gr%dzt, rho_ds_zt_col, rho_ds_zm_col, &
+        
+        ! upper_hf_level = nz since we are filling the zt levels
+        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, nz,  & ! In
+                                      gr%dzt, rho_ds_zt_col,                                  & ! In
                                       qv_clip )
         tmpqv = qv_clip(1,2:nz)
       end if
@@ -1476,8 +1482,10 @@ do j = 1,ny
         
         rho_ds_zt_col(1,:) = rho_ds_zt
         rho_ds_zm_col(1,:) = rho_ds_zm
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, "zt", &
-                                      gr%dzm, gr%dzt, rho_ds_zt_col, rho_ds_zm_col, &
+
+        ! upper_hf_level = nz since we are filling the zt levels
+        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, nz,  & ! In
+                                      gr%dzt, rho_ds_zt_col,                                  & ! In
                                       qcl_clip )
                                       
         tmpqcl = qcl_clip(1,2:nz)
