@@ -71,7 +71,7 @@ module spurious_source_test
         read_parameters, &
         nu_vertical_res_dep    ! Type(s)
 
-    use fill_holes, only: &
+    use advance_helper_module, only: &
         vertical_integral    ! Procedure(s)
 
     use numerical_check, only: & 

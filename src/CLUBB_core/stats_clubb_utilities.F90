@@ -2126,7 +2126,7 @@ module stats_clubb_utilities
         stat_update_var,  & ! Procedure(s)
         stat_update_var_pt
 
-    use fill_holes, only: &
+    use advance_helper_module, only: &
         vertical_avg, &     ! Procedure(s)
         vertical_integral
 
@@ -2766,7 +2766,7 @@ module stats_clubb_utilities
       ! Find the vertical average of thermodynamic level variables, averaged from
       ! level 2 (the first thermodynamic level above model surface) through
       ! level nz (the top of the model).  Use the vertical averaging function
-      ! found in fill_holes.F90.
+      ! found in advance_helper_module.F90.
 
       ! Vertical average of thlm.
       call stat_update_var_pt( ithlm_vert_avg, grid_level,  & ! intent(in)
@@ -2796,7 +2796,7 @@ module stats_clubb_utilities
 
       ! Find the vertical average of momentum level variables, averaged over the
       ! entire vertical profile (level 1 through level nz).  Use the vertical
-      ! averaging function found in fill_holes.F90.
+      ! averaging function found in advance_helper_module.F90.
 
       ! Vertical average of wp2.
       call stat_update_var_pt( iwp2_vert_avg, grid_level,  & ! intent(in)
@@ -2904,7 +2904,7 @@ module stats_clubb_utilities
         irwp, &
         iiwp
 
-    use fill_holes, only: &
+    use advance_helper_module, only: &
         vertical_integral ! Procedure(s)
 
     use stats_type_utilities, only: & 

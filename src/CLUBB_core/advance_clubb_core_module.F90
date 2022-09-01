@@ -203,7 +203,8 @@ module advance_clubb_core_module
         zero, &
         unused_var, &
         grav, &
-        eps
+        eps, &
+        num_hf_draw_points
 
     use parameter_indices, only: &
         nparams,                 & ! Variable(s)
@@ -381,14 +382,14 @@ module advance_clubb_core_module
         istability_correction
 
     use fill_holes, only: &
-        vertical_integral, & ! Procedure(s)
         fill_holes_vertical
 
     use advance_helper_module, only: &
         calc_stability_correction, & ! Procedure(s)
         compute_Cx_fnc_Richardson, &
         calc_brunt_vaisala_freq_sqd, &
-        term_wp2_splat, term_wp3_splat
+        term_wp2_splat, term_wp3_splat, &
+        vertical_integral
 
     use interpolation, only: &
         pvertinterp
@@ -2029,9 +2030,10 @@ module advance_clubb_core_module
       ! Hence the preprocessor.
 #ifdef CLUBB_CAM
       do ixind=1,edsclr_dim
-        call fill_holes_vertical( nz, ngrdcol, 2,0.0_core_rknd,"zt", & ! intent(in)
-                                 gr%dzm, gr%dzt, rho_ds_zt, rho_ds_zm, & ! intent(in)
-                                 edsclrm(:,:,ixind))       ! intent(inout)
+        ! upper_hf_level = nz since we are filling the zt levels
+        call fill_holes_vertical( nz, ngrdcol, num_hf_draw_points, zero_threshold, nz,  & ! In
+                                  gr%dzt, rho_ds_zt,                                    & ! In
+                                  edsclrm(:,:,ixind) )                                    ! InOut
       enddo
 #endif
 

@@ -100,7 +100,8 @@ module clubb_api_module
     rs_tol, & ! Tolerance value for r_s [kg/kg]
     rt_tol, & ! [kg/kg]
     thl_tol, & ! [K]
-    w_tol_sqd ! [m^2/s^2]
+    w_tol_sqd, & ! [m^2/s^2]
+    num_hf_draw_points ! Neighboring points to use in hole filling algorithm
 
   use corr_varnce_module, only : &
       corr_array_n_cloud, & ! Variable(s)
@@ -380,7 +381,8 @@ module clubb_api_module
     fill_holes_vertical_api, &
     fill_holes_hydromet_api, &
     set_clubb_debug_level_api, &
-    vertical_integral_api
+    vertical_integral_api, &
+    num_hf_draw_points
 
   public &
     ! Constants That May be Helpful:
@@ -2036,8 +2038,8 @@ contains
   ! fill_holes_vertical - clips values of 'field' that are below 'threshold' as much as possible.
   !================================================================================================
 
-  subroutine fill_holes_vertical_api( nz, ngrdcol, num_pts, threshold, field_grid, &
-                                      dzm, dzt, rho_ds, rho_ds_zm, &
+  subroutine fill_holes_vertical_api( nz, ngrdcol, num_draw_pts, threshold, upper_hf_level, &
+                                      dz, rho_ds, &
                                       field )
 
     use fill_holes, only : fill_holes_vertical
@@ -2046,39 +2048,37 @@ contains
 
     implicit none
     
+    ! --------------------- Input variables ---------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
     
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      dzm, &  ! Spacing between thermodynamic grid levels; centered over
+      dz      ! Spacing between thermodynamic grid levels; centered over
               ! momentum grid levels
-      dzt     ! Spcaing between momentum grid levels; centered over
+              ! OR
+              ! Spcaing between momentum grid levels; centered over
               ! thermodynamic grid levels
+                  
+    integer, intent(in) :: & 
+      num_draw_pts, & ! The number of points on either side of the hole;
+                      ! Mass is drawn from these points to fill the hole.  []
+      upper_hf_level  ! Upper grid level of global hole-filling range      []
 
-    ! Input variables
-    integer, intent(in) :: &
-      num_pts  ! The number of points on either side of the hole;
-               ! Mass is drawn from these points to fill the hole.  []
-
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: & 
       threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
                  ! fall                           [Units vary; same as field]
 
-    character(len=2), intent(in) :: &
-      field_grid ! The grid of the field, either stats_zt or stats_zm
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
+      rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
-      rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
-      rho_ds_zm    ! Dry, static density on momentum levels         [kg/m^3]
-
-    ! Input/Output variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+    ! --------------------- Input/Output variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
       field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
 
-    call fill_holes_vertical( nz, ngrdcol, num_pts, threshold, field_grid, & ! intent(in)
-                              dzm, dzt, rho_ds, rho_ds_zm, & ! intent(in)
-                              field ) ! intent(inout)
+    call fill_holes_vertical( nz, ngrdcol, num_draw_pts, threshold, upper_hf_level, & ! intent(in)
+                              dz, rho_ds,                                          & ! intent(in)
+                              field )                                                 ! intent(inout)
       
   end subroutine fill_holes_vertical_api
 
@@ -2121,7 +2121,7 @@ contains
     total_idx, rho_ds, &
     field, dz )
 
-    use fill_holes, only : vertical_integral
+    use advance_helper_module, only : vertical_integral
 
     implicit none
 

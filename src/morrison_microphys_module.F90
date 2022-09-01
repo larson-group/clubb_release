@@ -191,7 +191,7 @@ module morrison_microphys_module
     use error_code, only: &
         clubb_at_least_debug_level   ! Procedure
 
-    use fill_holes, only: &
+    use advance_helper_module, only: &
         vertical_integral
 
     use microphys_stats_vars_module, only: &
