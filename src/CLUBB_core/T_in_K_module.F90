@@ -10,14 +10,15 @@ module T_in_K_module
   public :: thlm2T_in_K, T_in_K2thlm
 
   interface thlm2T_in_K
-    module procedure thlm2T_in_K_k
-    module procedure thlm2T_in_K_1D
-    module procedure thlm2T_in_K_2D
+    module procedure thlm2T_in_K_k    ! Works over a single vertical level
+    module procedure thlm2T_in_K_1D   ! Works over all vertical levels 
+    module procedure thlm2T_in_K_2D   ! Works over all vertical levels and columns
   end interface thlm2T_in_K
 
   contains
 
   !-------------------------------------------------------------------------------
+  ! Wrapped in interface thlm2T_in_K
   function thlm2T_in_K_k( thlm, exner, rcm )  & 
                   result( T_in_K )
 
@@ -54,6 +55,7 @@ module T_in_K_module
   end function thlm2T_in_K_k
 
   !-------------------------------------------------------------------------------
+  ! Wrapped in interface thlm2T_in_K
   function thlm2T_in_K_1D( nz, thlm, exner, rcm )  & 
                    result( T_in_K )
 
@@ -97,6 +99,7 @@ module T_in_K_module
   end function thlm2T_in_K_1D
 
   !-------------------------------------------------------------------------------
+  ! Wrapped in interface thlm2T_in_K
   function thlm2T_in_K_2D( nz, ngrdcol, thlm, exner, rcm )  & 
                    result( T_in_K )
 

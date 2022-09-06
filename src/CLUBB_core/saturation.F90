@@ -27,14 +27,14 @@ module saturation
   private  :: sat_vapor_press_ice_flatau, sat_vapor_press_ice_bolton
 
   interface sat_vapor_press_liq
-    module procedure sat_vapor_press_liq_k
-    module procedure sat_vapor_press_liq_2D
+    module procedure sat_vapor_press_liq_k    ! Works over a single vertical level
+    module procedure sat_vapor_press_liq_2D   ! Works over all vertical levels and columns
   end interface sat_vapor_press_liq
 
   interface sat_mixrat_liq
-    module procedure sat_mixrat_liq_k
-    module procedure sat_mixrat_liq_1D
-    module procedure sat_mixrat_liq_2D
+    module procedure sat_mixrat_liq_k   ! Works over a single vertical level
+    module procedure sat_mixrat_liq_1D  ! Works over all vertical levels 
+    module procedure sat_mixrat_liq_2D  ! Works over all vertical levels and columns
   end interface sat_mixrat_liq
 
 
@@ -88,6 +88,7 @@ module saturation
   contains
 
   !-------------------------------------------------------------------------
+  ! Wrapped in interface sat_mixrat_liq
   function sat_mixrat_liq_k( p_in_Pa, T_in_K )
 
   ! Description:
@@ -138,6 +139,7 @@ module saturation
   end function sat_mixrat_liq_k
 
   !-------------------------------------------------------------------------
+  ! Wrapped in interface sat_mixrat_liq
   function sat_mixrat_liq_1D( nz, p_in_Pa, T_in_K )
 
   ! Description:
@@ -191,6 +193,7 @@ module saturation
   end function sat_mixrat_liq_1D
 
   !-------------------------------------------------------------------------
+  ! Wrapped in interface sat_mixrat_liq
   function sat_mixrat_liq_2D( nz, ngrdcol, p_in_Pa, T_in_K )
 
   ! Description:
@@ -330,6 +333,7 @@ module saturation
   end function sat_mixrat_liq_lookup
 
   !-----------------------------------------------------------------
+  ! Wrapped in interface sat_vapor_press_liq
   subroutine sat_vapor_press_liq_2D( nz, ngrdcol, T_in_K, &
                                      esat )
 
@@ -401,6 +405,7 @@ module saturation
 
 
   !-----------------------------------------------------------------
+  ! Wrapped in interface sat_vapor_press_liq
   subroutine sat_vapor_press_liq_k( T_in_K, &
                                     esat )
   ! Description:

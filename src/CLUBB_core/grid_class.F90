@@ -217,9 +217,9 @@ module grid_class
     ! ensured with a max statement.
     ! In the future, we could add a flag (lposdef) and, when needed, apply the
     ! max statement directly within interpolated_azm and interpolated_azmk.
-    module procedure redirect_interpolated_azm_k
-    module procedure redirect_interpolated_azm_1D
-    module procedure redirect_interpolated_azm_2D
+    module procedure redirect_interpolated_azm_k    ! Works over a single vertical level
+    module procedure redirect_interpolated_azm_1D   ! Works over all vertical levels 
+    module procedure redirect_interpolated_azm_2D   ! Works over all vertical levels and columns
   end interface
 
   interface zm2zt
@@ -233,20 +233,20 @@ module grid_class
     ! ensured with a max statement.
     ! In the future, we could add a flag (lposdef) and, when needed, apply the
     ! max statement directly within interpolated_azt and interpolated_aztk.
-    module procedure redirect_interpolated_azt_k
-    module procedure redirect_interpolated_azt_1D
-    module procedure redirect_interpolated_azt_2D
+    module procedure redirect_interpolated_azt_k    ! Works over a single vertical level
+    module procedure redirect_interpolated_azt_1D   ! Works over all vertical levels 
+    module procedure redirect_interpolated_azt_2D   ! Works over all vertical levels and columns
   end interface
 
   ! Vertical derivative functions
   interface ddzm
-    module procedure gradzm_1D
-    module procedure gradzm_2D
+    module procedure gradzm_1D    ! Works over all vertical levels 
+    module procedure gradzm_2D    ! Works over all vertical levels and columns
   end interface
 
   interface ddzt
-    module procedure gradzt_1D
-    module procedure gradzt_2D
+    module procedure gradzt_1D    ! Works over all vertical levels 
+    module procedure gradzt_2D    ! Works over all vertical levels and columns
   end interface
 
   contains
@@ -1145,6 +1145,7 @@ module grid_class
   end subroutine read_grid_heights
   
   !=============================================================================
+  ! Wrapped in interface zt2zm
   function redirect_interpolated_azm_2D( nz, ngrdcol, gr, azt )
 
     ! Description:
@@ -1203,6 +1204,7 @@ module grid_class
   end function redirect_interpolated_azm_2D
   
   !=============================================================================
+  ! Wrapped in interface zt2zm
   function redirect_interpolated_azm_1D( gr, azt )
 
     ! Description:
@@ -1251,6 +1253,7 @@ module grid_class
   end function redirect_interpolated_azm_1D
   
   !=============================================================================
+  ! Wrapped in interface zt2zm
   function redirect_interpolated_azm_k( gr, azt, k )
 
     ! Description:
@@ -1297,6 +1300,7 @@ module grid_class
   end function redirect_interpolated_azm_k
   
   !=============================================================================
+  ! Wrapped in interface zm2zt
   function redirect_interpolated_azt_k( gr, azt, k )
 
     ! Description:
@@ -1342,6 +1346,7 @@ module grid_class
   end function redirect_interpolated_azt_k
   
   !=============================================================================
+  ! Wrapped in interface zm2zt
   function redirect_interpolated_azt_1D( gr, azt )
 
     ! Description:
@@ -1398,6 +1403,7 @@ module grid_class
   end function redirect_interpolated_azt_1D
   
   !=============================================================================
+  ! Wrapped in interface zm2zt
   function redirect_interpolated_azt_2D( nz, ngrdcol, gr, azt )
 
     ! Description:
@@ -2167,6 +2173,7 @@ module grid_class
   end subroutine calc_zm2zt_weights
   
   !=============================================================================
+  ! Wrapped in interface ddzm
   pure function gradzm_2D( nz, ngrdcol, gr, azm )
 
     ! Description:
@@ -2210,6 +2217,7 @@ module grid_class
   end function gradzm_2D
   
   !=============================================================================
+  ! Wrapped in interface ddzm
   pure function gradzm_1D( gr, azm )
 
     ! Description:
@@ -2250,6 +2258,7 @@ module grid_class
   end function gradzm_1D
   
   !=============================================================================
+  ! Wrapped in interface ddzt
   pure function gradzt_2D( nz, ngrdcol, gr, azt )
 
     ! Description:
@@ -2293,6 +2302,7 @@ module grid_class
   end function gradzt_2D
   
   !=============================================================================
+  ! Wrapped in interface ddzt
   pure function gradzt_1D( gr, azt )
 
     ! Description:

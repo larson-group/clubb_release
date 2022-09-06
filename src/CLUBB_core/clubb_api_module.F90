@@ -234,14 +234,22 @@ module clubb_api_module
   use grid_class, only: grid ! Type
   
   use grid_class, only: &
+    ! Interpolate momentum level variables to thermodynamic levels 
     zm2zt_api => zm2zt, &
+
+    ! Interpolate thermodynamic level variables to momentum levels 
     zt2zm_api => zt2zm
 
   use saturation, only: &
+    ! Used to compute the saturation mixing ratio of liquid water.
     sat_mixrat_liq_api => sat_mixrat_liq
 
   use T_in_K_module, only : &
+    ! Calculates absolute temperature from liquid water potential
+    ! temperature.  (Does not include ice.)
     thlm2T_in_K_api => thlm2T_in_K, &
+
+    ! Calculates liquid water potential temperature from absolute temperature 
     T_in_K2thlm_api => T_in_K2thlm
 
   use stats_type, only: stats ! Type
