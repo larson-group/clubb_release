@@ -2453,11 +2453,11 @@ module pdf_closure_module
 
     implicit none
 
+    ! ---------------------- Input Variables ----------------------
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    ! ---------------------- Input Variables ----------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       mean_chi,   & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
       stdev_chi,  & ! Standard deviation of chi (ith PDF component)     [kg/kg]
