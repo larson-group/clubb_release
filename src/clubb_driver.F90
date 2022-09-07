@@ -885,6 +885,9 @@ module clubb_driver
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
                      ! here we have access to the global version
 
+    integer :: & 
+      fake_ngrdcol = 2
+
 !-----------------------------------------------------------------------
     ! Begin code
 
@@ -1819,7 +1822,7 @@ module clubb_driver
     end if
 
     ! Deallocate stretched grid altitude arrays
-    deallocate( momentum_heights, thermodynamic_heights )
+    !deallocate( momentum_heights, thermodynamic_heights )
 
     ! Allocate rvm_mc, rcm_mc, thlm_mc
     allocate( rvm_mc(gr%nz), rcm_mc(gr%nz), thlm_mc(gr%nz) )
@@ -2290,8 +2293,13 @@ module clubb_driver
       call cpu_time(time_start) ! initialize timer for advance_clubb_core
       
       ! Call the parameterization one timestep
-      call advance_clubb_core_api &
-           ( gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, & ! Intent(in)
+      call advance_clubb_core_standalone_multicol( &
+             fake_ngrdcol, &
+             momentum_heights(begin_height:end_height), &
+             thermodynamic_heights(begin_height:end_height), &
+             zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &
+             params, &
+             gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, & ! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
@@ -5920,7 +5928,919 @@ module clubb_driver
 
     return
   end subroutine silhs_radiation_driver
+
+
   !-----------------------------------------------------------------------
+  subroutine advance_clubb_core_standalone_multicol( &
+    ngrdcol, &
+    momentum_heights, thermodynamic_heights, &
+    zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &
+    params, &
+    gr, l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
+    thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
+    sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
+    wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
+    rtpthlp_forcing, wm_zm, wm_zt, &                        ! intent(in)
+    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &            ! intent(in)
+    wpsclrp_sfc, wpedsclrp_sfc, &                           ! intent(in)
+    upwp_sfc_pert, vpwp_sfc_pert, &                         ! intent(in)
+    rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(in)
+    p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
+    rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
+    invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
+    rfrzm, radf, &                                          ! intent(in)
+#ifdef CLUBBND_CAM
+    varmu, &                                                ! intent(in)
+#endif
+    wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
+    host_dx, host_dy, &                                     ! intent(in)
+    clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
+    clubb_config_flags, &                                   ! intent(in)
+    stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
+    um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
+    thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
+    wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
+    sclrm,   &
+#ifdef GFDL
+               sclrm_trsport_only,  &  ! h1g, 2010-06-16    ! intent(inout)
+#endif
+    sclrp2, sclrp3, sclrprtp, sclrpthlp, &                  ! intent(inout)
+    wpsclrp, edsclrm, err_code_api, &                       ! intent(inout)
+    rcm, cloud_frac, &                                      ! intent(inout)
+    wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
+    sclrpthvp, &                                            ! intent(inout)
+    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &          ! intent(inout)
+    wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
+    um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
+    pdf_params, pdf_params_zm, &                            ! intent(inout)
+    pdf_implicit_coefs_terms, &                             ! intent(inout)
+#ifdef GFDL
+               RH_crit, & !h1g, 2010-06-16                  ! intent(inout)
+               do_liquid_only_in_clubb, &                   ! intent(in)
+#endif
+    Kh_zm, Kh_zt, &                                         ! intent(out)
+#ifdef CLUBB_CAM
+    qclvar, &                                               ! intent(out)
+#endif
+    thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+    rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
+
+  !
+  ! Description:
+  !   This subroutine calls advance_clubb_core, but first converts single 
+  !   column arrays into multi column arrays, then calls advance_clubb_core
+  !   with the multi column arrays. 
+  !
+  !   The purpose of this is to create a multi column clubb_standalone run
+  !   to make testing easier. TODO: make columns not identical.
+  !
+  !   When a single column is specified, we copy the single column
+  !   data back to the single column output arrays and clubb_standalone 
+  !   carries on normally. When multiple columns are specified (by ngrdcol)
+  !   we still copy the single column data back to the single column output 
+  !   arrays, but TODO we additionally output the mutli column data
+  !   to clubb/output_multicol for comparison.
+  !
+  !----------------------------------------------------------------------------
+
+    use advance_clubb_core_module, only : advance_clubb_core
+
+    use pdf_parameter_module, only: &
+        implicit_coefs_terms    ! Variable Type(s)
+
+    use parameters_model, only: &
+        sclr_dim, & ! Variable(s)
+        edsclr_dim
+
+    use model_flags, only: &
+        clubb_config_flags_type
+        
+    use stats_zm_module, only: &
+        stats_init_zm ! Procedure(s)
+        
+    use stats_zt_module, only: &
+        stats_init_zt
+        
+    use stats_sfc_module, only: &
+        stats_init_sfc ! Procedure(s)
+
+    use grid_class, only: &
+      grid
+
+    use clubb_precision, only: &
+      core_rknd
+
+    use parameter_indices, only: &
+      nparams
+
+    use parameters_tunable, only: &
+        nu_vertical_res_dep !---------------------------- Type(s)
+
+    use pdf_parameter_module, only: &
+      pdf_parameter,                 & !----------------------------------- Variable Type(s)
+      implicit_coefs_terms,          &
+      init_pdf_params, &              !----------------------------------- Procedure(s)
+      copy_single_pdf_params_to_multi, &
+      copy_multi_pdf_params_to_single
+    
+      
+    use stats_variables, only : &
+      l_stats
+
+    use parameter_indices, only: &
+      nparams
+
+    use clubb_api_module, only: &
+      setup_grid_api, &
+      setup_parameters_api
+
+    implicit none
+
+    ! ------------------------- Input Variables -------------------------
+    integer, intent(in) :: &
+      ngrdcol
+
+    type(grid), target, intent(in) :: gr
+
+    real( kind = core_rknd), dimension(gr%nz), intent(in) :: &
+      momentum_heights, &
+      thermodynamic_heights
+
+    real( kind = core_rknd), intent(in) :: &
+      zm_init, &
+      zm_top, &
+      deltaz
+
+    real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
+      params  ! Model parameters, C1, nu2, etc.
+
+    integer, intent(in) :: &
+      grid_type
+
+    logical, intent(in) ::  &
+      l_prescribed_avg_deltaz, &
+      l_implemented ! Is this part of a larger host model (T/F) ?
+
+    real( kind = core_rknd ), intent(in) ::  &
+      dt  ! Current timestep duration    [s]
+
+    real( kind = core_rknd ), intent(in) ::  &
+      fcor,  &          ! Coriolis forcing             [s^-1]
+      sfc_elevation     ! Elevation of ground level    [m AMSL]
+
+    integer, intent(in) :: &
+      hydromet_dim      ! Total number of hydrometeors          [#]
+
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  &
+      thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
+      rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
+      wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
+      wm_zm,           & ! w mean wind component on momentum levels  [m/s]
+      wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
+      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+      rho,             & ! Air density on thermodynamic levels       [kg/m^3]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+      hydromet           ! Collection of hydrometeors                [units vary]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
+
+#ifdef CLUBBND_CAM 
+    real( kind = core_rknd ), intent(in) :: & 
+      varmu 
+#endif 
+
+    real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
+      wphydrometp, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
+      wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
+      rtphmp,      & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
+      thlphmp        ! Covariance of thl and a hydrometeor [K <hm units>]
+
+    real( kind = core_rknd ), intent(in) ::  &
+      wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
+      wprtp_sfc,    & ! w' r_t' at surface       [(kg m)/( kg s)]
+      upwp_sfc,     & ! u'w' at surface          [m^2/s^2]
+      vpwp_sfc        ! v'w' at surface          [m^2/s^2]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: &
+      sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  &
+      wpsclrp_sfc      ! Scalar flux at surface         [{units vary} m/s]
+
+    real( kind = core_rknd ), intent(in) :: &
+      upwp_sfc_pert, & ! pertubed u'w' at surface    [m^2/s^2]
+      vpwp_sfc_pert    ! pertubed v'w' at surface    [m^2/s^2]
+
+    ! Eddy passive scalar variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: &
+      edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
+
+    real( kind = core_rknd ), intent(in), dimension(edsclr_dim) ::  &
+      wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
+
+    ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      rtm_ref,  & ! Initial total water mixing ratio             [kg/kg]
+      thlm_ref, & ! Initial liquid water potential temperature   [K]
+      um_ref,   & ! Initial u wind; Michael Falk                 [m/s]
+      vm_ref,   & ! Initial v wind; Michael Falk                 [m/s]
+      ug,       & ! u geostrophic wind                           [m/s]
+      vg          ! v geostrophic wind                           [m/s]
+
+    ! Host model horizontal grid spacing, if part of host model.
+    real( kind = core_rknd ), intent(in) :: &
+      host_dx,  & ! East-West horizontal grid spacing     [m]
+      host_dy     ! North-South horizontal grid spacing   [m]
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    type(nu_vertical_res_dep), intent(in) :: &
+      nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    real( kind = core_rknd ), intent(in) :: &
+      lmin    ! Min. value for the length scale    [m]
+
+    type( clubb_config_flags_type ), intent(in) :: &
+      clubb_config_flags ! Derived type holding all configurable CLUBB flags
+
+    ! ------------------------- Input/Output Variables -------------------------
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
+
+    ! These are prognostic or are planned to be in the future
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      up3,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
+      vp3,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+      wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
+      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
+      sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
+      wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
+      sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrp3,    & ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+      sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
+      sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+      p_in_Pa, & ! Air pressure (thermodynamic levels)       [Pa]
+      exner      ! Exner function (thermodynamic levels)     [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+      rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
+      sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+      wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
+
+    ! Variables used to track perturbed version of winds.
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: &
+      um_pert,   & ! perturbed <u>       [m/s]
+      vm_pert,   & ! perturbed <v>       [m/s]
+      upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
+      vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
+
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
+      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
+
+    type(implicit_coefs_terms), intent(inout) :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+#ifdef GFDL
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
+      sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
+#endif
+
+      real( kind = core_rknd ), intent(inout), dimension(gr%nz,edsclr_dim) :: &
+      edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
+      rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
+      cloud_cover     ! cloud cover                                     [-]
+
+    ! Variables that need to be output for use in host models
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
+      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
+      invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+      Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
+
+#ifdef CLUBB_CAM
+    real( kind = core_rknd), intent(out), dimension(gr%nz) :: &
+      qclvar        ! cloud water variance
+#endif
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      thlprcp    ! thl'rc'              [K kg/kg]
+
+    !!! Output Variable 
+    integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
+
+#ifdef GFDL
+    ! hlg, 2010-06-16
+    real( kind = core_rknd ), intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: &
+      RH_crit  ! critical relative humidity for droplet and ice nucleation
+    logical, intent(in)                 ::  do_liquid_only_in_clubb
+#endif
+
+
+    ! -------------- Local Variables --------------
+    type( grid ) :: &
+      gr_col
+
+    type(stats), dimension(ngrdcol) :: &
+      stats_zt_col, &
+      stats_zm_col, &
+      stats_sfc_col
+
+    real( kind = core_rknd ), dimension(ngrdcol) ::  &
+      fcor_col,  &          ! Coriolis forcing             [s^-1]
+      sfc_elevation_col     ! Elevation of ground level    [m AMSL]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
+      thlm_forcing_col,    & ! theta_l forcing (thermodynamic levels)    [K/s]
+      rtm_forcing_col,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing_col,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing_col,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
+      wprtp_forcing_col,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing_col,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing_col,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing_col,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing_col, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
+      wm_zm_col,           & ! w mean wind component on momentum levels  [m/s]
+      wm_zt_col,           & ! w mean wind component on thermo. levels   [m/s]
+      rho_zm_col,          & ! Air density on momentum levels            [kg/m^3]
+      rho_col,             & ! Air density on thermodynamic levels       [kg/m^3]
+      rho_ds_zm_col,       & ! Dry, static density on momentum levels    [kg/m^3]
+      rho_ds_zt_col,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zm_col, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+      invrs_rho_ds_zt_col, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zm_col,       & ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zt_col,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      rfrzm_col              ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz,hydromet_dim) :: &
+      hydromet_col           ! Collection of hydrometeors                [units vary]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) :: &
+      radf_col          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
+
+#ifdef CLUBBND_CAM 
+    real( kind = core_rknd ), dimension(ngrdcol) :: & 
+      varmu_col 
+#endif 
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz, hydromet_dim) :: &
+      wphydrometp_col, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
+      wp2hmp_col,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
+      rtphmp_col,      & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
+      thlphmp_col        ! Covariance of thl and a hydrometeor [K <hm units>]
+
+    real( kind = core_rknd ), dimension(ngrdcol) ::  &
+      wpthlp_sfc_col,   & ! w' theta_l' at surface   [(m K)/s]
+      wprtp_sfc_col,    & ! w' r_t' at surface       [(kg m)/( kg s)]
+      upwp_sfc_col,     & ! u'w' at surface          [m^2/s^2]
+      vpwp_sfc_col        ! v'w' at surface          [m^2/s^2]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz,sclr_dim) :: &
+      sclrm_forcing_col    ! Passive scalar forcing         [{units vary}/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,sclr_dim) ::  &
+      wpsclrp_sfc_col      ! Scalar flux at surface         [{units vary} m/s]
+
+    ! Eddy passive scalar variables
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz,edsclr_dim) :: &
+      edsclrm_forcing_col  ! Eddy passive scalar forcing    [{units vary}/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      upwp_sfc_pert_col, & ! pertubed u'w' at surface    [m^2/s^2]
+      vpwp_sfc_pert_col    ! pertubed v'w' at surface    [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(ngrdcol,edsclr_dim) ::  &
+      wpedsclrp_sfc_col    ! Eddy-Scalar flux at surface    [{units vary} m/s]
+
+    ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
+      rtm_ref_col,  & ! Initial total water mixing ratio             [kg/kg]
+      thlm_ref_col, & ! Initial liquid water potential temperature   [K]
+      um_ref_col,   & ! Initial u wind; Michael Falk                 [m/s]
+      vm_ref_col,   & ! Initial v wind; Michael Falk                 [m/s]
+      ug_col,       & ! u geostrophic wind                           [m/s]
+      vg_col          ! v geostrophic wind                           [m/s]
+
+    ! Host model horizontal grid spacing, if part of host model.
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      host_dx_col,  & ! East-West horizontal grid spacing     [m]
+      host_dy_col     ! North-South horizontal grid spacing   [m]
+
+
+    ! ---------------------------- Input/Output Variables ----------------------------
+    ! These are prognostic or are planned to be in the future
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
+      um_col,      & ! u mean wind component (thermodynamic levels)   [m/s]
+      upwp_col,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vm_col,      & ! v mean wind component (thermodynamic levels)   [m/s]
+      vpwp_col,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2_col,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2_col,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      up3_col,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
+      vp3_col,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
+      rtm_col,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      wprtp_col,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      thlm_col,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wpthlp_col,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+      rtp2_col,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      rtp3_col,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp2_col,   & ! th_l'^2 (momentum levels)                      [K^2]
+      thlp3_col,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      rtpthlp_col, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+      wp2_col,     & ! w'^2 (momentum levels)                         [m^2/s^2]
+      wp3_col        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+    ! Passive scalar variables
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz,sclr_dim) :: &
+      sclrm_col,     & ! Passive scalar mean (thermo. levels) [units vary]
+      wpsclrp_col,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
+      sclrp2_col,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrp3_col,    & ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+      sclrprtp_col,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
+      sclrpthlp_col    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
+      p_in_Pa_col, & ! Air pressure (thermodynamic levels)       [Pa]
+      exner_col      ! Exner function (thermodynamic levels)     [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
+      rcm_col,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac_col, & ! cloud fraction (thermodynamic levels)          [-]
+      wpthvp_col,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      wp2thvp_col,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      rtpthvp_col,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp_col      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz,sclr_dim) :: &
+      sclrpthvp_col     ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
+      wp2rtp_col,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
+      wp2thlp_col,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      uprcp_col,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      vprcp_col,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
+      rc_coef_col,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      wp4_col,               & ! w'^4 (momentum levels)               [m^4/s^4]
+      wpup2_col,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2_col,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      wp2up2_col,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
+      wp2vp2_col,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
+      ice_supersat_frac_col    ! ice cloud fraction (thermo. levels)  [-]
+
+    ! Variables used to track perturbed version of winds.
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) :: &
+      um_pert_col,   & ! perturbed <u>       [m/s]
+      vm_pert_col,   & ! perturbed <v>       [m/s]
+      upwp_pert_col, & ! perturbed <u'w'>    [m^2/s^2]
+      vpwp_pert_col    ! perturbed <v'w'>    [m^2/s^2]
+
+#ifdef GFDL
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
+      sclrm_trsport_only_col  ! Passive scalar concentration due to pure transport [{units vary}/s]
+#endif
+
+      real( kind = core_rknd ), dimension(ngrdcol,gr%nz,edsclr_dim) :: &
+      edsclrm_col   ! Eddy passive scalar mean (thermo. levels)   [units vary]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
+      rcm_in_layer_col, & ! rcm in cloud layer                              [kg/kg]
+      cloud_cover_col     ! cloud cover                                     [-]
+
+    ! Variables that need to be output for use in host models
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
+      wprcp_col,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud_col,     & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud_col,   & ! Average cloudy downdraft velocity     [m/s]
+      invrs_tau_zm_col         ! One divided by tau on zm levels               [ngrdcol/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) :: &
+      Kh_zt_col, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+      Kh_zm_col    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
+
+#ifdef CLUBB_CAM
+    real( kind = core_rknd), dimension(ngrdcol,gr%nz) :: &
+      qclvar_col        ! cloud water variance
+#endif
+
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz) :: &
+      thlprcp_col    ! thl'rc'              [K kg/kg]
+      
+#ifdef GFDL
+    ! hlg, 2010-06-16
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nz, min(1,sclr_dim) , 2) :: &
+      RH_crit_col  ! critical relative humidity for droplet and ice nucleation
+    logical, intent(in)                 ::  do_liquid_only_in_clubb
+#endif
+
+    integer :: i
+
+    real( kind = core_rknd), dimension(ngrdcol,gr%nz) :: &
+      momentum_heights_col, &
+      thermodynamic_heights_col
+
+    real( kind = core_rknd), dimension(ngrdcol) :: &
+      zm_init_col, &
+      zm_top_col, &
+      deltaz_col
+
+    integer :: begin_height, end_height, err_code_dummy
+
+    real( kind = core_rknd ) :: &
+      lmin_col    ! Min. value for the length scale    [m]
+
+    type(nu_vertical_res_dep) :: &
+      nu_vert_res_dep_col    ! Vertical resolution dependent nu values
+
+    type(pdf_parameter) :: &
+      pdf_params_col ! PDF parameters (thermodynamic levels)    [units vary]
+      
+    type(pdf_parameter) :: &
+      pdf_params_zm_col    ! PDF parameters on momentum levels        [units vary]
+
+    ! ------------------------ Begin Code ------------------------
+
+    ! Variables for PDF closure scheme
+    call init_pdf_params( gr%nz, ngrdcol, pdf_params_col )
+    call init_pdf_params( gr%nz, ngrdcol, pdf_params_zm_col )
+
+    do i = 1, ngrdcol
+
+      call copy_single_pdf_params_to_multi( pdf_params, i, &
+                                            pdf_params_col )
+
+
+      call copy_single_pdf_params_to_multi( pdf_params_zm, i, &
+                                            pdf_params_zm_col )
+
+      fcor_col(i) = fcor
+      sfc_elevation_col(i) = sfc_elevation
+      
+      thlm_forcing_col(i,:) = thlm_forcing
+      rtm_forcing_col(i,:) = rtm_forcing
+      um_forcing_col(i,:) = um_forcing
+      vm_forcing_col(i,:) = vm_forcing
+      sclrm_forcing_col(i,:,:) = sclrm_forcing
+      edsclrm_forcing_col(i,:,:) = edsclrm_forcing
+      wprtp_forcing_col(i,:) = wprtp_forcing
+      wpthlp_forcing_col(i,:) = wpthlp_forcing
+      rtp2_forcing_col(i,:) = rtp2_forcing
+      thlp2_forcing_col(i,:) = thlp2_forcing
+      rtpthlp_forcing_col(i,:) = rtpthlp_forcing
+      wm_zm_col(i,:) = wm_zm
+      wm_zt_col(i,:) = wm_zt
+      
+      wpthlp_sfc_col(i) = wpthlp_sfc
+      wprtp_sfc_col(i) = wprtp_sfc
+      upwp_sfc_col(i) = upwp_sfc
+      vpwp_sfc_col(i) = vpwp_sfc
+      
+      wpsclrp_sfc_col(i,:) = wpsclrp_sfc
+      wpedsclrp_sfc_col(i,:) = wpedsclrp_sfc
+      
+      upwp_sfc_pert_col(i) = upwp_sfc_pert
+      vpwp_sfc_pert_col(i) = vpwp_sfc_pert
+
+      rtm_ref_col(i,:) = rtm_ref
+      thlm_ref_col(i,:) = thlm_ref
+      um_ref_col(i,:) = um_ref
+      vm_ref_col(i,:) = vm_ref
+      ug_col(i,:) = ug
+      vg_col(i,:) = vg
+      
+      p_in_Pa_col(i,:) = p_in_Pa
+      rho_zm_col(i,:) = rho_zm
+      rho_col(i,:) = rho
+      exner_col(i,:) = exner
+      rho_ds_zm_col(i,:) = rho_ds_zm
+      rho_ds_zt_col(i,:) = rho_ds_zt
+      invrs_rho_ds_zm_col(i,:) = invrs_rho_ds_zm
+      invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
+      thv_ds_zm_col(i,:) = thv_ds_zm
+      thv_ds_zt_col(i,:) = thv_ds_zt
+      rfrzm_col(i,:) = rfrzm
+      
+      hydromet_col(i,:,:) = hydromet
+      
+      radf_col(i,:) = radf
+#ifdef CLUBBND_CAM
+      varmu_col(i) = varmu
+#endif
+      wphydrometp_col(i,:,:) = wphydrometp
+      wp2hmp_col(i,:,:) = wp2hmp
+      rtphmp_col(i,:,:) = rtphmp
+      thlphmp_col(i,:,:) = thlphmp
+      
+      host_dx_col(i) = host_dx
+      host_dy_col(i) = host_dy
+      
+      stats_zt_col(i) = stats_zt
+      stats_zm_col(i) = stats_zm
+      stats_sfc_col(i) = stats_sfc
+      
+      um_col(i,:) = um
+      vm_col(i,:) = vm
+      upwp_col(i,:) = upwp
+      vpwp_col(i,:) = vpwp
+      up2_col(i,:) = up2
+      vp2_col(i,:) = vp2
+      up3_col(i,:) = up3
+      vp3_col(i,:) = vp3
+      thlm_col(i,:) = thlm
+      rtm_col(i,:) = rtm
+      wprtp_col(i,:) = wprtp
+      wpthlp_col(i,:) = wpthlp
+      wp2_col(i,:) = wp2
+      wp3_col(i,:) = wp3
+      rtp2_col(i,:) = rtp2
+      rtp3_col(i,:) = rtp3
+      thlp2_col(i,:) = thlp2
+      thlp3_col(i,:) = thlp3
+      rtpthlp_col(i,:) = rtpthlp
+      
+      sclrm_col(i,:,:) = sclrm
+#ifdef GFDL
+      sclrm_trsport_only_col(i,:,:) = sclrm_trsport_only
+#endif
+      sclrp2_col(i,:,:) = sclrp2
+      sclrp3_col(i,:,:) = sclrp3
+      sclrprtp_col(i,:,:) = sclrprtp
+      sclrpthlp_col(i,:,:) = sclrpthlp
+      wpsclrp_col(i,:,:) = wpsclrp
+      edsclrm_col(i,:,:) = edsclrm
+      
+      rcm_col(i,:) = rcm
+      cloud_frac_col(i,:) = cloud_frac
+      wpthvp_col(i,:) = wpthvp
+      wp2thvp_col(i,:) = wp2thvp
+      rtpthvp_col(i,:) = rtpthvp
+      thlpthvp_col(i,:) = thlpthvp
+      sclrpthvp_col(i,:,:) = sclrpthvp
+      wp2rtp_col(i,:) = wp2rtp
+      wp2thlp_col(i,:) = wp2thlp
+      uprcp_col(i,:) = uprcp
+      vprcp_col(i,:) = vprcp
+      rc_coef_col(i,:) = rc_coef
+      wp4_col(i,:) = wp4
+      wpup2_col(i,:) = wpup2
+      wpvp2_col(i,:) = wpvp2
+      wp2up2_col(i,:) = wp2up2
+      wp2vp2_col(i,:) = wp2vp2
+      ice_supersat_frac_col(i,:) = ice_supersat_frac
+      um_pert_col(i,:) = um_pert
+      vm_pert_col(i,:) = vm_pert
+      upwp_pert_col(i,:) = upwp_pert
+      vpwp_pert_col(i,:) = vpwp_pert
+#ifdef GFDL
+      RH_crit_col(i,:,:,:) = RH_crit
+#endif
+      Kh_zm_col(i,:) = Kh_zm
+      Kh_zt_col(i,:) = Kh_zt
+#ifdef CLUBB_CAM
+      qclvar_col(i,:) = qclvar
+#endif
+      thlprcp_col(i,:) = thlprcp
+      wprcp_col(i,:) = wprcp
+      w_up_in_cloud_col(i,:) = w_up_in_cloud
+      w_down_in_cloud_col(i,:) = w_down_in_cloud
+      rcm_in_layer_col(i,:) = rcm_in_layer
+      cloud_cover_col(i,:) = cloud_cover
+      invrs_tau_zm_col(i,:) = invrs_tau_zm
+
+      momentum_heights_col(i,:) = momentum_heights
+      thermodynamic_heights_col(i,:) = thermodynamic_heights
+      zm_init_col(i) = zm_init
+      zm_top_col(i) = zm_top
+      deltaz_col(i) = deltaz
+
+    end do
+
+    ! We need to setup the multicolumn grid
+    call setup_grid_api( gr%nz, ngrdcol, sfc_elevation_col, l_implemented, & ! intent(in)
+                         grid_type, deltaz_col, zm_init_col, zm_top_col,   & ! intent(in)
+                         momentum_heights_col, thermodynamic_heights_col,  & ! intent(in)
+                         gr_col, begin_height, end_height  )                 ! intent(out)
+
+    ! They only reason we need to call this is to setup the multicolumn version 
+    ! of nu_vert_res_dep. 
+    call setup_parameters_api( &
+           deltaz_col, params, gr%nz, ngrdcol,                     & ! intent(in)
+           grid_type, momentum_heights_col(:,begin_height:end_height), & ! intent(in)
+           thermodynamic_heights_col(:,begin_height:end_height),       & ! intent(in)
+           l_prescribed_avg_deltaz,                              & ! intent(in)
+           lmin_col, nu_vert_res_dep_col, err_code_dummy )                 ! intent(out)  
+
+    call advance_clubb_core( gr_col, gr%nz, ngrdcol, &
+      l_implemented, dt, fcor_col, sfc_elevation_col, hydromet_dim, & ! intent(in)
+      thlm_forcing_col, rtm_forcing_col, um_forcing_col, vm_forcing_col, &    ! intent(in)
+      sclrm_forcing_col, edsclrm_forcing_col, wprtp_forcing_col, &        ! intent(in)
+      wpthlp_forcing_col, rtp2_forcing_col, thlp2_forcing_col, &          ! intent(in)
+      rtpthlp_forcing_col, wm_zm_col, wm_zt_col, &                        ! intent(in)
+      wpthlp_sfc_col, wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, &            ! intent(in)
+      wpsclrp_sfc_col, wpedsclrp_sfc_col, &                           ! intent(in)
+      upwp_sfc_pert_col, vpwp_sfc_pert_col, &                         ! intent(in)
+      rtm_ref_col, thlm_ref_col, um_ref_col, vm_ref_col, ug_col, vg_col, &            ! Intent(in)
+      p_in_Pa_col, rho_zm_col, rho_col, exner_col, &                          ! intent(in)
+      rho_ds_zm_col, rho_ds_zt_col, invrs_rho_ds_zm_col, &                ! intent(in)
+      invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, hydromet_col, &      ! intent(in)
+      rfrzm_col, radf_col, &                                          ! intent(in)
+#ifdef CLUBBND_CAM
+      varmu_col, &
+#endif
+      wphydrometp_col, wp2hmp_col, rtphmp_col, thlphmp_col, &                 ! intent(in)
+      host_dx_col, host_dy_col, &                                     ! intent(in)
+      clubb_params, nu_vert_res_dep_col, lmin_col, &                  ! intent(in)
+      clubb_config_flags, &                                   ! intent(in)
+      stats_zt_col, stats_zm_col, stats_sfc_col, &                        ! intent(inout)
+      um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &               ! intent(inout)
+      thlm_col, rtm_col, wprtp_col, wpthlp_col, &                             ! intent(inout)
+      wp2_col, wp3_col, rtp2_col, rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, &          ! intent(inout)
+      sclrm_col,   &
+#ifdef GFDL
+      sclrm_trsport_only_col,  &  ! h1g, 2010-06-16      ! intent(inout)
+#endif
+      sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, &                  ! intent(inout)
+      wpsclrp_col, edsclrm_col, &                                     ! intent(inout)
+      rcm_col, cloud_frac_col, &                                      ! intent(inout)
+      wpthvp_col, wp2thvp_col, rtpthvp_col, thlpthvp_col, &                   ! intent(inout)
+      sclrpthvp_col, &                                            ! intent(inout)
+      wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, wp4_col, & ! intent(inout)
+      wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, & ! intent(inout)
+      um_pert_col, vm_pert_col, upwp_pert_col, vpwp_pert_col, &            ! intent(inout)
+      pdf_params_col, pdf_params_zm_col, &                            ! intent(inout)
+      pdf_implicit_coefs_terms, &                             ! intent(inout)
+#ifdef GFDL
+               RH_crit_col, & !h1g, 2010-06-16                    ! intent(inout)
+               do_liquid_only_in_clubb, &                     ! intent(in)
+#endif
+      Kh_zm_col, Kh_zt_col, &                                         ! intent(out)
+#ifdef CLUBB_CAM
+               qclvar_col, &                                      ! intent(out)
+#endif
+      thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, & ! intent(out)
+      rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &      ! intent(out)
+      err_code_api )                                          ! intent(out)
+    
+    !---------------------------------------------------------------------------
+    !         Copy first column of data to single column outputs
+    !---------------------------------------------------------------------------
+    call copy_multi_pdf_params_to_single( pdf_params_col, 1, &
+                                          pdf_params )
+
+
+    call copy_multi_pdf_params_to_single( pdf_params_zm_col, 1, &
+                                          pdf_params_zm )
+    
+    ! The following does not work for stats 
+    !     stats_zt = stats_zt_col(1)
+    !     stats_zm = stats_zm_col(1) 
+    !     stats_sfc = stats_sfc_col(1)
+    ! because of some mysterious pointer issue. However, the only thing that 
+    ! updates in stats is the field values, so we can copy only those instead.
+    if ( l_stats ) then 
+      stats_zm%accum_field_values = stats_zm_col(1)%accum_field_values
+      stats_zm%accum_num_samples = stats_zm_col(1)%accum_num_samples
+      
+      stats_zt%accum_field_values = stats_zt_col(1)%accum_field_values
+      stats_zt%accum_num_samples = stats_zt_col(1)%accum_num_samples
+      
+      stats_sfc%accum_field_values = stats_sfc_col(1)%accum_field_values
+      stats_sfc%accum_num_samples = stats_sfc_col(1)%accum_num_samples
+    end if
+
+    um = um_col(1,:)
+    upwp = upwp_col(1,:)
+    vm = vm_col(1,:)
+    vpwp = vpwp_col(1,:)
+    up2 = up2_col(1,:)
+    vp2 = vp2_col(1,:)
+    up3 = up3_col(1,:)
+    vp3 = vp3_col(1,:)
+    rtm = rtm_col(1,:)
+    wprtp = wprtp_col(1,:)
+    thlm = thlm_col(1,:)
+    wpthlp = wpthlp_col(1,:)
+    rtp2 = rtp2_col(1,:)
+    rtp3 = rtp3_col(1,:)
+    thlp2 = thlp2_col(1,:)
+    thlp3 = thlp3_col(1,:)
+    rtpthlp = rtpthlp_col(1,:)
+    wp2 = wp2_col(1,:)
+    wp3 = wp3_col(1,:)
+    sclrm = sclrm_col(1,:,:)
+    wpsclrp = wpsclrp_col(1,:,:)
+    sclrp2 = sclrp2_col(1,:,:)
+    sclrp3 = sclrp3_col(1,:,:)
+    sclrprtp = sclrprtp_col(1,:,:)
+    sclrpthlp = sclrpthlp_col(1,:,:)
+    p_in_Pa = p_in_Pa_col(1,:)
+    exner = exner_col(1,:)
+    rcm = rcm_col(1,:)
+    cloud_frac = cloud_frac_col(1,:)
+    wpthvp = wpthvp_col(1,:)
+    wp2thvp = wp2thvp_col(1,:)
+    rtpthvp = rtpthvp_col(1,:)
+    thlpthvp = thlpthvp_col(1,:)
+    sclrpthvp = sclrpthvp_col(1,:,:)
+    wp2rtp = wp2rtp_col(1,:)
+    wp2thlp = wp2thlp_col(1,:)
+    uprcp = uprcp_col(1,:)
+    vprcp = vprcp_col(1,:)
+    rc_coef = rc_coef_col(1,:)
+    wp4 = wp4_col(1,:)
+    wpup2 = wpup2_col(1,:)
+    wpvp2 = wpvp2_col(1,:)
+    wp2vp2 = wp2vp2_col(1,:)
+    wp2up2 = wp2up2_col(1,:)
+    ice_supersat_frac = ice_supersat_frac_col(1,:)
+#ifdef GFDL
+    sclrm_trsport_only = sclrm_trsport_only_col(1,:,:)
+#endif
+    edsclrm = edsclrm_col(1,:,:)
+    rcm_in_layer = rcm_in_layer_col(1,:)
+    cloud_cover  = cloud_cover_col(1,:)
+    wprcp = wprcp_col(1,:)
+    w_up_in_cloud = w_up_in_cloud_col(1,:)
+    w_down_in_cloud = w_down_in_cloud_col(1,:)
+    invrs_tau_zm = invrs_tau_zm_col(1,:)
+    Kh_zt = Kh_zt_col(1,:)
+    Kh_zm = Kh_zm_col(1,:)
+#ifdef CLUBB_CAM
+    qclvar = qclvar_col(1,:)
+#endif
+    thlprcp = thlprcp_col(1,:)
+#ifdef GFDL
+    RH_crit = RH_crit_col(1,:,:,:)
+#endif
+
+  end subroutine advance_clubb_core_standalone_multicol
+
+
+
 
 end module clubb_driver
 
