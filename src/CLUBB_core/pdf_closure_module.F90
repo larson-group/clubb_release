@@ -1029,31 +1029,12 @@ module pdf_closure_module
     ! Calc ice_supersat_frac
     if ( l_calc_ice_supersat_frac ) then
 
-      do k = 1, nz
-        do i = 1, ngrdcol
-
-          if ( tl1(i,k) <= T_freeze_K ) then
-
-            ! Temperature is freezing, we must compute chi_at_ice_sat and
-            ! calculate the new cloud_frac_component
-            chi_at_ice_sat1 = ( sat_mixrat_ice( p_in_Pa(i,k), tl1(i,k) ) - pdf_params%rsatl_1(i,k) ) &
-                              * pdf_params%crt_1(i,k)
-
-            call calc_cloud_frac_component( pdf_params%chi_1(i,k), pdf_params%stdev_chi_1(i,k), &!in
-                                            chi_at_ice_sat1, & ! intent(in)
-                                            pdf_params%ice_supersat_frac_1(i,k), rc_1_ice(i,k) )! out
-          else
-
-              ! Temperature is warmer than freezing, the ice_supersat_frac calculation is
-              ! the same as cloud_frac
-              pdf_params%ice_supersat_frac_1(i,k) = pdf_params%cloud_frac_1(i,k)
-              rc_1_ice(i,k) = pdf_params%rc_1(i,k)
-
-          end if
-          
-        end do
-      end do
-
+      call calc_ice_cloud_frac_component( nz, ngrdcol, &
+                                          pdf_params%chi_1, pdf_params%stdev_chi_1, &
+                                          pdf_params%rc_1, pdf_params%cloud_frac_1, &
+                                          p_in_Pa, tl1, &
+                                          pdf_params%rsatl_1, pdf_params%crt_1, &
+                                          pdf_params%ice_supersat_frac_1, rc_1_ice )
     end if
 
     call transform_pdf_chi_eta_component( nz, ngrdcol, &
@@ -1074,42 +1055,22 @@ module pdf_closure_module
     ! Calc ice_supersat_frac
     if ( l_calc_ice_supersat_frac ) then
 
-        do k = 1, nz
-          do i = 1, ngrdcol
+      call calc_ice_cloud_frac_component( nz, ngrdcol, &
+                                          pdf_params%chi_2, pdf_params%stdev_chi_2, &
+                                          pdf_params%rc_2, pdf_params%cloud_frac_2, &
+                                          p_in_Pa, tl2, &
+                                          pdf_params%rsatl_2, pdf_params%crt_2, &
+                                          pdf_params%ice_supersat_frac_2, rc_2_ice )
 
-            if ( tl2(i,k) <= T_freeze_K ) then
-
-              ! Temperature is freezing, we must compute chi_at_ice_sat and 
-              ! calculate the new cloud_frac_component
-              chi_at_ice_sat2 = ( sat_mixrat_ice( p_in_Pa(i,k), tl2(i,k) ) - pdf_params%rsatl_2(i,k) ) &
-                                * pdf_params%crt_2(i,k)
-
-              call calc_cloud_frac_component( pdf_params%chi_2(i,k), & ! intent(in)
-                                              pdf_params%stdev_chi_2(i,k), & ! intent(in)
-                                              chi_at_ice_sat2, & ! intent(in)
-                                              pdf_params%ice_supersat_frac_2(i,k), & ! intent(out)
-                                              rc_2_ice(i,k) ) ! intent(out)
-            else
-
-                ! Temperature is warmer than freezing, the ice_supersat_frac calculation is 
-                ! the same as cloud_frac
-                pdf_params%ice_supersat_frac_2(i,k) = pdf_params%cloud_frac_2(i,k)
-                rc_2_ice(i,k) = pdf_params%rc_2(i,k)
-
-            end if
-            
-          end do
+      ! Compute ice cloud fraction, ice_supersat_frac
+      do k = 1, nz
+        do i = 1, ngrdcol
+          ice_supersat_frac(i,k) = pdf_params%mixt_frac(i,k) &
+                                   * pdf_params%ice_supersat_frac_1(i,k) &
+                                   + ( one - pdf_params%mixt_frac(i,k) ) &
+                                     * pdf_params%ice_supersat_frac_2(i,k)
         end do
-
-        ! Compute ice cloud fraction, ice_supersat_frac
-        do k = 1, nz
-          do i = 1, ngrdcol
-            ice_supersat_frac(i,k) = pdf_params%mixt_frac(i,k) &
-                                     * pdf_params%ice_supersat_frac_1(i,k) &
-                                     + ( one - pdf_params%mixt_frac(i,k) ) &
-                                       * pdf_params%ice_supersat_frac_2(i,k)
-          end do
-        end do
+      end do
 
     else 
 
@@ -2457,6 +2418,124 @@ module pdf_closure_module
     return
 
   end subroutine calc_liquid_cloud_frac_component
+
+  !=============================================================================
+  subroutine calc_ice_cloud_frac_component( nz, ngrdcol, &
+                                            mean_chi, stdev_chi, &
+                                            rc_in, cloud_frac, &
+                                            p_in_Pa, tl, &
+                                            rsatl, crt, &
+                                            ice_supersat_frac, rc )
+
+    use constants_clubb, only: &
+        chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
+        T_freeze_K,     & ! Freezing point of water             [K]
+        sqrt_2pi,       & ! sqrt(2*pi)
+        sqrt_2,       & ! sqrt(2*pi)
+        one,            & ! 1
+        one_half,       & ! 1/2
+        zero,           & ! 0
+        max_num_stdevs, &
+        eps
+
+    use clubb_precision, only: &
+        core_rknd     ! Precision
+
+    use saturation, only:  & 
+        sat_mixrat_ice
+
+    implicit none
+
+    integer, intent(in) :: &
+      ngrdcol,  & ! Number of grid columns
+      nz          ! Number of vertical level
+
+    !----------- Input Variables -----------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      mean_chi,  & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
+      stdev_chi, &    ! Standard deviation of chi (ith PDF component)     [kg/kg]
+      rc_in, &
+      cloud_frac, &
+      p_in_Pa
+
+    !----------- Output Variables -----------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      ice_supersat_frac, & ! Cloud fraction (ith PDF component)               [-]
+      rc, &            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
+      tl, &
+      rsatl, &
+      crt
+
+    !----------- Local Variables -----------
+    real( kind = core_rknd), parameter :: &
+      invrs_sqrt_2 = one / sqrt_2, &
+      invrs_sqrt_2pi = one / sqrt_2pi
+
+    real( kind = core_rknd ) :: &
+      zeta, &
+      chi_at_ice_sat
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      rsatl_ice
+
+    integer :: k, i    ! Vertical loop index
+
+    !----------- Begin Code -----------
+
+    rsatl_ice = sat_mixrat_ice( p_in_Pa, tl )
+
+    do k = 1, nz
+      do i = 1, ngrdcol
+
+        if ( tl(i,k) <= T_freeze_K ) then
+
+          ! Temperature is freezing, we must compute chi_at_ice_sat and 
+          ! calculate the new cloud_frac_component
+          chi_at_ice_sat = crt(i,k) * ( rsatl_ice(i,k) - rsatl(i,k) ) 
+
+          if ( ( abs( mean_chi(i,k)-chi_at_ice_sat ) <= eps .and. stdev_chi(i,k) <= chi_tol ) &
+           .or. ( mean_chi(i,k)-chi_at_ice_sat < - max_num_stdevs * stdev_chi(i,k) ) ) then
+
+            ! The mean of chi is at saturation and does not vary in the ith PDF component
+            ice_supersat_frac(i,k) = zero
+            rc(i,k)         = zero
+
+          elseif ( mean_chi(i,k)-chi_at_ice_sat > max_num_stdevs * stdev_chi(i,k) ) then
+
+            ! The mean of chi is multiple standard deviations above the saturation point.
+            ! Thus, all cloud in the ith PDF component.
+            ice_supersat_frac(i,k) = one
+            rc(i,k)         = mean_chi(i,k)-chi_at_ice_sat
+
+          else
+
+            ! The mean of chi is within max_num_stdevs of the saturation point.
+            ! Thus, layer is partly cloudy, requires calculation.
+
+            zeta = (mean_chi(i,k)-chi_at_ice_sat) / stdev_chi(i,k)
+
+            ice_supersat_frac(i,k) = one_half * ( one + erf( zeta * invrs_sqrt_2 )  )
+
+            rc(i,k) = (mean_chi(i,k)-chi_at_ice_sat) * ice_supersat_frac(i,k) &
+                      + stdev_chi(i,k) * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
+
+          end if
+
+        else
+
+            ! Temperature is warmer than freezing, the ice_supersat_frac calculation is 
+            ! the same as cloud_frac
+            ice_supersat_frac(i,k) = cloud_frac(i,k)
+            rc(i,k) = rc_in(i,k)
+
+        end if
+
+      end do
+    end do
+
+    return
+
+  end subroutine calc_ice_cloud_frac_component
 
   !=============================================================================
   elemental subroutine calc_cloud_frac_component( mean_chi, stdev_chi, &
