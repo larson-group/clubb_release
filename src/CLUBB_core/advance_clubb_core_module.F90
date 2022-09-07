@@ -2626,8 +2626,7 @@ module advance_clubb_core_module
         iSkw_max_mag
 
     use pdf_closure_module, only: &
-        pdf_closure,                & ! Procedure(s)
-        calc_vert_avg_cf_component
+        pdf_closure ! Procedure(s)
 
     use Skx_module, only: &
         Skx_func    ! Procedure(s)

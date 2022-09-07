@@ -22,7 +22,6 @@ module pdf_closure_module
             calc_wp2xp_pdf, &
             calc_wpxp2_pdf, &
             calc_wpxpyp_pdf, &
-            calc_vert_avg_cf_component, &
             calc_w_up_in_cloud
 
   private ! Set Default Scope
@@ -109,7 +108,6 @@ module pdf_closure_module
         ep2,            & ! 1.0/ep;      ep2 = 1.61             [-]
         rt_tol,         & ! Tolerance for r_t                   [kg/kg]
         thl_tol,        & ! Tolerance for th_l                  [K]
-        T_freeze_K,     & ! Freezing point of water             [K]
         fstderr,        &
         zero_threshold, &
         eps, &
@@ -416,9 +414,6 @@ module pdf_closure_module
       Skw_clubb_pdf,   &
       Skrt_clubb_pdf,  &
       Skthl_clubb_pdf
-
-    real( kind = core_rknd ) :: &
-      chi_at_ice_sat1, chi_at_ice_sat2
 
     real( kind = core_rknd ) :: &
       beta,                         & ! CLUBB tunable parameter beta
@@ -961,14 +956,14 @@ module pdf_closure_module
         elsewhere ( tl1(i,:) > t2_combined )
           pdf_params%rsatl_1(i,:) = sat_mixrat_liq( nz, p_in_Pa(i,:), tl1(i,:) ) &
                     * (tl1(i,:) - t2_combined)/(t1_combined - t2_combined) &
-                    + sat_mixrat_ice( p_in_Pa(i,:), tl1(i,:) ) &
+                    + sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) &
                       * (t1_combined - tl1(i,:))/(t1_combined - t2_combined)
         elsewhere ( tl1(i,:) > t3_combined )
-          pdf_params%rsatl_1(i,:) = sat_mixrat_ice( p_in_Pa(i,:), tl1(i,:) ) &
-                    + sat_mixrat_ice( p_in_Pa(i,:), tl1(i,:) ) * (RH_crit(i, :, 1, 1) -one ) &
+          pdf_params%rsatl_1(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) &
+                    + sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) * (RH_crit(i, :, 1, 1) -one ) &
                       * ( t2_combined -tl1(i,:))/(t2_combined - t3_combined)
         elsewhere
-          pdf_params%rsatl_1(i,:) = sat_mixrat_ice( p_in_Pa(i,:), tl1(i,:) ) * RH_crit(i, :, 1, 1)
+          pdf_params%rsatl_1(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) * RH_crit(i, :, 1, 1)
         endwhere
 
         where ( tl2(i,:) > t1_combined )
@@ -976,14 +971,14 @@ module pdf_closure_module
         elsewhere ( tl2(i,:) > t2_combined )
           pdf_params%rsatl_2(i,:) = sat_mixrat_liq( nz, p_in_Pa(i,:), tl2(i,:) ) &
                     * (tl2(i,:) - t2_combined)/(t1_combined - t2_combined) &
-                    + sat_mixrat_ice( p_in_Pa(i,:), tl2(i,:) ) &
+                    + sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) ) &
                       * (t1_combined - tl2(i,:))/(t1_combined - t2_combined)
         elsewhere ( tl2(i,:) > t3_combined )
-          pdf_params%rsatl_2(i,:) = sat_mixrat_ice( p_in_Pa(i,:), tl2(i,:) ) &
-                    + sat_mixrat_ice( p_in_Pa(i,:), tl2(i,:) )* (RH_crit(i, :, 1, 2) -one) &
+          pdf_params%rsatl_2(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) ) &
+                    + sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) )* (RH_crit(i, :, 1, 2) -one) &
                       * ( t2_combined -tl2(i,:))/(t2_combined - t3_combined)
         elsewhere
-          pdf_params%rsatl_2(i,:) = sat_mixrat_ice( p_in_Pa(i,:), tl2(i,:) ) * RH_crit(i, :, 1, 2)
+          pdf_params%rsatl_2(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) ) * RH_crit(i, :, 1, 2)
         endwhere
         
       end do
@@ -2343,7 +2338,7 @@ module pdf_closure_module
     use constants_clubb, only: &
         chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
         sqrt_2pi,       & ! sqrt(2*pi)
-        sqrt_2,       & ! sqrt(2*pi)
+        sqrt_2,         & ! sqrt(2)
         one,            & ! 1
         one_half,       & ! 1/2
         zero,           & ! 0
@@ -2426,12 +2421,24 @@ module pdf_closure_module
                                             p_in_Pa, tl, &
                                             rsatl, crt, &
                                             ice_supersat_frac, rc )
+  ! Description:
+  !   A version of the cloud fraction calculation modified to work
+  !   for layers that are potentially below freezing. If there are
+  !   no below freezing levels, the ice_supersat_frac calculation is 
+  !   the same as cloud_frac. 
+  !
+  !   For the below freezing levels, the saturation point will be
+  !   non-zero, thus we need to calculate chi_at_ice_sat.
+  !
+  !   The description of the equations are located in the description
+  !   of calc_liquid_cloud_frac_component.
+  !----------------------------------------------------------------------
 
     use constants_clubb, only: &
         chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
         T_freeze_K,     & ! Freezing point of water             [K]
         sqrt_2pi,       & ! sqrt(2*pi)
-        sqrt_2,       & ! sqrt(2*pi)
+        sqrt_2,         & ! sqrt(2)
         one,            & ! 1
         one_half,       & ! 1/2
         zero,           & ! 0
@@ -2450,23 +2457,24 @@ module pdf_closure_module
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
 
-    !----------- Input Variables -----------
+    ! ---------------------- Input Variables ----------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      mean_chi,  & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
-      stdev_chi, &    ! Standard deviation of chi (ith PDF component)     [kg/kg]
-      rc_in, &
-      cloud_frac, &
-      p_in_Pa
+      mean_chi,   & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
+      stdev_chi,  & ! Standard deviation of chi (ith PDF component)     [kg/kg]
+      rc_in,      & ! Mean cloud water mixing ratio (ith PDF comp.)     [kg/kg]
+      cloud_frac, & ! Cloud fraction                                    [-]
+      p_in_Pa,    & ! Pressure                                          [Pa]
+      rsatl,      & ! Saturation mixing ratio of liquid                 [kg/kg]
+      crt,        & ! r_t coef. in chi/eta eqns.                        [-]
+      tl            ! Quantities needed to predict higher order moments
+                    ! tl = thl*exner
 
-    !----------- Output Variables -----------
+    ! ---------------------- Output Variables ----------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      ice_supersat_frac, & ! Cloud fraction (ith PDF component)               [-]
-      rc, &            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
-      tl, &
-      rsatl, &
-      crt
+      ice_supersat_frac,  & ! Ice supersaturation fraction                [-]
+      rc                    ! Mean cloud ice mixing ratio (ith PDF comp.) [kg/kg]
 
-    !----------- Local Variables -----------
+    ! ---------------------- Local Variables----------------------
     real( kind = core_rknd), parameter :: &
       invrs_sqrt_2 = one / sqrt_2, &
       invrs_sqrt_2pi = one / sqrt_2pi
@@ -2476,13 +2484,22 @@ module pdf_closure_module
       chi_at_ice_sat
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      rsatl_ice
+      rsat_ice
 
-    integer :: k, i    ! Vertical loop index
+    integer :: k, i    ! Loop indices
 
-    !----------- Begin Code -----------
+    ! ---------------------- Begin Code ----------------------
 
-    rsatl_ice = sat_mixrat_ice( p_in_Pa, tl )
+    ! If all grid boxes are above freezing, then the calculation is the 
+    ! same as the cloud_frac calculation
+    if ( all( tl > T_freeze_K ) ) then
+      ice_supersat_frac = cloud_frac
+      rc                = rc_in
+      return
+    end if
+
+    ! Calculate the saturation mixing ratio of ice
+    rsat_ice = sat_mixrat_ice( nz, ngrdcol, p_in_Pa, tl )
 
     do k = 1, nz
       do i = 1, ngrdcol
@@ -2491,7 +2508,7 @@ module pdf_closure_module
 
           ! Temperature is freezing, we must compute chi_at_ice_sat and 
           ! calculate the new cloud_frac_component
-          chi_at_ice_sat = crt(i,k) * ( rsatl_ice(i,k) - rsatl(i,k) ) 
+          chi_at_ice_sat = crt(i,k) * ( rsat_ice(i,k) - rsatl(i,k) ) 
 
           if ( ( abs( mean_chi(i,k)-chi_at_ice_sat ) <= eps .and. stdev_chi(i,k) <= chi_tol ) &
            .or. ( mean_chi(i,k)-chi_at_ice_sat < - max_num_stdevs * stdev_chi(i,k) ) ) then
@@ -2521,12 +2538,12 @@ module pdf_closure_module
 
           end if
 
-        else
+        else  ! tl(i,k) > T_freeze_K
 
-            ! Temperature is warmer than freezing, the ice_supersat_frac calculation is 
-            ! the same as cloud_frac
-            ice_supersat_frac(i,k) = cloud_frac(i,k)
-            rc(i,k) = rc_in(i,k)
+          ! Temperature is warmer than freezing, the ice_supersat_frac calculation is 
+          ! the same as cloud_frac
+          ice_supersat_frac(i,k) = cloud_frac(i,k)
+          rc(i,k) = rc_in(i,k)
 
         end if
 
@@ -2536,93 +2553,6 @@ module pdf_closure_module
     return
 
   end subroutine calc_ice_cloud_frac_component
-
-  !=============================================================================
-  elemental subroutine calc_cloud_frac_component( mean_chi, stdev_chi, &
-                                                  chi_at_sat, &
-                                                  cloud_frac, rc )
-    ! Description:
-    !   An elemental version of the cloud fraction calculation. This
-    !   procedure takes an extra argument, chi_at_sat, allowing it to
-    !   be used for the ice_supersat_frac calculation as well. This is
-    !   because the saturation point will be non-zero when calculating
-    !   ice_supersat_frac if tl is below freezing on that grid level,
-    !   unlike the calculation of the liquid cloud fraction, where the
-    !   saturation point is always 0. Additionally, the ice_supersat_frac
-    !   only needs to be calculated when tl is below freezing, otherwise
-    !   it is equal to the liquid cloud fraction component, so being
-    !   elemental allows this procedure to be called only for the grid
-    !   levels where tl < T_freeze_K.
-    !
-    !   The description of the equations are located in the description
-    !   of calc_liquid_cloud_frac_component.
-    !----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
-        sqrt_2pi,       & ! sqrt(2*pi)
-        sqrt_2,         & ! sqrt(2)
-        one,            & ! 1
-        one_half,       & ! 1/2
-        zero,           & ! 0
-        max_num_stdevs, &
-        eps
-
-    use clubb_precision, only: &
-        core_rknd     ! Precision
-
-    implicit none
-
-    !----------- Input Variables -----------
-    real( kind = core_rknd ), intent(in) :: &
-      mean_chi,    & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
-      stdev_chi,   & ! Standard deviation of chi (ith PDF component)     [kg/kg]
-      chi_at_sat     ! Value of chi at saturation (0--liquid; neg.--ice) [kg/kg]
-
-    !----------- Output Variables -----------
-    real( kind = core_rknd ), intent(out) :: &
-      cloud_frac, & ! Cloud fraction (ith PDF component)               [-]
-      rc            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
-
-    !----------- Local Variables -----------
-    real( kind = core_rknd), parameter :: &
-      invrs_sqrt_2 = one / sqrt_2, &
-      invrs_sqrt_2pi = one / sqrt_2pi
-
-    real( kind = core_rknd) :: zeta
-
-    !----------- Begin Code -----------
-
-    if ( ( abs( mean_chi - chi_at_sat ) <= eps .and. stdev_chi <= chi_tol ) &
-           .or. ( mean_chi - chi_at_sat < - max_num_stdevs * stdev_chi ) ) then
-
-        ! The mean of chi is at saturation and does not vary in the ith PDF component
-        cloud_frac = zero
-        rc         = zero
-
-    elseif ( mean_chi - chi_at_sat > max_num_stdevs * stdev_chi ) then
-
-        ! The mean of chi is multiple standard deviations above the saturation point.
-        ! Thus, all cloud in the ith PDF component.
-        cloud_frac = one
-        rc         = mean_chi - chi_at_sat
-    
-    else
-
-        ! The mean of chi is within max_num_stdevs of the saturation point.
-        ! Thus, layer is partly cloudy, requires calculation.
-        zeta = ( mean_chi - chi_at_sat ) / stdev_chi
-
-        cloud_frac = one_half * ( one + erf( zeta * invrs_sqrt_2 )  )
-
-        rc = ( mean_chi - chi_at_sat ) * cloud_frac &
-             + stdev_chi * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
-
-    end if
-
-    return
-    
-  end subroutine calc_cloud_frac_component
 
   !=============================================================================
   subroutine calc_xprcp_component( nz, ngrdcol,                                     & ! In
@@ -3119,72 +3049,6 @@ module pdf_closure_module
     return
 
   end subroutine calc_xprcp_component
-
-  !=============================================================================
-  subroutine calc_vert_avg_cf_component &
-                  ( nz, k, z_vals, chi, stdev_chi, chi_at_sat, &
-                    cloud_frac_i, rc_i )
-  ! Description:
-  !   This subroutine is similar to calc_cloud_frac_component, but
-  !   resolves cloud_frac and rc at an arbitrary number of vertical levels
-  !   in the vicinity of the desired level. This may give a better
-  !   parameterization of sub-grid atmospheric conditions.
-  !
-  ! References:
-  !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd
-
-    implicit none
-
-    intrinsic :: sum
-
-    ! Local Constants
-    integer, parameter :: &
-      n_points = 9       ! Number of vertical levels to use in averaging
-                         ! (arbitrary, but must be odd)
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz, &       ! Number of vertical levels                         [count]
-      k           ! Level at which cloud_frac is to be computed       [count]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      z_vals,    & ! Height at each vertical level                   [m]
-      chi,       & ! Value of chi (old s)                            [kg/kg]
-      stdev_chi, & ! Standard deviation of chi                       [kg/kg]
-      chi_at_sat   ! Value of chi at saturation with respect to ice  [kg/kg]
-
-    ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      cloud_frac_i, & ! Vertically averaged cloud fraction               [-]
-      rc_i            ! Vertically averaged cloud water mixing ratio     [kg/kg]
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(n_points) :: &
-      chi_ref,           &   ! chi (old s) evaluated on refined grid     [kg/kg]
-      stdev_chi_ref,     &   ! stdev_chi evaluated on refined grid       [kg/kg]
-      cloud_frac_ref,    &   ! cloud_frac evaluated on refined grid      [-]
-      rc_ref                 ! r_c evaluated on refined grid             [kg/kg]
-      
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-    chi_ref = interp_var_array( n_points, nz, k, z_vals, chi )
-    stdev_chi_ref = interp_var_array( n_points, nz, k, z_vals, stdev_chi )
-    ! We could optionally compute chi_at_sat in an analogous manner. For now,
-    ! use chi_at_sat(k) as an approximation.
-
-    ! Compute cloud_frac and r_c at each refined grid level
-    call calc_cloud_frac_component( chi_ref(:), stdev_chi_ref(:), chi_at_sat(k), & ! Intent(in)
-                                    cloud_frac_ref(:), rc_ref(:) )                  ! Intent(out)
-
-    cloud_frac_i = sum( cloud_frac_ref(:) ) / real( n_points, kind=core_rknd )
-    rc_i = sum( rc_ref(:) ) / real( n_points, kind=core_rknd )
-
-    return
-  end subroutine calc_vert_avg_cf_component
 
   !=============================================================================
   subroutine calc_w_up_in_cloud( nz, ngrdcol, &

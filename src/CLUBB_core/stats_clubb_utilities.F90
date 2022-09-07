@@ -2403,7 +2403,7 @@ module stats_clubb_utilities
       call stat_update_var( irsat, rsat, & ! intent(in)
                             stats_zt ) ! intent(inout)
       if ( irsati > 0 ) then
-        rsati = sat_mixrat_ice( p_in_Pa, T_in_K )
+        rsati = sat_mixrat_ice( nz, p_in_Pa, T_in_K )
         call stat_update_var( irsati, rsati, & ! intent(in)
                               stats_zt ) ! intent(inout)
       end if

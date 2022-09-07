@@ -37,6 +37,11 @@ module saturation
     module procedure sat_mixrat_liq_2D  ! Works over all vertical levels and columns
   end interface sat_mixrat_liq
 
+  interface sat_mixrat_ice
+    module procedure sat_mixrat_ice_k   ! Works over a single vertical level
+    module procedure sat_mixrat_ice_1D  ! Works over all vertical levels 
+    module procedure sat_mixrat_ice_2D  ! Works over all vertical levels and columns
+  end interface sat_mixrat_ice
 
   ! Lookup table of values for saturation 
   real( kind = core_rknd ), private, dimension(188:343) :: &
@@ -236,11 +241,11 @@ module saturation
     call sat_vapor_press_liq( nz, ngrdcol, T_in_K, &
                               esatv )
 
-    ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
-    !   and set rsat = ep = 0.622
     do k = 1, nz
       do i = 1, ngrdcol
 
+        ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
+        !   and set rsat = ep = 0.622
         if ( p_in_Pa(i,k)-esatv(i,k) < 1.0_core_rknd ) then
           sat_mixrat_liq_2D(i,k) = ep
         else
@@ -725,15 +730,16 @@ module saturation
   end subroutine sat_vapor_press_liq_gfdl
 ! <--- h1g, 2010-06-16
 
-!------------------------------------------------------------------------
-  elemental real( kind = core_rknd ) function sat_mixrat_ice( p_in_Pa, T_in_K )
+  !------------------------------------------------------------------------
+  ! Wrapped in interface sat_mixrat_ice
+  function sat_mixrat_ice_k( p_in_Pa, T_in_K )
 
-! Description:
-!   Used to compute the saturation mixing ratio of ice.
+  ! Description:
+  !   Used to compute the saturation mixing ratio of ice.
 
-! References:
-!   Formula from Emanuel 1994, 4.4.15
-!-------------------------------------------------------------------------
+  ! References:
+  !   Formula from Emanuel 1994, 4.4.15
+  !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
         ep ! Variable(s)
@@ -743,61 +749,184 @@ module saturation
 
     implicit none
 
-    ! External
-    intrinsic :: trim
-
-    ! Input Variables
-
+    ! ------------------------ Input Variables ------------------------
     real( kind = core_rknd ), intent(in) :: &
       p_in_Pa, &          ! Pressure [Pa]
       T_in_K              ! Temperature [K]
 
-    ! Local Variables
+    ! ------------------------ Output Variables ------------------------
+    real( kind = core_rknd ) :: &
+      sat_mixrat_ice_k
 
-    real( kind = core_rknd ) :: esat_ice
+    ! ------------------------ Local Variables ------------------------
+    real( kind = core_rknd ), dimension(1,1) ::  & 
+      p_in_Pa_col,  &
+      T_in_K_col 
 
-    ! --- Begin Code ---
+    real( kind = core_rknd ), dimension(1,1) ::  & 
+      sat_mixrat_ice_col
 
-    ! Determine the SVP for the given temperature
-    esat_ice = sat_vapor_press_ice( T_in_K )
+    integer :: i, k  ! Loop indices
 
-    ! If esat_ice exceeds the air pressure, then assume esat_ice~=0.5*pressure 
-    !   and set rsat = ep = 0.622
-    if ( p_in_Pa-esat_ice < 1.0_core_rknd ) then
-      sat_mixrat_ice = ep
-    else
+    ! ------------------------ Begin Code ------------------------
 
-#ifdef GFDL
-    ! GFDL uses specific humidity
-    ! Formula for Saturation Specific Humidity
-     if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-           sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - (1.0_core_rknd-ep) * esat_ice ) )
-     else
-           sat_mixrat_ice  = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
-     endif                     ! h1g, 2010-06-18 end mod
-#else
-    ! Formula for Saturation Mixing Ratio:
-    !
-    ! rs = (epsilon) * [ esat / ( p - esat ) ];
-    ! where epsilon = R_d / R_v
+    ! Copy inputs to 2D arrays
+    p_in_Pa_col(1,1) = p_in_Pa
+    T_in_K_col(1,1) = T_in_K
 
-    sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
-#endif
+    ! Call 2D version 
+    sat_mixrat_ice_col = sat_mixrat_ice_2D( 1, 1, p_in_Pa_col, T_in_K_col )
 
-    end if
+    ! Copy 2D result into output
+    sat_mixrat_ice_k = sat_mixrat_ice_col(1,1)
 
     return
-  end function sat_mixrat_ice
+  end function sat_mixrat_ice_k
 
-!------------------------------------------------------------------------
-  elemental function sat_vapor_press_ice( T_in_K ) result ( esat_ice )
-!
-! Description:
-!   Computes SVP for ice, using one of the various approximations.
-!
-! References:
-!   None
-!------------------------------------------------------------------------
+  !------------------------------------------------------------------------
+  ! Wrapped in interface sat_mixrat_ice
+  function sat_mixrat_ice_1D( nz, p_in_Pa, T_in_K )
+
+  ! Description:
+  !   Used to compute the saturation mixing ratio of ice.
+
+  ! References:
+  !   Formula from Emanuel 1994, 4.4.15
+  !-------------------------------------------------------------------------
+
+    use constants_clubb, only: & 
+        ep ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! ------------------------ Input Variables ------------------------
+    integer, intent(in) :: &
+      nz
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      p_in_Pa, &          ! Pressure [Pa]
+      T_in_K              ! Temperature [K]
+
+    ! ------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), dimension(nz) :: &
+      sat_mixrat_ice_1D
+
+    ! ------------------------ Local Variables ------------------------
+    real( kind = core_rknd ), dimension(1,nz) ::  & 
+      p_in_Pa_col,  &
+      T_in_K_col 
+
+    real( kind = core_rknd ), dimension(1,nz) ::  & 
+      sat_mixrat_ice_col
+
+    integer :: i, k  ! Loop indices
+
+    ! ------------------------ Begin Code ------------------------
+
+    ! Copy inputs to 2D arrays
+    p_in_Pa_col(1,:) = p_in_Pa(:)
+    T_in_K_col(1,:) = T_in_K(:)
+
+    ! Call 2D version 
+    sat_mixrat_ice_col = sat_mixrat_ice_2D( nz, 1, p_in_Pa_col, T_in_K_col )
+
+    ! Copy 2D result into output
+    sat_mixrat_ice_1D(:) = sat_mixrat_ice_col(1,:)
+
+    return
+  end function sat_mixrat_ice_1D
+
+  !------------------------------------------------------------------------
+  ! Wrapped in interface sat_mixrat_ice
+  function sat_mixrat_ice_2D( nz, ngrdcol, p_in_Pa, T_in_K )
+
+  ! Description:
+  !   Used to compute the saturation mixing ratio of ice.
+
+  ! References:
+  !   Formula from Emanuel 1994, 4.4.15
+  !-------------------------------------------------------------------------
+
+    use constants_clubb, only: & 
+        ep ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! ------------------------ Input Variables ------------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      p_in_Pa, &          ! Pressure [Pa]
+      T_in_K              ! Temperature [K]
+
+    ! ------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      sat_mixrat_ice_2D
+
+    ! ------------------------ Local Variables ------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      esat_ice
+
+    integer :: i, k  ! Loop indices
+
+    ! ------------------------ Begin Code ------------------------
+
+    ! Determine the SVP for the given temperature
+    call sat_vapor_press_ice( nz, ngrdcol, T_in_K, &
+                              esat_ice )
+
+    do k = 1, nz
+      do i = 1, ngrdcol
+
+        ! If esat_ice exceeds the air pressure, then assume esat_ice~=0.5*pressure 
+        !   and set rsat = ep = 0.622
+        if ( p_in_Pa(i,k)-esat_ice(i,k) < 1.0_core_rknd ) then
+          sat_mixrat_ice_2D(i,k) = ep
+        else
+
+#ifdef GFDL
+          ! GFDL uses specific humidity
+          ! Formula for Saturation Specific Humidity
+          if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
+            sat_mixrat_ice_2D(i,k) = ep * ( esat_ice(i,k) &
+                                  / ( p_in_Pa(i,k) - (1.0_core_rknd-ep) * esat_ice(i,k) ) )
+          else
+            sat_mixrat_ice_2D(i,k) = ep * ( esat_ice(i,k) / ( p_in_Pa(i,k) - esat_ice(i,k) ) )
+          endif                     ! h1g, 2010-06-18 end mod
+#else
+          ! Formula for Saturation Mixing Ratio:
+          !
+          ! rs = (epsilon) * [ esat / ( p - esat ) ];
+          ! where epsilon = R_d / R_v
+
+          sat_mixrat_ice_2D(i,k) = ep * ( esat_ice(i,k) / ( p_in_Pa(i,k) - esat_ice(i,k) ) )
+#endif
+
+        end if
+      end do
+    end do
+
+    return
+  end function sat_mixrat_ice_2D
+
+  !------------------------------------------------------------------------
+  subroutine sat_vapor_press_ice( nz, ngrdcol, T_in_K, &
+                                  esat_ice )
+  !
+  ! Description:
+  !   Computes SVP for ice, using one of the various approximations.
+  !
+  ! References:
+  !   None
+  !------------------------------------------------------------------------
  
     use model_flags, only: &
         saturation_formula, & ! Variable(s)
@@ -810,50 +939,64 @@ module saturation
 
     implicit none
 
-    ! Input Variable
-    real( kind = core_rknd ), intent(in) :: &
+    ! ---------------------- Input Variable ----------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       T_in_K      ! Temperature     [K]
 
-    ! Output Variable
-    real( kind = core_rknd ) :: esat_ice    ! Saturation Vapor Pressure over Ice [Pa]
+    ! ---------------------- Output Variable ----------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      esat_ice    ! Saturation Vapor Pressure over Ice [Pa]
 
-    ! Undefined approximation
-    esat_ice = -99999.999_core_rknd
+    ! ---------------------- Begin Code ----------------------
 
     select case ( saturation_formula )
     case ( saturation_bolton )
+
       ! Using the Bolton 1980 approximations for SVP over ice
-      esat_ice = sat_vapor_press_ice_bolton( T_in_K )
+      call sat_vapor_press_ice_bolton( nz, ngrdcol, T_in_K, &
+                                       esat_ice )
 
     case ( saturation_flatau )
+
       ! Using the Flatau, et al. polynomial approximation for SVP over ice
-      esat_ice = sat_vapor_press_ice_flatau( T_in_K )
+      call sat_vapor_press_ice_flatau( nz, ngrdcol, T_in_K, &
+                                       esat_ice )
 
 ! ---> h1g, 2010-06-16
     case ( saturation_gfdl )
+
       ! Using GFDL polynomial approximation for SVP with respect to ice
-      esat_ice = sat_vapor_press_ice_gfdl( T_in_K )
+      call sat_vapor_press_ice_gfdl( nz, ngrdcol, T_in_K, &
+                                     esat_ice )
 ! <--- h1g, 2010-06-16
 
-      ! Add new cases after this
+    case default
+
+      ! Undefined approximation
+      esat_ice = -99999.999_core_rknd
 
     end select
 
     return
 
-  end function sat_vapor_press_ice
+  end subroutine sat_vapor_press_ice
 
-!------------------------------------------------------------------------
-  elemental function sat_vapor_press_ice_flatau( T_in_K ) result ( esati )
-!
-! Description:
-!   Computes SVP for ice.
-!
-! References:
-!   ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
-!     and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
-!     pp. 1507--1513
-!------------------------------------------------------------------------
+  !------------------------------------------------------------------------
+  subroutine sat_vapor_press_ice_flatau( nz, ngrdcol, T_in_K, &
+                                         esati )
+  !
+  ! Description:
+  !   Computes SVP for ice.
+  !
+  ! References:
+  !   ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
+  !     and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
+  !     pp. 1507--1513
+  !------------------------------------------------------------------------
     use constants_clubb, only: T_freeze_K
 
     use clubb_precision, only: &
@@ -861,9 +1004,19 @@ module saturation
 
     implicit none
 
-    ! External
-    intrinsic :: max
+    ! ------------------------ Input Variables ------------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      T_in_K   ! Temperature   [deg_K]
+
+    ! ------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      esati  ! Saturation vapor pressure over ice [Pa]
+
+    ! ------------------------ Local Variables ------------------------
     ! Relative error norm expansion (-90 to 0 deg_C) from
     ! Table 4 of pp. 1511 of Flatau et al. 1992 (Ice)
     real( kind = core_rknd ), dimension(9), parameter :: a = & 
@@ -873,119 +1026,150 @@ module saturation
 
     real( kind = core_rknd ), parameter :: min_T_in_C = -90._core_rknd ! [deg_C]
 
+    real( kind = core_rknd ) :: &
+      T_in_C ! Temperature [deg_C]
 
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [deg_K]
+    integer :: i, k
 
-    ! Output Variables
-    real( kind = core_rknd ) :: esati  ! Saturation vapor pressure over ice [Pa]
+    ! ------------------------ Begin Code ------------------------
 
-    ! Local Variables
-    real( kind = core_rknd ) :: T_in_C ! Temperature [deg_C]
-!   integer :: i
+    do i = 1, ngrdcol
+      do k = 1, nz
 
-    ! ---- Begin Code ----
+        ! Determine deg K - 273.15
+        T_in_C = T_in_K(i,k) - T_freeze_K
 
-    ! Determine deg K - 273.15
-    T_in_C = T_in_K - T_freeze_K
+        ! Since this approximation is only good out to -90 degrees Celsius we
+        ! truncate the result here (Flatau, et al. 1992)
+        T_in_C = max( T_in_C, min_T_in_C )
 
-    ! Since this approximation is only good out to -90 degrees Celsius we
-    ! truncate the result here (Flatau, et al. 1992)
-    T_in_C = max( T_in_C, min_T_in_C )
+        ! Polynomial approx. (Flatau, et al. 1992)
+        !   esati = a(1)
 
-    ! Polynomial approx. (Flatau, et al. 1992)
-!   esati = a(1)
+        !   do i = 2, size( a ), 1
+        !     esati = esati + a(i) * ( T_in_C )**(i-1)
+        !   end do
 
-!   do i = 2, size( a ), 1
-!     esati = esati + a(i) * ( T_in_C )**(i-1)
-!   end do
+        esati(i,k) = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
+        *( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*a(9) ) ) ) ) ) ) )
 
-    esati = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
-    *( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
+      end do
+    end do
 
     return
 
-  end function sat_vapor_press_ice_flatau
+  end subroutine sat_vapor_press_ice_flatau
 
-!------------------------------------------------------------------------
-  elemental function sat_vapor_press_ice_bolton( T_in_K ) result ( esati )
-!
-! Description:
-!   Computes SVP for ice.
-!
-! References:
-!   Bolton 1980
-!------------------------------------------------------------------------
+  !------------------------------------------------------------------------
+  subroutine sat_vapor_press_ice_bolton( nz, ngrdcol, T_in_K, &
+                                         esati )
+  !
+  ! Description:
+  !   Computes SVP for ice.
+  !
+  ! References:
+  !   Bolton 1980
+  !------------------------------------------------------------------------
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
     implicit none
 
-    ! External
-    intrinsic :: exp, log
+    ! ------------------------ Input Variables ------------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      T_in_K   ! Temperature   [deg_K]
 
-    ! Output Variables
-    real( kind = core_rknd ) :: esati  ! Saturation vapor pressure over ice [Pa]
+    ! ------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      esati  ! Saturation vapor pressure over ice [Pa]
 
-    ! Exponential approx.
-    esati = 100.0_core_rknd * exp( 23.33086_core_rknd - &
-      (6111.72784_core_rknd/T_in_K) + (0.15215_core_rknd*log( T_in_K )) )
+    ! ------------------------ Local Variables ------------------------
+    integer :: i, k
+
+    ! ------------------------ Begin Code ------------------------
+
+    do i = 1, ngrdcol
+      do k = 1, nz
+
+        ! Exponential approx.
+        esati(i,k) = 100.0_core_rknd * exp( 23.33086_core_rknd - &
+          (6111.72784_core_rknd/T_in_K(i,k)) + (0.15215_core_rknd*log( T_in_K(i,k) )) )
+
+      end do
+    end do
 
     return
 
-  end function sat_vapor_press_ice_bolton
+  end subroutine sat_vapor_press_ice_bolton
 
 
-! ---> h1g, 2010-06-16
-!------------------------------------------------------------------------
-  elemental function sat_vapor_press_ice_gfdl( T_in_K ) result ( esati )
-! Description:
-! copy from "GFDL polysvp.F90" 
-!  Compute saturation vapor pressure with respect to liquid by using 
-! function from Goff and Gratch (1946)
-! 
-!  Polysvp returned in units of pa.
-!  T_in_K is input in units of K.
-!------------------------------------------------------------------------
+  ! ---> h1g, 2010-06-16
+  !------------------------------------------------------------------------
+  subroutine sat_vapor_press_ice_gfdl( nz, ngrdcol, T_in_K, &
+                                       esati )
+  ! Description:
+  ! copy from "GFDL polysvp.F90" 
+  !  Compute saturation vapor pressure with respect to liquid by using 
+  ! function from Goff and Gratch (1946)
+  ! 
+  !  Polysvp returned in units of pa.
+  !  T_in_K is input in units of K.
+  !------------------------------------------------------------------------
  
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
     implicit none
 
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: T_in_K   ! Absolute temperature   [K]
+    ! ------------------------ Input Variables ------------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-    ! Output Variables
-    real( kind = core_rknd ) :: esati  ! Saturation vapor pressure over ice [Pa]
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      T_in_K   ! Temperature   [deg_K]
 
-    ! Local Variables
+    ! ------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      esati  ! Saturation vapor pressure over ice [Pa]
+
+    ! ------------------------ Local Variables ------------------------
     real( kind = core_rknd ), parameter :: &
        min_T_in_K = 173.15_core_rknd ! Lowest temperature at which Goff-Gratch is valid [K]
 
     real( kind = core_rknd ) :: &
        T_in_K_clipped        ! Absolute temperature with minimum threshold applied [K]
 
-    ! Since the Goff-Gratch ice approximation is valid only down to -100 degrees Celsius,
-    !   we threshold the temperature.  This will yield a minimal saturation at
-    !   cold temperatures.
-    T_in_K_clipped = max( min_T_in_K, T_in_K )
+    integer :: i, k
 
-    ! Goff Gratch equation (good down to -100 C)
+    ! ------------------------ Begin Code ------------------------
 
-    esati = 10._core_rknd**(-9.09718_core_rknd* &
-            (273.16_core_rknd/T_in_K_clipped-1._core_rknd)-3.56654_core_rknd* &
-          log10(273.16_core_rknd/T_in_K_clipped)+0.876793_core_rknd* &
-            (1._core_rknd-T_in_K_clipped/273.16_core_rknd)+ &
-          log10(6.1071_core_rknd))*100._core_rknd ! Known magic number
+    do i = 1, ngrdcol
+      do k = 1, nz
+
+        ! Since the Goff-Gratch ice approximation is valid only down to -100 degrees Celsius,
+        !   we threshold the temperature.  This will yield a minimal saturation at
+        !   cold temperatures.
+        T_in_K_clipped = max( min_T_in_K, T_in_K(i,k) )
+
+        ! Goff Gratch equation (good down to -100 C)
+
+        esati(i,k) = 10._core_rknd**(-9.09718_core_rknd* &
+                    (273.16_core_rknd/T_in_K_clipped-1._core_rknd)-3.56654_core_rknd* &
+                  log10(273.16_core_rknd/T_in_K_clipped)+0.876793_core_rknd* &
+                    (1._core_rknd-T_in_K_clipped/273.16_core_rknd)+ &
+                  log10(6.1071_core_rknd))*100._core_rknd ! Known magic number
+      end do
+    end do
 
     return
 
-  end function sat_vapor_press_ice_gfdl
+  end subroutine sat_vapor_press_ice_gfdl
 ! <--- h1g, 2010-06-16
 
 !-------------------------------------------------------------------------
