@@ -907,7 +907,7 @@ module saturation
           ! rs = (epsilon) * [ esat / ( p - esat ) ];
           ! where epsilon = R_d / R_v
 
-          sat_mixrat_ice_2D(i,k) = ep * ( esat_ice(i,k) / ( p_in_Pa(i,k) - esat_ice(i,k) ) )
+          sat_mixrat_ice_2D(i,k) = ep * esat_ice(i,k) / ( p_in_Pa(i,k) - esat_ice(i,k) )
 #endif
 
         end if
