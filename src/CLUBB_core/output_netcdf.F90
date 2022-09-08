@@ -13,9 +13,9 @@ module output_netcdf
 
   implicit none
 
-  public :: open_netcdf_for_writing, write_netcdf, close_netcdf
+  public :: open_netcdf_for_writing, write_netcdf, close_netcdf, format_date
 
-  private :: define_netcdf, write_grid, first_write, format_date
+  private :: define_netcdf, write_grid, first_write
 
   ! Constant parameters
   ! This will truncate all timesteps smaller than 1 mn to a minute for 

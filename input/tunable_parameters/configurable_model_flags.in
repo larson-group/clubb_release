@@ -59,4 +59,8 @@ l_lh_instant_var_covar_src  = .true.
 l_lh_limit_weights          = .true.
 l_lh_var_frac               = .false.
 l_lh_normalize_weights      = .true.
+
+$configurable_multi_column_nl
+standalone_columns = 8
+multicol_nc_file = "multicol_data.nc"
 /

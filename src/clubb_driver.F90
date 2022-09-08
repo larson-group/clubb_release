@@ -880,13 +880,19 @@ module clubb_driver
       l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
       l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, &
       l_enable_relaxed_clipping, l_linearize_pbl_winds
-      
+
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
                      ! here we have access to the global version
 
     integer :: & 
-      fake_ngrdcol = 2
+      standalone_columns
+
+    character(len=30) :: &
+      multicol_nc_file
+
+    namelist /configurable_multi_column_nl/ &
+      standalone_columns, multicol_nc_file
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -1042,6 +1048,10 @@ module clubb_driver
 
     open(unit=iunit, file=runfile, status='old', action='read')
     read(unit=iunit, nml=configurable_clubb_flags_nl)
+    close(unit=iunit)
+
+    open(unit=iunit, file=runfile, status='old', action='read')
+    read(unit=iunit, nml=configurable_multi_column_nl)
     close(unit=iunit)
 
     if ( l_vert_avg_closure ) then
@@ -2294,7 +2304,7 @@ module clubb_driver
       
       ! Call the parameterization one timestep
       call advance_clubb_core_standalone_multicol( &
-             fake_ngrdcol, &
+             standalone_columns, ( itime == ifinal ), multicol_nc_file, &
              momentum_heights(begin_height:end_height), &
              thermodynamic_heights(begin_height:end_height), &
              zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &
@@ -5932,7 +5942,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine advance_clubb_core_standalone_multicol( &
-    ngrdcol, &
+    ngrdcol, l_final_timestep, multicol_nc_file, &
     momentum_heights, thermodynamic_heights, &
     zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &
     params, &
@@ -6054,11 +6064,22 @@ module clubb_driver
       setup_grid_api, &
       setup_parameters_api
 
+    use netcdf
+
+    use output_netcdf, only: &
+      format_date
+
     implicit none
 
     ! ------------------------- Input Variables -------------------------
     integer, intent(in) :: &
       ngrdcol
+
+    logical, intent(in) :: &
+      l_final_timestep
+
+    character(len=30) :: &
+      multicol_nc_file
 
     type(grid), target, intent(in) :: gr
 
@@ -6497,7 +6518,7 @@ module clubb_driver
     logical, intent(in)                 ::  do_liquid_only_in_clubb
 #endif
 
-    integer :: i
+    integer :: i, n
 
     real( kind = core_rknd), dimension(ngrdcol,gr%nz) :: &
       momentum_heights_col, &
@@ -6521,6 +6542,28 @@ module clubb_driver
       
     type(pdf_parameter) :: &
       pdf_params_zm_col    ! PDF parameters on momentum levels        [units vary]
+
+
+    integer, save :: netcdf_precision
+
+    integer, save :: status, ncid
+
+    integer, save :: column_id, vertical_id, time_id, &
+                     column_var_id, vertical_var_id, time_var_id
+ 
+    logical, save :: first_call = .true.
+
+    integer, dimension(3) :: var_dim
+    integer, dimension(15) :: ind
+
+    real( kind=core_rknd ), dimension(ngrdcol,gr%nz) :: &
+      tmp_field
+
+    character(len=35) :: TimeUnits
+
+    character(len = 30) :: name        ! Variable name
+
+    real( kind=8 ) :: time
 
     ! ------------------------ Begin Code ------------------------
 
@@ -6576,7 +6619,13 @@ module clubb_driver
       rho_zm_col(i,:) = rho_zm
       rho_col(i,:) = rho
       exner_col(i,:) = exner
-      rho_ds_zm_col(i,:) = rho_ds_zm
+
+      if ( i > 1 ) then 
+        rho_ds_zm_col(i,:) = rho_ds_zm + real( i, kind=core_rknd ) / 100._core_rknd
+      else
+        rho_ds_zm_col(i,:) = rho_ds_zm
+      end if
+
       rho_ds_zt_col(i,:) = rho_ds_zt
       invrs_rho_ds_zm_col(i,:) = invrs_rho_ds_zm
       invrs_rho_ds_zt_col(i,:) = invrs_rho_ds_zt
@@ -6678,6 +6727,7 @@ module clubb_driver
       deltaz_col(i) = deltaz
 
     end do
+
 
     ! We need to setup the multicolumn grid
     call setup_grid_api( gr%nz, ngrdcol, sfc_elevation_col, l_implemented, & ! intent(in)
@@ -6836,6 +6886,114 @@ module clubb_driver
 #ifdef GFDL
     RH_crit = RH_crit_col(1,:,:,:)
 #endif
+
+    if ( ngrdcol > 1 ) then
+
+      if ( first_call ) then
+
+        status = nf90_create(trim(multicol_nc_file), NF90_NETCDF4, ncid)
+
+        status = nf90_def_dim(ncid, 'columns', ngrdcol, column_id)
+        status = nf90_def_dim(ncid, 'altitude', gr_col%nz, vertical_id)
+        status = nf90_def_dim(ncid, "time", NF90_UNLIMITED, time_id )
+
+        status = nf90_def_var( ncid, "columns", NF90_DOUBLE, & 
+                               (/column_id/), column_var_id )
+
+        status = nf90_def_var( ncid, "altitude", NF90_DOUBLE, & 
+                               (/vertical_id/), vertical_var_id )
+
+        status = nf90_def_var( ncid, "time", NF90_DOUBLE, & 
+                               (/time_id/), time_var_id )
+
+
+        status = nf90_put_att( ncid, time_var_id, "cartesian_axis", "T" )
+
+        call format_date( 1, 1, 1970, 0.0_core_rknd, & ! intent(in)
+                          TimeUnits ) ! intent(out)
+
+        status = nf90_put_att( ncid, time_var_id, "units", TimeUnits )
+        status = nf90_put_att( ncid, time_var_id, "ipositive", 1 )
+        status = nf90_put_att( ncid, time_var_id, "calendar_type", "Gregorian" )
+
+
+        status = nf90_put_att( ncid, column_var_id, "cartesian_axis", "X" )
+        status = nf90_put_att( ncid, column_var_id, "units",  "degrees_E" )
+        status = nf90_put_att( ncid, column_var_id, "ipositive",  1 )
+
+        ! Altitude, Z coordinate
+        status = nf90_put_att( ncid, vertical_var_id, "cartesian_axis",  "Z" )
+        status = nf90_put_att( ncid, vertical_var_id, "units", "meters" )
+        status = nf90_put_att( ncid, vertical_var_id, "positive",  "up" )
+        status = nf90_put_att( ncid, vertical_var_id, "ipositive", 1 )
+
+
+        select case (core_rknd)
+        case ( selected_real_kind( p=5 ) )
+          netcdf_precision = NF90_FLOAT
+        case ( selected_real_kind( p=12 ) )
+          netcdf_precision = NF90_DOUBLE
+        case default
+          netcdf_precision = NF90_DOUBLE
+        end select
+
+
+        var_dim(1) = column_id
+        var_dim(2) = vertical_id
+        var_dim(3) = time_id
+
+        do n = 1, 15
+          ind(n) = n
+        end do
+
+        status = nf90_def_var( ncid, trim("thlm"), netcdf_precision, var_dim(:),        ind(1) )
+        status = nf90_def_var( ncid, trim("rtm"), netcdf_precision, var_dim(:),         ind(2) )
+        status = nf90_def_var( ncid, trim("wpthlp"), netcdf_precision, var_dim(:),      ind(3) )
+        status = nf90_def_var( ncid, trim("wprtp"), netcdf_precision, var_dim(:),       ind(4) )
+        status = nf90_def_var( ncid, trim("cloud_frac"), netcdf_precision, var_dim(:),  ind(5) )
+        status = nf90_def_var( ncid, trim("rcm"), netcdf_precision, var_dim(:),         ind(6) )
+        status = nf90_def_var( ncid, trim("wp2"), netcdf_precision, var_dim(:),         ind(7) )
+        status = nf90_def_var( ncid, trim("wp3"), netcdf_precision, var_dim(:),         ind(8) )
+        status = nf90_def_var( ncid, trim("thlp2"), netcdf_precision, var_dim(:),       ind(9) )
+        status = nf90_def_var( ncid, trim("rtp2"), netcdf_precision, var_dim(:),        ind(10) )
+        status = nf90_def_var( ncid, trim("rtpthlp"), netcdf_precision, var_dim(:),     ind(11) )
+        status = nf90_def_var( ncid, trim("upwp"), netcdf_precision, var_dim(:),        ind(12) )
+        status = nf90_def_var( ncid, trim("vpwp"), netcdf_precision, var_dim(:),        ind(13) )
+        status = nf90_def_var( ncid, trim("up2"), netcdf_precision, var_dim(:),         ind(14) )
+        status = nf90_def_var( ncid, trim("vp2"), netcdf_precision, var_dim(:),         ind(15) )
+        
+        first_call = .false.
+
+      end if
+
+      time = real( stats_zm%file%ntimes, kind=time_precision ) &
+             * real( stats_zm%file%dtwrite, kind=time_precision )  ! seconds
+
+      status = nf90_put_var( ncid=ncid, varid=time_var_id,  & 
+                              values=time, start=(/stats_zm%file%ntimes/) )
+
+      status = nf90_put_var( ncid,  1, thlm_col )
+      status = nf90_put_var( ncid,  2, rtm_col ) 
+      status = nf90_put_var( ncid,  3, wpthlp_col )
+      status = nf90_put_var( ncid,  4, wprtp_col )
+      status = nf90_put_var( ncid,  5, cloud_frac_col )
+      status = nf90_put_var( ncid,  6, rcm_col )
+      status = nf90_put_var( ncid,  7, wp2_col )
+      status = nf90_put_var( ncid,  8, wp3_col )
+      status = nf90_put_var( ncid,  9, thlp2_col )
+      status = nf90_put_var( ncid, 10, rtp2_col )
+      status = nf90_put_var( ncid, 11, rtpthlp_col )
+      status = nf90_put_var( ncid, 12, upwp_col )
+      status = nf90_put_var( ncid, 13, vpwp_col )
+      status = nf90_put_var( ncid, 14, up2_col )
+      status = nf90_put_var( ncid, 15, vp2_col )
+      
+      if ( l_final_timestep ) then
+        status = nf90_close(ncid)
+      end if
+      
+    end if
+
 
   end subroutine advance_clubb_core_standalone_multicol
 
