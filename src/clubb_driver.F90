@@ -6021,6 +6021,9 @@ module clubb_driver
   !   arrays, but we additionally output the mutli column data
   !   to a netcdf file specified by multicol_nc_file.
   !
+  ! References:
+  !   See clubb issue #1033 for more detail: 
+  !   https://github.com/larson-group/clubb/issues/1033
   !----------------------------------------------------------------------------
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -6832,7 +6835,22 @@ module clubb_driver
     ! Arbitrarily augment data for the extra columns, the only column that should 
     ! be untouched is the first
     do i = 2, ngrdcol 
-      rho_ds_zm_col(i,:) = rho_ds_zm + real( i, kind=core_rknd ) / 1000._core_rknd
+
+      ! Let's increase the dry static density, rho_ds, on the extra columns
+      rho_ds_zm_col(i,:) = rho_ds_zm + real( i, kind=core_rknd ) * 1.e-5
+      rho_ds_zt_col(i,:) = rho_ds_zt + real( i, kind=core_rknd ) * 1.e-5
+
+      ! We changed rho_ds, so let's recalculate the inverses
+      invrs_rho_ds_zm_col(i,:) = 1.0_core_rknd / rho_ds_zm_col(i,:)
+      invrs_rho_ds_zt_col(i,:) = 1.0_core_rknd / rho_ds_zt_col(i,:)
+
+      ! We changed the dry static density, so let's similary change the air density, rho 
+      rho_zm_col(i,:) = rho_zm + real( i, kind=core_rknd ) * 1.e-5
+      rho_col(i,:)    = rho    + real( i, kind=core_rknd ) * 1.e-5
+
+      ! Let's change the air pressure too, this is in pascals, so +i is not too much 
+      p_in_Pa_col(i,:) = p_in_Pa + real( i, kind=core_rknd )
+
     end do
 
 
