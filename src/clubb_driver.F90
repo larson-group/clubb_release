@@ -7031,7 +7031,7 @@ module clubb_driver
         ! Get a formatted date, the time does not actually matter since
         ! these columns do not represent a real case, so we just use the
         ! unix epoch
-        call format_date( 1, 1, 1970, 0.0_core_rknd, & ! intent(in)
+        call format_date( 1, 1, 1970, real(0.0, kind=time_precision), & ! intent(in)
                           TimeUnits ) ! intent(out)
 
         ! Define the attributes for the time variable
