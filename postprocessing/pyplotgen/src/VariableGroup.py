@@ -278,6 +278,20 @@ class VariableGroup:
                     if (model_name + '_calc') in line.keys() and \
                             not self.__varnamesInDataset__(line['var_names'], dataset):
                         plot_data, z = line[(model_name + '_calc')](dataset_override=dataset)
+
+                        #kludgy trimming for these variables since they are processed here but never trimmed
+                        if np.any(z<self.height_min_value):
+                            z_min_index=np.max(np.argwhere(z<self.height_min_value))+1
+                        else:
+                            z_min_index=0
+                        if np.any(z>self.height_max_value):
+                            z_max_index=np.min(np.argwhere(z>self.height_max_value))-1
+                        else:
+                            z_max_index=len(z)-1
+                        plot_data=plot_data[z_min_index:z_max_index]
+                        z=z[z_min_index:z_max_index]
+                        #end of kludgy trimming
+
                         if self.animation is None:
                             plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
                         else:
