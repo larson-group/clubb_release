@@ -80,44 +80,44 @@ def main():
     #    Each netcdf file contains metric values and parameter values for a single simulation.
     paramsNamesScalesAndFilenames = [ \
                     ['clubb_c7', 1.0, \
-                     '20220720/anvil.bmg20220630.sens720_2.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20220720/anvil.bmg20220630.sens720_3.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220903/anvil.bmg20220630.sens723_2.ne30pg2_r05_oECv3_Regional.nc',  \
+                     '20220903/anvil.bmg20220630.sens723_3.ne30pg2_r05_oECv3_Regional.nc'], \
 #                    ['clubb_c11', 1.0, \
-#                     '20220720/anvil.bmg20220630.sens720_4.ne30pg2_r05_oECv3_Regional.nc',  \
-#                     '20220720/anvil.bmg20220630.sens720_5.ne30pg2_r05_oECv3_Regional.nc'], \
+#                     '20220903/anvil.bmg20220630.sens723_4.ne30pg2_r05_oECv3_Regional.nc',  \
+#                     '20220903/anvil.bmg20220630.sens723_5.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_gamma_coef', 1.0, \
-                     '20220720/anvil.bmg20220630.sens720_6.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20220720/anvil.bmg20220630.sens720_7.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220903/anvil.bmg20220630.sens723_6.ne30pg2_r05_oECv3_Regional.nc',  \
+                     '20220903/anvil.bmg20220630.sens723_7.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c8', 1.0, \
-                     '20220720/anvil.bmg20220630.sens720_9.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20220720/anvil.bmg20220630.sens720_8.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220903/anvil.bmg20220630.sens723_9.ne30pg2_r05_oECv3_Regional.nc',  \
+                     '20220903/anvil.bmg20220630.sens723_8.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_k10', 1.0, \
-                     '20220720/anvil.bmg20220630.sens720_10.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20220720/anvil.bmg20220630.sens720_11.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220903/anvil.bmg20220630.sens723_10.ne30pg2_r05_oECv3_Regional.nc', \
+                     '20220903/anvil.bmg20220630.sens723_11.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_n2', 1.0, \
-                     '20220720/anvil.bmg20220630.sens720_12.ne30pg2_r05_oECv3_Regional.nc',
-                     '20220720/anvil.bmg20220630.sens720_13.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220903/anvil.bmg20220630.sens723_12.ne30pg2_r05_oECv3_Regional.nc',
+                     '20220903/anvil.bmg20220630.sens723_13.ne30pg2_r05_oECv3_Regional.nc'], \
 #                    ['clubb_altitude_threshold', 1.0, \
-#                     '20220720/anvil.bmg20220630.sens720_19.ne30pg2_r05_oECv3_Regional.nc',
-#                     '20220720/anvil.bmg20220630.sens720_20.ne30pg2_r05_oECv3_Regional.nc'], \
+#                     '20220903/anvil.bmg20220630.sens723_22.ne30pg2_r05_oECv3_Regional.nc',
+#                     '20220903/anvil.bmg20220630.sens723_23.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_bkgnd', 1.0, \
-                     '20220720/anvil.bmg20220630.sens720_21.ne30pg2_r05_oECv3_Regional.nc',
-                     '20220720/anvil.bmg20220630.sens720_22.ne30pg2_r05_oECv3_Regional.nc'], \
+                    '20220903/anvil.bmg20220630.sens723_16.ne30pg2_r05_oECv3_Regional.nc',
+                    '20220903/anvil.bmg20220630.sens723_17.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_sfc', 1.0, \
-                     '20220720/anvil.bmg20220630.sens720_23.ne30pg2_r05_oECv3_Regional.nc',
-                     '20220720/anvil.bmg20220630.sens720_24.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-#                     '20220720/anvil.bmg20220630.sens720_14.ne30pg2_r05_oECv3_Regional.nc', \
-#                     '20220720/anvil.bmg20220630.sens720_15.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220903/anvil.bmg20220630.sens723_18.ne30pg2_r05_oECv3_Regional.nc',
+                     '20220903/anvil.bmg20220630.sens723_19.ne30pg2_r05_oECv3_Regional.nc'], \
+                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
+                     '20220903/anvil.bmg20220630.sens723_14.ne30pg2_r05_oECv3_Regional.nc', \
+                     '20220903/anvil.bmg20220630.sens723_15.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_n2_wp2', 1.0, \
-                     '20220720/anvil.bmg20220630.sens720_25.ne30pg2_r05_oECv3_Regional.nc',
-                     '20220720/anvil.bmg20220630.sens720_26.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
-#                     '20220720/anvil.bmg20220630.sens720_27.ne30pg2_r05_oECv3_Regional.nc', \
-#                     '20220720/anvil.bmg20220630.sens720_28.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220903/anvil.bmg20220630.sens723_20.ne30pg2_r05_oECv3_Regional.nc',
+                     '20220903/anvil.bmg20220630.sens723_21.ne30pg2_r05_oECv3_Regional.nc'], \
+                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
+                     '20220903/anvil.bmg20220630.sens723_24.ne30pg2_r05_oECv3_Regional.nc', \
+                     '20220903/anvil.bmg20220630.sens723_25.ne30pg2_r05_oECv3_Regional.nc'], \
 ##                    ['micro_vqit', 1.0, \
-##                     '20220720/anvil.bmg20220630.sens720_16.ne30pg2_r05_oECv3_Regional.nc', \
-##                     '20220720/anvil.bmg20220630.sens720_17.ne30pg2_r05_oECv3_Regional.nc'], \
+##                     '20220903/anvil.bmg20220630.sens723_16.ne30pg2_r05_oECv3_Regional.nc', \
+##                     '20220903/anvil.bmg20220630.sens723_17.ne30pg2_r05_oECv3_Regional.nc'], \
                         ]
 
     dfparamsNamesScalesAndFilenames =  \
@@ -140,12 +140,12 @@ def main():
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
-        '20220720/anvil.bmg20220630.sens720_1.ne30pg2_r05_oECv3_Regional.nc'
+        '20220903/anvil.bmg20220630.sens723_1.ne30pg2_r05_oECv3_Regional.nc'
 
     # Metrics from simulation that use the SVD-recommended parameter values
     # Here, we use default simulation just as a placeholder.
     linSolnNcFilename = \
-            '20220720/anvil.bmg20220630.sens720_1.ne30pg2_r05_oECv3_Regional.nc'
+            '20220903/anvil.bmg20220630.sens723_27.ne30pg2_r05_oECv3_Regional.nc'
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
 # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -449,7 +449,7 @@ def main():
                                   font=dict(color='blue'),
                                   align='left', xref='paper', yref='paper', x=0.05, y=0.9, showarrow=False)
     biasesOrderFig.add_annotation(text='realized E3SM bias removal',
-                                  font=dict(color='rgba(255,0,0,0.0)'),
+                                  font=dict(color='red'),  #'rgba(255,0,0,0.0)'),
                                   align='left', xref='paper', yref='paper', x=0.05, y=0.8, showarrow=False)
     # Plot arrows showing the bias removal of E3SM's solution
     for i, item in enumerate(metricsNamesOrdered):
@@ -468,8 +468,8 @@ def main():
         arrowhead=3,
         arrowsize=1,
         arrowwidth=2,
-        arrowcolor='red',
-        opacity=0.0
+        arrowcolor='red'#,
+        #opacity=0.0
 	    )
     #pdb.set_trace()
 
@@ -743,6 +743,55 @@ def main():
         uNormlzdBiasColsFig.data[idx[0]].name = "{}".format(idx[0]+1) + ", " + "{:.2e}".format(val)
     #pdb.set_trace()
 
+    # Plot box and whiskers plot of optimal parameter values.
+    # Multiply in the user-designated scale factors before plotting.
+    df = pd.DataFrame( np.hstack( defaultParamValsOrigRow[0,:]*paramsScales ),
+                  index=paramsNames, columns=["Default plus error bars"] )
+    df["err_minus"] = ( defaultParamValsOrigRow[0,:] -  paramsLowValsPCBound[:,0] ) * paramsScales
+    df["err_plus"]  = ( paramsHiValsPCBound[:,0] - defaultParamValsOrigRow[0,:] ) * paramsScales
+    paramsBar = px.scatter(df, x=df.index, y=df.columns,
+              error_y="err_plus", error_y_minus="err_minus",
+              title =  """Best-fit parameter values""" )
+    paramsBar.update_traces( go.Scatter(
+                            mode='markers',
+                            marker=dict(color='black', size=14),
+                            error_y=dict( color='black', thickness=2, width=10 )
+                                    ))
+    #paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsLowValsPCBound[:,0]*paramsScales,
+    #                               name=r'$paramsSolnPC - \sigma$',
+    #                               line=dict(color='white', width=0), mode='lines', showlegend=False))
+    #paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsHiValsPCBound[:,0]*paramsScales, fill='tonexty',
+    #                           name='Default Parameter Values +- sigma', mode='none',
+    #                               fillcolor='rgba(253,253,150,1.0)'))
+    #paramsBar.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:]*paramsScales,
+    #                               name='Default Parameter Values', line=dict(color='black', width=6) ))
+    paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsSoln[:,0]*paramsScales,
+                                   mode='markers',
+                                   marker=dict(color='green', size=8),
+                                   name='Linear regression, |dp|=' 
+                                       + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSoln)) ))
+    paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsSolnNonlin[:,0]*paramsScales,
+                                   mode='markers',
+                                   marker_symbol='x',
+                                   marker=dict(color='orange',  size=12),
+                                   name='paramsSolnNonlin, |dpPC|='
+                                       + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnNonlin)) ))
+    paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsSolnElastic[:,0]*paramsScales,
+                                   mode='markers',
+                                   marker_symbol='square',
+                                   marker=dict(color='cyan', size=8),
+                                   name='Lasso regression, |dpLasso|='
+                                        + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnElastic)) ,
+                                   line=dict(color='red', width=2)  ))
+    #paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnPCBound[:,0]*paramsScales,
+    #                                name='paramsSolnPCBound, |dpBound|='
+    #                               + '{:.2e}'.format(0.0) ))
+    paramsBar.update_yaxes(title="User-scaled parameter value")
+    paramsBar.update_xaxes(title="Parameter Name")
+    paramsBar.update_layout(hovermode="x")
+    paramsBar.update_layout( width=1000, height=500  )
+
+
     # Plot the parameter values recommended by SVD.
     # Multiply in the user-designated scale factors before plotting.
     paramsFig = go.Figure()
@@ -777,10 +826,11 @@ def main():
         html.H1(children='Sensitivity matrix diagnostics'),
 
         html.Div(children=''' '''),
-
-        dcc.Graph( id='biasesFig', figure=biasesFig ),
+        
         dcc.Graph( id='biasesOrderFig', figure=biasesOrderFig ),
+        dcc.Graph( id='paramsBar', figure=paramsBar ),
         dcc.Graph( id='paramsFig', figure=paramsFig ),
+        dcc.Graph( id='biasesFig', figure=biasesFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
         dcc.Graph( id='dpMinScatterFig', figure=dpMinMatrixScatterFig ),
         dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ),
