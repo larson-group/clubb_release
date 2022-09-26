@@ -30,10 +30,11 @@ def main():
     # Column vector of (positive) weights.  A small value de-emphasizes
     #   the corresponding metric in the fit.
     metricsNamesAndWeights = [ \
-                        ['SWCF_GLB', 8.00], \
+                        ['SWCF_GLB', 16.00], \
                         ['SWCF_DYCOMS', 1.00], \
                         ['SWCF_HAWAII', 1.00], \
                         ['SWCF_VOCAL', 1.00], \
+                        ['SWCF_VOCAL_near', 8.00], \
                         ['SWCF_LBA', 1.00], \
                         ['SWCF_WP', 1.00], \
                         ['SWCF_EP', 1.00], \
@@ -41,6 +42,8 @@ def main():
                         ['SWCF_SP', 1.00],  \
 ##                        ['SWCF_PA', 1.01], \
                         ['SWCF_CAF', 1.00], \
+                        ['SWCF_Nambian', 1.00], \
+                        ['SWCF_Nambian_near', 8.00], \
                         ['LWCF_GLB', 8.00], \
 ##                        ['LWCF_DYCOMS', 1.01], \
 ##                        ['LWCF_HAWAII', 1.01], \
@@ -80,44 +83,44 @@ def main():
     #    Each netcdf file contains metric values and parameter values for a single simulation.
     paramsNamesScalesAndFilenames = [ \
                     ['clubb_c7', 1.0, \
-                     '20220903/anvil.bmg20220630.sens723_2.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20220903/anvil.bmg20220630.sens723_3.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220915/chrysalis.bmg20220630.sens915_2.ne30pg2_r05_oECv3_Regional.nc',  \
+                     '20220915/chrysalis.bmg20220630.sens915_3.ne30pg2_r05_oECv3_Regional.nc'], \
 #                    ['clubb_c11', 1.0, \
-#                     '20220903/anvil.bmg20220630.sens723_4.ne30pg2_r05_oECv3_Regional.nc',  \
-#                     '20220903/anvil.bmg20220630.sens723_5.ne30pg2_r05_oECv3_Regional.nc'], \
+#                     '20220915/chrysalis.bmg20220630.sens915_4.ne30pg2_r05_oECv3_Regional.nc',  \
+#                     '20220915/chrysalis.bmg20220630.sens915_5.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_gamma_coef', 1.0, \
-                     '20220903/anvil.bmg20220630.sens723_6.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20220903/anvil.bmg20220630.sens723_7.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c8', 1.0, \
-                     '20220903/anvil.bmg20220630.sens723_9.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20220903/anvil.bmg20220630.sens723_8.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220915/chrysalis.bmg20220630.sens915_12.ne30pg2_r05_oECv3_Regional.nc',  \
+                     '20220915/chrysalis.bmg20220630.sens915_13.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_c8', 1.0, \
+#                     '20220915/chrysalis.bmg20220630.sens915_9.ne30pg2_r05_oECv3_Regional.nc',  \
+#                     '20220915/chrysalis.bmg20220630.sens915_8.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_k10', 1.0, \
-                     '20220903/anvil.bmg20220630.sens723_10.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20220903/anvil.bmg20220630.sens723_11.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220915/chrysalis.bmg20220630.sens915_10.ne30pg2_r05_oECv3_Regional.nc', \
+                     '20220915/chrysalis.bmg20220630.sens915_11.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_n2', 1.0, \
-                     '20220903/anvil.bmg20220630.sens723_12.ne30pg2_r05_oECv3_Regional.nc',
-                     '20220903/anvil.bmg20220630.sens723_13.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_altitude_threshold', 1.0, \
-#                     '20220903/anvil.bmg20220630.sens723_22.ne30pg2_r05_oECv3_Regional.nc',
-#                     '20220903/anvil.bmg20220630.sens723_23.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-                    '20220903/anvil.bmg20220630.sens723_16.ne30pg2_r05_oECv3_Regional.nc',
-                    '20220903/anvil.bmg20220630.sens723_17.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_sfc', 1.0, \
-                     '20220903/anvil.bmg20220630.sens723_18.ne30pg2_r05_oECv3_Regional.nc',
-                     '20220903/anvil.bmg20220630.sens723_19.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220915/chrysalis.bmg20220630.sens915_6.ne30pg2_r05_oECv3_Regional.nc',
+                     '20220915/chrysalis.bmg20220630.sens915_7.ne30pg2_r05_oECv3_Regional.nc'], \
+                    ['clubb_altitude_threshold', 0.001, \
+                     '20220915/chrysalis.bmg20220630.sens915_14.ne30pg2_r05_oECv3_Regional.nc',
+                     '20220915/chrysalis.bmg20220630.sens915_15.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
+#                    '20220915/chrysalis.bmg20220630.sens915_16.ne30pg2_r05_oECv3_Regional.nc',
+#                    '20220915/chrysalis.bmg20220630.sens915_17.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_sfc', 1.0, \
+#                     '20220915/chrysalis.bmg20220630.sens915_18.ne30pg2_r05_oECv3_Regional.nc',
+#                     '20220915/chrysalis.bmg20220630.sens915_19.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-                     '20220903/anvil.bmg20220630.sens723_14.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20220903/anvil.bmg20220630.sens723_15.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
-                     '20220903/anvil.bmg20220630.sens723_20.ne30pg2_r05_oECv3_Regional.nc',
-                     '20220903/anvil.bmg20220630.sens723_21.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
-                     '20220903/anvil.bmg20220630.sens723_24.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20220903/anvil.bmg20220630.sens723_25.ne30pg2_r05_oECv3_Regional.nc'], \
+                     '20220915/chrysalis.bmg20220630.sens915_8.ne30pg2_r05_oECv3_Regional.nc', \
+                     '20220915/chrysalis.bmg20220630.sens915_9.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
+#                     '20220915/chrysalis.bmg20220630.sens915_20.ne30pg2_r05_oECv3_Regional.nc',
+#                     '20220915/chrysalis.bmg20220630.sens915_21.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
+#                     '20220915/chrysalis.bmg20220630.sens915_24.ne30pg2_r05_oECv3_Regional.nc', \
+#                     '20220915/chrysalis.bmg20220630.sens915_25.ne30pg2_r05_oECv3_Regional.nc'], \
 ##                    ['micro_vqit', 1.0, \
-##                     '20220903/anvil.bmg20220630.sens723_16.ne30pg2_r05_oECv3_Regional.nc', \
-##                     '20220903/anvil.bmg20220630.sens723_17.ne30pg2_r05_oECv3_Regional.nc'], \
+##                     '20220915/chrysalis.bmg20220630.sens915_16.ne30pg2_r05_oECv3_Regional.nc', \
+##                     '20220915/chrysalis.bmg20220630.sens915_17.ne30pg2_r05_oECv3_Regional.nc'], \
                         ]
 
     dfparamsNamesScalesAndFilenames =  \
@@ -140,12 +143,12 @@ def main():
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
-        '20220903/anvil.bmg20220630.sens723_1.ne30pg2_r05_oECv3_Regional.nc'
+        '20220915/chrysalis.bmg20220630.sens915_1.ne30pg2_r05_oECv3_Regional.nc'
 
     # Metrics from simulation that use the SVD-recommended parameter values
     # Here, we use default simulation just as a placeholder.
     linSolnNcFilename = \
-            '20220903/anvil.bmg20220630.sens723_27.ne30pg2_r05_oECv3_Regional.nc'
+            '20220915/chrysalis.bmg20220630.sens915_1.ne30pg2_r05_oECv3_Regional.nc'
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
 # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -161,7 +164,11 @@ def main():
     'LWCF_SP': 31.96141052, 'PRECT_SP':0.000000034625369, 'SWCF_SP': -70.26461792, 'TMQ_SP':10.95032024,\
     'LWCF_PA': 47.32126999, 'PRECT_PA':0.000000075492694, 'SWCF_PA': -78.27433014, 'TMQ_PA':47.25967789,\
     'LWCF_CAF': 43.99757003784179687500, 'PRECT_CAF':0.000000042313699, 'SWCF_CAF': -52.50243378, 'TMQ_CAF':36.79592514,\
-    'LWCF_VOCAL': 43.99757004, 'PRECT_VOCAL':0.000000001785546, 'SWCF_VOCAL': -77.26232147, 'TMQ_VOCAL':17.59922791  }
+    'LWCF_VOCAL': 43.99757004, 'PRECT_VOCAL':0.000000001785546, 'SWCF_VOCAL': -77.26232147, 'TMQ_VOCAL':17.59922791, \
+    'LWCF_VOCAL_near': 15.4783, 'PRECT_VOCAL_near':0.0000000037719, 'SWCF_VOCAL_near': -58.4732, 'TMQ_VOCAL_near': 14.9315, \
+    'LWCF_Nambian': 12.3294, 'PRECT_Nambian':0.00000000177636 , 'SWCF_Nambian': -66.9495, 'TMQ_Nambian': 24.4823, \
+    'LWCF_Nambian_near': 10.904, 'PRECT_Nambian_near':0.00000000238369 , 'SWCF_Nambian_near': -36.1216, 'TMQ_Nambian_near': 17.5188, \
+        }
 
     # Set up a column vector of observed metrics
     obsMetricValsCol = setupObsCol(obsMetricValsDict, metricsNames)
@@ -879,7 +886,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
                                   - 0.5 * normlzdCurvMatrix @ (dnormlzdParams * dnormlzdParams) \
                                  ) * metricsWeights \
                                )**2  \
-                + 0.2 * np.linalg.norm( dnormlzdParams, ord=1 )
+                + 0.0 * np.linalg.norm( dnormlzdParams, ord=1 )
         #chisqdOrig = np.linalg.norm( (-normlzdDefaultBiasesCol ) * np.reciprocal(metricsWeights) )**2
         #pdb.set_trace()
 
