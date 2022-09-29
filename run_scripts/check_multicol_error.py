@@ -1,5 +1,16 @@
 #!/usr/bin/python3
 
+#===============================================================================
+# Description: Compare 2 multicolumn standalone netcdf files.
+#              Used to help determine if an error has been introduced
+#              
+#   
+# Usage: ./check_multicolumn_error.py file1.nc file2.nc
+#
+# Author: Gunther Huebler
+# Reference: https://github.com/larson-group/clubb/issues/1033
+#===============================================================================
+
 import argparse
 import netCDF4
 import numpy as np
@@ -35,7 +46,7 @@ table = [[  'Var',
             'Max % Diff', 
             'Total Abs Diff', 
             'Avg Abs Diff', 
-            'Index of Max Abs Diff']]
+            'Index of Max Abs Diff (time,nz,ngrdcol)']]
 
 # Loop over each variable, the datasets should contain the same variables
 for var in dset0.variables:
