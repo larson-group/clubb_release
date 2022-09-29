@@ -886,7 +886,7 @@ module clubb_driver
                      ! here we have access to the global version
 
     integer :: & 
-      num_standalone_columns
+      num_standalone_columns, rc
 
     character(len=30) :: &
       multicol_nc_file
@@ -1051,7 +1051,11 @@ module clubb_driver
     close(unit=iunit)
 
     open(unit=iunit, file=runfile, status='old', action='read')
-    read(unit=iunit, nml=configurable_multi_column_nl)
+    read(unit=iunit, nml=configurable_multi_column_nl, iostat=rc)
+    if ( rc /= 0 ) then
+      write(fstderr,*) "configurable_multi_column_nl not found, setting num_standalone_columns = 1"
+      num_standalone_columns = 1
+    end if
     close(unit=iunit)
 
     if ( l_vert_avg_closure ) then
