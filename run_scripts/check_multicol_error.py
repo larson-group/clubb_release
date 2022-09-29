@@ -1,15 +1,36 @@
 #!/usr/bin/python3
 
-#===============================================================================
+#=========================================================================================================
 # Description: Compare 2 multicolumn standalone netcdf files.
-#              Used to help determine if an error has been introduced
-#              
+#              Used to help determine if an error has been introduced in 
+#              clubb_standalone. It's reccomended to only use this test
+#              for arm/bomex, as they are the most stable cases, but it can
+#              be used for any clubb cases.
 #   
-# Usage: ./check_multicolumn_error.py file1.nc file2.nc
+# Usage: Checkout a clean version of clubb with multicolumns enabled by setting 
+#        namelist variables in clubb/input/tunable_parameters/configurable_model_flags.in
+#
+#               $configurable_multi_column_nl
+#               num_standalone_columns = 8
+#               multicol_nc_file = "multicol_data.nc" 
+#
+#        num_standalone_columns: number of columns to run clubb_standalone with
+#        multicol_nc_file: name of outputfile, can be directory (e.g. "../output/multicol_data.nc")
+#
+#        Then clubb_standalone will output the netcdf data to multicol_data.nc, which
+#        should be saved for comparison (say clean_data.nc). Then make changes to clubb
+#        source code, compile and rerun the case with the same number of standalone_columns, 
+#        then compare the output files by calling this script with 
+#
+#           ./check_multicolumn_error.py clean_data.nc multicol_data.nc
+#
+#        It's assumed that for arm/bomex the total of all absolute differences of all fields 
+#        should be below 1.0e-5. If the differences of any field exceed this, then you will be 
+#        given the option to print the max absolute difference by timestep. 
 #
 # Author: Gunther Huebler
 # Reference: https://github.com/larson-group/clubb/issues/1033
-#===============================================================================
+#=========================================================================================================
 
 import argparse
 import netCDF4
