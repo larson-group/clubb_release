@@ -2307,46 +2307,53 @@ module clubb_driver
       call cpu_time(time_start) ! initialize timer for advance_clubb_core
       
       ! Call the parameterization one timestep
+      ! This procedure allows for clubb to be run with multiple columns that are 
+      ! derived from the 1st column. The extra columns will only be put through 
+      ! advance_clubb_core, and are not affected by any additional proceudres such
+      ! as microphysics, radition, silhs, etc.
+      ! To avoid running with multiple columns, set num_standalone_columns=1
+      ! in the configurable_multi_column_nl namelist, located in the 
+      ! configurable_model_flags.in 
       call advance_clubb_core_standalone_multicol( &
-             num_standalone_columns, ( itime == ifinal ), multicol_nc_file, &
-             momentum_heights(begin_height:end_height), &
-             thermodynamic_heights(begin_height:end_height), &
-             zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &
-             params, &
-             gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, & ! Intent(in)
-             thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
-             sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
-             wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
-             rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
-             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
-             wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
-             upwp_sfc_pert, vpwp_sfc_pert, &                      ! intent(in)
-             rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
-             p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
-             rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &        ! Intent(in)
-             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! Intent(in)
-             rfrzm, radf, wphydrometp, &                          ! Intent(in)
-             wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
-             dummy_dx, dummy_dy, &                                ! Intent(in)
-             params, nu_vert_res_dep, lmin, &                     ! Intent(in)
-             clubb_config_flags, &                                ! Intent(in)
-             stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
-             um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
-             thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
-             wp2, wp3(1,:), rtp2, rtp3, thlp2, thlp3, rtpthlp, &  ! Intent(inout)
-             sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
-             wpsclrp, edsclrm, err_code_dummy, &                  ! Intent(inout)
-             rcm(1,:), cloud_frac, &                              ! Intent(inout)
-             wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
-             sclrpthvp, &                                         ! Intent(inout)
-             wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &       ! intent(inout)
-             wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
-             um_pert, vm_pert, upwp_pert, vpwp_pert, &            ! intent(inout)
-             pdf_params, pdf_params_zm, &                         ! Intent(inout)
-             pdf_implicit_coefs_terms, &                          ! intent(inout)
-             Kh_zm, Kh_zt, &                                      ! intent(out)
-             thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! Intent(out)
-             rcm_in_layer, cloud_cover, invrs_tau_zm )            ! Intent(out)
+             num_standalone_columns, ( itime == ifinal ), multicol_nc_file, &     ! Intent(in)
+             momentum_heights(begin_height:end_height), &                         ! Intent(in)
+             thermodynamic_heights(begin_height:end_height), &                    ! Intent(in)
+             zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &       ! Intent(in)
+             params, &                                                            ! Intent(in)
+             gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, &  ! Intent(in)
+             thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &                 ! Intent(in)
+             sclrm_forcing, edsclrm_forcing, wprtp_forcing, &                     ! Intent(in)
+             wpthlp_forcing, rtp2_forcing, thlp2_forcing, &                       ! Intent(in)
+             rtpthlp_forcing, wm_zm, wm_zt, &                                     ! Intent(in)
+             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &                         ! Intent(in)
+             wpsclrp_sfc, wpedsclrp_sfc,  &                                       ! Intent(in)
+             upwp_sfc_pert, vpwp_sfc_pert, &                                      ! intent(in)
+             rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
+             p_in_Pa, rho_zm, rho, exner, &                                       ! Intent(in)
+             rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
+             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &                   ! Intent(in)
+             rfrzm, radf, wphydrometp, &                                          ! Intent(in)
+             wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
+             dummy_dx, dummy_dy, &                                                ! Intent(in)
+             params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
+             clubb_config_flags, &                                                ! Intent(in)
+             stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
+             um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
+             thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
+             wp2, wp3(1,:), rtp2, rtp3, thlp2, thlp3, rtpthlp, &                  ! Intent(inout)
+             sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
+             wpsclrp, edsclrm, err_code_dummy, &                                  ! Intent(inout)
+             rcm(1,:), cloud_frac, &                                              ! Intent(inout)
+             wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
+             sclrpthvp, &                                                         ! Intent(inout)
+             wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &                       ! intent(inout)
+             wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &                   ! intent(inout)
+             um_pert, vm_pert, upwp_pert, vpwp_pert, &                            ! intent(inout)
+             pdf_params, pdf_params_zm, &                                         ! Intent(inout)
+             pdf_implicit_coefs_terms, &                                          ! intent(inout)
+             Kh_zm, Kh_zt, &                                                      ! intent(out)
+             thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
+             rcm_in_layer, cloud_cover, invrs_tau_zm )                            ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -6011,12 +6018,15 @@ module clubb_driver
   !   those arrays for all columns other than the first to cause the output 
   !   to differed when compared to the first column. This leaves the first 
   !   column identical, but creates a set of differing columns we can
-  !   output for comparison. It should be noted that these extra columns are
-  !   not run from start to finish, since each timestep we use the single 
-  !   column input. So other than saving the output to netcdf files, the 
-  !   extra column data is lost after each call, this makes it so the differences
-  !   compared to the first column will not accumulate.
+  !   output for comparison. 
   !   
+  !   It should be noted that these extra columns are
+  !   not run from start to finish in the same way that the 1st column is.
+  !   For each additional column we save the inout variables from timestep
+  !   to timestep, but the input variables are copied from the original 
+  !   column. This is done so that we only need to call advance_clubb_core
+  !   for the extra columns, and can avoid calls to silhs, microphysics,
+  !   radiation, etc.
   !
   !   When a single column is specified, we copy the single column
   !   data back to the single column output arrays and clubb_standalone 
@@ -6024,6 +6034,10 @@ module clubb_driver
   !   we still copy the single column data back to the single column output 
   !   arrays, but we additionally output the mutli column data
   !   to a netcdf file specified by multicol_nc_file.
+  !
+  !   When ngrdcol=1, the additional columns will not be output.
+  !   When ngrdcol>1, netcdf data for the additonal columns will be output 
+  !   to "multicol_nc_file".
   !
   ! References:
   !   See clubb issue #1033 for more detail: 
@@ -7009,7 +7023,7 @@ module clubb_driver
 
     ! If the number of grid columns to use is more than 1, then we want to 
     ! to output the multicolumn data to netcdf files
-    if ( ngrdcol > 1 ) then
+    if ( ngrdcol > 1 .and. l_stats ) then
 
       ! If this is the first call, we have to create and define the netcdf file
       if ( l_first_call ) then
