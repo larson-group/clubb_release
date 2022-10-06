@@ -63,5 +63,4 @@ l_lh_normalize_weights      = .true.
 
 $configurable_multi_column_nl
 num_standalone_columns = 1
-multicol_nc_file = "multicol_data.nc"
 /

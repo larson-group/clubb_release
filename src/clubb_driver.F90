@@ -361,8 +361,10 @@ module clubb_driver
       stats_fmt  ! File format for stats; typically GrADS.
 
     character(len=100) :: & 
-      fname_prefix, & ! Prefix of stats filenames, to be followed by, for example "_zt"
-      fdir            ! Output directory
+      fname_prefix        ! Prefix of stats filenames, to be followed by, for example "_zt"
+
+    character(len=100), parameter :: & 
+      fdir = "../output/" ! Output directory            ! Output directory
 
     real( kind = core_rknd ) :: & 
       stats_tsamp,   & ! Stats sampling interval [s]
@@ -888,11 +890,11 @@ module clubb_driver
     integer :: & 
       num_standalone_columns, rc
 
-    character(len=30) :: &
+    character(len=100) :: &
       multicol_nc_file
 
     namelist /configurable_multi_column_nl/ &
-      num_standalone_columns, multicol_nc_file
+      num_standalone_columns
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -1050,6 +1052,7 @@ module clubb_driver
     read(unit=iunit, nml=configurable_clubb_flags_nl)
     close(unit=iunit)
 
+    ! Read in configurable_multi_column_nl
     open(unit=iunit, file=runfile, status='old', action='read')
     read(unit=iunit, nml=configurable_multi_column_nl, iostat=rc)
     if ( rc /= 0 ) then
@@ -1057,6 +1060,9 @@ module clubb_driver
       num_standalone_columns = 1
     end if
     close(unit=iunit)
+
+    ! Set the multicolumn netcdf file name to {fdir}{case}_multicol.nc
+    multicol_nc_file = trim( fdir ) // trim( fname_prefix ) // "_multicol.nc"
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.
@@ -2051,8 +2057,6 @@ module clubb_driver
 #else
     iunit = 50
 #endif
-
-    fdir = "../output/" ! Output directory
 
     ! Only output radiation files if using a radiation scheme
     if ( trim( rad_scheme ) == "bugsrad" ) then
@@ -6109,7 +6113,7 @@ module clubb_driver
     logical, intent(in) :: &
       l_final_timestep
 
-    character(len=30) :: &
+    character(len=100) :: &
       multicol_nc_file
 
     type(grid), target, intent(in) :: gr
@@ -6501,6 +6505,8 @@ module clubb_driver
     type( grid ), save :: &
       gr_col
 
+!$omp threadprivate( gr_col )
+
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), allocatable, dimension(:,:), save ::  &
       um_col,      & ! u mean wind component (thermodynamic levels)   [m/s]
@@ -6523,6 +6529,11 @@ module clubb_driver
       wp2_col,     & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3_col        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
+!$omp threadprivate( um_col, upwp_col, vm_col, vpwp_col, up2_col )
+!$omp threadprivate( vp2_col, up3_col, vp3_col, rtm_col, wprtp_col, thlm_col )
+!$omp threadprivate( wpthlp_col, rtp2_col, rtp3_col, thlp2_col, thlp3_col )
+!$omp threadprivate( rtpthlp_col, wp2_col, wp3_col )
+
     ! Passive scalar variables
     real( kind = core_rknd ), allocatable, dimension(:,:,:), save :: &
       sclrm_col,     & ! Passive scalar mean (thermo. levels) [units vary]
@@ -6532,6 +6543,8 @@ module clubb_driver
       sclrprtp_col,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp_col    ! sclr'thl' (momentum levels)          [{units vary} K]
 
+!$omp threadprivate( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col )
+
     real( kind = core_rknd ), allocatable, dimension(:,:), save ::  &
       rcm_col,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac_col, & ! cloud fraction (thermodynamic levels)          [-]
@@ -6540,8 +6553,13 @@ module clubb_driver
       rtpthvp_col,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
       thlpthvp_col      ! < th_l' th_v' > (momentum levels)              [K^2]
 
+!$omp threadprivate( rcm_col, cloud_frac_col, wpthvp_col, wp2thvp_col )
+!$omp threadprivate( rtpthvp_col, thlpthvp_col )
+
     real( kind = core_rknd ), allocatable, dimension(:,:,:), save :: &
       sclrpthvp_col     ! < sclr' th_v' > (momentum levels)   [units vary]
+
+!$omp threadprivate( sclrpthvp_col )
 
     real( kind = core_rknd ), allocatable, dimension(:,:), save ::  &
       wp2rtp_col,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
@@ -6556,6 +6574,9 @@ module clubb_driver
       wp2vp2_col,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
       ice_supersat_frac_col    ! ice cloud fraction (thermo. levels)  [-]
 
+!$omp threadprivate( wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, wp4_col )
+!$omp threadprivate( wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col )
+
     ! Variables used to track perturbed version of winds.
     real( kind = core_rknd ), allocatable, dimension(:,:), save :: &
       um_pert_col,   & ! perturbed <u>       [m/s]
@@ -6563,27 +6584,35 @@ module clubb_driver
       upwp_pert_col, & ! perturbed <u'w'>    [m^2/s^2]
       vpwp_pert_col    ! perturbed <v'w'>    [m^2/s^2]
 
+!$omp threadprivate( um_pert_col, vm_pert_col, upwp_pert_col, vpwp_pert_col )
+
 #ifdef GFDL
     real( kind = core_rknd ), allocatable, dimension(:,:,:), save :: &  ! h1g, 2010-06-16
       sclrm_trsport_only_col  ! Passive scalar concentration due to pure transport [{units vary}/s]
+
+!$omp threadprivate( sclrm_trsport_only_col )
 #endif
 
     real( kind = core_rknd ), allocatable, dimension(:,:,:), save :: &
       edsclrm_col   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
-    
+!$omp threadprivate( edsclrm_col )
 
     real( kind = core_rknd ), save :: &
       lmin_col    ! Min. value for the length scale    [m]
 
+!$omp threadprivate( lmin_col )
+
     type(nu_vertical_res_dep), save :: &
       nu_vert_res_dep_col    ! Vertical resolution dependent nu values
 
+!$omp threadprivate( nu_vert_res_dep_col )
+
     type(pdf_parameter), save :: &
-      pdf_params_col ! PDF parameters (thermodynamic levels)    [units vary]
-      
-    type(pdf_parameter), save :: &
+      pdf_params_col,    & ! PDF parameters (thermodynamic levels)    [units vary]
       pdf_params_zm_col    ! PDF parameters on momentum levels        [units vary]
+
+ !$omp threadprivate( pdf_params_col, pdf_params_zm_col )
 
     ! Variables we need to save for the netcdf writing
     integer, save :: netcdf_precision, &
@@ -6591,9 +6620,15 @@ module clubb_driver
                      column_id, vertical_id, time_id, &
                      column_var_id, vertical_var_id, time_var_id
 
+!$omp threadprivate( netcdf_precision, status, ncid, column_id, vertical_id, time_id )
+!$omp threadprivate( column_var_id, vertical_var_id, time_var_id )
+
     logical, save :: l_first_call = .true.
 
     integer, dimension(15), save :: ind
+
+!$omp threadprivate( l_first_call, ind )
+
 
     ! ------------------------ Begin Code ------------------------
 
@@ -7029,7 +7064,9 @@ module clubb_driver
       if ( l_first_call ) then
 
         ! Create the netcdf file
-        status = nf90_create(trim(multicol_nc_file), NF90_NETCDF4, ncid)
+        status = nf90_create( path = trim(multicol_nc_file),  & 
+                              cmode = NF90_CLOBBER,  & ! overwrite existing file
+                              ncid = ncid )
 
         ! Define the variable dimensions, columns, altitude, and time
         status = nf90_def_dim(ncid, 'columns', ngrdcol, column_id)

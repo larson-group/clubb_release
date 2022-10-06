@@ -11,18 +11,14 @@
 #        namelist variables in clubb/input/tunable_parameters/configurable_model_flags.in
 #
 #               $configurable_multi_column_nl
-#               num_standalone_columns = 8
-#               multicol_nc_file = "multicol_data.nc" 
+#               num_standalone_columns = # of columns to run
 #
-#        num_standalone_columns: number of columns to run clubb_standalone with
-#        multicol_nc_file: name of outputfile, can be directory (e.g. "../output/multicol_data.nc")
+#        Then clubb_standalone will output the netcdf data to ../output/case_multicol.nc
+#        which should be saved for comparison somewhere (say save_case_multicol.nc). Then make 
+#        changes to clubb source code, compile and rerun the case with the same number of 
+#        standalone_columns, then compare the output files by calling this script with 
 #
-#        Then clubb_standalone will output the netcdf data to multicol_data.nc, which
-#        should be saved for comparison (say clean_data.nc). Then make changes to clubb
-#        source code, compile and rerun the case with the same number of standalone_columns, 
-#        then compare the output files by calling this script with 
-#
-#           ./check_multicolumn_error.py clean_data.nc multicol_data.nc
+#           ./check_multicolumn_error.py save_case_multicol.nc ../output/case_multicol.nc
 #
 #        It's assumed that for arm/bomex the total of all absolute differences of all fields 
 #        should be below 1.0e-5. If the differences of any field exceed this, then you will be 
