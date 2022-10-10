@@ -4129,6 +4129,11 @@ module advance_xm_wpxp_module
 
     ! Apply a monotonic turbulent flux limiter to xm/w'x'.
     if ( l_mono_flux_lim ) then
+    ! To shut off the monotonic flux limiter for rtm/wprtp, comment the line above 
+    !    and uncomment the following line (credit, Ben Stephens):
+    ! if ( l_mono_flux_lim .and. .not. solve_type==xm_wpxp_rtm ) then
+    ! Omitting the mfl for rtm will tend to dry out rtm, which may be desired or undesired.
+    ! See https://github.com/NCAR/amwg_dev/discussions/134 for more details.
       call monotonic_turbulent_flux_limit( nz, ngrdcol, gr, solve_type, dt, xm_old, & ! intent(in)
                                            xp2, wm_zt, xm_forcing, & ! intent(in)
                                            rho_ds_zm, rho_ds_zt, & ! intent(in)
