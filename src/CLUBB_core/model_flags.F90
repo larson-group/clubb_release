@@ -259,7 +259,13 @@ module model_flags
                                       ! in src/CLUBB_core/mixing_length.F90
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
-      l_linearize_pbl_winds           ! Code to linearize PBL winds
+      l_linearize_pbl_winds,        & ! Code to linearize PBL winds
+      l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that 
+                                      ! eliminates spurious drying tendencies at model top
 
   end type clubb_config_flags_type
 
@@ -377,7 +383,12 @@ module model_flags
                                              l_use_tke_in_wp2_wp3_K_dfsn, &
                                              l_smooth_Heaviside_tau_wpxp, &
                                              l_enable_relaxed_clipping, &
-                                             l_linearize_pbl_winds )
+                                             l_linearize_pbl_winds, &
+                                             l_mono_flux_lim_thlm, &
+                                             l_mono_flux_lim_rtm, &
+                                             l_mono_flux_lim_um, &
+                                             l_mono_flux_lim_vm, &
+                                             l_mono_flux_lim_spikefix )
 
 ! Description:
 !   Sets all CLUBB flags to a default setting.
@@ -504,7 +515,13 @@ module model_flags
                                       ! in src/CLUBB_core/mixing_length.F90
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
-      l_linearize_pbl_winds           ! Code to linearize PBL winds
+      l_linearize_pbl_winds,        & ! Code to linearize PBL winds
+      l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+                                      ! eliminates spurious drying tendencies at model top
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -564,6 +581,11 @@ module model_flags
     l_smooth_Heaviside_tau_wpxp = .false.
     l_enable_relaxed_clipping = .false.
     l_linearize_pbl_winds = .false.
+    l_mono_flux_lim_thlm = .true.
+    l_mono_flux_lim_rtm = .true.
+    l_mono_flux_lim_um = .true.
+    l_mono_flux_lim_vm = .true.
+    l_mono_flux_lim_spikefix = .true.
 
     return
   end subroutine set_default_clubb_config_flags
@@ -618,6 +640,11 @@ module model_flags
                                                  l_smooth_Heaviside_tau_wpxp, &
                                                  l_enable_relaxed_clipping, &
                                                  l_linearize_pbl_winds, &
+                                                 l_mono_flux_lim_thlm, &
+                                                 l_mono_flux_lim_rtm, &
+                                                 l_mono_flux_lim_um, &
+                                                 l_mono_flux_lim_vm, &
+                                                 l_mono_flux_lim_spikefix, &
                                                  clubb_config_flags )
 
 ! Description:
@@ -745,7 +772,13 @@ module model_flags
                                       ! in src/CLUBB_core/mixing_length.F90
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
-      l_linearize_pbl_winds           ! Code to linearize PBL winds
+      l_linearize_pbl_winds,        & ! Code to linearize PBL winds
+      l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+                                      ! eliminates spurious drying tendencies at model top
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -803,6 +836,11 @@ module model_flags
     clubb_config_flags%l_smooth_Heaviside_tau_wpxp = l_smooth_Heaviside_tau_wpxp
     clubb_config_flags%l_enable_relaxed_clipping = l_enable_relaxed_clipping
     clubb_config_flags%l_linearize_pbl_winds = l_linearize_pbl_winds
+    clubb_config_flags%l_mono_flux_lim_thlm = l_mono_flux_lim_thlm
+    clubb_config_flags%l_mono_flux_lim_rtm = l_mono_flux_lim_rtm
+    clubb_config_flags%l_mono_flux_lim_um = l_mono_flux_lim_um
+    clubb_config_flags%l_mono_flux_lim_vm = l_mono_flux_lim_vm
+    clubb_config_flags%l_mono_flux_lim_spikefix = l_mono_flux_lim_spikefix
 
     return
   end subroutine initialize_clubb_config_flags_type
@@ -879,6 +917,11 @@ module model_flags
     write(iunit,*) "l_smooth_Heaviside_tau_wpxp = ", clubb_config_flags%l_smooth_Heaviside_tau_wpxp
     write(iunit,*) "l_enable_relaxed_clipping = ", clubb_config_flags%l_enable_relaxed_clipping
     write(iunit,*) "l_linearize_pbl_winds = ", clubb_config_flags%l_linearize_pbl_winds
+    write(iunit,*) "l_mono_flux_lim_thlm = ",clubb_config_flags%l_mono_flux_lim_thlm
+    write(iunit,*) "l_mono_flux_lim_rtm = ",clubb_config_flags%l_mono_flux_lim_rtm
+    write(iunit,*) "l_mono_flux_lim_um = ",clubb_config_flags%l_mono_flux_lim_vm
+    write(iunit,*) "l_mono_flux_lim_vm = ",clubb_config_flags%l_mono_flux_lim_um
+    write(iunit,*) "l_mono_flux_lim_spikefix = ",clubb_config_flags%l_mono_flux_lim_spikefix
 
     return
   end subroutine print_clubb_config_flags

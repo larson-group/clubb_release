@@ -75,6 +75,11 @@ module advance_xm_wpxp_module
                               l_lmm_stepping, &
                               l_enable_relaxed_clipping, &
                               l_linearize_pbl_winds, &
+                              l_mono_flux_lim_thlm, &
+                              l_mono_flux_lim_rtm, &
+                              l_mono_flux_lim_um, &
+                              l_mono_flux_lim_vm, &
+                              l_mono_flux_lim_spikefix, &
                               order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                               stats_zt, stats_zm, stats_sfc, &
                               rtm, wprtp, thlm, wpthlp, &
@@ -324,7 +329,13 @@ module advance_xm_wpxp_module
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in xm_wpxp_clipping_and_stats
-      l_linearize_pbl_winds           ! Flag (used by E3SM) to linearize PBL winds
+      l_linearize_pbl_winds,        & ! Flag (used by E3SM) to linearize PBL winds
+      l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+                                      ! eliminates spurious drying tendencies at model top
 
     integer, intent(in) :: &
       order_xm_wpxp, &
@@ -471,6 +482,15 @@ module advance_xm_wpxp_module
     ! -------------------- Begin Code --------------------
 
     l_perturbed_wind = l_predict_upwp_vpwp .and. l_linearize_pbl_winds
+
+    ! Check whether monotonic flux limiter flags are set appropriately
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( l_mono_flux_lim_rtm .and. .not. l_mono_flux_lim_spikefix ) then
+        write(fstderr,*) "l_mono_flux_lim_rtm=T with l_mono_flux_lim_spikefix=F can lead to spikes aloft."
+        err_code = clubb_fatal_error
+        return
+      end if
+    end if
 
     ! Check whether the passive scalars are present.
     if ( sclr_dim > 0 ) then
@@ -700,6 +720,11 @@ module advance_xm_wpxp_module
                                             l_upwind_xm_ma,                                 & ! In
                                             l_tke_aniso,                                    & ! In
                                             l_enable_relaxed_clipping,                      & ! In
+                                            l_mono_flux_lim_thlm,                           & ! In
+                                            l_mono_flux_lim_rtm,                            & ! In
+                                            l_mono_flux_lim_um,                             & ! In
+                                            l_mono_flux_lim_vm,                             & ! In
+                                            l_mono_flux_lim_spikefix,                       & ! In
                                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,   & ! In
                                             stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )        ! Out
@@ -730,6 +755,11 @@ module advance_xm_wpxp_module
                                           l_tke_aniso,                                     & ! In
                                           l_enable_relaxed_clipping,                       & ! In
                                           l_perturbed_wind,                                & ! In
+                                          l_mono_flux_lim_thlm,                            & ! In
+                                          l_mono_flux_lim_rtm,                             & ! In
+                                          l_mono_flux_lim_um,                              & ! In
+                                          l_mono_flux_lim_vm,                              & ! In
+                                          l_mono_flux_lim_spikefix,                        & ! In
                                           order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,    & ! In
                                           stats_zt, stats_zm, stats_sfc,                   & ! In
                                           rtm, wprtp, thlm, wpthlp,                        & ! Out
@@ -2258,6 +2288,11 @@ module advance_xm_wpxp_module
                                             l_tke_aniso, &
                                             l_enable_relaxed_clipping, &
                                             l_perturbed_wind, &
+                                            l_mono_flux_lim_thlm, &
+                                            l_mono_flux_lim_rtm, &
+                                            l_mono_flux_lim_um, &
+                                            l_mono_flux_lim_vm, &
+                                            l_mono_flux_lim_spikefix, &
                                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                                             stats_zt, stats_zm, stats_sfc, & 
                                             rtm, wprtp, thlm, wpthlp, &
@@ -2448,8 +2483,14 @@ module advance_xm_wpxp_module
                                    ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
       l_enable_relaxed_clipping, & ! Flag to relax clipping on wpxp in
                                    ! xm_wpxp_clipping_and_stats
-      l_perturbed_wind             ! Whether perturbed winds are being solved
-      
+      l_perturbed_wind,          & ! Whether perturbed winds are being solved
+      l_mono_flux_lim_thlm,      & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,       & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,        & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,        & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix     ! Flag to implement monotonic flux limiter code that
+                                   ! eliminates spurious drying tendencies at model top      
+
     integer, intent(in) :: &
       order_xm_wpxp, &
       order_xp2_xpyp, &
@@ -2852,6 +2893,11 @@ module advance_xm_wpxp_module
            l_upwind_xm_ma, &                          ! Intent(in)
            l_tke_aniso, &                             ! Intent(in)
            l_enable_relaxed_clipping, &               ! Intent(in)
+           l_mono_flux_lim_thlm, &
+           l_mono_flux_lim_rtm, &
+           l_mono_flux_lim_um, &
+           l_mono_flux_lim_vm, &
+           l_mono_flux_lim_spikefix, &
            order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
            order_wp2_wp3, &                           ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
@@ -2878,6 +2924,11 @@ module advance_xm_wpxp_module
            l_upwind_xm_ma, &                          ! Intent(in)
            l_tke_aniso, &                             ! Intent(in)
            l_enable_relaxed_clipping, &               ! Intent(in)
+           l_mono_flux_lim_thlm, &
+           l_mono_flux_lim_rtm, &
+           l_mono_flux_lim_um, &
+           l_mono_flux_lim_vm, &
+           l_mono_flux_lim_spikefix, &
            order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
            order_wp2_wp3, &                           ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
@@ -2914,6 +2965,11 @@ module advance_xm_wpxp_module
              l_upwind_xm_ma, &                                      ! Intent(in)
              l_tke_aniso, &                                         ! Intent(in)
              l_enable_relaxed_clipping, &                           ! Intent(in)
+             l_mono_flux_lim_thlm, &
+             l_mono_flux_lim_rtm, &
+             l_mono_flux_lim_um, &
+             l_mono_flux_lim_vm, &
+             l_mono_flux_lim_spikefix, &
              order_xm_wpxp, order_xp2_xpyp, &                       ! Intent(in)
              order_wp2_wp3, &                                       ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                       ! intent(inout)
@@ -2945,6 +3001,11 @@ module advance_xm_wpxp_module
             l_upwind_xm_ma,                           & ! Intent(in)
             l_tke_aniso,                              & ! Intent(in)
             l_enable_relaxed_clipping,                & ! Intent(in)
+            l_mono_flux_lim_thlm, &
+            l_mono_flux_lim_rtm, &
+            l_mono_flux_lim_um, &
+            l_mono_flux_lim_vm, &
+            l_mono_flux_lim_spikefix, &
             order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
             order_wp2_wp3,                            & ! Intent(in)
             stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
@@ -2971,6 +3032,11 @@ module advance_xm_wpxp_module
             l_upwind_xm_ma,                           & ! Intent(in)
             l_tke_aniso,                              & ! Intent(in)
             l_enable_relaxed_clipping,                & ! Intent(in)
+            l_mono_flux_lim_thlm, &
+            l_mono_flux_lim_rtm, &
+            l_mono_flux_lim_um, &
+            l_mono_flux_lim_vm, &
+            l_mono_flux_lim_spikefix, &
             order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
             order_wp2_wp3,                            & ! Intent(in)
             stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
@@ -2999,6 +3065,11 @@ module advance_xm_wpxp_module
                l_upwind_xm_ma,                           & ! Intent(in)
                l_tke_aniso,                              & ! Intent(in)
                l_enable_relaxed_clipping,                & ! Intent(in)
+               l_mono_flux_lim_thlm, &
+               l_mono_flux_lim_rtm, &
+               l_mono_flux_lim_um, &
+               l_mono_flux_lim_vm, &
+               l_mono_flux_lim_spikefix, &
                order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
                order_wp2_wp3,                            & ! Intent(in)
                stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
@@ -3025,6 +3096,11 @@ module advance_xm_wpxp_module
                l_upwind_xm_ma,                           & ! Intent(in)
                l_tke_aniso,                              & ! Intent(in)
                l_enable_relaxed_clipping,                & ! Intent(in)
+               l_mono_flux_lim_thlm, &
+               l_mono_flux_lim_rtm, &
+               l_mono_flux_lim_um, &
+               l_mono_flux_lim_vm, &
+               l_mono_flux_lim_spikefix, &
                order_xm_wpxp, order_xp2_xpyp,            & ! Intent(in)
                order_wp2_wp3,                            & ! Intent(in)
                stats_zt, stats_zm, stats_sfc,            & ! intent(inout)
@@ -3062,6 +3138,11 @@ module advance_xm_wpxp_module
                                             l_upwind_xm_ma, &
                                             l_tke_aniso, &
                                             l_enable_relaxed_clipping, &
+                                            l_mono_flux_lim_thlm, &
+                                            l_mono_flux_lim_rtm, &
+                                            l_mono_flux_lim_um, &
+                                            l_mono_flux_lim_vm, &
+                                            l_mono_flux_lim_spikefix, &
                                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                                             stats_zt, stats_zm, stats_sfc, & 
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )
@@ -3207,8 +3288,14 @@ module advance_xm_wpxp_module
                                    ! thlm, sclrm, um and vm.
       l_tke_aniso,               & ! For anisotropic turbulent kinetic energy,
                                    ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
-      l_enable_relaxed_clipping    ! Flag to relax clipping on wpxp in
+      l_enable_relaxed_clipping, & ! Flag to relax clipping on wpxp in
                                    ! xm_wpxp_clipping_and_stats
+      l_mono_flux_lim_thlm,      & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,       & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,        & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,        & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix     ! Flag to implement monotonic flux limiter code that
+                                   ! eliminates spurious drying tendencies at model top
       
     integer, intent(in) :: &
       order_xm_wpxp, &
@@ -3332,6 +3419,11 @@ module advance_xm_wpxp_module
            l_upwind_xm_ma, &                          ! Intent(in)
            l_tke_aniso, &                             ! Intent(in)
            l_enable_relaxed_clipping, &               ! Intent(in)
+           l_mono_flux_lim_thlm, &
+           l_mono_flux_lim_rtm, &
+           l_mono_flux_lim_um, &
+           l_mono_flux_lim_vm, &
+           l_mono_flux_lim_spikefix, &
            order_xm_wpxp, order_xp2_xpyp, &           ! Intent(in)
            order_wp2_wp3, &                           ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
@@ -3415,6 +3507,11 @@ module advance_xm_wpxp_module
            l_upwind_xm_ma, &                            ! Intent(in)
            l_tke_aniso, &                               ! Intent(in)
            l_enable_relaxed_clipping, &                 ! Intent(in)
+           l_mono_flux_lim_thlm, &
+           l_mono_flux_lim_rtm, &
+           l_mono_flux_lim_um, &
+           l_mono_flux_lim_vm, &
+           l_mono_flux_lim_spikefix, &
            order_xm_wpxp, order_xp2_xpyp, &             ! Intent(in)
            order_wp2_wp3, &                             ! Intent(in)
            stats_zt, stats_zm, stats_sfc, &             ! intent(inout)
@@ -3510,6 +3607,11 @@ module advance_xm_wpxp_module
              l_upwind_xm_ma, &                                      ! Intent(in)
              l_tke_aniso, &                                         ! Intent(in)
              l_enable_relaxed_clipping, &                           ! Intent(in)
+             l_mono_flux_lim_thlm, &
+             l_mono_flux_lim_rtm, &
+             l_mono_flux_lim_um, &
+             l_mono_flux_lim_vm, &
+             l_mono_flux_lim_spikefix, &
              order_xm_wpxp, order_xp2_xpyp, &                       ! Intent(in)
              order_wp2_wp3, &                                       ! Intent(in)
              stats_zt, stats_zm, stats_sfc, &                       ! intent(inout)
@@ -3626,6 +3728,11 @@ module advance_xm_wpxp_module
                l_upwind_xm_ma, &
                l_tke_aniso, &
                l_enable_relaxed_clipping, &
+               l_mono_flux_lim_thlm, &
+               l_mono_flux_lim_rtm, &
+               l_mono_flux_lim_um, &
+               l_mono_flux_lim_vm, &
+               l_mono_flux_lim_spikefix, &
                order_xm_wpxp, order_xp2_xpyp, &
                order_wp2_wp3, &
                stats_zt, stats_zm, stats_sfc, & 
@@ -3745,12 +3852,6 @@ module advance_xm_wpxp_module
 
     type (grid), target, intent(in) :: gr
 
-    ! Constant Parameters
-    logical, parameter :: &
-      l_mono_flux_lim = .true.!, &  ! Flag for monotonic turbulent flux limiter
-!      l_first_clip_ts = .true., &
-!      l_last_clip_ts  = .false.
-
     logical :: &
       l_first_clip_ts, &
       l_last_clip_ts
@@ -3825,8 +3926,14 @@ module advance_xm_wpxp_module
                                    ! thlm, sclrm, um and vm.
       l_tke_aniso,               & ! For anisotropic turbulent kinetic energy,
                                    ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
-      l_enable_relaxed_clipping    ! Flag to relax clipping on wpxp in
+      l_enable_relaxed_clipping, & ! Flag to relax clipping on wpxp in
                                    ! xm_wpxp_clipping_and_stats
+      l_mono_flux_lim_thlm,      & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,       & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,        & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,        & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix     ! Flag to implement monotonic flux limiter code that
+                                   ! eliminates spurious drying tendencies at model top
 
     integer, intent(in) :: &
       order_xm_wpxp, &
@@ -4128,7 +4235,10 @@ module advance_xm_wpxp_module
 
 
     ! Apply a monotonic turbulent flux limiter to xm/w'x'.
-    if ( l_mono_flux_lim ) then
+    if ( ( l_mono_flux_lim_thlm .and. solve_type == xm_wpxp_thlm ) .or. &
+         ( l_mono_flux_lim_rtm .and. solve_type == xm_wpxp_rtm ) .or. &
+         ( l_mono_flux_lim_um .and. solve_type == xm_wpxp_um ) .or. &
+         ( l_mono_flux_lim_vm .and. solve_type == xm_wpxp_vm ) ) then
       call monotonic_turbulent_flux_limit( nz, ngrdcol, gr, solve_type, dt, xm_old, & ! intent(in)
                                            xp2, wm_zt, xm_forcing, & ! intent(in)
                                            rho_ds_zm, rho_ds_zt, & ! intent(in)
@@ -4136,6 +4246,7 @@ module advance_xm_wpxp_module
                                            xp2_threshold, xm_tol, l_implemented, & ! intent(in)
                                            low_lev_effect, high_lev_effect, & ! intent(in)
                                            l_upwind_xm_ma, & ! intent(in)
+                                           l_mono_flux_lim_spikefix, & ! intent(in)
                                            stats_zt, stats_zm, & ! intent(inout)
                                            xm, wpxp ) ! intent(inout)
     end if ! l_mono_flux_lim

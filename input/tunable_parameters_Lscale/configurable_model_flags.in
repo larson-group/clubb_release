@@ -41,6 +41,11 @@ l_e3sm_config                = .false.,
 l_vary_convect_depth         = .false.,
 l_use_tke_in_wp3_pr_turb_term = .false.,
 l_use_tke_in_wp2_wp3_K_dfsn  = .false.
+l_mono_flux_lim_thlm         = .true.,
+l_mono_flux_lim_rtm          = .true.,
+l_mono_flux_lim_um           = .true.,
+l_mono_flux_lim_vm           = .true.,
+l_mono_flux_lim_spikefix     = .true.
 /
 
 &configurable_silhs_flags_nl

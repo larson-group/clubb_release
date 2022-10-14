@@ -34,6 +34,7 @@ module mono_flux_limiter
                                              xp2_threshold, xm_tol, l_implemented, &
                                              low_lev_effect, high_lev_effect, &
                                              l_upwind_xm_ma, &
+                                             l_mono_flux_lim_spikefix, &
                                              stats_zt, stats_zm, &
                                              xm, wpxp )
 
@@ -384,9 +385,11 @@ module mono_flux_limiter
       high_lev_effect   ! Index of highest level that has an effect (for lev. k)
 
     logical, intent(in) :: &
-      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
-                     ! approximation rather than a centered differencing for turbulent or
-                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_upwind_xm_ma, & ! This flag determines whether we want to use an upwind differencing
+                        ! approximation rather than a centered differencing for turbulent or
+                        ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_mono_flux_lim_spikefix ! Flag to implement monotonic flux limiter code that
+                               ! eliminates spurious drying tendencies at model top 
 
     ! Input/Output Variables
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -609,11 +612,22 @@ module mono_flux_limiter
         max_x_allowable(i,k) = maxval( max_x_allowable_lev(i,low_lev:high_lev) )
  
         ! Find the upper limit for w'x' for a monotonic turbulent flux.
-        wpxp_mfl_max(i,k)  &
-        = invrs_rho_ds_zm(i,k)  &
+        ! The following "if" statement ensures there are no "spikes" at the top of the column,
+        ! which can cause unphysical rtm tendencies over the height of the column.
+        ! The fix essentially turns off the monotonic flux limiter for these special cases,
+        ! but tests show that it still performs well otherwise and runs stably.
+        if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm & 
+           .and. abs( wpxp(i,km1) ) > 1 / ( dt * gr%invrs_dzt(i,k) ) &
+           * ( xm_without_ta(i,k) - min_x_allowable(i,k) ) &
+           .and. wpxp(i,km1) < 0.0_core_rknd ) then
+          wpxp_mfl_max(i,k) = 0.0_core_rknd
+        else
+          wpxp_mfl_max(i,k)  &
+          = invrs_rho_ds_zm(i,k)  &
                   * (   ( rho_ds_zt(i,k) / (dt*gr%invrs_dzt(i,k)) )  &
                         * ( xm_without_ta(i,k) - min_x_allowable(i,k) )  &
                       + rho_ds_zm(i,km1) * wpxp(i,km1)  )
+        endif
 
         ! Find the lower limit for w'x' for a monotonic turbulent flux.
         wpxp_mfl_min(i,k)  &
