@@ -42,7 +42,12 @@ l_use_tke_in_wp3_pr_turb_term = .true.,
 l_use_tke_in_wp2_wp3_K_dfsn  = .false.,
 l_smooth_Heaviside_tau_wpxp  = .false.,
 l_enable_relaxed_clipping    = .false.,
-l_linearize_pbl_winds        = .false.
+l_linearize_pbl_winds        = .false.,
+l_mono_flux_lim_thlm         = .true.,
+l_mono_flux_lim_rtm          = .true.,
+l_mono_flux_lim_um           = .true.,
+l_mono_flux_lim_vm           = .true.,
+l_mono_flux_lim_spikefix     = .true.
 /
 
 &configurable_silhs_flags_nl

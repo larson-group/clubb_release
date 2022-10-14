@@ -4513,7 +4513,12 @@ contains
                                                  l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
                                                  l_smooth_Heaviside_tau_wpxp, & ! Out
                                                  l_enable_relaxed_clipping, & ! Out
-                                                 l_linearize_pbl_winds ) ! Out
+                                                 l_linearize_pbl_winds, & ! Out
+                                                 l_mono_flux_lim_thlm, & ! Out
+                                                 l_mono_flux_lim_rtm, & ! Out
+                                                 l_mono_flux_lim_um, & ! Out
+                                                 l_mono_flux_lim_vm, & ! Out
+                                                 l_mono_flux_lim_spikefix ) ! Out
 
     use model_flags, only: &
         set_default_clubb_config_flags  ! Procedure
@@ -4636,7 +4641,13 @@ contains
                                       ! in src/CLUBB_core/mixing_length.F90
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp
                                       ! in xm_wpxp_clipping_and_stats
-      l_linearize_pbl_winds           ! Code to linearize PBL winds
+      l_linearize_pbl_winds,        & ! Code to linearize PBL winds
+      l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+                                      ! eliminates spurious drying tendencies at model top
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -4686,7 +4697,12 @@ contains
                                          l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
                                          l_smooth_Heaviside_tau_wpxp, & ! Out
                                          l_enable_relaxed_clipping, & ! Out
-                                         l_linearize_pbl_winds ) ! Out
+                                         l_linearize_pbl_winds, & ! Out
+                                         l_mono_flux_lim_thlm, & ! Out
+                                         l_mono_flux_lim_rtm, & ! Out
+                                         l_mono_flux_lim_um, & ! Out
+                                         l_mono_flux_lim_vm, & ! Out
+                                         l_mono_flux_lim_spikefix ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -4742,6 +4758,11 @@ contains
                                                      l_smooth_Heaviside_tau_wpxp, & ! In
                                                      l_enable_relaxed_clipping, & ! In
                                                      l_linearize_pbl_winds, & ! In
+                                                     l_mono_flux_lim_thlm, & ! In
+                                                     l_mono_flux_lim_rtm, & ! In
+                                                     l_mono_flux_lim_um, & ! In
+                                                     l_mono_flux_lim_vm, & ! In
+                                                     l_mono_flux_lim_spikefix, & ! In
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -4866,7 +4887,13 @@ contains
                                       ! in src/CLUBB_core/mixing_length.F90
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp
                                       ! in xm_wpxp_clipping_and_stats
-      l_linearize_pbl_winds           ! Code to linearize PBL winds
+      l_linearize_pbl_winds,        & ! Code to linearize PBL winds
+      l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+                                      ! eliminates spurious drying tendencies at model top
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -4921,6 +4948,11 @@ contains
                                              l_smooth_Heaviside_tau_wpxp, & ! In
                                              l_enable_relaxed_clipping, & ! In
                                              l_linearize_pbl_winds, & ! In
+                                             l_mono_flux_lim_thlm, & ! In
+                                             l_mono_flux_lim_rtm, & ! In
+                                             l_mono_flux_lim_um, & ! In
+                                             l_mono_flux_lim_vm, & ! In
+                                             l_mono_flux_lim_spikefix, & ! In
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api
