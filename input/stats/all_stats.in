@@ -19,7 +19,7 @@ vars_zt =
 'rel_humidity', 'wp3','thlp3','rtp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp', 'Skw_zt',
 'Skthl_zt','Skrt_zt',
 'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wp2hmp',
-'w_up_in_cloud', 'w_down_in_cloud',
+'w_up_in_cloud', 'w_down_in_cloud', 'cld_updr_frac', 'cld_downdr_frac',
 'wprtpthlp', 'wpup2', 'wpvp2', 'rc_coef', 'Lscale_pert_1', 'Lscale_pert_2',
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Nc_in_cloud', 'Nc_activated', 'Nccnm', 'Nim', 'snowslope', 'Nsm', 'Ngm', 
