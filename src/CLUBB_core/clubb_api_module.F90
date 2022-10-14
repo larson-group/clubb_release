@@ -615,6 +615,7 @@ contains
     qclvar, &                                               ! intent(out)
 #endif
     thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+    cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -839,10 +840,12 @@ contains
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
-      invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac, & ! cloudy downdraft fraction             [-]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -1037,10 +1040,12 @@ contains
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), dimension(1,gr%nz) ::  &
-      wprcp_col,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud_col,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud_col,   & ! Average cloudy downdraft velocity     [m/s]
-      invrs_tau_zm_col         ! One divided by tau on zm levels               [1/s]
+      wprcp_col,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud_col,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud_col,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac_col,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac_col, & ! cloudy downdraft fraction             [-]
+      invrs_tau_zm_col             ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(1,gr%nz) :: &
       Kh_zt_col, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -1193,6 +1198,8 @@ contains
     wprcp_col(1,:) = wprcp
     w_up_in_cloud_col(1,:) = w_up_in_cloud
     w_down_in_cloud_col(1,:) = w_down_in_cloud
+    cloudy_updraft_frac_col(1,:) = cloudy_updraft_frac
+    cloudy_downdraft_frac_col(1,:) = cloudy_downdraft_frac
     rcm_in_layer_col(1,:) = rcm_in_layer
     cloud_cover_col(1,:) = cloud_cover
     invrs_tau_zm_col(1,:) = invrs_tau_zm
@@ -1245,6 +1252,7 @@ contains
                qclvar_col, &                                      ! intent(out)
 #endif
       thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, & ! intent(out)
+      cloudy_updraft_frac_col, cloudy_downdraft_frac_col, &        ! intent(out)
       rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &      ! intent(out)
       err_code_api )                                          ! intent(out)
     
@@ -1321,6 +1329,8 @@ contains
     wprcp = wprcp_col(1,:)
     w_up_in_cloud = w_up_in_cloud_col(1,:)
     w_down_in_cloud = w_down_in_cloud_col(1,:)
+    cloudy_updraft_frac = cloudy_updraft_frac_col(1,:)
+    cloudy_downdraft_frac = cloudy_downdraft_frac_col(1,:)
     invrs_tau_zm = invrs_tau_zm_col(1,:)
     Kh_zt = Kh_zt_col(1,:)
     Kh_zm = Kh_zm_col(1,:)
@@ -1382,6 +1392,7 @@ contains
     qclvar, &                                               ! intent(out)
 #endif
     thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+    cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -1603,10 +1614,12 @@ contains
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) ::  &
-      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
-      invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac, & ! cloudy downdraft fraction             [-]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -1678,6 +1691,7 @@ contains
                qclvar, &                                      ! intent(out)
 #endif
       thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+      cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
       rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
       err_code_api )                                          ! intent(out)
 

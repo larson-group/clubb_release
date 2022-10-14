@@ -511,13 +511,15 @@ module clubb_driver
       sigma_sqd_w_zt    ! PDF width parameter interpolated to t-levs.  [-]
 
     real( kind = core_rknd ), dimension(:), allocatable ::  &
-      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
-      ice_supersat_frac, & ! ice cloud fraction (thermo. levels)   [-]
-      rcm_in_layer,      & ! rcm within cloud layer                [kg/kg]
-      cloud_cover,       & ! cloud cover                           [-]
-      invrs_tau_zm         ! One divided by tau on zm levels       [1/s]
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac, & ! cloudy downdraft fraction             [-]
+      ice_supersat_frac,     & ! ice cloud fraction (thermo. levels)   [-]
+      rcm_in_layer,          & ! rcm within cloud layer                [kg/kg]
+      cloud_cover,           & ! cloud cover                           [-]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       ug,       & ! u geostrophic wind                           [m/s]
@@ -1501,6 +1503,8 @@ module clubb_driver
     allocate( wprcp(1:gr%nz) )     ! w'rc'
     allocate( w_up_in_cloud(1:gr%nz) )
     allocate( w_down_in_cloud(1:gr%nz) )
+    allocate( cloudy_updraft_frac(1:gr%nz) )
+    allocate( cloudy_downdraft_frac(1:gr%nz) )
     allocate( wp2(1:gr%nz) )       ! w'^2
     allocate( wp3(1,1:gr%nz) )       ! w'^3
     allocate( rtp2(1:gr%nz) )      ! rt'^2
@@ -1654,6 +1658,8 @@ module clubb_driver
     wprcp(1:gr%nz)   = zero          ! w'rc'
     w_up_in_cloud(1:gr%nz) = zero
     w_down_in_cloud(1:gr%nz) = zero
+    cloudy_updraft_frac(1:gr%nz) = zero
+    cloudy_downdraft_frac(1:gr%nz) = zero
 
     p_in_Pa(1:gr%nz)= zero           ! pressure (Pa)
     exner(1:gr%nz) = zero            ! exner
@@ -2357,6 +2363,7 @@ module clubb_driver
              pdf_implicit_coefs_terms, &                                          ! intent(inout)
              Kh_zm, Kh_zt, &                                                      ! intent(out)
              thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
+             cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
              rcm_in_layer, cloud_cover, invrs_tau_zm )                            ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2750,6 +2757,8 @@ module clubb_driver
     deallocate( wprcp )     ! w'rc'
     deallocate( w_up_in_cloud )
     deallocate( w_down_in_cloud )
+    deallocate( cloudy_updraft_frac )
+    deallocate( cloudy_downdraft_frac )
     deallocate( wp2 )       ! w'^2
     deallocate( wp3 )       ! w'^3
     deallocate( rtp2 )      ! rt'^2
@@ -6008,6 +6017,7 @@ module clubb_driver
     qclvar, &                                               ! intent(out)
 #endif
     thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+    cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
   !
@@ -6329,10 +6339,12 @@ module clubb_driver
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
-      invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac, & ! cloudy downdraft fraction             [-]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -6454,10 +6466,12 @@ module clubb_driver
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
-      wprcp_col,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud_col,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud_col,   & ! Average cloudy downdraft velocity     [m/s]
-      invrs_tau_zm_col         ! One divided by tau on zm levels               [ngrdcol/s]
+      wprcp_col,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud_col,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud_col,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac_col,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac_col, & ! cloudy downdraft fraction             [-]
+      invrs_tau_zm_col             ! One divided by tau on zm levels       [ngrdcol/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nz) :: &
       Kh_zt_col, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -6879,6 +6893,8 @@ module clubb_driver
       wprcp_col(i,:) = wprcp
       w_up_in_cloud_col(i,:) = w_up_in_cloud
       w_down_in_cloud_col(i,:) = w_down_in_cloud
+      cloudy_updraft_frac_col(i,:) = cloudy_updraft_frac
+      cloudy_downdraft_frac_col(i,:) = cloudy_downdraft_frac
       rcm_in_layer_col(i,:) = rcm_in_layer
       cloud_cover_col(i,:) = cloud_cover
       invrs_tau_zm_col(i,:) = invrs_tau_zm
@@ -6956,6 +6972,7 @@ module clubb_driver
                qclvar_col,                                                      & ! intent(out)
 #endif
       thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col,           & ! intent(out)
+      cloudy_updraft_frac_col, cloudy_downdraft_frac_col,                       & ! intent(out)
       rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col,                      & ! intent(out)
       err_code_api )                                                              ! intent(out)
     
@@ -7040,6 +7057,8 @@ module clubb_driver
     wprcp = wprcp_col(1,:)
     w_up_in_cloud = w_up_in_cloud_col(1,:)
     w_down_in_cloud = w_down_in_cloud_col(1,:)
+    cloudy_updraft_frac = cloudy_updraft_frac_col(1,:)
+    cloudy_downdraft_frac = cloudy_downdraft_frac_col(1,:)
     invrs_tau_zm = invrs_tau_zm_col(1,:)
     Kh_zt = Kh_zt_col(1,:)
     Kh_zm = Kh_zm_col(1,:)

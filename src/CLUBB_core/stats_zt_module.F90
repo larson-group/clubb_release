@@ -77,6 +77,8 @@ module stats_zt_module
         iwp2rcp, &
         iw_up_in_cloud, &
         iw_down_in_cloud, &
+        icld_updr_frac, &
+        icld_downdr_frac, &
         iwprtpthlp, &
         irc_coef, &
         isigma_sqd_w_zt, &
@@ -1434,6 +1436,20 @@ module stats_zt_module
         call stat_assign( var_index=iw_down_in_cloud, var_name="w_down_in_cloud", &
              var_description="Mean W in saturated downdrafts", &
              var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+         k = k + 1
+
+      case ('cld_updr_frac')
+        icld_updr_frac = k
+        call stat_assign( var_index=icld_updr_frac, var_name="cld_updr_frac", &
+             var_description="Cloudy Updraft Fraction", &
+             var_units="-", l_silhs=.false., grid_kind=stats_zt )
+         k = k + 1
+
+      case ('cld_downdr_frac')
+        icld_downdr_frac = k
+        call stat_assign( var_index=icld_downdr_frac, var_name="cld_downdr_frac", &
+             var_description="Cloudy Downdraft Fraction", &
+             var_units="-", l_silhs=.false., grid_kind=stats_zt )
          k = k + 1
 
       case ('wprtpthlp')

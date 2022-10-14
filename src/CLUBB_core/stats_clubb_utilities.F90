@@ -1878,7 +1878,8 @@ module stats_clubb_utilities
                      tau_zm, Kh_zm, thlprcp, &
                      rtprcp, rcp2, em, a3_coef, a3_coef_zt, &
                      wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
-                     w_up_in_cloud, w_down_in_cloud, pdf_params, pdf_params_zm, &
+                     w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
+                     cloudy_downdraft_frac, pdf_params, pdf_params_zm, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
                      wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp, &
                      wpsclrpthlp, wpedsclrp, edsclrm, edsclrm_forcing, &
@@ -1942,6 +1943,8 @@ module stats_clubb_utilities
         iwp2rcp, & 
         iw_up_in_cloud, &
         iw_down_in_cloud, &
+        icld_updr_frac, &
+        icld_downdr_frac, &
         iwprtpthlp, &
         irc_coef, &
         isigma_sqd_w_zt, & 
@@ -2234,35 +2237,37 @@ module stats_clubb_utilities
         rsat              ! Saturation mixing ratio              [kg/kg]
 
     real( kind = core_rknd ), intent(in), dimension(nz) :: & 
-        wp2_zt,        & ! w'^2 on thermo. grid                  [m^2/s^2]
-        thlp2_zt,      & ! thl'^2 on thermo. grid                [K^2]
-        wpthlp_zt,     & ! w'thl' on thermo. grid                [m K/s]
-        wprtp_zt,      & ! w'rt' on thermo. grid                 [m kg/(kg s)]
-        rtp2_zt,       & ! rt'^2 on therm. grid                  [(kg/kg)^2]
-        rtpthlp_zt,    & ! rt'thl' on thermo. grid               [kg K/kg]
-        up2_zt,        & ! u'^2 on thermo. grid                  [m^2/s^2]
-        vp2_zt,        & ! v'^2 on thermo. grid                  [m^2/s^2]
-        upwp_zt,       & ! u'w' on thermo. grid                  [m^2/s^2]
-        vpwp_zt,       & ! v'w' on thermo. grid                  [m^2/s^2]
-        wpup2,         & ! w'u'^2 (thermodynamic levels)         [m^3/s^3]
-        wpvp2,         & ! w'v'^2 (thermodynamic levels)         [m^3/s^3]
-        wp2up2,        & ! < w'^2u'^2 > (momentum levels)        [m^4/s^4]
-        wp2vp2,        & ! < w'^2v'^2 > (momentum levels)        [m^4/s^4]
-        wp4,           & ! < w'^4 > (momentum levels)            [m^4/s^4]
-        tau_zm,        & ! Eddy diss. time scale; momentum levs. [s]
-        Kh_zm,         & ! Eddy diff. coef. on momentum levels   [m^2/s]
-        thlprcp,       & ! thl'rc'                               [K kg/kg]
-        rtprcp,        & ! rt'rc'                                [kg^2/kg^2]
-        rcp2,          & ! rc'^2                                 [kg^2/kg^2]
-        em,            & ! Turbulent Kinetic Energy (TKE)        [m^2/s^2]
-        a3_coef,       & ! The a3 coefficient from CLUBB eqns    [-]
-        a3_coef_zt,    & ! The a3 coef. interp. to the zt grid   [-]
-        wp3_zm,        & ! w'^3 interpolated to momentum levels  [m^3/s^3]
-        wp3_on_wp2,    & ! w'^3 / w'^2 on the zm grid            [m/s]
-        wp3_on_wp2_zt, & ! w'^3 / w'^2 on the zt grid            [m/s]
-        Skw_velocity,  & ! Skewness velocity                     [m/s]
-        w_up_in_cloud, & ! Mean cloudy updraft speed             [m/s]
-        w_down_in_cloud  ! Mean cloudy downdraft speed           [m/s]
+      wp2_zt,                & ! w'^2 on thermo. grid                  [m^2/s^2]
+      thlp2_zt,              & ! thl'^2 on thermo. grid                [K^2]
+      wpthlp_zt,             & ! w'thl' on thermo. grid                [m K/s]
+      wprtp_zt,              & ! w'rt' on thermo. grid                 [m kg/(kg s)]
+      rtp2_zt,               & ! rt'^2 on therm. grid                  [(kg/kg)^2]
+      rtpthlp_zt,            & ! rt'thl' on thermo. grid               [kg K/kg]
+      up2_zt,                & ! u'^2 on thermo. grid                  [m^2/s^2]
+      vp2_zt,                & ! v'^2 on thermo. grid                  [m^2/s^2]
+      upwp_zt,               & ! u'w' on thermo. grid                  [m^2/s^2]
+      vpwp_zt,               & ! v'w' on thermo. grid                  [m^2/s^2]
+      wpup2,                 & ! w'u'^2 (thermodynamic levels)         [m^3/s^3]
+      wpvp2,                 & ! w'v'^2 (thermodynamic levels)         [m^3/s^3]
+      wp2up2,                & ! < w'^2u'^2 > (momentum levels)        [m^4/s^4]
+      wp2vp2,                & ! < w'^2v'^2 > (momentum levels)        [m^4/s^4]
+      wp4,                   & ! < w'^4 > (momentum levels)            [m^4/s^4]
+      tau_zm,                & ! Eddy diss. time scale; momentum levs. [s]
+      Kh_zm,                 & ! Eddy diff. coef. on momentum levels   [m^2/s]
+      thlprcp,               & ! thl'rc'                               [K kg/kg]
+      rtprcp,                & ! rt'rc'                                [kg^2/kg^2]
+      rcp2,                  & ! rc'^2                                 [kg^2/kg^2]
+      em,                    & ! Turbulent Kinetic Energy (TKE)        [m^2/s^2]
+      a3_coef,               & ! The a3 coefficient from CLUBB eqns    [-]
+      a3_coef_zt,            & ! The a3 coef. interp. to the zt grid   [-]
+      wp3_zm,                & ! w'^3 interpolated to momentum levels  [m^3/s^3]
+      wp3_on_wp2,            & ! w'^3 / w'^2 on the zm grid            [m/s]
+      wp3_on_wp2_zt,         & ! w'^3 / w'^2 on the zt grid            [m/s]
+      Skw_velocity,          & ! Skewness velocity                     [m/s]
+      w_up_in_cloud,         & ! Mean cloudy updraft speed             [m/s]
+      w_down_in_cloud,       & ! Mean cloudy downdraft speed           [m/s]
+      cloudy_updraft_frac,   & ! Cloudy updraft fraction               [-]
+      cloudy_downdraft_frac    ! Cloudy downdraft fraction             [-]
 
     type(pdf_parameter), intent(in) :: & 
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
@@ -2391,6 +2396,10 @@ module stats_clubb_utilities
       call stat_update_var( iw_up_in_cloud, w_up_in_cloud, & ! intent(in)
                             stats_zt ) ! intent(inout)
       call stat_update_var( iw_down_in_cloud, w_down_in_cloud, & ! intent(in)
+                            stats_zt ) ! intent(inout)
+      call stat_update_var( icld_updr_frac, cloudy_updraft_frac, & ! intent(in)
+                            stats_zt ) ! intent(inout)
+      call stat_update_var( icld_downdr_frac, cloudy_downdraft_frac, & ! intent(in)
                             stats_zt ) ! intent(inout)
       call stat_update_var( iwprtpthlp, wprtpthlp, & ! intent(in)
                             stats_zt ) ! intent(inout)

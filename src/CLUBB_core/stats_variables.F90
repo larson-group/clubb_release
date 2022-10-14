@@ -112,14 +112,16 @@ module stats_variables
      iwp2rcp = 0, & 
      iw_up_in_cloud = 0, &
      iw_down_in_cloud = 0, &
+     icld_updr_frac = 0,   &
+     icld_downdr_frac = 0, &
      iwprtpthlp = 0, &
      irc_coef = 0, &
      isigma_sqd_w_zt = 0, & 
      irho = 0
 !$omp threadprivate( iLscale_up, iLscale_down, &
 !$omp   iLscale_pert_1, iLscale_pert_2, &
-!$omp   itau_zt, iinvrs_tau_zt, iKh_zt, iwp2thvp, iwp2rcp, iw_up_in_cloud, &
-!$omp   iw_down_in_cloud, iwprtpthlp, irc_coef, isigma_sqd_w_zt, irho )
+!$omp   itau_zt, iinvrs_tau_zt, iKh_zt, iwp2thvp, iwp2rcp, iw_up_in_cloud, iw_down_in_cloud, &
+!$omp   icld_updr_frac, icld_downdr_frac, iwprtpthlp, irc_coef, isigma_sqd_w_zt, irho )
 
   integer, public :: &
      iinvrs_tau_zm       = 0, &
