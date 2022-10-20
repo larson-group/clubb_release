@@ -1,0 +1,88 @@
+commit 712c7fcb9fe3cd06406e1cff510e45070e950884
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Oct 18 11:57:00 2022 -0500
+
+    Adding space because commit ba3b1ef5ceaa07706f078cc61cfdac22d3c6a1c3 in the sys_admin repo fixed a bug causing tests to fail, this means we have RESOLVED:d8df4eea1e41bee8cbd3de374148241f040fc03c, which was only labelled as failing since we erroneously checked the commit range it was included in.
+
+commit dd43df7acdaec448a6db87daff8537523060d646
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Oct 14 18:11:58 2022 -0500
+
+    I forgot to add cld_updr_frac and cld_downdr_frac to all_stats.in
+    in the last commit.
+
+commit d8df4eea1e41bee8cbd3de374148241f040fc03c
+Merge: 7550b3e11 5b79c73c6
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Oct 14 18:00:59 2022 -0500
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit 7550b3e11a7b6218c5eedc78f78e6397423141bb
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Oct 14 17:49:46 2022 -0500
+
+    I am adding cloudy_updraft_frac and cloudy_downdraft_frac as
+    outputs to the calculate_w_up_in_cloud code.
+    
+    These fields are non-interactive for the standard set of cases.
+    Thus, all cases are bit-for-bit identical.
+    
+    However, for the w_up_in_cloud and w_down_in_cloud results themselves,
+    it is possible that results might not be bit-for-bit since
+    the location of the max(eps, ...) clipping in the denominator
+    is changed.  However, results should not be appreciable different.
+
+commit 5b79c73c681b98162df10f5500226f6940704016
+Author: Benjamin A. Stephens <59519056+bstephens82@users.noreply.github.com>
+Date:   Fri Oct 14 09:32:04 2022 -0600
+
+    Creating new flags to control monotonic flux limiter (#1039)
+    
+    * Creating new flags to control monotonic flux limiter and the IF statement fix for the spikes found in CAM.
+    
+    * Removing no-longer-necessary logical l_mono_flux_lim.
+    
+    * Adding requested changes from PR (intent statements and editing error statement).
+    
+    * Accidentally set flag to false. Changing to true.
+
+commit 1bf74dd6f173a645d7bd448ab6bc07028c8ffadd
+Author: Benjamin A. Stephens <59519056+bstephens82@users.noreply.github.com>
+Date:   Thu Oct 13 08:55:53 2022 -0600
+
+    Updating monotonic flux limiter code to remove spikes. (#1038)
+    
+    Also putting a commented out code change in advance_xm_wpxp,
+    in case shutting of the flux limiter entirely for rtm is preferred.
+    
+    See https://github.com/NCAR/amwg_dev/discussions/134 for discussion.
+    
+    This commit will be BIT_CHANGING although the differences are only
+    obvious in sensitive cases like arm_97.
+
+commit ee00186816ceb16bee810c897fabe4deb660fcc3
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Oct 10 13:22:56 2022 -0500
+
+    Adds commented-out line that prevents the monotonic flux
+    
+    limiter from acting on rtm.  The comments are included to remind us of how to do this in case we choose to do so in the future.
+
+commit 73e61e51337b34e2a9c651fc61c7600a1bf6702e
+Author: huebler <huebler@uwm.edu>
+Date:   Thu Oct 6 15:30:26 2022 -0500
+
+    Making save variables in the multicol code threadprivate, this fixes the openmp test. Also changing the way we name and save the multicol output, this allows the parallel run to run with multiple columns. I've reflected the changes in comments where relevant. larson-group/clubb#1033
+
+commit 946dda9c077bd1889644cf8933d6469cffa517d1
+Author: huebler <huebler@uwm.edu>
+Date:   Thu Oct 6 11:47:16 2022 -0500
+
+    Namelists need to be closed with a '/', and omitting it will break many tests.
+
+commit 72afa580969c647295ee087c7bf605c9bb6c01fe
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Oct 4 11:25:02 2022 -0500
+
+    Adding comments, setting to num_standalone_columns=1 by default, and preventing multicolumn output when l_stats=false. larson-group/clubb#1033
