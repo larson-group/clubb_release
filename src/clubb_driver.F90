@@ -2334,54 +2334,94 @@ module clubb_driver
       call cpu_time(time_start) ! initialize timer for advance_clubb_core
       
       ! Call the parameterization one timestep
-      ! This procedure allows for clubb to be run with multiple columns that are 
-      ! derived from the 1st column. The extra columns will only be put through 
-      ! advance_clubb_core, and are not affected by any additional proceudres such
-      ! as microphysics, radition, silhs, etc.
-      ! To avoid running with multiple columns, set num_standalone_columns=1
-      ! in the configurable_multi_column_nl namelist, located in the 
-      ! configurable_model_flags.in 
-      call advance_clubb_core_standalone_multicol( &
-             num_standalone_columns, ( itime == ifinal ), multicol_nc_file, &     ! Intent(in)
-             momentum_heights(begin_height:end_height), &                         ! Intent(in)
-             thermodynamic_heights(begin_height:end_height), &                    ! Intent(in)
-             zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &       ! Intent(in)
-             params, &                                                            ! Intent(in)
-             gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, &  ! Intent(in)
-             thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &                 ! Intent(in)
-             sclrm_forcing, edsclrm_forcing, wprtp_forcing, &                     ! Intent(in)
-             wpthlp_forcing, rtp2_forcing, thlp2_forcing, &                       ! Intent(in)
-             rtpthlp_forcing, wm_zm, wm_zt, &                                     ! Intent(in)
-             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &                         ! Intent(in)
-             wpsclrp_sfc, wpedsclrp_sfc,  &                                       ! Intent(in)
-             upwp_sfc_pert, vpwp_sfc_pert, &                                      ! intent(in)
-             rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
-             p_in_Pa, rho_zm, rho, exner, &                                       ! Intent(in)
-             rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
-             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &                   ! Intent(in)
-             rfrzm, radf, wphydrometp, &                                          ! Intent(in)
-             wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
-             dummy_dx, dummy_dy, &                                                ! Intent(in)
-             params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
-             clubb_config_flags, &                                                ! Intent(in)
-             stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
-             um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
-             thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
-             wp2, wp3(1,:), rtp2, rtp3, thlp2, thlp3, rtpthlp, &                  ! Intent(inout)
-             sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
-             wpsclrp, edsclrm, err_code_dummy, &                                  ! Intent(inout)
-             rcm(1,:), cloud_frac, &                                              ! Intent(inout)
-             wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
-             sclrpthvp, &                                                         ! Intent(inout)
-             wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &                       ! intent(inout)
-             wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &                   ! intent(inout)
-             um_pert, vm_pert, upwp_pert, vpwp_pert, &                            ! intent(inout)
-             pdf_params, pdf_params_zm, &                                         ! Intent(inout)
-             pdf_implicit_coefs_terms, &                                          ! intent(inout)
-             Kh_zm, Kh_zt, &                                                      ! intent(out)
-             thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
-             cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
-             rcm_in_layer, cloud_cover, invrs_tau_zm )                            ! Intent(out)
+      if ( num_standalone_columns == 1 ) then
+        ! Call the clubb core api for one column
+        call advance_clubb_core_api( &
+               gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, &  ! Intent(in)
+               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &                 ! Intent(in)
+               sclrm_forcing, edsclrm_forcing, wprtp_forcing, &                     ! Intent(in)
+               wpthlp_forcing, rtp2_forcing, thlp2_forcing, &                       ! Intent(in)
+               rtpthlp_forcing, wm_zm, wm_zt, &                                     ! Intent(in)
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &                         ! Intent(in)
+               wpsclrp_sfc, wpedsclrp_sfc,  &                                       ! Intent(in)
+               upwp_sfc_pert, vpwp_sfc_pert, &                                      ! intent(in)
+               rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
+               p_in_Pa, rho_zm, rho, exner, &                                       ! Intent(in)
+               rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &                   ! Intent(in)
+               rfrzm, radf, wphydrometp, &                                          ! Intent(in)
+               wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
+               dummy_dx, dummy_dy, &                                                ! Intent(in)
+               params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
+               clubb_config_flags, &                                                ! Intent(in)
+               stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
+               um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
+               thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
+               wp2, wp3(1,:), rtp2, rtp3, thlp2, thlp3, rtpthlp, &                  ! Intent(inout)
+               sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
+               wpsclrp, edsclrm, err_code_dummy, &                                  ! Intent(inout)
+               rcm(1,:), cloud_frac, &                                              ! Intent(inout)
+               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
+               sclrpthvp, &                                                         ! Intent(inout)
+               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &                       ! intent(inout)
+               wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &                   ! intent(inout)
+               um_pert, vm_pert, upwp_pert, vpwp_pert, &                            ! intent(inout)
+               pdf_params, pdf_params_zm, &                                         ! Intent(inout)
+               pdf_implicit_coefs_terms, &                                          ! intent(inout)
+               Kh_zm, Kh_zt, &                                                      ! intent(out)
+               thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
+               cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
+               rcm_in_layer, cloud_cover, invrs_tau_zm )                            ! Intent(out)
+      else
+        ! This procedure allows for clubb to be run with multiple columns that are 
+        ! derived from the 1st column. The extra columns will only be put through 
+        ! advance_clubb_core, and are not affected by any additional proceudres such
+        ! as microphysics, radition, silhs, etc.
+        ! To avoid running with multiple columns, set num_standalone_columns=1
+        ! in the configurable_multi_column_nl namelist, located in the 
+        ! configurable_model_flags.in 
+        call advance_clubb_core_standalone_multicol( &
+               num_standalone_columns, ( itime == ifinal ), multicol_nc_file, &     ! Intent(in)
+               momentum_heights(begin_height:end_height), &                         ! Intent(in)
+               thermodynamic_heights(begin_height:end_height), &                    ! Intent(in)
+               zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &       ! Intent(in)
+               params, &                                                            ! Intent(in)
+               gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, &  ! Intent(in)
+               thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &                 ! Intent(in)
+               sclrm_forcing, edsclrm_forcing, wprtp_forcing, &                     ! Intent(in)
+               wpthlp_forcing, rtp2_forcing, thlp2_forcing, &                       ! Intent(in)
+               rtpthlp_forcing, wm_zm, wm_zt, &                                     ! Intent(in)
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &                         ! Intent(in)
+               wpsclrp_sfc, wpedsclrp_sfc,  &                                       ! Intent(in)
+               upwp_sfc_pert, vpwp_sfc_pert, &                                      ! intent(in)
+               rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
+               p_in_Pa, rho_zm, rho, exner, &                                       ! Intent(in)
+               rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &                   ! Intent(in)
+               rfrzm, radf, wphydrometp, &                                          ! Intent(in)
+               wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
+               dummy_dx, dummy_dy, &                                                ! Intent(in)
+               params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
+               clubb_config_flags, &                                                ! Intent(in)
+               stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
+               um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
+               thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
+               wp2, wp3(1,:), rtp2, rtp3, thlp2, thlp3, rtpthlp, &                  ! Intent(inout)
+               sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
+               wpsclrp, edsclrm, err_code_dummy, &                                  ! Intent(inout)
+               rcm(1,:), cloud_frac, &                                              ! Intent(inout)
+               wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
+               sclrpthvp, &                                                         ! Intent(inout)
+               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &                       ! intent(inout)
+               wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &                   ! intent(inout)
+               um_pert, vm_pert, upwp_pert, vpwp_pert, &                            ! intent(inout)
+               pdf_params, pdf_params_zm, &                                         ! Intent(inout)
+               pdf_implicit_coefs_terms, &                                          ! intent(inout)
+               Kh_zm, Kh_zt, &                                                      ! intent(out)
+               thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &                    ! Intent(out)
+               cloudy_updraft_frac, cloudy_downdraft_frac, &                        ! Intent(out)
+               rcm_in_layer, cloud_cover, invrs_tau_zm )                            ! Intent(out)
+      end if
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
