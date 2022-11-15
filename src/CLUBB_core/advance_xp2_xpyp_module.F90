@@ -2141,10 +2141,8 @@ module advance_xp2_xpyp_module
     use constants_clubb, only: &
         one  ! Constant(s)
 
-    use lapack_wrap, only:  & 
-        tridag_solve,  & ! Variable(s)
-        tridag_solvex !, &
-!        band_solve
+    use matrix_solver_wrapper, only:  & 
+        tridiag_solve ! Procedure(s)
 
     use grid_class, only: & 
         grid ! Type
@@ -2247,12 +2245,10 @@ module advance_xp2_xpyp_module
 
     if ( l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
       
-      do i = 1, ngrdcol
-        call tridag_solvex & 
-             ( solve_type_str, nz, nrhs, &                                        ! Intent(in) 
-               lhs(kp1_mdiag,i,:), lhs(k_mdiag,i,:), lhs(km1_mdiag,i,:), rhs(i,:,1:nrhs),  & ! Intent(inout)
-               xapxbp(i,:,1:nrhs), rcond(i) )                                             ! Intent(out)
-      end do
+      call tridiag_solve( solve_type_str,    & ! Intent(in) 
+                          ngrdcol, nz, nrhs, & ! Intent(in) 
+                          lhs, rhs,          & ! Intent(inout)
+                          xapxbp, rcond )      ! Intent(out)
 
       if ( l_single_lhs_solve ) then
         do i = 1, ngrdcol
@@ -2278,12 +2274,10 @@ module advance_xp2_xpyp_module
 
     else
       
-      do i = 1, ngrdcol
-        call tridag_solve & 
-             ( solve_type_str, nz, nrhs, lhs(kp1_mdiag,i,:),  &      ! Intent(in)
-               lhs(k_mdiag,i,:), lhs(km1_mdiag,i,:), rhs(i,:,1:nrhs),  &    ! Intent(inout)
-               xapxbp(i,:,1:nrhs) )                                     ! Intent(out)
-      end do
+      call tridiag_solve( solve_type_str,    & ! Intent(in)
+                          ngrdcol, nz, nrhs, & ! Intent(in)
+                          lhs, rhs,          & ! Intent(inout)
+                          xapxbp )             ! Intent(out)
       
     end if
 

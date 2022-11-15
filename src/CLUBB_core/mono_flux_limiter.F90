@@ -1161,8 +1161,8 @@ module mono_flux_limiter
     ! Subroutine mfl_xm_solve solves the tridiagonal matrix equation for xm at
     ! timestep index (t+1).
 
-    use lapack_wrap, only:  & 
-        tridag_solve  ! Procedure(s)
+    use matrix_solver_wrapper, only:  & 
+        tridiag_solve ! Procedure(s)
 
     use clubb_precision, only: &
         core_rknd
@@ -1213,10 +1213,10 @@ module mono_flux_limiter
     end select
 
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
-    call tridag_solve & 
-         ( solve_type_str, nz, 1, lhs(kp1_tdiag,:),  &  ! Intent(in)
-           lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs,  &       ! Intent(inout)
-           xm )                                            ! Intent(out)
+    call tridiag_solve( solve_type_str, & ! Intent(in)
+                        nz,             & ! Intent(inout)
+                        lhs, rhs,       & ! Intent(inout)
+                        xm )              ! Intent(out)
 
     ! Check for errors
     if ( clubb_at_least_debug_level( 0 ) ) then

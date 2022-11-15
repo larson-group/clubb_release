@@ -1328,8 +1328,8 @@ module advance_microphys_module
     use error_code, only: &
         clubb_at_least_debug_level   ! Procedure
 
-    use lapack_wrap, only:  & 
-        tridag_solve    ! Procedure(s)
+    use matrix_solver_wrapper, only:  & 
+        tridiag_solve ! Procedure(s)
 
     use parameters_microphys, only: &
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
@@ -1485,8 +1485,10 @@ module advance_microphys_module
 
     ! Solve system using tridag_solve. This uses LAPACK sgtsv,
     ! which relies on Gaussian elimination to decompose the matrix.
-    call tridag_solve( solve_type, gr%nz, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
-                       rhs, hmm )
+    call tridiag_solve( solve_type, &
+                        gr%nz, &
+                        lhs, rhs, &
+                        hmm )
 
 
     ! Statistics

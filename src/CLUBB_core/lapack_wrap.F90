@@ -20,19 +20,21 @@ module lapack_wrap
   implicit none
 
   ! Simple routines
-  public :: tridag_solve, band_solve
+  public :: lapack_tridag_solve, &
+            lapack_band_solve
 
   ! Expert routines
-  public :: tridag_solvex, band_solvex
+  public :: lapack_tridag_solvex, &
+            lapack_band_solvex
 
   private ! Set Default Scope
 
   contains
 
 !-----------------------------------------------------------------------
-  subroutine tridag_solvex( solve_type, ndim, nrhs, &
-                            supd, diag, subd, rhs, &
-                            solution, rcond )
+  subroutine lapack_tridag_solvex( solve_type, ndim, nrhs, &
+                                   supd, diag, subd, rhs, &
+                                   solution, rcond )
 
 ! Description:
 !   Solves a tridiagonal system of equations (expert routine).
@@ -168,13 +170,12 @@ module lapack_wrap
     end select
 
     return
-  end subroutine tridag_solvex
+  end subroutine lapack_tridag_solvex
 
 !-----------------------------------------------------------------------
-  subroutine tridag_solve & 
-             ( solve_type, ndim, nrhs, &
-               supd, diag, subd, rhs, &
-               solution )
+  subroutine lapack_tridag_solve( solve_type, ndim, nrhs, &
+                                  supd, diag, subd, rhs, &
+                                  solution )
 
 ! Description:
 !   Solves a tridiagonal system of equations (simple routine)
@@ -287,12 +288,12 @@ module lapack_wrap
     end select
 
     return
-  end subroutine tridag_solve
+  end subroutine lapack_tridag_solve
 
 !-----------------------------------------------------------------------
-  subroutine band_solvex( solve_type, nsup, nsub, ndim, nrhs,  & 
-                          lhs, rhs, &
-                          solution, rcond )
+  subroutine lapack_band_solvex( solve_type, nsup, nsub, ndim, nrhs,  & 
+                                 lhs, rhs, &
+                                 solution, rcond )
 ! Description:
 !   Restructure and then solve a band diagonal system, with
 !   diagnostic output
@@ -491,12 +492,12 @@ module lapack_wrap
     end select
 
     return
-  end subroutine band_solvex
+  end subroutine lapack_band_solvex
 
 !-----------------------------------------------------------------------
-  subroutine band_solve( solve_type, nsup, nsub, ndim, nrhs, lhs,  & 
-                          rhs, &
-                          solution )
+  subroutine lapack_band_solve( solve_type, nsup, nsub, ndim, nrhs, lhs,  & 
+                                rhs, &
+                                solution )
 ! Description:
 !   Restructure and then solve a band diagonal system
 
@@ -714,6 +715,6 @@ module lapack_wrap
     end select
 
     return
-  end subroutine band_solve
+  end subroutine lapack_band_solve
 
 end module lapack_wrap

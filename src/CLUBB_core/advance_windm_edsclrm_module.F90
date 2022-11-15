@@ -1544,9 +1544,8 @@ module advance_windm_edsclrm_module
     use grid_class, only: & 
         grid ! Type
 
-    use lapack_wrap, only:  & 
-        tridag_solve, & ! Procedure(s)
-        tridag_solvex
+    use matrix_solver_wrapper, only:  & 
+        tridiag_solve ! Procedure(s)
 
     use stats_variables, only: & 
         l_stats_samp
@@ -1605,13 +1604,11 @@ module advance_windm_edsclrm_module
 
     ! Solve tridiagonal system for xm.
     if ( l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
-      
-      do i = 1, ngrdcol
-        call tridag_solvex( & 
-               "windm_edsclrm", nz, nrhs, &                            ! intent(in) 
-               lhs(kp1_tdiag,i,:), lhs(k_tdiag,i,:), lhs(km1_tdiag,i,:), rhs(i,:,:), & ! intent(inout)
-               solution(i,:,:), rcond(i) )                                          ! intent(out)
-      end do
+
+      call tridiag_solve( "windm_edsclrm",    & ! Intent(in) 
+                          ngrdcol, nz, nrhs,  & ! Intent(in) 
+                          lhs, rhs,           & ! Intent(inout)
+                          solution, rcond )     ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
       do i = 1, ngrdcol
@@ -1620,11 +1617,10 @@ module advance_windm_edsclrm_module
       end do
     else
 
-      do i = 1, ngrdcol
-        call tridag_solve( "windm_edsclrm", nz, nrhs, &                             ! intent(in)
-                           lhs(kp1_tdiag,i,:),  lhs(k_tdiag,i,:), lhs(km1_tdiag,i,:), rhs(i,:,:), & ! intent(inout)
-                           solution(i,:,:) )                                                  ! intent(out)
-      end do
+      call tridiag_solve( "windm_edsclrm",    & ! Intent(in) 
+                          ngrdcol, nz, nrhs,  & ! Intent(in) 
+                          lhs, rhs,           & ! Intent(inout)
+                          solution )            ! Intent(out)
     end if
 
     return

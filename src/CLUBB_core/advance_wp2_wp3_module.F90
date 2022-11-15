@@ -1045,9 +1045,8 @@ module advance_wp2_wp3_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
-    use lapack_wrap, only:  & 
-        band_solve,  & ! Procedure(s) 
-        band_solvex
+    use matrix_solver_wrapper, only:  & 
+        band_solve ! Procedure(s) 
 
     use parameter_indices, only: &
         nparams, & ! Variable(s)
@@ -1098,10 +1097,6 @@ module advance_wp2_wp3_module
     use stats_type, only: stats ! Type
 
     implicit none
-
-    ! Parameter Constants
-    integer, parameter :: & 
-      nrhs = 1      ! Number of RHS vectors
 
     ! ----------------------- Input Variables -----------------------
     integer, intent(in) :: &
@@ -1219,13 +1214,12 @@ module advance_wp2_wp3_module
     ! Solve the system with LAPACK
     if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
 
-      ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      ! Note that this can change the answer slightly
-      do i = 1, ngrdcol
-        call band_solvex( "wp2_wp3", 2, 2, 2*nz, nrhs,  & ! intent(in)
-                          lhs(:,i,:), rhs(i,:),         & ! intent(inout)
-                          solut(i,:), rcond(i) )          ! intent(out)
-      end do
+      ! Solve the system and return condition number
+      ! Note: When using lapack this can change the answer slightly
+      call band_solve( "wp2_wp3",             & ! intent(in)
+                        ngrdcol, 2, 2, 2*nz,  & ! intent(in)
+                        lhs, rhs,             & ! intent(inout)
+                        solut, rcond )          ! intent(out)
 
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
       do i = 1, ngrdcol
@@ -1235,13 +1229,11 @@ module advance_wp2_wp3_module
       
     else
 
-      ! Perform LU decomp and solve system (LAPACK)
-      do i = 1, ngrdcol
-        call band_solve( "wp2_wp3", 2, 2, 2*nz, nrhs, & ! intent(in)
-                         lhs(:,i,:),                  & ! intent(in)
-                         rhs(i,:),                    & ! intent(inout)
-                         solut(i,:) )                   ! intent(out)
-      end do
+      ! Solve the system 
+      call band_solve( "wp2_wp3",           & ! intent(in)
+                       ngrdcol, 2, 2, 2*nz, & ! intent(in)
+                       lhs, rhs,            & ! intent(inout)
+                       solut )                ! intent(out)
 
     end if
     
