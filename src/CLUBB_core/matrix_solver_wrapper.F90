@@ -30,10 +30,10 @@ module matrix_solver_wrapper
   !-------------------------------------------------------------------
 
   subroutine band_solve_single_rhs_multiple_lhs( &
-                solve_name, & !solver_method, & 
-                ngrdcol, nsup, nsub, ndim, &
-                lhs, rhs, &
-                solution, rcond )
+                solve_name, & !solver_method, & ! Intent(in)
+                ngrdcol, nsup, nsub, ndim,    & ! Intent(in)
+                lhs, rhs,                     & ! Intent(inout)
+                solution, rcond )               ! Intent(out)
 
     use lapack_wrap, only:  & 
           lapack_band_solve,  & ! Procedure(s)
@@ -80,18 +80,18 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       do i = 1, ngrdcol
-        call lapack_band_solvex( "xm_wpxp", nsup, nsub, ndim, 1, & ! intent(in) 
-                          lhs(:,i,:), rhs(i,:), & ! intent(inout)
-                          solution(i,:), rcond(i) ) ! intent(out)
+        call lapack_band_solvex( "xm_wpxp", nsup, nsub, ndim, 1,  & ! Intent(in) 
+                          lhs(:,i,:), rhs(i,:),                   & ! Intent(inout)
+                          solution(i,:), rcond(i) )                 ! Intent(out)
       end do
 
     else
 
       ! Perform LU decomp and solve system (LAPACK)
       do i = 1, ngrdcol
-        call lapack_band_solve( "xm_wpxp", nsup, nsub, ndim, 1, lhs(:,i,:), & ! intent(in) 
-                         rhs(i,:), & ! intent(inout)
-                         solution(i,:) ) ! intent(out)
+        call lapack_band_solve( "xm_wpxp", nsup, nsub, ndim, 1, & ! Intent(in) 
+                                lhs(:,i,:), rhs(i,:),           & ! Intent(inout)
+                                solution(i,:) )                   ! Intent(out)
       end do
 
     end if
@@ -101,10 +101,10 @@ module matrix_solver_wrapper
   end subroutine band_solve_single_rhs_multiple_lhs
 
   subroutine band_solve_multiple_rhs_lhs( &
-                solve_name, & !solver_method, & 
-                ngrdcol, nsup, nsub, ndim, nrhs, &
-                lhs, rhs, &
-                solution, rcond )
+                solve_name, & !solver_method,     & ! Intent(in)
+                ngrdcol, nsup, nsub, ndim, nrhs,  & ! Intent(in)
+                lhs, rhs,                         & ! Intent(inout)
+                solution, rcond )                   ! Intent(out)
 
     use lapack_wrap, only:  & 
           lapack_band_solve,  & ! Procedure(s)
@@ -152,18 +152,18 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       do i = 1, ngrdcol
-        call lapack_band_solvex( "xm_wpxp", nsup, nsub, ndim, nrhs, & ! intent(in) 
-                          lhs(:,i,:), rhs(i,:,:), & ! intent(inout)
-                          solution(i,:,:), rcond(i) ) ! intent(out)
+        call lapack_band_solvex( "xm_wpxp", nsup, nsub, ndim, nrhs, & ! Intent(in) 
+                          lhs(:,i,:), rhs(i,:,:),                   & ! Intent(inout)
+                          solution(i,:,:), rcond(i) )                 ! Intent(out)
       end do
 
     else
 
       ! Perform LU decomp and solve system (LAPACK)
       do i = 1, ngrdcol
-        call lapack_band_solve( "xm_wpxp", nsup, nsub, ndim, nrhs, lhs(:,i,:), & ! intent(in) 
-                         rhs(i,:,:), & ! intent(inout)
-                         solution(i,:,:) ) ! intent(out)
+        call lapack_band_solve( "xm_wpxp", nsup, nsub, ndim, nrhs,  & ! Intent(in) 
+                                lhs(:,i,:), rhs(i,:,:),             & ! Intent(inout)
+                                solution(i,:,:) )                     ! Intent(out)
       end do
 
     end if
@@ -179,14 +179,14 @@ module matrix_solver_wrapper
   !-------------------------------------------------------------------
 
   subroutine tridiag_solve_single_rhs_lhs( &
-                solve_name, & !solver_method, & 
-                ndim, &
-                lhs, rhs, &
-                solution, rcond )
+                solve_name, & !solver_method, & ! Intent(in)
+                ndim,                         & ! Intent(in)
+                lhs, rhs,                     & ! Intent(inout)
+                solution, rcond )               ! Intent(out)
 
     use lapack_wrap, only:  & 
-          lapack_tridag_solve,  & ! Procedure(s)
-          lapack_tridag_solvex
+          lapack_tridiag_solve,  & ! Procedure(s)
+          lapack_tridiag_solvex
 
     implicit none
 
@@ -222,7 +222,7 @@ module matrix_solver_wrapper
     if ( present(rcond) ) then
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      call lapack_tridag_solvex( & 
+      call lapack_tridiag_solvex( & 
              solve_name, ndim, 1,                   & ! Intent(in) 
              lhs(1,:), lhs(2,:), lhs(3,:), rhs(:),  & ! Intent(inout)
              solution(:), rcond )                     ! Intent(out)
@@ -230,7 +230,7 @@ module matrix_solver_wrapper
     else
 
       ! Perform LU decomp and solve system (LAPACK)
-      call lapack_tridag_solve( & 
+      call lapack_tridiag_solve( & 
              solve_name, ndim, 1,                   & ! Intent(in)
              lhs(1,:), lhs(2,:), lhs(3,:), rhs(:),  & ! Intent(inout)
              solution(:) )                            ! Intent(out)
@@ -243,14 +243,14 @@ module matrix_solver_wrapper
 
 
   subroutine tridiag_solve_single_rhs_multiple_lhs( &
-                solve_name, & !solver_method, & 
-                ngrdcol, ndim, &
-                lhs, rhs, &
-                solution, rcond )
+                solve_name, & !solver_method, & ! Intent(in)
+                ngrdcol, ndim,                & ! Intent(in)
+                lhs, rhs,                     & ! Intent(inout)
+                solution, rcond )               ! Intent(out)
 
     use lapack_wrap, only:  & 
-          lapack_tridag_solve,  & ! Procedure(s)
-          lapack_tridag_solvex
+          lapack_tridiag_solve,  & ! Procedure(s)
+          lapack_tridiag_solvex
 
     implicit none
 
@@ -291,7 +291,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       do i = 1, ngrdcol
-        call lapack_tridag_solvex( & 
+        call lapack_tridiag_solvex( & 
                solve_name, ndim, 1,                           & ! Intent(in) 
                lhs(1,i,:), lhs(2,i,:), lhs(3,i,:), rhs(i,:),  & ! Intent(inout)
                solution(i,:), rcond(i) )                        ! Intent(out)
@@ -301,7 +301,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK)
       do i = 1, ngrdcol
-        call lapack_tridag_solve( & 
+        call lapack_tridiag_solve( & 
                solve_name, ndim, 1,                           & ! Intent(in)
                lhs(1,i,:), lhs(2,i,:), lhs(3,i,:), rhs(i,:),  & ! Intent(inout)
                solution(i,:) )                                  ! Intent(out)
@@ -314,14 +314,14 @@ module matrix_solver_wrapper
   end subroutine tridiag_solve_single_rhs_multiple_lhs
 
   subroutine tridiag_solve_multiple_rhs_lhs( &
-                solve_name, & !solver_method, & 
-                ngrdcol, ndim, nrhs, &
-                lhs, rhs, &
-                solution, rcond )
+                solve_name, & !solver_method, & ! Intent(in)
+                ngrdcol, ndim, nrhs,          & ! Intent(in)
+                lhs, rhs,                     & ! Intent(inout)
+                solution, rcond )               ! Intent(out)
 
     use lapack_wrap, only:  & 
-          lapack_tridag_solve,  & ! Procedure(s)
-          lapack_tridag_solvex
+          lapack_tridiag_solve,  & ! Procedure(s)
+          lapack_tridiag_solvex
 
     implicit none
 
@@ -363,7 +363,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       do i = 1, ngrdcol
-        call lapack_tridag_solvex( & 
+        call lapack_tridiag_solvex( & 
                solve_name, ndim, nrhs,                          & ! Intent(in) 
                lhs(1,i,:), lhs(2,i,:), lhs(3,i,:), rhs(i,:,:),  & ! Intent(inout)
                solution(i,:,:), rcond(i) )                        ! Intent(out)
@@ -373,7 +373,7 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK)
       do i = 1, ngrdcol
-        call lapack_tridag_solve( & 
+        call lapack_tridiag_solve( & 
                solve_name, ndim, nrhs,                          & ! Intent(in)
                lhs(1,i,:), lhs(2,i,:), lhs(3,i,:), rhs(i,:,:),  & ! Intent(inout)
                solution(i,:,:) )                                  ! Intent(out)

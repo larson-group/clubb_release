@@ -2905,7 +2905,7 @@ module advance_xm_wpxp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
        if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "rtm monotonic flux limiter:  tridag failed"
+          write(fstderr,*) "rtm monotonic flux limiter:  tridiag failed"
           return
        end if
     end if
@@ -2936,7 +2936,7 @@ module advance_xm_wpxp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
        if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "thlm monotonic flux limiter:  tridag failed"
+          write(fstderr,*) "thlm monotonic flux limiter:  tridiag failed"
           return
        end if
     end if
@@ -2977,7 +2977,7 @@ module advance_xm_wpxp_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridag failed"
+            write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridiag failed"
             return
          end if
       end if
@@ -3013,7 +3013,7 @@ module advance_xm_wpxp_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "um monotonic flux limiter:  tridag failed"
+          write(fstderr,*) "um monotonic flux limiter:  tridiag failed"
           return
         end if
       end if
@@ -3044,7 +3044,7 @@ module advance_xm_wpxp_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "vm monotonic flux limiter:  tridag failed"
+          write(fstderr,*) "vm monotonic flux limiter:  tridiag failed"
           return
         end if
       end if
@@ -3077,7 +3077,7 @@ module advance_xm_wpxp_module
 
          if ( clubb_at_least_debug_level( 0 ) ) then
            if ( err_code == clubb_fatal_error ) then
-             write(fstderr,*) "um_pert monotonic flux limiter:  tridag failed"
+             write(fstderr,*) "um_pert monotonic flux limiter:  tridiag failed"
              return
            end if
          end if
@@ -3108,7 +3108,7 @@ module advance_xm_wpxp_module
 
          if ( clubb_at_least_debug_level( 0 ) ) then
            if ( err_code == clubb_fatal_error ) then
-             write(fstderr,*) "vm_pert monotonic flux limiter:  tridag failed"
+             write(fstderr,*) "vm_pert monotonic flux limiter:  tridiag failed"
              return
            end if
          end if
@@ -3431,7 +3431,7 @@ module advance_xm_wpxp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
-        write(fstderr,*) "rtm monotonic flux limiter:  tridag failed"
+        write(fstderr,*) "rtm monotonic flux limiter:  tridiag failed"
         return
       end if
     end if
@@ -3519,7 +3519,7 @@ module advance_xm_wpxp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
-        write(fstderr,*) "thlm monotonic flux limiter:  tridag failed" 
+        write(fstderr,*) "thlm monotonic flux limiter:  tridiag failed" 
         return
       end if
     end if
@@ -3619,7 +3619,7 @@ module advance_xm_wpxp_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridag failed"
+          write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridiag failed"
           return
         end if
       end if
@@ -3686,10 +3686,11 @@ module advance_xm_wpxp_module
     ! Local Variables
     integer :: i
 
-    call band_solve( "xm_wpxp", &
-                      ngrdcol, nsup, nsub, 2*nz, nrhs, & ! intent(in) 
-                      lhs, rhs, & ! intent(inout)
-                      solution, rcond ) ! intent(out)
+    ! Solve the system 
+    call band_solve( "xm_wpxp",                         & ! Intent(in) 
+                      ngrdcol, nsup, nsub, 2*nz, nrhs,  & ! Intent(in) 
+                      lhs, rhs,                         & ! Intent(inout)
+                      solution, rcond )                   ! Intent(out)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code /= clubb_no_error ) then

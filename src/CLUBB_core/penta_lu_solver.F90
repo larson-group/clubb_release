@@ -1,7 +1,7 @@
 module penta_lu_solvers
 
   ! Description:
-  !   These routines solve lhs*sol=rhs using LU decomp. 
+  !   These routines solve lhs*soln=rhs using LU decomp. 
   !   
   !   LHS is stored in band diagonal form. 
   !     lhs = | lhs(0,1)  lhs(-1,1)  lhs(-2,1)     0           0          0          0
@@ -98,7 +98,7 @@ module penta_lu_solvers
 
   !=============================================================================
   subroutine penta_lu_solve_single_rhs( ndim, ngrdcol, lhs, rhs, &
-                                        sol )
+                                        soln )
     ! Description:
     !   Written for a single RHS and multiple LHS, optimized for CPUs.
     !------------------------------------------------------------------------
@@ -120,7 +120,7 @@ module penta_lu_solvers
 
     ! ----------------------- Output Variables -----------------------  
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim) ::  &
-      sol       ! Solution vector
+      soln      ! solution vector
 
     ! ----------------------- Local Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim) ::  &
@@ -137,7 +137,7 @@ module penta_lu_solvers
 
     do i = 1, ngrdcol
       l_diag_invrs = 1.0_core_rknd / lhs(0,i,1)
-      sol(i,1)     = l_diag_invrs * rhs(i,1) 
+      soln(i,1)    = l_diag_invrs * rhs(i,1) 
       u_1(i,1)     = l_diag_invrs * lhs(-1,i,1) 
       u_2(i,1)     = l_diag_invrs * lhs(-2,i,1) 
     end do
@@ -145,46 +145,46 @@ module penta_lu_solvers
     do i = 1, ngrdcol
       l_1          = lhs(1,i,2)
       l_diag_invrs = 1.0_core_rknd  / ( lhs(0,i,2) - l_1 * u_1(i,1) )
-      sol(i,2)     = l_diag_invrs * ( rhs(i,2) - l_1 * sol(i,1) ) 
+      soln(i,2)    = l_diag_invrs * ( rhs(i,2) - l_1 * soln(i,1) ) 
       u_1(i,2)     = l_diag_invrs * ( lhs(-1,i,2) - l_1 * u_2(i,1) ) 
       u_2(i,2)     = l_diag_invrs * lhs(-2,i,2) 
     end do
     
     do k = 3, ndim-2
       do i = 1, ngrdcol
-        l_1      = lhs(1,i,k) - lhs(2,i,k) * u_1(i,k-2)
+        l_1       = lhs(1,i,k) - lhs(2,i,k) * u_1(i,k-2)
         l_diag_invrs = 1.0_core_rknd  / ( lhs(0,i,k) - lhs(2,i,k) * u_2(i,k-2) &
                                                      - l_1 *u_1(i,k-1) )
-        sol(i,k) = l_diag_invrs * ( rhs(i,k) - lhs(2,i,k) * sol(i,k-2) - l_1 * sol(i,k-1) )
-        u_1(i,k) = l_diag_invrs * ( lhs(-1,i,k) - l_1 * u_2(i,k-1) ) 
-        u_2(i,k) = l_diag_invrs * lhs(-2,i,k) 
+        soln(i,k) = l_diag_invrs * ( rhs(i,k) - lhs(2,i,k) * soln(i,k-2) - l_1 * soln(i,k-1) )
+        u_1(i,k)  = l_diag_invrs * ( lhs(-1,i,k) - l_1 * u_2(i,k-1) ) 
+        u_2(i,k)  = l_diag_invrs * lhs(-2,i,k) 
       end do
     end do
     
     do i = 1, ngrdcol
       l_1 = lhs(1,i,ndim-1) - lhs(2,i,ndim-1) * u_1(i,ndim-3)
-      l_diag_invrs  = 1.0_core_rknd  / ( lhs(0,i,ndim-1) - lhs(2,i,ndim-1) * u_2(i,ndim-3) &
-                                                         - l_1 * u_1(i,ndim-2) )
-      sol(i,ndim-1) = l_diag_invrs * ( rhs(i,ndim-1) - lhs(2,i,ndim-1) * sol(i,ndim-3) &
-                                                     - l_1 * sol(i,ndim-2) ) 
-      u_1(i,ndim-1) = l_diag_invrs * ( lhs(-1,i,ndim-1) - l_1 * u_2(i,ndim-2) ) 
+      l_diag_invrs   = 1.0_core_rknd  / ( lhs(0,i,ndim-1) - lhs(2,i,ndim-1) * u_2(i,ndim-3) &
+                                                          - l_1 * u_1(i,ndim-2) )
+      soln(i,ndim-1) = l_diag_invrs * ( rhs(i,ndim-1) - lhs(2,i,ndim-1) * soln(i,ndim-3) &
+                                                     - l_1 * soln(i,ndim-2) ) 
+      u_1(i,ndim-1)  = l_diag_invrs * ( lhs(-1,i,ndim-1) - l_1 * u_2(i,ndim-2) ) 
     end do
 
     do i = 1, ngrdcol
       l_1 = lhs(1,i,ndim) - lhs(2,i,ndim) * u_1(i,ndim-2)
       l_diag_invrs = 1.0_core_rknd  / ( lhs(0,i,ndim-1) - lhs(2,i,ndim) * u_2(i,ndim-2) &
                                                         - l_1 * u_1(i,ndim-1) )
-      sol(i,ndim)  = l_diag_invrs * ( rhs(i,ndim) - lhs(2,i,ndim) * sol(i,ndim-2) &
-                                                  - l_1 * sol(i,ndim-1) ) 
+      soln(i,ndim) = l_diag_invrs * ( rhs(i,ndim) - lhs(2,i,ndim) * soln(i,ndim-2) &
+                                                  - l_1 * soln(i,ndim-1) ) 
     end do
 
     do i = 1, ngrdcol
-      sol(i,ndim-1) = sol(i,ndim-1) - u_1(i,ndim-1) * sol(i,ndim)
+      soln(i,ndim-1) = soln(i,ndim-1) - u_1(i,ndim-1) * soln(i,ndim)
     end do
 
     do k = ndim-2, 1, -1
       do i = 1, ngrdcol
-        sol(i,k) = sol(i,k) - u_1(i,k) * sol(i,k+1) - u_2(i,k) * sol(i,k+2)
+        soln(i,k) = soln(i,k) - u_1(i,k) * soln(i,k+1) - u_2(i,k) * soln(i,k+2)
       end do
     end do
 
@@ -192,7 +192,7 @@ module penta_lu_solvers
 
   !=============================================================================
   subroutine penta_lu_solve_batched( ndim, nrhs, ngrdcol, lhs, rhs, &
-                                     sol )
+                                     soln )
     ! Description:
     !   Written for multiple RHS and multiple LHS, optimized to run 
     !   on CPUs,
@@ -216,7 +216,7 @@ module penta_lu_solvers
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim,nrhs) ::  &
-      sol     ! Solution vector
+      soln   ! solution vector
 
     ! ----------------------- Local Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim) ::  &
@@ -233,7 +233,7 @@ module penta_lu_solvers
        
     do i = 1, ngrdcol
       l_diag_invrs = 1.0_core_rknd / lhs(0,i,1)
-      sol(i,1,:)   = l_diag_invrs * rhs(i,1,:) 
+      soln(i,1,:)  = l_diag_invrs * rhs(i,1,:) 
       u_1(i,1)     = l_diag_invrs * lhs(-1,i,1) 
       u_2(i,1)     = l_diag_invrs * lhs(-2,i,1) 
     end do
@@ -241,7 +241,7 @@ module penta_lu_solvers
     do i = 1, ngrdcol
       l_1          = lhs(1,i,2)
       l_diag_invrs = 1.0_core_rknd  / ( lhs(0,i,2) - l_1 * u_1(i,1) )
-      sol(i,2,:)   = l_diag_invrs * ( rhs(i,2,:) - l_1 * sol(i,1,:) )
+      soln(i,2,:)  = l_diag_invrs * ( rhs(i,2,:) - l_1 * soln(i,1,:) )
       u_1(i,2)     = l_diag_invrs * ( lhs(-1,i,2) - l_1 * u_2(i,1) )
       u_2(i,2)     = l_diag_invrs * lhs(-2,i,2)
     end do
@@ -250,8 +250,8 @@ module penta_lu_solvers
       do i = 1, ngrdcol 
         l_1          = lhs(1,i,k) - lhs(2,i,k) * u_1(i,k-2)
         l_diag_invrs = 1.0_core_rknd  / ( lhs(0,i,k) - lhs(2,i,k) * u_2(i,k-2) - l_1 *u_1(i,k-1) )
-        sol(i,k,:)   = l_diag_invrs * ( rhs(i,k,:) - lhs(2,i,k) * sol(i,k-2,:) &
-                                                   - l_1 * sol(i,k-1,:) )
+        soln(i,k,:)  = l_diag_invrs * ( rhs(i,k,:) - lhs(2,i,k) * soln(i,k-2,:) &
+                                                   - l_1 * soln(i,k-1,:) )
         u_1(i,k)     = l_diag_invrs * ( lhs(-1,i,k) - l_1 * u_2(i,k-1) )
         u_2(i,k)     = l_diag_invrs * lhs(-2,i,k)
       end do
@@ -261,8 +261,8 @@ module penta_lu_solvers
       l_1 = lhs(1,i,ndim-1) - lhs(2,i,ndim-1) * u_1(i,ndim-3)
       l_diag_invrs    = 1.0_core_rknd  / ( lhs(0,i,ndim-1) - lhs(2,i,ndim-1) * u_2(i,ndim-3) &
                                                            - l_1 * u_1(i,ndim-2) )
-      sol(i,ndim-1,:) = l_diag_invrs * ( rhs(i,ndim-1,:) - lhs(2,i,ndim-1) * sol(i,ndim-3,:) &
-                                                         - l_1 * sol(i,ndim-2,:) ) 
+      soln(i,ndim-1,:) = l_diag_invrs * ( rhs(i,ndim-1,:) - lhs(2,i,ndim-1) * soln(i,ndim-3,:) &
+                                                          - l_1 * soln(i,ndim-2,:) ) 
       u_1(i,ndim-1)   = l_diag_invrs * ( lhs(-1,i,ndim-1) - l_1 * u_2(i,ndim-2) )
     end do
 
@@ -270,18 +270,18 @@ module penta_lu_solvers
       l_1 = lhs(1,i,ndim) - lhs(2,i,ndim) * u_1(i,ndim-2)
       l_diag_invrs   = 1.0_core_rknd  / ( lhs(0,i,ndim-1) - lhs(2,i,ndim) * u_2(i,ndim-2) &
                                                           - l_1 * u_1(i,ndim-1) )
-      sol(i,ndim,:)  = l_diag_invrs * ( rhs(i,ndim,:) - lhs(2,i,ndim) * sol(i,ndim-2,:) &
-                                                      - l_1 * sol(i,ndim-1,:) ) 
+      soln(i,ndim,:) = l_diag_invrs * ( rhs(i,ndim,:) - lhs(2,i,ndim) * soln(i,ndim-2,:) &
+                                                      - l_1 * soln(i,ndim-1,:) ) 
     end do
 
     do i = 1, ngrdcol
-      sol(i,ndim-1,:) = sol(i,ndim-1,:) - u_1(i,ndim-1) * sol(i,ndim,:)
+      soln(i,ndim-1,:) = soln(i,ndim-1,:) - u_1(i,ndim-1) * soln(i,ndim,:)
     end do
 
     do j = 1, nrhs 
       do k = ndim-2, 1, -1
         do i = 1, ngrdcol
-          sol(i,k,j) = sol(i,k,j) - u_1(i,k) * sol(i,k+1,j) - u_2(i,k) * sol(i,k+2,j)
+          soln(i,k,j) = soln(i,k,j) - u_1(i,k) * soln(i,k+1,j) - u_2(i,k) * soln(i,k+2,j)
         end do
       end do
     end do
@@ -296,7 +296,7 @@ module penta_lu_solvers
 
 
   subroutine penta_lu_solve_batched_gpu( ndim, nrhs, ngrdcol, lhs, rhs, &
-                                         sol )
+                                         soln )
     ! Description:
     !   Written for multiple RHS and multiple LHS, optimized 
     !   to run on GPUs.
@@ -320,7 +320,7 @@ module penta_lu_solvers
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim,nrhs) ::  &
-      sol     ! Solution vector
+      soln   ! solution vector
 
     ! ----------------------- Local Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim) ::  &
@@ -335,7 +335,7 @@ module penta_lu_solvers
        
     !$acc data create( u_1, u_2, l_1, l_diag_invrs ) &
     !$acc      copyin( rhs, lhs ) &
-    !$acc      copyout( sol )
+    !$acc      copyout( soln )
 
     !$acc parallel loop default(present) async(1)
     do i = 1, ngrdcol
@@ -384,19 +384,19 @@ module penta_lu_solvers
     do j = 1, nrhs
       do i = 1, ngrdcol 
 
-        sol(i,1,j)   = l_diag_invrs(i,1) * rhs(i,1,j) 
+        soln(i,1,j)   = l_diag_invrs(i,1) * rhs(i,1,j) 
 
-        sol(i,2,j)   = l_diag_invrs(i,2) * ( rhs(i,2,j) - l_1(i,2) * sol(i,1,j) )
+        soln(i,2,j)   = l_diag_invrs(i,2) * ( rhs(i,2,j) - l_1(i,2) * soln(i,1,j) )
 
         do k = 3, ndim
-          sol(i,k,j)   = l_diag_invrs(i,k) * ( rhs(i,k,j) - lhs(2,i,k) * sol(i,k-2,j) &
-                                                          - l_1(  i,k) * sol(i,k-1,j) )
+          soln(i,k,j) = l_diag_invrs(i,k) * ( rhs(i,k,j) - lhs(2,i,k) * soln(i,k-2,j) &
+                                                         - l_1(  i,k) * soln(i,k-1,j) )
         end do
 
-        sol(i,ndim-1,j) = sol(i,ndim-1,j) - u_1(i,ndim-1) * sol(i,ndim,j)
+        soln(i,ndim-1,j) = soln(i,ndim-1,j) - u_1(i,ndim-1) * soln(i,ndim,j)
 
         do k = ndim-2, 1, -1
-          sol(i,k,j) = sol(i,k,j) - u_1(i,k) * sol(i,k+1,j) - u_2(i,k) * sol(i,k+2,j)
+          soln(i,k,j) = soln(i,k,j) - u_1(i,k) * soln(i,k+1,j) - u_2(i,k) * soln(i,k+2,j)
         end do
 
       end do
@@ -411,7 +411,7 @@ module penta_lu_solvers
 
   !=============================================================================
   subroutine penta_lu_solve_single_rhs_gpu( ndim, ngrdcol, lhs, rhs, &
-                                            sol )
+                                            soln )
     ! Description:
     !   Written for a single RHS and multiple LHS, optimized 
     !   to run on GPUs.
@@ -434,7 +434,7 @@ module penta_lu_solvers
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim) ::  &
-      sol     ! Solution vector
+      soln     ! solution vector
 
     ! ----------------------- Local Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim) ::  &
@@ -449,7 +449,7 @@ module penta_lu_solvers
        
     !$acc data create( u_1, u_2, l_1, l_diag_invrs ) &
     !$acc      copyin( rhs, lhs ) &
-    !$acc      copyout( sol )
+    !$acc      copyout( soln )
 
     !$acc parallel loop default(present) async(1)
     do i = 1, ngrdcol
@@ -492,19 +492,19 @@ module penta_lu_solvers
     !$acc parallel loop default(present) async(1)
     do i = 1, ngrdcol 
 
-      sol(i,1)   = l_diag_invrs(i,1) * rhs(i,1) 
+      soln(i,1) = l_diag_invrs(i,1) * rhs(i,1) 
 
-      sol(i,2)   = l_diag_invrs(i,2) * ( rhs(i,2) - l_1(i,2) * sol(i,1) )
+      soln(i,2) = l_diag_invrs(i,2) * ( rhs(i,2) - l_1(i,2) * soln(i,1) )
 
       do k = 3, ndim
-        sol(i,k)   = l_diag_invrs(i,k) * ( rhs(i,k) - lhs(2,i,k) * sol(i,k-2) &
-                                                    - l_1(  i,k) * sol(i,k-1) )
+        soln(i,k) = l_diag_invrs(i,k) * ( rhs(i,k) - lhs(2,i,k) * soln(i,k-2) &
+                                                   - l_1(  i,k) * soln(i,k-1) )
       end do
 
-      sol(i,ndim-1) = sol(i,ndim-1) - u_1(i,ndim-1) * sol(i,ndim)
+      soln(i,ndim-1) = soln(i,ndim-1) - u_1(i,ndim-1) * soln(i,ndim)
 
       do k = ndim-2, 1, -1
-        sol(i,k) = sol(i,k) - u_1(i,k) * sol(i,k+1) - u_2(i,k) * sol(i,k+2)
+        soln(i,k) = soln(i,k) - u_1(i,k) * soln(i,k+1) - u_2(i,k) * soln(i,k+2)
       end do
 
     end do

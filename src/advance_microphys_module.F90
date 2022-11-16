@@ -1483,12 +1483,11 @@ module advance_microphys_module
       ihmm_ts = 0
     end select
 
-    ! Solve system using tridag_solve. This uses LAPACK sgtsv,
-    ! which relies on Gaussian elimination to decompose the matrix.
-    call tridiag_solve( solve_type, &
-                        gr%nz, &
-                        lhs, rhs, &
-                        hmm )
+    ! Solve system using a tridiag_solve. 
+    call tridiag_solve( solve_type, & ! Intent(in)
+                        gr%nz,      & ! Intent(in)
+                        lhs, rhs,   & ! Intent(inout)
+                        hmm )         ! Intent(out)
 
 
     ! Statistics

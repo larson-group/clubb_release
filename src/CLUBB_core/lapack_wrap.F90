@@ -20,11 +20,11 @@ module lapack_wrap
   implicit none
 
   ! Simple routines
-  public :: lapack_tridag_solve, &
+  public :: lapack_tridiag_solve, &
             lapack_band_solve
 
   ! Expert routines
-  public :: lapack_tridag_solvex, &
+  public :: lapack_tridiag_solvex, &
             lapack_band_solvex
 
   private ! Set Default Scope
@@ -32,7 +32,7 @@ module lapack_wrap
   contains
 
 !-----------------------------------------------------------------------
-  subroutine lapack_tridag_solvex( solve_type, ndim, nrhs, &
+  subroutine lapack_tridiag_solvex( solve_type, ndim, nrhs, &
                                    supd, diag, subd, rhs, &
                                    solution, rcond )
 
@@ -135,8 +135,8 @@ module lapack_wrap
       write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
 
       do i = 1, nrhs, 1
-        write(fstderr,*) "rhs # ", i, "tridag forward error est. =", ferr(i)
-        write(fstderr,*) "rhs # ", i, "tridag backward error est. =", berr(i)
+        write(fstderr,*) "rhs # ", i, "tridiag forward error est. =", ferr(i)
+        write(fstderr,*) "rhs # ", i, "tridiag backward error est. =", berr(i)
       end do
 
       write(fstderr,'(2(a20,e15.6))') "rcond est. = ", rcond, & 
@@ -170,10 +170,10 @@ module lapack_wrap
     end select
 
     return
-  end subroutine lapack_tridag_solvex
+  end subroutine lapack_tridiag_solvex
 
 !-----------------------------------------------------------------------
-  subroutine lapack_tridag_solve( solve_type, ndim, nrhs, &
+  subroutine lapack_tridiag_solve( solve_type, ndim, nrhs, &
                                   supd, diag, subd, rhs, &
                                   solution )
 
@@ -288,7 +288,7 @@ module lapack_wrap
     end select
 
     return
-  end subroutine lapack_tridag_solve
+  end subroutine lapack_tridiag_solve
 
 !-----------------------------------------------------------------------
   subroutine lapack_band_solvex( solve_type, nsup, nsub, ndim, nrhs,  & 
