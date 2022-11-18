@@ -116,8 +116,8 @@ module matrix_solver_wrapper
       ! Using dummy_solution, since we only want this routine for diagnostics
       do i = 1, ngrdcol
         call lapack_band_solvex( "xm_wpxp", nsup, nsub, ndim, 1,  & ! Intent(in) 
-                          lhs(:,i,:), rhs(i,:),                   & ! Intent(inout)
-                          dummy_solution(i,:), rcond(i) )           ! Intent(out)
+                                 lhs_copy(:,i,:), rhs_copy(i,:),  & ! Intent(inout)
+                                 dummy_solution(i,:), rcond(i) )    ! Intent(out)
       end do
 
     end if
@@ -227,9 +227,9 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       ! Using dummy_solution, since we only want this routine for diagnostics
       do i = 1, ngrdcol
-        call lapack_band_solvex( "xm_wpxp", nsup, nsub, ndim, nrhs, & ! Intent(in) 
-                          lhs(:,i,:), rhs(i,:,:),                   & ! Intent(inout)
-                          dummy_solution(i,:,:), rcond(i) )           ! Intent(out)
+        call lapack_band_solvex( "xm_wpxp", nsup, nsub, ndim, nrhs,   & ! Intent(in) 
+                                 lhs_copy(:,i,:), rhs_copy(i,:,:),    & ! Intent(inout)
+                                 dummy_solution(i,:,:), rcond(i) )      ! Intent(out)
       end do
 
     end if
