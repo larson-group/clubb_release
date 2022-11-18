@@ -551,8 +551,10 @@ subroutine logical_flags_driver( current_date, current_time )
                            ! (double Gaussian) PDF type to use for the w, rt,
                            ! and theta-l (or w, chi, and eta) portion of
                            ! CLUBB's multivariate, two-component PDF.
-    ipdf_call_placement    ! Selected option for the placement of the call to
+    ipdf_call_placement, & ! Selected option for the placement of the call to
                            ! CLUBB's PDF.
+    penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
+    tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
 
   logical :: &
     l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -670,7 +672,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! eliminates spurious drying tendencies at model top
 
   namelist /configurable_clubb_flags_nl/ &
-    iiPDF_type, ipdf_call_placement, &
+    iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -689,6 +691,8 @@ subroutine logical_flags_driver( current_date, current_time )
 
   call set_default_clubb_config_flags( iiPDF_type, & ! Intent(out)
                                        ipdf_call_placement, & ! Intent(out)
+                                       penta_solve_method, & ! Intent(out)
+                                       tridiag_solve_method, & ! Intent(out)
                                        l_use_precip_frac, & ! Intent(out)
                                        l_predict_upwp_vpwp, & ! Intent(out)
                                        l_min_wp2_from_corr_wx, & ! Intent(out)

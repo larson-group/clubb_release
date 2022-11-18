@@ -64,6 +64,7 @@ module advance_wp2_wp3_module
                               wprtp, wpthlp, rtp2, thlp2,                    & ! intent(in)
                               clubb_params, nu_vert_res_dep,                 & ! intent(in)
                               iiPDF_type,                                    & ! intent(in)
+                              penta_solve_method,                            & ! intent(in)
                               l_min_wp2_from_corr_wx,                        & ! intent(in)
                               l_upwind_xm_ma,                                & ! intent(in)
                               l_tke_aniso,                                   & ! intent(in)
@@ -257,10 +258,11 @@ module advance_wp2_wp3_module
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
-      iiPDF_type    ! Selected option for the two-component normal (double
-                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
-                    ! w, chi, and eta) portion of CLUBB's multivariate,
-                    ! two-component PDF.
+      iiPDF_type,       & ! Selected option for the two-component normal (double
+                          ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                          ! w, chi, and eta) portion of CLUBB's multivariate,
+                          ! two-component PDF.
+      penta_solve_method  ! Method to solve then penta-diagonal system
 
     logical, intent(in) :: &
       l_min_wp2_from_corr_wx,     & ! Flag to base the threshold minimum value of wp2 on keeping the
@@ -861,6 +863,7 @@ module advance_wp2_wp3_module
                      rho_ds_zm, rho_ds_zt,                        & ! intent(in)
                      wprtp, wpthlp, rtp2, thlp2,                  & ! intent(in)
                      clubb_params,                                & ! intent(in)
+                     penta_solve_method,                          & ! intent(in)
                      l_min_wp2_from_corr_wx,                      & ! intent(in)
                      l_tke_aniso,                                 & ! intent(in)
                      l_use_tke_in_wp2_wp3_K_dfsn,                 & ! intent(in)
@@ -1005,6 +1008,7 @@ module advance_wp2_wp3_module
                          rho_ds_zm, rho_ds_zt, &
                          wprtp, wpthlp, rtp2, thlp2, &
                          clubb_params, &
+                         penta_solve_method, &
                          l_min_wp2_from_corr_wx, &
                          l_tke_aniso, &
                          l_use_tke_in_wp2_wp3_K_dfsn, &
@@ -1097,6 +1101,9 @@ module advance_wp2_wp3_module
 
     use stats_type, only: stats ! Type
 
+    use model_flags, only: &
+        penta_bicgstab
+
     implicit none
 
     ! External
@@ -1162,6 +1169,9 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    integer, intent(in) :: &
+      penta_solve_method  ! Method to solve then penta-diagonal system
+
     logical, intent(in) :: &
       l_min_wp2_from_corr_wx,     & ! Flag to base the threshold minimum value of wp2 on keeping the
                                     ! overall correlation of w and x (w and rt, as well as w and
@@ -1190,7 +1200,8 @@ module advance_wp2_wp3_module
       rhs_save    ! Saved RHS of band matrix
 
     real( kind = core_rknd ), dimension(ngrdcol,2*nz) ::  & 
-      solut ! Solution to band diagonal system.
+      solut, &  ! Solution to band diagonal system.
+      old_solut ! Old solution, used as an initial guess in the bicgstab method
 
     real( kind = core_rknd ), dimension(ngrdcol) ::  & 
       rcond  ! Est. of the reciprocal of the condition #
@@ -1218,15 +1229,25 @@ module advance_wp2_wp3_module
     ! part of the solving routine.
     rhs_save = rhs
 
+    if ( penta_solve_method == penta_bicgstab ) then
+      do k = 1, nz
+        do i = 1, ngrdcol
+          old_solut(i,2*k-1)  = wp3(i,k)
+          old_solut(i,2*k)    = wp2(i,k) 
+        end do
+      end do
+    end if
+
     ! Solve the system with LAPACK
     if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
 
       ! Solve the system and return condition number
       ! Note: When using lapack this can change the answer slightly
-      call band_solve( "wp2_wp3",             & ! intent(in)
-                        ngrdcol, 2, 2, 2*nz,  & ! intent(in)
-                        lhs, rhs,             & ! intent(inout)
-                        solut, rcond )          ! intent(out)
+      call band_solve( "wp2_wp3", penta_solve_method, & ! intent(in)
+                        ngrdcol, 2, 2, 2*nz,          & ! intent(in)
+                        old_solut,                    & ! Intent(in)
+                        lhs, rhs,                     & ! intent(inout)
+                        solut, rcond )                  ! intent(out)
 
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
       do i = 1, ngrdcol
@@ -1237,10 +1258,11 @@ module advance_wp2_wp3_module
     else
 
       ! Solve the system 
-      call band_solve( "wp2_wp3",           & ! intent(in)
-                       ngrdcol, 2, 2, 2*nz, & ! intent(in)
-                       lhs, rhs,            & ! intent(inout)
-                       solut )                ! intent(out)
+      call band_solve( "wp2_wp3", penta_solve_method, & ! intent(in)
+                       ngrdcol, 2, 2, 2*nz,           & ! intent(in)
+                       old_solut,                     & ! Intent(in)
+                       lhs, rhs,                      & ! intent(inout)
+                       solut )                          ! intent(out)
 
     end if
     

@@ -428,8 +428,10 @@ module pdf_parameter_tests
                              ! (double Gaussian) PDF type to use for the w, rt,
                              ! and theta-l (or w, chi, and eta) portion of
                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement    ! Selected option for the placement of the call to
+      ipdf_call_placement, & ! Selected option for the placement of the call to
                              ! CLUBB's PDF.
+      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -635,6 +637,8 @@ module pdf_parameter_tests
 
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
+                                         penta_solve_method, &
+                                         tridiag_solve_method, &
                                          l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &

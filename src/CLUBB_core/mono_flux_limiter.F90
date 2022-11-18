@@ -33,6 +33,7 @@ module mono_flux_limiter
                                              invrs_rho_ds_zm, invrs_rho_ds_zt, &
                                              xp2_threshold, xm_tol, l_implemented, &
                                              low_lev_effect, high_lev_effect, &
+                                             tridiag_solve_method, &
                                              l_upwind_xm_ma, &
                                              l_mono_flux_lim_spikefix, &
                                              stats_zt, stats_zm, &
@@ -383,6 +384,9 @@ module mono_flux_limiter
     integer, dimension(ngrdcol,nz), intent(in) ::  &
       low_lev_effect, & ! Index of lowest level that has an effect (for lev. k)
       high_lev_effect   ! Index of highest level that has an effect (for lev. k)
+
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     logical, intent(in) :: &
       l_upwind_xm_ma, & ! This flag determines whether we want to use an upwind differencing
@@ -792,7 +796,7 @@ module mono_flux_limiter
                              rhs_mfl_xm(i,:) ) ! intent(out)
 
             ! Solve the tridiagonal matrix equation.
-            call mfl_xm_solve( nz, solve_type, & ! intent(in)
+            call mfl_xm_solve( nz, solve_type, tridiag_solve_method, & ! intent(in)
                                lhs_mfl_xm(:,i,:), rhs_mfl_xm(i,:),  & ! intent(inout)
                                xm(i,:) ) ! intent(inout)
 
@@ -1144,7 +1148,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_rhs
 
   !=============================================================================
-  subroutine mfl_xm_solve( nz, solve_type, &
+  subroutine mfl_xm_solve( nz, solve_type, tridiag_solve_method, &
                            lhs, rhs,  &
                            xm )
 
@@ -1186,6 +1190,9 @@ module mono_flux_limiter
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
 
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+
     real( kind = core_rknd ), dimension(3,nz), intent(inout) ::  & 
       lhs  ! Left hand side of tridiagonal matrix
 
@@ -1212,10 +1219,10 @@ module mono_flux_limiter
     end select
 
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
-    call tridiag_solve( solve_type_str, & ! Intent(in)
-                        nz,             & ! Intent(inout)
-                        lhs, rhs,       & ! Intent(inout)
-                        xm )              ! Intent(out)
+    call tridiag_solve( solve_type_str, tridiag_solve_method,   & ! Intent(in)
+                        nz,                                     & ! Intent(inout)
+                        lhs, rhs,                               & ! Intent(inout)
+                        xm )                                      ! Intent(out)
 
     ! Check for errors
     if ( clubb_at_least_debug_level( 0 ) ) then

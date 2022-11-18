@@ -4481,6 +4481,8 @@ contains
   !================================================================================================
   subroutine set_default_clubb_config_flags_api( iiPDF_type, & ! Out
                                                  ipdf_call_placement, & ! Out
+                                                 penta_solve_method, & ! Out
+                                                 tridiag_solve_method, & ! Out
                                                  l_use_precip_frac, & ! Out
                                                  l_predict_upwp_vpwp, & ! Out
                                                  l_min_wp2_from_corr_wx, & ! Out
@@ -4545,8 +4547,10 @@ contains
                              ! (double Gaussian) PDF type to use for the w, rt,
                              ! and theta-l (or w, chi, and eta) portion of
                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement    ! Selected option for the placement of the call to
+      ipdf_call_placement, & ! Selected option for the placement of the call to
                              ! CLUBB's PDF.
+      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
 
     logical, intent(out) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -4665,6 +4669,8 @@ contains
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
+                                         penta_solve_method, & ! Out
+                                         tridiag_solve_method, & ! Out
                                          l_use_precip_frac, & ! Out
                                          l_predict_upwp_vpwp, & ! Out
                                          l_min_wp2_from_corr_wx, & ! Out
@@ -4725,6 +4731,8 @@ contains
   !================================================================================================
   subroutine initialize_clubb_config_flags_type_api( iiPDF_type, & ! In
                                                      ipdf_call_placement, & ! In
+                                                     penta_solve_method, & ! In
+                                                     tridiag_solve_method, & ! In
                                                      l_use_precip_frac, & ! In
                                                      l_predict_upwp_vpwp, & ! In
                                                      l_min_wp2_from_corr_wx, & ! In
@@ -4791,8 +4799,10 @@ contains
                              ! (double Gaussian) PDF type to use for the w, rt,
                              ! and theta-l (or w, chi, and eta) portion of
                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement    ! Selected option for the placement of the call to
+      ipdf_call_placement, & ! Selected option for the placement of the call to
                              ! CLUBB's PDF.
+      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
 
     logical, intent(in) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -4915,6 +4925,8 @@ contains
 
     call initialize_clubb_config_flags_type( iiPDF_type, & ! In
                                              ipdf_call_placement, & ! In 
+                                             penta_solve_method, & ! In
+                                             tridiag_solve_method, & ! In
                                              l_use_precip_frac, & ! In
                                              l_predict_upwp_vpwp, & ! In
                                              l_min_wp2_from_corr_wx, & ! In

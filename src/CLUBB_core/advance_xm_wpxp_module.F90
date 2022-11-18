@@ -61,6 +61,8 @@ module advance_xm_wpxp_module
                               uprcp, vprcp, rc_coef, &
                               clubb_params, nu_vert_res_dep, &
                               iiPDF_type, &
+                              penta_solve_method, &
+                              tridiag_solve_method, &
                               l_predict_upwp_vpwp, &
                               l_diffuse_rtm_and_thlm, &
                               l_stability_correct_Kh_N2_zm, &
@@ -294,10 +296,12 @@ module advance_xm_wpxp_module
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
-      iiPDF_type    ! Selected option for the two-component normal (double
-                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
-                    ! w, chi, and eta) portion of CLUBB's multivariate,
-                    ! two-component PDF.
+      iiPDF_type,           & ! Selected option for the two-component normal (double
+                              ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                              ! w, chi, and eta) portion of CLUBB's multivariate,
+                              ! two-component PDF.
+      penta_solve_method,   & ! Method to solve then penta-diagonal system
+      tridiag_solve_method    ! Specifier for method to solve tridiagonal systems
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -715,6 +719,8 @@ module advance_xm_wpxp_module
                                             rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpsclrp,    & ! In
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,   & ! In
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                & ! In
+                                            penta_solve_method,                             & ! In
+                                            tridiag_solve_method,                           & ! In
                                             l_predict_upwp_vpwp,                            & ! In
                                             l_diffuse_rtm_and_thlm,                         & ! In
                                             l_upwind_xm_ma,                                 & ! In
@@ -749,6 +755,8 @@ module advance_xm_wpxp_module
                                           lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,    & ! In
                                           lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                 & ! In
                                           clubb_params(iC_uu_shr),                         & ! In
+                                          penta_solve_method,                              & ! In
+                                          tridiag_solve_method,                            & ! In
                                           l_predict_upwp_vpwp,                             & ! In
                                           l_diffuse_rtm_and_thlm,                          & ! In
                                           l_upwind_xm_ma,                                  & ! In
@@ -2282,6 +2290,8 @@ module advance_xm_wpxp_module
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp, &
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
                                             C_uu_shr, &
+                                            penta_solve_method, &
+                                            tridiag_solve_method, &
                                             l_predict_upwp_vpwp, &
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
@@ -2355,6 +2365,9 @@ module advance_xm_wpxp_module
         ep1
 
     use stats_type, only: stats ! Type
+
+    use model_flags, only: &
+        penta_bicgstab
 
     implicit none
     
@@ -2463,6 +2476,11 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), intent(in) ::  &
       C_uu_shr    ! CLUBB tunable parameter C_uu_shr
 
+    integer, intent(in) :: &
+      penta_solve_method, & ! Method to solve then penta-diagonal system
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems,
+                            ! used for monotonic flux limiter
+
     logical, intent(in) :: &
       l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
                                    ! with <u> and <v> alongside the advancement
@@ -2559,9 +2577,10 @@ module advance_xm_wpxp_module
       vprtp_pert           ! perturbed horz flux of tot water (mom levs) [m/s kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol,2*nz,nrhs) :: & 
-      rhs,      & ! Right-hand sides of band diag. matrix. (LAPACK)
-      rhs_save, & ! Saved Right-hand sides of band diag. matrix. (LAPACK)
-      solution    ! solution vectors of band diag. matrix. (LAPACK)
+      rhs,        & ! Right-hand sides of band diag. matrix. (LAPACK)
+      rhs_save,   & ! Saved Right-hand sides of band diag. matrix. (LAPACK)
+      solution,   & ! solution vectors of band diag. matrix. (LAPACK)
+      old_solution  ! previous solutions
 
     ! Constant parameters as a function of Skw.
 
@@ -2818,15 +2837,41 @@ module advance_xm_wpxp_module
     ! part of the solving routine.
     rhs_save = rhs
 
+    ! Use the previous solution as an initial guess for the bicgstab method
+    if ( penta_solve_method == penta_bicgstab ) then
+      do k = 1, nz
+        old_solution(:,2*k-1,1) = rtm(:,k)
+        old_solution(:,2*k  ,1) = wprtp(:,k)
+        old_solution(:,2*k-1,2) = thlm(:,k)
+        old_solution(:,2*k  ,2) = wpthlp(:,k)
+
+        do j = 1, sclr_dim
+          old_solution(:,2*k-1,2+j) = sclrm(:,k,j)
+          old_solution(:,2*k  ,2+j) = wpsclrp(:,k,j)
+        end do
+
+        if ( l_predict_upwp_vpwp ) then
+          old_solution(:,2*k-1,3+sclr_dim) = um(:,k)
+          old_solution(:,2*k  ,3+sclr_dim) = upwp(:,k)
+          old_solution(:,2*k-1,4+sclr_dim) = vm(:,k)
+          old_solution(:,2*k  ,4+sclr_dim) = vpwp(:,k)
+        end if
+      end do
+    end if
+
     ! Solve for all fields
     if ( l_stats_samp .and. ithlm_matrix_condt_num + irtm_matrix_condt_num > 0 ) then
-       call xm_wpxp_solve( nz, ngrdcol, gr, nrhs, &                     ! Intent(in)
-                          lhs, rhs, &                 ! Intent(inout)
-                          solution, rcond )           ! Intent(out)
+       call xm_wpxp_solve( nz, ngrdcol, gr, nrhs, & ! Intent(in)
+                           old_solution,          & ! Intent(in)
+                           penta_solve_method,    & ! Intent(in)
+                           lhs, rhs,              & ! Intent(inout)
+                           solution, rcond )        ! Intent(out)
     else
-      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs, &              ! Intent(in)
-                          lhs, rhs, &          ! Intent(inout)
-                          solution )           ! Intent(out)
+      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs,  & ! Intent(in)
+                          old_solution,           & ! Intent(in)
+                          penta_solve_method,     & ! Intent(in)
+                          lhs, rhs,               & ! Intent(inout)
+                          solution )                ! Intent(out)
     end if
     
 
@@ -2889,6 +2934,7 @@ module advance_xm_wpxp_module
            lhs_diff_zm, C7_Skw_fnc, &                 ! Intent(in)
            lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &        ! Intent(in)
            l_implemented, solution(:,:,1),  &         ! Intent(in)
+           tridiag_solve_method, &                    ! Intent(in)
            l_predict_upwp_vpwp, &                     ! Intent(in)
            l_upwind_xm_ma, &                          ! Intent(in)
            l_tke_aniso, &                             ! Intent(in)
@@ -2920,6 +2966,7 @@ module advance_xm_wpxp_module
            lhs_diff_zm, C7_Skw_fnc, &                 ! Intent(in)
            lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &        ! Intent(in)
            l_implemented, solution(:,:,2),  &         ! Intent(in)
+           tridiag_solve_method, &                    ! Intent(in)
            l_predict_upwp_vpwp, &                     ! Intent(in)
            l_upwind_xm_ma, &                          ! Intent(in)
            l_tke_aniso, &                             ! Intent(in)
@@ -2961,6 +3008,7 @@ module advance_xm_wpxp_module
              lhs_diff_zm, C7_Skw_fnc, &                             ! Intent(in)
              lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &                    ! Intent(in)
              l_implemented, solution(:,:,2+j),  &                   ! Intent(in)
+             tridiag_solve_method, &                                ! Intent(in)
              l_predict_upwp_vpwp, &                                 ! Intent(in)
              l_upwind_xm_ma, &                                      ! Intent(in)
              l_tke_aniso, &                                         ! Intent(in)
@@ -2997,6 +3045,7 @@ module advance_xm_wpxp_module
             lhs_diff_zm, C7_Skw_fnc,                  & ! Intent(in)
             lhs_tp, lhs_ta_xm, lhs_pr1_wprtp,         & ! Intent(in)
             l_implemented, solution(:,:,3+sclr_dim),  & ! Intent(in)
+            tridiag_solve_method,                     & ! Intent(in)
             l_predict_upwp_vpwp,                      & ! Intent(in)
             l_upwind_xm_ma,                           & ! Intent(in)
             l_tke_aniso,                              & ! Intent(in)
@@ -3028,6 +3077,7 @@ module advance_xm_wpxp_module
             lhs_diff_zm, C7_Skw_fnc,                  & ! Intent(in)
             lhs_tp, lhs_ta_xm, lhs_pr1_wprtp,         & ! Intent(in)
             l_implemented, solution(:,:,4+sclr_dim),  & ! Intent(in)
+            tridiag_solve_method,                     & ! Intent(in)
             l_predict_upwp_vpwp,                      & ! Intent(in)
             l_upwind_xm_ma,                           & ! Intent(in)
             l_tke_aniso,                              & ! Intent(in)
@@ -3061,6 +3111,7 @@ module advance_xm_wpxp_module
                lhs_diff_zm, C7_Skw_fnc,                  & ! Intent(in)
                lhs_tp, lhs_ta_xm, lhs_pr1_wprtp,         & ! Intent(in)
                l_implemented, solution(:,:,5+sclr_dim),  & ! Intent(in)
+               tridiag_solve_method,                     & ! Intent(in)
                l_predict_upwp_vpwp,                      & ! Intent(in)
                l_upwind_xm_ma,                           & ! Intent(in)
                l_tke_aniso,                              & ! Intent(in)
@@ -3092,6 +3143,7 @@ module advance_xm_wpxp_module
                lhs_diff_zm, C7_Skw_fnc,                  & ! Intent(in)
                lhs_tp, lhs_ta_xm, lhs_pr1_wprtp,         & ! Intent(in)
                l_implemented, solution(:,:,6+sclr_dim),  & ! Intent(in)
+               tridiag_solve_method,                     & ! Intent(in)
                l_predict_upwp_vpwp,                      & ! Intent(in)
                l_upwind_xm_ma,                           & ! Intent(in)
                l_tke_aniso,                              & ! Intent(in)
@@ -3133,6 +3185,8 @@ module advance_xm_wpxp_module
                                             rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpsclrp, &
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp, &
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
+                                            penta_solve_method, &
+                                            tridiag_solve_method, &
                                             l_predict_upwp_vpwp, &
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
@@ -3183,6 +3237,9 @@ module advance_xm_wpxp_module
         thl_tol_mfl, &
         rt_tol_mfl, &
         zero
+
+    use model_flags, only: &
+        penta_bicgstab
 
     use stats_type, only: stats ! Type
 
@@ -3270,6 +3327,9 @@ module advance_xm_wpxp_module
     integer, intent(in) :: &
       nrhs         ! Number of RHS vectors
 
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+
     logical, intent(in) :: &
       l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
                                    ! with <u> and <v> alongside the advancement
@@ -3296,6 +3356,9 @@ module advance_xm_wpxp_module
       l_mono_flux_lim_vm,        & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix     ! Flag to implement monotonic flux limiter code that
                                    ! eliminates spurious drying tendencies at model top
+
+    integer, intent(in) :: &
+      penta_solve_method ! Method to solve then penta-diagonal system
       
     integer, intent(in) :: &
       order_xm_wpxp, &
@@ -3324,9 +3387,10 @@ module advance_xm_wpxp_module
       lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
     real( kind = core_rknd ), dimension(ngrdcol,2*nz,nrhs) :: & 
-      rhs,      & ! Right-hand sides of band diag. matrix. (LAPACK)
-      rhs_save, & ! Saved Right-hand sides of band diag. matrix. (LAPACK)
-      solution    ! solution vectors of band diag. matrix. (LAPACK)
+      rhs,        & ! Right-hand sides of band diag. matrix. (LAPACK)
+      rhs_save,   & ! Saved Right-hand sides of band diag. matrix. (LAPACK)
+      solution,   & ! solution vectors of band diag. matrix. (LAPACK)
+      old_solution  ! previous solutions
       
     ! Additional variables for passive scalars
     real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: & 
@@ -3371,15 +3435,27 @@ module advance_xm_wpxp_module
     ! part of the solving routine.
     rhs_save = rhs
 
+    ! Use the previous solution as an initial guess for the bicgstab method
+    if ( penta_solve_method == penta_bicgstab ) then
+      do k = 1, nz
+        old_solution(:,2*k-1,1) = rtm(:,k)
+        old_solution(:,2*k  ,1) = wprtp(:,k)
+      end do
+    end if
+
     ! Solve r_t / w'r_t'
     if ( l_stats_samp .and. irtm_matrix_condt_num > 0 ) then
-      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs, &                     ! Intent(in)
-                          lhs, rhs, &                 ! Intent(inout)
-                          solution, rcond )           ! Intent(out)
+      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs,  & ! Intent(in)
+                          old_solution,           & ! Intent(in)
+                          penta_solve_method,     & ! Intent(in)
+                          lhs, rhs,               & ! Intent(inout)
+                          solution, rcond )         ! Intent(out)
     else
-      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs, &              ! Intent(in)
-                          lhs, rhs, &          ! Intent(inout)
-                          solution )           ! Intent(out)
+      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs,  & ! Intent(in)
+                          old_solution,           & ! Intent(in)
+                          penta_solve_method,     & ! Intent(in)
+                          lhs, rhs,               & ! Intent(inout)
+                          solution )                ! Intent(out)
     end if
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3415,6 +3491,7 @@ module advance_xm_wpxp_module
            lhs_diff_zm, C7_Skw_fnc, &                 ! Intent(in)
            lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &        ! Intent(in)
            l_implemented, solution(:,:,1), &          ! Intent(in)
+           tridiag_solve_method, &                      ! Intent(in)
            l_predict_upwp_vpwp, &                     ! Intent(in)
            l_upwind_xm_ma, &                          ! Intent(in)
            l_tke_aniso, &                             ! Intent(in)
@@ -3459,15 +3536,27 @@ module advance_xm_wpxp_module
     ! part of the solving routine.
     rhs_save = rhs
 
+    ! Use the previous solution as an initial guess for the bicgstab method
+    if ( penta_solve_method == penta_bicgstab ) then
+      do k = 1, nz
+        old_solution(:,2*k-1,1) = thlm(:,k)
+        old_solution(:,2*k  ,1) = wpthlp(:,k)
+      end do
+    end if
+
     ! Solve for th_l / w'th_l'
     if ( l_stats_samp .and. ithlm_matrix_condt_num > 0 ) then
-      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs, &                 ! Intent(in)
-                          lhs, rhs, &                 ! Intent(inout)
-                          solution, rcond )           ! Intent(out)
+      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs,  & ! Intent(in)
+                          old_solution,           & ! Intent(in)
+                          penta_solve_method,     & ! Intent(in)
+                          lhs, rhs,               & ! Intent(inout)
+                          solution, rcond )         ! Intent(out)
     else
-      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs, &          ! Intent(in)
-                          lhs, rhs, &          ! Intent(inout)
-                          solution )           ! Intent(out)
+      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs,  & ! Intent(in)
+                          old_solution,           & ! Intent(in)
+                          penta_solve_method,     & ! Intent(in)
+                          lhs, rhs,               & ! Intent(inout)
+                          solution )                ! Intent(out)
     end if
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3503,6 +3592,7 @@ module advance_xm_wpxp_module
            lhs_diff_zm, C7_Skw_fnc, &                   ! Intent(in)
            lhs_tp, lhs_ta_xm, lhs_pr1_wpthlp, &         ! Intent(in)
            l_implemented, solution(:,:,1),  &           ! Intent(in)
+           tridiag_solve_method, &                      ! Intent(in)
            l_predict_upwp_vpwp, &                       ! Intent(in)
            l_upwind_xm_ma, &                            ! Intent(in)
            l_tke_aniso, &                               ! Intent(in)
@@ -3564,10 +3654,20 @@ module advance_xm_wpxp_module
       ! part of the solving routine.
       rhs_save = rhs
 
+      ! Use the previous solution as an initial guess for the bicgstab method
+      if ( penta_solve_method == penta_bicgstab ) then
+        do k = 1, nz
+          old_solution(:,2*k-1,1) = sclrm(:,k,j)
+          old_solution(:,2*k  ,1) = wpsclrp(:,k,j)
+        end do
+      end if
+
       ! Solve for sclrm / w'sclr'
-      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs, &              ! Intent(in)
-                          lhs, rhs, &          ! Intent(inout)
-                          solution )           ! Intent(out)
+      call xm_wpxp_solve( nz, ngrdcol, gr, nrhs,  & ! Intent(in)
+                          old_solution,           & ! Intent(in)
+                          penta_solve_method,     & ! Intent(in)
+                          lhs, rhs,               & ! Intent(inout)
+                          solution )                ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then   
@@ -3603,6 +3703,7 @@ module advance_xm_wpxp_module
              lhs_diff_zm, C7_Skw_fnc, &                             ! Intent(in)
              lhs_tp, lhs_ta_xm, lhs_pr1_wpsclrp, &                  ! Intent(in)
              l_implemented, solution(:,:,1),  &                     ! Intent(in)
+             tridiag_solve_method, &                                ! Intent(in)
              l_predict_upwp_vpwp, &                                 ! Intent(in)
              l_upwind_xm_ma, &                                      ! Intent(in)
              l_tke_aniso, &                                         ! Intent(in)
@@ -3630,6 +3731,8 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   subroutine xm_wpxp_solve( nz, ngrdcol, gr, nrhs, &
+                            old_solution, & 
+                            penta_solve_method, & 
                             lhs, rhs, &
                             solution, rcond )
 
@@ -3669,6 +3772,12 @@ module advance_xm_wpxp_module
     integer, intent(in) :: &
       nrhs ! Number of rhs vectors
 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,2*nz,nrhs) ::  &
+      old_solution ! Old solution, used as an initial guess in the bicgstab method
+
+    integer, intent(in) :: &
+      penta_solve_method ! Method to solve then penta-diagonal system
+
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(nsup+nsub+1,ngrdcol,2*nz) :: & 
       lhs  ! Implicit contributions to wpxp/xm (band diag. matrix in LAPACK storage)
@@ -3687,8 +3796,9 @@ module advance_xm_wpxp_module
     integer :: i
 
     ! Solve the system 
-    call band_solve( "xm_wpxp",                         & ! Intent(in) 
+    call band_solve( "xm_wpxp", penta_solve_method,     & ! Intent(in) 
                       ngrdcol, nsup, nsub, 2*nz, nrhs,  & ! Intent(in) 
+                      old_solution,                     & ! Intent(in)
                       lhs, rhs,                         & ! Intent(inout)
                       solution, rcond )                   ! Intent(out)
 
@@ -3713,6 +3823,7 @@ module advance_xm_wpxp_module
                lhs_diff_zm, C7_Skw_fnc, &
                lhs_tp, lhs_ta_xm, lhs_pr1, &
                l_implemented, solution, &
+               tridiag_solve_method, &
                l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
                l_tke_aniso, &
@@ -3898,6 +4009,9 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,2*nz) :: &
       solution ! The <t+1> value of xm and wpxp   [units vary]
+
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,       & ! Flag to predict <u'w'> and <v'w'> along
@@ -4234,6 +4348,7 @@ module advance_xm_wpxp_module
                                            invrs_rho_ds_zm, invrs_rho_ds_zt, & ! intent(in)
                                            xp2_threshold, xm_tol, l_implemented, & ! intent(in)
                                            low_lev_effect, high_lev_effect, & ! intent(in)
+                                           tridiag_solve_method, & ! intent(in)
                                            l_upwind_xm_ma, & ! intent(in)
                                            l_mono_flux_lim_spikefix, & ! intent(in)
                                            stats_zt, stats_zm, & ! intent(inout)

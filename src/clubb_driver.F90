@@ -724,8 +724,10 @@ module clubb_driver
                              ! (double Gaussian) PDF type to use for the w, rt,
                              ! and theta-l (or w, chi, and eta) portion of
                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement    ! Selected option for the placement of the call to
+      ipdf_call_placement, & ! Selected option for the placement of the call to
                              ! CLUBB's PDF.
+      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -874,7 +876,7 @@ module clubb_driver
       l_allow_small_stats_tout
 
     namelist /configurable_clubb_flags_nl/ &
-      iiPDF_type, ipdf_call_placement, &
+      iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
       l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
       l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
       l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -1003,6 +1005,8 @@ module clubb_driver
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Intent(out)
                                          ipdf_call_placement, & ! Intent(out)
+                                         penta_solve_method, & ! Intent(out)
+                                         tridiag_solve_method, & ! Intent(out)
                                          l_use_precip_frac, & ! Intent(out)
                                          l_predict_upwp_vpwp, & ! Intent(out)
                                          l_min_wp2_from_corr_wx, & ! Intent(out)
@@ -1395,6 +1399,8 @@ module clubb_driver
     ! Initialize CLUBB configurable flags type
     call initialize_clubb_config_flags_type( iiPDF_type, & ! Intent(in)
                                              ipdf_call_placement, & ! Intent(in)
+                                             penta_solve_method, & ! Intent(in)
+                                             tridiag_solve_method, & ! Intent(in)
                                              l_use_precip_frac, & ! Intent(in)
                                              l_predict_upwp_vpwp, & ! Intent(in)
                                              l_min_wp2_from_corr_wx, & ! Intent(in)
@@ -2653,6 +2659,7 @@ module clubb_driver
                               hydromet_vel_covar_zt_impc,                 & ! In
                               hydromet_vel_covar_zt_expc,                 & ! In
                               params, nu_vert_res_dep,                    & ! In
+                              clubb_config_flags%tridiag_solve_method,    & ! In
                               clubb_config_flags%l_upwind_xm_ma,          & ! In
                               stats_zt, stats_zm, stats_sfc,              & ! intent(inout)
                               hydromet, hydromet_vel_zt, hydrometp2,      & ! Inout
