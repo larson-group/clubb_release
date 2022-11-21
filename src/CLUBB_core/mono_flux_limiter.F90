@@ -616,8 +616,7 @@ module mono_flux_limiter
         ! which can cause unphysical rtm and thlm tendencies over the height of the column.
         ! The fix essentially turns off the monotonic flux limiter for these special cases,
         ! but tests show that it still performs well otherwise and runs stably.
-        if ( l_mono_flux_lim_spikefix .and. &
-           ( solve_type == mono_flux_rtm .or. solve_type == mono_flux_thlm ) & 
+        if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
            .and. abs( wpxp(i,km1) ) > 1 / ( dt * gr%invrs_dzt(i,k) ) &
            * ( xm_without_ta(i,k) - min_x_allowable(i,k) ) &
            .and. wpxp(i,km1) < 0.0_core_rknd ) then

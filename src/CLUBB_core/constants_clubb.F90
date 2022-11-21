@@ -317,7 +317,7 @@ module constants_clubb
   ! rt_tol_mfl is larger (1e-4) to prevent the mfl from
   ! depositing moisture at the top of the domain.
   real( kind = core_rknd ), parameter, public :: &
-    thl_tol_mfl = 1.e-2_core_rknd, & ! [K]
+    thl_tol_mfl = 0.2_core_rknd, & ! [K]
     rt_tol_mfl = 1.e-4_core_rknd     ! [kg/kg]
 
   ! The tolerance for w'^2 is the square of the tolerance for w.
