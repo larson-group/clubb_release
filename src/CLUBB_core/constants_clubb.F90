@@ -406,6 +406,9 @@ module constants_clubb
   real( kind = core_rknd ), parameter, public :: &
     cloud_frac_min = 0.005_core_rknd ! Threshold for cloud fractions
 
+  real( kind = core_rknd ), parameter, public :: &
+    wp2_max = 1000._core_rknd ! Max value for variance clipping
+
   !-----------------------------------------------------------------------------
   ! Useful conversion factors.
   !-----------------------------------------------------------------------------

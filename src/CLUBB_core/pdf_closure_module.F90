@@ -1331,7 +1331,37 @@ module pdf_closure_module
       w_up_in_cloud(:,:) = zero
       w_down_in_cloud(:,:) = zero
     end if
-
+#ifdef TUNER
+    ! Check the first levels (and first gridcolumn) for reasonable temperatures
+    ! greater than 190K and less than 1000K
+    ! This is necessary because for certain parameter sets we can get floating point errors
+    do i=1, min( 10, size(pdf_params%thl_1(1,:)) )
+        if ( pdf_params%thl_1(1,i) < 190. ) then
+            write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
+                             " < 190K at first grid column and grid level i = ", i
+            err_code = clubb_fatal_error
+            return
+        end if
+        if ( pdf_params%thl_2(1,i) < 190. ) then
+            write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
+                             " < 190K at first grid column and grid level i = ", i
+            err_code = clubb_fatal_error
+            return
+        end if
+        if ( pdf_params%thl_1(1,i) > 1000. ) then
+            write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
+                             " > 1000K at first grid column and grid level i = ", i
+            err_code = clubb_fatal_error
+            return
+        end if
+        if ( pdf_params%thl_2(1,i) > 1000. ) then
+            write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
+                             " > 1000K at first grid column and grid level i = ", i
+            err_code = clubb_fatal_error
+            return
+        end if
+    end do
+#endif
     if ( clubb_at_least_debug_level( 2 ) ) then
       do i = 1, ngrdcol
           
@@ -1459,6 +1489,7 @@ module pdf_closure_module
             write(fstderr,*) "wpsclrpthlp = ", wpsclrpthlp
             write(fstderr,*) "wp2sclrp = ", wp2sclrp
           end if
+          return
 
         end if ! Fatal error
 

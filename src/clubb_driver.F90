@@ -1364,7 +1364,10 @@ module clubb_driver
                             momentum_heights, &                 ! Intent(out)
                             thermodynamic_heights )             ! Intent(out)
 
-    if ( err_code == clubb_fatal_error ) error stop 
+    if ( err_code == clubb_fatal_error ) then
+      write(fstderr, *) "Error in read_grid_heights"
+      error stop
+    end if
 
     ! These numbers represent host model horizontal grid spacing
     ! which for a single column simulation is effectively infinite
@@ -2197,7 +2200,7 @@ module clubb_driver
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
 
-    do itime = iinit, ifinal, 1
+    mainloop: do itime = iinit, ifinal, 1
       
       call cpu_time( time_start ) ! start timer for initial part of main loop
       
@@ -2251,13 +2254,15 @@ module clubb_driver
       end if
 
       ! Check for NaN values in the model arrays
-      if ( invalid_model_arrays( gr%nz, um, vm, rtm, wprtp, thlm, wpthlp, &
-                                 rtp2, thlp2, rtpthlp, wp2, wp3(1,:), &
-                                 wp2thvp, rtpthvp, thlpthvp, &
-                                 hydromet, sclrm, edsclrm ) ) then
-        err_code = clubb_fatal_error
-        write(fstderr,*) "Fatal error: a CLUBB variable is NaN in main time stepping loop."
-        error stop
+      if ( clubb_at_least_debug_level( 2 ) ) then
+        if ( invalid_model_arrays( gr%nz, um, vm, rtm, wprtp, thlm, wpthlp, &
+                                   rtp2, thlp2, rtpthlp, wp2, wp3(1,:), &
+                                   wp2thvp, rtpthvp, thlpthvp, &
+                                   hydromet, sclrm, edsclrm ) ) then
+          err_code = clubb_fatal_error
+          write(fstderr,*) "Fatal error: a CLUBB variable is NaN in main time stepping loop."
+          error stop
+        end if
       end if
 
       ! Calculate radiation only once in a while
@@ -2332,7 +2337,7 @@ module clubb_driver
       call cpu_time(time_stop)      
       time_loop_init = time_loop_init + time_stop - time_start      
       call cpu_time(time_start) ! initialize timer for advance_clubb_core
-      
+
       ! Call the parameterization one timestep
       if ( num_standalone_columns == 1 ) then
         ! Call the clubb core api for one column
@@ -2424,8 +2429,10 @@ module clubb_driver
       end if
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-            error stop "Fatal error in clubb, check your parameter values and timestep"
+        if ( err_code_dummy == clubb_fatal_error ) then
+          write(fstderr, *) "Fatal error in clubb, check your parameter values and timestep"
+          err_code = clubb_fatal_error
+          exit mainloop
         end if
       end if
 
@@ -2462,7 +2469,13 @@ module clubb_driver
                         precip_fracs,                                               & ! Intent(inout)
                         hydromet_pdf_params(1,:) )                                  ! Optional(out)
 
-         if ( err_code == clubb_fatal_error ) error stop
+         ! Error check after setup_pdf_parameters
+         if ( clubb_at_least_debug_level( 0 ) ) then
+             if ( err_code == clubb_fatal_error ) then
+                 write(fstderr,*) "Fatal error after setup_pdf_parameters_api"
+                 exit mainloop
+             endif
+         end if
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
          call hydrometeor_mixed_moments( gr, gr%nz, pdf_dim, hydromet,               & ! Intent(in)
@@ -2654,7 +2667,7 @@ module clubb_driver
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Fatal error in advance_microphys:"
-            error stop   
+            exit mainloop
           endif
       end if
 
@@ -2748,8 +2761,8 @@ module clubb_driver
         if ( err_code == clubb_fatal_error ) exit
       end if
 
-    end do ! itime=1, ifinal
-    
+    end do mainloop ! itime=1, ifinal
+
     ! Measure overall time in the main loop
     call cpu_time(time_stop)
     time_total = time_stop - time_total ! subtract previously saved start time 
@@ -2761,15 +2774,15 @@ module clubb_driver
       (time_total * (one - timing_tol) > (time_loop_init + time_clubb_advance +    &
       time_clubb_pdf + time_SILHS + time_microphys_scheme +    &
       time_microphys_advance + time_loop_end))) then
-      
+
       ! print warning to stderror and stdout 
       write(unit=fstderr, fmt='(a)') 'WARNING! Main loop timing budget has errors &
         & in excess of 1 per cent!'
       write(unit=fstdout, fmt='(a)') 'WARNING! Main loop timing budget has errors &
         & in excess of 1 per cent!'
-      
+
     endif
-    
+
     ! Print timers
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_loop_init =         ', &
       time_loop_init
@@ -2787,7 +2800,6 @@ module clubb_driver
       time_loop_end
     write(unit=fstdout, fmt='(a,f10.4)') 'CLUBB-TIMER time_total =             ', &
       time_total
-    
 
 !-------------------------------------------------------------------------------
 !                       End Main Time Stepping Loop
@@ -6793,7 +6805,6 @@ module clubb_driver
       allocate(edsclrm_col(ngrdcol,gr_col%nz,sclr_dim))
 
     end if
-
 
     ! First let's copy all the clubb inout variables to the extra columns
     ! the inouts are saved from call to call, so we only need to copy the first

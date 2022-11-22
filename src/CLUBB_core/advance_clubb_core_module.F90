@@ -924,14 +924,13 @@ module advance_clubb_core_module
                sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), edsclrm(i,:,:), edsclrm_forcing(i,:,:) )       ! intent(in)
 
       end do
-      
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-          err_code_out = err_code
-          return
-        end if
+
+      if ( err_code == clubb_fatal_error ) then
+        write(fstderr,*) "Fatal error when testing input"
+        err_code_out = err_code
+        return
       end if
-        
+
     end if
     !-----------------------------------------------------------------------
 
@@ -1467,7 +1466,7 @@ module advance_clubb_core_module
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
             err_code_out = err_code
-            write(fstderr,*) "Error calling calc_sfc_varnce"
+            write(fstderr, *) "Error calling calc_sfc_varnce"
             return
           end if
         end if
@@ -1494,7 +1493,7 @@ module advance_clubb_core_module
                                    stats_zm(i) )                           ! intent(inout)
         end if
 
-      else
+      else  ! sfc_elevation
 
         ! Variances for cases where the lowest level is not at the surface.
         ! Eliminate surface effects on lowest level variances.
@@ -1914,7 +1913,6 @@ module advance_clubb_core_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( err_code == clubb_fatal_error ) then
-            err_code = clubb_fatal_error
             err_code_out = err_code
             write(fstderr,*) "Error calling advance_wp2_wp3"
             return
@@ -2464,12 +2462,11 @@ module advance_clubb_core_module
              sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), edsclrm(i,:,:), edsclrm_forcing(i,:,:)       ) ! intent(in)
       end do
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-          err_code = clubb_fatal_error
-          err_code_out = err_code
-          return
-        end if
+      if ( err_code == clubb_fatal_error ) then
+        write(fstderr,*) "Error occurred during parameterization_check at"// &
+                         " end of advance_clubb_core"
+        err_code_out = err_code
+        return
       end if
 
     end if

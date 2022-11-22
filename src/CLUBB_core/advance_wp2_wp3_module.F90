@@ -1032,7 +1032,8 @@ module advance_wp2_wp3_module
         zero,                     &
         fstderr,                  &
         gamma_over_implicit_ts,   &
-        num_hf_draw_points
+        num_hf_draw_points,       &
+        wp2_max
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
@@ -1097,6 +1098,13 @@ module advance_wp2_wp3_module
     use stats_type, only: stats ! Type
 
     implicit none
+
+    ! External
+    intrinsic :: any
+
+    ! Parameter Constants
+    integer, parameter :: & 
+      nrhs = 1      ! Number of RHS vectors
 
     ! ----------------------- Input Variables -----------------------
     integer, intent(in) :: &
@@ -1206,7 +1214,6 @@ module advance_wp2_wp3_module
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
-
     ! Save the value of rhs, which will be overwritten with the solution as
     ! part of the solving routine.
     rhs_save = rhs
@@ -1490,7 +1497,14 @@ module advance_wp2_wp3_module
     ! type found on the Climate Process Team ticket #49.  Chris Golaz found that
     ! instability caused by large wp2 in CLUBB led unrealistic results in AM3.
     ! -dschanen 11 Apr 2011
-    where ( wp2 > 1000._core_rknd ) wp2 = 1000._core_rknd
+
+    ! Output to trace if wp2 needs to be capped
+    if ( clubb_at_least_debug_level( 1 ) ) then
+      if ( any( wp2(:,:) > wp2_max ) ) then
+        write(fstderr,*) "Warning: wp2 > ", wp2_max, ". Large values are clipped."
+      end if
+    end if
+    where ( wp2 > wp2_max ) wp2 = wp2_max
 
     if ( l_stats_samp ) then
       ! Store updated value for effect of the positive definite scheme
@@ -1533,9 +1547,9 @@ module advance_wp2_wp3_module
       do k = 1, nz, 1
         do i = 1, ngrdcol
           threshold_array(i,k) &
-          = max( w_tol_sqd, &
+          = min( wp2_max, max( w_tol_sqd, &
                  wprtp(i,k)**2 / ( rtp2(i,k) * max_mag_correlation_flux**2 ), &
-                 wpthlp(i,k)**2 / ( thlp2(i,k) * max_mag_correlation_flux**2 ) )
+                 wpthlp(i,k)**2 / ( thlp2(i,k) * max_mag_correlation_flux**2 ) ) )
 
         end do 
       end do

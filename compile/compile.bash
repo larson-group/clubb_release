@@ -75,7 +75,7 @@ cd $scriptPath
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
 # This also expects gnu-getopt as opposed to BSD getopt. 
 # Make sure you have gnu-getopt installed and it is before BSD getopt in your PATH.
-TEMP=`getopt -o c:mh --long mkl_lapack,config:,help -n 'compile.bash' -- "$@"`
+TEMP=`getopt -o c:mth --long mkl_lapack,config:,tuner,help -n 'compile.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Run with -h for help." >&2 ; exit 1 ; fi
 
@@ -95,11 +95,16 @@ while true ; do
 			l_use_mkl_lapack=true
 
 			shift;;
+		-t|--tuner) # Compile for CLUBB for tuning
+
+		    CPPDEFS="${CPPDEFS} -DTUNER"
+		    shift;;
         	-h|--help) # Print the help message
 
 			echo -e "Usage: compile.bash [-c FILE] [-m] [-h]"
 			echo -e "\t-c FILE, --config FILE\t  Path to config flags file"
 			echo -e "\t-m, --mkl_lapack\t  Flag to use MKL Lapack routines"
+			echo -e "\t-t, --tuner\t\t  Compile for tuning run"
 			echo -e "\t-h, --help\t\t  Prints this help message"
 
 			exit 1 ;;

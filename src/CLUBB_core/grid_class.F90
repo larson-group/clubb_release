@@ -944,7 +944,7 @@ module grid_class
            // " Please reset zm_grid_fname to ''."
         err_code = clubb_fatal_error
         return
-          endif
+      endif
       if ( zt_grid_fname /= '' ) then
         write(fstderr,*) err_header, & 
            "An evenly-spaced grid has been selected. " & 
