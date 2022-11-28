@@ -6,6 +6,8 @@
 FC=nvfortran
 LD=nvfortran
 
+OPENACC=true
+
 # Define path to directories
 dir=`pwd` # dir where this script resides
 bindir="$dir/../bin"  # dir for Makefile and executable
@@ -15,7 +17,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 
 # == Debugging ==
 # No Debug flags
-DEBUG=""
+DEBUG="-g"
 # Debugging information and floating-point trapping
 #DEBUG="-g -C -Kieee -Ktrap=fp"
 
@@ -26,8 +28,14 @@ ARCH=""
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-r8"
 
-# == Optimization ==
-OPTIMIZE="-O2"
+if [ $OPENACC == true ]
+then
+	# == Optimization ==
+	OPTIMIZE="-O3 -acc -gpu=cc70,managed -Minfo=accel"
+else
+	OPTIMIZE="-O3"
+fi
+
 
 # == NetCDF Location ==
 # On Casper, the NETCDF enviornment variable is set by our choice of compiler.
@@ -38,8 +46,13 @@ OPTIMIZE="-O2"
 # The NVHPC directory contains static versions of LAPACK and BLAS
 LAPACK="-llapack -lblas"
 
-# == Linking Flags ==
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK"
+if [ $OPENACC == true ]
+then
+	# == Linking Flags ==
+	LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -gpu=cc70,managed -lcurand"
+else
+	LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK"
+fi
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee"
 
