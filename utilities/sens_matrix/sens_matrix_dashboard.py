@@ -24,154 +24,18 @@ def main():
             analyzeSensMatrix, setupObsCol, setupDefaultMetricValsCol, \
             findOutliers, findParamsUsingElastic
     from test_analyzeSensMatrix import write_test_netcdf_files
-
-    # Metrics are observed quantities that we want a tuned simulation to match.
-    #    The order of metricNames determines the order of rows in sensMatrix.
-    # Column vector of (positive) weights.  A small value de-emphasizes
-    #   the corresponding metric in the fit.
-    metricsNamesAndWeights = [ \
-                        ['SWCF_GLB', 16.00], \
-                        ['SWCF_DYCOMS', 1.00], \
-                        ['SWCF_HAWAII', 1.00], \
-                        ['SWCF_VOCAL', 1.00], \
-                        ['SWCF_VOCAL_near', 8.00], \
-                        ['SWCF_LBA', 1.00], \
-                        ['SWCF_WP', 1.00], \
-                        ['SWCF_EP', 1.00], \
-                        ['SWCF_NP', 1.00], \
-                        ['SWCF_SP', 1.00],  \
-##                        ['SWCF_PA', 1.01], \
-                        ['SWCF_CAF', 1.00], \
-                        ['SWCF_Nambian', 1.00], \
-                        ['SWCF_Nambian_near', 8.00], \
-                        ['LWCF_GLB', 8.00], \
-##                        ['LWCF_DYCOMS', 1.01], \
-##                        ['LWCF_HAWAII', 1.01], \
-##                        ['LWCF_VOCAL', 1.01], \
-#                        ['LWCF_LBA', 1.00], \
-#                        ['LWCF_WP', 1.00], \
-##                        ['LWCF_EP', 1.01], \
-##                        ['LWCF_NP', 1.01], \
-##                        ['LWCF_SP', 1.01], \
-###                        ['LWCF_PA',  1.01], \
-##                        ['LWCF_CAF', 1.01], \
-                        ['PRECT_GLB', 8.00] \
-#                        ['PRECT_LBA', 1.00], \
-#                        ['PRECT_WP', 1.00], \
-##                        ['PRECT_EP', 1.01], \
-##                        ['PRECT_NP', 1.01], \
-##                        ['PRECT_SP', 1.01], \
-###                        ['PRECT_PA', 1.01], \
-#                        ['PRECT_CAF', 1.00] \
-                         ]
-
-#                        ['PRECT_DYCOMS', 0.01], \
-#                        ['PRECT_HAWAII', 0.01], \
-#                        ['PRECT_VOCAL', 0.01], \
-
-    dfMetricsNamesAndWeights =  \
-        pd.DataFrame( metricsNamesAndWeights, columns = ['metricsNames', 'metricsWeights'] )
-    metricsNames = dfMetricsNamesAndWeights[['metricsNames']].to_numpy().astype(str)[:,0]
-    metricsWeights = dfMetricsNamesAndWeights[['metricsWeights']].to_numpy()
+    from set_up_dashboard_inputs import setUpInputs
 
 
-    # Parameters are tunable model parameters, e.g. clubb_C8.
-    # The float listed below is a factor that is used below for scaling plots.
-    # Each parameter is associated with two sensitivity simulations in which that parameter is perturbed
-    #    either up or down.
-    #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
-    #    Each netcdf file contains metric values and parameter values for a single simulation.
-    paramsNamesScalesAndFilenames = [ \
-                    ['clubb_c7', 1.0, \
-                     '20220915/chrysalis.bmg20220630.sens915_2.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20220915/chrysalis.bmg20220630.sens915_3.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c11', 1.0, \
-#                     '20220915/chrysalis.bmg20220630.sens915_4.ne30pg2_r05_oECv3_Regional.nc',  \
-#                     '20220915/chrysalis.bmg20220630.sens915_5.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_gamma_coef', 1.0, \
-                     '20220915/chrysalis.bmg20220630.sens915_12.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20220915/chrysalis.bmg20220630.sens915_13.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c8', 1.0, \
-#                     '20220915/chrysalis.bmg20220630.sens915_9.ne30pg2_r05_oECv3_Regional.nc',  \
-#                     '20220915/chrysalis.bmg20220630.sens915_8.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_k10', 1.0, \
-                     '20220915/chrysalis.bmg20220630.sens915_10.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20220915/chrysalis.bmg20220630.sens915_11.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2', 1.0, \
-                     '20220915/chrysalis.bmg20220630.sens915_6.ne30pg2_r05_oECv3_Regional.nc',
-                     '20220915/chrysalis.bmg20220630.sens915_7.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_altitude_threshold', 0.001, \
-                     '20220915/chrysalis.bmg20220630.sens915_14.ne30pg2_r05_oECv3_Regional.nc',
-                     '20220915/chrysalis.bmg20220630.sens915_15.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-#                    '20220915/chrysalis.bmg20220630.sens915_16.ne30pg2_r05_oECv3_Regional.nc',
-#                    '20220915/chrysalis.bmg20220630.sens915_17.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_sfc', 1.0, \
-#                     '20220915/chrysalis.bmg20220630.sens915_18.ne30pg2_r05_oECv3_Regional.nc',
-#                     '20220915/chrysalis.bmg20220630.sens915_19.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-                     '20220915/chrysalis.bmg20220630.sens915_8.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20220915/chrysalis.bmg20220630.sens915_9.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
-#                     '20220915/chrysalis.bmg20220630.sens915_20.ne30pg2_r05_oECv3_Regional.nc',
-#                     '20220915/chrysalis.bmg20220630.sens915_21.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
-#                     '20220915/chrysalis.bmg20220630.sens915_24.ne30pg2_r05_oECv3_Regional.nc', \
-#                     '20220915/chrysalis.bmg20220630.sens915_25.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['micro_vqit', 1.0, \
-##                     '20220915/chrysalis.bmg20220630.sens915_16.ne30pg2_r05_oECv3_Regional.nc', \
-##                     '20220915/chrysalis.bmg20220630.sens915_17.ne30pg2_r05_oECv3_Regional.nc'], \
-                        ]
+    # The user should input all tuning data into file set_up_dashboard_inputs.py
+    metricsNames, metricsWeights, \
+    paramsNames, paramsScales, \
+    transformedParamsNames, \
+    sensNcFilenames, sensNcFilenamesExt, \
+    defaultNcFilename, linSolnNcFilename, \
+    obsMetricValsDict, obsMetricValsCol = \
+        setUpInputs()
 
-    dfparamsNamesScalesAndFilenames =  \
-        pd.DataFrame( paramsNamesScalesAndFilenames, \
-                          columns = ['paramsNames', 'paramsScales',
-                                     #'sensNcFilenames', 'sensNcFilenamesExt'] )
-                                     'sensNcFilenamesExt', 'sensNcFilenames'] )
-    paramsNames = dfparamsNamesScalesAndFilenames[['paramsNames']].to_numpy().astype(str)[:,0]
-    # Extract scaling factors of parameter values from user-defined list paramsNamesScalesAndFilenames.
-    # The scaling is not used for any calculations, but it allows us to avoid plotting very large or small values.
-    paramsScales = dfparamsNamesScalesAndFilenames[['paramsScales']].to_numpy().astype(float)[:,0]
-    sensNcFilenames = dfparamsNamesScalesAndFilenames[['sensNcFilenames']].to_numpy().astype(str)[:,0]
-    sensNcFilenamesExt = dfparamsNamesScalesAndFilenames[['sensNcFilenamesExt']].to_numpy().astype(str)[:,0]
-
-    # This the subset of paramsNames that vary from [0,1] (e.g., C5)
-    #    and hence will be transformed to [0,infinity] in order to make
-    #    the relationship between parameters and metrics more linear:
-    #transformedParamsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2', 'clubb_c_invrs_tau_n2_clear_wp3'])
-    transformedParamsNames = np.array([''])
-
-    # Netcdf file containing metric and parameter values from the default simulation
-    defaultNcFilename = \
-        '20220915/chrysalis.bmg20220630.sens915_1.ne30pg2_r05_oECv3_Regional.nc'
-
-    # Metrics from simulation that use the SVD-recommended parameter values
-    # Here, we use default simulation just as a placeholder.
-    linSolnNcFilename = \
-            '20220915/chrysalis.bmg20220630.sens915_1.ne30pg2_r05_oECv3_Regional.nc'
-
-# Observed values of our metrics, from, e.g., CERES-EBAF.
-# These observed metrics will be matched as closely as possible by analyzeSensMatrix.
-# NOTE: PRECT is in the unit of m/s
-    obsMetricValsDict = { \
-    'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_GLB': -45.81, 'TMQ_GLB': 24.423, \
-    'LWCF_DYCOMS': 19.36681938, 'PRECT_DYCOMS':0.000000007141516, 'SWCF_DYCOMS': -63.49394226, 'TMQ_DYCOMS':20.33586884,\
-    'LWCF_LBA': 43.83245087, 'PRECT_LBA':0.000000063727875, 'SWCF_LBA': -55.10041809, 'TMQ_LBA': 44.27890396,\
-    'LWCF_HAWAII': 23.6855, 'PRECT_HAWAII':0.00000002087774, 'SWCF_HAWAII': -33.1536, 'TMQ_HAWAII': 32.4904,\
-    'LWCF_WP': 54.5056, 'PRECT_WP':0.000000077433568, 'SWCF_WP': 62.3644, 'TMQ_WP':50.5412,\
-    'LWCF_EP': 33.42149734, 'PRECT_EP': 0.000000055586694, 'SWCF_EP': -51.79394531, 'TMQ_EP':44.34251404,\
-    'LWCF_NP': 26.23941231, 'PRECT_NP':0.000000028597503, 'SWCF_NP': -50.92364502, 'TMQ_NP':12.72111988,\
-    'LWCF_SP': 31.96141052, 'PRECT_SP':0.000000034625369, 'SWCF_SP': -70.26461792, 'TMQ_SP':10.95032024,\
-    'LWCF_PA': 47.32126999, 'PRECT_PA':0.000000075492694, 'SWCF_PA': -78.27433014, 'TMQ_PA':47.25967789,\
-    'LWCF_CAF': 43.99757003784179687500, 'PRECT_CAF':0.000000042313699, 'SWCF_CAF': -52.50243378, 'TMQ_CAF':36.79592514,\
-    'LWCF_VOCAL': 43.99757004, 'PRECT_VOCAL':0.000000001785546, 'SWCF_VOCAL': -77.26232147, 'TMQ_VOCAL':17.59922791, \
-    'LWCF_VOCAL_near': 15.4783, 'PRECT_VOCAL_near':0.0000000037719, 'SWCF_VOCAL_near': -58.4732, 'TMQ_VOCAL_near': 14.9315, \
-    'LWCF_Nambian': 12.3294, 'PRECT_Nambian':0.00000000177636 , 'SWCF_Nambian': -66.9495, 'TMQ_Nambian': 24.4823, \
-    'LWCF_Nambian_near': 10.904, 'PRECT_Nambian_near':0.00000000238369 , 'SWCF_Nambian_near': -36.1216, 'TMQ_Nambian_near': 17.5188, \
-        }
-
-    # Set up a column vector of observed metrics
-    obsMetricValsCol = setupObsCol(obsMetricValsDict, metricsNames)
 
     # Estimate non-linearity of the global model to perturbations in parameter values.
     # To do so, calculate radius of curvature of the three points from the default simulation
@@ -456,7 +320,7 @@ def main():
                                   font=dict(color='blue'),
                                   align='left', xref='paper', yref='paper', x=0.05, y=0.9, showarrow=False)
     biasesOrderFig.add_annotation(text='realized E3SM bias removal',
-                                  font=dict(color='red'),  #'rgba(255,0,0,0.0)'),
+                                  font=dict(color='red'), #'rgba(255,0,0,0.0)'),
                                   align='left', xref='paper', yref='paper', x=0.05, y=0.8, showarrow=False)
     # Plot arrows showing the bias removal of E3SM's solution
     for i, item in enumerate(metricsNamesOrdered):
@@ -475,7 +339,7 @@ def main():
         arrowhead=3,
         arrowsize=1,
         arrowwidth=2,
-        arrowcolor='red'#,
+        arrowcolor='red' #,
         #opacity=0.0
 	    )
     #pdb.set_trace()
@@ -885,7 +749,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
         chisqd = np.linalg.norm( (-normlzdDefaultBiasesCol - normlzdSensMatrix @ dnormlzdParams \
                                   - 0.5 * normlzdCurvMatrix @ (dnormlzdParams * dnormlzdParams) \
                                  ) * metricsWeights \
-                               )**2  \
+                               )**1  \
                 + 0.0 * np.linalg.norm( dnormlzdParams, ord=1 )
         #chisqdOrig = np.linalg.norm( (-normlzdDefaultBiasesCol ) * np.reciprocal(metricsWeights) )**2
         #pdb.set_trace()
@@ -1222,7 +1086,7 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, par
 
     plt.show()
     plt.savefig('param_metric_scatter.png')
-    pdb.set_trace()
+    #pdb.set_trace()
 
     return
 
