@@ -380,6 +380,10 @@ If you add a new source file to CLUBB, then in order for mkmf to be
 able to find it, you will need to add the filename 
 to one of the file lists in directory compile/file_list.
 
+When compiling for a tuning run, make sure to include the command-line option
+-t/--tuner along with any other option:
+   $ ./compile.bash -t [other options]
+
 -----------------------------------------------------------------------
 - (1.1.1) Promoting real to double precision at compile time
 -----------------------------------------------------------------------
@@ -894,6 +898,14 @@ amoeba.f90  nrtype.f90  ran1_s.f90  ran_state.f90
 You may need to separate out any USE statements delimited by a semicolon in
 order to make the files work properly with the mkmf script.
 
+For a tuning run, CLUBB must be compiled as described in Chapter 1 with one exception:
+it is advised to use the command-line option -t/--tuner when calling the compile.bash script 
+in order to avoid crashed while tuning:
+   $ ./compile.bash -t [other options]
+Using this option will set a compiler flag that enables additional checks needed to avoid 
+floating-point issues when running CLUBB with unusual parameter sets.
+In general, this change will likely not be bit-changing since it will only affect the output 
+in extreme cases.
 Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
 
 4. Edit input_misc/tuner/error_<CASE NAME>.in or select an existing one. Note that

@@ -1,5 +1,5 @@
 &stats
-f_tol              = 0.001,
+f_tol              = 0.1,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .true.,

@@ -50,7 +50,8 @@ module sfc_varnce_module
         thl_tol,    &
         rt_tol,     &
         max_mag_correlation_flux, &
-        fstderr
+        fstderr,    &
+        wp2_max
 
     use parameters_model, only: & 
         sclr_dim  ! Variable(s)
@@ -480,6 +481,8 @@ module sfc_varnce_module
 
     endif ! l_andre_1978
 
+    ! Clip wp2_sfc at wp2_max, same as in advance_wp2_wp3
+    wp2_sfc = min(wp2_sfc, wp2_max)
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 

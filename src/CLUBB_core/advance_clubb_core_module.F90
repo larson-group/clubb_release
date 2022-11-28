@@ -173,6 +173,7 @@ module advance_clubb_core_module
                qclvar, &                                            ! intent(out)
 #endif
                thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &    ! intent(out)
+               cloudy_updraft_frac, cloudy_downdraft_frac, &        ! intent(out)
                rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! intent(out)
                err_code_out )                                       ! intent(out)
 
@@ -624,10 +625,12 @@ module advance_clubb_core_module
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) ::  &
-      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
-      invrs_tau_zm         ! One divided by tau on zm levels       [1/s]
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac, & ! cloudy downdraft fraction             [-]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -921,14 +924,13 @@ module advance_clubb_core_module
                sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), edsclrm(i,:,:), edsclrm_forcing(i,:,:) )       ! intent(in)
 
       end do
-      
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-          err_code_out = err_code
-          return
-        end if
+
+      if ( err_code == clubb_fatal_error ) then
+        write(fstderr,*) "Fatal error when testing input"
+        err_code_out = err_code
+        return
       end if
-        
+
     end if
     !-----------------------------------------------------------------------
 
@@ -1121,6 +1123,8 @@ module advance_clubb_core_module
                                rtprcp, rcp2,                                & ! Intent(out)
                                uprcp, vprcp,                                & ! Intent(out)
                                w_up_in_cloud, w_down_in_cloud,              & ! Intent(out)
+                               cloudy_updraft_frac,                         & ! Intent(out)
+                               cloudy_downdraft_frac,                       & ! intent(out)
                                Skw_velocity,                                & ! Intent(out)
                                cloud_frac_zm,                               & ! Intent(out)
                                ice_supersat_frac_zm,                        & ! Intent(out)
@@ -1462,7 +1466,7 @@ module advance_clubb_core_module
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
             err_code_out = err_code
-            write(fstderr,*) "Error calling calc_sfc_varnce"
+            write(fstderr, *) "Error calling calc_sfc_varnce"
             return
           end if
         end if
@@ -1489,7 +1493,7 @@ module advance_clubb_core_module
                                    stats_zm(i) )                           ! intent(inout)
         end if
 
-      else
+      else  ! sfc_elevation
 
         ! Variances for cases where the lowest level is not at the surface.
         ! Eliminate surface effects on lowest level variances.
@@ -1708,6 +1712,8 @@ module advance_clubb_core_module
                             uprcp, vprcp, rc_coef,                                & ! intent(in)
                             clubb_params, nu_vert_res_dep,                        & ! intent(in)
                             clubb_config_flags%iiPDF_type,                        & ! intent(in)
+                            clubb_config_flags%penta_solve_method,                & ! intent(in)
+                            clubb_config_flags%tridiag_solve_method,              & ! intent(in)
                             clubb_config_flags%l_predict_upwp_vpwp,               & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,            & ! intent(in)
                             clubb_config_flags%l_stability_correct_Kh_N2_zm,      & ! intent(in)
@@ -1722,6 +1728,11 @@ module advance_clubb_core_module
                             clubb_config_flags%l_lmm_stepping,                    & ! intent(in)
                             clubb_config_flags%l_enable_relaxed_clipping,         & ! intent(in)
                             clubb_config_flags%l_linearize_pbl_winds,             & ! intent(in)
+                            clubb_config_flags%l_mono_flux_lim_thlm,              & ! intent(in)
+                            clubb_config_flags%l_mono_flux_lim_rtm,               & ! intent(in)
+                            clubb_config_flags%l_mono_flux_lim_um,                & ! intent(in)
+                            clubb_config_flags%l_mono_flux_lim_vm,                & ! intent(in)
+                            clubb_config_flags%l_mono_flux_lim_spikefix,          & ! intent(in)
                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,         & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(i/o)
                             rtm, wprtp, thlm, wpthlp,                             & ! intent(i/o)
@@ -1789,6 +1800,7 @@ module advance_clubb_core_module
                              wp2_splat,                                   & ! intent(in)
                              clubb_params, nu_vert_res_dep,               & ! intent(in)
                              clubb_config_flags%iiPDF_type,               & ! intent(in)
+                             clubb_config_flags%tridiag_solve_method,     & ! intent(in)
                              clubb_config_flags%l_predict_upwp_vpwp,      & ! intent(in)
                              clubb_config_flags%l_min_xp2_from_corr_wx,   & ! intent(in)
                              clubb_config_flags%l_C2_cloud_frac,          & ! intent(in)
@@ -1888,6 +1900,7 @@ module advance_clubb_core_module
                             wprtp, wpthlp, rtp2, thlp2,                           & ! intent(in)
                             clubb_params, nu_vert_res_dep,                        & ! intent(in)
                             clubb_config_flags%iiPDF_type,                        & ! intent(in)
+                            clubb_config_flags%penta_solve_method,                & ! intent(in)
                             clubb_config_flags%l_min_wp2_from_corr_wx,            & ! intent(in)
                             clubb_config_flags%l_upwind_xm_ma,                    & ! intent(in)
                             clubb_config_flags%l_tke_aniso,                       & ! intent(in)
@@ -1904,7 +1917,6 @@ module advance_clubb_core_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( err_code == clubb_fatal_error ) then
-            err_code = clubb_fatal_error
             err_code_out = err_code
             write(fstderr,*) "Error calling advance_wp2_wp3"
             return
@@ -2001,6 +2013,7 @@ module advance_clubb_core_module
                                   rho_ds_zm, invrs_rho_ds_zt,                 & ! intent(in)
                                   fcor, l_implemented,                        & ! intent(in)
                                   nu_vert_res_dep,                            & ! intent(in)
+                                  clubb_config_flags%tridiag_solve_method,    & ! intent(in)
                                   clubb_config_flags%l_predict_upwp_vpwp,     & ! intent(in)
                                   clubb_config_flags%l_upwind_xm_ma,          & ! intent(in)
                                   clubb_config_flags%l_uv_nudge,              & ! intent(in)
@@ -2299,6 +2312,8 @@ module advance_clubb_core_module
                                rtprcp, rcp2,                                & ! Intent(out)
                                uprcp, vprcp,                                & ! Intent(out)
                                w_up_in_cloud, w_down_in_cloud,              & ! Intent(out)
+                               cloudy_updraft_frac,                         & ! Intent(out)
+                               cloudy_downdraft_frac,                       & ! intent(out)
                                Skw_velocity,                                & ! Intent(out)
                                cloud_frac_zm,                               & ! Intent(out)
                                ice_supersat_frac_zm,                        & ! Intent(out)
@@ -2425,7 +2440,8 @@ module advance_clubb_core_module
                tau_zm(i,:), Kh_zm(i,:), thlprcp(i,:),                                & ! intent(in)
                rtprcp(i,:), rcp2(i,:), em(i,:), a3_coef(i,:), a3_coef_zt(i,:),                 & ! intent(in)
                wp3_zm(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), Skw_velocity(i,:),       & ! intent(in)
-               w_up_in_cloud(i,:), w_down_in_cloud(i,:),                                  & ! intent(in)
+               w_up_in_cloud(i,:), w_down_in_cloud(i,:),                             & ! intent(in)
+               cloudy_updraft_frac(i,:), cloudy_downdraft_frac(i,:),                 & ! intent(in)
                pdf_params_single_col(i), pdf_params_zm_single_col(i), sclrm(i,:,:), sclrp2(i,:,:),              & ! intent(in)
                sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), sclrpthvp(i,:,:),         & ! intent(in)
                wpsclrp(i,:,:), sclrprcp(i,:,:), wp2sclrp(i,:,:), wpsclrp2(i,:,:), wpsclrprtp(i,:,:),     & ! intent(in)
@@ -2451,12 +2467,11 @@ module advance_clubb_core_module
              sclrprtp(i,:,:), sclrpthlp(i,:,:), sclrm_forcing(i,:,:), edsclrm(i,:,:), edsclrm_forcing(i,:,:)       ) ! intent(in)
       end do
 
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-          err_code = clubb_fatal_error
-          err_code_out = err_code
-          return
-        end if
+      if ( err_code == clubb_fatal_error ) then
+        write(fstderr,*) "Error occurred during parameterization_check at"// &
+                         " end of advance_clubb_core"
+        err_code_out = err_code
+        return
       end if
 
     end if
@@ -2577,6 +2592,8 @@ module advance_clubb_core_module
                                  rtprcp, rcp2,                  & ! Intent(out)
                                  uprcp, vprcp,                  & ! Intent(out)
                                  w_up_in_cloud, w_down_in_cloud,& ! Intent(out)
+                                 cloudy_updraft_frac,           & ! Intent(out)
+                                 cloudy_downdraft_frac,         & ! intent(out)
                                  Skw_velocity,                  & ! Intent(out)
                                  cloud_frac_zm,                 & ! Intent(out)
                                  ice_supersat_frac_zm,          & ! Intent(out)
@@ -2846,10 +2863,12 @@ module advance_clubb_core_module
       rcp2         ! Variance of r_c (momentum levels)        [kg^2/kg^2]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
-      uprcp,           & ! < u' r_c' >                [(m kg)/(s kg)]
-      vprcp,           & ! < v' r_c' >                [(m kg)/(s kg)]
-      w_up_in_cloud,   & ! mean cloudy updraft vel    [m/s]
-      w_down_in_cloud    ! mean cloudy downdraft vel  [m/s]
+      uprcp,                 & ! < u' r_c' >                [(m kg)/(s kg)]
+      vprcp,                 & ! < v' r_c' >                [(m kg)/(s kg)]
+      w_up_in_cloud,         & ! mean cloudy updraft vel    [m/s]
+      w_down_in_cloud,       & ! mean cloudy downdraft vel  [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction    [-]
+      cloudy_downdraft_frac    ! cloudy downdraft fraction  [-]
 
     ! Variables being passed back to only advance_clubb_core (for statistics).
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
@@ -2905,9 +2924,13 @@ module advance_clubb_core_module
       Sku_zt,           & ! Skewness of u on thermodynamic levels      [-]
       Sku_zm,           & ! Skewness of u on momentum levels           [-]
       Skv_zt,           & ! Skewness of v on thermodynamic levels      [-]
-      Skv_zm,           & ! Skewness of v on momentum levels           [-]
-      w_up_in_cloud_zm, & ! Avg. cloudy updraft velocity; m-levs       [m/s]
-      w_down_in_cloud_zm  ! Avg. cloudy downdraft velocity; m-levs     [m/s]
+      Skv_zm              ! Skewness of v on momentum levels           [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      w_up_in_cloud_zm,         & ! Avg. cloudy updraft velocity; m-levs   [m/s]
+      w_down_in_cloud_zm,       & ! Avg. cloudy downdraft velocity; m-levs [m/s]
+      cloudy_updraft_frac_zm,   & ! cloudy updraft fraction; m-levs        [-]
+      cloudy_downdraft_frac_zm    ! cloudy downdraft fraction; m-levs      [-]
 
     ! Interpolated values for optional second call to PDF closure.
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -3235,6 +3258,7 @@ module advance_clubb_core_module
            thlprcp_zt, rcp2_zt,                            & ! intent(out)
            uprcp_zt, vprcp_zt,                             & ! intent(out)
            w_up_in_cloud, w_down_in_cloud,                 & ! intent(out)
+           cloudy_updraft_frac, cloudy_downdraft_frac,     & ! intent(out)
            pdf_params, pdf_implicit_coefs_terms,           & ! intent(out)
            F_w, F_rt, F_thl,                               & ! intent(out)
            min_F_w, max_F_w,                               & ! intent(out)
@@ -3370,6 +3394,7 @@ module advance_clubb_core_module
              thlprcp, rcp2,                                        & ! intent(out)
              uprcp, vprcp,                                         & ! intent(out)
              w_up_in_cloud_zm, w_down_in_cloud_zm,                 & ! intent(out)
+             cloudy_updraft_frac_zm, cloudy_downdraft_frac_zm,     & ! intent(out)
              pdf_params_zm, pdf_implicit_coefs_terms_zm,           & ! intent(out)
              F_w_zm, F_rt_zm, F_thl_zm,                            & ! intent(out)
              min_F_w_zm, max_F_w_zm,                               & ! intent(out)

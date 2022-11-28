@@ -615,6 +615,7 @@ contains
     qclvar, &                                               ! intent(out)
 #endif
     thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+    cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -839,10 +840,12 @@ contains
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
-      invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac, & ! cloudy downdraft fraction             [-]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -1037,10 +1040,12 @@ contains
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), dimension(1,gr%nz) ::  &
-      wprcp_col,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud_col,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud_col,   & ! Average cloudy downdraft velocity     [m/s]
-      invrs_tau_zm_col         ! One divided by tau on zm levels               [1/s]
+      wprcp_col,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud_col,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud_col,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac_col,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac_col, & ! cloudy downdraft fraction             [-]
+      invrs_tau_zm_col             ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(1,gr%nz) :: &
       Kh_zt_col, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -1193,6 +1198,8 @@ contains
     wprcp_col(1,:) = wprcp
     w_up_in_cloud_col(1,:) = w_up_in_cloud
     w_down_in_cloud_col(1,:) = w_down_in_cloud
+    cloudy_updraft_frac_col(1,:) = cloudy_updraft_frac
+    cloudy_downdraft_frac_col(1,:) = cloudy_downdraft_frac
     rcm_in_layer_col(1,:) = rcm_in_layer
     cloud_cover_col(1,:) = cloud_cover
     invrs_tau_zm_col(1,:) = invrs_tau_zm
@@ -1245,6 +1252,7 @@ contains
                qclvar_col, &                                      ! intent(out)
 #endif
       thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, & ! intent(out)
+      cloudy_updraft_frac_col, cloudy_downdraft_frac_col, &        ! intent(out)
       rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &      ! intent(out)
       err_code_api )                                          ! intent(out)
     
@@ -1321,6 +1329,8 @@ contains
     wprcp = wprcp_col(1,:)
     w_up_in_cloud = w_up_in_cloud_col(1,:)
     w_down_in_cloud = w_down_in_cloud_col(1,:)
+    cloudy_updraft_frac = cloudy_updraft_frac_col(1,:)
+    cloudy_downdraft_frac = cloudy_downdraft_frac_col(1,:)
     invrs_tau_zm = invrs_tau_zm_col(1,:)
     Kh_zt = Kh_zt_col(1,:)
     Kh_zm = Kh_zm_col(1,:)
@@ -1382,6 +1392,7 @@ contains
     qclvar, &                                               ! intent(out)
 #endif
     thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+    cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -1603,10 +1614,12 @@ contains
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) ::  &
-      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
-      w_up_in_cloud,     & ! Average cloudy updraft velocity       [m/s]
-      w_down_in_cloud,   & ! Average cloudy downdraft velocity     [m/s]
-      invrs_tau_zm         ! One divided by tau on zm levels               [1/s]
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
+      w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac, & ! cloudy downdraft fraction             [-]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
@@ -1678,6 +1691,7 @@ contains
                qclvar, &                                      ! intent(out)
 #endif
       thlprcp, wprcp, w_up_in_cloud, w_down_in_cloud, &       ! intent(out)
+      cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
       rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
       err_code_api )                                          ! intent(out)
 
@@ -4467,6 +4481,8 @@ contains
   !================================================================================================
   subroutine set_default_clubb_config_flags_api( iiPDF_type, & ! Out
                                                  ipdf_call_placement, & ! Out
+                                                 penta_solve_method, & ! Out
+                                                 tridiag_solve_method, & ! Out
                                                  l_use_precip_frac, & ! Out
                                                  l_predict_upwp_vpwp, & ! Out
                                                  l_min_wp2_from_corr_wx, & ! Out
@@ -4513,7 +4529,12 @@ contains
                                                  l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
                                                  l_smooth_Heaviside_tau_wpxp, & ! Out
                                                  l_enable_relaxed_clipping, & ! Out
-                                                 l_linearize_pbl_winds ) ! Out
+                                                 l_linearize_pbl_winds, & ! Out
+                                                 l_mono_flux_lim_thlm, & ! Out
+                                                 l_mono_flux_lim_rtm, & ! Out
+                                                 l_mono_flux_lim_um, & ! Out
+                                                 l_mono_flux_lim_vm, & ! Out
+                                                 l_mono_flux_lim_spikefix ) ! Out
 
     use model_flags, only: &
         set_default_clubb_config_flags  ! Procedure
@@ -4526,8 +4547,10 @@ contains
                              ! (double Gaussian) PDF type to use for the w, rt,
                              ! and theta-l (or w, chi, and eta) portion of
                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement    ! Selected option for the placement of the call to
+      ipdf_call_placement, & ! Selected option for the placement of the call to
                              ! CLUBB's PDF.
+      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
 
     logical, intent(out) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -4636,10 +4659,18 @@ contains
                                       ! in src/CLUBB_core/mixing_length.F90
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp
                                       ! in xm_wpxp_clipping_and_stats
-      l_linearize_pbl_winds           ! Code to linearize PBL winds
+      l_linearize_pbl_winds,        & ! Code to linearize PBL winds
+      l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+                                      ! eliminates spurious drying tendencies at model top
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
+                                         penta_solve_method, & ! Out
+                                         tridiag_solve_method, & ! Out
                                          l_use_precip_frac, & ! Out
                                          l_predict_upwp_vpwp, & ! Out
                                          l_min_wp2_from_corr_wx, & ! Out
@@ -4686,7 +4717,12 @@ contains
                                          l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
                                          l_smooth_Heaviside_tau_wpxp, & ! Out
                                          l_enable_relaxed_clipping, & ! Out
-                                         l_linearize_pbl_winds ) ! Out
+                                         l_linearize_pbl_winds, & ! Out
+                                         l_mono_flux_lim_thlm, & ! Out
+                                         l_mono_flux_lim_rtm, & ! Out
+                                         l_mono_flux_lim_um, & ! Out
+                                         l_mono_flux_lim_vm, & ! Out
+                                         l_mono_flux_lim_spikefix ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -4695,6 +4731,8 @@ contains
   !================================================================================================
   subroutine initialize_clubb_config_flags_type_api( iiPDF_type, & ! In
                                                      ipdf_call_placement, & ! In
+                                                     penta_solve_method, & ! In
+                                                     tridiag_solve_method, & ! In
                                                      l_use_precip_frac, & ! In
                                                      l_predict_upwp_vpwp, & ! In
                                                      l_min_wp2_from_corr_wx, & ! In
@@ -4742,6 +4780,11 @@ contains
                                                      l_smooth_Heaviside_tau_wpxp, & ! In
                                                      l_enable_relaxed_clipping, & ! In
                                                      l_linearize_pbl_winds, & ! In
+                                                     l_mono_flux_lim_thlm, & ! In
+                                                     l_mono_flux_lim_rtm, & ! In
+                                                     l_mono_flux_lim_um, & ! In
+                                                     l_mono_flux_lim_vm, & ! In
+                                                     l_mono_flux_lim_spikefix, & ! In
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -4756,8 +4799,10 @@ contains
                              ! (double Gaussian) PDF type to use for the w, rt,
                              ! and theta-l (or w, chi, and eta) portion of
                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement    ! Selected option for the placement of the call to
+      ipdf_call_placement, & ! Selected option for the placement of the call to
                              ! CLUBB's PDF.
+      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
 
     logical, intent(in) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -4866,7 +4911,13 @@ contains
                                       ! in src/CLUBB_core/mixing_length.F90
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp
                                       ! in xm_wpxp_clipping_and_stats
-      l_linearize_pbl_winds           ! Code to linearize PBL winds
+      l_linearize_pbl_winds,        & ! Code to linearize PBL winds
+      l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+                                      ! eliminates spurious drying tendencies at model top
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -4874,6 +4925,8 @@ contains
 
     call initialize_clubb_config_flags_type( iiPDF_type, & ! In
                                              ipdf_call_placement, & ! In 
+                                             penta_solve_method, & ! In
+                                             tridiag_solve_method, & ! In
                                              l_use_precip_frac, & ! In
                                              l_predict_upwp_vpwp, & ! In
                                              l_min_wp2_from_corr_wx, & ! In
@@ -4921,6 +4974,11 @@ contains
                                              l_smooth_Heaviside_tau_wpxp, & ! In
                                              l_enable_relaxed_clipping, & ! In
                                              l_linearize_pbl_winds, & ! In
+                                             l_mono_flux_lim_thlm, & ! In
+                                             l_mono_flux_lim_rtm, & ! In
+                                             l_mono_flux_lim_um, & ! In
+                                             l_mono_flux_lim_vm, & ! In
+                                             l_mono_flux_lim_spikefix, & ! In
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api

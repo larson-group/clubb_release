@@ -934,6 +934,8 @@ module error
 
       run_stat(c_run) = err_code
 
+      ! Reset error code for next iteration
+      err_code = clubb_no_error
     end do ! 1..c_run
 !$omp end parallel do
 
@@ -956,7 +958,7 @@ module error
                                param_vals_vector(1:ndim) )
       end if
 
-      return
+      return ! return value was set, return after fatal error
     end if
 
     !----------------------------------------------------------------------- 

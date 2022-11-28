@@ -114,7 +114,7 @@ program clubb_tuner
     if ( tune_type /= iploops ) then
        ! Prompt the user to continue tuning with new parameters.
        write(unit=fstdout,fmt='(A)', advance='no')  & 
-         "Continue tuning starting with new parameters?(y/n) "
+         "Continue tuning starting with new parameters?(y/N) "
        read(*,*) user_response
     else
        ! For the parameter loops tuner, automatically enter a response of "no".
@@ -125,7 +125,7 @@ program clubb_tuner
 
     ! Save tuning results in file if specified
     if( l_save_tuning_run ) then
-      write(file_unit,*) "Continue tuning starting with new parameters?(y/n) ", user_response
+      write(file_unit,*) "Continue tuning starting with new parameters?(y/N) ", user_response
       close(unit=file_unit)
     end if ! l_save_tuning_run
 
@@ -551,8 +551,10 @@ subroutine logical_flags_driver( current_date, current_time )
                            ! (double Gaussian) PDF type to use for the w, rt,
                            ! and theta-l (or w, chi, and eta) portion of
                            ! CLUBB's multivariate, two-component PDF.
-    ipdf_call_placement    ! Selected option for the placement of the call to
+    ipdf_call_placement, & ! Selected option for the placement of the call to
                            ! CLUBB's PDF.
+    penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
+    tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
 
   logical :: &
     l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -661,10 +663,16 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! in src/CLUBB_core/mixing_length.F90
     l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                     ! xm_wpxp_clipping_and_stats
-    l_linearize_pbl_winds           ! Code to linearize PBL winds
+    l_linearize_pbl_winds,        & ! Code to linearize PBL winds
+    l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+    l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+    l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+    l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+    l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+                                    ! eliminates spurious drying tendencies at model top
 
   namelist /configurable_clubb_flags_nl/ &
-    iiPDF_type, ipdf_call_placement, &
+    iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
@@ -683,6 +691,8 @@ subroutine logical_flags_driver( current_date, current_time )
 
   call set_default_clubb_config_flags( iiPDF_type, & ! Intent(out)
                                        ipdf_call_placement, & ! Intent(out)
+                                       penta_solve_method, & ! Intent(out)
+                                       tridiag_solve_method, & ! Intent(out)
                                        l_use_precip_frac, & ! Intent(out)
                                        l_predict_upwp_vpwp, & ! Intent(out)
                                        l_min_wp2_from_corr_wx, & ! Intent(out)
@@ -729,7 +739,12 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(out)
                                        l_smooth_Heaviside_tau_wpxp, & ! Intent(out)
                                        l_enable_relaxed_clipping, & ! Intent(out)
-                                       l_linearize_pbl_winds ) ! Intent(out)
+                                       l_linearize_pbl_winds, & ! Intent(out)
+                                       l_mono_flux_lim_thlm, & ! Intent(out)
+                                       l_mono_flux_lim_rtm, & ! Intent(out)
+                                       l_mono_flux_lim_um, & ! Intent(out)
+                                       l_mono_flux_lim_vm, & ! Intent(out)
+                                       l_mono_flux_lim_spikefix ) ! Intent(out)
 
   ! Determine the current flags
   model_flags_default(1) = l_godunov_upwind_wpxp_ta

@@ -428,8 +428,10 @@ module pdf_parameter_tests
                              ! (double Gaussian) PDF type to use for the w, rt,
                              ! and theta-l (or w, chi, and eta) portion of
                              ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement    ! Selected option for the placement of the call to
+      ipdf_call_placement, & ! Selected option for the placement of the call to
                              ! CLUBB's PDF.
+      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -538,7 +540,13 @@ module pdf_parameter_tests
                                       ! in src/CLUBB_core/mixing_length.F90
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
-      l_linearize_pbl_winds           ! Code to linearize PBL winds
+      l_linearize_pbl_winds,        & ! Code to linearize PBL winds
+      l_mono_flux_lim_thlm,         & ! Flag to turn on monotonic flux limiter for thlm
+      l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
+      l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
+      l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+                                      ! eliminates spurious drying tendencies at model top
 
     real( kind = core_rknd ) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
@@ -629,6 +637,8 @@ module pdf_parameter_tests
 
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
+                                         penta_solve_method, &
+                                         tridiag_solve_method, &
                                          l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &
@@ -675,7 +685,12 @@ module pdf_parameter_tests
                                          l_use_tke_in_wp2_wp3_K_dfsn, &
                                          l_smooth_Heaviside_tau_wpxp, &
                                          l_enable_relaxed_clipping, &
-                                         l_linearize_pbl_winds )
+                                         l_linearize_pbl_winds, &
+                                         l_mono_flux_lim_thlm, &
+                                         l_mono_flux_lim_rtm, &
+                                         l_mono_flux_lim_um, &
+                                         l_mono_flux_lim_vm, &
+                                         l_mono_flux_lim_spikefix )
 
     iiPDF_type = test_pdf_type
 

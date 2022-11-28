@@ -36,43 +36,44 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure( gr, nz, ngrdcol,                          &
-                          hydromet_dim, p_in_Pa, exner, thv_ds,     &
-                          wm, wp2, wp3, sigma_sqd_w,                &
-                          Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,   &
-                          rtm, rtp2, wprtp,                         &
-                          thlm, thlp2, wpthlp,                      &
-                          um, up2, upwp,                            &
-                          vm, vp2, vpwp,                            &
-                          rtpthlp,                                  &
-                          sclrm, wpsclrp, sclrp2,                   &
-                          sclrprtp, sclrpthlp, Sksclr_in,           &
-                          gamma_Skw_fnc,                            &
+  subroutine pdf_closure( gr, nz, ngrdcol,                            &
+                          hydromet_dim, p_in_Pa, exner, thv_ds,       &
+                          wm, wp2, wp3, sigma_sqd_w,                  &
+                          Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,     &
+                          rtm, rtp2, wprtp,                           &
+                          thlm, thlp2, wpthlp,                        &
+                          um, up2, upwp,                              &
+                          vm, vp2, vpwp,                              &
+                          rtpthlp,                                    &
+                          sclrm, wpsclrp, sclrp2,                     &
+                          sclrprtp, sclrpthlp, Sksclr_in,             &
+                          gamma_Skw_fnc,                              &
 #ifdef GFDL
-                          RH_crit, do_liquid_only_in_clubb,         & ! h1g, 2010-06-15
+                          RH_crit, do_liquid_only_in_clubb,           & ! h1g, 2010-06-15
 #endif
-                          wphydrometp, wp2hmp,                      &
-                          rtphmp, thlphmp,                          &
-                          clubb_params,                             &
-                          iiPDF_type,                               &
-                          wpup2, wpvp2,                             &
-                          wp2up2, wp2vp2, wp4,                      &
-                          wprtp2, wp2rtp,                           &
-                          wpthlp2, wp2thlp, wprtpthlp,              &
-                          cloud_frac, ice_supersat_frac,            &
-                          rcm, wpthvp, wp2thvp, rtpthvp,            &
-                          thlpthvp, wprcp, wp2rcp, rtprcp,          &
-                          thlprcp, rcp2,                            &
-                          uprcp, vprcp,                             &
-                          w_up_in_cloud, w_down_in_cloud,           &
-                          pdf_params, pdf_implicit_coefs_terms,     &
-                          F_w, F_rt, F_thl,                         &
-                          min_F_w, max_F_w,                         &
-                          min_F_rt, max_F_rt,                       &
-                          min_F_thl, max_F_thl,                     &
-                          wpsclrprtp, wpsclrp2, sclrpthvp,          &
-                          wpsclrpthlp, sclrprcp, wp2sclrp,          &
-                          rc_coef                                   )
+                          wphydrometp, wp2hmp,                        &
+                          rtphmp, thlphmp,                            &
+                          clubb_params,                               &
+                          iiPDF_type,                                 &
+                          wpup2, wpvp2,                               &
+                          wp2up2, wp2vp2, wp4,                        &
+                          wprtp2, wp2rtp,                             &
+                          wpthlp2, wp2thlp, wprtpthlp,                &
+                          cloud_frac, ice_supersat_frac,              &
+                          rcm, wpthvp, wp2thvp, rtpthvp,              &
+                          thlpthvp, wprcp, wp2rcp, rtprcp,            &
+                          thlprcp, rcp2,                              &
+                          uprcp, vprcp,                               &
+                          w_up_in_cloud, w_down_in_cloud,             &
+                          cloudy_updraft_frac, cloudy_downdraft_frac, &
+                          pdf_params, pdf_implicit_coefs_terms,       &
+                          F_w, F_rt, F_thl,                           &
+                          min_F_w, max_F_w,                           &
+                          min_F_rt, max_F_rt,                         &
+                          min_F_thl, max_F_thl,                       &
+                          wpsclrprtp, wpsclrp2, sclrpthvp,            &
+                          wpsclrpthlp, sclrprcp, wp2sclrp,            &
+                          rc_coef                                     )
 
 
     ! Description:
@@ -166,11 +167,11 @@ module pdf_closure_module
         sat_mixrat_ice
 
     use stats_variables, only: &
-        ircp2,          & ! Variables
-        iwprtp2,        &
-        iwprtpthlp,     &
-        iwpthlp2,       &
-        iw_up_in_cloud, &
+        ircp2,            & ! Variables
+        iwprtp2,          &
+        iwprtpthlp,       &
+        iwpthlp2,         &
+        iw_up_in_cloud,   &
         iw_down_in_cloud
 
     use clubb_precision, only: &
@@ -264,30 +265,32 @@ module pdf_closure_module
 
     ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  & 
-      wpup2,              & ! w'u'^2                [m^3/s^3]
-      wpvp2,              & ! w'v'^2                [m^3/s^3]
-      wp2up2,             & ! w'^2u'^2              [m^2/s^4]
-      wp2vp2,             & ! w'^2v'^2              [m^2/s^4]
-      wp4,                & ! w'^4                  [m^4/s^4]
-      wprtp2,             & ! w' r_t'               [(m kg)/(s kg)]
-      wp2rtp,             & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
-      wpthlp2,            & ! w' th_l'^2            [(m K^2)/s]
-      wp2thlp,            & ! w'^2 th_l'            [(m^2 K)/s^2]
-      cloud_frac,         & ! Cloud fraction        [-]
-      ice_supersat_frac,  & ! Ice cloud fracion     [-]
-      rcm,                & ! Mean liquid water     [kg/kg]
-      wpthvp,             & ! Buoyancy flux         [(K m)/s] 
-      wp2thvp,            & ! w'^2 th_v'            [(m^2 K)/s^2]
-      rtpthvp,            & ! r_t' th_v'            [(kg K)/kg]
-      thlpthvp,           & ! th_l' th_v'           [K^2]
-      wprcp,              & ! w' r_c'               [(m kg)/(s kg)]
-      wp2rcp,             & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
-      rtprcp,             & ! r_t' r_c'             [(kg^2)/(kg^2)]
-      thlprcp,            & ! th_l' r_c'            [(K kg)/kg]
-      rcp2,               & ! r_c'^2                [(kg^2)/(kg^2)]
-      wprtpthlp,          & ! w' r_t' th_l'         [(m kg K)/(s kg)]
-      w_up_in_cloud,      & ! cloudy updraft vel    [m/s] TODO Correct place?
-      w_down_in_cloud       ! cloudy downdraft vel  [m/s] TODO Correct place?
+      wpup2,                 & ! w'u'^2                     [m^3/s^3]
+      wpvp2,                 & ! w'v'^2                     [m^3/s^3]
+      wp2up2,                & ! w'^2u'^2                   [m^2/s^4]
+      wp2vp2,                & ! w'^2v'^2                   [m^2/s^4]
+      wp4,                   & ! w'^4                       [m^4/s^4]
+      wprtp2,                & ! w' r_t'                    [(m kg)/(s kg)]
+      wp2rtp,                & ! w'^2 r_t'                  [(m^2 kg)/(s^2 kg)]
+      wpthlp2,               & ! w' th_l'^2                 [(m K^2)/s]
+      wp2thlp,               & ! w'^2 th_l'                 [(m^2 K)/s^2]
+      cloud_frac,            & ! Cloud fraction             [-]
+      ice_supersat_frac,     & ! Ice cloud fracion          [-]
+      rcm,                   & ! Mean liquid water          [kg/kg]
+      wpthvp,                & ! Buoyancy flux              [(K m)/s] 
+      wp2thvp,               & ! w'^2 th_v'                 [(m^2 K)/s^2]
+      rtpthvp,               & ! r_t' th_v'                 [(kg K)/kg]
+      thlpthvp,              & ! th_l' th_v'                [K^2]
+      wprcp,                 & ! w' r_c'                    [(m kg)/(s kg)]
+      wp2rcp,                & ! w'^2 r_c'                  [(m^2 kg)/(s^2 kg)]
+      rtprcp,                & ! r_t' r_c'                  [(kg^2)/(kg^2)]
+      thlprcp,               & ! th_l' r_c'                 [(K kg)/kg]
+      rcp2,                  & ! r_c'^2                     [(kg^2)/(kg^2)]
+      wprtpthlp,             & ! w' r_t' th_l'              [(m kg K)/(s kg)]
+      w_up_in_cloud,         & ! cloudy updraft vel         [m/s]
+      w_down_in_cloud,       & ! cloudy downdraft vel       [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction    [-]
+      cloudy_downdraft_frac    ! cloudy downdraft fraction  [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       uprcp,              & ! u' r_c'               [(m kg)/(s kg)]
@@ -1321,13 +1324,44 @@ module pdf_closure_module
                                pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, & ! In
                                pdf_params%w_1, pdf_params%w_2, &                   ! In
                                pdf_params%varnce_w_1, pdf_params%varnce_w_2, &     ! In
-                               w_up_in_cloud, w_down_in_cloud )                    ! Out
+                               w_up_in_cloud, w_down_in_cloud, &                   ! Out
+                               cloudy_updraft_frac, cloudy_downdraft_frac )        ! Out
 
     else
       w_up_in_cloud(:,:) = zero
       w_down_in_cloud(:,:) = zero
     end if
-
+#ifdef TUNER
+    ! Check the first levels (and first gridcolumn) for reasonable temperatures
+    ! greater than 190K and less than 1000K
+    ! This is necessary because for certain parameter sets we can get floating point errors
+    do i=1, min( 10, size(pdf_params%thl_1(1,:)) )
+        if ( pdf_params%thl_1(1,i) < 190. ) then
+            write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
+                             " < 190K at first grid column and grid level i = ", i
+            err_code = clubb_fatal_error
+            return
+        end if
+        if ( pdf_params%thl_2(1,i) < 190. ) then
+            write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
+                             " < 190K at first grid column and grid level i = ", i
+            err_code = clubb_fatal_error
+            return
+        end if
+        if ( pdf_params%thl_1(1,i) > 1000. ) then
+            write(fstderr,*) "Fatal error: pdf_params%thl_1 =", pdf_params%thl_1(1,i), &
+                             " > 1000K at first grid column and grid level i = ", i
+            err_code = clubb_fatal_error
+            return
+        end if
+        if ( pdf_params%thl_2(1,i) > 1000. ) then
+            write(fstderr,*) "Fatal error: pdf_params%thl_2 =", pdf_params%thl_2(1,i), &
+                             " > 1000K at first grid column and grid level i = ", i
+            err_code = clubb_fatal_error
+            return
+        end if
+    end do
+#endif
     if ( clubb_at_least_debug_level( 2 ) ) then
       do i = 1, ngrdcol
           
@@ -1455,6 +1489,7 @@ module pdf_closure_module
             write(fstderr,*) "wpsclrpthlp = ", wpsclrpthlp
             write(fstderr,*) "wp2sclrp = ", wp2sclrp
           end if
+          return
 
         end if ! Fatal error
 
@@ -3054,7 +3089,8 @@ module pdf_closure_module
   subroutine calc_w_up_in_cloud( nz, ngrdcol, &
                                  mixt_frac, cloud_frac_1, cloud_frac_2, &
                                  w_1, w_2, varnce_w_1, varnce_w_2, &
-                                 w_up_in_cloud, w_down_in_cloud )
+                                 w_up_in_cloud, w_down_in_cloud, &
+                                 cloudy_updraft_frac, cloudy_downdraft_frac )
 
     ! Description:
     ! Subroutine that computes the mean cloudy updraft (and also calculates
@@ -3103,8 +3139,10 @@ module pdf_closure_module
 
     !----------- Output Variables -----------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      w_up_in_cloud,   & ! mean cloudy updraft speed                   [m/s]
-      w_down_in_cloud    ! mean cloudy downdraft speed                 [m/s]
+      w_up_in_cloud,         & ! mean cloudy updraft speed             [m/s]
+      w_down_in_cloud,       & ! mean cloudy downdraft speed           [m/s]
+      cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
+      cloudy_downdraft_frac    ! cloudy downdraft fraction             [-]
 
     !----------- Local Variables -----------
     real( kind = core_rknd ) :: &
@@ -3216,23 +3254,27 @@ module pdf_closure_module
 
         endif
 
+        ! Calculate the total cloudy updraft fraction.
+        cloudy_updraft_frac(i,k) &
+        = mixt_frac(i,k) * cloud_frac_1(i,k) * updraft_frac_1 &
+          + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * updraft_frac_2
+
+        ! Calculate the total cloudy downdraft fraction.
+        cloudy_downdraft_frac(i,k) &
+        = mixt_frac(i,k) * cloud_frac_1(i,k) * downdraft_frac_1 &
+          + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * downdraft_frac_2
+
         ! Calculate the mean vertical velocity found in a cloudy updraft. 
         w_up_in_cloud(i,k) &
         = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_up_1 &
             + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_up_2 ) &
-          / ( mixt_frac(i,k) &
-                * max(eps, cloud_frac_1(i,k) * updraft_frac_1) &
-              + ( one - mixt_frac(i,k) ) &
-                * max(eps, cloud_frac_2(i,k) * updraft_frac_2) )
+          / max( eps, cloudy_updraft_frac(i,k) )
 
         ! Calculate the mean vertical velocity found in a cloudy downdraft. 
         w_down_in_cloud(i,k) &
         = ( mixt_frac(i,k) * cloud_frac_1(i,k) * w_down_1 &
             + ( one - mixt_frac(i,k) ) * cloud_frac_2(i,k) * w_down_2 ) &
-          / ( mixt_frac(i,k) &
-                * max(eps, cloud_frac_1(i,k) * downdraft_frac_1) &
-            + ( one - mixt_frac(i,k) ) &
-              * max(eps, cloud_frac_2(i,k) * downdraft_frac_2) )
+          / max( eps, cloudy_downdraft_frac(i,k) )
 
       end do
     end do

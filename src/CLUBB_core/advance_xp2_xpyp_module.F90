@@ -60,6 +60,7 @@ module advance_xp2_xpyp_module
                                wp2_splat,                                 & ! In
                                clubb_params, nu_vert_res_dep,             & ! In
                                iiPDF_type,                                & ! In
+                               tridiag_solve_method,                      & ! In
                                l_predict_upwp_vpwp,                       & ! In
                                l_min_xp2_from_corr_wx,                    & ! In
                                l_C2_cloud_frac,                           & ! In
@@ -250,10 +251,11 @@ module advance_xp2_xpyp_module
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     integer, intent(in) :: &
-      iiPDF_type    ! Selected option for the two-component normal (double
-                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
-                    ! w, chi, and eta) portion of CLUBB's multivariate,
-                    ! two-component PDF.
+      iiPDF_type,         & ! Selected option for the two-component normal (double
+                            ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                            ! w, chi, and eta) portion of CLUBB's multivariate,
+                            ! two-component PDF.
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,    & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -546,6 +548,7 @@ module advance_xp2_xpyp_module
                                            rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,               & ! In
                                            rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,           & ! In
                                            dt, l_scalar_calc, l_lmm_stepping, l_stats_samp, & ! In
+                                           tridiag_solve_method,                            & ! In
                                            stats_zm, stats_sfc,                             & ! In
                                            rtp2, thlp2, rtpthlp,                            & ! Out
                                            sclrp2, sclrprtp, sclrpthlp )                      ! Out
@@ -565,6 +568,7 @@ module advance_xp2_xpyp_module
                                              rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,        & ! In
                                              dt, iiPDF_type, l_scalar_calc,                & ! In
                                              l_lmm_stepping, l_stats_samp,                 & ! In
+                                             tridiag_solve_method,                         & ! In
                                              stats_zm, stats_sfc,                          & ! In
                                              rtp2, thlp2, rtpthlp,                         & ! Out
                                              sclrp2, sclrprtp, sclrpthlp )                   ! Out
@@ -640,9 +644,10 @@ module advance_xp2_xpyp_module
 
       ! Solve the tridiagonal system
        call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_up2_vp2, 1, & ! Intent(in)
-                            stats_sfc,                            & ! intent(inout)
-                            uv_rhs, lhs,                          & ! Intent(inout)
-                            uv_solution )                           ! Intent(out)
+                            tridiag_solve_method,             & ! Intent(in)
+                            stats_sfc,                        & ! intent(inout)
+                            uv_rhs, lhs,                      & ! Intent(inout)
+                            uv_solution )                       ! Intent(out)
       
       up2 = uv_solution(:,:,1)
          
@@ -676,10 +681,11 @@ module advance_xp2_xpyp_module
                             uv_rhs(:,:,1) ) ! Out
 
       ! Solve the tridiagonal system
-      call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_up2_vp2, 1, & ! Intent(in)
-                           stats_sfc,                            & ! intent(inout)
-                           uv_rhs, lhs,                          & ! Intent(inout)
-                           uv_solution )                           ! Intent(out)
+      call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_up2_vp2, 1,  & ! Intent(in)
+                           tridiag_solve_method,              & ! Intent(in)
+                           stats_sfc,                         & ! intent(inout)
+                           uv_rhs, lhs,                       & ! Intent(inout)
+                           uv_solution )                        ! Intent(out)
 
       vp2 = uv_solution(:,:,1)
 
@@ -729,9 +735,10 @@ module advance_xp2_xpyp_module
 
       ! Solve the tridiagonal system
       call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_up2_vp2, 2, & ! Intent(in)
-                           stats_sfc,                            & ! intent(inout)
-                           uv_rhs, lhs,                          & ! Intent(inout)
-                           uv_solution )                           ! Intent(out)
+                           tridiag_solve_method,             & ! Intent(in)
+                           stats_sfc,                        & ! intent(inout)
+                           uv_rhs, lhs,                      & ! Intent(inout)
+                           uv_solution )                       ! Intent(out)
 
       up2 = uv_solution(:,:,1)
       vp2 = uv_solution(:,:,2)
@@ -1200,6 +1207,7 @@ module advance_xp2_xpyp_module
                                              rhs_ta_wprtpthlp, rhs_ta_wpsclrp2, &
                                              rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
                                              dt, l_scalar_calc, l_lmm_stepping, l_stats_samp, &
+                                             tridiag_solve_method, & 
                                              stats_zm, stats_sfc, & 
                                              rtp2, thlp2, rtpthlp, &
                                              sclrp2, sclrprtp, sclrpthlp )
@@ -1284,6 +1292,9 @@ module advance_xp2_xpyp_module
       rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
       rhs_ta_wprtpsclrp,    & ! For <w'sclr'rt'><w'sclr'^2><w'sclr'thl'>
       rhs_ta_wpthlpsclrp      ! For <w'sclr'thl'>
+
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     ! -------- In/Out Variables --------
 
@@ -1432,9 +1443,10 @@ module advance_xp2_xpyp_module
     end if
      
     ! Solve multiple rhs with single lhs
-    call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_single_lhs, 3+3*sclr_dim, &      ! Intent(in)
-                         stats_sfc, & ! intent(inout)
-                         rhs, lhs, solution ) ! Intent(inout)
+    call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_single_lhs, 3+3*sclr_dim,  & ! Intent(in)
+                         tridiag_solve_method,                            & ! Intent(in)
+                         stats_sfc,                                       & ! intent(inout)
+                         rhs, lhs, solution )                               ! Intent(inout)
                           
     if ( l_lmm_stepping ) then
      
@@ -1499,6 +1511,7 @@ module advance_xp2_xpyp_module
                                     rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
                                     dt, iiPDF_type, l_scalar_calc, &
                                     l_lmm_stepping, l_stats_samp, &
+                                    tridiag_solve_method, &
                                     stats_zm, stats_sfc, & 
                                     rtp2, thlp2, rtpthlp, &
                                     sclrp2, sclrprtp, sclrpthlp )
@@ -1594,6 +1607,9 @@ module advance_xp2_xpyp_module
       rhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
       rhs_ta_wprtpsclrp,  & ! For <w'sclr'rt'>
       rhs_ta_wpthlpsclrp    ! For <w'sclr'thl'>
+      
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     ! -------- In/Out Variables --------
     
@@ -1674,8 +1690,9 @@ module advance_xp2_xpyp_module
                            
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_rtp2, 1, & ! Intent(in)
-                         stats_sfc, & ! intent(inout)
-                         rhs, lhs, rtp2_solution )    ! Intent(inout)
+                         tridiag_solve_method,          & ! Intent(in)
+                         stats_sfc,                     & ! intent(inout)
+                         rhs, lhs, rtp2_solution )        ! Intent(inout)
                            
     if ( l_lmm_stepping ) then
       rtp2(:,:) = one_half * ( rtp2(:,:) + rtp2_solution(:,:) )
@@ -1717,9 +1734,10 @@ module advance_xp2_xpyp_module
                        rhs ) ! Out
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_thlp2, 1, & ! Intent(in)
-                         stats_sfc, & ! intent(inout)
-                         rhs, lhs, thlp2_solution )    ! Intent(inout)
+    call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_thlp2, 1,  & ! Intent(in)
+                         tridiag_solve_method,            & ! Intent(in)
+                         stats_sfc,                       & ! intent(inout)
+                         rhs, lhs, thlp2_solution )         ! Intent(inout)
                            
     if ( l_lmm_stepping ) then
       thlp2(:,:) = one_half * ( thlp2(:,:) + thlp2_solution(:,:) )
@@ -1760,9 +1778,10 @@ module advance_xp2_xpyp_module
                        rhs ) ! Out
 
     ! Solve the tridiagonal system
-    call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_rtpthlp, 1, & ! Intent(in)
-                         stats_sfc, & ! intent(inout)
-                         rhs, lhs, rtpthlp_solution )    ! Intent(inout)
+    call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_rtpthlp, 1,  & ! Intent(in)
+                         tridiag_solve_method,              & ! Intent(in)
+                         stats_sfc,                         & ! intent(inout)
+                         rhs, lhs, rtpthlp_solution )         ! Intent(inout)
                            
     if ( l_lmm_stepping ) then
       rtpthlp(:,:) = one_half * ( rtpthlp(:,:) + rtpthlp_solution(:,:) )
@@ -1811,9 +1830,10 @@ module advance_xp2_xpyp_module
                              rhs ) ! Out
 
           ! Solve the tridiagonal system
-          call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_scalars, 1,  & ! Intent(in)
-                               stats_sfc, & ! intent(inout)
-                               rhs, lhs, sclrp2_solution(:,:,sclr) ) ! Intent(inout)
+          call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_scalars, 1,      & ! Intent(in)
+                               tridiag_solve_method,                  & ! Intent(in)
+                               stats_sfc,                             & ! intent(inout)
+                               rhs, lhs, sclrp2_solution(:,:,sclr) )    ! Intent(inout)
                                
           if ( l_lmm_stepping ) then
             sclrp2(:,:,sclr) = one_half * ( sclrp2(:,:,sclr) + sclrp2_solution(:,:,sclr) )
@@ -1847,9 +1867,10 @@ module advance_xp2_xpyp_module
                              rhs ) ! Out
 
           ! Solve the tridiagonal system
-          call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_scalars, 1,    & ! Intent(in)
-                               stats_sfc, & ! intent(inout)
-                               rhs, lhs, sclrprtp_solution(:,:,sclr) ) ! Intent(inout)
+          call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_scalars, 1,        & ! Intent(in)
+                               tridiag_solve_method,                    & ! Intent(in)
+                               stats_sfc,                               & ! intent(inout)
+                               rhs, lhs, sclrprtp_solution(:,:,sclr) )    ! Intent(inout)
                                
           if ( l_lmm_stepping ) then
             sclrprtp(:,:,sclr) = one_half * ( sclrprtp(:,:,sclr) + sclrprtp_solution(:,:,sclr) )
@@ -1883,9 +1904,10 @@ module advance_xp2_xpyp_module
                              rhs ) ! Out
 
           ! Solve the tridiagonal system
-          call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_scalars, 1,     & ! Intent(in)
-                               stats_sfc, & ! intent(inout)
-                               rhs, lhs, sclrpthlp_solution(:,:,sclr) ) ! Intent(inout)
+          call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_scalars, 1,        & ! Intent(in)
+                               tridiag_solve_method,                    & ! Intent(in)
+                               stats_sfc,                               & ! intent(inout)
+                               rhs, lhs, sclrpthlp_solution(:,:,sclr) )   ! Intent(inout)
                                
           if ( l_lmm_stepping ) then
             sclrpthlp(:,:,sclr) = one_half * ( sclrpthlp(:,:,sclr) + sclrpthlp_solution(:,:,sclr) )
@@ -1970,9 +1992,10 @@ module advance_xp2_xpyp_module
         enddo ! 1..sclr_dim
 
         ! Solve the tridiagonal system
-        call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_scalars, 3*sclr_dim, &   ! Intent(in)
-                             stats_sfc, & ! intent(inout)
-                             sclr_rhs, lhs, sclr_solution )    ! Intent(inout)
+        call xp2_xpyp_solve( nz, ngrdcol, xp2_xpyp_scalars, 3*sclr_dim, & ! Intent(in)
+                            tridiag_solve_method,                       & ! Intent(in)
+                             stats_sfc,                                 & ! intent(inout)
+                             sclr_rhs, lhs, sclr_solution )               ! Intent(inout)
         
         if ( l_lmm_stepping ) then
           sclrp2(:,:,:)    = one_half * ( sclrp2(:,:,:)    + sclr_solution(:,:,1:sclr_dim) )
@@ -2128,6 +2151,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine xp2_xpyp_solve( nz, ngrdcol, solve_type, nrhs, &
+                             tridiag_solve_method, & 
                              stats_sfc, &
                              rhs, lhs, xapxbp )
 
@@ -2141,10 +2165,8 @@ module advance_xp2_xpyp_module
     use constants_clubb, only: &
         one  ! Constant(s)
 
-    use lapack_wrap, only:  & 
-        tridag_solve,  & ! Variable(s)
-        tridag_solvex !, &
-!        band_solve
+    use matrix_solver_wrapper, only:  & 
+        tridiag_solve ! Procedure(s)
 
     use grid_class, only: & 
         grid ! Type
@@ -2185,6 +2207,9 @@ module advance_xp2_xpyp_module
 
     integer, intent(in) ::  & 
       solve_type ! Variable(s) description
+
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     ! ---------------------- Input/Ouput variables ----------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -2247,12 +2272,10 @@ module advance_xp2_xpyp_module
 
     if ( l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
       
-      do i = 1, ngrdcol
-        call tridag_solvex & 
-             ( solve_type_str, nz, nrhs, &                                        ! Intent(in) 
-               lhs(kp1_mdiag,i,:), lhs(k_mdiag,i,:), lhs(km1_mdiag,i,:), rhs(i,:,1:nrhs),  & ! Intent(inout)
-               xapxbp(i,:,1:nrhs), rcond(i) )                                             ! Intent(out)
-      end do
+      call tridiag_solve( solve_type_str, tridiag_solve_method, & ! Intent(in) 
+                          ngrdcol, nz, nrhs,                    & ! Intent(in) 
+                          lhs, rhs,                             & ! Intent(inout)
+                          xapxbp, rcond )                         ! Intent(out)
 
       if ( l_single_lhs_solve ) then
         do i = 1, ngrdcol
@@ -2278,12 +2301,10 @@ module advance_xp2_xpyp_module
 
     else
       
-      do i = 1, ngrdcol
-        call tridag_solve & 
-             ( solve_type_str, nz, nrhs, lhs(kp1_mdiag,i,:),  &      ! Intent(in)
-               lhs(k_mdiag,i,:), lhs(km1_mdiag,i,:), rhs(i,:,1:nrhs),  &    ! Intent(inout)
-               xapxbp(i,:,1:nrhs) )                                     ! Intent(out)
-      end do
+      call tridiag_solve( solve_type_str, tridiag_solve_method, & ! Intent(in)
+                          ngrdcol, nz, nrhs,                    & ! Intent(in)
+                          lhs, rhs,                             & ! Intent(inout)
+                          xapxbp )                                ! Intent(out)
       
     end if
 

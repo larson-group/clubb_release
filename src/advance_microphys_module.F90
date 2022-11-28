@@ -42,8 +42,9 @@ module advance_microphys_module
                                 hydromet_vel_covar_zt_impc, &              ! In
                                 hydromet_vel_covar_zt_expc, &              ! In
                                 clubb_params, nu_vert_res_dep, &           ! In
+                                tridiag_solve_method, &                    ! In
                                 l_upwind_xm_ma, &                          ! In
-                                stats_zt, stats_zm, stats_sfc, &           ! intent(inout)
+                                stats_zt, stats_zm, stats_sfc, &           ! Inout
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                                 K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
                                 wphydrometp, wpNcp )                       ! Out
@@ -174,6 +175,9 @@ module advance_microphys_module
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     logical, intent(in) :: &
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
@@ -324,6 +328,7 @@ module advance_microphys_module
                                  hydromet_vel_covar_zt_expc, &
                                  nu_vert_res_dep, &
                                  l_upwind_xm_ma, &
+                                 tridiag_solve_method, &
                                  stats_zt, stats_zm, &
                                  hydromet, hydromet_vel_zt, &
                                  hydrometp2, rvm_mc, thlm_mc, &
@@ -367,6 +372,7 @@ module advance_microphys_module
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          nu_vert_res_dep, &
                          l_upwind_xm_ma, &
+                         tridiag_solve_method, &
                          stats_zt, stats_zm, &
                          Ncm, Nc_in_cloud, &
                          wpNcp )
@@ -505,6 +511,7 @@ module advance_microphys_module
                                   hydromet_vel_covar_zt_expc, &
                                   nu_vert_res_dep, &
                                   l_upwind_xm_ma, &
+                                  tridiag_solve_method, &
                                   stats_zt, stats_zm, & 
                                   hydromet, hydromet_vel_zt, &
                                   hydrometp2, rvm_mc, thlm_mc, &
@@ -619,6 +626,9 @@ module advance_microphys_module
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
                      ! approximation rather than a centered differencing for turbulent or
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
@@ -787,6 +797,7 @@ module advance_microphys_module
        !!!!! Advance hydrometeor one time step.
        call microphys_solve( gr, trim( hydromet_list(i) ), l_hydromet_sed(i), &
                              cloud_frac, &
+                             tridiag_solve_method, &
                              stats_zt, &
                              lhs, rhs, hydromet(:,i) )
 
@@ -955,6 +966,7 @@ module advance_microphys_module
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                           nu_vert_res_dep, &
                           l_upwind_xm_ma, &
+                          tridiag_solve_method, &
                           stats_zt, stats_zm, &
                           Ncm, Nc_in_cloud, &
                           wpNcp )
@@ -1048,6 +1060,9 @@ module advance_microphys_module
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
                      ! approximation rather than a centered differencing for turbulent or
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
@@ -1175,6 +1190,7 @@ module advance_microphys_module
 
        call microphys_solve( gr, "Ncm", l_Ncm_sed, &
                              cloud_frac, &
+                             tridiag_solve_method, &
                              stats_zt, &
                              lhs, rhs, Nc_in_cloud )
 
@@ -1184,6 +1200,7 @@ module advance_microphys_module
 
        call microphys_solve( gr, "Ncm", l_Ncm_sed, &
                              cloud_frac, &
+                             tridiag_solve_method, &
                              stats_zt, &
                              lhs, rhs, Ncm )
 
@@ -1307,6 +1324,7 @@ module advance_microphys_module
   !=============================================================================
   subroutine microphys_solve( gr, solve_type, l_sed, &
                               cloud_frac, &
+                              tridiag_solve_method, &
                               stats_zt, &
                               lhs, rhs, hmm )
 
@@ -1328,8 +1346,8 @@ module advance_microphys_module
     use error_code, only: &
         clubb_at_least_debug_level   ! Procedure
 
-    use lapack_wrap, only:  & 
-        tridag_solve    ! Procedure(s)
+    use matrix_solver_wrapper, only:  & 
+        tridiag_solve ! Procedure(s)
 
     use parameters_microphys, only: &
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
@@ -1403,6 +1421,9 @@ module advance_microphys_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       cloud_frac    ! Cloud fraction (thermodynamic levels)        [-]
+
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(3,gr%nz) :: & 
@@ -1483,10 +1504,11 @@ module advance_microphys_module
       ihmm_ts = 0
     end select
 
-    ! Solve system using tridag_solve. This uses LAPACK sgtsv,
-    ! which relies on Gaussian elimination to decompose the matrix.
-    call tridag_solve( solve_type, gr%nz, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
-                       rhs, hmm )
+    ! Solve system using a tridiag_solve. 
+    call tridiag_solve( solve_type, tridiag_solve_method, & ! Intent(in)
+                        gr%nz,                            & ! Intent(in)
+                        lhs, rhs,                         & ! Intent(inout)
+                        hmm )                               ! Intent(out)
 
 
     ! Statistics

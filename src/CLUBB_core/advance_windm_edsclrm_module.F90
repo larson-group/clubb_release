@@ -38,6 +38,7 @@ module advance_windm_edsclrm_module
                                     rho_ds_zm, invrs_rho_ds_zt, &
                                     fcor, l_implemented, &
                                     nu_vert_res_dep, &
+                                    tridiag_solve_method, &
                                     l_predict_upwp_vpwp, &
                                     l_upwind_xm_ma, &
                                     l_uv_nudge, &
@@ -167,6 +168,9 @@ module advance_windm_edsclrm_module
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,   & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside
@@ -432,6 +436,7 @@ module advance_windm_edsclrm_module
       ! Decompose and back substitute for um and vm
       nrhs = 2
       call windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, iwindm_matrix_condt_num, & ! intent(in)
+                                tridiag_solve_method,                           & ! intent(in)
                                 stats_sfc, &                                      ! intent(inout)
                                 lhs, rhs, &                                       ! intent(inout)
                                 solution )                                        ! intent(out)
@@ -733,6 +738,7 @@ module advance_windm_edsclrm_module
       ! Decompose and back substitute for um and vm
       nrhs = 2
       call windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, iwindm_matrix_condt_num, & ! intent(in)
+                                tridiag_solve_method,                           & ! intent(in)
                                 stats_sfc, &                                      ! intent(in)
                                 lhs, rhs, &                                       ! intent(inout)
                                 solution )                                        ! intent(out)
@@ -945,6 +951,7 @@ module advance_windm_edsclrm_module
                                     
       ! Decompose and back substitute for all eddy-scalar variables
       call windm_edsclrm_solve( nz, ngrdcol, gr, edsclr_dim, 0, & ! intent(in)
+                                tridiag_solve_method,           & ! intent(in)
                                 stats_sfc,                      & ! intent(inout)
                                 lhs, rhs,                       & ! intent(inout)
                                 solution )                        ! intent(out)
@@ -1043,6 +1050,7 @@ module advance_windm_edsclrm_module
 
   !=============================================================================
   subroutine windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, ixm_matrix_condt_num, &
+                                  tridiag_solve_method, &
                                   stats_sfc, & 
                                   lhs, rhs, solution )
 
@@ -1544,9 +1552,8 @@ module advance_windm_edsclrm_module
     use grid_class, only: & 
         grid ! Type
 
-    use lapack_wrap, only:  & 
-        tridag_solve, & ! Procedure(s)
-        tridag_solvex
+    use matrix_solver_wrapper, only:  & 
+        tridiag_solve ! Procedure(s)
 
     use stats_variables, only: & 
         l_stats_samp
@@ -1581,6 +1588,9 @@ module advance_windm_edsclrm_module
     integer, intent(in) :: &
       ixm_matrix_condt_num  ! Stats index of the condition numbers
 
+    integer, intent(in) :: &
+      tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+
     ! ------------------------ Inout variables ------------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_sfc
@@ -1605,13 +1615,11 @@ module advance_windm_edsclrm_module
 
     ! Solve tridiagonal system for xm.
     if ( l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
-      
-      do i = 1, ngrdcol
-        call tridag_solvex( & 
-               "windm_edsclrm", nz, nrhs, &                            ! intent(in) 
-               lhs(kp1_tdiag,i,:), lhs(k_tdiag,i,:), lhs(km1_tdiag,i,:), rhs(i,:,:), & ! intent(inout)
-               solution(i,:,:), rcond(i) )                                          ! intent(out)
-      end do
+
+      call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in) 
+                          ngrdcol, nz, nrhs,                      & ! Intent(in) 
+                          lhs, rhs,                               & ! Intent(inout)
+                          solution, rcond )                         ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
       do i = 1, ngrdcol
@@ -1620,11 +1628,10 @@ module advance_windm_edsclrm_module
       end do
     else
 
-      do i = 1, ngrdcol
-        call tridag_solve( "windm_edsclrm", nz, nrhs, &                             ! intent(in)
-                           lhs(kp1_tdiag,i,:),  lhs(k_tdiag,i,:), lhs(km1_tdiag,i,:), rhs(i,:,:), & ! intent(inout)
-                           solution(i,:,:) )                                                  ! intent(out)
-      end do
+      call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in) 
+                          ngrdcol, nz, nrhs,                      & ! Intent(in) 
+                          lhs, rhs,                               & ! Intent(inout)
+                          solution )                                ! Intent(out)
     end if
 
     return

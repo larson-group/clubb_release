@@ -502,7 +502,7 @@ module numerical_check
     do k=1, min( 10, size(thlm) )
         if ( thlm(k) < 190. ) then
             write(fstderr,*) "Liquid water potential temperature (thlm) < 190K ", &
-                             "at grid level k = ", k
+                             "at grid level k = ", k, ": thlm(",k,") = ", thlm(k)
         end if
     end do 
 

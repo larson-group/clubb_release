@@ -1,6 +1,8 @@
 &configurable_clubb_flags_nl
 iiPDF_type                   = 1
 ipdf_call_placement          = 2
+penta_solve_method           = 1
+tridiag_solve_method         = 1
 
 l_godunov_upwind_wpxp_ta     = .false.,
 l_upwind_xpyp_ta             = .true.,
@@ -42,7 +44,12 @@ l_use_tke_in_wp3_pr_turb_term = .true.,
 l_use_tke_in_wp2_wp3_K_dfsn  = .false.,
 l_smooth_Heaviside_tau_wpxp  = .false.,
 l_enable_relaxed_clipping    = .false.,
-l_linearize_pbl_winds        = .false.
+l_linearize_pbl_winds        = .false.,
+l_mono_flux_lim_thlm         = .true.,
+l_mono_flux_lim_rtm          = .true.,
+l_mono_flux_lim_um           = .true.,
+l_mono_flux_lim_vm           = .true.,
+l_mono_flux_lim_spikefix     = .true.
 /
 
 &configurable_silhs_flags_nl
@@ -59,4 +66,8 @@ l_lh_instant_var_covar_src  = .true.
 l_lh_limit_weights          = .true.
 l_lh_var_frac               = .false.
 l_lh_normalize_weights      = .true.
+/
+
+&configurable_multi_column_nl
+num_standalone_columns = 1
 /
