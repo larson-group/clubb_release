@@ -1323,6 +1323,10 @@ module mixing_length
                                                             sqrt( (ddzt( nz, ngrdcol, gr, um ))**2 & 
                                                             + (ddzt( nz, ngrdcol, gr, vm ))**2 ) ) )
 
+    ! Enforce that invrs_tau_shear is positive
+    invrs_tau_shear(:,:) = smooth_max( nz, ngrdcol, invrs_tau_shear, &
+                                       zero_threshold, one * min_max_smth_mag )
+
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_sfc(i,k) = C_invrs_tau_sfc &
