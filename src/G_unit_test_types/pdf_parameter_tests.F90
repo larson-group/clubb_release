@@ -225,8 +225,6 @@ module pdf_parameter_tests
       sgn_wp2     ! Sign of the variance of w (overall); always positive [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      mu_w_1,          & ! Mean of w (1st PDF component)             [m/s]
-      mu_w_2,          & ! Mean of w (2nd PDF component)             [m/s]
       mu_rt_1,         & ! Mean of rt (1st PDF component)            [kg/kg]
       mu_rt_2,         & ! Mean of rt (2nd PDF component)            [kg/kg]
       mu_thl_1,        & ! Mean of thl (1st PDF component)           [K]
@@ -241,8 +239,6 @@ module pdf_parameter_tests
       sigma_rt_2,      & ! Standard deviation of rt (2nd PDF comp.)  [kg/kg]
       sigma_thl_1,     & ! Standard deviation of thl (1st PDF comp.) [K]
       sigma_thl_2,     & ! Standard deviation of thl (2nd PDF comp.) [K]
-      sigma_w_1_sqd,   & ! Variance of w (1st PDF component)         [m^2/s^2]
-      sigma_w_2_sqd,   & ! Variance of w (2nd PDF component)         [m^2/s^2]
       sigma_rt_1_sqd,  & ! Variance of rt (1st PDF component)        [kg^2/kg^2]
       sigma_rt_2_sqd,  & ! Variance of rt (2nd PDF component)        [kg^2/kg^2]
       sigma_thl_1_sqd, & ! Variance of thl (1st PDF component)       [K^2]
@@ -250,8 +246,7 @@ module pdf_parameter_tests
       sigma_u_1_sqd,   & ! Variance of u (1st PDF component)         [m^2/s^2]
       sigma_u_2_sqd,   & ! Variance of u (2nd PDF component)         [m^2/s^2]
       sigma_v_1_sqd,   & ! Variance of v (1st PDF component)         [m^2/s^2]
-      sigma_v_2_sqd,   & ! Variance of v (2nd PDF component)         [m^2/s^2]
-      mixt_frac          ! Mixture fraction                          [-]
+      sigma_v_2_sqd      ! Variance of v (2nd PDF component)         [m^2/s^2]
 
     real( kind = core_rknd ), dimension(nz) :: &
       coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
@@ -357,10 +352,17 @@ module pdf_parameter_tests
 !      coef_spread_DG_means_thl
 
     ! Variables for ADG1
+    real( kind = core_rknd ), dimension(1,nz) :: &
+      sqrt_wp2,        & ! Square root of w (ADG1)                         [m/s]
+      mu_w_1,          & ! Mean of w (1st PDF component)                   [m/s]
+      mu_w_2,          & ! Mean of w (2nd PDF component)                   [m/s]
+      w_1_n,           & ! Normalized mean of w (1st PDF comp.) (ADG1)     [-]
+      w_2_n,           & ! Normalized mean of w (2nd PDF comp.) (ADG1)     [-]
+      sigma_w_1_sqd,   & ! Variance of w (1st PDF component)               [m^2/s^2]
+      sigma_w_2_sqd,   & ! Variance of w (2nd PDF component)               [m^2/s^2]
+      mixt_frac          ! Mixture fraction                                [-]
+
     real( kind = core_rknd ), dimension(nz) :: &
-      sqrt_wp2,      & ! Square root of w (ADG1)                         [m/s]
-      w_1_n,         & ! Normalized mean of w (1st PDF comp.) (ADG1)     [-]
-      w_2_n,         & ! Normalized mean of w (2nd PDF comp.) (ADG1)     [-]
       alpha_thl,     & ! Factor relating to normalized variance for th_l [-]
       alpha_rt,      & ! Factor relating to normalized variance for r_t  [-]
       alpha_u,       & ! Factor relating to normalized variance for u    [-]
@@ -1061,22 +1063,22 @@ module pdf_parameter_tests
                 ! sigma_w_2, and mixt_frac.
                 call calc_setter_var_params( gr%nz, wm, wp2(1,:), Skw, sgn_wp2,     & ! In
                                              F_w, zeta_w,               & ! In
-                                             mu_w_1, mu_w_2, sigma_w_1, & ! Out
-                                             sigma_w_2, mixt_frac,      & ! Out
+                                             mu_w_1(1,:), mu_w_2(1,:), sigma_w_1, & ! Out
+                                             sigma_w_2, mixt_frac(1,:),      & ! Out
                                              coef_sigma_w_1_sqd,        & ! Out
                                              coef_sigma_w_2_sqd         ) ! Out
 
-                sigma_w_1_sqd = sigma_w_1**2
-                sigma_w_2_sqd = sigma_w_2**2
+                sigma_w_1_sqd(1,:) = sigma_w_1**2
+                sigma_w_2_sqd(1,:) = sigma_w_2**2
 
                 l_check_mu_w_1_gte_mu_w_2 = .true.
 
                 ! Perform the tests for the "setter" variable, which is the
                 ! variable that is used to set the mixture fraction.
                 call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
-                                       mu_w_1, mu_w_2, sigma_w_1,    & ! In
-                                       sigma_w_2, mixt_frac, tol,    & ! In
-                                       sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                       mu_w_1(1,:), mu_w_2(1,:), sigma_w_1,    & ! In
+                                       sigma_w_2, mixt_frac(1,:), tol,    & ! In
+                                       sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:), & ! In
                                        l_pass_test_1, l_pass_test_2, & ! Out
                                        l_pass_test_3, l_pass_test_4, & ! Out
                                        l_pass_test_5, l_pass_test_6, & ! Out
@@ -1084,13 +1086,13 @@ module pdf_parameter_tests
 
                 ! Calculate <w'^4> by integrating over the PDF.
                 call calc_wp4_pdf( gr%nz, 1, & 
-                                   wm, mu_w_1, mu_w_2, sigma_w_1**2, &
-                                   sigma_w_2**2, mixt_frac, &
+                                   wm, mu_w_1(1,:), mu_w_2(1,:), sigma_w_1**2, &
+                                   sigma_w_2**2, mixt_frac(1,:), &
                                    wp4_pdf_calc )
 
                 ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
                 coef_wp4_implicit &
-                = calc_coef_wp4_implicit( gr%nz, mixt_frac, F_w, &
+                = calc_coef_wp4_implicit( gr%nz, mixt_frac(1,:), F_w, &
                                           coef_sigma_w_1_sqd, &
                                           coef_sigma_w_2_sqd )
 
@@ -1213,22 +1215,22 @@ module pdf_parameter_tests
                 ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
                 ! sigma_w_2, and mixt_frac.
                 call calculate_w_params( wm, wp2(1,:), Skw, F_w, zeta_w, & ! In
-                                         mu_w_1, mu_w_2, sigma_w_1, & ! Out
-                                         sigma_w_2, mixt_frac,      & ! Out
+                                         mu_w_1(1,:), mu_w_2(1,:), sigma_w_1, & ! Out
+                                         sigma_w_2, mixt_frac(1,:),      & ! Out
                                          coef_sigma_w_1_sqd,        & ! Out
                                          coef_sigma_w_2_sqd         ) ! Out
 
-                sigma_w_1_sqd = sigma_w_1**2
-                sigma_w_2_sqd = sigma_w_2**2
+                sigma_w_1_sqd(1,:) = sigma_w_1**2
+                sigma_w_2_sqd(1,:) = sigma_w_2**2
 
                 l_check_mu_w_1_gte_mu_w_2 = .true.
 
                 ! Perform the tests for the "setter" variable, which is the
                 ! variable that is used to set the mixture fraction.
                 call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
-                                       mu_w_1, mu_w_2, sigma_w_1,    & ! In
-                                       sigma_w_2, mixt_frac, tol,    & ! In
-                                       sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                       mu_w_1(1,:), mu_w_2(1,:), sigma_w_1,    & ! In
+                                       sigma_w_2, mixt_frac(1,:), tol,    & ! In
+                                       sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:), & ! In
                                        l_pass_test_1, l_pass_test_2, & ! Out
                                        l_pass_test_3, l_pass_test_4, & ! Out
                                        l_pass_test_5, l_pass_test_6, & ! Out
@@ -1236,13 +1238,13 @@ module pdf_parameter_tests
 
                 ! Calculate <w'^4> by integrating over the PDF.
                 call calc_wp4_pdf( gr%nz, 1, & 
-                                   wm, mu_w_1, mu_w_2, sigma_w_1**2, &
-                                   sigma_w_2**2, mixt_frac, &
+                                   wm, mu_w_1(1,:), mu_w_2(1,:), sigma_w_1**2, &
+                                   sigma_w_2**2, mixt_frac(1,:), &
                                    wp4_pdf_calc )
 
                 ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
                 coef_wp4_implicit &
-                = calculate_coef_wp4_implicit( mixt_frac, F_w, &
+                = calculate_coef_wp4_implicit( mixt_frac(1,:), F_w, &
                                                coef_sigma_w_1_sqd, &
                                                coef_sigma_w_2_sqd )
 
@@ -1316,7 +1318,7 @@ module pdf_parameter_tests
                            // "and 1 (or 0.99)."
           write(fstdout,*) ""
 
-          sqrt_wp2 = sqrt( wp2(1,:) )
+          sqrt_wp2 = sqrt( wp2 )
           mixt_frac_max_mag = 1.0_core_rknd
 
           do iter_sigma_sqd_w = 1, num_sigma_sqd_w, 1
@@ -1337,13 +1339,13 @@ module pdf_parameter_tests
                                                     kind = core_rknd )
              endif ! iter_sigma_sqd_w
  
-             call ADG1_w_closure( wm, wp2(1,:), Skw, sigma_sqd_w(1,:),              &! In
+             call ADG1_w_closure( nz, 1, wm, wp2, Skw, sigma_sqd_w,       &! In
                                   sqrt_wp2, mixt_frac_max_mag,            &! In
                                   mu_w_1, mu_w_2, w_1_n, w_2_n,           &! Out
                                   sigma_w_1_sqd, sigma_w_2_sqd, mixt_frac )! Out
 
-             sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
-             sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
+             sigma_w_1 = sqrt( max( sigma_w_1_sqd(1,:), zero ) )
+             sigma_w_2 = sqrt( max( sigma_w_2_sqd(1,:), zero ) )
 
              l_check_mu_w_1_gte_mu_w_2 = .true.
 
@@ -1351,9 +1353,9 @@ module pdf_parameter_tests
              ! variable that is used to set the mixture fraction.  This is
              ! always w for ADG1.
              call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
-                                    mu_w_1, mu_w_2, sigma_w_1,    & ! In
-                                    sigma_w_2, mixt_frac, tol,    & ! In
-                                    sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                    mu_w_1(1,:), mu_w_2(1,:), sigma_w_1,    & ! In
+                                    sigma_w_2, mixt_frac(1,:), tol,    & ! In
+                                    sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:), & ! In
                                     l_pass_test_1, l_pass_test_2, & ! Out
                                     l_pass_test_3, l_pass_test_4, & ! Out
                                     l_pass_test_5, l_pass_test_6, & ! Out
@@ -1413,26 +1415,26 @@ module pdf_parameter_tests
                                               Skw(idx), sgn_wp2(idx),   & ! In
                                               big_L_w_1(idx),           & ! In
                                               big_L_w_2(idx),           & ! In
-                                              mu_w_1(idx), mu_w_2(idx), & ! Out
-                                              sigma_w_1_sqd(idx),       & ! Out
-                                              sigma_w_2_sqd(idx),       & ! Out
-                                              mixt_frac(idx),           & ! Out
+                                              mu_w_1(1,idx), mu_w_2(1,idx), & ! Out
+                                              sigma_w_1_sqd(1,idx),       & ! Out
+                                              sigma_w_2_sqd(1,idx),       & ! Out
+                                              mixt_frac(1,idx),           & ! Out
                                               coef_sigma_w_1_sqd(idx),  & ! Out
                                               coef_sigma_w_2_sqd(idx)   ) ! Out
 
               enddo ! idx = 1, nz, 1
 
-              sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
-              sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
+              sigma_w_1 = sqrt( max( sigma_w_1_sqd(1,:), zero ) )
+              sigma_w_2 = sqrt( max( sigma_w_2_sqd(1,:), zero ) )
 
               l_check_mu_w_1_gte_mu_w_2 = .true.
 
               ! Perform the tests for the "setter" variable, which is the
               ! variable that is used to set the mixture fraction.
               call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
-                                     mu_w_1, mu_w_2, sigma_w_1,    & ! In
-                                     sigma_w_2, mixt_frac, tol,    & ! In
-                                     sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                     mu_w_1(1,:), mu_w_2(1,:), sigma_w_1,    & ! In
+                                     sigma_w_2, mixt_frac(1,:), tol,    & ! In
+                                     sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:), & ! In
                                      l_pass_test_1, l_pass_test_2, & ! Out
                                      l_pass_test_3, l_pass_test_4, & ! Out
                                      l_pass_test_5, l_pass_test_6, & ! Out
@@ -1478,23 +1480,23 @@ module pdf_parameter_tests
                            // "the setting variable (w is used here)."
           write(fstdout,*) ""
 
-          mixt_frac = calc_mixt_frac_LY93( gr%nz, abs( Skw ) )
+          mixt_frac(1,:) = calc_mixt_frac_LY93( gr%nz, abs( Skw ) )
 
-          call calc_params_LY93( gr%nz, wm, wp2(1,:), Skw, mixt_frac,     & ! In
-                                 mu_w_1, mu_w_2,              & ! Out
-                                 sigma_w_1_sqd, sigma_w_2_sqd ) ! Out
+          call calc_params_LY93( gr%nz, wm, wp2(1,:), Skw, mixt_frac(1,:),     & ! In
+                                 mu_w_1(1,:), mu_w_2(1,:),              & ! Out
+                                 sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:) ) ! Out
 
-          sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
-          sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
+          sigma_w_1 = sqrt( max( sigma_w_1_sqd(1,:), zero ) )
+          sigma_w_2 = sqrt( max( sigma_w_2_sqd(1,:), zero ) )
 
           l_check_mu_w_1_gte_mu_w_2 = .false.
 
           ! Perform the tests for the "setter" variable, which is the variable
           ! that is used to set the mixture fraction.
           call setter_var_tests( nz, wm, wp2(1,:), wp3, Skw,        & ! In
-                                 mu_w_1, mu_w_2, sigma_w_1,    & ! In
-                                 sigma_w_2, mixt_frac, tol,    & ! In
-                                 sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                 mu_w_1(1,:), mu_w_2(1,:), sigma_w_1,    & ! In
+                                 sigma_w_2, mixt_frac(1,:), tol,    & ! In
+                                 sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:), & ! In
                                  l_pass_test_1, l_pass_test_2, & ! Out
                                  l_pass_test_3, l_pass_test_4, & ! Out
                                  l_pass_test_5, l_pass_test_6, & ! Out
@@ -1547,11 +1549,11 @@ module pdf_parameter_tests
                                coef_spread_DG_means_rt,                  & ! In
                                coef_spread_DG_means_thl,                 & ! In
                                Skrt, Skthl,                              & ! I/O
-                               mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,         & ! Out
-                               mu_thl_1, mu_thl_2, sigma_w_1_sqd,        & ! Out
-                               sigma_w_2_sqd, sigma_rt_1_sqd,            & ! Out
+                               mu_w_1(1,:), mu_w_2(1,:), mu_rt_1, mu_rt_2,         & ! Out
+                               mu_thl_1, mu_thl_2, sigma_w_1_sqd(1,:),        & ! Out
+                               sigma_w_2_sqd(1,:), sigma_rt_1_sqd,            & ! Out
                                sigma_rt_2_sqd, sigma_thl_1_sqd,          & ! Out
-                               sigma_thl_2_sqd, mixt_frac,               & ! Out
+                               sigma_thl_2_sqd, mixt_frac(1,:),               & ! Out
                                pdf_implicit_coefs_terms,                 & ! Out
                                F_w, F_rt, F_thl, min_F_w, max_F_w,       & ! Out
                                min_F_rt, max_F_rt, min_F_thl, max_F_thl  ) ! Out
@@ -1584,18 +1586,18 @@ module pdf_parameter_tests
                                       slope_coef_spread_DG_means_w,       &! In
                                       pdf_component_stdev_factor_w,       &! In
                                       Skrt, Skthl, Sku, Skv, Sksclr,      &! I/O
-                                      mu_w_1, mu_w_2,                     &! Out
+                                      mu_w_1(1,:), mu_w_2(1,:),                     &! Out
                                       mu_rt_1, mu_rt_2,                   &! Out
                                       mu_thl_1, mu_thl_2,                 &! Out
                                       mu_u_1, mu_u_2, mu_v_1, mu_v_2,     &! Out
-                                      sigma_w_1_sqd, sigma_w_2_sqd,       &! Out
+                                      sigma_w_1_sqd(1,:), sigma_w_2_sqd(1,:),       &! Out
                                       sigma_rt_1_sqd, sigma_rt_2_sqd,     &! Out
                                       sigma_thl_1_sqd, sigma_thl_2_sqd,   &! Out
                                       sigma_u_1_sqd, sigma_u_2_sqd,       &! Out
                                       sigma_v_1_sqd, sigma_v_2_sqd,       &! Out
                                       mu_sclr_1, mu_sclr_2,               &! Out
                                       sigma_sclr_1_sqd, sigma_sclr_2_sqd, &! Out
-                                      mixt_frac,                          &! Out
+                                      mixt_frac(1,:),                          &! Out
                                       pdf_implicit_coefs_terms,           &! Out
                                       F_w, min_F_w, max_F_w               )! Out
 
@@ -1627,9 +1629,9 @@ module pdf_parameter_tests
 
           call ADG1_pdf_driver( gr%nz, 1,                                & ! In 
                                 wm, rtm, thlm, um, vm,                   & ! In 
-                                wp2(1,:), rtp2(1,:), thlp2(1,:), up2(1,:), vp2(1,:),              & ! In 
-                                Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:), sqrt_wp2,& ! In 
-                                sigma_sqd_w(1,:), beta, mixt_frac_max_mag,    & ! In 
+                                wp2, rtp2, thlp2, up2, vp2,              & ! In 
+                                Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In 
+                                sigma_sqd_w, beta, mixt_frac_max_mag,    & ! In 
                                 sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In 
                                 mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2,& ! Out
                                 mu_u_1, mu_u_2, mu_v_1, mu_v_2,          & ! Out
@@ -1655,16 +1657,16 @@ module pdf_parameter_tests
 
           call LY93_driver( gr%nz, wm, rtm, thlm, wp2(1,:), rtp2(1,:),          & ! In
                             thlp2(1,:), Skw, Skrt, Skthl,           & ! In
-                            mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
-                            mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out
-                            sigma_w_2_sqd, sigma_rt_1_sqd,     & ! Out
+                            mu_w_1(1,:), mu_w_2(1,:), mu_rt_1, mu_rt_2,  & ! Out
+                            mu_thl_1, mu_thl_2, sigma_w_1_sqd(1,:), & ! Out
+                            sigma_w_2_sqd(1,:), sigma_rt_1_sqd,     & ! Out
                             sigma_rt_2_sqd, sigma_thl_1_sqd,   & ! Out
-                            sigma_thl_2_sqd, mixt_frac         ) ! Out
+                            sigma_thl_2_sqd, mixt_frac(1,:)         ) ! Out
 
        endif ! test_PDF_type
 
-       sigma_w_1 = sqrt( sigma_w_1_sqd )
-       sigma_w_2 = sqrt( sigma_w_2_sqd )
+       sigma_w_1 = sqrt( sigma_w_1_sqd(1,:) )
+       sigma_w_2 = sqrt( sigma_w_2_sqd(1,:) )
        sigma_rt_1 = sqrt( sigma_rt_1_sqd )
        sigma_rt_2 = sqrt( sigma_rt_2_sqd )
        sigma_thl_1 = sqrt( sigma_thl_1_sqd )
@@ -1672,22 +1674,22 @@ module pdf_parameter_tests
 
        ! Recalculate the values of <wm>, <w'^2>, <w'^3>, and Skw using the
        ! PDF parameters that are output from the subroutine.
-       call recalc_single_var( nz, wm, mu_w_1, mu_w_2, sigma_w_1, & ! In
-                               sigma_w_2, mixt_frac,              & ! In
+       call recalc_single_var( nz, wm, mu_w_1(1,:), mu_w_2(1,:), sigma_w_1, & ! In
+                               sigma_w_2, mixt_frac(1,:),              & ! In
                                recalc_wm, recalc_wp2,             & ! Out
                                recalc_wp3, recalc_Skw             ) ! Out
 
        ! Recalculate the values of <rtm>, <rt'^2>, <rt'^3>, and Skrt using the
        ! PDF parameters that are output from the subroutine.
        call recalc_single_var( nz, rtm, mu_rt_1, mu_rt_2, sigma_rt_1, & ! In
-                               sigma_rt_2, mixt_frac,                 & ! In
+                               sigma_rt_2, mixt_frac(1,:),                 & ! In
                                recalc_rtm, recalc_rtp2,               & ! Out
                                recalc_rtp3, recalc_Skrt               ) ! Out
 
        ! Recalculate the values of <thlm>, <thl'^2>, <thl'^3>, and Skthl using
        ! the PDF parameters that are output from the subroutine.
        call recalc_single_var( nz, thlm, mu_thl_1, mu_thl_2, sigma_thl_1, & ! In
-                               sigma_thl_2, mixt_frac,                    & ! In
+                               sigma_thl_2, mixt_frac(1,:),                    & ! In
                                recalc_thlm, recalc_thlp2,                & ! Out
                                recalc_thlp3, recalc_Skthl                ) ! Out
 
@@ -2012,7 +2014,7 @@ module pdf_parameter_tests
        where ( ( sigma_w_1 >= zero ) .and. ( sigma_w_2 >= zero ) &
                .and. ( sigma_rt_1 >= zero ) .and. ( sigma_rt_2 >= zero ) &
                .and. ( sigma_thl_1 >= zero ) .and. ( sigma_thl_2 >= zero ) &
-               .and. ( mixt_frac > zero ) .and. ( mixt_frac < one ) )
+               .and. ( mixt_frac(1,:) > zero ) .and. ( mixt_frac(1,:) < one ) )
           l_pass_test_20 = .true.
        elsewhere
           l_pass_test_20 = .false.
@@ -2029,7 +2031,7 @@ module pdf_parameter_tests
                 write(fstderr,*) "sigma_rt_2 = ", sigma_rt_2(idx)
                 write(fstderr,*) "sigma_thl_1 = ", sigma_thl_1(idx)
                 write(fstderr,*) "sigma_thl_2 = ", sigma_thl_2(idx)
-                write(fstderr,*) "mixt_frac = ", mixt_frac(idx)
+                write(fstderr,*) "mixt_frac = ", mixt_frac(1,idx)
                 write(fstderr,*) ""
              endif ! .not. l_pass_test_20(idx)
           enddo ! idx = 1, nz, 1

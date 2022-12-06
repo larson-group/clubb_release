@@ -949,10 +949,10 @@ module spurious_source_test
 
        ! Calculate the PDF parameters on momentum levels (w_1_zm, w_2_zm,
        ! varnce_w_1_zm, varnce_w_2_zm, and mixt_frac).
-       call ADG1_w_closure( wm_zm(1,:), wp2(1,:), Skw_zm(1,:), sigma_sqd_w(1,:),           & ! In
-                            sqrt( wp2(1,:) ), 0.999_core_rknd,              & ! In
-                            w_1_zm(1,:), w_2_zm(1,:), w_1_n_zm(1,:), w_2_n_zm(1,:),        & ! Out
-                            varnce_w_1_zm(1,:), varnce_w_2_zm(1,:), mixt_frac_zm(1,:) ) ! Out
+       call ADG1_w_closure( gr%nz, 1, wm_zm, wp2, Skw_zm, sigma_sqd_w,  & ! In
+                            sqrt( wp2 ), 0.999_core_rknd,               & ! In
+                            w_1_zm, w_2_zm, w_1_n_zm, w_2_n_zm,         & ! Out
+                            varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm )  ! Out
 
        ! Calculate the value of exner.
        exner(1,:) = ( p_in_Pa(1,:) / 1.0e5_core_rknd )**(Rd/Cp)

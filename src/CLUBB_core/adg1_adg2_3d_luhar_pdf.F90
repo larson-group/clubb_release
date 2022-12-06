@@ -33,7 +33,7 @@ module adg1_adg2_3d_luhar_pdf
                               wm, rtm, thlm, um, vm,                    & ! In
                               wp2, rtp2, thlp2, up2, vp2,               & ! In
                               Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, & ! In
-                              sigma_sqd_w, beta, mixt_frac_max_mag_in,  & ! In
+                              sigma_sqd_w, beta, mixt_frac_max_mag,     & ! In
                               sclrm, sclrp2, wpsclrp, l_scalar_calc,    & ! In
                               w_1, w_2,                                 & ! Out
                               rt_1, rt_2,                               & ! Out
@@ -95,7 +95,7 @@ module adg1_adg2_3d_luhar_pdf
 
     real( kind = core_rknd ), intent(in) ::  &
       beta,                 & ! CLUBB tunable parameter beta         [-]
-      mixt_frac_max_mag_in    ! Maximum allowable mag. of mixt_frac  [-]
+      mixt_frac_max_mag       ! Maximum allowable mag. of mixt_frac  [-]
 
     real( kind = core_rknd ), dimension(ngrdcol, nz, sclr_dim), intent(in) ::  &
       sclrm,   & ! Mean of passive scalar (overall)           [units vary]
@@ -145,18 +145,11 @@ module adg1_adg2_3d_luhar_pdf
       w_1_n, & ! Normalized mean of w (1st PDF component)     [-]
       w_2_n    ! Normalized mean of w (2nd PDF component)     [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
-      mixt_frac_max_mag    ! Maximum allowable mag. of mixt_frac  [-]
-
     integer :: j  ! Loop index
-
-
-    ! Set mixt_frac_max_mag to mixt_frac_max_mag_in.
-    mixt_frac_max_mag = mixt_frac_max_mag_in
     
     ! Calculate the mixture fraction and the PDF component means and variances
     ! of w.
-    call ADG1_w_closure_gpu( nz, ngrdcol, wm, wp2, Skw, sigma_sqd_w, &        ! In
+    call ADG1_w_closure( nz, ngrdcol, wm, wp2, Skw, sigma_sqd_w, &        ! In
                          sqrt_wp2, mixt_frac_max_mag, &      ! In
                          w_1, w_2, w_1_n, w_2_n, &           ! Out
                          varnce_w_1, varnce_w_2, mixt_frac ) ! Out
@@ -592,10 +585,10 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine Luhar_3D_pdf_driver
 
   !======================================================================
-  subroutine ADG1_w_closure_gpu( nz, ngrdcol, wm, wp2, Skw, sigma_sqd_w, &         !In
-                                 sqrt_wp2, mixt_frac_max_mag, &       !In
-                                w_1, w_2, w_1_n, w_2_n, &             !Out
-                                varnce_w_1, varnce_w_2, mixt_frac )   !Out
+  subroutine ADG1_w_closure( nz, ngrdcol, wm, wp2, Skw, sigma_sqd_w, & !In
+                             sqrt_wp2, mixt_frac_max_mag, &            !In
+                             w_1, w_2, w_1_n, w_2_n, &                 !Out
+                             varnce_w_1, varnce_w_2, mixt_frac )       !Out
 
 
     ! Description:
@@ -643,7 +636,9 @@ module adg1_adg2_3d_luhar_pdf
       wp2,               & ! Variance of w (overall)               [m^2/s^2]
       Skw,               & ! Skewness of w                         [-]
       sigma_sqd_w,       & ! Widths of each w Gaussian             [-]
-      sqrt_wp2,          & ! Square root of the variance of w      [m/s]
+      sqrt_wp2             ! Square root of the variance of w      [m/s]
+
+    real( kind = core_rknd ),  intent(in) :: &
       mixt_frac_max_mag    ! Maximum allowable mag. of mixt_frac   [-]
 
     ! Output Variables
@@ -691,8 +686,8 @@ module adg1_adg2_3d_luhar_pdf
              ! 1 - ( 1/2 * ( 1 - Skw_max
              !                   / sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) ),
              ! where sigma_sqd_w is fixed at 0.4 for this calculation.
-             mixt_frac(i,k) = min( max( mixt_frac(i,k), one - mixt_frac_max_mag(i,k) ), &
-                                   mixt_frac_max_mag(i,k) )
+             mixt_frac(i,k) = min( max( mixt_frac(i,k), one - mixt_frac_max_mag ), &
+                                   mixt_frac_max_mag )
 
              ! The normalized mean of w for Gaussian "plume" 1 is w_1_n.  It's value
              ! will always be greater than 0.  As an example, a value of 1.0 would
@@ -736,140 +731,8 @@ module adg1_adg2_3d_luhar_pdf
 
 
 
-  end subroutine ADG1_w_closure_gpu
-
-  !=============================================================================
-  elemental subroutine ADG1_w_closure( wm, wp2, Skw, sigma_sqd_w, &        ! In
-                                       sqrt_wp2, mixt_frac_max_mag, &      ! In
-                                       w_1, w_2, w_1_n, w_2_n, &           ! Out
-                                       varnce_w_1, varnce_w_2, mixt_frac ) ! Out
-
-    ! Description:
-    ! Calculates the mixture fraction, the PDF component means of w, and the PDF
-    ! component variances of w for the Analytic Double Gaussian 1 (ADG1)
-    ! closure.  It sets the widths of both w Gaussians to be the same, and
-    ! furthermore, relates them to the overall variance of w (<w'^2>) by a
-    ! parameter, sigma_sqd_w.  The equation is:
-    !
-    ! sigma_w_1^2 = sigma_w_2^2 = sigma_sqd_w * <w'^2>;
-    !
-    ! where sigma_w_1^2 is the variance of w in the 1st PDF component,
-    ! sigma_w_2^2 is the variance of w in the 2nd PDF component, and parameter
-    ! sigma_sqd_w must have a value within the range 0 <= sigma_sqd_w <= 1.
-    !
-    ! References:
-    ! Golaz, J-C., V. E. Larson, and W. R. Cotton, 2002a: A PDF-based model for
-    ! boundary layer clouds. Part I: Method and model description. J. Atmos.
-    ! Sci., 59, 3540–3551.
-    !
-    ! Vincent E. Larson and Jean-Christophe Golaz, 2005: Using Probability
-    ! Density Functions to Derive Consistent Closure Relationships among
-    ! Higher-Order Moments. Mon. Wea. Rev., 133, 1023–1042.
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        four,      & ! Constant(s)
-        one,       &
-        one_half,  &
-        zero,      &
-        w_tol_sqd
-
-    use clubb_precision, only: &
-        core_rknd     ! Precision
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      wm,                & ! Mean of w (overall)                   [m/s]
-      wp2,               & ! Variance of w (overall)               [m^2/s^2]
-      Skw,               & ! Skewness of w                         [-]
-      sigma_sqd_w,       & ! Widths of each w Gaussian             [-]
-      sqrt_wp2,          & ! Square root of the variance of w      [m/s]
-      mixt_frac_max_mag    ! Maximum allowable mag. of mixt_frac   [-]
-
-    ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      w_1,        & ! Mean of w (1st PDF component)                [m/s]
-      w_2,        & ! Mean of w (2nd PDF component)                [m/s]
-      w_1_n,      & ! Normalized mean of w (1st PDF component)     [-]
-      w_2_n,      & ! Normalized mean of w (2nd PDF component)     [-]
-      varnce_w_1, & ! Variance of w (1st PDF component)            [m^2/s^2]
-      varnce_w_2, & ! Variance of w (2nd PDF component)            [m^2/s^2]
-      mixt_frac     ! Mixture fraction                             [-]
-
-
-    !----- Begin Code -----
-
-    if ( wp2 > w_tol_sqd ) then
-
-       ! Width (standard deviation) parameters are non-zero
-
-       ! The variable "mixt_frac" is the weight of the 1st PDF component.  The
-       ! weight of the 2nd PDF component is "1-mixt_frac".  If there isn't any
-       ! skewness of w (Sk_w = 0 because w'^3 = 0), mixt_frac = 0.5, and both
-       ! PDF components are equally weighted.  If there is positive skewness of
-       ! w (Sk_w > 0 because w'^3 > 0), 0 < mixt_frac < 0.5, and the 2nd PDF
-       ! component has greater weight than does the 1st PDF component.  If there
-       ! is negative skewness of w (Sk_w < 0 because w'^3 < 0),
-       ! 0.5 < mixt_frac < 1, and the 1st PDF component has greater weight than
-       ! does the 2nd PDF component.
-       if ( abs( Skw ) <= 1.0e-5_core_rknd ) then
-          mixt_frac = one_half
-       else
-          mixt_frac &
-          = one_half &
-            * ( one - Skw / sqrt( four * ( one - sigma_sqd_w )**3 + Skw**2 ) )
-       endif
-
-       ! Clip mixt_frac, and 1 - mixt_frac, to avoid dividing by a small number.
-       ! Formula for mixt_frac_max_mag =
-       ! 1 - ( 1/2 * ( 1 - Skw_max
-       !                   / sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) ),
-       ! where sigma_sqd_w is fixed at 0.4 for this calculation.
-       mixt_frac = min( max( mixt_frac, one - mixt_frac_max_mag ), &
-                        mixt_frac_max_mag )
-
-       ! The normalized mean of w for Gaussian "plume" 1 is w_1_n.  It's value
-       ! will always be greater than 0.  As an example, a value of 1.0 would
-       ! indicate that the actual mean of w for Gaussian "plume" 1 is found 1.0
-       ! standard deviation above the overall mean for w.
-       w_1_n &
-       = sqrt( ( ( one - mixt_frac ) / mixt_frac ) * ( one - sigma_sqd_w ) )
-       ! The normalized mean of w for Gaussian "plume" 2 is w_2_n.  It's value
-       ! will always be less than 0.  As an example, a value of -0.5 would
-       ! indicate that the actual mean of w for Gaussian "plume" 2 is found 0.5
-       ! standard deviations below the overall mean for w.
-       w_2_n &
-       = -sqrt( ( mixt_frac / ( one - mixt_frac ) ) * ( one - sigma_sqd_w ) )
-       ! The mean of w for Gaussian "plume" 1 is w_1.
-       w_1 = wm + sqrt_wp2 * w_1_n
-       ! The mean of w for Gaussian "plume" 2 is w_2.
-       w_2 = wm + sqrt_wp2 * w_2_n
-
-       ! The variance of w for Gaussian "plume" 1 for varnce_w_1.
-       varnce_w_1 = sigma_sqd_w * wp2
-       ! The variance of w for Gaussian "plume" 2 for varnce_w_2.
-       ! The variance in both Gaussian "plumes" is defined to be the same.
-       varnce_w_2 = sigma_sqd_w * wp2
-
-    else
-
-       ! Vertical velocity doesn't vary.
-       mixt_frac  = one_half
-       w_1_n      = sqrt( one - sigma_sqd_w )
-       w_2_n      = -sqrt( one - sigma_sqd_w )
-       w_1        = wm
-       w_2        = wm
-       varnce_w_1 = zero
-       varnce_w_2 = zero
-
-    endif  ! Widths non-zero
-
-
-    return
-
   end subroutine ADG1_w_closure
+
 
   !=============================================================================
   subroutine calc_Luhar_params( nz, Skx, wpxp,            & ! In
