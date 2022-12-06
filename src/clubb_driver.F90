@@ -2392,7 +2392,7 @@ module clubb_driver
         ! in the configurable_multi_column_nl namelist, located in the 
         ! configurable_model_flags.in 
         call advance_clubb_core_standalone_multicol( &
-               num_standalone_columns, ( itime == ifinal ), multicol_nc_file, &     ! Intent(in)
+               num_standalone_columns, multicol_nc_file, &                          ! Intent(in)
                momentum_heights(begin_height:end_height), &                         ! Intent(in)
                thermodynamic_heights(begin_height:end_height), &                    ! Intent(in)
                zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &       ! Intent(in)
@@ -6042,7 +6042,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine advance_clubb_core_standalone_multicol( &
-    ngrdcol, l_final_timestep, multicol_nc_file, &
+    ngrdcol, multicol_nc_file, &
     momentum_heights, thermodynamic_heights, &
     zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &
     params, &
@@ -6195,9 +6195,6 @@ module clubb_driver
     ! ------------------------- Input Variables -------------------------
     integer, intent(in) :: &
       ngrdcol
-
-    logical, intent(in) :: &
-      l_final_timestep
 
     character(len=100) :: &
       multicol_nc_file
@@ -7247,12 +7244,20 @@ module clubb_driver
         status = nf90_def_var( ncid, trim("vpwp"),        netcdf_precision, var_dim(:), ind(13) )
         status = nf90_def_var( ncid, trim("up2"),         netcdf_precision, var_dim(:), ind(14) )
         status = nf90_def_var( ncid, trim("vp2"),         netcdf_precision, var_dim(:), ind(15) )
+
+        ! Close netcdf file
+        status = nf90_close( ncid = ncid )
       end if
 
       ! Calculate the time based on the varibales stored in the
       ! stats type, time=ntimes*dtwrite
       time = real( stats_zm%file%ntimes, kind=time_precision ) &
              * real( stats_zm%file%dtwrite, kind=time_precision )  ! seconds
+
+      ! Open the netcdf file
+      status = nf90_open( path = trim(multicol_nc_file),  & 
+                          mode = NF90_WRITE,  & 
+                          ncid = ncid )
 
       ! Update the time variable
       status = nf90_put_var( ncid, time_var_id,  time, &
@@ -7319,10 +7324,8 @@ module clubb_driver
                              (/1,1,stats_zm%file%ntimes/), &
                              count=(/ngrdcol,gr_col%nz,1/) )
 
-      ! Close the netcdf file if this is the last timestep
-      if ( l_final_timestep ) then
-        status = nf90_close(ncid)
-      end if
+      ! Close netcdf file
+      status = nf90_close( ncid = ncid )
 
     end if
 
