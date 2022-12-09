@@ -32,6 +32,9 @@ def setUpInputs():
             findOutliers, findParamsUsingElastic
     from test_analyzeSensMatrix import write_test_netcdf_files
 
+    # L1 regularization coefficient, i.e., penalty on param perturbations in objFnc
+    reglrCoef = 0.0
+
     # Metrics are observed quantities that we want a tuned simulation to match.
     #    The order of metricNames determines the order of rows in sensMatrix.
     # Column vector of (positive) weights.  A small value de-emphasizes
@@ -39,32 +42,32 @@ def setUpInputs():
     metricsNamesAndWeights = [ \
                         ['SWCF_GLB', 8.00], \
                         ['SWCF_DYCOMS', 1.00], \
-                        ['SWCF_HAWAII', 8.00], \
-                        ['SWCF_VOCAL', 1.00], \
-                        ['SWCF_VOCAL_near', 1.00], \
+                        ['SWCF_HAWAII', 1.00], \
+                        ['SWCF_VOCAL', 4.00], \
+                        ['SWCF_VOCAL_near', 4.00], \
                         ['SWCF_LBA', 1.00], \
                         ['SWCF_WP', 1.00], \
-                        ['SWCF_EP', 1.00], \
-                        ['SWCF_NP', 1.00], \
-                        ['SWCF_SP', 1.00],  \
+#                        ['SWCF_EP', 1.00], \
+#                        ['SWCF_NP', 1.00], \
+#                        ['SWCF_SP', 1.00],  \
 ##                        ['SWCF_PA', 1.01], \
-                        ['SWCF_CAF', 1.00], \
+#                        ['SWCF_CAF', 1.00], \
                         ['SWCF_Nambian', 1.00], \
                         ['SWCF_Nambian_near', 1.00], \
                         ['LWCF_GLB', 8.00], \
 ###                        ['LWCF_DYCOMS', 1.01], \
 ###                        ['LWCF_HAWAII', 1.01], \
 ###                        ['LWCF_VOCAL', 1.01], \
-##                        ['LWCF_LBA', 1.00], \
-##                        ['LWCF_WP', 1.00], \
-###                        ['LWCF_EP', 1.01], \
-###                        ['LWCF_NP', 1.01], \
-###                        ['LWCF_SP', 1.01], \
+#                        ['LWCF_LBA', 1.00], \
+#                        ['LWCF_WP', 1.00], \
+#                        ['LWCF_EP', 1.00], \
+#                        ['LWCF_NP', 1.00], \
+#                        ['LWCF_SP', 1.00], \
 ####                        ['LWCF_PA',  1.01], \
 ###                        ['LWCF_CAF', 1.01], \
-                        ['PRECT_GLB', 8.00] \
-##                        ['PRECT_LBA', 1.00], \
-##                        ['PRECT_WP', 1.00], \
+                        ['PRECT_GLB', 8.00], \
+#                        ['PRECT_LBA', 1.00], \
+#                        ['PRECT_WP', 1.00] \
 ###                        ['PRECT_EP', 1.01], \
 ###                        ['PRECT_NP', 1.01], \
 ###                        ['PRECT_SP', 1.01], \
@@ -88,64 +91,65 @@ def setUpInputs():
     #    either up or down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
+    folder_name = 'Regional_files/20221207_cam/'
     paramsNamesScalesAndFilenames = [ \
-                    ['clubb_c7', 1.0, \
-                     '20221121/chrysalis.bmg20220630.sens1107_2.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20221121/chrysalis.bmg20220630.sens1107_3.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c11', 1.0, \
-##                     '20221121/chrysalis.bmg20220630.sens1107_4.ne30pg2_r05_oECv3_Regional.nc',  \
-##                     '20221121/chrysalis.bmg20220630.sens1107_5.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_gamma_coef', 1.0, \
-                     '20221121/chrysalis.bmg20220630.sens1107_10.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20221121/chrysalis.bmg20220630.sens1107_11.ne30pg2_r05_oECv3_Regional.nc'], \
+#                    ['clubb_c7', 1.0, \
+#                     folder_name + 'zt_2_Regional.nc',  \
+#                     folder_name + 'zt_3_Regional.nc'], \
+#                    ['clubb_c11', 1.0, \
+#                     folder_name + 'zt_c11m_Regional.nc',  \
+#                     folder_name + 'zt_c11p_Regional.nc'], \
+#                    ['clubb_gamma_coef', 1.0, \
+#                     folder_name + 'zt_gamma_coefm_Regional.nc',  \
+#                     folder_name + 'zt_gamma_coefp_Regional.nc'], \
+#                    ['clubb_beta', 1.0, \
+#                     folder_name + 'zt_betam_Regional.nc',  \
+#                     folder_name + 'zt_betap_Regional.nc'], \
                     ['clubb_c8', 1.0, \
-                     '20221121/chrysalis.bmg20220630.sens1107_18.ne30pg2_r05_oECv3_Regional.nc',  \
-                     '20221121/chrysalis.bmg20220630.sens1107_19.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_k10', 1.0, \
-                     '20221121/chrysalis.bmg20220630.sens1107_8.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20221121/chrysalis.bmg20220630.sens1107_9.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2', 1.0, \
-                     '20221121/chrysalis.bmg20220630.sens1107_20.ne30pg2_r05_oECv3_Regional.nc',
-                     '20221121/chrysalis.bmg20220630.sens1107_21.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_altitude_threshold', 0.001, \
-                     '20221121/chrysalis.bmg20220630.sens1107_12.ne30pg2_r05_oECv3_Regional.nc',
-                     '20221121/chrysalis.bmg20220630.sens1107_13.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-##                     '20221121/chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc',
-##                     '20221121/chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c_invrs_tau_sfc', 1.0, \
-##                     '20221121/chrysalis.bmg20220630.sens1107_18.ne30pg2_r05_oECv3_Regional.nc',
-##                     '20221121/chrysalis.bmg20220630.sens1107_19.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-                     '20221121/chrysalis.bmg20220630.sens1107_6.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20221121/chrysalis.bmg20220630.sens1107_7.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
-                     '20221121/chrysalis.bmg20220630.sens1107_14.ne30pg2_r05_oECv3_Regional.nc',
-                     '20221121/chrysalis.bmg20220630.sens1107_15.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
-                     '20221121/chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
-                     '20221121/chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c_k1', 1.0, \
-##                     '20221121/chrysalis.bmg20220630.sens1107_25.ne30pg2_r05_oECv3_Regional.nc', \
-##                     '20221121/chrysalis.bmg20220630.sens1107_26.ne30pg2_r05_oECv3_Regional.nc'], \
+                     folder_name + 'zt_c8m_Regional.nc',  \
+                     folder_name + 'zt_c8p_Regional.nc'], \
+#                    ['clubb_c_uu_shr', 1.0, \
+#                     folder_name + 'zt_c_uu_shrm_Regional.nc', \
+#                     folder_name + 'zt_c_uu_shrp_Regional.nc'], \
+#                    ['clubb_c_uu_buoy', 1.0, \
+#                     folder_name + 'zt_c_uu_buoym_Regional.nc', \
+#                     folder_name + 'zt_c_uu_buoyp_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2', 1.0, \
+#                     folder_name + 'zt_c_invrs_tau_n2m_Regional.nc',
+#                     folder_name + 'zt_c_invrs_tau_n2p_Regional.nc'], \
+#                    ['clubb_altitude_threshold', 0.001, \
+#                     folder_name + 'zt_altitude_thresholdm_Regional.nc',
+#                     folder_name + 'zt_altitude_thresholdp_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
+#                     folder_name + 'zt_c_invrs_tau_bkgndm_Regional.nc',
+#                     folder_name + 'zt_c_invrs_tau_bkgndp_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_sfc', 1.0, \
+#                     folder_name + 'zt_c_invrs_tau_sfcm_Regional.nc',
+#                     folder_name + 'zt_c_invrs_tau_sfcp_Regional.nc'], \
 #                    ['clubb_c_invrs_tau_shear', 1.0, \
-#                     '20221121/chrysalis.bmg20220630.sens1107_27.ne30pg2_r05_oECv3_Regional.nc', \
-#                     '20221121/chrysalis.bmg20220630.sens1107_28.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['micro_vqit', 1.0, \
-##                     '20221121/chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
-##                     '20221121/chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c_invrs_tau_n2', 1.0, \
-##                     '20220903/anvil.bmg20220630.sens723_12.ne30pg2_r05_oECv3_Regional.nc',
-##                     '20220903/anvil.bmg20220630.sens723_13.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-##                     '20220903/anvil.bmg20220630.sens723_16.ne30pg2_r05_oECv3_Regional.nc',
-##                     '20220903/anvil.bmg20220630.sens723_17.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-##                     '20220903/anvil.bmg20220630.sens723_14.ne30pg2_r05_oECv3_Regional.nc', \
-##                     '20220903/anvil.bmg20220630.sens723_15.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c8', 1.0, \
-##                     '20220903/anvil.bmg20220630.sens723_8.ne30pg2_r05_oECv3_Regional.nc',  \
-##                     '20220903/anvil.bmg20220630.sens723_9.ne30pg2_r05_oECv3_Regional.nc'], \
+#                     folder_name + 'zt_c_invrs_tau_shearm_Regional.nc',
+#                     folder_name + 'zt_c_invrs_tau_shearp_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
+#                     folder_name + 'zt_c_invrs_tau_wpxp_n2_threshm_Regional.nc', \
+#                     folder_name + 'zt_c_invrs_tau_wpxp_n2_threshp_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
+#                     folder_name + 'zt_c_invrs_tau_n2_wp2m_Regional.nc',
+#                     folder_name + 'zt_c_invrs_tau_n2_wp2p_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2_xp2', 1.0, \
+#                         folder_name + 'zt_c_invrs_tau_n2_xp2m_Regional.nc',
+#                         folder_name + 'zt_c_invrs_tau_n2_xp2p_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2_clear_wp3', 1.0, \
+#                     folder_name + 'zt_c_invrs_tau_n2_clear_wp3m_Regional.nc',
+#                     folder_name + 'zt_c_invrs_tau_n2_clear_wp3p_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
+#                     folder_name + 'zt_c_invrs_tau_wpxp_rim_Regional.nc', \
+#                     folder_name + 'zt_c_invrs_tau_wpxp_rip_Regional.nc'], \
+                    ['micro_mg_autocon_fact', 1.0, \
+                     folder_name + 'zt_autocon_factm_Regional.nc', \
+                     folder_name + 'zt_autocon_factp_Regional.nc'], \
+                    ['micro_mg_dcs', 1.0, \
+                         folder_name + 'zt_dcsm_Regional.nc', \
+                         folder_name + 'zt_dcsp_Regional.nc'], \
                         ]
 
     dfparamsNamesScalesAndFilenames =  \
@@ -168,14 +172,14 @@ def setUpInputs():
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
-        '20221121/chrysalis.bmg20220630.sens1107_1.ne30pg2_r05_oECv3_Regional.nc'
-#        '20220903/anvil.bmg20220630.sens723_1.ne30pg2_r05_oECv3_Regional.nc'
+        folder_name + 'zt0_Regional.nc'
+#        '20220903/anvil.bmg20220630.sens723_1_Regional.nc'
 
     # Metrics from simulation that use the SVD-recommended parameter values
     # Here, we use default simulation just as a placeholder.
     linSolnNcFilename = \
-            '20221121/chrysalis.bmg20220630.sens1107_1.ne30pg2_r05_oECv3_Regional.nc'
-#            '20221121/chrysalis.bmg20220630.sens1107_23.ne30pg2_r05_oECv3_Regional.nc'
+            folder_name + 'zt0_Regional.nc'
+#            folder_name + 'zt_23_Regional.nc'
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
 # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -205,7 +209,8 @@ def setUpInputs():
         transformedParamsNames, \
         sensNcFilenames, sensNcFilenamesExt, \
         defaultNcFilename, linSolnNcFilename, \
-        obsMetricValsDict, obsMetricValsCol)
+        obsMetricValsDict, obsMetricValsCol, \
+        reglrCoef)
 
 
 #if __name__ == '__main__':

@@ -33,7 +33,9 @@ def main():
     transformedParamsNames, \
     sensNcFilenames, sensNcFilenamesExt, \
     defaultNcFilename, linSolnNcFilename, \
-    obsMetricValsDict, obsMetricValsCol = \
+    obsMetricValsDict, obsMetricValsCol, \
+    reglrCoef \
+    = \
         setUpInputs()
 
 
@@ -64,6 +66,7 @@ def main():
                             sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
                              obsMetricValsDict)
 
+
     paramsLowValsPCBound, paramsHiValsPCBound = \
         calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
                      metricsWeights, obsMetricValsCol,
@@ -88,7 +91,8 @@ def main():
                          sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
                          defaultParamValsOrigRow, \
                          dnormlzdParamsSoln, normlzdSensMatrix, defaultBiasesCol, \
-                         normlzdCurvMatrix)
+                         normlzdCurvMatrix, \
+                         reglrCoef)
 
     # Create scatterplot to look at outliers
     #createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, obsMetricValsCol, metricsNames, paramsNames)
@@ -727,7 +731,8 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
                      defaultParamValsOrigRow, \
                      dnormlzdParamsSoln, normlzdSensMatrix, defaultBiasesCol, \
-                     normlzdCurvMatrix):
+                     normlzdCurvMatrix, \
+                     reglrCoef):
 
     import numpy as np
     import pdb
@@ -742,15 +747,16 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
 
     # Define objective function that is to be minimized.
     def objFnc(dnormlzdParams, normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
-               normlzdCurvMatrix):
+               normlzdCurvMatrix, reglrCoef):
         import numpy as np
         import pdb
         dnormlzdParams = np.atleast_2d(dnormlzdParams).T # convert from 1d row array to 2d column array
         chisqd = np.linalg.norm( (-normlzdDefaultBiasesCol - normlzdSensMatrix @ dnormlzdParams \
                                   - 0.5 * normlzdCurvMatrix @ (dnormlzdParams * dnormlzdParams) \
                                  ) * metricsWeights \
+                                , ord=2 \
                                )**1  \
-                + 0.0 * np.linalg.norm( dnormlzdParams, ord=1 )
+                + reglrCoef * np.linalg.norm( dnormlzdParams, ord=1 )
         #chisqdOrig = np.linalg.norm( (-normlzdDefaultBiasesCol ) * np.reciprocal(metricsWeights) )**2
         #pdb.set_trace()
 
@@ -763,7 +769,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
     dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(dnormlzdParamsSoln), \
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
-                               normlzdCurvMatrix),\
+                               normlzdCurvMatrix, reglrCoef),\
                                method='Powell')
     #pdb.set_trace()
     dnormlzdParamsSolnNonlin = np.atleast_2d(dnormlzdParamsSolnNonlin.x).T

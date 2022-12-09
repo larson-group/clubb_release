@@ -559,7 +559,7 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
 
     import numpy as np
     import pdb
-
+    import sys
 
     # Calculate solution using transformed SVD matrix.  However, dparamsSoln is not normalized.
     # dnormlzdParamsSoln = dparamsSoln / ( normalizing param value from default simulation
