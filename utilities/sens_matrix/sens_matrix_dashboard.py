@@ -83,7 +83,7 @@ def main():
                                    metricsWeights, obsMetricValsCol, magParamValsRow, \
                                    sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
-    defaultBiasesApproxNonlin, normlzdWeightedDefaultBiasesApproxNonlin, \
+    defaultBiasesApproxNonlin, \
     dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
     defaultBiasesApproxNonlin2x = \
         solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
@@ -306,6 +306,7 @@ def main():
         x=  xArrow[i] - gap,  # ith arrow's head
         # ith arrow's length:
         y= (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+        #y= (-defaultBiasesApproxNonlin2x-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
         ax= xArrow[i] - gap,  # ith arrow's tail
         ay=  yArrow[i],  # ith arrow's tail
         xref='x',
@@ -726,6 +727,16 @@ def main():
 
     return
 
+# Calculate forward nonlinear solution, normalized but not weighted
+def fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix):
+    import numpy as np
+
+    normlzdDefaultBiasesApproxNonlin = \
+            normlzdSensMatrix @ dnormlzdParams \
+            + 0.5 * normlzdCurvMatrix @ (dnormlzdParams * dnormlzdParams) 
+
+    return normlzdDefaultBiasesApproxNonlin
+
 def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
                      metricsWeights, obsMetricValsCol, magParamValsRow, \
                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
@@ -750,29 +761,41 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
                normlzdCurvMatrix, reglrCoef):
         import numpy as np
         import pdb
+
         dnormlzdParams = np.atleast_2d(dnormlzdParams).T # convert from 1d row array to 2d column array
-        chisqd = np.linalg.norm( (-normlzdDefaultBiasesCol - normlzdSensMatrix @ dnormlzdParams \
-                                  - 0.5 * normlzdCurvMatrix @ (dnormlzdParams * dnormlzdParams) \
-                                 ) * metricsWeights \
+        chisqd = np.linalg.norm( (-normlzdDefaultBiasesCol \
+                                  - fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix) \
+                                    ) * metricsWeights \
                                 , ord=2 \
                                )**1  \
                 + reglrCoef * np.linalg.norm( dnormlzdParams, ord=1 )
         #chisqdOrig = np.linalg.norm( (-normlzdDefaultBiasesCol ) * np.reciprocal(metricsWeights) )**2
-        #pdb.set_trace()
 
         return chisqd
 
 
     # Perform nonlinear optimization
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(obsMetricValsCol)
-    print("normlzdDefaultBiasesCol.T=", normlzdDefaultBiasesCol.T)
     dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(dnormlzdParamsSoln), \
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
                                normlzdCurvMatrix, reglrCoef),\
                                method='Powell')
-    #pdb.set_trace()
     dnormlzdParamsSolnNonlin = np.atleast_2d(dnormlzdParamsSolnNonlin.x).T
+
+    # Check whether the minimizer actually minimizes chisqd
+    # Initial value of chisqd, which assumes parameter perturbations are zero
+    chisqdZero = objFnc(np.zeros_like(dnormlzdParamsSoln).T, normlzdSensMatrix, \
+                        normlzdDefaultBiasesCol, metricsWeights, \
+                        normlzdCurvMatrix, reglrCoef)
+    # Optimized value of chisqd, which uses optimal values of parameter perturbations
+    chisqdMin = objFnc(dnormlzdParamsSolnNonlin.T, normlzdSensMatrix, \
+                        normlzdDefaultBiasesCol, metricsWeights, \
+                        normlzdCurvMatrix, reglrCoef)
+    print("chisqdZero =", chisqdZero)  
+    print("chisqdMin =", chisqdMin)      
+    
+
     dparamsSolnNonlin = dnormlzdParamsSolnNonlin * np.transpose(magParamValsRow)
     paramsSolnNonlin = np.transpose(defaultParamValsOrigRow) + dparamsSolnNonlin
     #print("paramsSoln.T=", paramsSoln.T)
@@ -784,15 +807,13 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
     #pdb.set_trace()
 
     normlzdWeightedDefaultBiasesApproxNonlin = \
-            ( normlzdSensMatrix @ dnormlzdParamsSolnNonlin \
-              + 0.5 * normlzdCurvMatrix @ (dnormlzdParamsSolnNonlin**2) \
-            ) * metricsWeights
+             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, normlzdCurvMatrix) \
+             * metricsWeights
 
     scale = 2
     normlzdWeightedDefaultBiasesApproxNonlin2x = \
-            ( normlzdSensMatrix @ (scale*dnormlzdParamsSolnNonlin) \
-              + 0.5 * normlzdCurvMatrix @ ((scale*dnormlzdParamsSolnNonlin)**2) \
-            ) * metricsWeights
+             fwdFnc(scale*dnormlzdParamsSolnNonlin, normlzdSensMatrix, 1*normlzdCurvMatrix) \
+             * metricsWeights
 
     # defaultBiasesApprox = (forward model soln - default soln)
     defaultBiasesApproxNonlin = normlzdWeightedDefaultBiasesApproxNonlin \
@@ -801,7 +822,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
     defaultBiasesApproxNonlin2x = normlzdWeightedDefaultBiasesApproxNonlin2x \
                                 * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
 
-    return (defaultBiasesApproxNonlin, normlzdWeightedDefaultBiasesApproxNonlin, \
+    return (defaultBiasesApproxNonlin, \
             dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
             defaultBiasesApproxNonlin2x \
            )
