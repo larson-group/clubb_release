@@ -73,7 +73,6 @@ def main():
                      magParamValsRow,
                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
-
     #print("dnormlzdParamsSoln.T=", dnormlzdParamsSoln.T)
     #print("normlzdSensMatrix=", normlzdSensMatrix)
     #print("normlzdSensMatrix@dnormlzdParamsSoln=", normlzdSensMatrix @ dnormlzdParamsSoln)
@@ -85,7 +84,8 @@ def main():
 
     defaultBiasesApproxNonlin, \
     dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
-    defaultBiasesApproxNonlin2x = \
+    defaultBiasesApproxNonlin2x, \
+    defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv = \
         solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
                          metricsWeights, obsMetricValsCol, magParamValsRow, \
                          sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
@@ -306,7 +306,7 @@ def main():
         x=  xArrow[i] - gap,  # ith arrow's head
         # ith arrow's length:
         y= (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
-        #y= (-defaultBiasesApproxNonlin2x-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+        #y= (-defaultBiasesApproxNonlinNoCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
         ax= xArrow[i] - gap,  # ith arrow's tail
         ay=  yArrow[i],  # ith arrow's tail
         xref='x',
@@ -385,13 +385,16 @@ def main():
     #normlzdDefaultBiasesCol = ( metricsWeights * (-defaultBiasesCol) /
     normlzdDefaultBiasesCol = ( (-defaultBiasesCol) /
                                 np.abs(obsMetricValsCol) )
-    sensMatrixRowMag = np.linalg.norm(normlzdWeightedSensMatrix, axis=1)
+    #sensMatrixRowMag = np.linalg.norm(normlzdWeightedSensMatrix, axis=1)
+    sensMatrixRowMag = np.linalg.norm(normlzdSensMatrix, axis=1)
+    #sensMatrixRowMag = np.amax(np.abs(normlzdSensMatrix), axis=1)
     dpMin = np.abs(normlzdDefaultBiasesCol) / np.atleast_2d(sensMatrixRowMag).T
-    u_dot_b = np.atleast_2d(sensMatrixRowMag).T * normlzdDefaultBiasesCol
-    #dpMinMatrix = np.dstack((np.reciprocal(dpMin),
-    dpMinMatrix = np.dstack((np.abs(u_dot_b),
-    #dpMinMatrix = np.dstack((np.atleast_2d(sensMatrixRowMag).T,
-                          np.abs(defaultBiasesApproxElastic)/np.abs(obsMetricValsCol)
+    #u_dot_b = np.atleast_2d(sensMatrixRowMag).T * normlzdDefaultBiasesCol
+    dpMinMatrix = np.dstack((np.reciprocal(dpMin),
+    #dpMinMatrix = np.dstack((np.abs(u_dot_b),
+    ##dpMinMatrix = np.dstack((np.atleast_2d(sensMatrixRowMag).T,
+    #                      np.abs(defaultBiasesApproxElastic)/np.abs(obsMetricValsCol)
+                          np.abs(defaultBiasesCol)/np.abs(obsMetricValsCol)
                          )).squeeze()
     biasAndParamsNames = ["dpMinInvrs", "bias_approx"]
     df = pd.DataFrame(dpMinMatrix,
@@ -424,13 +427,14 @@ def main():
     #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
     #df = pd.DataFrame({'Max abs normlzd sensitivity': np.max(np.abs(normlzdSensMatrix), axis=1), # max |row elements|
     #df = pd.DataFrame({'Max abs normlzd sensitivity': np.sum(normlzdWeightedSensMatrix, axis=1), # sum of row elements
-    df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdWeightedSensMatrix, axis=1), # sum of row elements
+    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdWeightedSensMatrix, axis=1), # sum of row elements
+    df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdSensMatrix, axis=1), # sum of row elements
     #df = pd.DataFrame({'Max abs normlzd sensitivity':
     #                    -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0])*np.linalg.norm(normlzdWeightedSensMatrix, axis=1), # sum of row elements
                        'default tuning': -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0]),
                        'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(obsMetricValsCol[:,0])
                       }, index=metricsNames )
-    biasesVsSensFig = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:],
+    biasesVsSensFig = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
                                  text=metricsNames, title = """Regional biases with default and revised tuning, versus sensitivity.""" )
     biasesVsSensFig.update_yaxes(title="Regional biases")
     biasesVsSensFig.update_xaxes(title="Sensitivity of regional metrics to parameter changes")
@@ -682,7 +686,7 @@ def main():
     paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSoln[:,0]*paramsScales,
                                    name='Linear regression, |dp|=' + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSoln)) ))
     paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnNonlin[:,0]*paramsScales,
-                                   name='paramsSolnNonlin, |dpPC|='
+                                   name='paramsSolnNonlin, |dpNonlin|='
                                    + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnNonlin)) ))
     paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnElastic[:,0]*paramsScales,
                                     name='Lasso regression, |dpLasso|='
@@ -705,22 +709,22 @@ def main():
         
         dcc.Graph( id='biasesOrderFig', figure=biasesOrderFig ),
         dcc.Graph( id='paramsBar', figure=paramsBar ),
-        dcc.Graph( id='paramsFig', figure=paramsFig ),
-        dcc.Graph( id='biasesFig', figure=biasesFig ),
+        #dcc.Graph( id='paramsFig', figure=paramsFig ),
+        #dcc.Graph( id='biasesFig', figure=biasesFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
         dcc.Graph( id='dpMinScatterFig', figure=dpMinMatrixScatterFig ),
         dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ),
         dcc.Graph( id='biasesVsSensFig', figure=biasesVsSensFig ),
-        dcc.Graph( id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig ),
+        #dcc.Graph( id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig ),
         dcc.Graph( id='residVsBiasFig', figure=residVsBiasFig ),
         dcc.Graph( id='diffBiasesVsSensFig', figure=diffBiasesVsSensFig ),
         dcc.Graph( id='relBiasesVsSensFig', figure=relBiasesVsSensFig ),
         dcc.Graph( id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig ),
         dcc.Graph( id='normlzdSensMatrixRowsFig', figure=normlzdSensMatrixRowsFig ),
-        dcc.Graph( id='vhNormlzdColsFig', figure=vhNormlzdColsFig ),
-        dcc.Graph( id='uNormlzdWeightedColsFig', figure=uNormlzdWeightedColsFig ),
-        dcc.Graph( id='uNormlzdColsFig', figure=uNormlzdColsFig ),
-        dcc.Graph( id='uNormlzdBiasColsFig', figure=uNormlzdBiasColsFig )
+        #dcc.Graph( id='vhNormlzdColsFig', figure=vhNormlzdColsFig ),
+        #dcc.Graph( id='uNormlzdWeightedColsFig', figure=uNormlzdWeightedColsFig ),
+        #dcc.Graph( id='uNormlzdColsFig', figure=uNormlzdColsFig ),
+        #dcc.Graph( id='uNormlzdBiasColsFig', figure=uNormlzdBiasColsFig )
     ])
 
     sensMatrixDashboard.run_server(debug=True)
@@ -822,9 +826,18 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
     defaultBiasesApproxNonlin2x = normlzdWeightedDefaultBiasesApproxNonlin2x \
                                 * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
 
+    defaultBiasesApproxNonlinNoCurv = \
+             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 0*normlzdCurvMatrix) \
+             * np.abs(obsMetricValsCol)
+
+    defaultBiasesApproxNonlin2xCurv = \
+             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 2*normlzdCurvMatrix) \
+             * np.abs(obsMetricValsCol)
+
     return (defaultBiasesApproxNonlin, \
             dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
-            defaultBiasesApproxNonlin2x \
+            defaultBiasesApproxNonlin2x, \
+            defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv \
            )
 
 def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames,

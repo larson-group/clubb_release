@@ -33,12 +33,16 @@ def setUpInputs():
     from test_analyzeSensMatrix import write_test_netcdf_files
 
     # L1 regularization coefficient, i.e., penalty on param perturbations in objFnc
+    # Increase this value to 0.1 or 0.5 or so if you want to reduce 
+    # the size of tuned parameter perturbations.
     reglrCoef = 0.0
 
     # Metrics are observed quantities that we want a tuned simulation to match.
+    #    The first column is the metric name.
     #    The order of metricNames determines the order of rows in sensMatrix.
-    # Column vector of (positive) weights.  A small value de-emphasizes
-    #   the corresponding metric in the fit.
+    # The second column is a vector of (positive) weights.  A small value de-emphasizes
+    #   the corresponding metric in the fitting process.
+    #   Use a large weight for global (GLB) metrics.
     metricsNamesAndWeights = [ \
                         ['SWCF_GLB', 8.00], \
                         ['SWCF_DYCOMS', 4.00], \
@@ -79,6 +83,7 @@ def setUpInputs():
 #                        ['PRECT_HAWAII', 0.01], \
 #                        ['PRECT_VOCAL', 0.01], \
 
+    # Split up the list above into metric names and the corresponding weights.
     dfMetricsNamesAndWeights =  \
         pd.DataFrame( metricsNamesAndWeights, columns = ['metricsNames', 'metricsWeights'] )
     metricsNames = dfMetricsNamesAndWeights[['metricsNames']].to_numpy().astype(str)[:,0]
@@ -86,12 +91,13 @@ def setUpInputs():
 
 
     # Parameters are tunable model parameters, e.g. clubb_C8.
-    # The float listed below is a factor that is used below for scaling plots.
-    # Each parameter is associated with two sensitivity simulations in which that parameter is perturbed
-    #    either up or down.
+    # The float listed below after the parameter name is a factor that is used below for scaling plots.
+    #   It is not a weight and doesn't affect optimized values; it just makes the plots more readable.
+    # Each parameter is associated with two sensitivity simulations; in one, the parameter is perturbed
+    #    up and in the other, it is perturbed down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
-    folder_name = 'Regional_files/20221120_2yr/'
+    folder_name = 'Regional_files/20221120_2yr/'  # folder where regional netcdf files are stored.
     paramsNamesScalesAndFilenames = [ \
                     ['clubb_c7', 1.0, \
                      folder_name + 'chrysalis.bmg20220630.sens1107_2.ne30pg2_r05_oECv3_Regional.nc',  \
@@ -152,11 +158,12 @@ def setUpInputs():
 ##                     '20220903/anvil.bmg20220630.sens723_9.ne30pg2_r05_oECv3_Regional.nc'], \
                         ]
 
+    # Split up the above list into parameter names, scales, and filenames.
     dfparamsNamesScalesAndFilenames =  \
         pd.DataFrame( paramsNamesScalesAndFilenames, \
                           columns = ['paramsNames', 'paramsScales',
-                                     #'sensNcFilenames', 'sensNcFilenamesExt'] )
-                                     'sensNcFilenamesExt', 'sensNcFilenames'] )
+                                     'sensNcFilenames', 'sensNcFilenamesExt'] )
+                                     #'sensNcFilenamesExt', 'sensNcFilenames'] )
     paramsNames = dfparamsNamesScalesAndFilenames[['paramsNames']].to_numpy().astype(str)[:,0]
     # Extract scaling factors of parameter values from user-defined list paramsNamesScalesAndFilenames.
     # The scaling is not used for any calculations, but it allows us to avoid plotting very large or small values.
@@ -164,7 +171,7 @@ def setUpInputs():
     sensNcFilenames = dfparamsNamesScalesAndFilenames[['sensNcFilenames']].to_numpy().astype(str)[:,0]
     sensNcFilenamesExt = dfparamsNamesScalesAndFilenames[['sensNcFilenamesExt']].to_numpy().astype(str)[:,0]
 
-    # This the subset of paramsNames that vary from [0,1] (e.g., C5)
+    # Below we designate the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
     #    the relationship between parameters and metrics more linear:
     #transformedParamsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2', 'clubb_c_invrs_tau_n2_clear_wp3'])
@@ -175,16 +182,15 @@ def setUpInputs():
         folder_name + 'chrysalis.bmg20220630.sens1107_1.ne30pg2_r05_oECv3_Regional.nc'
 #        '20220903/anvil.bmg20220630.sens723_1.ne30pg2_r05_oECv3_Regional.nc'
 
-    # Metrics from simulation that use the SVD-recommended parameter values
-    # Here, we use default simulation just as a placeholder.
+    # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
            folder_name + 'chrysalis.bmg20220630.sens1107_28.ne30pg2_r05_oECv3_Regional.nc'
            # folder_name + 'chrysalis.bmg20220630.sens1107_30.ne30pg2_r05_oECv3_Regional.nc'
 #            folder_name + 'chrysalis.bmg20220630.sens1107_23.ne30pg2_r05_oECv3_Regional.nc'
 
-# Observed values of our metrics, from, e.g., CERES-EBAF.
-# These observed metrics will be matched as closely as possible by analyzeSensMatrix.
-# NOTE: PRECT is in the unit of m/s
+    # Observed values of our metrics, from, e.g., CERES-EBAF.
+    # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
+    # NOTE: PRECT is in the unit of m/s
     obsMetricValsDict = { \
     'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_GLB': -45.81, 'TMQ_GLB': 24.423, \
     'LWCF_DYCOMS': 19.36681938, 'PRECT_DYCOMS':0.000000007141516, 'SWCF_DYCOMS': -63.49394226, 'TMQ_DYCOMS':20.33586884,\
