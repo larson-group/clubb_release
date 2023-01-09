@@ -32,9 +32,9 @@ module lapack_wrap
   contains
 
 !-----------------------------------------------------------------------
-  subroutine lapack_tridiag_solvex( solve_type, ndim, nrhs, &
-                                   supd, diag, subd, rhs, &
-                                   solution, rcond )
+  subroutine lapack_tridiag_solvex( solve_type, ndim, nrhs, ngrdcol, &
+                                    lhs, rhs, &
+                                    solution, rcond )
 
 ! Description:
 !   Solves a tridiagonal system of equations (expert routine).
@@ -64,33 +64,33 @@ module lapack_wrap
 
     intrinsic :: kind
 
-    ! Input variables
+    ! ----------------------- Input variables -----------------------
     character(len=*), intent(in) ::  & 
       solve_type ! Used to write a message if this fails
 
     integer, intent(in) ::  & 
-      ndim,  & ! N-dimension of matrix
-      nrhs     ! # of right hand sides to back subst. after LU-decomp.
+      ndim,     & ! N-dimension of matrix
+      ngrdcol,  & ! Number of grid columns
+      nrhs        ! # of right hand sides to back subst. after LU-decomp.
 
-    ! Input/Output variables
-    real( kind = core_rknd ), intent(inout), dimension(ndim) ::  & 
-      diag,       & ! Main diagonal
-      subd, supd    ! Sub and super diagonal
+    ! ----------------------- Input/Output variables -----------------------
+    real( kind = core_rknd ), intent(inout), dimension(3,ngrdcol,ndim) ::  & 
+      lhs ! Tridiagonal LHS
 
-    real( kind = core_rknd ), intent(inout), dimension(ndim,nrhs) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,ndim,nrhs) ::  & 
       rhs ! RHS input
 
     ! The estimate of the reciprocal of the condition number on the LHS matrix.
     ! If rcond is < machine precision the matrix is singular to working
     ! precision, and info == ndim+1.  If rcond == 0, then the LHS matrix
     ! is singular.  This condition is indicated by a return code of info > 0.
-    real( kind = core_rknd ), intent(out) :: rcond
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: rcond
 
-    ! Output variables
-    real( kind = core_rknd ), intent(out), dimension(ndim,nrhs) ::  & 
+    ! ----------------------- Output variables -----------------------
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim,nrhs) ::  & 
       solution ! Solution
 
-    ! Local Variables
+    ! ----------------------- Local Variables -----------------------
     ! These contain the decomposition of the matrix
     real( kind = core_rknd ), dimension(ndim-1) :: dlf, duf
     real( kind = core_rknd ), dimension(ndim)   :: df
@@ -103,7 +103,7 @@ module lapack_wrap
       iwork   ! `scrap' array
 
 
-    real( kind = core_rknd ), dimension(nrhs) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nrhs) ::  & 
       ferr,  & ! Forward error estimate
       berr     ! Backward error estimate
 
@@ -112,7 +112,7 @@ module lapack_wrap
 
     integer :: info ! Diagnostic output
 
-    integer :: i  ! Array index
+    integer :: i, n  ! Array index
 
 !-----------------------------------------------------------------------
 !     *** The LAPACK Routine ***
@@ -123,24 +123,28 @@ module lapack_wrap
 
     ! Lapack tridiagonal matrix solver, expert version, sgtsvx for single 
     ! or dgtsvx for double precision
-    call lapack_gtsvx( "Not Factored", "No Transpose lhs", ndim, nrhs,  & 
-                       subd(2:ndim), diag, supd(1:ndim-1),  & 
-                       dlf, df, duf, du2, ipivot,  & 
-                       rhs, ndim, solution, ndim, rcond, & 
-                       ferr, berr, work, iwork, info )
+    do i = 1, ngrdcol
+      call lapack_gtsvx( "Not Factored", "No Transpose lhs", ndim, nrhs,  & 
+                         lhs(3,i,2:ndim), lhs(2,i,:), lhs(1,i,1:ndim-1),  & 
+                         dlf, df, duf, du2, ipivot,  & 
+                         rhs(i,:,:), ndim, solution(i,:,:), ndim, rcond(i), & 
+                         ferr(i,:), berr(i,:), work, iwork, info )
+    end do
 
     ! Print diagnostics for when ferr is large
     if ( clubb_at_least_debug_level( 2 ) .and. any( ferr > 1.e-3_core_rknd ) ) then
 
       write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
 
-      do i = 1, nrhs, 1
-        write(fstderr,*) "rhs # ", i, "tridiag forward error est. =", ferr(i)
-        write(fstderr,*) "rhs # ", i, "tridiag backward error est. =", berr(i)
+      do n = 1, nrhs
+        do i = 1, ngrdcol
+          write(fstderr,*) "grdcol #", i, "rhs # ", i, "tridiag forward error est. =", ferr(i,n)
+          write(fstderr,*) "grdcol #", i, "rhs # ", i, "tridiag backward error est. =", berr(i,n)
+        end do
       end do
 
       write(fstderr,'(2(a20,e15.6))') "rcond est. = ", rcond, & 
-        "machine epsilon = ", epsilon( diag(1) )
+        "machine epsilon = ", epsilon( lhs(1,1,1) )
     end if
 
     select case( info )
@@ -150,10 +154,12 @@ module lapack_wrap
       err_code = clubb_fatal_error
 
     case( 0 )
-      ! Success!
-      if ( lapack_isnan( ndim, nrhs, solution ) ) then
-        err_code = clubb_fatal_error 
-      end if
+      ! Success
+      do i = 1, ngrdcol
+        if ( lapack_isnan( ndim, nrhs, solution(i,:,:) ) ) then
+          err_code = clubb_fatal_error 
+        end if
+      end do
 
     case( 1: )
       if ( info == ndim+1 ) then
@@ -173,9 +179,9 @@ module lapack_wrap
   end subroutine lapack_tridiag_solvex
 
 !-----------------------------------------------------------------------
-  subroutine lapack_tridiag_solve( solve_type, ndim, nrhs, &
-                                  supd, diag, subd, rhs, &
-                                  solution )
+  subroutine lapack_tridiag_solve( solve_type, ndim, nrhs, ngrdcol, &
+                                   lhs, rhs, &
+                                   solution )
 
 ! Description:
 !   Solves a tridiagonal system of equations (simple routine)
@@ -208,29 +214,33 @@ module lapack_wrap
 
     intrinsic :: kind
 
-    ! Input variables
+    ! ----------------------- Input variables -----------------------
     character(len=*), intent(in) ::  & 
       solve_type ! Used to write a message if this fails
 
     integer, intent(in) ::  & 
-      ndim,  & ! N-dimension of matrix
-      nrhs     ! # of right hand sides to back subst. after LU-decomp.
+      ndim,     & ! N-dimension of matrix
+      ngrdcol,  & ! Number of grid columns
+      nrhs        ! # of right hand sides to back subst. after LU-decomp.
 
-    ! Input/Output variables
-    real( kind = core_rknd ), intent(inout), dimension(ndim) ::  & 
-      diag,       & ! Main diagonal
-      subd, supd ! Sub and super diagonal
+    ! ----------------------- Input/Output Variables -----------------------
+    real( kind = core_rknd ), intent(inout), dimension(3,ngrdcol,ndim) ::  & 
+      lhs ! Tridiagonal LHS input
 
-    real( kind = core_rknd ), intent(inout), dimension(ndim,nrhs) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,ndim,nrhs) ::  & 
       rhs ! RHS input
 
-    ! Output variables
-    real( kind = core_rknd ), intent(out), dimension(ndim,nrhs) ::  & 
+    ! ----------------------- Output variables -----------------------
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim,nrhs) ::  & 
       solution ! Solution
 
-    ! Local Variables
+    ! ----------------------- Local Variables -----------------------
+    real( kind = core_rknd ), dimension(ndim) ::  & 
+      subd, diag, supd
 
-    integer :: info ! Diagnostic output
+    integer :: &
+      info, & ! Diagnostic output
+      i       ! Loop var
 
 !-----------------------------------------------------------------------
 !       *** The LAPACK Routine ***
@@ -251,8 +261,10 @@ module lapack_wrap
 
     ! Interface for Lapack tridiagonal matrix solver, sgtsv for single 
     ! or dgtsv for double precision
-    call lapack_gtsv( ndim, nrhs, subd(2:ndim), diag, supd(1:ndim-1),  & 
-                      rhs, ndim, info )
+    do i = 1, ngrdcol
+      call lapack_gtsv( ndim, nrhs, lhs(3,i,2:ndim), lhs(2,i,:), lhs(1,i,1:ndim-1),  & 
+                        rhs(i,:,:), ndim, info )
+    end do
 
 #ifdef E3SM
 #ifndef NDEBUG
@@ -272,10 +284,12 @@ module lapack_wrap
       solution = -999._core_rknd
 
     case( 0 )
-      ! Success!
-      if ( lapack_isnan( ndim, nrhs, rhs ) ) then
-        err_code = clubb_fatal_error 
-      end if
+      ! Success
+      do i = 1, ngrdcol
+        if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
+          err_code = clubb_fatal_error 
+        end if
+      end do
 
       solution = rhs
 
@@ -291,9 +305,11 @@ module lapack_wrap
   end subroutine lapack_tridiag_solve
 
 !-----------------------------------------------------------------------
-  subroutine lapack_band_solvex( solve_type, nsup, nsub, ndim, nrhs,  & 
+  subroutine lapack_band_solvex( solve_type, nsup, nsub, &
+                                 ndim, nrhs, ngrdcol, &
                                  lhs, rhs, &
                                  solution, rcond )
+
 ! Description:
 !   Restructure and then solve a band diagonal system, with
 !   diagnostic output
@@ -325,32 +341,33 @@ module lapack_wrap
 
     implicit none
 
-    intrinsic :: eoshift, kind, trim
-
-    ! Input Variables
+    ! ------------------------------ Input Variables ------------------------------
     character(len=*), intent(in) :: solve_type
 
     integer, intent(in) :: & 
-      nsup,  & ! Number of superdiagonals
-      nsub,  & ! Number of subdiagonals
-      ndim,  & ! The order of the LHS Matrix, i.e. the # of linear equations
-      nrhs     ! Number of RHS's to back substitute for
+      nsup,    & ! Number of superdiagonals
+      nsub,    & ! Number of subdiagonals
+      ngrdcol, & ! Number of grid columns
+      ndim,    & ! The order of the LHS Matrix, i.e. the # of linear equations
+      nrhs       ! Number of RHS's to solve for
 
-    real( kind = core_rknd ), dimension(nsup+nsub+1,ndim), intent(inout) ::  & 
+    ! ------------------------------ InOut Variables ------------------------------
+    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) ::  & 
       lhs ! Left hand side
-    real( kind = core_rknd ), dimension(ndim,nrhs), intent(inout) ::  & 
+
+    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) ::  & 
       rhs ! Right hand side(s)
 
-    ! Output Variables
-    real( kind = core_rknd ), dimension(ndim,nrhs), intent(out) :: &
+    ! ------------------------------ Output Variables ------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
       solution
 
     ! The estimate of the reciprocal condition number of matrix
     ! after equilibration (if done).
-    real( kind = core_rknd ), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) ::  & 
       rcond
 
-    ! Local Variables
+    ! ------------------------------ Local Variables ------------------------------
 
     ! Workspaces
     real( kind = core_rknd ), dimension(3*ndim)  :: work
@@ -362,7 +379,7 @@ module lapack_wrap
     integer, dimension(ndim) ::  & 
       ipivot
 
-    real( kind = core_rknd ), dimension(nrhs) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nrhs) ::  & 
       ferr, berr ! Forward and backward error estimate
 
     real( kind = core_rknd ), dimension(ndim) ::  & 
@@ -372,7 +389,7 @@ module lapack_wrap
       info,   & ! If this doesn't come back as 0, something went wrong
       offset, & ! Loop iterator
       imain,  & ! Main diagonal of the matrix
-      i         ! Loop iterator
+      i,n       ! Loop iterator
 
     character ::  & 
       equed ! Row equilibration status
@@ -400,15 +417,17 @@ module lapack_wrap
     ! For the offset, (+) is left, and (-) is right
 
     ! Sub diagonals
-    do offset = 1, nsub, 1
-      lhs(imain+offset, 1:ndim) & 
-      = eoshift( lhs(imain+offset, 1:ndim), offset )
+    do i = 1, ngrdcol
+      do offset = 1, nsub, 1
+        lhs(imain+offset,i,1:ndim) = eoshift( lhs(imain+offset,i,1:ndim), offset )
+      end do
     end do
 
     ! Super diagonals
-    do offset = 1, nsup, 1
-      lhs(imain-offset, 1:ndim) & 
-      = eoshift( lhs(imain-offset, 1:ndim), -offset )
+    do i = 1, ngrdcol
+      do offset = 1, nsup, 1
+        lhs(imain-offset,i,1:ndim) = eoshift( lhs(imain-offset,i,1:ndim), -offset )
+      end do
     end do
 
 !-----------------------------------------------------------------------
@@ -420,12 +439,14 @@ module lapack_wrap
 
     ! Lapack general band solver, expert version, sgbsvx for single 
     ! or dgbsvx for double precision
-    call lapack_gbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
-                       ndim, nsub, nsup, nrhs, & 
-                       lhs, nsup+nsub+1, lulhs, 2*nsub+nsup+1, & 
-                       ipivot, equed, rscale, cscale, & 
-                       rhs, ndim, solution, ndim, & 
-                       rcond, ferr, berr, work, iwork, info )
+    do i = 1, ngrdcol
+      call lapack_gbsvx( 'Equilibrate lhs', 'No Transpose lhs', & 
+                         ndim, nsub, nsup, nrhs, & 
+                         lhs(:,i,:), nsup+nsub+1, lulhs, 2*nsub+nsup+1, & 
+                         ipivot, equed, rscale, cscale, & 
+                         rhs(i,:,:), ndim, solution(i,:,:), ndim, & 
+                         rcond(i), ferr(i,:), berr(i,:), work, iwork, info )
+    end do
 
 
 ! %% debug
@@ -453,13 +474,15 @@ module lapack_wrap
 
       write(fstderr,*) "Warning, large error est. for: " // trim( solve_type )
 
-      do i = 1, nrhs, 1
-        write(fstderr,*) "rhs # ", i, "band_solvex forward error est. =", ferr(i)
-        write(fstderr,*) "rhs # ", i, "band_solvex backward error est. =", berr(i)
+      do n = 1, nrhs
+        do i = 1, ngrdcol
+          write(fstderr,*) "grdcol #", i, "rhs # ", n, "band_solvex forward error est. =", ferr(i,n)
+          write(fstderr,*) "grdcol #", i, "rhs # ", n, "band_solvex backward error est. =", berr(i,n)
+        end do
       end do
 
       write(fstderr,'(2(a20,e15.6))') "rcond est. = ", rcond, & 
-        "machine epsilon = ", epsilon( lhs(1,1) )
+        "machine epsilon = ", epsilon( lhs(1,1,1) )
     end if
 
     select case( info )
@@ -471,9 +494,11 @@ module lapack_wrap
 
     case( 0 )
       ! Success!
-      if ( lapack_isnan( ndim, nrhs, solution ) ) then
-        err_code = clubb_fatal_error 
-      end if
+      do i = 1, ngrdcol
+        if ( lapack_isnan( ndim, nrhs, solution(i,:,:) ) ) then
+          err_code = clubb_fatal_error 
+        end if
+      end do
 
     case( 1: )
       if ( info == ndim+1 ) then
@@ -495,8 +520,9 @@ module lapack_wrap
   end subroutine lapack_band_solvex
 
 !-----------------------------------------------------------------------
-  subroutine lapack_band_solve( solve_type, nsup, nsub, ndim, nrhs, lhs,  & 
-                                rhs, &
+  subroutine lapack_band_solve( solve_type, nsup, nsub, &
+                                ndim, nrhs, ngrdcol, &
+                                lhs, rhs, &
                                 solution )
 ! Description:
 !   Restructure and then solve a band diagonal system
@@ -519,31 +545,33 @@ module lapack_wrap
         lapack_isnan
 
     implicit none
-    intrinsic :: eoshift, kind, trim
 
-    ! Input Variables
+    ! ------------------------------ Input Variables ------------------------------
     character(len=*), intent(in) :: solve_type
 
     integer, intent(in) :: & 
-      nsup,  & ! Number of superdiagonals
-      nsub,  & ! Number of subdiagonals
-      ndim,  & ! The order of the LHS Matrix, i.e. the # of linear equations
-      nrhs  ! Number of RHS's to solve for
+      nsup,    & ! Number of superdiagonals
+      nsub,    & ! Number of subdiagonals
+      ngrdcol, & ! Number of grid columns
+      ndim,    & ! The order of the LHS Matrix, i.e. the # of linear equations
+      nrhs       ! Number of RHS's to solve for
 
     ! Note: matrix lhs is intent(in), not intent(inout)
     ! as in the subroutine band_solvex( )
-    real( kind = core_rknd ), dimension(nsup+nsub+1,ndim), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(in) ::  & 
       lhs ! Left hand side
-    real( kind = core_rknd ), dimension(ndim,nrhs), intent(inout) ::  & 
+
+    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(inout) ::  & 
       rhs ! Right hand side(s)
 
-    ! Output Variables
-    real( kind = core_rknd ), dimension(ndim,nrhs), intent(out) :: solution
+    ! ------------------------------ Output Variables ------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
+      solution
 
-    ! Local Variables
+    ! ------------------------------ Local Variables ------------------------------
 
     ! Workspaces
-    real( kind = core_rknd ), dimension(2*nsub+nsup+1,ndim) :: & 
+    real( kind = core_rknd ), dimension(2*nsub+nsup+1,ndim,ngrdcol) :: & 
       lulhs ! LU Decomposition of the LHS
 
     integer, dimension(ndim) ::  & 
@@ -553,7 +581,7 @@ module lapack_wrap
       info,   & ! If this doesn't come back as 0, something went wrong
       imain  ! Main diagonal of the matrix
 
-    integer :: i, j
+    integer :: i, j, d
 
     !-----------------------------------------------------------------------
     !       Reorder LU Matrix to use LAPACK band matrix format
@@ -604,18 +632,20 @@ module lapack_wrap
     ! 
     ! Since the first nsup rows are the first rows in lulhs, we're going to access them first to
     ! avoid out of order memory accesses.
-    do i = 1, nsup
+    do i = 1, ngrdcol
+      do d = 1, nsup
 
         ! Add 0s to first nsup columns, and decreasing number of end-shift affected columns
-        do j = 1, imain-i
-            lulhs(j,i) = 0.0_core_rknd
+        do j = 1, imain-d
+          lulhs(j,d,i) = 0.0_core_rknd
         end do
 
         ! Copy lhs values into appropriate lulhs spots
-        do j = imain-i+1, imain+nsub
-            lulhs(j,i) = lhs(j-nsub,i+j-imain)
+        do j = imain-d+1, imain+nsub
+          lulhs(j,d,i) = lhs(j-nsub,i,d+j-imain)
         end do
 
+      end do
     end do
 
     ! After the first nsup rows are dealt with, the offset lhs values can be copied into lulhs
@@ -631,18 +661,20 @@ module lapack_wrap
     ! lulhs(:,ndim-nsub) =  0     0       lhs      lhs    
     ! 
     ! For all values not affected by end-shifting
-    do i = nsup+1, ndim-nsub
+    do i = 1, ngrdcol
+      do d = nsup+1, ndim-nsub
 
         ! Set first nsup columns to 0
         do j = 1, nsub
-            lulhs(j,i) = 0.0_core_rknd
+          lulhs(j,d,i) = 0.0_core_rknd
         end do
 
         ! Copy lhs values into appropriate lulhs spots
         do j = imain-nsub, imain+nsub
-            lulhs(j,i) = lhs(j-nsub, i+j-imain)
+          lulhs(j,d,i) = lhs(j-nsub,i, d+j-imain)
         end do
 
+      end do
     end do
 
 
@@ -662,23 +694,25 @@ module lapack_wrap
     !                        ...  nsup     nsup+1    ...          ndim-nsub+1 ... ndim
     ! 
     ! Finish the lulhs setup by accessing the last values last, keeping memory access ordered
-    do i = ndim-nsub+1, ndim
+    do i = 1, ngrdcol
+      do d = ndim-nsub+1, ndim
     
         ! Set first nsup columns to 0
         do j = 1, nsub
-            lulhs(j,i) = 0.0_core_rknd
+          lulhs(j,d,i) = 0.0_core_rknd
         end do
 
         ! Copy lhs values into appropriate lulhs spots
-        do j = imain-nsup, imain-(i-ndim)
-            lulhs(j,i) = lhs(j-nsub, i+j-imain)
+        do j = imain-nsup, imain-(d-ndim)
+          lulhs(j,d,i) = lhs(j-nsub,i, d+j-imain)
         end do
 
         ! Set increasing number of end-shift affected columns to 0
-        do j = imain-(i-ndim)+1, imain+nsub
-            lulhs(j,i) = 0.0_core_rknd
+        do j = imain-(d-ndim)+1, imain+nsub
+          lulhs(j,d,i) = 0.0_core_rknd
         end do
         
+      end do
     end do
 
 !-----------------------------------------------------------------------
@@ -688,8 +722,10 @@ module lapack_wrap
 
     ! Lapack general band solver, sgbsv for single 
     ! or dgbsv for double precision
-    call lapack_gbsv( ndim, nsub, nsup, nrhs, lulhs, nsub*2+nsup+1,  & 
-                      ipivot, rhs, ndim, info )
+    do i = 1, ngrdcol
+      call lapack_gbsv( ndim, nsub, nsup, nrhs, lulhs(:,:,i), nsub*2+nsup+1,  & 
+                        ipivot, rhs(i,:,:), ndim, info )
+    end do
 
 
     select case( info )
@@ -701,9 +737,11 @@ module lapack_wrap
     case( 0 )
           ! Success!
           if ( clubb_at_least_debug_level( 1 ) ) then
-              if ( lapack_isnan( ndim, nrhs, rhs ) ) then
+            do i = 1, ngrdcol
+              if ( lapack_isnan( ndim, nrhs, rhs(i,:,:) ) ) then
                 err_code = clubb_fatal_error 
               end if
+            end do
           end if
 
           solution = rhs
