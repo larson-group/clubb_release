@@ -31,7 +31,7 @@ DOUBLE_PRECISION="-r8"
 if [ $OPENACC == true ]
 then
 	# == Optimization ==
-	OPTIMIZE="-O3 -acc -gpu=cc70,managed -Minfo=accel"
+	OPTIMIZE="-O3 -acc -gpu=cc70,managed,deepcopy -Minfo=accel"
 else
 	OPTIMIZE="-O3"
 fi
@@ -49,7 +49,7 @@ LAPACK="-llapack -lblas"
 if [ $OPENACC == true ]
 then
 	# == Linking Flags ==
-	LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -gpu=cc70,managed -lcurand"
+	LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -gpu=cc70,managed,deepcopy -lcurand"
 else
 	LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK"
 fi

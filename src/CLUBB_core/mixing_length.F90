@@ -139,6 +139,7 @@ module mixing_length
         l_sat_mixrat_lookup ! Variable(s)
 
     use saturation, only:  &
+        sat_mixrat_liq_acc, & ! Procedure(s)
         sat_mixrat_liq, & ! Procedure(s)
         sat_mixrat_liq_lookup, &
         sat_mixrat_ice
@@ -195,24 +196,25 @@ module mixing_length
 
     real( kind = core_rknd ) :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
 
-    ! Temporary arrays to store calculations to speed runtime
-    real( kind = core_rknd ), dimension(nz) :: &
+    ! Temporary 2D arrays to store calculations to speed runtime
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
         exp_mu_dzm, &
         invrs_dzm_on_mu, &
         grav_on_thvm, &
+        Lv_coef, &
+        entrain_coef, &
         thl_par_j_precalc, &
         rt_par_j_precalc, &
-        thl_par_1, &
-        rt_par_1, &
         tl_par_1, &
+        rt_par_1, &
         rsatl_par_1, &
+        thl_par_1, &
+        dCAPE_dz_1, &
         s_par_1, &
         rc_par_1, &
-        thv_par_1, &
-        dCAPE_dz_1, &
         CAPE_incr_1, &
-        Lv_coef, &
-        entrain_coef
+        thv_par_1
+        
         
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
         tke_i
@@ -247,10 +249,11 @@ module mixing_length
 
     ! Calculate initial turbulent kinetic energy for each grid level
     tke_i = zm2zt( nz, ngrdcol, gr, em )
-
-    do i = 1, ngrdcol
-      
+ 
       ! Initialize arrays and precalculate values for computational efficiency
+!$acc data copyin(gr)
+!$acc parallel loop gang vector collapse(2)
+    do i = 1, ngrdcol
       do k = 1, nz
 
         ! Initialize up and down arrays
@@ -258,18 +261,24 @@ module mixing_length
         Lscale_down(i,k) = zlmin
 
         ! Precalculate values to avoid unnecessary calculations later
-        exp_mu_dzm(k) = exp( -mu(i) * gr%dzm(i,k) )
-        invrs_dzm_on_mu(k) = ( gr%invrs_dzm(i,k) ) / mu(i)
-        grav_on_thvm(k) = grav / thvm(i,k)
-        Lv_coef(k) = Lv / ( exner(i,k) * cp ) - ep2 * thv_ds(i,k)
-        entrain_coef(k) = ( one - exp_mu_dzm(k) ) * invrs_dzm_on_mu(k)
+        exp_mu_dzm(i,k) = exp( -mu(i) * gr%dzm(i,k) )
+        invrs_dzm_on_mu(i,k) = ( gr%invrs_dzm(i,k) ) / mu(i)
+        grav_on_thvm(i,k) = grav / thvm(i,k)
+        Lv_coef(i,k) = Lv / ( exner(i,k) * cp ) - ep2 * thv_ds(i,k)
+        entrain_coef(i,k) = ( one - exp_mu_dzm(i,k) ) * invrs_dzm_on_mu(i,k)
 
       end do
+    end do
+!$acc end parallel
+
+!$acc parallel loop gang vector
+    do i = 1, ngrdcol
 
       ! Avoid uninitialized memory (these values are not used in Lscale)
       Lscale_up(i,1)   = zero
       Lscale_down(i,1) = zero
-
+    end do
+!$acc end parallel
       ! Precalculations of single values to avoid unnecessary calculations later
       Lv2_coef = ep * Lv**2 / ( Rd * cp )
       invrs_Lscale_sfclyr_depth = one / Lscale_sfclyr_depth
@@ -280,15 +289,18 @@ module mixing_length
       ! Precalculate values for upward Lscale, these are useful only if a parcel can rise
       ! more than one level. They are used in the equations that calculate thl and rt
       ! recursively for a parcel as it ascends
+!$acc parallel loop gang vector collapse(2)
+    do i = 1, ngrdcol  
       do j = 2, nz-1
 
-          thl_par_j_precalc(j) = thlm(i,j) - thlm(i,j-1) * exp_mu_dzm(j-1)  &
-                                 - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(j-1)
+          thl_par_j_precalc(i,j) = thlm(i,j) - thlm(i,j-1) * exp_mu_dzm(i,j-1)  &
+                                 - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(i,j-1)
 
-          rt_par_j_precalc(j) = rtm(i,j) - rtm(i,j-1) * exp_mu_dzm(j-1)  &
-                                - ( rtm(i,j) - rtm(i,j-1) ) * entrain_coef(j-1)
+          rt_par_j_precalc(i,j) = rtm(i,j) - rtm(i,j-1) * exp_mu_dzm(i,j-1)  &
+                                - ( rtm(i,j) - rtm(i,j-1) ) * entrain_coef(i,j-1)
       end do
-
+    end do
+!$acc end parallel
 
       ! Calculate the initial change in TKE for each level. This is done for computational
       ! efficiency, it helps because there will be at least one calculation for each grid level,
@@ -299,28 +311,45 @@ module mixing_length
       ! and expensive calculations.
 
       ! Calculate initial thl, tl, and rt for parcels at each grid level
-      do j = 3, nz
+!$acc parallel loop gang vector collapse(2)
+    do i = 1, ngrdcol
+     do j = 3, nz
 
-          thl_par_1(j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(j-1)
+          thl_par_1(i,j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(i,j-1)
 
-          tl_par_1(j) = thl_par_1(j) * exner(i,j)
+          tl_par_1(i,j) = thl_par_1(i,j) * exner(i,j)
 
-          rt_par_1(j) = rtm(i,j) - ( rtm(i,j) - rtm(i,j-1) ) * entrain_coef(j-1)
+          rt_par_1(i,j) = rtm(i,j) - ( rtm(i,j) - rtm(i,j-1) ) * entrain_coef(i,j-1)
 
       end do
+    end do
+!$acc end parallel
 
 
       ! Caclculate initial rsatl for parcels at each grid level, this function is elemental
-      if ( l_sat_mixrat_lookup ) then
-        rsatl_par_1(3:) = sat_mixrat_liq_lookup( p_in_Pa(i,3:), tl_par_1(3:) )
-      else
-        rsatl_par_1(3:) = sat_mixrat_liq( nz-2, p_in_Pa(i,3:), tl_par_1(3:) )
+#if _OPENACC
+    do i = 1, ngrdcol
+      if ( .not. l_sat_mixrat_lookup ) then
+        rsatl_par_1(i,3:) = sat_mixrat_liq_acc( nz-2, p_in_Pa(i,3:), tl_par_1(i,3:) )
       end if
-
+    end do
+#else
+    do i = 1, ngrdcol
+      if ( l_sat_mixrat_lookup ) then
+        rsatl_par_1(i,3:) = sat_mixrat_liq_lookup( p_in_Pa(i,3:), tl_par_1(i,3:) )
+      else
+        rsatl_par_1(i,3:) = sat_mixrat_liq( nz-2, p_in_Pa(i,3:), tl_par_1(i,3:) )
+      end if
+    end do
+#endif
+    
+    
       ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
+    !$acc parallel loop gang vector
+    do i = 1, ngrdcol
       do j = 3, nz
 
-          tl_par_j_sqd = tl_par_1(j)**2
+          tl_par_j_sqd = tl_par_1(i,j)**2
 
           ! s from Lewellen and Yoh 1993 (LY) eqn. 1
           !                           s = ( rt - rsatl ) / ( 1 + beta * rsatl )
@@ -329,21 +358,21 @@ module mixing_length
           !
           ! Simplified by multiplying top and bottom by tl^2 to avoid a divide and precalculating
           ! ep * Lv**2 / ( Rd * cp )
-          s_par_1(j) = ( rt_par_1(j) - rsatl_par_1(j) ) * tl_par_j_sqd &
-                       / ( tl_par_j_sqd + Lv2_coef * rsatl_par_1(j) )
+          s_par_1(i,j) = ( rt_par_1(i,j) - rsatl_par_1(i,j) ) * tl_par_j_sqd &
+                       / ( tl_par_j_sqd + Lv2_coef * rsatl_par_1(i,j) )
 
-          rc_par_1(j) = max( s_par_1(j), zero_threshold )
+          rc_par_1(i,j) = max( s_par_1(i,j), zero_threshold )
 
           ! theta_v of entraining parcel at grid level j
-          thv_par_1(j) = thl_par_1(j) + ep1 * thv_ds(i,j) * rt_par_1(j) + Lv_coef(j) * rc_par_1(j)
+          thv_par_1(i,j) = thl_par_1(i,j) + ep1 * thv_ds(i,j) * rt_par_1(i,j) + Lv_coef(i,j) * rc_par_1(i,j)
 
 
           ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
-          dCAPE_dz_1(j) = grav_on_thvm(j) * ( thv_par_1(j) - thvm(i,j) )
+          dCAPE_dz_1(i,j) = grav_on_thvm(i,j) * ( thv_par_1(i,j) - thvm(i,j) )
 
           ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
           ! Trapezoidal estimate between grid levels, dCAPE at z_0 = 0 for this initial calculation
-          CAPE_incr_1(j) = one_half * dCAPE_dz_1(j) * gr%dzm(i,j-1)
+          CAPE_incr_1(i,j) = one_half * dCAPE_dz_1(i,j) * gr%dzm(i,j-1)
 
       end do
 
@@ -356,19 +385,19 @@ module mixing_length
       do k = 2, nz-2
 
           ! If the initial turbulent kinetic energy (tke) has not been exhausted for this grid level
-          if ( tke_i(i,k) + CAPE_incr_1(k+1) > zero ) then
+          if ( tke_i(i,k) + CAPE_incr_1(i,k+1) > zero ) then
 
               ! Calculate new TKE for parcel
-              tke = tke_i(i,k) + CAPE_incr_1(k+1)
+              tke = tke_i(i,k) + CAPE_incr_1(i,k+1)
 
               ! Set j to 2 levels above current Lscale_up level, this is because we've already
               ! determined that the parcel can rise at least 1 full level
               j = k + 2
 
               ! Set initial thl, rt, and dCAPE_dz to the values found by the intial calculations
-              thl_par_j = thl_par_1(k+1)
-              rt_par_j  = rt_par_1(k+1)
-              dCAPE_dz_j_minus_1 = dCAPE_dz_1(k+1)
+              thl_par_j = thl_par_1(i,k+1)
+              rt_par_j  = rt_par_1(i,k+1)
+              dCAPE_dz_j_minus_1 = dCAPE_dz_1(i,k+1)
 
 
               ! Continue change in TKE calculations until it is exhausted or the max grid
@@ -386,14 +415,14 @@ module mixing_length
                   ! at grid level j
                   !
                   ! d(thl_par)/dz = - mu * ( thl_par - thl_env )
-                  thl_par_j = thl_par_j_precalc(j) + thl_par_j * exp_mu_dzm(j-1)
+                  thl_par_j = thl_par_j_precalc(i,j) + thl_par_j * exp_mu_dzm(i,j-1)
 
 
                   ! r_t of the parcel starting at grid level k, and currenly
                   ! at grid level j
                   !
                   ! d(rt_par)/dz = - mu * ( rt_par - rt_env )
-                  rt_par_j = rt_par_j_precalc(j) + rt_par_j * exp_mu_dzm(j-1)
+                  rt_par_j = rt_par_j_precalc(i,j) + rt_par_j * exp_mu_dzm(i,j-1)
 
 
                   ! Include effects of latent heating on Lscale_up 6/12/00
@@ -403,9 +432,9 @@ module mixing_length
                   tl_par_j = thl_par_j*exner(i,j)
 
                   if ( l_sat_mixrat_lookup ) then
-                    rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(i,j), tl_par_j )
+                    !rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(i,j), tl_par_j )
                   else
-                    rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j )
+                    rsatl_par_j = sat_mixrat_liq_acc( p_in_Pa(i,j), tl_par_j )
                   end if
 
                   tl_par_j_sqd = tl_par_j**2
@@ -424,10 +453,10 @@ module mixing_length
 
                   ! theta_v of entraining parcel at grid level j
                   thv_par_j = thl_par_j + ep1 * thv_ds(i,j) * rt_par_j  &
-                              + Lv_coef(j) * rc_par_j
+                              + Lv_coef(i,j) * rc_par_j
 
                   ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
-                  dCAPE_dz_j = grav_on_thvm(j) * ( thv_par_j - thvm(i,j) )
+                  dCAPE_dz_j = grav_on_thvm(i,j) * ( thv_par_j - thvm(i,j) )
 
                   ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
                   ! Trapezoidal estimate between grid levels j and j-1
@@ -491,8 +520,8 @@ module mixing_length
               ! remaining TKE (tke_i), using the quadratic formula. Simplified
               ! since dCAPE_dz_j_minus_1 = 0.0
               Lscale_up(i,k) = Lscale_up(i,k) - sqrt( - two * tke_i(i,k) &
-                                                    * gr%dzm(i,k) * dCAPE_dz_1(k+1) ) &
-                                            / dCAPE_dz_1(k+1)
+                                                    * gr%dzm(i,k) * dCAPE_dz_1(i,k+1) ) &
+                                            / dCAPE_dz_1(i,k+1)
           endif
 
 
@@ -512,22 +541,25 @@ module mixing_length
 
 
       end do
-
-
+    end do
+    !$acc end parallel
       ! ---------------- Downwards Length Scale Calculation ----------------
 
       ! Precalculate values for downward Lscale, these are useful only if a parcel can descend
       ! more than one level. They are used in the equations that calculate thl and rt
       ! recursively for a parcel as it descends
+!$acc parallel loop gang vector collapse(2)    
+    do i = 1, ngrdcol
       do j = 2, nz-1
 
-          thl_par_j_precalc(j) = thlm(i,j) - thlm(i,j+1) * exp_mu_dzm(j)  &
-                                 - ( thlm(i,j) - thlm(i,j+1) ) * entrain_coef(j)
+          thl_par_j_precalc(i,j) = thlm(i,j) - thlm(i,j+1) * exp_mu_dzm(i,j)  &
+                                 - ( thlm(i,j) - thlm(i,j+1) ) * entrain_coef(i,j)
 
-          rt_par_j_precalc(j) = rtm(i,j) - rtm(i,j+1) * exp_mu_dzm(j)  &
-                                - ( rtm(i,j) - rtm(i,j+1) ) * entrain_coef(j)
+          rt_par_j_precalc(i,j) = rtm(i,j) - rtm(i,j+1) * exp_mu_dzm(i,j)  &
+                                - ( rtm(i,j) - rtm(i,j+1) ) * entrain_coef(i,j)
       end do
-
+    end do
+!$acc end parallel
 
       ! Calculate the initial change in TKE for each level. This is done for computational
       ! efficiency, it helps because there will be at least one calculation for each grid level,
@@ -538,29 +570,43 @@ module mixing_length
       ! and expensive calculations.
 
       ! Calculate initial thl, tl, and rt for parcels at each grid level
+!$acc parallel loop gang vector collapse(2)    
+    do i = 1, ngrdcol
       do j = 2, nz-1
 
-          thl_par_1(j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j+1) )  * entrain_coef(j)
+          thl_par_1(i,j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j+1) )  * entrain_coef(i,j)
 
-          tl_par_1(j) = thl_par_1(j) * exner(i,j)
+          tl_par_1(i,j) = thl_par_1(i,j) * exner(i,j)
 
-          rt_par_1(j) = rtm(i,j) - ( rtm(i,j) - rtm(i,j+1) ) * entrain_coef(j)
+          rt_par_1(i,j) = rtm(i,j) - ( rtm(i,j) - rtm(i,j+1) ) * entrain_coef(i,j)
 
       end do
+    end do
+!$acc end parallel
 
-
-      ! Caclculate initial rsatl for parcels at each grid level, this function is elemental
-      if ( l_sat_mixrat_lookup ) then
-        rsatl_par_1(2:) = sat_mixrat_liq_lookup( p_in_Pa(i,2:), tl_par_1(2:) )
-      else
-        rsatl_par_1(2:) = sat_mixrat_liq( nz-1, p_in_Pa(i,2:), tl_par_1(2:) )
+    ! Caclculate initial rsatl for parcels at each grid level, this function is elemental
+#if _OPENACC
+    do i = 1, ngrdcol
+      if ( .not. l_sat_mixrat_lookup ) then
+        rsatl_par_1(i,2:) = sat_mixrat_liq_acc( nz-1, p_in_Pa(i,2:), tl_par_1(i,2:) )
       end if
-
+    end do
+#else
+  do i = 1, ngrdcol
+    if ( l_sat_mixrat_lookup ) then
+      rsatl_par_1(i,2:) = sat_mixrat_liq_lookup( p_in_Pa(i,2:), tl_par_1(i,2:) )
+    else
+      rsatl_par_1(i,2:) = sat_mixrat_liq( nz-1, p_in_Pa(i,2:), tl_par_1(i,2:) )
+    end if
+  end do
+#endif
 
       ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
+  !$acc parallel loop gang vector
+    do i = 1, ngrdcol
       do j = 2, nz-1
 
-          tl_par_j_sqd = tl_par_1(j)**2
+          tl_par_j_sqd = tl_par_1(i,j)**2
 
           ! s from Lewellen and Yoh 1993 (LY) eqn. 1
           !                           s = ( rt - rsatl ) / ( 1 + beta * rsatl )
@@ -569,20 +615,20 @@ module mixing_length
           !
           ! Simplified by multiplying top and bottom by tl^2 to avoid a divide and precalculating
           ! ep * Lv**2 / ( Rd * cp )
-          s_par_1(j) = ( rt_par_1(j) - rsatl_par_1(j) ) * tl_par_j_sqd &
-                       / ( tl_par_j_sqd + Lv2_coef * rsatl_par_1(j) )
+          s_par_1(i,j) = ( rt_par_1(i,j) - rsatl_par_1(i,j) ) * tl_par_j_sqd &
+                       / ( tl_par_j_sqd + Lv2_coef * rsatl_par_1(i,j) )
 
-          rc_par_1(j) = max( s_par_1(j), zero_threshold )
+          rc_par_1(i,j) = max( s_par_1(i,j), zero_threshold )
 
           ! theta_v of entraining parcel at grid level j
-          thv_par_1(j) = thl_par_1(j) + ep1 * thv_ds(i,j) * rt_par_1(j) + Lv_coef(j) * rc_par_1(j)
+          thv_par_1(i,j) = thl_par_1(i,j) + ep1 * thv_ds(i,j) * rt_par_1(i,j) + Lv_coef(i,j) * rc_par_1(i,j)
 
           ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
-          dCAPE_dz_1(j) = grav_on_thvm(j) * ( thv_par_1(j) - thvm(i,j) )
+          dCAPE_dz_1(i,j) = grav_on_thvm(i,j) * ( thv_par_1(i,j) - thvm(i,j) )
 
           ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
           ! Trapezoidal estimate between grid levels, dCAPE at z_0 = 0 for this initial calculation
-          CAPE_incr_1(j) = one_half * dCAPE_dz_1(j) * gr%dzm(i,j)
+          CAPE_incr_1(i,j) = one_half * dCAPE_dz_1(i,j) * gr%dzm(i,j)
 
       end do
 
@@ -595,19 +641,19 @@ module mixing_length
       do k = nz, 3, -1
 
           ! If the initial turbulent kinetic energy (tke) has not been exhausted for this grid level
-          if ( tke_i(i,k) - CAPE_incr_1(k-1) > zero ) then
+          if ( tke_i(i,k) - CAPE_incr_1(i,k-1) > zero ) then
 
               ! Calculate new TKE for parcel
-              tke = tke_i(i,k) - CAPE_incr_1(k-1)
+              tke = tke_i(i,k) - CAPE_incr_1(i,k-1)
 
               ! Set j to 2 levels below current Lscale_down level, this is because we've already
               ! determined that the parcel can descend at least 1 full level
               j = k - 2
 
               ! Set initial thl, rt, and dCAPE_dz to the values found by the intial calculations
-              thl_par_j = thl_par_1(k-1)
-              rt_par_j = rt_par_1(k-1)
-              dCAPE_dz_j_plus_1 = dCAPE_dz_1(k-1)
+              thl_par_j = thl_par_1(i,k-1)
+              rt_par_j = rt_par_1(i,k-1)
+              dCAPE_dz_j_plus_1 = dCAPE_dz_1(i,k-1)
 
 
               ! Continue change in TKE calculations until it is exhausted or the min grid
@@ -625,14 +671,14 @@ module mixing_length
                   ! at grid level j
                   !
                   ! d(thl_par)/dz = - mu * ( thl_par - thl_env )
-                  thl_par_j = thl_par_j_precalc(j) + thl_par_j * exp_mu_dzm(j)
+                  thl_par_j = thl_par_j_precalc(i,j) + thl_par_j * exp_mu_dzm(i,j)
 
 
                   ! r_t of the parcel starting at grid level k, and currenly
                   ! at grid level j
                   !
                   ! d(rt_par)/dz = - mu * ( rt_par - rt_env )
-                  rt_par_j = rt_par_j_precalc(j) + rt_par_j * exp_mu_dzm(j)
+                  rt_par_j = rt_par_j_precalc(i,j) + rt_par_j * exp_mu_dzm(i,j)
 
 
                   ! Include effects of latent heating on Lscale_up 6/12/00
@@ -642,9 +688,9 @@ module mixing_length
                   tl_par_j = thl_par_j*exner(i,j)
 
                   if ( l_sat_mixrat_lookup ) then
-                    rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(i,j), tl_par_j )
+                    !rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(i,j), tl_par_j )
                   else
-                    rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j )
+                    rsatl_par_j = sat_mixrat_liq_acc( p_in_Pa(i,j), tl_par_j )
                   end if
 
                   tl_par_j_sqd = tl_par_j**2
@@ -662,10 +708,10 @@ module mixing_length
                   rc_par_j = max( s_par_j, zero_threshold )
 
                   ! theta_v of entraining parcel at grid level j
-                  thv_par_j = thl_par_j + ep1 * thv_ds(i,j) * rt_par_j + Lv_coef(j) * rc_par_j
+                  thv_par_j = thl_par_j + ep1 * thv_ds(i,j) * rt_par_j + Lv_coef(i,j) * rc_par_j
 
                   ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
-                  dCAPE_dz_j = grav_on_thvm(j) * ( thv_par_j - thvm(i,j) )
+                  dCAPE_dz_j = grav_on_thvm(i,j) * ( thv_par_j - thvm(i,j) )
 
                   ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
                   ! Trapezoidal estimate between grid levels j+1 and j
@@ -731,8 +777,8 @@ module mixing_length
               ! remaining TKE (tke_i), using the quadratic formula. Simplified
               ! since dCAPE_dz_j_plus_1 = 0.0
               Lscale_down(i,k) = Lscale_down(i,k) + sqrt( two * tke_i(i,k) &
-                                                      * gr%dzm(i,k-1) * dCAPE_dz_1(k-1) ) &
-                                                / dCAPE_dz_1(k-1)
+                                                      * gr%dzm(i,k-1) * dCAPE_dz_1(i,k-1) ) &
+                                                / dCAPE_dz_1(i,k-1)
           endif
 
           ! If a parcel at a previous grid level can descend past the parcel at this grid level
@@ -745,10 +791,11 @@ module mixing_length
           end if
 
       end do
-
-
+    end do
+  !$acc end parallel
       ! ---------------- Final Lscale Calculation ----------------
-
+!$acc parallel loop gang vector 
+    do i = 1, ngrdcol
       do k = 2, nz, 1
 
           ! Make lminh a linear function starting at value lmin at the bottom
@@ -785,6 +832,8 @@ module mixing_length
       Lscale(i,:) = min( Lscale(i,:), Lscale_max(i) )
       
     end do
+!$acc end parallel
+!$acc end data
 
     ! Ensure that no Lscale values are NaN
     if ( clubb_at_least_debug_level( 1 ) ) then

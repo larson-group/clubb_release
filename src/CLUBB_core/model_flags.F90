@@ -106,6 +106,7 @@ module model_flags
     saturation_bolton = 1, & ! Constant for Bolton approximations of saturation
     saturation_gfdl   = 2, & ! Constant for the GFDL approximation of saturation
     saturation_flatau = 3    ! Constant for Flatau approximations of saturation
+  !$acc declare create(saturation_flatau,saturation_gfdl,saturation_bolton)
 
   !-----------------------------------------------------------------------------
   ! Options that can be changed at runtime 
@@ -134,6 +135,7 @@ module model_flags
     saturation_formula = saturation_flatau ! Integer that stores the saturation formula to be used
 
 !$omp threadprivate(saturation_formula)
+!$acc declare create(saturation_formula)
 
   logical, parameter, public :: &
     l_silhs_rad = .false.    ! Resolve radiation over subcolumns using SILHS
