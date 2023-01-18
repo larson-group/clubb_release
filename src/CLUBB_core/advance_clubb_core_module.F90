@@ -3788,6 +3788,9 @@ module advance_clubb_core_module
 
         ! Add new saturation formulas after this
 
+      case ( "lookup" )
+        ! Using the lookup table
+
       case default
         write(fstderr,*) "Unknown approx. of saturation vapor pressure: "// &
           trim( saturation_formula )

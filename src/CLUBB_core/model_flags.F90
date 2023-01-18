@@ -44,9 +44,7 @@ module model_flags
   logical, parameter, public ::  & 
     l_pos_def            = .false., & ! Flux limiting positive definite scheme on rtm
     l_hole_fill          = .true.,  & ! Hole filling pos def scheme on wp2,up2,rtp2,etc
-    l_clip_turb_adv      = .false., & ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
-    l_sat_mixrat_lookup  = .false.    ! Use a lookup table for mixing length
-                                      ! saturation vapor pressure calculations
+    l_clip_turb_adv      = .false.    ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
 
   logical, parameter, public :: &
 #ifdef BYTESWAP_IO
@@ -105,8 +103,10 @@ module model_flags
   integer, parameter, public :: &
     saturation_bolton = 1, & ! Constant for Bolton approximations of saturation
     saturation_gfdl   = 2, & ! Constant for the GFDL approximation of saturation
-    saturation_flatau = 3    ! Constant for Flatau approximations of saturation
-  !$acc declare create(saturation_flatau,saturation_gfdl,saturation_bolton)
+    saturation_flatau = 3, & ! Constant for Flatau approximations of saturation
+    saturation_lookup = 4    ! Use a lookup table for mixing length
+                             ! saturation vapor pressure calculations
+  !$acc declare create(saturation_flatau,saturation_gfdl,saturation_bolton,saturation_lookup)
 
   !-----------------------------------------------------------------------------
   ! Options that can be changed at runtime 
@@ -333,6 +333,9 @@ module model_flags
 
     case ( "gfdl", "GFDL" )
       saturation_formula = saturation_gfdl
+
+    case ( "lookup" )
+      saturation_formula = saturation_lookup
 
       ! Add new saturation formulas after this.
     end select

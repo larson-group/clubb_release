@@ -16,32 +16,26 @@ module saturation
   use clubb_precision, only: &
     core_rknd ! Variable(s)
 
+
+  use model_flags, only: &
+    saturation_formula, & ! Variable
+    saturation_bolton, &
+    saturation_gfdl, &
+    saturation_flatau, &
+    saturation_lookup
+
   implicit none
 
   private  ! Change default so all items private
 
-  public   :: sat_mixrat_liq, sat_mixrat_liq_lookup, sat_mixrat_ice, rcm_sat_adj, &
-              sat_vapor_press_liq, sat_mixrat_liq_acc
+  public   :: sat_mixrat_liq, sat_mixrat_ice, rcm_sat_adj, sat_vapor_press_liq
 
-  private  :: sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton
   private  :: sat_vapor_press_ice_flatau, sat_vapor_press_ice_bolton
-
-  interface sat_vapor_press_liq
-    module procedure sat_vapor_press_liq_k    ! Works over a single vertical level
-    module procedure sat_vapor_press_liq_2D   ! Works over all vertical levels and columns
-  end interface sat_vapor_press_liq
 
   interface sat_mixrat_liq
     module procedure sat_mixrat_liq_k   ! Works over a single vertical level
-    module procedure sat_mixrat_liq_1D  ! Works over all vertical levels 
     module procedure sat_mixrat_liq_2D  ! Works over all vertical levels and columns
   end interface sat_mixrat_liq
-
-  interface sat_mixrat_liq_acc
-    module procedure sat_mixrat_liq_k_acc   ! Works over a single vertical level
-    module procedure sat_mixrat_liq_1D_acc  ! Works over all vertical levels 
-    !module procedure sat_mixrat_liq_2D_acc  ! Works over all vertical levels and columns
-  end interface sat_mixrat_liq_acc
 
   interface sat_mixrat_ice
     module procedure sat_mixrat_ice_k   ! Works over a single vertical level
@@ -93,188 +87,14 @@ module saturation
     18892.55_core_rknd, 19794.07_core_rknd, 20732.262_core_rknd, 21708.352_core_rknd,           &
     22723.592_core_rknd, 23779.273_core_rknd, 24876.709_core_rknd, 26017.258_core_rknd,         &
     27202.3_core_rknd, 28433.256_core_rknd, 29711.578_core_rknd, 31038.766_core_rknd /
-
+!$acc declare create( svp_liq_lookup_table )
 !$omp threadprivate( svp_liq_lookup_table )
 
   contains
 
-    !-------------------------------------------------------------------------
-  ! Wrapped in interface sat_mixrat_liq_acc
-  function sat_mixrat_liq_k_acc( p_in_Pa, T_in_K )
-!$acc routine seq
-    ! Description:
-    !   Used to compute the saturation mixing ratio of liquid water.
-  
-    ! References:
-    !   Formula from Emanuel 1994, 4.4.14
-    !-------------------------------------------------------------------------
-
-      use constants_clubb, only: & 
-          fstderr, & ! Variable
-          ep    
-
-  
-      use clubb_precision, only: &
-          core_rknd ! Variable(s)
-
-      use model_flags, only: &
-        saturation_formula, & ! Variable
-        saturation_bolton, &
-        saturation_gfdl, &
-        saturation_flatau
-
-      use constants_clubb, only: T_freeze_K
-
-      use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
-        clubb_fatal_error              ! Constant
-  
-      implicit none
-  
-      ! -------------------- Input Variables --------------------
-      real( kind = core_rknd ), intent(in) ::  & 
-        p_in_Pa,  & ! Pressure    [Pa]
-        T_in_K      ! Temperature [K]
-  
-      ! -------------------- Output Variables --------------------
-      real( kind = core_rknd ) ::  & 
-        sat_mixrat_liq_k_acc
-  
-      ! -------------------- Local Variables --------------------
-      real( kind = core_rknd ), dimension(1,1) ::  & 
-        p_in_Pa_col,  & 
-        T_in_K_col
-  
-      real( kind = core_rknd ), dimension(1,1) ::  & 
-        sat_mixrat_liq_col
-
-      real( kind = core_rknd ) :: T_in_C, T_in_C_sqd
-
-      ! Constant parameters
-
-      ! Relative error norm expansion (-50 to 50 deg_C) from
-      ! Table 3 of pp. 1510 of Flatau et al. 1992 (Water Vapor)
-      ! (The 100 coefficient converts from mb to Pa)
-      !   real, dimension(7), parameter :: a = & 
-      !   100.* (/ 6.11176750,      0.443986062,     0.143053301E-01, & 
-      !            0.265027242E-03, 0.302246994E-05, 0.203886313E-07, & 
-      !            0.638780966E-10 /)
-
-      ! Relative error norm expansion (-85 to 70 deg_C) from
-      ! Table 4 of pp. 1511 of Flatau et al.
-      !real( kind = core_rknd ), dimension(9), parameter :: a = & 
-      !100._core_rknd * &
-      !  Commented out because the form has been redone, causing these number to no longer be needed,
-      !  leaving them in for now for reference.
-      !         (/ 6.11583699_core_rknd,      0.444606896_core_rknd,     0.143177157E-01_core_rknd, &
-      !         0.264224321E-03_core_rknd, 0.299291081E-05_core_rknd, 0.203154182E-07_core_rknd, & 
-      !         0.702620698E-10_core_rknd, 0.379534310E-13_core_rknd,-0.321582393E-15_core_rknd /)
-
-      real( kind = core_rknd ), parameter :: min_T_in_C = -85._core_rknd ! [deg_C]
-      
-      ! ---------------------- Output Variables ----------------------
-      real( kind = core_rknd ) :: &
-        esat  ! Saturation vapor pressure over water [Pa]
-  
-      ! -------------------- Begin Code --------------------
-  
-    ! Calculate the SVP for water vapor.
-    !SS: Only porting the flatau case for OpenACC
-    !SS: OpenACC code execution on GPU only works for 
-    !l_sat_mixrat_lookup = false and saturation_formula = saturation_flatau
-    !All other cases exits with an error on GPUs
-    select case ( saturation_formula )
-    case ( saturation_flatau )
-
-      ! Using the Flatau, et al. polynomial approximation for SVP over vapor
-
-          ! Determine deg K - 273.15
-          T_in_C = T_in_K - T_freeze_K
-
-          ! Since this approximation is only good out to -85 degrees Celsius we
-          ! truncate the result here (Flatau, et al. 1992)
-          T_in_C = max( T_in_C, min_T_in_C )
-
-          ! Polynomial approx. (Flatau, et al. 1992)
-
-          ! This is the generalized formula but is not computationally efficient. 
-          ! Based on Wexler's expressions(2.1)-(2.4) (See Flatau et al. p 1508)
-          ! e_{sat} = a_1 + a_2 ( T - T_0 ) + ... + a_{n+1} ( T - T_0 )^n
-
-          ! esat = a(1)
-
-          ! do i = 2, size( a ) , 1
-          !   esat = esat + a(i) * ( T_in_C )**(i-1)
-          ! end do
-
-          ! The 8th order polynomial fit.  When running deep 
-          ! convective cases I noticed that absolute temperature often dips below
-          ! -50 deg_C at higher altitudes, where the 6th order approximation is
-          ! not accurate.  -dschanen 20 Nov 2008
-          !esat = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
-          !*( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
-
-
-          ! Factoring the polynomial above and changing it into this form allows the cpu
-          ! to complete the calculations out of order. This is because modern cpus can complete
-          ! multiple instructions at once if they do not depend on eachother, in the above case
-          ! each instruction relies on the result of the last. In this version however, the terms
-          ! in the parentheses could potentially be calculated in parallel by different execution
-          ! units in the cpu, then only when those terms are being multiplied together do the 
-          ! instructions need to be done one at a time. See clubb issue 834 for more info.
-          !   - Gunther Huebler, Aug 2018
-          T_in_C_sqd = T_in_C**2
-
-          esat = &
-            - 3.21582393e-14_core_rknd * ( T_in_C - 646.5835252598777_core_rknd ) &
-              * ( T_in_C + 90.72381630364440_core_rknd ) &
-              * ( T_in_C_sqd + 111.0976961559954_core_rknd * T_in_C + 6459.629194243118_core_rknd ) &
-              * ( T_in_C_sqd + 152.3131930092453_core_rknd * T_in_C + 6499.774954705265_core_rknd ) &
-              * ( T_in_C_sqd + 174.4279584934021_core_rknd * T_in_C + 7721.679732114084_core_rknd )
-
-    case default
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        write(fstderr,*) "Only l_sat_mixrat_lookup = false and" // &
-              "saturation_formula = saturation_flatau is supported on GPUs" 
-        err_code = clubb_fatal_error
-      end if
-      ! Undefined approximation
-      esat = -99999.999_core_rknd
-                                  
-    end select
-
-        ! If esat exceeds the air pressure, then assume esat~=0.5*pressure 
-        !   and set rsat = ep = 0.622
-        if ( p_in_Pa-esat < 1.0_core_rknd ) then
-          sat_mixrat_liq_k_acc = ep
-        else
-
-#ifdef GFDL
-
-          ! GFDL uses specific humidity
-          ! Formula for Saturation Specific Humidity
-          if ( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-            sat_mixrat_liq_k_acc = ep * ( esat / ( p_in_Pa &
-                                                 - (1.0_core_rknd-ep) * esat ) )
-          else
-            sat_mixrat_liq_k_acc = ep * ( esat / ( p_in_Pa - esat ) )
-          endif                     ! h1g, 2010-06-18 end mod
-#else
-          ! Formula for Saturation Mixing Ratio:
-          !
-          ! rs = (epsilon) * [ esat / ( p - esat ) ];
-          ! where epsilon = R_d / R_v
-          sat_mixrat_liq_k_acc = ep * esat / ( p_in_Pa - esat )
-#endif
-        end if
-  
-      return
-    end function sat_mixrat_liq_k_acc
-
   !-------------------------------------------------------------------------
-  ! Wrapped in interface sat_mixrat_liq_acc
-  function sat_mixrat_liq_1D_acc( nz, p_in_Pa, T_in_K )
+  ! Wrapped in interface sat_mixrat_liq
+  function sat_mixrat_liq_k( p_in_Pa, T_in_K )
 !$acc routine seq
   ! Description:
   !   Used to compute the saturation mixing ratio of liquid water.
@@ -283,48 +103,30 @@ module saturation
   !   Formula from Emanuel 1994, 4.4.14
   !-------------------------------------------------------------------------
 
-    use model_flags, only: &
-      saturation_formula, & ! Variable
-      saturation_bolton, &
-      saturation_gfdl, &
-      saturation_flatau
-
     use constants_clubb, only: & 
-        fstderr, & ! Variable
         ep    
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
     use constants_clubb, only: T_freeze_K
-
-    use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
-        clubb_fatal_error              ! Constant
 
     implicit none
 
     ! -------------------- Input Variables --------------------
-    integer, intent(in) :: &
-      nz
-
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       p_in_Pa,  & ! Pressure    [Pa]
       T_in_K      ! Temperature [K]
 
     ! -------------------- Output Variables --------------------
-    real( kind = core_rknd ), dimension(nz) ::  & 
-      sat_mixrat_liq_1D_acc
+    real( kind = core_rknd ) ::  & 
+      sat_mixrat_liq_k
 
     ! -------------------- Local Variables --------------------
+    real( kind = core_rknd ) :: &
+        T_in_C, &
+        T_in_C_sqd, &
+        T_in_K_clipped
 
-    real( kind = core_rknd ), dimension(nz) :: &
-      esat
-
-    integer :: k
-
-    real( kind = core_rknd ) :: T_in_C, T_in_C_sqd
+      integer :: &
+        T_in_K_int
 
     ! Constant parameters
 
@@ -346,227 +148,157 @@ module saturation
     !         0.264224321E-03_core_rknd, 0.299291081E-05_core_rknd, 0.203154182E-07_core_rknd, & 
     !         0.702620698E-10_core_rknd, 0.379534310E-13_core_rknd,-0.321582393E-15_core_rknd /)
 
-    real( kind = core_rknd ), parameter :: min_T_in_C = -85._core_rknd ! [deg_C]
+    real( kind = core_rknd ), parameter :: &
+      min_T_in_C = -85._core_rknd,  & ! [deg_C]
+      min_T_in_K = 173.15_core_rknd   ! Lowest temperature at which Goff-Gratch is valid [K]
+    
+    ! ---------------------- Output Variables ----------------------
+    real( kind = core_rknd ) :: &
+      esat  ! Saturation vapor pressure over water [Pa]
 
     ! -------------------- Begin Code --------------------
 
     ! Calculate the SVP for water vapor.
-    !SS: Only porting the flatau case for OpenACC
-    !SS: OpenACC code execution on GPU only works for 
-    !l_sat_mixrat_lookup = false and saturation_formula = saturation_flatau
-    !All other cases exits with an error on GPUs
     select case ( saturation_formula )
     case ( saturation_flatau )
 
-      do k = 1, nz
-  
-          ! Determine deg K - 273.15
-          T_in_C = T_in_K(k) - T_freeze_K
-  
-          ! Since this approximation is only good out to -85 degrees Celsius we
-          ! truncate the result here (Flatau, et al. 1992)
-          T_in_C = max( T_in_C, min_T_in_C )
-  
-          ! Polynomial approx. (Flatau, et al. 1992)
-  
-          ! This is the generalized formula but is not computationally efficient. 
-          ! Based on Wexler's expressions(2.1)-(2.4) (See Flatau et al. p 1508)
-          ! e_{sat} = a_1 + a_2 ( T - T_0 ) + ... + a_{n+1} ( T - T_0 )^n
-  
-          ! esat = a(1)
-  
-          ! do i = 2, size( a ) , 1
-          !   esat = esat + a(i) * ( T_in_C )**(i-1)
-          ! end do
-  
-          ! The 8th order polynomial fit.  When running deep 
-          ! convective cases I noticed that absolute temperature often dips below
-          ! -50 deg_C at higher altitudes, where the 6th order approximation is
-          ! not accurate.  -dschanen 20 Nov 2008
-          !esat = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
-          !*( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
-  
-  
-          ! Factoring the polynomial above and changing it into this form allows the cpu
-          ! to complete the calculations out of order. This is because modern cpus can complete
-          ! multiple instructions at once if they do not depend on eachother, in the above case
-          ! each instruction relies on the result of the last. In this version however, the terms
-          ! in the parentheses could potentially be calculated in parallel by different execution
-          ! units in the cpu, then only when those terms are being multiplied together do the 
-          ! instructions need to be done one at a time. See clubb issue 834 for more info.
-          !   - Gunther Huebler, Aug 2018
-          T_in_C_sqd = T_in_C**2
-  
-          esat(k) = &
-           - 3.21582393e-14_core_rknd * ( T_in_C - 646.5835252598777_core_rknd ) &
-             * ( T_in_C + 90.72381630364440_core_rknd ) &
-             * ( T_in_C_sqd + 111.0976961559954_core_rknd * T_in_C + 6459.629194243118_core_rknd ) &
-             * ( T_in_C_sqd + 152.3131930092453_core_rknd * T_in_C + 6499.774954705265_core_rknd ) &
-             * ( T_in_C_sqd + 174.4279584934021_core_rknd * T_in_C + 7721.679732114084_core_rknd )
-      end do
+      ! Using the Flatau, et al. polynomial approximation for SVP over vapor
+
+      ! Determine deg K - 273.15
+      T_in_C = T_in_K - T_freeze_K
+
+      ! Since this approximation is only good out to -85 degrees Celsius we
+      ! truncate the result here (Flatau, et al. 1992)
+      T_in_C = max( T_in_C, min_T_in_C )
+
+      ! Polynomial approx. (Flatau, et al. 1992)
+
+      ! This is the generalized formula but is not computationally efficient. 
+      ! Based on Wexler's expressions(2.1)-(2.4) (See Flatau et al. p 1508)
+      ! e_{sat} = a_1 + a_2 ( T - T_0 ) + ... + a_{n+1} ( T - T_0 )^n
+
+      ! esat = a(1)
+
+      ! do i = 2, size( a ) , 1
+      !   esat = esat + a(i) * ( T_in_C )**(i-1)
+      ! end do
+
+      ! The 8th order polynomial fit.  When running deep 
+      ! convective cases I noticed that absolute temperature often dips below
+      ! -50 deg_C at higher altitudes, where the 6th order approximation is
+      ! not accurate.  -dschanen 20 Nov 2008
+      !esat = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
+      !*( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
+
+
+      ! Factoring the polynomial above and changing it into this form allows the cpu
+      ! to complete the calculations out of order. This is because modern cpus can complete
+      ! multiple instructions at once if they do not depend on eachother, in the above case
+      ! each instruction relies on the result of the last. In this version however, the terms
+      ! in the parentheses could potentially be calculated in parallel by different execution
+      ! units in the cpu, then only when those terms are being multiplied together do the 
+      ! instructions need to be done one at a time. See clubb issue 834 for more info.
+      !   - Gunther Huebler, Aug 2018
+      T_in_C_sqd = T_in_C**2
+
+      esat = &
+        - 3.21582393e-14_core_rknd * ( T_in_C - 646.5835252598777_core_rknd ) &
+          * ( T_in_C + 90.72381630364440_core_rknd ) &
+          * ( T_in_C_sqd + 111.0976961559954_core_rknd * T_in_C + 6459.629194243118_core_rknd ) &
+          * ( T_in_C_sqd + 152.3131930092453_core_rknd * T_in_C + 6499.774954705265_core_rknd ) &
+          * ( T_in_C_sqd + 174.4279584934021_core_rknd * T_in_C + 7721.679732114084_core_rknd )
+
+    case ( saturation_bolton )
+
+      ! Using the Bolton 1980 approximations for SVP over vapor
+      ! Generally this more computationally expensive than the Flatau polnomial expansion
+      esat = 611.2_core_rknd &
+              * exp( (17.67_core_rknd *(T_in_K-T_freeze_K))  &
+                     / (T_in_K-29.65_core_rknd) ) ! Known magic number
+
+! ---> h1g
+    case ( saturation_gfdl )
+
+      ! Using GFDL polynomial approximation for SVP with respect to liquid
+      ! Since the Goff-Gratch approximation is valid only down to -70 degrees Celsius,
+      !   we threshold the temperature.  This will yield a minimal saturation at
+      !   cold temperatures.
+      T_in_K_clipped = max( min_T_in_K, T_in_K )
+
+      ! Goff Gratch equation, uncertain below -70 C
+    
+      esat = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K_clipped-1._core_rknd)+ &
+           5.02808_core_rknd*log10(373.16_core_rknd/T_in_K_clipped)- &
+           1.3816e-7_core_rknd*(10._core_rknd**(11.344_core_rknd &
+             *(1._core_rknd-T_in_K_clipped/373.16_core_rknd))-1._core_rknd)+ &
+           8.1328e-3_core_rknd*(10._core_rknd**(-3.49149_core_rknd &
+             *(373.16_core_rknd/T_in_K_clipped-1._core_rknd))-1._core_rknd)+ &
+           log10(1013.246_core_rknd))*100._core_rknd ! Known magic number
+
+! <--- h1g
+
+    case ( saturation_lookup ) 
+
+      T_in_K_int = int( anint( T_in_K ) )
+
+      ! Since this approximation is only good out to -85 degrees Celsius we
+      ! truncate the result here
+      T_in_K_int = min( max( T_in_K_int, 188 ), 343 )
+
+      ! Use the lookup table to determine the saturation vapor pressure.
+      esat = svp_liq_lookup_table( T_in_K_int )
 
     case default
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        write(fstderr,*) "Only l_sat_mixrat_lookup = false and" // &
-          "saturation_formula = saturation_flatau is supported on GPUs"
-        err_code = clubb_fatal_error
-      end if
+
       ! Undefined approximation
       esat = -99999.999_core_rknd
-                                  
+       
     end select
 
-    do k = 1, nz
-        ! If esat exceeds the air pressure, then assume esat~=0.5*pressure 
-        !   and set rsat = ep = 0.622
-        if ( p_in_Pa(k)-esat(k) < 1.0_core_rknd ) then
-          sat_mixrat_liq_1D_acc(k) = ep
-        else
+    ! If esat exceeds the air pressure, then assume esat~=0.5*pressure 
+    !   and set rsat = ep = 0.622
+    if ( p_in_Pa-esat < 1.0_core_rknd ) then
+      sat_mixrat_liq_k = ep
+    else
 
 #ifdef GFDL
 
-          ! GFDL uses specific humidity
-          ! Formula for Saturation Specific Humidity
-          if ( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-            sat_mixrat_liq_1D_acc(k) = ep(1,k) * ( esat(k) / ( p_in_Pa(k) &
-                                                 - (1.0_core_rknd-ep) * esat(k) ) )
-          else
-            sat_mixrat_liq_1D_acc(k) = ep(1,k) * ( esat(k) / ( p_in_Pa(k) - esat(k) ) )
-          endif                     ! h1g, 2010-06-18 end mod
+      ! GFDL uses specific humidity
+      ! Formula for Saturation Specific Humidity
+      if ( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
+        sat_mixrat_liq_k = ep * ( esat / ( p_in_Pa &
+                                             - (1.0_core_rknd-ep) * esat ) )
+      else
+        sat_mixrat_liq_k = ep * ( esat / ( p_in_Pa - esat ) )
+      endif                     ! h1g, 2010-06-18 end mod
 #else
-          ! Formula for Saturation Mixing Ratio:
-          !
-          ! rs = (epsilon) * [ esat / ( p - esat ) ];
-          ! where epsilon = R_d / R_v
-          sat_mixrat_liq_1D_acc(k) = ep * esat(k) / ( p_in_Pa(k) - esat(k) )
+      ! Formula for Saturation Mixing Ratio:
+      !
+      ! rs = (epsilon) * [ esat / ( p - esat ) ];
+      ! where epsilon = R_d / R_v
+      sat_mixrat_liq_k = ep * esat / ( p_in_Pa - esat )
 #endif
-        end if
-    end do    
-
-    return
-  end function sat_mixrat_liq_1D_acc
-
-  !-------------------------------------------------------------------------
-  ! Wrapped in interface sat_mixrat_liq
-  function sat_mixrat_liq_k( p_in_Pa, T_in_K )
-
-  ! Description:
-  !   Used to compute the saturation mixing ratio of liquid water.
-
-  ! References:
-  !   Formula from Emanuel 1994, 4.4.14
-  !-------------------------------------------------------------------------
-
-    use constants_clubb, only: & 
-        ep    ! Variable
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! -------------------- Input Variables --------------------
-    real( kind = core_rknd ), intent(in) ::  & 
-      p_in_Pa,  & ! Pressure    [Pa]
-      T_in_K      ! Temperature [K]
-
-    ! -------------------- Output Variables --------------------
-    real( kind = core_rknd ) ::  & 
-      sat_mixrat_liq_k
-
-    ! -------------------- Local Variables --------------------
-    real( kind = core_rknd ), dimension(1,1) ::  & 
-      p_in_Pa_col,  & 
-      T_in_K_col
-
-    real( kind = core_rknd ), dimension(1,1) ::  & 
-      sat_mixrat_liq_col
-
-    ! -------------------- Begin Code --------------------
-
-    ! Copy inputs to 2D arrays
-    p_in_Pa_col(1,1) = p_in_Pa
-    T_in_K_col(1,1) = T_in_K
-
-    ! Call 2D version 
-    sat_mixrat_liq_col = sat_mixrat_liq_2D( 1, 1, p_in_Pa_col, T_in_K_col )
-
-    ! Copy 2D result into output
-    sat_mixrat_liq_k = sat_mixrat_liq_col(1,1)
+    end if
 
     return
   end function sat_mixrat_liq_k
 
   !-------------------------------------------------------------------------
-  ! Wrapped in interface sat_mixrat_liq
-  function sat_mixrat_liq_1D( nz, p_in_Pa, T_in_K )
-
+  !
+  function sat_mixrat_liq_2D( nz, ngrdcol, p_in_Pa, T_in_K, &
+                              start_index_in )
+  !
   ! Description:
   !   Used to compute the saturation mixing ratio of liquid water.
-
+  !
   ! References:
   !   Formula from Emanuel 1994, 4.4.14
   !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
-        ep    ! Variable
+      ep  
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! -------------------- Input Variables --------------------
-    integer, intent(in) :: &
-      nz
-
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  & 
-      p_in_Pa,  & ! Pressure    [Pa]
-      T_in_K      ! Temperature [K]
-
-    ! -------------------- Output Variables --------------------
-    real( kind = core_rknd ), dimension(nz) ::  & 
-      sat_mixrat_liq_1D
-
-    ! -------------------- Local Variables --------------------
-    real( kind = core_rknd ), dimension(1,nz) ::  & 
-      p_in_Pa_col,  &
-      T_in_K_col 
-
-    real( kind = core_rknd ), dimension(1,nz) ::  & 
-      sat_mixrat_liq_col
-
-    ! -------------------- Begin Code --------------------
-
-    ! Copy inputs to 2D arrays
-    p_in_Pa_col(1,:) = p_in_Pa(:)
-    T_in_K_col(1,:) = T_in_K(:)
-
-    ! Call 2D version 
-    sat_mixrat_liq_col = sat_mixrat_liq_2D( nz, 1, p_in_Pa_col, T_in_K_col )
-
-    ! Copy 2D result into output
-    sat_mixrat_liq_1D(:) = sat_mixrat_liq_col(1,:)
-
-    return
-  end function sat_mixrat_liq_1D
-
-  !-------------------------------------------------------------------------
-  ! Wrapped in interface sat_mixrat_liq
-  function sat_mixrat_liq_2D( nz, ngrdcol, p_in_Pa, T_in_K )
-
-  ! Description:
-  !   Used to compute the saturation mixing ratio of liquid water.
-
-  ! References:
-  !   Formula from Emanuel 1994, 4.4.14
-  !-------------------------------------------------------------------------
-
-    use constants_clubb, only: & 
-        ep    ! Variable
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
+    use constants_clubb, only: T_freeze_K
 
     implicit none
 
@@ -574,6 +306,9 @@ module saturation
     integer, intent(in) :: &
       nz, &
       ngrdcol
+
+    integer, intent(in), optional :: &
+      start_index_in
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
       p_in_Pa,  & ! Pressure    [Pa]
@@ -585,22 +320,181 @@ module saturation
 
     ! -------------------- Local Variables --------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      esatv
+      esat
+
+    real( kind = core_rknd ) :: &
+      T_in_C, &
+      T_in_C_sqd, &
+      T_in_K_clipped
+
+    integer :: &
+      T_in_K_int
 
     integer :: i,k
 
+    ! Constant parameters
+
+    ! Relative error norm expansion (-50 to 50 deg_C) from
+    ! Table 3 of pp. 1510 of Flatau et al. 1992 (Water Vapor)
+    ! (The 100 coefficient converts from mb to Pa)
+    !   real, dimension(7), parameter :: a = & 
+    !   100.* (/ 6.11176750,      0.443986062,     0.143053301E-01, & 
+    !            0.265027242E-03, 0.302246994E-05, 0.203886313E-07, & 
+    !            0.638780966E-10 /)
+
+    ! Relative error norm expansion (-85 to 70 deg_C) from
+    ! Table 4 of pp. 1511 of Flatau et al.
+    !real( kind = core_rknd ), dimension(9), parameter :: a = & 
+    !100._core_rknd * &
+    !  Commented out because the form has been redone, causing these number to no longer be needed,
+    !  leaving them in for now for reference.
+    !         (/ 6.11583699_core_rknd,      0.444606896_core_rknd,     0.143177157E-01_core_rknd, &
+    !         0.264224321E-03_core_rknd, 0.299291081E-05_core_rknd, 0.203154182E-07_core_rknd, & 
+    !         0.702620698E-10_core_rknd, 0.379534310E-13_core_rknd,-0.321582393E-15_core_rknd /)
+
+    real( kind = core_rknd ), parameter :: &
+      min_T_in_C = -85._core_rknd,  & ! [deg_C]
+      min_T_in_K = 173.15_core_rknd   ! Lowest temperature at which Goff-Gratch is valid [K]
+
+    integer :: &
+      start_index
+
     ! -------------------- Begin Code --------------------
 
-    ! Calculate the SVP for water vapor.
-    call sat_vapor_press_liq( nz, ngrdcol, T_in_K, &
-                              esatv )
+    ! start_index is an optional argument and 
+    ! used for choosing the sub-arrays
+    if ( present(start_index_in) ) then
+      start_index = start_index_in
+    else
+      start_index = 1
+    end if
 
-    do k = 1, nz
+    select case ( saturation_formula )
+    case ( saturation_flatau )
+
+      !$acc parallel loop gang collapse(2)
+      do k = start_index, nz
+        do i = 1, ngrdcol
+
+          ! Determine deg K - 273.15
+          T_in_C = T_in_K(i,k) - T_freeze_K
+
+          ! Since this approximation is only good out to -85 degrees Celsius we
+          ! truncate the result here (Flatau, et al. 1992)
+          T_in_C = max( T_in_C, min_T_in_C )
+
+          ! Polynomial approx. (Flatau, et al. 1992)
+
+          ! This is the generalized formula but is not computationally efficient. 
+          ! Based on Wexler's expressions(2.1)-(2.4) (See Flatau et al. p 1508)
+          ! e_{sat} = a_1 + a_2 ( T - T_0 ) + ... + a_{n+1} ( T - T_0 )^n
+
+          ! esat = a(1)
+
+          ! do i = 2, size( a ) , 1
+          !   esat = esat + a(i) * ( T_in_C )**(i-1)
+          ! end do
+
+          ! The 8th order polynomial fit.  When running deep 
+          ! convective cases I noticed that absolute temperature often dips below
+          ! -50 deg_C at higher altitudes, where the 6th order approximation is
+          ! not accurate.  -dschanen 20 Nov 2008
+          !esat = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
+          !*( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
+
+
+          ! Factoring the polynomial above and changing it into this form allows the cpu
+          ! to complete the calculations out of order. This is because modern cpus can complete
+          ! multiple instructions at once if they do not depend on eachother, in the above case
+          ! each instruction relies on the result of the last. In this version however, the terms
+          ! in the parentheses could potentially be calculated in parallel by different execution
+          ! units in the cpu, then only when those terms are being multiplied together do the 
+          ! instructions need to be done one at a time. See clubb issue 834 for more info.
+          !   - Gunther Huebler, Aug 2018
+          T_in_C_sqd = T_in_C**2
+
+          esat(i,k) = &
+          - 3.21582393e-14_core_rknd * ( T_in_C - 646.5835252598777_core_rknd ) &
+            * ( T_in_C + 90.72381630364440_core_rknd ) &
+            * ( T_in_C_sqd + 111.0976961559954_core_rknd * T_in_C + 6459.629194243118_core_rknd ) &
+            * ( T_in_C_sqd + 152.3131930092453_core_rknd * T_in_C + 6499.774954705265_core_rknd ) &
+            * ( T_in_C_sqd + 174.4279584934021_core_rknd * T_in_C + 7721.679732114084_core_rknd )
+        end do
+      end do
+      !$acc end parallel
+
+    case ( saturation_bolton )
+
+      ! Using the Bolton 1980 approximations for SVP over vapor
+      ! Generally this more computationally expensive than the Flatau polnomial expansion
+      !$acc parallel loop gang collapse(2)
+      do k = start_index, nz
+        do i = 1, ngrdcol
+          esat(i,k) = 611.2_core_rknd &
+                      * exp( (17.67_core_rknd *(T_in_K(i,k)-T_freeze_K))  &
+                             / (T_in_K(i,k)-29.65_core_rknd) ) ! Known magic number
+        end do
+      end do
+      !$acc end parallel
+
+! ---> h1g
+    case ( saturation_gfdl )
+
+      ! Using GFDL polynomial approximation for SVP with respect to liquid
+      !$acc parallel loop gang collapse(2)
+      do k = start_index, nz
+        do i = 1, ngrdcol
+
+          ! Since the Goff-Gratch approximation is valid only down to -70 degrees Celsius,
+          !   we threshold the temperature.  This will yield a minimal saturation at
+          !   cold temperatures.
+          T_in_K_clipped = max( min_T_in_K, T_in_K(i,k) )
+
+          ! Goff Gratch equation, uncertain below -70 C
+        
+          esat(i,k) = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K_clipped-1._core_rknd)+ &
+               5.02808_core_rknd*log10(373.16_core_rknd/T_in_K_clipped)- &
+               1.3816e-7_core_rknd*(10._core_rknd**(11.344_core_rknd &
+                 *(1._core_rknd-T_in_K_clipped/373.16_core_rknd))-1._core_rknd)+ &
+               8.1328e-3_core_rknd*(10._core_rknd**(-3.49149_core_rknd &
+                 *(373.16_core_rknd/T_in_K_clipped-1._core_rknd))-1._core_rknd)+ &
+               log10(1013.246_core_rknd))*100._core_rknd ! Known magic number
+        end do
+      end do
+      !$acc end parallel
+
+! <--- h1g
+
+    case ( saturation_lookup ) 
+
+      !$acc parallel loop gang collapse(2)
+      do k = start_index, nz
+        do i = 1, ngrdcol
+          T_in_K_int = int( anint( T_in_K(i,k) ) )
+
+          ! Since this approximation is only good out to -85 degrees Celsius we
+          ! truncate the result here
+          T_in_K_int = min( max( T_in_K_int, 188 ), 343 )
+
+          ! Use the lookup table to determine the saturation vapor pressure.
+          esat(i,k) = svp_liq_lookup_table( T_in_K_int )
+        end do
+      end do
+
+    case default
+
+      ! Undefined approximation
+      esat = -99999.999_core_rknd
+       
+    end select
+
+    !$acc parallel loop gang collapse(2)
+    do k = start_index, nz
       do i = 1, ngrdcol
 
-        ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
+        ! If esat exceeds the air pressure, then assume esat~=0.5*pressure 
         !   and set rsat = ep = 0.622
-        if ( p_in_Pa(i,k)-esatv(i,k) < 1.0_core_rknd ) then
+        if ( p_in_Pa(i,k)-esat(i,k) < 1.0_core_rknd ) then
           sat_mixrat_liq_2D(i,k) = ep
         else
 
@@ -609,165 +503,31 @@ module saturation
           ! GFDL uses specific humidity
           ! Formula for Saturation Specific Humidity
           if ( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-            sat_mixrat_liq_2D(i,k) = ep(i,k) * ( esatv(i,k) / ( p_in_Pa(i,k) &
-                                                 - (1.0_core_rknd-ep) * esatv(i,k) ) )
+            sat_mixrat_liq_2D(i,k) = ep(i,k) * ( esat(i,k) / ( p_in_Pa(i,k) &
+                                                 - (1.0_core_rknd-ep) * esat(i,k) ) )
           else
-            sat_mixrat_liq_2D(i,k) = ep(i,k) * ( esatv(i,k) / ( p_in_Pa(i,k) - esatv(i,k) ) )
+            sat_mixrat_liq_2D(i,k) = ep(i,k) * ( esat(i,k) / ( p_in_Pa(i,k) - esat(i,k) ) )
           endif                     ! h1g, 2010-06-18 end mod
 #else
           ! Formula for Saturation Mixing Ratio:
           !
           ! rs = (epsilon) * [ esat / ( p - esat ) ];
           ! where epsilon = R_d / R_v
-          sat_mixrat_liq_2D(i,k) = ep * esatv(i,k) / ( p_in_Pa(i,k) - esatv(i,k) )
+          sat_mixrat_liq_2D(i,k) = ep * esat(i,k) / ( p_in_Pa(i,k) - esat(i,k) )
 #endif
         end if
         
       end do
     end do
-
-    return
+    !$acc end parallel
+    
   end function sat_mixrat_liq_2D
 
-!-------------------------------------------------------------------------
-  elemental real( kind = core_rknd ) function sat_mixrat_liq_lookup( p_in_Pa, T_in_K )
-
-! Description:
-!   Used to compute the saturation mixing ratio of liquid water.
-!   This function utilizes sat_vapor_press_liq_lookup; the SVP is found
-!   using a lookup table rather than calculating it using various
-!   approximations.
-
-! References:
-!   Formula from Emanuel 1994, 4.4.14
-!-------------------------------------------------------------------------
-
-    use constants_clubb, only: & 
-        ep    ! Variable
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  & 
-      p_in_Pa,  & ! Pressure    [Pa]
-      T_in_K      ! Temperature [K]
-
-   ! Local Variables
-    real( kind = core_rknd ) :: esatv
-
-    ! --- Begin Code ---
-
-    ! Calculate the SVP for water vapor using a lookup table.
-    esatv = sat_vapor_press_liq_lookup( T_in_K )
-
-    ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
-    !   and set rsat = ep = 0.622
-    if ( p_in_Pa-esatv < 1.0_core_rknd ) then
-      sat_mixrat_liq_lookup = ep
-    else
-
-#ifdef GFDL
-
-    ! GFDL uses specific humidity
-    ! Formula for Saturation Specific Humidity
-     if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-           sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - (1.0_core_rknd-ep) * esatv ) )
-     else
-           sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - esatv ) )
-     endif                     ! h1g, 2010-06-18 end mod
-#else
-    ! Formula for Saturation Mixing Ratio:
-    !
-    ! rs = (epsilon) * [ esat / ( p - esat ) ];
-    ! where epsilon = R_d / R_v
-    sat_mixrat_liq_lookup = ep * ( esatv / ( p_in_Pa - esatv ) )
-#endif
-
-    end if
-
-    return
-  end function sat_mixrat_liq_lookup
-
   !-----------------------------------------------------------------
   ! Wrapped in interface sat_vapor_press_liq
-  subroutine sat_vapor_press_liq_2D( nz, ngrdcol, T_in_K, &
-                                     esat )
+  subroutine sat_vapor_press_liq( T_in_K, &
+                                  esat )
 
-  ! Description:
-  !   Computes SVP for water vapor. Calls one of the other functions
-  !   that calculate an approximation to SVP.
-
-  ! References:
-  !   None
-  !-----------------------------------------------------------------
-    use model_flags, only: &
-        saturation_formula, & ! Variable
-        saturation_bolton, &
-        saturation_gfdl, &
-        saturation_flatau
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! ------------------------ Input Variables ------------------------
-    integer, intent(in) :: &
-      nz, &
-      ngrdcol
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      T_in_K     ! Temperature                          [K]
-
-    ! ------------------------ Output Variables ------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      esat      ! Saturation Vapor Pressure over Water [Pa]
-
-    ! ------------------------ Being Code ------------------------
-
-    ! Saturation Vapor Pressure, esat, can be found to be approximated
-    ! in many different ways.
-    select case ( saturation_formula )
-    case ( saturation_bolton )
-
-      ! Using the Bolton 1980 approximations for SVP over vapor
-      call sat_vapor_press_liq_bolton( nz, ngrdcol, T_in_K, &
-                                       esat )
-
-    !Earthworks case                                   
-    case ( saturation_flatau )
-
-      ! Using the Flatau, et al. polynomial approximation for SVP over vapor
-      call sat_vapor_press_liq_flatau( nz, ngrdcol, T_in_K, &
-                                       esat )
-
-! ---> h1g
-    case ( saturation_gfdl )
-
-      ! Using GFDL polynomial approximation for SVP with respect to liquid
-      call sat_vapor_press_liq_gfdl( nz, ngrdcol, T_in_K, &
-                                     esat )
-
-! <--- h1g
-    case default
-
-      ! Undefined approximation
-      esat = -99999.999_core_rknd
-
-    end select
-
-    return
-
-  end subroutine sat_vapor_press_liq_2D
-
-
-  !-----------------------------------------------------------------
-  ! Wrapped in interface sat_vapor_press_liq
-  subroutine sat_vapor_press_liq_k( T_in_K, &
-                                    esat )
   ! Description:
   !   Computes SVP for water vapor. Calls one of the other functions
   !   that calculate an approximation to SVP.
@@ -794,73 +554,50 @@ module saturation
     real( kind = core_rknd ), intent(out) :: &
       esat      ! Saturation Vapor Pressure over Water [Pa]
 
-    ! ------------------------ Local Variables ------------------------
-    real( kind = core_rknd ), dimension(1,1) :: &
-      T_in_K_col     ! Temperature                          [K]
-
-    real( kind = core_rknd ), dimension(1,1) :: &
-      esat_col      ! Saturation Vapor Pressure over Water [Pa]
-
-    integer :: i, k
-
     ! ------------------------ Being Code ------------------------
 
-    T_in_K_col(1,1) = T_in_K
+    ! Saturation Vapor Pressure, esat, can be found to be approximated
+    ! in many different ways.
+    select case ( saturation_formula )
+    case ( saturation_bolton )
 
-    call sat_vapor_press_liq_2D( 1, 1, T_in_K_col, &
-                                 esat_col )
+      ! Using the Bolton 1980 approximations for SVP over vapor
+      call sat_vapor_press_liq_bolton( T_in_K, &
+                                       esat )
 
-    esat = esat_col(1,1)
+    !Earthworks case                                   
+    case ( saturation_flatau )
 
-    return
+      ! Using the Flatau, et al. polynomial approximation for SVP over vapor
+      call sat_vapor_press_liq_flatau( T_in_K, &
+                                       esat )
 
-  end subroutine sat_vapor_press_liq_k
+! ---> h1g
+    case ( saturation_gfdl )
 
+      ! Using GFDL polynomial approximation for SVP with respect to liquid
+      call sat_vapor_press_liq_gfdl( T_in_K, &
+                                     esat )
 
-!------------------------------------------------------------------------
-  elemental function sat_vapor_press_liq_lookup( T_in_K ) result ( esat )
+! <--- h1g
+    case ( saturation_lookup ) 
 
-! Description:
-!   Computes SVP for water vapor, using a lookup table.
-!
-!   The lookup table was constructed using the Flatau approximation.
+      ! Use the lookup table to determine the saturation vapor pressure.
+      esat = sat_vapor_press_liq_lookup( T_in_K )
 
-! References:
-!   ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
-!     and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
-!     pp. 1507--1513
-!------------------------------------------------------------------------
+    case default
 
-    implicit none
+      ! Undefined approximation
+      esat = -99999.999_core_rknd
 
-    ! External
-    intrinsic :: max, min, int, anint
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
-
-    ! Output Variables
-    real( kind = core_rknd ) :: esat  ! Saturation vapor pressure over water [Pa]
-
-    ! Local Variables
-    integer :: T_in_K_int
-
-    ! ---- Begin Code ----
-
-    T_in_K_int = int( anint( T_in_K ) )
-
-    ! Since this approximation is only good out to -85 degrees Celsius we
-    ! truncate the result here
-    T_in_K_int = min( max( T_in_K_int, 188 ), 343 )
-
-    ! Use the lookup table to determine the saturation vapor pressure.
-    esat = svp_liq_lookup_table( T_in_K_int )
+    end select
 
     return
-  end function sat_vapor_press_liq_lookup
+
+  end subroutine sat_vapor_press_liq
 
   !------------------------------------------------------------------------
-  subroutine sat_vapor_press_liq_flatau( nz, ngrdcol, T_in_K, &
+  subroutine sat_vapor_press_liq_flatau( T_in_K, &
                                          esat )
 
   ! Description:
@@ -902,79 +639,68 @@ module saturation
     real( kind = core_rknd ), parameter :: min_T_in_C = -85._core_rknd ! [deg_C]
 
     ! ---------------------- Input Variables ----------------------
-    integer, intent(in) :: &
-      nz, &
-      ngrdcol
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       T_in_K   ! Temperature   [K]
 
     ! ---------------------- Output Variables ----------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       esat  ! Saturation vapor pressure over water [Pa]
 
     ! ---------------------- Local Variables ----------------------
     real( kind = core_rknd ) :: T_in_C, T_in_C_sqd
 
-    integer :: i, k ! Loop index
-
     ! ---------------------- Begin Code ----------------------
 
-    do k = 1, nz
-      do i = 1, ngrdcol
+    ! Determine deg K - 273.15
+    T_in_C = T_in_K - T_freeze_K
 
-        ! Determine deg K - 273.15
-        T_in_C = T_in_K(i,k) - T_freeze_K
+    ! Since this approximation is only good out to -85 degrees Celsius we
+    ! truncate the result here (Flatau, et al. 1992)
+    T_in_C = max( T_in_C, min_T_in_C )
 
-        ! Since this approximation is only good out to -85 degrees Celsius we
-        ! truncate the result here (Flatau, et al. 1992)
-        T_in_C = max( T_in_C, min_T_in_C )
+    ! Polynomial approx. (Flatau, et al. 1992)
 
-        ! Polynomial approx. (Flatau, et al. 1992)
+    ! This is the generalized formula but is not computationally efficient. 
+    ! Based on Wexler's expressions(2.1)-(2.4) (See Flatau et al. p 1508)
+    ! e_{sat} = a_1 + a_2 ( T - T_0 ) + ... + a_{n+1} ( T - T_0 )^n
 
-        ! This is the generalized formula but is not computationally efficient. 
-        ! Based on Wexler's expressions(2.1)-(2.4) (See Flatau et al. p 1508)
-        ! e_{sat} = a_1 + a_2 ( T - T_0 ) + ... + a_{n+1} ( T - T_0 )^n
+    ! esat = a(1)
 
-        ! esat = a(1)
+    ! do i = 2, size( a ) , 1
+    !   esat = esat + a(i) * ( T_in_C )**(i-1)
+    ! end do
 
-        ! do i = 2, size( a ) , 1
-        !   esat = esat + a(i) * ( T_in_C )**(i-1)
-        ! end do
-
-        ! The 8th order polynomial fit.  When running deep 
-        ! convective cases I noticed that absolute temperature often dips below
-        ! -50 deg_C at higher altitudes, where the 6th order approximation is
-        ! not accurate.  -dschanen 20 Nov 2008
-        !esat = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
-        !*( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
+    ! The 8th order polynomial fit.  When running deep 
+    ! convective cases I noticed that absolute temperature often dips below
+    ! -50 deg_C at higher altitudes, where the 6th order approximation is
+    ! not accurate.  -dschanen 20 Nov 2008
+    !esat = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
+    !*( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*( a(9) ) ) ) ) ) ) ) )
 
 
-        ! Factoring the polynomial above and changing it into this form allows the cpu
-        ! to complete the calculations out of order. This is because modern cpus can complete
-        ! multiple instructions at once if they do not depend on eachother, in the above case
-        ! each instruction relies on the result of the last. In this version however, the terms
-        ! in the parentheses could potentially be calculated in parallel by different execution
-        ! units in the cpu, then only when those terms are being multiplied together do the 
-        ! instructions need to be done one at a time. See clubb issue 834 for more info.
-        !   - Gunther Huebler, Aug 2018
-        T_in_C_sqd = T_in_C**2
+    ! Factoring the polynomial above and changing it into this form allows the cpu
+    ! to complete the calculations out of order. This is because modern cpus can complete
+    ! multiple instructions at once if they do not depend on eachother, in the above case
+    ! each instruction relies on the result of the last. In this version however, the terms
+    ! in the parentheses could potentially be calculated in parallel by different execution
+    ! units in the cpu, then only when those terms are being multiplied together do the 
+    ! instructions need to be done one at a time. See clubb issue 834 for more info.
+    !   - Gunther Huebler, Aug 2018
+    T_in_C_sqd = T_in_C**2
 
-        esat(i,k) = &
-         - 3.21582393e-14_core_rknd * ( T_in_C - 646.5835252598777_core_rknd ) &
-           * ( T_in_C + 90.72381630364440_core_rknd ) &
-           * ( T_in_C_sqd + 111.0976961559954_core_rknd * T_in_C + 6459.629194243118_core_rknd ) &
-           * ( T_in_C_sqd + 152.3131930092453_core_rknd * T_in_C + 6499.774954705265_core_rknd ) &
-           * ( T_in_C_sqd + 174.4279584934021_core_rknd * T_in_C + 7721.679732114084_core_rknd )
-      end do
-    end do
+    esat = &
+     - 3.21582393e-14_core_rknd * ( T_in_C - 646.5835252598777_core_rknd ) &
+       * ( T_in_C + 90.72381630364440_core_rknd ) &
+       * ( T_in_C_sqd + 111.0976961559954_core_rknd * T_in_C + 6459.629194243118_core_rknd ) &
+       * ( T_in_C_sqd + 152.3131930092453_core_rknd * T_in_C + 6499.774954705265_core_rknd ) &
+       * ( T_in_C_sqd + 174.4279584934021_core_rknd * T_in_C + 7721.679732114084_core_rknd )
 
     return
   end subroutine sat_vapor_press_liq_flatau
 
 
   !------------------------------------------------------------------------
-  subroutine sat_vapor_press_liq_bolton( nz, ngrdcol, T_in_K, &
+  subroutine sat_vapor_press_liq_bolton( T_in_K, &
                                          esat )
   ! Description:
   !   Computes SVP for water vapor.
@@ -990,31 +716,21 @@ module saturation
     implicit none
 
     ! --------------------- Input Variables ---------------------
-    integer, intent(in) :: &
-      nz, &
-      ngrdcol 
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       T_in_K   ! Temperature   [K]
 
     ! --------------------- Output Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       esat  ! Saturation vapor pressure over water [Pa]
 
-    ! --------------------- Local Variables ---------------------
-    integer :: i, k
 
     ! --------------------------- Begin Code ---------------------------
 
     ! (Bolton 1980) approx.
     ! Generally this more computationally expensive than the Flatau polnomial expansion
-    do k = 1, nz
-      do i = 1, ngrdcol
-        esat(i,k) = 611.2_core_rknd &
-                    * exp( (17.67_core_rknd *(T_in_K(i,k)-T_freeze_K))  &
-                           / (T_in_K(i,k)-29.65_core_rknd) ) ! Known magic number
-      end do
-    end do
+    esat = 611.2_core_rknd &
+                * exp( (17.67_core_rknd *(T_in_K-T_freeze_K))  &
+                       / (T_in_K-29.65_core_rknd) ) ! Known magic number
 
     return
   end subroutine sat_vapor_press_liq_bolton
@@ -1022,7 +738,7 @@ module saturation
 
   ! ---> h1g, 2010-06-16
   !------------------------------------------------------------------------
-  subroutine sat_vapor_press_liq_gfdl( nz, ngrdcol, T_in_K, &
+  subroutine sat_vapor_press_liq_gfdl( T_in_K, &
                                        esat )
   ! Description:
   ! copy from "GFDL polysvp.F90" 
@@ -1039,15 +755,11 @@ module saturation
     implicit none
 
     ! --------------------------- Input Variables ---------------------------
-    integer, intent(in) :: &
-      nz, &
-      ngrdcol 
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       T_in_K   ! Absolute temperature   [K]
 
     ! --------------------------- Output Variables ---------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       esat  ! Saturation vapor pressure over water [Pa]
 
     ! --------------------------- Local Variables ---------------------------
@@ -1057,33 +769,68 @@ module saturation
     real( kind = core_rknd ) :: & 
        T_in_K_clipped        ! Absolute temperature with minimum threshold applied [K]
 
-     integer :: i, k
-
     ! --------------------------- Begin Code ---------------------------
 
-    do k = 1, nz
-      do i = 1, ngrdcol
+    ! Since the Goff-Gratch approximation is valid only down to -70 degrees Celsius,
+    !   we threshold the temperature.  This will yield a minimal saturation at
+    !   cold temperatures.
+    T_in_K_clipped = max( min_T_in_K, T_in_K )
 
-        ! Since the Goff-Gratch approximation is valid only down to -70 degrees Celsius,
-        !   we threshold the temperature.  This will yield a minimal saturation at
-        !   cold temperatures.
-        T_in_K_clipped = max( min_T_in_K, T_in_K(i,k) )
-
-        ! Goff Gratch equation, uncertain below -70 C
-      
-        esat(i,k) = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K_clipped-1._core_rknd)+ &
-             5.02808_core_rknd*log10(373.16_core_rknd/T_in_K_clipped)- &
-             1.3816e-7_core_rknd*(10._core_rknd**(11.344_core_rknd &
-               *(1._core_rknd-T_in_K_clipped/373.16_core_rknd))-1._core_rknd)+ &
-             8.1328e-3_core_rknd*(10._core_rknd**(-3.49149_core_rknd &
-               *(373.16_core_rknd/T_in_K_clipped-1._core_rknd))-1._core_rknd)+ &
-             log10(1013.246_core_rknd))*100._core_rknd ! Known magic number
-      end do
-    end do
+    ! Goff Gratch equation, uncertain below -70 C
+  
+    esat = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K_clipped-1._core_rknd)+ &
+         5.02808_core_rknd*log10(373.16_core_rknd/T_in_K_clipped)- &
+         1.3816e-7_core_rknd*(10._core_rknd**(11.344_core_rknd &
+           *(1._core_rknd-T_in_K_clipped/373.16_core_rknd))-1._core_rknd)+ &
+         8.1328e-3_core_rknd*(10._core_rknd**(-3.49149_core_rknd &
+           *(373.16_core_rknd/T_in_K_clipped-1._core_rknd))-1._core_rknd)+ &
+         log10(1013.246_core_rknd))*100._core_rknd ! Known magic number
 
     return
   end subroutine sat_vapor_press_liq_gfdl
 ! <--- h1g, 2010-06-16
+
+  !------------------------------------------------------------------------
+  elemental function sat_vapor_press_liq_lookup( T_in_K ) result ( esat )
+
+! Description:
+!   Computes SVP for water vapor, using a lookup table.
+!
+!   The lookup table was constructed using the Flatau approximation.
+
+! References:
+!   ``Polynomial Fits to Saturation Vapor Pressure'' Falatau, Walko,
+!     and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
+!     pp. 1507--1513
+!------------------------------------------------------------------------
+
+    implicit none
+
+    ! External
+    intrinsic :: max, min, int, anint
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
+
+    ! Output Variables
+    real( kind = core_rknd ) :: esat  ! Saturation vapor pressure over water [Pa]
+
+    ! Local Variables
+    integer :: T_in_K_int
+
+    ! ---- Begin Code ----
+
+    T_in_K_int = int( anint( T_in_K ) )
+
+    ! Since this approximation is only good out to -85 degrees Celsius we
+    ! truncate the result here
+    T_in_K_int = min( max( T_in_K_int, 188 ), 343 )
+
+    ! Use the lookup table to determine the saturation vapor pressure.
+    esat = svp_liq_lookup_table( T_in_K_int )
+
+    return
+  end function sat_vapor_press_liq_lookup
 
   !------------------------------------------------------------------------
   ! Wrapped in interface sat_mixrat_ice
@@ -1585,9 +1332,8 @@ module saturation
 
     do iteration = 1, itermax, 1
 
-      answer = &
-      theta - (Lv/(Cp*exner)) &
-             *(MAX( rtm - sat_mixrat_liq(p_in_Pa,theta*exner), zero_threshold ))
+      answer = theta - (Lv/(Cp*exner)) &
+                       *(MAX( rtm - sat_mixrat_liq(p_in_Pa,theta*exner), zero_threshold ))
 
       if ( ABS(answer - thlm) <= tolerance ) then
         exit
