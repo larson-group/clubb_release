@@ -34,7 +34,7 @@ module lapack_wrap
 !-----------------------------------------------------------------------
   subroutine lapack_tridiag_solvex( solve_type, ndim, nrhs, ngrdcol, &
                                     lhs, rhs, &
-                                    solution, rcond )
+                                    soln, rcond )
 
 ! Description:
 !   Solves a tridiagonal system of equations (expert routine).
@@ -88,7 +88,7 @@ module lapack_wrap
 
     ! ----------------------- Output variables -----------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim,nrhs) ::  & 
-      solution ! Solution
+      soln ! solution
 
     ! ----------------------- Local Variables -----------------------
     ! These contain the decomposition of the matrix
@@ -127,7 +127,7 @@ module lapack_wrap
       call lapack_gtsvx( "Not Factored", "No Transpose lhs", ndim, nrhs,  & 
                          lhs(3,i,2:ndim), lhs(2,i,:), lhs(1,i,1:ndim-1),  & 
                          dlf, df, duf, du2, ipivot,  & 
-                         rhs(i,:,:), ndim, solution(i,:,:), ndim, rcond(i), & 
+                         rhs(i,:,:), ndim, soln(i,:,:), ndim, rcond(i), & 
                          ferr(i,:), berr(i,:), work, iwork, info )
     end do
 
@@ -156,7 +156,7 @@ module lapack_wrap
     case( 0 )
       ! Success
       do i = 1, ngrdcol
-        if ( lapack_isnan( ndim, nrhs, solution(i,:,:) ) ) then
+        if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
           err_code = clubb_fatal_error 
         end if
       end do
@@ -181,7 +181,7 @@ module lapack_wrap
 !-----------------------------------------------------------------------
   subroutine lapack_tridiag_solve( solve_type, ndim, nrhs, ngrdcol, &
                                    lhs, rhs, &
-                                   solution )
+                                   soln )
 
 ! Description:
 !   Solves a tridiagonal system of equations (simple routine)
@@ -232,7 +232,7 @@ module lapack_wrap
 
     ! ----------------------- Output variables -----------------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,ndim,nrhs) ::  & 
-      solution ! Solution
+      soln ! solution
 
     ! ----------------------- Local Variables -----------------------
     real( kind = core_rknd ), dimension(ndim) ::  & 
@@ -251,7 +251,7 @@ module lapack_wrap
 #ifndef NDEBUG
 #if defined(ARCH_MIC_KNL) && defined(CPRINTEL)
     ! when floating-point exceptions are turned on, this call was failing with
-    ! a div-by-zero on KNL with Intel/MKL.  Solution was to turn off exceptions
+    ! a div-by-zero on KNL with Intel/MKL. Solution was to turn off exceptions
     ! only here at this call (and only for machine with ARCH_MIC_KNL defined)
     ! (github 1183)
     call ieee_set_halting_mode(IEEE_DIVIDE_BY_ZERO, .false.) ! Turn off stopping on div-by-zero only
@@ -281,7 +281,7 @@ module lapack_wrap
         " illegal value in argument", -info
       err_code = clubb_fatal_error
 
-      solution = -999._core_rknd
+      soln = -999._core_rknd
 
     case( 0 )
       ! Success
@@ -291,13 +291,13 @@ module lapack_wrap
         end if
       end do
 
-      solution = rhs
+      soln = rhs
 
     case( 1: )
       write(fstderr,*) trim( solve_type )//" singular matrix."
       err_code = clubb_fatal_error
 
-      solution = -999._core_rknd
+      soln = -999._core_rknd
 
     end select
 
@@ -308,7 +308,7 @@ module lapack_wrap
   subroutine lapack_band_solvex( solve_type, nsup, nsub, &
                                  ndim, nrhs, ngrdcol, &
                                  lhs, rhs, &
-                                 solution, rcond )
+                                 soln, rcond )
 
 ! Description:
 !   Restructure and then solve a band diagonal system, with
@@ -360,7 +360,7 @@ module lapack_wrap
 
     ! ------------------------------ Output Variables ------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
-      solution
+      soln
 
     ! The estimate of the reciprocal condition number of matrix
     ! after equilibration (if done).
@@ -444,7 +444,7 @@ module lapack_wrap
                          ndim, nsub, nsup, nrhs, & 
                          lhs(:,i,:), nsup+nsub+1, lulhs, 2*nsub+nsup+1, & 
                          ipivot, equed, rscale, cscale, & 
-                         rhs(i,:,:), ndim, solution(i,:,:), ndim, & 
+                         rhs(i,:,:), ndim, soln(i,:,:), ndim, & 
                          rcond(i), ferr(i,:), berr(i,:), work, iwork, info )
     end do
 
@@ -495,7 +495,7 @@ module lapack_wrap
     case( 0 )
       ! Success!
       do i = 1, ngrdcol
-        if ( lapack_isnan( ndim, nrhs, solution(i,:,:) ) ) then
+        if ( lapack_isnan( ndim, nrhs, soln(i,:,:) ) ) then
           err_code = clubb_fatal_error 
         end if
       end do
@@ -523,7 +523,7 @@ module lapack_wrap
   subroutine lapack_band_solve( solve_type, nsup, nsub, &
                                 ndim, nrhs, ngrdcol, &
                                 lhs, rhs, &
-                                solution )
+                                soln )
 ! Description:
 !   Restructure and then solve a band diagonal system
 
@@ -566,7 +566,7 @@ module lapack_wrap
 
     ! ------------------------------ Output Variables ------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
-      solution
+      soln
 
     ! ------------------------------ Local Variables ------------------------------
 
@@ -744,7 +744,7 @@ module lapack_wrap
             end do
           end if
 
-          solution = rhs
+          soln = rhs
 
     case( 1: )
         write(fstderr,*) "in band_solve for ", trim( solve_type ), &

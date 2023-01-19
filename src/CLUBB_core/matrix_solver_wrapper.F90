@@ -18,6 +18,7 @@ module matrix_solver_wrapper
   use model_flags, only: &
     lapack ,        & ! Variable(s)
     penta_lu ,      & 
+    tridiag_lu,     &
     penta_bicgstab    
 
   implicit none
@@ -46,9 +47,9 @@ module matrix_solver_wrapper
   subroutine band_solve_single_rhs_multiple_lhs( &
                 solve_name, penta_solve_method, & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim,      & ! Intent(in)
-                old_solution,                   & ! Intent(in)
+                old_soln,                       & ! Intent(in)
                 lhs, rhs,                       & ! Intent(inout)
-                solution, rcond )                 ! Intent(out)
+                soln, rcond )                     ! Intent(out)
 
     use lapack_wrap, only:  & 
       lapack_band_solve,  & ! Procedure(s)
@@ -73,7 +74,7 @@ module matrix_solver_wrapper
       ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(in) ::  & 
-      old_solution ! Old solution, used as an initial guess in the bicgstab method
+      old_soln ! Old soln, used as an initial guess in the bicgstab method
 
     real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) ::  & 
       lhs ! Left hand side
@@ -83,7 +84,7 @@ module matrix_solver_wrapper
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
-      solution
+      soln
 
     ! ----------------------- Optional Out -----------------------
 
@@ -100,7 +101,7 @@ module matrix_solver_wrapper
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
-      dummy_solution
+      dummy_soln
 
     integer :: i
 
@@ -113,11 +114,11 @@ module matrix_solver_wrapper
       rhs_copy = rhs
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      ! Using dummy_solution, since we only want this routine for diagnostics
+      ! Using dummy_soln, since we only want this routine for diagnostics
       call lapack_band_solvex( "xm_wpxp", nsup, nsub, & ! Intent(in) 
                                ndim, 1, ngrdcol,      & ! Intent(in) 
                                lhs_copy, rhs_copy,    & ! Intent(inout)
-                               dummy_solution, rcond )  ! Intent(out)
+                               dummy_soln, rcond )      ! Intent(out)
 
     end if
 
@@ -128,14 +129,14 @@ module matrix_solver_wrapper
       call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
                               ndim, 1, ngrdcol,       & ! Intent(in) 
                               lhs, rhs,               & ! Intent(inout)
-                              solution )                ! Intent(out)
+                              soln )                    ! Intent(out)
 
     else if ( penta_solve_method == penta_lu ) then 
 
       ! Solve the system with a penta-diagonal specific LU decomp
       call penta_lu_solve( ndim, ngrdcol,         & ! Intent(in)
                            lhs(:,:,:), rhs(:,:),  & ! Intent(in)
-                           solution(:,:) )          ! Intent(out)
+                           soln(:,:) )              ! Intent(out)
 
     else
 
@@ -155,9 +156,9 @@ module matrix_solver_wrapper
   subroutine band_solve_multiple_rhs_lhs( &
                 solve_name, penta_solve_method,   & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim, nrhs,  & ! Intent(in)
-                old_solution,                     & ! Intent(in)
+                old_soln,                         & ! Intent(in)
                 lhs, rhs,                         & ! Intent(inout)
-                solution, rcond )                   ! Intent(out)
+                soln, rcond )                       ! Intent(out)
 
     use lapack_wrap, only:  & 
       lapack_band_solve,  & ! Procedure(s)
@@ -183,7 +184,7 @@ module matrix_solver_wrapper
       nrhs        ! Number of RHS's to back substitute for
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(in) ::  & 
-      old_solution ! Old solution, used as an initial guess in the bicgstab method
+      old_soln ! Old soln, used as an initial guess in the bicgstab method
 
     real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) ::  & 
       lhs ! Left hand side
@@ -193,7 +194,7 @@ module matrix_solver_wrapper
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
-      solution
+      soln
 
     ! ----------------------- Optional Out -----------------------
 
@@ -210,7 +211,7 @@ module matrix_solver_wrapper
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
-      dummy_solution
+      dummy_soln
 
     integer :: i
 
@@ -223,11 +224,11 @@ module matrix_solver_wrapper
       rhs_copy = rhs
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
-      ! Using dummy_solution, since we only want this routine for diagnostics
+      ! Using dummy_soln, since we only want this routine for diagnostics
       call lapack_band_solvex( "xm_wpxp", nsup, nsub, & ! Intent(in) 
                                ndim, nrhs, ngrdcol,   & ! Intent(in) 
                                lhs_copy, rhs_copy,    & ! Intent(inout)
-                               dummy_solution, rcond )  ! Intent(out)
+                               dummy_soln, rcond )      ! Intent(out)
 
     end if
 
@@ -238,14 +239,14 @@ module matrix_solver_wrapper
       call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
                               ndim, nrhs, ngrdcol,    & ! Intent(in) 
                               lhs, rhs,               & ! Intent(inout)
-                              solution )                ! Intent(out)
+                              soln )                    ! Intent(out)
 
     else if ( penta_solve_method == penta_lu ) then 
 
       ! Solve the system with a penta-diagonal specific LU decomp
       call penta_lu_solve( ndim, nrhs, ngrdcol,     & ! Intent(in)
                            lhs(:,:,:), rhs(:,:,:),  & ! Intent(in)
-                           solution(:,:,:) )          ! Intent(out)
+                           soln(:,:,:) )              ! Intent(out)
 
     else
 
@@ -272,11 +273,14 @@ module matrix_solver_wrapper
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ndim,                             & ! Intent(in)
                 lhs, rhs,                         & ! Intent(inout)
-                solution, rcond )                   ! Intent(out)
+                soln, rcond )                       ! Intent(out)
 
     use lapack_wrap, only:  & 
-          lapack_tridiag_solve,  & ! Procedure(s)
-          lapack_tridiag_solvex
+      lapack_tridiag_solve,  & ! Procedure(s)
+      lapack_tridiag_solvex
+
+    use tridiag_lu_solvers, only: &
+      tridiag_lu_solve    ! Procedure(s)
 
     implicit none
 
@@ -298,7 +302,7 @@ module matrix_solver_wrapper
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ndim), intent(out) :: &
-      solution
+      soln
 
     ! ----------------------- Optional Out -----------------------
 
@@ -315,7 +319,7 @@ module matrix_solver_wrapper
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ndim) :: &
-      dummy_solution
+      dummy_soln
 
     ! ----------------------- Begin Code -----------------------
 
@@ -328,7 +332,7 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       call lapack_tridiag_solvex( solve_name, ndim, 1, 1, & ! Intent(in) 
                                   lhs_copy, rhs_copy,     & ! Intent(inout)
-                                  dummy_solution, rcond )   ! Intent(out)
+                                  dummy_soln, rcond )       ! Intent(out)
 
     end if
 
@@ -338,7 +342,14 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, 1, 1, & ! Intent(in) 
                                  lhs, rhs,               & ! Intent(inout)
-                                 solution )                ! Intent(out)
+                                 soln )                   ! Intent(out)
+
+    else if ( tridiag_solve_method == tridiag_lu ) then
+
+      ! Solve the system with a tri-diagonal specific LU decomp
+      call tridiag_lu_solve( ndim,      & ! Intent(in)
+                             lhs, rhs,  & ! Intent(in)
+                             soln )       ! Intent(out)
 
     else
 
@@ -360,11 +371,14 @@ module matrix_solver_wrapper
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ngrdcol, ndim,                    & ! Intent(in)
                 lhs, rhs,                         & ! Intent(inout)
-                solution, rcond )                   ! Intent(out)
+                soln, rcond )                       ! Intent(out)
 
     use lapack_wrap, only:  & 
-          lapack_tridiag_solve,  & ! Procedure(s)
-          lapack_tridiag_solvex
+      lapack_tridiag_solve,  & ! Procedure(s)
+      lapack_tridiag_solvex
+
+    use tridiag_lu_solvers, only: &
+      tridiag_lu_solve    ! Procedure(s)
 
     implicit none
 
@@ -387,7 +401,7 @@ module matrix_solver_wrapper
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(out) :: &
-      solution
+      soln
 
     ! ----------------------- Optional Out -----------------------
 
@@ -404,7 +418,7 @@ module matrix_solver_wrapper
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
-      dummy_solution
+      dummy_soln
 
     integer :: i
 
@@ -419,7 +433,7 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       call lapack_tridiag_solvex( solve_name, ndim, 1, ngrdcol, & ! Intent(in) 
                                   lhs_copy, rhs_copy,           & ! Intent(inout)
-                                  dummy_solution, rcond )         ! Intent(out)
+                                  dummy_soln, rcond )             ! Intent(out)
 
     end if
 
@@ -429,8 +443,14 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, 1, ngrdcol, & ! Intent(in) 
                                  lhs, rhs,                     & ! Intent(inout)
-                                 solution )                      ! Intent(out)
+                                 soln )                          ! Intent(out)
 
+    else if ( tridiag_solve_method == tridiag_lu ) then
+
+      ! Solve the system with a tri-diagonal specific LU decomp
+      call tridiag_lu_solve( ndim, ngrdcol, & ! Intent(in)
+                             lhs, rhs,      & ! Intent(in)
+                             soln )           ! Intent(out)
     else
 
       ! The solve method should match one of the above
@@ -450,11 +470,14 @@ module matrix_solver_wrapper
                 solve_name, tridiag_solve_method, & ! Intent(in)
                 ngrdcol, ndim, nrhs,              & ! Intent(in)
                 lhs, rhs,                         & ! Intent(inout)
-                solution, rcond )                   ! Intent(out)
+                soln, rcond )                       ! Intent(out)
 
     use lapack_wrap, only:  & 
-          lapack_tridiag_solve,  & ! Procedure(s)
-          lapack_tridiag_solvex
+      lapack_tridiag_solve,  & ! Procedure(s)
+      lapack_tridiag_solvex
+
+    use tridiag_lu_solvers, only: &
+      tridiag_lu_solve    ! Procedure(s)
 
     implicit none
 
@@ -478,7 +501,7 @@ module matrix_solver_wrapper
 
     ! ----------------------- Output Variables -----------------------
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(out) :: &
-      solution
+      soln
 
     ! ----------------------- Optional Out -----------------------
 
@@ -495,7 +518,7 @@ module matrix_solver_wrapper
       rhs_copy ! Copy of right hand side
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
-      dummy_solution
+      dummy_soln
 
     integer :: i
 
@@ -510,7 +533,7 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       call lapack_tridiag_solvex( solve_name, ndim, nrhs, ngrdcol,  & ! Intent(in) 
                                   lhs_copy, rhs_copy,               & ! Intent(inout)
-                                  dummy_solution, rcond )             ! Intent(out)
+                                  dummy_soln, rcond )                 ! Intent(out)
 
     end if
 
@@ -520,8 +543,14 @@ module matrix_solver_wrapper
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, nrhs, ngrdcol, & ! Intent(in) 
                                  lhs, rhs,                        & ! Intent(inout)
-                                 solution )                         ! Intent(out)
+                                 soln )                             ! Intent(out)
 
+    else if ( tridiag_solve_method == tridiag_lu ) then
+
+      ! Solve the system with a tri-diagonal specific LU decomp
+      call tridiag_lu_solve( ndim, nrhs, ngrdcol, & ! Intent(in)
+                             lhs, rhs,            & ! Intent(in)
+                             soln )                 ! Intent(out)
     else
 
       ! The solve method should match one of the above

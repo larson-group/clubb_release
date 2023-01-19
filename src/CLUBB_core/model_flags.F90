@@ -39,6 +39,7 @@ module model_flags
   integer, parameter, public :: &
     lapack          = 1,  & ! Use lapack library for matrix solves
     penta_lu        = 2,  & ! Use penta_lu solver for 5 banded matrices
+    tridiag_lu      = 2,  & ! Use tridiag_lu solver for 3 banded matrices
     penta_bicgstab  = 3     ! Use bicgstab to solve 5 banded matrices
 
   logical, parameter, public ::  & 
