@@ -409,8 +409,7 @@ module mono_flux_limiter
       xp2_zt,          &      ! x'^2 interpolated to thermodynamic levels  [units vary]
       xm_enter_mfl,    &      ! xm as it enters the MFL                    [units vary]
       xm_without_ta,   &      ! Value of xm without turb. adv. contrib.    [units vary]
-      wpxp_net_adjust, &      ! Net amount of adjustment needed on w'x'    [units vary]      
-      dxm_dt_mfl_adjust       ! Rate of change of adjustment to xm         [units vary]
+      wpxp_net_adjust         ! Net amount of adjustment needed on w'x'    [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       min_x_allowable_lev, & ! Smallest usuable value of x at lev k [units vary]
@@ -427,6 +426,7 @@ module mono_flux_limiter
       xm_density_weighted, & ! Density weighted xm at domain top             [units vary]
       xm_adj_coef,         & ! Coeffecient to eliminate spikes at domain top [units vary]
       xm_vert_integral,    & ! Vertical integral of xm                       [units_vary]
+      dxm_dt_mfl_adjust,   & ! Rate of change of adjustment to xm            [units vary]
       dz                     ! zm grid spacing at top of domain              [m]
 
     real( kind = core_rknd ), dimension(3,ngrdcol,nz) ::  &
@@ -449,6 +449,12 @@ module mono_flux_limiter
     integer ::  &
       iwpxp_mfl,  &
       ixm_mfl
+
+    logical, dimension(ngrdcol) :: &
+      l_adjustment_needed  ! Indicates if we need an adjustment for a column
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
+      xm_mfl
 
     !--- Begin Code ---
 
@@ -511,7 +517,6 @@ module mono_flux_limiter
 
     ! Initialize arrays.
     wpxp_net_adjust(:,:) = 0.0_core_rknd
-    dxm_dt_mfl_adjust(:,:) = 0.0_core_rknd
 
     ! Store the value of xm as it enters the mfl
     xm_enter_mfl(:,:) = xm(:,:)
@@ -775,130 +780,148 @@ module mono_flux_limiter
     endif
 
     do i = 1, ngrdcol
-      if ( any( abs(wpxp_net_adjust(i,:)) > eps ) ) then
 
-         ! Reset the value of xm to compensate for the change to w'x'.
+      l_adjustment_needed(i) = .false.
 
-         if ( l_mfl_xm_imp_adj ) then
+      do k = 1, nz
+        if ( abs(wpxp_net_adjust(i,k)) > eps ) then
+          l_adjustment_needed(i) = .true.
+        end if
+      end do
+    end do
 
-            ! A tridiagonal matrix is used to semi-implicitly re-solve for the
-            ! values of xm at timestep index (t+1).
+    if ( any( l_adjustment_needed ) ) then
 
-            ! Set up the left-hand side of the tridiagonal matrix equation.
-            call mfl_xm_lhs( nz, dt, gr%weights_zt2zm(i,:,:),  & ! intent(in)
-                             gr%invrs_dzt(i,:), gr%invrs_dzm(i,:),    & ! intent(in)
-                             wm_zt(i,:), l_implemented, l_upwind_xm_ma, & ! intent(in)
-                             lhs_mfl_xm(:,i,:) ) ! intent(out)
+      ! Reset the value of xm to compensate for the change to w'x'.
 
-            ! Set up the right-hand side of tridiagonal matrix equation.
-            call mfl_xm_rhs( nz, dt, xm_old(i,:), wpxp(i,:), xm_forcing(i,:), & ! intent(in)
-                             gr%invrs_dzt(i,:), rho_ds_zm(i,:), invrs_rho_ds_zt(i,:), & ! intent(in)
-                             rhs_mfl_xm(i,:) ) ! intent(out)
+      if ( l_mfl_xm_imp_adj ) then
 
-            ! Solve the tridiagonal matrix equation.
-            call mfl_xm_solve( nz, solve_type, tridiag_solve_method, & ! intent(in)
-                               lhs_mfl_xm(:,i,:), rhs_mfl_xm(i,:),  & ! intent(inout)
-                               xm(i,:) ) ! intent(inout)
+        ! A tridiagonal matrix is used to semi-implicitly re-solve for the
+        ! values of xm at timestep index (t+1).
 
-            ! Check for errors
-            if ( clubb_at_least_debug_level( 0 ) ) then
-                if ( err_code == clubb_fatal_error ) return
+        ! Set up the left-hand side of the tridiagonal matrix equation.
+        call mfl_xm_lhs( nz, ngrdcol, dt, gr%weights_zt2zm,     & ! intent(in)
+                         gr%invrs_dzt, gr%invrs_dzm,            & ! intent(in)
+                         wm_zt, l_implemented, l_upwind_xm_ma,  & ! intent(in)
+                         lhs_mfl_xm )                             ! intent(out)
+
+        ! Set up the right-hand side of tridiagonal matrix equation.
+        call mfl_xm_rhs( nz, ngrdcol, dt, xm_old, wpxp, xm_forcing, & ! intent(in)
+                         gr%invrs_dzt, rho_ds_zm, invrs_rho_ds_zt,  & ! intent(in)
+                         rhs_mfl_xm )                                 ! intent(out)
+
+        ! Solve the tridiagonal matrix equation.
+        call mfl_xm_solve( nz, ngrdcol, solve_type, tridiag_solve_method,  & ! intent(in)
+                           lhs_mfl_xm, rhs_mfl_xm,                         & ! intent(inout)
+                           xm_mfl )                                          ! intent(inout)
+
+        ! If an adjustment is for a column
+        do i = 1, ngrdcol 
+          if ( l_adjustment_needed(i) ) then
+            xm(i,:) = xm_mfl(i,:)
+          end if
+        end do
+
+        ! Check for errors
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code == clubb_fatal_error ) return
+        end if
+
+      else  ! l_mfl_xm_imp_adj = .false.
+
+        ! An explicit adjustment is made to the values of xm at timestep
+        ! index (t+1), which is based upon the array of the amounts of w'x'
+        ! adjustments.
+
+        do k = 2, nz, 1
+          do i = 1, ngrdcol 
+
+            if ( l_adjustment_needed(i) ) then  
+              km1 = max( k-1, 1 )
+
+              ! The rate of change of the adjustment to xm due to the monotonic
+              ! flux limiter.
+              dxm_dt_mfl_adjust = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k)  &
+                                  * ( rho_ds_zm(i,k) * wpxp_net_adjust(i,k)  &
+                                      - rho_ds_zm(i,km1) * wpxp_net_adjust(i,km1) )
+
+              ! The net change to xm due to the monotonic flux limiter is the
+              ! rate of change multiplied by the time step length.  Add the
+              ! product to xm to find the new xm resulting from the monotonic
+              ! flux limiter.
+              xm(i,k) = xm(i,k) + dxm_dt_mfl_adjust * dt 
             end if
 
-         else  ! l_mfl_xm_imp_adj = .false.
+          end do
+        end do
 
-            ! An explicit adjustment is made to the values of xm at timestep
-            ! index (t+1), which is based upon the array of the amounts of w'x'
-            ! adjustments.
+        ! Boundary condition on xm
+        xm(:,1) = xm(:,2)
 
-            do k = 2, nz, 1
+      endif  ! l_mfl_xm_imp_adj
 
-               km1 = max( k-1, 1 )
+      ! This code can be uncommented for debugging.
+      !do k = 1, gr%nz, 1
+      !   print *, "k = ", k, "xm(t) = ", xm_old(k), "new xm(t+1) = ", xm(k)
+      !enddo
 
-               ! The rate of change of the adjustment to xm due to the monotonic
-               ! flux limiter.
-               dxm_dt_mfl_adjust(i,k)  &
-               = - invrs_rho_ds_zt(i,k)  &
-                   * gr%invrs_dzt(i,k)  &
-                     * (   rho_ds_zm(i,k) * wpxp_net_adjust(i,k)  &
-                         - rho_ds_zm(i,km1) * wpxp_net_adjust(i,km1) )
+      !Ensure there are no spikes at the top of the domain
+      do i = 1, ngrdcol 
 
-               ! The net change to xm due to the monotonic flux limiter is the
-               ! rate of change multiplied by the time step length.  Add the
-               ! product to xm to find the new xm resulting from the monotonic
-               ! flux limiter.
-               xm(i,k) = xm(i,k) + dxm_dt_mfl_adjust(i,k) * dt
+        if (abs( xm(i,nz) - xm_enter_mfl(i,nz) ) > 10._core_rknd * xm_tol) then
+          dz = gr%zm(i,nz) - gr%zm(i,nz - 1)
 
-            enddo
+          xm_density_weighted = rho_ds_zt(i,nz) &
+                              * (xm(i,nz) - xm_enter_mfl(i,nz)) &
+                              * dz
 
-            ! Boundary condition on xm
-            xm(i,1) = xm(i,2)
+          xm_vert_integral = sum(rho_ds_zt(i,2:nz-1) * xm(i,2:nz-1) * gr%dzt(i,2:nz-1) )
 
-         endif  ! l_mfl_xm_imp_adj
+          !Check to ensure the vertical integral is not zero to avoid a divide
+          !by zero error
+          if (xm_vert_integral < eps) then
+            write(fstderr,*) "Vertical integral of xm is zero;", & 
+                             "mfl will remove spike at top of domain,", &
+                             "but it will not conserve xm."
 
-         ! This code can be uncommented for debugging.
-         !do k = 1, gr%nz, 1
-         !   print *, "k = ", k, "xm(t) = ", xm_old(k), "new xm(t+1) = ", xm(k)
-         !enddo
+            !Remove the spike at the top of the domain
+            xm(i,nz) = xm_enter_mfl(i,nz)      
+          else
+            xm_adj_coef = xm_density_weighted / xm_vert_integral
 
-         !Ensure there are no spikes at the top of the domain
-         if (abs( xm(i,nz) - xm_enter_mfl(i,nz) ) > 10._core_rknd * xm_tol) then
-            dz = gr%zm(i,nz) - gr%zm(i,nz - 1)
+            !xm_adj_coef can not be smaller than -1
+            if (xm_adj_coef < -0.99_core_rknd) then
+              write(fstderr,*) "xm_adj_coef in mfl less than -0.99, " &
+                               // "mx_adj_coef set to -0.99"
+              xm_adj_coef = -0.99_core_rknd
+            endif
 
-            xm_density_weighted = rho_ds_zt(i,nz) &
-                                  * (xm(i,nz) - xm_enter_mfl(i,nz)) &
-                                  * dz
+            !Apply the adjustment
+            xm(i,:) = xm(i,:) * (1._core_rknd + xm_adj_coef)
 
-            xm_vert_integral &
-            = vertical_integral  &
-                ( ((nz - 1) - 2 + 1), rho_ds_zt(i,2:nz - 1), &
-                  xm(i,2:nz - 1), gr%dzt(i,2:nz - 1) )
+            !Remove the spike at the top of the domain
+            xm(i,nz) = xm_enter_mfl(i,nz)
 
-            !Check to ensure the vertical integral is not zero to avoid a divide
-            !by zero error
-            if (xm_vert_integral < eps) then
-               write(fstderr,*) "Vertical integral of xm is zero;", & 
-                                "mfl will remove spike at top of domain,", &
-                                "but it will not conserve xm."
+            !This code can be uncommented to ensure conservation
+            !if (abs(sum(rho_ds_zt(2:gr%nz) * xm(2:gr%nz) / gr%invrs_dzt(2:gr%nz)) - & 
+            !    sum(rho_ds_zt(2:gr%nz) * xm_enter_mfl(2:gr%nz) / gr%invrs_dzt(2:gr%nz)))&
+            !    > (1000 * xm_tol)) then
+            !   write(fstderr,*) "NON-CONSERVATION in MFL", trim( solve_type ), &
+            !      abs(sum(rho_ds_zt(2:gr%nz) * xm(2:gr%nz) / gr%invrs_dzt(2:gr%nz)) - &
+            !       sum(rho_ds_zt(2:gr%nz) * xm_enter_mfl(2:gr%nz) / &
+            !              gr%invrs_dzt(2:gr%nz)))
+            !
+            !   write(fstderr,*) "XM_ENTER_MFL=", xm_enter_mfl 
+            !   write(fstderr,*) "XM_AFTER_SPIKE_REMOVAL", xm 
+            !   write(fstderr,*) "XM_TOL", xm_tol
+            !   write(fstderr,*) "XM_ADJ_COEF", xm_adj_coef   
+            !endif
 
-               !Remove the spike at the top of the domain
-               xm(i,nz) = xm_enter_mfl(i,nz)      
-            else
-               xm_adj_coef = xm_density_weighted / xm_vert_integral
+          endif ! xm_vert_integral < eps
+        endif ! spike at domain top
+      end do
 
-               !xm_adj_coef can not be smaller than -1
-               if (xm_adj_coef < -0.99_core_rknd) then
-                  write(fstderr,*) "xm_adj_coef in mfl less than -0.99, " &
-                                   // "mx_adj_coef set to -0.99"
-                  xm_adj_coef = -0.99_core_rknd
-               endif
-
-               !Apply the adjustment
-               xm(i,:) = xm(i,:) * (1._core_rknd + xm_adj_coef)
-
-               !Remove the spike at the top of the domain
-               xm(i,nz) = xm_enter_mfl(i,nz)
-
-               !This code can be uncommented to ensure conservation
-               !if (abs(sum(rho_ds_zt(2:gr%nz) * xm(2:gr%nz) / gr%invrs_dzt(2:gr%nz)) - & 
-               !    sum(rho_ds_zt(2:gr%nz) * xm_enter_mfl(2:gr%nz) / gr%invrs_dzt(2:gr%nz)))&
-               !    > (1000 * xm_tol)) then
-               !   write(fstderr,*) "NON-CONSERVATION in MFL", trim( solve_type ), &
-               !      abs(sum(rho_ds_zt(2:gr%nz) * xm(2:gr%nz) / gr%invrs_dzt(2:gr%nz)) - &
-               !       sum(rho_ds_zt(2:gr%nz) * xm_enter_mfl(2:gr%nz) / &
-               !              gr%invrs_dzt(2:gr%nz)))
-               !
-               !   write(fstderr,*) "XM_ENTER_MFL=", xm_enter_mfl 
-               !   write(fstderr,*) "XM_AFTER_SPIKE_REMOVAL", xm 
-               !   write(fstderr,*) "XM_TOL", xm_tol
-               !   write(fstderr,*) "XM_ADJ_COEF", xm_adj_coef   
-               !endif
-
-            endif ! xm_vert_integral < eps
-         endif ! spike at domain top
-
-      endif ! any( wpxp_net_adjust(:) /= 0.0_core_rknd )
-    end do
+    end if
 
 
     if ( l_stats_samp ) then
@@ -929,7 +952,7 @@ module mono_flux_limiter
   end subroutine monotonic_turbulent_flux_limit
 
   !=============================================================================
-  subroutine mfl_xm_lhs( nz, dt, weights_zt2zm, & 
+  subroutine mfl_xm_lhs( nz, ngrdcol, dt, weights_zt2zm, & 
                          invrs_dzt, invrs_dzm, & 
                          wm_zt, l_implemented, l_upwind_xm_ma, &
                          lhs )
@@ -966,17 +989,18 @@ module mono_flux_limiter
 
     ! Input Variables
     integer, intent(in) :: &
-      nz
+      nz, &
+      ngrdcol
     
     real( kind = core_rknd ), intent(in) ::  &
       dt     ! Model timestep length                      [s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       wm_zt,      & ! w wind component on thermodynamic levels   [m/s]
       invrs_dzt,  &
       invrs_dzm
       
-    real( kind = core_rknd ), dimension(nz,t_above:t_below), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,t_above:t_below), intent(in) ::  &
       weights_zt2zm
 
     logical, intent(in) :: &
@@ -988,22 +1012,11 @@ module mono_flux_limiter
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(3,nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) ::  & 
       lhs    ! Left hand side of tridiagonal matrix
 
     ! Local Variables
-    integer :: k    ! Array index
-    
-    real( kind = core_rknd ), dimension(1,nz) ::  &
-      wm_zt_col,      & ! w wind component on thermodynamic levels   [m/s]
-      invrs_dzt_col,  &
-      invrs_dzm_col
-      
-    real( kind = core_rknd ), dimension(1,nz,t_above:t_below) ::  &
-      weights_zt2zm_col
-
-    real( kind = core_rknd ), dimension(3,1,nz) ::  & 
-      lhs_col    ! Left hand side of tridiagonal matrix
+    integer :: i, k    ! Array index
 
     !-----------------------------------------------------------------------
 
@@ -1018,39 +1031,33 @@ module mono_flux_limiter
 
     ! LHS xm mean advection (ma) term.
     if ( .not. l_implemented ) then
-      
-      wm_zt_col(1,:)            = wm_zt
-      invrs_dzt_col(1,:)        = invrs_dzt
-      invrs_dzm_col(1,:)        = invrs_dzm
-      weights_zt2zm_col(1,:,:)  = weights_zt2zm
-      lhs_col(:,1,:)            = lhs
     
-      call term_ma_zt_lhs( nz, 1, wm_zt_col, weights_zt2zm_col,  & ! intent(in)
-                           invrs_dzt_col, invrs_dzm_col,    & ! intent(in)
-                           l_upwind_xm_ma, & ! intent(in)
-                           lhs_col ) ! intent(out)
-                           
-      lhs = lhs_col(:,1,:)
+      call term_ma_zt_lhs( nz, ngrdcol, wm_zt, weights_zt2zm,  & ! intent(in)
+                           invrs_dzt, invrs_dzm,               & ! intent(in)
+                           l_upwind_xm_ma,                     & ! intent(in)
+                           lhs )                                 ! intent(out)
     else
       lhs = 0.0_core_rknd
     endif
 
     do k = 2, nz, 1
-      ! LHS xm time tendency.
-      lhs(k_tdiag,k) = lhs(k_tdiag,k) + 1.0_core_rknd / dt
+      do i = 1, ngrdcol
+        ! LHS xm time tendency.
+        lhs(k_tdiag,i,k) = lhs(k_tdiag,i,k) + 1.0_core_rknd / dt
+      end do
     end do ! xm loop: 2..nz
 
     ! Boundary conditions.
 
     ! Lower boundary
-    lhs(:,1)       = 0.0_core_rknd
-    lhs(k_tdiag,1) = 1.0_core_rknd
+    lhs(:,:,1)       = 0.0_core_rknd
+    lhs(k_tdiag,:,1) = 1.0_core_rknd
 
     return
   end subroutine mfl_xm_lhs
 
   !=============================================================================
-  subroutine mfl_xm_rhs( nz, dt, xm_old, wpxp, xm_forcing, &
+  subroutine mfl_xm_rhs( nz, ngrdcol, dt, xm_old, wpxp, xm_forcing, &
                          invrs_dzt, rho_ds_zm, invrs_rho_ds_zt, &
                          rhs )
 
@@ -1072,12 +1079,13 @@ module mono_flux_limiter
     
     ! Input Variables
     integer, intent(in) :: &
-      nz
+      nz, &
+      ngrdcol
       
     real( kind = core_rknd ), intent(in) ::  &
       dt                 ! Model timestep length                    [s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       invrs_dzt,       & ! The inverse spacing between momentum grid levels;
                          ! centered over thermodynamic grid levels.
       xm_old,          & ! xm; timestep (t) (thermodynamic levels)  [units vary]
@@ -1087,11 +1095,11 @@ module mono_flux_limiter
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       rhs         ! Right hand side of tridiagonal matrix equation
 
     ! Local Variables
-    integer :: k, km1  ! Array indices
+    integer :: i, k, km1  ! Array indices
 
     !-----------------------------------------------------------------------
 
@@ -1104,51 +1112,50 @@ module mono_flux_limiter
     ! value of xm at level k = 2 after the solve has been completed.
 
     do k = 2, nz, 1
+      do i = 1, ngrdcol
 
-       ! Define indices
-       km1 = max( k-1, 1 )
+        ! Define indices
+        km1 = max( k-1, 1 )
 
-       ! RHS xm time tendency.
-       rhs(k) = rhs(k) + xm_old(k) / dt
+        ! RHS xm time tendency.
+        rhs(i,k) = rhs(i,k) + xm_old(i,k) / dt
 
-       ! RHS xm turbulent advection (ta) term.
-       ! Note:  Normally, the turbulent advection (ta) term is treated
-       !        implicitly when advancing xm one timestep, as both xm and w'x'
-       !        are advanced together from timestep index (t) to timestep
-       !        index (t+1).  However, in this case, both xm and w'x' have
-       !        already been advanced one timestep.  However, w'x'(t+1) has been
-       !        limited after the fact, and therefore it's values at timestep
-       !        index (t+1) are known.  Thus, in re-solving for xm(t+1), the
-       !        derivative of w'x'(t+1) can be placed on the right-hand side of
-       !        the d(xm)/dt equation.
-       rhs(k) &
-       = rhs(k) &
-       - invrs_rho_ds_zt(k)  &
-         * invrs_dzt(k)  &
-           * ( rho_ds_zm(k) * wpxp(k) - rho_ds_zm(km1) * wpxp(km1) )
+        ! RHS xm turbulent advection (ta) term.
+        ! Note:  Normally, the turbulent advection (ta) term is treated
+        !        implicitly when advancing xm one timestep, as both xm and w'x'
+        !        are advanced together from timestep index (t) to timestep
+        !        index (t+1).  However, in this case, both xm and w'x' have
+        !        already been advanced one timestep.  However, w'x'(t+1) has been
+        !        limited after the fact, and therefore it's values at timestep
+        !        index (t+1) are known.  Thus, in re-solving for xm(t+1), the
+        !        derivative of w'x'(t+1) can be placed on the right-hand side of
+        !        the d(xm)/dt equation.
+        rhs(i,k) = rhs(i,k) &
+                   - invrs_rho_ds_zt(i,k) * invrs_dzt(i,k)  &
+                     * ( rho_ds_zm(i,k) * wpxp(i,k) - rho_ds_zm(i,km1) * wpxp(i,km1) )
 
-       ! RHS xm forcings.
-       ! Note: xm forcings include the effects of microphysics,
-       !       cloud water sedimentation, radiation, and any
-       !       imposed forcings on xm.
-       rhs(k) = rhs(k) + xm_forcing(k)
+        ! RHS xm forcings.
+        ! Note: xm forcings include the effects of microphysics,
+        !       cloud water sedimentation, radiation, and any
+        !       imposed forcings on xm.
+        rhs(i,k) = rhs(i,k) + xm_forcing(i,k)
 
-    enddo ! xm loop: 2..gr%nz
+      end do
+    end do ! xm loop: 2..gr%nz
 
     ! Boundary conditions
 
     ! Lower Boundary
-    k = 1
     ! The value of xm at the lower boundary will remain the same.  However, the
     ! value of xm at the lower boundary gets overwritten after the matrix is
     ! solved for the next timestep, such that xm(1) = xm(2).
-    rhs(k) = xm_old(k)
+    rhs(:,1) = xm_old(:,1)
 
     return
   end subroutine mfl_xm_rhs
 
   !=============================================================================
-  subroutine mfl_xm_solve( nz, solve_type, tridiag_solve_method, &
+  subroutine mfl_xm_solve( nz, ngrdcol, solve_type, tridiag_solve_method, &
                            lhs, rhs,  &
                            xm )
 
@@ -1185,7 +1192,8 @@ module mono_flux_limiter
 
     ! Input Variables
     integer, intent(in) :: &
-      nz
+      nz, &
+      ngrdcol
     
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
@@ -1193,14 +1201,14 @@ module mono_flux_limiter
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
-    real( kind = core_rknd ), dimension(3,nz), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(inout) ::  & 
       lhs  ! Left hand side of tridiagonal matrix
 
-    real( kind = core_rknd ), dimension(nz), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) ::  &
       rhs  ! Right hand side of tridiagonal matrix equation
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
       xm   ! Value of variable being solved for at timestep (t+1)   [units vary]
 
     ! Local variable
@@ -1220,17 +1228,17 @@ module mono_flux_limiter
 
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
     call tridiag_solve( solve_type_str, tridiag_solve_method,   & ! Intent(in)
-                        nz,                                     & ! Intent(inout)
+                        ngrdcol, nz,                            & ! Intent(in)
                         lhs, rhs,                               & ! Intent(inout)
                         xm )                                      ! Intent(out)
 
     ! Check for errors
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) return
+      if ( err_code == clubb_fatal_error ) return
     end if
 
     ! Boundary condition on xm
-    xm(1) = xm(2)
+    xm(:,1) = xm(:,2)
 
     return
   end subroutine mfl_xm_solve
