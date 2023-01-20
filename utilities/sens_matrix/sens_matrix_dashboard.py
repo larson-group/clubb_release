@@ -304,7 +304,7 @@ def main():
     for i, item in enumerate(metricsNamesOrdered):
         biasesOrderFig.add_annotation(
         x=  xArrow[i] - gap,  # ith arrow's head
-        # ith arrow's length:
+        # ith arrow's head:
         y= (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
         #y= (-defaultBiasesApproxNonlinNoCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
         ax= xArrow[i] - gap,  # ith arrow's tail
@@ -331,7 +331,7 @@ def main():
     for i, item in enumerate(metricsNamesOrdered):
         biasesOrderFig.add_annotation(
         x=  xArrow[i]+gap,  # ith arrow's head
-        # ith arrow's length:
+        # ith arrow's head:
         y= (-linSolnBiasesCol-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
         ax= xArrow[i]+gap,  # ith arrow's tail
         ay=  yArrow[i],  # ith arrow's tail
@@ -347,7 +347,110 @@ def main():
         arrowcolor='red' #,
         #opacity=0.0
 	    )
+    # Plot 0-curvature error bars on prediction arrow
+    for i, item in enumerate(metricsNamesOrdered):
+        biasesOrderFig.add_annotation(
+        x =  xArrow[i]-gap,  # ith arrow's head
+        # ith arrow's head:
+        y = (-defaultBiasesApproxNonlinNoCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+        text ='-',  # blank because we want only the arrow
+        font = dict(family="bold", color="blue", size=30),        
+        showarrow=False
+	    )
+    # Plot 2x-curvature error bars on prediction arrow
+    for i, item in enumerate(metricsNamesOrdered):
+        biasesOrderFig.add_annotation(
+        x =  xArrow[i]-gap,  # ith arrow's head
+        # ith arrow's head:
+        y = (-defaultBiasesApproxNonlin2xCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+        text ='-',  # blank because we want only the arrow
+        font = dict(family="bold", color="blue", size=30),        
+        showarrow=False
+	    )               
+    #biasesOrderFig.add_trace(go.Scatter(x=xArrow, y=yArrow,
+    #                      name='Region of improvement', mode='markers',
+    #                       marker=dict(color='green', size=14)))
     #pdb.set_trace()
+
+
+    # Create plot showing how well the regional biases are actually removed
+    metricsSens = np.linalg.norm(normlzdWeightedSensMatrix, axis=1) # measure of sensitivity of each metric
+    # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
+    metricsSensOrdered = metricsSens.argsort()
+    metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
+    normlzdSensMatrixOrdered = normlzdSensMatrix[metricsSensOrdered,:]
+    # Form matrix of parameter perturbations, for later multiplication into the sensitivity matrix
+    dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
+    normlzdSensParamsMatrixOrdered = normlzdSensMatrixOrdered * dnormlzdParamsSolnNonlinMatrix
+    df = pd.DataFrame(-1*normlzdSensParamsMatrixOrdered,
+                      index=metricsNamesOrdered,
+                      columns=paramsNames)
+    biasContrOrderFig = px.bar(df, x=df.index, y=df.columns,
+              title = """Linear contributions to actual removal of regional biases""")
+    biasContrOrderFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
+    biasContrOrderFig.update_xaxes(title="Metric and region")
+    biasContrOrderFig.update_layout(hovermode="x")
+    biasContrOrderFig.update_layout(showlegend=True)
+    #biasContrOrderFig.update_traces(mode='markers', line_color='black')  # Plot default biases as black dots
+    biasContrOrderFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    biasContrOrderFig.update_layout( width=800, height=500  )
+    # Now plot an arrow for each region that points from default-run bias to new bias after tuning
+    # xArrow = np.arange(len(metricsNamesOrdered)) # x-coordinate of arrows
+    # yArrow = -defaultBiasesCol[metricsSensOrdered,0]/np.abs(obsMetricValsCol[metricsSensOrdered,0])
+    # gap = 0.1  # horizontal spacing between arrows
+    # Plot arrows showing the tuner's nonlinear predicted bias removal
+    # for i, item in enumerate(metricsNamesOrdered):
+    #     biasContrOrderFig.add_annotation(
+    #     x=  xArrow[i] - gap,  # ith arrow's head
+    #     # ith arrow's head:
+    #     y= (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+    #     #y= (-defaultBiasesApproxNonlinNoCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+    #     ax= xArrow[i] - gap,  # ith arrow's tail
+    #     ay=  yArrow[i],  # ith arrow's tail
+    #     xref='x',
+    #     yref='y',
+    #     axref='x',
+    #     ayref='y',
+    #     text='',  # blank because we want only the arrow
+    #     showarrow=True,
+    #     arrowhead=3,
+    #     arrowsize=1,
+    #     arrowwidth=2,
+    #     arrowcolor='blue'
+    #     )
+    # # Add a hand-made legend
+    # biasContrOrderFig.add_annotation(text='tuner prediction of bias removal',
+    #                               font=dict(color='blue'),
+    #                               align='left', xref='paper', yref='paper', x=0.05, y=0.9, showarrow=False)
+    # biasContrOrderFig.add_annotation(text='realized E3SM bias removal',
+    #                               font=dict(color='red'), #'rgba(255,0,0,0.0)'),
+    #                               align='left', xref='paper', yref='paper', x=0.05, y=0.8, showarrow=False)
+
+
+
+    # Create plot showing how well the regional biases are actually removed
+    #metricsSens = np.linalg.norm(normlzdWeightedSensMatrix, axis=1) # measure of sensitivity of each metric
+    # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
+    #metricsSensOrdered = metricsSens.argsort()
+    #metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
+    #normlzdSensMatrixOrdered = normlzdSensMatrix[metricsSensOrdered,:]
+    # Form matrix of parameter perturbations, for later multiplication into the sensitivity matrix
+    dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
+    curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrdered,:] * dnormlzdParamsSolnNonlinMatrix**2
+    #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
+    df = pd.DataFrame(-1*curvParamsMatrixOrdered + -1*normlzdSensParamsMatrixOrdered,
+                      index=metricsNamesOrdered,
+                      columns=paramsNames)
+    biasContrNLOrderFig = px.bar(df, x=df.index, y=df.columns,
+              title = """Nonlinear contributions to actual removal of regional biases""")
+    biasContrNLOrderFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
+    biasContrNLOrderFig.update_xaxes(title="Metric and region")
+    biasContrNLOrderFig.update_layout(hovermode="x")
+    biasContrNLOrderFig.update_layout(showlegend=True)
+    biasContrNLOrderFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    biasContrNLOrderFig.update_layout( width=800, height=500  )
+
+
 
     # Plot a scatterplot of default-simulation bias and SVD approximation of that bias.
     # Each column tells us how all metrics vary with a single parameter.
@@ -711,6 +814,8 @@ def main():
         dcc.Graph( id='paramsBar', figure=paramsBar ),
         #dcc.Graph( id='paramsFig', figure=paramsFig ),
         #dcc.Graph( id='biasesFig', figure=biasesFig ),
+        dcc.Graph( id='biasContrOrderFig', figure=biasContrOrderFig ),
+        dcc.Graph( id='biasContrNLOrderFig', figure=biasContrNLOrderFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
         dcc.Graph( id='dpMinScatterFig', figure=dpMinMatrixScatterFig ),
         dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ),
@@ -787,7 +892,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
                                method='Powell')
     dnormlzdParamsSolnNonlin = np.atleast_2d(dnormlzdParamsSolnNonlin.x).T
 
-    # Check whether the minimizer actually minimizes chisqd
+    # Check whether the minimizer actually reduces chisqd
     # Initial value of chisqd, which assumes parameter perturbations are zero
     chisqdZero = objFnc(np.zeros_like(dnormlzdParamsSoln).T, normlzdSensMatrix, \
                         normlzdDefaultBiasesCol, metricsWeights, \
