@@ -147,35 +147,19 @@ module adg1_adg2_3d_luhar_pdf
 
     integer :: j  ! Loop index
 
-!$acc data copyin(wm(:ngrdcol,:nz), wp2(:ngrdcol,:nz), &
-!$acc um(:ngrdcol,:nz) , vm(:ngrdcol,:nz),             &
-!$acc sigma_sqd_w(:ngrdcol,:nz), Skw(:ngrdcol,:nz),    &
-!$acc sqrt_wp2(:ngrdcol,:nz), beta, mixt_frac_max_mag,   &
-!$acc rtm(:ngrdcol,:nz), thlm(:ngrdcol,:nz),      &
-!$acc rtp2(:ngrdcol,:nz), thlp2(:ngrdcol,:nz),    &
-!$acc wprtp(:ngrdcol,:nz), wpthlp(:ngrdcol,:nz),  &
-!$acc sclrm(ngrdcol,nz, sclr_dim), sclrp2(ngrdcol,nz, sclr_dim), &
-!$acc wpsclrp(ngrdcol,nz, sclr_dim), l_scalar_calc,         &
-!$acc w_1_n(ngrdcol,nz), w_2_n(ngrdcol,nz),         &
-!$acc up2(ngrdcol,nz), vp2(ngrdcol,nz),       &
-!$acc upwp(ngrdcol,nz), vpwp(ngrdcol,nz)  &
-!$acc ) copyout(mixt_frac(:ngrdcol,:nz), w_1(:ngrdcol,:nz),   &
-!$acc w_2(:ngrdcol,:nz), alpha_thl(:ngrdcol,:nz),      &
-!$acc varnce_w_2(:ngrdcol,:nz), varnce_w_1(:ngrdcol,:nz),  &
-!$acc rt_1(:ngrdcol,:nz), rt_2(:ngrdcol,:nz),         &
-!$acc u_1(:ngrdcol,:nz), u_2(:ngrdcol,:nz),         &
-!$acc v_1(:ngrdcol,:nz), v_2(:ngrdcol,:nz),         &
-!$acc thl_1(:ngrdcol,:nz), thl_2(:ngrdcol,:nz),        &
-!$acc varnce_rt_1(:ngrdcol,:nz), varnce_rt_2(:ngrdcol,:nz),  &
-!$acc varnce_thl_1(:ngrdcol,:nz), varnce_thl_2(:ngrdcol,:nz), &
-!$acc varnce_u_1(:ngrdcol,:nz), varnce_u_2(:ngrdcol,:nz), &
-!$acc varnce_v_1(:ngrdcol,:nz), varnce_v_2(:ngrdcol,:nz), &
-!$acc alpha_rt(:ngrdcol,:nz), sigma_sqd_w(:ngrdcol,:nz),  &
-!$acc alpha_u(:ngrdcol,:nz), alpha_v(:ngrdcol,:nz),  &
-!$acc sclr_1(ngrdcol,nz, sclr_dim), sclr_2(ngrdcol,nz, sclr_dim),        &
-!$acc varnce_sclr_1(ngrdcol,nz, sclr_dim), varnce_sclr_2(ngrdcol,nz, sclr_dim), &
-!$acc alpha_sclr(ngrdcol,nz, sclr_dim)       &
-!$acc )
+    !$acc data create( w_1_n, w_2_n ) &
+    !$acc      copyin( wm, wp2, um , vm, &
+    !$acc              sigma_sqd_w, Skw, sqrt_wp2, &
+    !$acc              rtm, thlm, rtp2, thlp2, &
+    !$acc              wprtp, wpthlp, sclrm, sclrp2, &
+    !$acc              wpsclrp, up2, vp2, upwp, vpwp )  &
+    !$acc     copyout( mixt_frac, w_1, w_2, alpha_thl, &
+    !$acc              varnce_w_2, varnce_w_1, rt_1, rt_2, u_1, u_2, &
+    !$acc              v_1, v_2, thl_1, thl_2, varnce_rt_1, varnce_rt_2,  &
+    !$acc              varnce_thl_1, varnce_thl_2, varnce_u_1, varnce_u_2, &
+    !$acc              varnce_v_1, varnce_v_2, alpha_rt, sigma_sqd_w,  &
+    !$acc              alpha_u, alpha_v, sclr_1, sclr_2, &
+    !$acc              varnce_sclr_1, varnce_sclr_2, alpha_sclr )
     
     ! Calculate the mixture fraction and the PDF component means and variances
     ! of w.
@@ -231,7 +215,9 @@ module adg1_adg2_3d_luhar_pdf
                                            alpha_sclr(:,:,j) )              ! Out
        enddo ! i=1, sclr_dim
     endif ! l_scalar_calc
-!$acc end data
+
+    !$acc end data
+    
     return
 
   end subroutine ADG1_pdf_driver
