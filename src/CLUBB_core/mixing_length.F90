@@ -247,7 +247,20 @@ module mixing_length
  
     ! Initialize arrays and precalculate values for computational efficiency
 
-    !$acc data copyin(gr)
+!$acc data copyin(gr,mu(:ngrdcol), entrain_coef(:ngrdcol,:nz), &
+!$acc exp_mu_dzm(:ngrdcol,:nz),thv_ds(:ngrdcol,:nz), &
+!$acc thvm(:ngrdcol,:nz), grav_on_thvm(:ngrdcol,:nz), &
+!$acc exner(:ngrdcol,:nz), lv_coef(:ngrdcol,:nz),  &
+!$acc invrs_dzm_on_mu(:ngrdcol,:nz), rt_par_j_precalc(:ngrdcol,:nz),  &
+!$acc rtm(:ngrdcol,:nz), thlm(:ngrdcol,:nz),  &
+!$acc thl_par_j_precalc(:ngrdcol,:nz), rt_par_1(:ngrdcol,:nz),  &
+!$acc tl_par_1(:ngrdcol,:nz), thl_par_1(:ngrdcol,:nz),  &
+!$acc cape_incr_1(:ngrdcol,:nz), thv_par_1(:ngrdcol,:nz),  &
+!$acc s_par_1(:ngrdcol,:nz), p_in_pa(:,:), rc_par_1(:ngrdcol,:nz),  &
+!$acc rsatl_par_1(:ngrdcol,:nz), tke_i(:ngrdcol,:nz),  &
+!$acc dcape_dz_1(:ngrdcol,:nz), thvm(:ngrdcol,:), lscale_max(:ngrdcol)  &
+!$acc ) copyout(lscale_up(:ngrdcol,:nz),  &
+!$acc lscale_down(:ngrdcol,:nz), lscale(:ngrdcol,:))
     !$acc parallel loop gang vector collapse(2)
     do i = 1, ngrdcol
       do k = 1, nz

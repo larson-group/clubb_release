@@ -146,6 +146,36 @@ module adg1_adg2_3d_luhar_pdf
       w_2_n    ! Normalized mean of w (2nd PDF component)     [-]
 
     integer :: j  ! Loop index
+
+!$acc data copyin(wm(:ngrdcol,:nz), wp2(:ngrdcol,:nz), &
+!$acc um(:ngrdcol,:nz) , vm(:ngrdcol,:nz),             &
+!$acc sigma_sqd_w(:ngrdcol,:nz), Skw(:ngrdcol,:nz),    &
+!$acc sqrt_wp2(:ngrdcol,:nz), beta, mixt_frac_max_mag,   &
+!$acc rtm(:ngrdcol,:nz), thlm(:ngrdcol,:nz),      &
+!$acc rtp2(:ngrdcol,:nz), thlp2(:ngrdcol,:nz),    &
+!$acc wprtp(:ngrdcol,:nz), wpthlp(:ngrdcol,:nz),  &
+!$acc sclrm(ngrdcol,nz, sclr_dim), sclrp2(ngrdcol,nz, sclr_dim), &
+!$acc wpsclrp(ngrdcol,nz, sclr_dim), l_scalar_calc,         &
+!$acc w_1_n(ngrdcol,nz), w_2_n(ngrdcol,nz),         &
+!$acc up2(ngrdcol,nz), vp2(ngrdcol,nz),       &
+!$acc upwp(ngrdcol,nz), vpwp(ngrdcol,nz)  &
+!$acc ) copyout(mixt_frac(:ngrdcol,:nz), w_1(:ngrdcol,:nz),   &
+!$acc w_2(:ngrdcol,:nz), alpha_thl(:ngrdcol,:nz),      &
+!$acc varnce_w_2(:ngrdcol,:nz), varnce_w_1(:ngrdcol,:nz),  &
+!$acc rt_1(:ngrdcol,:nz), rt_2(:ngrdcol,:nz),         &
+!$acc u_1(:ngrdcol,:nz), u_2(:ngrdcol,:nz),         &
+!$acc v_1(:ngrdcol,:nz), v_2(:ngrdcol,:nz),         &
+!$acc thl_1(:ngrdcol,:nz), thl_2(:ngrdcol,:nz),        &
+!$acc varnce_rt_1(:ngrdcol,:nz), varnce_rt_2(:ngrdcol,:nz),  &
+!$acc varnce_thl_1(:ngrdcol,:nz), varnce_thl_2(:ngrdcol,:nz), &
+!$acc varnce_u_1(:ngrdcol,:nz), varnce_u_2(:ngrdcol,:nz), &
+!$acc varnce_v_1(:ngrdcol,:nz), varnce_v_2(:ngrdcol,:nz), &
+!$acc alpha_rt(:ngrdcol,:nz), sigma_sqd_w(:ngrdcol,:nz),  &
+!$acc alpha_u(:ngrdcol,:nz), alpha_v(:ngrdcol,:nz),  &
+!$acc sclr_1(ngrdcol,nz, sclr_dim), sclr_2(ngrdcol,nz, sclr_dim),        &
+!$acc varnce_sclr_1(ngrdcol,nz, sclr_dim), varnce_sclr_2(ngrdcol,nz, sclr_dim), &
+!$acc alpha_sclr(ngrdcol,nz, sclr_dim)       &
+!$acc )
     
     ! Calculate the mixture fraction and the PDF component means and variances
     ! of w.
@@ -201,7 +231,7 @@ module adg1_adg2_3d_luhar_pdf
                                            alpha_sclr(:,:,j) )              ! Out
        enddo ! i=1, sclr_dim
     endif ! l_scalar_calc
-
+!$acc end data
     return
 
   end subroutine ADG1_pdf_driver
