@@ -1,0 +1,128 @@
+commit a0f5313ee697be2153704f9d4b9775cde7d717a1
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Jan 24 12:42:04 2023 -0600
+
+    Fixing error causing GPU code not to run. Some variables to be copied were labelled as (ngrdcol,nz) when it should be (:ngrdcol,:nz). I've just removed the data length specifiers completely since they are not neccesary in general.
+
+commit 95217702784b7eddc848ef0d6f7ee705c10d7752
+Author: supreethms1809 <supreethms1809@gmail.com>
+Date:   Mon Jan 23 19:29:22 2023 -0700
+
+    Adding OpenACC data directives for mixing length and adg routines
+    
+    OpenACC structured data regions are added to optimize the data transfers
+    between CPU and GPU. These data regions will converted to unstrucutred
+    data region in the later optimization phase.
+    Results are bit for bit.
+
+commit f9eb64fb27f4b0515602e0f46848fc644035cfaf
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Fri Jan 20 17:31:54 2023 +0100
+
+    Adds to tuner error bars on bias removal (arrow) plots
+    
+    and also adds bar graphs that show how each parameter contributes to the bias removal.
+
+commit dda5e8c57edb41b73340c0f9578d7c327b18e076
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Jan 19 12:36:44 2023 -0600
+
+    Adding tridiag_lu solver (#1056)
+    
+    * Adding tridiag_lu solver
+    
+    * Changing low to lower in tridiag_lu and penta_lu, also fixing up some spacing.
+    
+    * Making variables that represent matrix solutions more consistently named.
+
+commit e21e2713eab0f3f228189a4b407c80d4f241038f
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Jan 19 12:36:21 2023 -0600
+
+    Breaking up column loop in mono_flux_limiter. This may not be the final form for GPUization, but it's definitely a start, no longer do we have to copy single column variables to multicolumn ones anywhere. (#1051)
+
+commit 7f1decd0252e0b4d80f4b3873b0b48b6d3ec8631
+Author: supreethms1809 <supreethms1809@gmail.com>
+Date:   Wed Jan 18 15:36:56 2023 -0700
+
+    Restructuring and Porting of Compute_mixing_length subroutine(Phase 2) (#1054)
+    
+    * Restructuring and Porting of Compute_mixing_length subroutine(Phase 2)
+    
+    Restructure: sat_mixrat_liq_2D_acc is being directly called instead of
+    calling the 1D version inside the column loop. Changing sat_mixrat_liq_2D_acc
+    to a subroutine from a function and adding output array, start_index as
+    additional argument. This is a workaround for passing sub-arrays. The OpenACC
+    doen't like the sub-arrays being passed and fails the validation.
+    
+    Porting: OpenACC directives are added inside sat_mixrat_liq_2D_acc for porting
+    
+    Validation: Answers are Bit for Bit with arm-multicolumn case + nvhpc compiler
+    
+    * Fix for compilation issues
+    
+    Issue 1: Missed out declaring 'start_index' while intergrating the
+    change
+    
+    Issue 2: The use of error_code module and the procedures inside it
+    causes OpenACC compilation issues when run on the device.
+    
+    * Removing the sat_mixrat_liq_acc and sat_mixrat_liq_2D_acc, making the normal sat_mixrat_liq work for all current use cases, and making the other versions of sat_mixrat_liq (bolton,gfdl,lookup) functional with OPENACC.
+    
+    Co-authored-by: huebler <huebler@uwm.edu>
+
+commit 88b8239840f581d76610aa630dab6219d64d68be
+Author: supreethms1809 <supreethms1809@gmail.com>
+Date:   Thu Jan 12 11:54:15 2023 -0700
+
+    Restructuring and Porting of Compute_mixing_length subroutine(Phase 1) (#1052)
+    
+    * Restructuring and Porting of Compute_mixing_length subroutine(Phase 1)
+    
+    Restructure: The compute_mixing_length is one of the top most routine taking 35-50%
+    of the total time in a single timestep. The subroutine has been restructured to
+    push the i-loop further down to extract vectorization and parallelization.
+    The restructuring also involves introduction of sat_mixrat_liq_acc routines to
+    extract parallelism when called inside a OpenACC parallel region.
+    
+    Porting: OpenACC directives are inserted to port the restructured compute_mixing_length
+    code on to the GPUs. This port is currently unoptimized and there is still room for improvement.
+    
+    NOTE: Currently, l_sat_mixrat_lookup = false and saturation_formula = saturation_flatau
+    (Earthworks config options) case is supported on OpenACC build. Any other options works
+    on CPUs as usual. OpenACC declare create directives are inserted in model_flags and
+    constants_clubb, as these module variables are used inside the saturation routines.
+    
+    * Added debug message about only supporting
+    l_sat_mixrat_lookup = false and saturation_formula = saturation_flatau
+     on GPUs
+    Answers are Bit for Bit with arm-multicolumn case + nvhpc compiler.
+    
+    * Changing CLUBB debug level 1 to 0 for the saturation formula support
+    running on GPUs
+    
+    * Changing indentation to make gfortran happy, it wants ifdefs to start at the beginning of the line.
+    
+    * Adding use statements for error checks and printouts, also making the errors set err_code to clubb_fatal_error.
+    
+    Co-authored-by: huebler <huebler@uwm.edu>
+
+commit 6d5d5f573f3866d5d66b028d829342026e569099
+Author: huebler <huebler@uwm.edu>
+Date:   Mon Jan 9 17:09:29 2023 -0600
+
+    Pushing column loop into lapack wrap.
+
+commit ef9acf81f5828bb0d26258d7e2ae2e0ad5959bb5
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Jan 3 14:48:53 2023 -0600
+
+    Adding config script to compile with openacc using nvhpc.
+
+commit 2f930309d0a901cb4ba97ecd7766e81141b29993
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Jan 2 11:57:25 2023 +0100
+
+    Adds to tuner code for min dp for stubborn parameters
+    
+    and adds code to start adding error bars on arrow plots.
