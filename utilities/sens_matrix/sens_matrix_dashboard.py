@@ -17,7 +17,8 @@ def main():
     import numpy as np
     import pdb
     import sklearn
-    from plotly.figure_factory import create_quiver
+    import plotly.figure_factory as ff
+    #from plotly.figure_factory import create_quiver
     from itertools import chain
 
     from analyze_sensitivity_matrix import \
@@ -77,7 +78,7 @@ def main():
     #print("normlzdSensMatrix=", normlzdSensMatrix)
     #print("normlzdSensMatrix@dnormlzdParamsSoln=", normlzdSensMatrix @ dnormlzdParamsSoln)
 
-    normlzdCurvMatrix = \
+    normlzdCurvMatrix, threeDotFig = \
         constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
                                    metricsWeights, obsMetricValsCol, magParamValsRow, \
                                    sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
@@ -299,7 +300,30 @@ def main():
     # Now plot an arrow for each region that points from default-run bias to new bias after tuning
     xArrow = np.arange(len(metricsNamesOrdered)) # x-coordinate of arrows
     yArrow = -defaultBiasesCol[metricsSensOrdered,0]/np.abs(obsMetricValsCol[metricsSensOrdered,0])
-    gap = 0.1  # horizontal spacing between arrows
+    gap = 0.2  # horizontal spacing between arrows
+    # Plot error bar on prediction arrow.  Bar runs between 0- and 2x-curvature solns.
+    for i, item in enumerate(metricsNamesOrdered):
+        biasesOrderFig.add_annotation(
+        x =  xArrow[i]-gap,  # ith arrow's head
+        # ith arrow's head:
+        y = (-defaultBiasesApproxNonlinNoCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+        ax =  xArrow[i]-gap,  # ith arrow's head
+        # ith arrow's head:
+        ay = (-defaultBiasesApproxNonlin2xCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+        font = dict(family="bold", color="blue", size=30),        
+        showarrow=True,
+        xref='x',
+        yref='y',
+        axref='x',
+        ayref='y',
+        text='',  # blank because we want only the arrow
+        arrowhead=0,
+        arrowsize=1,
+        arrowwidth=6,
+        arrowcolor='lightskyblue' # https://stackoverflow.com/questions/72496150/user-friendly-names-for-plotly-css-colors
+	    )
+    #biasesOrderFig.add_scatter(x=df.index, y=df.columns, line_color='pink')  # attempt to make black dot appear on top
+    biasesOrderFig.update_traces(mode='markers', line_color='black')
     # Plot arrows showing the tuner's nonlinear predicted bias removal
     for i, item in enumerate(metricsNamesOrdered):
         biasesOrderFig.add_annotation(
@@ -347,26 +371,28 @@ def main():
         arrowcolor='red' #,
         #opacity=0.0
 	    )
-    # Plot 0-curvature error bars on prediction arrow
-    for i, item in enumerate(metricsNamesOrdered):
-        biasesOrderFig.add_annotation(
-        x =  xArrow[i]-gap,  # ith arrow's head
-        # ith arrow's head:
-        y = (-defaultBiasesApproxNonlinNoCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
-        text ='-',  # blank because we want only the arrow
-        font = dict(family="bold", color="blue", size=30),        
-        showarrow=False
-	    )
-    # Plot 2x-curvature error bars on prediction arrow
-    for i, item in enumerate(metricsNamesOrdered):
-        biasesOrderFig.add_annotation(
-        x =  xArrow[i]-gap,  # ith arrow's head
-        # ith arrow's head:
-        y = (-defaultBiasesApproxNonlin2xCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
-        text ='-',  # blank because we want only the arrow
-        font = dict(family="bold", color="blue", size=30),        
-        showarrow=False
-	    )               
+#     # Plot 0-curvature error bars on prediction arrow
+#     for i, item in enumerate(metricsNamesOrdered):
+#         biasesOrderFig.add_annotation(
+#         x =  xArrow[i]-gap,  # ith arrow's head
+#         # ith arrow's head:
+#         y = (-defaultBiasesApproxNonlinNoCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+#         text ='-',  # plot horizontal line
+#         font = dict(family="bold", color="blue", size=30),        
+#         showarrow=False
+# 	    )
+#     # Plot 2x-curvature error bars on prediction arrow
+#     for i, item in enumerate(metricsNamesOrdered):
+#         biasesOrderFig.add_annotation(
+#         x =  xArrow[i]-gap,  # ith arrow's head
+#         # ith arrow's head:
+#         y = (-defaultBiasesApproxNonlin2xCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(obsMetricValsCol[metricsSensOrdered[i],0]),
+#         text ='-',  # plot horizontal line
+#         font = dict(family="bold", color="blue", size=30),        
+#         showarrow=False
+# 	    )               
+
+
     #biasesOrderFig.add_trace(go.Scatter(x=xArrow, y=yArrow,
     #                      name='Region of improvement', mode='markers',
     #                       marker=dict(color='green', size=14)))
@@ -442,7 +468,7 @@ def main():
                       index=metricsNamesOrdered,
                       columns=paramsNames)
     biasContrNLOrderFig = px.bar(df, x=df.index, y=df.columns,
-              title = """Nonlinear contributions to actual removal of regional biases""")
+              title = """Linear + nonlinear contributions to actual removal of regional biases""")
     biasContrNLOrderFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
     biasContrNLOrderFig.update_xaxes(title="Metric and region")
     biasContrNLOrderFig.update_layout(hovermode="x")
@@ -450,6 +476,34 @@ def main():
     biasContrNLOrderFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
     biasContrNLOrderFig.update_layout( width=800, height=500  )
 
+
+    # Plot a scatterplot of default-simulation bias and SVD approximation of that bias.
+    # Each column tells us how all metrics vary with a single parameter.
+    biasSensDirMatrix = np.concatenate((defaultBiasesApproxNonlin/np.abs(obsMetricValsCol),
+                                       (-defaultBiasesCol/np.abs(obsMetricValsCol))), axis=1)
+    biasAndParamsNames = ["biasApproxNonlin", "bias"]
+    #biasAndParamsNames = np.append(["bias", "bias_approx_pc"], paramsNames)
+    df = pd.DataFrame(biasSensDirMatrix,
+                  index=metricsNames,
+                  columns=biasAndParamsNames)
+    biasSensDirMatrixScatter = px.scatter(df, x="biasApproxNonlin", y="bias", 
+                                          text=metricsNames, title="Bias approx vs bias" )
+    biasSensDirMatrixOneOneLine = px.line(df, x="bias", y="bias")
+    #biasSensDirMatrixOneMOneLine = px.line(df, x="bias", y=-df.loc[:,"bias"])
+    biasSensDirMatrixScatterFig = go.Figure(data=biasSensDirMatrixScatter.data
+                                              + biasSensDirMatrixOneOneLine.data)
+    #biasRange = (max(df.loc[:,"bias"]), min(df.loc[:,"bias"]))
+    #biasSensDirMatrixScatterFig.add_trace(go.Scatter(x=biasRange, y=biasRange, fill='tozeroy',
+    #                           name='Region of improvement', mode='none',
+    #                           fillcolor='rgba(253,253,150,0.7)'))
+    biasSensDirMatrixScatterFig.update_xaxes(title="(defaultBiasesApproxNonlin)/obs")
+    biasSensDirMatrixScatterFig.update_yaxes(title="-defaultBiasesCol/obs")   
+    biasSensDirMatrixScatterFig.update_traces(textposition='top center')
+    biasSensDirMatrixScatterFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=2,zerolinecolor='lightblue') # Plot x axis
+    biasSensDirMatrixScatterFig.update_layout( width=800, height=500  )
+    biasSensDirMatrixScatterFig.update_layout(title="Bias approx vs bias")
+    #normlzdSensMatrixColsFig.layout.legend.title = "Parameter"
+    #pdb.set_trace()
 
 
     # Plot a scatterplot of default-simulation bias and SVD approximation of that bias.
@@ -535,13 +589,14 @@ def main():
     #df = pd.DataFrame({'Max abs normlzd sensitivity':
     #                    -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0])*np.linalg.norm(normlzdWeightedSensMatrix, axis=1), # sum of row elements
                        'default tuning': -defaultBiasesCol[:,0]/np.abs(obsMetricValsCol[:,0]),
-                       'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(obsMetricValsCol[:,0])
+    #                   'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(obsMetricValsCol[:,0])
                       }, index=metricsNames )
     biasesVsSensFig = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
-                                 text=metricsNames, title = """Regional biases with default and revised tuning, versus sensitivity.""" )
+                                 text=metricsNames, title = """Regional biases vs. RMSE(sensitivity).""" )
     biasesVsSensFig.update_yaxes(title="Regional biases")
     biasesVsSensFig.update_xaxes(title="Sensitivity of regional metrics to parameter changes")
     biasesVsSensFig.update_layout(hovermode="x")
+    biasesVsSensFig.update_layout( width=1000, height=500  )
 
     # Compute length of arrows between default and tuned biases
     #metricsNamesPadded = ",,".join(metricsNames).split(",")
@@ -804,22 +859,124 @@ def main():
     paramsFig.update_layout( width=1000, height=500  )
 
     #pdb.set_trace()
+        
+    cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrix )
+    roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
+    df = pd.DataFrame(roundedCosAnglesMatrix,
+                  index=metricsNames,
+                  columns=metricsNames)
+    upTriMask = np.logical_not( np.tril(np.ones_like(roundedCosAnglesMatrix, dtype=bool)) )
+    df_mask = df.mask(upTriMask)
+    #maskedRoundedCosAnglesMatrix = np.ma.masked_array(roundedCosAnglesMatrix, mask=upTriMask)
+    #maskedRoundedCosAnglesMatrix.filled(np.nan)
+    #print("maskedAngles =", maskedRoundedCosAnglesMatrix)
+    #print("cosAnglesMatrix =", cosAnglesMatrix)
+    #print("upTriMask =", upTriMask)
+    corrArrayFig = ff.create_annotated_heatmap(
+                   z=df_mask.to_numpy(),
+                   x=df_mask.columns.tolist(),
+                   y=df_mask.columns.tolist(),
+                   colorscale=px.colors.diverging.balance,
+                   showscale=True, ygap=1, xgap=1
+                   )
+    #corrArrayFig = go.Figure(data=go.Heatmap(
+    #                z=roundedCosAnglesMatrix,  
+    ##                labels=dict(x="Metrics", y="Metrics")x=['SWCF_GLB', 'SWCF_DYCOMS', 'SWCF_HAWAII', 'SWCF_VOCAL', 'SWCF_VOCAL_near', 'SWCF_LBA', 'SWCF_WP', 'SWCF_EP', 'SWCF_NP', 'SWCF_SP', 'SWCF_CAF', 'SWCF_Nambian', 'SWCF_Nambian_near', 'LWCF_GLB', 'PRECT_GLB'])
+    ##                 labels=dict(x="hullo")
+    #                x=metricsNames.tolist(),
+    #                y=metricsNames.tolist() )
+    ##                text_auto=True  )
+    #                )
+    #    corrArrayFig = px.imshow(
+    #                   img=roundedCosAnglesMatrix,
+    #                   x=metricsNames.tolist(),
+    #                   y=metricsNames.tolist(),
+    #                   color_continuous_scale=px.colors.diverging.balance
+    #                    )
+    #    corrArrayFig.update_traces(text=roundedCosAnglesMatrix)
+    corrArrayFig.update_xaxes(side="bottom")
+    corrArrayFig.update_layout(
+    title_text='cos(angle) among metrics (i.e., rows of sens matrix)', 
+    title_x=0.5, 
+    width=800, 
+    height=700,
+    xaxis_showgrid=False,
+    yaxis_showgrid=False,
+    xaxis_zeroline=False,
+    yaxis_zeroline=False,
+    yaxis_autorange='reversed',
+    template='plotly_white'
+    )
+
+
+    cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrix )
+    invrsCosFactorMinusMatrix = np.power( 2. * ( 1. - cosAnglesMatrix ) , -0.5 )
+    invrsCosFactorPlusMatrix = np.power( 2. * ( 1. + cosAnglesMatrix ) , -0.5 )
+    dbOnAbsSensVector = \
+        -defaultBiasesCol/np.abs(obsMetricValsCol) \
+            / np.linalg.norm(normlzdSensMatrix, axis=1).reshape(-1, 1)
+    dbOnAbsSensMatrix1 = np.ones((len(metricsNames),1)) @ dbOnAbsSensVector.T
+    dbOnAbsSensMatrix2 = dbOnAbsSensVector @ np.ones((1,len(metricsNames)) )
+    dpMin2PtMinusMatrix = invrsCosFactorMinusMatrix * \
+        np.abs( dbOnAbsSensMatrix2 - dbOnAbsSensMatrix1 )
+    dpMin2PtPlusMatrix = invrsCosFactorPlusMatrix * \
+        np.abs( dbOnAbsSensMatrix2 + dbOnAbsSensMatrix1 )
+    dpMin2PtMatrix = np.maximum( dpMin2PtMinusMatrix, dpMin2PtPlusMatrix )
+    roundedDpMin2PtMatrix = np.around(dpMin2PtMatrix, decimals=2)
+    dpMin2PtMatrix = np.fill_diagonal(roundedDpMin2PtMatrix, np.nan)
+    df = pd.DataFrame(roundedDpMin2PtMatrix,
+                  index=metricsNames,
+                  columns=metricsNames)
+    #upTriMask = np.logical_not( np.tril(np.ones_like(roundedDpMin2PtMatrix, dtype=bool)) )
+    upTriMask = np.triu(np.ones_like(roundedDpMin2PtMatrix, dtype=bool))
+    df_mask = df.mask(upTriMask)
+    dpMin2PtFig = ff.create_annotated_heatmap(
+                   z=df_mask.to_numpy(),
+                   x=df_mask.columns.tolist(),
+                   y=df_mask.columns.tolist(),
+                   colorscale=px.colors.sequential.Bluered,
+                   showscale=True, ygap=1, xgap=1
+                   )
+    dpMin2PtFig.update_xaxes(side="bottom")
+    dpMin2PtFig.update_layout(
+    title_text='dpMin between 2 metrics (i.e., rows of sens matrix)', 
+    title_x=0.5, 
+    width=800, 
+    height=700,
+    xaxis_showgrid=False,
+    yaxis_showgrid=False,
+    xaxis_zeroline=False,
+    yaxis_zeroline=False,
+    yaxis_autorange='reversed',
+    template='plotly_white'
+    )
+
+
+
 
     sensMatrixDashboard.layout = html.Div(children=[
         html.H1(children='Sensitivity matrix diagnostics'),
 
         html.Div(children=''' '''),
         
-        dcc.Graph( id='biasesOrderFig', figure=biasesOrderFig ),
         dcc.Graph( id='paramsBar', figure=paramsBar ),
+        dcc.Graph( id='biasesOrderFig', figure=biasesOrderFig ),
+        dcc.Graph( id='biasContrNLOrderFig', figure=biasContrNLOrderFig ),
+        
         #dcc.Graph( id='paramsFig', figure=paramsFig ),
         #dcc.Graph( id='biasesFig', figure=biasesFig ),
-        dcc.Graph( id='biasContrOrderFig', figure=biasContrOrderFig ),
-        dcc.Graph( id='biasContrNLOrderFig', figure=biasContrNLOrderFig ),
+        #dcc.Graph( id='biasContrOrderFig', figure=biasContrOrderFig ),
+
+        dcc.Graph( id='biasesVsSensFig', figure=biasesVsSensFig ),
+        dcc.Graph( id='corrArrayFig', figure=corrArrayFig ),
+        
+
+        dcc.Graph( id='biasSensDirScatterFig', figure=biasSensDirMatrixScatterFig ),
+        dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ),
+        dcc.Graph( id='threeDotFig', figure=threeDotFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
         dcc.Graph( id='dpMinScatterFig', figure=dpMinMatrixScatterFig ),
         dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ),
-        dcc.Graph( id='biasesVsSensFig', figure=biasesVsSensFig ),
         #dcc.Graph( id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig ),
         dcc.Graph( id='residVsBiasFig', figure=residVsBiasFig ),
         dcc.Graph( id='diffBiasesVsSensFig', figure=diffBiasesVsSensFig ),
@@ -957,6 +1114,8 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
     and maximum values of parameters.
     """
     import numpy as np
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
     import sys
     import netCDF4
     #import matplotlib.pyplot as plt
@@ -1108,9 +1267,58 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
 #            axs[row, col].set_ylabel(metricsNames[row])
 #            fig.show()
 
-    #pdb.set_trace()
+    
+    # numParams = len(paramsNames)
+    # numMetrics = len(metricsNames)
+    threeDotFig = make_subplots( rows=numMetrics, cols=numParams,
+                                shared_xaxes=True
+                                #horizontal_spacing = 0.1/numParams,
+                                #vertical_spacing = 0.1/numMetrics
+                                )    
+    for arrayCol in np.arange(numParams):
+        for arrayRow in np.arange(numMetrics):
 
-    return normlzdCurvMatrix
+            paramVals = [defaultParamValsRow[0][arrayCol], 
+                         sens1ParamValsRow[0][arrayCol], 
+                         sens2ParamValsRow[0][arrayCol]]
+            metricVals = [defaultMetricValsMatrix[arrayRow][arrayCol], 
+                          sens1MetricValsMatrix[arrayRow][arrayCol],
+                          sens2MetricValsMatrix[arrayRow][arrayCol]]
+
+
+            threeDotFig.add_trace(
+                go.Scatter(x=paramVals, y=metricVals, 
+                               mode='markers',
+                               marker=dict(color='black', size=4)), 
+                           row=arrayRow+1, 
+                           col=arrayCol+1
+                                  )
+            #axs[row, col].plot( paramVals, metricVals, marker=".", ls="" )
+
+            threeObsMetricVals = np.squeeze(obsMetricValsCol[arrayRow][0]*np.ones((3,1)))
+            #threeObsMetricValsList = threeObsMetricVals.tolist()
+            #print("obsMetricVals=", threeObsMetricValsList)
+            #print("paramVals=", paramVals)            
+            threeDotFig.add_trace(
+                go.Scatter(x=paramVals, y=threeObsMetricVals, 
+                               mode='lines',
+                               line=dict(color='red', width=2)),
+                           row=arrayRow+1, 
+                           col=arrayCol+1
+                                  )
+            if (arrayRow == numMetrics-1):  # Put params labels only along bottom of plot
+                threeDotFig.update_xaxes(title_text=paramsNames[arrayCol], row=arrayRow+1, col=arrayCol+1)
+            if (arrayCol == 0): # Insert metrics label only along left edge of plot
+                threeDotFig.update_yaxes(title_text=metricsNames[arrayRow], row=arrayRow+1, col=arrayCol+1)
+            threeDotFig.update_layout(showlegend=False,
+                    title_text="Simulated metric values vs. parameter values for each metric", 
+                    height=2500)
+            #axs[row, col].plot( paramVals, obsMetricValsCol[row][0] * np.ones((3,1)), color="r" )
+            #axs[row, col].set_xlabel(paramsNames[col])
+            #axs[row, col].set_ylabel(metricsNames[row])
+            #fig.show()
+
+    return ( normlzdCurvMatrix, threeDotFig )
 
 
 def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, paramsScales,
@@ -1408,6 +1616,29 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
     #pdb.set_trace()
 
     return ( defaultBiasesCol, sensMatrix, normlzdWeightedSensMatrix )
+
+def calcMatrixVectorAngles( matrix, row ):
+    '''Calculate cos(angle) between one row of a matrix and all rows of the same matrix.
+       Returns a column vector, with length equal to the number of rows in the matrix.'''
+    
+    import sklearn
+    
+    normed_matrix = sklearn.preprocessing.normalize( matrix, axis=1, norm='l2' )
+    
+    cosAngles = normed_matrix @ normed_matrix[row, :].T
+    
+    return cosAngles
+
+def calcMatrixAngles( matrix ):
+    '''Calculate cos(angle) among all rows of the same matrix.'''
+    
+    import sklearn
+    
+    normed_matrix = sklearn.preprocessing.normalize( matrix, axis=1, norm='l2' )
+    
+    cosAnglesMatrix = normed_matrix @ normed_matrix.T
+    
+    return cosAnglesMatrix
 
 def createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, obsMetricValsCol, metricsNames, paramsNames):
 
