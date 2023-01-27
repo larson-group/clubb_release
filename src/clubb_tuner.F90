@@ -671,6 +671,10 @@ subroutine logical_flags_driver( current_date, current_time )
     l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
                                     ! eliminates spurious drying tendencies at model top
 
+  logical :: &
+    l_modify_ic_for_cnvg_test ! Flag to activate modifications on initial condition 
+                              ! for convergence test 
+
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
     l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
@@ -685,7 +689,8 @@ subroutine logical_flags_driver( current_date, current_time )
     l_trapezoidal_rule_zm, l_call_pdf_closure_twice, l_Lscale_plume_centered, &
     l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
     l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
-    l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp
+    l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, &
+    l_modify_ic_for_cnvg_test 
 
   ! ---- Begin Code ----
 
@@ -744,7 +749,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_mono_flux_lim_rtm, & ! Intent(out)
                                        l_mono_flux_lim_um, & ! Intent(out)
                                        l_mono_flux_lim_vm, & ! Intent(out)
-                                       l_mono_flux_lim_spikefix ) ! Intent(out)
+                                       l_mono_flux_lim_spikefix, & ! Intent(out) 
+                                       l_modify_ic_for_cnvg_test ) ! Intent(out)
 
   ! Determine the current flags
   model_flags_default(1) = l_godunov_upwind_wpxp_ta

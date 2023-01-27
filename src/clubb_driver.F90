@@ -843,6 +843,9 @@ module clubb_driver
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
+    logical :: &
+      l_modify_ic_for_cnvg_test ! Flag to activate modifications on initial condition 
+                                ! for convergence test
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -892,7 +895,8 @@ module clubb_driver
       l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
       l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, &
       l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
-      l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix
+      l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, & 
+      l_modify_ic_for_cnvg_test 
 
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -1058,7 +1062,8 @@ module clubb_driver
                                          l_mono_flux_lim_rtm, & ! Intent(out)
                                          l_mono_flux_lim_um, & ! Intent(out)
                                          l_mono_flux_lim_vm, & ! Intent(out)
-                                         l_mono_flux_lim_spikefix ) ! Intent(out)
+                                         l_mono_flux_lim_spikefix, & ! Intent(out) 
+                                         l_modify_ic_for_cnvg_test ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1453,6 +1458,7 @@ module clubb_driver
                                              l_mono_flux_lim_um, & ! Intent(in)
                                              l_mono_flux_lim_vm, & ! Intent(in)
                                              l_mono_flux_lim_spikefix, & ! Intent(in)
+                                             l_modify_ic_for_cnvg_test, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
@@ -1975,6 +1981,7 @@ module clubb_driver
            ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
              clubb_config_flags%l_uv_nudge,                      & ! Intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! Intent(in)
+             clubb_config_flags%l_modify_ic_for_cnvg_test,       & ! Intent(in) 
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm(1,:), & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
              thvm, p_in_Pa,                                      & ! Intent(inout)
@@ -2005,6 +2012,7 @@ module clubb_driver
            ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
              clubb_config_flags%l_uv_nudge,                      & ! Intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! Intent(in)
+             clubb_config_flags%l_modify_ic_for_cnvg_test,       & ! Intent(in) 
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm(1,:), & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
              thvm, p_in_Pa,                                      & ! Intent(inout)
@@ -2979,6 +2987,7 @@ module clubb_driver
              ( gr, iunit, forcings_file_path, p_sfc, zm_init, &
                l_uv_nudge, &
                l_tke_aniso, &
+               l_modify_ic_for_cnvg_test, & 
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -3088,6 +3097,10 @@ module clubb_driver
       l_uv_nudge, & ! For wind speed nudging
       l_tke_aniso   ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
+    logical, intent(in) :: &
+      l_modify_ic_for_cnvg_test ! Flag to activate modifications on initial condition 
+                                ! for convergence test 
+
     ! Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
       thlm,            & ! Grid mean of liquid water pot. temp               [K] 
@@ -3154,6 +3167,7 @@ module clubb_driver
 
     ! Read sounding information
     call read_sounding( gr, iunit, runtype, p_sfc, zm_init, &        ! Intent(in) 
+                        l_modify_ic_for_cnvg_test, & ! Intent(in)
                         thlm, theta_type, rtm, um, vm, ug, vg, & ! Intent(out)
                         alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
