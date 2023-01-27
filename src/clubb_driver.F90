@@ -409,9 +409,7 @@ module clubb_driver
       vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
       up3,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
       vp3,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
-      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
       wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
-      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
       wpthlp,  & ! w'th_l' (momentum levels)                      [(m/s) K]
       rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
       rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
@@ -421,13 +419,16 @@ module clubb_driver
       wp2        ! w'^2 (momentum levels)                         [m^2/s^2]
     
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      thvm,   & ! Virtual potential temperature                        [K]
+      exner,      & ! Exner function (thermodynamic levels)       [-]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
       rcm,      & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
       delta_zm
     
     real( kind = core_rknd ), dimension(:), allocatable :: &
       p_in_Pa,    & ! Air pressure (thermodynamic levels)         [Pa]
-      exner,      & ! Exner function (thermodynamic levels)       [-]
       cloud_frac, & ! cloud fraction (thermodynamic levels)       [-]
       wpthvp,     & ! < w' th_v' > (momentum levels)              [kg/kg K]
       wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)       [m^2/s^2 K]
@@ -445,7 +446,8 @@ module clubb_driver
       wp2vp2        ! w'^2 v'^2 (momentum levels)                 [m^4/s^4]
 
     real( kind = core_rknd ), dimension(:,:), allocatable ::  &
-      rho_ds_zt  ! Dry, static density on thermo. levels      [kg/m^3]
+      rho_ds_zt,  & ! Dry, static density on thermo. levels      [kg/m^3]
+      thv_ds_zt     ! Dry, base-state theta_v on thermo levs.    [K]
     
     real( kind = core_rknd ), dimension(:), allocatable ::  &
       wm_zm,           & ! vertical mean wind comp. on momentum levs  [m/s]
@@ -455,8 +457,7 @@ module clubb_driver
       rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
       invrs_rho_ds_zm, & ! Inverse dry, static density on m-levs.     [m^3/kg]
       invrs_rho_ds_zt, & ! Inverse dry, static density on thermo levs.[m^3/kg]
-      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs.  [K]
-      thv_ds_zt          ! Dry, base-state theta_v on thermo levs.    [K]
+      thv_ds_zm          ! Dry, base-state theta_v on momentum levs.  [K]
 
     real( kind = core_rknd ), dimension(:), allocatable ::  &
       thlm_forcing,    & ! liq. wat. pot. temp. forcing (thermo. levs)[K/s]
@@ -493,7 +494,6 @@ module clubb_driver
     real( kind = core_rknd ), dimension(:), allocatable :: &
       Ncm,    & ! Mean cloud droplet concentration, <N_c> (t-levs.)    [num/kg]
       Nccnm,  & ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
-      thvm,   & ! Virtual potential temperature                        [K]
       em,     & ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
       tau_zm, & ! Eddy dissipation time scale on momentum levels       [s]
       tau_zt, & ! Eddy dissipation time scale on thermodynamic levels  [s]
@@ -1522,8 +1522,8 @@ module clubb_driver
     allocate( vp2(1:gr%nz) )
     allocate( vp3(1:gr%nz) )
 
-    allocate( thlm(1:gr%nz) )      ! liquid potential temperature
-    allocate( rtm(1:gr%nz) )       ! total water mixing ratio
+    allocate( thlm(1,1:gr%nz) )      ! liquid potential temperature
+    allocate( rtm(1,1:gr%nz) )       ! total water mixing ratio
     allocate( wprtp(1:gr%nz) )     ! w'rt'
     allocate( wpthlp(1:gr%nz) )    ! w'thl'
     allocate( wprcp(1:gr%nz) )     ! w'rc'
@@ -1538,7 +1538,7 @@ module clubb_driver
     allocate( rtpthlp(1:gr%nz) )   ! rt'thlp'
 
     allocate( p_in_Pa(1:gr%nz) )         ! pressure (pascals)
-    allocate( exner(1:gr%nz) )           ! exner function
+    allocate( exner(1,1:gr%nz) )           ! exner function
     allocate( rho(1:gr%nz) )             ! density: t points
     allocate( rho_zm(1:gr%nz) )          ! density: m points
     allocate( rho_ds_zm(1:gr%nz) )       ! dry, static density: m-levs
@@ -1546,7 +1546,7 @@ module clubb_driver
     allocate( invrs_rho_ds_zm(1:gr%nz) ) ! inv. dry, static density: m-levs
     allocate( invrs_rho_ds_zt(1:gr%nz) ) ! inv. dry, static density: t-levs
     allocate( thv_ds_zm(1:gr%nz) )       ! dry, base-state theta_v: m-levs
-    allocate( thv_ds_zt(1:gr%nz) )       ! dry, base-state theta_v: t-levs
+    allocate( thv_ds_zt(1,1:gr%nz) )       ! dry, base-state theta_v: t-levs
 
     allocate( thlm_forcing(1:gr%nz) )    ! thlm ls forcing
     allocate( rtm_forcing(1:gr%nz) )     ! rtm ls forcing
@@ -1603,7 +1603,7 @@ module clubb_driver
     allocate( vm_ref(1:gr%nz) )         ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
     allocate( thlm_ref(1:gr%nz) )       ! Reference liquid water potential for nudging
     allocate( rtm_ref(1:gr%nz) )        ! Reference total water mixing ratio for nudging
-    allocate( thvm(1:gr%nz) )           ! Virtual potential temperature
+    allocate( thvm(1,1:gr%nz) )           ! Virtual potential temperature
     allocate( radht(1:gr%nz) )          ! SW + LW heating rate
     allocate( Frad(1:gr%nz) )           ! radiative flux (momentum point)
     allocate( Frad_SW_up(1:gr%nz) )
@@ -1672,8 +1672,8 @@ module clubb_driver
     vp2(1:gr%nz)     = w_tol_sqd     ! v'^2
     vp3(1:gr%nz)     = zero          ! v'^3
 
-    thlm(1:gr%nz)    = zero          ! liquid potential temperature
-    rtm(1:gr%nz)     = zero          ! total water mixing ratio
+    thlm(1,1:gr%nz)    = zero          ! liquid potential temperature
+    rtm(1,1:gr%nz)     = zero          ! total water mixing ratio
     wprtp(1:gr%nz)   = zero          ! w'rt'
     wpthlp(1:gr%nz)  = zero          ! w'thl'
     wp2(1:gr%nz)     = w_tol_sqd     ! w'^2
@@ -1688,7 +1688,7 @@ module clubb_driver
     cloudy_downdraft_frac(1:gr%nz) = zero
 
     p_in_Pa(1:gr%nz)= zero           ! pressure (Pa)
-    exner(1:gr%nz) = zero            ! exner
+    exner(1,1:gr%nz) = zero            ! exner
     rho(1:gr%nz)  = zero             ! density on thermo. levels
     rho_zm(1:gr%nz)  = zero          ! density on moment. levels
     rho_ds_zm(1:gr%nz) = zero        ! dry, static density: m-levs
@@ -1696,7 +1696,7 @@ module clubb_driver
     invrs_rho_ds_zm(1:gr%nz) = zero  ! inv. dry, static density: m-levs
     invrs_rho_ds_zt(1:gr%nz) = zero  ! inv. dry, static density: t-levs
     thv_ds_zm(1:gr%nz) = zero        ! dry, base-state theta_v: m-levs
-    thv_ds_zt(1:gr%nz) = zero        ! dry, base-state theta_v: t-levs
+    thv_ds_zt(1,1:gr%nz) = zero        ! dry, base-state theta_v: t-levs
 
     thlm_forcing(1:gr%nz)    = zero  ! thlm large-scale forcing
     rtm_forcing(1:gr%nz)     = zero  ! rtm large-scale forcing
@@ -1972,19 +1972,19 @@ module clubb_driver
       iinit = 1
 
       call initialize_clubb &
-           ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
-             clubb_config_flags%l_uv_nudge,                      & ! Intent(in)
-             clubb_config_flags%l_tke_aniso,                     & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm(1,:), & ! Intent(inout)
-             wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
-             thvm, p_in_Pa,                                      & ! Intent(inout)
-             rho, rho_zm, rho_ds_zm, rho_ds_zt(1,:),             & ! Intent(inout)
-             invrs_rho_ds_zm, invrs_rho_ds_zt,                   & ! Intent(inout)
-             thv_ds_zm, thv_ds_zt,                               & ! Intent(inout)
-             rtm_ref, thlm_ref,                                  & ! Intent(inout) 
-             um_ref, vm_ref,                                     & ! Intent(inout)
-             Ncm, Nc_in_cloud, Nccnm,                            & ! Intent(inout)
-             sclrm, edsclrm )                                      ! Intent(out)
+           ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
+             clubb_config_flags%l_uv_nudge,                                 & ! Intent(in)
+             clubb_config_flags%l_tke_aniso,                                & ! Intent(in)
+             thlm(1,:), rtm(1,:), um, vm, ug, vg, wp2, up2, vp2, rcm(1,:),  & ! Intent(inout)
+             wm_zt, wm_zm, em, exner(1,:),                                  & ! Intent(inout)
+             thvm(1,:), p_in_Pa,                                            & ! Intent(inout)
+             rho, rho_zm, rho_ds_zm, rho_ds_zt(1,:),                        & ! Intent(inout)
+             invrs_rho_ds_zm, invrs_rho_ds_zt,                              & ! Intent(inout)
+             thv_ds_zm, thv_ds_zt(1,:),                                     & ! Intent(inout)
+             rtm_ref, thlm_ref,                                             & ! Intent(inout) 
+             um_ref, vm_ref,                                                & ! Intent(inout)
+             Ncm, Nc_in_cloud, Nccnm,                                       & ! Intent(inout)
+             sclrm, edsclrm )                                                 ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
@@ -2002,19 +2002,19 @@ module clubb_driver
       ! Therefore it should be executed prior to a restart. The restart should overwrite
       ! the initial sounding anyway.
       call initialize_clubb &
-           ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
-             clubb_config_flags%l_uv_nudge,                      & ! Intent(in)
-             clubb_config_flags%l_tke_aniso,                     & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm(1,:), & ! Intent(inout)
-             wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
-             thvm, p_in_Pa,                                      & ! Intent(inout)
-             rho, rho_zm, rho_ds_zm, rho_ds_zt(1,:),             & ! Intent(inout)
-             invrs_rho_ds_zm, invrs_rho_ds_zt,                   & ! Intent(inout)
-             thv_ds_zm, thv_ds_zt,                               & ! Intent(inout)
-             rtm_ref, thlm_ref,                                  & ! Intent(inout) 
-             um_ref, vm_ref,                                     & ! Intent(inout)
-             Ncm, Nc_in_cloud, Nccnm,                            & ! Intent(inout)
-             sclrm, edsclrm )                                      ! Intent(out)
+           ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
+             clubb_config_flags%l_uv_nudge,                                 & ! Intent(in)
+             clubb_config_flags%l_tke_aniso,                                & ! Intent(in)
+             thlm(1,:), rtm(1,:), um, vm, ug, vg, wp2, up2, vp2, rcm(1,:),  & ! Intent(inout)
+             wm_zt, wm_zm, em, exner(1,:),                                  & ! Intent(inout)
+             thvm(1,:), p_in_Pa,                                            & ! Intent(inout)
+             rho, rho_zm, rho_ds_zm, rho_ds_zt(1,:),                        & ! Intent(inout)
+             invrs_rho_ds_zm, invrs_rho_ds_zt,                              & ! Intent(inout)
+             thv_ds_zm, thv_ds_zt(1,:),                                     & ! Intent(inout)
+             rtm_ref, thlm_ref,                                             & ! Intent(inout) 
+             um_ref, vm_ref,                                                & ! Intent(inout)
+             Ncm, Nc_in_cloud, Nccnm,                                       & ! Intent(inout)
+             sclrm, edsclrm )                                                 ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
@@ -2047,31 +2047,31 @@ module clubb_driver
       iinit = floor( ( time_current - time_initial ) / real(dt_main,kind=time_precision) ) + 1
 
       call restart_clubb &
-           ( gr, iunit, runfile,                    & ! Intent(in)
-             restart_path_case, time_restart,          & ! Intent(in)
-             um, upwp, vm, vpwp, up2, vp2, rtm,        & ! Intent(inout)
-             wprtp, thlm, wpthlp, rtp2, rtp3,          & ! Intent(inout)
-             thlp2, thlp3, rtpthlp, wp2, wp3(1,:),     & ! Intent(inout)
-             p_in_Pa, exner, rcm(1,:), cloud_frac,     & ! Intent(inout)
-             wpthvp, wp2thvp, rtpthvp, thlpthvp,       & ! Intent(inout)
-             wp2rtp, wp2thlp, uprcp, vprcp,            & ! Intent(inout)
-             rc_coef, wp4, wpup2, wpvp2, wp2up2,       & ! Intent(inout)
-             wp2vp2, ice_supersat_frac,                & ! Intent(inout)
-             wm_zt, rho, rho_zm, rho_ds_zm,            & ! Intent(inout)
-             rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt,     & ! Intent(inout)
-             thlm_forcing, rtm_forcing, wprtp_forcing, & ! Intent(inout)
-             wpthlp_forcing, rtp2_forcing,             & ! Intent(inout)
-             thlp2_forcing, rtpthlp_forcing,           & ! Intent(inout)
-             hydromet, hydrometp2, wphydrometp,        & ! Intent(inout)
-             Ncm, Nccnm, thvm, em, tau_zm, tau_zt,     & ! Intent(inout)
-             Kh_zt, Kh_zm, ug, vg, Lscale(1,:),        & ! Intent(inout)
-             Lscale_up, Lscale_down, thlprcp,          & ! Intent(inout)
-             sigma_sqd_w, sigma_sqd_w_zt, radht,       & ! Intent(inout)
-             pdf_params, pdf_params_zm,                & ! Intent(inout)
-             rcm_mc, rvm_mc, thlm_mc,                  & ! Intent(out)
-             wprtp_mc, wpthlp_mc, rtp2_mc,             & ! Intent(out)
-             thlp2_mc, rtpthlp_mc,                     & ! Intent(out)
-             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc ) ! Intent(out)
+           ( gr, iunit, runfile,                            & ! Intent(in)
+             restart_path_case, time_restart,               & ! Intent(in)
+             um, upwp, vm, vpwp, up2, vp2, rtm(1,:),        & ! Intent(inout)
+             wprtp, thlm(1,:), wpthlp, rtp2, rtp3,          & ! Intent(inout)
+             thlp2, thlp3, rtpthlp, wp2, wp3(1,:),          & ! Intent(inout)
+             p_in_Pa, exner(1,:), rcm(1,:), cloud_frac,     & ! Intent(inout)
+             wpthvp, wp2thvp, rtpthvp, thlpthvp,            & ! Intent(inout)
+             wp2rtp, wp2thlp, uprcp, vprcp,                 & ! Intent(inout)
+             rc_coef, wp4, wpup2, wpvp2, wp2up2,            & ! Intent(inout)
+             wp2vp2, ice_supersat_frac,                     & ! Intent(inout)
+             wm_zt, rho, rho_zm, rho_ds_zm,                 & ! Intent(inout)
+             rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt(1,:),     & ! Intent(inout)
+             thlm_forcing, rtm_forcing, wprtp_forcing,      & ! Intent(inout)
+             wpthlp_forcing, rtp2_forcing,                  & ! Intent(inout)
+             thlp2_forcing, rtpthlp_forcing,                & ! Intent(inout)
+             hydromet, hydrometp2, wphydrometp,             & ! Intent(inout)
+             Ncm, Nccnm, thvm(1,:), em, tau_zm, tau_zt,     & ! Intent(inout)
+             Kh_zt, Kh_zm, ug, vg, Lscale(1,:),             & ! Intent(inout)
+             Lscale_up, Lscale_down, thlprcp,               & ! Intent(inout)
+             sigma_sqd_w, sigma_sqd_w_zt, radht,            & ! Intent(inout)
+             pdf_params, pdf_params_zm,                     & ! Intent(inout)
+             rcm_mc, rvm_mc, thlm_mc,                       & ! Intent(out)
+             wprtp_mc, wpthlp_mc, rtp2_mc,                  & ! Intent(out)
+             thlp2_mc, rtpthlp_mc,                          & ! Intent(out)
+             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )      ! Intent(out)
  
       ! Calculate invrs_rho_ds_zm and invrs_rho_ds_zt from the values of
       ! rho_ds_zm and rho_ds_zt, respectively, which were read in from the input
@@ -2230,21 +2230,21 @@ module clubb_driver
              itime_nearest )                                     ! Intent(out)
 
         call stat_fields_reader( gr, max( itime_nearest, 1 ), & ! In
-                                 um, upwp, vm, vpwp, up2, vp2, rtm, & ! Inout
-                                 wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
+                                 um, upwp, vm, vpwp, up2, vp2, rtm(1,:), & ! Inout
+                                 wprtp, thlm(1,:), wpthlp, rtp2, rtp3, & ! Inout
                                  thlp2, thlp3, rtpthlp, wp2, wp3(1,:), & ! Inout
-                                 p_in_Pa, exner, rcm(1,:), cloud_frac, & ! Inout
+                                 p_in_Pa, exner(1,:), rcm(1,:), cloud_frac, & ! Inout
                                  wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
                                  wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
                                  rc_coef, wp4, wpup2, wpvp2, wp2up2, & ! Inout
                                  wp2vp2, ice_supersat_frac, & ! Inout
                                  wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
-                                 rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt, & ! Inout
+                                 rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt(1,:), & ! Inout
                                  thlm_forcing, rtm_forcing, wprtp_forcing, & !""
                                  wpthlp_forcing, rtp2_forcing, & ! Inout
                                  thlp2_forcing, rtpthlp_forcing, & ! Inout
                                  hydromet, hydrometp2, wphydrometp, & ! Inout
-                                 Ncm, Nccnm, thvm, em, tau_zm, tau_zt, & ! Inout
+                                 Ncm, Nccnm, thvm(1,:), em, tau_zm, tau_zt, & ! Inout
                                  Kh_zt, Kh_zm, ug, vg, Lscale(1,:), & ! Inout
                                  Lscale_up, Lscale_down, thlprcp, & ! Inout
                                  sigma_sqd_w, sigma_sqd_w_zt, radht, & ! Inout
@@ -2261,7 +2261,7 @@ module clubb_driver
 
       ! Check for NaN values in the model arrays
       if ( clubb_at_least_debug_level( 2 ) ) then
-        if ( invalid_model_arrays( gr%nz, um, vm, rtm, wprtp, thlm, wpthlp, &
+        if ( invalid_model_arrays( gr%nz, um, vm, rtm(1,:), wprtp, thlm(1,:), wpthlp, &
                                    rtp2, thlp2, rtpthlp, wp2, wp3(1,:), &
                                    wp2thvp, rtpthvp, thlpthvp, &
                                    hydromet, sclrm, edsclrm ) ) then
@@ -2278,13 +2278,15 @@ module clubb_driver
       l_calc_weights_all_levs_itime = l_calc_weights_all_levs .and. .not. l_rad_itime
 
       ! Calculate thvm for use in prescribe_forcings.
-      thvm = calculate_thvm( thlm, rtm, rcm(1,:), exner, thv_ds_zt )
+      call calculate_thvm( gr%nz, 1, &
+                           thlm, rtm, rcm, exner, thv_ds_zt, &
+                           thvm )
 
       ! Set large-scale tendencies and subsidence profiles
-      call prescribe_forcings( gr, dt_main, um, vm, thlm, & ! In
-                               p_in_Pa, exner, rho, rho_zm, thvm, & ! In
+      call prescribe_forcings( gr, dt_main, um, vm, thlm(1,:), & ! In
+                               p_in_Pa, exner(1,:), rho, rho_zm, thvm(1,:), & ! In
                                Frad_SW_up, Frad_SW_down, Frad_LW_down, & ! In
-                               rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
+                               rtm(1,:), wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
                                vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
                                rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! Inout
@@ -2357,9 +2359,9 @@ module clubb_driver
                wpsclrp_sfc, wpedsclrp_sfc,  &                                       ! Intent(in)
                upwp_sfc_pert, vpwp_sfc_pert, &                                      ! intent(in)
                rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
-               p_in_Pa, rho_zm, rho, exner, &                                       ! Intent(in)
+               p_in_Pa, rho_zm, rho, exner(1,:), &                                  ! Intent(in)
                rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &                   ! Intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt(1,:), hydromet, &              ! Intent(in)
                rfrzm, radf, wphydrometp, &                                          ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
@@ -2367,7 +2369,7 @@ module clubb_driver
                clubb_config_flags, &                                                ! Intent(in)
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
-               thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
+               thlm(1,:), rtm(1,:), wprtp, wpthlp, &                                ! Intent(inout)
                wp2, wp3(1,:), rtp2, rtp3, thlp2, thlp3, rtpthlp, &                  ! Intent(inout)
                sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
                wpsclrp, edsclrm, err_code_dummy, &                                  ! Intent(inout)
@@ -2406,9 +2408,9 @@ module clubb_driver
                wpsclrp_sfc, wpedsclrp_sfc,  &                                       ! Intent(in)
                upwp_sfc_pert, vpwp_sfc_pert, &                                      ! intent(in)
                rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
-               p_in_Pa, rho_zm, rho, exner, &                                       ! Intent(in)
+               p_in_Pa, rho_zm, rho, exner(1,:), &                                  ! Intent(in)
                rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &                   ! Intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt(1,:), hydromet, &              ! Intent(in)
                rfrzm, radf, wphydrometp, &                                          ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
@@ -2416,7 +2418,7 @@ module clubb_driver
                clubb_config_flags, &                                                ! Intent(in)
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
-               thlm, rtm, wprtp, wpthlp, &                                          ! Intent(inout)
+               thlm(1,:), rtm(1,:), wprtp, wpthlp, &                                ! Intent(inout)
                wp2, wp3(1,:), rtp2, rtp3, thlp2, thlp3, rtpthlp, &                  ! Intent(inout)
                sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &                        ! Intent(inout)
                wpsclrp, edsclrm, err_code_dummy, &                                  ! Intent(inout)
@@ -2612,7 +2614,7 @@ module clubb_driver
 
       ! Call microphysics scheme and produce microphysics tendencies.
       call calc_microphys_scheme_tendcies( gr, dt_main, time_current, pdf_dim, runtype, & ! In
-                              thlm, p_in_Pa, exner, rho, rho_zm, rtm, &               ! In
+                              thlm(1,:), p_in_Pa, exner(1,:), rho, rho_zm, rtm(1,:), &               ! In
                               rcm(1,:), cloud_frac, wm_zt, wm_zm, wp2_zt(1,:), &           ! In
                               hydromet, Nc_in_cloud, &                                ! In
                               pdf_params, hydromet_pdf_params(1,:), &                 ! In
@@ -2652,7 +2654,7 @@ module clubb_driver
 
       ! Advance predictive microphysics fields one model timestep.
       call advance_microphys( gr, dt_main, time_current, wm_zt, wp2,      & ! In
-                              exner, rho, rho_zm, rcm(1,:),               & ! In
+                              exner(1,:), rho, rho_zm, rcm(1,:),               & ! In
                               cloud_frac, Kh_zm, Skw_zm,                  & ! In
                               rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zt, & ! In
                               hydromet_mc, Ncm_mc, Lscale(1,:),           & ! In
@@ -2707,7 +2709,7 @@ module clubb_driver
           call silhs_radiation_driver &
                ( gr, gr%nz, lh_num_samples, pdf_dim, hydromet_dim,                & !In
                  time_current, time_initial, rho, rho_zm,                               & !In
-                 p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs(1,:,:,:), & !In
+                 p_in_Pa, exner(1,:), cloud_frac, ice_supersat_frac, X_nl_all_levs(1,:,:,:), & !In
                  lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:), lh_rc_clipped(1,:,:),     & !In
                  lh_sample_point_weights(1,:,:), hydromet,                              & !In
                  radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )        !out
@@ -2716,7 +2718,7 @@ module clubb_driver
 
           call advance_clubb_radiation &
                ( gr, time_current, time_initial, rho, rho_zm, p_in_Pa,             & ! In
-                 exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm(1,:), hydromet, & ! In
+                 exner(1,:), cloud_frac, ice_supersat_frac, thlm(1,:), rtm(1,:), rcm(1,:), hydromet, & ! In
                  radht, Frad, Frad_SW_up, Frad_LW_up,                                 & ! Out
                  Frad_SW_down, Frad_LW_down )                                           ! Out
 
@@ -3089,6 +3091,11 @@ module clubb_driver
       l_tke_aniso   ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
     ! Output
+    real( kind = core_rknd ), dimension(1,gr%nz), intent(inout) ::  & 
+      exner,           & ! Exner function (thermodynamic levels)     [-] 
+      thvm,            & ! Virtual potential temp. (thermo. levs.)   [K]
+      rcm                ! Cloud water mixing ratio (thermo. levs.)  [kg/kg]
+
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
       thlm,            & ! Grid mean of liquid water pot. temp               [K] 
       rtm,             & ! Grid mean of total water mixing ratio             [kg/kg]
@@ -3099,11 +3106,8 @@ module clubb_driver
       wp2,             & ! Vertical velocity variance (w'^2)                 [m^2/s^2]
       up2,             & ! East-west velocity variance (u'^2)                [m^2/s^2]
       vp2,             & ! North-south velocity variance (v'^2)              [m^2/s^2]
-      rcm,             & ! Cloud water mixing ratio                          [kg/kg]
       wm_zt, wm_zm,    & ! Vertical wind                                     [m/s]
       em,              & ! Turbulence kinetic energy                         [m^2/s^2]
-      exner,           & ! Exner function                                    [-] 
-      thvm,            & ! Virtual potential temperature                     [K]
       p_in_Pa,         & ! Pressure                                          [Pa]
       rho,             & ! Density (thermodynamic levels)                    [kg/m^3]
       rho_zm,          & ! Density on momentum levels                        [kg/m^3]
@@ -3186,7 +3190,7 @@ module clubb_driver
     Nc_in_cloud = Nc0_in_cloud / rho
     do k = 1, gr%nz, 1
 
-       if ( rcm(k) > zero ) then
+       if ( rcm(1,k) > zero ) then
 
           ! The initial profile at this level is entirely saturated (due to
           ! constant moisture and temperature over the level).  The level is
@@ -3750,22 +3754,26 @@ module clubb_driver
       rtm_sfc !,& ! Surface total water mixing ratio               [kg/kg]
 !     thlm_sfc    ! Surface liquid water potential temperature     [K]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nz), intent(in) ::  &
       rtm    ! Total water mixing ratio (thermodynamic levels)    [kg/kg]
 
     ! Input/Output Variables
+    real( kind = core_rknd ), dimension(1,gr%nz), intent(inout) ::  &
+      thlm       ! Liquid water potential temperature (thermo. levs.)  [K] 
+
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
-      thlm,    & ! Liquid water potential temperature (thermo. levs.)  [K] 
       p_in_Pa    ! Pressure (thermodynamic levels)                     [Pa]
 
     ! Output Variables
+    real( kind = core_rknd ), dimension(1,gr%nz), intent(out) ::  &
+      exner,           & ! Exner function (thermodynamic levels)     [-] 
+      thvm,            & ! Virtual potential temp. (thermo. levs.)   [K]
+      rcm                ! Cloud water mixing ratio (thermo. levs.)  [kg/kg]
+
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
       p_in_Pa_zm,      & ! Pressure (momentum levels)                [Pa]
-      exner,           & ! Exner function (thermodynamic levels)     [-] 
       rho,             & ! Density (thermodynamic levels)            [kg/m^3]
       rho_zm,          & ! Density on momentum levels                [kg/m^3]
-      rcm,             & ! Cloud water mixing ratio (thermo. levs.)  [kg/kg]
-      thvm,            & ! Virtual potential temp. (thermo. levs.)   [K]
       rho_ds_zm,       & ! Dry, static density (momentum levels)     [kg/m^3]
       rho_ds_zt,       & ! Dry, static density (thermodynamic levs.) [kg/m^3]
       invrs_rho_ds_zm, & ! Inverse dry, static density (m-levs.)     [m^3/kg]
@@ -3784,8 +3792,10 @@ module clubb_driver
       pd_sfc, & ! Dry surface pressure                [Pa]
       rv_sfc    ! Surface water vapor mixing ratio    [kg/kg]
 
+    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
+      thm             ! Potential temperature (thermodynamic levels)   [K]
+
     real( kind = core_rknd ), dimension(gr%nz) ::  &
-      thm,          & ! Potential temperature (thermodynamic levels)   [K]
       exner_zm,     & ! Exner on momentum levels                       [-]
       th_dry,       & ! Dry potential temperature (thermo. levels)     [K]
       p_dry,        & ! Dry air pressure (thermodynamic levels)        [Pa]
@@ -3805,7 +3815,7 @@ module clubb_driver
     if ( rtm_sfc < 0.0_core_rknd ) then
       ! The sounding doesn't extended to the surface, so rtm_sfc is set to a
       ! negative number.  Use rtm(1) as rv_sfc.
-      rv_sfc = rtm(1)
+      rv_sfc = rtm(1,1)
     else ! rtm_sfc >= 0.0_core_rknd
       ! The sounding does extended to the surface, so rtm_sfc is the initial value
       ! of total water mixing ratio at the surface.
@@ -3838,7 +3848,7 @@ module clubb_driver
           ! calculation.  After this calculation, the variable "thlm" will
           ! actually contain potential temperature.
           do k = 1, gr%nz, 1
-             thlm(k) = thlm(k) / ( p_in_Pa(k) / p0 )**kappa
+             thlm(1,k) = thlm(1,k) / ( p_in_Pa(k) / p0 )**kappa
           enddo
 
        else
@@ -3882,14 +3892,14 @@ module clubb_driver
     ! is important to allow the ensuing computation of initial r_c is done as
     ! accurately as possible.
     do k = 1, gr%nz, 1
-       thvm(k) = thlm(k) * ( one + ep1 * ( rtm(k) / ( one + rtm(k) ) ) )
+       thvm(1,k) = thlm(1,k) * ( one + ep1 * ( rtm(1,k) / ( one + rtm(1,k) ) ) )
     enddo
 
     ! Compute approximate pressure, exner, and density using an approximate
     ! value of theta_v.
     call hydrostatic( gr, thvm, p_sfc,         & ! Intent(in)
                       p_in_Pa, p_in_Pa_zm, & ! Intent(out)
-                      exner, exner_zm,     & ! Intent(out)
+                      exner(1,:), exner_zm,     & ! Intent(out)
                       rho, rho_zm          ) ! Intent(out)
 
 
@@ -3899,14 +3909,14 @@ module clubb_driver
 
        ! The variable "thlm" actually contains potential temperature (theta)
        ! at this point.
-       thm = thlm
+       thm(1,:) = thlm(1,:)
 
        ! Calculate cloud water mixing ratio based on total water mixing ratio
        ! and saturation mixing ratio, which based total pressure and
        ! temperature, which is equal to theta * exner.
        do k = 1, gr%nz
-          rcm(k) &
-          = max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), thm(k) * exner(k) ), &
+          rcm(1,k) &
+          = max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), thm(1,k) * exner(1,k) ), &
                  zero_threshold )
        enddo
 
@@ -3914,15 +3924,15 @@ module clubb_driver
        ! in variable thlm) and cloud water mixing ratio (rcm), such that:
        !  theta_l = theta - [Lv/(Cp*exner)]*rcm.
        do k = 1, gr%nz
-          thlm(k) = thlm(k) - Lv/(Cp*exner(k)) * rcm(k)
+          thlm(1,k) = thlm(1,k) - Lv/(Cp*exner(1,k)) * rcm(1,k)
        enddo
 
        ! Testing of passive scalars
        if ( iisclr_thl > 0 ) then
-          sclrm(:,iisclr_thl) = thlm
+          sclrm(:,iisclr_thl) = thlm(1,:)
        endif
        if ( iiedsclr_thl > 0 ) then
-          edsclrm(:,iiedsclr_thl) = thlm
+          edsclrm(:,iiedsclr_thl) = thlm(1,:)
        endif
 
 
@@ -3941,20 +3951,20 @@ module clubb_driver
        ! Find mean cloud water mixing ratio.
        do k = 1, gr%nz, 1
           ! Compute cloud water mixing ratio using an iterative method.
-          rcm(k) = rcm_sat_adj( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+          rcm(1,k) = rcm_sat_adj( thlm(1,k), rtm(1,k), p_in_Pa(k), exner(1,k) )
        enddo
 
        ! Compute initial theta.
        do k = 1, gr%nz, 1
-          thm(k) = thlm(k) + Lv/(Cp*exner(k)) * rcm(k)
+          thm(1,k) = thlm(1,k) + Lv/(Cp*exner(1,k)) * rcm(1,k)
        enddo
 
        ! Testing of passive scalars
        if ( iisclr_thl > 0 ) then
-          sclrm(:,iisclr_thl) = thlm
+          sclrm(:,iisclr_thl) = thlm(1,:)
        endif
        if ( iiedsclr_thl > 0 ) then
-          edsclrm(:,iiedsclr_thl) = thlm
+          edsclrm(:,iiedsclr_thl) = thlm(1,:)
        endif
 
 
@@ -4005,14 +4015,16 @@ module clubb_driver
     !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
     !
     ! where thv_ds is used as a reference value to approximate theta_l.
-    thvm = calculate_thvm( thlm, rtm, rcm, exner, &
-                           thm * ( one + ep2 * ( rtm - rcm ) )**kappa )
+    call calculate_thvm( gr%nz, 1, &
+                         thlm, rtm, rcm, exner, &
+                         thm * ( one + ep2 * ( rtm - rcm ) )**kappa, &
+                         thvm )
 
     ! Recompute more accurate initial exner function, pressure, and density
     ! using thvm, which includes the effects of water vapor and cloud water.
-    call hydrostatic( gr, thvm, p_sfc,          & ! Intent(in)
+    call hydrostatic( gr, thvm(1,:), p_sfc,          & ! Intent(in)
                       p_in_Pa, p_in_Pa_zm, &  ! Intent(out)
-                      exner, exner_zm,     &  ! Intent(out)
+                      exner(1,:), exner_zm,     &  ! Intent(out)
                       rho, rho_zm          )  ! Intent(out)
 
 
@@ -4026,7 +4038,7 @@ module clubb_driver
 
        ! Calculate dry pressure from total pressure and water vapor mixing
        ! ratio, such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
-       p_dry(k) = p_in_Pa(k) / ( one + ep2 * ( rtm(k) - rcm(k) ) )
+       p_dry(k) = p_in_Pa(k) / ( one + ep2 * ( rtm(1,k) - rcm(1,k) ) )
 
        ! Calculate dry exner from dry pressure.
        exner_dry(k) = ( p_dry(k) / p0 )**kappa
@@ -4065,7 +4077,7 @@ module clubb_driver
     ! exner yields dry theta, which differs by actual theta by a small
     ! amount, which is given by the equations above.
     do k = 1, gr%nz, 1
-       th_dry(k) = thm(k) * ( one + ep2 * ( rtm(k) - rcm(k) ) )**kappa
+       th_dry(k) = thm(1,k) * ( one + ep2 * ( rtm(1,k) - rcm(1,k) ) )**kappa
     enddo
 
     ! Compute dry density using dry pressure, dry exner, and theta_d.
@@ -4083,7 +4095,7 @@ module clubb_driver
        ! momentum levels) and water vapor mixing ratio (interpolated to
        ! momentum levels), such that:  p_d = p / [ 1 + (R_v/R_d)*r_v ].
        p_dry_zm(k) = p_in_Pa_zm(k) &
-                     / ( one + ep2 * max( zt2zm( gr, rtm - rcm, k ), &
+                     / ( one + ep2 * max( zt2zm( gr, rtm(1,:) - rcm(1,:), k ), &
                                           zero_threshold ) )
     enddo
 
@@ -4096,8 +4108,8 @@ module clubb_driver
     ! Calculate theta_d on momentum levels by interpolating theta and water
     ! vapor mixing ratio to momentum levels.
     do k = 1, gr%nz, 1
-       th_dry_zm(k) = zt2zm( gr, thm, k ) &
-                      * ( one + ep2 * max( zt2zm( gr, rtm - rcm, k ), &
+       th_dry_zm(k) = zt2zm( gr, thm(1,:), k ) &
+                      * ( one + ep2 * max( zt2zm( gr, rtm(1,:) - rcm(1,:), k ), &
                                            zero_threshold ) )**kappa
     enddo
 

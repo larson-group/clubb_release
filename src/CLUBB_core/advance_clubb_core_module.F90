@@ -1257,7 +1257,9 @@ module advance_clubb_core_module
     !----------------------------------------------------------------
     ! Compute thvm
     !----------------------------------------------------------------
-    thvm = calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt )
+    call calculate_thvm( nz, ngrdcol, &
+                         thlm, rtm, rcm, exner, thv_ds_zt, &
+                         thvm )
 
     !----------------------------------------------------------------
     ! Compute tke (turbulent kinetic energy)

@@ -87,7 +87,7 @@ module input_interpret
     intrinsic :: max
 
     ! Local Variables
-    real( kind = core_rknd ), dimension( nsize ) :: &
+    real( kind = core_rknd ), dimension( 1,nsize ) :: &
       exner,   & ! Exner function at sounding levels                    [-]
       thvm,    & ! Mean theta-v at sounding levels                      [K]
       rcm,     & ! Mean cloud water mixing ratio at sounding levels     [kg/kg]
@@ -127,15 +127,15 @@ module input_interpret
 
         ! Obtain the value of theta_type (theta, theta_l, or temperature) at
         ! each pressure sounding level.
-        call read_theta_profile(nvar, nsize, retVars, theta_type, theta )
+        call read_theta_profile(nvar, nsize, retVars, theta_type, theta(1,:) )
 
         ! Obtain the value of total water mixing ratio at each pressure sounding
         ! level. 
-        rtm = read_x_profile(nvar, nsize, rt_name, retVars)
+        rtm(1,:) = read_x_profile(nvar, nsize, rt_name, retVars)
 
         ! Calculate exner from pressure.
         do k = 1, nlevels
-          exner(k) = ( p_in_Pa(k) / p0 )**kappa
+          exner(1,k) = ( p_in_Pa(k) / p0 )**kappa
         enddo
 
 
@@ -150,18 +150,18 @@ module input_interpret
            ! based on temperature and rtm.  Again, "theta(k)" is actually
            ! "temperature(k)" at this point in the code.
            do k = 1, nlevels
-              rcm(k) = &
-                max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), theta(k) ), &
+              rcm(1,k) = &
+                max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), theta(1,k) ), &
                      zero_threshold )
            enddo
 
            ! Convert temperature to potential temperature, theta.
-           theta(1:nlevels) = theta(1:nlevels) / exner(1:nlevels)
+           theta(1,1:nlevels) = theta(1,1:nlevels) / exner(1,1:nlevels)
 
            ! Calculate theta_l from theta and cloud water mixing ratio, such
            ! that:  theta_l = theta - [Lv/(Cp*exner)]*rcm.
-           thlm(1:nlevels) = theta(1:nlevels) &
-                              - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
+           thlm(1,1:nlevels) = theta(1,1:nlevels) &
+                              - Lv/(Cp*exner(1,1:nlevels)) * rcm(1,1:nlevels)
 
 
         case ( theta_name )
@@ -171,22 +171,22 @@ module input_interpret
            ! Determine initial cloud water mixing ratio at sounding levels
            ! based on potential temperature, exner, and rtm.
            do k = 1,nlevels
-              rcm(k) = &
-                max( rtm(k) - sat_mixrat_liq( p_in_Pa(k), theta(k)*exner(k) ), &
+              rcm(1,k) = &
+                max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), theta(1,k)*exner(1,k) ), &
                      zero_threshold )
            enddo
 
            ! Calculate theta_l from theta and cloud water mixing ratio, such
            ! that:  theta_l = theta - [Lv/(Cp*exner)]*rcm.
-           thlm(1:nlevels) = theta(1:nlevels) &
-                              - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
+           thlm(1,1:nlevels) = theta(1,1:nlevels) &
+                              - Lv/(Cp*exner(1,1:nlevels)) * rcm(1,1:nlevels)
 
 
         case ( thetal_name )
 
            ! The variable "theta" actually contains liquid water potential
            ! temperature, theta_l, at this point.
-           thlm(1:nlevels) = theta(1:nlevels)
+           thlm(1,1:nlevels) = theta(1,1:nlevels)
 
            ! Determine initial cloud water mixing ratio.  If the profile is
            ! unsaturated, then theta = theta_l.  If the profile is saturated at
@@ -194,13 +194,13 @@ module input_interpret
            ! an iterative method involving theta_l, total water mixing ratio,
            ! pressure, and exner.
            do k =1, nlevels, 1
-              rcm(k) = rcm_sat_adj( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
+              rcm(1,k) = rcm_sat_adj( thlm(1,k), rtm(1,k), p_in_Pa(k), exner(1,k) )
            enddo
 
            ! Calculate theta from theta_l and cloud water mixing ratio, such
            ! that:  theta = theta_l + [Lv/(Cp*exner)]*rcm.
-           theta(1:nlevels) = thlm(1:nlevels) &
-                              + Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
+           theta(1,1:nlevels) = thlm(1,1:nlevels) &
+                              + Lv/(Cp*exner(1,1:nlevels)) * rcm(1,1:nlevels)
 
 
         case default
@@ -250,12 +250,10 @@ module input_interpret
         !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
         !
         ! where thv_ds is used as a reference value to approximate theta_l.
-        thvm(1:nlevels) &
-        = calculate_thvm( thlm(1:nlevels), rtm(1:nlevels), &
-                          rcm(1:nlevels), exner(1:nlevels), &
-                          theta(1:nlevels) &
-                          * ( one + ep2 * ( rtm(1:nlevels) &
-                                            - rcm(1:nlevels) ) )**kappa )
+        call calculate_thvm( nlevels, 1, &
+                             thlm, rtm, rcm, exner, &
+                             theta * ( one + ep2 * ( rtm - rcm ) )**kappa, &
+                             thvm )
 
         ! Find the altitudes, z, of the pressure sounding levels.
         call inverse_hydrostatic( p_sfc, zm_init, nlevels, thvm, exner, &
