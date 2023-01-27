@@ -87,7 +87,7 @@ module sounding
     intrinsic :: trim, exp
 
     ! Constant parameter
-    integer, parameter :: nmaxsnd = 600
+    integer, parameter :: nmaxsnd = 10000
 
     ! Input variables
     integer, intent(in) :: iunit ! File unit to use for namelist
