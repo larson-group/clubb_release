@@ -360,6 +360,10 @@ module saturation
 
     ! -------------------- Begin Code --------------------
 
+    !$acc data create(esat) &
+    !$acc      copyin(p_in_Pa,T_in_K), &
+    !$acc      copyout(sat_mixrat_liq_2D)
+
     ! start_index is an optional argument and 
     ! used for choosing the sub-arrays
     if ( present(start_index_in) ) then
@@ -518,7 +522,8 @@ module saturation
         
       end do
     end do
-    !$acc end parallel
+
+    !$acc end data
     
   end function sat_mixrat_liq_2D
 

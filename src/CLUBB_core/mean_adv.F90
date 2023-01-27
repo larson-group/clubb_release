@@ -195,7 +195,7 @@ module mean_adv
       t_above = 1, & ! Index for upper thermodynamic level grid weight.
       t_below = 2    ! Index for lower thermodynamic level grid weight.
 
-    ! Input Variables
+    ! -------------------------- Input Variables --------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -214,21 +214,32 @@ module mean_adv
                         ! differencing for turbulent or mean advection terms.
                         ! It affects rtm, thlm, sclrm, um and vm.
 
-    ! Return Variable
+    ! -------------------------- Return Variable --------------------------
     real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
       lhs_ma    ! Mean advection contributions to lhs    [1/s]
 
-    ! Local Variables
+    ! -------------------------- Local Variables --------------------------
 
-    integer :: i, k    ! Vertical level index
+    integer :: i, k, b    ! Vertical level index
+
+    !-------------------------- Begin Code --------------------------
+
+    !$acc data copyin( wm_zt, invrs_dzt, invrs_dzm, weights_zt2zm ) &
+    !$acc      copyout( lhs_ma )
 
     ! Set lower boundary array to 0
-    lhs_ma(:,:,1) = 0.0_core_rknd
+    !$acc parallel loop collapse(2)
+    do i = 1, ngrdcol
+      do b = 1, 3
+        lhs_ma(b,i,1) = 0.0_core_rknd
+      end do
+    end do
 
 
     if ( .not. l_upwind_xm_ma ) then  ! Use centered differencing
 
       ! Most of the interior model; normal conditions.
+      !$acc parallel loop collapse(2)
       do k = 2, nz, 1
         do i = 1, ngrdcol
 
@@ -244,12 +255,13 @@ module mean_adv
         end do
       end do ! k = 2, nz, 1
 
-       ! Upper Boundary
+        ! Upper Boundary
 
         ! Special discretization for zero derivative method, where the
         ! derivative d(var_zt)/dz over the model top is set to 0, in order
         ! to stay consistent with the zero-flux boundary condition option
         ! in the eddy diffusion code.
+        !$acc parallel loop
         do i = 1, ngrdcol
           
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -267,6 +279,7 @@ module mean_adv
     else ! l_upwind_xm_ma == .true.; use "upwind" differencing
 
       ! Most of the interior model; normal conditions.
+      !$acc parallel loop collapse(2)
       do k = 2, nz, 1
         do i = 1, ngrdcol
           if ( wm_zt(i,k) >= zero ) then  ! Mean wind is in upward direction
@@ -297,6 +310,7 @@ module mean_adv
       end do ! k = 2, nz, 1
 
       ! Upper Boundary
+      !$acc parallel loop
       do i = 1, ngrdcol
         if ( wm_zt(i,nz) >= zero ) then  ! Mean wind is in upward direction
 
@@ -325,6 +339,7 @@ module mean_adv
 
     endif ! l_upwind_xm_ma
 
+    !$acc end data
 
     return
 
@@ -407,7 +422,7 @@ module mean_adv
       m_above = 1, & ! Index for upper momentum level grid weight.
       m_below = 2    ! Index for lower momentum level grid weight.
 
-    ! Input Variables
+    ! -------------------------- Input Variables --------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -419,17 +434,28 @@ module mean_adv
     real( kind = core_rknd ), dimension(ngrdcol,nz,m_above:m_below), intent(in) :: & 
       weights_zm2zt
 
-    ! Return Variable
+    ! -------------------------- Return Variable --------------------------
     real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
       lhs_ma    ! Mean advection contributions to lhs  [1/s]
 
-    integer :: i, k    ! Vertical level index
+    ! -------------------------- Local Variables
+    integer :: i, k, b    ! Vertical level index
 
+    ! -------------------------- Begin Code --------------------------
+
+    !$acc data copyin( wm_zm, invrs_dzm, weights_zm2zt ) &
+    !$acc      copyout( lhs_ma )
 
     ! Set lower boundary array to 0
-    lhs_ma(:,:,1) = zero
+    !$acc parallel loop collapse(2)
+    do i = 1, ngrdcol
+      do b = 1, 3
+        lhs_ma(b,i,1) = zero
+      end do
+    end do
 
     ! Most of the interior model; normal conditions.
+    !$acc parallel loop collapse(2)
     do k = 2, nz-1, 1
       do i = 1, ngrdcol
         
@@ -447,7 +473,14 @@ module mean_adv
     end do ! k = 2, nz-1, 1
 
     ! Set upper boundary array to 0
-    lhs_ma(:,:,nz) = zero
+    !$acc parallel loop collapse(2)
+    do i = 1, ngrdcol
+      do b = 1, 3
+        lhs_ma(b,i,nz) = zero
+      end do
+    end do
+
+    !$acc end data
 
     return
 

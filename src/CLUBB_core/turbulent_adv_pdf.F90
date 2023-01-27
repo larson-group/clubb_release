@@ -335,7 +335,7 @@ module turbulent_adv_pdf
       m_above = 1, & ! Index for upper momentum level grid weight.
       m_below = 2    ! Index for lower momentum level grid weight.
 
-    ! Input Variables
+    ! ------------------------------ Input Variables ------------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -355,20 +355,32 @@ module turbulent_adv_pdf
       coef_wpxpyp_implicit_zm, & ! coef_wpxpyp_implicit interp m-levs  [m/s]
       rho_ds_zm                  ! Dry, static density at m-levs       [kg/m^3]
 
-    ! Return Variable
+    ! ------------------------------ Return Variable ------------------------------
     real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
       lhs_ta    ! LHS coefficient of xpyp turbulent advection  [1/s]
 
-    ! Local Variables
-    integer :: i, k    ! Vertical level index
+    ! ------------------------------ Local Variables ------------------------------
+    integer :: i, k, b    ! Vertical level index
+
+    ! ------------------------------ Begin Code ------------------------------
+
+    !$acc data copyin( coef_wpxpyp_implicit, rho_ds_zt, invrs_rho_ds_zm, &
+    !$acc              sgn_turbulent_vel, coef_wpxpyp_implicit_zm, rho_ds_zm ) &
+    !$acc      copyout( lhs_ta )
 
 
-   ! Set lower boundary array to 0
-   lhs_ta(:,:,1) = zero
+    ! Set lower boundary array to 0
+    !$acc parallel loop collapse(2)
+    do i = 1, ngrdcol
+      do b = 1, 3
+        lhs_ta(b,i,1) = zero
+      end do
+    end do
 
     if ( .not. l_upwind_xpyp_turbulent_adv ) then
 
       ! Centered discretization.
+      !$acc parallel loop collapse(2) 
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           
@@ -398,6 +410,7 @@ module turbulent_adv_pdf
     else ! l_upwind_xpyp_turbulent_adv
 
       ! "Upwind" discretization
+      !$acc parallel loop collapse(2) 
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
         
@@ -441,103 +454,126 @@ module turbulent_adv_pdf
       end do
     endif
 
-    ! Set upper boundary array to 0
-    lhs_ta(:,:,nz) = zero
+    ! Set upper boundary array to 
+    !$acc parallel loop collapse(2)
+    do i = 1, ngrdcol
+      do b = 1, 3
+        lhs_ta(b,i,nz) = zero
+      end do
+    end do
+
+    !$acc end data
 
     return
 
   end subroutine xpyp_term_ta_pdf_lhs
 
-    !=============================================================================================
-    pure subroutine xpyp_term_ta_pdf_lhs_godunov( nz, ngrdcol, gr, & ! Intent(in)
-                                                  coef_wpxpyp_implicit, & ! Intent(in)
-                                                  invrs_rho_ds_zm, rho_ds_zm,  & ! Intent(in)
-                                                  lhs_ta )
-    ! Intent(out)
-    ! Description:
-    !   This subroutine is a revised version of xpyp_term_ta_pdf_lhs_all. The
-    !   revisions are maded to use the  Godunov-like upwind scheme for the
-    !   vertical discretization of the turbulent advection term. This subroutine 
-    !   returns an array of 3 dimensional arrays, one for every grid level not
-    !   including
-    !   boundary values.
-    ! 
-    ! Optional Arguements:
-    !   The optional arguements can be used to override the default indices. 
-    !   from_level - low index, default 2
-    !   to level   - high index, default gr%nz-1
-    ! 
-    ! Notes:
-    !   This subroutine exists for testing of Godunov-like upwind scheme. 
-    !   THIS SUBROUTINE DOES NOT HANDLE BOUNDARY CONDITIONS AND SETS THEM TO 0
-    !---------------------------------------------------------------------------------------------
+  !=============================================================================================
+  pure subroutine xpyp_term_ta_pdf_lhs_godunov( nz, ngrdcol, gr, & ! Intent(in)
+                                                coef_wpxpyp_implicit, & ! Intent(in)
+                                                invrs_rho_ds_zm, rho_ds_zm,  & ! Intent(in)
+                                                lhs_ta )
+  ! Intent(out)
+  ! Description:
+  !   This subroutine is a revised version of xpyp_term_ta_pdf_lhs_all. The
+  !   revisions are maded to use the  Godunov-like upwind scheme for the
+  !   vertical discretization of the turbulent advection term. This subroutine 
+  !   returns an array of 3 dimensional arrays, one for every grid level not
+  !   including
+  !   boundary values.
+  ! 
+  ! Optional Arguements:
+  !   The optional arguements can be used to override the default indices. 
+  !   from_level - low index, default 2
+  !   to level   - high index, default gr%nz-1
+  ! 
+  ! Notes:
+  !   This subroutine exists for testing of Godunov-like upwind scheme. 
+  !   THIS SUBROUTINE DOES NOT HANDLE BOUNDARY CONDITIONS AND SETS THEM TO 0
+  !---------------------------------------------------------------------------------------------
 
-        use grid_class, only:  & ! for gr%weights_zm2zt
-        grid ! Type
+    use grid_class, only:  & ! for gr%weights_zm2zt
+    grid ! Type
 
-        use clubb_precision, only: &
-            core_rknd    ! Variable(s)
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
 
-        implicit none
-        
-        integer, parameter :: &
-          kp1_mdiag = 1, & ! Momentum superdiagonal index.
-          k_mdiag   = 2, & ! Momentum main diagonal index.
-          km1_mdiag = 3    ! Momentum subdiagonal index.
-
-        !------------------- Input Variables -------------------
-        integer, intent(in) :: &
-          nz, &
-          ngrdcol
-
-        type (grid), target, intent(in) :: gr
+    implicit none
     
-        real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-            coef_wpxpyp_implicit,     & ! Coef. of <x'y'> in <w'x'y'>; t-lev [m/s]
-            invrs_rho_ds_zm,          & ! Inv dry, static density @ m-level [m^3/kg]
-            rho_ds_zm                   ! Dry, static density at m-lev [kg/m^3]
+    integer, parameter :: &
+      kp1_mdiag = 1, & ! Momentum superdiagonal index.
+      k_mdiag   = 2, & ! Momentum main diagonal index.
+      km1_mdiag = 3    ! Momentum subdiagonal index.
 
-        !------------------- Output Variables -------------------
-        real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
-            lhs_ta
+    !------------------- Input Variables -------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-        !---------------- Local Variables -------------------
-        integer :: &
-            i, k          ! Loop variable for current grid level
+    type (grid), target, intent(in) :: gr
 
-        !---------------- Begin Code -------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+        coef_wpxpyp_implicit,     & ! Coef. of <x'y'> in <w'x'y'>; t-lev [m/s]
+        invrs_rho_ds_zm,          & ! Inv dry, static density @ m-level [m^3/kg]
+        rho_ds_zm                   ! Dry, static density at m-lev [kg/m^3]
 
-        ! Set lower boundary array to 0
-        lhs_ta(:,:,1) = 0.0_core_rknd
+    !------------------- Output Variables -------------------
+    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
+        lhs_ta
 
-        ! Godunov-like upwind discretization
-        do k = 2, nz-1
-          do i = 1, ngrdcol
-            
-            ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
-            lhs_ta(kp1_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
-                                    * rho_ds_zm(i,k+1) &
-                                    * min(0.0_core_rknd,coef_wpxpyp_implicit(i,k+1))
+    !---------------- Local Variables -------------------
+    integer :: &
+        i, k, b          ! Loop variable for current grid level
 
-            ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
-            lhs_ta(k_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
-                                  * rho_ds_zm(i,k) &
-                                  * ( max(0.0_core_rknd,coef_wpxpyp_implicit(i,k+1)) - &
-                                      min(0.0_core_rknd,coef_wpxpyp_implicit(i,k)) )
+    !---------------- Begin Code -------------------
 
-            ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
-            lhs_ta(km1_mdiag,i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
-                                      * rho_ds_zm(i,k-1) &
-                                      * max(0.0_core_rknd,coef_wpxpyp_implicit(i,k) )
-          end do
-        end do
+    !$acc data copyin( coef_wpxpyp_implicit, invrs_rho_ds_zm, rho_ds_zm ) &
+    !$acc      copyout( lhs_ta )
 
-        ! Set upper boundary array to 0
-        lhs_ta(:,:,nz) = 0.0_core_rknd
+    ! Set lower boundary array to 0
+    !$acc parallel loop collapse(2)
+    do i = 1, ngrdcol
+      do b = 1, 3
+        lhs_ta(b,i,1) = 0.0_core_rknd
+      end do
+    end do
 
-        return
+    ! Godunov-like upwind discretization
+    !$acc parallel loop collapse(2) 
+    do k = 2, nz-1
+      do i = 1, ngrdcol
+        
+        ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
+        lhs_ta(kp1_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
+                                * rho_ds_zm(i,k+1) &
+                                * min(0.0_core_rknd,coef_wpxpyp_implicit(i,k+1))
 
-    end subroutine xpyp_term_ta_pdf_lhs_godunov
+        ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
+        lhs_ta(k_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
+                              * rho_ds_zm(i,k) &
+                              * ( max(0.0_core_rknd,coef_wpxpyp_implicit(i,k+1)) - &
+                                  min(0.0_core_rknd,coef_wpxpyp_implicit(i,k)) )
+
+        ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
+        lhs_ta(km1_mdiag,i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
+                                  * rho_ds_zm(i,k-1) &
+                                  * max(0.0_core_rknd,coef_wpxpyp_implicit(i,k) )
+      end do
+    end do
+
+    ! Set upper boundary array to 0
+    !$acc parallel loop collapse(2)
+    do i = 1, ngrdcol
+      do b = 1, 3
+        lhs_ta(b,i,nz) = 0.0_core_rknd
+      end do
+    end do
+
+    !$acc end data
+
+    return
+
+  end subroutine xpyp_term_ta_pdf_lhs_godunov
 
   !=============================================================================
   pure subroutine xpyp_term_ta_pdf_rhs( nz, ngrdcol, gr, term_wpxpyp_explicit,  & ! In
@@ -807,7 +843,7 @@ module turbulent_adv_pdf
 
     implicit none
 
-    ! Input Variables
+    ! ----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -827,20 +863,30 @@ module turbulent_adv_pdf
       term_wpxpyp_explicit_zm, & ! term_wpxpyp_expl. zm       [m/s(x un)(y un)]
       rho_ds_zm                  ! Dry, static density at m-levs       [kg/m^3]
 
-    ! Return Variable
+    ! ----------------------------- Return Variable -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       rhs_ta    ! RHS portion of xpyp turbulent advection      [(x un)(y un)/s]
 
-    ! Local Variables
-    integer :: i,k    ! Vertical level index
+    ! ----------------------------- Local Variables -----------------------------
+    integer :: i, k    ! Vertical level index
+
+    ! ----------------------------- Begin Code -----------------------------
+
+    !$acc data copyin( term_wpxpyp_explicit, rho_ds_zt, invrs_rho_ds_zm, &
+    !$acc              sgn_turbulent_vel, term_wpxpyp_explicit_zm, rho_ds_zm ) &
+    !$acc      copyout( rhs_ta )
 
 
     ! Set lower boundary value to 0
-    rhs_ta(:,1) = zero
+    !$acc parallel loop
+    do i = 1, ngrdcol
+      rhs_ta(i,1) = zero
+    end do
 
     if ( .not. l_upwind_xpyp_turbulent_adv ) then
 
       ! Centered discretization.
+      !$acc parallel loop collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           
@@ -854,7 +900,7 @@ module turbulent_adv_pdf
     else ! l_upwind_xpyp_turbulent_adv
 
       ! "Upwind" discretization
-
+      !$acc parallel loop collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
 
@@ -884,8 +930,12 @@ module turbulent_adv_pdf
     end if
 
     ! Set upper boundary value to 0
-    rhs_ta(:,nz) = zero
+    !$acc parallel loop
+    do i = 1, ngrdcol
+      rhs_ta(i,nz) = zero
+    end do
 
+    !$acc end data 
 
     return
 
@@ -944,9 +994,17 @@ module turbulent_adv_pdf
 
     !---------------- Begin Code -------------------
 
-    ! Set lower boundary value to 0
-    rhs_ta(:,1) = 0.0_core_rknd
+    !$acc data copyin( term_wpxpyp_explicit_zm, invrs_rho_ds_zm, &
+    !$acc              sgn_turbulent_vel, rho_ds_zm ) &
+    !$acc      copyout( rhs_ta )
 
+    ! Set lower boundary value to 0
+    !$acc parallel loop
+    do i = 1, ngrdcol
+      rhs_ta(i,1) = 0.0_core_rknd
+    end do
+
+    !$acc parallel loop collapse(2)
     do k = 2, nz-1
       do i = 1, ngrdcol 
         rhs_ta(i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
@@ -963,7 +1021,12 @@ module turbulent_adv_pdf
     end do
 
     ! Set upper boundary value to 0
-    rhs_ta(:,nz) = 0.0_core_rknd
+    !$acc parallel loop
+    do i = 1, ngrdcol
+      rhs_ta(i,nz) = 0.0_core_rknd
+    end do
+
+    !$acc end data 
 
     return
 
