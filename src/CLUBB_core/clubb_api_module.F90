@@ -4535,7 +4535,8 @@ contains
                                                  l_mono_flux_lim_um, & ! Out
                                                  l_mono_flux_lim_vm, & ! Out
                                                  l_mono_flux_lim_spikefix, & !Out 
-                                                 l_modify_ic_for_cnvg_test ) ! Out
+                                                 l_modify_ic_for_cnvg_test, & !Out
+                                                 l_modify_bc_for_cnvg_test ) ! Out
 
     use model_flags, only: &
         set_default_clubb_config_flags  ! Procedure
@@ -4669,8 +4670,10 @@ contains
                                       ! eliminates spurious drying tendencies at model top
 
     logical, intent(out) :: &
-      l_modify_ic_for_cnvg_test ! Flag to activate modifications on initial condition 
-                                ! for convergence test 
+      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
+                                   ! for convergence test 
+      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+                                   ! for convergence test 
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -4728,7 +4731,8 @@ contains
                                          l_mono_flux_lim_um, & ! Out
                                          l_mono_flux_lim_vm, & ! Out
                                          l_mono_flux_lim_spikefix, & ! Out 
-                                         l_modify_ic_for_cnvg_test ) ! Out
+                                         l_modify_ic_for_cnvg_test, & ! Out
+                                         l_modify_bc_for_cnvg_test ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -4792,6 +4796,7 @@ contains
                                                      l_mono_flux_lim_vm, & ! In
                                                      l_mono_flux_lim_spikefix, & ! In
                                                      l_modify_ic_for_cnvg_test,& ! In
+                                                     l_modify_bc_for_cnvg_test,& ! In
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -4926,8 +4931,10 @@ contains
       l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
     logical, intent(in) :: &
-      l_modify_ic_for_cnvg_test ! Flag to activate modifications on initial condition 
-                                ! for convergence test 
+      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
+                                   ! for convergence test 
+      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+                                   ! for convergence test 
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -4990,6 +4997,7 @@ contains
                                              l_mono_flux_lim_vm, & ! In
                                              l_mono_flux_lim_spikefix, & ! In
                                              l_modify_ic_for_cnvg_test, & ! In
+                                             l_modify_bc_for_cnvg_test, & ! In 
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api

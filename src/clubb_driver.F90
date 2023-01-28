@@ -844,8 +844,10 @@ module clubb_driver
       l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
     logical :: &
-      l_modify_ic_for_cnvg_test ! Flag to activate modifications on initial condition 
-                                ! for convergence test
+      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
+                                   ! for convergence test
+      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+                                   ! for convergence test 
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -896,7 +898,7 @@ module clubb_driver
       l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, &
       l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
       l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, & 
-      l_modify_ic_for_cnvg_test 
+      l_modify_ic_for_cnvg_test, l_modify_bc_for_cnvg_test 
 
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -1063,7 +1065,8 @@ module clubb_driver
                                          l_mono_flux_lim_um, & ! Intent(out)
                                          l_mono_flux_lim_vm, & ! Intent(out)
                                          l_mono_flux_lim_spikefix, & ! Intent(out) 
-                                         l_modify_ic_for_cnvg_test ) ! Intent(out)
+                                         l_modify_ic_for_cnvg_test, & ! Intent(out)
+                                         l_modify_bc_for_cnvg_test ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1459,6 +1462,7 @@ module clubb_driver
                                              l_mono_flux_lim_vm, & ! Intent(in)
                                              l_mono_flux_lim_spikefix, & ! Intent(in)
                                              l_modify_ic_for_cnvg_test, & ! Intent(in)
+                                             l_modify_bc_for_cnvg_test, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
@@ -2292,6 +2296,7 @@ module clubb_driver
       call prescribe_forcings( gr, dt_main, um, vm, thlm, & ! In
                                p_in_Pa, exner, rho, rho_zm, thvm, & ! In
                                Frad_SW_up, Frad_SW_down, Frad_LW_down, & ! In
+                               clubb_config_flags%l_modify_bc_for_cnvg_test, & ! In 
                                rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
                                vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
@@ -4781,6 +4786,7 @@ module clubb_driver
   subroutine prescribe_forcings( gr, dt, um, vm, thlm, &
                                  p_in_Pa, exner, rho, rho_zm, thvm, &
                                  Frad_SW_up, Frad_SW_down, Frad_LW_down, &
+                                 l_modify_bc_for_cnvg_test, & 
                                  rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
                                  thlm_forcing, rtm_forcing, um_forcing, &
                                  vm_forcing, wprtp_forcing, wpthlp_forcing, &
@@ -4986,7 +4992,22 @@ module clubb_driver
     logical :: &
       l_compute_momentum_flux, &
       l_set_sclr_sfc_rtm_thlm, &
-      l_fixed_flux            
+      l_fixed_flux  
+          
+    logical, intent(in) :: &
+      l_modify_bc_for_cnvg_test ! Flag to activate modifications on boundary condition 
+                                ! for convergence test 
+
+    ! local variable to store the values used to implement the modified 
+    ! boundary conditions for convergence test 
+    real( kind = core_rknd ) :: &
+      um_bot, &
+      vm_bot, &
+      rtm_bot, &
+      thlm_bot, &
+      rho_bot, &
+      exner_bot, &
+      z_bot     
 
 !-----------------------------------------------------------------------
 
@@ -5123,33 +5144,41 @@ module clubb_driver
     ! Compute Surface Fluxes
     !----------------------------------------------------------------
 
+    ! A new subrutine is added here to derive the pysical quantities at 
+    ! bottom model level that are used for computing the surface fluxes   
+    ! (i.e. boundary conditions)
+    call read_surface_var_for_bc( gr, um, vm, rtm, thlm, rho_zm, exner, & ! Intent(in)
+                                  l_modify_bc_for_cnvg_test, & ! Intent(in)
+                                  z_bot, um_bot, vm_bot, rtm_bot, & ! Intent (out) 
+                                  thlm_bot, rho_bot, exner_bot ) ! Intent (out) 
+    
     ! Boundary conditions for the second order moments
 
-    ubar = compute_ubar( um(2), vm(2) )
+    ubar = compute_ubar( um_bot, vm_bot )
 
     select case ( trim( runtype ) )
 
     case ( "rico" )
       l_set_sclr_sfc_rtm_thlm = .true.
-      call rico_sfclyr( time_current, um(2), vm(2), thlm(2), rtm(2),  & ! Intent(in)
+      call rico_sfclyr( time_current, um_bot, vm_bot, thlm_bot, rtm_bot, & ! Intent(in)
                           ! 299.8_core_rknd K is the RICO T_sfc;
                           ! 101540 Pa is the sfc pressure.
                           !gr%zt(1,2), 299.8_core_rknd, 101540._core_rknd,  &           ! Intent(in)
-                        gr%zt(1,2), p_sfc, exner(1), &                    ! Intent(in)
+                        z_bot, p_sfc, exner_bot, &                      ! Intent(in)
                         upwp_sfc, vpwp_sfc, wpthlp_sfc, &               ! Intent(out)
                         wprtp_sfc, ustar, T_sfc )                       ! Intent(out)
 
     case ( "gabls3" )
       l_compute_momentum_flux = .true.
       call gabls3_sfclyr( ubar, veg_T_in_K,      &               ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(1,2), exner(1), & ! Intent(in)
+                          thlm_bot, rtm_bot, z_bot, exner_bot, & ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
     case ( "gabls3_night" )
-      call gabls3_night_sfclyr( time_current, um(2), vm(2),    & ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(1,2),           & ! Intent(in)
-                          upwp_sfc, vpwp_sfc,                  & ! Intent(out)
-                          wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
+      call gabls3_night_sfclyr( time_current, um_bot, vm_bot,    & ! Intent(in)
+                          thlm_bot, rtm_bot, z_bot,              & ! Intent(in)
+                          upwp_sfc, vpwp_sfc,                    & ! Intent(out)
+                          wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
     case ( "jun25_altocu" )
       ! There are no surface momentum or heat fluxes
       ! for the Jun. 25 Altocumulus case.
@@ -5163,10 +5192,10 @@ module clubb_driver
 
     case ( "cobra" )
       l_compute_momentum_flux = .true.
-      call cobra_sfclyr( time_current, gr%zt(1,2), rho_zm(1), &      ! Intent(in)
-                         thlm(2), ubar,                     &      ! Intent(in)
-                         wpthlp_sfc, wprtp_sfc, ustar,      &      ! Intent(out)
-                         wpsclrp_sfc, wpedsclrp_sfc, T_sfc )       ! Intent(out)
+      call cobra_sfclyr( time_current, z_bot, rho_bot,  &      ! Intent(in)
+                         thlm_bot, ubar,                &      ! Intent(in)
+                         wpthlp_sfc, wprtp_sfc, ustar,  &      ! Intent(out)
+                         wpsclrp_sfc, wpedsclrp_sfc, T_sfc )   ! Intent(out)
     case ( "clex9_nov02" )
       ! There are no surface momentum or heat fluxes
       ! for the CLEX-9: Nov. 02 Altocumulus case.
@@ -5191,8 +5220,8 @@ module clubb_driver
 
     case ( "astex_a209" )
       l_compute_momentum_flux = .true.
-      call astex_a209_sfclyr( time_current, ubar, rtm(2), &     ! Intent(in)
-                          thlm(2), gr%zt(1,2), exner(1), p_sfc, & ! Intent(in)
+      call astex_a209_sfclyr( time_current, ubar, rtm_bot, &    ! Intent(in)
+                          thlm_bot, z_bot, exner_bot, p_sfc, &  ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
 
     case ( "nov11_altocu" )
@@ -5220,9 +5249,9 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.
-      call fire_sfclyr( time_current, ubar, p_sfc,            &       ! Intent(in)
-                        thlm(2), rtm(2), exner(1),   &                ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar, T_sfc )         ! Intent(out)
+      call fire_sfclyr( time_current, ubar, p_sfc, &         ! Intent(in)
+                        thlm_bot, rtm_bot, exner_bot, &      ! Intent(in)
+                        wpthlp_sfc, wprtp_sfc, ustar, T_sfc )! Intent(out)
 
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
@@ -5232,65 +5261,65 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.
-      call cloud_feedback_sfclyr( time_current, sfctype, &  ! Intent(in)
-                                  thlm(2), rtm(2), gr%zt(1,2),   &     ! Intent(in)
-                                  ubar, p_sfc, T_sfc,            &   ! Intent(in)
-                                  wpthlp_sfc, wprtp_sfc, ustar)      ! Intent(out)
+      call cloud_feedback_sfclyr( time_current, sfctype, &      ! Intent(in)
+                                  thlm_bot, rtm_bot, z_bot, &   ! Intent(in)
+                                  ubar, p_sfc, T_sfc, &         ! Intent(in)
+                                  wpthlp_sfc, wprtp_sfc, ustar) ! Intent(out)
 
     case ( "arm" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       rho_sfc = 1.1_core_rknd
-      call arm_sfclyr( time_current, gr%zt(1,2), rho_sfc,  &   ! Intent(in)
-                        thlm(2), ubar,               &       ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
+      call arm_sfclyr( time_current, z_bot, rho_sfc,  & ! Intent(in)
+                        thlm_bot, ubar,               & ! Intent(in)
+                        wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
 
     case ( "arm_0003" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_0003_sfclyr( time_current, gr%zt(1,2), rho_zm(1), &  ! Intent(in)
-                            thlm(2), ubar,                     &  ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar )        ! Intent(out)
+      call arm_0003_sfclyr( time_current, z_bot, rho_bot, &  ! Intent(in)
+                            thlm_bot, ubar,               &  ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar )   ! Intent(out)
     case ( "arm_3year" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_3year_sfclyr( time_current, gr%zt(1,2), rho_zm(1), & ! Intent(in)
-                              thlm(2), ubar,                    & ! Intent(in)
-                              wpthlp_sfc, wprtp_sfc, ustar) ! Intent(out)
+      call arm_3year_sfclyr( time_current, z_bot, rho_bot, & ! Intent(in)
+                              thlm_bot, ubar,              & ! Intent(in)
+                              wpthlp_sfc, wprtp_sfc, ustar)  ! Intent(out)
     case ( "mc3e" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_97_sfclyr( time_current, gr%zt(1,2), rho_zm(1), &   ! Intent(in)
-                          thlm(2), ubar,                     &   ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
+      call arm_97_sfclyr( time_current, z_bot, rho_bot, & ! Intent(in)
+                          thlm_bot, ubar,               & ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar )  ! Intent(out)
 
     case ( "arm_97" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_97_sfclyr( time_current, gr%zt(1,2), rho_zm(1), &   ! Intent(in)
-                          thlm(2), ubar,                     &   ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
+      call arm_97_sfclyr( time_current, z_bot, rho_bot, &   ! Intent(in)
+                          thlm_bot, ubar,               &   ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar )    ! Intent(out)
 
 
     case ( "atex" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call atex_sfclyr( time_current, ubar,          &         ! Intent(in)
-                        thlm(2), rtm(2), exner(1),   &         ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
+      call atex_sfclyr( time_current, ubar, &                 ! Intent(in)
+                        thlm_bot, rtm_bot, exner_bot, &       ! Intent(in)
+                        wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
 
     case ( "bomex" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call bomex_sfclyr( time_current, rtm(2),                      &  ! Intent(in) 
-                         wpthlp_sfc, wprtp_sfc, ustar )                ! Intent(out)
+      call bomex_sfclyr( time_current, rtm_bot, &       ! Intent(in) 
+                         wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
     case ( "dycoms2_rf01" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call dycoms2_rf01_sfclyr( time_current, sfctype, p_sfc, &       ! Intent(in)
-                                exner(1), ubar,              &        ! Intent(in)
-                                thlm(2), rtm(2), rho_zm(1),  &        ! Intent(in)
+                                exner_bot, ubar,              &       ! Intent(in)
+                                thlm_bot, rtm_bot, rho_bot,   &       ! Intent(in)
                                 wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
     case ( "dycoms2_rf02" )
       l_compute_momentum_flux = .true.
@@ -5301,43 +5330,43 @@ module clubb_driver
     case ( "gabls2" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call gabls2_sfclyr( time_current, time_initial, &              ! Intent(in)
-                          gr%zt(1,2), p_sfc, &                         ! Intent(in)
-                          ubar, thlm(2), rtm(2), exner(1), &         ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc )      ! Intent(out)
+      call gabls2_sfclyr( time_current, time_initial, &         ! Intent(in)
+                          z_bot, p_sfc, &                       ! Intent(in)
+                          ubar, thlm_bot, rtm_bot, exner_bot, & ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
 
     case ( "lba" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call lba_sfclyr( time_current, time_initial, gr%zt(1,2), &  ! Intent(in)
-                       rho_zm(1), thlm(2), ubar, &              ! Intent(in)
-                       wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
+      call lba_sfclyr( time_current, time_initial, z_bot, &  ! Intent(in)
+                       rho_bot, thlm_bot, ubar, &            ! Intent(in)
+                       wpthlp_sfc, wprtp_sfc, ustar )        ! Intent(out)
 
     case ( "mpace_a" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call mpace_a_sfclyr( time_current, rho_zm(1),      & ! Intent(in)
+      call mpace_a_sfclyr( time_current, rho_bot,        & ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
     case ( "mpace_b" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call mpace_b_sfclyr( time_current, rho_zm(1), &      ! Intent(in)
+      call mpace_b_sfclyr( time_current, rho_bot, &        ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
     case ( "neutral" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call neutral_case_sfclyr( time_current, gr%zt(1,2), thlm(2), & ! Intent(in)
-                                um(2), vm(2), ubar,              & ! Intent(in)
+      call neutral_case_sfclyr( time_current, z_bot, thlm_bot, & ! Intent(in)
+                                um_bot, vm_bot, ubar,          & ! Intent(in)
                                 upwp_sfc, vpwp_sfc, &              ! Intent(out)
                                 wpthlp_sfc, wprtp_sfc, ustar )     ! Intent(out)
 
     case ( "twp_ice" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call twp_ice_sfclyr( time_current, gr%zt(1,2), exner(1), thlm(2), & ! Intent(in)
-                            ubar, rtm(2), p_sfc,               &        ! Intent(in)
-                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )       ! Intent(out)
+      call twp_ice_sfclyr( time_current, z_bot, exner_bot, thlm_bot, & ! Intent(in)
+                            ubar, rtm_bot, p_sfc,               &      ! Intent(in)
+                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )      ! Intent(out)
 
     case ( "wangara" )
       l_compute_momentum_flux = .true.
@@ -5353,7 +5382,7 @@ module clubb_driver
 
     ! These have been placed here to help avoid repetition in the cases
     if( l_compute_momentum_flux ) then
-      call compute_momentum_flux( um(2), vm(2), ubar, ustar, &   ! Intent(in)
+      call compute_momentum_flux( um_bot, vm_bot, ubar, ustar, & ! Intent(in)
                                   upwp_sfc, vpwp_sfc )           ! Intent(out)
     end if
 
@@ -5420,6 +5449,170 @@ module clubb_driver
 
     return
   end subroutine prescribe_forcings
+
+!-------------------------------------------------------------------------------
+  subroutine read_surface_var_for_bc( gr, um, vm, rtm, thlm, rho_zm, exner, & ! Intent(in)
+                                      l_modify_bc_for_cnvg_test, & ! Intent(in)
+                                      z_bot, um_bot, vm_bot, rtm_bot, & ! Intent (out) 
+                                      thlm_bot, rho_bot, exner_bot ) ! Intent (out) 
+! Description:
+!   Derive the physical quantities at the bottom model level for calculating
+!   surface fluxes (boundary conditions). The default option is to use the
+!   quantities at first/second model level. When l_modify_bc_for_cnvg_test =
+!   .true., the quantities at a fixed model height (25m) is obtained via
+!   vertical interpolation and used for calculating the surface fluxes. The
+!   purpose is to eleminate the space-dependence of quantities in default option 
+!   when model is refined vertically, which results in a space-dependence of
+!   surface fluxes. The modified option is found to be correct treatment for 
+!   evaluating space-time convergence in CLUBB-SCM.
+!
+! Contact: Shixuan Zhang (Shixuan.Zhang@pnnl.gov).
+
+    use clubb_precision, only: &
+        core_rknd !------------------- Constants
+
+    use interpolation, only:  &
+        mono_cubic_interp  ! Procedure(s)
+
+    use grid_class, only: & 
+        grid  ! Type
+
+    use grid_class, only: &
+        zt2zm,  & ! Procedure(s)
+        zm2zt
+
+    use constants_clubb, only: &
+        fstderr, & ! Constant
+        fstdout
+
+    use error_code, only: &
+        clubb_at_least_debug_level ! Error indicator
+
+    implicit none
+
+    type (grid), target, intent(in) :: & 
+      gr
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      um,           & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
+      vm,           & ! northward grid-mean wind component (thermo. levs.) [m/s]
+      rtm,          & ! total water mixing ratio, r_t (thermo. levs.)      [kg/kg]
+      thlm,         & ! liq. water pot. temp., th_l (thermo. levels)       [K]
+      exner,        & ! Exner function (thermodynamic levels)              [-]
+      rho_zm          ! Air density on momentum levels                     [kg/m^3]
+
+    logical, intent(in) :: &
+      l_modify_bc_for_cnvg_test ! Flag to activate modifications on boundary condition 
+                                ! for convergence test 
+
+    ! the variable at a fixed model hight for the derivation of surface fluxes
+    real( kind = core_rknd ), intent(out) :: &
+      z_bot,        & ! height at bottom model level                          [m] 
+      um_bot,       & ! um at bottom model level (thermo. levs.)              [m/s]
+      vm_bot,       & ! vm at bottom model level (thermo. levs.)              [m/s]
+      rtm_bot,      & ! rtm at bottom model level (thermo. levs.)             [kg/kg]
+      thlm_bot,     & ! thlm at bottom model level (thermo. levels)           [K]
+      rho_bot,      & ! rho at bottom model level (momentum levels)           [kg/m^3]   
+      exner_bot       ! exner at bottom model level (thermodynamic levels)    [-]
+
+    ! Options for locating the fixed model height
+    integer, parameter :: &
+      constant_height_option   = 2 ! option 1: find the nearest level 
+                                   ! option 2: interpolate to the constant height level 
+
+    ! Local variables 
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      z_diff,  & ! differences of the model hight and the fixed height leve
+      um_zm,   &
+      vm_zm,   &
+      exner_zm,&
+      rtm_zm,  &
+      thlm_zm
+
+    integer :: kk, km1,kp1,kp2,k00
+
+    if (.not. l_modify_bc_for_cnvg_test) then 
+      ! Default model setup in CLUBB-SCM 
+      z_bot     = gr%zt(1,2)
+      um_bot    = um(2)
+      vm_bot    = vm(2)
+      rtm_bot   = rtm(2)
+      thlm_bot  = thlm(2)
+      rho_bot   = rho_zm(1)
+      exner_bot = exner(1)
+
+      !write(unit=fstdout, fmt='(a,f10.4)')'Surface fluxes calculated at height of = ', z_bot
+      !write(unit=fstdout, fmt='(a,f10.4)')'The nearest zt-levels to z_bot = ', gr%zt(1,2)
+    else 
+      ! Modified option which find the values of physical quantities 
+      ! at a fixed model height (25m)
+      z_bot  = 25.0_core_rknd !user-specified 
+       
+      ! find the neareast level to the constant model height 
+      z_diff = abs(gr%zt(1,1:gr%nz) - z_bot )
+      kk     = MINLOC (z_diff, DIM = 1)
+ 
+      if ( clubb_at_least_debug_level( 1 ) .and. (kk < 2) ) then
+        write(fstderr,*) "Sanity check failed! constant model height is not properly set"
+        write(fstderr,*) "in get_fixed_height_values."
+      end if
+
+      if (constant_height_option == 1) then ! option 1 (non-interpolation)
+
+        um_bot    = um(kk)
+        vm_bot    = vm(kk)
+        rtm_bot   = rtm(kk)
+        thlm_bot  = thlm(kk)
+        rho_bot   = rho_zm(kk-1)
+        exner_bot = exner(kk)
+
+      else ! option 2 (interpolation) 
+
+        ! use the mono cubic interpolation to get the values 
+        if ( kk == 2 ) then
+          km1 = 1
+          k00 = 1
+          kp1 = 2
+          kp2 = 3
+        else
+          km1 = kk-2
+          k00 = kk-1
+          kp1 = kk
+          kp2 = kk+1
+        end if
+
+        um_zm    = zt2zm( gr, um )
+        vm_zm    = zt2zm( gr, vm )
+        thlm_zm  = zt2zm( gr, thlm)
+        rtm_zm   = zt2zm( gr, rtm )
+        exner_zm = zt2zm( gr, exner)
+        exner_zm(1) = exner(1)
+
+        um_bot    = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
+                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
+                                       um_zm(km1), um_zm(k00), um_zm(kp1), um_zm(kp2) )
+        vm_bot    = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
+                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
+                                       vm_zm(km1), vm_zm(k00), vm_zm(kp1), vm_zm(kp2) )
+        exner_bot = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
+                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
+                                       exner_zm(km1), exner_zm(k00), exner_zm(kp1), exner_zm(kp2) )
+        thlm_bot  = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
+                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
+                                       thlm_zm(km1), thlm_zm(k00), thlm_zm(kp1), thlm_zm(kp2) )
+        rtm_bot   = mono_cubic_interp( z_bot, km1, k00, kp1, kp2, &
+                                       gr%zm(1,km1), gr%zm(1,k00), gr%zm(1,kp1), gr%zm(1,kp2), &
+                                       rtm_zm(km1), rtm_zm(k00), rtm_zm(kp1), rtm_zm(kp2) )
+        rho_bot   = rho_zm(kk-1)
+
+      end if 
+
+      !write(unit=fstdout, fmt='(a,f10.4)')'Surface fluxes calculated at height of = ', z_bot
+      !write(unit=fstdout, fmt='(a,f10.4)')'The nearest zt-levels to z_bot = ', gr%zt(1,kk)
+    end if 
+
+    return
+  end subroutine read_surface_var_for_bc
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_radiation &

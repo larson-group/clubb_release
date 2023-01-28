@@ -277,8 +277,10 @@ module model_flags
       l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that 
                                       ! eliminates spurious drying tendencies at model top
     logical :: &
-      l_modify_ic_for_cnvg_test ! Flag to activate modifications on initial condition 
-                                ! for convergence test 
+      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
+                                   ! for convergence test 
+      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+                                   ! for convergence test 
 
   end type clubb_config_flags_type
 
@@ -407,7 +409,8 @@ module model_flags
                                              l_mono_flux_lim_um, &
                                              l_mono_flux_lim_vm, &
                                              l_mono_flux_lim_spikefix, &
-                                             l_modify_ic_for_cnvg_test )
+                                             l_modify_ic_for_cnvg_test, &  
+                                             l_modify_bc_for_cnvg_test )
 
 ! Description:
 !   Sets all CLUBB flags to a default setting.
@@ -545,8 +548,10 @@ module model_flags
                                       ! eliminates spurious drying tendencies at model top
 
     logical, intent(out) :: &
-      l_modify_ic_for_cnvg_test ! Flag to activate modifications on initial condition 
-                                ! for convergence test 
+      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
+                                   ! for convergence test 
+      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+                                   ! for convergence test 
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -614,6 +619,7 @@ module model_flags
     l_mono_flux_lim_vm = .true.
     l_mono_flux_lim_spikefix = .true.
     l_modify_ic_for_cnvg_test = .false.
+    l_modify_bc_for_cnvg_test = .false.
 
     return
   end subroutine set_default_clubb_config_flags
@@ -676,6 +682,7 @@ module model_flags
                                                  l_mono_flux_lim_vm, &
                                                  l_mono_flux_lim_spikefix, &
                                                  l_modify_ic_for_cnvg_test, &
+                                                 l_modify_bc_for_cnvg_test, & 
                                                  clubb_config_flags )
 
 ! Description:
@@ -813,8 +820,10 @@ module model_flags
       l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
     logical, intent(in) :: &
-      l_modify_ic_for_cnvg_test ! Flag to activate modifications on initial condition 
-                                ! for convergence test 
+      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
+                                   ! for convergence test 
+      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+                                   ! for convergence test 
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -880,6 +889,7 @@ module model_flags
     clubb_config_flags%l_mono_flux_lim_vm = l_mono_flux_lim_vm
     clubb_config_flags%l_mono_flux_lim_spikefix = l_mono_flux_lim_spikefix
     clubb_config_flags%l_modify_ic_for_cnvg_test = l_modify_ic_for_cnvg_test 
+    clubb_config_flags%l_modify_bc_for_cnvg_test = l_modify_bc_for_cnvg_test 
 
     return
   end subroutine initialize_clubb_config_flags_type
@@ -964,6 +974,7 @@ module model_flags
     write(iunit,*) "l_mono_flux_lim_vm = ",clubb_config_flags%l_mono_flux_lim_um
     write(iunit,*) "l_mono_flux_lim_spikefix = ",clubb_config_flags%l_mono_flux_lim_spikefix
     write(iunit,*) "l_modify_ic_for_cnvg_test = ",clubb_config_flags%l_modify_ic_for_cnvg_test
+    write(iunit,*) "l_modify_bc_for_cnvg_test = ",clubb_config_flags%l_modify_bc_for_cnvg_test 
 
     return
   end subroutine print_clubb_config_flags
