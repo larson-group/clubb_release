@@ -553,8 +553,10 @@ module pdf_parameter_tests
     logical :: &
       l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
                                    ! for convergence test 
-      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                   ! as numerical smoothing in clubb equations
 
     real( kind = core_rknd ) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
@@ -700,7 +702,8 @@ module pdf_parameter_tests
                                          l_mono_flux_lim_vm, &
                                          l_mono_flux_lim_spikefix, &
                                          l_modify_ic_for_cnvg_test, &
-                                         l_modify_bc_for_cnvg_test )
+                                         l_modify_bc_for_cnvg_test, & 
+                                         l_linear_diffusion )
 
     iiPDF_type = test_pdf_type
 

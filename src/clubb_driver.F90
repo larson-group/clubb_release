@@ -846,8 +846,10 @@ module clubb_driver
     logical :: &
       l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
                                    ! for convergence test
-      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                   ! as numerical smoothing in clubb equations
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -898,7 +900,7 @@ module clubb_driver
       l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, &
       l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
       l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, & 
-      l_modify_ic_for_cnvg_test, l_modify_bc_for_cnvg_test 
+      l_modify_ic_for_cnvg_test, l_modify_bc_for_cnvg_test, l_linear_diffusion 
 
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -1066,7 +1068,8 @@ module clubb_driver
                                          l_mono_flux_lim_vm, & ! Intent(out)
                                          l_mono_flux_lim_spikefix, & ! Intent(out) 
                                          l_modify_ic_for_cnvg_test, & ! Intent(out)
-                                         l_modify_bc_for_cnvg_test ) ! Intent(out)
+                                         l_modify_bc_for_cnvg_test, & ! Intent(out)
+                                         l_linear_diffusion ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1463,6 +1466,7 @@ module clubb_driver
                                              l_mono_flux_lim_spikefix, & ! Intent(in)
                                              l_modify_ic_for_cnvg_test, & ! Intent(in)
                                              l_modify_bc_for_cnvg_test, & ! Intent(in)
+                                             l_linear_diffusion, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
@@ -1517,6 +1521,7 @@ module clubb_driver
            grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
            thermodynamic_heights(begin_height:end_height),       & ! intent(in)
            l_prescribed_avg_deltaz,                              & ! intent(in)
+           clubb_config_flags%l_linear_diffusion,                & ! intent(in)
            lmin, nu_vert_res_dep, err_code_dummy )                 ! intent(out)  
 
     ! Allocate and initialize variables
@@ -6956,6 +6961,7 @@ module clubb_driver
              grid_type, momentum_heights_col(:,begin_height:end_height),          & ! intent(in)
              thermodynamic_heights_col(:,begin_height:end_height),                & ! intent(in)
              l_prescribed_avg_deltaz,                                             & ! intent(in)
+             clubb_config_flags%l_linear_diffusion,                               & ! intent(in)
              lmin_col, nu_vert_res_dep_col, err_code_dummy )                        ! intent(out)  
 
       ! Allocate the inouts we want to save

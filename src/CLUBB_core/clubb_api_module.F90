@@ -2607,6 +2607,7 @@ contains
              deltaz, params, nzmax, &
              grid_type, momentum_heights, thermodynamic_heights, &
              l_prescribed_avg_deltaz, &
+             l_linear_diffusion, & 
              lmin, nu_vert_res_dep, err_code_api )
 
     use parameters_tunable, only: &
@@ -2654,6 +2655,10 @@ contains
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
+    logical, intent(in) :: & 
+      l_linear_diffusion      ! Flag to use linear diffusion instead of nonlinear diffusion 
+                              ! as numerical smoothing in clubb equations
+
     ! Output Variables 
     real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
@@ -2680,6 +2685,7 @@ contains
               deltaz_col, params, nzmax, 1, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
+              l_linear_diffusion, &  
               lmin, nu_vert_res_dep, err_code_api )
 
   end subroutine setup_parameters_api_single_col
@@ -2692,6 +2698,7 @@ contains
              deltaz, params, nzmax, ngrdcol, &
              grid_type, momentum_heights, thermodynamic_heights, &
              l_prescribed_avg_deltaz, &
+             l_linear_diffusion, & 
              lmin, nu_vert_res_dep, err_code_api )
 
     use parameters_tunable, only: &
@@ -2741,6 +2748,10 @@ contains
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
+    logical, intent(in) :: &
+      l_linear_diffusion      ! Flag to use linear diffusion instead of nonlinear diffusion 
+                              ! as numerical smoothing in clubb equations
+
     ! Output Variables 
     real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
@@ -2755,6 +2766,7 @@ contains
               deltaz, params, nzmax, ngrdcol, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
+              l_linear_diffusion, & 
               lmin, nu_vert_res_dep, err_code_api )
 
   end subroutine setup_parameters_api_multi_col
@@ -4536,7 +4548,8 @@ contains
                                                  l_mono_flux_lim_vm, & ! Out
                                                  l_mono_flux_lim_spikefix, & !Out 
                                                  l_modify_ic_for_cnvg_test, & !Out
-                                                 l_modify_bc_for_cnvg_test ) ! Out
+                                                 l_modify_bc_for_cnvg_test, & !Out 
+                                                 l_linear_diffusion ) ! Out
 
     use model_flags, only: &
         set_default_clubb_config_flags  ! Procedure
@@ -4672,8 +4685,10 @@ contains
     logical, intent(out) :: &
       l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
                                    ! for convergence test 
-      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                   ! as numerical smoothing in clubb equations
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -4732,7 +4747,8 @@ contains
                                          l_mono_flux_lim_vm, & ! Out
                                          l_mono_flux_lim_spikefix, & ! Out 
                                          l_modify_ic_for_cnvg_test, & ! Out
-                                         l_modify_bc_for_cnvg_test ) ! Out
+                                         l_modify_bc_for_cnvg_test, & ! Out 
+                                         l_linear_diffusion ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -4795,8 +4811,9 @@ contains
                                                      l_mono_flux_lim_um, & ! In
                                                      l_mono_flux_lim_vm, & ! In
                                                      l_mono_flux_lim_spikefix, & ! In
-                                                     l_modify_ic_for_cnvg_test,& ! In
-                                                     l_modify_bc_for_cnvg_test,& ! In
+                                                     l_modify_ic_for_cnvg_test, & ! In
+                                                     l_modify_bc_for_cnvg_test, & ! In
+                                                     l_linear_diffusion, & ! In 
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -4933,8 +4950,10 @@ contains
     logical, intent(in) :: &
       l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
                                    ! for convergence test 
-      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                   ! as numerical smoothing in clubb equations
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -4998,6 +5017,7 @@ contains
                                              l_mono_flux_lim_spikefix, & ! In
                                              l_modify_ic_for_cnvg_test, & ! In
                                              l_modify_bc_for_cnvg_test, & ! In 
+                                             l_linear_diffusion, & ! In 
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api

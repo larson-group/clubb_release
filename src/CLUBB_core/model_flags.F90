@@ -279,8 +279,10 @@ module model_flags
     logical :: &
       l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
                                    ! for convergence test 
-      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                   ! as numerical smoothing in clubb equations 
 
   end type clubb_config_flags_type
 
@@ -410,7 +412,8 @@ module model_flags
                                              l_mono_flux_lim_vm, &
                                              l_mono_flux_lim_spikefix, &
                                              l_modify_ic_for_cnvg_test, &  
-                                             l_modify_bc_for_cnvg_test )
+                                             l_modify_bc_for_cnvg_test, & 
+                                             l_linear_diffusion )
 
 ! Description:
 !   Sets all CLUBB flags to a default setting.
@@ -550,8 +553,10 @@ module model_flags
     logical, intent(out) :: &
       l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
                                    ! for convergence test 
-      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                   ! as numerical smoothing in clubb equations
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -620,6 +625,7 @@ module model_flags
     l_mono_flux_lim_spikefix = .true.
     l_modify_ic_for_cnvg_test = .false.
     l_modify_bc_for_cnvg_test = .false.
+    l_linear_diffusion = .false. 
 
     return
   end subroutine set_default_clubb_config_flags
@@ -683,6 +689,7 @@ module model_flags
                                                  l_mono_flux_lim_spikefix, &
                                                  l_modify_ic_for_cnvg_test, &
                                                  l_modify_bc_for_cnvg_test, & 
+                                                 l_linear_diffusion, & 
                                                  clubb_config_flags )
 
 ! Description:
@@ -822,8 +829,10 @@ module model_flags
     logical, intent(in) :: &
       l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
                                    ! for convergence test 
-      l_modify_bc_for_cnvg_test    ! Flag to activate modifications on boundary condition 
+      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                   ! as numerical smoothing in clubb equations
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -890,6 +899,7 @@ module model_flags
     clubb_config_flags%l_mono_flux_lim_spikefix = l_mono_flux_lim_spikefix
     clubb_config_flags%l_modify_ic_for_cnvg_test = l_modify_ic_for_cnvg_test 
     clubb_config_flags%l_modify_bc_for_cnvg_test = l_modify_bc_for_cnvg_test 
+    clubb_config_flags%l_linear_diffusion = l_linear_diffusion 
 
     return
   end subroutine initialize_clubb_config_flags_type
@@ -975,6 +985,7 @@ module model_flags
     write(iunit,*) "l_mono_flux_lim_spikefix = ",clubb_config_flags%l_mono_flux_lim_spikefix
     write(iunit,*) "l_modify_ic_for_cnvg_test = ",clubb_config_flags%l_modify_ic_for_cnvg_test
     write(iunit,*) "l_modify_bc_for_cnvg_test = ",clubb_config_flags%l_modify_bc_for_cnvg_test 
+    write(iunit,*) "l_linear_diffusion = ",clubb_config_flags%l_linear_diffusion 
 
     return
   end subroutine print_clubb_config_flags

@@ -40,13 +40,13 @@ module parameters_tunable
 
   type nu_vertical_res_dep
     real( kind = core_rknd ), allocatable, dimension(:) :: & 
-      nu1,   & ! Background Coefficient of Eddy Diffusion: wp2      [m^2/s]
-      nu2,   & ! Background Coefficient of Eddy Diffusion: xp2      [m^2/s]
-      nu6,   & ! Background Coefficient of Eddy Diffusion: wpxp     [m^2/s]
-      nu8,   & ! Background Coefficient of Eddy Diffusion: wp3      [m^2/s]
-      nu9,   & ! Background Coefficient of Eddy Diffusion: up2/vp2  [m^2/s]
-      nu10,  & ! Background Coefficient of Eddy Diffusion: edsclrm  [m^2/s]
-      nu_hm    ! Background Coefficient of Eddy Diffusion: hydromet [m^2/s]
+      nu1,   & ! Background nonlinear diffusion coef.: wp2      [m^2/s]
+      nu2,   & ! Background nonlinear diffusion coef.: xp2      [m^2/s]
+      nu6,   & ! Background nonlinear diffusion coef.: wpxp     [m^2/s]
+      nu8,   & ! Background nonlinear diffusion coef.: wp3      [m^2/s]
+      nu9,   & ! Background nonlinear diffusion coef.: up2/vp2  [m^2/s]
+      nu10,  & ! Background nonlinear diffusion coef.: edsclrm  [m^2/s]
+      nu_hm    ! Background nonlinear diffusion coef.: hydromet [m^2/s]
   end type nu_vertical_res_dep
 
   ! These are referenced together often enough that it made sense to
@@ -358,6 +358,7 @@ module parameters_tunable
               deltaz, params, nzmax, ngrdcol, &
               grid_type, momentum_heights, thermodynamic_heights, &
               l_prescribed_avg_deltaz, &
+              l_linear_diffusion, & 
               lmin, nu_vert_res_dep, err_code_out )
 
     ! Description:
@@ -429,6 +430,10 @@ module parameters_tunable
 
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+
+    logical, intent(in) :: &
+      l_linear_diffusion      ! Flag to use linear diffusion instead of nonlinear diffusion 
+                              ! as numerical smoothing in clubb equations
 
     real( kind = core_rknd ), intent(out) :: &
       lmin    ! Min. value for the length scale    [m]
@@ -518,13 +523,69 @@ module parameters_tunable
     !lmin = lmin_coef * deltaz  ! Old
     lmin = lmin_coef * lmin_deltaz ! New fixed value
 
-    ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
-    call adj_low_res_nu( &
-             nzmax, ngrdcol, grid_type, deltaz,  & ! Intent(in)
-             momentum_heights, thermodynamic_heights, & ! Intent(in)
-             l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-             nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
-             nu_vert_res_dep )  ! Intent(out)
+    if ( l_linear_diffusion ) then 
+      !If use linear diffusion, then diffusion coefficients are constant 
+      !and set to the nu coefficients declared in the parameters.in file.
+      allocate( nu_vert_res_dep%nu1(1:ngrdcol), &
+                nu_vert_res_dep%nu2(1:ngrdcol), &
+                nu_vert_res_dep%nu6(1:ngrdcol), &
+                nu_vert_res_dep%nu8(1:ngrdcol), &
+                nu_vert_res_dep%nu9(1:ngrdcol), &
+                nu_vert_res_dep%nu10(1:ngrdcol), &
+                nu_vert_res_dep%nu_hm(1:ngrdcol) )
+
+      do i = 1, ngrdcol
+        nu_vert_res_dep%nu1(i)   =  nu1
+        nu_vert_res_dep%nu2(i)   =  nu2
+        nu_vert_res_dep%nu6(i)   =  nu6
+        nu_vert_res_dep%nu8(i)   =  nu8
+        nu_vert_res_dep%nu9(i)   =  nu9
+        !parameters for hydrometers in microphysics, remove their  
+        !dependence on vertical resolution in linear diffusion 
+        nu_vert_res_dep%nu10(i)  =  nu10
+        nu_vert_res_dep%nu_hm(i) =  nu_hm
+      end do
+ 
+      !Sanity check to make sure the nonlinear coefficient compoent is always
+      !zero when linear diffusion is activated (in case unintended wrong setups
+      !appear in the parameters.in file).  
+      if ( abs(c_K1) > zero ) then 
+        write(fstderr,*) "Warning: nonlinear diffusion coef. for wp2, c_K1 = ", c_K1, & 
+                         ",force it to be zero for linear diffusion ..."
+        c_K1 = zero 
+      end if  
+      if ( abs(c_K2) > zero ) then    
+        write(fstderr,*) "Warning: nonlinear diffusion coef. for xp2, c_K2 = ", c_K2, & 
+                         ",force it to be zero for linear diffusion ..."
+        c_K2 = zero
+      end if
+      if ( abs(c_K6) > zero ) then    
+        write(fstderr,*) "Warning: nonlinear diffusion coef. for wpthlp and wprtp, c_K6 = ", c_K6, & 
+                         ",force it to be zero for linear diffusion ..."
+        c_K6 = zero
+      end if
+      if ( abs(c_K8) > zero ) then    
+        write(fstderr,*) "Warning: nonlinear diffusion coef. for wp3, c_K8 = ", c_K8, & 
+                         ",force it to be zero for linear diffusion ..."
+        c_K8 = zero
+      end if
+      if ( abs(c_K9) > zero ) then    
+        write(fstderr,*) "Warning: nonlinear diffusion coef. for up2 and vp2, c_K9 = ", c_K9, & 
+                         ",force it to be zero for linear diffusion ..."
+        c_K9 = zero
+      end if
+
+    else ! default setup 
+
+      ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
+      call adj_low_res_nu( &
+               nzmax, ngrdcol, grid_type, deltaz,  & ! Intent(in)
+               momentum_heights, thermodynamic_heights, & ! Intent(in)
+               l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
+               nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
+               nu_vert_res_dep )  ! Intent(out)
+
+    end if 
 
     if ( beta < zero .or. beta > three ) then
 
