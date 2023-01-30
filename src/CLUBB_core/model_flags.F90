@@ -281,6 +281,8 @@ module model_flags
                                    ! for convergence test 
       l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_use_modify_limiters,     & ! Flag to activate modifications on limiters to improve 
+                                   ! the solution convergence 
       l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
                                    ! as numerical smoothing in clubb equations 
 
@@ -413,6 +415,7 @@ module model_flags
                                              l_mono_flux_lim_spikefix, &
                                              l_modify_ic_for_cnvg_test, &  
                                              l_modify_bc_for_cnvg_test, & 
+                                             l_use_modify_limiters, & 
                                              l_linear_diffusion )
 
 ! Description:
@@ -555,6 +558,8 @@ module model_flags
                                    ! for convergence test 
       l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_use_modify_limiters,     & ! Flag to activate modifications on limiters to improve 
+                                   ! the solution convergence 
       l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
                                    ! as numerical smoothing in clubb equations
 
@@ -625,6 +630,7 @@ module model_flags
     l_mono_flux_lim_spikefix = .true.
     l_modify_ic_for_cnvg_test = .false.
     l_modify_bc_for_cnvg_test = .false.
+    l_use_modify_limiters = .false.
     l_linear_diffusion = .false. 
 
     return
@@ -688,7 +694,8 @@ module model_flags
                                                  l_mono_flux_lim_vm, &
                                                  l_mono_flux_lim_spikefix, &
                                                  l_modify_ic_for_cnvg_test, &
-                                                 l_modify_bc_for_cnvg_test, & 
+                                                 l_modify_bc_for_cnvg_test, &
+                                                 l_use_modify_limiters, &  
                                                  l_linear_diffusion, & 
                                                  clubb_config_flags )
 
@@ -831,6 +838,8 @@ module model_flags
                                    ! for convergence test 
       l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_use_modify_limiters,     & ! Flag to activate modifications on limiters to improve 
+                                   ! the solution convergence 
       l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
                                    ! as numerical smoothing in clubb equations
 
@@ -899,6 +908,7 @@ module model_flags
     clubb_config_flags%l_mono_flux_lim_spikefix = l_mono_flux_lim_spikefix
     clubb_config_flags%l_modify_ic_for_cnvg_test = l_modify_ic_for_cnvg_test 
     clubb_config_flags%l_modify_bc_for_cnvg_test = l_modify_bc_for_cnvg_test 
+    clubb_config_flags%l_use_modify_limiters = l_use_modify_limiters 
     clubb_config_flags%l_linear_diffusion = l_linear_diffusion 
 
     return
@@ -985,6 +995,7 @@ module model_flags
     write(iunit,*) "l_mono_flux_lim_spikefix = ",clubb_config_flags%l_mono_flux_lim_spikefix
     write(iunit,*) "l_modify_ic_for_cnvg_test = ",clubb_config_flags%l_modify_ic_for_cnvg_test
     write(iunit,*) "l_modify_bc_for_cnvg_test = ",clubb_config_flags%l_modify_bc_for_cnvg_test 
+    write(iunit,*) "l_use_modify_limiters = ",clubb_config_flags%l_use_modify_limiters 
     write(iunit,*) "l_linear_diffusion = ",clubb_config_flags%l_linear_diffusion 
 
     return

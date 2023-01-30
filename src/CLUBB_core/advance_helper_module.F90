@@ -501,6 +501,7 @@ module advance_helper_module
                                         l_brunt_vaisala_freq_moist, &
                                         l_use_thvm_in_bv_freq, &
                                         l_use_shear_Richardson, &
+                                        l_use_modify_limiters, & 
                                         stats_zm, & 
                                         Cx_fnc_Richardson )
 
@@ -517,7 +518,8 @@ module advance_helper_module
     use grid_class, only: &
         grid, & ! Type
         ddzt, & ! Procedure(s)
-        zt2zm
+        zt2zm, & 
+        zm2zt
 
     use constants_clubb, only: &
         one, zero
@@ -588,7 +590,9 @@ module advance_helper_module
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,      & ! Use thvm in the calculation of Brunt-Vaisala frequency
-      l_use_shear_Richardson        ! Use shear in the calculation of Richardson number
+      l_use_shear_Richardson,     & ! Use shear in the calculation of Richardson number
+      l_use_modify_limiters         ! Flag to activate modifications on limiters to improve 
+                                    ! the solution convergence 
 
     ! Output Variable
     real( kind = core_rknd), dimension(ngrdcol,nz), intent(out) :: &
@@ -617,6 +621,12 @@ module advance_helper_module
       Richardson_num_min    ! CLUBB tunable parameter Richardson_num_min
       
     integer :: i
+
+    real( kind = core_rknd ), parameter :: &
+      min_max_smth_mag = 1.0e-9_core_rknd ! "base" smoothing magnitude before scaling 
+                                          ! for the respective data structure. See
+                                          ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
+                                          ! for a plot on how output behaves with varying min_max_smth_mag
 
   !-----------------------------------------------------------------------
 
@@ -683,10 +693,25 @@ module advance_helper_module
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
     ! The min function ensures that Cx does not exceed Cx_max, regardless of the
     !     value of Richardson_num_max.
-    Cx_fnc_Richardson = linear_interp_factor( &
-                    ( max(min(Richardson_num_max,Ri_zm),Richardson_num_min) &
-                    - Richardson_num_min )  * invrs_min_max_diff, &
-                                              clubb_params(iCx_max), clubb_params(iCx_min) )
+    if (l_use_modify_limiters) then 
+
+      Cx_fnc_Richardson = linear_interp_factor( &
+                     smooth_max(nz, ngrdcol, zero, & 
+                                smooth_min(nz, ngrdcol, one,&  
+                                           (Ri_zm-Richardson_num_min)*invrs_min_max_diff, &
+                                               one * min_max_smth_mag), &
+                     one * min_max_smth_mag), clubb_params(iCx_max), clubb_params(iCx_min) )
+
+      Cx_fnc_Richardson = zt2zm(nz, ngrdcol, gr, zm2zt(nz, ngrdcol, gr,Cx_fnc_Richardson))
+
+    else ! default setup 
+
+      Cx_fnc_Richardson = linear_interp_factor( &
+                      ( max(min(Richardson_num_max,Ri_zm),Richardson_num_min) &
+                      - Richardson_num_min )  * invrs_min_max_diff, &
+                                               clubb_params(iCx_max), clubb_params(iCx_min) )
+
+    end if 
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
       Cx_fnc_Richardson = Lscale_width_vert_avg( nz, ngrdcol, gr, &

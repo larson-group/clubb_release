@@ -848,6 +848,8 @@ module clubb_driver
                                    ! for convergence test
       l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
                                    ! for convergence test 
+      l_use_modify_limiters,     & ! Flag to activate modifications on limiters to improve 
+                                   ! the solution convergence 
       l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
                                    ! as numerical smoothing in clubb equations
 
@@ -900,7 +902,8 @@ module clubb_driver
       l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, &
       l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
       l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, & 
-      l_modify_ic_for_cnvg_test, l_modify_bc_for_cnvg_test, l_linear_diffusion 
+      l_modify_ic_for_cnvg_test, l_modify_bc_for_cnvg_test, l_use_modify_limiters, & 
+      l_linear_diffusion 
 
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -1069,6 +1072,7 @@ module clubb_driver
                                          l_mono_flux_lim_spikefix, & ! Intent(out) 
                                          l_modify_ic_for_cnvg_test, & ! Intent(out)
                                          l_modify_bc_for_cnvg_test, & ! Intent(out)
+                                         l_use_modify_limiters, & ! Intent(out)
                                          l_linear_diffusion ) ! Intent(out)
 
     ! Read namelist file
@@ -1466,6 +1470,7 @@ module clubb_driver
                                              l_mono_flux_lim_spikefix, & ! Intent(in)
                                              l_modify_ic_for_cnvg_test, & ! Intent(in)
                                              l_modify_bc_for_cnvg_test, & ! Intent(in)
+                                             l_use_modify_limiters, & ! Intent(in)
                                              l_linear_diffusion, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 

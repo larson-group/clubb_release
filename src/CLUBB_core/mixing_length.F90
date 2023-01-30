@@ -1158,6 +1158,7 @@ module mixing_length
                         l_brunt_vaisala_freq_moist, & !intent in
                         l_use_thvm_in_bv_freq, &! intent in
                         l_smooth_Heaviside_tau_wpxp, & ! intent in
+                        l_use_modify_limiters, & ! intent in 
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
                         brunt_vaisala_freq_sqd_plus, & !intent out
@@ -1256,6 +1257,8 @@ module mixing_length
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq, &      ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_use_modify_limiters, &      ! Flag to activate modifications on limiters to improve 
+                                    ! the solution convergence 
       l_smooth_Heaviside_tau_wpxp   ! Use the smoothed Heaviside 'Peskin' function
                                     ! to compute invrs_tau_wpxp_zm
 
@@ -1383,61 +1386,83 @@ module mixing_length
     !The min function below smooths the slope discontinuity in brunt freq
     !  and thereby allows tau to remain large in Sc layers in which thlm may
     !  be slightly stably stratified.
-    if ( l_smooth_min_max ) then
-          brunt_vaisala_freq_sqd_smth &
-            = zt2zm(nz, ngrdcol, gr, zm2zt(nz, ngrdcol, gr, &
-                                           smooth_min(nz, ngrdcol, &
-                                           brunt_vaisala_freq_sqd, &
-                                           1.e8_core_rknd * abs(brunt_vaisala_freq_sqd) ** 3, &
-                                           1.0e-4_core_rknd * min_max_smth_mag)))
-        else
-          brunt_vaisala_freq_sqd_smth &
-            = zt2zm(nz, ngrdcol, gr, &
-                    zm2zt(nz, ngrdcol, gr, &
-                          min(brunt_vaisala_freq_sqd, &
-                              1.e8_core_rknd * abs(brunt_vaisala_freq_sqd) ** 3)))
-        end if
-        
-        if ( l_smooth_min_max ) then
-          sqrt_Ri_zm &
-            = sqrt(smooth_max(nz, ngrdcol, 1.0e-7_core_rknd, &
-                              brunt_vaisala_freq_sqd_smth, 1.0e-4_core_rknd * min_max_smth_mag ) &
-                    / smooth_max(nz, ngrdcol, &
-                                 ddzt(nz, ngrdcol, gr, um)**2 &
-                                  + ddzt(nz, ngrdcol, gr, vm)**2, &
-                                 1.0e-7_core_rknd, 1.0e-6_core_rknd * min_max_smth_mag ) )
-        else
-          sqrt_Ri_zm &
-            = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
-                      / max(ddzt(nz, ngrdcol, gr, um)**2 &
-                              + ddzt(nz, ngrdcol, gr, vm)**2, &
-                            1.0e-7_core_rknd) )
-        end if
-        
-        if ( l_smooth_min_max ) then
-          brunt_freq_pos = sqrt( smooth_max( nz, ngrdcol, zero_threshold, &
-                                             brunt_vaisala_freq_sqd_smth, &
-                                             1.0e-4_core_rknd * min_max_smth_mag ) )
-        else
-          brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
-        end if 
+    if ( l_use_modify_limiters ) then 
 
-        if ( l_smooth_min_max ) then
-          brunt_freq_out_cloud &
-            =  brunt_freq_pos &
-                * smooth_min( nz, ngrdcol, one, &
-                              smooth_max(nz, ngrdcol, zero_threshold, &
-                              ! roll this back as well once checks have passed
-                                         one - zt2zm(nz, ngrdcol, gr, ice_supersat_frac) / 0.007_core_rknd, &
-                                         one * min_max_smth_mag), &
-                              one * min_max_smth_mag )
-        else
-          brunt_freq_out_cloud &
-            = brunt_freq_pos &
-                * min(one, max(zero_threshold, &
-                               one - ( (zt2zm(nz, ngrdcol, gr, ice_supersat_frac) &
-                                          / 0.007_core_rknd) )))
-        end if
+      !Remove the limiters to improve the solution convergence 
+      brunt_vaisala_freq_sqd_smth = zt2zm(nz,ngrdcol,gr, zm2zt(nz,ngrdcol,gr,brunt_vaisala_freq_sqd) ) 
+
+    else ! default method 
+
+      if ( l_smooth_min_max ) then
+        brunt_vaisala_freq_sqd_smth &
+          = zt2zm(nz, ngrdcol, gr, zm2zt(nz, ngrdcol, gr, &
+                                         smooth_min(nz, ngrdcol, &
+                                         brunt_vaisala_freq_sqd, &
+                                         1.e8_core_rknd * abs(brunt_vaisala_freq_sqd) ** 3, &
+                                         1.0e-4_core_rknd * min_max_smth_mag)))
+      else
+        brunt_vaisala_freq_sqd_smth &
+          = zt2zm(nz, ngrdcol, gr, &
+                  zm2zt(nz, ngrdcol, gr, &
+                        min(brunt_vaisala_freq_sqd, &
+                            1.e8_core_rknd * abs(brunt_vaisala_freq_sqd) ** 3)))
+      end if
+
+    end if 
+ 
+    if ( l_use_modify_limiters ) then
+
+      sqrt_Ri_zm &
+        = sqrt( max( 0.0_core_rknd, brunt_vaisala_freq_sqd_smth ) &
+                  / max(ddzt(nz, ngrdcol, gr, um)**2 &
+                          + ddzt(nz, ngrdcol, gr, vm)**2, &
+                        1.0e-12_core_rknd) )
+      sqrt_Ri_zm = zt2zm(nz,ngrdcol,gr,zm2zt(nz,ngrdcol,gr,sqrt_Ri_zm))
+
+    else ! default method 
+
+      if ( l_smooth_min_max ) then
+        sqrt_Ri_zm &
+          = sqrt(smooth_max(nz, ngrdcol, 1.0e-7_core_rknd, &
+                            brunt_vaisala_freq_sqd_smth, 1.0e-4_core_rknd * min_max_smth_mag ) &
+                  / smooth_max(nz, ngrdcol, &
+                               ddzt(nz, ngrdcol, gr, um)**2 &
+                                + ddzt(nz, ngrdcol, gr, vm)**2, &
+                               1.0e-7_core_rknd, 1.0e-6_core_rknd * min_max_smth_mag ) )
+      else
+        sqrt_Ri_zm &
+          = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
+                    / max(ddzt(nz, ngrdcol, gr, um)**2 &
+                            + ddzt(nz, ngrdcol, gr, vm)**2, &
+                          1.0e-7_core_rknd) )
+      end if
+
+    end if 
+
+    if ( l_smooth_min_max ) then
+      brunt_freq_pos = sqrt( smooth_max( nz, ngrdcol, zero_threshold, &
+                                         brunt_vaisala_freq_sqd_smth, &
+                                         1.0e-4_core_rknd * min_max_smth_mag ) )
+    else
+      brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
+    end if 
+
+    if ( l_smooth_min_max ) then
+      brunt_freq_out_cloud &
+        =  brunt_freq_pos &
+            * smooth_min( nz, ngrdcol, one, &
+                          smooth_max(nz, ngrdcol, zero_threshold, &
+                          ! roll this back as well once checks have passed
+                                     one - zt2zm(nz, ngrdcol, gr, ice_supersat_frac) / 0.007_core_rknd, &
+                                     one * min_max_smth_mag), &
+                          one * min_max_smth_mag )
+    else
+      brunt_freq_out_cloud &
+        = brunt_freq_pos &
+            * min(one, max(zero_threshold, &
+                           one - ( (zt2zm(nz, ngrdcol, gr, ice_supersat_frac) &
+                                      / 0.007_core_rknd) )))
+    end if
 
     do k = 1, nz
       do i = 1, ngrdcol
