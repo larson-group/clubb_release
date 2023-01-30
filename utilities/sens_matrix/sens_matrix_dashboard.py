@@ -477,6 +477,73 @@ def main():
     biasContrNLOrderFig.update_layout( width=800, height=500  )
 
 
+
+    #dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
+    #curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrdered,:] * dnormlzdParamsSolnNonlinMatrix**2
+    #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
+    dfLin = pd.DataFrame(-1*normlzdSensParamsMatrixOrdered,
+                      index=metricsNamesOrdered,
+                      columns=paramsNames)
+    # biasContrGroupedFig = go.Figure()
+    # biasContrGroupedFig.add_trace( go.Bar(x=df.index, y=list(curvParamsMatrixOrdered[:,2:3])) )
+    #df_long = pd.wide_to_long( df, i=df.index, j=df.columns, stubnames=[''] )
+    dfLin = dfLin.reset_index()
+    dfLin.rename(columns = {'index':'metricsNamesOrdered'}, inplace = True)
+    #print("biasContrGrouped df=", df.to_string())
+    #print("df.columns.values=", df.columns.values)
+    #df.columns[1] = ['metricsNamesOrdered']
+
+    dfLin_long = dfLin.melt( id_vars='metricsNamesOrdered', 
+                            var_name='paramsNames', value_name='Contribution to bias removal')
+    dfLin_long.insert(0, 'isNonlin', ['linear'] * len(paramsNames) * len(metricsNamesOrdered) )
+    #print("df_long=", df_long.to_string())
+    
+    dfNonlin = pd.DataFrame(-1*curvParamsMatrixOrdered,
+                      index=metricsNamesOrdered,
+                      columns=paramsNames)
+    # biasContrGroupedFig = go.Figure()
+    # biasContrGroupedFig.add_trace( go.Bar(x=df.index, y=list(curvParamsMatrixOrdered[:,2:3])) )
+    #df_long = pd.wide_to_long( df, i=df.index, j=df.columns, stubnames=[''] )
+    dfNonlin = dfNonlin.reset_index()
+    dfNonlin.rename(columns = {'index':'metricsNamesOrdered'}, inplace = True)
+    #print("biasContrGrouped df=", df.to_string())
+    #print("df.columns.values=", df.columns.values)
+    #df.columns[1] = ['metricsNamesOrdered']
+
+    dfNonlin_long = dfNonlin.melt( id_vars='metricsNamesOrdered', 
+                            var_name='paramsNames', value_name='Contribution to bias removal')
+    dfNonlin_long.insert(0, 'isNonlin', ['nonlinear'] * len(paramsNames) * len(metricsNamesOrdered) )
+    #print("df_long=", df_long.to_string())    
+    
+    dfLinNonlin_long = pd.concat([dfLin_long, dfNonlin_long], ignore_index=True)
+    
+    biasContrGroupedFig = px.bar(dfLinNonlin_long, 
+                                 facet_col='metricsNamesOrdered', y='Contribution to bias removal', 
+                                 x='isNonlin', color='paramsNames') #,
+              #title = """Long: Linear ++ nonlinear contributions to actual removal of regional biases""")
+    #biasContrGroupedFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
+    #biasContrGroupedFig.update_xaxes(title="Metric and region")
+    ##biasContrGroupedFig.update_xaxes(visible=False)
+    ##biasContrGroupedFig.update_yaxes(visible=False)
+    biasContrGroupedFig.update_layout(hovermode="x")
+    biasContrGroupedFig.update_layout(showlegend=True)
+    ##biasContrGroupedFig.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
+    #biasContrGroupedFig.for_each_annotation(lambda a: a.update(text=''))
+    biasContrGroupedFig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+    biasContrGroupedFig.update_annotations(textangle=-90)
+    biasContrGroupedFig.update_layout(margin = dict(t = 160))
+    for axis in biasContrGroupedFig.layout:
+        #if type(biasContrGroupedFig.layout[axis]) == go.layout.YAxis:
+        #    biasContrGroupedFig.layout[axis].title.text = 'Contribution to bias removal'
+        if type(biasContrGroupedFig.layout[axis]) == go.layout.XAxis:
+            biasContrGroupedFig.layout[axis].title.text = ''
+    #biasContrGroupedFig.layout.title.text = ''
+    #biasContrGroupedFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    biasContrGroupedFig.update_layout( width=1000, height=450  )
+    #print("curvParams =", -1*curvParamsMatrixOrdered)
+    #print("normlzdSens =", -1*normlzdSensParamsMatrixOrdered)
+    
+
     # Plot a scatterplot of default-simulation bias and SVD approximation of that bias.
     # Each column tells us how all metrics vary with a single parameter.
     biasSensDirMatrix = np.concatenate((defaultBiasesApproxNonlin/np.abs(obsMetricValsCol),
@@ -783,8 +850,13 @@ def main():
 
     # Plot box and whiskers plot of optimal parameter values.
     # Multiply in the user-designated scale factors before plotting.
+    paramsAbbrv = np.char.replace( paramsNames, 'clubb_', '' )
+    paramsAbbrv = np.char.replace( paramsAbbrv, 'c_invrs_tau_', '' )
+    paramsAbbrv = np.char.replace( paramsAbbrv, 'wpxp_n2', 'n2' )
+    paramsAbbrv = np.char.replace( paramsAbbrv, 'wpxp_n2', 'n2' )
+    paramsAbbrv = np.char.replace( paramsAbbrv, 'threshold', 'thresh' )
     df = pd.DataFrame( np.hstack( defaultParamValsOrigRow[0,:]*paramsScales ),
-                  index=paramsNames, columns=["Default plus error bars"] )
+                  index=paramsAbbrv, columns=["Default plus error bars"] )
     df["err_minus"] = ( defaultParamValsOrigRow[0,:] -  paramsLowValsPCBound[:,0] ) * paramsScales
     df["err_plus"]  = ( paramsHiValsPCBound[:,0] - defaultParamValsOrigRow[0,:] ) * paramsScales
     paramsBar = px.scatter(df, x=df.index, y=df.columns,
@@ -803,18 +875,18 @@ def main():
     #                               fillcolor='rgba(253,253,150,1.0)'))
     #paramsBar.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:]*paramsScales,
     #                               name='Default Parameter Values', line=dict(color='black', width=6) ))
-    paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsSoln[:,0]*paramsScales,
+    paramsBar.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSoln[:,0]*paramsScales,
                                    mode='markers',
                                    marker=dict(color='green', size=8),
                                    name='Linear regression, |dp|=' 
                                        + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSoln)) ))
-    paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsSolnNonlin[:,0]*paramsScales,
+    paramsBar.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnNonlin[:,0]*paramsScales,
                                    mode='markers',
                                    marker_symbol='x',
                                    marker=dict(color='orange',  size=12),
                                    name='paramsSolnNonlin, |dpPC|='
                                        + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnNonlin)) ))
-    paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsSolnElastic[:,0]*paramsScales,
+    paramsBar.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnElastic[:,0]*paramsScales,
                                    mode='markers',
                                    marker_symbol='square',
                                    marker=dict(color='cyan', size=8),
@@ -962,6 +1034,7 @@ def main():
         dcc.Graph( id='paramsBar', figure=paramsBar ),
         dcc.Graph( id='biasesOrderFig', figure=biasesOrderFig ),
         dcc.Graph( id='biasContrNLOrderFig', figure=biasContrNLOrderFig ),
+        dcc.Graph( id='biasContrGroupedFig', figure=biasContrGroupedFig ),
         
         #dcc.Graph( id='paramsFig', figure=paramsFig ),
         #dcc.Graph( id='biasesFig', figure=biasesFig ),
@@ -1307,7 +1380,14 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
                            col=arrayCol+1
                                   )
             if (arrayRow == numMetrics-1):  # Put params labels only along bottom of plot
-                threeDotFig.update_xaxes(title_text=paramsNames[arrayCol], row=arrayRow+1, col=arrayCol+1)
+                #threeDotFig.update_xaxes(title=dict(text=paramsNames[arrayCol], 
+                #                         tickangle=45),
+                threeDotFig.update_xaxes(title_text=paramsNames[arrayCol].replace('clubb_','').replace('c_invrs_tau_','').replace('wpxp_n2','n2').replace('threshold','thresh'),
+                                         #title_font_size=8,
+                                         tickangle=45,
+                                         row=arrayRow+1, col=arrayCol+1
+                                         )
+                threeDotFig.update_xaxes(tickangle=45,row=arrayRow+1, col=arrayCol+1)
             if (arrayCol == 0): # Insert metrics label only along left edge of plot
                 threeDotFig.update_yaxes(title_text=metricsNames[arrayRow], row=arrayRow+1, col=arrayCol+1)
             threeDotFig.update_layout(showlegend=False,
@@ -1317,7 +1397,12 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
             #axs[row, col].set_xlabel(paramsNames[col])
             #axs[row, col].set_ylabel(metricsNames[row])
             #fig.show()
+            
+    #threeDotFig.update_layout(xaxis)            
+    #print("threeDotFig.layout=", threeDotFig.layout)
 
+    threeDotFig.update_xaxes(tickangle=45)    
+    
     return ( normlzdCurvMatrix, threeDotFig )
 
 
