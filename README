@@ -950,6 +950,9 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
 
 8. Go to the run_scripts directory and execute ./run_tuner.bash
 
+NOTE: In previous versions the run_tuner.bash script executed pre-tuning CLUBB standalone runs.
+Those runs are now by default disabled and can be re-enabled by adding the *-i/--initial-output* option when executing run_script.bash
+
 -----------------------------------------------------------------------
 - (3.3.1) Creating a RAM disk (optional)
 -----------------------------------------------------------------------
