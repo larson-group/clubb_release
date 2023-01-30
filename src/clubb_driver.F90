@@ -844,14 +844,18 @@ module clubb_driver
       l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
     logical :: &
-      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
-                                   ! for convergence test
-      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
-                                   ! for convergence test 
-      l_use_modify_limiters,     & ! Flag to activate modifications on limiters to improve 
-                                   ! the solution convergence 
-      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
-                                   ! as numerical smoothing in clubb equations
+      l_modify_ic_for_cnvg_test,  & ! Flag to activate modifications on initial condition 
+                                    ! for convergence test
+      l_modify_bc_for_cnvg_test,  & ! Flag to activate modifications on boundary condition 
+                                    ! for convergence test 
+      l_smooth_Heaviside_wp3_lim, & ! Use smoothed Heaviside 'Peskin' function
+                                    ! in the calculation of upper and lower
+                                    ! limits of w'^3 (wp3_lim_sqd) in
+                                    ! src/CLUBB_core/clip_explicit.F90
+      l_use_modify_limiters,      & ! Flag to activate modifications on limiters to improve 
+                                    ! the solution convergence 
+      l_linear_diffusion            ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                    ! as numerical smoothing in clubb equations
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -903,7 +907,7 @@ module clubb_driver
       l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
       l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, & 
       l_modify_ic_for_cnvg_test, l_modify_bc_for_cnvg_test, l_use_modify_limiters, & 
-      l_linear_diffusion 
+      l_smooth_Heaviside_wp3_lim, l_linear_diffusion 
 
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -1073,6 +1077,7 @@ module clubb_driver
                                          l_modify_ic_for_cnvg_test, & ! Intent(out)
                                          l_modify_bc_for_cnvg_test, & ! Intent(out)
                                          l_use_modify_limiters, & ! Intent(out)
+                                         l_smooth_Heaviside_wp3_lim, & ! Intent(out)
                                          l_linear_diffusion ) ! Intent(out)
 
     ! Read namelist file
@@ -1471,6 +1476,7 @@ module clubb_driver
                                              l_modify_ic_for_cnvg_test, & ! Intent(in)
                                              l_modify_bc_for_cnvg_test, & ! Intent(in)
                                              l_use_modify_limiters, & ! Intent(in)
+                                             l_smooth_Heaviside_wp3_lim, & ! Intent(in)
                                              l_linear_diffusion, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
@@ -2276,8 +2282,10 @@ module clubb_driver
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
           wp2_zt(1,:) = max( zm2zt( gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
-          call clip_skewness_core( 1, gr%nz, gr, sfc_elevation(:), params(iSkw_max_mag), &
-                                   wp2_zt(1,:), wp3(1,:) )
+          call clip_skewness_core( 1, gr%nz, gr, sfc_elevation(:), & 
+                                   params(iSkw_max_mag), wp2_zt(1,:), & 
+                                   clubb_config_flags%l_smooth_Heaviside_wp3_lim, &
+                                   wp3(1,:) )
         end if
       end if
 

@@ -672,14 +672,18 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! eliminates spurious drying tendencies at model top
 
   logical :: &
-    l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
-                                 ! for convergence test 
-    l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
-                                 ! for convergence test 
-    l_use_modify_limiters,     & ! Flag to activate modifications on limiters to improve 
-                                 ! the solution convergence 
-    l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
-                                 ! as numerical smoothing in clubb equations
+    l_modify_ic_for_cnvg_test,  & ! Flag to activate modifications on initial condition 
+                                  ! for convergence test 
+    l_modify_bc_for_cnvg_test,  & ! Flag to activate modifications on boundary condition 
+                                  ! for convergence test 
+    l_smooth_Heaviside_wp3_lim, & ! Use smoothed Heaviside 'Peskin' function
+                                  ! in the calculation of upper and lower
+                                  ! limits of w'^3 (wp3_lim_sqd) in
+                                  ! src/CLUBB_core/clip_explicit.F90
+    l_use_modify_limiters,      & ! Flag to activate modifications on limiters to improve 
+                                  ! the solution convergence 
+    l_linear_diffusion            ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                  ! as numerical smoothing in clubb equations
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
@@ -697,7 +701,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
     l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, &
     l_modify_ic_for_cnvg_test, l_modify_bc_for_cnvg_test, l_use_modify_limiters, & 
-    l_linear_diffusion 
+    l_smooth_Heaviside_wp3_lim, l_linear_diffusion 
 
   ! ---- Begin Code ----
 
@@ -760,6 +764,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_modify_ic_for_cnvg_test, & ! Intent(out) 
                                        l_modify_bc_for_cnvg_test, & ! Intent(out) 
                                        l_use_modify_limiters, & ! Intent(out)
+                                       l_smooth_Heaviside_wp3_lim, & ! Intent(out)
                                        l_linear_diffusion ) ! Intent(out)
 
   ! Determine the current flags

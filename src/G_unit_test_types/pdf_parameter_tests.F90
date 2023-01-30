@@ -551,14 +551,18 @@ module pdf_parameter_tests
                                       ! eliminates spurious drying tendencies at model top
 
     logical :: &
-      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
-                                   ! for convergence test 
-      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
-                                   ! for convergence test 
-      l_use_modify_limiters,     & ! Flag to activate modifications on limiters to improve 
-                                   ! the solution convergence 
-      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
-                                   ! as numerical smoothing in clubb equations
+      l_modify_ic_for_cnvg_test,  & ! Flag to activate modifications on initial condition 
+                                    ! for convergence test 
+      l_modify_bc_for_cnvg_test,  & ! Flag to activate modifications on boundary condition 
+                                    ! for convergence test 
+      l_smooth_Heaviside_wp3_lim, & ! Use smoothed Heaviside 'Peskin' function
+                                    ! in the calculation of upper and lower
+                                    ! limits of w'^3 (wp3_lim_sqd) in
+                                    ! src/CLUBB_core/clip_explicit.F90
+      l_use_modify_limiters,      & ! Flag to activate modifications on limiters to improve 
+                                    ! the solution convergence 
+      l_linear_diffusion            ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                    ! as numerical smoothing in clubb equations
 
     real( kind = core_rknd ) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
@@ -706,6 +710,7 @@ module pdf_parameter_tests
                                          l_modify_ic_for_cnvg_test, &
                                          l_modify_bc_for_cnvg_test, & 
                                          l_use_modify_limiters, & 
+                                         l_smooth_Heaviside_wp3_lim, & 
                                          l_linear_diffusion )
 
     iiPDF_type = test_pdf_type

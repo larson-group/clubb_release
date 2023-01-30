@@ -4550,6 +4550,7 @@ contains
                                                  l_modify_ic_for_cnvg_test, & !Out
                                                  l_modify_bc_for_cnvg_test, & !Out 
                                                  l_use_modify_limiters, & !Out 
+                                                 l_smooth_Heaviside_wp3_lim, & !Out
                                                  l_linear_diffusion ) ! Out
 
     use model_flags, only: &
@@ -4684,14 +4685,18 @@ contains
                                       ! eliminates spurious drying tendencies at model top
 
     logical, intent(out) :: &
-      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
-                                   ! for convergence test 
-      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
-                                   ! for convergence test 
-      l_use_modify_limiters,     & ! Flag to activate modifications on limiters to improve 
-                                   ! the solution convergence 
-      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
-                                   ! as numerical smoothing in clubb equations
+      l_modify_ic_for_cnvg_test,  & ! Flag to activate modifications on initial condition 
+                                    ! for convergence test 
+      l_modify_bc_for_cnvg_test,  & ! Flag to activate modifications on boundary condition 
+                                    ! for convergence test 
+      l_smooth_Heaviside_wp3_lim, & ! Use smoothed Heaviside 'Peskin' function
+                                    ! in the calculation of upper and lower
+                                    ! limits of w'^3 (wp3_lim_sqd) in
+                                    ! src/CLUBB_core/clip_explicit.F90
+      l_use_modify_limiters,      & ! Flag to activate modifications on limiters to improve 
+                                    ! the solution convergence 
+      l_linear_diffusion            ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                    ! as numerical smoothing in clubb equations
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -4752,6 +4757,7 @@ contains
                                          l_modify_ic_for_cnvg_test, & ! Out
                                          l_modify_bc_for_cnvg_test, & ! Out 
                                          l_use_modify_limiters, & ! Out 
+                                         l_smooth_Heaviside_wp3_lim, & ! Out 
                                          l_linear_diffusion ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
@@ -4818,6 +4824,7 @@ contains
                                                      l_modify_ic_for_cnvg_test, & ! In
                                                      l_modify_bc_for_cnvg_test, & ! In
                                                      l_use_modify_limiters, & ! In 
+                                                     l_smooth_Heaviside_wp3_lim, & ! In
                                                      l_linear_diffusion, & ! In 
                                                      clubb_config_flags ) ! Out
 
@@ -4953,14 +4960,18 @@ contains
       l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
     logical, intent(in) :: &
-      l_modify_ic_for_cnvg_test, & ! Flag to activate modifications on initial condition 
-                                   ! for convergence test 
-      l_modify_bc_for_cnvg_test, & ! Flag to activate modifications on boundary condition 
-                                   ! for convergence test 
-      l_use_modify_limiters,     & ! Flag to activate modifications on limiters to improve 
-                                   ! the solution convergence 
-      l_linear_diffusion           ! Flag to use linear diffusion instead of nonlinear diffusion 
-                                   ! as numerical smoothing in clubb equations
+      l_modify_ic_for_cnvg_test,  & ! Flag to activate modifications on initial condition 
+                                    ! for convergence test 
+      l_modify_bc_for_cnvg_test,  & ! Flag to activate modifications on boundary condition 
+                                    ! for convergence test 
+      l_smooth_Heaviside_wp3_lim, & ! Use smoothed Heaviside 'Peskin' function
+                                    ! in the calculation of upper and lower
+                                    ! limits of w'^3 (wp3_lim_sqd) in
+                                    ! src/CLUBB_core/clip_explicit.F90
+      l_use_modify_limiters,      & ! Flag to activate modifications on limiters to improve 
+                                    ! the solution convergence 
+      l_linear_diffusion            ! Flag to use linear diffusion instead of nonlinear diffusion 
+                                    ! as numerical smoothing in clubb equations
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -5025,6 +5036,7 @@ contains
                                              l_modify_ic_for_cnvg_test, & ! In
                                              l_modify_bc_for_cnvg_test, & ! In 
                                              l_use_modify_limiters, & ! In 
+                                             l_smooth_Heaviside_wp3_lim, & ! In 
                                              l_linear_diffusion, & ! In 
                                              clubb_config_flags ) ! Out
 

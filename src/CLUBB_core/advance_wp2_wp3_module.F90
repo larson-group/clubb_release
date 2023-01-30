@@ -76,6 +76,7 @@ module advance_wp2_wp3_module
                               l_lmm_stepping,                                & ! intent(in)
                               l_use_tke_in_wp3_pr_turb_term,                 & ! intent(in)
                               l_use_tke_in_wp2_wp3_K_dfsn,                   & ! intent(in)
+                              l_smooth_Heaviside_wp3_lim,                    & ! intent(in)
                               stats_zt, stats_zm, stats_sfc,                 & ! intent(inout)
                               wp2, wp3, wp3_zm, wp2_zt )                       ! intent(inout)
 
@@ -291,7 +292,11 @@ module advance_wp2_wp3_module
       l_damp_wp3_Skw_squared,     & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_lmm_stepping,             & ! Apply Linear Multistep Method (LMM) Stepping
       l_use_tke_in_wp3_pr_turb_term, & ! Use TKE formulation for wp3 pr_turb term
-      l_use_tke_in_wp2_wp3_K_dfsn   ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_tke_in_wp2_wp3_K_dfsn, &   ! Use TKE in eddy diffusion for wp2 and wp3
+      l_smooth_Heaviside_wp3_lim ! Use smoothed Heaviside 'Peskin' function
+                                 ! in the calculation of upper and lower
+                                 ! limits of w'^3 (wp3_lim_sqd) in
+                                 ! src/CLUBB_core/clip_explicit.F90
 
     ! --------------------------- Input/Output ---------------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -867,6 +872,7 @@ module advance_wp2_wp3_module
                      l_min_wp2_from_corr_wx,                      & ! intent(in)
                      l_tke_aniso,                                 & ! intent(in)
                      l_use_tke_in_wp2_wp3_K_dfsn,                 & ! intent(in)
+                     l_smooth_Heaviside_wp3_lim,                  & ! intent(in)
                      stats_zt, stats_zm, stats_sfc,               & ! intent(inout)
                      wp2, wp3, wp3_zm, wp2_zt )                     ! intent(inout)
 
@@ -1012,6 +1018,7 @@ module advance_wp2_wp3_module
                          l_min_wp2_from_corr_wx, &
                          l_tke_aniso, &
                          l_use_tke_in_wp2_wp3_K_dfsn, &
+                         l_smooth_Heaviside_wp3_lim, & 
                          stats_zt, stats_zm, stats_sfc, &
                          wp2, wp3, wp3_zm, wp2_zt )
 
@@ -1179,7 +1186,11 @@ module advance_wp2_wp3_module
                                     ! max_mag_correlation_flux.
       l_tke_aniso,                & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                     ! (u'^2 + v'^2 + w'^2)
-      l_use_tke_in_wp2_wp3_K_dfsn   ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_tke_in_wp2_wp3_K_dfsn,& ! Use TKE in eddy diffusion for wp2 and wp3
+      l_smooth_Heaviside_wp3_lim    ! Use smoothed Heaviside 'Peskin' function
+                                    ! in the calculation of upper and lower
+                                    ! limits of w'^3 (wp3_lim_sqd) in
+                                    ! src/CLUBB_core/clip_explicit.F90
 
     ! ----------------------- Input/Output Variables -----------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -1597,6 +1608,7 @@ module advance_wp2_wp3_module
     ! Clip w'^3 by limiting skewness.
     call clip_skewness( nz, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
                         clubb_params(iSkw_max_mag), wp2_zt, & ! intent(in)
+                        l_smooth_Heaviside_wp3_lim,         & ! intent(in)
                         stats_zt,                           & ! intent(inout)
                         wp3 )                                 ! intent(inout)
 
