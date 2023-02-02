@@ -74,3 +74,108 @@ Date:   Mon Jan 30 18:47:29 2023 +0100
     and linear contributions to bias removal.
     
     Also abbreviates the clubb parameter names in the plots.
+
+commit cfd87ac680ebb26e2fdb7b1aab7a8b8b4fc75320
+Author: Steffen Domke <sdomke@uwm.edu>
+Date:   Mon Jan 30 15:12:37 2023 -0600
+
+    Added option (-i) to run_tuner.bash script to enable pre-tuning standalone runs. README will be updated.
+
+commit 1025d807ab1f3d5e8d3a8deb72595f2314b1cec5
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Jan 30 18:47:29 2023 +0100
+
+    Adds to dashboard a bar plot that separates nonlinear
+    
+    and linear contributions to bias removal.
+    
+    Also abbreviates the clubb parameter names in the plots.
+
+commit 822ec13b0db0f3beb4eb93d796d5221a0d3c5f93
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Thu Jan 26 14:36:52 2023 +0100
+
+    Adds to dashboard plots error bars for
+    
+    bias removal plot, a colored correlation matrix,
+    a matrix of linear-based 2-point bounds on parameter perturbations,
+    and a web-page version of the 3-dot subplots.
+
+commit 15a351eec8d677c5035bce255aac81898c795822
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Jan 24 15:53:43 2023 -0600
+
+    GPUizing sat_mixrat_ice_2D.
+
+commit a0f5313ee697be2153704f9d4b9775cde7d717a1
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Jan 24 12:42:04 2023 -0600
+
+    Fixing error causing GPU code not to run. Some variables to be copied were labelled as (ngrdcol,nz) when it should be (:ngrdcol,:nz). I've just removed the data length specifiers completely since they are not neccesary in general.
+
+commit 95217702784b7eddc848ef0d6f7ee705c10d7752
+Author: supreethms1809 <supreethms1809@gmail.com>
+Date:   Mon Jan 23 19:29:22 2023 -0700
+
+    Adding OpenACC data directives for mixing length and adg routines
+    
+    OpenACC structured data regions are added to optimize the data transfers
+    between CPU and GPU. These data regions will converted to unstrucutred
+    data region in the later optimization phase.
+    Results are bit for bit.
+
+commit f9eb64fb27f4b0515602e0f46848fc644035cfaf
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Fri Jan 20 17:31:54 2023 +0100
+
+    Adds to tuner error bars on bias removal (arrow) plots
+    
+    and also adds bar graphs that show how each parameter contributes to the bias removal.
+
+commit dda5e8c57edb41b73340c0f9578d7c327b18e076
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Jan 19 12:36:44 2023 -0600
+
+    Adding tridiag_lu solver (#1056)
+    
+    * Adding tridiag_lu solver
+    
+    * Changing low to lower in tridiag_lu and penta_lu, also fixing up some spacing.
+    
+    * Making variables that represent matrix solutions more consistently named.
+
+commit e21e2713eab0f3f228189a4b407c80d4f241038f
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Jan 19 12:36:21 2023 -0600
+
+    Breaking up column loop in mono_flux_limiter. This may not be the final form for GPUization, but it's definitely a start, no longer do we have to copy single column variables to multicolumn ones anywhere. (#1051)
+
+commit 7f1decd0252e0b4d80f4b3873b0b48b6d3ec8631
+Author: supreethms1809 <supreethms1809@gmail.com>
+Date:   Wed Jan 18 15:36:56 2023 -0700
+
+    Restructuring and Porting of Compute_mixing_length subroutine(Phase 2) (#1054)
+    
+    * Restructuring and Porting of Compute_mixing_length subroutine(Phase 2)
+    
+    Restructure: sat_mixrat_liq_2D_acc is being directly called instead of
+    calling the 1D version inside the column loop. Changing sat_mixrat_liq_2D_acc
+    to a subroutine from a function and adding output array, start_index as
+    additional argument. This is a workaround for passing sub-arrays. The OpenACC
+    doen't like the sub-arrays being passed and fails the validation.
+    
+    Porting: OpenACC directives are added inside sat_mixrat_liq_2D_acc for porting
+    
+    Validation: Answers are Bit for Bit with arm-multicolumn case + nvhpc compiler
+    
+    * Fix for compilation issues
+    
+    Issue 1: Missed out declaring 'start_index' while intergrating the
+    change
+    
+    Issue 2: The use of error_code module and the procedures inside it
+    causes OpenACC compilation issues when run on the device.
+    
+    * Removing the sat_mixrat_liq_acc and sat_mixrat_liq_2D_acc, making the normal sat_mixrat_liq work for all current use cases, and making the other versions of sat_mixrat_liq (bolton,gfdl,lookup) functional with OPENACC.
+    
+    Co-authored-by: huebler <huebler@uwm.edu>
