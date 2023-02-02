@@ -21,14 +21,14 @@ RUN_TYPE='single'
 
 # directory to save initial (pre-tuner) runs
 INITIAL_OUTPUT_DIR='../initial_output'
-
+INITIAL_OUTPUT=false
 
 # The code below is borrowed from run_scm.bash to allow command line arguments to this script
 
 # Note that we use `"$@"' to let each command-line parameter expand to a 
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o nh --long nightly,help \
+TEMP=`getopt -o inh --long initial-output,nightly,help \
      -n 'run_tuner.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -38,6 +38,12 @@ eval set -- "$TEMP"
 
 while true ; do
 	case "$1" in
+	-i|--initial-output)
+	# Before tuning, run CLUBB in standalone mode for all cases included in the tuning setup
+	# and store the output in folder INITIAL_OUTPUT_DIR
+	    INITIAL_OUTPUT=true
+	    echo "Executing initial standalone run before tuning"
+	    shift;;
 	-n|--nightly) 
 		NIGHTLY=true
 		echo "nightly"
@@ -45,7 +51,9 @@ while true ; do
 	-h|--help) # Print the help message
 		echo -e "Usage: run_tuner.bash [OPTION]"
 		echo -e "\t-n, --nightly\t\tRun in a nightly test configuration"
-		echo -e "\t-h, --help\t\t\tPrints this help message"
+		echo -e "\t-i, --initial-output\tBefore tuning, run CLUBB standalone and store output in separate folder"
+		echo -e "\t\t\t\tIf the -n option is given, -i will not work"
+		echo -e "\t-h, --help\t\tPrints this help message"
 
 		exit 1 ;;
 		--) shift ; break ;;
@@ -225,7 +233,7 @@ cp $RAND_SEED .
 #######################################################################
 #
 # # run test cases with initial parameters & save output to separate directory
-if [ $NIGHTLY=false ] ; then
+if ([ $NIGHTLY=false ] && [ $INITIAL_OUTPUT=true ]) ; then
 
   mkdir $INITIAL_OUTPUT_DIR
 
