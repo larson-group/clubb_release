@@ -39,7 +39,6 @@ module saturation
 
   interface sat_mixrat_ice
     module procedure sat_mixrat_ice_k   ! Works over a single vertical level
-    module procedure sat_mixrat_ice_1D  ! Works over all vertical levels 
     module procedure sat_mixrat_ice_2D  ! Works over all vertical levels and columns
   end interface sat_mixrat_ice
 
@@ -887,62 +886,6 @@ module saturation
 
   !------------------------------------------------------------------------
   ! Wrapped in interface sat_mixrat_ice
-  function sat_mixrat_ice_1D( nz, p_in_Pa, T_in_K )
-
-  ! Description:
-  !   Used to compute the saturation mixing ratio of ice.
-
-  ! References:
-  !   Formula from Emanuel 1994, 4.4.15
-  !-------------------------------------------------------------------------
-
-    use constants_clubb, only: & 
-        ep ! Variable(s)
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! ------------------------ Input Variables ------------------------
-    integer, intent(in) :: &
-      nz
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      p_in_Pa, &          ! Pressure [Pa]
-      T_in_K              ! Temperature [K]
-
-    ! ------------------------ Output Variables ------------------------
-    real( kind = core_rknd ), dimension(nz) :: &
-      sat_mixrat_ice_1D
-
-    ! ------------------------ Local Variables ------------------------
-    real( kind = core_rknd ), dimension(1,nz) ::  & 
-      p_in_Pa_col,  &
-      T_in_K_col 
-
-    real( kind = core_rknd ), dimension(1,nz) ::  & 
-      sat_mixrat_ice_col
-
-    integer :: i, k  ! Loop indices
-
-    ! ------------------------ Begin Code ------------------------
-
-    ! Copy inputs to 2D arrays
-    p_in_Pa_col(1,:) = p_in_Pa(:)
-    T_in_K_col(1,:) = T_in_K(:)
-
-    ! Call 2D version 
-    sat_mixrat_ice_col = sat_mixrat_ice_2D( nz, 1, p_in_Pa_col, T_in_K_col )
-
-    ! Copy 2D result into output
-    sat_mixrat_ice_1D(:) = sat_mixrat_ice_col(1,:)
-
-    return
-  end function sat_mixrat_ice_1D
-
-  !------------------------------------------------------------------------
-  ! Wrapped in interface sat_mixrat_ice
   function sat_mixrat_ice_2D( nz, ngrdcol, p_in_Pa, T_in_K )
 
   ! Description:
@@ -953,7 +896,8 @@ module saturation
   !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
-        ep ! Variable(s)
+        T_freeze_K, & ! Variable(s)
+        ep
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -974,6 +918,21 @@ module saturation
       sat_mixrat_ice_2D
 
     ! ------------------------ Local Variables ------------------------
+    ! Relative error norm expansion (-90 to 0 deg_C) from
+    ! Table 4 of pp. 1511 of Flatau et al. 1992 (Ice)
+    real( kind = core_rknd ), dimension(9), parameter :: a = & 
+      100._core_rknd * (/ 6.09868993_core_rknd, 0.499320233_core_rknd, 0.184672631E-01_core_rknd, &
+                0.402737184E-03_core_rknd, 0.565392987E-05_core_rknd, 0.521693933E-07_core_rknd, &
+                0.307839583E-09_core_rknd, 0.105785160E-11_core_rknd, 0.161444444E-14_core_rknd /)
+
+    real( kind = core_rknd ), parameter :: &
+      min_T_in_C = -90._core_rknd,  & ! [deg_C]
+      min_T_in_K = 173.15_core_rknd   ! Lowest temperature at which Goff-Gratch is valid [K]
+
+    real( kind = core_rknd ) :: &
+      T_in_C,         & ! Temperature [deg_C]
+      T_in_K_clipped    ! Absolute temperature with minimum threshold applied [K]
+
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       esat_ice
 
@@ -981,10 +940,86 @@ module saturation
 
     ! ------------------------ Begin Code ------------------------
 
-    ! Determine the SVP for the given temperature
-    call sat_vapor_press_ice( nz, ngrdcol, T_in_K, &
-                              esat_ice )
+    !$acc data create( esat_ice ) &
+    !$acc      copyin( p_in_Pa, T_in_K ) &
+    !$acc      copyout( sat_mixrat_ice_2D ) 
 
+    ! Determine the SVP for the given temperature
+    select case ( saturation_formula )
+    case ( saturation_bolton )
+
+      ! Using the Bolton 1980 approximations for SVP over ice
+      !$acc parallel loop gang vector collapse(2)
+      do i = 1, ngrdcol
+        do k = 1, nz
+
+          ! Exponential approx.
+          esat_ice(i,k) = 100.0_core_rknd * exp( 23.33086_core_rknd - &
+            (6111.72784_core_rknd/T_in_K(i,k)) + (0.15215_core_rknd*log( T_in_K(i,k) )) )
+
+        end do
+      end do
+
+    case ( saturation_flatau )
+
+      ! Using the Flatau, et al. polynomial approximation for SVP over ice
+      !$acc parallel loop gang vector collapse(2)
+      do i = 1, ngrdcol
+        do k = 1, nz
+
+          ! Determine deg K - 273.15
+          T_in_C = T_in_K(i,k) - T_freeze_K
+
+          ! Since this approximation is only good out to -90 degrees Celsius we
+          ! truncate the result here (Flatau, et al. 1992)
+          T_in_C = max( T_in_C, min_T_in_C )
+
+          ! Polynomial approx. (Flatau, et al. 1992)
+          !   esati = a(1)
+
+          !   do i = 2, size( a ), 1
+          !     esati = esati + a(i) * ( T_in_C )**(i-1)
+          !   end do
+
+          esat_ice(i,k) = a(1) + T_in_C*( a(2) + T_in_C*( a(3) + T_in_C*( a(4) + T_in_C &
+          *( a(5) + T_in_C*( a(6) + T_in_C*( a(7) + T_in_C*( a(8) + T_in_C*a(9) ) ) ) ) ) ) )
+
+        end do
+      end do
+
+! ---> h1g, 2010-06-16
+    case ( saturation_gfdl )
+
+      ! Using GFDL polynomial approximation for SVP with respect to ice
+      !$acc parallel loop gang vector collapse(2)
+      do i = 1, ngrdcol
+        do k = 1, nz
+
+          ! Since the Goff-Gratch ice approximation is valid only down to -100 degrees Celsius,
+          !   we threshold the temperature.  This will yield a minimal saturation at
+          !   cold temperatures.
+          T_in_K_clipped = max( min_T_in_K, T_in_K(i,k) )
+
+          ! Goff Gratch equation (good down to -100 C)
+
+          esat_ice(i,k) = 10._core_rknd**(-9.09718_core_rknd* &
+                      (273.16_core_rknd/T_in_K_clipped-1._core_rknd)-3.56654_core_rknd* &
+                    log10(273.16_core_rknd/T_in_K_clipped)+0.876793_core_rknd* &
+                      (1._core_rknd-T_in_K_clipped/273.16_core_rknd)+ &
+                    log10(6.1071_core_rknd))*100._core_rknd ! Known magic number
+        end do
+      end do
+! <--- h1g, 2010-06-16
+
+    case default
+
+      ! Undefined approximation
+      esat_ice = -99999.999_core_rknd
+
+    end select
+
+
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -1015,6 +1050,8 @@ module saturation
         end if
       end do
     end do
+
+    !$acc end data
 
     return
   end function sat_mixrat_ice_2D

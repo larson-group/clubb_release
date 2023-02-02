@@ -1,3 +1,35 @@
+commit cfd87ac680ebb26e2fdb7b1aab7a8b8b4fc75320
+Author: Steffen Domke <sdomke@uwm.edu>
+Date:   Mon Jan 30 15:12:37 2023 -0600
+
+    Added option (-i) to run_tuner.bash script to enable pre-tuning standalone runs. README will be updated.
+
+commit 1025d807ab1f3d5e8d3a8deb72595f2314b1cec5
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Jan 30 18:47:29 2023 +0100
+
+    Adds to dashboard a bar plot that separates nonlinear
+    
+    and linear contributions to bias removal.
+    
+    Also abbreviates the clubb parameter names in the plots.
+
+commit 822ec13b0db0f3beb4eb93d796d5221a0d3c5f93
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Thu Jan 26 14:36:52 2023 +0100
+
+    Adds to dashboard plots error bars for
+    
+    bias removal plot, a colored correlation matrix,
+    a matrix of linear-based 2-point bounds on parameter perturbations,
+    and a web-page version of the 3-dot subplots.
+
+commit 15a351eec8d677c5035bce255aac81898c795822
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Jan 24 15:53:43 2023 -0600
+
+    GPUizing sat_mixrat_ice_2D.
+
 commit a0f5313ee697be2153704f9d4b9775cde7d717a1
 Author: huebler <huebler@uwm.edu>
 Date:   Tue Jan 24 12:42:04 2023 -0600
