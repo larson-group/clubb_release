@@ -157,7 +157,7 @@ module adg1_adg2_3d_luhar_pdf
     !$acc              varnce_w_2, varnce_w_1, rt_1, rt_2, u_1, u_2, &
     !$acc              v_1, v_2, thl_1, thl_2, varnce_rt_1, varnce_rt_2,  &
     !$acc              varnce_thl_1, varnce_thl_2, varnce_u_1, varnce_u_2, &
-    !$acc              varnce_v_1, varnce_v_2, alpha_rt, sigma_sqd_w,  &
+    !$acc              varnce_v_1, varnce_v_2, alpha_rt,  &
     !$acc              alpha_u, alpha_v, sclr_1, sclr_2, &
     !$acc              varnce_sclr_1, varnce_sclr_2, alpha_sclr )
     
