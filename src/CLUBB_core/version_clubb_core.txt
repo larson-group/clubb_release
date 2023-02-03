@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 commit b361c61e93c25e1a491a5ff4fdbe5cbcc1f0f735
 Author: Tyler Cernik <cernikt@msoe.edu>
 Date:   Sat Feb 11 14:41:23 2023 -0600
@@ -47,6 +48,8 @@ Date:   Sat Feb 4 17:22:00 2023 -0600
 
     Removing update_pressure from public list. This was causing compilation crashes. RESOLVED:8c7230fecb877d04fb129ef5e143e0993b4b29b1
 
+=======
+>>>>>>> Updating the clubb core and silhs version files
 commit 8c7230fecb877d04fb129ef5e143e0993b4b29b1
 Author: huebler <huebler@uwm.edu>
 Date:   Thu Feb 2 13:06:52 2023 -0600
@@ -75,6 +78,7 @@ Date:   Mon Jan 30 18:47:29 2023 +0100
     
     Also abbreviates the clubb parameter names in the plots.
 
+<<<<<<< HEAD
 commit cfd87ac680ebb26e2fdb7b1aab7a8b8b4fc75320
 Author: Steffen Domke <sdomke@uwm.edu>
 Date:   Mon Jan 30 15:12:37 2023 -0600
@@ -91,6 +95,8 @@ Date:   Mon Jan 30 18:47:29 2023 +0100
     
     Also abbreviates the clubb parameter names in the plots.
 
+=======
+>>>>>>> Updating the clubb core and silhs version files
 commit 822ec13b0db0f3beb4eb93d796d5221a0d3c5f93
 Author: Vincent Larson <vlarson@users.noreply.github.com>
 Date:   Thu Jan 26 14:36:52 2023 +0100
@@ -143,6 +149,7 @@ Date:   Thu Jan 19 12:36:44 2023 -0600
     * Changing low to lower in tridiag_lu and penta_lu, also fixing up some spacing.
     
     * Making variables that represent matrix solutions more consistently named.
+<<<<<<< HEAD
 
 commit e21e2713eab0f3f228189a4b407c80d4f241038f
 Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
