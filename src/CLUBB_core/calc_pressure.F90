@@ -3,8 +3,7 @@ module calc_pressure
 
   implicit none
 
-  public :: update_pressure, & ! Procedure(s)
-            init_pressure,   &
+  public :: init_pressure,   & ! Procedure(s)
             calculate_thvm
 
   private ! default scope
