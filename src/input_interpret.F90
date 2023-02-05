@@ -251,9 +251,9 @@ module input_interpret
         !
         ! where thv_ds is used as a reference value to approximate theta_l.
         call calculate_thvm( nlevels, 1, &
-                             thlm, rtm, rcm, exner, &
-                             theta * ( one + ep2 * ( rtm - rcm ) )**kappa, &
-                             thvm )
+             thlm(1,1:nlevels), rtm(1,1:nlevels), rcm(1,1:nlevels), exner(1,1:nlevels), &
+             theta(1,1:nlevels) * ( one + ep2 * ( rtm(1,1:nlevels)-rcm(1,1:nlevels) ) )**kappa, &
+             thvm(1,1:nlevels) )
 
         ! Find the altitudes, z, of the pressure sounding levels.
         call inverse_hydrostatic( p_sfc, zm_init, nlevels, thvm, exner, &
