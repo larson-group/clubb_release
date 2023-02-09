@@ -865,6 +865,7 @@ module pdf_utilities
     ! ---------------- Local Variables ----------------
     integer :: i, k 
 
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol 
         if ( sigma_x_1_sqd(i,k) * sigma_y_1_sqd(i,k) > zero &
@@ -889,11 +890,14 @@ module pdf_utilities
            corr_x_y_1(i,k) = zero
 
         endif
+        ! Set corr_x_y_2 equal to corr_x_y_1.
+        corr_x_y_2(i,k) = corr_x_y_1(i,k)
       end do
     end do
+    !$acc end parallel
 
     ! Set corr_x_y_2 equal to corr_x_y_1.
-    corr_x_y_2(:,:) = corr_x_y_1(:,:)
+    !corr_x_y_2(:,:) = corr_x_y_1(:,:)
 
     return
 

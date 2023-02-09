@@ -439,6 +439,37 @@ module pdf_closure_module
 
   !------------------------ Code Begins ----------------------------------
 
+    !$acc data copyin( pdf_params, p_in_Pa, exner, thv_ds, wm, wp2, wp3, &
+    !$acc              Skw, Skthl_in, Skrt_in, Sku_in, pdf_implicit_coefs_terms, &
+    !$acc              Skv_in, rtm, rtp2, wprtp, thlm, thlp2, wpthlp, rtpthlp, &
+    !$acc              um, up2, upwp, vm, vp2, vpwp, sclrm, wpsclrp, sclrp2, sclrprtp, &
+    !$acc              sclrpthlp, Sksclr_in, gamma_Skw_fnc, clubb_params, &
+    !$acc              wphydrometp, wp2hmp, rtphmp, thlphmp, sigma_sqd_w ) &
+    !$acc      create( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
+    !$acc              varnce_v_1, varnce_v_2, alpha_u, alpha_v, &
+    !$acc              corr_u_w_1, corr_u_w_2, corr_v_w_1, corr_v_w_2, &
+    !$acc              sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
+    !$acc              alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
+    !$acc              corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, corr_w_sclr_2, &
+    !$acc              tl1, tl2, Sksclr, sqrt_wp2, Skthl, &
+    !$acc              Skrt, Sku, Skv, wprcp_contrib_comp_1, wprcp_contrib_comp_2, &
+    !$acc              wp2rcp_contrib_comp_1, wp2rcp_contrib_comp_2, &
+    !$acc              rtprcp_contrib_comp_1, rtprcp_contrib_comp_2, &
+    !$acc              thlprcp_contrib_comp_1, thlprcp_contrib_comp_2, &
+    !$acc              uprcp_contrib_comp_1, uprcp_contrib_comp_2, &
+    !$acc              vprcp_contrib_comp_1, vprcp_contrib_comp_2, &
+    !$acc              rc_1_ice, rc_2_ice ) &
+    !$acc     copyout( pdf_params, uprcp, vprcp, wpup2, wpvp2, wp2up2, &
+    !$acc              wp2vp2, wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, &
+    !$acc              cloud_frac, ice_supersat_frac, rcm, wpthvp, wp2thvp, &
+    !$acc              rtpthvp, thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp, &
+    !$acc              rcp2, wprtpthlp, w_up_in_cloud, &
+    !$acc              w_down_in_cloud, cloudy_updraft_frac, &
+    !$acc              cloudy_downdraft_frac, pdf_implicit_coefs_terms, &
+    !$acc              F_w, F_rt, F_thl, min_F_w, max_F_w, min_F_rt, &
+    !$acc              max_F_rt, min_F_thl, max_F_thl, sclrpthvp, sclrprcp, & 
+    !$acc              wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp, rc_coef )
+
     ! Check whether the passive scalars are present.
     if ( sclr_dim > 0 ) then
       l_scalar_calc = .true.
@@ -446,10 +477,9 @@ module pdf_closure_module
       l_scalar_calc = .false.
     end if
 
-
     ! Initialize to default values to prevent a runtime error
     if ( ( iiPDF_type /= iiPDF_ADG1 ) .and. ( iiPDF_type /= iiPDF_ADG2 ) ) then
-
+      
       do k = 1, nz
         do i = 1, ngrdcol
           pdf_params%alpha_thl(i,k) = one_half
@@ -467,7 +497,7 @@ module pdf_closure_module
           Skv(i,k) = Skv_in(i,k)
         end do
       end do
-        
+      
       do j = 1, sclr_dim
         do k = 1, nz
           do i = 1, ngrdcol
@@ -487,7 +517,7 @@ module pdf_closure_module
 
     ! Initialize to 0 to prevent a runtime error
     if ( iiPDF_type /= iiPDF_new .and. iiPDF_type /= iiPDF_new_hybrid ) then
-
+      !$acc parallel loop gang vector collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           F_w(i,k) = zero
@@ -501,6 +531,7 @@ module pdf_closure_module
           max_F_thl(i,k) = zero
         end do
       end do
+      !$acc end parallel
 
     end if
 
@@ -519,11 +550,13 @@ module pdf_closure_module
       
 
     ! To avoid recomputing
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         sqrt_wp2(i,k) = sqrt( wp2(i,k) )
       end do
     end do
+    !$acc end parallel
 
     ! Select the PDF closure method for the two-component PDF used by CLUBB for
     ! w, rt, theta-l, and passive scalar variables.
@@ -683,6 +716,7 @@ module pdf_closure_module
       ! corr_w_thl_2 to all have a value of 0, so skip the calculation.
       ! The values of corr_u_w_1, corr_u_w_2, corr_v_w_1, and corr_v_w_2 are
       ! all defined to be 0, as well.
+      !$acc parallel loop gang vector collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           pdf_params%corr_w_rt_1(i,k)  = zero
@@ -695,6 +729,7 @@ module pdf_closure_module
           corr_v_w_2(i,k)   = zero
         end do
       end do
+      !$acc end parallel
 
     else
 
@@ -750,6 +785,7 @@ module pdf_closure_module
 
         ! These PDF types define all PDF component correlations involving w
         ! to have a value of 0, so skip the calculation.
+        !$acc parallel loop gang vector collapse(2)
         do j = 1, sclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -758,6 +794,7 @@ module pdf_closure_module
             end do
           end do
         end do
+        !$acc end parallel
 
       else
 
@@ -942,13 +979,14 @@ module pdf_closure_module
     ! First compute some preliminary quantities.
     ! "1" denotes first Gaussian; "2" denotes 2nd Gaussian
     ! liq water temp (Sommeria & Deardorff 1977 (SD), eqn. 3)
-    
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         tl1(i,k)  = pdf_params%thl_1(i,k)*exner(i,k)
         tl2(i,k)  = pdf_params%thl_2(i,k)*exner(i,k)
       end do
     end do
+    !$acc end parallel
 
 #ifdef GFDL
     if ( sclr_dim > 0  .and.  (.not. do_liquid_only_in_clubb) ) then ! h1g, 2010-06-16 begin mod
@@ -1006,6 +1044,8 @@ module pdf_closure_module
     pdf_params%rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1 )
     pdf_params%rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2 ) ! h1g, 2010-06-16 end mod
 
+    !$acc update device(pdf_params%rsatl_1,pdf_params%rsatl_2)
+
     l_calc_ice_supersat_frac = .true.
 #endif
 
@@ -1061,6 +1101,7 @@ module pdf_closure_module
                                           pdf_params%ice_supersat_frac_2, rc_2_ice )
 
       ! Compute ice cloud fraction, ice_supersat_frac
+      !$acc parallel loop gang vector collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           ice_supersat_frac(i,k) = pdf_params%mixt_frac(i,k) &
@@ -1069,15 +1110,18 @@ module pdf_closure_module
                                      * pdf_params%ice_supersat_frac_2(i,k)
         end do
       end do
+      !$acc end parallel
 
     else 
 
       ! ice_supersat_frac will be garbage if computed as above
+      !$acc parallel loop gang vector collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           ice_supersat_frac(i,k) = 0.0_core_rknd
         end do
       end do
+      !$acc end parallel
 
       if (clubb_at_least_debug_level( 1 )) then
           write(fstderr,*) "Warning: ice_supersat_frac has garbage values if &
@@ -1090,6 +1134,7 @@ module pdf_closure_module
     ! Compute cloud fraction and mean cloud water mixing ratio.
     ! Reference:
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_cloud_terms
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         cloud_frac(i,k) = pdf_params%mixt_frac(i,k) * pdf_params%cloud_frac_1(i,k) &
@@ -1099,12 +1144,14 @@ module pdf_closure_module
         rcm(i,k) = max( zero_threshold, rcm(i,k) )
       end do
     end do
+    !$acc end parallel
 
     if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
          .or. iiPDF_type == iiPDF_new_hybrid ) then
 
       ! corr_w_rt and corr_w_thl are zero for these pdf types so
       ! corr_w_chi and corr_w_eta are zero as well
+      !$acc parallel loop gang vector collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           pdf_params%corr_w_chi_1(i,k) = zero
@@ -1113,6 +1160,7 @@ module pdf_closure_module
           pdf_params%corr_w_eta_2(i,k) = zero
         end do
       end do
+      !$acc end parallel
 
     else 
         
@@ -1193,6 +1241,7 @@ module pdf_closure_module
 
     
     ! Calculate rc_coef, which is the coefficient on <x'rc'> in the <x'thv'> equation.
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         
@@ -1218,8 +1267,10 @@ module pdf_closure_module
                      + ( one - pdf_params%mixt_frac(i,k) ) * vprcp_contrib_comp_2(i,k)
       end do
     end do
+    !$acc end parallel
 
     ! Calculate <w'thv'>, <w'^2 thv'>, <rt'thv'>, and <thl'thv'>.
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         wpthvp(i,k)  = wpthlp(i,k)  + ep1 * thv_ds(i,k) * wprtp(i,k)   + rc_coef(i,k) * wprcp(i,k)
@@ -1228,7 +1279,7 @@ module pdf_closure_module
         thlpthvp(i,k)= thlp2(i,k)   + ep1 * thv_ds(i,k) * rtpthlp(i,k) + rc_coef(i,k) * thlprcp(i,k)
       end do
     end do
-
+    !$acc end parallel
 
     ! Add the precipitation loading term in the <x'thv'> equation.
     if ( l_liq_ice_loading_test ) then
@@ -1236,7 +1287,7 @@ module pdf_closure_module
        do hm_idx = 1, hydromet_dim, 1
 
           if ( l_mix_rat_hm(hm_idx) ) then
-
+            !$acc parallel loop gang vector collapse(2)
             do k = 1, nz
               do i = 1, ngrdcol
                 wp2thvp(i,k)  = wp2thvp(i,k)  - thv_ds(i,k) * wp2hmp(i,k,hm_idx)
@@ -1245,7 +1296,7 @@ module pdf_closure_module
                 rtpthvp(i,k)  = rtpthvp(i,k)  - thv_ds(i,k) * rtphmp(i,k,hm_idx)
               end do
             end do
-
+            !$acc end parallel
           end if
 
        end do
@@ -1256,33 +1307,35 @@ module pdf_closure_module
     ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
     !  where the ``scalar'' in this paper is w.
     if ( l_scalar_calc ) then
-      
+      !$acc parallel loop gang vector collapse(3)
       do j = 1, sclr_dim
-        do i = 1, ngrdcol
-          
-          sclrprcp(i,:,j) &
-          = pdf_params%mixt_frac(i,:) * ( ( sclr1(i,:,j) - sclrm(i,:,j) ) * pdf_params%rc_1(i,:) ) &
-            + ( one - pdf_params%mixt_frac(i,:) ) * ( ( sclr2(i,:,j) - sclrm(i,:,j) ) &
-                                                      * pdf_params%rc_2(i,:) ) &
-            + pdf_params%mixt_frac(i,:) * corr_sclr_rt_1(i,:,j) * pdf_params%crt_1(i,:) &
-              * sqrt( varnce_sclr1(i,:,j) * pdf_params%varnce_rt_1(i,:) ) &
-              * pdf_params%cloud_frac_1(i,:) & 
-            + ( one - pdf_params%mixt_frac(i,:) ) * corr_sclr_rt_2(i,:,j) * pdf_params%crt_2(i,:) &
-              * sqrt( varnce_sclr2(i,:,j) * pdf_params%varnce_rt_2(i,:) ) &
-              * pdf_params%cloud_frac_2(i,:) & 
-            - pdf_params%mixt_frac(i,:) * corr_sclr_thl_1(i,:,j) * pdf_params%cthl_1(i,:) &
-              * sqrt( varnce_sclr1(i,:,j) * pdf_params%varnce_thl_1(i,:) ) &
-              * pdf_params%cloud_frac_1(i,:) & 
-            - ( one - pdf_params%mixt_frac(i,:) ) * corr_sclr_thl_2(i,:,j) * pdf_params%cthl_2(i,:) &
-              * sqrt( varnce_sclr2(i,:,j) * pdf_params%varnce_thl_2(i,:) ) &
-              * pdf_params%cloud_frac_2(i,:)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            
+            sclrprcp(i,k,j) &
+            = pdf_params%mixt_frac(i,k) * ( ( sclr1(i,k,j) - sclrm(i,k,j) ) * pdf_params%rc_1(i,k) ) &
+              + ( one - pdf_params%mixt_frac(i,k) ) * ( ( sclr2(i,k,j) - sclrm(i,k,j) ) &
+                                                        * pdf_params%rc_2(i,k) ) &
+              + pdf_params%mixt_frac(i,k) * corr_sclr_rt_1(i,k,j) * pdf_params%crt_1(i,k) &
+                * sqrt( varnce_sclr1(i,k,j) * pdf_params%varnce_rt_1(i,k) ) &
+                * pdf_params%cloud_frac_1(i,k) &
+              + ( one - pdf_params%mixt_frac(i,k) ) * corr_sclr_rt_2(i,k,j) * pdf_params%crt_2(i,k) &
+                * sqrt( varnce_sclr2(i,k,j) * pdf_params%varnce_rt_2(i,k) ) &
+                * pdf_params%cloud_frac_2(i,k) & 
+              - pdf_params%mixt_frac(i,k) * corr_sclr_thl_1(i,k,j) * pdf_params%cthl_1(i,k) &
+                * sqrt( varnce_sclr1(i,k,j) * pdf_params%varnce_thl_1(i,k) ) &
+                * pdf_params%cloud_frac_1(i,k) & 
+              - ( one - pdf_params%mixt_frac(i,k) ) * corr_sclr_thl_2(i,k,j) * pdf_params%cthl_2(i,k) &
+                * sqrt( varnce_sclr2(i,k,j) * pdf_params%varnce_thl_2(i,k) ) &
+                * pdf_params%cloud_frac_2(i,k)
 
-          sclrpthvp(i,:,j) = sclrpthlp(i,:,j) + ep1*thv_ds(i,:)*sclrprtp(i,:,j) &
-                           + rc_coef(i,:)*sclrprcp(i,:,j)
-                           
+            sclrpthvp(i,k,j) = sclrpthlp(i,k,j) + ep1*thv_ds(i,k)*sclrprtp(i,k,j) &
+                             + rc_coef(i,k)*sclrprcp(i,k,j)
+                             
+          end do
         end do
       end do ! i=1, sclr_dim
-      
+      !$acc end parallel
     end if ! l_scalar_calc
     
     
@@ -1295,7 +1348,7 @@ module pdf_closure_module
       !  if CLUBB is used in CAM we want this variable computed no matter what
       if ( ircp2 > 0 ) then
 #endif
-
+    !$acc parallel loop gang vector collapse(2)
     do k = 1,nz
       do i = 1, ngrdcol
         rcp2(i,k) = pdf_params%mixt_frac(i,k) &
@@ -1309,7 +1362,7 @@ module pdf_closure_module
         
       end do
     end do
-
+    !$acc end parallel
 #ifndef CLUBB_CAM
       !  if CLUBB is used in CAM we want this variable computed no matter what
       end if
@@ -1331,6 +1384,9 @@ module pdf_closure_module
       w_up_in_cloud(:,:) = zero
       w_down_in_cloud(:,:) = zero
     end if
+
+    !$acc end data
+
 #ifdef TUNER
     ! Check the first levels (and first gridcolumn) for reasonable temperatures
     ! greater than 190K and less than 1000K
@@ -1362,6 +1418,7 @@ module pdf_closure_module
         end if
     end do
 #endif
+
     if ( clubb_at_least_debug_level( 2 ) ) then
       do i = 1, ngrdcol
           
@@ -1723,6 +1780,7 @@ module pdf_closure_module
 
     ! ----------- Begin Code -----------
 
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -1748,6 +1806,7 @@ module pdf_closure_module
     ! Calculate covariance, correlation, and standard deviation of 
     ! chi and eta for each component
     ! Include subplume correlation of qt, thl
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
        
@@ -1792,6 +1851,7 @@ module pdf_closure_module
 
       end do
     end do
+    !$acc end parallel
 
   end subroutine transform_pdf_chi_eta_component
   
@@ -1856,7 +1916,7 @@ module pdf_closure_module
     ! Local Variables
     integer :: i, k
 
-    
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -1869,6 +1929,7 @@ module pdf_closure_module
                                         + ( w_2(i,k) - wm(i,k) )**4 )
       end do
     end do
+    !$acc end parallel
 
     return
 
@@ -1960,7 +2021,7 @@ module pdf_closure_module
     ! Local Variable
     integer :: i, k
 
-
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -1979,6 +2040,7 @@ module pdf_closure_module
                 + ( 1 + 2*corr_w_x_2(i,k)**2 ) * varnce_x_2(i,k) ) * varnce_w_2(i,k) )
       end do
     end do
+    !$acc end parallel
 
     return
 
@@ -2066,6 +2128,7 @@ module pdf_closure_module
 
 
     ! Calculate <w'^2 x'> by integrating over the PDF.
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         
@@ -2079,6 +2142,7 @@ module pdf_closure_module
                            * ( w_2(i,k) - wm(i,k) ) )
       end do
     end do
+    !$acc end parallel
 
     return
 
@@ -2164,6 +2228,7 @@ module pdf_closure_module
     ! Local Variables
     integer :: i, k
 
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -2178,6 +2243,7 @@ module pdf_closure_module
                         * ( x_2(i,k) - xm(i,k) ) )
       end do
     end do
+    !$acc end parallel
 
     return
 
@@ -2292,6 +2358,7 @@ module pdf_closure_module
     
 
     ! Calculate <w'x'y'> by integrating over the PDF.
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         wpxpyp(i,k) &
@@ -2307,6 +2374,7 @@ module pdf_closure_module
                 + corr_w_x_2(i,k)*sqrt( varnce_w_2(i,k)*varnce_x_2(i,k) )*( y_2(i,k)-ym(i,k) ) )
       end do
     end do
+    !$acc end parallel
 
     return
 
@@ -2410,7 +2478,7 @@ module pdf_closure_module
     integer :: k, i    ! Vertical loop index
 
     !----------- Begin Code -----------
-
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -2444,6 +2512,7 @@ module pdf_closure_module
         
       end do
     end do
+    !$acc end parallel
 
     return
 
@@ -2527,15 +2596,26 @@ module pdf_closure_module
 
     ! If all grid boxes are above freezing, then the calculation is the 
     ! same as the cloud_frac calculation
+    !$acc update host(tl)
     if ( all( tl > T_freeze_K ) ) then
-      ice_supersat_frac = cloud_frac
-      rc                = rc_in
+      !$acc parallel loop gang vector collapse(2)
+      do k = 1, nz
+        do i = 1, ngrdcol 
+          ice_supersat_frac(i,k) = cloud_frac(i,k)
+          rc(i,k)                = rc_in(i,k)
+        end do
+      end do
       return
     end if
+
+    !$acc data create( rsat_ice )
 
     ! Calculate the saturation mixing ratio of ice
     rsat_ice = sat_mixrat_ice( nz, ngrdcol, p_in_Pa, tl )
 
+    !$acc update device(rsat_ice)
+
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -2584,6 +2664,9 @@ module pdf_closure_module
 
       end do
     end do
+    !$acc end parallel
+
+    !$acc end data
 
     return
 
@@ -3026,7 +3109,7 @@ module pdf_closure_module
     
     ! Changing these conditionals may result in inconsistencies with the conditional
     ! statements located in calc_cloud_frac_component
-    
+    !$acc parallel loop gang collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -3049,6 +3132,7 @@ module pdf_closure_module
         
       end do
     end do
+    !$acc end parallel
 
     ! If iiPDF_type isn't iiPDF_ADG1, iiPDF_ADG2, or iiPDF_new_hybrid, so
     ! corr_w_chi_i /= 0 (and perhaps corr_u_w_i /= 0).
@@ -3078,7 +3162,6 @@ module pdf_closure_module
           end if
         end do
       end do
-
     end if 
 
     return
@@ -3162,6 +3245,7 @@ module pdf_closure_module
       
     integer :: i, k
       
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -3278,6 +3362,7 @@ module pdf_closure_module
 
       end do
     end do
+    !$acc end parallel
 
     return
 
