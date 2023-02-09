@@ -1,10 +1,13 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 commit b361c61e93c25e1a491a5ff4fdbe5cbcc1f0f735
 Author: Tyler Cernik <cernikt@msoe.edu>
 Date:   Sat Feb 11 14:41:23 2023 -0600
 
     made graphing for netcdf_var collector general. #1040
 
+=======
+>>>>>>> Updating the clubb core and silhs version files
 commit 47cd566e64abb0e774abd20c2ec97deed8dd3ab5
 Author: supreethms1809 <supreethms1809@gmail.com>
 Date:   Wed Feb 8 17:34:02 2023 -0700
@@ -48,6 +51,9 @@ Date:   Sat Feb 4 17:22:00 2023 -0600
 
     Removing update_pressure from public list. This was causing compilation crashes. RESOLVED:8c7230fecb877d04fb129ef5e143e0993b4b29b1
 
+<<<<<<< HEAD
+=======
+>>>>>>> Updating the clubb core and silhs version files
 =======
 >>>>>>> Updating the clubb core and silhs version files
 commit 8c7230fecb877d04fb129ef5e143e0993b4b29b1
@@ -79,6 +85,7 @@ Date:   Mon Jan 30 18:47:29 2023 +0100
     Also abbreviates the clubb parameter names in the plots.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 commit cfd87ac680ebb26e2fdb7b1aab7a8b8b4fc75320
 Author: Steffen Domke <sdomke@uwm.edu>
 Date:   Mon Jan 30 15:12:37 2023 -0600
@@ -97,6 +104,8 @@ Date:   Mon Jan 30 18:47:29 2023 +0100
 
 =======
 >>>>>>> Updating the clubb core and silhs version files
+=======
+>>>>>>> Updating the clubb core and silhs version files
 commit 822ec13b0db0f3beb4eb93d796d5221a0d3c5f93
 Author: Vincent Larson <vlarson@users.noreply.github.com>
 Date:   Thu Jan 26 14:36:52 2023 +0100
@@ -106,6 +115,7 @@ Date:   Thu Jan 26 14:36:52 2023 +0100
     bias removal plot, a colored correlation matrix,
     a matrix of linear-based 2-point bounds on parameter perturbations,
     and a web-page version of the 3-dot subplots.
+<<<<<<< HEAD
 
 commit 15a351eec8d677c5035bce255aac81898c795822
 Author: huebler <huebler@uwm.edu>
