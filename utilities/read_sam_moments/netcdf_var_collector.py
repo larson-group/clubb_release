@@ -6,7 +6,11 @@ import matplotlib.pyplot as plt
 gravity = 9.81
 
 # Change netcdf_file path to the file you want to use.
-netcdf_file = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc"
+netcdf_file = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
+
+# "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
+
+# "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc"
 
 
 def get_var_from_netcdf(nc_file, var_name, df):
@@ -45,11 +49,23 @@ def make_z_col(ncdf):
     #         z.append(ncdf.variables['z'][i])
     z =  ncdf.variables['z'][:]
     reps = len(ncdf.dimensions['time'])
+
+
+    # print(len(ncdf.variables['z']))
+    # print(len(ncdf.dimensions['time']))
+
+
+    # print(len(ncdf.dimensions['time']))
+
+    # file = open("test.txt", "w")
+    # file.write())
+    # file.close()
+
     z = np.tile(z, reps)
 
     # print(len(z))
 
-    return np.array(z)
+    return np.array(z), len(ncdf.dimensions['z'])
 
 
 def create_df_1040_scalar_dissipation(df, ncdf):
@@ -63,7 +79,8 @@ def create_df_1040_scalar_dissipation(df, ncdf):
     '''
     # create index
     make_index(df, ncdf)
-    z = make_z_col(ncdf)
+    z, levels = make_z_col(ncdf)
+
 
     # Q2DIFTR = np.array(ncdf.variables['Q2DIFTR'][:]).flatten('F')
     # QT2 = np.array(ncdf.variables['QT2'][:]).flatten('F')
@@ -130,6 +147,8 @@ def create_df_1040_scalar_dissipation(df, ncdf):
     # test_df['THETAL'] = np.array([ncdf.variables['THETAL']]).flatten('F')
     # test_df.to_csv('thetal_pandas.csv', index=False)
 
+    return levels
+
 
 
 
@@ -176,29 +195,31 @@ def original_gradient(var, z):
 
     return np.array(gradient)
 
-def graph_last_3_hours(df, variable, filename):
+def graph_last_3_hours(df, variable, filename, levels):
     '''
     This function graphs the average of the last 3 hours of the data
     This is done by getting the average of each height level for the last 3 hours
-    3 hours is 180 minutes. There are 75 rows per timestep (min). So 180*75 = 13500 rows
+    3 hours is 180 minutes. The number of rows is the variable levels, which represents the rows per timestep (min). So 180*levels = x rows
     '''
     vars = []
 
-    var_last_3_hours = np.array(df[variable][-13500:])
-    z_last_3_hours = np.array(df['z'][-13500:])
+    offset = levels*180
+
+    var_last_3_hours = np.array(df[variable][-offset:])
+    z_last_3_hours = np.array(df['z'][-offset:])
 
     # print('amde it here')
     # print(len(var_last_3_hours))
     # print(len(z_last_3_hours))
 
-    for i in range(75):
-        vars.append([var_last_3_hours[i+j] for j in range(0,(13500-74), 75)])
+    for i in range(levels):
+        vars.append([var_last_3_hours[i+j] for j in range(0,(13500-74), levels)])
 
     vars = np.array(vars)
 
     vars = np.mean(vars, axis=1)
 
-    plt.plot(vars, z_last_3_hours[-75:])
+    plt.plot(vars, z_last_3_hours[-levels:])
     plt.xlabel(variable)
     plt.ylabel('height')
     plt.savefig(filename + '.png')
@@ -207,16 +228,12 @@ def graph_last_3_hours(df, variable, filename):
 
     
 
-def graphing_testing(df):
+def graphing_testing(df, levels):
 
     variables = ['Q2DIFTR_on_QT2', 'W2_on_U2_plus_V2', 'sqrt_g_on_THETAL_dTHETAL_dz', 'd_sqrt_U2_plus_V2_dz', 'd_sqrt_U2_plus_V2_plus_W2_dz', 'W2', 'U2', 'V2', 'THETAL', 'QT2', 'Q2DIFTR', 'CLD', 'WSKEW']
 
     for variable in variables:
-        graph_last_3_hours(df, variable, variable + '_last_3_hours')
-
-
-
-
+        graph_last_3_hours(df, variable, variable + '_last_3_hours', levels)
 
 
 
@@ -227,8 +244,12 @@ if __name__ == '__main__':
 
     # make_index(df, ncdf)
     # make_z_col(df, ncdf)
-    create_df_1040_scalar_dissipation(df, ncdf)
-    graphing_testing(df)
-    df.to_csv('flatten.csv', index=False)
+    levels = create_df_1040_scalar_dissipation(df, ncdf)
+    
+    graphing_testing(df, levels)
+
+    # df["z"].to_csv('z.csv', index=False)
+
+    df.to_csv('dycoms_rf01.csv', index=False)
 
     
