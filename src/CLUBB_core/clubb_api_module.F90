@@ -4528,6 +4528,7 @@ contains
                                                  l_use_tke_in_wp3_pr_turb_term, & ! Out
                                                  l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
                                                  l_smooth_Heaviside_tau_wpxp, & ! Out
+                                                 l_modify_bc_for_cnvg_test, & ! Out 
                                                  l_enable_relaxed_clipping, & ! Out
                                                  l_linearize_pbl_winds, & ! Out
                                                  l_mono_flux_lim_thlm, & ! Out
@@ -4657,6 +4658,8 @@ contains
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_modify_bc_for_cnvg_test,    & ! Flag to activate modifications on boundary condition for 
+                                      ! convergence test (surface fluxes computed at fixed 25m height) 
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp
                                       ! in xm_wpxp_clipping_and_stats
       l_linearize_pbl_winds,        & ! Code to linearize PBL winds
@@ -4716,6 +4719,7 @@ contains
                                          l_use_tke_in_wp3_pr_turb_term, & ! Out
                                          l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
                                          l_smooth_Heaviside_tau_wpxp, & ! Out
+                                         l_modify_bc_for_cnvg_test, & ! Out 
                                          l_enable_relaxed_clipping, & ! Out
                                          l_linearize_pbl_winds, & ! Out
                                          l_mono_flux_lim_thlm, & ! Out
