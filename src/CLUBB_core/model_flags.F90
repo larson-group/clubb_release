@@ -601,6 +601,7 @@ module model_flags
     l_use_tke_in_wp3_pr_turb_term = .false.
     l_use_tke_in_wp2_wp3_K_dfsn = .false.
     l_smooth_Heaviside_tau_wpxp = .false.
+    l_modify_bc_for_cnvg_test = .false. 
     l_enable_relaxed_clipping = .false.
     l_linearize_pbl_winds = .false.
     l_mono_flux_lim_thlm = .true.
