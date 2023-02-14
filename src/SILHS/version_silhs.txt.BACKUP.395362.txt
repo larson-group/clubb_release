@@ -1,0 +1,220 @@
+<<<<<<< HEAD
+commit 0eca2146266b52e407a4feac444e1be8923fa3c4
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Apr 6 23:40:20 2023 -0500
+
+    Making it so sclr_tol is set to 0 before the specified sclr_tol_in. This is so that it is initialized to 0 in the case that sclr_dim = 0, since now we are setting it to have a minimum allocation size of 1 and would otherwise have a garbage value. This is what broke the clubb_openmp_gfortran_test.
+
+commit 6d1ddfc80e3c21483a2a90d03c0f5581c0dd7dff
+Author: cernikt <tjcernik@uwm.edu>
+Date:   Thu Apr 6 16:23:07 2023 -0500
+
+    bug fixes for the autocommit message maker code
+
+commit 34329990202f44999b237263136111b0086963c4
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Apr 5 17:34:23 2023 -0500
+
+    Fixing a labelling error in redirect_interpolated_azt_2D and similar procedures, since this interpolates to zt the input should be zm. I think this was my fault, so I cleaned all the zt2zm and zm2zt things up to make it a little nicer. Also ordered the routines _k _1D _2D to make it easier to jump around, it was a bit confusing as they were out of order and the typo really made it hard.
+
+commit c0fb204097dab9c58399ebd3526835db482899cc
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Apr 5 17:23:55 2023 -0500
+
+    Small tweaks to fix some GPU bugs. Some variables were uninitialized on the CPU while we were saving them. This could only have been caught by comparing consecutive runs and checking _zt and _zm files, even then few cases were having problems.
+
+commit f20b355f2ce4e686d8f3392ad148341f08fd6acc
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Apr 5 15:28:51 2023 -0500
+
+    Small improvements to diff_netcdf_outputs.py, removing reliance on ncdiff, now it is entirely in python. Cleaning up linux_x86_64_nvhpc_gpu.bash, removing outdated parts, improving default parallel compilation, changing pgfortran to nvfortran.
+
+commit 49ec5990089b7f9728eb6707a2b653bbeca94c81
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Apr 5 12:44:46 2023 -0500
+
+    Advance xm wpxp gpuization (#1077)
+    
+    * Initial commit for GPUizing advance_xm_wpxp.
+    
+    * GPUizing fill_holes_vertical
+    
+    * Adding Skthl_zm to the update host list, I missed this in the last PR. I noticed this by comparing results with and without managed memory, now I've checked BFBness with arm, mpace_b, mc3e, and gabls2.
+    
+    * Small GPU fixes (#1076)
+    
+    * Fixing small things that I caught by adding the default(present) onto acc loops.
+    
+    * Moving default(present) to the end because it looks nicer there.
+    
+    * Adding default(present) to all acc loop statements. Also adding azt to a copyin statement, which was missed previously. All BFB.
+    
+    * Incemental update, not well tested yet.
+    
+    * Removing some copies and making the sclr_dim change.
+    
+    * Fixing a bug that only seemed detectable with astex_a209. We need to pass only single arrays to functions, calling ddzt( nz, ngrdcol, gr, rho_ds_zt * K_zt_nu ) was resulting in rho_ds_zt * K_zt_nu being evluated on the CPU, but the values were only valid on the GPU. So we need to evaluate that expression on the GPU, save it into an array (currently K_zt_nu_tmp), then pass that to ddzt.
+    
+    * GPUizing calc_turb_adv_range
+    
+    * GPUizing mono_flux_limiter
+    
+    * Cleaning up data statments and a couple other things.
+    
+    * Updated for some different options.
+    
+    * More updates needed for various options.
+    
+    * Reverting accidental flag change
+    
+    * Should be the final changes, all options tested now.
+    
+    * Replacing some comments in monoflux limiter, and also modifying it to make it BFB on CPUs. Also changing incorrect error conditions on tridiag.
+    
+    * Adding max_x_allowable to update host statement, missed previous.
+    
+    * Properly naming tmp variables and variables calculated from ddzt and ddzm start with ddzt_ and ddzm_.
+    
+    * Replacing constants with named ones from constants_clubb.
+    
+    * Replacing hard coded numbers in lhs variables representing the number of bands they contain with fortran parameters.
+
+commit 4b16d833e86ad23ef6ea81de67c38c596ebccd25
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Apr 3 11:11:27 2023 -0500
+
+    This commit contains code changes to implement modifications on limiters in three places:
+    
+    1. remove the limiters in denominator of equation for
+       brunt_vaisala_freq_sqd_smth, which affects the computed
+       eddy dissipation time scale in turbulent fluxes (wpxp).
+       (in mixing_length.F90)
+    
+    2. reduce the threshold values of limiters in the equation
+       for richardson number (sqrt_Ri_zm)
+       (in mixing_length.F90)
+    
+    3. introduce the smoothed max/min function for limiters in
+       equation of Cx_fnc_Richardson.
+       (in advance_helper_module.F90).
+    
+    After the modification, we also apply a zt2m(zm2zt) smoothing
+    on the calculated quantities. These modifications are found to
+    be benificial for improving solution convergence in CLUBB-SCM
+    
+    The code changes are controlled by a newly introduced flag named
+    "l_modify_limiters_for_cnvg_test", which is set to .false. (meaning that
+    the modificaitons on limiters is turned off) by default.
+    
+    Originally committed by Shixuan.
+
+commit 475d569931a16ce1187c26757a0913e53c62abe5
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 31 02:17:42 2023 -0500
+
+    Code changes to implement modificiations on wp3 clippings
+    This commit contains code changes to implement modifications of skewness
+    clippings on wp3 in src/CLUBB_core/clip_explicit.F90. The default method attempts
+    to apply smaller (larger) clippings below (above) 100m AGL level, which
+    can cause a discontinuities around 100m AGL level. This clippings is
+    found to trigger sawthooth oscillations in wp3 when linear diffusion is
+    used. Such swathooth oscillations are eleminated if a smoothed Heaviside
+    function is introduced to obtain a smooth transition of clippings at
+    around 100m AGL level. The changes is necessary to obtain the first
+    order convergence in CLUBB-SCM when lienar diffusion is used.
+    
+    Previously committed by Shixuan.
+
+commit 5cd77e018ec1ca2d920bd34b5500529068b95749
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Wed Mar 29 05:39:02 2023 -0500
+
+    Adds blank line to trigger nightly tests
+
+commit d6db663fb3c7cd893d3d68786c486254e8a28ebb
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Mar 24 21:30:34 2023 -0500
+
+    Small GPU fixes (#1076)
+    
+    * Fixing small things that I caught by adding the default(present) onto acc loops.
+    
+    * Moving default(present) to the end because it looks nicer there.
+=======
+commit b361c61e93c25e1a491a5ff4fdbe5cbcc1f0f735
+Author: Tyler Cernik <cernikt@msoe.edu>
+Date:   Sat Feb 11 14:41:23 2023 -0600
+
+    made graphing for netcdf_var collector general. #1040
+
+commit 47cd566e64abb0e774abd20c2ec97deed8dd3ab5
+Author: supreethms1809 <supreethms1809@gmail.com>
+Date:   Wed Feb 8 17:34:02 2023 -0700
+
+    Porting pdf_closure subroutine with OpenACC (#1059)
+    
+    * Porting pdf_closure subroutine with OpenACC
+    
+    OpenACC directives are added to pdf_closure subroutine. The necessary
+    structured data region is also added for optimzing data movement across
+    kernels. There is opportunity to task parallelize using streams and
+    will be explored in the future.
+    
+    Answers are bit for bit.
+    
+    * Fixing the copyin directives
+    
+    * Making work without managed memory.
+
+commit 7d6dfad026e40eaf30f29ffa17c23dfbed882040
+Author: huebler <huebler@uwm.edu>
+Date:   Thu Feb 2 15:50:27 2023 -0600
+
+    Removing sigma_sqd_w from the acc data copyout statement. This is a bug which was causing the code to crash when not using managed memory.
+
+commit c9a950dbbf76e82a3cda0ab2d65f29cd5f28df12
+Author: huebler <huebler@uwm.edu>
+Date:   Fri Jan 27 17:50:12 2023 -0600
+
+    GPUizing some helping procedures.
+
+commit 5850944600089fe2cb244ca1b08973231b6d91d3
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sat Feb 4 22:56:44 2023 -0600
+
+    Fixing bug, arrays given a dummy index in 0fafc6b0b1f1a6058d37bf3db4bb3708204504db are declared nsize, but are only used up to nlevels, thus we need the (1,1:nlevels) specifier when passing them. This issue was only caught by our _debug tests, so that's good evidence the new flags we added to initialize unused to memory was effective.
+
+commit 2f84d7c748f143990316004c66ebda5486de5752
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sat Feb 4 17:22:00 2023 -0600
+
+    Removing update_pressure from public list. This was causing compilation crashes. RESOLVED:8c7230fecb877d04fb129ef5e143e0993b4b29b1
+
+commit 8c7230fecb877d04fb129ef5e143e0993b4b29b1
+Author: huebler <huebler@uwm.edu>
+Date:   Thu Feb 2 13:06:52 2023 -0600
+
+    Removing update_pressure since it is no longer called anywhere in clubb or host models. The addition of this subroutine was discussed in larson-group/e3sm#6 and the removal of the call to it was discussed in larson-group/clubb#926.
+
+commit 0fafc6b0b1f1a6058d37bf3db4bb3708204504db
+Author: huebler <huebler@uwm.edu>
+Date:   Fri Jan 27 14:42:40 2023 -0600
+
+    Pushing column loop into calculate_thvm
+
+commit cfd87ac680ebb26e2fdb7b1aab7a8b8b4fc75320
+Author: Steffen Domke <sdomke@uwm.edu>
+Date:   Mon Jan 30 15:12:37 2023 -0600
+
+    Added option (-i) to run_tuner.bash script to enable pre-tuning standalone runs. README will be updated.
+
+commit 1025d807ab1f3d5e8d3a8deb72595f2314b1cec5
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Jan 30 18:47:29 2023 +0100
+
+    Adds to dashboard a bar plot that separates nonlinear
+    
+    and linear contributions to bias removal.
+    
+    Also abbreviates the clubb parameter names in the plots.
+>>>>>>> Updating the clubb core and silhs version files
