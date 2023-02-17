@@ -188,6 +188,22 @@ class VariableGroupNondimMoments(VariableGroup):
                 'title': r'Nondimensionalized wp2rtp, wp2rtp/(wp2*sqrt(rtp2))',
                 'axis_title': r'Nondimensionalized wp2rtp  [-]',
             },
+            {'var_names':
+                {
+                    'clubb': ['wp3_on_wp3_cfl_num'],
+                    'sam': [''],
+                    'coamps': [''],
+                    'r408': [''],
+                    'hoc': [''],
+                    'e3sm': [''],
+                    'cam': [''],
+                    'wrf': [''],
+                },
+                'sci_scale': 0,
+                'priority': False,
+                'title': r'wp3_on_wp2 CFL number, (wp3/wp2)*(dt/dz)',
+                'axis_title': r'wp3_on_wp2 CFL number  [-]',
+            },
         ]
 
         # Call ctor of parent class
