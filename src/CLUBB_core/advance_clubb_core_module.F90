@@ -2422,7 +2422,7 @@ module advance_clubb_core_module
                                               pdf_params_zm_single_col(i) )
         
         call stats_accumulate( &
-               nz, gr%invrs_dzm(i,:), gr%zt(i,:), gr%dzm(i,:), gr%dzt(i,:), & ! intent(in)
+               nz, gr%invrs_dzm(i,:), gr%zt(i,:), gr%dzm(i,:), gr%dzt(i,:), dt, & ! intent(in)
                um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:),                      & ! intent(in)
                thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! intent(in)
                wp2(i,:), wp3(i,:), rtp2(i,:), rtp3(i,:), thlp2(i,:), thlp3(i,:), rtpthlp(i,:),           & ! intent(in)

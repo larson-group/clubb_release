@@ -1858,7 +1858,7 @@ module stats_clubb_utilities
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate( &
-                     nz, invrs_dzm, zt, dzm, dzt, &
+                     nz, invrs_dzm, zt, dzm, dzt, dt, &
                      um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
@@ -2097,6 +2097,7 @@ module stats_clubb_utilities
     use stats_variables, only: &
         iwp3_on_wp2, &
         iwp3_on_wp2_zt, &
+        iwp3_on_wp2_cfl_num, &
         iSkw_velocity
 
     use stats_variables, only: &
@@ -2163,7 +2164,10 @@ module stats_clubb_utilities
                    ! momentum grid levels
       dzt          ! Spcaing between momentum grid levels; centered over
                    ! thermodynamic grid levels
-                   
+
+    real( kind = core_rknd ), intent(in) ::  &
+      dt           ! Model timestep                        [s]
+
     real( kind = core_rknd ), intent(in), dimension(nz) :: & 
       um,       & ! u wind (thermodynamic levels)          [m/s]
       vm,       & ! v wind (thermodynamic levels)          [m/s]
@@ -2646,6 +2650,8 @@ module stats_clubb_utilities
       call stat_update_var( ia3_coef, a3_coef, & ! intent(in)
                             stats_zm ) ! intent(inout)
       call stat_update_var( iwp3_on_wp2, wp3_on_wp2, & ! intent(in)
+                            stats_zm ) ! intent(inout)
+      call stat_update_var( iwp3_on_wp2_cfl_num, wp3_on_wp2 * dt / dzm, & ! intent(in)
                             stats_zm ) ! intent(inout)
 
       call stat_update_var( icloud_frac_zm, cloud_frac_zm, & ! intent(in)

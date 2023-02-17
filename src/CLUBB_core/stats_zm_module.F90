@@ -311,6 +311,7 @@ module stats_zm_module
     use stats_variables, only: &
         ia3_coef, &
         iwp3_on_wp2, &
+        iwp3_on_wp2_cfl_num, &
         iSkw_velocity, &
         igamma_Skw_fnc, &
         iC6rt_Skw_fnc, &
@@ -2531,6 +2532,13 @@ module stats_zm_module
         iwp3_on_wp2 = k
         call stat_assign( var_index=iwp3_on_wp2, var_name="wp3_on_wp2", &
              var_description="w'^3_on_w'^2, Smoothed version of wp3 / wp2", var_units="m/s", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'wp3_on_wp2_cfl_num' )
+        iwp3_on_wp2_cfl_num = k
+        call stat_assign( var_index=iwp3_on_wp2_cfl_num, var_name="wp3_on_wp2_cfl_num", &
+             var_description="w'^3_on_w'^2 CFL number", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

@@ -134,7 +134,7 @@ vars_zm =
 'upthvp', 'uprcp', 'vpthvp', 'vprcp',
 'rho_zm', 'sigma_sqd_w', 'Skw_velocity',
 'gamma_Skw_fnc', 'coef_wp4_implicit', 'C6rt_Skw_fnc', 'C6thl_Skw_fnc',
-'C7_Skw_fnc', 'C1_Skw_fnc', 'a3_coef', 'wp3_on_wp2', 'rcm_zm', 'rtm_zm',
+'C7_Skw_fnc', 'C1_Skw_fnc', 'a3_coef', 'wp3_on_wp2', 'wp3_on_wp2_cfl_num', 'rcm_zm', 'rtm_zm',
 'thlm_zm', 'cloud_frac_zm', 'ice_supersat_frac_zm', 'rho_ds_zm', 'thv_ds_zm',
 'em', 'mean_w_up', 'mean_w_down', 'shear', 'wp3_zm','thlp3_zm','rtp3_zm',
 'w_1_zm', 'w_2_zm', 'varnce_w_1_zm', 'varnce_w_2_zm', 'mixt_frac_zm',

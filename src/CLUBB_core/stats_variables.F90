@@ -1472,9 +1472,10 @@ module stats_variables
 !$omp threadprivate(iSkw_velocity, iwp3_zm, ithlp3_zm, irtp3_zm, ia3_coef, ia3_coef_zt)
 
   integer, public :: &
-    iwp3_on_wp2 = 0, &  ! w'^3 / w'^2 [m/s]
-    iwp3_on_wp2_zt = 0  ! w'^3 / w'^2 [m/s]
-!$omp threadprivate(iwp3_on_wp2, iwp3_on_wp2_zt)
+    iwp3_on_wp2 = 0,         & ! w'^3 / w'^2                   [m/s]
+    iwp3_on_wp2_zt = 0,      & ! w'^3 / w'^2                   [m/s]
+    iwp3_on_wp2_cfl_num = 0    ! ( w'^3 / w'^2 ) * dt / dz     [-]
+!$omp threadprivate(iwp3_on_wp2, iwp3_on_wp2_zt, iwp3_on_wp2_cfl_num)
 
   integer, public :: & 
     ilh_morr_snow_rate = 0
