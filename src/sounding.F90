@@ -332,26 +332,29 @@ module sounding
           !use Steffen's monotone cubic interpolation method to obtain
           !smoothing initial condition profile for convergence test 
           !note: vertical levels in sounding file need to be not too coarse
-          if ( k == gr%nz ) then
-            km1 = k-2
-            kp1 = k
-            kp2 = k
-            k00 = k-1
+          if ( k == 1 ) then ! Extrapolation for the ghost point
+            km1 = k
+            k00 = 1
+            kp1 = 2
+            kp2 = 3
           else if ( k == 2 ) then
             km1 = 1
             kp1 = 2
             kp2 = 3
             k00 = 1
-          else if ( k == 1 ) then ! Extrapolation for the ghost point
-            km1 = k
-            k00 = 1
-            kp1 = 2
-            kp2 = 3
           else
             km1 = k-2
             kp1 = k
             kp2 = k+1
             k00 = k-1
+            !if z(k) reaches at the top level in sounding profile,
+            !then use the nearest levels for interpolation 
+            if ( z(k) >= z(nlevels) ) then
+              km1 = nlevels-2
+              kp1 = nlevels
+              kp2 = nlevels
+              k00 = nlevels-1
+            end if
           end if
 
           um(i)    = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), & 
