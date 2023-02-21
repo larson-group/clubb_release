@@ -36,7 +36,7 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure( gr, nz, ngrdcol,                            &
+  subroutine pdf_closure( nz, ngrdcol,                                &
                           hydromet_dim, p_in_Pa, exner, thv_ds,       &
                           wm, wp2, wp3, sigma_sqd_w,                  &
                           Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,     &
@@ -191,9 +191,6 @@ module pdf_closure_module
       hydromet_dim, & ! Number of hydrometeor species              [#]
       nz, &
       ngrdcol
-      
-    type (grid), target, intent(in) :: &
-      gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
       p_in_Pa,     & ! Pressure                                   [Pa]
@@ -588,7 +585,7 @@ module pdf_closure_module
                             
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
       
-      call ADG2_pdf_driver( gr, nz, ngrdcol,                                  & ! In
+      call ADG2_pdf_driver( nz, ngrdcol,                                      & ! In
                             wm, rtm, thlm, wp2, rtp2, thlp2,                  & ! In
                             Skw, wprtp, wpthlp, sqrt_wp2, beta,               & ! In
                             sclrm, sclrp2, wpsclrp, l_scalar_calc,            & ! In

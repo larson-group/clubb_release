@@ -3231,7 +3231,7 @@ module advance_clubb_core_module
       wphydrometp_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, wphydrometp(:,:,j) )
     end do ! i = 1, hydromet_dim, 1
 
-    call pdf_closure( gr, nz, ngrdcol,                     & ! intent(in)
+    call pdf_closure( nz, ngrdcol,                         & ! intent(in)
            hydromet_dim, p_in_Pa, exner, thv_ds_zt,        & ! intent(in)
            wm_zt, wp2_zt, wp3, sigma_sqd_w_zt,             & ! intent(in)
            Skw_zt, Skthl_zt, Skrt_zt, Sku_zt, Skv_zt,      & ! intent(in)
@@ -3367,7 +3367,7 @@ module advance_clubb_core_module
       end if 
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
-      call pdf_closure( gr, nz, ngrdcol,                           & ! intent(in)
+      call pdf_closure( nz, ngrdcol,                               & ! intent(in)
              hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm,        & ! intent(in)
              wm_zm, wp2, wp3_zm, sigma_sqd_w,                      & ! intent(in)
              Skw_zm, Skthl_zm, Skrt_zm, Sku_zm, Skv_zm,            & ! intent(in)
