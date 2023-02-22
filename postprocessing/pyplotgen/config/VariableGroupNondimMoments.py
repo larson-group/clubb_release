@@ -190,7 +190,7 @@ class VariableGroupNondimMoments(VariableGroup):
             },
             {'var_names':
                 {
-                    'clubb': ['wp3_on_wp3_cfl_num'],
+                    'clubb': ['wp3_on_wp2_cfl_num'],
                     'sam': [''],
                     'coamps': [''],
                     'r408': [''],
