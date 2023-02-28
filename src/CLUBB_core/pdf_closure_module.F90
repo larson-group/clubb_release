@@ -1414,7 +1414,7 @@ module pdf_closure_module
             return
         end if
     end do
-#endif
+#endif /*TUNER*/
 
     if ( clubb_at_least_debug_level( 2 ) ) then
       do i = 1, ngrdcol
@@ -1465,9 +1465,13 @@ module pdf_closure_module
           write(fstderr,*) "Intent(out)"
 
           write(fstderr,*) "wp4 = ", wp4
-          write(fstderr,*) "wprtp2 = ", wprtp2
+          if ( l_explicit_turbulent_adv_xpyp .or. iwprtp2 > 0 ) then
+            write(fstderr,*) "wprtp2 = ", wprtp2
+          end if
           write(fstderr,*) "wp2rtp = ", wp2rtp
-          write(fstderr,*) "wpthlp2 = ", wpthlp2
+          if ( l_explicit_turbulent_adv_xpyp .or. iwpthlp2 > 0 ) then
+            write(fstderr,*) "wpthlp2 = ", wpthlp2
+          end if
           write(fstderr,*) "cloud_frac = ", cloud_frac
           write(fstderr,*) "ice_supersat_frac = ", ice_supersat_frac
           write(fstderr,*) "rcm = ", rcm
@@ -1479,8 +1483,17 @@ module pdf_closure_module
           write(fstderr,*) "wp2rcp = ", wp2rcp
           write(fstderr,*) "rtprcp = ", rtprcp
           write(fstderr,*) "thlprcp = ", thlprcp
+#ifndef CLUBB_CAM
+          !  if CLUBB is used in CAM we want this variable computed no matter what
+          if ( ircp2 > 0 ) then
+#endif
           write(fstderr,*) "rcp2 = ", rcp2
-          write(fstderr,*) "wprtpthlp = ", wprtpthlp
+#ifndef CLUBB_CAM
+          end if
+#endif
+          if ( l_explicit_turbulent_adv_xpyp .or. iwprtpthlp > 0 ) then
+            write(fstderr,*) "wprtpthlp = ", wprtpthlp
+          end if
           write(fstderr,*) "pdf_params%w_1(i,:) = ", pdf_params%w_1(i,:)
           write(fstderr,*) "pdf_params%w_2(i,:) = ", pdf_params%w_2(i,:)
           write(fstderr,*) "pdf_params%varnce_w_1(i,:) = ", pdf_params%varnce_w_1(i,:)

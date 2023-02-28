@@ -72,25 +72,30 @@ module error
 
 
   real( kind = core_rknd ), public ::  & 
-    f_tol = 1e-5_core_rknd,             & ! The precision to tune for
-    anneal_temp = 100._core_rknd,       & ! Initial temperature for the SA algorithm
-    max_final_temp = 1._core_rknd,      & ! Maxmimum final temperature for the SA algorithm
-    stp_adjst_center_in = .5_core_rknd, &
-    stp_adjst_spread_in = 1._core_rknd
+    f_tol = 1e-5_core_rknd,                 & ! The precision to tune for
+    anneal_temp = 100._core_rknd,           & ! Initial temperature for the SA algorithm
+    max_final_temp = 1._core_rknd,          & ! Maxmimum final temperature for the SA algorithm
+    stp_adjst_shift_in = 0.5_core_rknd,     & ! Shift parameter for step size calculation
+    stp_adjst_factor_in = 1._core_rknd        ! Linear coefficient for step size calculation
 
   integer, public :: & 
     anneal_iter = 0, &    ! Number of annealing iterations to perform
-    tune_type = iesa, & ! Toggle for downhill simplex of simulated annealing
-    c_total = 0, &      ! Total number of simulation cases to tune over
-    v_total = 0         ! Total number of variables to tune over
+    tune_type = iesa, &   ! Toggle for downhill simplex of simulated annealing
+    c_total = 0, &        ! Total number of simulation cases to tune over
+    v_total = 0, &        ! Total number of variables to tune over
+    prescribed_rand_seed = 1, & ! Default value for prescribed random seed for esa methods
+                                ! Value read from stats nml in input_misc/tuner/error*.in
+    max_iters_in = 2000         ! Max number of iteration steps for tuner. Read from error*.in
 
   logical, public :: & 
     l_results_stdout = .false.,    & ! Whether to print tuning results to the terminal
     l_results_file = .false.,      & ! Whether to generate a new error.in based on
                                      ! the new tuning constants
     l_stdout_on_invalid = .false., & ! Generate a new error.in when the simulation crashes
-    l_keep_params_equal = .false.    ! Whether to keep parameters like C1, C1b,
+    l_keep_params_equal = .false., & ! Whether to keep parameters like C1, C1b,
                                      ! etc. equal throughout tuning run
+    l_use_prescribed_rand_seed = .false.    ! Whether to use a fixed random seed for
+                                            ! esa methods. Value in prescribed_rand_seed
 
   logical, parameter, public :: &
     l_save_tuning_run = .true.  ! If true, writes the results of the tuning run to a file
@@ -314,7 +319,8 @@ module error
       f_tol, tune_type, anneal_temp, max_final_temp, anneal_iter, & 
       l_results_stdout, l_results_file, l_stdout_on_invalid, &
       l_keep_params_equal, &
-      t_variables, weight_var_nl, stp_adjst_center_in, stp_adjst_spread_in
+      t_variables, weight_var_nl, stp_adjst_shift_in, stp_adjst_factor_in, &
+      l_use_prescribed_rand_seed, prescribed_rand_seed, max_iters_in
 
     namelist /cases/  & 
       les_stats_file_nl, hoc_stats_file_nl, & 

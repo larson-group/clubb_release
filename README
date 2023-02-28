@@ -58,7 +58,9 @@ parameter values as input.
 The tuner code is highly flexible.  One can vary the cases (bomex, fire, arm, 
 or atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
-these variables; and the parameters to tune (C1, beta, etc.). 
+these variables; and the parameters to tune (C1, beta, etc.).
+
+For more information about the tuner, see section 3.3 below and in input_misc/tuner/README.
 
 ***********************************************************************
 *                       CLUBB Quick Start Guide                       *
@@ -882,10 +884,6 @@ enabled.
 - (3.3) Executing a tuning run:
 -----------------------------------------------------------------------
 
-NOTE:  As of 8.9.21, the tuner appears to have some issues when compiled with
-gfortran, but appears to work fine when compiled with ifort.  This is being 
-discussed in CLUBB issue #939.
-
 The "tuner" code is used to optimize CLUBB's parameters in order to better match
 output from a 3D large-eddy simulation (LES) model.  The default optimization 
 technique is the downhill-simplex method of Nelder and Mead, as implemented in 
@@ -923,7 +921,8 @@ Do steps 1, 2, & 3 as outlined in the description of a standalone run (Sec 2.1).
    Sometimes the names of the optimized variable in the CLUBB and LES output
    will differ.  Note that when tuning against netCDF data, the file will
    need to have a .nc extension for the clubb_tuner to correctly identify
-   the file as being in netCDF format.
+   the file as being in netCDF format.  
+   For more information on the tuning parameters go to input_misc/tuner/README.
 
 5. You may also wish to set the debug_level to 0 in the file
    input/case_setups/<CASE_NAME>_model.in to speed up tuning.

@@ -1,17 +1,19 @@
 &stats
-f_tol              = 0.1,
-l_results_stdout    = .true.,
-l_results_file      = .true.,
-l_stdout_on_invalid = .true.,
-l_keep_params_equal = .true.,
-t_variables       = "rcm", "QC", "cloud_frac", "CLD", "wp2_zt", "W2", "wp3", "W3"
-weight_var_nl     = 0.25, 0.25, 0.25, 0.25
-anneal_temp       = 100.0,
-max_final_temp      = 0.01,
-anneal_iter       = 100,
-tune_type = 2
-stp_adjst_center_in = 0.6
-stp_adjst_spread_in = 0.8
+f_tol                       = 0.1,
+l_results_stdout            = .true.,
+l_results_file              = .true.,
+l_stdout_on_invalid         = .true.,
+l_keep_params_equal         = .true.,
+t_variables                 = "rcm", "QC", "cloud_frac", "CLD", "wp2_zt", "W2", "wp3", "W3"
+weight_var_nl               = 0.25, 0.25, 0.25, 0.25
+anneal_temp                 = 100.0,
+max_final_temp              = 0.01,
+anneal_iter                 = 100,
+tune_type                   = 2
+stp_adjst_shift_in          = 0.6
+stp_adjst_factor_in         = 0.8
+l_use_prescribed_rand_seed  = .false.
+prescribed_rand_seed        = 1
 /
 
 ! clubb_stats_file is the name of clubb stats file;  This should be the same as

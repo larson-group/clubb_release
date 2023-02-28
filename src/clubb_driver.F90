@@ -1152,6 +1152,11 @@ module clubb_driver
 #else
       call write_text( "-DCOAMPS_MICRO disabled", l_write_to_file, iunit )
 #endif
+#ifdef NR_SP
+      call write_text( "-DNR_SP enabled", l_write_to_file, iunit )
+#else
+      call write_text( "-DNR_SP disabled", l_write_to_file, iunit )
+#endif
 #ifdef TUNER
       call write_text( "-DTUNER enabled", l_write_to_file, iunit )
 #else
@@ -2105,6 +2110,7 @@ module clubb_driver
       l_silhs_out = .false.
 #endif
 
+!$OMP CRITICAL
     ! This is a kludge added because the grid used by BUGSrad does
     ! not include CLUBB's ghost point. -nielsenb 20 Oct 2009
     if ( l_output_rad_files ) then
@@ -2129,7 +2135,7 @@ module clubb_driver
                        stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                        stats_rad_zt, stats_rad_zm ) ! intent(inout)
     end if
- 
+!$OMP END CRITICAL
 
 #ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then

@@ -231,7 +231,7 @@ program clubb_tuner
   !     References:
   !     _Numerical Recipes in Fortran 90_.  See full citation above.
   !------------------------------------------------------------------------
-#ifdef TUNER
+#ifdef NR_SP
   use nr, only:  & 
       amoeba ! Procedure(s)
 
@@ -279,7 +279,7 @@ program clubb_tuner
   return
 #else
   error stop "Numerical recipes subroutines were disabled at compile time"
-#endif
+#endif /* NR_SP */
   end subroutine amoeba_driver
 
   !-----------------------------------------------------------------------
@@ -294,7 +294,7 @@ program clubb_tuner
   ! References:
   !   None
   !-----------------------------------------------------------------------
-#ifdef TUNER
+#ifdef NR_SP
   use nr, only:  & 
       amebsa ! Procedure(s)
 
@@ -396,7 +396,7 @@ program clubb_tuner
 
 #else
   error stop "Numerical recipes subroutines were disabled at compile time"
-#endif
+#endif /* NR_SP */
 end subroutine amebsa_driver
 !----------------------------------------------------------------------
 subroutine enhanced_simann_driver
@@ -415,17 +415,18 @@ subroutine enhanced_simann_driver
         esa_driver_siarry
 
   use error, only: & ! Variable(s)
-    ndim,                 & ! Array dimensions
-    param_vals_matrix,    & ! The parameters to tune matrix
-    param_vals_minmax,    & ! The min/max values for the parameters
-    anneal_temp,          & ! Start annealing temperature
-    max_final_temp,       & ! Maximum final annealing temperature
-    min_err,              & ! Minimum value of the cost function
-    stp_adjst_center_in,  & 
-    stp_adjst_spread_in,  &
-    iter,                 &
-    tuning_filename,      &
-    file_unit,            &
+    ndim,                      & ! Array dimensions
+    param_vals_matrix,         & ! The parameters to tune matrix
+    param_vals_minmax,         & ! The min/max values for the parameters
+    anneal_temp,               & ! Start annealing temperature
+    max_final_temp,            & ! Maximum final annealing temperature
+    min_err,                   & ! Minimum value of the cost function
+    stp_adjst_shift_in,        & ! If improvement_ratio = this, no step adjust
+    stp_adjst_factor_in,       & ! Slope around stp_adjst_shift
+    max_iters_in,              & ! Max iterations for esa tuning
+    iter,                      &
+    tuning_filename,           &
+    file_unit,                 &
     f_tol
 
   use error, only:  & ! Procedure(s)
@@ -459,13 +460,14 @@ subroutine enhanced_simann_driver
   if ( l_esa_siarry ) then 
     call esa_driver_siarry( xinit, xmin, xmax, anneal_temp, min_les_clubb_diff, xopt, enopt )
   else 
-    call esa_driver( xinit, xmin, xmax,                         & ! intent(in)
-                     anneal_temp, max_final_temp,               & ! intent(inout)
-                     xopt, enopt,                               & ! intent(out)
-                     min_les_clubb_diff,                        & ! procedure    
-                     stp_adjst_center_in, stp_adjst_spread_in,  & ! optional(in)
-                     f_tol, tuning_filename, file_unit,         & ! ^
-                     iter                                       ) ! optional(inout) 
+    call esa_driver( xinit, xmin, xmax,                           & ! intent(in)
+                     anneal_temp, max_final_temp,                 & ! intent(inout)
+                     xopt, enopt,                                 & ! intent(out)
+                     min_les_clubb_diff,                          & ! procedure
+                     stp_adjst_shift_in, stp_adjst_factor_in,     & ! optional(in)
+                     max_iters_in,                                & ! optional(in)
+                     f_tol, tuning_filename, file_unit,           & ! ^
+                     iter                                         ) ! optional(inout) 
   end if
 
                    

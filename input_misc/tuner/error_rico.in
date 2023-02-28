@@ -1,19 +1,22 @@
 ! $Id$
 
 &stats
-f_tol               = 0.0001,
-l_results_stdout    = .true.,
-l_results_file      = .true.,
-l_stdout_on_invalid = .false.,
-l_keep_params_equal  = .false.,
-t_variables       = "cloud_frac", "CLD", "rcm", "QC", "wp3", "W3" 
-weight_var_nl       = 1.0,
-anneal_temp         = 100.,
-max_final_temp      = 0.01,
-anneal_iter         = 100,
-tune_type = 2
-stp_adjst_center_in = 0.6
-stp_adjst_spread_in = 0.8
+f_tol                       = 0.0001,
+l_results_stdout            = .true.,
+l_results_file              = .true.,
+l_stdout_on_invalid         = .false.,
+l_keep_params_equal         = .false.,
+t_variables                 = "cloud_frac", "CLD", "rcm", "QC", "wp3", "W3"
+weight_var_nl               = 1.0,
+anneal_temp                 = 100.,
+max_final_temp              = 0.01,
+anneal_iter                 = 100,
+tune_type                   = 2
+stp_adjst_shift_in          = 0.6
+stp_adjst_factor_in         = 0.8
+max_iters_in                = 1000
+l_use_prescribed_rand_seed  = .false.,
+prescribed_rand_seed        = 1
 /
 
 ! clubb_stats_file is the name of clubb stats file;  This should be the same as 
