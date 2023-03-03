@@ -124,13 +124,13 @@ def get_autommit_message_commit(external_repo, clubb_internal):
     repo_git_log = list(filter(None, repo_git_log))
 
 
-    repo_out_file = open(("/home/cernikt/Documents/autocommit_message_maker/clubb/utilities/repo_git_log.txt"), "w")
+    #repo_out_file = open(("/home/cernikt/Documents/autocommit_message_maker/clubb/utilities/repo_git_log.txt"), "w")
     # index = git_log.index()
-    for line in repo_git_log:
-        repo_out_file.write(line)
+    #for line in repo_git_log:
+      #  repo_out_file.write(line)
         # repo_out_file.write("Poopy Butthole")
-        repo_out_file.write("\npoop\n")
-    repo_out_file.close()
+      #  repo_out_file.write("\npoop\n")
+    # repo_out_file.close()
 
     hash = ""
     for line in repo_git_log:
@@ -138,7 +138,7 @@ def get_autommit_message_commit(external_repo, clubb_internal):
             offset = line.index("Autoupdated " + clubb_internal_src) + len("Autoupdated " + clubb_internal_src)
             # print(offset)
             # print(line[offset:offset + 40])
-            hash = re.search('Body: commit (.+)', line).group(1).strip()
+            hash = re.search('Body: Commit (.+)', line).group(1).strip()
             # print(hash)
             # once we find the latest autocommit, we can break out of the loop
             return hash
