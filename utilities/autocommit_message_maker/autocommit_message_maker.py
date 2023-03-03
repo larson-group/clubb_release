@@ -36,18 +36,18 @@ def get_arguments():
     if(len(sys.argv) > 1 and os.path.isdir(sys.argv[1])):
         # if sys argv[1] is not empty and is a valid directory, then we will set the external_repo to that directory
         external_repo = sys.argv[1]
-        if(sys.argv[2] and os.path.isdir(sys.argv[2])):
+        if(sys.argv[2] and (sys.argv[2] == "src/CLUBB_core" or sys.argv[2] == "src/SILHS")):
             clubb_internal_directory = sys.argv[2]
         else:
             print("Path to internal directory is not valid, defaulting to src/CLUBB_core")
             clubb_internal_directory = "src/CLUBB_core"
     else:
-        print("Please enter the path to the repo you want to get the autocommit messages from")
+        print("the path to the repo you want to get the autocommit messages from is incorrect, exiting")
         sys.exit(1)
 
 
-    # print("external_repo: " + external_repo)
-    # print("clubb_internal_directory: " + clubb_internal_directory)
+    print("external_repo: " + external_repo)
+    print("clubb_internal_directory: " + clubb_internal_directory)
 
     return external_repo, clubb_internal_directory
 
@@ -69,7 +69,6 @@ def run(external_repo, clubb_internal_directory):
     #git_log = git_log.stdout.decode("utf-8")
     #print(type(git_log.stdout))
     #print(str(git_log.stdout).split("\n\n"))
-    #print(git_log.stdout.decode("utf-8"))
 
 
     # decode the git log from bytes to a string, and split it into a list of strings
@@ -78,7 +77,6 @@ def run(external_repo, clubb_internal_directory):
     git_log = list(str(git_log.stdout.decode("utf-8")).strip("\"").split("Start_of_Commit\n"))
 
 
-    #print(git_log)
 
 
     # print(len(git_log))
@@ -123,14 +121,16 @@ def get_autommit_message_commit(external_repo, clubb_internal):
     
     repo_git_log = subprocess.run(["git", "log", commit_format], stdout=subprocess.PIPE)
     repo_git_log = str(repo_git_log.stdout.decode("utf-8")).split("commit_hash:")
+    repo_git_log = list(filter(None, repo_git_log))
 
-    # repo_out_file = open(("/home/cernikt/Documents/autocommit_message_maker/clubb/utilities/repo_git_log.txt"), "w")
-    # # index = git_log.index()
-    # for line in repo_git_log:
-    #     repo_out_file.write(line)
-    #     # repo_out_file.write("Poopy Butthole")
-    #     repo_out_file.write("\n")
-    # repo_out_file.close()
+
+    repo_out_file = open(("/home/cernikt/Documents/autocommit_message_maker/clubb/utilities/repo_git_log.txt"), "w")
+    # index = git_log.index()
+    for line in repo_git_log:
+        repo_out_file.write(line)
+        # repo_out_file.write("Poopy Butthole")
+        repo_out_file.write("\npoop\n")
+    repo_out_file.close()
 
     hash = ""
     for line in repo_git_log:
@@ -138,7 +138,7 @@ def get_autommit_message_commit(external_repo, clubb_internal):
             offset = line.index("Autoupdated " + clubb_internal_src) + len("Autoupdated " + clubb_internal_src)
             # print(offset)
             # print(line[offset:offset + 40])
-            hash = re.search('Body: Commit (.+)', line).group(1).strip()
+            hash = re.search('Body: commit (.+)', line).group(1).strip()
             # print(hash)
             # once we find the latest autocommit, we can break out of the loop
             return hash
@@ -156,10 +156,12 @@ def get_new_clubb_commits():
 
     external_repo, clubb_internal_directory = get_arguments()
 
+    internal = clubb_internal_directory.split("/")[1].strip()
+
     run(external_repo, clubb_internal_directory)
 
     hash = get_autommit_message_commit(external_repo, clubb_internal_directory)
-    # print(hash)
+    print(hash)
     if(hash == -1):
         print("No autocommit messages found")
         return -1
@@ -176,13 +178,13 @@ def get_new_clubb_commits():
     for key in list(log_dict.keys()):
 
         if(str(key) == hash):
-            return ("Autoupdated " + clubb_internal_directory + "\n") + ("\n").join(new_clubb_commits)
+            return ("Autoupdated " + internal + "\n") + ("\n").join(new_clubb_commits)
         new_clubb_commits.append(log_dict[key])
 
 
 
     # return the list of new clubb commits
-    return ("Autoupdated " + clubb_internal_directory) + ("\n").join(new_clubb_commits)
+    return ("Autoupdated " + internal) + ("\n").join(new_clubb_commits)
 
 
 if __name__=="__main__":
@@ -193,11 +195,10 @@ if __name__=="__main__":
 
     print(out)
 
-    # final_out_file = open(("/home/cernikt/Documents/autocommit_message_maker/clubb/utilities/final_git_log.txt"), "w")
-    # # index = git_log.index()
-    # for line in out:
-    #     final_out_file.write(line)
-    #     # repo_out_file.write("Poopy Butthole")
-    #     final_out_file.write("\n")
-    # final_out_file.close()
-
+    final_out_file = open(("/home/cernikt/Documents/autocommit_message_maker/clubb/utilities/final_git_log.txt"), "w")
+    # index = git_log.index()
+    for line in out:
+        final_out_file.write(line)
+        # repo_out_file.write("Poopy Butthole")
+        # final_out_file.write("\n")
+    final_out_file.close()
