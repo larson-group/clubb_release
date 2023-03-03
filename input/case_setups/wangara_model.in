@@ -53,6 +53,7 @@ l_t_dependent = .true. ! Read values from _surface.in file. Also read
                        ! _forcings.in file if l_ignore_forcings
 l_ignore_forcings = .true. ! Do not read values from _forcings.in file,
                            ! even if l_t_dependent = .true.
+l_modify_ic_with_cubic_int = .true. ! Initial sounding uses monotonic cubic interpolation
 
 time_initial = 82800.0  ! Model start time [seconds since midnight on start date]
 time_final = 111600.0   ! Model end time [seconds since midnight on start date]

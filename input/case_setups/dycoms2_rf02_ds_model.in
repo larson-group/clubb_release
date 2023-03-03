@@ -60,6 +60,7 @@ l_t_dependent = .true. ! Read values from _surface.in file. Also read
                        ! _forcings.in file if l_ignore_forcings = .false.
 l_ignore_forcings = .true. ! Do not read values from _forcings.in file, 
                            ! even if l_t_dependent = .true.
+l_modify_ic_with_cubic_int = .true. ! Initial sounding uses monotonic cubic interpolation
 
 dt_main    = 60.0   ! Model timestep [s]
 dt_rad = 60.0   ! Radiation timestep [s]

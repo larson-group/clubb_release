@@ -347,6 +347,14 @@ module clubb_driver
                                ! since the changes made here (Nc-tendency) are not fed into 
                                ! the microphysics
 
+    ! Flag for interpolating the sounding profile with Steffen's monotone cubic 
+    ! method to obtain smoother initial condition profile, which is found to be 
+    ! beneficial to achive a better numerical solution convergence. If this flag 
+    ! is turned off, the initial conditions will be generated with linear interpolation.
+    ! This is done on a case-by-case basis, since using the monotone cubic method
+    ! requires a special sounding.in file with many additional sounding levels.
+    logical :: l_modify_ic_with_cubic_int 
+
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
@@ -859,7 +867,7 @@ module clubb_driver
       dt_main, dt_rad, &
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
-      l_ignore_forcings, saturation_formula, &
+      l_ignore_forcings, l_modify_ic_with_cubic_int, saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, &
       uv_sponge_damp_settings, wp2_sponge_damp_settings, &
       wp3_sponge_damp_settings, up2_vp2_sponge_damp_settings, &
@@ -927,6 +935,7 @@ module clubb_driver
     l_t_dependent   = .false. 
     l_input_xpwp_sfc = .false. 
     l_ignore_forcings = .false. 
+    l_modify_ic_with_cubic_int = .false.
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
@@ -1233,6 +1242,7 @@ module clubb_driver
 
       call write_text( "l_t_dependent = ", l_t_dependent, l_write_to_file, iunit )
       call write_text( "l_ignore_forcings = ", l_ignore_forcings, l_write_to_file, iunit )
+      call write_text( "l_modify_ic_with_cubic_int = ", l_modify_ic_with_cubic_int, l_write_to_file, iunit )
       call write_text( "l_input_xpwp_sfc = ", l_input_xpwp_sfc, l_write_to_file, iunit )
 
       call write_text( "saturation_formula = " // saturation_formula, &
@@ -1980,6 +1990,7 @@ module clubb_driver
            ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
              clubb_config_flags%l_uv_nudge,                                 & ! Intent(in)
              clubb_config_flags%l_tke_aniso,                                & ! Intent(in)
+             l_modify_ic_with_cubic_int,                                    & ! Intent(in)
              thlm(1,:), rtm(1,:), um, vm, ug, vg, wp2, up2, vp2, rcm(1,:),  & ! Intent(inout)
              wm_zt, wm_zm, em, exner(1,:),                                  & ! Intent(inout)
              thvm(1,:), p_in_Pa,                                            & ! Intent(inout)
@@ -2010,6 +2021,7 @@ module clubb_driver
            ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
              clubb_config_flags%l_uv_nudge,                                 & ! Intent(in)
              clubb_config_flags%l_tke_aniso,                                & ! Intent(in)
+             l_modify_ic_with_cubic_int,                                    & ! Intent(in)
              thlm(1,:), rtm(1,:), um, vm, ug, vg, wp2, up2, vp2, rcm(1,:),  & ! Intent(inout)
              wm_zt, wm_zm, em, exner(1,:),                                  & ! Intent(inout)
              thvm(1,:), p_in_Pa,                                            & ! Intent(inout)
@@ -2987,6 +2999,7 @@ module clubb_driver
              ( gr, iunit, forcings_file_path, p_sfc, zm_init, &
                l_uv_nudge, &
                l_tke_aniso, &
+               l_modify_ic_with_cubic_int, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -3096,6 +3109,15 @@ module clubb_driver
       l_uv_nudge, & ! For wind speed nudging
       l_tke_aniso   ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
+    ! Flag for interpolating the sounding profile with Steffen's monotone cubic 
+    ! method to obtain smoother initial condition profile, which is found to be 
+    ! beneficial to achive a better numerical solution convergence. If this flag 
+    ! is turned off, the initial conditions will be generated with linear interpolation.
+    ! This is done on a case-by-case basis, since using the monotone cubic method
+    ! requires a special sounding.in file with many additional sounding levels.
+    logical, intent(in) :: &
+      l_modify_ic_with_cubic_int 
+
     ! Output
     real( kind = core_rknd ), dimension(1,gr%nz), intent(inout) ::  & 
       exner,           & ! Exner function (thermodynamic levels)     [-] 
@@ -3163,7 +3185,8 @@ module clubb_driver
     !---- Begin code ----
 
     ! Read sounding information
-    call read_sounding( gr, iunit, runtype, p_sfc, zm_init, &        ! Intent(in) 
+    call read_sounding( gr, iunit, runtype, p_sfc, zm_init, &    ! Intent(in) 
+                        l_modify_ic_with_cubic_int, &            ! Intent(in)
                         thlm, theta_type, rtm, um, vm, ug, vg, & ! Intent(out)
                         alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)

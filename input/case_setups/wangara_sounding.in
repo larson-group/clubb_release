@@ -3,7 +3,7 @@
 ! Prescribed, time-independent vertical velocity can be entered as velocity (w[m\s]) or pressure velocity (omega[Pa\s])
 ! If vertical velocity is time dependent, insert missing values throughout column.
 ! In all cases, missing values are denoted by -999.9
-z[m]     thm[K]   rt[kg\kg]   u[m\s]   v[m\s]   w[m\s]   ug[m\s]   vg[m\s]   
+z[m]     thm[K]     rt[kg\kg]   u[m\s]   v[m\s]   w[m\s]      ug[m\s]   vg[m\s]
 0.0E+0   276.85     4.2E-3      0.0E+0   0.0E+0  -999.9       -5.5      0.0E+0    
 50.0     276.91     3.7E-3      -2.84    0.03    -999.9       -5.36     0.0E+0    
 100.0    277.68     3.5E-3      -2.92    -0.38   -999.9       -5.21     0.0E+0    
@@ -12,8 +12,10 @@ z[m]     thm[K]   rt[kg\kg]   u[m\s]   v[m\s]   w[m\s]   ug[m\s]   vg[m\s]
 250.0    281.4      3.8E-3      -2.79    -0.51   -999.9       -4.78     0.0E+0    
 300.0    281.68     3.7E-3      -3.12    -0.51   -999.9       -4.63     0.0E+0    
 350.0    281.97     3.6E-3      -3.39    -0.53   -999.9       -4.49     0.0E+0    
+400.0    -999.9     -999.9      -999.9   -999.9  -999.9       -999.9    -999.9   
 500.0    281.97     3.3E-3      -2.49    -0.37   -999.9       -4.05     0.0E+0    
-550.0    281.97     3.2E-3      -2.66    -0.3    -999.9       -3.9      0.0E+0    
+550.0    281.97     3.2E-3      -2.66    -0.3    -999.9       -3.9      0.0E+0   
+600.0    -999.9     -999.9      -999.9   -999.9  -999.9       -999.9    -999.9    
 700.0    281.98     2.9E-3      -2.43    -0.35   -999.9       -3.47     0.0E+0    
 750.0    282.29     2.7E-3      -2.42    -0.44   -999.9       -3.32     0.0E+0    
 800.0    282.62     2.5E-3      -2.45    -0.48   -999.9       -3.18     0.0E+0    
