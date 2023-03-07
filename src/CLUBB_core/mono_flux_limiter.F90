@@ -879,7 +879,7 @@ module mono_flux_limiter
 
           !Check to ensure the vertical integral is not zero to avoid a divide
           !by zero error
-          if (xm_vert_integral < eps) then
+          if (abs(xm_vert_integral) < eps) then
             write(fstderr,*) "Vertical integral of xm is zero;", & 
                              "mfl will remove spike at top of domain,", &
                              "but it will not conserve xm."
