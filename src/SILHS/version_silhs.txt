@@ -1,0 +1,120 @@
+commit 53c717bb7dd9bddcd720cba58c46d77b7ad36c9c
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Mar 6 10:34:35 2023 -0600
+
+    reorgnize the scripts for convergence test simulations
+    Move the script associated with convergence test simulation
+    in the folder of run_scripts/convergence_run
+    
+    Originally committed by Shixuan
+
+commit 0e087bee28254a2bc2da5869a28352e1374b2b91
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Mar 6 10:30:05 2023 -0600
+
+    Add scripts to configure and run convergence test
+     This commit contains new scripts created to configure and run
+     convergence test simulations. There are four scripts:
+    
+     1. run_scripts/run_cnvg_test_multi_cases.csh. This script is used to
+        compile and run convergence simulations with specific configurations
+        (see details in scripts for explations). After the simulations,the
+        space-time convergence plots will also be generated.
+    
+     2.run_scripts/convergence_config.py: this script "called" by the
+       first script to generate the namelist file for CLUBB-SCM simulations.
+       With this script, the modified configuration will be applied in the
+       case run directory, while the files in default clubb will not be
+       touched
+    
+     3.run_scripts/convergence_function.py: this script contains function
+       to modify the initial condition profile for convergence test
+       simulations. It is called by run_scripts/convergence_config.py
+       when the model is configured to use modified initial conditions
+    
+     4.run_scripts/plot_l2_convergence.py: this is a sample script to
+       generate the space-time convergence plots
+    
+    Originally committed by Shixuan
+
+commit a6682998e27e3d01b8ffeb4ec2774872e7311aa4
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 3 22:50:58 2023 -0600
+
+    This commit most definitely does not change any bits,
+    but commit 67878ef was BIT_CHANGING for the DYCOMS-II RF02 family
+    of cases, RICO (and RICO SILHS), BOMEX, and Wangara.
+
+commit 9aeea149d5970cb99218344f8bde576e1f036d21
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 3 16:39:28 2023 -0600
+
+    Implementing changes to the initial conditions.
+    This commit contains code changes related to the modified initial
+    conditions for convergence test simulations. These code changes can be
+    activated by setting l_modify_ic_with_cubic_int = .true. in
+    the namelist on a case-by-case basis.
+    
+    Along with this option, the sounding profiles are also modified for
+    the BOMEX, RICO, DYCOMS2_RF02 and Wangara cases.
+    
+     -- For BOMEX, RICO, Wangara cases, we add more height levels in the
+        original sounding profiles so that the cubic spline interpolation
+        produces consistent profiles with those with linear interpolation
+    
+     -- For DYCOMS2_RF02, instead of using the formulations in the code to
+        derive the initial condition profiles (which will results in the
+        grid-spacing dependent initial condition when we refine grid), we
+        construct a sounding profiles (still use the same formulas as in
+        the src/sounding.F90) on a high-resolution grid (refine the standard
+        grid by a factor of 2^7), then save the profile in
+        dycoms2_rf02_sounding.in. In this way, the model initiliazation will
+        always read the same sounding profile for initialization when user
+        refine the vertical model grid.
+    
+    Originally committed by Shixuan.
+
+commit be6ab481c56acfc66d65990889dba011d6bcd36a
+Author: cernikt <tjcernik@uwm.edu>
+Date:   Fri Mar 3 16:18:04 2023 -0600
+
+    Oops, I made 1 small error, should be consistent now.
+
+commit 6e4204729c1b525b0f2fde3d7c715f5982fc79c3
+Author: cernikt <tjcernik@uwm.edu>
+Date:   Fri Mar 3 16:13:40 2023 -0600
+
+    changes to integrate message maker into gitUpdate scripts
+
+commit 965964e81cc6b58ffbf3213af1d2488080b3371a
+Author: cernikt <tjcernik@uwm.edu>
+Date:   Fri Mar 3 12:13:07 2023 -0600
+
+    added autocommit message maker to clubb so I have an easier time testing it
+
+commit 981b9ba9bc9b5d80edc82f52f502ab9bcce097db
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Tue Feb 28 13:46:03 2023 -0600
+
+    Clubb ticket #1025: Implemented way to make esa tuner reproducible, h… (#1068)
+    
+    * Clubb ticket #1025: Implemented way to make esa tuner reproducible, hid error output of optional diagnostic variables behind check, fixed parallelization issue with tuner, esa max_iters parameter is now in stats namelist, fixed issue with TUNER compiler directive, some small fixes.
+    - New namelist variables prescribed_rand_seed and l_use_prescribed_rand_seed determine if the esa tuner will use a random or a fixed value as random seed. Added descriptions to README.
+    - Added max_iters to stats namelist to make it more modifiable.
+    - Renamed stp_adjst_intercept_in and stp_adjst_slope_in to stp_adjst_shift_in and stp_adjst_factor_in, respectively, to better reflect their influence on step size.
+    - The error output in src/CLUBB_core/pdf_closure_module.F90 for the diagnostic variables wprtp2, wpthlp2, wprtpthlp, and rcp2 is now hidden behind existence checks for these variables. And a clarification was added to "#ifdef TUNER" directive.
+    - NetCDF file access caused the tuner to crash in parallel mode (-fopenmp flag in config file and multiple cases). Adding an $OMP CRITICAL structure around the call to stats_init in clubb_driver.F90 fixed that.
+    - Fixed compile/README. Config files are specified with the -c option.
+    - The -t option in run_scripts/run_tuner.bash interfered with the previous usage of the TUNER compiler directive. Renamed the old TUNER directive to NR_SP, a short for "numerical recipes, single precision". TUNER now is the option to "turn on" code changes required to run the tuner.
+
+commit fa914b7afea4b486d22cdaa23fb1fa70c0578559
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Feb 21 14:47:14 2023 -0600
+
+    Removing usage of gr from pdf_closure. It was only ever used for nz, which is now fed in directly.
+
+commit d3264a2623c048a97b2dd6d8bb43f14c0e496f0c
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Feb 21 13:59:45 2023 -0600
+
+    Fixing bug. This was only triggered when l_input_fields=.true., which I am only testing because it needs to be true so that I can test ADG2_driver.
