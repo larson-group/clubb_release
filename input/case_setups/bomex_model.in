@@ -52,6 +52,7 @@ l_t_dependent = .true. ! Read values from _surface.in file. Also read
 l_ignore_forcings = .true. ! Do not read values from _forcings.in file,
                            ! even if l_t_dependent = .true.
 l_modify_ic_with_cubic_int = .true. ! Initial sounding uses monotonic cubic interpolation
+l_modify_bc_for_cnvg_test = .true. ! Modify surface boundary conditions for convergence test
 
 time_initial = 0.0     ! Model start time [seconds since midnight on start date]
 time_final = 21600.0   ! Model end time [seconds since midnight on start date]
