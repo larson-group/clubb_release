@@ -237,30 +237,24 @@ module mixing_length
 
     !---------- Mixing length computation ----------------------------------
 
+    !$acc data create( exp_mu_dzm, invrs_dzm_on_mu, grav_on_thvm, Lv_coef, &
+    !$acc              entrain_coef, thl_par_j_precalc, rt_par_j_precalc, &
+    !$acc              tl_par_1, rt_par_1, rsatl_par_1, thl_par_1, dCAPE_dz_1, &
+    !$acc              s_par_1, rc_par_1, CAPE_incr_1, thv_par_1, tke_i ) &
+    !$acc      copyin( gr, gr%dzm, gr%invrs_dzm, gr%zt, mu, thv_ds, thvm, &
+    !$acc              exner, rtm, thlm, p_in_pa, thvm, lscale_max, em ) &
+    !$acc     copyout( Lscale_up, Lscale_down, Lscale )
+ 
+    !$acc update host(mu)
     if( any(abs(mu) < eps) ) then
-        write(fstderr,*) "Entrainment rate mu cannot be 0"
-        error stop "Fatal error in subroutine compute_mixing_length"
+      write(fstderr,*) "Entrainment rate mu cannot be 0"
+      error stop "Fatal error in subroutine compute_mixing_length"
     end if
 
     ! Calculate initial turbulent kinetic energy for each grid level
     tke_i = zm2zt( nz, ngrdcol, gr, em )
  
     ! Initialize arrays and precalculate values for computational efficiency
-
-!$acc data copyin(gr,mu(:ngrdcol), entrain_coef(:ngrdcol,:nz), &
-!$acc exp_mu_dzm(:ngrdcol,:nz),thv_ds(:ngrdcol,:nz), &
-!$acc thvm(:ngrdcol,:nz), grav_on_thvm(:ngrdcol,:nz), &
-!$acc exner(:ngrdcol,:nz), lv_coef(:ngrdcol,:nz),  &
-!$acc invrs_dzm_on_mu(:ngrdcol,:nz), rt_par_j_precalc(:ngrdcol,:nz),  &
-!$acc rtm(:ngrdcol,:nz), thlm(:ngrdcol,:nz),  &
-!$acc thl_par_j_precalc(:ngrdcol,:nz), rt_par_1(:ngrdcol,:nz),  &
-!$acc tl_par_1(:ngrdcol,:nz), thl_par_1(:ngrdcol,:nz),  &
-!$acc cape_incr_1(:ngrdcol,:nz), thv_par_1(:ngrdcol,:nz),  &
-!$acc s_par_1(:ngrdcol,:nz), p_in_pa(:,:), rc_par_1(:ngrdcol,:nz),  &
-!$acc rsatl_par_1(:ngrdcol,:nz), tke_i(:ngrdcol,:nz),  &
-!$acc dcape_dz_1(:ngrdcol,:nz), thvm(:ngrdcol,:), lscale_max(:ngrdcol)  &
-!$acc ) copyout(lscale_up(:ngrdcol,:nz),  &
-!$acc lscale_down(:ngrdcol,:nz), lscale(:ngrdcol,:))
     !$acc parallel loop gang vector collapse(2)
     do i = 1, ngrdcol
       do k = 1, nz
@@ -278,7 +272,7 @@ module mixing_length
 
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     !$acc parallel loop gang vector
     do i = 1, ngrdcol
@@ -287,7 +281,7 @@ module mixing_length
       Lscale_up(i,1)   = zero
       Lscale_down(i,1) = zero
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! Precalculations of single values to avoid unnecessary calculations later
     Lv2_coef = ep * Lv**2 / ( Rd * cp )
@@ -311,7 +305,7 @@ module mixing_length
                               - ( rtm(i,j) - rtm(i,j-1) ) * entrain_coef(i,j-1)
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! Calculate the initial change in TKE for each level. This is done for computational
     ! efficiency, it helps because there will be at least one calculation for each grid level,
@@ -334,7 +328,7 @@ module mixing_length
 
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
 
     ! Caclculate initial rsatl for parcels at each grid level
@@ -347,7 +341,6 @@ module mixing_length
     ! since subarray 3:, the start_index is 3 and it is an optional argument
     start_index = 3
     rsatl_par_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl_par_1, start_index )
-    
     
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector
@@ -543,7 +536,7 @@ module mixing_length
 
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! ---------------- Downwards Length Scale Calculation ----------------
 
@@ -561,7 +554,7 @@ module mixing_length
                               - ( rtm(i,j) - rtm(i,j+1) ) * entrain_coef(i,j)
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! Calculate the initial change in TKE for each level. This is done for computational
     ! efficiency, it helps because there will be at least one calculation for each grid level,
@@ -584,7 +577,7 @@ module mixing_length
 
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! Caclculate initial rsatl for parcels at each grid level, this function is elemental
 
@@ -784,7 +777,7 @@ module mixing_length
 
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
       ! ---------------- Final Lscale Calculation ----------------
 
@@ -826,11 +819,13 @@ module mixing_length
       Lscale(i,:) = min( Lscale(i,:), Lscale_max(i) )
       
     end do
-    !$acc end parallel
-    !$acc end data
+    !$acc end parallel loop
 
     ! Ensure that no Lscale values are NaN
     if ( clubb_at_least_debug_level( 1 ) ) then
+
+      !$acc update host( Lscale, Lscale_up, Lscale_down, &
+      !$acc              thvm, thlm, rtm, em, exner, p_in_Pa, thv_ds )
 
       do i = 1, ngrdcol
         call length_check( nz, Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:) ) ! intent(in)
@@ -859,6 +854,8 @@ module mixing_length
       endif ! Fatal error
 
     end if
+
+    !$acc end data
 
     return
 

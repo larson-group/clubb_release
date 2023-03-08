@@ -370,17 +370,18 @@ module turbulent_adv_pdf
 
 
     ! Set lower boundary array to 0
-    !$acc parallel loop collapse(2)
+    !$acc parallel loop gang vector collapse(2)
     do i = 1, ngrdcol
       do b = 1, 3
         lhs_ta(b,i,1) = zero
       end do
     end do
+    !$acc end parallel loop
 
     if ( .not. l_upwind_xpyp_turbulent_adv ) then
 
       ! Centered discretization.
-      !$acc parallel loop collapse(2) 
+      !$acc parallel loop gang vector collapse(2) 
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           
@@ -406,11 +407,12 @@ module turbulent_adv_pdf
 
         end do
       end do
+      !$acc end parallel loop
       
     else ! l_upwind_xpyp_turbulent_adv
 
       ! "Upwind" discretization
-      !$acc parallel loop collapse(2) 
+      !$acc parallel loop gang vector collapse(2) 
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
         
@@ -452,15 +454,18 @@ module turbulent_adv_pdf
 
         end do
       end do
+      !$acc end parallel loop
+
     endif
 
     ! Set upper boundary array to 
-    !$acc parallel loop collapse(2)
+    !$acc parallel loop gang vector collapse(2)
     do i = 1, ngrdcol
       do b = 1, 3
         lhs_ta(b,i,nz) = zero
       end do
     end do
+    !$acc end parallel loop
 
     !$acc end data
 
@@ -531,15 +536,16 @@ module turbulent_adv_pdf
     !$acc      copyout( lhs_ta )
 
     ! Set lower boundary array to 0
-    !$acc parallel loop collapse(2)
+    !$acc parallel loop gang vector collapse(2)
     do i = 1, ngrdcol
       do b = 1, 3
         lhs_ta(b,i,1) = 0.0_core_rknd
       end do
     end do
+    !$acc end parallel loop
 
     ! Godunov-like upwind discretization
-    !$acc parallel loop collapse(2) 
+    !$acc parallel loop gang vector collapse(2) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         
@@ -560,14 +566,16 @@ module turbulent_adv_pdf
                                   * max(0.0_core_rknd,coef_wpxpyp_implicit(i,k) )
       end do
     end do
+    !$acc end parallel loop
 
     ! Set upper boundary array to 0
-    !$acc parallel loop collapse(2)
+    !$acc parallel loop gang vector collapse(2)
     do i = 1, ngrdcol
       do b = 1, 3
         lhs_ta(b,i,nz) = 0.0_core_rknd
       end do
     end do
+    !$acc end parallel loop
 
     !$acc end data
 
@@ -882,11 +890,12 @@ module turbulent_adv_pdf
     do i = 1, ngrdcol
       rhs_ta(i,1) = zero
     end do
+    !$acc end parallel loop
 
     if ( .not. l_upwind_xpyp_turbulent_adv ) then
 
       ! Centered discretization.
-      !$acc parallel loop collapse(2)
+      !$acc parallel loop gang vector collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           
@@ -896,11 +905,12 @@ module turbulent_adv_pdf
                                  - rho_ds_zt(i,k) * term_wpxpyp_explicit(i,k) )
         end do
       end do ! k = 2, nz-1, 1
+      !$acc end parallel loop
 
     else ! l_upwind_xpyp_turbulent_adv
 
       ! "Upwind" discretization
-      !$acc parallel loop collapse(2)
+      !$acc parallel loop gang vector collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
 
@@ -926,6 +936,7 @@ module turbulent_adv_pdf
           
         end do
       end do ! k = 2, nz-1, 1
+      !$acc end parallel loop
       
     end if
 
@@ -934,6 +945,7 @@ module turbulent_adv_pdf
     do i = 1, ngrdcol
       rhs_ta(i,nz) = zero
     end do
+    !$acc end parallel loop
 
     !$acc end data 
 
@@ -1003,8 +1015,9 @@ module turbulent_adv_pdf
     do i = 1, ngrdcol
       rhs_ta(i,1) = 0.0_core_rknd
     end do
+    !$acc end parallel loop
 
-    !$acc parallel loop collapse(2)
+    !$acc parallel loop gang vector collapse(2)
     do k = 2, nz-1
       do i = 1, ngrdcol 
         rhs_ta(i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
@@ -1019,12 +1032,14 @@ module turbulent_adv_pdf
                       )
       end do
     end do
+    !$acc end parallel loop
 
     ! Set upper boundary value to 0
     !$acc parallel loop
     do i = 1, ngrdcol
       rhs_ta(i,nz) = 0.0_core_rknd
     end do
+    !$acc end parallel loop
 
     !$acc end data 
 

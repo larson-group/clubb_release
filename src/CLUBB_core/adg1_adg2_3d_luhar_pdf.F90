@@ -147,19 +147,7 @@ module adg1_adg2_3d_luhar_pdf
 
     integer :: j  ! Loop index
 
-    !$acc data create( w_1_n, w_2_n ) &
-    !$acc      copyin( wm, wp2, um , vm, &
-    !$acc              sigma_sqd_w, Skw, sqrt_wp2, &
-    !$acc              rtm, thlm, rtp2, thlp2, &
-    !$acc              wprtp, wpthlp, sclrm, sclrp2, &
-    !$acc              wpsclrp, up2, vp2, upwp, vpwp )  &
-    !$acc     copyout( mixt_frac, w_1, w_2, alpha_thl, &
-    !$acc              varnce_w_2, varnce_w_1, rt_1, rt_2, u_1, u_2, &
-    !$acc              v_1, v_2, thl_1, thl_2, varnce_rt_1, varnce_rt_2,  &
-    !$acc              varnce_thl_1, varnce_thl_2, varnce_u_1, varnce_u_2, &
-    !$acc              varnce_v_1, varnce_v_2, alpha_rt,  &
-    !$acc              alpha_u, alpha_v, sclr_1, sclr_2, &
-    !$acc              varnce_sclr_1, varnce_sclr_2, alpha_sclr )
+    !$acc declare create( w_1_n, w_2_n )
     
     ! Calculate the mixture fraction and the PDF component means and variances
     ! of w.
@@ -215,8 +203,6 @@ module adg1_adg2_3d_luhar_pdf
                                            alpha_sclr(:,:,j) )              ! Out
        enddo ! i=1, sclr_dim
     endif ! l_scalar_calc
-
-    !$acc end data
     
     return
 
@@ -740,7 +726,7 @@ module adg1_adg2_3d_luhar_pdf
           endif  ! Widths non-zero
        end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
     return
 
 
@@ -1161,7 +1147,8 @@ module adg1_adg2_3d_luhar_pdf
         
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
+    
     return
 
   end subroutine ADG1_ADG2_responder_params
