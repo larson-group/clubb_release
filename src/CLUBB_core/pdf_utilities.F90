@@ -894,10 +894,7 @@ module pdf_utilities
         corr_x_y_2(i,k) = corr_x_y_1(i,k)
       end do
     end do
-    !$acc end parallel
-
-    ! Set corr_x_y_2 equal to corr_x_y_1.
-    !corr_x_y_2(:,:) = corr_x_y_1(:,:)
+    !$acc end parallel loop
 
     return
 
