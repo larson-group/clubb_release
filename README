@@ -1310,7 +1310,7 @@ upwp       = <u'w'>      = Covariance of u and w                        [m^2/s^2
 vpwp       = <v'w'>      = Covariance of v and w                        [m^2/s^2]
 up2        = <u'^2>      = Variance of u                                [m^2/s^2]
 vp2        = <v'^2>      = Variance of v                                [m^2/s^2]
-rrainm     = <r_r>       = Mean rain water mixing ratio, r_r            [kg/kg]
+rrm        = <r_r>       = Mean rain water mixing ratio, r_r            [kg/kg]
 
 Information on and a description of CLUBB's vertical grid can be found in the 
 source file ../src/CLUBB_core/grid_class.F90 and doc/CLUBBeqns.pdf.
