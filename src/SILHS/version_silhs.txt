@@ -1,0 +1,143 @@
+commit 5cb6f1b9b80536e8a57e8d5f64a73136c824b0a0
+Author: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+Date:   Thu Mar 9 08:01:47 2023 -0600
+
+    Update README
+    
+    Did this not work because I didn't include all 40 characters of the git hash?
+    BIT_CHANGING:9aeea149d5970cb99218344f8bde576e1f036d21
+
+commit 9512061ddd7b2a7d1009a787409055495fbd39c5
+Author: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+Date:   Thu Mar 9 07:55:25 2023 -0600
+
+    Fixed an old notation change in the README
+
+commit c5c29600aa8cf9176127e44fbf6ddccf9474722a
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Thu Mar 9 02:31:40 2023 -0600
+
+    Implements Thomas Toniazzo's bug fix for spike removal
+    
+    in the monotonic flux limiter.  See
+    
+    https://github.com/larson-group/clubb_release/pull/11/files
+    
+    This code change is
+    expected to be BIT_CHANGING for cases in which
+    `l_predict_upwp_vpwp = T`, `l_mono_flux_lim_um = T`
+    or `l_mono_flux_lim_vm = T`, and the monotonic
+    flux limiter is triggered.
+    
+    This bug fix prevents non-conservation of momentum
+    when the vertical integral of either of the wind components `um` or `vm` is negative.
+
+commit de3e928885d0c8bf633f40cd422a7950ee4bfdbf
+Merge: 8e473e08b a3bcb0bd3
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Mar 8 16:58:53 2023 -0600
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit 8e473e08b858df61c5c5116e37e26f3df2431a0b
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Mar 8 16:58:23 2023 -0600
+
+    Code changes to implement modified boundary condition
+    This commit contains code changes to implement modified boundary
+    conditions for convergence test simulations. These code changes
+    can be activated by setting l_modify_bc_for_cnvg_test = .true.
+    in the CLUBB namelist.
+    
+    Originally committed by Shixuan.
+
+commit a3bcb0bd343d004b2f085006708b88131be99507
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Mar 8 11:46:19 2023 -0600
+
+    Gpu updates (#1070)
+    
+    * Fixing bug. This was only triggered when l_input_fields=.true., which I am only testing because it needs to be true so that I can test ADG2_driver.
+    
+    * Removing usage of gr from pdf_closure. It was only ever used for nz, which is now fed in directly.
+    
+    * Making openacc statements more consistent. Ensuring all statments on double loops have specified gang and vector, and that all parallel loops have an end parallel loop statment at the end of them. Everything BFB on CPUs and GPUs.
+    
+    * Pushing acc data region to outermost parts of mixing_length.
+    
+    * Removing pdf_implicit_coefs_terms from acc copyin and copyout. It is only used when iiPDF_type == iiPDF_new .or. iiPDF_type == iiPDF_new_hybrid, so we do not need to do any copying with it. The inclusion of it also caused the data statement to copy unallocated arrays, which are just garbage pointers, and that was causing random occasional crashes (either segfaults or gpu out of memory).
+    
+    * The update device clauses for return variables seems to only be requried for arrays contained in types. See https://github.com/larson-group/clubb/issues/1049\#issuecomment-1440624778
+    
+    * Moving acc end data to end of pdf_closure. This reuqired removing any conditional return statements that appear before the final return, since we're not allowed to branch out of an acc region early. I also moved a large printout statement outside of a loop. The only reason it was in the loop to begin with was because pdf_params used to be an array of types, but now is a type of arrays, allowing us to print the full arrays directly.
+    
+    * Making loop an acc loop. If we weren't outputting w_[up/down]_in_cloud (iw_up_in_cloud <= 0 .or. iw_down_in_cloud <= 0, then these arrays were only being zerod out on the CPU and would've getting overwritten by the uninitialized GPU data at the end of the data statement. This change causes the arrays to get correctly zerod out on the GPU when we need.
+    
+    * Update VariableGroupNondimMoments.py
+    
+    Fixed a typo
+    
+    * Merging new changes from master
+    
+    * Removing need for -gpu=deepcopy, pushing some acc data statements up call tree, and replacing some acc data statements with acc delare statements so that return statements can be added back in.
+    
+    * Adding back an acc loop that was accidentally removed during a merge.
+    
+    ---------
+    
+    Co-authored-by: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+
+commit db8d5931d779bc1f776fb80952a1c263c22f8467
+Author: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+Date:   Wed Mar 8 10:39:38 2023 -0600
+
+    Update README
+    
+    I guess the proper way to do it is this -- BIT_CHANGING:9aeea14
+
+commit 53c717bb7dd9bddcd720cba58c46d77b7ad36c9c
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Mar 6 10:34:35 2023 -0600
+
+    reorgnize the scripts for convergence test simulations
+    Move the script associated with convergence test simulation
+    in the folder of run_scripts/convergence_run
+    
+    Originally committed by Shixuan
+
+commit 0e087bee28254a2bc2da5869a28352e1374b2b91
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Mar 6 10:30:05 2023 -0600
+
+    Add scripts to configure and run convergence test
+     This commit contains new scripts created to configure and run
+     convergence test simulations. There are four scripts:
+    
+     1. run_scripts/run_cnvg_test_multi_cases.csh. This script is used to
+        compile and run convergence simulations with specific configurations
+        (see details in scripts for explations). After the simulations,the
+        space-time convergence plots will also be generated.
+    
+     2.run_scripts/convergence_config.py: this script "called" by the
+       first script to generate the namelist file for CLUBB-SCM simulations.
+       With this script, the modified configuration will be applied in the
+       case run directory, while the files in default clubb will not be
+       touched
+    
+     3.run_scripts/convergence_function.py: this script contains function
+       to modify the initial condition profile for convergence test
+       simulations. It is called by run_scripts/convergence_config.py
+       when the model is configured to use modified initial conditions
+    
+     4.run_scripts/plot_l2_convergence.py: this is a sample script to
+       generate the space-time convergence plots
+    
+    Originally committed by Shixuan
+
+commit a6682998e27e3d01b8ffeb4ec2774872e7311aa4
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 3 22:50:58 2023 -0600
+
+    This commit most definitely does not change any bits,
+    but commit 67878ef was BIT_CHANGING for the DYCOMS-II RF02 family
+    of cases, RICO (and RICO SILHS), BOMEX, and Wangara.
