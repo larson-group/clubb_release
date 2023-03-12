@@ -141,80 +141,147 @@ Date:   Fri Mar 24 21:30:34 2023 -0500
     
     * Moving default(present) to the end because it looks nicer there.
 =======
-commit b361c61e93c25e1a491a5ff4fdbe5cbcc1f0f735
-Author: Tyler Cernik <cernikt@msoe.edu>
-Date:   Sat Feb 11 14:41:23 2023 -0600
+commit 5cb6f1b9b80536e8a57e8d5f64a73136c824b0a0
+Author: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+Date:   Thu Mar 9 08:01:47 2023 -0600
 
-    made graphing for netcdf_var collector general. #1040
-
-commit 47cd566e64abb0e774abd20c2ec97deed8dd3ab5
-Author: supreethms1809 <supreethms1809@gmail.com>
-Date:   Wed Feb 8 17:34:02 2023 -0700
-
-    Porting pdf_closure subroutine with OpenACC (#1059)
+    Update README
     
-    * Porting pdf_closure subroutine with OpenACC
-    
-    OpenACC directives are added to pdf_closure subroutine. The necessary
-    structured data region is also added for optimzing data movement across
-    kernels. There is opportunity to task parallelize using streams and
-    will be explored in the future.
-    
-    Answers are bit for bit.
-    
-    * Fixing the copyin directives
-    
-    * Making work without managed memory.
+    Did this not work because I didn't include all 40 characters of the git hash?
+    BIT_CHANGING:9aeea149d5970cb99218344f8bde576e1f036d21
 
-commit 7d6dfad026e40eaf30f29ffa17c23dfbed882040
-Author: huebler <huebler@uwm.edu>
-Date:   Thu Feb 2 15:50:27 2023 -0600
+commit 9512061ddd7b2a7d1009a787409055495fbd39c5
+Author: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+Date:   Thu Mar 9 07:55:25 2023 -0600
 
-    Removing sigma_sqd_w from the acc data copyout statement. This is a bug which was causing the code to crash when not using managed memory.
+    Fixed an old notation change in the README
 
-commit c9a950dbbf76e82a3cda0ab2d65f29cd5f28df12
-Author: huebler <huebler@uwm.edu>
-Date:   Fri Jan 27 17:50:12 2023 -0600
-
-    GPUizing some helping procedures.
-
-commit 5850944600089fe2cb244ca1b08973231b6d91d3
-Author: Gunther Huebler <huebler@uwm.edu>
-Date:   Sat Feb 4 22:56:44 2023 -0600
-
-    Fixing bug, arrays given a dummy index in 0fafc6b0b1f1a6058d37bf3db4bb3708204504db are declared nsize, but are only used up to nlevels, thus we need the (1,1:nlevels) specifier when passing them. This issue was only caught by our _debug tests, so that's good evidence the new flags we added to initialize unused to memory was effective.
-
-commit 2f84d7c748f143990316004c66ebda5486de5752
-Author: Gunther Huebler <huebler@uwm.edu>
-Date:   Sat Feb 4 17:22:00 2023 -0600
-
-    Removing update_pressure from public list. This was causing compilation crashes. RESOLVED:8c7230fecb877d04fb129ef5e143e0993b4b29b1
-
-commit 8c7230fecb877d04fb129ef5e143e0993b4b29b1
-Author: huebler <huebler@uwm.edu>
-Date:   Thu Feb 2 13:06:52 2023 -0600
-
-    Removing update_pressure since it is no longer called anywhere in clubb or host models. The addition of this subroutine was discussed in larson-group/e3sm#6 and the removal of the call to it was discussed in larson-group/clubb#926.
-
-commit 0fafc6b0b1f1a6058d37bf3db4bb3708204504db
-Author: huebler <huebler@uwm.edu>
-Date:   Fri Jan 27 14:42:40 2023 -0600
-
-    Pushing column loop into calculate_thvm
-
-commit cfd87ac680ebb26e2fdb7b1aab7a8b8b4fc75320
-Author: Steffen Domke <sdomke@uwm.edu>
-Date:   Mon Jan 30 15:12:37 2023 -0600
-
-    Added option (-i) to run_tuner.bash script to enable pre-tuning standalone runs. README will be updated.
-
-commit 1025d807ab1f3d5e8d3a8deb72595f2314b1cec5
+commit c5c29600aa8cf9176127e44fbf6ddccf9474722a
 Author: Vincent Larson <vlarson@users.noreply.github.com>
-Date:   Mon Jan 30 18:47:29 2023 +0100
+Date:   Thu Mar 9 02:31:40 2023 -0600
 
-    Adds to dashboard a bar plot that separates nonlinear
+    Implements Thomas Toniazzo's bug fix for spike removal
     
-    and linear contributions to bias removal.
+    in the monotonic flux limiter.  See
     
-    Also abbreviates the clubb parameter names in the plots.
+    https://github.com/larson-group/clubb_release/pull/11/files
+    
+    This code change is
+    expected to be BIT_CHANGING for cases in which
+    `l_predict_upwp_vpwp = T`, `l_mono_flux_lim_um = T`
+    or `l_mono_flux_lim_vm = T`, and the monotonic
+    flux limiter is triggered.
+    
+    This bug fix prevents non-conservation of momentum
+    when the vertical integral of either of the wind components `um` or `vm` is negative.
+
+commit de3e928885d0c8bf633f40cd422a7950ee4bfdbf
+Merge: 8e473e08b a3bcb0bd3
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Mar 8 16:58:53 2023 -0600
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit 8e473e08b858df61c5c5116e37e26f3df2431a0b
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Mar 8 16:58:23 2023 -0600
+
+    Code changes to implement modified boundary condition
+    This commit contains code changes to implement modified boundary
+    conditions for convergence test simulations. These code changes
+    can be activated by setting l_modify_bc_for_cnvg_test = .true.
+    in the CLUBB namelist.
+    
+    Originally committed by Shixuan.
+
+commit a3bcb0bd343d004b2f085006708b88131be99507
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Wed Mar 8 11:46:19 2023 -0600
+
+    Gpu updates (#1070)
+    
+    * Fixing bug. This was only triggered when l_input_fields=.true., which I am only testing because it needs to be true so that I can test ADG2_driver.
+    
+    * Removing usage of gr from pdf_closure. It was only ever used for nz, which is now fed in directly.
+    
+    * Making openacc statements more consistent. Ensuring all statments on double loops have specified gang and vector, and that all parallel loops have an end parallel loop statment at the end of them. Everything BFB on CPUs and GPUs.
+    
+    * Pushing acc data region to outermost parts of mixing_length.
+    
+    * Removing pdf_implicit_coefs_terms from acc copyin and copyout. It is only used when iiPDF_type == iiPDF_new .or. iiPDF_type == iiPDF_new_hybrid, so we do not need to do any copying with it. The inclusion of it also caused the data statement to copy unallocated arrays, which are just garbage pointers, and that was causing random occasional crashes (either segfaults or gpu out of memory).
+    
+    * The update device clauses for return variables seems to only be requried for arrays contained in types. See https://github.com/larson-group/clubb/issues/1049\#issuecomment-1440624778
+    
+    * Moving acc end data to end of pdf_closure. This reuqired removing any conditional return statements that appear before the final return, since we're not allowed to branch out of an acc region early. I also moved a large printout statement outside of a loop. The only reason it was in the loop to begin with was because pdf_params used to be an array of types, but now is a type of arrays, allowing us to print the full arrays directly.
+    
+    * Making loop an acc loop. If we weren't outputting w_[up/down]_in_cloud (iw_up_in_cloud <= 0 .or. iw_down_in_cloud <= 0, then these arrays were only being zerod out on the CPU and would've getting overwritten by the uninitialized GPU data at the end of the data statement. This change causes the arrays to get correctly zerod out on the GPU when we need.
+    
+    * Update VariableGroupNondimMoments.py
+    
+    Fixed a typo
+    
+    * Merging new changes from master
+    
+    * Removing need for -gpu=deepcopy, pushing some acc data statements up call tree, and replacing some acc data statements with acc delare statements so that return statements can be added back in.
+    
+    * Adding back an acc loop that was accidentally removed during a merge.
+    
+    ---------
+    
+    Co-authored-by: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+
+commit db8d5931d779bc1f776fb80952a1c263c22f8467
+Author: Brian Griffin <31553422+bmg929@users.noreply.github.com>
+Date:   Wed Mar 8 10:39:38 2023 -0600
+
+    Update README
+    
+    I guess the proper way to do it is this -- BIT_CHANGING:9aeea14
+
+commit 53c717bb7dd9bddcd720cba58c46d77b7ad36c9c
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Mar 6 10:34:35 2023 -0600
+
+    reorgnize the scripts for convergence test simulations
+    Move the script associated with convergence test simulation
+    in the folder of run_scripts/convergence_run
+    
+    Originally committed by Shixuan
+
+commit 0e087bee28254a2bc2da5869a28352e1374b2b91
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Mar 6 10:30:05 2023 -0600
+
+    Add scripts to configure and run convergence test
+     This commit contains new scripts created to configure and run
+     convergence test simulations. There are four scripts:
+    
+     1. run_scripts/run_cnvg_test_multi_cases.csh. This script is used to
+        compile and run convergence simulations with specific configurations
+        (see details in scripts for explations). After the simulations,the
+        space-time convergence plots will also be generated.
+    
+     2.run_scripts/convergence_config.py: this script "called" by the
+       first script to generate the namelist file for CLUBB-SCM simulations.
+       With this script, the modified configuration will be applied in the
+       case run directory, while the files in default clubb will not be
+       touched
+    
+     3.run_scripts/convergence_function.py: this script contains function
+       to modify the initial condition profile for convergence test
+       simulations. It is called by run_scripts/convergence_config.py
+       when the model is configured to use modified initial conditions
+    
+     4.run_scripts/plot_l2_convergence.py: this is a sample script to
+       generate the space-time convergence plots
+    
+    Originally committed by Shixuan
+
+commit a6682998e27e3d01b8ffeb4ec2774872e7311aa4
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Mar 3 22:50:58 2023 -0600
+
+    This commit most definitely does not change any bits,
+    but commit 67878ef was BIT_CHANGING for the DYCOMS-II RF02 family
+    of cases, RICO (and RICO SILHS), BOMEX, and Wangara.
 >>>>>>> Updating the clubb core and silhs version files
