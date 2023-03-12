@@ -27,6 +27,17 @@ l_stdout_on_invalid  | logical
  Will write a series of namelists for analyzing what parameter sets cause the 
  model to crash.
 
+l_keep_params_equal | logical
+ Enables the option to keep the values of different parameters equal.
+ Those constraints can be specified in the namelist "parameter_constraints"
+ in the same error_*.in file.
+
+l_use_prescribed_rand_seed | logical
+ The tuner will initialize the random number generator with a fixed seed value
+ instead of a value based on the unix time at execution.
+ If prescribed_rand_seed is not specified in this namelist, the value 1 is used.
+ This option should be used when the tuner should produce reproducible results.
+
 anneal_iter | integer
  The variable anneal_iter are only used in amebsa runs.  It determines the 
  number of times the subroutine is called.
@@ -34,7 +45,7 @@ anneal_iter | integer
 anneal_temp | real, default precision
  Used for both amebsa and the enhanced simulated annealing algorithm.  
  It determines the starting temperature for the algorithms.
- 
+
 max_final_temp | real, default precision
  Used to specify the maximum temperature the simulated annealing tuner can 
  stop on. For example, 0.1 would mean that the temp must be below 0.1 before
@@ -44,6 +55,26 @@ tune_type | integer
    0 for amoeba(downhill simplex method with random restart), or
    1 for amebsa(downhill simplex with simulated annealing), or
    2 for Siarry et al., 1997 enhanced simulated annealing.
+
+max_iters_in | integer
+ Set a maximum number of tuner iterations, after which
+ the tuner stops and returns the current optimal parameter set.
+
+stp_adjst_factor_in | real, default precision
+ Defines the influence of the improvement ratio on the next step size
+ for the enhanced Simann optimization algorithm after each temp stage.
+ Default = 1
+ For an explanation for the calculation see stp_adjst_shift_in.
+
+stp_adjst_shift_in | real, default precision
+ Defines the value of the improvement ratio for which the step size stays the same.
+ Default = .5
+ The new step size is calculated as follows:
+ new_stp = old_stp * ( stp_adjst_factor_in * (improvement_ratio - stp_adjst_shift_in) + 1 )
+ This defines a linear function in improvement_ratio between 0 and 1 with values (default case)
+ Minimum: new_stp = .5 * old_stp (if there was no improvement, ratio = 0)
+ No change: new_stp = old_stp (if improvement ratio = stp_adjst_shift_in = .5)
+ Maximum: 1.5 * old_stp (if there was maximal improvement, ratio = 1)
 
 t_variables | character array
  Setting t_variables:
@@ -169,5 +200,4 @@ To reduce the number of tuning iterations, i.e. calls to CLUBB, you may
 - Increase f_tol, so that a small improvement counts as another iteration without significant improvement;
 - Increase max_final_temp, so that the final polishing is omitted;
 - Decrease anneal_temp, so that the initial jumps in parameter space are not so large.
-- Reduce max_iters, which sets a hard limit on the total number of iterations (note this is hard-coded
-  in src/enhanced_simann.F90).
+- Reduce max_iters, which sets a hard limit on the total number of iterations.

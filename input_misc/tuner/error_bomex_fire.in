@@ -1,14 +1,14 @@
-! $Id: error_all.in 7366 2014-11-06 04:55:06Z bmg2@uwm.edu $
+! $Id: Newly created 2 case tuning setup for tuner testing purposes$
 
 &stats
 f_tol                       = 0.0001,
 l_results_stdout            = .true.,
-l_results_file              = .true.,
-l_stdout_on_invalid         = .true.,
+l_results_file              = .false.,
+l_stdout_on_invalid         = .false.,
 l_keep_params_equal         = .false.,
-t_variables                 = "wp3", "wp3"
-weight_var_nl               = 1.0,
-anneal_temp                 = 100.,
+t_variables                 = "cloud_frac", "CLD",
+weight_var_nl               = 1.0, 
+anneal_temp                 = 30.,
 max_final_temp              = 0.01,
 anneal_iter                 = 100,
 tune_type                   = 2
@@ -27,33 +27,15 @@ prescribed_rand_seed        = 1
 !   Note that the first and last z-levels in CLUBB are not prognosed.
 ! timestep_intvls_nl is the time interval(s) to tune for, in ordered pair form.
 
+!  GCSS BOMEX
 &cases
-!  GCSS ARM
-hoc_stats_file_nl(1)      = "../output/arm_zt.nc"
-les_stats_file_nl(1)      = "/home/pub/les_and_clubb_benchmark_runs/les_runs/arm_coamps_sm.nc"
-run_file_nl(1)            = "arm_hoc.in"
-z_i_nl(1)                 = 2
-z_f_nl(1)                 = 109
-timestep_intvls_nl(1,:)   = 481, 541
-weight_case_nl(1)         = 1.0
-
-!  RICO
-hoc_stats_file_nl(2)    = "../output/rico_zt.nc"
-les_stats_file_nl(2)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/rico_coamps_sm.nc"
-run_file_nl(2)          = "rico_hoc.in"
-z_i_nl(2)               = 2
-z_f_nl(2)               = 33
-timestep_intvls_nl(2,:) = 4201, 4320
-weight_case_nl(2)       = 1.0
-
-!  DYCOMS2_RF02_ND
-hoc_stats_file_nl(3)    = "../output/dycoms2_rf02_nd_zt.nc"
-les_stats_file_nl(3)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf02_nd_coamps_sm.nc"
-run_file_nl(3)          = "dycoms2_rf02_nd_hoc.in"
-z_i_nl(3)               = 2
-z_f_nl(3)               = 37
-timestep_intvls_nl(3,:) = 301, 360
-weight_case_nl(3)       = 1.0                                                  
+hoc_stats_file_nl(1)    = "../output/bomex_zt.nc",
+les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
+run_file_nl(1)          = "bomex_hoc.in",
+z_i_nl(1)               = 2,
+z_f_nl(1)               = 75,
+timestep_intvls_nl(1,:) = 180, 360
+weight_case_nl(1)       = 1.0
 /
 
 &init_minmax

@@ -6,8 +6,13 @@ If you want to compile with the default compiler (GNU Fortran on Redhat Linux):
 
 To compile with a different compiler, pass the .bash script for the compiler
 you want to use (found in ./config/) into the compile script:
-  ./compile.bash [PATH TO CONFIG FILE]
+  ./compile.bash -c [PATH TO CONFIG FILE]
 
 If you want to run the compiler tests, which compiles CLUBB using the g95, gfortran
 Oracle, and Intel Fortran compilers:
   ./compiler_tests.bash
+
+For tuning purposes use the -t option. This will not impact standalone runs in a major way,
+and definitely does not change the output of CLUBB.
+This might slow down climate model runs, hence the changes are hidden behind this option:
+  ./compile.bash -t

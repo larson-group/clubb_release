@@ -2422,7 +2422,7 @@ module advance_clubb_core_module
                                               pdf_params_zm_single_col(i) )
         
         call stats_accumulate( &
-               nz, gr%invrs_dzm(i,:), gr%zt(i,:), gr%dzm(i,:), gr%dzt(i,:), & ! intent(in)
+               nz, gr%invrs_dzm(i,:), gr%zt(i,:), gr%dzm(i,:), gr%dzt(i,:), dt, & ! intent(in)
                um(i,:), vm(i,:), upwp(i,:), vpwp(i,:), up2(i,:), vp2(i,:),                      & ! intent(in)
                thlm(i,:), rtm(i,:), wprtp(i,:), wpthlp(i,:),                              & ! intent(in)
                wp2(i,:), wp3(i,:), rtp2(i,:), rtp3(i,:), thlp2(i,:), thlp3(i,:), rtpthlp(i,:),           & ! intent(in)
@@ -3231,7 +3231,47 @@ module advance_clubb_core_module
       wphydrometp_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, wphydrometp(:,:,j) )
     end do ! i = 1, hydromet_dim, 1
 
-    call pdf_closure( gr, nz, ngrdcol,                     & ! intent(in)
+    !$acc data copyin( pdf_params, p_in_Pa, exner, thv_ds_zt, wm_zt, wp2_zt, wp3, &
+    !$acc            Skw_zt, Skthl_zt, Skrt_zt, Sku_zt, &
+    !$acc            Skv_zt, rtm, rtp2_zt, wprtp_zt, thlm, thlp2_zt, wpthlp_zt, rtpthlp_zt, &
+    !$acc            um, up2_zt, upwp_zt, vm, vp2_zt, vpwp_zt, sclrm, wpsclrp_zt, sclrp2_zt, & 
+    !$acc            sclrprtp_zt, sclrpthlp_zt, Sksclr_zt, gamma_Skw_fnc_zt, clubb_params, &
+    !$acc            wphydrometp, wp2hmp, rtphmp, thlphmp, sigma_sqd_w_zt ) &
+    !$acc      copy( pdf_params%w_1, pdf_params%w_2, &
+    !$acc            pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+    !$acc            pdf_params%rt_1, pdf_params%rt_2, &
+    !$acc            pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,  &
+    !$acc            pdf_params%thl_1, pdf_params%thl_2, &
+    !$acc            pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+    !$acc            pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,  &
+    !$acc            pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2, &
+    !$acc            pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2,&
+    !$acc            pdf_params%alpha_thl, pdf_params%alpha_rt, &
+    !$acc            pdf_params%crt_1, pdf_params%crt_2, pdf_params%cthl_1, &
+    !$acc            pdf_params%cthl_2, pdf_params%chi_1, &
+    !$acc            pdf_params%chi_2, pdf_params%stdev_chi_1, &
+    !$acc            pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
+    !$acc            pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, &
+    !$acc            pdf_params%covar_chi_eta_2, pdf_params%corr_w_chi_1, &
+    !$acc            pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
+    !$acc            pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, &
+    !$acc            pdf_params%corr_chi_eta_2, pdf_params%rsatl_1, &
+    !$acc            pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
+    !$acc            pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,  &
+    !$acc            pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
+    !$acc            pdf_params%ice_supersat_frac_2 ) &
+    !$acc   copyout( uprcp_zt, vprcp_zt, wpup2, wpvp2, wp2up2_zt, &
+    !$acc            wp2vp2, wp4_zt, wprtp2, wp2rtp, wpthlp2, wp2thlp, &
+    !$acc            cloud_frac, ice_supersat_frac, rcm, wpthvp_zt, wp2thvp, &
+    !$acc            rtpthvp_zt, thlpthvp_zt, wprcp_zt, wp2rcp, rtprcp_zt, thlprcp_zt, &
+    !$acc            rcp2_zt, wprtpthlp, w_up_in_cloud, &
+    !$acc            w_down_in_cloud, cloudy_updraft_frac, &
+    !$acc            cloudy_downdraft_frac, &
+    !$acc            F_w, F_rt, F_thl, min_F_w, max_F_w, min_F_rt, &
+    !$acc            max_F_rt, min_F_thl, max_F_thl, sclrpthvp_zt, sclrprcp_zt, & 
+    !$acc            wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp, rc_coef )
+
+    call pdf_closure( nz, ngrdcol,                         & ! intent(in)
            hydromet_dim, p_in_Pa, exner, thv_ds_zt,        & ! intent(in)
            wm_zt, wp2_zt, wp3, sigma_sqd_w_zt,             & ! intent(in)
            Skw_zt, Skthl_zt, Skrt_zt, Sku_zt, Skv_zt,      & ! intent(in)
@@ -3269,6 +3309,7 @@ module advance_clubb_core_module
            wpsclrprtp, wpsclrp2, sclrpthvp_zt,             & ! intent(out)
            wpsclrpthlp, sclrprcp_zt, wp2sclrp,             & ! intent(out)
            rc_coef                                         ) ! intent(out)
+    !$acc end data 
 
     ! Subroutine may produce NaN values, and if so, return
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3366,8 +3407,48 @@ module advance_clubb_core_module
                                             pdf_implicit_coefs_terms_zm ) ! Intent(out)
       end if 
 
+      !$acc data copyin( pdf_params_zm, p_in_Pa_zm, exner_zm, thv_ds_zm, wm_zm, wp2, wp3_zm, &
+      !$acc            Skw_zm, Skthl_zm, Skrt_zm, Sku_zm, &
+      !$acc            Skv_zm, rtm_zm, rtp2, wprtp, thlm_zm, thlp2, wpthlp, rtpthlp, &
+      !$acc            um_zm, up2, upwp, vm_zm, vp2, vpwp, sclrm_zm, wpsclrp, sclrp2, & 
+      !$acc            sclrprtp, sclrpthlp, Sksclr_zm, gamma_Skw_fnc, clubb_params, &
+      !$acc            wphydrometp, wp2hmp, rtphmp, thlphmp, sigma_sqd_w ) &
+      !$acc      copy( pdf_params_zm%w_1, pdf_params_zm%w_2, &
+      !$acc            pdf_params_zm%varnce_w_1, pdf_params_zm%varnce_w_2, &
+      !$acc            pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
+      !$acc            pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2,  &
+      !$acc            pdf_params_zm%thl_1, pdf_params_zm%thl_2, &
+      !$acc            pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
+      !$acc            pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2,  &
+      !$acc            pdf_params_zm%corr_w_thl_1, pdf_params_zm%corr_w_thl_2, &
+      !$acc            pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,&
+      !$acc            pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, &
+      !$acc            pdf_params_zm%crt_1, pdf_params_zm%crt_2, pdf_params_zm%cthl_1, &
+      !$acc            pdf_params_zm%cthl_2, pdf_params_zm%chi_1, &
+      !$acc            pdf_params_zm%chi_2, pdf_params_zm%stdev_chi_1, &
+      !$acc            pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
+      !$acc            pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, &
+      !$acc            pdf_params_zm%covar_chi_eta_2, pdf_params_zm%corr_w_chi_1, &
+      !$acc            pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
+      !$acc            pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, &
+      !$acc            pdf_params_zm%corr_chi_eta_2, pdf_params_zm%rsatl_1, &
+      !$acc            pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
+      !$acc            pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,  &
+      !$acc            pdf_params_zm%mixt_frac, pdf_params_zm%ice_supersat_frac_1, &
+      !$acc            pdf_params_zm%ice_supersat_frac_2 ) &
+      !$acc   copyout( uprcp, vprcp, wpup2_zm, wpvp2_zm, wp2up2, &
+      !$acc            wp2vp2, wp4, wprtp2_zm, wp2rtp_zm, wpthlp2_zm, wp2thlp_zm, &
+      !$acc            cloud_frac_zm, ice_supersat_frac_zm, rcm_zm, wpthvp, wp2thvp_zm, &
+      !$acc            rtpthvp, thlpthvp, wprcp, wp2rcp_zm, rtprcp, thlprcp, &
+      !$acc            rcp2, wprtpthlp_zm, w_up_in_cloud_zm, &
+      !$acc            w_down_in_cloud_zm, cloudy_updraft_frac_zm, &
+      !$acc            cloudy_downdraft_frac_zm, &
+      !$acc            F_w_zm, F_rt_zm, F_thl_zm, min_F_w_zm, max_F_w_zm, min_F_rt_zm, &
+      !$acc            max_F_rt_zm, min_F_thl_zm, max_F_thl_zm, sclrpthvp, sclrprcp, & 
+      !$acc            wpsclrp2_zm, wpsclrprtp_zm, wpsclrpthlp_zm, wp2sclrp_zm, rc_coef_zm )
+
       ! Call pdf_closure to output the variables which belong on the momentum grid.
-      call pdf_closure( gr, nz, ngrdcol,                           & ! intent(in)
+      call pdf_closure( nz, ngrdcol,                               & ! intent(in)
              hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm,        & ! intent(in)
              wm_zm, wp2, wp3_zm, sigma_sqd_w,                      & ! intent(in)
              Skw_zm, Skthl_zm, Skrt_zm, Sku_zm, Skv_zm,            & ! intent(in)
@@ -3405,6 +3486,7 @@ module advance_clubb_core_module
              wpsclrprtp_zm, wpsclrp2_zm, sclrpthvp,                & ! intent(out)
              wpsclrpthlp_zm, sclrprcp, wp2sclrp_zm,                & ! intent(out)
              rc_coef_zm                                            ) ! intent(out)
+      !$acc end data
 
       ! Subroutine may produce NaN values, and if so, return
       if ( clubb_at_least_debug_level( 0 ) ) then

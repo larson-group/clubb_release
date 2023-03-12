@@ -147,19 +147,7 @@ module adg1_adg2_3d_luhar_pdf
 
     integer :: j  ! Loop index
 
-    !$acc data create( w_1_n, w_2_n ) &
-    !$acc      copyin( wm, wp2, um , vm, &
-    !$acc              sigma_sqd_w, Skw, sqrt_wp2, &
-    !$acc              rtm, thlm, rtp2, thlp2, &
-    !$acc              wprtp, wpthlp, sclrm, sclrp2, &
-    !$acc              wpsclrp, up2, vp2, upwp, vpwp )  &
-    !$acc     copyout( mixt_frac, w_1, w_2, alpha_thl, &
-    !$acc              varnce_w_2, varnce_w_1, rt_1, rt_2, u_1, u_2, &
-    !$acc              v_1, v_2, thl_1, thl_2, varnce_rt_1, varnce_rt_2,  &
-    !$acc              varnce_thl_1, varnce_thl_2, varnce_u_1, varnce_u_2, &
-    !$acc              varnce_v_1, varnce_v_2, alpha_rt,  &
-    !$acc              alpha_u, alpha_v, sclr_1, sclr_2, &
-    !$acc              varnce_sclr_1, varnce_sclr_2, alpha_sclr )
+    !$acc declare create( w_1_n, w_2_n )
     
     ! Calculate the mixture fraction and the PDF component means and variances
     ! of w.
@@ -215,15 +203,13 @@ module adg1_adg2_3d_luhar_pdf
                                            alpha_sclr(:,:,j) )              ! Out
        enddo ! i=1, sclr_dim
     endif ! l_scalar_calc
-
-    !$acc end data
     
     return
 
   end subroutine ADG1_pdf_driver
 
   !=============================================================================
-  subroutine ADG2_pdf_driver( gr, nz, ngrdcol,                          & ! In
+  subroutine ADG2_pdf_driver( nz, ngrdcol,                              & ! In
                               wm, rtm, thlm, wp2, rtp2, thlp2,          & ! In
                               Skw, wprtp, wpthlp, sqrt_wp2, beta,       & ! In
                               sclrm, sclrp2, wpsclrp, l_scalar_calc,    & ! In
@@ -265,8 +251,6 @@ module adg1_adg2_3d_luhar_pdf
     integer, intent(in) :: &
       ngrdcol,  & ! Number of grid columns
       nz          ! Number of vertical level
-
-    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
@@ -336,11 +320,11 @@ module adg1_adg2_3d_luhar_pdf
     ! Reproduce ADG2_w_closure using separate functions
     do i = 1, ngrdcol
       
-      call calc_Luhar_params( gr%nz, Skw(i,:), wp2(i,:), &                   ! intent(in)
+      call calc_Luhar_params( nz, Skw(i,:), wp2(i,:), &                      ! intent(in)
                               wp2(i,:), w_tol_sqd, &                         ! intent(in)
                               mixt_frac(i,:), big_m_w(i,:), small_m_w(i,:) ) ! intent(out)
 
-      call close_Luhar_pdf( gr%nz, wm(i,:), wp2(i,:), mixt_frac(i,:),    & ! intent(in)
+      call close_Luhar_pdf( nz, wm(i,:), wp2(i,:), mixt_frac(i,:),       & ! intent(in)
                             small_m_w(i,:), wp2(i,:), w_tol_sqd,         & ! intent(in)
                             sigma_sqd_w_1(i,:), sigma_sqd_w_2(i,:),      & ! intent(out)
                             varnce_w_1(i,:), varnce_w_2(i,:),            & ! intent(out)
@@ -593,7 +577,7 @@ module adg1_adg2_3d_luhar_pdf
 
        endif
 
-    enddo ! k = 1, gr%nz, 1
+    enddo ! k = 1, nz, 1
 
 
     return
@@ -742,7 +726,7 @@ module adg1_adg2_3d_luhar_pdf
           endif  ! Widths non-zero
        end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
     return
 
 
@@ -1163,7 +1147,8 @@ module adg1_adg2_3d_luhar_pdf
         
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
+    
     return
 
   end subroutine ADG1_ADG2_responder_params

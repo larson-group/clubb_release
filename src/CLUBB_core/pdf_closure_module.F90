@@ -36,7 +36,7 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure( gr, nz, ngrdcol,                            &
+  subroutine pdf_closure( nz, ngrdcol,                                &
                           hydromet_dim, p_in_Pa, exner, thv_ds,       &
                           wm, wp2, wp3, sigma_sqd_w,                  &
                           Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,     &
@@ -191,9 +191,6 @@ module pdf_closure_module
       hydromet_dim, & ! Number of hydrometeor species              [#]
       nz, &
       ngrdcol
-      
-    type (grid), target, intent(in) :: &
-      gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
       p_in_Pa,     & ! Pressure                                   [Pa]
@@ -357,7 +354,7 @@ module pdf_closure_module
 
     ! Passive scalar local variables
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)) ::  & 
       sclr1, sclr2,  &
       varnce_sclr1, varnce_sclr2, & 
       alpha_sclr,  & 
@@ -380,7 +377,7 @@ module pdf_closure_module
       Sku,      & ! Skewness of u               [-]
       Skv         ! Skewness of v               [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)) :: &
       Sksclr      ! Skewness of rt              [-]
 
     ! Thermodynamic quantity
@@ -439,36 +436,20 @@ module pdf_closure_module
 
   !------------------------ Code Begins ----------------------------------
 
-    !$acc data copyin( pdf_params, p_in_Pa, exner, thv_ds, wm, wp2, wp3, &
-    !$acc              Skw, Skthl_in, Skrt_in, Sku_in, pdf_implicit_coefs_terms, &
-    !$acc              Skv_in, rtm, rtp2, wprtp, thlm, thlp2, wpthlp, rtpthlp, &
-    !$acc              um, up2, upwp, vm, vp2, vpwp, sclrm, wpsclrp, sclrp2, sclrprtp, &
-    !$acc              sclrpthlp, Sksclr_in, gamma_Skw_fnc, clubb_params, &
-    !$acc              wphydrometp, wp2hmp, rtphmp, thlphmp, sigma_sqd_w ) &
-    !$acc      create( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
-    !$acc              varnce_v_1, varnce_v_2, alpha_u, alpha_v, &
-    !$acc              corr_u_w_1, corr_u_w_2, corr_v_w_1, corr_v_w_2, &
-    !$acc              sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
-    !$acc              alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
-    !$acc              corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, corr_w_sclr_2, &
-    !$acc              tl1, tl2, Sksclr, sqrt_wp2, Skthl, &
-    !$acc              Skrt, Sku, Skv, wprcp_contrib_comp_1, wprcp_contrib_comp_2, &
-    !$acc              wp2rcp_contrib_comp_1, wp2rcp_contrib_comp_2, &
-    !$acc              rtprcp_contrib_comp_1, rtprcp_contrib_comp_2, &
-    !$acc              thlprcp_contrib_comp_1, thlprcp_contrib_comp_2, &
-    !$acc              uprcp_contrib_comp_1, uprcp_contrib_comp_2, &
-    !$acc              vprcp_contrib_comp_1, vprcp_contrib_comp_2, &
-    !$acc              rc_1_ice, rc_2_ice ) &
-    !$acc     copyout( pdf_params, uprcp, vprcp, wpup2, wpvp2, wp2up2, &
-    !$acc              wp2vp2, wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, &
-    !$acc              cloud_frac, ice_supersat_frac, rcm, wpthvp, wp2thvp, &
-    !$acc              rtpthvp, thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp, &
-    !$acc              rcp2, wprtpthlp, w_up_in_cloud, &
-    !$acc              w_down_in_cloud, cloudy_updraft_frac, &
-    !$acc              cloudy_downdraft_frac, pdf_implicit_coefs_terms, &
-    !$acc              F_w, F_rt, F_thl, min_F_w, max_F_w, min_F_rt, &
-    !$acc              max_F_rt, min_F_thl, max_F_thl, sclrpthvp, sclrprcp, & 
-    !$acc              wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp, rc_coef )
+    !$acc declare create( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
+    !$acc                 varnce_v_1, varnce_v_2, alpha_u, alpha_v, &
+    !$acc                 corr_u_w_1, corr_u_w_2, corr_v_w_1, corr_v_w_2, &
+    !$acc                 tl1, tl2, sqrt_wp2, Skthl, &
+    !$acc                 Skrt, Sku, Skv, wprcp_contrib_comp_1, wprcp_contrib_comp_2, &
+    !$acc                 wp2rcp_contrib_comp_1, wp2rcp_contrib_comp_2, &
+    !$acc                 rtprcp_contrib_comp_1, rtprcp_contrib_comp_2, &
+    !$acc                 thlprcp_contrib_comp_1, thlprcp_contrib_comp_2, &
+    !$acc                 uprcp_contrib_comp_1, uprcp_contrib_comp_2, &
+    !$acc                 vprcp_contrib_comp_1, vprcp_contrib_comp_2, &
+    !$acc                 rc_1_ice, rc_2_ice, sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
+    !$acc                 alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
+    !$acc                 corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, &
+    !$acc                 corr_w_sclr_2, Sksclr )
 
     ! Check whether the passive scalars are present.
     if ( sclr_dim > 0 ) then
@@ -531,7 +512,7 @@ module pdf_closure_module
           max_F_thl(i,k) = zero
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
     end if
 
@@ -556,7 +537,7 @@ module pdf_closure_module
         sqrt_wp2(i,k) = sqrt( wp2(i,k) )
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! Select the PDF closure method for the two-component PDF used by CLUBB for
     ! w, rt, theta-l, and passive scalar variables.
@@ -588,7 +569,7 @@ module pdf_closure_module
                             
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
       
-      call ADG2_pdf_driver( gr, nz, ngrdcol,                                  & ! In
+      call ADG2_pdf_driver( nz, ngrdcol,                                      & ! In
                             wm, rtm, thlm, wp2, rtp2, thlp2,                  & ! In
                             Skw, wprtp, wpthlp, sqrt_wp2, beta,               & ! In
                             sclrm, sclrp2, wpsclrp, l_scalar_calc,            & ! In
@@ -729,7 +710,7 @@ module pdf_closure_module
           corr_v_w_2(i,k)   = zero
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
     else
 
@@ -794,7 +775,7 @@ module pdf_closure_module
             end do
           end do
         end do
-        !$acc end parallel
+        !$acc end parallel loop
 
       else
 
@@ -986,7 +967,7 @@ module pdf_closure_module
         tl2(i,k)  = pdf_params%thl_2(i,k)*exner(i,k)
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
 #ifdef GFDL
     if ( sclr_dim > 0  .and.  (.not. do_liquid_only_in_clubb) ) then ! h1g, 2010-06-16 begin mod
@@ -1110,7 +1091,7 @@ module pdf_closure_module
                                      * pdf_params%ice_supersat_frac_2(i,k)
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
     else 
 
@@ -1121,7 +1102,7 @@ module pdf_closure_module
           ice_supersat_frac(i,k) = 0.0_core_rknd
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
       if (clubb_at_least_debug_level( 1 )) then
           write(fstderr,*) "Warning: ice_supersat_frac has garbage values if &
@@ -1144,7 +1125,7 @@ module pdf_closure_module
         rcm(i,k) = max( zero_threshold, rcm(i,k) )
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
          .or. iiPDF_type == iiPDF_new_hybrid ) then
@@ -1160,7 +1141,7 @@ module pdf_closure_module
           pdf_params%corr_w_eta_2(i,k) = zero
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
     else 
         
@@ -1267,7 +1248,7 @@ module pdf_closure_module
                      + ( one - pdf_params%mixt_frac(i,k) ) * vprcp_contrib_comp_2(i,k)
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! Calculate <w'thv'>, <w'^2 thv'>, <rt'thv'>, and <thl'thv'>.
     !$acc parallel loop gang vector collapse(2)
@@ -1279,7 +1260,7 @@ module pdf_closure_module
         thlpthvp(i,k)= thlp2(i,k)   + ep1 * thv_ds(i,k) * rtpthlp(i,k) + rc_coef(i,k) * thlprcp(i,k)
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! Add the precipitation loading term in the <x'thv'> equation.
     if ( l_liq_ice_loading_test ) then
@@ -1296,7 +1277,7 @@ module pdf_closure_module
                 rtpthvp(i,k)  = rtpthvp(i,k)  - thv_ds(i,k) * rtphmp(i,k,hm_idx)
               end do
             end do
-            !$acc end parallel
+            !$acc end parallel loop
           end if
 
        end do
@@ -1307,6 +1288,7 @@ module pdf_closure_module
     ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
     !  where the ``scalar'' in this paper is w.
     if ( l_scalar_calc ) then
+
       !$acc parallel loop gang vector collapse(3)
       do j = 1, sclr_dim
         do k = 1, nz
@@ -1335,10 +1317,9 @@ module pdf_closure_module
           end do
         end do
       end do ! i=1, sclr_dim
-      !$acc end parallel
+      !$acc end parallel loop
+
     end if ! l_scalar_calc
-    
-    
 
       
     ! Compute variance of liquid water mixing ratio.
@@ -1362,7 +1343,7 @@ module pdf_closure_module
         
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 #ifndef CLUBB_CAM
       !  if CLUBB is used in CAM we want this variable computed no matter what
       end if
@@ -1381,13 +1362,19 @@ module pdf_closure_module
                                cloudy_updraft_frac, cloudy_downdraft_frac )        ! Out
 
     else
-      w_up_in_cloud(:,:) = zero
-      w_down_in_cloud(:,:) = zero
+      !$acc parallel loop gang vector collapse(2)
+      do k = 1,nz
+        do i = 1, ngrdcol
+          w_up_in_cloud(i,k) = zero
+          w_down_in_cloud(i,k) = zero
+        end do
+      end do
     end if
 
-    !$acc end data
-
 #ifdef TUNER
+
+    !$acc update host( pdf_params, pdf_params%thl_1, pdf_params%thl_2 )
+
     ! Check the first levels (and first gridcolumn) for reasonable temperatures
     ! greater than 190K and less than 1000K
     ! This is necessary because for certain parameter sets we can get floating point errors
@@ -1417,9 +1404,38 @@ module pdf_closure_module
             return
         end if
     end do
-#endif
+#endif /*TUNER*/
 
     if ( clubb_at_least_debug_level( 2 ) ) then
+
+      !$acc update host( wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, cloud_frac, &
+      !$acc              rcm, wpthvp, wp2thvp, rtpthvp, thlpthvp, wprcp, wp2rcp, &
+      !$acc              rtprcp, thlprcp, rcp2, wprtpthlp, sclrpthvp, sclrprcp, &
+      !$acc              wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp, &
+      !$acc              pdf_params%w_1, pdf_params%w_2, &
+      !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+      !$acc              pdf_params%rt_1, pdf_params%rt_2, &
+      !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,  &
+      !$acc              pdf_params%thl_1, pdf_params%thl_2, &
+      !$acc              pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+      !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,  &
+      !$acc              pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2, &
+      !$acc              pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2,&
+      !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, &
+      !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%cthl_1, &
+      !$acc              pdf_params%cthl_2, pdf_params%chi_1, &
+      !$acc              pdf_params%chi_2, pdf_params%stdev_chi_1, &
+      !$acc              pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
+      !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, &
+      !$acc              pdf_params%covar_chi_eta_2, pdf_params%corr_w_chi_1, &
+      !$acc              pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
+      !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, &
+      !$acc              pdf_params%corr_chi_eta_2, pdf_params%rsatl_1, &
+      !$acc              pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
+      !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,  &
+      !$acc              pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
+      !$acc              pdf_params%ice_supersat_frac_2 )
+
       do i = 1, ngrdcol
           
         call pdf_closure_check( & 
@@ -1432,123 +1448,147 @@ module pdf_closure_module
                pdf_params, & ! intent(in)
                sclrpthvp(i,:,:), sclrprcp(i,:,:), wpsclrp2(i,:,:), &  ! intent(in)
                wpsclrprtp(i,:,:), wpsclrpthlp(i,:,:), wp2sclrp(i,:,:) ) ! intent(in)
+      end do
+    end if
 
-        ! Error Reporting
-        ! Joshua Fasching February 2008
+    ! Error Reporting
+    ! Joshua Fasching February 2008
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( err_code == clubb_fatal_error ) then
 
-        if ( err_code == clubb_fatal_error ) then
+        !$acc update host( p_in_Pa, exner, thv_ds, wm, wp2, wp3, sigma_sqd_w, &
+        !$acc              rtm, rtp2, wprtp, thlm, thlp2, wpthlp, rtpthlp, sclrm, &
+        !$acc              wpsclrp, sclrp2, sclrprtp, sclrpthlp, ice_supersat_frac )
 
-          write(fstderr,*) "Error in pdf_closure_new"
+        write(fstderr,*) "Error in pdf_closure_new"
 
-          write(fstderr,*) "Intent(in)"
+        write(fstderr,*) "Intent(in)"
 
-          write(fstderr,*) "p_in_Pa = ", p_in_Pa
-          write(fstderr,*) "exner = ", exner
-          write(fstderr,*) "thv_ds = ", thv_ds
-          write(fstderr,*) "wm = ", wm
-          write(fstderr,*) "wp2 = ", wp2
-          write(fstderr,*) "wp3 = ", wp3
-          write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-          write(fstderr,*) "rtm = ", rtm
-          write(fstderr,*) "rtp2 = ", rtp2
-          write(fstderr,*) "wprtp = ", wprtp
-          write(fstderr,*) "thlm = ", thlm
-          write(fstderr,*) "thlp2 = ", thlp2
-          write(fstderr,*) "wpthlp = ", wpthlp
-          write(fstderr,*) "rtpthlp = ", rtpthlp
+        write(fstderr,*) "p_in_Pa = ", p_in_Pa
+        write(fstderr,*) "exner = ", exner
+        write(fstderr,*) "thv_ds = ", thv_ds
+        write(fstderr,*) "wm = ", wm
+        write(fstderr,*) "wp2 = ", wp2
+        write(fstderr,*) "wp3 = ", wp3
+        write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
+        write(fstderr,*) "rtm = ", rtm
+        write(fstderr,*) "rtp2 = ", rtp2
+        write(fstderr,*) "wprtp = ", wprtp
+        write(fstderr,*) "thlm = ", thlm
+        write(fstderr,*) "thlp2 = ", thlp2
+        write(fstderr,*) "wpthlp = ", wpthlp
+        write(fstderr,*) "rtpthlp = ", rtpthlp
 
-          if ( sclr_dim > 0 ) then
-            write(fstderr,*) "sclrm = ", sclrm
-            write(fstderr,*) "wpsclrp = ", wpsclrp
-            write(fstderr,*) "sclrp2 = ", sclrp2
-            write(fstderr,*) "sclrprtp = ", sclrprtp
-            write(fstderr,*) "sclrpthlp = ", sclrpthlp
-          end if
+        if ( sclr_dim > 0 ) then
+          write(fstderr,*) "sclrm = ", sclrm
+          write(fstderr,*) "wpsclrp = ", wpsclrp
+          write(fstderr,*) "sclrp2 = ", sclrp2
+          write(fstderr,*) "sclrprtp = ", sclrprtp
+          write(fstderr,*) "sclrpthlp = ", sclrpthlp
+        end if
 
-          write(fstderr,*) "Intent(out)"
+        write(fstderr,*) "Intent(out)"
 
-          write(fstderr,*) "wp4 = ", wp4
+        write(fstderr,*) "wp4 = ", wp4
+        if ( l_explicit_turbulent_adv_xpyp .or. iwprtp2 > 0 ) then
           write(fstderr,*) "wprtp2 = ", wprtp2
-          write(fstderr,*) "wp2rtp = ", wp2rtp
+        end if
+        write(fstderr,*) "wp2rtp = ", wp2rtp
+        if ( l_explicit_turbulent_adv_xpyp .or. iwpthlp2 > 0 ) then
           write(fstderr,*) "wpthlp2 = ", wpthlp2
-          write(fstderr,*) "cloud_frac = ", cloud_frac
-          write(fstderr,*) "ice_supersat_frac = ", ice_supersat_frac
-          write(fstderr,*) "rcm = ", rcm
-          write(fstderr,*) "wpthvp = ", wpthvp
-          write(fstderr,*) "wp2thvp = ", wp2thvp
-          write(fstderr,*) "rtpthvp = ", rtpthvp
-          write(fstderr,*) "thlpthvp = ", thlpthvp
-          write(fstderr,*) "wprcp = ", wprcp
-          write(fstderr,*) "wp2rcp = ", wp2rcp
-          write(fstderr,*) "rtprcp = ", rtprcp
-          write(fstderr,*) "thlprcp = ", thlprcp
+        end if
+        write(fstderr,*) "cloud_frac = ", cloud_frac
+        write(fstderr,*) "ice_supersat_frac = ", ice_supersat_frac
+        write(fstderr,*) "rcm = ", rcm
+        write(fstderr,*) "wpthvp = ", wpthvp
+        write(fstderr,*) "wp2thvp = ", wp2thvp
+        write(fstderr,*) "rtpthvp = ", rtpthvp
+        write(fstderr,*) "thlpthvp = ", thlpthvp
+        write(fstderr,*) "wprcp = ", wprcp
+        write(fstderr,*) "wp2rcp = ", wp2rcp
+        write(fstderr,*) "rtprcp = ", rtprcp
+        write(fstderr,*) "thlprcp = ", thlprcp
+#ifndef CLUBB_CAM
+        !  if CLUBB is used in CAM we want this variable computed no matter what
+        if ( ircp2 > 0 ) then
+#endif
           write(fstderr,*) "rcp2 = ", rcp2
+#ifndef CLUBB_CAM
+        end if
+#endif
+        if ( l_explicit_turbulent_adv_xpyp .or. iwprtpthlp > 0 ) then
           write(fstderr,*) "wprtpthlp = ", wprtpthlp
-          write(fstderr,*) "pdf_params%w_1(i,:) = ", pdf_params%w_1(i,:)
-          write(fstderr,*) "pdf_params%w_2(i,:) = ", pdf_params%w_2(i,:)
-          write(fstderr,*) "pdf_params%varnce_w_1(i,:) = ", pdf_params%varnce_w_1(i,:)
-          write(fstderr,*) "pdf_params%varnce_w_2(i,:) = ", pdf_params%varnce_w_2(i,:)
-          write(fstderr,*) "pdf_params%rt_1(i,:) = ", pdf_params%rt_1(i,:)
-          write(fstderr,*) "pdf_params%rt_2(i,:) = ", pdf_params%rt_2(i,:)
-          write(fstderr,*) "pdf_params%varnce_rt_1(i,:) = ", pdf_params%varnce_rt_1(i,:)
-          write(fstderr,*) "pdf_params%varnce_rt_2(i,:) = ", pdf_params%varnce_rt_2(i,:)
-          write(fstderr,*) "pdf_params%thl_1(i,:) = ", pdf_params%thl_1(i,:)
-          write(fstderr,*) "pdf_params%thl_2(i,:) = ", pdf_params%thl_2(i,:)
-          write(fstderr,*) "pdf_params%varnce_thl_1(i,:) = ", pdf_params%varnce_thl_1(i,:)
-          write(fstderr,*) "pdf_params%varnce_thl_2(i,:) = ", pdf_params%varnce_thl_2(i,:)
-          write(fstderr,*) "pdf_params%corr_w_rt_1(i,:) = ", pdf_params%corr_w_rt_1(i,:)
-          write(fstderr,*) "pdf_params%corr_w_rt_2(i,:) = ", pdf_params%corr_w_rt_2(i,:)
-          write(fstderr,*) "pdf_params%corr_w_thl_1(i,:) = ", pdf_params%corr_w_thl_1(i,:)
-          write(fstderr,*) "pdf_params%corr_w_thl_2(i,:) = ", pdf_params%corr_w_thl_2(i,:)
-          write(fstderr,*) "pdf_params%corr_rt_thl_1(i,:) = ", pdf_params%corr_rt_thl_1(i,:)
-          write(fstderr,*) "pdf_params%corr_rt_thl_2(i,:) = ", pdf_params%corr_rt_thl_2(i,:)
-          write(fstderr,*) "pdf_params%alpha_thl(i,:) = ", pdf_params%alpha_thl(i,:)
-          write(fstderr,*) "pdf_params%alpha_rt(i,:) = ", pdf_params%alpha_rt(i,:)
-          write(fstderr,*) "pdf_params%crt_1(i,:) = ", pdf_params%crt_1(i,:)
-          write(fstderr,*) "pdf_params%crt_2(i,:) = ", pdf_params%crt_2(i,:)
-          write(fstderr,*) "pdf_params%cthl_1(i,:) = ", pdf_params%cthl_1(i,:)
-          write(fstderr,*) "pdf_params%cthl_2(i,:) = ", pdf_params%cthl_2(i,:)
-          write(fstderr,*) "pdf_params%chi_1(i,:) = ", pdf_params%chi_1(i,:)
-          write(fstderr,*) "pdf_params%chi_2(i,:) = ", pdf_params%chi_2(i,:)
-          write(fstderr,*) "pdf_params%stdev_chi_1(i,:) = ", pdf_params%stdev_chi_1(i,:)
-          write(fstderr,*) "pdf_params%stdev_chi_2(i,:) = ", pdf_params%stdev_chi_2(i,:)
-          write(fstderr,*) "pdf_params%stdev_eta_1(i,:) = ", pdf_params%stdev_eta_1(i,:)
-          write(fstderr,*) "pdf_params%stdev_eta_2(i,:) = ", pdf_params%stdev_eta_2(i,:)
-          write(fstderr,*) "pdf_params%covar_chi_eta_1(i,:) = ", &
-                           pdf_params%covar_chi_eta_1(i,:)
-          write(fstderr,*) "pdf_params%covar_chi_eta_2(i,:) = ", &
-                           pdf_params%covar_chi_eta_2(i,:)
-          write(fstderr,*) "pdf_params%corr_w_chi_1(i,:) = ", pdf_params%corr_w_chi_1(i,:)
-          write(fstderr,*) "pdf_params%corr_w_chi_2(i,:) = ", pdf_params%corr_w_chi_2(i,:)
-          write(fstderr,*) "pdf_params%corr_w_eta_1(i,:) = ", pdf_params%corr_w_eta_1(i,:)
-          write(fstderr,*) "pdf_params%corr_w_eta_2(i,:) = ", pdf_params%corr_w_eta_2(i,:)
-          write(fstderr,*) "pdf_params%corr_chi_eta_1(i,:) = ", &
-                           pdf_params%corr_chi_eta_1(i,:)
-          write(fstderr,*) "pdf_params%corr_chi_eta_2(i,:) = ", &
-                           pdf_params%corr_chi_eta_2(i,:)
-          write(fstderr,*) "pdf_params%rsatl_1(i,:) = ", pdf_params%rsatl_1(i,:)
-          write(fstderr,*) "pdf_params%rsatl_2(i,:) = ", pdf_params%rsatl_2(i,:)
-          write(fstderr,*) "pdf_params%rc_1(i,:) = ", pdf_params%rc_1(i,:)
-          write(fstderr,*) "pdf_params%rc_2(i,:) = ", pdf_params%rc_2(i,:)
-          write(fstderr,*) "pdf_params%cloud_frac_1(i,:) = ", pdf_params%cloud_frac_1(i,:)
-          write(fstderr,*) "pdf_params%cloud_frac_2(i,:) = ", pdf_params%cloud_frac_2(i,:)
-          write(fstderr,*) "pdf_params%mixt_frac(i,:) = ", pdf_params%mixt_frac(i,:)
-          write(fstderr,*) "pdf_params%ice_supersat_frac_1(i,:) = ", &
-                           pdf_params%ice_supersat_frac_1(i,:)
-          write(fstderr,*) "pdf_params%ice_supersat_frac_2(i,:) = ", &
-                           pdf_params%ice_supersat_frac_2(i,:)
+        end if
+        write(fstderr,*) "rcp2 = ", rcp2
+        write(fstderr,*) "wprtpthlp = ", wprtpthlp
+        write(fstderr,*) "pdf_params%w_1 = ", pdf_params%w_1
+        write(fstderr,*) "pdf_params%w_2 = ", pdf_params%w_2
+        write(fstderr,*) "pdf_params%varnce_w_1 = ", pdf_params%varnce_w_1
+        write(fstderr,*) "pdf_params%varnce_w_2 = ", pdf_params%varnce_w_2
+        write(fstderr,*) "pdf_params%rt_1 = ", pdf_params%rt_1
+        write(fstderr,*) "pdf_params%rt_2 = ", pdf_params%rt_2
+        write(fstderr,*) "pdf_params%varnce_rt_1 = ", pdf_params%varnce_rt_1
+        write(fstderr,*) "pdf_params%varnce_rt_2 = ", pdf_params%varnce_rt_2
+        write(fstderr,*) "pdf_params%thl_1 = ", pdf_params%thl_1
+        write(fstderr,*) "pdf_params%thl_2 = ", pdf_params%thl_2
+        write(fstderr,*) "pdf_params%varnce_thl_1 = ", pdf_params%varnce_thl_1
+        write(fstderr,*) "pdf_params%varnce_thl_2 = ", pdf_params%varnce_thl_2
+        write(fstderr,*) "pdf_params%corr_w_rt_1 = ", pdf_params%corr_w_rt_1
+        write(fstderr,*) "pdf_params%corr_w_rt_2 = ", pdf_params%corr_w_rt_2
+        write(fstderr,*) "pdf_params%corr_w_thl_1 = ", pdf_params%corr_w_thl_1
+        write(fstderr,*) "pdf_params%corr_w_thl_2 = ", pdf_params%corr_w_thl_2
+        write(fstderr,*) "pdf_params%corr_rt_thl_1 = ", pdf_params%corr_rt_thl_1
+        write(fstderr,*) "pdf_params%corr_rt_thl_2 = ", pdf_params%corr_rt_thl_2
+        write(fstderr,*) "pdf_params%alpha_thl = ", pdf_params%alpha_thl
+        write(fstderr,*) "pdf_params%alpha_rt = ", pdf_params%alpha_rt
+        write(fstderr,*) "pdf_params%crt_1 = ", pdf_params%crt_1
+        write(fstderr,*) "pdf_params%crt_2 = ", pdf_params%crt_2
+        write(fstderr,*) "pdf_params%cthl_1 = ", pdf_params%cthl_1
+        write(fstderr,*) "pdf_params%cthl_2 = ", pdf_params%cthl_2
+        write(fstderr,*) "pdf_params%chi_1 = ", pdf_params%chi_1
+        write(fstderr,*) "pdf_params%chi_2 = ", pdf_params%chi_2
+        write(fstderr,*) "pdf_params%stdev_chi_1 = ", pdf_params%stdev_chi_1
+        write(fstderr,*) "pdf_params%stdev_chi_2 = ", pdf_params%stdev_chi_2
+        write(fstderr,*) "pdf_params%stdev_eta_1 = ", pdf_params%stdev_eta_1
+        write(fstderr,*) "pdf_params%stdev_eta_2 = ", pdf_params%stdev_eta_2
+        write(fstderr,*) "pdf_params%covar_chi_eta_1 = ", &
+                         pdf_params%covar_chi_eta_1
+        write(fstderr,*) "pdf_params%covar_chi_eta_2 = ", &
+                         pdf_params%covar_chi_eta_2
+        write(fstderr,*) "pdf_params%corr_w_chi_1 = ", pdf_params%corr_w_chi_1
+        write(fstderr,*) "pdf_params%corr_w_chi_2 = ", pdf_params%corr_w_chi_2
+        write(fstderr,*) "pdf_params%corr_w_eta_1 = ", pdf_params%corr_w_eta_1
+        write(fstderr,*) "pdf_params%corr_w_eta_2 = ", pdf_params%corr_w_eta_2
+        write(fstderr,*) "pdf_params%corr_chi_eta_1 = ", &
+                         pdf_params%corr_chi_eta_1
+        write(fstderr,*) "pdf_params%corr_chi_eta_2 = ", &
+                         pdf_params%corr_chi_eta_2
+        write(fstderr,*) "pdf_params%rsatl_1 = ", pdf_params%rsatl_1
+        write(fstderr,*) "pdf_params%rsatl_2 = ", pdf_params%rsatl_2
+        write(fstderr,*) "pdf_params%rc_1 = ", pdf_params%rc_1
+        write(fstderr,*) "pdf_params%rc_2 = ", pdf_params%rc_2
+        write(fstderr,*) "pdf_params%cloud_frac_1 = ", pdf_params%cloud_frac_1
+        write(fstderr,*) "pdf_params%cloud_frac_2 = ", pdf_params%cloud_frac_2
+        write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
+        write(fstderr,*) "pdf_params%ice_supersat_frac_1 = ", &
+                         pdf_params%ice_supersat_frac_1
+        write(fstderr,*) "pdf_params%ice_supersat_frac_2 = ", &
+                         pdf_params%ice_supersat_frac_2
 
-          if ( sclr_dim > 0 )then
-            write(fstderr,*) "sclrpthvp = ", sclrpthvp
-            write(fstderr,*) "sclrprcp = ", sclrprcp
-            write(fstderr,*) "wpsclrp2 = ", wpsclrp2
-            write(fstderr,*) "wpsclrprtp = ", wpsclrprtp
-            write(fstderr,*) "wpsclrpthlp = ", wpsclrpthlp
-            write(fstderr,*) "wp2sclrp = ", wp2sclrp
-          end if
-          return
+        if ( sclr_dim > 0 )then
+          write(fstderr,*) "sclrpthvp = ", sclrpthvp
+          write(fstderr,*) "sclrprcp = ", sclrprcp
+          write(fstderr,*) "wpsclrp2 = ", wpsclrp2
+          write(fstderr,*) "wpsclrprtp = ", wpsclrprtp
+          write(fstderr,*) "wpsclrpthlp = ", wpsclrpthlp
+          write(fstderr,*) "wp2sclrp = ", wp2sclrp
+        end if
 
-        end if ! Fatal error
+        return  
+
+      end if ! Fatal error
+          
+      do i = 1, ngrdcol
 
         ! Error check pdf parameters and moments to ensure consistency
         if ( iiPDF_type == iiPDF_3D_Luhar ) then
@@ -1802,6 +1842,7 @@ module pdf_closure_module
                   
       end do
     end do
+    !$acc end parallel loop
 
     ! Calculate covariance, correlation, and standard deviation of 
     ! chi and eta for each component
@@ -1851,7 +1892,7 @@ module pdf_closure_module
 
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
   end subroutine transform_pdf_chi_eta_component
   
@@ -1929,7 +1970,7 @@ module pdf_closure_module
                                         + ( w_2(i,k) - wm(i,k) )**4 )
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     return
 
@@ -2040,7 +2081,7 @@ module pdf_closure_module
                 + ( 1 + 2*corr_w_x_2(i,k)**2 ) * varnce_x_2(i,k) ) * varnce_w_2(i,k) )
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     return
 
@@ -2142,7 +2183,7 @@ module pdf_closure_module
                            * ( w_2(i,k) - wm(i,k) ) )
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     return
 
@@ -2243,7 +2284,7 @@ module pdf_closure_module
                         * ( x_2(i,k) - xm(i,k) ) )
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     return
 
@@ -2374,7 +2415,7 @@ module pdf_closure_module
                 + corr_w_x_2(i,k)*sqrt( varnce_w_2(i,k)*varnce_x_2(i,k) )*( y_2(i,k)-ym(i,k) ) )
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     return
 
@@ -2512,7 +2553,7 @@ module pdf_closure_module
         
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     return
 
@@ -2605,6 +2646,7 @@ module pdf_closure_module
           rc(i,k)                = rc_in(i,k)
         end do
       end do
+      !$acc end parallel loop
       return
     end if
 
@@ -2612,8 +2654,6 @@ module pdf_closure_module
 
     ! Calculate the saturation mixing ratio of ice
     rsat_ice = sat_mixrat_ice( nz, ngrdcol, p_in_Pa, tl )
-
-    !$acc update device(rsat_ice)
 
     !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
@@ -2664,7 +2704,7 @@ module pdf_closure_module
 
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     !$acc end data
 
@@ -3132,7 +3172,7 @@ module pdf_closure_module
         
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! If iiPDF_type isn't iiPDF_ADG1, iiPDF_ADG2, or iiPDF_new_hybrid, so
     ! corr_w_chi_i /= 0 (and perhaps corr_u_w_i /= 0).
@@ -3362,7 +3402,7 @@ module pdf_closure_module
 
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     return
 

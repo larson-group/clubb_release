@@ -27,13 +27,14 @@ module enhanced_simann
 
     contains
 !-----------------------------------------------------------------------------
-    subroutine esa_driver( xinit, xmin, xmax,                         & ! intent(in)
-                           initial_temp, max_final_temp,              & ! intent(inout)
-                           xopt, nrgy_opt,                            & ! intent(out)
-                           fobj,                                      & ! procedure
-                           stp_adjst_center_in, stp_adjst_spread_in,  & ! optional(in)
-                           f_tol_in, file_name, file_unit,            & ! ^
-                           iter_in                                    ) ! optional(inout)
+    subroutine esa_driver( xinit, xmin, xmax,                           & ! intent(in)
+                           initial_temp, max_final_temp,                & ! intent(inout)
+                           xopt, nrgy_opt,                              & ! intent(out)
+                           fobj,                                        & ! procedure
+                           stp_adjst_shift_in, stp_adjst_factor_in,     & ! optional(in)
+                           max_iters_in,                                & ! ^
+                           f_tol_in, file_name, file_unit,              & ! ^
+                           iter_in                                      ) ! optional(inout)
 
     ! Description:
     !   Driver subroutine
@@ -69,15 +70,16 @@ module enhanced_simann
 
         ! Input variables
         real( kind = core_rknd ), intent(in), optional :: &
-            stp_adjst_center_in,    & ! If improvement_ratio = this, no step adjust
-            stp_adjst_spread_in,    & ! Slope around stp_adjst_center
+            stp_adjst_shift_in,     & ! If improvement_ratio = this, no step adjust
+            stp_adjst_factor_in,    & ! Slope around stp_adjst_shift
             f_tol_in                  ! Threshold value to determine if cost improved
 
         character(len=50), intent(in), optional :: &
             file_name
 
         integer, intent(in), optional :: &
-            file_unit
+            file_unit, &
+            max_iters_in        ! Input value for max iterations
 
         integer, intent(inout), optional :: &
             iter_in
@@ -86,7 +88,6 @@ module enhanced_simann
 
         ! Stop conditions parameters
         integer, parameter :: &
-          max_iters = 2000,     & ! Max iterations
           no_improve_max = 3      ! Max num of temperature stages we allow 
                                   ! since the most recent improvement.
                                   ! A stage is a series of iterations at the same temperature.
@@ -103,9 +104,9 @@ module enhanced_simann
 
         ! Parameters for step vector adjustment
         real( kind = core_rknd ) :: &
-          stp_adjst_center  = 0.5_core_rknd,  & ! If improvement_ratio = this, no step change
-          stp_adjst_spread  = 1.0_core_rknd,  & ! Slope around stp_adjst_center
-          f_tol             = 1.e-4             ! Threshold value to determine if cost improved
+          stp_adjst_shift  = 0.5_core_rknd, & ! If improvement_ratio = this, no step change
+          stp_adjst_factor = 1.0_core_rknd, & ! Slope around stp_adjst_shift
+          f_tol            = 1.e-4            ! Threshold value to determine if cost improved
 
         ! Variable names based not on the paper because they were stupid
         real( kind = core_rknd ), dimension(size( xinit )) :: &
@@ -128,7 +129,8 @@ module enhanced_simann
           xpartition              ! List of variables being used this iteration
 
         integer :: &
-          iter,                 & ! Total iterations comepleted
+          max_iters = 2000,     & ! Max iterations
+          iter,                 & ! Total iterations completed
           stages_w_no_improve,  & ! Number of temperature stages since the most recent improvement
           vars,                 & ! Size of the a partion
           n1, n2,               & ! Annealing schedule
@@ -156,8 +158,9 @@ module enhanced_simann
 
         ! set values if optional arguements if present
         if ( present(f_tol_in) ) f_tol = f_tol_in
-        if ( present(stp_adjst_center_in) ) stp_adjst_center = stp_adjst_center_in
-        if ( present(stp_adjst_spread_in) ) stp_adjst_spread = stp_adjst_spread_in
+        if ( present(stp_adjst_shift_in) ) stp_adjst_shift = stp_adjst_shift_in
+        if ( present(stp_adjst_factor_in) ) stp_adjst_factor = stp_adjst_factor_in
+        if ( present(max_iters_in) ) max_iters = max_iters_in
         
         ! set annealing schedule, suggested values from the paper
         n1 = 12
@@ -291,10 +294,10 @@ module enhanced_simann
             improvement_ratio(:) = improved(:) / attempted(:)
 
             ! adjust variable based on improvement ratio
-            ! if improvement_ratio == stp_adjst_center, then step size will
+            ! if improvement_ratio == stp_adjst_shift, then step size will
             ! remain the same. 
-            stp_cur(:) = stp_cur(:) * (  stp_adjst_spread* &
-                         ( improvement_ratio(:) - stp_adjst_center ) + 1 )
+            stp_cur(:) = stp_cur(:) * (  stp_adjst_factor* &
+                         ( improvement_ratio(:) - stp_adjst_shift ) + 1 )
 
             ! too many iterations, so let's stop.
             if ( iter >= max_iters ) then
@@ -422,19 +425,33 @@ module enhanced_simann
 
     subroutine init_random
 
+        use error, only: &
+            l_use_prescribed_rand_seed, &   ! constant(s) 
+            prescribed_rand_seed
+
+        use constants_clubb, only: fstdout
+
         implicit none
 
         integer :: i, n, clock
         integer, dimension(:), allocatable :: seed
-      
+
         call random_seed(size = n)
         allocate(seed(n))
-      
-        call system_clock(count=clock)
-      
-        seed = clock + 37 * (/ (i - 1, i = 1, n) /)
+
+        if ( l_use_prescribed_rand_seed ) then
+            ! Use fixed value as random seed
+            seed = (/ (prescribed_rand_seed, i = 1, n) /)
+        else
+            ! Use clock to randomize seed value
+            call system_clock(count=clock)
+            seed = clock + 37 * (/ (i - 1, i = 1, n) /)
+        end if
+
+        write (fstdout,*) "Enhanced Simann random seed = ", seed
+
         call random_seed(PUT = seed)
-      
+
         deallocate(seed)
 
     end subroutine init_random

@@ -53,6 +53,11 @@ l_double_precision=false
 # significantly slower. This flag can be enabled by running this script with the -m option.
 l_use_mkl_lapack=false
 
+# This flag distinguishes between tuning and non-tuning mode.
+# It is set to true by using the -t option of this script.
+# As of Feb 2023 the only difference is an additional check to avoid crashes in pdf_closure_module.
+l_tuning=false
+
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
 
@@ -61,7 +66,6 @@ restoreDir=`pwd`
 
 # Change directories to the one the script is located in
 cd $scriptPath
-
 
 # Set using the default config flags
 	CONFIG=./config/linux_x86_64_gfortran.bash # Linux (Redhat Enterprise 5 / GNU)
@@ -97,7 +101,8 @@ while true ; do
 			shift;;
 		-t|--tuner) # Compile for CLUBB for tuning
 
-		    CPPDEFS="${CPPDEFS} -DTUNER"
+            l_tuning=true
+
 		    shift;;
         	-h|--help) # Print the help message
 
@@ -135,7 +140,7 @@ if [ -e $srcdir/COAMPS_microphys ]; then
 fi
 if ! "$l_double_precision"; then
 	if [ -e $srcdir/Numerical_recipes ]; then
-		CPPDEFS="${CPPDEFS} -DTUNER"
+		CPPDEFS="${CPPDEFS} -DNR_SP"
 	fi
 fi
 
@@ -149,6 +154,10 @@ if [ -e $srcdir/SILHS ]; then
 	CPPDEFS="${CPPDEFS} -DSILHS"
 	OPT_LIBS="${OPT_LIBS} -lsilhs"
 	lh_LIB="libsilhs.a"
+fi
+
+if "$l_tuning"; then
+    CPPDEFS="${CPPDEFS} -DTUNER"
 fi
 
 # Add miscellaneous preprocessor definitions

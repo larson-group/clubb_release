@@ -375,7 +375,7 @@ module saturation
     select case ( saturation_formula )
     case ( saturation_flatau )
 
-      !$acc parallel loop gang collapse(2)
+      !$acc parallel loop gang vector collapse(2)
       do k = start_index, nz
         do i = 1, ngrdcol
 
@@ -424,13 +424,13 @@ module saturation
             * ( T_in_C_sqd + 174.4279584934021_core_rknd * T_in_C + 7721.679732114084_core_rknd )
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
     case ( saturation_bolton )
 
       ! Using the Bolton 1980 approximations for SVP over vapor
       ! Generally this more computationally expensive than the Flatau polnomial expansion
-      !$acc parallel loop gang collapse(2)
+      !$acc parallel loop gang vector collapse(2)
       do k = start_index, nz
         do i = 1, ngrdcol
           esat(i,k) = 611.2_core_rknd &
@@ -438,13 +438,13 @@ module saturation
                              / (T_in_K(i,k)-29.65_core_rknd) ) ! Known magic number
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
 ! ---> h1g
     case ( saturation_gfdl )
 
       ! Using GFDL polynomial approximation for SVP with respect to liquid
-      !$acc parallel loop gang collapse(2)
+      !$acc parallel loop gang vector collapse(2)
       do k = start_index, nz
         do i = 1, ngrdcol
 
@@ -464,13 +464,13 @@ module saturation
                log10(1013.246_core_rknd))*100._core_rknd ! Known magic number
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
 ! <--- h1g
 
     case ( saturation_lookup ) 
 
-      !$acc parallel loop gang collapse(2)
+      !$acc parallel loop gang vector collapse(2)
       do k = start_index, nz
         do i = 1, ngrdcol
           T_in_K_int = int( anint( T_in_K(i,k) ) )
@@ -483,6 +483,7 @@ module saturation
           esat(i,k) = svp_liq_lookup_table( T_in_K_int )
         end do
       end do
+      !$acc end parallel loop
 
     case default
 
@@ -491,7 +492,7 @@ module saturation
        
     end select
 
-    !$acc parallel loop gang collapse(2)
+    !$acc parallel loop gang vector collapse(2)
     do k = start_index, nz
       do i = 1, ngrdcol
 
@@ -522,6 +523,7 @@ module saturation
         
       end do
     end do
+    !$acc end parallel loop
 
     !$acc end data
     
@@ -964,6 +966,7 @@ module saturation
 
         end do
       end do
+      !$acc end parallel loop
 
     case ( saturation_flatau )
 
@@ -991,6 +994,7 @@ module saturation
 
         end do
       end do
+      !$acc end parallel loop
 
 ! ---> h1g, 2010-06-16
     case ( saturation_gfdl )
@@ -1014,6 +1018,8 @@ module saturation
                     log10(6.1071_core_rknd))*100._core_rknd ! Known magic number
         end do
       end do
+      !$acc end parallel loop
+
 ! <--- h1g, 2010-06-16
 
     case default
@@ -1055,6 +1061,7 @@ module saturation
         end if
       end do
     end do
+    !$acc end parallel loop
 
     !$acc end data
 

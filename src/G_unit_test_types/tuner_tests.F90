@@ -8,7 +8,7 @@
 !   percent of the time. This percentage was determined experimentally by spending
 !   a long time seeing what the best percentage I could get was. The variables that
 !   were changed to increase this global minimum finding ratio are intial_temp, 
-!   stp_adjst_center, and stp_adjust_spread
+!   stp_adjst_intercept, and stp_adjst_slope
 ! 
 ! Functions:
 ! 
@@ -158,7 +158,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: goldstein_price_test, nrgy_opt, &
-                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_intercept, stp_adjst_slope, f_tol
 
         integer :: &
             pass_count, &
@@ -173,8 +173,8 @@ module tuner_tests
 
         intial_temp = 450._core_rknd
         max_final_temp = 1.e-10_core_rknd
-        stp_adjst_center = 0.58_core_rknd
-        stp_adjst_spread = 0.28_core_rknd
+        stp_adjst_intercept = 0.58_core_rknd
+        stp_adjst_slope = 0.28_core_rknd
 
         do k = 1, samples
 
@@ -194,8 +194,8 @@ module tuner_tests
                                  intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  goldstein_price,                       & ! procedure    
-                                 stp_adjst_center, stp_adjst_spread,    & ! optional(in)
-                                 f_tol                                  ) ! ^
+                                 stp_adjst_intercept, stp_adjst_slope,  & ! optional(in)
+                                 f_tol_in=f_tol                         ) ! ^
 
             end if
            
@@ -245,7 +245,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: rastrigin_test, nrgy_opt, &
-                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_intercept, stp_adjst_slope, f_tol
 
         integer :: &
             pass_count, &
@@ -259,8 +259,8 @@ module tuner_tests
 
         intial_temp = 20.
         max_final_temp = 1.e-10_core_rknd
-        stp_adjst_center = 0.694
-        stp_adjst_spread = 0.1
+        stp_adjst_intercept = 0.694
+        stp_adjst_slope = 0.1
         
 
         do k = 1, samples
@@ -278,8 +278,8 @@ module tuner_tests
                                  intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  rastrigin,                             & ! procedure    
-                                 stp_adjst_center, stp_adjst_spread,    & ! optional(in)
-                                 f_tol                                  ) ! ^
+                                 stp_adjst_intercept, stp_adjst_slope,  & ! optional(in)
+                                 f_tol_in=f_tol                         ) ! ^
             end if
 
            
@@ -325,7 +325,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: himmelblau_test, nrgy_opt, &
-                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_intercept, stp_adjst_slope, f_tol
 
         integer :: &
             pass_count, &
@@ -340,8 +340,8 @@ module tuner_tests
 
         intial_temp = 10._core_rknd
         max_final_temp = 1.e-10_core_rknd
-        stp_adjst_center = 0.96_core_rknd
-        stp_adjst_spread = 0.8_core_rknd
+        stp_adjst_intercept = 0.96_core_rknd
+        stp_adjst_slope = 0.8_core_rknd
         
         do k = 1, samples
 
@@ -358,8 +358,8 @@ module tuner_tests
                                  intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  himmelblau,                            & ! procedure    
-                                 stp_adjst_center, stp_adjst_spread,    & ! optional(in)
-                                 f_tol                                  ) ! ^
+                                 stp_adjst_intercept, stp_adjst_slope,  & ! optional(in)
+                                 f_tol_in=f_tol                         ) ! ^
             end if
            
             
@@ -405,7 +405,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: eggholder_test, nrgy_opt, &
-                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_intercept, stp_adjst_slope, f_tol
 
         integer :: &
             pass_count, &
@@ -420,8 +420,8 @@ module tuner_tests
 
         intial_temp = 85000._core_rknd
         max_final_temp = 1.e-10_core_rknd
-        stp_adjst_center = 0.128_core_rknd
-        stp_adjst_spread = 0.87_core_rknd
+        stp_adjst_intercept = 0.128_core_rknd
+        stp_adjst_slope = 0.87_core_rknd
         
         do k = 1, samples
 
@@ -439,8 +439,8 @@ module tuner_tests
                                  intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  eggholder,                             & ! procedure    
-                                 stp_adjst_center, stp_adjst_spread,    & ! optional(in)
-                                 f_tol                                  ) ! ^
+                                 stp_adjst_intercept, stp_adjst_slope,  & ! optional(in)
+                                 f_tol_in=f_tol                         ) ! ^
                 
             end if
            
@@ -480,7 +480,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: schaffer_test, nrgy_opt, &
-                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_intercept, stp_adjst_slope, f_tol
 
         integer :: &
             pass_count, &
@@ -495,8 +495,8 @@ module tuner_tests
 
         intial_temp = 20._core_rknd
         max_final_temp = 1.e-10_core_rknd
-        stp_adjst_center = 0.8_core_rknd
-        stp_adjst_spread = 0.4_core_rknd
+        stp_adjst_intercept = 0.8_core_rknd
+        stp_adjst_slope = 0.4_core_rknd
        
 
         do k = 1, samples
@@ -514,8 +514,8 @@ module tuner_tests
                                  intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  schaffer,                              & ! procedure    
-                                 stp_adjst_center, stp_adjst_spread,    & ! optional(in)
-                                 f_tol                                  ) ! ^
+                                 stp_adjst_intercept, stp_adjst_slope,  & ! optional(in)
+                                 f_tol_in=f_tol                         ) ! ^
             end if
            
             ! if all x ~= 0 then global minimum found
