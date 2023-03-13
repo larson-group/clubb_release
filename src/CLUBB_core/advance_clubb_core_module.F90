@@ -146,6 +146,7 @@ module advance_clubb_core_module
                host_dx, host_dy, &                                  ! intent(in)
                clubb_params, nu_vert_res_dep, lmin, &               ! intent(in)
                clubb_config_flags, &                                ! intent(in)
+               l_modify_limiters_for_cnvg_test, &                   ! intent(in)
                stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
@@ -532,6 +533,13 @@ module advance_clubb_core_module
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
+
+    ! Flag to activate modifications on limiters for convergence test 
+    ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
+    ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
+    ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
+    logical, intent(in) :: &
+      l_modify_limiters_for_cnvg_test
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
@@ -1350,6 +1358,7 @@ module advance_clubb_core_module
                         clubb_config_flags%l_brunt_vaisala_freq_moist,            & ! In
                         clubb_config_flags%l_use_thvm_in_bv_freq,                 & ! In
                         clubb_config_flags%l_smooth_Heaviside_tau_wpxp,           & ! In
+                        l_modify_limiters_for_cnvg_test,                          & ! In 
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,     & ! Out
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! Out
                         brunt_vaisala_freq_sqd_plus,                              & ! Out
@@ -1673,6 +1682,7 @@ module advance_clubb_core_module
                                       clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
                                       clubb_config_flags%l_use_thvm_in_bv_freq,      & ! intent(in
                                       clubb_config_flags%l_use_shear_Richardson,     & ! intent(in)
+                                      l_modify_limiters_for_cnvg_test,               & ! intent(in)
                                       stats_zm,                                      & ! intent(inout)
                                       Cx_fnc_Richardson )                              ! intent(out)
     else

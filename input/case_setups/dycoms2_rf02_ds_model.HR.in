@@ -87,6 +87,9 @@ l_restart      = .false.  ! Flag for whether this is a restart run.
 restart_path_case  = "restart/dycoms2_rf02_ds_HR"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
+l_modify_ic_with_cubic_int = .true. ! Initial sounding uses monotonic cubic interpolation
+l_modify_bc_for_cnvg_test = .true. ! Modify surface boundary conditions for convergence test
+l_modify_limiters_for_cnvg_test = .false. ! Modify limiters for convergence test
 
 ! Select debug level:
 !        0 => Print no debug messages to the screen

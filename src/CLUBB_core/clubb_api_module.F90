@@ -505,7 +505,7 @@ module clubb_api_module
     set_default_clubb_config_flags_api, &
     initialize_clubb_config_flags_type_api, &
     print_clubb_config_flags_api
-
+   
   public &
     thlm_sponge_damp_settings,      & ! Variable(s)
     rtm_sponge_damp_settings,       &
@@ -588,6 +588,7 @@ contains
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
+    l_modify_limiters_for_cnvg_test, &                      ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
@@ -751,6 +752,12 @@ contains
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
 
+    ! Flag to activate modifications on limiters for convergence test 
+    ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
+    ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
+    ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
+    logical, intent(in) :: &
+      l_modify_limiters_for_cnvg_test 
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
@@ -1225,6 +1232,7 @@ contains
       host_dx_col, host_dy_col, &                                     ! intent(in)
       clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
       clubb_config_flags, &                                   ! intent(in)
+      l_modify_limiters_for_cnvg_test, &                      ! intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col, &                        ! intent(inout)
       um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &               ! intent(inout)
       thlm_col, rtm_col, wprtp_col, wpthlp_col, &                             ! intent(inout)
@@ -1365,6 +1373,7 @@ contains
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
+    l_modify_limiters_for_cnvg_test, &                      ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
@@ -1525,6 +1534,13 @@ contains
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
 
+    ! Flag to activate modifications on limiters for convergence test 
+    ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
+    ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
+    ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
+    logical, intent(in) :: &
+      l_modify_limiters_for_cnvg_test
+
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
@@ -1664,6 +1680,7 @@ contains
       host_dx, host_dy, &                                     ! intent(in)
       clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
       clubb_config_flags, &                                   ! intent(in)
+      l_modify_limiters_for_cnvg_test, &                      ! intent(in)
       stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
       um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
       thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)

@@ -359,6 +359,12 @@ module clubb_driver
     ! (surface fluxes computed at fixed 25 m height).
     logical :: l_modify_bc_for_cnvg_test
 
+    ! Flag to activate modifications on limiters for convergence test 
+    ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
+    ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
+    ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
+    logical :: l_modify_limiters_for_cnvg_test 
+    
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
@@ -872,7 +878,8 @@ module clubb_driver
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, l_modify_ic_with_cubic_int, &
-      l_modify_bc_for_cnvg_test, saturation_formula, &
+      l_modify_bc_for_cnvg_test, l_modify_limiters_for_cnvg_test, &
+      saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, &
       uv_sponge_damp_settings, wp2_sponge_damp_settings, &
       wp3_sponge_damp_settings, up2_vp2_sponge_damp_settings, &
@@ -942,7 +949,8 @@ module clubb_driver
     l_ignore_forcings = .false. 
     l_modify_ic_with_cubic_int = .false.
     l_modify_bc_for_cnvg_test = .false.
-
+    l_modify_limiters_for_cnvg_test = .false.
+ 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
     uv_sponge_damp_settings%l_sponge_damping = .false.
@@ -1250,6 +1258,7 @@ module clubb_driver
       call write_text( "l_ignore_forcings = ", l_ignore_forcings, l_write_to_file, iunit )
       call write_text( "l_modify_ic_with_cubic_int = ", l_modify_ic_with_cubic_int, l_write_to_file, iunit )
       call write_text( "l_modify_bc_for_cnvg_test = ", l_modify_bc_for_cnvg_test, l_write_to_file, iunit )
+      call write_text( "l_modify_limiters_for_cnvg_test = ", l_modify_limiters_for_cnvg_test, l_write_to_file, iunit )
       call write_text( "l_input_xpwp_sfc = ", l_input_xpwp_sfc, l_write_to_file, iunit )
 
       call write_text( "saturation_formula = " // saturation_formula, &
@@ -2393,6 +2402,7 @@ module clubb_driver
                dummy_dx, dummy_dy, &                                                ! Intent(in)
                params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
                clubb_config_flags, &                                                ! Intent(in)
+               l_modify_limiters_for_cnvg_test, &                                   ! Intent(in) 
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
                thlm(1,:), rtm(1,:), wprtp, wpthlp, &                                ! Intent(inout)
@@ -2442,6 +2452,7 @@ module clubb_driver
                dummy_dx, dummy_dy, &                                                ! Intent(in)
                params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
                clubb_config_flags, &                                                ! Intent(in)
+               l_modify_limiters_for_cnvg_test, &                                   ! Intent(in) 
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
                thlm(1,:), rtm(1,:), wprtp, wpthlp, &                                ! Intent(inout)
@@ -6311,6 +6322,7 @@ module clubb_driver
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
+    l_modify_limiters_for_cnvg_test, &                      ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
@@ -6563,6 +6575,13 @@ module clubb_driver
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
+
+    ! Flag to activate modifications on limiters for convergence test 
+    ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
+    ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
+    ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
+    logical, intent(in) :: &
+      l_modify_limiters_for_cnvg_test
 
     ! ------------------------- Input/Output Variables -------------------------
     type(stats), target, intent(inout) :: &
@@ -7262,6 +7281,7 @@ module clubb_driver
       host_dx_col, host_dy_col,                                                 & ! intent(in)
       clubb_params, nu_vert_res_dep_col, lmin_col,                              & ! intent(in)
       clubb_config_flags,                                                       & ! intent(in)
+      l_modify_limiters_for_cnvg_test,                                          & ! intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col,                                & ! intent(inout)
       um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col,   & ! intent(inout)
       thlm_col, rtm_col, wprtp_col, wpthlp_col,                                 & ! intent(inout)
