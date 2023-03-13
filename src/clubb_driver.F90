@@ -359,6 +359,10 @@ module clubb_driver
     ! (surface fluxes computed at fixed 25 m height).
     logical :: l_modify_bc_for_cnvg_test
 
+    ! Flag to activate modifications on wp3 limiters for convergence test 
+    ! (use smooth Heaviside 'Preskin' function in the calculation of clip_skewness for wp3) 
+    logical :: l_use_wp3_lim_with_smth_Heaviside
+
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
@@ -872,7 +876,8 @@ module clubb_driver
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, l_modify_ic_with_cubic_int, &
-      l_modify_bc_for_cnvg_test, saturation_formula, &
+      l_modify_bc_for_cnvg_test, l_use_wp3_lim_with_smth_Heaviside, & 
+      saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, &
       uv_sponge_damp_settings, wp2_sponge_damp_settings, &
       wp3_sponge_damp_settings, up2_vp2_sponge_damp_settings, &
@@ -942,6 +947,7 @@ module clubb_driver
     l_ignore_forcings = .false. 
     l_modify_ic_with_cubic_int = .false.
     l_modify_bc_for_cnvg_test = .false.
+    l_use_wp3_lim_with_smth_Heaviside = .false.
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
@@ -1250,6 +1256,8 @@ module clubb_driver
       call write_text( "l_ignore_forcings = ", l_ignore_forcings, l_write_to_file, iunit )
       call write_text( "l_modify_ic_with_cubic_int = ", l_modify_ic_with_cubic_int, l_write_to_file, iunit )
       call write_text( "l_modify_bc_for_cnvg_test = ", l_modify_bc_for_cnvg_test, l_write_to_file, iunit )
+      call write_text( "l_use_wp3_lim_with_smth_Heaviside = ", l_use_wp3_lim_with_smth_Heaviside, l_write_to_file, iunit )
+
       call write_text( "l_input_xpwp_sfc = ", l_input_xpwp_sfc, l_write_to_file, iunit )
 
       call write_text( "saturation_formula = " // saturation_formula, &
@@ -2280,7 +2288,7 @@ module clubb_driver
         if( l_input_wp3 ) then
           wp2_zt(1,:) = max( zm2zt( gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
           call clip_skewness_core( gr%nz, 1, gr, sfc_elevation(:), params(iSkw_max_mag), &
-                                   wp2_zt(1,:), wp3(1,:) )
+                                   wp2_zt(1,:), l_use_wp3_lim_with_smth_Heaviside, wp3(1,:) )
         end if
       end if
 
@@ -2393,6 +2401,7 @@ module clubb_driver
                dummy_dx, dummy_dy, &                                                ! Intent(in)
                params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
                clubb_config_flags, &                                                ! Intent(in)
+               l_use_wp3_lim_with_smth_Heaviside, &                                 ! Intent(in) 
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
                thlm(1,:), rtm(1,:), wprtp, wpthlp, &                                ! Intent(inout)
@@ -2442,6 +2451,7 @@ module clubb_driver
                dummy_dx, dummy_dy, &                                                ! Intent(in)
                params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
                clubb_config_flags, &                                                ! Intent(in)
+               l_use_wp3_lim_with_smth_Heaviside, &                                 ! Intent(in)      
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
                thlm(1,:), rtm(1,:), wprtp, wpthlp, &                                ! Intent(inout)
@@ -6311,6 +6321,7 @@ module clubb_driver
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
+    l_use_wp3_lim_with_smth_Heaviside, &                    ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
@@ -6563,6 +6574,11 @@ module clubb_driver
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
+
+    ! Flag to activate modifications on wp3 limiters for convergence test 
+    ! (use smooth Heaviside 'Preskin' function in the calculation of
+    ! clip_skewness for wp3) 
+    logical, intent(in):: l_use_wp3_lim_with_smth_Heaviside
 
     ! ------------------------- Input/Output Variables -------------------------
     type(stats), target, intent(inout) :: &
@@ -7262,6 +7278,7 @@ module clubb_driver
       host_dx_col, host_dy_col,                                                 & ! intent(in)
       clubb_params, nu_vert_res_dep_col, lmin_col,                              & ! intent(in)
       clubb_config_flags,                                                       & ! intent(in)
+      l_use_wp3_lim_with_smth_Heaviside,                                        & ! intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col,                                & ! intent(inout)
       um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col,   & ! intent(inout)
       thlm_col, rtm_col, wprtp_col, wpthlp_col,                                 & ! intent(inout)

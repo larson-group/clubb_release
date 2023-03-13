@@ -146,6 +146,7 @@ module advance_clubb_core_module
                host_dx, host_dy, &                                  ! intent(in)
                clubb_params, nu_vert_res_dep, lmin, &               ! intent(in)
                clubb_config_flags, &                                ! intent(in)
+               l_use_wp3_lim_with_smth_Heaviside, &                 ! intent(in)
                stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
@@ -532,6 +533,11 @@ module advance_clubb_core_module
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
+
+    ! Flag to activate modifications on wp3 limiters for convergence test 
+    ! (use smooth Heaviside 'Preskin' function in the calculation of clip_skewness for wp3) 
+    logical, intent(in):: &
+      l_use_wp3_lim_with_smth_Heaviside
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
@@ -1914,6 +1920,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_lmm_stepping,                    & ! intent(in)
                             clubb_config_flags%l_use_tke_in_wp3_pr_turb_term,     & ! intent(in)
                             clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn,       & ! intent(in)
+                            l_use_wp3_lim_with_smth_Heaviside,                    & ! intent(in) 
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
                             wp2, wp3, wp3_zm, wp2_zt )                              ! intent(inout)
 

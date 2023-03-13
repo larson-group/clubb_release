@@ -962,6 +962,7 @@ module clip_explicit
   !=============================================================================
   subroutine clip_skewness( nz, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
                             Skw_max_mag, wp2_zt,                & ! intent(in)
+                            l_use_wp3_lim_with_smth_Heaviside,  & ! intent(in)
                             stats_zt,                           & ! intent(inout)
                             wp3 )                                 ! intent(out)
 
@@ -1041,6 +1042,12 @@ module clip_explicit
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
 
+    ! Flag to activate modifications on wp3 limiters for convergence test 
+    ! (use smooth Heaviside 'Preskin' function in the calculation of
+    ! clip_skewness for wp3) 
+    logical, intent(in):: &
+      l_use_wp3_lim_with_smth_Heaviside
+
     ! ----------------------- Input/Output Variables -----------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zt
@@ -1060,9 +1067,10 @@ module clip_explicit
       end do
     end if
 
-    call clip_skewness_core( nz, ngrdcol, gr, sfc_elevation,  & ! intent(in)
-                             Skw_max_mag, wp2_zt,             & ! intent(in)
-                             wp3 )                              ! intent(inout)
+    call clip_skewness_core( nz, ngrdcol, gr, sfc_elevation,    & ! intent(in)
+                             Skw_max_mag, wp2_zt,               & ! intent(in)
+                             l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
+                             wp3 )                                ! intent(inout)
 
     if ( l_stats_samp ) then
       do i = 1, ngrdcol
@@ -1077,6 +1085,7 @@ module clip_explicit
 !=============================================================================
   subroutine clip_skewness_core( nz, ngrdcol, gr, sfc_elevation, &
                                  Skw_max_mag, wp2_zt, &
+                                 l_use_wp3_lim_with_smth_Heaviside, & 
                                  wp3 )
 !
     use grid_class, only: & 
@@ -1084,6 +1093,9 @@ module clip_explicit
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use advance_helper_module, only: &
+        smooth_heaviside_peskin
 
     implicit none
 
@@ -1103,6 +1115,11 @@ module clip_explicit
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
 
+    ! Flag to activate modifications on wp3 limiters for convergence test 
+    ! (use smooth Heaviside 'Preskin' function in the calculation of clip_skewness for wp3) 
+    logical, intent(in):: &
+      l_use_wp3_lim_with_smth_Heaviside
+
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
       wp3              ! w'^3 (thermodynamic levels)                [m^3/s^3]
@@ -1116,6 +1133,10 @@ module clip_explicit
 
     real( kind = core_rknd ), parameter :: &  
       wp3_max = 100._core_rknd ! Threshold for wp3 [m^3/s^3]      
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      zagl_thresh, & ! temporatory array  
+      H_zagl ! Heaviside function for clippings of wp3_lim_sqd
 
     ! ---- Begin Code ----
 
@@ -1139,20 +1160,42 @@ module clip_explicit
 
     wp2_zt_cubed(:,:) = wp2_zt(:,:)**3
 
-    do k = 1, nz
-      do i = 1, ngrdcol
-        if ( gr%zt(i,k) - sfc_elevation(i) <= 100.0_core_rknd ) then ! Clip for 100 m. AGL.
-         !wp3_upper_lim(k) =  0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
-         !wp3_lower_lim(k) = -0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
-          wp3_lim_sqd(i,k) = 0.0021_core_rknd * Skw_max_mag**2 * wp2_zt_cubed(i,k)
-        else                          ! Clip skewness consistently with a.
-         !wp3_upper_lim(k) =  4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
-         !wp3_lower_lim(k) = -4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
-          wp3_lim_sqd(i,k) = Skw_max_mag**2 * wp2_zt_cubed(i,k) ! Skw_max_mag = 4.5_core_rknd^2
-        endif
-      end do
-    end do
+    if (l_use_wp3_lim_with_smth_Heaviside) then 
 
+      !implement a smoothed Heaviside function to avoid discontinuities 
+      do i = 1, ngrdcol
+        zagl_thresh(i,:) = ( gr%zt(i,:) - sfc_elevation(i) ) /  100.0_core_rknd 
+        zagl_thresh(i,:) = zagl_thresh(i,:)  - 1.0_core_rknd 
+        H_zagl(i,:) = smooth_heaviside_peskin(zagl_thresh(i,:), 0.6_core_rknd) 
+      end do
+
+      do k = 1, nz
+        do i = 1, ngrdcol
+          wp3_lim_sqd(i,k) = wp2_zt_cubed(i,k)   &
+                              * ( H_zagl(i,k) * Skw_max_mag**2   &
+                                  + (1.0_core_rknd - H_zagl(i,k)) & 
+                                     * 0.0021_core_rknd *Skw_max_mag**2 )
+        end do
+      end do
+
+    else ! default method 
+
+      do k = 1, nz
+        do i = 1, ngrdcol
+          if ( gr%zt(i,k) - sfc_elevation(i) <= 100.0_core_rknd ) then ! Clip for 100 m. AGL.
+           !wp3_upper_lim(k) =  0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
+           !wp3_lower_lim(k) = -0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
+            wp3_lim_sqd(i,k) = 0.0021_core_rknd * Skw_max_mag**2 * wp2_zt_cubed(i,k)
+          else                          ! Clip skewness consistently with a.
+           !wp3_upper_lim(k) =  4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
+           !wp3_lower_lim(k) = -4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
+            wp3_lim_sqd(i,k) = Skw_max_mag**2 * wp2_zt_cubed(i,k) ! Skw_max_mag = 4.5_core_rknd^2
+          endif
+        end do
+      end do
+
+    end if
+  
     ! Clipping for w'^3 at an upper and lower limit corresponding with
     ! the appropriate value of Sk_w.
     do k = 1, nz
