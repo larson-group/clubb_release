@@ -17,6 +17,7 @@ module sfc_varnce_module
                               wp2_splat_sfc, tau_zm_sfc, &
                               depth_pos_wpthlp, up2_sfc_coef, &
                               l_vary_convect_depth, &
+                              clubb_params, &
                               wp2_sfc, up2_sfc, vp2_sfc, & 
                               thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
                               sclrp2_sfc, & 
@@ -55,6 +56,10 @@ module sfc_varnce_module
 
     use parameters_model, only: & 
         sclr_dim  ! Variable(s)
+
+    use parameter_indices, only: &
+        nparams, &
+        ia_const
 
     use numerical_check, only: & 
         sfc_varnce_check ! Procedure
@@ -101,6 +106,9 @@ module sfc_varnce_module
       ! Vince Larson reduced surface spike in scalar variances associated
       ! w/ Andre et al. 1978 scheme
       reduce_coef   = 0.2_core_rknd
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
@@ -160,11 +168,16 @@ module sfc_varnce_module
 
     integer :: i ! Loop index
 
-    if ( .not. l_vary_convect_depth ) then
-       a_const = 1.8_core_rknd
-    else
-       a_const = 0.6_core_rknd 
-    end if
+    !----- Begin Code -----
+
+    ! a_const used to be set here; now it is a tunable parameter
+    !if ( .not. l_vary_convect_depth ) then
+    !   a_const = 1.8_core_rknd
+    !else
+    !   a_const = 0.6_core_rknd
+    !end if
+
+    a_const = clubb_params(ia_const) 
 
     if ( l_andre_1978 ) then
 

@@ -1459,6 +1459,7 @@ module advance_clubb_core_module
                              wp2_splat(i,1), tau_zm(i,1),                        & ! intent(in)
                              depth_pos_wpthlp(i), clubb_params(iup2_sfc_coef),  & ! intent(in)
                              clubb_config_flags%l_vary_convect_depth,        & ! intent(in)
+                             clubb_params,                                   & ! intent(in)
                              wp2(i,1), up2(i,1), vp2(i,1),                         & ! intent(out)
                              thlp2(i,1), rtp2(i,1), rtpthlp(i,1),                  & ! intent(out)
                              sclrp2(i,1,1:sclr_dim),                           & ! intent(out)

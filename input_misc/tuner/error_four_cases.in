@@ -162,6 +162,7 @@ Richardson_num_max_minmax           = 0., 0.
 Cx_min_minmax                       = 0., 0.
 Cx_max_minmax                       = 0., 0.
 a3_coef_min_minmax                  = 0., 0.
+a_const_minmax                      = 0., 0.
 /
 
 &parameter_constraints
