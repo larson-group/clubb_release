@@ -64,24 +64,37 @@ module Skx_module
 
     ! ---- Begin Code ----
 
+    !$acc data copyin( xp2, xp3 ) &
+    !$acc      copyout( Skx )
+
     Skx_denom_tol = Skw_denom_coef * x_tol**2
 
     !Skx = xp3 / ( max( xp2, x_tol**two ) )**three_halves
     ! Calculation of skewness to help reduce the sensitivity of this value to
     ! small values of xp2.
+    !$acc parallel loop gang vector collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         Skx(i,k) = xp3(i,k) / ( ( xp2(i,k) + Skx_denom_tol ) * sqrt( xp2(i,k) + Skx_denom_tol ) )
       end do
     end do
+    !$acc end parallel loop
 
     ! This is no longer needed since clipping is already
     ! imposed on wp2 and wp3 elsewhere in the code
 
     ! I turned clipping on in this local copy since thlp3 and rtp3 are not clipped
     if ( l_clipping_kluge ) then
-      Skx = min( max( Skx, -Skw_max_mag ), Skw_max_mag )
+      !$acc parallel loop gang vector collapse(2)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          Skx(i,k) = min( max( Skx(i,k), -Skw_max_mag ), Skw_max_mag )
+        end do
+      end do
+      !$acc end parallel loop
     end if
+
+    !$acc end data
 
     return
 

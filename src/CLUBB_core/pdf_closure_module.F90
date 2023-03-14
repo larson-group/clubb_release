@@ -38,7 +38,7 @@ module pdf_closure_module
   !#######################################################################
   subroutine pdf_closure( nz, ngrdcol,                                &
                           hydromet_dim, p_in_Pa, exner, thv_ds,       &
-                          wm, wp2, wp3, sigma_sqd_w,                  &
+                          wm, wp2, wp3,                               &
                           Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,     &
                           rtm, rtp2, wprtp,                           &
                           thlm, thlp2, wpthlp,                        &
@@ -55,6 +55,8 @@ module pdf_closure_module
                           rtphmp, thlphmp,                            &
                           clubb_params,                               &
                           iiPDF_type,                                 &
+                          sigma_sqd_w,                                &
+                          pdf_params, pdf_implicit_coefs_terms,       &
                           wpup2, wpvp2,                               &
                           wp2up2, wp2vp2, wp4,                        &
                           wprtp2, wp2rtp,                             &
@@ -66,7 +68,6 @@ module pdf_closure_module
                           uprcp, vprcp,                               &
                           w_up_in_cloud, w_down_in_cloud,             &
                           cloudy_updraft_frac, cloudy_downdraft_frac, &
-                          pdf_params, pdf_implicit_coefs_terms,       &
                           F_w, F_rt, F_thl,                           &
                           min_F_w, max_F_w,                           &
                           min_F_rt, max_F_rt,                         &
@@ -184,9 +185,7 @@ module pdf_closure_module
 
     implicit none
 
-    intrinsic :: sqrt, exp, min, max, abs, present
-
-    ! Input Variables
+    !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       hydromet_dim, & ! Number of hydrometeor species              [#]
       nz, &
@@ -240,7 +239,7 @@ module pdf_closure_module
 ! <--- h1g, 2012-06-14
 #endif
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz, hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,hydromet_dim)), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor    [(m/s) <hm units>]
       wp2hmp,      & ! Third-order moment:  < w'^2 hm' >    [(m/s)^2 <hm units>]
       rtphmp,      & ! Covariance of rt and a hydrometeor   [(kg/kg) <hm units>]
@@ -255,12 +254,19 @@ module pdf_closure_module
                     ! w, chi, and eta) portion of CLUBB's multivariate,
                     ! two-component PDF.
 
+    !----------------------------- InOut Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
       ! If iiPDF_type == iiPDF_ADG2, this gets overwritten. Therefore,
       ! intent(inout). Otherwise it should be intent(in)
       sigma_sqd_w   ! Width of individual w plumes               [-]
 
-    ! Output Variables
+    type(pdf_parameter), intent(inout) :: & 
+      pdf_params     ! pdf paramters         [units vary]
+
+    type(implicit_coefs_terms), intent(inout) :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+    !----------------------------- Output Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  & 
       wpup2,                 & ! w'u'^2                     [m^3/s^3]
       wpvp2,                 & ! w'v'^2                     [m^3/s^3]
@@ -293,12 +299,6 @@ module pdf_closure_module
       uprcp,              & ! u' r_c'               [(m kg)/(s kg)]
       vprcp                 ! v' r_c'               [(m kg)/(s kg)]
 
-    type(pdf_parameter), intent(inout) :: & 
-      pdf_params     ! pdf paramters         [units vary]
-
-    type(implicit_coefs_terms), intent(inout) :: &
-      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
-
     ! Parameters output only for recording statistics (new PDF).
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       F_w,   & ! Parameter for the spread of the PDF component means of w    [-]
@@ -314,7 +314,6 @@ module pdf_closure_module
       max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
 
     ! Output (passive scalar variables)
-
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz, sclr_dim) ::  & 
       sclrpthvp, & 
       sclrprcp, & 
@@ -326,7 +325,7 @@ module pdf_closure_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       rc_coef    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
 
-    ! Local Variables
+    !----------------------------- Local Variables -----------------------------
 
     ! Variables that are stored in derived data type pdf_params.
     real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
@@ -434,7 +433,7 @@ module pdf_closure_module
                                             t3_combined = 238.16 
 #endif
 
-  !------------------------ Code Begins ----------------------------------
+    !----------------------------- Begin Code -----------------------------
 
     !$acc declare create( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
     !$acc                 varnce_v_1, varnce_v_2, alpha_u, alpha_v, &
