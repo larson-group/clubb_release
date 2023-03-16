@@ -3821,15 +3821,15 @@ module advance_clubb_core_module
                    'rtm < rcm after pdf_closure', & ! intent(in)
                    rcm )                            ! intent(inout)
 
-    if ( l_use_cloud_cover ) then
-      ! Compute variables cloud_cover and rcm_in_layer.
-      ! Added July 2009
-      call compute_cloud_cover( gr, nz, ngrdcol,             & ! intent(in)
-                                pdf_params, cloud_frac, rcm, & ! intent(in)
-                                cloud_cover, rcm_in_layer )    ! intent(out)
+    ! Compute variables cloud_cover and rcm_in_layer.
+    ! Added July 2009
+    call compute_cloud_cover( gr, nz, ngrdcol,             & ! intent(in)
+                              pdf_params, cloud_frac, rcm, & ! intent(in)
+                              cloud_cover, rcm_in_layer )    ! intent(out)
 
-    ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help
-    ! increase cloudiness at coarser grid resolutions.
+    if ( l_use_cloud_cover ) then
+      ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help
+      ! increase cloudiness at coarser grid resolutions.
       !$acc parallel loop gang vector collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
