@@ -3301,7 +3301,7 @@ module advance_clubb_core_module
 
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
 
-      !$acc update host( Skw_zt, Skw_zm, Skthl_zt, Skrt_zt, Skrt_zm )
+      !$acc update host( Skw_zt, Skw_zm, Skthl_zt, Skrt_zt, Skrt_zm, Skthl_zm )
 
       do i = 1, ngrdcol
         call stat_update_var( iSkw_zt, Skw_zt(i,:), & ! In
