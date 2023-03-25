@@ -255,7 +255,7 @@ module mixing_length
     tke_i = zm2zt( nz, ngrdcol, gr, em )
  
     ! Initialize arrays and precalculate values for computational efficiency
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do k = 1, nz
 
@@ -274,7 +274,7 @@ module mixing_length
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! Avoid uninitialized memory (these values are not used in Lscale)
@@ -294,7 +294,7 @@ module mixing_length
     ! more than one level. They are used in the equations that calculate thl and rt
     ! recursively for a parcel as it ascends
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol  
       do j = 2, nz-1
 
@@ -316,7 +316,7 @@ module mixing_length
     ! and expensive calculations.
 
     ! Calculate initial thl, tl, and rt for parcels at each grid level
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
      do j = 3, nz
 
@@ -343,7 +343,7 @@ module mixing_length
     rsatl_par_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl_par_1, start_index )
     
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
-    !$acc parallel loop gang vector
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       do j = 3, nz
 
@@ -543,7 +543,7 @@ module mixing_length
     ! Precalculate values for downward Lscale, these are useful only if a parcel can descend
     ! more than one level. They are used in the equations that calculate thl and rt
     ! recursively for a parcel as it descends
-    !$acc parallel loop gang vector collapse(2)    
+    !$acc parallel loop gang vector collapse(2) default(present)    
     do i = 1, ngrdcol
       do j = 2, nz-1
 
@@ -565,7 +565,7 @@ module mixing_length
     ! and expensive calculations.
 
     ! Calculate initial thl, tl, and rt for parcels at each grid level
-    !$acc parallel loop gang vector collapse(2)    
+    !$acc parallel loop gang vector collapse(2) default(present)    
     do i = 1, ngrdcol
       do j = 2, nz-1
 
@@ -591,7 +591,7 @@ module mixing_length
     rsatl_par_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl_par_1, start_index )
 
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
-    !$acc parallel loop gang vector
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       do j = 2, nz-1
 
@@ -781,7 +781,7 @@ module mixing_length
 
       ! ---------------- Final Lscale Calculation ----------------
 
-    !$acc parallel loop gang vector 
+    !$acc parallel loop gang vector default(present) 
     do i = 1, ngrdcol
       do k = 2, nz, 1
 

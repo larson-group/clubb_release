@@ -656,7 +656,7 @@ module adg1_adg2_3d_luhar_pdf
 
     !----- Begin Code -----
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
        do i = 1, ngrdcol
 
@@ -1109,7 +1109,7 @@ module adg1_adg2_3d_luhar_pdf
       k, i     ! Vertical loop index
 
     !----- Begin Code -----
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
 

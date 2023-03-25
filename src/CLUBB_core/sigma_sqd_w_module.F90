@@ -109,7 +109,7 @@ module sigma_sqd_w_module
     ! includes rt and theta-l.  When l_predict_upwp_vpwp is enabled, u and v are
     ! also calculated as part of the PDF, and they are included as well.
     ! Additionally, when sclr_dim > 0, passive scalars (sclr) are also included.
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         max_corr_w_x_sqd(i,k) = max( ( wpthlp(i,k) / ( sqrt( wp2(i,k) * thlp2(i,k) ) &
@@ -121,7 +121,7 @@ module sigma_sqd_w_module
     !$acc end parallel loop
 
     if ( l_predict_upwp_vpwp ) then
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
           max_corr_w_x_sqd(i,k) = max( max_corr_w_x_sqd(i,k), &
@@ -135,7 +135,7 @@ module sigma_sqd_w_module
     endif ! l_predict_upwp_vpwp
 
     ! Calculate the value of sigma_sqd_w
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         sigma_sqd_w(i,k) = gamma_Skw_fnc(i,k) * ( one - min( max_corr_w_x_sqd(i,k), one ) )

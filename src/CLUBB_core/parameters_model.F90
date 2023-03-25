@@ -55,6 +55,7 @@ module parameters_model
   real( kind = core_rknd ), dimension(:), allocatable, public :: & 
     sclr_tol ! Threshold(s) on the passive scalars  [units vary]
 
+!$acc declare create(sclr_tol)
 !$omp threadprivate(sclr_tol)
 
   real( kind = sp ), public :: PosInf

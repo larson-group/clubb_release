@@ -375,7 +375,7 @@ module saturation
     select case ( saturation_formula )
     case ( saturation_flatau )
 
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = start_index, nz
         do i = 1, ngrdcol
 
@@ -430,7 +430,7 @@ module saturation
 
       ! Using the Bolton 1980 approximations for SVP over vapor
       ! Generally this more computationally expensive than the Flatau polnomial expansion
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = start_index, nz
         do i = 1, ngrdcol
           esat(i,k) = 611.2_core_rknd &
@@ -444,7 +444,7 @@ module saturation
     case ( saturation_gfdl )
 
       ! Using GFDL polynomial approximation for SVP with respect to liquid
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = start_index, nz
         do i = 1, ngrdcol
 
@@ -470,7 +470,7 @@ module saturation
 
     case ( saturation_lookup ) 
 
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = start_index, nz
         do i = 1, ngrdcol
           T_in_K_int = int( anint( T_in_K(i,k) ) )
@@ -492,7 +492,7 @@ module saturation
        
     end select
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = start_index, nz
       do i = 1, ngrdcol
 
@@ -956,7 +956,7 @@ module saturation
     case ( saturation_bolton )
 
       ! Using the Bolton 1980 approximations for SVP over ice
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do i = 1, ngrdcol
         do k = 1, nz
 
@@ -971,7 +971,7 @@ module saturation
     case ( saturation_flatau )
 
       ! Using the Flatau, et al. polynomial approximation for SVP over ice
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do i = 1, ngrdcol
         do k = 1, nz
 
@@ -1000,7 +1000,7 @@ module saturation
     case ( saturation_gfdl )
 
       ! Using GFDL polynomial approximation for SVP with respect to ice
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do i = 1, ngrdcol
         do k = 1, nz
 
@@ -1030,7 +1030,7 @@ module saturation
     end select
 
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
 

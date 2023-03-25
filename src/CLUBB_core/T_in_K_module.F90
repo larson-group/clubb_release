@@ -140,7 +140,7 @@ module T_in_K_module
     !$acc data copyin( thlm, exner, rcm ) &
     !$acc     copyout( T_in_K )
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         T_in_K(i,k) = thlm(i,k) * exner(i,k) + Lv * rcm(i,k) / Cp

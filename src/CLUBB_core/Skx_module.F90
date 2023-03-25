@@ -72,7 +72,7 @@ module Skx_module
     !Skx = xp3 / ( max( xp2, x_tol**two ) )**three_halves
     ! Calculation of skewness to help reduce the sensitivity of this value to
     ! small values of xp2.
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         Skx(i,k) = xp3(i,k) / ( ( xp2(i,k) + Skx_denom_tol ) * sqrt( xp2(i,k) + Skx_denom_tol ) )
@@ -85,7 +85,7 @@ module Skx_module
 
     ! I turned clipping on in this local copy since thlp3 and rtp3 are not clipped
     if ( l_clipping_kluge ) then
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
           Skx(i,k) = min( max( Skx(i,k), -Skw_max_mag ), Skw_max_mag )
