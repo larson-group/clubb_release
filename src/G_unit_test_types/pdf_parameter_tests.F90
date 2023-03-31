@@ -537,6 +537,7 @@ module pdf_parameter_tests
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn,  & ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Preskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
@@ -685,6 +686,7 @@ module pdf_parameter_tests
                                          l_vary_convect_depth, &
                                          l_use_tke_in_wp3_pr_turb_term, &
                                          l_use_tke_in_wp2_wp3_K_dfsn, &
+                                         l_use_wp3_lim_with_smth_Heaviside, &
                                          l_smooth_Heaviside_tau_wpxp, &
                                          l_enable_relaxed_clipping, &
                                          l_linearize_pbl_winds, &

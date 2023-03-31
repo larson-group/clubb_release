@@ -4527,6 +4527,7 @@ contains
                                                  l_vary_convect_depth, & ! Out
                                                  l_use_tke_in_wp3_pr_turb_term, & ! Out
                                                  l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
+                                                 l_use_wp3_lim_with_smth_Heaviside, & ! Out
                                                  l_smooth_Heaviside_tau_wpxp, & ! Out
                                                  l_enable_relaxed_clipping, & ! Out
                                                  l_linearize_pbl_winds, & ! Out
@@ -4654,6 +4655,7 @@ contains
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn,  & ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
@@ -4715,6 +4717,7 @@ contains
                                          l_vary_convect_depth, & ! Out
                                          l_use_tke_in_wp3_pr_turb_term, & ! Out
                                          l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
+                                         l_use_wp3_lim_with_smth_Heaviside, & ! Out
                                          l_smooth_Heaviside_tau_wpxp, & ! Out
                                          l_enable_relaxed_clipping, & ! Out
                                          l_linearize_pbl_winds, & ! Out
@@ -4777,6 +4780,7 @@ contains
                                                      l_vary_convect_depth, & ! In
                                                      l_use_tke_in_wp3_pr_turb_term, & ! In
                                                      l_use_tke_in_wp2_wp3_K_dfsn, & ! In
+                                                     l_use_wp3_lim_with_smth_Heaviside, & ! In
                                                      l_smooth_Heaviside_tau_wpxp, & ! In
                                                      l_enable_relaxed_clipping, & ! In
                                                      l_linearize_pbl_winds, & ! In
@@ -4906,6 +4910,7 @@ contains
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn,  & ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
@@ -4971,6 +4976,7 @@ contains
                                              l_vary_convect_depth, & ! In
                                              l_use_tke_in_wp3_pr_turb_term, & ! In
                                              l_use_tke_in_wp2_wp3_K_dfsn, & ! In
+                                             l_use_wp3_lim_with_smth_Heaviside, & ! In
                                              l_smooth_Heaviside_tau_wpxp, & ! In
                                              l_enable_relaxed_clipping, & ! In
                                              l_linearize_pbl_winds, & ! In

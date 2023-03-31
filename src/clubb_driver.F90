@@ -843,6 +843,7 @@ module clubb_driver
                                       ! Looking at issue #905 on the clubb repo
       l_use_tke_in_wp3_pr_turb_term,& ! Use TKE formulation for wp3 pr_turb term
       l_use_tke_in_wp2_wp3_K_dfsn,  & ! Use TKE in eddy diffusion for wp2 and wp3
+      l_use_wp3_lim_with_smth_Heaviside, & ! Flag to activate mods on wp3 limiters for conv test
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Preskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
@@ -903,7 +904,7 @@ module clubb_driver
       l_call_pdf_closure_twice, l_Lscale_plume_centered, &
       l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
       l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
-      l_use_tke_in_wp2_wp3_K_dfsn, l_smooth_Heaviside_tau_wpxp, &
+      l_use_tke_in_wp2_wp3_K_dfsn, l_use_wp3_lim_with_smth_Heaviside, l_smooth_Heaviside_tau_wpxp, &
       l_enable_relaxed_clipping, l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
       l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix
 
@@ -1066,6 +1067,7 @@ module clubb_driver
                                          l_vary_convect_depth, & ! Intent(out)
                                          l_use_tke_in_wp3_pr_turb_term, & ! Intent(out)
                                          l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(out)
+                                         l_use_wp3_lim_with_smth_Heaviside, & ! Intent(out)
                                          l_smooth_Heaviside_tau_wpxp, & ! Intent(out)
                                          l_enable_relaxed_clipping, & ! Intent(out)
                                          l_linearize_pbl_winds, & ! Intent(out)
@@ -1467,6 +1469,7 @@ module clubb_driver
                                              l_vary_convect_depth, & ! Intent(in)
                                              l_use_tke_in_wp3_pr_turb_term, & ! Intent(in)
                                              l_use_tke_in_wp2_wp3_K_dfsn, & ! Intent(in)
+                                             l_use_wp3_lim_with_smth_Heaviside, & ! Intent(in)
                                              l_smooth_Heaviside_tau_wpxp, & ! Intent(in)
                                              l_enable_relaxed_clipping, & ! Intent(in)
                                              l_linearize_pbl_winds, & ! Intent(in)
@@ -2279,8 +2282,10 @@ module clubb_driver
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
           wp2_zt(1,:) = max( zm2zt( gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
-          call clip_skewness_core( gr%nz, 1, gr, sfc_elevation(:), params(iSkw_max_mag), &
-                                   wp2_zt(1,:), wp3(1,:) )
+          call clip_skewness_core( gr%nz, 1, gr, sfc_elevation(:), &
+                                   params(iSkw_max_mag), wp2_zt(1,:), &
+                                   clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, &
+                                   wp3(1,:) )
         end if
       end if
 
