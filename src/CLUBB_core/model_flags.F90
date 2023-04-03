@@ -268,6 +268,7 @@ module model_flags
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_modify_limiters_for_cnvg_test, & ! Flag to activate mods on limiters for conv test
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
       l_linearize_pbl_winds,        & ! Code to linearize PBL winds
@@ -399,6 +400,7 @@ module model_flags
                                              l_use_tke_in_wp2_wp3_K_dfsn, &
                                              l_use_wp3_lim_with_smth_Heaviside, &
                                              l_smooth_Heaviside_tau_wpxp, &
+                                             l_modify_limiters_for_cnvg_test, &
                                              l_enable_relaxed_clipping, &
                                              l_linearize_pbl_winds, &
                                              l_mono_flux_lim_thlm, &
@@ -533,6 +535,7 @@ module model_flags
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_modify_limiters_for_cnvg_test, & ! Flag to activate mods on limiters for conv test
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
       l_linearize_pbl_winds,        & ! Code to linearize PBL winds
@@ -602,6 +605,7 @@ module model_flags
     l_use_tke_in_wp2_wp3_K_dfsn = .false.
     l_use_wp3_lim_with_smth_Heaviside = .false.
     l_smooth_Heaviside_tau_wpxp = .false.
+    l_modify_limiters_for_cnvg_test = .false.
     l_enable_relaxed_clipping = .false.
     l_linearize_pbl_winds = .false.
     l_mono_flux_lim_thlm = .true.
@@ -664,6 +668,7 @@ module model_flags
                                                  l_use_tke_in_wp2_wp3_K_dfsn, &
                                                  l_use_wp3_lim_with_smth_Heaviside, &
                                                  l_smooth_Heaviside_tau_wpxp, &
+                                                 l_modify_limiters_for_cnvg_test, &
                                                  l_enable_relaxed_clipping, &
                                                  l_linearize_pbl_winds, &
                                                  l_mono_flux_lim_thlm, &
@@ -799,6 +804,7 @@ module model_flags
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_modify_limiters_for_cnvg_test, & ! Flag to activate mods on limiters for conv test
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in
                                       ! xm_wpxp_clipping_and_stats
       l_linearize_pbl_winds,        & ! Code to linearize PBL winds
@@ -866,6 +872,7 @@ module model_flags
     clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn = l_use_tke_in_wp2_wp3_K_dfsn
     clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside = l_use_wp3_lim_with_smth_Heaviside
     clubb_config_flags%l_smooth_Heaviside_tau_wpxp = l_smooth_Heaviside_tau_wpxp
+    clubb_config_flags%l_modify_limiters_for_cnvg_test = l_modify_limiters_for_cnvg_test
     clubb_config_flags%l_enable_relaxed_clipping = l_enable_relaxed_clipping
     clubb_config_flags%l_linearize_pbl_winds = l_linearize_pbl_winds
     clubb_config_flags%l_mono_flux_lim_thlm = l_mono_flux_lim_thlm
@@ -950,6 +957,7 @@ module model_flags
     write(iunit,*) "l_use_tke_in_wp2_wp3_K_dfsn = ", clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn
     write(iunit,*) "l_use_wp3_lim_with_smth_Heaviside = ", clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside
     write(iunit,*) "l_smooth_Heaviside_tau_wpxp = ", clubb_config_flags%l_smooth_Heaviside_tau_wpxp
+    write(iunit,*) "l_modify_limiters_for_cnvg_test = ", clubb_config_flags%l_modify_limiters_for_cnvg_test
     write(iunit,*) "l_enable_relaxed_clipping = ", clubb_config_flags%l_enable_relaxed_clipping
     write(iunit,*) "l_linearize_pbl_winds = ", clubb_config_flags%l_linearize_pbl_winds
     write(iunit,*) "l_mono_flux_lim_thlm = ",clubb_config_flags%l_mono_flux_lim_thlm

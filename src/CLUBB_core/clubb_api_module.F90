@@ -4529,6 +4529,7 @@ contains
                                                  l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
                                                  l_use_wp3_lim_with_smth_Heaviside, & ! Out
                                                  l_smooth_Heaviside_tau_wpxp, & ! Out
+                                                 l_modify_limiters_for_cnvg_test, & ! Out
                                                  l_enable_relaxed_clipping, & ! Out
                                                  l_linearize_pbl_winds, & ! Out
                                                  l_mono_flux_lim_thlm, & ! Out
@@ -4659,6 +4660,7 @@ contains
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_modify_limiters_for_cnvg_test, & ! Flag to activate mods on limiters for conv test
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp
                                       ! in xm_wpxp_clipping_and_stats
       l_linearize_pbl_winds,        & ! Code to linearize PBL winds
@@ -4719,6 +4721,7 @@ contains
                                          l_use_tke_in_wp2_wp3_K_dfsn, & ! Out
                                          l_use_wp3_lim_with_smth_Heaviside, & ! Out
                                          l_smooth_Heaviside_tau_wpxp, & ! Out
+                                         l_modify_limiters_for_cnvg_test, & ! Out
                                          l_enable_relaxed_clipping, & ! Out
                                          l_linearize_pbl_winds, & ! Out
                                          l_mono_flux_lim_thlm, & ! Out
@@ -4782,6 +4785,7 @@ contains
                                                      l_use_tke_in_wp2_wp3_K_dfsn, & ! In
                                                      l_use_wp3_lim_with_smth_Heaviside, & ! In
                                                      l_smooth_Heaviside_tau_wpxp, & ! In
+                                                     l_modify_limiters_for_cnvg_test, & ! In
                                                      l_enable_relaxed_clipping, & ! In
                                                      l_linearize_pbl_winds, & ! In
                                                      l_mono_flux_lim_thlm, & ! In
@@ -4914,6 +4918,7 @@ contains
       l_smooth_Heaviside_tau_wpxp,  & ! Use smoothed Heaviside 'Peskin' function
                                       ! in the calculation of H_invrs_tau_wpxp_N2
                                       ! in src/CLUBB_core/mixing_length.F90
+      l_modify_limiters_for_cnvg_test, & ! Flag to activate mods on limiters for conv test
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp
                                       ! in xm_wpxp_clipping_and_stats
       l_linearize_pbl_winds,        & ! Code to linearize PBL winds
@@ -4978,6 +4983,7 @@ contains
                                              l_use_tke_in_wp2_wp3_K_dfsn, & ! In
                                              l_use_wp3_lim_with_smth_Heaviside, & ! In
                                              l_smooth_Heaviside_tau_wpxp, & ! In
+                                             l_modify_limiters_for_cnvg_test, & ! In
                                              l_enable_relaxed_clipping, & ! In
                                              l_linearize_pbl_winds, & ! In
                                              l_mono_flux_lim_thlm, & ! In

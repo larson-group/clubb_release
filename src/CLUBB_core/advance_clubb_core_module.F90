@@ -1420,6 +1420,7 @@ module advance_clubb_core_module
                         clubb_config_flags%l_brunt_vaisala_freq_moist,            & ! In
                         clubb_config_flags%l_use_thvm_in_bv_freq,                 & ! In
                         clubb_config_flags%l_smooth_Heaviside_tau_wpxp,           & ! In
+                        clubb_config_flags%l_modify_limiters_for_cnvg_test,       & ! In
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,     & ! Out
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! Out
                         brunt_vaisala_freq_sqd_plus,                              & ! Out
@@ -1744,6 +1745,7 @@ module advance_clubb_core_module
                                       clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
                                       clubb_config_flags%l_use_thvm_in_bv_freq,      & ! intent(in
                                       clubb_config_flags%l_use_shear_Richardson,     & ! intent(in)
+                                      clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! intent(in)
                                       stats_zm,                                      & ! intent(inout)
                                       Cx_fnc_Richardson )                              ! intent(out)
     else
