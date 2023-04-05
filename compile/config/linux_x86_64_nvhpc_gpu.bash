@@ -3,8 +3,8 @@
 # compiler
 
 # Fortran 95 compiler and linker
-FC=pgfortran
-LD=pgfortran
+FC=nvfortran
+LD=nvfortran
 
 # Define path to directories
 dir=`pwd` # dir where this script resides
@@ -17,7 +17,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 # No Debug flags
 DEBUG=""
 # Debugging information and floating-point trapping
-#DEBUG="-g -C -Kieee -Ktrap=fp"
+#DEBUG="-traceback -g -C -Kieee -Ktrap=fp"
 
 # == Machine specific options ==
 # The PGI Fortran compiler will select the native processor type by default
@@ -30,21 +30,13 @@ DOUBLE_PRECISION="-r8"
 OPTIMIZE="-O2"
 
 # == NetCDF Location ==
-#NETCDF="$HOME/netcdf-3.6.3"
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
 NETCDF="$PGI_NETCDF_FORTRAN"
-
-# == LAPACK libraries ==
-# The PGI directory contains static versions of LAPACK and BLAS
-#LAPACK="-llapack -lblas"
-# This will select the version of ACML that PGI provides, which is generally
-# faster than the reference BLAS and LAPACK (above)
-#LAPACK="-lacml"
 
 # == Linking Flags ==
 LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -Mcuda"
 
-FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc -Minfo=accel"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
@@ -65,5 +57,7 @@ SHAREDFLAGS="-KPIC -shared"
 # Location of 'mkmf' utility
 mkmf=$dir/mkmf
 
-# gmake command to use and options: '-j 2' enables parallel compilation
-gmake="make -j5"
+# gmake command to use and options: '-j #n' enables parallel compilation
+# $(echo "scale=0 ; 2+$(nproc) / 2.0" | bc) will compute 2+nproc/2, where nproc is
+# the number of logical cores available. This is always a close to optimal choice.
+gmake="make -j$(echo "scale=0 ; 2+$(nproc) / 2.0" | bc)"
