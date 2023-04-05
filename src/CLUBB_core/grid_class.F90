@@ -2223,15 +2223,24 @@ module grid_class
     ! Local Variable
     integer :: i, k  ! Grid level loop index
     
+    !$acc data copyin( gr, gr%invrs_dzt, azm ) &
+    !$acc     copyout( gradzm_2D )
+
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       gradzm_2D(i,1) = ( azm(i,2) - azm(i,1) ) * gr%invrs_dzt(i,2)
     end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz
       do i = 1, ngrdcol
         gradzm_2D(i,k) = ( azm(i,k) - azm(i,k-1) ) * gr%invrs_dzt(i,k)
       end do
     end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
 
@@ -2308,15 +2317,24 @@ module grid_class
     ! Local Variable
     integer :: i, k  ! Grid level loop index
 
+    !$acc data copyin( gr, gr%invrs_dzm, azt ) &
+    !$acc     copyout( gradzt_2D )
+
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       gradzt_2D(i,nz) = ( azt(i,nz) - azt(i,nz-1) ) * gr%invrs_dzm(i,nz-1)
     end do
+    !$acc end parallel loop
     
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz-1
       do i = 1, ngrdcol
         gradzt_2D(i,k) = ( azt(i,k+1) - azt(i,k) ) * gr%invrs_dzm(i,k)
       end do
     end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
 

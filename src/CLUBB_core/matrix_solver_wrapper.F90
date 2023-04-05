@@ -107,6 +107,14 @@ module matrix_solver_wrapper
 
     ! ----------------------- Begin Code -----------------------
 
+#ifdef _OPENACC
+    if ( penta_solve_method /= penta_lu  ) then
+      write(fstderr,*) "Running on GPUs requires penta_solve_method = penta_lu = 2"
+      err_code = clubb_no_error
+      return
+    end if
+#endif
+
     if ( present(rcond) ) then
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
@@ -217,6 +225,14 @@ module matrix_solver_wrapper
 
     ! ----------------------- Begin Code -----------------------
 
+#ifdef _OPENACC
+    if ( penta_solve_method /= penta_lu  ) then
+      write(fstderr,*) "Running on GPUs requires penta_solve_method = penta_lu = 2"
+      err_code = clubb_no_error
+      return
+    end if
+#endif
+
     if ( present(rcond) ) then
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
@@ -323,6 +339,14 @@ module matrix_solver_wrapper
 
     ! ----------------------- Begin Code -----------------------
 
+#ifdef _OPENACC
+    if ( tridiag_solve_method /= tridiag_lu ) then
+      write(fstderr,*) "Running on GPUs requires tridiag_solve_method = tridiag_lu = 2"
+      err_code = clubb_no_error
+      return
+    end if
+#endif
+
     if ( present(rcond) ) then
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
@@ -424,6 +448,14 @@ module matrix_solver_wrapper
 
     ! ----------------------- Begin Code -----------------------
 
+#ifdef _OPENACC
+    if ( tridiag_solve_method /= tridiag_lu ) then
+      write(fstderr,*) "Running on GPUs requires tridiag_solve_method = tridiag_lu = 2"
+      err_code = clubb_no_error
+      return
+    end if
+#endif
+
     if ( present(rcond) ) then
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
@@ -523,6 +555,14 @@ module matrix_solver_wrapper
     integer :: i
 
     ! ----------------------- Begin Code -----------------------
+    
+#ifdef _OPENACC
+    if ( tridiag_solve_method /= tridiag_lu ) then
+      write(fstderr,*) "Running on GPUs requires tridiag_solve_method = tridiag_lu = 2"
+      err_code = clubb_no_error
+      return
+    end if
+#endif
 
     if ( present(rcond) ) then
 

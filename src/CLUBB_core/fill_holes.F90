@@ -64,7 +64,7 @@ module fill_holes
       nz, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       dz      ! Spacing between thermodynamic grid levels; centered over
               ! momentum grid levels
               ! OR
@@ -113,16 +113,38 @@ module fill_holes
       mass_fraction_global      ! Coefficient that multiplies clipped field
                                 ! in order to conserve mass.                      []
 
+    logical :: &
+      l_field_below_threshold
+
     ! --------------------- Begin Code --------------------- 
 
+    !$acc declare copyin( dz, rho_ds ) &
+    !$acc           copy( field ) &
+    !$acc         create( l_field_below_threshold, denom_integral, field_clipped, denom_integral_global, &
+    !$acc                 numer_integral_global, field_avg_global, mass_fraction_global )
+
+    l_field_below_threshold = .false.
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( field(i,k) < threshold ) then
+          l_field_below_threshold = .true.
+        end if
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc update host( l_field_below_threshold )
     ! If all field values are above the specified threshold, no hole filling is required
-    if ( all( field >= threshold ) ) then
+    if ( .not. l_field_below_threshold ) then
       return
     end if
 
     ! denom_integral does not change throughout the hole filling algorithm
     ! so we can calculate it before hand. This results in unneccesary computations,
     ! but is parallelizable and reduces the cost of the serial k loop
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       do k = 2+num_draw_pts, upper_hf_level-num_draw_pts
         k_start = k - num_draw_pts
@@ -130,8 +152,9 @@ module fill_holes
         denom_integral(i,k) = sum( rho_ds(i,k_start:k_end) * dz(i,k_start:k_end) )
       end do  
     end do
-
+    !$acc end parallel loop
     
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
 
       ! Make one pass up the profile, filling holes as much as we can using
@@ -188,9 +211,23 @@ module fill_holes
       end do
 
     end do
+    !$acc end parallel loop
 
-    ! If all the holes have been filled, return 
-    if ( all( field >= threshold ) ) then
+    l_field_below_threshold = .false.
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( field(i,k) < threshold ) then
+          l_field_below_threshold = .true.
+        end if
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc update host( l_field_below_threshold )
+    ! If all field values are above the threshold, no further hole filling is required
+    if ( .not. l_field_below_threshold ) then
       return
     end if
 
@@ -201,8 +238,14 @@ module fill_holes
     ! if any holes need filling before the final step of updating the field. 
 
     ! Compute the numerator and denominator integrals
-    numer_integral_global = 0.0_core_rknd
-    denom_integral_global = 0.0_core_rknd
+    !$acc parallel loop default(present)
+    do i = 1, ngrdcol
+      numer_integral_global(i) = 0.0_core_rknd
+      denom_integral_global(i) = 0.0_core_rknd
+    end do
+    !$acc end parallel loop
+
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       do k = 2, upper_hf_level
         numer_integral_global(i) = numer_integral_global(i) + rho_ds(i,k)  &
@@ -212,8 +255,10 @@ module fill_holes
         denom_integral_global(i) = denom_integral_global(i) + rho_ds(i,k) * dz(i,k)
       end do  
     end do
+    !$acc end parallel loop
 
     
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
 
       ! Find the vertical average of field, using the precomputed numerator and denominator,
@@ -231,9 +276,16 @@ module fill_holes
       endif
 
     end do
+    !$acc end parallel loop
 
     ! To compute the clipped field's vertical integral we only need to recompute the numerator
-    numer_integral_global = 0.0_core_rknd
+    !$acc parallel loop default(present)
+    do i = 1, ngrdcol
+      numer_integral_global(i) = 0.0_core_rknd
+    end do
+    !$acc end parallel loop
+
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       do k = 2, upper_hf_level
         numer_integral_global(i) = numer_integral_global(i) + rho_ds(i,k)  &
@@ -241,7 +293,9 @@ module fill_holes
                                                               * field_clipped(i,k)
       end do  
     end do
+    !$acc end parallel loop
 
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
 
       ! Do not complete calculations or update field values for this 
@@ -268,7 +322,7 @@ module fill_holes
       end if
 
     end do
-
+    !$acc end parallel loop
 
     return
 

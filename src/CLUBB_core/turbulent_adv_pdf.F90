@@ -24,6 +24,9 @@ module turbulent_adv_pdf
 
   private    ! Set default scope
 
+  integer, parameter :: &
+    ndiags3 = 3
+
   contains
 
   !=============================================================================
@@ -356,7 +359,7 @@ module turbulent_adv_pdf
       rho_ds_zm                  ! Dry, static density at m-levs       [kg/m^3]
 
     ! ------------------------------ Return Variable ------------------------------
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: &
       lhs_ta    ! LHS coefficient of xpyp turbulent advection  [1/s]
 
     ! ------------------------------ Local Variables ------------------------------
@@ -373,7 +376,7 @@ module turbulent_adv_pdf
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ta(b,i,1) = zero
       end do
     end do
@@ -462,7 +465,7 @@ module turbulent_adv_pdf
     ! Set upper boundary array to 
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ta(b,i,nz) = zero
       end do
     end do
@@ -524,7 +527,7 @@ module turbulent_adv_pdf
         rho_ds_zm                   ! Dry, static density at m-lev [kg/m^3]
 
     !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: &
         lhs_ta
 
     !---------------- Local Variables -------------------
@@ -540,7 +543,7 @@ module turbulent_adv_pdf
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ta(b,i,1) = 0.0_core_rknd
       end do
     end do
@@ -573,7 +576,7 @@ module turbulent_adv_pdf
     ! Set upper boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ta(b,i,nz) = 0.0_core_rknd
       end do
     end do

@@ -1763,6 +1763,21 @@ module advance_clubb_core_module
     do advance_order_loop_iter = 1, 4, 1
 
      if ( advance_order_loop_iter == order_xm_wpxp ) then
+      
+      !$acc data copyin( gr, gr%zm, gr%zt, gr%invrs_dzt, gr%invrs_dzm, gr%dzm, &
+      !$acc              gr%weights_zt2zm, gr%dzt, &
+      !$acc              sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale, em, &
+      !$acc              wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, invrs_tau_C6_zm, &
+      !$acc              tau_max_zm, Skw_zm, wp2rtp, rtpthvp, rtm_forcing, wprtp_forcing, &
+      !$acc              rtm_ref, wp2thlp, thlpthvp, thlm_forcing, wpthlp_forcing, &
+      !$acc              thlm_ref, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
+      !$acc              thv_ds_zm, rtp2, thlp2, w_1_zm, w_2_zm, varnce_w_1_zm, &
+      !$acc              varnce_w_2_zm, mixt_frac_zm, wp2sclrp, sclrpthvp, &
+      !$acc              sclrm_forcing, sclrp2, exner, rcm, p_in_Pa, thvm, Cx_fnc_Richardson, &
+      !$acc              ice_supersat_frac, um_forcing, vm_forcing, ug, vg, wpthvp, uprcp, &
+      !$acc              vprcp, rc_coef, fcor, um_ref, vm_ref, up2, vp2, clubb_params ) &
+      !$acc        copy( rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, um, upwp, &
+      !$acc              vm, vpwp, um_pert, vm_pert, upwp_pert, vpwp_pert ) 
 
       ! Advance the prognostic equations for
       !   the scalar grid means (rtm, thlm, sclrm) and
@@ -1813,6 +1828,7 @@ module advance_clubb_core_module
                             rtm, wprtp, thlm, wpthlp,                             & ! intent(i/o)
                             sclrm, wpsclrp, um, upwp, vm, vpwp,                   & ! intent(i/o)
                             um_pert, vm_pert, upwp_pert, vpwp_pert )                ! intent(i/o)
+      !$acc end data
 
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( err_code == clubb_fatal_error ) then

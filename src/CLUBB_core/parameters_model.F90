@@ -133,10 +133,10 @@ module parameters_model
 
     ! In a tuning run, this array has the potential to be allocated already
     if ( .not. allocated( sclr_tol ) ) then
-      allocate( sclr_tol(1:sclr_dim) )
+      allocate( sclr_tol(1:max(1,sclr_dim)) )
     else
       deallocate( sclr_tol )
-      allocate( sclr_tol(1:sclr_dim) )
+      allocate( sclr_tol(1:max(1,sclr_dim)) )
     end if
 
     sclr_tol(1:sclr_dim) = sclr_tol_in(1:sclr_dim)

@@ -281,9 +281,19 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_dry, & !  []
       brunt_vaisala_freq_sqd_moist, &
       brunt_vaisala_freq_sqd_plus, &
-      lambda0_stability
+      lambda0_stability, &
+      Lscale_zm
+
+    integer :: i, k
 
     !------------ Begin Code --------------
+
+    !$acc data copyin( Lscale, em, thlm, exner, rtm, rcm, p_in_Pa, &
+    !$acc              thvm, ice_supersat_frac ) &
+    !$acc     copyout( stability_correction ) &
+    !$acc      create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+    !$acc              brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
+    !$acc              brunt_vaisala_freq_sqd_plus, lambda0_stability, Lscale_zm )
     
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
@@ -296,13 +306,33 @@ module advance_helper_module
                                       brunt_vaisala_freq_sqd_moist, &   ! intent(out)
                                       brunt_vaisala_freq_sqd_plus )     ! intent(out)
 
-    lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        if ( brunt_vaisala_freq_sqd(i,k) > zero  ) then
+          lambda0_stability(i,k) = lambda0_stability_coef
+        else
+          lambda0_stability(i,k) = zero
+        end if
+      end do
+    end do
+    !$acc end parallel loop
 
-    stability_correction = one &
-        + min( lambda0_stability * brunt_vaisala_freq_sqd &
-                * zt2zm(nz, ngrdcol, gr, Lscale(:,:))**2 / em, three )
+    Lscale_zm = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        stability_correction(i,k) = one + min( lambda0_stability(i,k) * brunt_vaisala_freq_sqd(i,k) &
+                                               * Lscale_zm(i,k)**2 / em(i,k), three )
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
+
   end subroutine calc_stability_correction
 
   !===============================================================================
@@ -329,8 +359,13 @@ module advance_helper_module
 
     use constants_clubb, only: &
         grav, & ! Constant(s)
-        Lv, Cp, Rd, ep, &
-        one
+        Lv, &
+        Cp, &
+        Rd, &
+        ep, &
+        one, &
+        one_half, &
+        zero_threshold
 
     use parameters_model, only: & 
         T0 ! Variable! 
@@ -347,14 +382,14 @@ module advance_helper_module
         sat_mixrat_liq ! Procedure
 
     implicit none
-    
+
+    !---------------------------- Input Variables ----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       thlm,    &  ! th_l (thermo. levels)              [K]
       exner,   &  ! Exner function                     [-]
@@ -369,7 +404,7 @@ module advance_helper_module
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
-    ! Output Variables
+    !---------------------------- Output Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
       brunt_vaisala_freq_sqd_mixed, &
@@ -377,7 +412,7 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_moist, &
       brunt_vaisala_freq_sqd_plus
 
-    ! Local Variables
+    !---------------------------- Local Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
       ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm
@@ -386,78 +421,135 @@ module advance_helper_module
       stat_dry, stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, &
       stat_dry_virtual, stat_dry_virtual_zm,  ddzt_rtm_zm
 
-
     integer :: i, k
 
-  !---------------------------------------------------------------------
-    !----- Begin Code -----
+    !---------------------------- Begin Code ----------------------------
+
+    !$acc data copyin( gr, gr%zt, &
+    !$acc              thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac ) &
+    !$acc      copyout( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+    !$acc               brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
+    !$acc               brunt_vaisala_freq_sqd_plus ) &
+    !$acc       create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
+    !$acc               ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, stat_dry, &
+    !$acc               stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, stat_dry_virtual, &
+    !$acc               stat_dry_virtual_zm, ddzt_rtm_zm )
+
     ddzt_thlm = ddzt( nz, ngrdcol, gr, thlm )
     thvm_zm = zt2zm( nz, ngrdcol, gr, thvm )
     ddzt_thvm = ddzt( nz, ngrdcol, gr, thvm )
 
     if ( .not. l_brunt_vaisala_freq_moist ) then
 
-        ! Dry Brunt-Vaisala frequency
-        if ( l_use_thvm_in_bv_freq ) then
+      ! Dry Brunt-Vaisala frequency
+      if ( l_use_thvm_in_bv_freq ) then
 
-          brunt_vaisala_freq_sqd(:,:) = ( grav / thvm_zm(:,:) ) * ddzt_thvm(:,:)
-
-        else
-
-          brunt_vaisala_freq_sqd(:,:) = ( grav / T0 ) * ddzt_thlm(:,:)
-
-        end if
-
-        T_in_K = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
-        T_in_K_zm = zt2zm( nz, ngrdcol, gr, T_in_K )
-        rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K )
-        rsat_zm = zt2zm( nz, ngrdcol, gr, rsat )
-        ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
-        thm = thlm + Lv/(Cp*exner) * rcm
-        thm_zm = zt2zm( nz, ngrdcol, gr, thm )
-        ddzt_thm = ddzt( nz, ngrdcol, gr, thm )
-        ddzt_rtm = ddzt( nz, ngrdcol, gr, rtm )
-
+        !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            stat_dry(i,k)  =  Cp * T_in_K(i,k) + grav * gr%zt(i,k)
+            brunt_vaisala_freq_sqd(i,k) = ( grav / thvm_zm(i,k) ) * ddzt_thvm(i,k)
           end do
         end do
-        
-        stat_liq  =  stat_dry -Lv * rcm
-        ddzt_stat_liq       = ddzt( nz, ngrdcol, gr, stat_liq )
-        ddzt_stat_liq_zm    = zt2zm( nz, ngrdcol, gr, ddzt_stat_liq)
-        stat_dry_virtual    = stat_dry + Cp * T_in_K *(0.608*(rtm-rcm)- rcm)
-        stat_dry_virtual_zm = zt2zm( nz, ngrdcol, gr, stat_dry_virtual)
-        ddzt_rtm_zm         = zt2zm( nz, ngrdcol, gr, ddzt_rtm )
+        !$acc end parallel loop
+      else
 
-        brunt_vaisala_freq_sqd_dry = ( grav / thm_zm)* ddzt_thm
-
-        do k=1, nz
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
           do i = 1, ngrdcol
-            brunt_vaisala_freq_sqd_plus(i,k) = grav/stat_dry_virtual(i,k) &
-                      * ( ( ice_supersat_frac(i,k) * 0.5 + (1-ice_supersat_frac(i,k))) &
-                          * ddzt_stat_liq_zm(i,k) &
-                          + ( ice_supersat_frac(i,k) * Lv - (1-ice_supersat_frac(i,k)) *0.608*Cp) &
-                            * ddzt_rtm_zm(i,k) )
+            brunt_vaisala_freq_sqd(i,k) = ( grav / T0 ) * ddzt_thlm(i,k)
           end do
-        end do ! k=1, gr%nz
+        end do
+        !$acc end parallel loop
 
-        do k=1, nz
-          do i = 1, ngrdcol
-            ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
-            ! Klemp (1982)
-            brunt_vaisala_freq_sqd_moist(i,k) = &
-              grav * ( ((one + Lv*rsat_zm(i,k) / (Rd*T_in_K_zm(i,k))) / &
-              (one + ep*(Lv**2)*rsat_zm(i,k)/(Cp*Rd*T_in_K_zm(i,k)**2))) * &
-              ( (one/thm_zm(i,k) * ddzt_thm(i,k)) + (Lv/(Cp*T_in_K_zm(i,k)))*ddzt_rsat(i,k)) - &
-              ddzt_rtm(i,k) )
-          end do
-        end do ! k=1, gr%nz
+      end if
 
-        brunt_vaisala_freq_sqd_mixed =  &
-               merge (brunt_vaisala_freq_sqd_moist,brunt_vaisala_freq_sqd_dry,&
-               ice_supersat_frac > 0 )
+      T_in_K = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
+      T_in_K_zm = zt2zm( nz, ngrdcol, gr, T_in_K )
+      rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K )
+      rsat_zm = zt2zm( nz, ngrdcol, gr, rsat )
+      ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          thm(i,k) = thlm(i,k) + Lv/(Cp*exner(i,k)) * rcm(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+
+      thm_zm = zt2zm( nz, ngrdcol, gr, thm )
+      ddzt_thm = ddzt( nz, ngrdcol, gr, thm )
+      ddzt_rtm = ddzt( nz, ngrdcol, gr, rtm )
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          stat_dry(i,k)  =  Cp * T_in_K(i,k) + grav * gr%zt(i,k)
+          stat_liq(i,k)  =  stat_dry(i,k) - Lv * rcm(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+      
+      ddzt_stat_liq    = ddzt( nz, ngrdcol, gr, stat_liq )
+      ddzt_stat_liq_zm = zt2zm( nz, ngrdcol, gr, ddzt_stat_liq)
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          stat_dry_virtual(i,k) = stat_dry(i,k) + Cp * T_in_K(i,k) &
+                                                  *( 0.608 * ( rtm(i,k) - rcm(i,k) )- rcm(i,k) )
+        end do
+      end do
+      !$acc end parallel loop
+
+      stat_dry_virtual_zm = zt2zm( nz, ngrdcol, gr, stat_dry_virtual)
+      ddzt_rtm_zm         = zt2zm( nz, ngrdcol, gr, ddzt_rtm )
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          brunt_vaisala_freq_sqd_dry(i,k) = ( grav / thm_zm(i,k) )* ddzt_thm(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k=1, nz
+        do i = 1, ngrdcol
+          brunt_vaisala_freq_sqd_plus(i,k) = grav/stat_dry_virtual(i,k) &
+                    * ( ( ice_supersat_frac(i,k) * one_half + (one-ice_supersat_frac(i,k))) &
+                        * ddzt_stat_liq_zm(i,k) &
+                        + ( ice_supersat_frac(i,k) * Lv - (one-ice_supersat_frac(i,k)) *0.608*Cp)&
+                          * ddzt_rtm_zm(i,k) )
+        end do
+      end do ! k=1, gr%nz
+      !$acc end parallel loop
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
+          ! Klemp (1982)
+          brunt_vaisala_freq_sqd_moist(i,k) = &
+            grav * ( ((one + Lv*rsat_zm(i,k) / (Rd*T_in_K_zm(i,k))) / &
+            (one + ep*(Lv**2)*rsat_zm(i,k)/(Cp*Rd*T_in_K_zm(i,k)**2))) * &
+            ( (one/thm_zm(i,k) * ddzt_thm(i,k)) + (Lv/(Cp*T_in_K_zm(i,k)))*ddzt_rsat(i,k)) - &
+            ddzt_rtm(i,k) )
+        end do
+      end do ! k=1, gr%nz
+      !$acc end parallel loop
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          if ( ice_supersat_frac(i,k) > zero_threshold  ) then
+            brunt_vaisala_freq_sqd_mixed(i,k) = brunt_vaisala_freq_sqd_moist(i,k)
+          else
+            brunt_vaisala_freq_sqd_mixed(i,k) = brunt_vaisala_freq_sqd_dry(i,k)
+          end if
+        end do
+      end do
+      !$acc end parallel loop
 
     else ! l_brunt_vaisala_freq_moist
 
@@ -466,12 +558,21 @@ module advance_helper_module
         rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K )
         rsat_zm = zt2zm( nz, ngrdcol, gr, rsat )
         ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
-        thm = thlm + Lv/(Cp*exner) * rcm
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            thm(i,k) = thlm(i,k) + Lv / ( Cp * exner(i,k) ) * rcm(i,k)
+          end do
+        end do
+        !$acc end parallel loop
+
         thm_zm = zt2zm( nz, ngrdcol, gr, thm )
         ddzt_thm = ddzt( nz, ngrdcol, gr, thm )
         ddzt_rtm = ddzt( nz, ngrdcol, gr, rtm )
 
-        do k=1, nz
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
           do i = 1, ngrdcol
 
             ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
@@ -484,9 +585,12 @@ module advance_helper_module
                 
           end do
         end do ! k=1, gr%nz
+        !$acc end parallel loop
 
 
     end if ! .not. l_brunt_vaisala_freq_moist
+
+    !$acc end data
 
     return
 

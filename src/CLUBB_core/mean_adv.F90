@@ -24,6 +24,9 @@ module mean_adv
   public :: term_ma_zt_lhs, & 
             term_ma_zm_lhs
 
+  integer, parameter :: &
+    ndiags3 = 3
+
   contains
 
   !=============================================================================
@@ -215,7 +218,7 @@ module mean_adv
                         ! It affects rtm, thlm, sclrm, um and vm.
 
     ! -------------------------- Return Variable --------------------------
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: &
       lhs_ma    ! Mean advection contributions to lhs    [1/s]
 
     ! -------------------------- Local Variables --------------------------
@@ -230,7 +233,7 @@ module mean_adv
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ma(b,i,1) = 0.0_core_rknd
       end do
     end do
@@ -440,7 +443,7 @@ module mean_adv
       weights_zm2zt
 
     ! -------------------------- Return Variable --------------------------
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: &
       lhs_ma    ! Mean advection contributions to lhs  [1/s]
 
     ! -------------------------- Local Variables
@@ -454,7 +457,7 @@ module mean_adv
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ma(b,i,1) = zero
       end do
     end do
@@ -482,7 +485,7 @@ module mean_adv
     ! Set upper boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ma(b,i,nz) = zero
       end do
     end do

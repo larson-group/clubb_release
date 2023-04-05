@@ -505,10 +505,10 @@ module clip_explicit
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
-    ! Output Variable
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
       xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
 
+    !-------------------------- Output Variable --------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       xpyp_chnge  ! Net change in x'y' due to clipping [{x units}*{y units}]
 
@@ -524,6 +524,10 @@ module clip_explicit
       ixpyp_cl
 
     ! -------------------------- Begin Code --------------------------
+
+    !$acc data copyin( xp2, yp2 ) &
+    !$acc        copy( xpyp ) &
+    !$acc     copyout( xpyp_chnge )
 
     select case ( solve_type )
     case ( clip_wprtp )   ! wprtp clipping budget term
@@ -550,6 +554,9 @@ module clip_explicit
 
 
     if ( l_stats_samp ) then
+
+      !$acc update host( xpyp )
+
       if ( l_first_clip_ts ) then
         do i = 1, ngrdcol
           call stat_begin_update( nz, ixpyp_cl, xpyp(i,:) / dt, & ! intent(in)
@@ -581,7 +588,8 @@ module clip_explicit
     ! code does not need to be invoked at the upper boundary.
     ! Note that if clipping were applied at the lower boundary, momentum will
     ! not be conserved, therefore it should never be added.
-    do k = 2, nz-1, 1
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 2, nz-1
       do i = 1, ngrdcol
         xpyp_bound = max_mag_corr * sqrt( xp2(i,k) * yp2(i,k) )
 
@@ -605,14 +613,22 @@ module clip_explicit
 
         end if
       end do
-    end do ! k = 2..gr%nz
+    end do
+    !$acc end parallel loop
 
     ! Since there is no covariance clipping at the upper or lower boundaries,
     ! the change in x'y' due to covariance clipping at those levels is 0.
-    xpyp_chnge(:,1)     = 0.0_core_rknd
-    xpyp_chnge(:,nz) = 0.0_core_rknd
+    !$acc parallel loop default(present)
+    do i = 1, ngrdcol
+      xpyp_chnge(i,1)  = 0.0_core_rknd
+      xpyp_chnge(i,nz) = 0.0_core_rknd
+    end do
+    !$acc end parallel loop
 
     if ( l_stats_samp ) then
+
+      !$acc update host( xpyp )
+
       if ( l_last_clip_ts ) then
         do i = 1, ngrdcol
           call stat_end_update( nz, ixpyp_cl, xpyp(i,:) / dt, & ! intent(in)
@@ -626,7 +642,10 @@ module clip_explicit
       endif
     endif
 
+    !$acc end data
+
     return
+    
   end subroutine clip_covar
 
   !=============================================================================
