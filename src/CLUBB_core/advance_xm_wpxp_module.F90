@@ -2398,8 +2398,14 @@ module advance_xm_wpxp_module
         end if
         
         if ( l_stats_samp ) then
-          term_wp2rtp_explicit(:,:) = zero
-          term_wp2thlp_explicit(:,:) = zero
+          !$acc parallel loop gang vector collapse(2) default(present)
+          do k = 1, nz
+            do i = 1, ngrdcol
+              term_wp2rtp_explicit(i,k) = zero
+              term_wp2thlp_explicit(i,k) = zero
+            end do
+          end do
+          !$acc end parallel loop
         end if
 
         ! The <w'r_t'>, <w'thl'>, <w'sclr'> turbulent advection terms are entirely implicit.
@@ -4520,8 +4526,7 @@ module advance_xm_wpxp_module
 
     ! --------------------------- Begin code ---------------------------
 
-    !$acc declare create( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed, &
-    !$acc                 zero_vector, wpxp_ac, wpxp_pr2 )
+    !$acc declare create( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
 
     select case ( solve_type )
 
@@ -4643,15 +4648,10 @@ module advance_xm_wpxp_module
 
     if ( l_stats_samp ) then
     
-      !$acc update host( wp2, xp2, wm_zt, xm_forcing, rho_ds_zm, &
-      !$acc              rho_ds_zt, invrs_rho_ds_zm,invrs_rho_ds_zt, &
-      !$acc              rcond, low_lev_effect, high_lev_effect, &
+      !$acc update host( wm_zt, rcond, &
       !$acc              lhs_diff_zm, lhs_ma_zt, lhs_ma_zm, &
       !$acc              lhs_ta_wpxp, lhs_tp, lhs_ta_xm, &
-      !$acc              lhs_pr1, C7_Skw_fnc, solution, &
-      !$acc              xm, wpxp, &
-      !$acc              xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed, &
-      !$acc              zero_vector, wpxp_ac, wpxp_pr2 )
+      !$acc              lhs_pr1, C7_Skw_fnc, xm, wpxp )
 
       zero_vector(:,:) = 0.0_core_rknd
       
@@ -4797,7 +4797,7 @@ module advance_xm_wpxp_module
     ! for the mean field is negative and we're determining total water
     if ( solve_type == xm_wpxp_rtm .and. l_pos_def ) then
 
-      !$acc update host( xm, xm_old, wpxp, xm_pd, wpxp_pd )
+      !$acc update host( xm, xm_old, wpxp )
 
       ! If any xm values are negative and the values at the previous
       ! timestep were all non-negative, then call pos_definite_adj
@@ -4808,7 +4808,7 @@ module advance_xm_wpxp_module
                                xm_pd, wpxp_pd )             ! intent(out)
       end if
 
-      !$acc update device( xm, wpxp, xm_old, xm_pd, wpxp_pd )
+      !$acc update device( xm, wpxp, xm_old )
 
     else
       ! For stats purposes
@@ -4821,7 +4821,7 @@ module advance_xm_wpxp_module
 
     if ( l_stats_samp ) then
 
-      !$acc update host( wpxp_pd, xm_pd, xm )
+      !$acc update host( xm )
 
       do i = 1, ngrdcol
         call stat_update_var( iwpxp_pd, wpxp_pd(i,1:nz), & ! intent(in)

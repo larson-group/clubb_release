@@ -13,20 +13,13 @@ parser.add_argument("files", nargs=2,
                     
 args = parser.parse_args()
 
-
-# Create diff command, using ncdiff and -O to overwrite file if it exists
-ncdiffCommand = "ncdiff -O " + args.files[0] + " " + args.files[1] + " diff.nc"
-
-# Run diff command, printing output (there should be no output unless there's an error)
-process = subprocess.Popen(ncdiffCommand.split(), stdout=subprocess.PIPE)
-output, error = process.communicate()
-
-# Create dataset from nc file
-dset = netCDF4.Dataset("diff.nc")
+# Create datasets from nc files
+dset0 = netCDF4.Dataset(args.files[0])
+dset1 = netCDF4.Dataset(args.files[1])
 
 # Loop through all variables in dataset, and make sure they are all completely 0
 all_zero = True
-for var in dset.variables:
+for var in dset0.variables:
     
     # The CLUBB netcdf variables we are interested in are all 
     # 4 dimensional (time, altitude, latitude, longitude),
@@ -34,8 +27,8 @@ for var in dset.variables:
     # dimensions are hardcoded to be 1. If in the future we remove those useless
     # dimensions (unlikely), then the variables of interested would be 2D. So 
     # for futureproofing, we will just check all variables with more than 1 dimension.
-    if dset[var].ndim > 1:
-        if not numpy.all(dset[var][:] == 0):
+    if dset0[var].ndim > 1:
+        if numpy.any( dset0[var][:] != dset1[var][:] ):
             print(var + " is NON-ZERO")
             all_zero = False
             
