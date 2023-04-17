@@ -1,14 +1,14 @@
 #!/bin/csh
 #SBATCH -A esmd 
-#SBATCH -p short 
+#SBATCH -p slurm 
 #SBATCH -N 1     
-#SBATCH -t 2:00:00 
+#SBATCH -t 48:00:00 
 #SBATCH -J convergence_%j 
 #SBATCH -o convergence_%j.out 
 #SBATCH -e convergence_%j.err 
 
 # Flag to run model compiling section 
-set compile_model  = 1  # False: 0, True: 1
+set compile_model  = 0  # False: 0, True: 1
 
 # Flag to run simulation section 
 set run_model      = 1  # False: 0, True: 1
@@ -19,7 +19,7 @@ set run_diagnostic = 1  # False: 0, True: 1
 
 #user-specified code location, experiment name and model run directory 
 set topdir = "/compyfs/zhan391/code/clubb_standalone_fnl/clubb_release-push"
-set expnam = "revic"
+set expnam = "default"
 set wkdir  = "${topdir}/cnvg_${expnam}"
 set outdir = "${topdir}/output"
 
@@ -80,13 +80,11 @@ endif
 # set config_flags = ""
 
 # For test simulations with baseline configuration (turn off mincrophysics + radiation + splatting, use standard ta)
-# set config_flags = "-rad-off -micro-off -standard-aterms -splat-off"
+set config_flags = "-rad-off -micro-off -standard-aterms -splat-off"
 
 # For test simulations with all changes from (Zhang_Vogl_Larson et. al., 2023, JAMES).
-# set config_flags = "-rad-off -micro-off -standard-aterms -splat-off -new-ic -new-bc -new-lim -smooth-tau -lin-diff -new-wp3cl"
+#set config_flags = "-rad-off -micro-off -standard-aterms -splat-off -new-ic -new-bc -new-lim -smooth-tau -lin-diff -new-wp3cl"
 
-#Test the impact of revised initial condtion only on model solution 
-set config_flags = "-new-ic"
 set dt_output    = 60   # output frequency in seconds, default setup for convergence simulation
                         # is 600s (maximum time step size used for simulation)
 
@@ -102,13 +100,13 @@ set ncase  = $#case
 #user-specified time-step and grid-spacing refinements for convergence test  
 #the default is the same as simulation setup in clubb convergence paper 
 #(Zhang_Vogl_Larson et. al., 2023, JAMES)
-#set refine_levels = (0  1  2    3    4     5      6       7) 
-#set time_steps    = (4  2  1  0.5 0.25 0.125 0.0625 0.03125) 
-#set nrefs         = $#refine_levels
-
-set refine_levels = (  0   0   0  0  0  1  2    3 ) 
-set time_steps    = ( 60  30  15  8  4  2  1  0.5 ) 
+set refine_levels = (0  1  2    3    4     5      6       7) 
+set time_steps    = (4  2  1  0.5 0.25 0.125 0.0625 0.03125) 
 set nrefs         = $#refine_levels
+
+#set refine_levels = (  0   0   0  0  0  1  2    3 ) 
+#set time_steps    = ( 60  30  15  8  4  2  1  0.5 ) 
+#set nrefs         = $#refine_levels
 
 #compile model
 if ( $compile_model > 0 )  then 
@@ -159,7 +157,7 @@ EOB
     while ( $k <= $nrefs )
       set jobid  = `printf "%02d" $k`
       set config = "-dt $time_steps[$k] -ref $refine_levels[$k] -ti ${tstart} -tf ${tend} -dto ${dt_output}" 
-      set strs0  = 'time python3 '"${topdir}"'/run_scripts/convergence_config.py $1 -output-name $2'
+      set strs0  = 'time python3 '"${topdir}"'/run_scripts/convergence_run/convergence_config.py $1 -output-name $2'
       if( $k < $nrefs) then 
         set strs1  = '-skip-check ${@:3} > ${1}_${2}_${SLURM_JOBID}-'"${jobid}"'.log 2>&1 &'
       else
@@ -223,7 +221,7 @@ if ( $run_diagnostic > 0 ) then
 
     cd ${wkdir}
 
-    cp ${topdir}/run_scripts/plot_l2_convergence.py ${casnam}_fig.py
+    cp ${topdir}/run_scripts/convergence_run/plot_l2_convergence.py ${casnam}_fig.py
     set j = 1
     while ( $j <= $nrefs ) 
       if ( $j == 1) then 
