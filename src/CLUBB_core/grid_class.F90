@@ -1547,7 +1547,7 @@ module grid_class
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
     ! ------------------------------ Return Variable ------------------------------
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       zt2zm2zt    ! Variable when interp. to momentum levels
 
     ! ------------------------------ Local Variable ------------------------------
@@ -1600,7 +1600,7 @@ module grid_class
       azm    ! Variable on momentum grid levels    [units vary]
 
     ! ------------------------------ Return Variable ------------------------------
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       zm2zt2zm    ! Variable when interp. to momentum levels
 
     ! ------------------------------ Local Variable ------------------------------
