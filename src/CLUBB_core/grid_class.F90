@@ -148,7 +148,7 @@ module grid_class
 
   implicit none
 
-  public :: grid, zt2zm, zm2zt, & 
+  public :: grid, zt2zm, zm2zt, zt2zm2zt, zm2zt2zm, & 
             ddzm, ddzt, & 
             setup_grid, cleanup_grid, setup_grid_heights, &
             read_grid_heights, flip
@@ -1518,7 +1518,113 @@ module grid_class
     return
 
   end subroutine linear_interpolated_azm_2D
+
+  !=============================================================================
+  function zt2zm2zt( nz, ngrdcol, gr, azt )
+
+    ! Description:
+    !    Function to interpolate a variable located on the thermodynamic grid
+    !    levels (azt) to the momentum grid levels (azm), then interpolate back
+    !    to thermodynamic grid levels (azt).
+    !
+    ! Note:
+    !   This is intended for smoothing variables.
+    !-----------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+    
+    ! ------------------------------ Input Variable ------------------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type (grid), target, intent(in) :: gr
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    ! ------------------------------ Return Variable ------------------------------
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
+      zt2zm2zt    ! Variable when interp. to momentum levels
+
+    ! ------------------------------ Local Variable ------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      azt_zm
+
+    ! ------------------------------ Begin Code ------------------------------
+
+    !$acc data copyin( azt ) &
+    !$acc     copyout( zt2zm2zt ) &
+    !$acc      create( azt_zm )
+
+    ! Interpolate azt to momentum levels 
+    azt_zm = zt2zm( nz, ngrdcol, gr, azt )
+
+    ! Interpolate back to termodynamic levels
+    zt2zm2zt = zm2zt( nz, ngrdcol, gr, azt_zm )
+
+    !$acc end data
+
+    return 
+
+  end function zt2zm2zt
   
+  !=============================================================================
+  function zm2zt2zm( nz, ngrdcol, gr, azm )
+
+    ! Description:
+    !    Function to interpolate a variable located on the momentum grid 
+    !    levels(azm) to thermodynamic grid levels (azt), then interpolate 
+    !    back to momentum grid levels (azm).
+    !
+    ! Note:
+    !   This is intended for smoothing variables.
+    !-----------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+    
+    ! ------------------------------ Input Variable ------------------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type (grid), target, intent(in) :: gr
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+      azm    ! Variable on momentum grid levels    [units vary]
+
+    ! ------------------------------ Return Variable ------------------------------
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
+      zm2zt2zm    ! Variable when interp. to momentum levels
+
+    ! ------------------------------ Local Variable ------------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      azm_zt
+
+    ! ------------------------------ Begin Code ------------------------------
+
+    !$acc data copyin( azm ) &
+    !$acc     copyout( zm2zt2zm ) &
+    !$acc      create( azm_zt )
+
+    ! Interpolate azt to termodynamic levels 
+    azm_zt = zm2zt( nz, ngrdcol, gr, azm )
+
+    ! Interpolate back to momentum levels
+    zm2zt2zm = zt2zm( nz, ngrdcol, gr, azm_zt )
+
+    !$acc end data
+
+    return 
+
+  end function zm2zt2zm
+
   !=============================================================================
   function cubic_interpolated_azm_2D( nz, ngrdcol, gr, azt )
 

@@ -1185,8 +1185,9 @@ module clip_explicit
       do i = 1, ngrdcol
         zagl_thresh(i,:) = ( gr%zt(i,:) - sfc_elevation(i) ) /  100.0_core_rknd 
         zagl_thresh(i,:) = zagl_thresh(i,:)  - 1.0_core_rknd 
-        H_zagl(i,:) = smooth_heaviside_peskin(zagl_thresh(i,:), 0.6_core_rknd) 
       end do
+
+      H_zagl(:,:) = smooth_heaviside_peskin(nz, ngrdcol, zagl_thresh(:,:), 0.6_core_rknd) 
 
       do k = 1, nz
         do i = 1, ngrdcol

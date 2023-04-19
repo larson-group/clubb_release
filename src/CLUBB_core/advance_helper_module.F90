@@ -1208,12 +1208,27 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
-  !----------------------------------------------------------------------
+    !----------------------------- Local Variables -----------------------------
+    integer :: i, k
 
-    output_var = one_half * ( (input_var1+input_var2) - &
-                              sqrt((input_var1-input_var2)**2 + smth_coef**2) )
+    !----------------------------- Begin Code -----------------------------
+
+    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc     copyout( output_var )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        output_var(i,k) = one_half * ( (input_var1+input_var2(i,k)) - &
+                                  sqrt((input_var1-input_var2(i,k))**2 + smth_coef**2) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
+
   end function smooth_min_scalar_array
 
 !===============================================================================
@@ -1236,11 +1251,11 @@ module advance_helper_module
 
     implicit none
     
+    !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-  ! Input Variables
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var1          ! Units vary
 
@@ -1249,16 +1264,31 @@ module advance_helper_module
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
                           ! that of the data structures input_var1 and input_var2
 
-  ! Output Variables
+    !----------------------------- Output Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
-  !----------------------------------------------------------------------
+    !----------------------------- Local Variables -----------------------------
+    integer :: i, k
 
-    output_var = one_half * ( (input_var1+input_var2) - &
-                              sqrt((input_var1-input_var2)**2 + smth_coef**2) )
+    !----------------------------- Begin Code -----------------------------
+
+    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc     copyout( output_var )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        output_var(i,k) = one_half * ( (input_var1(i,k)+input_var2) - &
+                                  sqrt((input_var1(i,k)-input_var2)**2 + smth_coef**2) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
+
   end function smooth_min_array_scalar
 
 !===============================================================================
@@ -1281,11 +1311,11 @@ module advance_helper_module
 
     implicit none
     
+    !----------------------------- Input Variables-----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-  ! Input Variables
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
@@ -1294,21 +1324,37 @@ module advance_helper_module
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
                           ! that of the data structures input_var1 and input_var2
 
-  ! Output Variables
+    !----------------------------- Output Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
-  !----------------------------------------------------------------------
+    !----------------------------- Local Variables -----------------------------
+    integer :: i, k
 
-    output_var = one_half * ( (input_var1+input_var2) - &
-                              sqrt((input_var1-input_var2)**2 + smth_coef**2) )
+    !----------------------------- Begin Code -----------------------------
+
+    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc     copyout( output_var )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        output_var(i,k) = one_half * ( (input_var1(i,k)+input_var2(i,k)) - &
+                                  sqrt((input_var1(i,k)-input_var2(i,k))**2 + smth_coef**2) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
+
   end function smooth_min_arrays
   
 !===============================================================================
   function smooth_min_scalars( input_var1, input_var2, smth_coef ) &
   result( output_var )
+  !$acc routine
 
   ! Description:
   !   Computes a smoothed version of the min function, using two scalars as inputs.
@@ -1365,11 +1411,11 @@ module advance_helper_module
 
     implicit none
     
+    !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-  ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
@@ -1378,16 +1424,31 @@ module advance_helper_module
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var2          ! Units vary
 
-  ! Output Variables
+    !----------------------------- Output Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
-  !----------------------------------------------------------------------
-  
-    output_var = one_half * ( (input_var1+input_var2) + &
-                              sqrt((input_var1-input_var2)**2 + smth_coef**2) )
+    !----------------------------- Local Variables -----------------------------
+    integer :: i, k
+
+    !----------------------------- Begin Code -----------------------------
+
+    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc     copyout( output_var )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        output_var(i,k) = one_half * ( (input_var1+input_var2(i,k)) + &
+                                  sqrt((input_var1-input_var2(i,k))**2 + smth_coef**2) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
+
   end function smooth_max_scalar_array
 
 !===============================================================================
@@ -1410,11 +1471,11 @@ module advance_helper_module
 
     implicit none
     
+    !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-  ! Input Variables
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var1          ! Units vary
 
@@ -1423,16 +1484,31 @@ module advance_helper_module
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
                           ! that of the data structures input_var1 and input_var2
 
-  ! Output Variables
+    !----------------------------- Output Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
-  !----------------------------------------------------------------------
+    !----------------------------- Local Variables -----------------------------
+    integer :: i, k
 
-    output_var = one_half * ( (input_var1+input_var2) + &
-                              sqrt((input_var1-input_var2)**2 + smth_coef**2) )
+    !----------------------------- Begin Code -----------------------------
+
+    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc     copyout( output_var )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        output_var(i,k) = one_half * ( ( input_var1(i,k) + input_var2 ) + &
+                                  sqrt(( input_var1(i,k) - input_var2 )**2 + smth_coef**2) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
+
   end function smooth_max_array_scalar
 
 !===============================================================================
@@ -1455,11 +1531,11 @@ module advance_helper_module
 
     implicit none
     
+    !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-  ! Input Variables
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2          ! Units vary
@@ -1468,21 +1544,37 @@ module advance_helper_module
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
                           ! that of the data structures input_var1 and input_var2
 
-  ! Output Variables
+    !----------------------------- Output Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
-  !----------------------------------------------------------------------
+    !----------------------------- Local Variables -----------------------------
+    integer :: i, k
 
-    output_var = one_half * ( (input_var1+input_var2) + &
-                              sqrt((input_var1-input_var2)**2 + smth_coef**2) )
+    !----------------------------- Begin Code -----------------------------
+
+    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc     copyout( output_var )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        output_var(i,k) = one_half * ( (input_var1(i,k)+input_var2(i,k)) + &
+                                  sqrt((input_var1(i,k)-input_var2(i,k))**2 + smth_coef**2) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
+
   end function smooth_max_arrays
   
 !===============================================================================
   function smooth_max_scalars( input_var1, input_var2, smth_coef ) &
   result( output_var )
+  !$acc routine
 
   ! Description:
   !   Computes a smoothed version of the max function, using two scalars as inputs.
@@ -1500,26 +1592,29 @@ module advance_helper_module
 
     implicit none
 
-  ! Input Variables
+    !----------------------------- Input Variables -----------------------------
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
       input_var2, &       ! Units vary
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
                           ! that of the data structures input_var1 and input_var2
 
-  ! Output Variables
+    !----------------------------- Output Variables -----------------------------
     real( kind = core_rknd ) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
-  !----------------------------------------------------------------------
+    !----------------------------- Local Variables -----------------------------
+    integer :: i, k
+
+    !----------------------------- Begin Code -----------------------------
 
     output_var = one_half * ( (input_var1+input_var2) + &
                               sqrt((input_var1-input_var2)**2 + smth_coef**2) )
-
     return
+
   end function smooth_max_scalars
   
-  elemental function smooth_heaviside_peskin( input, smth_range ) &
+  function smooth_heaviside_peskin( nz, ngrdcol, input, smth_range ) &
     result( smth_output )
     
   ! Description:
@@ -1539,34 +1634,57 @@ module advance_helper_module
 
     implicit none
     
-    ! Input Variables      
+    !------------------------- Input Variables -------------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    real ( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      input    ! Units vary
+
     real ( kind = core_rknd ), intent(in) :: &
-      input, &    ! Units vary
       smth_range  ! Smooth Heaviside function on [-smth_range, smth_range]
+
+    !------------------------- Output Variables -------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      smth_output    ! Same units as input
     
-    ! Local Variables
+    !------------------------- Local Variables -------------------------
     real ( kind = core_rknd ) :: &
       input_over_smth_range  ! input divided by smth_range
 
-    ! Output Variables
-    real( kind = core_rknd ) :: &
-      smth_output    ! Same units as input
+    integer :: i, k
       
-  !----------------------------------------------------------------------
-    if (input < -smth_range ) then 
-      smth_output = zero
-    elseif ( input > smth_range ) then
-       smth_output = one
-    else 
-      ! Note that this case will only ever be reached if smth_range != 0,
-      ! so this division is fine and should not cause any issues
-      input_over_smth_range = input / smth_range
-      smth_output = one_half &
-                    * (one + input_over_smth_range &
-                       + invrs_pi * sin(pi * input_over_smth_range))
-    end if
+    !------------------------- Begin Code -------------------------
+
+    !$acc data copyin( input ) &
+    !$acc     copyout( smth_output )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+
+        if ( input(i,k) < -smth_range ) then 
+          smth_output(i,k) = zero
+        elseif ( input(i,k) > smth_range ) then
+           smth_output(i,k) = one
+        else 
+          ! Note that this case will only ever be reached if smth_range != 0,
+          ! so this division is fine and should not cause any issues
+          input_over_smth_range = input(i,k) / smth_range
+          smth_output(i,k) = one_half &
+                             * (one + input_over_smth_range &
+                               + invrs_pi * sin(pi * input_over_smth_range))
+        end if
+
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
     
     return
+
   end function smooth_heaviside_peskin
   
   !===============================================================================

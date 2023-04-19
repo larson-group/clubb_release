@@ -113,7 +113,7 @@ contains
     result_cmp(3, 1) = one
     result_cmp(4, 1) = one
       
-    result = smooth_heaviside_peskin(input, heaviside_smth_range)
+    result = smooth_heaviside_peskin(1, 4, input, heaviside_smth_range)
     print *, "Input: ", input
     print *, "Expected outcome: ", result_cmp
     print *, "True outcome:     ", result
@@ -133,7 +133,7 @@ contains
     result_cmp(3, 1) = 0.9091549430900_core_rknd
     result_cmp(4, 1) = one
     
-    result = smooth_heaviside_peskin(input, heaviside_smth_range)
+    result = smooth_heaviside_peskin(1, 4, input, heaviside_smth_range)
     print *, "Input: ", input
     print *, "Expected outcome: ", result_cmp
     print *, "True outcome:     ", result

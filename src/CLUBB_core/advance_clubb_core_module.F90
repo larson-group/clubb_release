@@ -247,7 +247,8 @@ module advance_clubb_core_module
         zm2zt,  & ! Procedure(s)
         zt2zm, &
         ddzm, &
-        ddzt
+        ddzt, &
+        zm2zt2zm
 
     use numerical_check, only: &
         parameterization_check, & ! Procedure(s)
@@ -1260,7 +1261,7 @@ module advance_clubb_core_module
                                 sigma_sqd_w )
 
       ! Smooth in the vertical using interpolation
-      sigma_sqd_w(:,:) = zt2zm( nz, ngrdcol, gr, zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:) ) )
+      sigma_sqd_w(:,:) = zm2zt2zm( nz, ngrdcol, gr, sigma_sqd_w(:,:) )
       
       do k = 1, nz
         do i = 1, ngrdcol
@@ -1357,7 +1358,16 @@ module advance_clubb_core_module
 
     if ( .not. clubb_config_flags%l_diag_Lscale_from_tau ) then ! compute Lscale 1st, using
                                                                 ! buoyant parcel calc
-        
+      
+      !$acc data copyin( gr, gr%zm, gr%dzm, gr%invrs_dzm, gr%zt, &
+      !$acc              pdf_params, pdf_params%rt_1, pdf_params%rt_2, &
+      !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2, &
+      !$acc              pdf_params%thl_1, pdf_params%thl_2, pdf_params%varnce_thl_1, &
+      !$acc              pdf_params%varnce_thl_2, &
+      !$acc              p_in_Pa, exner, rtm, &
+      !$acc              thlm, thvm, newmu, rtp2, thlp2, rtpthlp, em, &
+      !$acc              thv_ds_zt, Lscale_max ) &
+      !$acc     copyout( Lscale, Lscale_up, Lscale_down )
       call calc_Lscale_directly ( ngrdcol, nz, gr,                             & ! intent(in)
                                   l_implemented, p_in_Pa,                      & ! intent(in)
                                   exner, rtm, thlm, thvm,                      & ! intent(in)
@@ -1367,6 +1377,7 @@ module advance_clubb_core_module
                                   clubb_config_flags%l_Lscale_plume_centered,  & ! intent(in)
                                   stats_zt,                                    & ! intent(inout)
                                   Lscale, Lscale_up, Lscale_down )               ! intent(out)
+      !$acc end data
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -1407,6 +1418,17 @@ module advance_clubb_core_module
 
     else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
+      !$acc data copyin( gr, gr%zm, gr%zt, &
+      !$acc              upwp_sfc, vpwp_sfc, um, vm, exner, p_in_Pa, rtm, thlm, &
+      !$acc              thvm, rcm, ice_supersat_frac, em, sqrt_em_zt, sfc_elevation, &
+      !$acc              Lscale_max ) &
+      !$acc    copyout(  brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+      !$acc              brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
+      !$acc              brunt_vaisala_freq_sqd_plus, sqrt_Ri_zm, invrs_tau_zt, &
+      !$acc              invrs_tau_zm, invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
+      !$acc              invrs_tau_shear, invrs_tau_N2_iso, invrs_tau_wp2_zm, invrs_tau_xp2_zm, &
+      !$acc              invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm, tau_max_zm, &
+      !$acc              tau_max_zt, tau_zm, tau_zt, Lscale, Lscale_up, Lscale_down )
       call diagnose_Lscale_from_tau( nz, ngrdcol, gr,                             & ! In
                         upwp_sfc, vpwp_sfc, um, vm,                               & ! In
                         exner, p_in_Pa,                                           & ! In
@@ -1432,7 +1454,7 @@ module advance_clubb_core_module
                         invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm,    & ! Out
                         tau_max_zm, tau_max_zt, tau_zm, tau_zt,                   & ! Out
                         Lscale, Lscale_up, Lscale_down )                            ! Out
-
+      !$acc end data
     end if ! l_diag_Lscale_from_tau
     
     
