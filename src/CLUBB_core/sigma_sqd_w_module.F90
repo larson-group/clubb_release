@@ -94,11 +94,7 @@ module sigma_sqd_w_module
 
     ! ---- Begin Code ----
 
-    !$acc data create( max_corr_w_x_sqd )  &
-    !$acc      copyin( gamma_Skw_fnc, wp2, thlp2, rtp2, up2, &
-    !$acc              vp2, wpthlp, wprtp, upwp, vpwp ) &
-    !$acc     copyout( sigma_sqd_w ) 
-
+    !$acc declare create( max_corr_w_x_sqd )
 
     !----------------------------------------------------------------
     ! Compute sigma_sqd_w with new formula from Vince
@@ -142,8 +138,6 @@ module sigma_sqd_w_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 

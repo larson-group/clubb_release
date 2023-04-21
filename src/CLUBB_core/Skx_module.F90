@@ -124,11 +124,11 @@ module Skx_module
 
     implicit none
 
+    !-------------------------- Input Variables --------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Skw,         & ! Skewness of w                  [-]
       wpxp,        & ! Turbulent flux of x            [m/s (x units)]
@@ -140,21 +140,23 @@ module Skx_module
       beta,        & ! Tunable parameter              [-]
       x_tol          ! Minimum tolerance of x         [(x units)]
 
-    ! Output Variable
+    !-------------------------- Output Variable --------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Skx            ! Skewness of x                  [-]
 
-    ! Local Variables
+    !-------------------------- Local Variables --------------------------
     real( kind = core_rknd ) :: &
       nrmlzd_corr_wx, & ! Normalized correlation of w and x       [-]
       nrmlzd_Skw        ! Normalized skewness of w                [-]
       
     integer :: i, k
 
-    ! ---- Begin Code ----
+    !--------------------------Begin Code --------------------------
+
     ! weberjk, 8-July 2015. Commented this out for now. cgils was failing during some tests.
 
     ! Larson and Golaz (2005) eq. 16
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         nrmlzd_corr_wx = &
@@ -169,6 +171,7 @@ module Skx_module
               * ( beta + ( one - beta ) * nrmlzd_corr_wx**2 )
       end do
     end do
+    !$acc end parallel loop
 
     return
 
@@ -194,11 +197,11 @@ module Skx_module
 
     implicit none
     
+    !-------------------------- Input Variables--------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Skw_zt,         & ! Skewness of w on thermodynamic levels   [-]
       wpxp_zt,        & ! Flux of x  (interp. to t-levs.)         [m/s(x units)]
@@ -211,28 +214,44 @@ module Skx_module
       Skw_denom_coef, & ! CLUBB tunable parameter Skw_denom_coef  [-]
       x_tol             ! Minimum tolerance of x                  [(x units)]
 
-    ! Return Variable
+    !-------------------------- Return Variable --------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       xp3    ! <x'^3> (thermodynamic levels)    [(x units)^3]
 
-    ! Local Variable
+    !-------------------------- Local Variable --------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      Skx_zt, &    ! Skewness of x on thermodynamic levels    [-]
+      Skx_zt       ! Skewness of x on thermodynamic levels    [-]
+
+    real( kind = core_rknd ) :: &
       Skx_denom_tol
 
-    ! ---- Begin Code ----
+    integer :: i, k
 
-    Skx_denom_tol = Skw_denom_coef * x_tol**2
+    !-------------------------- Begin Code --------------------------
+
+    !$acc data create(Skx_zt) &
+    !$acc      copyin( Skw_zt, wpxp_zt, wp2_zt, xp2_zt, sigma_sqd_w_zt ) &
+    !$acc     copyout( xp3 )
 
     ! Calculate skewness of x using the ansatz of LG05.
     call LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
                          xp2_zt, beta, sigma_sqd_w_zt, x_tol, &
                          Skx_zt )
 
+    Skx_denom_tol = Skw_denom_coef * x_tol**2
+
     ! Calculate <x'^3> using the reverse of the special sensitivity reduction
     ! formula in function Skx_func above.
-    xp3 = Skx_zt * ( xp2_zt + Skx_denom_tol ) * sqrt( xp2_zt + Skx_denom_tol )
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        xp3(i,k) = Skx_zt(i,k) * ( xp2_zt(i,k) + Skx_denom_tol ) &
+                               * sqrt( xp2_zt(i,k) + Skx_denom_tol )
+      end do
+    end do
+    !$acc end parallel loop
 
+    !$acc end data
 
     return
 
