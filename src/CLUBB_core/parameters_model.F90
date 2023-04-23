@@ -55,6 +55,7 @@ module parameters_model
   real( kind = core_rknd ), dimension(:), allocatable, public :: & 
     sclr_tol ! Threshold(s) on the passive scalars  [units vary]
 
+!$acc declare create(sclr_tol)
 !$omp threadprivate(sclr_tol)
 
   real( kind = sp ), public :: PosInf
@@ -132,12 +133,17 @@ module parameters_model
 
     ! In a tuning run, this array has the potential to be allocated already
     if ( .not. allocated( sclr_tol ) ) then
-      allocate( sclr_tol(1:sclr_dim) )
+      allocate( sclr_tol(1:max(1,sclr_dim)) )
     else
       deallocate( sclr_tol )
-      allocate( sclr_tol(1:sclr_dim) )
+      allocate( sclr_tol(1:max(1,sclr_dim)) )
     end if
 
+    ! Set to 0 before setting to sclr_tol_in because the above allocates sclr_tol
+    ! with a minimum dimension of 1, while it may be the case that sclr_dim=0.
+    ! This ensures that if we are not using scalars that sclr_tol will be 
+    ! initialized to 0.0
+    sclr_tol = 0.0_core_rknd
     sclr_tol(1:sclr_dim) = sclr_tol_in(1:sclr_dim)
 
     PosInf = transfer( nanbits, PosInf )

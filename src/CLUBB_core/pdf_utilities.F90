@@ -865,7 +865,7 @@ module pdf_utilities
     ! ---------------- Local Variables ----------------
     integer :: i, k 
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol 
         if ( sigma_x_1_sqd(i,k) * sigma_y_1_sqd(i,k) > zero &

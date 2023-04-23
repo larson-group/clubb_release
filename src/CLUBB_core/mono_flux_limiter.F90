@@ -24,6 +24,9 @@ module mono_flux_limiter
     mono_flux_um = 4,   & ! Named constant for um mono_flux calls
     mono_flux_vm = 5      ! Named constant for vm mono_flux calls
 
+  integer, parameter :: &
+    ndiags3 = 3
+
   contains
 
   !=============================================================================
@@ -429,14 +432,14 @@ module mono_flux_limiter
       dxm_dt_mfl_adjust,   & ! Rate of change of adjustment to xm            [units vary]
       dz                     ! zm grid spacing at top of domain              [m]
 
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz) ::  &
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz) ::  &
       lhs_mfl_xm  ! Left hand side of tridiagonal matrix
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
       rhs_mfl_xm  ! Right hand side of tridiagonal matrix equation
 
     integer ::  &
-      k, km1, i  ! Array indices
+      k, km1, i, j  ! Array indices
 
 !    integer, parameter :: &
 !      num_levs = 10  ! Number of levels above and below level k to look for
@@ -453,14 +456,18 @@ module mono_flux_limiter
     logical, dimension(ngrdcol) :: &
       l_adjustment_needed  ! Indicates if we need an adjustment for a column
 
+    logical:: &
+      l_any_adjustment_needed
+
     real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
       xm_mfl
 
-    !--- Begin Code ---
+    !---------------------------- Begin Code ----------------------------
 
-    ! Default Initialization required due to G95 compiler warning
-    max_xp2 = 0.0_core_rknd
-    dz = 0.0_core_rknd
+    !$acc declare create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
+    !$acc                 min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
+    !$acc                 max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
+    !$acc                 rhs_mfl_xm, l_adjustment_needed, l_any_adjustment_needed, xm_mfl )
 
     select case( solve_type )
     case ( mono_flux_rtm )  ! rtm/wprtp
@@ -487,6 +494,7 @@ module mono_flux_limiter
 
 
     if ( l_stats_samp ) then
+      !$acc update host( wpxp, xm )
       do i = 1, ngrdcol
         call stat_begin_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
@@ -495,6 +503,7 @@ module mono_flux_limiter
       end do
     endif
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
+      !$acc update host( xm, xm_old, wpxp )
       do i = 1, ngrdcol
         call stat_update_var( ithlm_enter_mfl, xm(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
@@ -504,6 +513,7 @@ module mono_flux_limiter
                               stats_zm(i) ) ! intent(inout)
       end do
     elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
+      !$acc update host( xm, xm_old, wpxp )
       do i = 1, ngrdcol
         call stat_update_var( irtm_enter_mfl, xm(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
@@ -515,14 +525,20 @@ module mono_flux_limiter
     endif
     
 
-    ! Initialize arrays.
-    wpxp_net_adjust(:,:) = 0.0_core_rknd
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        ! Initialize arrays.
+        wpxp_net_adjust(i,k) = 0.0_core_rknd
 
-    ! Store the value of xm as it enters the mfl
-    xm_enter_mfl(:,:) = xm(:,:)
+        ! Store the value of xm as it enters the mfl
+        xm_enter_mfl(i,k) = xm(i,k)
+      end do
+    end do
+    !$acc end parallel loop
 
     ! Interpolate x'^2 to thermodynamic levels.
-    xp2_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, xp2(:,:) ), xp2_threshold )
+    xp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, xp2(:,:) )
 
     ! Place an upper limit on xp2_zt.
     ! For purposes of this subroutine, an upper limit has been placed on the
@@ -530,12 +546,19 @@ module mono_flux_limiter
     ! the model code.  The upper limit is a reasonable upper limit.  This is
     ! done to prevent unphysically large standard deviations caused by numerical
     ! instabilities in the x'^2 profile.
-    xp2_zt(:,:) = min( xp2_zt(:,:), max_xp2 )
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        xp2_zt(i,k) = min( max( xp2_zt(i,k), xp2_threshold ), max_xp2 )
+      end do
+    end do
+    !$acc end parallel loop
 
     ! Find the maximum and minimum usuable values of variable x at each
     ! vertical level.  Start from level 2, which is the first level above
     ! the ground (or above the model surface).  This computation needs to be
     ! performed for all vertical levels above the ground (or model surface).
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz, 1
       do i = 1, ngrdcol
 
@@ -590,13 +613,16 @@ module mono_flux_limiter
         max_x_allowable_lev(i,k) = xm_without_ta(i,k) + max_dev
       end do
     end do
+    !$acc end parallel loop
 
     ! Boundary condition on xm_without_ta    
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       xm_without_ta(i,1) = xm(i,1)
       min_x_allowable_lev(i,1) = min_x_allowable_lev(i,2)
       max_x_allowable_lev(i,1) = max_x_allowable_lev(i,2)
     end do
+    !$acc end parallel loop
 
     ! Find the maximum and minimum usuable values of x that can effect the value
     ! of x at level k.  Then, find the upper and lower limits of w'x'.  Reset
@@ -604,21 +630,45 @@ module mono_flux_limiter
     ! of adjustment that was needed to w'x'.
     ! The values of w'x' at level 1 and at level gr%nz are set values and
     ! are not altered.
-    do k = 2, nz-1, 1
-      do i = 1, ngrdcol
 
-        km1 = max( k-1, 1 )
+    ! Find the smallest value of all relevant level minima for variable x.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 2, nz-1
+      do i = 1, ngrdcol
 
         low_lev  = max( low_lev_effect(i,k), 2 )
         high_lev = min( high_lev_effect(i,k), nz )
-        !low_lev  = max( k-num_levs, 2 )
-        !high_lev = min( k+num_levs, gr%nz )
 
-        ! Find the smallest value of all relevant level minima for variable x.
-        min_x_allowable(i,k) = minval( min_x_allowable_lev(i,low_lev:high_lev) )
+        min_x_allowable(i,k) = min_x_allowable_lev(i,low_lev)
 
-        ! Find the largest value of all relevant level maxima for variable x.
-        max_x_allowable(i,k) = maxval( max_x_allowable_lev(i,low_lev:high_lev) )
+        do j = low_lev, high_lev
+          min_x_allowable(i,k) = min( min_x_allowable(i,k), min_x_allowable_lev(i,j) )
+        end do
+
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! Find the largest value of all relevant level maxima for variable x.
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 2, nz-1
+      do i = 1, ngrdcol
+
+        low_lev  = max( low_lev_effect(i,k), 2 )
+        high_lev = min( high_lev_effect(i,k), nz )
+
+        max_x_allowable(i,k) = max_x_allowable_lev(i,low_lev)
+
+        do j = low_lev, high_lev
+          max_x_allowable(i,k) = max( max_x_allowable(i,k), max_x_allowable_lev(i,j) )
+        end do
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 2, nz-1, 1
+      do i = 1, ngrdcol
  
         ! Find the upper limit for w'x' for a monotonic turbulent flux.
         ! The following "if" statement ensures there are no "spikes" at the top of the column,
@@ -626,16 +676,16 @@ module mono_flux_limiter
         ! The fix essentially turns off the monotonic flux limiter for these special cases,
         ! but tests show that it still performs well otherwise and runs stably.
         if ( l_mono_flux_lim_spikefix .and. solve_type == mono_flux_rtm  & 
-           .and. abs( wpxp(i,km1) ) > 1 / ( dt * gr%invrs_dzt(i,k) ) &
+           .and. abs( wpxp(i,k-1) ) > 1 / ( dt * gr%invrs_dzt(i,k) ) &
            * ( xm_without_ta(i,k) - min_x_allowable(i,k) ) &
-           .and. wpxp(i,km1) < 0.0_core_rknd ) then
+           .and. wpxp(i,k-1) < 0.0_core_rknd ) then
           wpxp_mfl_max(i,k) = 0.0_core_rknd
         else
           wpxp_mfl_max(i,k)  &
           = invrs_rho_ds_zm(i,k)  &
                   * (   ( rho_ds_zt(i,k) / (dt*gr%invrs_dzt(i,k)) )  &
                         * ( xm_without_ta(i,k) - min_x_allowable(i,k) )  &
-                      + rho_ds_zm(i,km1) * wpxp(i,km1)  )
+                      + rho_ds_zm(i,k-1) * wpxp(i,k-1)  )
         endif
 
         ! Find the lower limit for w'x' for a monotonic turbulent flux.
@@ -643,7 +693,7 @@ module mono_flux_limiter
         = invrs_rho_ds_zm(i,k)  &
                   * (   ( rho_ds_zt(i,k) / (dt*gr%invrs_dzt(i,k)) )  &
                         * ( xm_without_ta(i,k) - max_x_allowable(i,k) )  &
-                      + rho_ds_zm(i,km1) * wpxp(i,km1)  )
+                      + rho_ds_zm(i,k-1) * wpxp(i,k-1)  )
 
         if ( wpxp(i,k) > wpxp_mfl_max(i,k) ) then
 
@@ -735,8 +785,10 @@ module mono_flux_limiter
         endif
       end do
     end do
+    !$acc end parallel loop
 
-      ! Boundary conditions
+    ! Boundary conditions
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       min_x_allowable(i,1) = 0._core_rknd
       max_x_allowable(i,1) = 0._core_rknd
@@ -750,8 +802,11 @@ module mono_flux_limiter
       wpxp_mfl_min(i,nz) = 0._core_rknd
       wpxp_mfl_max(i,nz) = 0._core_rknd
     end do
+    !$acc end parallel loop
 
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
+      !$acc update host( xm_without_ta, min_x_allowable, wpxp_mfl_min, &
+      !$acc              wpxp_mfl_max, max_x_allowable )
       do i = 1, ngrdcol
         call stat_update_var( ithlm_without_ta, xm_without_ta(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
@@ -765,6 +820,8 @@ module mono_flux_limiter
                               stats_zm(i) ) ! intent(inout)
       end do
     elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
+      !$acc update host( xm_without_ta, min_x_allowable, max_x_allowable,  &
+      !$acc              wpxp_mfl_min, wpxp_mfl_max )
       do i = 1, ngrdcol
         call stat_update_var( irtm_without_ta, xm_without_ta(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
@@ -779,6 +836,9 @@ module mono_flux_limiter
       end do
     endif
 
+    l_any_adjustment_needed = .false.
+
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
 
       l_adjustment_needed(i) = .false.
@@ -786,11 +846,16 @@ module mono_flux_limiter
       do k = 1, nz
         if ( abs(wpxp_net_adjust(i,k)) > eps ) then
           l_adjustment_needed(i) = .true.
+          l_any_adjustment_needed = .true.
+          exit
         end if
       end do
     end do
+    !$acc end parallel loop
 
-    if ( any( l_adjustment_needed ) ) then
+    !$acc update host( l_any_adjustment_needed )
+
+    if ( l_any_adjustment_needed ) then
 
       ! Reset the value of xm to compensate for the change to w'x'.
 
@@ -816,11 +881,15 @@ module mono_flux_limiter
                            xm_mfl )                                          ! intent(inout)
 
         ! If an adjustment is for a column
-        do i = 1, ngrdcol 
-          if ( l_adjustment_needed(i) ) then
-            xm(i,:) = xm_mfl(i,:)
-          end if
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol 
+            if ( l_adjustment_needed(i) ) then
+              xm(i,k) = xm_mfl(i,k)
+            end if
+          end do
         end do
+        !$acc end parallel loop
 
         ! Check for errors
         if ( clubb_at_least_debug_level( 0 ) ) then
@@ -833,17 +902,17 @@ module mono_flux_limiter
         ! index (t+1), which is based upon the array of the amounts of w'x'
         ! adjustments.
 
+        !$acc parallel loop gang vector collapse(2) default(present)
         do k = 2, nz, 1
           do i = 1, ngrdcol 
 
             if ( l_adjustment_needed(i) ) then  
-              km1 = max( k-1, 1 )
 
               ! The rate of change of the adjustment to xm due to the monotonic
               ! flux limiter.
               dxm_dt_mfl_adjust = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k)  &
                                   * ( rho_ds_zm(i,k) * wpxp_net_adjust(i,k)  &
-                                      - rho_ds_zm(i,km1) * wpxp_net_adjust(i,km1) )
+                                      - rho_ds_zm(i,k-1) * wpxp_net_adjust(i,k-1) )
 
               ! The net change to xm due to the monotonic flux limiter is the
               ! rate of change multiplied by the time step length.  Add the
@@ -854,9 +923,14 @@ module mono_flux_limiter
 
           end do
         end do
+        !$acc end parallel loop
 
         ! Boundary condition on xm
-        xm(:,1) = xm(:,2)
+        !$acc parallel loop default(present)
+        do i = 1, ngrdcol 
+          xm(i,1) = xm(i,2)
+        end do
+        !$acc end parallel loop
 
       endif  ! l_mfl_xm_imp_adj
 
@@ -866,6 +940,7 @@ module mono_flux_limiter
       !enddo
 
       !Ensure there are no spikes at the top of the domain
+      !$acc parallel loop default(present)
       do i = 1, ngrdcol 
 
         if (abs( xm(i,nz) - xm_enter_mfl(i,nz) ) > 10._core_rknd * xm_tol) then
@@ -920,11 +995,14 @@ module mono_flux_limiter
           endif ! xm_vert_integral < eps
         endif ! spike at domain top
       end do
+      !$acc end parallel loop
 
     end if
 
+    !$acc update host( wpxp, xm )
 
     if ( l_stats_samp ) then
+      !$acc update host( wpxp, xm )
       do i = 1, ngrdcol
 
         call stat_end_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
@@ -947,8 +1025,8 @@ module mono_flux_limiter
       end do
     endif
 
-
     return
+    
   end subroutine monotonic_turbulent_flux_limit
 
   !=============================================================================
@@ -987,7 +1065,7 @@ module mono_flux_limiter
     integer, parameter :: & 
       k_tdiag = 2    ! Thermodynamic main diagonal index.
 
-    ! Input Variables
+    !---------------------------- Input Variables ----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -1011,17 +1089,14 @@ module mono_flux_limiter
                      ! approximation rather than a centered differencing for turbulent or
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
-    ! Output Variables
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) ::  & 
+    !---------------------------- Output Variables ----------------------------
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) ::  & 
       lhs    ! Left hand side of tridiagonal matrix
 
-    ! Local Variables
-    integer :: i, k    ! Array index
+    !---------------------------- Local Variables ----------------------------
+    integer :: i, k, b   ! Array index
 
-    !-----------------------------------------------------------------------
-
-    ! Initialize the left-hand side matrix to 0.
-    lhs = 0.0_core_rknd
+    !---------------------------- Begin Code ----------------------------
 
     ! The xm loop runs between k = 2 and k = nz.  The value of xm at
     ! level k = 1, which is below the model surface, is simply set equal to the
@@ -1037,23 +1112,40 @@ module mono_flux_limiter
                            l_upwind_xm_ma,                     & ! intent(in)
                            lhs )                                 ! intent(out)
     else
-      lhs = 0.0_core_rknd
+      !$acc parallel loop gang vector collapse(3) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          do b = 1, ndiags3
+            lhs(b,i,k) = 0.0_core_rknd
+          end do
+        end do
+      end do
+      !$acc end parallel loop
     endif
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz, 1
       do i = 1, ngrdcol
         ! LHS xm time tendency.
         lhs(k_tdiag,i,k) = lhs(k_tdiag,i,k) + 1.0_core_rknd / dt
       end do
     end do ! xm loop: 2..nz
+    !$acc end parallel loop
 
     ! Boundary conditions.
 
     ! Lower boundary
-    lhs(:,:,1)       = 0.0_core_rknd
-    lhs(k_tdiag,:,1) = 1.0_core_rknd
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol 
+        lhs(:,i,1)       = 0.0_core_rknd
+        lhs(k_tdiag,i,1) = 1.0_core_rknd
+      end do
+    end do
+    !$acc end parallel loop
 
     return
+
   end subroutine mfl_xm_lhs
 
   !=============================================================================
@@ -1077,7 +1169,7 @@ module mono_flux_limiter
 
     implicit none
     
-    ! Input Variables
+    !---------------------------- Input Variables ----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -1094,31 +1186,25 @@ module mono_flux_limiter
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    ! Output Variable
+    !---------------------------- Output Variable ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
       rhs         ! Right hand side of tridiagonal matrix equation
 
-    ! Local Variables
-    integer :: i, k, km1  ! Array indices
+    !---------------------------- Local Variables ----------------------------
+    integer :: i, k  ! Array indices
 
-    !-----------------------------------------------------------------------
-
-    ! Initialize the right-hand side vector to 0.
-    rhs = 0.0_core_rknd
-
+    !---------------------------- Begin Code ----------------------------
 
     ! The xm loop runs between k = 2 and k = gr%nz.  The value of xm at
     ! level k = 1, which is below the model surface, is simply set equal to the
     ! value of xm at level k = 2 after the solve has been completed.
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz, 1
       do i = 1, ngrdcol
 
-        ! Define indices
-        km1 = max( k-1, 1 )
-
         ! RHS xm time tendency.
-        rhs(i,k) = rhs(i,k) + xm_old(i,k) / dt
+        rhs(i,k) = xm_old(i,k) / dt
 
         ! RHS xm turbulent advection (ta) term.
         ! Note:  Normally, the turbulent advection (ta) term is treated
@@ -1132,7 +1218,7 @@ module mono_flux_limiter
         !        the d(xm)/dt equation.
         rhs(i,k) = rhs(i,k) &
                    - invrs_rho_ds_zt(i,k) * invrs_dzt(i,k)  &
-                     * ( rho_ds_zm(i,k) * wpxp(i,k) - rho_ds_zm(i,km1) * wpxp(i,km1) )
+                     * ( rho_ds_zm(i,k) * wpxp(i,k) - rho_ds_zm(i,k-1) * wpxp(i,k-1) )
 
         ! RHS xm forcings.
         ! Note: xm forcings include the effects of microphysics,
@@ -1142,6 +1228,7 @@ module mono_flux_limiter
 
       end do
     end do ! xm loop: 2..gr%nz
+    !$acc end parallel loop
 
     ! Boundary conditions
 
@@ -1149,9 +1236,14 @@ module mono_flux_limiter
     ! The value of xm at the lower boundary will remain the same.  However, the
     ! value of xm at the lower boundary gets overwritten after the matrix is
     ! solved for the next timestep, such that xm(1) = xm(2).
-    rhs(:,1) = xm_old(:,1)
+    !$acc parallel loop default(present)
+    do i = 1, ngrdcol
+      rhs(i,1) = xm_old(i,1)
+    end do
+    !$acc end parallel loop
 
     return
+
   end subroutine mfl_xm_rhs
 
   !=============================================================================
@@ -1190,7 +1282,7 @@ module mono_flux_limiter
       k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
       km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
-    ! Input Variables
+    !---------------------------- Input Variables ----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -1201,21 +1293,23 @@ module mono_flux_limiter
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(inout) ::  & 
+    !---------------------------- InOut Variables ----------------------------
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(inout) ::  & 
       lhs  ! Left hand side of tridiagonal matrix
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) ::  &
       rhs  ! Right hand side of tridiagonal matrix equation
 
-    ! Output Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
       xm   ! Value of variable being solved for at timestep (t+1)   [units vary]
 
-    ! Local variable
+    !---------------------------- Local Variable ----------------------------
     character(len=10) :: &
       solve_type_str ! solve_type as a string for debug output purposes
 
-    !-----------------------------------------------------------------------
+    integer :: i
+
+    !---------------------------- Begin Code ----------------------------
 
     select case( solve_type )
     case ( mono_flux_rtm )
@@ -1234,11 +1328,17 @@ module mono_flux_limiter
 
     ! Check for errors
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code == clubb_fatal_error ) return
+      if ( err_code == clubb_fatal_error )  then
+        return
+      end if
     end if
 
     ! Boundary condition on xm
-    xm(:,1) = xm(:,2)
+    !$acc parallel loop default(present)
+    do i = 1, ngrdcol
+      xm(i,1) = xm(i,2)
+    end do
+    !$acc end parallel
 
     return
   end subroutine mfl_xm_solve
@@ -1288,13 +1388,6 @@ module mono_flux_limiter
     use stats_type, only: stats ! Type
 
     implicit none
-    
-    integer, intent(in) :: &
-      nz, &
-      ngrdcol
-
-    type (grid), target, intent(in) :: gr
-   
     ! Constant parameters 
     logical, parameter ::  &
       l_constant_thickness = .false.  ! Toggle constant or variable thickness.
@@ -1302,7 +1395,13 @@ module mono_flux_limiter
     real( kind = core_rknd ), parameter ::  &
       const_thick = 150.0_core_rknd  ! Constant thickness value               [m]
 
-    ! Input Variables
+    !------------------------- Input Variables -------------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type (grid), target, intent(in) :: gr
+   
     real( kind = core_rknd ), intent(in) ::  &
       dt ! Model timestep length                       [s]
 
@@ -1313,16 +1412,16 @@ module mono_flux_limiter
       varnce_w_2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
       mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
 
-    ! Inout Variable
+    !------------------------- Inout Variables -------------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
-    ! Output Variables
+    !------------------------- Output Variables -------------------------
     integer, dimension(ngrdcol,nz), intent(out) ::  &
       low_lev_effect, & ! Index of lowest level that has an effect (for lev. k)
       high_lev_effect   ! Index of highest level that has an effect (for lev. k)
 
-    ! Local Variables
+    !------------------------- Local Variables -------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
       vert_vel_up,   & ! Average upwards vertical velocity component   [m/s]
       vert_vel_down, & ! Average downwards vertical velocity component [m/s]
@@ -1335,13 +1434,14 @@ module mono_flux_limiter
 
     integer :: k, i, j
 
-    ! ---- Begin Code ----
+    !------------------------- Begin Code -------------------------
+
+    !$acc declare create( vert_vel_up, vert_vel_down, w_min )
 
     if ( l_constant_thickness ) then ! thickness is a constant value.
 
       ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
       do k = 3, nz-2, 1
-        
         do i = 1, ngrdcol
           
           ! Compute the number of levels that effect the central thermodynamic
@@ -1386,11 +1486,16 @@ module mono_flux_limiter
              end if
 
           end do ! downwards loop
+          
+        end do
+      end do ! k = 3, gr%nz-2
 
+      ! Compute the number of levels that effect the central thermodynamic
+      ! level through downwards motion (traveling from higher levels to
+      ! reach the central thermodynamic level).
 
-          ! Compute the number of levels that effect the central thermodynamic
-          ! level through downwards motion (traveling from higher levels to
-          ! reach the central thermodynamic level).
+      do k = 3, nz-2, 1
+        do i = 1, ngrdcol
 
           ! Start with the index of the thermodynamic level immediately above
           ! the central thermodynamic level.
@@ -1430,18 +1535,19 @@ module mono_flux_limiter
           end do ! upwards loop
           
         end do
-
       end do ! k = 3, gr%nz-2
-
 
     else ! thickness based on vertical velocity and time step length.
 
       invrs_dt = 1.0_core_rknd / dt
+
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
           w_min(i,k) = gr%dzm(i,k) * invrs_dt
         end do
       end do
+      !$acc end parallel loop
 
       ! Find the average upwards vertical velocity and the average downwards
       ! vertical velocity.
@@ -1454,6 +1560,7 @@ module mono_flux_limiter
                                   vert_vel_down, vert_vel_up ) ! intent(out)
 
       ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 3, nz-2, 1
         do i = 1, ngrdcol
 
@@ -1461,14 +1568,14 @@ module mono_flux_limiter
           ! level through upwards motion (traveling from lower levels to reach
           ! the central thermodynamic level).
 
-          ! Start with the index of the thermodynamic level immediately below
-          ! the central thermodynamic level.
-          j = k - 1
-
           ! Initialize the overall delta t counter to 0.
           dt_all_grid_levs = 0.0_core_rknd
 
-          do ! loop downwards until answer is found.
+          ! Start with the index of the thermodynamic level immediately below
+          ! the central thermodynamic level.
+          do j = k-1, 2, -1
+             
+             low_lev_effect(i,k) = j
 
              ! Continue if there is some component of upwards vertical velocity.
              if ( vert_vel_up(i,j) > 0.0_core_rknd ) then
@@ -1488,34 +1595,9 @@ module mono_flux_limiter
 
                    ! The current level is the lowest level that can be
                    ! considered.
-                   low_lev_effect(i,k) = j
-
                    exit
 
-                ! Continue if the total elapsed time has not reached or exceeded
-                ! one model time step.
-                else
-
-                   ! Thermodynamic level 1 cannot be considered because it is
-                   ! located below the surface or below the bottom of the model.
-                   ! The lowest level that can be considered is thermodynamic
-                   ! level 2.
-                   if ( j == 2 ) then
-
-                      ! The current level (level 2) is the lowest level that can
-                      ! be considered.
-                      low_lev_effect(i,k) = j
-
-                      exit
-
-                   else
-
-                      ! Increment to the next vertical level down.
-                      j = j - 1
-
-                   endif
-
-                endif
+                 endif
 
              ! Stop if there isn't a component of upwards vertical velocity.
              else
@@ -1530,88 +1612,77 @@ module mono_flux_limiter
 
           enddo ! downwards loop
 
+        end do
+      enddo ! k = 3, gr%nz-2
+      !$acc end parallel loop
 
-          ! Compute the number of levels that effect the central thermodynamic
-          ! level through downwards motion (traveling from higher levels to
-          ! reach the central thermodynamic level).
 
-          ! Start with the index of the thermodynamic level immediately above
-          ! the central thermodynamic level.
-          j = k + 1
+      ! Compute the number of levels that effect the central thermodynamic
+      ! level through downwards motion (traveling from higher levels to
+      ! reach the central thermodynamic level).
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 3, nz-2, 1
+        do i = 1, ngrdcol
 
           ! Initialize the overall delta t counter to 0.
           dt_all_grid_levs = 0.0_core_rknd
 
-          do ! loop upwards until answer is found.
+          ! Start with the index of the thermodynamic level immediately above
+          ! the central thermodynamic level.
+          do j = k+1, nz
+                 
+            high_lev_effect(i,k) = j
 
-             ! Continue if there is some component of downwards vertical velocity.
-             if ( vert_vel_down(i,j-1) < 0.0_core_rknd ) then
+            ! Continue if there is some component of downwards vertical velocity.
+            if ( vert_vel_down(i,j-1) < 0.0_core_rknd ) then
 
-                ! Compute the amount of time it takes to travel one grid level
-                ! downwards:  delta_t = - delta_z / vert_vel_down.
-                ! Note:  There is a (-) sign in front of delta_z because the
-                !        distance traveled is downwards.  Since vert_vel_down
-                !        has a negative value, dt_one_grid_lev will be a
-                !        positive value.
-                dt_one_grid_lev = -gr%dzm(i,j-1) / vert_vel_down(i,j-1)
+              ! Compute the amount of time it takes to travel one grid level
+              ! downwards:  delta_t = - delta_z / vert_vel_down.
+              ! Note:  There is a (-) sign in front of delta_z because the
+              !        distance traveled is downwards.  Since vert_vel_down
+              !        has a negative value, dt_one_grid_lev will be a
+              !        positive value.
+              dt_one_grid_lev = -gr%dzm(i,j-1) / vert_vel_down(i,j-1)
 
-                ! Total time elapsed for crossing all grid levels that have been
-                ! passed, thus far.
-                dt_all_grid_levs = dt_all_grid_levs + dt_one_grid_lev
+              ! Total time elapsed for crossing all grid levels that have been
+              ! passed, thus far.
+              dt_all_grid_levs = dt_all_grid_levs + dt_one_grid_lev
 
-                ! Stop if has taken more than one model time step (overall) to
-                ! travel the entire extent of the current vertical grid level.
-                if ( dt_all_grid_levs >= dt ) then
+              ! Stop if has taken more than one model time step (overall) to
+              ! travel the entire extent of the current vertical grid level.
+              if ( dt_all_grid_levs >= dt ) then
 
-                   ! The current level is the highest level that can be
-                   ! considered.
-                   high_lev_effect(i,k) = j
+                 ! The current level is the highest level that can be
+                 ! considered.
+                 exit
 
-                   exit
+              endif
 
-                ! Continue if the total elapsed time has not reached or exceeded
-                ! one model time step.
-                else
+            ! Stop if there isn't a component of downwards vertical velocity.
+            else
 
-                   ! The highest level that can be considered is thermodynamic
-                   ! level gr%nz.
-                   if ( j == nz ) then
+              ! The current level cannot be considered.  The highest level
+              ! that can be considered is one-level-below the current level.
+              high_lev_effect(i,k) = j - 1
 
-                      ! The current level (level gr%nz) is the highest level
-                      ! that can be considered.
-                      high_lev_effect(i,k) = j
+              exit
 
-                      exit
-
-                   else
-
-                      ! Increment to the next vertical level up.
-                      j = j + 1
-
-                   endif
-
-                endif
-
-             ! Stop if there isn't a component of downwards vertical velocity.
-             else
-
-                ! The current level cannot be considered.  The highest level
-                ! that can be considered is one-level-below the current level.
-                high_lev_effect(i,k) = j - 1
-
-                exit
-
-             end if
+            end if
 
           end do  ! upwards loop
+
         end do
       enddo ! k = 3, gr%nz-2
+      !$acc end parallel loop
+
     end if ! l_constant_thickness
 
 
     ! Information for levels 1, 2, gr%nz-1, and gr%nz is not needed.
     ! However, set the values at these levels for purposes of not having odd
     ! values in the arrays.
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       low_lev_effect(i,1)  = 1
       high_lev_effect(i,1) = 1
@@ -1622,8 +1693,10 @@ module mono_flux_limiter
       low_lev_effect(i,nz)    = nz
       high_lev_effect(i,nz)   = nz
     end do
+    !$acc end parallel loop
 
     return
+
   end subroutine calc_turb_adv_range
 
   !=============================================================================
@@ -1840,12 +1913,12 @@ module mono_flux_limiter
     use stats_type, only: stats ! Type
 
     implicit none
-    
+
+    !------------------------- Input Variables -------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-    ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       w_1_zm,        & ! Mean w (1st PDF component)                   [m/s]
       w_2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
@@ -1857,16 +1930,16 @@ module mono_flux_limiter
     real( kind = core_rknd ), intent(in) ::  &
       w_ref          ! Reference velocity, w|_ref (normally = 0)   [m/s]
 
-    ! Output Variables
+    !------------------------- Inout Variables -------------------------
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+      stats_zm
+
+    !------------------------- Output Variables -------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       mean_w_down, & ! Overall mean w (<= w|_ref)                  [m/s]
       mean_w_up      ! Overall mean w (>= w|_ref)                  [m/s]
 
-    ! Inout Variables
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
-      stats_zm
-
-    ! Local Variables
+    !------------------------- Local Variables -------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       mean_w_down_1st, & ! Mean w (<= w|_ref) from 1st normal distribution [m/s]
       mean_w_down_2nd, & ! Mean w (<= w|_ref) from 2nd normal distribution [m/s]
@@ -1875,7 +1948,9 @@ module mono_flux_limiter
 
     integer :: i, k
 
-    ! ---- Begin Code ----
+    !------------------------- Begin Code -------------------------
+
+    !$acc declare create( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd )
 
     call calc_mean_w_up_down_component( nz, ngrdcol, & ! intent(in)
                                         w_1_zm, varnce_w_1_zm, & ! intent(in)
@@ -1888,14 +1963,27 @@ module mono_flux_limiter
                                         mean_w_down_2nd, mean_w_up_2nd ) ! intent(out)
 
     ! Overall mean of downwards w.
-    mean_w_down = mixt_frac_zm * mean_w_down_1st &
-                     + ( 1.0_core_rknd - mixt_frac_zm ) * mean_w_down_2nd
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        mean_w_down(i,k) = mixt_frac_zm(i,k) * mean_w_down_1st(i,k) &
+                           + ( 1.0_core_rknd - mixt_frac_zm(i,k) ) * mean_w_down_2nd(i,k)
+      end do
+    end do
+    !$acc end parallel loop
 
     ! Overall mean of upwards w.
-    mean_w_up = mixt_frac_zm * mean_w_up_1st  &
-                   + ( 1.0_core_rknd - mixt_frac_zm ) * mean_w_up_2nd
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        mean_w_up(i,k) = mixt_frac_zm(i,k) * mean_w_up_1st(i,k)  &
+                        + ( 1.0_core_rknd - mixt_frac_zm(i,k) ) * mean_w_up_2nd(i,k)
+      end do
+    end do
+    !$acc end parallel loop
 
     if ( l_stats_samp ) then
+      !$acc update host( mean_w_up, mean_w_down )
       do i = 1, ngrdcol
          call stat_update_var( imean_w_up, mean_w_up(i,:), & ! intent(in)
                                stats_zm(i) ) ! intent(inout)
@@ -1936,61 +2024,62 @@ module mono_flux_limiter
     !
     !-----------------------------------------------------------------------
 
-      use grid_class, only:  &
-        grid ! Type
+    use grid_class, only:  &
+      grid ! Type
 
-      use constants_clubb, only: &
-          sqrt_2pi, &  ! Constant(s)
-          sqrt_2, &
-          one
+    use constants_clubb, only: &
+        sqrt_2pi, &  ! Constant(s)
+        sqrt_2, &
+        one
 #ifdef MKL
-      use constants_clubb, only: &
-          one_half  ! Constant(s)
+    use constants_clubb, only: &
+        one_half  ! Constant(s)
 #endif
 
-      use clubb_precision, only: &
-        core_rknd ! Variable(s)
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
-      implicit none
-      
-      integer, intent(in) :: &
-        nz, &
-        ngrdcol
+    implicit none
+    
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
 
-      ! Input Variables
-      real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
-        w_i_zm,     & ! Mean of w                                   [m/s]
-        varnce_w_i, & ! Variance of w                                       [m^2/s^2]
-        w_min         ! Minimum velocity required to affect adjacent level  [m/s]
+    !------------------------- Input Variables -------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+      w_i_zm,     & ! Mean of w                                   [m/s]
+      varnce_w_i, & ! Variance of w                                       [m^2/s^2]
+      w_min         ! Minimum velocity required to affect adjacent level  [m/s]
 
-      real( kind = core_rknd ), intent(in) ::  &
-        w_ref         ! Reference velocity, w|_ref (normally = 0)   [m/s]
+    real( kind = core_rknd ), intent(in) ::  &
+      w_ref         ! Reference velocity, w|_ref (normally = 0)   [m/s]
 
-      ! Output Variables
-      real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
-        mean_w_down_i, & ! Mean w (<= w|_ref) from normal distribution [m/s]
-        mean_w_up_i      ! Mean w (>= w|_ref) from normal distribution [m/s]
+    !------------------------- Output Variables -------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+      mean_w_down_i, & ! Mean w (<= w|_ref) from normal distribution [m/s]
+      mean_w_up_i      ! Mean w (>= w|_ref) from normal distribution [m/s]
 
-      ! Local Variables
-      real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-          erf_cache, & ! erf/cdfnorm values
-          exp_cache    ! exp() values
+    !------------------------- Local Variables -------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+        erf_cache, & ! erf/cdfnorm values
+        exp_cache    ! exp() values
 
-      real( kind = core_rknd ) :: &
-        sigma_w_i,   & ! Variance of w (1st PDF component)            [m^2/s^2]
-        invrs_sqrt_2pi ! The inverse of sqrt(2*pi), calculated to save divide operations
+    real( kind = core_rknd ) :: &
+      sigma_w_i,   & ! Variance of w (1st PDF component)            [m^2/s^2]
+      invrs_sqrt_2pi ! The inverse of sqrt(2*pi), calculated to save divide operations
 
-      integer :: i, k  ! Vertical loop index
+    integer :: i, k  ! Vertical loop index
 
-    ! ----------------- Begin Code -----------------
+    !------------------------- Begin Code -------------------------
+
+    !$acc declare create( erf_cache, exp_cache )
 
     invrs_sqrt_2pi = one / sqrt_2pi
 
-
     ! Loop over momentum levels from 2 to nz-1.  Levels 1 and nz
     ! are not needed.
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz-1
-      
       do i = 1, ngrdcol
       
         ! Standard deviation of w for the normal distribution.
@@ -2032,10 +2121,11 @@ module mono_flux_limiter
         end if
         
       end do
-
     end do ! k = 2, gr%nz
+    !$acc end parallel loop
 
     ! Upper and lower levels are not used, set to 0 to besafe and avoid NaN problems
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       mean_w_down_i(i,1) = 0.0_core_rknd
       mean_w_up_i(i,1) = 0.0_core_rknd
@@ -2043,6 +2133,7 @@ module mono_flux_limiter
       mean_w_down_i(i,nz) = 0.0_core_rknd
       mean_w_up_i(i,nz) = 0.0_core_rknd
     end do
+    !$acc end parallel loop
 
     return
 

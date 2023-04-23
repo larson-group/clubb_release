@@ -24,6 +24,9 @@ module turbulent_adv_pdf
 
   private    ! Set default scope
 
+  integer, parameter :: &
+    ndiags3 = 3
+
   contains
 
   !=============================================================================
@@ -356,7 +359,7 @@ module turbulent_adv_pdf
       rho_ds_zm                  ! Dry, static density at m-levs       [kg/m^3]
 
     ! ------------------------------ Return Variable ------------------------------
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: &
       lhs_ta    ! LHS coefficient of xpyp turbulent advection  [1/s]
 
     ! ------------------------------ Local Variables ------------------------------
@@ -364,15 +367,16 @@ module turbulent_adv_pdf
 
     ! ------------------------------ Begin Code ------------------------------
 
-    !$acc data copyin( coef_wpxpyp_implicit, rho_ds_zt, invrs_rho_ds_zm, &
+    !$acc data copyin( gr, gr%weights_zm2zt, gr%invrs_dzm, gr%invrs_dzt, &
+    !$acc              coef_wpxpyp_implicit, rho_ds_zt, invrs_rho_ds_zm, &
     !$acc              sgn_turbulent_vel, coef_wpxpyp_implicit_zm, rho_ds_zm ) &
     !$acc      copyout( lhs_ta )
 
 
     ! Set lower boundary array to 0
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ta(b,i,1) = zero
       end do
     end do
@@ -381,7 +385,7 @@ module turbulent_adv_pdf
     if ( .not. l_upwind_xpyp_turbulent_adv ) then
 
       ! Centered discretization.
-      !$acc parallel loop gang vector collapse(2) 
+      !$acc parallel loop gang vector collapse(2) default(present) 
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           
@@ -412,7 +416,7 @@ module turbulent_adv_pdf
     else ! l_upwind_xpyp_turbulent_adv
 
       ! "Upwind" discretization
-      !$acc parallel loop gang vector collapse(2) 
+      !$acc parallel loop gang vector collapse(2) default(present) 
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
         
@@ -459,9 +463,9 @@ module turbulent_adv_pdf
     endif
 
     ! Set upper boundary array to 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ta(b,i,nz) = zero
       end do
     end do
@@ -523,7 +527,7 @@ module turbulent_adv_pdf
         rho_ds_zm                   ! Dry, static density at m-lev [kg/m^3]
 
     !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: &
         lhs_ta
 
     !---------------- Local Variables -------------------
@@ -532,20 +536,21 @@ module turbulent_adv_pdf
 
     !---------------- Begin Code -------------------
 
-    !$acc data copyin( coef_wpxpyp_implicit, invrs_rho_ds_zm, rho_ds_zm ) &
+    !$acc data copyin( gr, gr%invrs_dzm, &
+    !$acc              coef_wpxpyp_implicit, invrs_rho_ds_zm, rho_ds_zm ) &
     !$acc      copyout( lhs_ta )
 
     ! Set lower boundary array to 0
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ta(b,i,1) = 0.0_core_rknd
       end do
     end do
     !$acc end parallel loop
 
     ! Godunov-like upwind discretization
-    !$acc parallel loop gang vector collapse(2) 
+    !$acc parallel loop gang vector collapse(2) default(present) 
     do k = 2, nz-1
       do i = 1, ngrdcol
         
@@ -569,9 +574,9 @@ module turbulent_adv_pdf
     !$acc end parallel loop
 
     ! Set upper boundary array to 0
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do b = 1, 3
+      do b = 1, ndiags3
         lhs_ta(b,i,nz) = 0.0_core_rknd
       end do
     end do
@@ -880,13 +885,14 @@ module turbulent_adv_pdf
 
     ! ----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( term_wpxpyp_explicit, rho_ds_zt, invrs_rho_ds_zm, &
+    !$acc data copyin( gr, gr%invrs_dzm, gr%invrs_dzt, &
+    !$acc              term_wpxpyp_explicit, rho_ds_zt, invrs_rho_ds_zm, &
     !$acc              sgn_turbulent_vel, term_wpxpyp_explicit_zm, rho_ds_zm ) &
     !$acc      copyout( rhs_ta )
 
 
     ! Set lower boundary value to 0
-    !$acc parallel loop
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       rhs_ta(i,1) = zero
     end do
@@ -895,7 +901,7 @@ module turbulent_adv_pdf
     if ( .not. l_upwind_xpyp_turbulent_adv ) then
 
       ! Centered discretization.
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           
@@ -910,7 +916,7 @@ module turbulent_adv_pdf
     else ! l_upwind_xpyp_turbulent_adv
 
       ! "Upwind" discretization
-      !$acc parallel loop gang vector collapse(2)
+      !$acc parallel loop gang vector collapse(2) default(present)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
 
@@ -941,7 +947,7 @@ module turbulent_adv_pdf
     end if
 
     ! Set upper boundary value to 0
-    !$acc parallel loop
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       rhs_ta(i,nz) = zero
     end do
@@ -1006,18 +1012,19 @@ module turbulent_adv_pdf
 
     !---------------- Begin Code -------------------
 
-    !$acc data copyin( term_wpxpyp_explicit_zm, invrs_rho_ds_zm, &
+    !$acc data copyin( gr, gr%invrs_dzm, &
+    !$acc              term_wpxpyp_explicit_zm, invrs_rho_ds_zm, &
     !$acc              sgn_turbulent_vel, rho_ds_zm ) &
     !$acc      copyout( rhs_ta )
 
     ! Set lower boundary value to 0
-    !$acc parallel loop
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       rhs_ta(i,1) = 0.0_core_rknd
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz-1
       do i = 1, ngrdcol 
         rhs_ta(i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
@@ -1035,7 +1042,7 @@ module turbulent_adv_pdf
     !$acc end parallel loop
 
     ! Set upper boundary value to 0
-    !$acc parallel loop
+    !$acc parallel loop default(present)
     do i = 1, ngrdcol
       rhs_ta(i,nz) = 0.0_core_rknd
     end do

@@ -20,7 +20,7 @@ from convergence_function import modify_ic_profile
 if (sys.version_info.major < 3):
   sys.exit('must use Python 3 instead of {}'.format(sys.version))
 
-# get CLUBB root directory (assumed to be one above the CWD) and set directories
+# get CLUBB root directory (assumed to be two above the CWD) and set directories
 clubb_dir = os.path.join(os.getcwd(),'..')
 output_dir = os.path.join(clubb_dir, 'output')
 case_dir = os.path.join(clubb_dir, 'input', 'case_setups')
@@ -119,34 +119,19 @@ for line in input_lines:
       line = line[0:ind] + '\n'
     line_collections.append(line)
     if (line.startswith('tridiag_solve_method')):
-      #if ('modified_ic' in parameters):
-      #  if (not any('l_modify_ic_for_cnvg_test' in tmpstr for tmpstr in input_lines)):
-      #    lnew = 'l_modify_ic_for_cnvg_test = .false.,' + '\n'
-      #    line_collections.append(lnew)
-      #    print('append line '+lnew)
-      if ('modified_bc' in parameters):
-        if (not any('l_modify_bc_for_cnvg_test' in tmpstr for tmpstr in input_lines)):
-          lnew = 'l_modify_bc_for_cnvg_test = .false.,' + '\n'
-          line_collections.append(lnew)
-          print('append line '+lnew)
       if ('smoothed_tau' in parameters):
         if (not any('l_smooth_Heaviside_tau_wpxp' in tmpstr for tmpstr in input_lines)):
           lnew = 'l_smooth_Heaviside_tau_wpxp = .false.,' + '\n'
           line_collections.append(lnew)
           print('append line '+lnew)
-      if ('linear_diffusion' in parameters):
-        if (not any('l_linear_diffusion' in tmpstr for tmpstr in input_lines)):
-          lnew = 'l_linear_diffusion = .false.,' + '\n'
-          line_collections.append(lnew)
-          print('append line '+lnew)
       if ('modified_BVF_Ri_limiter' in parameters):
-        if (not any('l_use_modify_limiters' in tmpstr for tmpstr in input_lines)):
-          lnew = 'l_use_modify_limiters = .false.,' + '\n'
+        if (not any('l_modify_limiters_for_cnvg_test' in tmpstr for tmpstr in input_lines)):
+          lnew = 'l_modify_limiters_for_cnvg_test = .false.,' + '\n'
           line_collections.append(lnew)
           print('append line '+lnew)
       if ('modified_wp3_clip' in parameters):
-        if (not any('l_smooth_Heaviside_wp3_lim' in tmpstr for tmpstr in input_lines)):
-          lnew = 'l_smooth_Heaviside_wp3_lim = .false.,' + '\n'
+        if (not any('l_use_wp3_lim_with_smth_Heaviside' in tmpstr for tmpstr in input_lines)):
+          lnew = 'l_use_wp3_lim_with_smth_Heaviside = .false.,' + '\n'
           line_collections.append(lnew)
           print('append line '+lnew)
 # "MOD_MODEL" file
@@ -165,6 +150,16 @@ for line in input_lines:
         lnew = 'nzmax = 999' + '\n'
         line_collections.append(lnew)
         print('append line '+lnew)
+      if ('modified_ic' in parameters):
+        if (not any('l_modify_ic_with_cubic_int' in tmpstr for tmpstr in input_lines)):
+          lnew = 'l_modify_ic_with_cubic_int = .false.,' + '\n'
+          line_collections.append(lnew)
+          print('append line '+lnew)
+      if ('modified_bc' in parameters):
+        if (not any('l_modify_bc_for_cnvg_test' in tmpstr for tmpstr in input_lines)):
+          lnew = 'l_modify_bc_for_cnvg_test = .false.,' + '\n'
+          line_collections.append(lnew)
+          print('append line '+lnew)
     elif (line.startswith('rad_scheme')):
       if (not any('l_calc_thlp2_rad' in tmpstr for tmpstr in input_lines)):
         lnew = 'l_calc_thlp2_rad = .true.,' + '\n'
@@ -263,7 +258,7 @@ if ('standard_aterms' in parameters):
 
 # fix flux computation height unless user has specified otherwise
 if ('modified_ic' in parameters):
-  #config_strings['l_modify_ic_with_cubic_int'] = '.true.,'
+  config_strings['l_modify_ic_with_cubic_int'] = '.true.,'
   if ('dycoms2_rf02' in parameters['case']):
     case_name = 'dycoms2_rf02'
   else: 
@@ -277,10 +272,14 @@ if ('modified_ic' in parameters):
   else:
     sys.exit('must specify grid spacing or refinement level info.....') 
   modify_ic_profile(clubb_dir, case_dir, grid_dir, case_name, case_dz, case_ref)
+else:
+  config_strings['l_modify_ic_with_cubic_int'] = '.false.,'
 
 # used revised boundary condition if user has specified 
 if ('modified_bc' in parameters):
   config_strings['l_modify_bc_for_cnvg_test'] = '.true.,'
+else:
+  config_strings['l_modify_bc_for_cnvg_test'] = '.false.,'
 
 #set time-dependent forcing to false
 if ('fixed_forcing' in parameters):
@@ -293,12 +292,14 @@ if ('turn_off_splat' in parameters):
 # set l_smooth_Heaviside_tau_wpxp to true unless unless user has specified otherwise
 if ('smoothed_tau' in parameters):
   config_strings['l_smooth_Heaviside_tau_wpxp'] = '.true.,'
+else:
+  config_strings['l_smooth_Heaviside_tau_wpxp'] = '.false.,'
 
 # use linear diffusion instead of nonlinear diffusion unless user has specified otherwise
 if ('linear_diffusion' in parameters):
-  config_strings['l_linear_diffusion'] = '.true.,'
   #specific setup for coefficients in linear diffusion 
-  #(used in clubb convergence paper) 
+  #(these setups are used for Zhang_Vogl_Larson_2023 paper) 
+  config_strings['mult_coef'] = '0.000000'
   config_strings['c_K1'] = '0.000000'
   config_strings['c_K2'] = '0.000000'
   config_strings['c_K6'] = '0.000000'
@@ -314,10 +315,14 @@ if ('linear_diffusion' in parameters):
 
 # use modified setup for limiters on BVF and Ri unless user has specified otherwise
 if ('modified_BVF_Ri_limiter' in parameters):
-  config_strings['l_use_modify_limiters'] = '.true.,'
+  config_strings['l_modify_limiters_for_cnvg_test'] = '.true.,'
+else:
+  config_strings['l_modify_limiters_for_cnvg_test'] = '.false.,'
 
 if ('modified_wp3_clip' in parameters): 
-  config_strings['l_smooth_Heaviside_wp3_lim'] = '.true.' 
+  config_strings['l_use_wp3_lim_with_smth_Heaviside'] = '.true.' 
+else:
+  config_strings['l_use_wp3_lim_with_smth_Heaviside'] = '.false.'
 
 # set restart run information
 if ('restart_run' in parameters):
