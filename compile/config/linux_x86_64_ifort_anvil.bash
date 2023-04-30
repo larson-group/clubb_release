@@ -2,13 +2,21 @@
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
 # compiler 
 
+#module purge
+#module load intel
+#module load netcdf
+#module load python
+#module load intel-mkl 
+
+source /home/software/spack-0.10.1/opt/spack/linux-centos7-x86_64/gcc-4.8.5/lmod-7.4.9-ic63herzfgw5u3na5mdtvp3nwxy6oj2z/lmod/lmod/init/sh;export MODULEPATH=$MODULEPATH:/software/centos7/spack-latest/share/spack/lmod/linux-centos7-x86_64/Core
 
 module purge
-module load python
-module load intel
-module load netcdf-fortran/4.5.3
-module load netcdf-c/4.7.4
-module load intel-mkl/2019.5.281
+
+module load cmake/3.20.3-vedypwm intel/20.0.4-lednsve intel-mkl/2020.4.304-voqlapk intel-mpi/2019.9.304-i42whlw netcdf-c/4.4.1-blyisdg netcdf-cxx/4.2-gkqc6fq netcdf-fortran/4.4.4-eanrh5t parallel-netcdf/1.11.0-y3nmmej perl/5.30.3-xxmtnqh 
+
+export NETCDF_C_PATH=/gpfs/fs1/software/centos7/spack-latest/opt/spack/linux-centos7-x86_64/intel-20.0.4/netcdf-c-4.4.1-blyisdg
+
+export NETCDF_FORTRAN_PATH=/gpfs/fs1/software/centos7/spack-latest/opt/spack/linux-centos7-x86_64/intel-20.0.4/netcdf-fortran-4.4.4-eanrh5t
 
 # Fortran 95 compiler and linker
 FC=ifort
@@ -39,7 +47,7 @@ OPTIMIZE="-O3"
 #OPTIMIZE="-O3 -ipo" # Interprocedural optimization
 
 # == NetCDF Location ==
-NETCDF=$NETCDF_ROOT
+#NETCDF=$NETCDF_FORTRAN_PATH
 
 # == LAPACK libraries ==
 # AMD Core Math Library
@@ -52,7 +60,7 @@ LAPACK="-mkl=sequential"
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS="-L$NETCDF/lib -lnetcdff -lnetcdf -L$MKLROOT/lib/intel64 $LAPACK"
+LDFLAGS="-L$NETCDF_FORTRAN_PATH/lib -lnetcdff -L$NETCDF_C_PATH/lib -lnetcdf -L$MKLROOT/lib/intel64 $LAPACK"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG -fp-model strict"
 
@@ -65,7 +73,7 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG -fp-model strict"
 # Need location of include and *.mod files for the netcdf library
 
 CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8"
-CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
+CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF_FORTRAN_PATH/include -I$NETCDF_C_PATH"
 
 # == Static library processing ==
 AR=ar

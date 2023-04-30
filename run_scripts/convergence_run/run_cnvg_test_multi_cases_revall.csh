@@ -1,11 +1,20 @@
 #!/bin/csh
-#SBATCH -A esmd 
-#SBATCH -p slurm 
-#SBATCH -N 1     
-#SBATCH -t 48:00:00 
-#SBATCH -J convergence_%j 
-#SBATCH -o convergence_%j.out 
-#SBATCH -e convergence_%j.err 
+# Submit this script as : sbatch ./[script-name]
+#SBATCH  --job-name=clubb-cnvg
+#SBATCH  --nodes=1
+#SBATCH  --time=12:00:00
+#SBATCH  --exclusive
+#SBATCH -A condo
+#SBATCH -p acme-small
+
+#load environment setups
+module purge
+module load cmake/3.20.3-vedypwm intel/20.0.4-lednsve intel-mkl/2020.4.304-voqlapk intel-mpi/2019.9.304-i42whlw netcdf-c/4.4.1-blyisdg netcdf-cxx/4.2-gkqc6fq netcdf-fortran/4.4.4-eanrh5t parallel-netcdf/1.11.0-y3nmmej perl/5.30.3-xxmtnqh
+
+set LD_LIBRARY_PATH=/gpfs/fs1/software/centos7/spack-latest/opt/spack/linux-centos7-x86_64/intel-20.0.4/netcdf-fortran-4.4.4-eanrh5t/lib:/gpfs/fs1/software/centos7/spack-latest/opt/spack/linux-centos7-x86_64/intel-20.0.4/netcdf-c-4.4.1-blyisdg/lib:${LD_LIBRARY_PATH}
+
+#load python environment (user-specified)
+source /lcrc/soft/climate/e3sm-unified/load_latest_e3sm_unified_anvil.csh
 
 # Flag to run model compiling section 
 set compile_model  = 0  # False: 0, True: 1
@@ -18,8 +27,8 @@ set run_model      = 1  # False: 0, True: 1
 set run_diagnostic = 1  # False: 0, True: 1
 
 #user-specified code location, experiment name and model run directory 
-set topdir = "/compyfs/zhan391/code/clubb_standalone_fnl/clubb_release-push"
-set expnam = "default"
+set topdir = "/lcrc/group/acme/ac.szhang/acme_scratch/clubb_release-2023"
+set expnam = "revall"
 set wkdir  = "${topdir}/cnvg_${expnam}"
 set outdir = "${topdir}/output"
 
@@ -80,10 +89,10 @@ endif
 # set config_flags = ""
 
 # For test simulations with baseline configuration (turn off mincrophysics + radiation + splatting, use standard ta)
-set config_flags = "-rad-off -micro-off -standard-aterms -splat-off"
+# set config_flags = "-rad-off -micro-off -standard-aterms -splat-off"
 
 # For test simulations with all changes from (Zhang_Vogl_Larson et. al., 2023, JAMES).
-#set config_flags = "-rad-off -micro-off -standard-aterms -splat-off -new-ic -new-bc -new-lim -smooth-tau -lin-diff -new-wp3cl"
+set config_flags = "-rad-off -micro-off -standard-aterms -splat-off -new-ic -new-bc -new-lim -smooth-tau -lin-diff -new-wp3cl"
 
 set dt_output    = 60   # output frequency in seconds, default setup for convergence simulation
                         # is 600s (maximum time step size used for simulation)
@@ -204,12 +213,6 @@ if ( $run_diagnostic > 0 ) then
   date
   echo
  
-  #load python environment (user-specified)
-  # module load python
-  module load anaconda3/2019.03 
-  source /share/apps/anaconda3/2019.03/etc/profile.d/conda.csh
-  conda activate e3sm_analysis 
-
   set i = 1
   while ( $i <= $ncase )
 
