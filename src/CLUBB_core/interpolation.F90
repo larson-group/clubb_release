@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-!$Id$
+!$Id$ 
 !===============================================================================
 module interpolation
 
@@ -497,65 +497,92 @@ module interpolation
     return
   end function zlinterp_fnc
 
-!-------------------------------------------------------------------------------
-  subroutine pvertinterp & 
-             ( nlev, pmid, pout, arrin, &
-               arrout )
-	     
+  !-------------------------------------------------------------------------------
+  subroutine pvertinterp( nz, ngrdcol, &
+                          p_mid, p_out, input_var, &
+                          interp_var )
+     
     implicit none
     
-    !------------------------------Arguments--------------------------------
-    integer , intent(in)  :: nlev              ! vertical dimension
-    real( kind = core_rknd ), intent(in)  :: pmid(nlev)        ! input level pressure levels
-    real( kind = core_rknd ), intent(in)  :: pout              ! output pressure level
-    real( kind = core_rknd ), intent(in)  :: arrin(nlev)       ! input  array
-    real( kind = core_rknd ), intent(out) :: arrout            ! output array (interpolated)   
+    !------------------------ Input Variables ------------------------
+    integer , intent(in)  :: &
+      nz, &
+      ngrdcol
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in)  :: &
+      p_mid,      & ! input level pressure levels
+      input_var     ! input  array
+
+    real( kind = core_rknd ), intent(in)  :: &
+      p_out         ! output pressure level
+
+    !------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
+      interp_var    ! output array (interpolated)   
     
-    !---------------------------Local variables-----------------------------
-    integer :: k                 ! indices
-    integer :: kupper            ! Level indices for interpolation
-    real( kind = core_rknd ) :: dpu              ! upper level pressure difference
-    real( kind = core_rknd ) :: dpl              ! lower level pressure difference
-    logical :: found             ! true if input levels found   	
-    logical :: error             ! true if error     
-    !-----------------------------------------------------------------
-    !
+    !------------------------ Local Variables ------------------------
+    integer :: &
+      i, k,   & ! Loop indices
+      k_upper    ! Level indices for interpolation
+
+    real( kind = core_rknd ) :: &
+      dpu,  & ! upper level pressure difference
+      dpl     ! lower level pressure difference
+
+    logical :: &
+      l_found,  & ! true if input levels found   	
+      l_error     ! true if error     
+
+    !------------------------ Begin Code ------------------------
+    
     ! Initialize index array and logical flags
-    !
+    l_error = .false.
 
-    found = .false.
-    kupper = 1
-
-    error = .false.
-    !
-    ! Store level indices for interpolation.
-    ! If all indices for this level have been found,
-    ! do the interpolation
-    !
-    do k=1,nlev-1
-      if ((.not. found) .and. pmid(k)>pout .and. pout>=pmid(k+1)) then
-        found = .true.
-        kupper = k
-      end if
-    end do
-    !
-    ! If we've fallen through the k=1,nlev-1 loop, we cannot interpolate and
+    ! If we've fallen through the k=1,nz-1 loop, we cannot interpolate and
     ! must extrapolate from the bottom or top data level for at least some
     ! of the longitude points.
-    !
-    if (pout >= pmid(1)) then
-      arrout = arrin(1)
-    else if (pout <= pmid(nlev)) then
-      arrout = arrin(nlev)
-    else if (found) then
-      dpu = pmid(kupper) - pout
-      dpl = pout - pmid(kupper+1)
-      arrout = (arrin(kupper)*dpl + arrin(kupper+1)*dpu)/(dpl + dpu)
-    else
-      error = .true.
-    end if   
-	     
+    !$acc parallel loop default(present)
+    do i = 1, ngrdcol
+
+      if ( p_out >= p_mid(i,1) ) then
+
+        interp_var(i) = input_var(i,1)
+
+      elseif ( p_out <= p_mid(i,nz) ) then
+
+        interp_var(i) = input_var(i,nz)
+
+      else
+
+        l_found = .false.
+        k_upper = 1
+
+        ! Store level indices for interpolation.
+        ! If all indices for this level have been found,
+        ! do the interpolation
+        do k = 1, nz-1
+          if ( p_mid(i,k) > p_out .and. p_out >= p_mid(i,k+1) ) then
+            l_found = .true.
+            k_upper = k
+            exit
+          end if
+        end do
+
+        if ( .not. l_found ) then
+          l_error = .true.
+        end if
+
+        dpu = p_mid(i,k_upper) - p_out
+        dpl = p_out - p_mid(i,k_upper+1)
+        interp_var(i) = ( input_var(i,k_upper)*dpl + input_var(i,k_upper+1)*dpu ) &
+                        / ( dpl + dpu )
+      end if
+
+    end do
+    !$acc end parallel loop
+     
     return
+
   end subroutine pvertinterp
 
 !-------------------------------------------------------------------------------

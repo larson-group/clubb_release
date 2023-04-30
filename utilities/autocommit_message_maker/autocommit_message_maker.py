@@ -151,12 +151,12 @@ def get_autommit_message_commit(external_repo, clubb_internal):
     return -1
 
 
-def get_new_clubb_commits(log_dict):
+def get_new_clubb_commits(log_dict, external_repo, clubb_internal_directory):
     # get the latest clubb commit from the latest autocommit message in the external repo
 
     #global log_dict
 
-    external_repo, clubb_internal_directory = get_arguments()
+    # external_repo, clubb_internal_directory = get_arguments()
 
     internal = clubb_internal_directory.split("/")[1].strip()
 
@@ -196,8 +196,9 @@ def get_new_clubb_commits(log_dict):
 
 if __name__=="__main__":
 
-    try: 
-        out = get_new_clubb_commits(log_dict)
+    try:
+        external_repo, clubb_internal_directory = get_arguments()
+        out = get_new_clubb_commits(log_dict, external_repo, clubb_internal_directory)
 
 
         sys.stdout.flush()

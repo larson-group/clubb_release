@@ -288,12 +288,9 @@ module advance_helper_module
 
     !------------ Begin Code --------------
 
-    !$acc data copyin( Lscale, em, thlm, exner, rtm, rcm, p_in_Pa, &
-    !$acc              thvm, ice_supersat_frac ) &
-    !$acc     copyout( stability_correction ) &
-    !$acc      create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc              brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc              brunt_vaisala_freq_sqd_plus, lambda0_stability, Lscale_zm )
+    !$acc declare create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+    !$acc                 brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
+    !$acc                 brunt_vaisala_freq_sqd_plus, lambda0_stability, Lscale_zm )
     
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
@@ -328,8 +325,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -623,7 +618,7 @@ module advance_helper_module
         grid, & ! Type
         ddzt, & ! Procedure(s)
         zt2zm, & 
-        zm2zt
+        zm2zt2zm
 
     use constants_clubb, only: &
         one, zero
@@ -649,30 +644,33 @@ module advance_helper_module
     use stats_type, only: stats ! Type
 
     implicit none
-    
-    integer, intent(in) :: &
-      nz, &
-      ngrdcol
 
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
-      stats_zm
-
-    type (grid), target, intent(in) :: gr
-
-    ! Constant Parameters
+    !!------------------------------ Constant Parameters !------------------------------
     real( kind = core_rknd ), parameter :: &
       Richardson_num_divisor_threshold = 1.0e-6_core_rknd, &
       Cx_fnc_Richardson_below_ground_value = one
 
     logical, parameter :: &
-      l_Cx_fnc_Richardson_vert_avg = .false.,& ! Vertically average Cx_fnc_Richardson over a
-                                        !  distance of Lscale
-      l_Richardson_vert_avg = .false. , & ! Vertically average Richardson_num over a
-                                         !  distance of Lscale
-      l_use_shear_turb_freq_sqd = .false.! Use turb_freq_sqd and shear_sqd in denominator of
-                                         !  Richardson_num
+      l_Cx_fnc_Richardson_vert_avg = .false., & ! Vertically average Cx_fnc_Richardson over a
+                                                !  distance of Lscale
+      l_Richardson_vert_avg = .false.,        & ! Vertically average Richardson_num over a
+                                                !  distance of Lscale
+      l_use_shear_turb_freq_sqd = .false.       ! Use turb_freq_sqd and shear_sqd in denominator of
+                                                !  Richardson_num
 
-    ! Input Variables
+    real( kind = core_rknd ), parameter :: &
+      min_max_smth_mag = 1.0e-9_core_rknd ! "base" smoothing magnitude before scaling 
+                                          ! for the respective data structure. See
+                                          ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
+                                          ! for a plot on how output behaves with varying min_max_smth_mag
+    
+    !------------------------------ Input ------------------------------
+    integer, intent(in) :: &
+      nz, &
+      ngrdcol
+
+    type (grid), target, intent(in) :: gr
+
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       thlm,      & ! th_l (liquid water potential temperature)      [K]
       um,        & ! u mean wind component (thermodynamic levels)   [m/s]
@@ -703,11 +701,15 @@ module advance_helper_module
     logical, intent(in) :: &
       l_modify_limiters_for_cnvg_test
 
-    ! Output Variable
+    !------------------------------ InOut Variable ------------------------------
+    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+      stats_zm
+
+    !------------------------------ Output Variable ------------------------------
     real( kind = core_rknd), dimension(ngrdcol,nz), intent(out) :: &
       Cx_fnc_Richardson
 
-    ! Local Variables
+    !------------------------------ Local Variables ------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       brunt_vaisala_freq_sqd, &
       brunt_vaisala_freq_sqd_mixed,&
@@ -715,11 +717,18 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_moist, &
       brunt_vaisala_freq_sqd_plus, &
       Richardson_num, &
+      fnc_Richardson, &
+      fnc_Richardson_clipped, &
+      fnc_Richardson_smooth, &
       Ri_zm, &
-      dum_dz, dvm_dz, &
+      ddzt_um, &
+      ddzt_vm, &
       shear_sqd, &
       turb_freq_sqd, &
-      Lscale_zm
+      Lscale_zm, &
+      Cx_fnc_interp, &
+      Richardson_num_clipped, &
+      Cx_fnc_Richardson_avg
 
     real ( kind = core_rknd ) :: &
       invrs_min_max_diff, &
@@ -727,19 +736,25 @@ module advance_helper_module
 
     real( kind = core_rknd ) :: &
       Richardson_num_max, & ! CLUBB tunable parameter Richardson_num_max
-      Richardson_num_min    ! CLUBB tunable parameter Richardson_num_min
-      
-    integer :: i
+      Richardson_num_min, & ! CLUBB tunable parameter Richardson_num_min
+      Cx_max,             & ! CLUBB tunable parameter max of Cx_fnc_Richardson
+      Cx_min                ! CLUBB tunable parameter min of Cx_fnc_Richardson
 
-    real( kind = core_rknd ), parameter :: &
-      min_max_smth_mag = 1.0e-9_core_rknd ! "base" smoothing magnitude before scaling 
-                                          ! for the respective data structure. See
-                                          ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
-                                          ! for a plot on how output behaves with varying min_max_smth_mag
+    integer :: i, k
 
-  !-----------------------------------------------------------------------
+    !------------------------------ Begin Code ------------------------------
 
-    !----- Begin Code -----
+    !$acc declare create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, brunt_vaisala_freq_sqd_dry, &
+    !$acc                 brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_plus, Richardson_num, &
+    !$acc                 Ri_zm, ddzt_um, ddzt_vm, shear_sqd, turb_freq_sqd, Lscale_zm, Cx_fnc_interp, &
+    !$acc                 Richardson_num_clipped, Cx_fnc_Richardson_avg, fnc_Richardson, &
+    !$acc                 fnc_Richardson_clipped, fnc_Richardson_smooth )
+
+    if ( l_modify_limiters_for_cnvg_test .and. l_use_shear_turb_freq_sqd ) then
+      error stop "ERROR: l_modify_limiters_for_cnvg_test .and. l_use_shear_turb_freq_sqd "// &
+                 "both true in compute_Cx_fnc_Richardson"
+    end if
+    
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &              ! intent(in)
@@ -753,23 +768,40 @@ module advance_helper_module
 
     Richardson_num_max = clubb_params(iRichardson_num_max)
     Richardson_num_min = clubb_params(iRichardson_num_min)
+    Cx_max = clubb_params(iCx_max)
+    Cx_min = clubb_params(iCx_min)
 
     invrs_min_max_diff = one / ( Richardson_num_max - Richardson_num_min )
     invrs_num_div_thresh = one / Richardson_num_divisor_threshold
 
     Lscale_zm = zt2zm( nz, ngrdcol, gr, Lscale )
 
-    if ( l_use_shear_turb_freq_sqd ) then
-      ! Calculate shear_sqd
-      dum_dz = ddzt( nz, ngrdcol, gr, um )
-      dvm_dz = ddzt( nz, ngrdcol, gr, vm )
-      shear_sqd = dum_dz**2 + dvm_dz**2
+    ! Calculate shear_sqd
+    ddzt_um = ddzt( nz, ngrdcol, gr, um )
+    ddzt_vm = ddzt( nz, ngrdcol, gr, vm )
 
-      turb_freq_sqd = em / Lscale_zm**2
-      Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
-                                                     Richardson_num_divisor_threshold )
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        shear_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
+      end do
+    end do
+    !$acc end parallel loop
+
+    if ( l_use_shear_turb_freq_sqd ) then
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          turb_freq_sqd(i,k) = em(i,k) / Lscale_zm(i,k)**2
+          Richardson_num(i,k) = brunt_vaisala_freq_sqd(i,k) / max( shear_sqd(i,k), turb_freq_sqd(i,k), &
+                                                                   Richardson_num_divisor_threshold )
+        end do
+      end do
+      !$acc end parallel loop
 
       if ( l_stats_samp ) then
+        !$acc update host(shear_sqd)
         do i = 1, ngrdcol
           call stat_update_var( ishear_sqd, shear_sqd(i,:), & ! intent(in)
                                 stats_zm(i) )               ! intent(inout)
@@ -779,66 +811,125 @@ module advance_helper_module
     else
 
       if ( l_use_shear_Richardson ) then
-         Richardson_num = brunt_vaisala_freq_sqd_mixed * invrs_num_div_thresh
-         Ri_zm &
-         = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed ) &
-           / max( ( ddzt( nz, ngrdcol, gr, um)**2 &
-                    + ddzt( nz, ngrdcol, gr, vm )**2 ), 1.0e-7_core_rknd )
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            Richardson_num(i,k) = brunt_vaisala_freq_sqd_mixed(i,k) * invrs_num_div_thresh
+
+            Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed(i,k) ) &
+                         / max( shear_sqd(i,k), 1.0e-7_core_rknd )
+          end do
+        end do
+        !$acc end parallel loop
+
       else
-         Richardson_num = brunt_vaisala_freq_sqd * invrs_num_div_thresh
-         Ri_zm = Richardson_num
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            Richardson_num(i,k) = brunt_vaisala_freq_sqd(i,k) * invrs_num_div_thresh
+            Ri_zm(i,k) = Richardson_num(i,k)
+          end do
+        end do
+        !$acc end parallel loop
       endif
 
     end if
 
     if ( l_Richardson_vert_avg ) then
+
       ! Clip below-min values of Richardson_num
-      Richardson_num = max( Richardson_num, Richardson_num_min )
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          Richardson_num_clipped(i,k) = max( Richardson_num(i,k), Richardson_num_min )
+        end do
+      end do
+      !$acc end parallel loop
+
       Richardson_num = Lscale_width_vert_avg( nz, ngrdcol, gr, &
-                                              Richardson_num, Lscale_zm, rho_ds_zm, &
+                                              Richardson_num_clipped, Lscale_zm, rho_ds_zm, &
                                               Richardson_num_max )
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
     ! The min function ensures that Cx does not exceed Cx_max, regardless of the
     !     value of Richardson_num_max.
-    if (l_modify_limiters_for_cnvg_test) then 
-      ! use smoothed max amd min to achive smoothed profile and avoid discontinuities 
-      Cx_fnc_Richardson = linear_interp_factor( &
-                     smooth_max(nz, ngrdcol, zero, &
-                                smooth_min(nz, ngrdcol, one,&
-                                           (Ri_zm-Richardson_num_min)*invrs_min_max_diff, &
-                                               one * min_max_smth_mag), &
-                     one * min_max_smth_mag), clubb_params(iCx_max), clubb_params(iCx_min) )
+    if ( l_modify_limiters_for_cnvg_test ) then 
 
-      Cx_fnc_Richardson = zt2zm(nz, ngrdcol, gr, zm2zt(nz, ngrdcol, gr,Cx_fnc_Richardson))
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          fnc_Richardson(i,k) = ( Ri_zm(i,k) - Richardson_num_min ) * invrs_min_max_diff
+        end do
+      end do
+
+      fnc_Richardson_clipped = smooth_min( nz, ngrdcol, one, &
+                                           fnc_Richardson, &
+                                           min_max_smth_mag )
+
+      fnc_Richardson_smooth = smooth_max( nz, ngrdcol, zero, &
+                                          fnc_Richardson_clipped, &
+                                          min_max_smth_mag )
+
+      ! use smoothed max amd min to achive smoothed profile and avoid discontinuities 
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          Cx_fnc_interp(i,k) = fnc_Richardson_smooth(i,k) * ( Cx_max - Cx_min ) + Cx_min
+        end do
+      end do
+
+      Cx_fnc_Richardson = zm2zt2zm( nz, ngrdcol, gr, Cx_fnc_interp )
 
     else ! default method 
 
-      Cx_fnc_Richardson = linear_interp_factor( &
-                      ( max(min(Richardson_num_max,Ri_zm),Richardson_num_min) &
-                      - Richardson_num_min )  * invrs_min_max_diff, &
-                                                clubb_params(iCx_max), clubb_params(iCx_min) )
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          Cx_fnc_Richardson(i,k) = ( max(min(Richardson_num_max, Ri_zm(i,k)), Richardson_num_min) &
+                                     - Richardson_num_min )  &
+                                   * invrs_min_max_diff * ( Cx_max - Cx_min ) + Cx_min
+        end do
+      end do
+      !$acc end parallel loop
 
     end if 
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
-      Cx_fnc_Richardson = Lscale_width_vert_avg( nz, ngrdcol, gr, &
+      Cx_fnc_Richardson_avg = Lscale_width_vert_avg( nz, ngrdcol, gr, &
                                                  Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
                                                  Cx_fnc_Richardson_below_ground_value )
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          Cx_fnc_Richardson(i,k) = Cx_fnc_Richardson_avg(i,k)
+        end do
+      end do
+      !$acc end parallel loop
     end if
 
     ! On some compilers, roundoff error can result in Cx_fnc_Richardson being
     ! slightly outside the range [0,1]. Thus, it is clipped here.
-    Cx_fnc_Richardson = max( zero, min( one, Cx_fnc_Richardson ) )
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        Cx_fnc_Richardson(i,k) = max( zero, min( one, Cx_fnc_Richardson(i,k) ) )
+      end do
+    end do
+    !$acc end parallel loop
 
     ! Stats sampling
     if ( l_stats_samp ) then
+      !$acc update host(Richardson_num)
       do i = 1, ngrdcol
         call stat_update_var( iRichardson_num, Richardson_num(i,:), & ! intent(in)
                               stats_zm(i) )                      ! intent(inout)
       end do
     end if
+
+    return
 
   end subroutine compute_Cx_fnc_Richardson
   !----------------------------------------------------------------------
@@ -1026,12 +1117,10 @@ module advance_helper_module
 
   end function Lscale_width_vert_avg
 
- !============================================================================
+  !============================================================================
   subroutine term_wp2_splat( nz, ngrdcol, gr, C_wp2_splat, dt, &
                              wp2, wp2_zt, tau_zm, &
                              wp2_splat )
-
-
   ! Description:
   !   This subroutine computes the (negative) tendency of wp2 due
   !   to "splatting" of eddies, e.g., near the ground or a Sc inversion.
@@ -1054,7 +1143,7 @@ module advance_helper_module
 
     implicit none 
     
-    ! Input Variables
+    !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -1070,30 +1159,45 @@ module advance_helper_module
       wp2_zt,  &  ! Variance of vertical velocity on the thermodynamic grid [m^2/s^2]
       tau_zm     ! Turbulent time scale on the momentum grid               [s]
 
-    ! Output Variable
+    !----------------------------- Output Variable -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: & 
       wp2_splat     ! Tendency of <w'^2> due to splatting of eddies (on zm grid) [m^2/s^3]
 
-    ! Local Variable
+    !----------------------------- Local Variable -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
-      d_sqrt_wp2_dz    ! d/dz( sqrt( w'2 ) )                 [1/s]
+      d_sqrt_wp2_dz,    & ! d/dz( sqrt( w'2 ) )                 [1/s]
+      sqrt_wp2_zt
 
     integer :: i, k
 
-    ! ---- Begin Code ----
+    !----------------------------- Begin Code -----------------------------
 
-    d_sqrt_wp2_dz(:,:) = ddzt( nz, ngrdcol, gr, sqrt( wp2_zt ) )
+    !$acc declare create( d_sqrt_wp2_dz, sqrt_wp2_zt )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        sqrt_wp2_zt(i,k) = sqrt( wp2_zt(i,k) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    d_sqrt_wp2_dz(:,:) = ddzt( nz, ngrdcol, gr, sqrt_wp2_zt )
     
     ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
     !   value of wp2 itself.  This prevents spikes in wp2 from being propagated to up2 and vp2.
     !   However, it does introduce undesired dependence on the time step.
     !   Someday we may wish to treat this term using a semi-implicit discretization.
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         wp2_splat(i,k) = - wp2(i,k) * min( five/dt, C_wp2_splat * tau_zm(i,k) &
                                                     * d_sqrt_wp2_dz(i,k)**2 )
       end do
     end do
+    !$acc end parallel loop
+
+    return
 
   end subroutine term_wp2_splat
 
@@ -1101,7 +1205,6 @@ module advance_helper_module
   subroutine term_wp3_splat( nz, ngrdcol, gr, C_wp2_splat, dt, &
                              wp2, wp3, tau_zt, &
                              wp3_splat )
-
   ! Description:
   !   This subroutine computes the damping of wp3 due
   !   to "splatting" of eddies, e.g., as they approach the ground or a Sc inversion.
@@ -1128,7 +1231,7 @@ module advance_helper_module
 
     implicit none
    
-    ! Input Variables
+    !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -1144,23 +1247,35 @@ module advance_helper_module
       wp3,     &  ! Third moment of vertical velocity on the momentum grid [m^3/s^3]
       tau_zt      ! Turbulent time scale on the thermal grid               [s]
 
-    ! Output Variable
+    !----------------------------- Output Variable -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: & 
       wp3_splat     ! Tendency of <w'^3> due to splatting of eddies (on zt grid) [m^3/s^4]
 
-    ! Local Variable
+    !----------------------------- Local Variable-----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
-      d_sqrt_wp2_dz    ! d/dz( sqrt( w'2 ) )                 [1/s]
+      d_sqrt_wp2_dz,  & ! d/dz( sqrt( w'2 ) )                 [1/s]
+      sqrt_wp2
       
     integer :: i, k
 
-    ! ---- Begin Code ----
+    !----------------------------- Begin Code -----------------------------
 
-    d_sqrt_wp2_dz(:,:) = ddzm( nz, ngrdcol, gr, sqrt( wp2 ) )
+    !$acc declare create( d_sqrt_wp2_dz, sqrt_wp2 )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        sqrt_wp2(i,k) = sqrt( wp2(i,k) )
+      end do
+    end do
+    !$acc end parallel loop
+
+    d_sqrt_wp2_dz(:,:) = ddzm( nz, ngrdcol, gr, sqrt_wp2 )
     
     ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
     ! value of wp3 itself. Someday we may wish to treat this term using a semi-implicit 
     ! discretization.
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         wp3_splat(i,k) = - wp3(i,k) &
@@ -1168,6 +1283,7 @@ module advance_helper_module
                                            * d_sqrt_wp2_dz(i,k)**2 )
       end do
     end do
+    !$acc end parallel loop
 
   end subroutine term_wp3_splat
 
