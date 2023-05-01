@@ -319,6 +319,7 @@ module stats_zm_module
         iC7_Skw_fnc, &
         iC1_Skw_fnc, &
         ibrunt_vaisala_freq_sqd, &
+        ibrunt_vaisala_freq_sqd_splat, &
         iRichardson_num, &
         ishear_sqd, &
         ihydrometp2, &
@@ -2496,6 +2497,14 @@ module stats_zm_module
         ibrunt_vaisala_freq_sqd = k
         call stat_assign( var_index=ibrunt_vaisala_freq_sqd, var_name="bv_freq_sqd", &
              var_description="Brunt-Vaisala frequency squared", &
+             var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'bv_freq_sqd_splat' )
+        ibrunt_vaisala_freq_sqd_splat = k
+        call stat_assign( var_index=ibrunt_vaisala_freq_sqd_splat, var_name="bv_freq_sqd_splat", &
+             var_description="Brunt-Vaisala freq. squared for splatting", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1

@@ -14,7 +14,8 @@ module sfc_varnce_module
   !=============================================================================
   subroutine calc_sfc_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
                               um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
-                              wp2_splat_sfc, tau_zm_sfc, &
+                              lhs_splat_wp2_sfc, tau_zm_sfc, &
+!                              wp2_splat_sfc, tau_zm_sfc, &
                               depth_pos_wpthlp, up2_sfc_coef, &
                               l_vary_convect_depth, &
                               clubb_params, &
@@ -119,7 +120,8 @@ module sfc_varnce_module
       um_sfc,           & ! Surface u wind component, <u>          [m/s]
       vm_sfc,           & ! Surface v wind component, <v>          [m/s]
       Lscale_up_sfc,    & ! Upward component of Lscale at surface  [m] 
-      wp2_splat_sfc,    & ! Tendency of <w'^2> due to splatting of eddies at zm(1) [m^2/s^3]
+      lhs_splat_wp2_sfc, &
+!      wp2_splat_sfc,    & ! Tendency of <w'^2> due to splatting of eddies at zm(1) [m^2/s^3]
       tau_zm_sfc,       & ! Turbulent dissipation time at level zm(1)  [s]
       depth_pos_wpthlp, & ! Thickness of the layer near the surface with wpthlp > 0 [m]
       up2_sfc_coef        ! CLUBB tunable parameter up2_sfc_coef   [-]
@@ -291,12 +293,14 @@ module sfc_varnce_module
        = max( w_tol_sqd, &
               wprtp_sfc**2 / ( rtp2_sfc * max_mag_correlation_flux**2 ), &
               wpthlp_sfc**2 / ( thlp2_sfc * max_mag_correlation_flux**2 ) )
-       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then 
+       if ( wp2_sfc - tau_zm_sfc * lhs_splat_wp2_sfc * wp2_sfc < min_wp2_sfc_val ) then
+!       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then 
                             ! splatting correction drives wp2_sfc to overly small value
          wp2_splat_sfc_correction = -wp2_sfc + min_wp2_sfc_val
          wp2_sfc = min_wp2_sfc_val
        else
-         wp2_splat_sfc_correction = tau_zm_sfc * wp2_splat_sfc
+         wp2_splat_sfc_correction = - tau_zm_sfc * lhs_splat_wp2_sfc * wp2_sfc
+!         wp2_splat_sfc_correction = tau_zm_sfc * wp2_splat_sfc
          wp2_sfc = wp2_sfc + wp2_splat_sfc_correction
        end if
        usp2_sfc = usp2_sfc - 0.5_core_rknd * wp2_splat_sfc_correction
@@ -429,12 +433,14 @@ module sfc_varnce_module
               wprtp_sfc**2 / ( rtp2_sfc * max_mag_correlation_flux**2 ), &
               wpthlp_sfc**2 / ( thlp2_sfc * max_mag_correlation_flux**2 ) )
 
-       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then 
+       if ( wp2_sfc - tau_zm_sfc * lhs_splat_wp2_sfc * wp2_sfc < min_wp2_sfc_val ) then
+!       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then 
                            ! splatting correction drives wp2_sfc to overly small values
-         wp2_splat_sfc_correction = -wp2_sfc + min_wp2_sfc_val
+         wp2_splat_sfc_correction = - wp2_sfc + min_wp2_sfc_val
          wp2_sfc = min_wp2_sfc_val
        else
-         wp2_splat_sfc_correction = tau_zm_sfc * wp2_splat_sfc
+         wp2_splat_sfc_correction = - tau_zm_sfc * lhs_splat_wp2_sfc * wp2_sfc
+!         wp2_splat_sfc_correction = tau_zm_sfc * wp2_splat_sfc
          wp2_sfc = wp2_sfc + wp2_splat_sfc_correction
        end if
        up2_sfc = up2_sfc - 0.5_core_rknd * wp2_splat_sfc_correction

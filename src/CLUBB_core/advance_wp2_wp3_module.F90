@@ -59,7 +59,7 @@ module advance_wp2_wp3_module
                               Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! intent(in)
                               invrs_rho_ds_zt, radf, thv_ds_zm,              & ! intent(in)
                               thv_ds_zt, mixt_frac, Cx_fnc_Richardson,       & ! intent(in)
-                              wp2_splat, wp3_splat,                          & ! intent(in)
+                              lhs_splat_wp2, lhs_splat_wp3,                  & ! intent(in)
                               pdf_implicit_coefs_terms,                      & ! intent(in)
                               wprtp, wpthlp, rtp2, thlp2,                    & ! intent(in)
                               clubb_params, nu_vert_res_dep,                 & ! intent(in)
@@ -246,8 +246,8 @@ module advance_wp2_wp3_module
       rtp2,              & ! Variance of rt (overall)                  [kg^2/kg^2]
       thlp2,             & ! Variance of thl (overall)                 [K^2]
       Cx_fnc_Richardson, & ! Cx_fnc from Richardson_num                [-]
-      wp2_splat,         & ! Tendency of <w'2> due to vertical compression of eddies [m^2/s^3]
-      wp3_splat            ! Tendency of <w'3> due to vertical compression of eddies [m^3/s^4]
+      lhs_splat_wp2,     & ! LHS coefficient of wp2 splatting term     [1/s] 
+      lhs_splat_wp3        ! LHS coefficient of wp3 splatting term     [1/s]
 
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -784,7 +784,7 @@ module advance_wp2_wp3_module
                    wp2, wp3, wpup2, wpvp2,                                          & ! intent(in)
                    wpthvp, wp2thvp, up2, vp2,                                       & ! intent(in)
                    C11_Skw_fnc, radf, thv_ds_zm, thv_ds_zt,                         & ! intent(in)
-                   wp2_splat, wp3_splat,                                            & ! intent(in)
+                   lhs_splat_wp2, lhs_splat_wp3,                                    & ! intent(in)
                    clubb_params,                                                    & ! intent(in)
                    iiPDF_type,                                                      & ! intent(in)
                    l_tke_aniso,                                                     & ! intent(in)
@@ -838,15 +838,15 @@ module advance_wp2_wp3_module
 
     ! Compute the implicit portion of the w'^2 and w'^3 equations.
     ! Build the left-hand side matrix.
-    call wp23_lhs( nz, ngrdcol, gr, dt,                         & ! intent(in)
-                   wp3_term_ta_lhs_result,                      & ! intent(in)
-                   lhs_diff_zm, lhs_diff_zt, lhs_ma_zm,         & ! intent(in)   
-                   lhs_ma_zt, lhs_ta_wp2,                       & ! intent(in)
-                   lhs_tp_wp3,                                  & ! intent(in)    
-                   lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, lhs_dp1_wp2, & ! intent(in)     
-                   lhs_pr1_wp3, lhs_pr1_wp2,                    & ! intent(in)      
-                   l_tke_aniso,                                 & ! intent(in) 
-                   lhs )                                          ! intent(out)
+    call wp23_lhs( nz, ngrdcol, gr, dt,                                     & ! intent(in)
+                   wp3_term_ta_lhs_result,                                  & ! intent(in)
+                   lhs_diff_zm, lhs_diff_zt, lhs_ma_zm,                     & ! intent(in)   
+                   lhs_ma_zt, lhs_ta_wp2,                                   & ! intent(in)
+                   lhs_tp_wp3,                                              & ! intent(in)    
+                   lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, lhs_dp1_wp2,             & ! intent(in)     
+                   lhs_pr1_wp3, lhs_pr1_wp2, lhs_splat_wp2, lhs_splat_wp3,  & ! intent(in)      
+                   l_tke_aniso,                                             & ! intent(in) 
+                   lhs )                                                      ! intent(out)
     
     if ( l_lmm_stepping ) then
        wp2_old(:,:) = wp2(:,:)
@@ -971,8 +971,8 @@ module advance_wp2_wp3_module
         write(fstderr,*) "thv_ds_zm = ", thv_ds_zm, new_line('c')
         write(fstderr,*) "thv_ds_zt = ", thv_ds_zt, new_line('c')
         write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
-        write(fstderr,*) "wp2_splat = ", wp2_splat, new_line('c')
-        write(fstderr,*) "wp3_splat = ", wp3_splat, new_line('c')
+        write(fstderr,*) "lhs_splat_wp2 = ", lhs_splat_wp2, new_line('c')
+        write(fstderr,*) "lhs_splat_wp3 = ", lhs_splat_wp3, new_line('c')
         write(fstderr,*) "wprtp = ", wprtp, new_line('c')
         write(fstderr,*) "wpthlp = ", wpthlp, new_line('c')
         write(fstderr,*) "rtp2 = ", rtp2, new_line('c')
@@ -1619,7 +1619,7 @@ module advance_wp2_wp3_module
                        lhs_ma_zt, lhs_ta_wp2, &
                        lhs_tp_wp3, &    
                        lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, lhs_dp1_wp2, &     
-                       lhs_pr1_wp3, lhs_pr1_wp2, &      
+                       lhs_pr1_wp3, lhs_pr1_wp2, lhs_splat_wp2, lhs_splat_wp3, & 
                        l_tke_aniso, & 
                        lhs ) 
                        
@@ -1693,7 +1693,9 @@ module advance_wp2_wp3_module
       lhs_ac_pr2_wp3, &   ! Accumulation terms of w'^3 and w'^3 pressure term 2
       lhs_dp1_wp2, &      ! Dissipation terms 1 for w'^2
       lhs_pr1_wp3, &      ! Dissipation terms 1 for w'^3
-      lhs_pr1_wp2         ! Pressure term 1 for w'2
+      lhs_pr1_wp2, &      ! Pressure term 1 for w'2
+      lhs_splat_wp2, &    ! LHS coefficient of wp2 splatting term  [1/s]
+      lhs_splat_wp3       ! LHS coefficient of wp3 splatting term  [1/s]
 
     logical, intent(in) :: &
       l_tke_aniso ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
@@ -1758,6 +1760,9 @@ module advance_wp2_wp3_module
         ! LHS pressure term 1 (pr1).
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         lhs(3,i,k_wp3) = lhs(3,i,k_wp3) + gamma_over_implicit_ts * lhs_pr1_wp3(i,k)
+
+        ! Add implicit splatting
+        lhs(3,i,k_wp3) = lhs(3,i,k_wp3) + lhs_splat_wp3(i,k)
 
         ! LHS time tendency.
         lhs(3,i,k_wp3) = lhs(3,i,k_wp3) + invrs_dt
@@ -1842,6 +1847,14 @@ module advance_wp2_wp3_module
 
     endif
 
+    ! Add implicit splatting to wp2
+    do k = 2, nz-1
+      do i = 1, ngrdcol
+        k_wp2 = 2*k
+
+        lhs(3,i,k_wp2) = lhs(3,i,k_wp2) + lhs_splat_wp2(i,k)
+      end do
+    end do
 
     ! LHS turbulent advection (ta) term for wp3
     if ( .not. l_explicit_turbulent_adv_wp3 ) then
@@ -1889,7 +1902,7 @@ module advance_wp2_wp3_module
                        wp2, wp3, wpup2, wpvp2, &
                        wpthvp, wp2thvp, up2, vp2,  &
                        C11_Skw_fnc, radf, thv_ds_zm, thv_ds_zt, &
-                       wp2_splat, wp3_splat, &
+                       lhs_splat_wp2, lhs_splat_wp3, &
                        clubb_params, &
                        iiPDF_type, & 
                        l_tke_aniso, & 
@@ -2022,8 +2035,8 @@ module advance_wp2_wp3_module
       radf,              & ! Buoyancy production at the CL top         [m^2/s^3]
       thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt,         & ! Dry, base-state theta_v on thermo. levs.  [K]
-      wp2_splat,         & ! Tendency of <w'^2> due to vertical compression of eddies [m^2/s^3]
-      wp3_splat            ! Tendency of <w'^3> due to vertical compression of eddies [m^3/s^4]
+      lhs_splat_wp2,     & ! LHS coefficient of wp2 splatting term     [1/s]
+      lhs_splat_wp3        ! LHS coefficient of wp3 splatting term     [1/s]
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -2161,7 +2174,7 @@ module advance_wp2_wp3_module
                                         * ( - lhs_pr1_wp2(i,k) * wp2(i,k) )
 
           ! Effect of vertical compression of eddies
-          rhs(i,k_wp2) = rhs(i,k_wp2) + wp2_splat(i,k)
+          rhs(i,k_wp2) = rhs(i,k_wp2)
         end do
       end do
       
@@ -2186,9 +2199,6 @@ module advance_wp2_wp3_module
 
         ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
         rhs(i,k_wp3) = rhs(i,k_wp3) + rhs_bp1_pr2_wp3(i,k)
-
-        ! RHS term for vertical compression of eddies (w'^3 splat)
-        rhs(i,k_wp3) = rhs(i,k_wp3) + wp3_splat(i,k) 
 
         ! RHS pressure term 1
         rhs(i,k_wp3) = rhs(i,k_wp3) + rhs_pr1_wp3(i,k)
@@ -2384,7 +2394,7 @@ module advance_wp2_wp3_module
 
 
           ! Include effect of vertical compression of eddies in wp2 budget
-          call stat_update_var_pt( iwp2_splat, k, wp2_splat(i,k), & ! intent(in)
+          call stat_update_var_pt( iwp2_splat, k, - lhs_splat_wp2(i,k) * wp2(i,k), & ! intent(in)
                                    stats_zm(i) )                    ! intent(out)
 
 
@@ -2542,11 +2552,9 @@ module advance_wp2_wp3_module
                                * ( - lhs_pr1_wp3(i,k) * wp3(i,k) ), & ! intent(in)
                                stats_zt(i) )                          ! intent(out)
 
-
           ! Include effect of vertical compression of eddies in wp2 budget
-          call stat_update_var_pt( iwp3_splat, k, wp3_splat(i,k), & ! intent(in)
+          call stat_update_var_pt( iwp3_splat, k, - lhs_splat_wp3(i,k) * wp3(i,k), & ! intent(in)
                                    stats_zt(i) )                    ! intent(out)
-
 
           if ( l_crank_nich_diff ) then
 

@@ -360,6 +360,7 @@ module advance_clubb_core_module
         iinvrs_tau_sfc,          &
         iinvrs_tau_shear,        &
         ibrunt_vaisala_freq_sqd, &
+        ibrunt_vaisala_freq_sqd_splat, &
         isqrt_Ri_zm
 
     use stats_variables, only: &
@@ -390,8 +391,10 @@ module advance_clubb_core_module
         calc_stability_correction, & ! Procedure(s)
         compute_Cx_fnc_Richardson, &
         calc_brunt_vaisala_freq_sqd, &
-        term_wp2_splat, term_wp3_splat, &
-        vertical_integral
+        wp2_term_splat_lhs, &
+        wp3_term_splat_lhs, &
+        vertical_integral, &
+        Lscale_width_vert_avg
 
     use interpolation, only: &
         pvertinterp
@@ -810,6 +813,7 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd_dry,   & ! dry N^2
        brunt_vaisala_freq_sqd_moist, & ! moist N^2
        brunt_vaisala_freq_sqd_plus,  & ! N^2 from another way
+       brunt_vaisala_freq_sqd_splat, &
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
        sqrt_Ri_zm                      ! square root of Richardson number
 
@@ -829,6 +833,8 @@ module advance_clubb_core_module
       tau_max_zt    ! Max. allowable eddy dissipation time scale on t-levs  [s]
 
     real( kind = core_rknd ), dimension(ngrdcol) :: newmu
+
+    real( kind = core_rknd ) :: below_grnd_val = 0.01_core_rknd
 
     real( kind = core_rknd ) :: &
       taumax,         & ! CLUBB tunable parameter taumax
@@ -850,8 +856,8 @@ module advance_clubb_core_module
     logical, parameter :: l_use_invrs_tau_N2_iso = .false.
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-       wp2_splat, &   ! Tendency of <w'2> due to eddies compressing  [m^2/s^3]
-       wp3_splat      ! Tendency of <w'3> due to eddies compressing  [m^3/s^4]
+       lhs_splat_wp2, & ! LHS coefficient of wp2 splatting term  [1/s]
+       lhs_splat_wp3    ! LHS coefficient of wp3 splatting term  [1/s]
 
     ! Variables associated with upgradient momentum contributions due to cumuli
     !real( kind = core_rknd ), dimension(nz) :: &
@@ -869,6 +875,8 @@ module advance_clubb_core_module
                            pdf_params_zm_single_col(ngrdcol)
 
     integer :: advance_order_loop_iter
+
+    integer :: smth_type = 2  ! Used for Lscale_width_vert_avg
 
     !----- Begin Code -----
 
@@ -1423,6 +1431,17 @@ module advance_clubb_core_module
 
       ! End Vince Larson's replacement.
 
+      call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm,                         & ! In
+                                        exner, rtm, rcm, p_in_Pa, thvm,                & ! In
+                                        ice_supersat_frac,                             & ! In
+                                        clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
+                                        clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
+                                        brunt_vaisala_freq_sqd,                        & ! Out
+                                        brunt_vaisala_freq_sqd_mixed,                  & ! Out
+                                        brunt_vaisala_freq_sqd_dry,                    & ! Out
+                                        brunt_vaisala_freq_sqd_moist,                  & ! Out
+                                        brunt_vaisala_freq_sqd_plus )                    ! Out
+
     else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
       !$acc data copyin( gr, gr%zm, gr%zt, &
@@ -1496,19 +1515,26 @@ module advance_clubb_core_module
     Kh_zm(:,:) = c_K * max( zt2zm( nz, ngrdcol, gr, Lscale(:,:) ), zero_threshold )  &
                  * sqrt( max( em(:,:), em_min ) )
 
-    !$acc data copyin( wp2, wp2_zt, tau_zm, wp3, tau_zt ) &
-    !$acc     copyout( wp2_splat, wp3_splat )
+    ! calculate Brunt-Vaisala frequency used for splatting
+    brunt_vaisala_freq_sqd_splat  &
+               = Lscale_width_vert_avg( nz, ngrdcol, gr, smth_type, &
+                                        brunt_vaisala_freq_sqd_mixed, Lscale, rho_ds_zm, &
+                                        below_grnd_val )
+
+    !$acc data copyin( brunt_vaisala_freq_sqd_splat ) &
+    !$acc     copyout( lhs_splat_wp2, lhs_splat_wp3 )
 
     ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
-    call term_wp2_splat( nz, ngrdcol, gr, clubb_params(iC_wp2_splat), dt, & ! Intent(in)
-                         wp2, wp2_zt, tau_zm,                             & ! Intent(in)
-                         wp2_splat )                                        ! Intent(out)
-                           
+    call wp2_term_splat_lhs( nz, ngrdcol, gr, clubb_params(iC_wp2_splat),       & ! Intent(in)
+                             brunt_vaisala_freq_sqd_splat,                      & ! Intent(in)
+                             lhs_splat_wp2 )                                      ! Intent(out)
+
     ! Vertical compression of eddies also diminishes w'3
-    call term_wp3_splat( nz, ngrdcol, gr, clubb_params(iC_wp2_splat), dt, & ! Intent(in)
-                         wp2, wp3, tau_zt,                                & ! Intent(in)
-                         wp3_splat )                                        ! Intent(out)
+    call wp3_term_splat_lhs( nz, ngrdcol, gr, clubb_params(iC_wp2_splat),       & ! Intent(in)
+                             brunt_vaisala_freq_sqd_splat,                      & ! Intent(in)
+                             lhs_splat_wp3 )                                      ! Intent(out)
     !$acc end data
+
 
     !----------------------------------------------------------------
     ! Set Surface variances
@@ -1560,7 +1586,7 @@ module advance_clubb_core_module
         ! Diagnose surface variances based on surface fluxes.
         call calc_sfc_varnce( upwp_sfc(i), vpwp_sfc(i), wpthlp_sfc(i), wprtp_sfc(i),     & ! intent(in)
                              um(i,2), vm(i,2), Lscale_up(i,2), wpsclrp_sfc(i,:),        & ! intent(in)
-                             wp2_splat(i,1), tau_zm(i,1),                        & ! intent(in)
+                             lhs_splat_wp2(i,1), tau_zm(i,1),                        & ! intent(in)
                              depth_pos_wpthlp(i), clubb_params(iup2_sfc_coef),  & ! intent(in)
                              clubb_config_flags%l_vary_convect_depth,        & ! intent(in)
                              clubb_params,                                   & ! intent(in)
@@ -1766,6 +1792,8 @@ module advance_clubb_core_module
           call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd(i,:), & ! intent(in)
                                stats_zm(i))                                          ! intent(inout)
         end if
+        call stat_update_var(ibrunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_splat(i,:), & ! intent(in)
+                               stats_zm(i))
       end do
     end if
 
@@ -1929,7 +1957,7 @@ module advance_clubb_core_module
                              dt_advance,                                  & ! intent(in)
                              sclrm, wpsclrp,                              & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,           & ! intent(in)
-                             wp2_splat,                                   & ! intent(in)
+                             lhs_splat_wp2,                               & ! intent(in)
                              clubb_params, nu_vert_res_dep,               & ! intent(in)
                              clubb_config_flags%iiPDF_type,               & ! intent(in)
                              clubb_config_flags%tridiag_solve_method,     & ! intent(in)
@@ -2027,7 +2055,7 @@ module advance_clubb_core_module
                             Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,        & ! intent(in)
                             invrs_rho_ds_zt, radf, thv_ds_zm,                     & ! intent(in)
                             thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson,   & ! intent(in)
-                            wp2_splat, wp3_splat,                                 & ! intent(in)
+                            lhs_splat_wp2, lhs_splat_wp3,                         & ! intent(in)
                             pdf_implicit_coefs_terms,                             & ! intent(in)
                             wprtp, wpthlp, rtp2, thlp2,                           & ! intent(in)
                             clubb_params, nu_vert_res_dep,                        & ! intent(in)

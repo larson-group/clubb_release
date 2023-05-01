@@ -482,6 +482,21 @@ class VariableGroupBase(VariableGroup):
             },
             {'var_names':
                 {
+                'clubb': ['bv_freq_sqd_splat'],
+                'sam': [],
+                'coamps': [],
+                'r408': ['bv_freq_sqd_splat'],
+                'hoc': ['bv_freq_sqd_splat'],
+                'e3sm': ['bv_freq_sqd_splat'],
+                'cam': ['bv_freq_sqd_splat'],
+                'wrf': ['bv_freq_sqd_splat'],
+                },
+                'title': 'Brunt-Vaisala frequency squared for splatting',
+                'axis_title': 'bv_freq_sqd_splat [$\mathrm{1/s^2}$]',
+                'sci_scale': 0,
+            },
+            {'var_names':
+                {
                     'clubb': ['wpthvp'],
                     'sam': [self.getWpthvpSamCalc,'WPTHVP'],
                     'coamps': ['wpthvp'],

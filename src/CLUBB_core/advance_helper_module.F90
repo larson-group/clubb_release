@@ -15,12 +15,14 @@ module advance_helper_module
     calc_stability_correction,   &
     calc_brunt_vaisala_freq_sqd, &
     compute_Cx_fnc_Richardson, &
-    term_wp2_splat, term_wp3_splat, &
+    wp2_term_splat_lhs, &
+    wp3_term_splat_lhs, &
     smooth_min, smooth_max, &
     smooth_heaviside_peskin, &
     calc_xpwp, &
     vertical_avg, &
-    vertical_integral
+    vertical_integral, &
+    Lscale_width_vert_avg
     
   interface calc_xpwp
     module procedure calc_xpwp_1D
@@ -740,6 +742,8 @@ module advance_helper_module
       Cx_max,             & ! CLUBB tunable parameter max of Cx_fnc_Richardson
       Cx_min                ! CLUBB tunable parameter min of Cx_fnc_Richardson
 
+    integer :: smth_type = 1
+
     integer :: i, k
 
     !------------------------------ Begin Code ------------------------------
@@ -847,8 +851,8 @@ module advance_helper_module
       end do
       !$acc end parallel loop
 
-      Richardson_num = Lscale_width_vert_avg( nz, ngrdcol, gr, &
-                                              Richardson_num_clipped, Lscale_zm, rho_ds_zm, &
+      Richardson_num = Lscale_width_vert_avg( nz, ngrdcol, gr, smth_type, &
+                                              Richardson_num, Lscale_zm, rho_ds_zm, &
                                               Richardson_num_max )
     end if
 
@@ -897,7 +901,7 @@ module advance_helper_module
     end if 
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
-      Cx_fnc_Richardson_avg = Lscale_width_vert_avg( nz, ngrdcol, gr, &
+      Cx_fnc_Richardson = Lscale_width_vert_avg( nz, ngrdcol, gr, smth_type, &
                                                  Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
                                                  Cx_fnc_Richardson_below_ground_value )
 
@@ -935,7 +939,7 @@ module advance_helper_module
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------
-  function Lscale_width_vert_avg( nz, ngrdcol, gr, &
+  function Lscale_width_vert_avg( nz, ngrdcol, gr, smth_type, &
                                   var_profile, Lscale_zm, rho_ds_zm, &
                                   var_below_ground_value )&
   result (Lscale_width_vert_avg_output)
@@ -960,7 +964,8 @@ module advance_helper_module
     ! Input Variables
     integer, intent(in) :: &
       nz, &
-      ngrdcol
+      ngrdcol, &
+      smth_type
       
     type (grid), target, intent(in) :: gr
     
@@ -998,7 +1003,11 @@ module advance_helper_module
 
     !----- Begin Code -----
 
-    one_half_avg_width = max( Lscale_zm, 500.0_core_rknd )
+    if ( smth_type == 1 ) then
+      one_half_avg_width = max( Lscale_zm, 500.0_core_rknd )
+    else if (smth_type == 2 ) then
+      one_half_avg_width = 60.0
+    endif
 
     ! Pre calculate numerator and denominator terms
     do k=1, nz
@@ -1117,175 +1126,107 @@ module advance_helper_module
 
   end function Lscale_width_vert_avg
 
-  !============================================================================
-  subroutine term_wp2_splat( nz, ngrdcol, gr, C_wp2_splat, dt, &
-                             wp2, wp2_zt, tau_zm, &
-                             wp2_splat )
-  ! Description:
-  !   This subroutine computes the (negative) tendency of wp2 due
-  !   to "splatting" of eddies, e.g., near the ground or a Sc inversion.
-  !   term_splat is intended to be added to the right-hand side of 
-  !   the wp2 equation, and -0.5*term_splat is intended to be added to each 
-  !   of the up2 and vp2 equations.  The functional form of term splat is
-  !
-  !   term_splat \propto - w'2 * (turbulent time scale) * ( d/dz( sqrt(w'2) ) )^2
+ !=============================================================================
+  subroutine wp2_term_splat_lhs( nz, ngrdcol, gr, C_wp2_splat, &
+                                 brunt_vaisala_freq_sqd_splat, &
+                                 lhs_splat_wp2 )
 
-    ! Included Modules
-    use grid_class, only: &
-        ddzt,  &   ! Procedure(s)
-        grid
+    ! Description
+    ! DESCRIBE TERM
 
-    use clubb_precision, only: & 
-        core_rknd 
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only:  &
+        grid, & ! Type
+        zm2zt, &
+        zt2zm
 
     use constants_clubb, only: &
-        five  ! Constant(s)
+        zero
 
-    implicit none 
-    
-    !----------------------------- Input Variables -----------------------------
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! --------------------- Input Variables ---------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
-      
+
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in) :: & 
-      C_wp2_splat, &          ! Tuning parameter                    [-]
-      dt                      ! CLUBB computational time step       [s]
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
-      wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
-      wp2_zt,  &  ! Variance of vertical velocity on the thermodynamic grid [m^2/s^2]
-      tau_zm     ! Turbulent time scale on the momentum grid               [s]
+    real( kind = core_rknd ), intent(in) :: &
+      C_wp2_splat    ! Model parameter C_wp2_splat             [ -]
 
-    !----------------------------- Output Variable -----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: & 
-      wp2_splat     ! Tendency of <w'^2> due to splatting of eddies (on zm grid) [m^2/s^3]
-
-    !----------------------------- Local Variable -----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
-      d_sqrt_wp2_dz,    & ! d/dz( sqrt( w'2 ) )                 [1/s]
-      sqrt_wp2_zt
-
-    integer :: i, k
+    ! --------------------- Output Variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      lhs_splat_wp2    ! LHS coefficient of wp2 splatting term  [1/s]
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc declare create( d_sqrt_wp2_dz, sqrt_wp2_zt )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        sqrt_wp2_zt(i,k) = sqrt( wp2_zt(i,k) )
-      end do
-    end do
-    !$acc end parallel loop
-
-    d_sqrt_wp2_dz(:,:) = ddzt( nz, ngrdcol, gr, sqrt_wp2_zt )
-    
-    ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
-    !   value of wp2 itself.  This prevents spikes in wp2 from being propagated to up2 and vp2.
-    !   However, it does introduce undesired dependence on the time step.
-    !   Someday we may wish to treat this term using a semi-implicit discretization.
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        wp2_splat(i,k) = - wp2(i,k) * min( five/dt, C_wp2_splat * tau_zm(i,k) &
-                                                    * d_sqrt_wp2_dz(i,k)**2 )
-      end do
-    end do
-    !$acc end parallel loop
+    lhs_splat_wp2 = + C_wp2_splat * zt2zm( nz, ngrdcol, gr, &
+                      zm2zt( nz, ngrdcol, gr, sqrt( max( zero, brunt_vaisala_freq_sqd_splat ) ) ) )
 
     return
 
-  end subroutine term_wp2_splat
+  end subroutine wp2_term_splat_lhs
 
-  !============================================================================
-  subroutine term_wp3_splat( nz, ngrdcol, gr, C_wp2_splat, dt, &
-                             wp2, wp3, tau_zt, &
-                             wp3_splat )
-  ! Description:
-  !   This subroutine computes the damping of wp3 due
-  !   to "splatting" of eddies, e.g., as they approach the ground or a Sc inversion.
-  !   term_wp3_splat is intended to be added to the right-hand side of 
-  !   the wp3 equation.  The functional form of wp3_splat is
-  !
-  !   wp3_splat \propto - w'3 * (turbulent time scale) * ( d/dz( sqrt(w'2) ) )^2
-  !
-  !   If the coefficient on wp3_splat is at least 1.5 times greater than the 
-  !   coefficient on wp2_splat, then skewness will be damped, promoting
-  !   more stratiform layers.
+ !=============================================================================
+  subroutine wp3_term_splat_lhs( nz, ngrdcol, gr, C_wp2_splat, &
+                                 brunt_vaisala_freq_sqd_splat, &
+                                 lhs_splat_wp3 )
 
-    ! Included Modules
-    use grid_class, only: &
-        ddzm, &   ! Procedure(s)
-        grid    
+    ! Description
+    ! DESCRIBE TERM
 
-    use clubb_precision, only: & 
-        core_rknd 
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only:  &
+        grid, & ! Type
+        zm2zt, &
+        zt2zm 
 
     use constants_clubb, only: &
-        three, &  ! Constant(s)
-        five
+        zero, &
+        one_half, &
+        three
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
 
     implicit none
-   
-    !----------------------------- Input Variables -----------------------------
+
+    ! --------------------- Input Variables ---------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
-      
+
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in) :: & 
-      C_wp2_splat, &          ! Tuning parameter                    [-]
-      dt                      ! CLUBB computational time step       [s]
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
-      wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
-      wp3,     &  ! Third moment of vertical velocity on the momentum grid [m^3/s^3]
-      tau_zt      ! Turbulent time scale on the thermal grid               [s]
+    real( kind = core_rknd ), intent(in) :: &
+      C_wp2_splat    ! Model parameter C_wp2_splat              [-]
 
-    !----------------------------- Output Variable -----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: & 
-      wp3_splat     ! Tendency of <w'^3> due to splatting of eddies (on zt grid) [m^3/s^4]
-
-    !----------------------------- Local Variable-----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
-      d_sqrt_wp2_dz,  & ! d/dz( sqrt( w'2 ) )                 [1/s]
-      sqrt_wp2
-      
-    integer :: i, k
+    ! --------------------- Output Variable ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      lhs_splat_wp3    ! LHS coefficient of wp3 splatting term [1/s]
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc declare create( d_sqrt_wp2_dz, sqrt_wp2 )
+    lhs_splat_wp3 = + one_half * three * C_wp2_splat * zt2zm( nz, ngrdcol, gr, &
+                      zm2zt( nz, ngrdcol, gr, sqrt( max( zero, brunt_vaisala_freq_sqd_splat ) ) ) )
 
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        sqrt_wp2(i,k) = sqrt( wp2(i,k) )
-      end do
-    end do
-    !$acc end parallel loop
+    return
 
-    d_sqrt_wp2_dz(:,:) = ddzm( nz, ngrdcol, gr, sqrt_wp2 )
-    
-    ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
-    ! value of wp3 itself. Someday we may wish to treat this term using a semi-implicit 
-    ! discretization.
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        wp3_splat(i,k) = - wp3(i,k) &
-                           * min( five/dt, three * C_wp2_splat * tau_zt(i,k) &
-                                           * d_sqrt_wp2_dz(i,k)**2 )
-      end do
-    end do
-    !$acc end parallel loop
-
-  end subroutine term_wp3_splat
+  end subroutine wp3_term_splat_lhs
 
 !===============================================================================
   function smooth_min_scalar_array( nz, ngrdcol, input_var1, input_var2, smth_coef ) &

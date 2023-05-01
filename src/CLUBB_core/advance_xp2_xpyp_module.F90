@@ -57,7 +57,7 @@ module advance_xp2_xpyp_module
                                dt,                                        & ! In
                                sclrm, wpsclrp,                            & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,         & ! In
-                               wp2_splat,                                 & ! In
+                               lhs_splat_wp2,                             & ! In
                                clubb_params, nu_vert_res_dep,             & ! In
                                iiPDF_type,                                & ! In
                                tridiag_solve_method,                      & ! In
@@ -242,7 +242,7 @@ module advance_xp2_xpyp_module
       wpsclrpthlp    ! <w'sclr'th_l'> (thermo. levels)    [m/s{sclr units}K]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
-      wp2_splat    ! Gustiness tendency for wp2 equation
+      lhs_splat_wp2  ! LHS coefficient of wp2 splatting term  [1/s]
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -637,7 +637,7 @@ module advance_xp2_xpyp_module
                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                             um, vm, upwp, vpwp, up2, vp2, & ! In
                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                            clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
+                            clubb_params(iC_uu_buoy), C14, lhs_splat_wp2, & ! In
                             lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                             stats_zm, & ! intent(inout)
                             uv_rhs(:,:,1) ) ! Out
@@ -675,7 +675,7 @@ module advance_xp2_xpyp_module
                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                             vm, um, vpwp, upwp, vp2, up2, & ! In
                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                            clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
+                            clubb_params(iC_uu_buoy), C14, lhs_splat_wp2, & ! In
                             lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
                             stats_zm, & ! intent(inout)
                             uv_rhs(:,:,1) ) ! Out
@@ -717,7 +717,7 @@ module advance_xp2_xpyp_module
                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                             um, vm, upwp, vpwp, up2, vp2, & ! In
                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                            clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
+                            clubb_params(iC_uu_buoy), C14, lhs_splat_wp2, & ! In
                             lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                             stats_zm, & ! intent(inout)
                             uv_rhs(:,:,1) ) ! Out
@@ -728,7 +728,7 @@ module advance_xp2_xpyp_module
                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                             vm, um, vpwp, upwp, vp2, up2, & ! In
                             thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                            clubb_params(iC_uu_buoy), C14, wp2_splat, & ! In
+                            clubb_params(iC_uu_buoy), C14, lhs_splat_wp2, & ! In
                             lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
                             stats_zm, & ! intent(inout)
                             uv_rhs(:,:,2) ) ! Out
@@ -2499,7 +2499,7 @@ module advance_xp2_xpyp_module
                               wp2, wpthvp, & ! In
                               C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
-                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
+                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, lhs_splat_wp2, & ! In
                               lhs_ta, rhs_ta, &
                               stats_zm, & ! intent(inout)
                               rhs ) ! Out
@@ -2601,7 +2601,7 @@ module advance_xp2_xpyp_module
       xap2,             & ! x_a'^2 (momentum levels)                    [m^2/s^2]
       xbp2,             & ! x_b'^2 (momentum levels)                    [m^2/s^2]
       thv_ds_zm,        & ! Dry, base-state theta_v on momentum levs.         [K]
-      wp2_splat           ! Tendency of <w'^2> due to splatting of eddies [m^2/s^3]
+      lhs_splat_wp2       ! LHS coefficient of wp2 splatting term           [1/s]
 
     real( kind = core_rknd ), intent(in) :: & 
       C4,        & ! Model parameter C_4                         [-]
@@ -2668,7 +2668,7 @@ module advance_xp2_xpyp_module
     ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
     ! Add half the contribution to up2 and half to vp2
     do i = 1, ngrdcol
-      rhs(i,2:nz-1) = rhs_ta(i,2:nz-1) - 0.5_core_rknd*wp2_splat(i,2:nz-1)
+      rhs(i,2:nz-1) = rhs_ta(i,2:nz-1) + 0.5_core_rknd * lhs_splat_wp2(i,2:nz-1) * wp2(i,2:nz-1)
     end do
     
     ! Calculate RHS pressure term 2 (pr2).
@@ -2781,7 +2781,7 @@ module advance_xp2_xpyp_module
 
           ! Vertical compression of eddies.
           call stat_update_var_pt( ixapxbp_splat, k, & ! Intent(in) 
-                       -0.5_core_rknd * wp2_splat(i,k),  & ! Intent(in)
+                        + 0.5_core_rknd * lhs_splat_wp2(i,k) * wp2(i,k),  & ! Intent(in)
                                    stats_zm(i) )       ! Intent(inout)
         end do
       end do
