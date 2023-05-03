@@ -7246,6 +7246,8 @@ module clubb_driver
       ! Let's change the air pressure too, this is in pascals, so +i is not too much 
       p_in_Pa_col(i,:) = p_in_Pa + real( i, kind=core_rknd )
 
+      upwp_sfc_col(i) = upwp_sfc_col(i) + real( i, kind=core_rknd ) * 1.e-5
+
     end do
 
 

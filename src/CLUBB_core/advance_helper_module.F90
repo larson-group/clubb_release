@@ -1139,8 +1139,7 @@ module advance_helper_module
 
     use grid_class, only:  &
         grid, & ! Type
-        zm2zt, &
-        zt2zm
+        zm2zt2zm
 
     use constants_clubb, only: &
         zero
@@ -1155,7 +1154,8 @@ module advance_helper_module
       nz, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
@@ -1167,10 +1167,36 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       lhs_splat_wp2    ! LHS coefficient of wp2 splatting term  [1/s]
 
+    ! --------------------- Local Variables ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      brunt_vaisala_freq_splat_clipped, &
+      brunt_vaisala_freq_splat_smooth
+
+    integer :: i, k
+
     !----------------------------- Begin Code -----------------------------
 
-    lhs_splat_wp2 = + C_wp2_splat * zt2zm( nz, ngrdcol, gr, &
-                      zm2zt( nz, ngrdcol, gr, sqrt( max( zero, brunt_vaisala_freq_sqd_splat ) ) ) )
+    !$acc declare create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        brunt_vaisala_freq_splat_clipped(i,k) &
+                = sqrt( max( zero, brunt_vaisala_freq_sqd_splat(i,k) ) )
+      end do
+    end do
+    !$acc end parallel loop
+    
+    brunt_vaisala_freq_splat_smooth = zm2zt2zm( nz, ngrdcol, gr, &
+                                                brunt_vaisala_freq_splat_clipped )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        lhs_splat_wp2(i,k) = + C_wp2_splat * brunt_vaisala_freq_splat_smooth(i,k)
+      end do
+    end do
+    !$acc end parallel loop
 
     return
 
@@ -1189,8 +1215,7 @@ module advance_helper_module
 
     use grid_class, only:  &
         grid, & ! Type
-        zm2zt, &
-        zt2zm 
+        zm2zt2zm
 
     use constants_clubb, only: &
         zero, &
@@ -1207,7 +1232,8 @@ module advance_helper_module
       nz, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
@@ -1219,10 +1245,37 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       lhs_splat_wp3    ! LHS coefficient of wp3 splatting term [1/s]
 
+    ! --------------------- Local Variables ---------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      brunt_vaisala_freq_splat_clipped, &
+      brunt_vaisala_freq_splat_smooth
+
+    integer :: i, k
+
     !----------------------------- Begin Code -----------------------------
 
-    lhs_splat_wp3 = + one_half * three * C_wp2_splat * zt2zm( nz, ngrdcol, gr, &
-                      zm2zt( nz, ngrdcol, gr, sqrt( max( zero, brunt_vaisala_freq_sqd_splat ) ) ) )
+    !$acc declare create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        brunt_vaisala_freq_splat_clipped(i,k) &
+                = sqrt( max( zero, brunt_vaisala_freq_sqd_splat(i,k) ) )
+      end do
+    end do
+    !$acc end parallel loop
+    
+    brunt_vaisala_freq_splat_smooth = zm2zt2zm( nz, ngrdcol, gr, &
+                                                brunt_vaisala_freq_splat_clipped )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        lhs_splat_wp3(i,k) = + one_half * three * C_wp2_splat &
+                               * brunt_vaisala_freq_splat_smooth(i,k)
+      end do
+    end do
+    !$acc end parallel loop
 
     return
 

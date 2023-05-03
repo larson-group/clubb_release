@@ -1521,8 +1521,12 @@ module advance_clubb_core_module
                                         brunt_vaisala_freq_sqd_mixed, Lscale, rho_ds_zm, &
                                         below_grnd_val )
 
-    !$acc data copyin( brunt_vaisala_freq_sqd_splat ) &
-    !$acc     copyout( lhs_splat_wp2, lhs_splat_wp3 )
+    !$acc data copyin( gr, gr%zm, wp2_zt, wp3, tau_zt, Lscale_up, &
+    !$acc              sfc_elevation, upwp_sfc, vpwp_sfc, wprtp_sfc, &
+    !$acc              wpthlp, um, vm, tau_zm, wpsclrp_sfc, &
+    !$acc              brunt_vaisala_freq_sqd_splat ) &
+    !$acc        copy( up2, vp2, thlp2, rtp2, rtpthlp, wp2,&
+    !$acc              lhs_splat_wp2, lhs_splat_wp3, sclrp2, sclrprtp, sclrpthlp )
 
     ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
     call wp2_term_splat_lhs( nz, ngrdcol, gr, clubb_params(iC_wp2_splat),       & ! Intent(in)
@@ -1533,119 +1537,37 @@ module advance_clubb_core_module
     call wp3_term_splat_lhs( nz, ngrdcol, gr, clubb_params(iC_wp2_splat),       & ! Intent(in)
                              brunt_vaisala_freq_sqd_splat,                      & ! Intent(in)
                              lhs_splat_wp3 )                                      ! Intent(out)
-    !$acc end data
-
 
     !----------------------------------------------------------------
     ! Set Surface variances
     !----------------------------------------------------------------
-
     ! Surface variances should be set here, before the call to either
     ! advance_xp2_xpyp or advance_wp2_wp3.
     ! Surface effects should not be included with any case where the lowest
     ! level is not the ground level.  Brian Griffin.  December 22, 2005.
-    do i = 1, ngrdcol
-      
-      if ( abs(gr%zm(i,1)-sfc_elevation(i)) <= abs(gr%zm(i,1)+sfc_elevation(i))*eps/2) then
 
-        ! Reflect surface varnce changes in budget
-        if ( l_stats_samp ) then
-          call stat_begin_update_pt( ithlp2_sf, 1,      &      ! intent(in)
-           thlp2(i,1) / dt,    &                                 ! intent(in)
-                                     stats_zm(i) )                      ! intent(inout)
-          call stat_begin_update_pt( irtp2_sf, 1,       &      ! intent(in)
-            rtp2(i,1) / dt,    &                                 ! intent(in)
-                                     stats_zm(i) )                      ! intent(inout)
-          call stat_begin_update_pt( irtpthlp_sf, 1,    &      ! intent(in)
-            rtpthlp(i,1) / dt, &                                 ! intent(in)
-                                     stats_zm(i) )                      ! intent(inout)
-          call stat_begin_update_pt( iup2_sf, 1,        &      ! intent(in)
-            up2(i,1) / dt,     &                                 ! intent(in)
-                                     stats_zm(i) )                      ! intent(inout)
-          call stat_begin_update_pt( ivp2_sf, 1,        &      ! intent(in)
-            vp2(i,1) / dt,     &                                 ! intent(in)
-                                     stats_zm(i) )                      ! intent(inout)
-          call stat_begin_update_pt( iwp2_sf, 1,        &      ! intent(in)
-            wp2(i,1) / dt,     &                                 ! intent(in)
-                                     stats_zm(i) )                      ! intent(inout)
-        end if
+    ! Diagnose surface variances based on surface fluxes.
+    call calc_sfc_varnce( nz, ngrdcol, gr, dt, sfc_elevation,       & ! Intent(in)
+                          upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc,    & ! Intent(in)
+                          um, vm, Lscale_up, wpsclrp_sfc,           & ! Intent(in)
+                          lhs_splat_wp2, tau_zm,                    & ! Intent(in)
+                          !wp2_splat, tau_zm,                       & ! Intent(in)
+                          clubb_config_flags%l_vary_convect_depth,  & ! Intent(in)
+                          clubb_params,                             & ! Intent(in)
+                          stats_zm,                                 & ! Intent(inout)
+                          wp2, up2, vp2,                            & ! Intent(inout)
+                          thlp2, rtp2, rtpthlp,                     & ! Intent(inout)
+                          sclrp2, sclrprtp, sclrpthlp )               ! Intent(inout)
 
+    !$acc end data
 
-        ! Find thickness of layer near surface with positive heat flux.
-        ! This is used when l_vary_convect_depth=.true. in order to determine wp2_sfc.
-        if ( wpthlp_sfc(i) <= zero ) then
-           depth_pos_wpthlp(i) = one ! When sfc heat flux is negative, set depth to 1 m.
-        else ! When sfc heat flux is positive, march up sounding until wpthlp 1st becomes negative.
-           k = 1
-           do while ( wpthlp(i,k) > zero .and. (gr%zm(i,k)-sfc_elevation(i)) < 1000._core_rknd )
-              k = k + 1
-           end do
-           depth_pos_wpthlp(i) = max( one, gr%zm(i,k)-sfc_elevation(i) )
-        end if
-
-        ! Diagnose surface variances based on surface fluxes.
-        call calc_sfc_varnce( upwp_sfc(i), vpwp_sfc(i), wpthlp_sfc(i), wprtp_sfc(i),     & ! intent(in)
-                             um(i,2), vm(i,2), Lscale_up(i,2), wpsclrp_sfc(i,:),        & ! intent(in)
-                             lhs_splat_wp2(i,1), tau_zm(i,1),                        & ! intent(in)
-                             depth_pos_wpthlp(i), clubb_params(iup2_sfc_coef),  & ! intent(in)
-                             clubb_config_flags%l_vary_convect_depth,        & ! intent(in)
-                             clubb_params,                                   & ! intent(in)
-                             wp2(i,1), up2(i,1), vp2(i,1),                         & ! intent(out)
-                             thlp2(i,1), rtp2(i,1), rtpthlp(i,1),                  & ! intent(out)
-                             sclrp2(i,1,1:sclr_dim),                           & ! intent(out)
-                             sclrprtp(i,1,1:sclr_dim),                         & ! intent(out)
-                             sclrpthlp(i,1,1:sclr_dim) )                         ! intent(out)
-
-        if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
-            err_code_out = err_code
-            write(fstderr, *) "Error calling calc_sfc_varnce"
-            return
-          end if
-        end if
-
-        ! Update surface stats
-        if ( l_stats_samp ) then
-          call stat_end_update_pt( ithlp2_sf, 1, &                ! intent(in)
-            thlp2(i,1) / dt, &                                      ! intent(in)
-                                   stats_zm(i) )                           ! intent(inout)
-          call stat_end_update_pt( irtp2_sf, 1, &                 ! intent(in)
-            rtp2(i,1) / dt, &                                       ! intent(in)
-                                   stats_zm(i) )                           ! intent(inout)
-          call stat_end_update_pt( irtpthlp_sf, 1, &              ! intent(in)
-            rtpthlp(i,1) / dt, &                                    ! intent(in)
-                                   stats_zm(i) )                           ! intent(inout)
-          call stat_end_update_pt( iup2_sf, 1, &                  ! intent(in)
-            up2(i,1) / dt, &                                        ! intent(in)
-                                   stats_zm(i) )                           ! intent(inout)
-          call stat_end_update_pt( ivp2_sf, 1, &                  ! intent(in)
-            vp2(i,1) / dt, &                                        ! intent(in)
-                                   stats_zm(i) )                           ! intent(inout)
-          call stat_end_update_pt( iwp2_sf, 1, &                  ! intent(in)
-            wp2(i,1) / dt, &                                        ! intent(in)
-                                   stats_zm(i) )                           ! intent(inout)
-        end if
-
-      else  ! sfc_elevation
-
-        ! Variances for cases where the lowest level is not at the surface.
-        ! Eliminate surface effects on lowest level variances.
-        wp2(i,1)     = w_tol_sqd
-        up2(i,1)     = w_tol_sqd
-        vp2(i,1)     = w_tol_sqd
-        thlp2(i,1)   = thl_tol**2
-        rtp2(i,1)    = rt_tol**2
-        rtpthlp(i,1) = 0.0_core_rknd
-
-        do j = 1, sclr_dim, 1
-          sclrp2(i,1,j)    = 0.0_core_rknd
-          sclrprtp(i,1,j)  = 0.0_core_rknd
-          sclrpthlp(i,1,j) = 0.0_core_rknd
-        end do
-
-      end if ! gr%zm(1,1) == sfc_elevation
-        
-    end do
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( err_code == clubb_fatal_error ) then
+        err_code_out = err_code
+        write(fstderr, *) "Error calling calc_sfc_varnce"
+        return
+      end if
+    end if
 
     !#######################################################################
     !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
