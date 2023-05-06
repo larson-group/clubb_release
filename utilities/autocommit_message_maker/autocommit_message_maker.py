@@ -205,7 +205,7 @@ if __name__=="__main__":
 
         print(out)
     except Exception as e:
-        print("Caught exception: {}".format(e))
+        # print("Caught exception: {}".format(e))
         print("Autoupdated " + clubb_internal_directory.split("/")[1].strip())
 
     # final_out_file = open(("/home/cernikt/Documents/autocommit_message_maker/clubb/utilities/final_git_log.txt"), "w")
