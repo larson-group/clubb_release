@@ -109,8 +109,8 @@ set ncase  = $#case
 #user-specified time-step and grid-spacing refinements for convergence test  
 #the default is the same as simulation setup in clubb convergence paper 
 #(Zhang_Vogl_Larson et. al., 2023, JAMES)
-set refine_levels = (0  1  2    3    4     5      6       7) 
-set time_steps    = (4  2  1  0.5 0.25 0.125 0.0625 0.03125) 
+set refine_levels = (0  1  2    3    4     5       7) 
+set time_steps    = (4  2  1  0.5 0.25 0.125 0.03125) 
 set nrefs         = $#refine_levels
 
 #set refine_levels = (  0   0   0  0  0  1  2    3 ) 
