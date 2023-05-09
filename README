@@ -1031,6 +1031,34 @@ in a parameter value.
 
 3. $  ./run_jacobian.bash <CASE NAME> [PATH TO PARAMETER FILE] [PATH TO STATS FILE]
 
+-----------------------------------------------------------------------
+- (3.5) Running a convergence test:
+-----------------------------------------------------------------------
+
+A convergence test is used to determine how well CLUBB is converging to a reference
+solution (which is a simulation run with very high spatial and temporal resolution)
+as vertical and temporal resolution increases over multiple simulations.
+
+The convergence tests run multiple simulations (for each test case) with the
+following resolutions:
+
+0: dt = 4
+1: dt = 2
+2: dt = 1
+3: dt = 0.5
+4: dt = 0.25
+5: dt = 0.125
+6: Omitted
+7 (reference solution): dt = 0.03125
+
+The convergence tests scripts run the convergence tests in 3 steps: (1) compile
+the code (if necessary), (2) run the tests, and (3) perform the postprocessing,
+which generates a large number of *.png image files in the cnvg_/figures directory.
+
+1. cd ../run_scripts/convergence_run
+
+2. at now -f run_cnvg_revall
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % CHAPTER 4: "NON-CORE" CLUBB CODE
