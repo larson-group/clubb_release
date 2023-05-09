@@ -1040,7 +1040,10 @@ solution (which is a simulation run with very high spatial and temporal resoluti
 as vertical and temporal resolution increases over multiple simulations.
 
 The convergence tests run multiple simulations (for each test case) with the
-following resolutions:
+following refinements. The number on the left is the order of the refinement,
+where the vertical grid spacing and model timestep duration are both a factor
+of 2^order smaller than their 0th order values. The 7th refinement is the "reference"
+refinement, as it is run at the smallest grid spacing and time step duration.
 
 0: dt = 4
 1: dt = 2
@@ -1054,6 +1057,10 @@ following resolutions:
 The convergence tests scripts run the convergence tests in 3 steps: (1) compile
 the code (if necessary), (2) run the tests, and (3) perform the postprocessing,
 which generates a large number of *.png image files in the cnvg_/figures directory.
+The *.png image files show the rate of convergence for each case and variable
+of interest.
+
+The steps to run a convergence test are as follows:
 
 1. cd ../run_scripts/convergence_run
 
