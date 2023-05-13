@@ -250,4 +250,4 @@ module calendar
     return
   end function gregorian2julian_day
 
-end module calendar 
+end module calendar
