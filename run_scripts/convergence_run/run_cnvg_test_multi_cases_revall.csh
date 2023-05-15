@@ -27,7 +27,7 @@ set run_model      = 1  # False: 0, True: 1
 set run_diagnostic = 1  # False: 0, True: 1
 
 #user-specified code location, experiment name and model run directory 
-set topdir = "/lcrc/group/acme/ac.szhang/acme_scratch/clubb_release-2023"
+set topdir = "/lcrc/group/acme/ac.griffin/clubb_convergence_test"
 set expnam = "revall"
 set wkdir  = "${topdir}/cnvg_${expnam}"
 set outdir = "${topdir}/output"
