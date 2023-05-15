@@ -1,0 +1,1 @@
+csh run_cnvg_test_multi_cases_baseline.csh &> clubb_output_baseline.txt
