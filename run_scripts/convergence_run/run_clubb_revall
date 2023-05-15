@@ -1,1 +1,3 @@
+# Usage: at now -f run_clubb_revall
+
 csh run_cnvg_test_multi_cases_revall.csh &> clubb_output_revall.txt
