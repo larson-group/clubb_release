@@ -1045,26 +1045,65 @@ where the vertical grid spacing and model timestep duration are both a factor
 of 2^order smaller than their 0th order values. The 7th refinement is the "reference"
 refinement, as it is run at the smallest grid spacing and time step duration.
 
-0: dt = 4
-1: dt = 2
-2: dt = 1
-3: dt = 0.5
-4: dt = 0.25
-5: dt = 0.125
+0: dt = 4 s; dz is based on the 128-level "deep convective" zt grid
+   (input/grid/deep_convection_128lev_27km_zt_grid.grd), which is applied
+   up to altitude zm_top, which is the case-specific model upper boundary. 
+1: dt = 2 s; dz is 1/2 of its size at the 0th refinement.
+2: dt = 1 s; dz is 1/4 of its size at the 0th refinement.
+3: dt = 0.5 s; dz is 1/8 of its size at the 0th refinement.
+4: dt = 0.25 s; dz is 1/16 of its size at the 0th refinement.
+5: dt = 0.125 s; dz is 1/32 of its size at the 0th refinement.
 6: Omitted
-7 (reference solution): dt = 0.03125
+7 (reference solution): dt = 0.03125 s; dz is 1/128 of its size at the 0th refinement.
 
 The convergence tests scripts run the convergence tests in 3 steps: (1) compile
 the code (if necessary), (2) run the tests, and (3) perform the postprocessing,
-which generates a large number of *.png image files in the cnvg_/figures directory.
-The *.png image files show the rate of convergence for each case and variable
-of interest.
+which generates a large number of *.png image files in the cnvg_*/figures
+directory. The *.png image files show the rate of convergence for each case and
+variable of interest.
 
-The steps to run a convergence test are as follows:
+There are 3 different groups of settings for running the convergence tests:
 
-1. cd ../run_scripts/convergence_run
+1) default: turns off both microphysics and radiation, and also turns off
+            wp2 splat and turns on the l_standard_term_ta flag.
+2) baseline: uses the settings found in "default", and additionally uses
+             modified initial conditions instead of the default method and
+             uses modified boundary conditions for computing surface fluxes.
+3) revall: uses the settings found in "baseline", and additionally uses
+           a modified Brunt-Vaisala frequency and Richardson number limiter,
+           sets l_smooth_Heaviside_tau_wpxp to false, uses linear diffusion
+           (accomplished by setting all of c_K1, c_K2, c_K6, c_K8, and c_K9
+           to 0), and uses a modified wp3 limiter with a smooth Heaviside
+           function.
 
-2. at now -f run_cnvg_revall
+The "revall" is the group of setting that you want to use to truly test for
+maximum convergence.
+
+As of now, the convergence tests are only able to be run on Anvil, which is
+a U.S. D.O.E. computer. The steps to run a convergence test are as follows:
+
+1. cd run_scripts/convergence_run
+
+2. If necessary, edit run_cnvg_test_multi_cases_revall.csh.
+
+   You can edit whether or not to compile, whether or not to run the cases,
+   and whether or not to perform the postprocessing. You can also edit what
+   CLUBB test cases are run, for how long they are run for, etc.
+
+3. Since these tests take a long time to run, they can be run in the background
+   by issuing the following command at the prompt:
+
+   at now -f run_cnvg_revall
+
+   The standard output (screen output) from the run is redireted to
+   clubb_output_revall.txt (also within the run_scripts/convergence_run
+   directory). The netCDF output files that CLUBB produces are stored in
+   the same location that CLUBB normally places output files, and that is
+   in the output directory. Finally, the script creates a new directory
+   underneath the main directory that is called cnvg_revall. There are
+   many log files and other files placed in this directory. Also within
+   this directory is the figures subdirectory, which contains the *.png
+   output files that contain the results of the convergence test.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
