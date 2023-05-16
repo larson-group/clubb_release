@@ -1084,11 +1084,13 @@ a U.S. D.O.E. computer. The steps to run a convergence test are as follows:
 
 1. cd run_scripts/convergence_run
 
-2. If necessary, edit run_cnvg_test_multi_cases_revall.csh.
+2. Edit run_cnvg_test_multi_cases_revall.csh.
 
-   You can edit whether or not to compile, whether or not to run the cases,
-   and whether or not to perform the postprocessing. You can also edit what
-   CLUBB test cases are run, for how long they are run for, etc.
+   You will most likely need to edit the script to declare the path to the
+   top-level (main) CLUBB directory. You can edit whether or not to compile,
+   whether or not to run the cases, and whether or not to perform the
+   postprocessing. You can also edit what CLUBB test cases are run, for how
+   long they are run for, etc.
 
 3. Since these tests take a long time to run, they can be run in the background
    by issuing the following command at the prompt:
