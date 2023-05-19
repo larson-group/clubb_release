@@ -7,6 +7,18 @@
 #SBATCH -A condo
 #SBATCH -p acme-small
 
+# Call this script using:
+#
+# csh run_cnvg_test_multi_cases_default.csh
+#
+# to run all five test cases.
+#
+# Call this script using:
+#
+# csh run_cnvg_test_multi_cases_default.csh dycoms
+#
+# to run only DYCOMS-II RF02 ND and DYCOMS-II RF01.
+
 #load environment setups
 module purge
 module load cmake/3.20.3-vedypwm intel/20.0.4-lednsve intel-mkl/2020.4.304-voqlapk intel-mpi/2019.9.304-i42whlw netcdf-c/4.4.1-blyisdg netcdf-cxx/4.2-gkqc6fq netcdf-fortran/4.4.4-eanrh5t parallel-netcdf/1.11.0-y3nmmej perl/5.30.3-xxmtnqh
@@ -100,10 +112,18 @@ set dt_output    = 60   # output frequency in seconds, default setup for converg
 #user-specified code and simulation run directory
 #the default is the same as simulation setup in 
 #clubb convergence paper (Zhang et. al., 2023, JAMES)
-#name, start and end time for test case  in clubb-scm, 
-set case   = ( bomex  rico   dycoms2_rf02_nd  wangara )  
-set t0     = ( 0      0      0                82800 ) 
-set tf     = ( 21600  21600  21600            104400 ) 
+#name, start and end time for test case  in clubb-scm,
+if ( $1 == "dycoms" ) then 
+  # run only the DYCOMS-II cases
+  set case   = ( dycoms2_rf02_nd  dycoms2_rf01 )  
+  set t0     = ( 0                21600 ) 
+  set tf     = ( 21600            36000 ) 
+else
+  # run all the cases that have been studied for convergence
+  set case   = ( bomex  rico   dycoms2_rf02_nd  dycoms2_rf01  wangara )
+  set t0     = ( 0      0      0                21600         82800 )
+  set tf     = ( 21600  21600  21600            36000         104400 )
+endif
 set ncase  = $#case
 
 #user-specified time-step and grid-spacing refinements for convergence test  
@@ -122,7 +142,7 @@ if ( $compile_model > 0 )  then
 
   cd $topdir/compile  
 
-  sed -i "s/linux_x86_64_gfortran.bash/linux_x86_64_ifort_compy.bash/g" compile.bash
+  sed -i "s/linux_x86_64_gfortran.bash/linux_x86_64_ifort_anvil.bash/g" compile.bash
   ./clean_all.bash 
   ./compile.bash 
 
@@ -236,8 +256,13 @@ if ( $run_diagnostic > 0 ) then
       endif 
      @ j++ 
     end 
-    #1-h, 2-h ... 6-h index in output 
-    foreach hour ( 1 2 3 4 5 6 ) 
+    #1-h, 2-h ... 6-h index in output
+    if ( ${casnam} == "dycoms2_rf01" ) then
+      set hourlist = ( 1 2 3 4 )
+    else
+      set hourlist = ( 1 2 3 4 5 6 )
+    endif
+    foreach hour ( $hourlist )
       @ indx = $hour * 3600 / $dt_output - 1
       if ( $hour == 1 ) then 
         set tpindex = "$indx"
