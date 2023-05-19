@@ -39,7 +39,7 @@ if ('quartz' in os.uname().nodename):
 # parse command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('case',
-  help='name of case to run', choices=('rico', 'bomex', 'wangara', 'dycoms2_rf02_nd'))
+  help='name of case to run', choices=('rico', 'bomex', 'wangara', 'dycoms2_rf02_nd', 'dycoms2_rf01'))
 parser.add_argument ('-dt', metavar='seconds',
   help='timestep size')
 parser.add_argument('-dto', metavar='seconds', dest='dt_output',
