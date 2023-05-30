@@ -1515,18 +1515,20 @@ module advance_clubb_core_module
     Kh_zm(:,:) = c_K * max( zt2zm( nz, ngrdcol, gr, Lscale(:,:) ), zero_threshold )  &
                  * sqrt( max( em(:,:), em_min ) )
 
+
+    !$acc data copyin( gr, gr%zm, gr%dzm, wp2_zt, wp3, tau_zt, Lscale_up, &
+    !$acc              sfc_elevation, upwp_sfc, vpwp_sfc, wprtp_sfc, &
+    !$acc              wpthlp, um, vm, tau_zm, wpsclrp_sfc, &
+    !$acc              brunt_vaisala_freq_sqd_mixed, Lscale, rho_ds_zm ) &
+    !$acc        copy( up2, vp2, thlp2, rtp2, rtpthlp, wp2,&
+    !$acc              lhs_splat_wp2, lhs_splat_wp3, sclrp2, sclrprtp, sclrpthlp, &
+    !$acc              brunt_vaisala_freq_sqd_splat )
+
     ! calculate Brunt-Vaisala frequency used for splatting
     brunt_vaisala_freq_sqd_splat  &
                = Lscale_width_vert_avg( nz, ngrdcol, gr, smth_type, &
                                         brunt_vaisala_freq_sqd_mixed, Lscale, rho_ds_zm, &
                                         below_grnd_val )
-
-    !$acc data copyin( gr, gr%zm, wp2_zt, wp3, tau_zt, Lscale_up, &
-    !$acc              sfc_elevation, upwp_sfc, vpwp_sfc, wprtp_sfc, &
-    !$acc              wpthlp, um, vm, tau_zm, wpsclrp_sfc, &
-    !$acc              brunt_vaisala_freq_sqd_splat ) &
-    !$acc        copy( up2, vp2, thlp2, rtp2, rtpthlp, wp2,&
-    !$acc              lhs_splat_wp2, lhs_splat_wp3, sclrp2, sclrprtp, sclrpthlp )
 
     ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
     call wp2_term_splat_lhs( nz, ngrdcol, gr, clubb_params(iC_wp2_splat),       & ! Intent(in)

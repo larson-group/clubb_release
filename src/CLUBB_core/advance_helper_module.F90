@@ -927,7 +927,7 @@ module advance_helper_module
 
     implicit none
 
-    ! Input Variables
+    !-------------------------- Input Variables --------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol, &
@@ -943,11 +943,11 @@ module advance_helper_module
     real( kind = core_rknd ), intent(in) :: &
       var_below_ground_value ! Value to use below ground
 
-    ! Result Variable
+    !-------------------------- Result Variable --------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Lscale_width_vert_avg_output ! Vertically averaged profile (on momentum levels)
 
-    ! Local Variables
+    !-------------------------- Local Variables --------------------------
     integer :: &
         k, i,        & ! Loop variable
         k_avg_lower, &
@@ -959,132 +959,112 @@ module advance_helper_module
       numer_terms, &
       denom_terms
 
-    integer :: n_below_ground_levels
+    integer :: &
+      n_below_ground_levels
 
     real( kind = core_rknd ) :: & 
       numer_integral, & ! Integral in the numerator (see description)
       denom_integral    ! Integral in the denominator (see description)
 
-  !----------------------------------------------------------------------
+    !-------------------------- Begin Code --------------------------
 
-    !----- Begin Code -----
+    !$acc declare create( one_half_avg_width, numer_terms, denom_terms )
 
     if ( smth_type == 1 ) then
-      one_half_avg_width = max( Lscale_zm, 500.0_core_rknd )
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          one_half_avg_width(i,k) = max( Lscale_zm(i,k), 500.0_core_rknd )
+        end do
+      end do
     else if (smth_type == 2 ) then
-      one_half_avg_width = 60.0
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          one_half_avg_width(i,k) = 60.0_core_rknd
+        end do
+      end do
     endif
 
     ! Pre calculate numerator and denominator terms
-    do k=1, nz
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
       do i = 1, ngrdcol
         numer_terms(i,k) = rho_ds_zm(i,k) * gr%dzm(i,k) * var_profile(i,k)
         denom_terms(i,k) = rho_ds_zm(i,k) * gr%dzm(i,k)
       end do
     end do
 
-    k_avg_upper = 2
-    k_avg_lower = 1
-
     ! For every grid level
-    do k=1, nz
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
       do i = 1, ngrdcol
 
         !-----------------------------------------------------------------------
-        ! Hunt down all vertical levels with one_half_avg_width(k) of gr%zm(1,k).
+        ! Hunt down all vertical levels with one_half_avg_width(k) of gr%zm(k).
         ! 
-        !     k_avg_upper and k_avg_lower are saved each loop iteration, this 
-        !     improves computational efficiency since their values are likely
-        !     within one or two grid levels of where they were last found to 
-        !     be. This is because one_half_avg_width does not change drastically
-        !     from one grid level to the next. Thus, less searching is required
-        !     by allowing the search to start at a value that is close to the
-        !     desired value and allowing each value to increment or decrement 
-        !     as needed. 
+        ! Note: Outdated explanation of version that improves CPU performance
+        !       below. Reworked due to it requiring a k dependency. Now we
+        !       begin looking for k_avg_upper and k_avg_lower starting at 
+        !       the kth level.
+        ! 
+        ! Outdated but potentially useful note:
+        !     k_avg_upper and k_avg_lower can be saved each loop iteration, this 
+        !     reduces iterations beacuse the kth values are likely to be within
+        !     one or two grid levels of the k-1th values. Less searching is required
+        !     by starting the search at the previous values and incrementing or 
+        !     decrement as needed.
         !-----------------------------------------------------------------------
 
+        ! Determine if k_avg_upper needs to increment
+        do k_avg_upper = k, nz-1
+          if ( gr%zm(i,k_avg_upper+1) - gr%zm(i,k) > one_half_avg_width(i,k) ) then
+            exit
+          end if
+        end do
 
-        ! Determine if k_avg_upper needs to increment or decrement
-        if ( gr%zm(i,k_avg_upper) - gr%zm(i,k) > one_half_avg_width(i,k) ) then
-
-            ! k_avg_upper is too large, decrement it
-            do while ( gr%zm(i,k_avg_upper) - gr%zm(i,k) > one_half_avg_width(i,k) )
-                k_avg_upper = k_avg_upper - 1
-            end do
-
-        elseif ( k_avg_upper < nz ) then
-
-            ! k_avg_upper is too small, increment it
-            do while ( gr%zm(i,k_avg_upper+1) - gr%zm(i,k) <= one_half_avg_width(i,k) )
-
-                k_avg_upper = k_avg_upper + 1
-
-                if ( k_avg_upper == nz ) exit
-
-            end do
-
-        end if
-
-
-        ! Determine if k_avg_lower needs to increment or decrement
-        if ( gr%zm(i,k) - gr%zm(i,k_avg_lower) > one_half_avg_width(i,k) ) then
-
-            ! k_avg_lower is too small, increment it
-            do while ( gr%zm(i,k) - gr%zm(i,k_avg_lower) > one_half_avg_width(i,k) )
-
-                k_avg_lower = k_avg_lower + 1
-
-            end do
-
-        elseif ( k_avg_lower > 1 ) then
-
-            ! k_avg_lower is too large, decrement it
-            do while ( gr%zm(i,k) - gr%zm(i,k_avg_lower-1) <= one_half_avg_width(i,k) )
-
-                k_avg_lower = k_avg_lower - 1
-
-                if ( k_avg_lower == 1 ) exit
-
-            end do 
-
-        end if
-
+        ! Determine if k_avg_lower needs to decrement
+        do k_avg_lower = k, 2, -1
+          if ( gr%zm(i,k) - gr%zm(i,k_avg_lower-1) > one_half_avg_width(i,k) ) then
+            exit
+          end if
+        end do
 
         ! Compute the number of levels below ground to include.
         if ( k_avg_lower > 1 ) then
 
-            ! k=1, the lowest "real" level, is not included in the average, so no
-            ! below-ground levels should be included.
-            n_below_ground_levels = 0
+          ! k=1, the lowest "real" level, is not included in the average, so no
+          ! below-ground levels should be included.
+          n_below_ground_levels = 0
 
-            numer_integral = zero
-            denom_integral = zero
+          numer_integral = zero
+          denom_integral = zero
 
         else
 
-            ! The number of below-ground levels included is equal to the distance
-            ! below the lowest level spanned by one_half_avg_width(k)
-            ! divided by the distance between vertical levels below ground; the
-            ! latter is assumed to be the same as the distance between the first and
-            ! second vertical levels.
-            n_below_ground_levels = int( ( one_half_avg_width(i,k)-(gr%zm(i,k)-gr%zm(i,1)) ) / &
-                                        ( gr%zm(i,2)-gr%zm(i,1) ) )
+          ! The number of below-ground levels included is equal to the distance
+          ! below the lowest level spanned by one_half_avg_width(k)
+          ! divided by the distance between vertical levels below ground; the
+          ! latter is assumed to be the same as the distance between the first and
+          ! second vertical levels.
+          n_below_ground_levels = int( ( one_half_avg_width(i,k)-(gr%zm(i,k)-gr%zm(i,1)) ) / &
+                                      ( gr%zm(i,2)-gr%zm(i,1) ) )
 
-            numer_integral = n_below_ground_levels * denom_terms(i,1) * var_below_ground_value
-            denom_integral = n_below_ground_levels * denom_terms(i,1)
+          numer_integral = n_below_ground_levels * denom_terms(i,1) * var_below_ground_value
+          denom_integral = n_below_ground_levels * denom_terms(i,1)
 
         end if
-
             
         ! Add numerator and denominator terms for all above-ground levels
         do k_avg = k_avg_lower, k_avg_upper
 
-            numer_integral = numer_integral + numer_terms(i,k_avg)
-            denom_integral = denom_integral + denom_terms(i,k_avg)
+          numer_integral = numer_integral + numer_terms(i,k_avg)
+          denom_integral = denom_integral + denom_terms(i,k_avg)
 
         end do
 
         Lscale_width_vert_avg_output(i,k) = numer_integral / denom_integral
+
       end do
     end do
 
