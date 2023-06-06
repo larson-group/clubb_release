@@ -2076,6 +2076,20 @@ module advance_clubb_core_module
       !   of vertical velocity (wp2, wp3) by one timestep.
       !----------------------------------------------------------------
 
+      !$acc data copyin( gr, gr%invrs_dzm, gr%weights_zm2zt, gr%weights_zt2zm, &
+      !$acc              gr%invrs_dzt, gr%invrs_dzm, gr%zm, gr%zt, &
+      !$acc              nu_vert_res_dep, nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, &
+      !$acc              sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, a3_coef, a3_coef_zt, &
+      !$acc              wp3_on_wp2, wpup2, wpvp2, wp2up2, wp2vp2, wp4, &
+      !$acc              wpthvp, wp2thvp, um, vm, upwp, vpwp, up2, vp2, em, &
+      !$acc              Kh_zm, Kh_zt, invrs_tau_C4_zm, invrs_tau_wp3_zt, &
+      !$acc              invrs_tau_C1_zm, Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt, &
+      !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, &
+      !$acc              thv_ds_zt, wprtp, wpthlp, rtp2, thlp2, &
+      !$acc              Cx_fnc_Richardson, lhs_splat_wp2, lhs_splat_wp3, &
+      !$acc              pdf_params, pdf_params%mixt_frac ) &
+      !$acc        copy( wp2, wp3, wp3_zm, wp2_zt )
+
       ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3( nz, ngrdcol, gr, dt_advance,                          & ! intent(in)
                             sfc_elevation, sigma_sqd_w, wm_zm,                    & ! intent(in)
@@ -2107,6 +2121,8 @@ module advance_clubb_core_module
                             clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(inout)
                             wp2, wp3, wp3_zm, wp2_zt )                              ! intent(inout)
+
+      !$acc end data
 
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( err_code == clubb_fatal_error ) then
