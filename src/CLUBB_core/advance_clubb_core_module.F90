@@ -2226,6 +2226,14 @@ module advance_clubb_core_module
           end do
         end do
       end if
+
+      !$acc data copyin( gr, gr%weights_zt2zm, gr%invrs_dzt, gr%invrs_dzm, &
+      !$acc              nu_vert_res_dep, nu_vert_res_dep%nu10, &
+      !$acc              wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, wp2, &
+      !$acc              up2, vp2, um_forcing, vm_forcing, rho_ds_zm, &
+      !$acc              invrs_rho_ds_zt, edsclrm_forcing, fcor ) &
+      !$acc        copy( um, vm, upwp, vpwp, edsclrm, wpedsclrp, &
+      !$acc              um_pert, vm_pert, upwp_pert, vpwp_pert )
       
       call advance_windm_edsclrm( nz, ngrdcol, gr, dt,                        & ! intent(in)
                                   wm_zt, Km_zm, Kmh_zm,                       & ! intent(in)
@@ -2247,6 +2255,7 @@ module advance_clubb_core_module
                                   um, vm, edsclrm,                            & ! intent(inout)
                                   upwp, vpwp, wpedsclrp,                      & ! intent(inout)
                                   um_pert, vm_pert, upwp_pert, vpwp_pert )      ! intent(inout)
+      !$acc end data
 
       if ( edsclr_dim > 1 .and. clubb_config_flags%l_do_expldiff_rtm_thlm ) then
 

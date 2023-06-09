@@ -1824,14 +1824,22 @@ module advance_helper_module
 
     ! ----------------------- Begin Code -----------------------
 
+    !$acc data copyin( gr, gr%invrs_dzm, Km_zm, xm ) &
+    !$acc     copyout( xpwp )
+
     ! Solve for x'w' at all intermediate model levels.
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz-1
       do i = 1, ngrdcol
         xpwp(i,k) = Km_zm(i,k) * gr%invrs_dzm(i,k) * ( xm(i,k+1) - xm(i,k) )
       end do
     end do
+    !$acc end parallel loop
+
+    !$acc end data
 
     return
+
   end subroutine calc_xpwp_2D
 
   !=============================================================================
