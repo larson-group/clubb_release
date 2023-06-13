@@ -1491,7 +1491,7 @@ module advance_wp2_wp3_module
       !$acc              wp3, lhs_ma_zm, lhs_pr1_wp2, lhs_wp3_ac_term, &
       !$acc              lhs_wp3_pr2_term, lhs_pr1_wp3, lhs_diff_zt, &
       !$acc              wp3_term_ta_lhs_result, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
-      !$acc              wp3_pr3_lhs, lhs_ma_zt )
+      !$acc              wp3_pr3_lhs, lhs_ma_zt, C11_Skw_fnc, wm_zm )
       
       C_uu_shr = clubb_params(iC_uu_shr)
       
