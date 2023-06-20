@@ -412,7 +412,9 @@ module pdf_closure_module
       thlp3_clubb_pdf, &
       Skw_clubb_pdf,   &
       Skrt_clubb_pdf,  &
-      Skthl_clubb_pdf
+      Skthl_clubb_pdf, &
+      rsatl_1, &
+      rsatl_2
 
     real( kind = core_rknd ) :: &
       beta,                         & ! CLUBB tunable parameter beta
@@ -448,7 +450,7 @@ module pdf_closure_module
     !$acc                 rc_1_ice, rc_2_ice, sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
     !$acc                 alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
     !$acc                 corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, &
-    !$acc                 corr_w_sclr_2, Sksclr )
+    !$acc                 corr_w_sclr_2, Sksclr, rsatl_1, rsatl_2 )
 
     ! Check whether the passive scalars are present.
     if ( sclr_dim > 0 ) then
@@ -1021,10 +1023,17 @@ module pdf_closure_module
     end if
 
 #else
-    pdf_params%rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1 )
-    pdf_params%rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2 ) ! h1g, 2010-06-16 end mod
+    rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1 )
+    rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2 ) ! h1g, 2010-06-16 end mod
 
-    !$acc update device(pdf_params%rsatl_1,pdf_params%rsatl_2)
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        pdf_params%rsatl_1(i,k) = rsatl_1(i,k)
+        pdf_params%rsatl_2(i,k) = rsatl_2(i,k)
+      end do
+    end do
+    !$acc end parallel loop
 
     l_calc_ice_supersat_frac = .true.
 #endif
@@ -2632,20 +2641,32 @@ module pdf_closure_module
 
     integer :: k, i    ! Loop indices
 
+    logical :: &
+      l_any_below_freezing
+
     ! ---------------------- Begin Code ----------------------
+
+    l_any_below_freezing = .false.
+
+    ! If a grid boxes is above freezing, then the calculation is the 
+    ! same as the cloud_frac calculation
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc          reduction(.or.:l_any_below_freezing)
+    do k = 1, nz
+      do i = 1, ngrdcol 
+        if ( tl(i,k) > T_freeze_K ) then
+          ice_supersat_frac(i,k) = cloud_frac(i,k)
+          rc(i,k)                = rc_in(i,k)
+        else
+          l_any_below_freezing = .true.
+        end if
+      end do
+    end do
+    !$acc end parallel loop
 
     ! If all grid boxes are above freezing, then the calculation is the 
     ! same as the cloud_frac calculation
-    !$acc update host(tl)
-    if ( all( tl > T_freeze_K ) ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol 
-          ice_supersat_frac(i,k) = cloud_frac(i,k)
-          rc(i,k)                = rc_in(i,k)
-        end do
-      end do
-      !$acc end parallel loop
+    if ( .not. l_any_below_freezing ) then
       return
     end if
 
@@ -2691,13 +2712,6 @@ module pdf_closure_module
                       + stdev_chi(i,k) * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
 
           end if
-
-        else  ! tl(i,k) > T_freeze_K
-
-          ! Temperature is warmer than freezing, the ice_supersat_frac calculation is 
-          ! the same as cloud_frac
-          ice_supersat_frac(i,k) = cloud_frac(i,k)
-          rc(i,k) = rc_in(i,k)
 
         end if
 

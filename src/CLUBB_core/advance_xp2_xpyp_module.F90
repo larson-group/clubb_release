@@ -405,8 +405,8 @@ module advance_xp2_xpyp_module
       
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       lhs_dp1, &     ! LHS dissipation term 1
-      lhs_dp1_C14, & ! LHS dissipation term 1, for up2 vp2 using C14
-      lhs_dp1_C4     ! LHS dissipation term 1, for up2 vp2 using C4
+      lhs_dp1_C14, & ! LHS dissipation term 1, for up2 vp2 using C14, only for stats
+      lhs_dp1_C4     ! LHS dissipation term 1, for up2 vp2 using C4, only for stats
       
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       rtm_zm
@@ -425,8 +425,7 @@ module advance_xp2_xpyp_module
     !$acc                 rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, &
     !$acc                 lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
     !$acc                 rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
-    !$acc                 lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, lhs_dp1_C14, &
-    !$acc                 lhs_dp1_C4, rtm_zm )
+    !$acc                 lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm )
     
     ! Unpack CLUBB tunable parameters
     C2rt    = clubb_params(iC2rt)
@@ -834,7 +833,7 @@ module advance_xp2_xpyp_module
 
       if ( l_stats_samp ) then
 
-        !$acc update host( up2, lhs_dp1_C4, lhs_diff_uv, lhs_ta_wpup2, &
+        !$acc update host( up2, lhs_diff_uv, lhs_ta_wpup2, &
         !$acc              lhs_ma, vp2 )
 
         do i = 1, ngrdcol
@@ -3133,8 +3132,7 @@ module advance_xp2_xpyp_module
                             invrs_tau_C4_zm(i,k), invrs_tau_C14_zm(i,k) ), & ! Intent(in)
                                        stats_zm(i) )        ! Intent(inout)
 
-            tmp  &
-            = term_dp1_lhs( two_thirds*C4, invrs_tau_C4_zm(i,k) )
+            tmp = term_dp1_lhs( two_thirds*C4, invrs_tau_C4_zm(i,k) )
             call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
                   + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
                   * ( - tmp * xap2(i,k) ),  &               ! Intent(in)
@@ -3457,10 +3455,8 @@ module advance_xp2_xpyp_module
     !$acc end parallel loop
 
     if ( l_stats_samp ) then
-      !$acc update host( rhs_ta, lhs_ta, xapxbp,  &
-      !$acc              Cn, invrs_tau_zm, xam,  &
-      !$acc              xbm, wpxbp, wpxap, &
-      !$acc              xpyp_forcing )
+      !$acc update host( rhs_ta, lhs_ta, xapxbp, Cn, invrs_tau_zm, xam,  &
+      !$acc              xbm, wpxbp, wpxap, xpyp_forcing )
       do k = 2, nz-1
         do i = 1, ngrdcol
           ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.

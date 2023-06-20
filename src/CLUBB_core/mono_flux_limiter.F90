@@ -467,7 +467,7 @@ module mono_flux_limiter
     !$acc declare create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
     !$acc                 min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                 max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
-    !$acc                 rhs_mfl_xm, l_adjustment_needed, l_any_adjustment_needed, xm_mfl )
+    !$acc                 rhs_mfl_xm, l_adjustment_needed, xm_mfl )
 
     select case( solve_type )
     case ( mono_flux_rtm )  ! rtm/wprtp
@@ -838,22 +838,23 @@ module mono_flux_limiter
 
     l_any_adjustment_needed = .false.
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-
       l_adjustment_needed(i) = .false.
+    end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc          reduction(.or.:l_any_adjustment_needed)
+    do i = 1, ngrdcol
       do k = 1, nz
         if ( abs(wpxp_net_adjust(i,k)) > eps ) then
           l_adjustment_needed(i) = .true.
           l_any_adjustment_needed = .true.
-          exit
         end if
       end do
     end do
     !$acc end parallel loop
-
-    !$acc update host( l_any_adjustment_needed )
 
     if ( l_any_adjustment_needed ) then
 
@@ -998,8 +999,6 @@ module mono_flux_limiter
       !$acc end parallel loop
 
     end if
-
-    !$acc update host( wpxp, xm )
 
     if ( l_stats_samp ) then
       !$acc update host( wpxp, xm )

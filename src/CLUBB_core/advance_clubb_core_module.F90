@@ -889,6 +889,7 @@ module advance_clubb_core_module
     !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
     !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
+    !$acc              nu_vert_res_dep%nu6, &
     !$acc              pdf_params, pdf_params_zm, &
     !$acc              fcor,  sfc_elevation, thlm_forcing, rtm_forcing, um_forcing, &
     !$acc              vm_forcing, wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
@@ -2889,7 +2890,8 @@ module advance_clubb_core_module
     use grid_class, only: &
         grid, & ! Type
         zt2zm, & ! Procedure(s)
-        zm2zt
+        zm2zt, &
+        zm2zt2zm
 
     use constants_clubb, only: &
         one_half,       & ! Variable(s)
@@ -3311,7 +3313,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
       um_zm, &
       vm_zm, &
-      T_in_K
+      T_in_K, &
+      sigma_sqd_w_tmp
 
     logical :: l_spur_supersat   ! Spurious supersaturation?
 
@@ -3339,7 +3342,7 @@ module advance_clubb_core_module
     !$acc                 F_w_zm, F_rt_zm, F_thl_zm, &    
     !$acc                 min_F_w_zm, max_F_w_zm, min_F_rt_zm, & 
     !$acc                 max_F_rt_zm, min_F_thl_zm, max_F_thl_zm, &
-    !$acc                 rsat, rel_humidity,um_zm, vm_zm, T_in_K )
+    !$acc                 rsat, rel_humidity,um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
 
     !---------------------------------------------------------------------------
     ! Interpolate wp3, rtp3, thlp3, up3, vp3, and sclrp3 to momentum levels, and
@@ -3498,13 +3501,6 @@ module advance_clubb_core_module
 
     end if
 
-    ! Compute sigma_sqd_w (dimensionless PDF width parameter)
-    call compute_sigma_sqd_w( nz, ngrdcol, &
-                              gamma_Skw_fnc, wp2, thlp2, rtp2, &
-                              up2, vp2, wpthlp, wprtp, upwp, vpwp, &
-                              l_predict_upwp_vpwp, &
-                              sigma_sqd_w )
-
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       !$acc update host(gamma_Skw_fnc)      
       do i = 1, ngrdcol
@@ -3513,11 +3509,19 @@ module advance_clubb_core_module
       end do
     endif
 
+    ! Compute sigma_sqd_w (dimensionless PDF width parameter)
+    call compute_sigma_sqd_w( nz, ngrdcol, &
+                              gamma_Skw_fnc, wp2, thlp2, rtp2, &
+                              up2, vp2, wpthlp, wprtp, upwp, vpwp, &
+                              l_predict_upwp_vpwp, &
+                              sigma_sqd_w_tmp )
+
     ! Smooth in the vertical using interpolation
-    sigma_sqd_w(:,:) = zt2zm( nz, ngrdcol, gr, zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:) ) ) ! Pos. def. quantity
+    sigma_sqd_w(:,:) = zm2zt2zm( nz, ngrdcol, gr, sigma_sqd_w_tmp(:,:) ) ! Pos. def. quantity
+
 
     ! Interpolate the the stats_zt grid
-    sigma_sqd_w_zt(:,:) =zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:) )  ! Pos. def. quantity
+    sigma_sqd_w_zt(:,:) = zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:) )  ! Pos. def. quantity
       
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz

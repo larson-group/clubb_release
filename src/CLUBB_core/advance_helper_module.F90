@@ -1251,7 +1251,7 @@ module advance_helper_module
       nz, &
       ngrdcol
 
-  ! Input Variables
+    !----------------------------- Input Variables -----------------------------
     real ( kind = core_rknd ), intent(in) :: &
       input_var1, &       ! Units vary
       smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
@@ -1260,7 +1260,7 @@ module advance_helper_module
     real ( kind = core_rknd ), dimension(ngrdcol, nz), intent(in) :: &
       input_var2          ! Units vary
 
-  ! Output Variables
+    !----------------------------- Output Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
@@ -1269,7 +1269,7 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc data copyin( input_var2 ) &
     !$acc     copyout( output_var )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1329,7 +1329,7 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc data copyin( input_var1 ) &
     !$acc     copyout( output_var )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1389,7 +1389,7 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc data copyin( input_var1, input_var2 ) &
     !$acc     copyout( output_var )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1489,7 +1489,7 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc data copyin( input_var2 ) &
     !$acc     copyout( output_var )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1549,7 +1549,7 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc data copyin( input_var1 ) &
     !$acc     copyout( output_var )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1609,7 +1609,7 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1, input_var2, smth_coef ) &
+    !$acc data copyin( input_var1, input_var2 ) &
     !$acc     copyout( output_var )
 
     !$acc parallel loop gang vector collapse(2) default(present)

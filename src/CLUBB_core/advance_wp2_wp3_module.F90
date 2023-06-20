@@ -1392,9 +1392,7 @@ module advance_wp2_wp3_module
 
     !------------------------- Begin Code -------------------------
 
-    !$acc declare create( rhs_save, solut, old_solut, rcond, &
-    !$acc                 lhs_wp3_ac_term, lhs_wp3_pr2_term, &
-    !$acc                 threshold_array ) 
+    !$acc declare create( rhs_save, solut, old_solut, rcond, threshold_array ) 
 
     ! Save the value of rhs, which will be overwritten with the solution as
     ! part of the solving routine.
@@ -1488,8 +1486,7 @@ module advance_wp2_wp3_module
     if ( l_stats_samp ) then
 
       !$acc update host( wm_zt, lhs_dp1_wp2, wp2, lhs_diff_zm, lhs_ta_wp2, &
-      !$acc              wp3, lhs_ma_zm, lhs_pr1_wp2, lhs_wp3_ac_term, &
-      !$acc              lhs_wp3_pr2_term, lhs_pr1_wp3, lhs_diff_zt, &
+      !$acc              wp3, lhs_ma_zm, lhs_pr1_wp2, lhs_pr1_wp3, lhs_diff_zt, &
       !$acc              wp3_term_ta_lhs_result, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
       !$acc              wp3_pr3_lhs, lhs_ma_zt, C11_Skw_fnc, wm_zm )
       
