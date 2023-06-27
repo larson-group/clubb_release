@@ -151,7 +151,8 @@ module mixing_length
       nz, &
       ngrdcol  
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
@@ -206,7 +207,7 @@ module mixing_length
         rc_par_1, &
         CAPE_incr_1, &
         thv_par_1
-        
+
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
         tke_i
 
@@ -912,13 +913,14 @@ module mixing_length
     use stats_type, only: stats ! Type
 
     implicit none
-    
+
     !--------------------------------- Input Variables ---------------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
 
     logical, intent(in) ::  &
       l_implemented ! True if CLUBB is being run within a large-scale hostmodel,
@@ -984,7 +986,7 @@ module mixing_length
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       mu_pert_1, mu_pert_2, &
       mu_pert_pos_rt, mu_pert_neg_rt  ! For l_Lscale_plume_centered
-      
+
     real( kind = core_rknd ) :: &
       Lscale_mu_coef, Lscale_pert_coef
 
@@ -1032,7 +1034,7 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
-     
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
@@ -1041,12 +1043,12 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
-          
-      !$acc parallel loop default(present)     
+
+      !$acc parallel loop default(present)
       do  i = 1, ngrdcol
         mu_pert_1(i)   = newmu(i) / Lscale_mu_coef
       end do 
-      !$acc end parallel loop        
+      !$acc end parallel loop
 
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_1,  & ! In
                     rtm_pert_1, em, Lscale_max, p_in_Pa,               & ! In
@@ -1295,7 +1297,8 @@ module mixing_length
         iC_invrs_tau_wpxp_N2_thresh, &
         iC_invrs_tau_N2_clear_wp3,   &
         iC_invrs_tau_wpxp_Ri,        &
-        ialtitude_threshold
+        ialtitude_threshold,         &
+        ibv_efold
 
     use error_code, only: &
       err_code, &
@@ -1309,7 +1312,8 @@ module mixing_length
       nz, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       upwp_sfc,      &
@@ -1473,6 +1477,7 @@ module mixing_length
                                       ice_supersat_frac, & ! intent(in)
                                       l_brunt_vaisala_freq_moist, & ! intent(in)
                                       l_use_thvm_in_bv_freq, & ! intent(in)
+                                      clubb_params(ibv_efold), & ! intent(in)
                                       brunt_vaisala_freq_sqd, & ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,& ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, & ! intent(out)
@@ -1584,7 +1589,7 @@ module mixing_length
 
         brunt_vaisala_freq_clipped = smooth_min( nz, ngrdcol, &
                                                  brunt_vaisala_freq_sqd, &
-                                                 tmp_calc_min, &
+                                                 tmp_calc, &
                                                  1.0e-4_core_rknd * min_max_smth_mag)
 
         brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz, ngrdcol, gr, brunt_vaisala_freq_clipped )
@@ -1603,11 +1608,11 @@ module mixing_length
         brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz, ngrdcol, gr, brunt_vaisala_freq_clipped )
 
       end if
- 
+
     end if 
-    
+
     if ( l_modify_limiters_for_cnvg_test ) then
- 
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
@@ -1650,8 +1655,8 @@ module mixing_length
 
       end if
 
-    end if 
-      
+    end if
+
     if ( l_smooth_min_max ) then
 
       brunt_vaisala_freq_clipped = smooth_max( nz, ngrdcol, zero_threshold, &
@@ -1676,7 +1681,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-    end if 
+    end if
 
     ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac )
 
@@ -1855,7 +1860,6 @@ module mixing_length
 
     end if ! l_e3sm_config
 
-
     if ( l_smooth_Heaviside_tau_wpxp ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1869,14 +1873,14 @@ module mixing_length
       H_invrs_tau_wpxp_N2 = smooth_heaviside_peskin( nz, ngrdcol, bvf_thresh, heaviside_smth_range )
 
     else ! l_smooth_Heaviside_tau_wpxp = .false.
-      
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
           if ( brunt_vaisala_freq_sqd_smth(i,k) > C_invrs_tau_wpxp_N2_thresh ) then
-            H_invrs_tau_wpxp_N2(i,k) = one 
-          else 
-            H_invrs_tau_wpxp_N2(i,k) = zero 
+            H_invrs_tau_wpxp_N2(i,k) = one
+          else
+            H_invrs_tau_wpxp_N2(i,k) = zero
           end if
         end do
       end do
@@ -1931,7 +1935,6 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
-
 
     ! Calculate the maximum allowable value of time-scale tau,
     ! which depends of the value of Lscale_max.

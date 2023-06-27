@@ -145,7 +145,7 @@ program jacobian
     C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
     C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
     C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-    Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const
+    Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
 
   ! Namelists
   namelist /jcbn_nml/  & 
@@ -180,7 +180,7 @@ program jacobian
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, &
-               Richardson_num_max, a3_coef_min, a_const )
+               Richardson_num_max, a3_coef_min, a_const, bv_efold )
 
   ! Use an internal file write to specify the write format for the jacobian_matrix.txt
   ! and impact_matrix.txt files.
@@ -226,7 +226,7 @@ program jacobian
                           C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                           C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                           Cx_min, Cx_max, Richardson_num_min, &
-                          Richardson_num_max, a3_coef_min, a_const, &
+                          Richardson_num_max, a3_coef_min, a_const, bv_efold, &
                           clubb_params%value )
 
   else
@@ -254,7 +254,7 @@ program jacobian
                           C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                           C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                           Cx_min, Cx_max, Richardson_num_min, &
-                          Richardson_num_max, a3_coef_min, a_const, &
+                          Richardson_num_max, a3_coef_min, a_const, bv_efold, &
                           clubb_params%value )
 
   end if

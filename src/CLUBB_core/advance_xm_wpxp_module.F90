@@ -1222,10 +1222,6 @@ module advance_xm_wpxp_module
         iwprtp_dp1, & 
         iwprtp_sicl
 
-    use advance_helper_module, only: &
-        set_boundary_conditions_lhs, & ! Procedure(s)
-        calc_stability_correction
-
     implicit none
 
     !------------------- Input Variables -------------------
@@ -1438,7 +1434,8 @@ module advance_xm_wpxp_module
 
     use parameter_indices, only: &
         nparams, & ! Variable(s)
-        ilambda0_stability_coef
+        ilambda0_stability_coef, &
+        ibv_efold
 
     use parameters_tunable, only: &
         nu_vertical_res_dep    ! Type(s)
@@ -1598,6 +1595,7 @@ module advance_xm_wpxp_module
                                           exner, rtm, rcm, &
                                           p_in_Pa, thvm, ice_supersat_frac, &
                                           clubb_params(ilambda0_stability_coef), &
+                                          clubb_params(ibv_efold), &
                                           l_brunt_vaisala_freq_moist, &
                                           l_use_thvm_in_bv_freq,&
                                           Kh_N2_zm )

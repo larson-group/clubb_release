@@ -76,7 +76,7 @@ program clubb_thread_test
     C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
     C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
     C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-    Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const
+    Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
 
   ! Internal variables
   integer, dimension(ncases) :: err_code_saves
@@ -119,7 +119,7 @@ program clubb_thread_test
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, &
-               Richardson_num_max, a3_coef_min, a_const )
+               Richardson_num_max, a3_coef_min, a_const, bv_efold )
 
   ! Run the model in parallel
 !$omp parallel do default(shared), private(iter, params, iunit), &
@@ -155,7 +155,7 @@ program clubb_thread_test
                           C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                           C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                           Cx_min, Cx_max, Richardson_num_min, &
-                          Richardson_num_max, a3_coef_min, a_const, &
+                          Richardson_num_max, a3_coef_min, a_const, bv_efold, &
                           params )
 
     ! Run the model

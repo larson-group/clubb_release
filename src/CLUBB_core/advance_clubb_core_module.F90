@@ -225,7 +225,8 @@ module advance_clubb_core_module
         iSkw_denom_coef,         &
         iSkw_max_mag,            &
         iup2_sfc_coef,           &
-        ia3_coef_min
+        ia3_coef_min,            &
+        ibv_efold
 
     use parameters_tunable, only: &
         nu_vertical_res_dep    ! Type(s)
@@ -1043,7 +1044,7 @@ module advance_clubb_core_module
       !$acc              wp2, wp3, rtp2, thlp2, rtpthlp, wpsclrp_sfc, wpedsclrp_sfc, &
       !$acc              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
       !$acc              edsclrm, edsclrm_forcing )
-      
+
       do i = 1, ngrdcol
         call parameterization_check &
              ( nz, thlm_forcing(i,:), rtm_forcing(i,:), um_forcing(i,:),                         & ! intent(in)
@@ -1074,9 +1075,9 @@ module advance_clubb_core_module
 
       !$acc update host( rfrzm, wp2, vp2, up2, wprtp, wpthlp, upwp, vpwp, &
       !$acc              rtp2, thlp2, rtpthlp, rtm, thlm, um, vm, wp3 )
-      
+
       do i = 1, ngrdcol
-      
+
         call stat_update_var( irfrzm, rfrzm(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
 
@@ -1122,7 +1123,7 @@ module advance_clubb_core_module
                                  stats_zt(i) )         ! intent(inout)
          call stat_begin_update( nz, iwp3_bt, wp3(i,:) / dt, & ! intent(in)
                                  stats_zt(i) )           ! intent(inout)
-                                 
+
       end do
 
     end if
@@ -1132,7 +1133,7 @@ module advance_clubb_core_module
     ! elsewhere in the code (e.g. WRF).  In other cases the _sfc variables will
     ! only be used to compute the variance at the surface. -dschanen 8 Sept 2009
     if ( .not. l_host_applies_sfc_fluxes ) then
-      
+
       !$acc parallel loop default(present)
       do i = 1, ngrdcol
         wpthlp(i,1) = wpthlp_sfc(i)
@@ -1351,7 +1352,7 @@ module advance_clubb_core_module
 
       ! Smooth in the vertical using interpolation
       sigma_sqd_w(:,:) = zm2zt2zm( nz, ngrdcol, gr, sigma_sqd_w_tmp(:,:) )
-      
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
@@ -1360,8 +1361,8 @@ module advance_clubb_core_module
       end do
 
     endif ! clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields
-    
-    
+
+
     ! Compute the a3 coefficient (formula 25 in `Equations for CLUBB')
     ! Note:  a3 has been modified because the wp3 turbulent advection term is
     !        now discretized on its own.  This removes the "- 3" from the end.
@@ -1456,7 +1457,7 @@ module advance_clubb_core_module
         end do
       end do
     end if
-    
+
     sqrt_em_zt(:,:) = zm2zt( nz, ngrdcol, gr, em(:,:) )
 
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1533,6 +1534,7 @@ module advance_clubb_core_module
                                         ice_supersat_frac,                             & ! In
                                         clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
                                         clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
+                                        clubb_params(ibv_efold),                       & ! In
                                         brunt_vaisala_freq_sqd,                        & ! Out
                                         brunt_vaisala_freq_sqd_mixed,                  & ! Out
                                         brunt_vaisala_freq_sqd_dry,                    & ! Out
@@ -1567,8 +1569,8 @@ module advance_clubb_core_module
                         tau_max_zm, tau_max_zt, tau_zm, tau_zt,                   & ! Out
                         Lscale, Lscale_up, Lscale_down )                            ! Out
     end if ! l_diag_Lscale_from_tau
-    
-    
+
+
 
         ! Modification to damp noise in stable region
   ! Vince Larson commented out because it may prevent turbulence from
@@ -1590,7 +1592,7 @@ module advance_clubb_core_module
     ! Calculate CLUBB's eddy diffusivity as
     !   CLUBB's length scale times a velocity scale.
     c_K = clubb_params(ic_K)
-    
+
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1599,7 +1601,7 @@ module advance_clubb_core_module
     end do
 
     Lscale_zm(:,:) = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
-    
+
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1660,7 +1662,7 @@ module advance_clubb_core_module
     if ( l_stats_samp ) then
 
       !$acc update host( rtm, rcm, thlm, exner, p_in_Pa )
-      
+
       do i = 1, ngrdcol
         call stat_update_var( irvm, rtm(i,:) - rcm(i,:), & !intent(in)
                               stats_zt(i) )               !intent(inout)
@@ -1713,10 +1715,11 @@ module advance_clubb_core_module
                                     exner, rtm, rcm, & ! In
                                     p_in_Pa, thvm, ice_supersat_frac, & ! In
                                     clubb_params(ilambda0_stability_coef), & ! In
+                                    clubb_params(ibv_efold), & ! In
                                     clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
                                     clubb_config_flags%l_use_thvm_in_bv_freq, &
                                     stability_correction ) ! In
-        
+
     if ( l_stats_samp ) then
       !$acc update host( stability_correction )
       do i = 1, ngrdcol
@@ -1794,7 +1797,7 @@ module advance_clubb_core_module
                              stats_zm(i))                                ! intent(inout)
         call stat_update_var(isqrt_Ri_zm, sqrt_Ri_zm(i,:), & ! intent(in)
                              stats_zm(i))                  ! intent(inout)
-       
+
         if ( clubb_config_flags%l_diag_Lscale_from_tau ) then
           call stat_update_var(iinvrs_tau_wp3_zm, invrs_tau_wp3_zm(i,:), &   ! intent(in)
                                stats_zm(i))                                ! intent(inout)
@@ -1818,7 +1821,7 @@ module advance_clubb_core_module
     ! otherwise its value is irrelevant, set it to 0 to avoid NaN problems
     if ( clubb_config_flags%l_use_C7_Richardson .or. &
          clubb_config_flags%l_use_C11_Richardson ) then
-         
+
       call compute_Cx_Fnc_Richardson( nz, ngrdcol, gr,                               & ! intent(in)
                                       thlm, um, vm, em, Lscale, exner, rtm,          & ! intent(in)
                                       rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
@@ -2164,7 +2167,7 @@ module advance_clubb_core_module
           end do
         end do
       end if
-      
+
       call advance_windm_edsclrm( nz, ngrdcol, gr, dt,                        & ! intent(in)
                                   wm_zt, Km_zm, Kmh_zm,                       & ! intent(in)
                                   ug, vg, um_ref, vm_ref,                     & ! intent(in)
@@ -2195,7 +2198,7 @@ module advance_clubb_core_module
         call pvertinterp( nz, ngrdcol,                        & ! intent(in)
                           p_in_Pa, 100000.0_core_rknd, thlm,  & ! intent(in)
                           thlm1000 )                            ! intent(out)
-                  
+
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol         
@@ -2205,7 +2208,7 @@ module advance_clubb_core_module
             end if
           end do
         end do
-        
+
       end if
 
       ! Eric Raut: this seems dangerous to call without any attached flag.
@@ -2222,7 +2225,7 @@ module advance_clubb_core_module
      endif ! advance_order_loop_iter
 
     enddo ! advance_order_loop_iter = 1, 4, 1
-    
+
     !----------------------------------------------------------------
     ! Advance or otherwise calculate <thl'^3>, <rt'^3>, and
     ! <sclr'^3>.
@@ -2274,7 +2277,7 @@ module advance_clubb_core_module
                                 * ( one - exp( brunt_vaisala_freq_sqd_zt(i,k) / xp3_coef_slope ) )
         end do
       end do
-      
+
       call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, upwp_zt, wp2_zt, &
                                up2_zt, xp3_coef_fnc, &
                                beta, Skw_denom_coef, w_tol, &
@@ -2513,7 +2516,7 @@ module advance_clubb_core_module
                                rtm_zm, thlm_zm, rcm_zm,                     & ! Intent(out)
                                rcm_supersat_adj,                            & ! Intent(out)
                                wp2sclrp, wpsclrp2, sclrprcp,                & ! Intent(out)
-                               wpsclrprtp, wpsclrpthlp )                      ! Intent(out)      
+                               wpsclrprtp, wpsclrpthlp )                      ! Intent(out)
 
     end if ! clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields
           ! or clubb_config_flags%ipdf_call_placement
@@ -2608,7 +2611,7 @@ module advance_clubb_core_module
       !$acc              sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
       !$acc              wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp, &
       !$acc              wpsclrpthlp, wpedsclrp, edsclrm, edsclrm_forcing )
-      
+
       do i = 1, ngrdcol
 
         call stat_end_update( nz, iwp2_bt, wp2(i,:) / dt, & ! intent(in)

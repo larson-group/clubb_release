@@ -23,7 +23,7 @@ module advance_helper_module
     vertical_avg, &
     vertical_integral, &
     Lscale_width_vert_avg
-    
+
   interface calc_xpwp
     module procedure calc_xpwp_1D
     module procedure calc_xpwp_2D
@@ -223,6 +223,7 @@ module advance_helper_module
                                         exner, rtm, rcm, &
                                         p_in_Pa, thvm, ice_supersat_frac, &
                                         lambda0_stability_coef, &
+                                        bv_efold, &
                                         l_brunt_vaisala_freq_moist, &
                                         l_use_thvm_in_bv_freq, &
                                         stability_correction )
@@ -265,7 +266,9 @@ module advance_helper_module
       ice_supersat_frac
 
     real( kind = core_rknd ), intent(in) :: &
-      lambda0_stability_coef    ! CLUBB tunable parameter lambda0_stability_coef
+      lambda0_stability_coef, &     ! CLUBB tunable parameter lambda0_stability_coef
+      bv_efold                      ! Control parameter for inverse e-folding of
+                                    ! cloud fraction in the mixed Brunt Vaisala frequency
 
     logical, intent(in) :: &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -293,12 +296,13 @@ module advance_helper_module
     !$acc declare create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                 brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
     !$acc                 brunt_vaisala_freq_sqd_plus, lambda0_stability, Lscale_zm )
-    
+
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &              ! intent(in)
                                       l_brunt_vaisala_freq_moist, &     ! intent(in)
                                       l_use_thvm_in_bv_freq, &          ! intent(in)
+                                      bv_efold, &                       ! intent(in)
                                       brunt_vaisala_freq_sqd, &         ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, &     ! intent(out)
@@ -338,6 +342,7 @@ module advance_helper_module
                                            ice_supersat_frac, &
                                            l_brunt_vaisala_freq_moist, &
                                            l_use_thvm_in_bv_freq, &
+                                           bv_efold, &
                                            brunt_vaisala_freq_sqd, &
                                            brunt_vaisala_freq_sqd_mixed,&
                                            brunt_vaisala_freq_sqd_dry, &
@@ -400,6 +405,10 @@ module advance_helper_module
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
+
+    real( kind = core_rknd ), intent(in) :: &
+      bv_efold                      ! Control parameter for inverse e-folding of
+                                    ! cloud fraction in the mixed Brunt Vaisala frequency
 
     !---------------------------- Output Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
@@ -485,7 +494,7 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-    
+
     ddzt_stat_liq    = ddzt( nz, ngrdcol, gr, stat_liq )
     ddzt_stat_liq_zm = zt2zm( nz, ngrdcol, gr, ddzt_stat_liq)
 
@@ -599,7 +608,8 @@ module advance_helper_module
         iCx_min,             &
         iCx_max,             &
         iRichardson_num_min, &
-        iRichardson_num_max
+        iRichardson_num_max, &
+        ibv_efold
 
     use stats_variables, only: &
         iRichardson_num, &    ! Variable(s)
@@ -631,7 +641,7 @@ module advance_helper_module
                                           ! for the respective data structure. See
                                           ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
                                           ! for a plot on how output behaves with varying min_max_smth_mag
-    
+
     !------------------------------ Input ------------------------------
     integer, intent(in) :: &
       nz, &
@@ -724,12 +734,13 @@ module advance_helper_module
       error stop "ERROR: l_modify_limiters_for_cnvg_test .and. l_use_shear_turb_freq_sqd "// &
                  "both true in compute_Cx_fnc_Richardson"
     end if
-    
+
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &              ! intent(in)
                                       l_brunt_vaisala_freq_moist, &     ! intent(in)
                                       l_use_thvm_in_bv_freq, &          ! intent(in)
+                                      clubb_params(ibv_efold), &        ! intent(in)
                                       brunt_vaisala_freq_sqd, &         ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, &     ! intent(out)
@@ -1301,12 +1312,12 @@ module advance_helper_module
 
     use clubb_precision, only: &
         core_rknd                     ! Constant(s)
-        
+
     use constants_clubb, only: &
         one_half
 
     implicit none
-    
+
     !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
@@ -1366,7 +1377,7 @@ module advance_helper_module
         one_half
 
     implicit none
-    
+
     !----------------------------- Input Variables-----------------------------
     integer, intent(in) :: &
       nz, &
@@ -1406,7 +1417,7 @@ module advance_helper_module
     return
 
   end function smooth_min_arrays
-  
+
 !===============================================================================
   function smooth_min_scalars( input_var1, input_var2, smth_coef ) &
   result( output_var )
@@ -1466,7 +1477,7 @@ module advance_helper_module
         one_half
 
     implicit none
-    
+
     !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
@@ -1526,7 +1537,7 @@ module advance_helper_module
         one_half
 
     implicit none
-    
+
     !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
@@ -1586,7 +1597,7 @@ module advance_helper_module
         one_half
 
     implicit none
-    
+
     !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
       nz, &
@@ -1626,7 +1637,7 @@ module advance_helper_module
     return
 
   end function smooth_max_arrays
-  
+
 !===============================================================================
   function smooth_max_scalars( input_var1, input_var2, smth_coef ) &
   result( output_var )
@@ -1669,7 +1680,7 @@ module advance_helper_module
     return
 
   end function smooth_max_scalars
-  
+
   function smooth_heaviside_peskin( nz, ngrdcol, input, smth_range ) &
     result( smth_output )
     
@@ -1689,7 +1700,7 @@ module advance_helper_module
         pi, invrs_pi, one, one_half, zero
 
     implicit none
-    
+
     !------------------------- Input Variables -------------------------
     integer, intent(in) :: &
       nz, &
@@ -1742,7 +1753,7 @@ module advance_helper_module
     return
 
   end function smooth_heaviside_peskin
-  
+
   !===============================================================================
   subroutine calc_xpwp_1D( gr, Km_zm, xm, &
                            xpwp )

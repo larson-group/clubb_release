@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 99 ! Total tunable parameters
+    nparams = 100 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -141,7 +141,8 @@ module parameter_indices
     iRichardson_num_min           = 96, &
     iRichardson_num_max           = 97, &
     ia3_coef_min                  = 98, &
-    ia_const                      = 99
+    ia_const                      = 99, &
+    ibv_efold                     = 100
 
 end module parameter_indices
 !-----------------------------------------------------------------------
