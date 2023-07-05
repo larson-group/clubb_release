@@ -1822,7 +1822,7 @@ module advance_clubb_core_module
     if ( clubb_config_flags%l_use_C7_Richardson .or. &
          clubb_config_flags%l_use_C11_Richardson ) then
 
-      call compute_Cx_Fnc_Richardson( nz, ngrdcol, gr,                               & ! intent(in)
+      call compute_Cx_fnc_Richardson( nz, ngrdcol, gr,                               & ! intent(in)
                                       thlm, um, vm, em, Lscale, exner, rtm,          & ! intent(in)
                                       rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
                                       ice_supersat_frac,                             & ! intent(in)
