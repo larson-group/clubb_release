@@ -144,14 +144,15 @@ module clip_explicit
       upwp_chnge,   & ! Net change in u'w' due to clipping    [m^2/s^2]
       vpwp_chnge      ! Net change in v'w' due to clipping    [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       wpsclrp_chnge   ! Net change in w'sclr' due to clipping [{units vary}]
 
     integer :: sclr, i  ! scalar array index.
 
     ! --------------------- Begin Code ---------------------
 
-    !$acc declare create( wprtp_chnge, wpthlp_chnge, upwp_chnge, vpwp_chnge, wpsclrp_chnge )
+    !$acc enter data create( wprtp_chnge, wpthlp_chnge, upwp_chnge, vpwp_chnge )
+    !$acc enter data if( sclr_dim > 0 ) create( wpsclrp_chnge )
 
     !!! Clipping for w'r_t'
     !
@@ -397,6 +398,8 @@ module clip_explicit
       endif ! l_linearize_pbl_winds
     end if
 
+    !$acc exit data delete( wprtp_chnge, wpthlp_chnge, upwp_chnge, vpwp_chnge )
+    !$acc exit data if( sclr_dim > 0 ) delete( wpsclrp_chnge )
 
     return
   end subroutine clip_covars_denom

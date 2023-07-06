@@ -1433,12 +1433,10 @@ module mixing_length
       invrs_tau_shear_smooth, &
       sqrt_Ri_zm_clipped, &
       sqrt_Ri_zm_smooth, &
-      brunt_vaisala_freq_sqd_scaled, &
       em_clipped, &
       tau_zm_unclipped, & 
       tau_zt_unclipped, &
       tmp_calc, &
-      tmp_calc_min, &
       tmp_calc_max, &
       tmp_calc_min_max
 
@@ -1446,14 +1444,17 @@ module mixing_length
 
     !--------------------------------- Begin Code ---------------------------------
 
-    !$acc declare create( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
-    !$acc                 smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
-    !$acc                 ddzt_um, ddzt_vm, sqrt_ddzt_umvm, smooth_sqrt_ddzt_umvm, &
-    !$acc                 brunt_vaisala_freq_clipped, sqrt_Ri_zm_clipped, &
-    !$acc                 ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                 ddzt_umvm, ddzt_umvm_clipped, brunt_vaisala_freq_sqd_scaled, &
-    !$acc                 tau_zm_unclipped, tau_zt_unclipped, sqrt_Ri_zm_smooth, em_clipped, &
-    !$acc                 tau_zt, tmp_calc, tmp_calc_min, tmp_calc_max, tmp_calc_min_max )
+    !$acc enter data create( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
+    !$acc                    smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
+    !$acc                    ddzt_um, ddzt_vm, sqrt_ddzt_umvm, smooth_sqrt_ddzt_umvm, &
+    !$acc                    brunt_vaisala_freq_clipped, &
+    !$acc                    ice_supersat_frac_zm, invrs_tau_shear_smooth, &
+    !$acc                    ddzt_umvm, tau_zt )
+
+    !$acc enter data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
+    !$acc            create( sqrt_Ri_zm_clipped, ddzt_umvm_clipped, &
+    !$acc                    tau_zm_unclipped, tau_zt_unclipped, sqrt_Ri_zm_smooth, em_clipped, &
+    !$acc                    tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
     !$acc parallel loop default(present)
     do i = 1, ngrdcol
@@ -2020,6 +2021,18 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+
+    !$acc exit data delete( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
+    !$acc                   smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
+    !$acc                   ddzt_um, ddzt_vm, sqrt_ddzt_umvm, smooth_sqrt_ddzt_umvm, &
+    !$acc                   brunt_vaisala_freq_clipped, &
+    !$acc                   ice_supersat_frac_zm, invrs_tau_shear_smooth, &
+    !$acc                   ddzt_umvm, tau_zt )
+
+    !$acc exit data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
+    !$acc           delete( sqrt_Ri_zm_clipped, ddzt_umvm_clipped, &
+    !$acc                   tau_zm_unclipped, tau_zt_unclipped, sqrt_Ri_zm_smooth, em_clipped, &
+    !$acc                   tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
     return
     

@@ -696,10 +696,10 @@ module advance_clubb_core_module
       tau_zm, & ! Eddy dissipation time scale on momentum levels      [s]
       tau_zt    ! Eddy dissipation time scale on thermodynamic levels [s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,edsclr_dim)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,edsclr_dim) :: &
       wpedsclrp   ! w'edsclr'
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       sclrprcp,    & ! sclr'rc'
       wp2sclrp,    & ! w'^2 sclr'
       wpsclrp2,    & ! w'sclr'^2
@@ -825,9 +825,6 @@ module advance_clubb_core_module
        z_displace = 10.0_core_rknd   ! displacement of log law profile above ground   [m]
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
-      depth_pos_wpthlp  ! Thickness of the layer near the surface with wpthlp > 0 [m]
-
-    real( kind = core_rknd ), dimension(ngrdcol) :: &
       Lscale_max    ! Max. allowable mixing length (based on grid box size) [m]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -892,11 +889,11 @@ module advance_clubb_core_module
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
     !$acc              nu_vert_res_dep%nu6, &
     !$acc              pdf_params, pdf_params_zm, &
-    !$acc              fcor,  sfc_elevation, thlm_forcing, rtm_forcing, um_forcing, &
+    !$acc              fcor, sfc_elevation, thlm_forcing, rtm_forcing, um_forcing, &
     !$acc              vm_forcing, wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
     !$acc              rtpthlp_forcing, wm_zm, wm_zt, rho_zm, rho, rho_ds_zm, rho_ds_zt, &
     !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, rfrzm, &
-    !$acc              hydromet, radf, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, wpthlp_sfc, &
+    !$acc              radf, wpthlp_sfc, &
     !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, sclrm_forcing, wpsclrp_sfc, edsclrm_forcing, & 
     !$acc              wpedsclrp_sfc, upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, thlm_ref, um_ref, &
 #ifdef CLUBBND_CAM
@@ -965,20 +962,18 @@ module advance_clubb_core_module
 #ifdef CLUBB_CAM
     !$acc              qclvar, &
 #endif
-    !$acc              thlprcp ) &
-    !$acc      create( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
+    !$acc              thlprcp )
+
+    !$acc enter data create( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
     !$acc              wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, Lscale_zm, &
-    !$acc              Lscale_down, em, tau_zm, tau_zt, wpedsclrp, sclrprcp, wp2sclrp, &
-    !$acc              wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2_zt, thlp2_zt, wpthlp_zt, &
+    !$acc              Lscale_down, em, tau_zm, tau_zt, &
+    !$acc              wp2_zt, thlp2_zt, wpthlp_zt, &
     !$acc              wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
     !$acc              Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, &
     !$acc              rc_coef_zm, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, sigma_sqd_w_zt, &
     !$acc              sqrt_em_zt, xp3_coef_fnc, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
     !$acc              mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
-    !$acc              thlm_zm, rcm_zm, wpsclrp_zt, sclrp2_zt, &
-    !$acc              rtm_integral_forcing, rtm_flux_top, rtm_flux_sfc, &
-    !$acc              thlm_integral_forcing, &
-    !$acc              thlm_flux_top, thlm_flux_sfc, thlm1000, thlm700, &
+    !$acc              thlm_zm, rcm_zm, thlm1000, thlm700, &
     !$acc              rcm_supersat_adj, stability_correction, invrs_tau_N2_zm, &
     !$acc              invrs_tau_C6_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, invrs_tau_N2_iso, &
     !$acc              invrs_tau_C4_zm, invrs_tau_C14_zm, invrs_tau_wp2_zm, invrs_tau_wpxp_zm, &
@@ -987,8 +982,15 @@ module advance_clubb_core_module
     !$acc              brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc              brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
     !$acc              brunt_vaisala_freq_sqd_plus, brunt_vaisala_freq_sqd_splat, &
-    !$acc              brunt_vaisala_freq_sqd_zt, sqrt_Ri_zm, depth_pos_wpthlp, Lscale_max, &
+    !$acc              brunt_vaisala_freq_sqd_zt, sqrt_Ri_zm, Lscale_max, &
     !$acc              tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
+
+    !$acc enter data if( sclr_dim > 0 ) &
+    !$acc            create( wpedsclrp, sclrprcp, wp2sclrp, &
+    !$acc                    wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt )
+
+    !$acc enter data if( sclr_dim > 0 ) &
+    !$acc            create( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
 
     if ( clubb_config_flags%l_lmm_stepping ) then
       dt_advance = two * dt
@@ -1709,29 +1711,30 @@ module advance_clubb_core_module
       mixt_frac_zm(:,:)  = zt2zm( nz, ngrdcol, gr, pdf_params%mixt_frac(:,:) )
     end if
 
-    ! Determine stability correction factor
-    call calc_stability_correction( nz, ngrdcol, gr, & ! In
-                                    thlm, Lscale, em, & ! In
-                                    exner, rtm, rcm, & ! In
-                                    p_in_Pa, thvm, ice_supersat_frac, & ! In
-                                    clubb_params(ilambda0_stability_coef), & ! In
-                                    clubb_params(ibv_efold), & ! In
-                                    clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
-                                    clubb_config_flags%l_use_thvm_in_bv_freq, &
-                                    stability_correction ) ! In
-
-    if ( l_stats_samp ) then
-      !$acc update host( stability_correction )
-      do i = 1, ngrdcol
-        call stat_update_var( istability_correction, stability_correction(i,:), & ! In
-                              stats_zm(i) ) ! In/Out
-      end do
-    end if
-
     ! Here we determine if we're using tau_zm or tau_N2_zm, which is tau
     ! that has been stability corrected for stably stratified regions.
     ! -dschanen 7 Nov 2014
     if ( clubb_config_flags%l_stability_correct_tau_zm ) then
+
+      ! Determine stability correction factor
+      call calc_stability_correction( nz, ngrdcol, gr,                               & ! In
+                                      thlm, Lscale, em,                              & ! In
+                                      exner, rtm, rcm,                               & ! In
+                                      p_in_Pa, thvm, ice_supersat_frac,              & ! In
+                                      clubb_params(ilambda0_stability_coef),         & ! In
+                                      clubb_params(ibv_efold), & ! In
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
+                                      clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
+                                      stability_correction )                           ! Out
+          
+      if ( l_stats_samp ) then
+        !$acc update host( stability_correction )
+        do i = 1, ngrdcol
+          call stat_update_var( istability_correction, stability_correction(i,:), & ! In
+                                stats_zm(i) ) ! In/Out
+        end do
+      end if
+
       ! Determine the static stability corrected version of tau_zm
       ! Create a damping time scale that is more strongly damped at the
       ! altitudes where the Brunt-Vaisala frequency (N^2) is large.
@@ -2829,6 +2832,34 @@ module advance_clubb_core_module
 
     !$acc end data
 
+    !$acc exit data delete( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
+    !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, &
+    !$acc                   Lscale_zm, Lscale_down, em, tau_zm, tau_zt, sigma_sqd_w_zt, &
+    !$acc                   wp2_zt, thlp2_zt, wpthlp_zt, &
+    !$acc                   wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
+    !$acc                   Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, &
+    !$acc                   rc_coef_zm, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, &
+    !$acc                   sqrt_em_zt, xp3_coef_fnc, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+    !$acc                   mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
+    !$acc                   thlm_zm, rcm_zm, thlm1000, thlm700, &
+    !$acc                   rcm_supersat_adj, stability_correction, invrs_tau_N2_zm, &
+    !$acc                   invrs_tau_C6_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, invrs_tau_N2_iso, &
+    !$acc                   invrs_tau_C4_zm, invrs_tau_C14_zm, invrs_tau_wp2_zm, invrs_tau_wpxp_zm, &
+    !$acc                   invrs_tau_wp3_zm, invrs_tau_no_N2_zm, invrs_tau_bkgnd, invrs_tau_shear, &
+    !$acc                   invrs_tau_sfc, invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
+    !$acc                   brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+    !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
+    !$acc                   brunt_vaisala_freq_sqd_plus, brunt_vaisala_freq_sqd_splat, &
+    !$acc                   brunt_vaisala_freq_sqd_zt, sqrt_Ri_zm, Lscale_max, &
+    !$acc                   tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
+
+    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc           delete( wpedsclrp, sclrprcp, wp2sclrp, &
+    !$acc                   wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt )
+
+    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc           delete( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
+
     return
 
   end subroutine advance_clubb_core
@@ -3040,14 +3071,14 @@ module advance_clubb_core_module
     !real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
     !hydromet       ! Mean of hydrometeor fields               [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,hydromet_dim)), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
       wp2hmp,      & ! Third-order moment:  < w'^2 hm' >    [(m/s)^2 <hm units>]
       rtphmp_zt,   & ! Covariance of rt and hm (on t-levs.) [(kg/kg) <hm units>]
       thlphmp_zt     ! Covariance of thl and hm (on t-levs.)      [K <hm units>]
 
     ! Passive scalar variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: &
       sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
       wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
       sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
@@ -3135,7 +3166,7 @@ module advance_clubb_core_module
       rc_coef_zm           ! Coefficient of X'r_c' on m-levs.       [K/(kg/kg)]
 
     ! Variable being passed back to and out of advance_clubb_core.
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(out) :: &
       sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
 
     ! Variables being passed back to only advance_clubb_core (for statistics).
@@ -3172,7 +3203,7 @@ module advance_clubb_core_module
       rcm_zm,               & ! rcm at momentum levels                   [kg/kg]
       rcm_supersat_adj        ! Adjust. to rcm due to spurious supersat. [kg/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(out) :: &
       wp2sclrp,    & ! < w'^2 sclr' > (thermodynamic levels)      [units vary]
       wpsclrp2,    & ! < w' sclr'^2 > (thermodynamic levels)      [units vary]
       sclrprcp,    & ! < sclr' r_c' > (momentum levels)           [units vary]
@@ -3221,13 +3252,13 @@ module advance_clubb_core_module
       p_in_Pa_zm, & ! Pressure interpolated to momentum levels  [Pa]
       exner_zm      ! Exner interpolated to momentum levels     [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,hydromet_dim)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim) :: &
       wphydrometp_zt, & ! Covariance of w and hm (on t-levs.) [(m/s) <hm units>]
       wp2hmp_zm,      & ! Moment <w'^2 hm'> (on m-levs.)    [(m/s)^2 <hm units>]
       rtphmp,         & ! Covariance of rt and hm           [(kg/kg) <hm units>]
       thlphmp           ! Covariance of thl and hm                [K <hm units>]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       wpsclrp_zt,   & ! w' sclr' interpolated to thermo. levels
       sclrp2_zt,    & ! sclr'^2 interpolated to thermo. levels
       sclrp3_zm,    & ! sclr'^3 interpolated to momentum levels
@@ -3254,7 +3285,7 @@ module advance_clubb_core_module
       uprcp_zt,    & ! u' r_c' (on thermo. grid)        [(m kg)/(s kg)]
       vprcp_zt       ! v' r_c' (on thermo. grid)        [(m kg)/(s kg)]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz, max(1,sclr_dim)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid)
       sclrprcp_zt     ! sclr'rc' (on thermo. grid)
 
@@ -3267,7 +3298,7 @@ module advance_clubb_core_module
       wp2thvp_zm,   & ! < w'^2 th_v' > on momentum levels     [m^2/s^2 K]
       wp2rcp_zm       ! < w'^2 r_c' > on momentum levles      [m^2/s^2 kg/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid
       wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid
       wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid
@@ -3325,27 +3356,29 @@ module advance_clubb_core_module
 
     !-------------------------------------- Begin Code --------------------------------------
 
-    !$acc declare create( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &   
-    !$acc                 wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &       
-    !$acc                 vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, & 
-    !$acc                 gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &         
-    !$acc                 Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &         
-    !$acc                 Sku_zm, Skv_zt, Skv_zm, w_up_in_cloud_zm, &        
-    !$acc                 w_down_in_cloud_zm, cloudy_updraft_frac_zm, cloudy_downdraft_frac_zm, & 
-    !$acc                 p_in_Pa_zm, exner_zm, wphydrometp_zt, wp2hmp_zm, rtphmp, thlphmp, &       
-    !$acc                 wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &
-    !$acc                 Sksclr_zt, Sksclr_zm, wpup2_zm, wpvp2_zm, wp2up2_zt, &  
-    !$acc                 wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
-    !$acc                 wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
-    !$acc                 sclrpthvp_zt, sclrprcp_zt, wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
-    !$acc                 wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm, &
-    !$acc                 wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, &
-    !$acc                 sclrm_zm, F_w, F_rt, F_thl, min_F_w, max_F_w, &
-    !$acc                 min_F_rt, max_F_rt, min_F_thl, max_F_thl, &
-    !$acc                 F_w_zm, F_rt_zm, F_thl_zm, &    
-    !$acc                 min_F_w_zm, max_F_w_zm, min_F_rt_zm, & 
-    !$acc                 max_F_rt_zm, min_F_thl_zm, max_F_thl_zm, &
-    !$acc                 rsat, rel_humidity,um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
+    !$acc enter data create( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &   
+    !$acc                    wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &       
+    !$acc                    vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, & 
+    !$acc                    gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &         
+    !$acc                    Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &         
+    !$acc                    Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &  
+    !$acc                    wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
+    !$acc                    wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
+    !$acc                    rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
+
+    !$acc enter data if( l_call_pdf_closure_twice ) &
+    !$acc            create( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &  
+    !$acc                    w_down_in_cloud_zm, cloudy_updraft_frac_zm,  & 
+    !$acc                    cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &     
+    !$acc                    wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
+    !$acc                    wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm )
+
+    !$acc enter data if( sclr_dim > 0 ) &
+    !$acc            create( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &
+    !$acc                    Sksclr_zt, Sksclr_zm, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
+    !$acc                    wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrm_zm )
+
+    !$acc enter data if( hydromet_dim > 0 ) create( wphydrometp_zt, wp2hmp_zm, rtphmp, thlphmp )
 
     !---------------------------------------------------------------------------
     ! Interpolate wp3, rtp3, thlp3, up3, vp3, and sclrp3 to momentum levels, and
@@ -3650,9 +3683,6 @@ module advance_clubb_core_module
 
     ! Stats output
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
-
-      !$acc update host( F_w, F_rt, F_thl, min_F_w, max_F_w, &
-      !$acc              min_F_rt, max_F_rt, min_F_thl, max_F_thl )
 
       do i = 1, ngrdcol
         call stat_update_var( iF_w, F_w(i,:), & ! intent(in)
@@ -4035,6 +4065,30 @@ module advance_clubb_core_module
       end if
 
     end if ! l_rcm_supersat_adj
+
+    !$acc exit data delete( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &   
+    !$acc                   wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &       
+    !$acc                   vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, & 
+    !$acc                   gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &         
+    !$acc                   Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &         
+    !$acc                   Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &  
+    !$acc                   wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
+    !$acc                   wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
+    !$acc                   rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
+
+    !$acc exit data if( l_call_pdf_closure_twice ) &
+    !$acc           delete( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &  
+    !$acc                   w_down_in_cloud_zm, cloudy_updraft_frac_zm,  & 
+    !$acc                   cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &     
+    !$acc                   wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
+    !$acc                   wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm )
+
+    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc           delete( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &
+    !$acc                   Sksclr_zt, Sksclr_zm, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
+    !$acc                   wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrm_zm )
+
+    !$acc exit data if( hydromet_dim > 0 ) delete( wphydrometp_zt, wp2hmp_zm, rtphmp, thlphmp )
 
     return
 

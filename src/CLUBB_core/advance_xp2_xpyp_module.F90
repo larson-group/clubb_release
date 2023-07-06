@@ -239,7 +239,7 @@ module advance_xp2_xpyp_module
       dt             ! Model timestep                                [s]
 
     ! Passive scalar input
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,max(sclr_dim,1)) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
       wpsclrp,     & ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
       wpsclrp2,    & ! <w'sclr'^2> (thermodynamic levels) [m/s{sclr units}^2]
@@ -300,7 +300,7 @@ module advance_xp2_xpyp_module
       vp2        ! <v'^2>                        [m^2/s^2]
 
     ! Passive scalar output
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,max(sclr_dim,1)) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrp2, sclrprtp, sclrpthlp
 
     !------------------------------ Local Variables ------------------------------
@@ -311,7 +311,7 @@ module advance_xp2_xpyp_module
       up2_old,     & ! Saved value of <u'^2>           [m^2/s^2]
       vp2_old        ! Saved value of <v'^2>           [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(sclr_dim,1)) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrp2_old,    & ! Saved value of <sclr'^2>     [units vary]
       sclrprtp_old,  & ! Saved value of <sclr'rt'>    [units vary]
       sclrpthlp_old    ! Saved value of <sclr'thl'>   [units vary]
@@ -353,7 +353,7 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       rtpthlp_chnge    ! Net change in r_t'th_l' due to clipping [(kg/kg) K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(sclr_dim,1)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       sclrprtp_chnge,  & ! Net change in sclr'r_t' due to clipping  [units vary]
       sclrpthlp_chnge    ! Net change in sclr'th_l' due to clipping [units vary]
       
@@ -376,13 +376,13 @@ module advance_xp2_xpyp_module
       rhs_ta_wpvp2        ! For <w'v'^2>
     
     ! Implicit (LHS) turbulent advection terms for scalars
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz,max(sclr_dim,1)) :: & 
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz,sclr_dim) :: & 
       lhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
       lhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
       lhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
 
     ! Explicit (RHS) turbulent advection terms for scalars
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(sclr_dim,1)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
       rhs_ta_wprtpsclrp,    & ! For <w'sclr'rt'>
       rhs_ta_wpthlpsclrp      ! For <w'sclr'thl'>
@@ -409,23 +409,27 @@ module advance_xp2_xpyp_module
       lhs_dp1_C4     ! LHS dissipation term 1, for up2 vp2 using C4, only for stats
       
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      rtm_zm
+      rtm_zm, test
 
     ! Loop indices
     integer :: sclr, k, i
     
     !------------------------------ Begin Code ------------------------------
     
-    !$acc declare create( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, sclrp2_old, &
-    !$acc                 sclrprtp_old, sclrpthlp_old, C2sclr_1d, C2rt_1d, C2thl_1d, &
-    !$acc                 C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, &
-    !$acc                 uv_solution, Kw2, Kw9, Kw2_zm, Kw9_zm, rtpthlp_chnge, &
-    !$acc                 sclrprtp_chnge, sclrpthlp_chnge, lhs_ta_wprtp2, lhs_ta_wpthlp2, &
-    !$acc                 lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
-    !$acc                 rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, &
-    !$acc                 lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
-    !$acc                 rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
-    !$acc                 lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm )
+    !$acc enter data create( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, &
+    !$acc                    C2sclr_1d, C2rt_1d, C2thl_1d, &
+    !$acc                    C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, &
+    !$acc                    uv_solution, Kw2, Kw9, Kw2_zm, Kw9_zm, rtpthlp_chnge, &
+    !$acc                    lhs_ta_wprtp2, lhs_ta_wpthlp2, &
+    !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
+    !$acc                    rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, &
+    !$acc                    lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm )
+
+    !$acc enter data if( sclr_dim > 0 ) &
+    !$acc      create( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, &
+    !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
+    !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
+    !$acc              sclrpthlp_chnge ) 
     
     ! Unpack CLUBB tunable parameters
     C2rt    = clubb_params(iC2rt)
@@ -1377,6 +1381,21 @@ module advance_xp2_xpyp_module
       endif
     end if
 
+    !$acc exit data delete( rtp2_old, thlp2_old, rtpthlp_old, up2_old, vp2_old, &
+    !$acc                    C2sclr_1d, C2rt_1d, C2thl_1d, &
+    !$acc                    C2rtthl_1d, C4_1d, C14_1d, threshold_array, lhs, uv_rhs, &
+    !$acc                    uv_solution, Kw2, Kw9, Kw2_zm, Kw9_zm, rtpthlp_chnge, &
+    !$acc                    lhs_ta_wprtp2, lhs_ta_wpthlp2, &
+    !$acc                    lhs_ta_wprtpthlp, lhs_ta_wpup2, lhs_ta_wpvp2, rhs_ta_wprtp2, &
+    !$acc                    rhs_ta_wpthlp2, rhs_ta_wprtpthlp, rhs_ta_wpup2, rhs_ta_wpvp2, &
+    !$acc                    lhs_diff, lhs_diff_uv, lhs_ma, lhs_dp1, rtm_zm )
+
+    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc      delete( sclrp2_old, sclrprtp_old, sclrpthlp_old, sclrprtp_chnge, &
+    !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
+    !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
+    !$acc              sclrpthlp_chnge ) 
+
     return
 
   end subroutine advance_xp2_xpyp
@@ -1457,7 +1476,7 @@ module advance_xp2_xpyp_module
       dt             ! Model timestep                                [s]
       
     ! Passive scalar input
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,max(sclr_dim,1)) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
       wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
 
@@ -1471,7 +1490,7 @@ module advance_xp2_xpyp_module
       rhs_ta_wpthlp2,   & ! For <w'thl'^2>
       rhs_ta_wprtpthlp    ! For <w'rt'thl'>
       
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,max(sclr_dim,1)) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,sclr_dim) :: &
       rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
       rhs_ta_wprtpsclrp,    & ! For <w'sclr'rt'><w'sclr'^2><w'sclr'thl'>
       rhs_ta_wpthlpsclrp      ! For <w'sclr'thl'>
@@ -1492,7 +1511,7 @@ module advance_xp2_xpyp_module
       thlp2,   & ! <th_l'^2>                     [K^2]
       rtpthlp    ! <r_t'th_l'>                   [(kg K)/kg]
       
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,max(sclr_dim,1)) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrp2, sclrprtp, sclrpthlp
       
     ! -------- Local Variables --------
@@ -1525,8 +1544,10 @@ module advance_xp2_xpyp_module
     
     ! -------- Begin Code --------
 
-    !$acc declare create( lhs, rhs, solution, sclrp2_forcing, sclrprtp_forcing, &
-    !$acc                 sclrpthlp_forcing, lhs_dp1 )
+    !$acc enter data create( lhs, rhs, solution, lhs_dp1 )
+
+    !$acc enter data if( sclr_dim > 0 ) &
+    !$acc            create( sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -1748,6 +1769,11 @@ module advance_xp2_xpyp_module
       end do
     end if
 
+    !$acc exit data delete( lhs, rhs, solution, lhs_dp1 )
+
+    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc           delete( sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing )
+
     return
       
   end subroutine solve_xp2_xpyp_with_single_lhs
@@ -1837,7 +1863,7 @@ module advance_xp2_xpyp_module
       dt             ! Model timestep                                [s]
         
     ! Passive scalar input
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,max(sclr_dim,1)) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
       wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
 
@@ -1853,12 +1879,12 @@ module advance_xp2_xpyp_module
       rhs_ta_wpthlp2,   & ! For <w'thl'^2>
       rhs_ta_wprtpthlp    ! For <w'rt'thl'>
         
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz,max(sclr_dim,1)), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz,sclr_dim), intent(in) :: & 
       lhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
       lhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
       lhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,max(sclr_dim,1)) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,sclr_dim) :: &
       rhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
       rhs_ta_wprtpsclrp,  & ! For <w'sclr'rt'>
       rhs_ta_wpthlpsclrp    ! For <w'sclr'thl'>
@@ -1880,7 +1906,7 @@ module advance_xp2_xpyp_module
       thlp2,   & ! <th_l'^2>                     [K^2]
       rtpthlp    ! <r_t'th_l'>                   [(kg K)/kg]
         
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,max(sclr_dim,1)) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrp2, sclrprtp, sclrpthlp
         
     !------------------------ Local Variables ------------------------
@@ -1896,7 +1922,7 @@ module advance_xp2_xpyp_module
       sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
       sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
         
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,3*sclr_dim)) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,3*sclr_dim) ::  & 
       sclr_rhs,   & ! RHS vectors of tridiagonal system for the passive scalars
       sclr_solution ! Solution to tridiagonal system for the passive scalars
  
@@ -1911,7 +1937,7 @@ module advance_xp2_xpyp_module
       thlp2_solution,   & ! <th_l'^2>                     [K^2]
       rtpthlp_solution    ! <r_t'th_l'>                   [(kg K)/kg]
         
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(sclr_dim,1)) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrp2_solution, &
       sclrprtp_solution, &
       sclrpthlp_solution
@@ -1923,10 +1949,13 @@ module advance_xp2_xpyp_module
       
     !------------------------ Begin Code ------------------------
 
-    !$acc declare create( lhs, rhs, sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, &
-    !$acc                 sclr_rhs, sclr_solution, threshold, lhs_dp1, rtp2_solution, &
-    !$acc                 thlp2_solution, rtpthlp_solution, sclrp2_solution, &
-    !$acc                 sclrprtp_solution, sclrpthlp_solution )
+    !$acc enter data  create( lhs, rhs, threshold, lhs_dp1, rtp2_solution, &
+    !$acc                     thlp2_solution, rtpthlp_solution )
+
+    !$acc enter data if( sclr_dim > 0 ) &
+    !$acc            create( sclrprtp_solution, sclrpthlp_solution, sclr_solution, &
+    !$acc                    sclr_rhs, sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, &
+    !$acc                    sclrp2_solution )
 
     !!!!!***** r_t'^2 *****!!!!!
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -2377,6 +2406,14 @@ module advance_xp2_xpyp_module
       endif ! iiPDF_type
 
     end if
+
+    !$acc exit data delete( lhs, rhs, threshold, lhs_dp1, rtp2_solution, &
+    !$acc                     thlp2_solution, rtpthlp_solution )
+
+    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc           delete( sclrprtp_solution, sclrpthlp_solution, sclr_solution, &
+    !$acc                   sclr_rhs, sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, &
+    !$acc                   sclrp2_solution )
 
     return
       
@@ -3641,14 +3678,14 @@ module advance_xp2_xpyp_module
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
     
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(sclr_dim,1)), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: &
       wpsclrp,      & ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
       wpsclrp2,     & ! <w'sclr'^2> (thermodynamic levels) [m/s{sclr units}^2]
       wpsclrprtp,   & ! <w'sclr'r_t'> (thermo. levels)     [m/s{sclr units)kg/kg]
       wpsclrpthlp     ! <w'sclr'th_l'> (thermo. levels)    [m/s{sclr units}K]
       
     ! Passive scalar output
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(sclr_dim,1)), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(in) :: &
       sclrp2,       & 
       sclrprtp,     &
       sclrpthlp
@@ -3720,13 +3757,13 @@ module advance_xp2_xpyp_module
       rhs_ta_wpvp2        ! For <w'v'^2>
 
     ! Implicit (LHS) turbulent advection terms for scalars
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz,max(sclr_dim,1)), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz,sclr_dim), intent(out) :: & 
       lhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
       lhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
       lhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
 
     ! Explicit (RHS) turbulent advection terms for scalars
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(sclr_dim,1)), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(out) :: &
       rhs_ta_wpsclrp2,    & ! For <w'sclr'^2>
       rhs_ta_wprtpsclrp,  & ! For <w'rt'sclr'>
       rhs_ta_wpthlpsclrp    ! For <w'thl'sclr'>
@@ -3821,7 +3858,7 @@ module advance_xp2_xpyp_module
       sgn_t_vel_sclrprtp,  & ! Sign of the turbulent velocity for <sclr'rt'> [-]
       sgn_t_vel_sclrpthlp    ! Sign of the turbulent vel. for <sclr'thl'>    [-]
         
-    real ( kind = core_rknd ), dimension(ngrdcol,nz,max(sclr_dim,1)) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       wpsclrp_zt  ! <w'sclr'> interp. to thermo. levels  [m/s {sclrm units}]
       
     real ( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -3837,24 +3874,26 @@ module advance_xp2_xpyp_module
 
     !------------------- Begin Code -------------------
 
-    !$acc declare create( coef_wprtp2_implicit, term_wprtp2_explicit, &
+    !$acc enter data create( coef_wprtp2_implicit, term_wprtp2_explicit, &
     !$acc                 coef_wprtp2_implicit_zm, term_wprtp2_explicit_zm, &
     !$acc                 coef_wpthlp2_implicit, term_wpthlp2_explicit, &
-    !$acc                 coef_wpthlp2_implicit_zm, term_wpthlp2_explicit_zm, &
+    !$acc                 term_wpthlp2_explicit_zm, &
     !$acc                 coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
-    !$acc                 coef_wprtpthlp_implicit_zm, term_wprtpthlp_explicit_zm, &
+    !$acc                 coef_wpvp2_implicit_zm, term_wprtpthlp_explicit_zm, &
     !$acc                 coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, &
     !$acc                 term_wpvp2_explicit, coef_wpup2_implicit_zm, term_wpup2_explicit_zm, &
-    !$acc                 coef_wpvp2_implicit_zm, term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
+    !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
     !$acc                 sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
-    !$acc                 coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &
+    !$acc                 a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt )
+
+    !$acc enter data if( sclr_dim > 0 ) &
+    !$acc         create( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &
     !$acc                 coef_wpsclrp2_implicit_zm, term_wpsclrp2_explicit_zm, &
     !$acc                 coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, &
     !$acc                 coef_wprtpsclrp_implicit_zm, term_wprtpsclrp_explicit_zm, &
     !$acc                 coef_wpthlpsclrp_implicit, coef_wpthlpsclrp_implicit_zm, &
     !$acc                 term_wpthlpsclrp_explicit_zm, sgn_t_vel_sclrp2, sgn_t_vel_sclrprtp, &
-    !$acc                 sgn_t_vel_sclrpthlp, wpsclrp_zt, a1, a1_zt, upwp_zt, &
-    !$acc                 vpwp_zt, wprtp_zt, wpthlp_zt )
+    !$acc                 sgn_t_vel_sclrpthlp, wpsclrp_zt )
     
     ! Define a_1 (located on momentum levels).
     ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is
@@ -5125,6 +5164,27 @@ module advance_xp2_xpyp_module
                               stats_zt(i) ) ! intent(inout)
       end do
     end if ! l_stats_samp
+
+    !$acc exit data delete( coef_wprtp2_implicit, term_wprtp2_explicit, &
+    !$acc                 coef_wprtp2_implicit_zm, term_wprtp2_explicit_zm, &
+    !$acc                 coef_wpthlp2_implicit, term_wpthlp2_explicit, &
+    !$acc                 term_wpthlp2_explicit_zm, &
+    !$acc                 coef_wprtpthlp_implicit, term_wprtpthlp_explicit, &
+    !$acc                 coef_wpvp2_implicit_zm, term_wprtpthlp_explicit_zm, &
+    !$acc                 coef_wpup2_implicit, term_wpup2_explicit, coef_wpvp2_implicit, &
+    !$acc                 term_wpvp2_explicit, coef_wpup2_implicit_zm, term_wpup2_explicit_zm, &
+    !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
+    !$acc                 sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
+    !$acc                 a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt )
+
+    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc         delete( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &
+    !$acc                 coef_wpsclrp2_implicit_zm, term_wpsclrp2_explicit_zm, &
+    !$acc                 coef_wprtpsclrp_implicit, term_wprtpsclrp_explicit, &
+    !$acc                 coef_wprtpsclrp_implicit_zm, term_wprtpsclrp_explicit_zm, &
+    !$acc                 coef_wpthlpsclrp_implicit, coef_wpthlpsclrp_implicit_zm, &
+    !$acc                 term_wpthlpsclrp_explicit_zm, sgn_t_vel_sclrp2, sgn_t_vel_sclrprtp, &
+    !$acc                 sgn_t_vel_sclrpthlp, wpsclrp_zt )
     
     return
                                  

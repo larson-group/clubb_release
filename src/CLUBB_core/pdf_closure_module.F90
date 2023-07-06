@@ -239,7 +239,7 @@ module pdf_closure_module
 ! <--- h1g, 2012-06-14
 #endif
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,hydromet_dim)), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor    [(m/s) <hm units>]
       wp2hmp,      & ! Third-order moment:  < w'^2 hm' >    [(m/s)^2 <hm units>]
       rtphmp,      & ! Covariance of rt and a hydrometeor   [(kg/kg) <hm units>]
@@ -314,7 +314,7 @@ module pdf_closure_module
       max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
 
     ! Output (passive scalar variables)
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz, sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrpthvp, & 
       sclrprcp, & 
       wpsclrp2, & 
@@ -353,7 +353,7 @@ module pdf_closure_module
 
     ! Passive scalar local variables
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclr1, sclr2,  &
       varnce_sclr1, varnce_sclr2, & 
       alpha_sclr,  & 
@@ -376,7 +376,7 @@ module pdf_closure_module
       Sku,      & ! Skewness of u               [-]
       Skv         ! Skewness of v               [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,sclr_dim)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim) :: &
       Sksclr      ! Skewness of rt              [-]
 
     ! Thermodynamic quantity
@@ -437,7 +437,7 @@ module pdf_closure_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc declare create( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
+    !$acc enter data create( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
     !$acc                 varnce_v_1, varnce_v_2, alpha_u, alpha_v, &
     !$acc                 corr_u_w_1, corr_u_w_2, corr_v_w_1, corr_v_w_2, &
     !$acc                 tl1, tl2, sqrt_wp2, Skthl, &
@@ -447,10 +447,13 @@ module pdf_closure_module
     !$acc                 thlprcp_contrib_comp_1, thlprcp_contrib_comp_2, &
     !$acc                 uprcp_contrib_comp_1, uprcp_contrib_comp_2, &
     !$acc                 vprcp_contrib_comp_1, vprcp_contrib_comp_2, &
-    !$acc                 rc_1_ice, rc_2_ice, sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
-    !$acc                 alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
-    !$acc                 corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, &
-    !$acc                 corr_w_sclr_2, Sksclr, rsatl_1, rsatl_2 )
+    !$acc                 rc_1_ice, rc_2_ice, rsatl_1, rsatl_2 )
+
+    !$acc enter data if( sclr_dim > 0 ) &
+    !$acc            create( sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
+    !$acc                    alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
+    !$acc                    corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, &
+    !$acc                    corr_w_sclr_2, Sksclr )
 
     ! Check whether the passive scalars are present.
     if ( sclr_dim > 0 ) then
@@ -496,10 +499,9 @@ module pdf_closure_module
 
     end if
 
-
     ! Initialize to 0 to prevent a runtime error
     if ( iiPDF_type /= iiPDF_new .and. iiPDF_type /= iiPDF_new_hybrid ) then
-      !$acc parallel loop gang vector collapse(2) default(present)
+      ! Stats only variables, setting to zero
       do k = 1, nz
         do i = 1, ngrdcol
           F_w(i,k) = zero
@@ -513,8 +515,6 @@ module pdf_closure_module
           max_F_thl(i,k) = zero
         end do
       end do
-      !$acc end parallel loop
-
     end if
 
     ! Unpack CLUBB's tunable parameters
@@ -1757,6 +1757,24 @@ module pdf_closure_module
       end do
 
     end if ! clubb_at_least_debug_level
+
+    !$acc exit data delete( u_1, u_2, varnce_u_1, varnce_u_2, v_1, v_2, &
+    !$acc                   varnce_v_1, varnce_v_2, alpha_u, alpha_v, &
+    !$acc                   corr_u_w_1, corr_u_w_2, corr_v_w_1, corr_v_w_2, &
+    !$acc                   tl1, tl2, sqrt_wp2, Skthl, &
+    !$acc                   Skrt, Sku, Skv, wprcp_contrib_comp_1, wprcp_contrib_comp_2, &
+    !$acc                   wp2rcp_contrib_comp_1, wp2rcp_contrib_comp_2, &
+    !$acc                   rtprcp_contrib_comp_1, rtprcp_contrib_comp_2, &
+    !$acc                   thlprcp_contrib_comp_1, thlprcp_contrib_comp_2, &
+    !$acc                   uprcp_contrib_comp_1, uprcp_contrib_comp_2, &
+    !$acc                   vprcp_contrib_comp_1, vprcp_contrib_comp_2, &
+    !$acc                   rc_1_ice, rc_2_ice, rsatl_1, rsatl_2 )
+
+    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc           delete( sclr1, sclr2, varnce_sclr1, varnce_sclr2, & 
+    !$acc                   alpha_sclr, corr_sclr_thl_1, corr_sclr_thl_2, &
+    !$acc                   corr_sclr_rt_1, corr_sclr_rt_2, corr_w_sclr_1, &
+    !$acc                   corr_w_sclr_2, Sksclr )
 
     return
 

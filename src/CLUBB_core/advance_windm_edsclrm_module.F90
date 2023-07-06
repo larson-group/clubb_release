@@ -224,7 +224,7 @@ module advance_windm_edsclrm_module
       um_old, & ! Saved value of mean u (west-to-east) wind component    [m/s]
       vm_old    ! Saved value of Mean v (south-to-north) wind component  [m/s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(1,edsclr_dim)) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,edsclr_dim) ::  &
       edsclrm_old    ! Saved value of mean eddy scalar quantity   [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
@@ -281,11 +281,14 @@ module advance_windm_edsclrm_module
     logical :: l_perturbed_wind
 
     ! ------------------------ Begin Code ------------------------
-    !$acc declare create( um_old, vm_old, edsclrm_old, um_tndcy, vm_tndcy, &
-    !$acc                 upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
-    !$acc                 wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
-    !$acc                 nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
-    !$acc                 Km_zm_p_nu10, xpwp )
+
+    !$acc enter data create( um_old, vm_old, um_tndcy, vm_tndcy, &
+    !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
+    !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
+    !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
+    !$acc                    Km_zm_p_nu10, xpwp )
+
+    !$acc enter data if( edsclr_dim > 0) create( edsclrm_old )
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -1273,6 +1276,14 @@ module advance_windm_edsclrm_module
           return
         end if
     end if
+
+    !$acc exit data delete( um_old, vm_old, um_tndcy, vm_tndcy, &
+    !$acc                    upwp_chnge, vpwp_chnge, lhs, rhs, solution, wind_speed, &
+    !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
+    !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
+    !$acc                    Km_zm_p_nu10, xpwp )
+
+    !$acc exit data if( edsclr_dim > 0) delete( edsclrm_old )
 
     return
 
