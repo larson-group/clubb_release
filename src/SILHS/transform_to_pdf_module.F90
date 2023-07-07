@@ -5,7 +5,8 @@ module transform_to_pdf_module
 
   implicit none
 
-  public :: ltqnorm, multiply_Cholesky, transform_uniform_samples_to_pdf, chi_eta_2_rtthl
+  public :: ltqnorm, multiply_Cholesky, transform_uniform_samples_to_pdf, chi_eta_2_rtthl, &
+            sample_w_using_invrs_cdf
 
   private ! Default scope
 
@@ -189,6 +190,117 @@ module transform_to_pdf_module
 
     return
   end subroutine transform_uniform_samples_to_pdf
+
+
+!-------------------------------------------------------------------------------
+  subroutine sample_w_using_invrs_cdf &
+             ( nz, ngrdcol, num_samples, pdf_dim, & ! In
+               pdf_params, & ! In
+               X_u_all_levs, & ! In
+               X_nl_all_levs ) ! Inout
+! Description:
+!   Uses the inverse cumulative distribution to draw sample points for vertical velocity.
+
+! References:
+!   ``Multivariate Statistical Simulation'' (1987), Mark E. Johnson, p. 19.
+!-------------------------------------------------------------------------------
+
+    use pdf_parameter_module, only: &
+      pdf_parameter  ! Type
+
+    use array_index, only: &
+      iiPDF_w    ! Variable(s)
+
+    use constants_clubb, only:  &
+      one
+
+    use clubb_precision, only: &
+      core_rknd
+
+    implicit none
+
+    ! External
+    intrinsic :: sqrt
+
+    integer, parameter :: &
+      d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
+                            ! the lognormal sample. Currently:
+                            !
+                            ! pdf_dim+1: Mixture component, for choosing PDF component
+                            ! pdf_dim+2: Precipitation fraction, for determining precipitation
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, & ! Number of vertical grid levels
+      ngrdcol, & ! Number of grid columns
+      num_samples,  & ! Number of subcolumn samples
+      pdf_dim         ! Number of variables to sample
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params  ! PDF parameters       [units vary]
+
+    real( kind = core_rknd ),intent(in),dimension(ngrdcol,num_samples,nz,pdf_dim+d_uniform_extra)::&
+      X_u_all_levs ! Sample drawn from uniform distribution from a particular grid level
+
+    ! Input-Output Variable
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,num_samples,nz,pdf_dim) :: &
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+
+    ! Local Variables
+
+    integer :: i, k, sample, p ! Loop counters
+
+    real( kind = core_rknd ) :: &
+      U_pt, &  !  values from uniformly distributed sample array, X_u_all_levs
+      mixt_frac, & ! value of mixture fraction from pdf_params%mixt_frac
+      interp_coef  ! interpolation coefficient between low and high values of w sample
+
+    ! Flag to clip sample point values of chi in extreme situations.
+    logical, parameter :: &
+      l_clip_extreme_chi_sample_pts = .true.
+
+    real( kind = core_rknd ), dimension(pdf_dim,ngrdcol,nz,num_samples) :: &
+      std_normal ! vector of d-variate standard normal distribution [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz,num_samples) :: &
+      w_min, & ! lower bound of vertical velocity, given the uniform sample point [m/s]
+      w_max    ! upper bound of vertical velocity, given the uniform sample point [m/s]
+
+    ! ---- Begin Code ----
+
+    ! From Latin hypercube sample, generate standard normal sample
+    call cdfnorminv( pdf_dim, nz, ngrdcol, num_samples, X_u_all_levs, &  ! In
+                     std_normal )                                        ! Out
+
+    ! Calculate lower bound of sampled vertical velocity
+    do sample = 1, num_samples
+      w_min(1:ngrdcol,1:nz,sample) = pdf_params%w_2(1:ngrdcol,1:nz) &
+                    + std_normal(iiPDF_w,1:ngrdcol,1:nz,sample) * sqrt( pdf_params%varnce_w_2(1:ngrdcol,1:nz)  )
+    end do
+
+    ! Calculate upper bound of sampled vertical velocity
+    do sample = 1, num_samples
+      w_max(1:ngrdcol,1:nz,sample) = pdf_params%w_1(1:ngrdcol,1:nz) &
+                    + std_normal(iiPDF_w,1:ngrdcol,1:nz,sample) * sqrt( pdf_params%varnce_w_1(1:ngrdcol,1:nz)  )
+    end do
+
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          U_pt = X_u_all_levs(i,sample,k,iiPDF_w)
+          mixt_frac = pdf_params%mixt_frac(i,k)
+          interp_coef = ( U_pt - ( one - mixt_frac ) * U_pt )  &
+                          /  ( ( one - mixt_frac ) * ( one - U_pt ) + mixt_frac * U_pt )
+          X_nl_all_levs(i,sample,k,iiPDF_w) = w_min(i,k,sample) &
+                                              + interp_coef * ( w_max(i,k,sample) - w_min(i,k,sample) )
+        end do
+      end do
+    end do
+
+
+end subroutine sample_w_using_invrs_cdf
+
 
 !-----------------------------------------------------------------------
   subroutine cdfnorminv( pdf_dim, nz, ngrdcol, num_samples, X_u_all_levs, &
