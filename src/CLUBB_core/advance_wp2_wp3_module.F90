@@ -413,17 +413,17 @@ module advance_wp2_wp3_module
 
     integer :: k, i, b
 
-    !$acc declare create( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, &
-    !$acc                 wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
-    !$acc                 lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
-    !$acc                 lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, &
-    !$acc                 rhs_pr1_wp2, lhs_pr1_wp3, rhs_pr1_wp3, rhs_bp_pr2_wp2, &
-    !$acc                 rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, &
-    !$acc                 rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
-    !$acc                 lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
-    !$acc                 lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
-    !$acc                 coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
-    !$acc                 dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt )
+    !$acc enter data create( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, &
+    !$acc                    wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
+    !$acc                    lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
+    !$acc                    lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, &
+    !$acc                    rhs_pr1_wp2, lhs_pr1_wp3, rhs_pr1_wp3, rhs_bp_pr2_wp2, &
+    !$acc                    rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, &
+    !$acc                    rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
+    !$acc                    lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
+    !$acc                    lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
+    !$acc                    coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
+    !$acc                    dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt )
 
     !-----------------------------------------------------------------------
 
@@ -1160,6 +1160,18 @@ module advance_wp2_wp3_module
       end if ! fatal error
     end if
 
+    !$acc exit data delete( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, &
+    !$acc                   wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
+    !$acc                   lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
+    !$acc                   lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, &
+    !$acc                   rhs_pr1_wp2, lhs_pr1_wp3, rhs_pr1_wp3, rhs_bp_pr2_wp2, &
+    !$acc                   rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, rhs_pr3_wp2, &
+    !$acc                   rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
+    !$acc                   lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
+    !$acc                   lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
+    !$acc                   coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
+    !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt )
+
     return
 
   end subroutine advance_wp2_wp3
@@ -1392,7 +1404,7 @@ module advance_wp2_wp3_module
 
     !------------------------- Begin Code -------------------------
 
-    !$acc declare create( rhs_save, solut, old_solut, rcond, threshold_array ) 
+    !$acc enter data create( rhs_save, solut, old_solut, rcond, threshold_array ) 
 
     ! Save the value of rhs, which will be overwritten with the solution as
     ! part of the solving routine.
@@ -1814,6 +1826,8 @@ module advance_wp2_wp3_module
 
     ! Compute wp3_zm for output purposes
     wp3_zm(:,:) = zt2zm( nz, ngrdcol, gr, wp3 )
+
+    !$acc exit data delete( rhs_save, solut, old_solut, rcond, threshold_array ) 
 
     return
 

@@ -1505,7 +1505,7 @@ module grid_class
     ! Use a linear extension based on the values of azt at levels gr%nz and
     ! gr%nz-1 to find the value of azm at level gr%nz (the uppermost level
     ! in the model).
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       linear_interpolated_azm(i,nz) &
         = ( ( azt(i,nz) - azt(i,nz-1) ) / ( gr%zt(i,nz) - gr%zt(i,nz-1) ) ) & 
@@ -1964,7 +1964,7 @@ module grid_class
     ! thermodynamic levels is azt.
     ! Use a linear extension based on the values of azm at levels 1 and 2 to
     ! find the value of azt at level 1 (the lowermost level in the model).
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       linear_interpolated_azt(i,1) &
         = ( ( azm(i,2) - azm(i,1) ) / ( gr%zm(i,2) - gr%zm(i,1) ) ) & 
@@ -2317,7 +2317,7 @@ module grid_class
     !$acc data copyin( gr, gr%invrs_dzt, azm ) &
     !$acc     copyout( gradzm_2D )
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       gradzm_2D(i,1) = ( azm(i,2) - azm(i,1) ) * gr%invrs_dzt(i,2)
     end do
@@ -2411,7 +2411,7 @@ module grid_class
     !$acc data copyin( gr, gr%invrs_dzm, azt ) &
     !$acc     copyout( gradzt_2D )
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       gradzt_2D(i,nz) = ( azt(i,nz) - azt(i,nz-1) ) * gr%invrs_dzm(i,nz-1)
     end do

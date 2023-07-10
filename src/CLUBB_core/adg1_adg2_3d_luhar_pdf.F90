@@ -147,7 +147,7 @@ module adg1_adg2_3d_luhar_pdf
 
     integer :: j  ! Loop index
 
-    !$acc declare create( w_1_n, w_2_n )
+    !$acc enter data create( w_1_n, w_2_n )
     
     ! Calculate the mixture fraction and the PDF component means and variances
     ! of w.
@@ -204,6 +204,8 @@ module adg1_adg2_3d_luhar_pdf
        enddo ! i=1, sclr_dim
     endif ! l_scalar_calc
     
+    !$acc exit data delete( w_1_n, w_2_n )
+
     return
 
   end subroutine ADG1_pdf_driver

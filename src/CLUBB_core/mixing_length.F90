@@ -232,12 +232,12 @@ module mixing_length
 
     ! --------------------------------- Begin Code ---------------------------------
 
-    !$acc declare create( exp_mu_dzm, invrs_dzm_on_mu, grav_on_thvm, Lv_coef, &
-    !$acc                 entrain_coef, thl_par_j_precalc, rt_par_j_precalc, &
-    !$acc                 tl_par_1, rt_par_1, rsatl_par_1, thl_par_1, dCAPE_dz_1, &
-    !$acc                 s_par_1, rc_par_1, CAPE_incr_1, thv_par_1, tke_i )
+    !$acc enter data create( exp_mu_dzm, invrs_dzm_on_mu, grav_on_thvm, Lv_coef, &
+    !$acc                    entrain_coef, thl_par_j_precalc, rt_par_j_precalc, &
+    !$acc                    tl_par_1, rt_par_1, rsatl_par_1, thl_par_1, dCAPE_dz_1, &
+    !$acc                    s_par_1, rc_par_1, CAPE_incr_1, thv_par_1, tke_i )
  
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       if ( abs(mu(i)) < eps ) then
         err_code = clubb_fatal_error
@@ -855,6 +855,11 @@ module mixing_length
 
     end if
 
+    !$acc exit data delete( exp_mu_dzm, invrs_dzm_on_mu, grav_on_thvm, Lv_coef, &
+    !$acc                   entrain_coef, thl_par_j_precalc, rt_par_j_precalc, &
+    !$acc                   tl_par_1, rt_par_1, rsatl_par_1, thl_par_1, dCAPE_dz_1, &
+    !$acc                   s_par_1, rc_par_1, CAPE_incr_1, thv_par_1, tke_i )
+
     return
 
   end subroutine compute_mixing_length
@@ -995,10 +1000,11 @@ module mixing_length
 
     !--------------------------------- Begin Code ---------------------------------
 
-    !$acc declare create( sign_rtpthlp, Lscale_pert_1, Lscale_pert_2, &
-    !$acc                 thlm_pert_1, thlm_pert_2, rtm_pert_1, rtm_pert_2, &
-    !$acc                 thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, rtm_pert_neg_rt, &
-    !$acc                 mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt )
+    !$acc enter data create( sign_rtpthlp, Lscale_pert_1, Lscale_pert_2, &
+    !$acc                    thlm_pert_1, thlm_pert_2, rtm_pert_1, rtm_pert_2, &
+    !$acc                    thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, &
+    !$acc                    rtm_pert_neg_rt, &
+    !$acc                    mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt )
 
     Lscale_mu_coef = clubb_params(iLscale_mu_coef)
     Lscale_pert_coef = clubb_params(iLscale_pert_coef)
@@ -1044,7 +1050,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do  i = 1, ngrdcol
         mu_pert_1(i)   = newmu(i) / Lscale_mu_coef
       end do 
@@ -1073,7 +1079,7 @@ module mixing_length
       end do
       !$acc end parallel loop
            
-      !$acc parallel loop default(present) 
+      !$acc parallel loop gang vector default(present) 
       do  i = 1, ngrdcol
         mu_pert_2(i)   = newmu(i) * Lscale_mu_coef
       end do 
@@ -1138,7 +1144,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop default(present) 
+      !$acc parallel loop gang vector default(present) 
       do i = 1, ngrdcol
         mu_pert_pos_rt(i) = newmu(i) / Lscale_mu_coef
         mu_pert_neg_rt(i) = newmu(i) * Lscale_mu_coef
@@ -1218,6 +1224,12 @@ module mixing_length
         !$acc end parallel loop
       end if
     end if
+
+    !$acc exit data delete( sign_rtpthlp, Lscale_pert_1, Lscale_pert_2, &
+    !$acc                   thlm_pert_1, thlm_pert_2, rtm_pert_1, rtm_pert_2, &
+    !$acc                   thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, &
+    !$acc                   rtm_pert_neg_rt, &
+    !$acc                   mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt )
 
    return
    
@@ -1456,7 +1468,7 @@ module mixing_length
     !$acc                    tau_zm_unclipped, tau_zt_unclipped, sqrt_Ri_zm_smooth, em_clipped, &
     !$acc                    tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       if ( gr%zm(i,1) - sfc_elevation(i) + z_displace < eps ) then
         err_code = clubb_fatal_error
@@ -1500,7 +1512,7 @@ module mixing_length
 
     if ( l_smooth_min_max ) then
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ustar(i) = smooth_max( ( upwp_sfc(i)**2 + vpwp_sfc(i)**2 )**one_fourth, ufmin, min_max_smth_mag )
       end do
@@ -1508,7 +1520,7 @@ module mixing_length
 
     else 
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ustar(i) = max( ( upwp_sfc(i)**2 + vpwp_sfc(i)**2 )**one_fourth, ufmin )
       end do

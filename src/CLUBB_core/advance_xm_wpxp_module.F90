@@ -1111,17 +1111,17 @@ module advance_xm_wpxp_module
     end if ! l_predict_upwp_vpwp
 
     !$acc exit data delete( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, &
-    !$acc                 low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, &
-    !$acc                 wpthlp_old, um_old, upwp_old, vm_old, &
-    !$acc                 vpwp_old, lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
-    !$acc                 lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, lhs_ta_wpvp, &
-    !$acc                 rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
-    !$acc                 rhs_ta_wpvp, lhs_tp, lhs_ta_xm, lhs_ac_pr2, &
-    !$acc                 lhs_pr1_wprtp, lhs_pr1_wpthlp )
+    !$acc                   low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, &
+    !$acc                   wpthlp_old, um_old, upwp_old, vm_old, &
+    !$acc                   vpwp_old, lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
+    !$acc                   lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, lhs_ta_wpvp, &
+    !$acc                   rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
+    !$acc                   rhs_ta_wpvp, lhs_tp, lhs_ta_xm, lhs_ac_pr2, &
+    !$acc                   lhs_pr1_wprtp, lhs_pr1_wpthlp )
 
     !$acc exit data if( sclr_dim > 0 ) &
-    !$acc            delete( sclrm_old, wpsclrp_old, lhs_ta_wpsclrp,  &
-    !$acc                    rhs_ta_wpsclrp, lhs_pr1_wpsclrp )
+    !$acc           delete( sclrm_old, wpsclrp_old, lhs_ta_wpsclrp,  &
+    !$acc                   rhs_ta_wpsclrp, lhs_pr1_wpsclrp )
 
     return
 
@@ -1292,21 +1292,16 @@ module advance_xm_wpxp_module
       
     real (kind = core_rknd) :: &
       invrs_dt
-        
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      zero_vector    ! Vector of 0s
       
     integer :: i
 
     !------------------- Begin Code -------------------
-
-    !$acc declare create( zero_vector )
     
     ! Initializations/precalculations
     invrs_dt = 1.0_core_rknd / dt
 
     ! Lower boundary for xm, lhs(:,1)
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs(1,i,1) = 0.0_core_rknd
       lhs(2,i,1) = 0.0_core_rknd
@@ -1317,7 +1312,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Lower boundary for w'x', lhs(:,2)
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs(1,i,2) = 0.0_core_rknd
       lhs(2,i,2) = 0.0_core_rknd
@@ -1368,7 +1363,7 @@ module advance_xm_wpxp_module
 
     ! Upper boundary for w'x', , lhs(:,2*gr%nz)
     ! These were set in the loop above for simplicity, so they must be set properly here
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs(1,i,2*nz) = 0.0_core_rknd
       lhs(2,i,2*nz) = 0.0_core_rknd
@@ -1562,7 +1557,7 @@ module advance_xm_wpxp_module
 
     !------------------- Begin Code -------------------
 
-    !$acc declare create( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array )
+    !$acc enter data create( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array )
 
     ! Initializations/precalculations
     constant_nu = 0.1_core_rknd
@@ -1646,7 +1641,7 @@ module advance_xm_wpxp_module
         end do
         !$acc end parallel loop
 
-        !$acc parallel loop default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol        
           zeros_array(i) = zero
         end do
@@ -1665,6 +1660,8 @@ module advance_xm_wpxp_module
                            l_upwind_xm_ma,                        & ! Intent(in)
                            lhs_ma_zt )                              ! Intent(out)
     end if    
+
+    !$acc exit data delete( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array )
 
     return
 
@@ -1828,7 +1825,7 @@ module advance_xm_wpxp_module
 
     !------------------- Begin Code -------------------
 
-    !$acc declare create( rhs_bp_pr3 )
+    !$acc enter data create( rhs_bp_pr3 )
 
     ! Initialize output array and precalculate the reciprocal of dt
     invrs_dt = 1.0_core_rknd / dt    
@@ -1837,7 +1834,7 @@ module advance_xm_wpxp_module
     call wpxp_terms_bp_pr3_rhs( nz, ngrdcol, C7_Skw_fnc, thv_ds_zm, xpthvp, & ! intent(in)
                                 rhs_bp_pr3 )                                  ! intent(out)
                             
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Set lower boundary for xm
       rhs(i,1) = xm(i,1)
@@ -1873,7 +1870,7 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Upper boundary for xm
       rhs(i,2*nz-1) = xm(i,nz) * invrs_dt + xm_forcing(i,nz)
@@ -2026,6 +2023,8 @@ module advance_xm_wpxp_module
       end do
 
     endif ! l_stats_samp
+
+    !$acc exit data delete( rhs_bp_pr3 )
 
     return
 
@@ -4565,7 +4564,7 @@ module advance_xm_wpxp_module
 
     ! --------------------------- Begin code ---------------------------
 
-    !$acc declare create( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
+    !$acc enter data create( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
 
     select case ( solve_type )
 
@@ -4678,7 +4677,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Lower boundary condition on xm
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       xm(i,1) = xm(i,2)
     end do
@@ -4911,7 +4910,7 @@ module advance_xm_wpxp_module
 
       ! Hole filling does not affect the below ground level, perform a blunt clipping
       ! here on that level to prevent small values of xm(1)
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         if ( any( xm(i,:) < xm_threshold) ) then
           xm(i,1) = max( xm(i,1), xm_tol )
@@ -5044,7 +5043,9 @@ module advance_xm_wpxp_module
                                   wpxp_chnge, gr%invrs_dzt,     & ! intent(in)
                                   stats_zt,                     & ! intent(inout)
                                   xm )                            ! intent(inout)
-    end if
+    end if 
+
+    !$acc exit data delete( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
 
     return
 
@@ -5135,7 +5136,7 @@ module advance_xm_wpxp_module
     integer :: i, k    ! Vertical level index
 
     ! Set lower boundary condition to 0
-    !$acc parallel loop default(present) 
+    !$acc parallel loop gang vector default(present) 
     do i = 1, ngrdcol
       lhs_ta_xm(k_mdiag,i,1)   = zero
       lhs_ta_xm(km1_mdiag,i,1) = zero
@@ -5241,7 +5242,7 @@ module advance_xm_wpxp_module
     integer :: i, k  ! Vertical level index
 
     ! Set lower boundary to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs_tp(1,i,1) = zero
       lhs_tp(2,i,1) = zero
@@ -5264,7 +5265,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Set upper boundary to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs_tp(1,i,nz) = 0.0_core_rknd
       lhs_tp(2,i,nz) = 0.0_core_rknd
@@ -5360,7 +5361,7 @@ module advance_xm_wpxp_module
     !$acc     copyout( lhs_ac_pr2 ) 
 
     ! Set lower boundary to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs_ac_pr2(i,1) = zero
     end do
@@ -5378,7 +5379,7 @@ module advance_xm_wpxp_module
     !$acc end parallel loop
 
     ! Set upper boundary to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs_ac_pr2(i,nz) = zero
     end do
@@ -5471,7 +5472,7 @@ module advance_xm_wpxp_module
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! Set lower boundary to 0
@@ -5502,7 +5503,7 @@ module advance_xm_wpxp_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
 
         ! Set lower boundary to 0
@@ -5578,7 +5579,7 @@ module advance_xm_wpxp_module
     !$acc     copyout( rhs_bp_pr3 )
 
     ! Set lower boundary to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_bp_pr3(i,1) = zero
     end do
@@ -5592,7 +5593,7 @@ module advance_xm_wpxp_module
     end do ! k = 2, nz-1
 
     ! Set upper boundary to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_bp_pr3(i,nz) = zero
     end do
@@ -5775,7 +5776,7 @@ module advance_xm_wpxp_module
 
     !---------------------------- Begin Code ----------------------------
 
-    !$acc declare create( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed )
+    !$acc enter data create( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed )
 
     l_any_clipping_needed = .false.
 
@@ -5830,6 +5831,8 @@ module advance_xm_wpxp_module
                               stats_zt(i) )                      ! intent(inout)
       end do
     endif
+
+    !$acc exit data delete( xm_tndcy_wpxp_cl, l_clipping_needed, l_any_clipping_needed )
 
     return
 
@@ -5953,7 +5956,7 @@ module advance_xm_wpxp_module
 
     !----------------------------- Begin Code ------------------------------
 
-    !$acc declare create( ddzt_xm, ddzt_ym )
+    !$acc enter data create( ddzt_xm, ddzt_ym )
     
     ddzt_xm = ddzt( nz, ngrdcol, gr, xm )
     ddzt_ym = ddzt( nz, ngrdcol, gr, ym )
@@ -5964,9 +5967,11 @@ module advance_xm_wpxp_module
         ypxp(i,k) = ( tau_C6_zm(i,k) / C6x_Skw_fnc(i,k) ) &
                     * ( - ypwp(i,k) * ddzt_xm(i,k) - (one - C7_Skw_fnc(i,k) ) &
                       * ( wpxp(i,k) * ddzt_ym(i,k) ) )
-     end do
-   end do
-   !$acc end parallel loop
+      end do
+    end do
+    !$acc end parallel loop
+
+    !$acc exit data delete( ddzt_xm, ddzt_ym )
               
     return
 

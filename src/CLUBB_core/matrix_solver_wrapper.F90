@@ -107,15 +107,9 @@ module matrix_solver_wrapper
 
     ! ----------------------- Begin Code -----------------------
 
-#ifdef _OPENACC
-    if ( penta_solve_method /= penta_lu  ) then
-      write(fstderr,*) "Running on GPUs requires penta_solve_method = penta_lu = 2"
-      err_code = clubb_no_error
-      return
-    end if
-#endif
-
     if ( present(rcond) ) then
+
+      !$acc update host( lhs, rhs )
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -128,16 +122,22 @@ module matrix_solver_wrapper
                                lhs_copy, rhs_copy,    & ! Intent(inout)
                                dummy_soln, rcond )      ! Intent(out)
 
+      !$acc update device( rcond )
+
     end if
 
 
     if ( penta_solve_method == lapack ) then
+
+      !$acc update host( lhs, rhs )
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
                               ndim, 1, ngrdcol,       & ! Intent(in) 
                               lhs, rhs,               & ! Intent(inout)
                               soln )                    ! Intent(out)
+
+      !$acc update device( soln )
 
     else if ( penta_solve_method == penta_lu ) then 
 
@@ -225,15 +225,9 @@ module matrix_solver_wrapper
 
     ! ----------------------- Begin Code -----------------------
 
-#ifdef _OPENACC
-    if ( penta_solve_method /= penta_lu  ) then
-      write(fstderr,*) "Running on GPUs requires penta_solve_method = penta_lu = 2"
-      err_code = clubb_no_error
-      return
-    end if
-#endif
-
     if ( present(rcond) ) then
+
+      !$acc update host( lhs, rhs )
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -246,16 +240,22 @@ module matrix_solver_wrapper
                                lhs_copy, rhs_copy,    & ! Intent(inout)
                                dummy_soln, rcond )      ! Intent(out)
 
+      !$acc update device( rcond )
+
     end if
 
 
     if ( penta_solve_method == lapack ) then
+
+      !$acc update host( lhs, rhs )
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
                               ndim, nrhs, ngrdcol,    & ! Intent(in) 
                               lhs, rhs,               & ! Intent(inout)
                               soln )                    ! Intent(out)
+
+      !$acc update device( soln )
 
     else if ( penta_solve_method == penta_lu ) then 
 
@@ -339,14 +339,6 @@ module matrix_solver_wrapper
 
     ! ----------------------- Begin Code -----------------------
 
-#ifdef _OPENACC
-    if ( tridiag_solve_method /= tridiag_lu ) then
-      write(fstderr,*) "Running on GPUs requires tridiag_solve_method = tridiag_lu = 2"
-      err_code = clubb_no_error
-      return
-    end if
-#endif
-
     if ( present(rcond) ) then
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
@@ -357,7 +349,6 @@ module matrix_solver_wrapper
       call lapack_tridiag_solvex( solve_name, ndim, 1, 1, & ! Intent(in) 
                                   lhs_copy, rhs_copy,     & ! Intent(inout)
                                   dummy_soln, rcond )       ! Intent(out)
-
     end if
 
 
@@ -448,15 +439,9 @@ module matrix_solver_wrapper
 
     ! ----------------------- Begin Code -----------------------
 
-#ifdef _OPENACC
-    if ( tridiag_solve_method /= tridiag_lu ) then
-      write(fstderr,*) "Running on GPUs requires tridiag_solve_method = tridiag_lu = 2"
-      err_code = clubb_no_error
-      return
-    end if
-#endif
-
     if ( present(rcond) ) then
+
+      !$acc update host( lhs, rhs )
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -466,16 +451,22 @@ module matrix_solver_wrapper
       call lapack_tridiag_solvex( solve_name, ndim, 1, ngrdcol, & ! Intent(in) 
                                   lhs_copy, rhs_copy,           & ! Intent(inout)
                                   dummy_soln, rcond )             ! Intent(out)
+      
+      !$acc update device( rcond )
 
     end if
 
 
     if ( tridiag_solve_method == lapack ) then
 
+      !$acc update host( lhs, rhs )
+
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, 1, ngrdcol, & ! Intent(in) 
                                  lhs, rhs,                     & ! Intent(inout)
                                  soln )                          ! Intent(out)
+
+      !$acc update device( soln )
 
     else if ( tridiag_solve_method == tridiag_lu ) then
 
@@ -555,16 +546,10 @@ module matrix_solver_wrapper
     integer :: i
 
     ! ----------------------- Begin Code -----------------------
-    
-#ifdef _OPENACC
-    if ( tridiag_solve_method /= tridiag_lu ) then
-      write(fstderr,*) "Running on GPUs requires tridiag_solve_method = tridiag_lu = 2"
-      err_code = clubb_no_error
-      return
-    end if
-#endif
 
     if ( present(rcond) ) then
+
+      !$acc update host( lhs, rhs )
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -574,16 +559,22 @@ module matrix_solver_wrapper
       call lapack_tridiag_solvex( solve_name, ndim, nrhs, ngrdcol,  & ! Intent(in) 
                                   lhs_copy, rhs_copy,               & ! Intent(inout)
                                   dummy_soln, rcond )                 ! Intent(out)
+      
+      !$acc update device( rcond )
 
     end if
 
 
     if ( tridiag_solve_method == lapack ) then
 
+      !$acc update host( lhs, rhs )
+
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, nrhs, ngrdcol, & ! Intent(in) 
                                  lhs, rhs,                        & ! Intent(inout)
                                  soln )                             ! Intent(out)
+
+      !$acc update device( soln )
 
     else if ( tridiag_solve_method == tridiag_lu ) then
 

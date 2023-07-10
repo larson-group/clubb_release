@@ -1136,20 +1136,22 @@ module advance_clubb_core_module
     ! only be used to compute the variance at the surface. -dschanen 8 Sept 2009
     if ( .not. l_host_applies_sfc_fluxes ) then
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         wpthlp(i,1) = wpthlp_sfc(i)
         wprtp(i,1)  = wprtp_sfc(i)
         upwp(i,1)   = upwp_sfc(i)
         vpwp(i,1)   = vpwp_sfc(i)
       end do
+      !$acc end parallel loop
 
       if ( clubb_config_flags%l_linearize_pbl_winds ) then
-        !$acc parallel loop default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
           upwp_pert(i,1) = upwp_sfc_pert(i)
           vpwp_pert(i,1) = vpwp_sfc_pert(i)
         end do
+        !$acc end parallel loop
       endif ! l_linearize_pbl_winds
 
       ! Set fluxes for passive scalars (if enabled)
@@ -1160,6 +1162,7 @@ module advance_clubb_core_module
             wpsclrp(i,1,j)   = wpsclrp_sfc(i,j)
           end do
         end do
+        !$acc end parallel loop
       end if
 
       if ( edsclr_dim > 0 ) then
@@ -1169,17 +1172,19 @@ module advance_clubb_core_module
             wpedsclrp(i,1,j) = wpedsclrp_sfc(i,j)
           end do
         end do
+        !$acc end parallel loop
       end if
 
     else
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         wpthlp(i,1) = 0.0_core_rknd
         wprtp(i,1)  = 0.0_core_rknd
         upwp(i,1)   = 0.0_core_rknd
         vpwp(i,1)   = 0.0_core_rknd
       end do
+      !$acc end parallel loop
 
       ! Set fluxes for passive scalars (if enabled)
       if ( sclr_dim > 0 ) then
@@ -1189,6 +1194,7 @@ module advance_clubb_core_module
             wpsclrp(i,1,j) = 0.0_core_rknd
           end do
         end do
+        !$acc end parallel loop
       end if
 
       if ( edsclr_dim > 0 ) then
@@ -1198,20 +1204,23 @@ module advance_clubb_core_module
             wpedsclrp(i,1,j) = 0.0_core_rknd
           end do
         end do
+        !$acc end parallel loop
       end if
 
     end if ! ~l_host_applies_sfc_fluxes
 
 #ifdef CLUBBND_CAM
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       newmu(i) = varmu(i)
     end do
+    !$acc end parallel loop
 #else
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       newmu(i) = mu
     end do
+    !$acc end parallel loop
 #endif
 
     if ( clubb_config_flags%ipdf_call_placement == ipdf_pre_advance_fields &
@@ -1304,6 +1313,7 @@ module advance_clubb_core_module
         wp2_zt(i,k) = max( wp2_zt(i,k), w_tol_sqd )
       end do
     end do
+    !$acc end parallel loop
 
     beta = clubb_params(ibeta)
     Skw_denom_coef = clubb_params(iSkw_denom_coef)
@@ -1336,6 +1346,7 @@ module advance_clubb_core_module
                   *exp( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm(i,k)/gamma_coefc)**2 )
           end do
         end do
+        !$acc end parallel loop
       else
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
@@ -1343,6 +1354,7 @@ module advance_clubb_core_module
             gamma_Skw_fnc(i,k) = gamma_coef
           end do
         end do
+        !$acc end parallel loop
       endif
 
       ! Compute sigma_sqd_w (dimensionless PDF width parameter)
@@ -1361,6 +1373,7 @@ module advance_clubb_core_module
           sigma_sqd_w(i,k) = max( zero_threshold, sigma_sqd_w(i,k) ) ! Pos. def. quantity
         end do
       end do
+      !$acc end parallel loop
 
     endif ! clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields
 
@@ -1381,6 +1394,7 @@ module advance_clubb_core_module
         a3_coef(i,k) = -2._core_rknd * ( 1._core_rknd - sigma_sqd_w(i,k) )**2 + 3.0_core_rknd
       end do
     end do
+    !$acc end parallel loop
 
     ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
     ! than -1.4 -dschanen 4 Jan 2011
@@ -1391,6 +1405,8 @@ module advance_clubb_core_module
         a3_coef(i,k) = max( a3_coef(i,k), a3_coef_min )
       end do
     end do
+    !$acc end parallel loop
+
     a3_coef_zt(:,:) = zm2zt( nz, ngrdcol, gr, a3_coef(:,:) )
 
     ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels.
@@ -1405,6 +1421,7 @@ module advance_clubb_core_module
         rtp2_zt(i,k)  = max( rtp2_zt(i,k), rt_tol**2 )
       end do
     end do
+    !$acc end parallel loop
 
     ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in the
     ! denominator since it's less likely to create spikes
@@ -1414,6 +1431,7 @@ module advance_clubb_core_module
         wp3_on_wp2_zt(i,k) = ( wp3(i,k) / max( wp2_zt(i,k), w_tol_sqd ) )
       end do
     end do
+    !$acc end parallel loop
 
     ! Clip wp3_on_wp2_zt if it's too large
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -1426,6 +1444,7 @@ module advance_clubb_core_module
         end if
       end do
     end do
+    !$acc end parallel loop
 
     ! Compute wp3_on_wp2 by interpolating wp3_on_wp2_zt
     wp3_on_wp2(:,:) = zt2zm( nz, ngrdcol, gr, wp3_on_wp2_zt(:,:) )
@@ -1451,6 +1470,7 @@ module advance_clubb_core_module
           em(i,k) = three_halves * wp2(i,k) 
         end do
       end do
+      !$acc end parallel loop
     else
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1458,6 +1478,7 @@ module advance_clubb_core_module
           em(i,k) = 0.5_core_rknd * ( wp2(i,k) + vp2(i,k) + up2(i,k) )
         end do
       end do
+      !$acc end parallel loop
     end if
 
     sqrt_em_zt(:,:) = zm2zt( nz, ngrdcol, gr, em(:,:) )
@@ -1468,6 +1489,7 @@ module advance_clubb_core_module
         sqrt_em_zt(i,k) = sqrt( max( em_min, sqrt_em_zt(i,k) ) )
       end do
     end do
+    !$acc end parallel loop
 
     !----------------------------------------------------------------
     ! Compute mixing length and dissipation time
@@ -1503,6 +1525,7 @@ module advance_clubb_core_module
           tau_zt(i,k) = min( Lscale(i,k) / sqrt_em_zt(i,k), taumax )
         end do
       end do
+      !$acc end parallel loop
 
       tau_zm(:,:) = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
           
@@ -1513,6 +1536,7 @@ module advance_clubb_core_module
                        / sqrt( max( em_min, em(i,k) ) ) ), taumax )
         end do
       end do
+      !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1528,6 +1552,7 @@ module advance_clubb_core_module
           tau_max_zt(i,k) = taumax
         end do
       end do
+      !$acc end parallel loop
 
       ! End Vince Larson's replacement.
 
@@ -1601,6 +1626,7 @@ module advance_clubb_core_module
         Kh_zt(i,k) = c_K * Lscale(i,k) * sqrt_em_zt(i,k)
       end do
     end do
+    !$acc end parallel loop
 
     Lscale_zm(:,:) = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
 
@@ -1611,6 +1637,7 @@ module advance_clubb_core_module
                      * sqrt( max( em(i,k), em_min ) )
       end do
     end do
+    !$acc end parallel loop
 
     ! calculate Brunt-Vaisala frequency used for splatting
     brunt_vaisala_freq_sqd_splat  &
@@ -1703,6 +1730,7 @@ module advance_clubb_core_module
           mixt_frac_zm(i,k)  = pdf_params_zm%mixt_frac(i,k)
         end do
       end do
+      !$acc end parallel loop
     else
       w_1_zm(:,:)        = zt2zm( nz, ngrdcol, gr, pdf_params%w_1(:,:) )
       w_2_zm(:,:)        = zt2zm( nz, ngrdcol, gr, pdf_params%w_2(:,:) )
@@ -1746,6 +1774,7 @@ module advance_clubb_core_module
           invrs_tau_C1_zm(i,k) = invrs_tau_N2_zm(i,k)
         end do
       end do
+      !$acc end parallel loop
     else
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1755,6 +1784,7 @@ module advance_clubb_core_module
           invrs_tau_C1_zm(i,k) = invrs_tau_wp2_zm(i,k)
         end do
       end do
+      !$acc end parallel loop
     end if ! l_stability_correction
 
     ! Set invrs_tau variables for C4 and C14
@@ -1764,6 +1794,7 @@ module advance_clubb_core_module
         invrs_tau_C14_zm(i,k) = invrs_tau_wp2_zm(i,k)
       end do
     end do
+    !$acc end parallel loop
     
     if ( .not. l_use_invrs_tau_N2_iso ) then
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1772,6 +1803,7 @@ module advance_clubb_core_module
           invrs_tau_C4_zm(i,k) = invrs_tau_wp2_zm(i,k)
         end do
       end do
+      !$acc end parallel loop
     else
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1779,6 +1811,7 @@ module advance_clubb_core_module
           invrs_tau_C4_zm(i,k) = invrs_tau_N2_iso(i,k)
         end do
       end do
+      !$acc end parallel loop
     end if
 
     if ( l_stats_samp ) then
@@ -1843,6 +1876,7 @@ module advance_clubb_core_module
           Cx_fnc_Richardson(i,k) = 0.0
         end do
       end do
+      !$acc end parallel loop
     end if
 
     ! Loop over the 4 main advance subroutines -- advance_xm_wpxp,
@@ -2160,6 +2194,7 @@ module advance_clubb_core_module
           Kmh_zm(i,k) = Kh_zm(i,k) * C_K10h ! Coefficient for thermo
         end do
       end do
+      !$acc end parallel loop
 
       if ( edsclr_dim > 1 .and. clubb_config_flags%l_do_expldiff_rtm_thlm ) then
         !$acc parallel loop gang vector collapse(2) default(present)
@@ -2169,6 +2204,7 @@ module advance_clubb_core_module
             edsclrm(i,k,edsclr_dim) = rtm(i,k)
           end do
         end do
+        !$acc end parallel loop
       end if
 
       call advance_windm_edsclrm( nz, ngrdcol, gr, dt,                        & ! intent(in)
@@ -2211,6 +2247,7 @@ module advance_clubb_core_module
             end if
           end do
         end do
+        !$acc end parallel loop
 
       end if
 
@@ -2317,6 +2354,7 @@ module advance_clubb_core_module
           vp2_zt(i,k)   = max( vp2_zt(i,k), w_tol_sqd )
         end do
       end do
+      !$acc end parallel loop
 
       if ( clubb_config_flags%iiPDF_type == iiPDF_ADG1 ) then
 
@@ -2330,6 +2368,7 @@ module advance_clubb_core_module
             sigma_sqd_w_zt(i,k) = max( sigma_sqd_w_zt(i,k), zero_threshold )
           end do
         end do
+        !$acc end parallel loop
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpthlp_zt, wp2_zt, &
                                  thlp2_zt, sigma_sqd_w_zt, &
@@ -2362,6 +2401,7 @@ module advance_clubb_core_module
               sclrp2_zt(i,k)  = max( sclrp2_zt(i,k), sclr_tol(j)**2 )
             end do
           end do
+          !$acc end parallel loop
 
           call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpsclrp_zt, wp2_zt, &
                                    sclrp2_zt, sigma_sqd_w_zt, &
@@ -2532,6 +2572,7 @@ module advance_clubb_core_module
         qclvar(i,k) = rcp2_zt(i,k)
       end do
     end do
+    !$acc end parallel loop
 #endif
 
 
@@ -3732,7 +3773,7 @@ module advance_clubb_core_module
 
         ! Clip if extrap. causes sclrm_zm to be less than sclr_tol
 
-        !$acc parallel loop default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
           sclrm_zm(i,nz,j) = max( sclrm_zm(i,nz,j), sclr_tol(j) )
         end do
@@ -3747,7 +3788,7 @@ module advance_clubb_core_module
       ! p_sfc, which is p_in_Pa(1).  Thus, p_in_Pa_zm(1) = p_in_Pa(1).
       p_in_Pa_zm(:,:) = zt2zm( nz, ngrdcol, gr, p_in_Pa(:,:) )
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         p_in_Pa_zm(i,1) = p_in_Pa(i,1)
 
@@ -3768,7 +3809,7 @@ module advance_clubb_core_module
       rtm_zm(:,:) = zt2zm( nz, ngrdcol, gr, rtm(:,:) )
       thlm_zm(:,:) = zt2zm( nz, ngrdcol, gr, thlm(:,:) )
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Clip if extrapolation at the top level causes rtm_zm to be < rt_tol
         rtm_zm(i,nz) = max( rtm_zm(i,nz), rt_tol )
@@ -3859,7 +3900,7 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Since top momentum level is higher than top thermo level,
         ! set variables at top momentum level to 0.
@@ -3886,7 +3927,7 @@ module advance_clubb_core_module
         end do
         !$acc end parallel loop
 #ifndef CLUBB_CAM
-        !$acc parallel loop default(present) 
+        !$acc parallel loop gang vector default(present) 
         do i = 1, ngrdcol
           rcp2(i,nz) = zero
         end do
@@ -3906,7 +3947,7 @@ module advance_clubb_core_module
       wp2up2(:,:)      = zt2zm( nz, ngrdcol, gr, wp2up2_zt(:,:) )
       wp2vp2(:,:)      = zt2zm( nz, ngrdcol, gr, wp2vp2_zt(:,:) )
 
-      !$acc parallel loop default(present) 
+      !$acc parallel loop gang vector default(present) 
       do i = 1, ngrdcol 
         wpthvp(i,nz)     = 0.0_core_rknd
         thlpthvp(i,nz)   = 0.0_core_rknd
@@ -3940,7 +3981,7 @@ module advance_clubb_core_module
         sclrpthvp(:,:,j)       = zt2zm( nz, ngrdcol, gr, sclrpthvp_zt(:,:,j) )
         sclrprcp(:,:,j)        = zt2zm( nz, ngrdcol, gr, sclrprcp_zt(:,:,j) )
 
-        !$acc parallel loop default(present)
+        !$acc parallel loop gang vector default(present)
         do k = 1, nz
           do i = 1, ngrdcol
             sclrpthvp(i,nz,j) = 0.0_core_rknd
@@ -4105,15 +4146,7 @@ module advance_clubb_core_module
 #ifdef GFDL
                  I_sat_sphum,                             & ! intent(in)  h1g, 2010-06-16
 #endif
-                 iiPDF_type,                              & ! intent(in)
-                 ipdf_call_placement,                     & ! intent(in)
-                 l_predict_upwp_vpwp,                     & ! intent(in)
-                 l_min_xp2_from_corr_wx,                  & ! intent(in)
-                 l_prescribed_avg_deltaz,                 & ! intent(in)
-                 l_damp_wp2_using_em,                     & ! intent(in)
-                 l_stability_correct_tau_zm,              & ! intent(in)
-                 l_enable_relaxed_clipping,               & ! intent(in)
-                 l_diag_Lscale_from_tau,                  & ! intent(in)
+                 clubb_config_flags,                      & ! intent(in)
 
 #ifdef GFDL
                  cloud_frac_min,                          & ! intent(in)  h1g, 2010-06-16
@@ -4174,6 +4207,7 @@ module advance_clubb_core_module
           iiPDF_TSDADG,     &
           iiPDF_LY93,       &
           iiPDF_new_hybrid, &
+          lapack,           &
           l_explicit_turbulent_adv_wpxp
 
       use clubb_precision, only: &
@@ -4215,35 +4249,9 @@ module advance_clubb_core_module
       logical, intent(in) ::  &
         l_input_fields    ! Flag for whether LES input fields are being used
 
-      integer, intent(in) :: &
-        iiPDF_type,          & ! Selected option for the two-component normal
-                               ! (double Gaussian) PDF type to use for the w,
-                               ! rt, and theta-l (or w, chi, and eta) portion of
-                               ! CLUBB's multivariate, two-component PDF.
-        ipdf_call_placement    ! Selected option for the placement of the call to
-                               ! CLUBB's PDF.
-
-      logical, intent(in) :: &
-        l_predict_upwp_vpwp,        & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                      ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
-                                      ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
-                                      ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
-                                      ! diffusivity when <u> and <v> are advanced in subroutine
-                                      ! advance_windm_edsclrm.
-        l_min_xp2_from_corr_wx,     & ! Flag to base the threshold minimum value of xp2 (rtp2 and
-                                      ! thlp2) on keeping the overall correlation of w and x within
-                                      ! the limits of -max_mag_correlation_flux to
-                                      ! max_mag_correlation_flux.
-        l_prescribed_avg_deltaz,    & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-        l_stability_correct_tau_zm, & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1 stability
-                                      ! correction
-        l_damp_wp2_using_em,        & ! In wp2 equation, use a dissipation formula of
-                                      ! -(2/3)*em/tau_zm, as in Bougeault (1981)
-        l_enable_relaxed_clipping,  & ! Flag to relax clipping on wpxp in
-                                      ! xm_wpxp_clipping_and_stats
-        l_diag_Lscale_from_tau        ! First diagnose dissipation time tau, and
-                                      ! then diagnose the mixing length scale as
-                                      ! Lscale = tau * tke
+      type(clubb_config_flags_type), intent(in) :: &
+        clubb_config_flags
+        
 
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
@@ -4261,17 +4269,29 @@ module advance_clubb_core_module
       err_code_out = clubb_no_error ! Initialize to no error value
       call initialize_error_headers
 
+#ifdef _OPENACC
+      if ( clubb_config_flags%penta_solve_method == lapack ) then
+        write(fstderr,*) "WARNING: The penta-diagonal lapack solver is not GPU accelerated"
+        write(fstderr,*) " Set penta_solve_method = 2, to use an accelerated penta-diagonal solver"
+      end if
+
+      if ( clubb_config_flags%tridiag_solve_method == lapack ) then
+        write(fstderr,*) "WARNING: The tri-diagonal lapack solver is not GPU accelerated"
+        write(fstderr,*) " Set tridiag_solve_method = 2, to use an accelerated tri-diagonal solver"
+      end if
+#endif
+
       ! Sanity check
       if ( clubb_at_least_debug_level( 0 ) ) then
 
-        if ( l_damp_wp2_using_em .and. &
+        if ( clubb_config_flags%l_damp_wp2_using_em .and. &
            (abs(params(iC1) - params(iC14)) > abs(params(iC1) + params(iC14)) / 2 * eps .or. &
-             l_stability_correct_tau_zm) ) then
+             clubb_config_flags%l_stability_correct_tau_zm) ) then
           write(fstderr,*) "l_damp_wp2_using_em = T requires C1=C14 and" &
                             // " l_stability_correct_tau_zm = F"
           write(fstderr,*) "C1 = ", params(iC1)
           write(fstderr,*) "C14 = ", params(iC14)
-          write(fstderr,*) "l_stability_correct_tau_zm = ", l_stability_correct_tau_zm
+          write(fstderr,*) "l_stability_correct_tau_zm = ", clubb_config_flags%l_stability_correct_tau_zm
           write(fstderr,*) "Fatal error in setup_clubb_core"
           err_code = clubb_fatal_error
           err_code_out = clubb_fatal_error
@@ -4307,9 +4327,10 @@ module advance_clubb_core_module
 
       ! Check for the type of two component normal (double Gaussian) PDF being
       ! used for w, rt, and theta-l (or w, chi, and eta).
-      if ( iiPDF_type < iiPDF_ADG1 .or. iiPDF_type > iiPDF_new_hybrid ) then
-         write(fstderr,*) "Unknown type of double Gaussian PDF selected: ", iiPDF_type
-         write(fstderr,*) "iiPDF_type = ", iiPDF_type
+      if ( clubb_config_flags%iiPDF_type < iiPDF_ADG1 &
+           .or. clubb_config_flags%iiPDF_type > iiPDF_new_hybrid ) then
+         write(fstderr,*) "Unknown type of double Gaussian PDF selected: ", clubb_config_flags%iiPDF_type
+         write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
          write(fstderr,*) "Fatal error in setup_clubb_core"
          err_code = clubb_fatal_error
          err_code_out = clubb_fatal_error
@@ -4317,11 +4338,11 @@ module advance_clubb_core_module
       endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_lY93
 
       ! The ADG2 and 3D Luhar PDFs can only be used as part of input fields.
-      if ( iiPDF_type == iiPDF_ADG2 ) then
+      if ( clubb_config_flags%iiPDF_type == iiPDF_ADG2 ) then
          if ( .not. l_input_fields ) then
             write(fstderr,*) "The ADG2 PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
-            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
@@ -4330,11 +4351,11 @@ module advance_clubb_core_module
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_ADG2
 
-      if ( iiPDF_type == iiPDF_3D_Luhar ) then
+      if ( clubb_config_flags%iiPDF_type == iiPDF_3D_Luhar ) then
          if ( .not. l_input_fields ) then
             write(fstderr,*) "The 3D Luhar PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
-            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
@@ -4345,11 +4366,11 @@ module advance_clubb_core_module
 
       ! This also currently applies to the new PDF until it has been fully
       ! implemented.
-      if ( iiPDF_type == iiPDF_new ) then
+      if ( clubb_config_flags%iiPDF_type == iiPDF_new ) then
          if ( .not. l_input_fields ) then
             write(fstderr,*) "The new PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
-            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
@@ -4360,11 +4381,11 @@ module advance_clubb_core_module
 
       ! This also currently applies to the TSDADG PDF until it has been fully
       ! implemented.
-      if ( iiPDF_type == iiPDF_TSDADG ) then
+      if ( clubb_config_flags%iiPDF_type == iiPDF_TSDADG ) then
          if ( .not. l_input_fields ) then
             write(fstderr,*) "The new TSDADG PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
-            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
@@ -4374,11 +4395,11 @@ module advance_clubb_core_module
       endif ! iiPDF_type == iiPDF_TSDADG
 
       ! This also applies to Lewellen and Yoh (1993).
-      if ( iiPDF_type == iiPDF_LY93 ) then
+      if ( clubb_config_flags%iiPDF_type == iiPDF_LY93 ) then
          if ( .not. l_input_fields ) then
             write(fstderr,*) "The Lewellen and Yoh PDF can only be used with" &
                              // " input fields (l_input_fields = .true.)."
-            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             write(fstderr,*) "Fatal error in setup_clubb_core"
             err_code = clubb_fatal_error
@@ -4388,9 +4409,10 @@ module advance_clubb_core_module
       endif ! iiPDF_type == iiPDF_LY93
 
       ! Check the option for the placement of the call to CLUBB's PDF.
-      if ( ipdf_call_placement < ipdf_pre_advance_fields &
-           .or. ipdf_call_placement > ipdf_pre_post_advance_fields ) then
-         write(fstderr,*) "Invalid option selected for ipdf_call_placement: ", ipdf_call_placement
+      if ( clubb_config_flags%ipdf_call_placement < ipdf_pre_advance_fields &
+           .or. clubb_config_flags%ipdf_call_placement > ipdf_pre_post_advance_fields ) then
+         write(fstderr,*) "Invalid option selected for ipdf_call_placement: ", &
+                          clubb_config_flags%ipdf_call_placement
          write(fstderr,*) "Fatal error in setup_clubb_core"
          err_code = clubb_fatal_error
          err_code_out = clubb_fatal_error
@@ -4399,7 +4421,7 @@ module advance_clubb_core_module
 
       ! The l_predict_upwp_vpwp flag requires that the ADG1 PDF is used
       ! implicitly in subroutine advance_xm_wpxp.
-      if ( l_predict_upwp_vpwp ) then
+      if ( clubb_config_flags%l_predict_upwp_vpwp ) then
 
          ! When l_predict_upwp_vpwp is enabled, the
          ! l_explicit_turbulent_adv_wpxp flag must be turned off.
@@ -4420,8 +4442,8 @@ module advance_clubb_core_module
          ! the ADG1 PDF or the new hybrid PDF.  The other PDFs are not currently
          ! set up to calculate variables needed for implicit or semi-implicit
          ! turbulent advection, such as coef_wp2up_implicit, etc.
-         if ( ( iiPDF_type /= iiPDF_ADG1 ) &
-              .and. ( iiPDF_type /= iiPDF_new_hybrid ) ) then
+         if ( ( clubb_config_flags%iiPDF_type /= iiPDF_ADG1 ) &
+              .and. ( clubb_config_flags%iiPDF_type /= iiPDF_new_hybrid ) ) then
             write(fstderr,*) "Currently, only the ADG1 PDF and the new hybrid" &
                              // " PDF are set up for use with the" &
                              // " l_predict_upwp_vpwp code."
@@ -4435,8 +4457,8 @@ module advance_clubb_core_module
 
       ! The flags l_min_xp2_from_corr_wx and l_enable_relaxed_clipping must
       ! have opposite values.
-      if ( ( l_min_xp2_from_corr_wx ) &
-         .and. ( l_enable_relaxed_clipping ) ) then
+      if ( ( clubb_config_flags%l_min_xp2_from_corr_wx ) &
+         .and. ( clubb_config_flags%l_enable_relaxed_clipping ) ) then
          write(fstderr,*) "Invalid configuration: l_min_xp2_from_corr_wx = T " &
                           // "and l_enable_relaxed_clipping = T"
          write(fstderr,*) "They must have opposite values"
@@ -4444,8 +4466,8 @@ module advance_clubb_core_module
          err_code = clubb_fatal_error
          err_code_out = clubb_fatal_error
          return
-      elseif ( ( .not. l_min_xp2_from_corr_wx ) &
-               .and. ( .not. l_enable_relaxed_clipping ) ) then
+      elseif ( ( .not. clubb_config_flags%l_min_xp2_from_corr_wx ) &
+               .and. ( .not. clubb_config_flags%l_enable_relaxed_clipping ) ) then
          write(fstderr,*) "Invalid configuration: l_min_xp2_from_corr_wx = F " &
                           // "and l_enable_relaxed_clipping = F"
          write(fstderr,*) "They must have opposite values"
@@ -4555,7 +4577,7 @@ module advance_clubb_core_module
       ! Checking that when the l_diag_Lscale_from_tau is enabled, the
       ! relevant Cx tunable parameters are all set to a value of 1 (as
       ! you're supposed to tune the C_invrs_tau_ parameters instead).
-      if ( l_diag_Lscale_from_tau ) then
+      if ( clubb_config_flags%l_diag_Lscale_from_tau ) then
 
          ! Note: someday when we can successfully run with all these parameters
          ! having a value of 1, the "Warning" messages should be removed and the
@@ -4864,7 +4886,7 @@ module advance_clubb_core_module
 
         ! Since top momentum level is higher than top thermo. level,
         ! set variables at top momentum level to 0.
-        !$acc parallel loop default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
           wprtp2_zm(i,nz)             = 0.0_core_rknd
           wpthlp2_zm(i,nz)            = 0.0_core_rknd
@@ -4881,7 +4903,7 @@ module advance_clubb_core_module
           wpsclrp2_zm(:,:,sclr)     = zt2zm( nz, ngrdcol, gr, wpsclrp2(:,:,sclr) )
           wpsclrpthlp_zm(:,:,sclr)  = zt2zm( nz, ngrdcol, gr, wpsclrpthlp(:,:,sclr) )
 
-          !$acc parallel loop default(present)
+          !$acc parallel loop gang vector default(present)
           do i = 1, ngrdcol
             wpsclrprtp_zm(i,nz,sclr)  = 0.0_core_rknd
             wpsclrp2_zm(i,nz,sclr)    = 0.0_core_rknd
@@ -5055,7 +5077,7 @@ module advance_clubb_core_module
       ! ---------------- Begin Code ----------------
 
       ! Boundary condition: trapezoidal rule not valid at zt level 1
-      !$acc parallel loop default(present) 
+      !$acc parallel loop gang vector default(present) 
       do i = 1, ngrdcol
         trapezoid_zt(i,1) = variable_zt(i,1)
       end do
@@ -5118,7 +5140,7 @@ module advance_clubb_core_module
 
       ! Boundary conditions: trapezoidal rule not valid at top zm level, nzmax.
       ! Trapezoidal rule also not used at zm level 1.
-      !$acc parallel loop default(present) 
+      !$acc parallel loop gang vector default(present) 
       do i = 1, ngrdcol
         trapezoid_zm(i,1)  = variable_zm(i,1)
         trapezoid_zm(i,nz) = variable_zm(i,nz)
@@ -5210,7 +5232,8 @@ module advance_clubb_core_module
 
       !------------------------ Begin code ------------------------
 
-      !$acc declare create( chi_mean, vert_cloud_frac_upper, vert_cloud_frac_lower, vert_cloud_frac )
+      !$acc enter data create( chi_mean, vert_cloud_frac_upper, &
+      !$acc                    vert_cloud_frac_lower, vert_cloud_frac )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -5307,7 +5330,7 @@ module advance_clubb_core_module
       end do ! k = 2, gr%nz-1, 1
       !$acc end parallel loop
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         cloud_cover(i,1)  = cloud_frac(i,1)
         cloud_cover(i,nz) = cloud_frac(i,nz)
@@ -5333,6 +5356,9 @@ module advance_clubb_core_module
           write(fstderr,*) "rcm = ", rcm
         end if
       end if 
+
+      !$acc exit data delete( chi_mean, vert_cloud_frac_upper, &
+      !$acc                   vert_cloud_frac_lower, vert_cloud_frac )
 
       return
 
@@ -5471,13 +5497,13 @@ module advance_clubb_core_module
 
       ! Determine the maximum allowable value for Lscale (in meters).
       if ( l_implemented ) then
-        !$acc parallel loop default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
           Lscale_max(i) = 0.25_core_rknd * min( host_dx(i), host_dy(i) )
         end do
         !$acc end parallel loop
       else
-        !$acc parallel loop default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
           Lscale_max(i) = 1.0e5_core_rknd
         end do

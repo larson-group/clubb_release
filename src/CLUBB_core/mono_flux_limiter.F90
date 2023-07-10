@@ -464,10 +464,10 @@ module mono_flux_limiter
 
     !---------------------------- Begin Code ----------------------------
 
-    !$acc declare create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
-    !$acc                 min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
-    !$acc                 max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
-    !$acc                 rhs_mfl_xm, l_adjustment_needed, xm_mfl )
+    !$acc enter data create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
+    !$acc                    min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
+    !$acc                    max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
+    !$acc                    rhs_mfl_xm, l_adjustment_needed, xm_mfl )
 
     select case( solve_type )
     case ( mono_flux_rtm )  ! rtm/wprtp
@@ -616,7 +616,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     ! Boundary condition on xm_without_ta    
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       xm_without_ta(i,1) = xm(i,1)
       min_x_allowable_lev(i,1) = min_x_allowable_lev(i,2)
@@ -788,7 +788,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     ! Boundary conditions
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       min_x_allowable(i,1) = 0._core_rknd
       max_x_allowable(i,1) = 0._core_rknd
@@ -927,7 +927,7 @@ module mono_flux_limiter
         !$acc end parallel loop
 
         ! Boundary condition on xm
-        !$acc parallel loop default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol 
           xm(i,1) = xm(i,2)
         end do
@@ -941,7 +941,7 @@ module mono_flux_limiter
       !enddo
 
       !Ensure there are no spikes at the top of the domain
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol 
 
         if (abs( xm(i,nz) - xm_enter_mfl(i,nz) ) > 10._core_rknd * xm_tol) then
@@ -1023,6 +1023,11 @@ module mono_flux_limiter
         endif
       end do
     endif
+
+    !$acc exit data delete( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
+    !$acc                   min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
+    !$acc                   max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
+    !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl )
 
     return
     
@@ -1235,7 +1240,7 @@ module mono_flux_limiter
     ! The value of xm at the lower boundary will remain the same.  However, the
     ! value of xm at the lower boundary gets overwritten after the matrix is
     ! solved for the next timestep, such that xm(1) = xm(2).
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs(i,1) = xm_old(i,1)
     end do
@@ -1333,7 +1338,7 @@ module mono_flux_limiter
     end if
 
     ! Boundary condition on xm
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       xm(i,1) = xm(i,2)
     end do
@@ -1435,7 +1440,7 @@ module mono_flux_limiter
 
     !------------------------- Begin Code -------------------------
 
-    !$acc declare create( vert_vel_up, vert_vel_down, w_min )
+    !$acc enter data create( vert_vel_up, vert_vel_down, w_min )
 
     if ( l_constant_thickness ) then ! thickness is a constant value.
 
@@ -1681,7 +1686,7 @@ module mono_flux_limiter
     ! Information for levels 1, 2, gr%nz-1, and gr%nz is not needed.
     ! However, set the values at these levels for purposes of not having odd
     ! values in the arrays.
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       low_lev_effect(i,1)  = 1
       high_lev_effect(i,1) = 1
@@ -1693,6 +1698,8 @@ module mono_flux_limiter
       high_lev_effect(i,nz)   = nz
     end do
     !$acc end parallel loop
+
+    !$acc exit data delete( vert_vel_up, vert_vel_down, w_min )
 
     return
 
@@ -1949,7 +1956,7 @@ module mono_flux_limiter
 
     !------------------------- Begin Code -------------------------
 
-    !$acc declare create( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd )
+    !$acc enter data create( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd )
 
     call calc_mean_w_up_down_component( nz, ngrdcol, & ! intent(in)
                                         w_1_zm, varnce_w_1_zm, & ! intent(in)
@@ -1991,6 +1998,8 @@ module mono_flux_limiter
                                stats_zm(i) ) ! intent(inout)
       end do
     end if ! l_stats_samp
+
+    !$acc exit data delete( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd )
 
     return
 
@@ -2071,7 +2080,7 @@ module mono_flux_limiter
 
     !------------------------- Begin Code -------------------------
 
-    !$acc declare create( erf_cache, exp_cache )
+    !$acc enter data create( erf_cache, exp_cache )
 
     invrs_sqrt_2pi = one / sqrt_2pi
 
@@ -2124,7 +2133,7 @@ module mono_flux_limiter
     !$acc end parallel loop
 
     ! Upper and lower levels are not used, set to 0 to besafe and avoid NaN problems
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       mean_w_down_i(i,1) = 0.0_core_rknd
       mean_w_up_i(i,1) = 0.0_core_rknd
@@ -2133,6 +2142,8 @@ module mono_flux_limiter
       mean_w_up_i(i,nz) = 0.0_core_rknd
     end do
     !$acc end parallel loop
+
+    !$acc exit data delete( erf_cache, exp_cache )
 
     return
 

@@ -2133,7 +2133,7 @@ module advance_windm_edsclrm_module
 
     ! -------------------------- Begin Code --------------------------
 
-    !$acc declare create( xm_gf, xm_cf )
+    !$acc enter data create( xm_gf, xm_cf )
 
     if ( .not. l_implemented ) then
       ! Only compute the Coriolis term if the model is running on it's own,
@@ -2240,6 +2240,8 @@ module advance_windm_edsclrm_module
       !$acc end parallel
 
     endif
+
+    !$acc exit data delete( xm_gf, xm_cf )
 
     return
 

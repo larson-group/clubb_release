@@ -1513,15 +1513,7 @@ module clubb_driver
            l_host_applies_sfc_fluxes,                         & ! Intent(in)
            saturation_formula,                                & ! Intent(in)
            l_input_fields,                                    & ! Intent(in)
-           iiPDF_type,                                        & ! intent(in)
-           ipdf_call_placement,                               & ! intent(in)
-           l_predict_upwp_vpwp,                               & ! intent(in)
-           l_min_xp2_from_corr_wx,                            & ! intent(in)
-           l_prescribed_avg_deltaz,                           & ! intent(in)
-           l_damp_wp2_using_em,                               & ! intent(in)
-           l_stability_correct_tau_zm,                        & ! intent(in)
-           l_enable_relaxed_clipping,                         & ! intent(in)
-           l_diag_Lscale_from_tau,                            & ! intent(in)
+           clubb_config_flags,                                & ! intent(in)
            err_code_dummy )                                     ! Intent(out)
            
     ! Setup grid

@@ -293,9 +293,9 @@ module advance_helper_module
 
     !------------ Begin Code --------------
 
-    !$acc declare create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc                 brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                 brunt_vaisala_freq_sqd_plus, lambda0_stability, Lscale_zm )
+    !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+    !$acc                    brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
+    !$acc                    brunt_vaisala_freq_sqd_plus, lambda0_stability, Lscale_zm )
 
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
@@ -331,6 +331,10 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+
+    !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+    !$acc                   brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
+    !$acc                   brunt_vaisala_freq_sqd_plus, lambda0_stability, Lscale_zm )
 
     return
 
@@ -724,11 +728,12 @@ module advance_helper_module
 
     !------------------------------ Begin Code ------------------------------
 
-    !$acc declare create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, brunt_vaisala_freq_sqd_dry, &
-    !$acc                 brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_plus, Richardson_num, &
-    !$acc                 Ri_zm, ddzt_um, ddzt_vm, shear_sqd, turb_freq_sqd, Lscale_zm, Cx_fnc_interp, &
-    !$acc                 Richardson_num_clipped, Cx_fnc_Richardson_avg, fnc_Richardson, &
-    !$acc                 fnc_Richardson_clipped, fnc_Richardson_smooth )
+    !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+    !$acc                    brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
+    !$acc                    brunt_vaisala_freq_sqd_plus, Richardson_num, Cx_fnc_interp, &
+    !$acc                    Ri_zm, ddzt_um, ddzt_vm, shear_sqd, turb_freq_sqd, Lscale_zm, &
+    !$acc                    Richardson_num_clipped, Cx_fnc_Richardson_avg, fnc_Richardson, &
+    !$acc                    fnc_Richardson_clipped, fnc_Richardson_smooth )
 
     if ( l_modify_limiters_for_cnvg_test .and. l_use_shear_turb_freq_sqd ) then
       error stop "ERROR: l_modify_limiters_for_cnvg_test .and. l_use_shear_turb_freq_sqd "// &
@@ -910,6 +915,13 @@ module advance_helper_module
       end do
     end if
 
+    !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+    !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
+    !$acc                   brunt_vaisala_freq_sqd_plus, Richardson_num, Cx_fnc_interp, &
+    !$acc                   Ri_zm, ddzt_um, ddzt_vm, shear_sqd, turb_freq_sqd, Lscale_zm, &
+    !$acc                   Richardson_num_clipped, Cx_fnc_Richardson_avg, fnc_Richardson, &
+    !$acc                   fnc_Richardson_clipped, fnc_Richardson_smooth )
+
     return
 
   end subroutine compute_Cx_fnc_Richardson
@@ -979,7 +991,7 @@ module advance_helper_module
 
     !-------------------------- Begin Code --------------------------
 
-    !$acc declare create( one_half_avg_width, numer_terms, denom_terms )
+    !$acc enter data create( one_half_avg_width, numer_terms, denom_terms )
 
     if ( smth_type == 1 ) then
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1079,6 +1091,8 @@ module advance_helper_module
       end do
     end do
 
+    !$acc exit data delete( one_half_avg_width, numer_terms, denom_terms )
+
     return
 
   end function Lscale_width_vert_avg
@@ -1133,7 +1147,7 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc declare create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+    !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -1154,6 +1168,8 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+
+    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
 
     return
 
@@ -1211,7 +1227,7 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc declare create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+    !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -1233,6 +1249,8 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+
+    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
 
     return
 

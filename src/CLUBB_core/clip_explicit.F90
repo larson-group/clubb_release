@@ -619,7 +619,7 @@ module clip_explicit
 
     ! Since there is no covariance clipping at the upper or lower boundaries,
     ! the change in x'y' due to covariance clipping at those levels is 0.
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       xpyp_chnge(i,1)  = 0.0_core_rknd
       xpyp_chnge(i,nz) = 0.0_core_rknd
@@ -1180,7 +1180,7 @@ module clip_explicit
 
     !----------------------- Begin Code-----------------------
 
-    !$acc declare create( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl )
+    !$acc enter data create( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl )
 
     ! Compute the upper and lower limits of w'^3 at every level,
     ! based on the skewness of w, Sk_w, such that:
@@ -1276,6 +1276,8 @@ module clip_explicit
       end do
     end do
     !$acc end parallel
+
+    !$acc exit data delete( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl )
 
   end subroutine clip_skewness_core
 

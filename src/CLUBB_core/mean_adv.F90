@@ -266,7 +266,7 @@ module mean_adv
       ! derivative d(var_zt)/dz over the model top is set to 0, in order
       ! to stay consistent with the zero-flux boundary condition option
       ! in the eddy diffusion code.
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -317,7 +317,7 @@ module mean_adv
       !$acc end parallel loop
 
       ! Upper Boundary
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         if ( wm_zt(i,nz) >= zero ) then  ! Mean wind is in upward direction
 

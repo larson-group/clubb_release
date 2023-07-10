@@ -340,7 +340,7 @@ module diffusion
 
       ! extra terms with upwind scheme 
       ! k = 1 (bottom level); lowere boundary level 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         lhs_upwind(kp1_tdiag,i,1) = + min( drhoKdz_zt(i,1) , zero ) * gr%invrs_dzm(i,1)  
         lhs_upwind(k_tdiag,i,1)   = - min( drhoKdz_zt(i,1) , zero ) * gr%invrs_dzm(i,1)
@@ -369,7 +369,7 @@ module diffusion
 
       ! k = nz (top level); upper boundary level.
       ! Only relevant if zero-flux boundary conditions are used.
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         lhs_upwind(kp1_tdiag,i,nz) =  zero 
         lhs_upwind(k_tdiag,i,nz)   = + max( drhoKdz_zt(i,nz) , zero ) * gr%invrs_dzm(i,nz-1)
@@ -387,7 +387,7 @@ module diffusion
 
     if ( .not. l_upwind_Kh_dp_term ) then
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,i,1) = - gr%invrs_dzt(i,1) * invrs_rho_ds_zt(i,1) &
@@ -404,7 +404,7 @@ module diffusion
 
     else
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,i,1) = - gr%invrs_dzt(i,1) * ( K_zt(i,1) + nu(i) ) * gr%invrs_dzm(i,1) & 
@@ -477,7 +477,7 @@ module diffusion
 
     if ( .not. l_upwind_Kh_dp_term ) then 
 
-      !$acc parallel loop default(present) 
+      !$acc parallel loop gang vector default(present) 
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,i,nz) = zero
@@ -496,7 +496,7 @@ module diffusion
 
     else
 
-      !$acc parallel loop default(present) 
+      !$acc parallel loop gang vector default(present) 
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,i,nz) = zero + lhs_upwind(kp1_tdiag,i,nz)
@@ -990,7 +990,7 @@ module diffusion
 
     ! extra terms with upwind scheme 
     ! k = 1 (bottom level); lowere boundary level 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs_upwind(kp1_mdiag,i,1) = + min( drhoKdz_zm(i,1) , zero ) * gr%invrs_dzt(i,2)
       lhs_upwind(k_mdiag,i,1)   = - min( drhoKdz_zm(i,1) , zero ) * gr%invrs_dzt(i,2)
@@ -1015,7 +1015,7 @@ module diffusion
 
     ! k = nz (top level); upper boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lhs_upwind(kp1_mdiag,i,nz) = zero
       lhs_upwind(k_mdiag,i,nz)   = + max( drhoKdz_zm(i,nz) , zero ) * gr%invrs_dzt(i,nz)
@@ -1031,7 +1031,7 @@ module diffusion
 
     if ( .not. l_upwind_Kh_dp_term ) then
       
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,i,1) = - gr%invrs_dzm(i,1) * invrs_rho_ds_zm(i,1) &
@@ -1048,7 +1048,7 @@ module diffusion
 
     else
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,i,1) = - gr%invrs_dzm(i,1) * ( K_zm(i,1) + nu(i) ) * gr%invrs_dzt(i,2) &
@@ -1122,7 +1122,7 @@ module diffusion
 
     if ( .not. l_upwind_Kh_dp_term ) then
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,i,nz) = zero
@@ -1141,7 +1141,7 @@ module diffusion
 
     else
 
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,i,nz) =  zero &

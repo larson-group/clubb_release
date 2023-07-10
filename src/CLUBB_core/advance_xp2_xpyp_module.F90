@@ -3053,7 +3053,7 @@ module advance_xp2_xpyp_module
 
     !----------------------------- Begin Code ----------------------------------
 
-    !$acc declare create( rhs_pr2 )
+    !$acc enter data create( rhs_pr2 )
 
     select case ( solve_type )
     case ( xp2_xpyp_vp2 )
@@ -3228,6 +3228,8 @@ module advance_xp2_xpyp_module
       rhs(i,nz) = w_tol_sqd
     end do
     !$acc end parallel loop
+
+    !$acc exit data delete( rhs_pr2 )
     
     return
 

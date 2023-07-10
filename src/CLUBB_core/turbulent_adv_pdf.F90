@@ -892,7 +892,7 @@ module turbulent_adv_pdf
 
 
     ! Set lower boundary value to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_ta(i,1) = zero
     end do
@@ -947,7 +947,7 @@ module turbulent_adv_pdf
     end if
 
     ! Set upper boundary value to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_ta(i,nz) = zero
     end do
@@ -1018,7 +1018,7 @@ module turbulent_adv_pdf
     !$acc      copyout( rhs_ta )
 
     ! Set lower boundary value to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_ta(i,1) = 0.0_core_rknd
     end do
@@ -1042,7 +1042,7 @@ module turbulent_adv_pdf
     !$acc end parallel loop
 
     ! Set upper boundary value to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_ta(i,nz) = 0.0_core_rknd
     end do

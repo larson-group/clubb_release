@@ -143,7 +143,7 @@ module fill_holes
       return
     end if
 
-    !$acc parallel loop collapse(2) default(present)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         rho_ds_dz(i,k) = rho_ds(i,k) * dz(i,k)
@@ -246,14 +246,14 @@ module fill_holes
     ! if any holes need filling before the final step of updating the field. 
 
     ! Compute the numerator and denominator integrals
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       numer_integral_global(i) = 0.0_core_rknd
       denom_integral_global(i) = 0.0_core_rknd
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       do k = 2, upper_hf_level
         numer_integral_global(i) = numer_integral_global(i) + rho_ds_dz(i,k) * field(i,k)
@@ -264,7 +264,7 @@ module fill_holes
     !$acc end parallel loop
 
     
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! Find the vertical average of field, using the precomputed numerator and denominator,
@@ -285,7 +285,7 @@ module fill_holes
     !$acc end parallel loop
 
     ! To compute the clipped field's vertical integral we only need to recompute the numerator
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       numer_integral_global(i) = 0.0_core_rknd
       do k = 2, upper_hf_level
@@ -294,7 +294,7 @@ module fill_holes
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! Do not complete calculations or update field values for this 
