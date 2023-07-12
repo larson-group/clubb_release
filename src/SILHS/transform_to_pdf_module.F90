@@ -212,7 +212,10 @@ module transform_to_pdf_module
       iiPDF_w    ! Variable(s)
 
     use constants_clubb, only:  &
-      one
+      one, &
+      two, &
+      fstderr
+
 
     use clubb_precision, only: &
       core_rknd
@@ -252,9 +255,15 @@ module transform_to_pdf_module
     integer :: i, k, sample, p ! Loop counters
 
     real( kind = core_rknd ) :: &
-      U_pt, &  !  values from uniformly distributed sample array, X_u_all_levs
-      mixt_frac, & ! value of mixture fraction from pdf_params%mixt_frac
-      interp_coef  ! interpolation coefficient between low and high values of w sample
+      U_pt, &         !  values from uniformly distributed sample array, X_u_all_levs
+      mixt_frac, &    ! value of mixture fraction from pdf_params%mixt_frac
+      interp_coef, &  ! interpolation coefficient between low and high values of w sample
+      U_approx        ! back-solved value of U, used to check accuracy of sampling
+
+    real( kind = core_rknd ), dimension(1,1,1,1) :: &
+      U_pt_array, &   ! Modified sample
+      w_n_max, &      ! normalized version of w_max
+      w_n_min         ! normalized version of w_min
 
     ! Flag to clip sample point values of chi in extreme situations.
     logical, parameter :: &
@@ -285,6 +294,38 @@ module transform_to_pdf_module
                     + std_normal(iiPDF_w,1:ngrdcol,1:nz,sample) * sqrt( pdf_params%varnce_w_1(1:ngrdcol,1:nz)  )
     end do
 
+    ! Overwrite w_max if we can find a better upper bound
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          if ( ( X_u_all_levs(i,sample,k,iiPDF_w) < 0.9_core_rknd * ( one - pdf_params%mixt_frac(i,k) ) ) &
+                  .and. ( pdf_params%mixt_frac(i,k) < 0.5_core_rknd ) )  then
+            U_pt_array = X_u_all_levs(i,sample,k,iiPDF_w)/(one-pdf_params%mixt_frac(i,k))
+            call cdfnorminv( 1, 1, 1, 1, U_pt_array, &  ! In
+                             w_n_max )
+            w_max(i,k,sample) = pdf_params%w_2(i,k) + w_n_max(1,1,1,1) * sqrt( pdf_params%varnce_w_2(i,k) )
+          end if
+        end do
+      end do
+    end do
+
+    ! Overwrite w_min if we can find a better lower bound
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          if ( ( X_u_all_levs(i,sample,k,iiPDF_w) > ( one - 0.9_core_rknd * pdf_params%mixt_frac(i,k) ) ) &
+                  .and. ( pdf_params%mixt_frac(i,k) > 0.5_core_rknd ) )  then
+             U_pt_array = ( X_u_all_levs(i,sample,k,iiPDF_w) - (one-pdf_params%mixt_frac(i,k)) ) / pdf_params%mixt_frac(i,k)
+             call cdfnorminv( 1, 1, 1, 1, &
+                 U_pt_array, &  ! In
+                             w_n_min )
+            w_min(i,k,sample) = pdf_params%w_1(i,k) + w_n_min(1,1,1,1) * sqrt( pdf_params%varnce_w_1(i,k) )
+          end if
+        end do
+      end do
+    end do
+
+
     do k = 1, nz
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -298,6 +339,41 @@ module transform_to_pdf_module
       end do
     end do
 
+    ! Assertion check: Are w samples accurate?
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          U_pt = X_u_all_levs(i,sample,k,iiPDF_w)
+          mixt_frac = pdf_params%mixt_frac(i,k)
+          interp_coef = ( U_pt - ( one - mixt_frac ) * U_pt )  &
+                          /  ( ( one - mixt_frac ) * ( one - U_pt ) + mixt_frac * U_pt )
+          U_approx = mixt_frac * 0.5_core_rknd * ( one &
+                           + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_1(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) ) &
+                   + ( one - mixt_frac ) * 0.5_core_rknd * ( one &
+                           + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_2(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) ) 
+          if ( abs( U_approx - U_pt ) > 0.2_core_rknd &
+               .and. ( abs( pdf_params%w_1(i,k) ) > 0.02_core_rknd &
+                        .or. abs( pdf_params%w_2(i,k) ) > 0.02_core_rknd ) &
+             ) then
+            !write(fstderr, *) "abs( U_approx - U ) > 0.1 in subroutine sample_w_using_invrs_cdf!"
+            write(fstderr, *) "------------------"
+            write(fstderr, *) "k = ", k
+            write(fstderr, *) "U_pt = ", U_pt
+            write(fstderr, *) "U_approx = ", U_approx
+            write(fstderr, *) "1 - mixt_frac = ", one - mixt_frac
+            write(fstderr, *) "mixt_frac = ", mixt_frac
+            write(fstderr, *) "interp_coef = ", interp_coef
+            write(fstderr, *) "w_sample = ", X_nl_all_levs(i,sample,k,iiPDF_w)
+            write(fstderr, *) "w_min, w_2 = ", w_min(i,k,sample), pdf_params%w_2(i,k)
+            write(fstderr, *) "w_1, w_max = ", pdf_params%w_1(i,k), w_max(i,k,sample)
+            !write(fstderr, *) "w_2(i,k) = ", pdf_params%w_2(i,k)
+            !write(fstderr, *) "w_1(i,k) = ", pdf_params%w_1(i,k)
+          end if
+        end do
+      end do
+    end do
 
 end subroutine sample_w_using_invrs_cdf
 

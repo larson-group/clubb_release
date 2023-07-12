@@ -1163,6 +1163,21 @@ the zt file, the rest (e.g. variance, flux) all occur in the zm file.
 Note that the scalars can be used in a host model as well.  See SAM-CLUBB for
 an example of how to do this.
 
+----------------------------------------------------------------------
+- (4.2) SILHS
+---------------------------------------------------------------------
+
+SILHS is code that draws samples from CLUBB's PDF and 
+feeds the samples into microphysics.
+
+An example of how to configure a SILHS run can be
+seen in input/case_setups/arm_97_model.in.
+
+In order to output individual SILHS subcolumns to disk,
+set l_output_2D_lognormal_dist = .true. in
+src/SILHS/latin_hypercube_driver_module.F90.
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % CHAPTER 5: CODE CONTRIBUTED BY EXTERNAL RESEARCH GROUPS
