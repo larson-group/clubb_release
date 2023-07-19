@@ -255,15 +255,17 @@ module transform_to_pdf_module
     integer :: i, k, sample, p ! Loop counters
 
     real( kind = core_rknd ) :: &
-      U_pt, &         !  values from uniformly distributed sample array, X_u_all_levs
-      mixt_frac, &    ! value of mixture fraction from pdf_params%mixt_frac
-      interp_coef, &  ! interpolation coefficient between low and high values of w sample
-      U_approx        ! back-solved value of U, used to check accuracy of sampling
+      U_pt, &         ! Values from uniformly distributed sample array, X_u_all_levs []
+      mixt_frac, &    ! Value of mixture fraction from pdf_params%mixt_frac          []
+      interp_coef, &  ! Interpolation coefficient between low and high values of w sample
+      U_approx, &     ! Back-solved value of U, used to check accuracy of sampling   []
+      F_w_min, &      ! Value of CDF at w_min                                        []
+      F_w_max         ! Value of CDF at w_max                                        []
 
     real( kind = core_rknd ), dimension(1,1,1,1) :: &
-      U_pt_array, &   ! Modified sample
-      w_n_max, &      ! normalized version of w_max
-      w_n_min         ! normalized version of w_min
+      U_pt_array, &   ! Modified sample point
+      w_n_max, &      ! Normalized version of w_max  []
+      w_n_min         ! Normalized version of w_min  []
 
     ! Flag to clip sample point values of chi in extreme situations.
     logical, parameter :: &
@@ -273,68 +275,251 @@ module transform_to_pdf_module
       std_normal ! vector of d-variate standard normal distribution [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz,num_samples) :: &
-      w_min, & ! lower bound of vertical velocity, given the uniform sample point [m/s]
-      w_max    ! upper bound of vertical velocity, given the uniform sample point [m/s]
+      w_min,    & ! lower bound of vertical velocity, given the uniform sample point [m/s]
+      w_max,    & ! upper bound of vertical velocity, given the uniform sample point [m/s]
+      F1_w_min, & ! Value of CDF component 1 (updraft) at w_min
+      F2_w_min, & ! Value of CDF component 2 (downdraft) at w_min
+      F1_w_max, & ! Value of CDF component 1 (updraft) at w_max
+      F2_w_max    ! Value of CDF component 2 (downdraft) at w_max
 
     ! ---- Begin Code ----
 
     ! From Latin hypercube sample, generate standard normal sample
+    !   This is inefficient, because it computes the inverse for all variates, not just w.
     call cdfnorminv( pdf_dim, nz, ngrdcol, num_samples, X_u_all_levs, &  ! In
                      std_normal )                                        ! Out
 
-    ! Calculate lower bound of sampled vertical velocity
-    do sample = 1, num_samples
-      w_min(1:ngrdcol,1:nz,sample) = pdf_params%w_2(1:ngrdcol,1:nz) &
-                    + std_normal(iiPDF_w,1:ngrdcol,1:nz,sample) * sqrt( pdf_params%varnce_w_2(1:ngrdcol,1:nz)  )
-    end do
-
-    ! Calculate upper bound of sampled vertical velocity
-    do sample = 1, num_samples
-      w_max(1:ngrdcol,1:nz,sample) = pdf_params%w_1(1:ngrdcol,1:nz) &
-                    + std_normal(iiPDF_w,1:ngrdcol,1:nz,sample) * sqrt( pdf_params%varnce_w_1(1:ngrdcol,1:nz)  )
-    end do
-
-    ! Overwrite w_max if we can find a better upper bound
+    ! Calculate simple lower bound of sampled vertical velocity
     do k = 1, nz
       do sample = 1, num_samples
         do i = 1, ngrdcol
-          if ( ( X_u_all_levs(i,sample,k,iiPDF_w) < 0.9_core_rknd * ( one - pdf_params%mixt_frac(i,k) ) ) &
-                  .and. ( pdf_params%mixt_frac(i,k) < 0.5_core_rknd ) )  then
+          w_min(i,k,sample) = pdf_params%w_2(i,k) &
+                    + std_normal(iiPDF_w,i,k,sample) * sqrt( pdf_params%varnce_w_2(i,k)  )
+          F1_w_min(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_min(i,k,sample) - pdf_params%w_1(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) )
+          F2_w_min(i,k,sample) = X_u_all_levs(i,sample,k,iiPDF_w)
+        end do
+      end do
+    end do
+
+    ! Calculate simple upper bound of sampled vertical velocity
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          w_max(i,k,sample) = pdf_params%w_1(i,k) &
+                    + std_normal(iiPDF_w,i,k,sample) * sqrt( pdf_params%varnce_w_1(i,k)  )
+          F2_w_max(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_max(i,k,sample) - pdf_params%w_2(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) )
+          F1_w_max(i,k,sample) = X_u_all_levs(i,sample,k,iiPDF_w)
+        end do
+      end do
+    end do
+
+    ! Overwrite w_max with better upper bound if mixt_frac < 0.5 and X_u ~= 0.
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          if ( ( X_u_all_levs(i,sample,k,iiPDF_w) &
+                           < 0.9_core_rknd * ( one - pdf_params%mixt_frac(i,k) ) ) &
+                  .and. ( pdf_params%mixt_frac(i,k) < 0.8_core_rknd ) )  then
             U_pt_array = X_u_all_levs(i,sample,k,iiPDF_w)/(one-pdf_params%mixt_frac(i,k))
             call cdfnorminv( 1, 1, 1, 1, U_pt_array, &  ! In
-                             w_n_max )
-            w_max(i,k,sample) = pdf_params%w_2(i,k) + w_n_max(1,1,1,1) * sqrt( pdf_params%varnce_w_2(i,k) )
+                             w_n_max )                  ! Out
+            w_max(i,k,sample) = pdf_params%w_2(i,k) &
+                                     + w_n_max(1,1,1,1) * sqrt( pdf_params%varnce_w_2(i,k) )
+            F1_w_max(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_max(i,k,sample) - pdf_params%w_1(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) )
+            F2_w_max(i,k,sample) = X_u_all_levs(i,sample,k,iiPDF_w) &
+                                       / ( one - pdf_params%mixt_frac(i,k) )
           end if
         end do
       end do
     end do
 
-    ! Overwrite w_min if we can find a better lower bound
+    ! Overwrite w_min with better lower bound if mixt_frac > 0.5 and X_u ~= 1.
     do k = 1, nz
       do sample = 1, num_samples
         do i = 1, ngrdcol
-          if ( ( X_u_all_levs(i,sample,k,iiPDF_w) > ( one - 0.9_core_rknd * pdf_params%mixt_frac(i,k) ) ) &
-                  .and. ( pdf_params%mixt_frac(i,k) > 0.5_core_rknd ) )  then
-             U_pt_array = ( X_u_all_levs(i,sample,k,iiPDF_w) - (one-pdf_params%mixt_frac(i,k)) ) / pdf_params%mixt_frac(i,k)
-             call cdfnorminv( 1, 1, 1, 1, &
-                 U_pt_array, &  ! In
-                             w_n_min )
-            w_min(i,k,sample) = pdf_params%w_1(i,k) + w_n_min(1,1,1,1) * sqrt( pdf_params%varnce_w_1(i,k) )
+          if ( ( X_u_all_levs(i,sample,k,iiPDF_w) &
+                          > ( one - 0.9_core_rknd * pdf_params%mixt_frac(i,k) ) ) &
+                  .and. ( pdf_params%mixt_frac(i,k) > 0.2_core_rknd ) )  then
+            U_pt_array = ( X_u_all_levs(i,sample,k,iiPDF_w) &
+                              - (one-pdf_params%mixt_frac(i,k)) ) / pdf_params%mixt_frac(i,k)
+            call cdfnorminv( 1, 1, 1, 1, U_pt_array, &  ! In
+                             w_n_min )                  ! Out
+            w_min(i,k,sample) = pdf_params%w_1(i,k) &
+                                   + w_n_min(1,1,1,1) * sqrt( pdf_params%varnce_w_1(i,k) )
+            F2_w_min(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_min(i,k,sample) - pdf_params%w_2(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) )
+            F1_w_min(i,k,sample) = ( X_u_all_levs(i,sample,k,iiPDF_w) &
+                                         - ( one - pdf_params%mixt_frac(i,k) ) ) &
+                                                    / pdf_params%mixt_frac(i,k)
           end if
         end do
       end do
     end do
 
-
+    ! Linearly interpolate between w_min and w_max to find best value of w.
+    !   Use the best w to overwrite the appropriate element of X_nl.
     do k = 1, nz
       do sample = 1, num_samples
         do i = 1, ngrdcol
           U_pt = X_u_all_levs(i,sample,k,iiPDF_w)
           mixt_frac = pdf_params%mixt_frac(i,k)
-          interp_coef = ( U_pt - ( one - mixt_frac ) * U_pt )  &
-                          /  ( ( one - mixt_frac ) * ( one - U_pt ) + mixt_frac * U_pt )
+          F_w_min = mixt_frac * F1_w_min(i,k,sample) + ( one - mixt_frac ) * F2_w_min(i,k,sample)
+          F_w_max = mixt_frac * F1_w_max(i,k,sample) + ( one - mixt_frac ) * F2_w_max(i,k,sample)
+          interp_coef = ( U_pt - F_w_min ) / max( F_w_max - F_w_min, 1e-9_core_rknd )
+          ! Approx formula for simple bounds
+          !interp_coef = ( U_pt - ( one - mixt_frac ) * U_pt )  &
+          !                /  ( ( one - mixt_frac ) * ( one - U_pt ) + mixt_frac * U_pt )
           X_nl_all_levs(i,sample,k,iiPDF_w) = w_min(i,k,sample) &
-                                              + interp_coef * ( w_max(i,k,sample) - w_min(i,k,sample) )
+                                         + interp_coef * ( w_max(i,k,sample) - w_min(i,k,sample) )
+        end do
+      end do
+    end do
+
+!    ! Assertion check: Are un-iterated w samples accurate?
+!    do k = 1, nz
+!      do sample = 1, num_samples
+!        do i = 1, ngrdcol
+!          U_pt = X_u_all_levs(i,sample,k,iiPDF_w)
+!          mixt_frac = pdf_params%mixt_frac(i,k)
+!          F_w_min = mixt_frac * F1_w_min(i,k,sample) + ( one - mixt_frac ) * F2_w_min(i,k,sample)
+!          F_w_max = mixt_frac * F1_w_max(i,k,sample) + ( one - mixt_frac ) * F2_w_max(i,k,sample)
+!          interp_coef = ( U_pt - F_w_min ) / max( F_w_max - F_w_min, 1e-9_core_rknd )
+!          ! Approx formula for simple bounds
+!          !interp_coef = ( U_pt - ( one - mixt_frac ) * U_pt )  &
+!          !                /  ( ( one - mixt_frac ) * ( one - U_pt ) + mixt_frac * U_pt )
+!          U_approx = mixt_frac * 0.5_core_rknd * ( one &
+!                           + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_1(i,k) ) &
+!                                   / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) ) &
+!                   + ( one - mixt_frac ) * 0.5_core_rknd * ( one &
+!                           + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_2(i,k) ) &
+!                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) )
+!          if ( abs( U_approx - U_pt ) > 0.05_core_rknd &
+!               .and. ( abs( pdf_params%w_1(i,k) ) > 0.02_core_rknd &
+!                        .or. abs( pdf_params%w_2(i,k) ) > 0.02_core_rknd ) &
+!             ) then
+!            !write(fstderr, *) "abs( U_approx - U ) > 0.1 in subroutine sample_w_using_invrs_cdf!"
+!            write(fstderr, *) "Uncorrected soln------------------"
+!            write(fstderr, *) "k = ", k
+!            write(fstderr, *) "U_pt = ", U_pt
+!            write(fstderr, *) "U_approx = ", U_approx
+!            write(fstderr, *) "1 - mixt_frac = ", one - mixt_frac
+!            write(fstderr, *) "mixt_frac = ", mixt_frac
+!            write(fstderr, *) "interp_coef = ", interp_coef
+!            write(fstderr, *) "w_sample = ", X_nl_all_levs(i,sample,k,iiPDF_w)
+!            write(fstderr, *) "w_min, w_2 = ", w_min(i,k,sample), pdf_params%w_2(i,k)
+!            write(fstderr, *) "w_1, w_max = ", pdf_params%w_1(i,k), w_max(i,k,sample)
+!            !write(fstderr, *) "w_2(i,k) = ", pdf_params%w_2(i,k)
+!            !write(fstderr, *) "w_1(i,k) = ", pdf_params%w_1(i,k)
+!          end if
+!        end do
+!      end do
+!    end do
+
+    ! Iterate one time to improve solution.
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          U_pt = X_u_all_levs(i,sample,k,iiPDF_w)
+          mixt_frac = pdf_params%mixt_frac(i,k)
+          U_approx = mixt_frac * 0.5_core_rknd * ( one &
+                           + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_1(i,k) ) &
+                                   / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) ) &
+                   + ( one - mixt_frac ) * 0.5_core_rknd * ( one &
+                           + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_2(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) )
+          if ( U_approx > U_pt ) then
+            ! Trial w is too large; use it to replace w_max
+            w_max(i,k,sample) = X_nl_all_levs(i,sample,k,iiPDF_w)
+            F1_w_max(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_max(i,k,sample) - pdf_params%w_1(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) )
+            F2_w_max(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_max(i,k,sample) - pdf_params%w_2(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) )
+          else
+            ! Trial w is too small; use it to replace w_min
+            w_min(i,k,sample) = X_nl_all_levs(i,sample,k,iiPDF_w)
+            F1_w_min(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_min(i,k,sample) - pdf_params%w_1(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) )
+            F2_w_min(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_min(i,k,sample) - pdf_params%w_2(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) )
+          end if
+        end do
+      end do
+    end do
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          U_pt = X_u_all_levs(i,sample,k,iiPDF_w)
+          mixt_frac = pdf_params%mixt_frac(i,k)
+          F_w_min = mixt_frac * F1_w_min(i,k,sample) + ( one - mixt_frac ) * F2_w_min(i,k,sample)
+          F_w_max = mixt_frac * F1_w_max(i,k,sample) + ( one - mixt_frac ) * F2_w_max(i,k,sample)
+          interp_coef = ( U_pt - F_w_min ) / max( F_w_max - F_w_min, 1e-9_core_rknd )
+          ! Approx formula for simple bounds
+          !interp_coef = ( U_pt - ( one - mixt_frac ) * U_pt )  &
+          !                /  ( ( one - mixt_frac ) * ( one - U_pt ) + mixt_frac * U_pt )
+          X_nl_all_levs(i,sample,k,iiPDF_w) = w_min(i,k,sample) &
+                                         + interp_coef * ( w_max(i,k,sample) - w_min(i,k,sample) )
+        end do
+      end do
+    end do
+
+    ! Iterate second time to improve solution.
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          U_pt = X_u_all_levs(i,sample,k,iiPDF_w)
+          mixt_frac = pdf_params%mixt_frac(i,k)
+          U_approx = mixt_frac * 0.5_core_rknd * ( one &
+                           + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_1(i,k) ) &
+                                   / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) ) &
+                   + ( one - mixt_frac ) * 0.5_core_rknd * ( one &
+                           + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_2(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) )
+          if ( U_approx > U_pt ) then
+            ! Trial w is too large; use it to replace w_max
+            w_max(i,k,sample) = X_nl_all_levs(i,sample,k,iiPDF_w)
+            F1_w_max(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_max(i,k,sample) - pdf_params%w_1(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) )
+            F2_w_max(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_max(i,k,sample) - pdf_params%w_2(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) )
+          else
+            ! Trial w is too small; use it to replace w_min
+            w_min(i,k,sample) = X_nl_all_levs(i,sample,k,iiPDF_w)
+            F1_w_min(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_min(i,k,sample) - pdf_params%w_1(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) )
+            F2_w_min(i,k,sample) = 0.5_core_rknd * ( one &
+                           + erf( ( w_min(i,k,sample) - pdf_params%w_2(i,k) ) &
+                                    / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) )
+          end if
+        end do
+      end do
+    end do
+    do k = 1, nz
+      do sample = 1, num_samples
+        do i = 1, ngrdcol
+          U_pt = X_u_all_levs(i,sample,k,iiPDF_w)
+          mixt_frac = pdf_params%mixt_frac(i,k)
+          F_w_min = mixt_frac * F1_w_min(i,k,sample) + ( one - mixt_frac ) * F2_w_min(i,k,sample)
+          F_w_max = mixt_frac * F1_w_max(i,k,sample) + ( one - mixt_frac ) * F2_w_max(i,k,sample)
+          interp_coef = ( U_pt - F_w_min ) / max( F_w_max - F_w_min, 1e-9_core_rknd )
+          ! Approx formula for simple bounds
+          !interp_coef = ( U_pt - ( one - mixt_frac ) * U_pt )  &
+          !                /  ( ( one - mixt_frac ) * ( one - U_pt ) + mixt_frac * U_pt )
+          X_nl_all_levs(i,sample,k,iiPDF_w) = w_min(i,k,sample) &
+                                         + interp_coef * ( w_max(i,k,sample) - w_min(i,k,sample) )
         end do
       end do
     end do
@@ -345,11 +530,15 @@ module transform_to_pdf_module
         do i = 1, ngrdcol
           U_pt = X_u_all_levs(i,sample,k,iiPDF_w)
           mixt_frac = pdf_params%mixt_frac(i,k)
-          interp_coef = ( U_pt - ( one - mixt_frac ) * U_pt )  &
-                          /  ( ( one - mixt_frac ) * ( one - U_pt ) + mixt_frac * U_pt )
+          F_w_min = mixt_frac * F1_w_min(i,k,sample) + ( one - mixt_frac ) * F2_w_min(i,k,sample)
+          F_w_max = mixt_frac * F1_w_max(i,k,sample) + ( one - mixt_frac ) * F2_w_max(i,k,sample)
+          interp_coef = ( U_pt - F_w_min ) / max( F_w_max - F_w_min, 1e-9_core_rknd )
+          ! Approx formula for simple bounds
+          !interp_coef = ( U_pt - ( one - mixt_frac ) * U_pt )  &
+          !                /  ( ( one - mixt_frac ) * ( one - U_pt ) + mixt_frac * U_pt )
           U_approx = mixt_frac * 0.5_core_rknd * ( one &
                            + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_1(i,k) ) &
-                                    / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) ) &
+                                   / sqrt( pdf_params%varnce_w_1(i,k)*two + 1e-9_core_rknd )  ) ) &
                    + ( one - mixt_frac ) * 0.5_core_rknd * ( one &
                            + erf( ( X_nl_all_levs(i,sample,k,iiPDF_w) - pdf_params%w_2(i,k) ) &
                                     / sqrt( pdf_params%varnce_w_2(i,k)*two + 1e-9_core_rknd )  ) ) 
@@ -358,7 +547,7 @@ module transform_to_pdf_module
                         .or. abs( pdf_params%w_2(i,k) ) > 0.02_core_rknd ) &
              ) then
             !write(fstderr, *) "abs( U_approx - U ) > 0.1 in subroutine sample_w_using_invrs_cdf!"
-            write(fstderr, *) "------------------"
+            write(fstderr, *) "Corrected soln------------------"
             write(fstderr, *) "k = ", k
             write(fstderr, *) "U_pt = ", U_pt
             write(fstderr, *) "U_approx = ", U_approx
