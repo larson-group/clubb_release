@@ -1035,7 +1035,7 @@ module numerical_check
 !-------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  pure function calculate_spurious_source( integral_after, integral_before, &
+  function calculate_spurious_source( integral_after, integral_before, &
                                            flux_top, flux_sfc, & 
                                            integral_forcing, dt ) &
   result( spurious_source )

@@ -5157,7 +5157,7 @@ module advance_clubb_core_module
                                  * ( gr%zm(i,k) - gr%zt(i,k) ) * gr%invrs_dzm(i,k)
         end do
       end do 
-      !$acc end parallel
+      !$acc end parallel loop
 
       return
     end subroutine calc_trapezoid_zm
@@ -5514,7 +5514,7 @@ module advance_clubb_core_module
     end subroutine set_Lscale_max
 
 !===============================================================================
-  pure subroutine calculate_thlp2_rad &
+  subroutine calculate_thlp2_rad &
                   ( nz, rcm_zm, thlprcp, radht_zm, & ! Intent(in)
                     clubb_params,                  & ! Intent(in)
                     thlp2_forcing )                  ! Intent(inout)

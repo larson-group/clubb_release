@@ -1342,7 +1342,7 @@ module mono_flux_limiter
     do i = 1, ngrdcol
       xm(i,1) = xm(i,2)
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     return
   end subroutine mfl_xm_solve

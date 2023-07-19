@@ -30,7 +30,7 @@ module mean_adv
   contains
 
   !=============================================================================
-  pure subroutine term_ma_zt_lhs( nz, ngrdcol, wm_zt, weights_zt2zm, & ! Intent(in)
+  subroutine term_ma_zt_lhs( nz, ngrdcol, wm_zt, weights_zt2zm, & ! Intent(in)
                                   invrs_dzt, invrs_dzm,     & ! Intent(in)
                                   l_upwind_xm_ma,           & ! Intent(in)
                                   lhs_ma )                    ! Intent(out)
@@ -354,7 +354,7 @@ module mean_adv
   end subroutine term_ma_zt_lhs
 
   !=============================================================================
-  pure subroutine term_ma_zm_lhs( nz, ngrdcol, wm_zm, &
+  subroutine term_ma_zm_lhs( nz, ngrdcol, wm_zm, &
                                   invrs_dzm, weights_zm2zt, & 
                                   lhs_ma )
 

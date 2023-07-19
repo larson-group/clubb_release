@@ -224,7 +224,7 @@ module corr_varnce_module
   end subroutine init_default_corr_arrays
 
   !-----------------------------------------------------------------------------
-  pure function def_corr_idx( iiPDF_x ) result(ii_def_corr)
+  function def_corr_idx( iiPDF_x ) result(ii_def_corr)
 
     ! Description:
     !   Map from a iiPDF index to the corresponding index in the default 

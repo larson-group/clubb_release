@@ -1447,7 +1447,7 @@ module grid_class
   end function redirect_interpolated_azt_2D
   
   !=============================================================================
-  pure subroutine linear_interpolated_azm_2D( nz, ngrdcol, gr, azt, &
+  subroutine linear_interpolated_azm_2D( nz, ngrdcol, gr, azt, &
                                               linear_interpolated_azm )
 
     ! Description:
@@ -1708,7 +1708,7 @@ module grid_class
   end function cubic_interpolated_azm_2D
 
   !=============================================================================
-  pure subroutine calc_zt2zm_weights( nz, ngrdcol, &
+  subroutine calc_zt2zm_weights( nz, ngrdcol, &
                                       gr ) 
 
     ! Description:
@@ -1918,7 +1918,7 @@ module grid_class
   end subroutine calc_zt2zm_weights
   
   !=============================================================================
-  pure subroutine linear_interpolated_azt_2D( nz, ngrdcol, gr, azm, &
+  subroutine linear_interpolated_azt_2D( nz, ngrdcol, gr, azm, &
                                               linear_interpolated_azt )
 
     ! Description:
@@ -2073,7 +2073,7 @@ module grid_class
   end function cubic_interpolated_azt_2D
 
   !=============================================================================
-  pure subroutine calc_zm2zt_weights( nz, ngrdcol, &
+  subroutine calc_zm2zt_weights( nz, ngrdcol, &
                                       gr )
 
     ! Description:
@@ -2286,7 +2286,7 @@ module grid_class
   
   !=============================================================================
   ! Wrapped in interface ddzm
-  pure function gradzm_2D( nz, ngrdcol, gr, azm )
+  function gradzm_2D( nz, ngrdcol, gr, azm )
 
     ! Description:
     !  2D version of gradzm
@@ -2339,7 +2339,7 @@ module grid_class
   
   !=============================================================================
   ! Wrapped in interface ddzm
-  pure function gradzm_1D( gr, azm )
+  function gradzm_1D( gr, azm )
 
     ! Description:
     !  2D version of gradzm
@@ -2380,7 +2380,7 @@ module grid_class
   
   !=============================================================================
   ! Wrapped in interface ddzt
-  pure function gradzt_2D( nz, ngrdcol, gr, azt )
+  function gradzt_2D( nz, ngrdcol, gr, azt )
 
     ! Description:
     !  2D version of gradzt
@@ -2433,7 +2433,7 @@ module grid_class
   
   !=============================================================================
   ! Wrapped in interface ddzt
-  pure function gradzt_1D( gr, azt )
+  function gradzt_1D( gr, azt )
 
     ! Description:
     !  2D version of gradzt
@@ -2474,7 +2474,7 @@ module grid_class
   end function gradzt_1D
 
   !=============================================================================
-  pure function flip( x, xdim )
+  function flip( x, xdim )
 
     ! Description:
     !   Flips a single dimension array (i.e. a vector), so the first element

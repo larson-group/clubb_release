@@ -5052,7 +5052,7 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_clipping_and_stats
 
   !=============================================================================
-  pure subroutine xm_term_ta_lhs( nz, ngrdcol, gr, &
+  subroutine xm_term_ta_lhs( nz, ngrdcol, gr, &
                                   rho_ds_zm, invrs_rho_ds_zt, &
                                   lhs_ta_xm )
 
@@ -5164,7 +5164,7 @@ module advance_xm_wpxp_module
   end subroutine xm_term_ta_lhs
 
   !=============================================================================
-  pure subroutine wpxp_term_tp_lhs( nz, ngrdcol, gr, wp2, & 
+  subroutine wpxp_term_tp_lhs( nz, ngrdcol, gr, wp2, & 
                                     lhs_tp )
 
     ! Description:
@@ -5277,7 +5277,7 @@ module advance_xm_wpxp_module
   end subroutine wpxp_term_tp_lhs
     
   !=============================================================================
-  pure subroutine wpxp_terms_ac_pr2_lhs( nz, ngrdcol, C7_Skw_fnc, &
+  subroutine wpxp_terms_ac_pr2_lhs( nz, ngrdcol, C7_Skw_fnc, &
                                          wm_zt, invrs_dzm, &
                                          lhs_ac_pr2  ) 
 
@@ -5392,7 +5392,7 @@ module advance_xm_wpxp_module
   end subroutine wpxp_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure subroutine wpxp_term_pr1_lhs( nz, ngrdcol, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
+  subroutine wpxp_term_pr1_lhs( nz, ngrdcol, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
                                      invrs_tau_C6_zm, l_scalar_calc, &
                                      lhs_pr1_wprtp, lhs_pr1_wpthlp, &
                                      lhs_pr1_wpsclrp )
@@ -5522,7 +5522,7 @@ module advance_xm_wpxp_module
   end subroutine wpxp_term_pr1_lhs
 
   !=============================================================================
-  pure subroutine wpxp_terms_bp_pr3_rhs( nz, ngrdcol, C7_Skw_fnc, thv_ds_zm, xpthvp, &
+  subroutine wpxp_terms_bp_pr3_rhs( nz, ngrdcol, C7_Skw_fnc, thv_ds_zm, xpthvp, &
                                          rhs_bp_pr3 )
 
     ! Description:
@@ -5902,7 +5902,7 @@ module advance_xm_wpxp_module
   !-----------------------------------------------------------------------
 
   !=====================================================================================
-  pure subroutine diagnose_upxp( nz, ngrdcol, gr, ypwp, xm, wpxp, ym, &
+  subroutine diagnose_upxp( nz, ngrdcol, gr, ypwp, xm, wpxp, ym, &
                                  C6x_Skw_fnc, tau_C6_zm, C7_Skw_fnc, &
                                  ypxp )
     ! Description:

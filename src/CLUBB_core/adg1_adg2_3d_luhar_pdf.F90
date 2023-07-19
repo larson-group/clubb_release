@@ -1360,7 +1360,7 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine backsolve_Luhar_params
 
   !=============================================================================
-  pure function max_cubic_root( a_coef, b_coef, c_coef, d_coef ) &
+  function max_cubic_root( a_coef, b_coef, c_coef, d_coef ) &
   result( max_root )
 
     ! Description:

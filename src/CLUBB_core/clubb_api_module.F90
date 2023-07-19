@@ -3877,7 +3877,7 @@ contains
   !================================================================================================
   ! calculate_thlp2_rad - Computes the contribution of radiative cooling to thlp2
   !================================================================================================
-  pure subroutine calculate_thlp2_rad_api &
+  subroutine calculate_thlp2_rad_api &
                   ( nz, rcm_zm, thlprcp, radht_zm, & ! Intent(in)
                     clubb_params,                  & ! Intent(in)
                     thlp2_forcing )                  ! Intent(inout)

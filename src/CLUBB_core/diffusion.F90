@@ -31,7 +31,7 @@ module diffusion
   contains
 
   !=============================================================================
-  pure subroutine diffusion_zt_lhs( nz, ngrdcol, gr, K_zm, K_zt, nu,  & ! In
+  subroutine diffusion_zt_lhs( nz, ngrdcol, gr, K_zm, K_zt, nu,  & ! In
                                     invrs_rho_ds_zt, rho_ds_zm,       & ! In
                                     lhs )                               ! Out
 
@@ -522,7 +522,7 @@ module diffusion
   end subroutine diffusion_zt_lhs
 
   !=============================================================================
-  pure function diffusion_cloud_frac_zt_lhs &
+  function diffusion_cloud_frac_zt_lhs &
                 ( gr, K_zm, K_zmm1, cloud_frac_zt, cloud_frac_ztm1, &
                   cloud_frac_ztp1, cloud_frac_zm, &
                   cloud_frac_zmm1, &
@@ -693,7 +693,7 @@ module diffusion
   end function diffusion_cloud_frac_zt_lhs
 
   !=============================================================================
-  pure subroutine diffusion_zm_lhs( nz, ngrdcol, gr, K_zt, K_zm, nu,   & ! In
+  subroutine diffusion_zm_lhs( nz, ngrdcol, gr, K_zt, K_zm, nu,   & ! In
                                     invrs_rho_ds_zm, rho_ds_zt, & ! In 
                                     lhs )                   ! Out
 

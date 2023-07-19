@@ -2023,7 +2023,7 @@ module advance_helper_module
   end function vertical_avg
 
   !=============================================================================
-  pure function vertical_integral( total_idx, rho_ds, &
+  function vertical_integral( total_idx, rho_ds, &
                                        field, dz )
 
     ! Description:

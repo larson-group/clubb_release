@@ -5193,7 +5193,7 @@ module advance_xp2_xpyp_module
   end subroutine calc_xp2_xpyp_ta_terms
 
   !=============================================================================
-  pure function term_tp( xamp1, xam, xbmp1, xbm,  & 
+  function term_tp( xamp1, xam, xbmp1, xbm,  & 
                          wpxbp, wpxap, invrs_dzm ) & 
   result( rhs )
   !$acc routine seq
@@ -5255,7 +5255,7 @@ module advance_xp2_xpyp_module
   end function term_tp
 
   !=============================================================================
-  pure function term_dp1_lhs( Cn, invrs_tau_zm )  & 
+  function term_dp1_lhs( Cn, invrs_tau_zm )  & 
   result( lhs )
   !$acc routine seq
 
@@ -5327,7 +5327,7 @@ module advance_xp2_xpyp_module
   end function term_dp1_lhs
 
   !=============================================================================
-  pure function term_dp1_rhs( Cn, invrs_tau_zm, threshold ) &
+  function term_dp1_rhs( Cn, invrs_tau_zm, threshold ) &
   result( rhs )
   !$acc routine seq
 
@@ -5390,7 +5390,7 @@ module advance_xp2_xpyp_module
   end function term_dp1_rhs
 
   !=============================================================================
-  pure function term_pr1( C4, C14, xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm ) & 
+  function term_pr1( C4, C14, xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm ) & 
   result( rhs )
   !$acc routine seq
 
