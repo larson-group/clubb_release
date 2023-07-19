@@ -464,7 +464,7 @@ module advance_xp3_module
   end subroutine advance_xp3_simplified
 
   !=============================================================================
-  pure function term_tp_rhs( xp2_zt, wpxp, wpxpm1, &
+  function term_tp_rhs( xp2_zt, wpxp, wpxpm1, &
                              rho_ds_zm, rho_ds_zmm1, &
                              invrs_rho_ds_zt, &
                              invrs_dzt ) &
@@ -541,7 +541,7 @@ module advance_xp3_module
   end function term_tp_rhs
 
   !=============================================================================
-  pure function term_ac_rhs( xm_zm, xm_zmm1, wpxp2, &
+  function term_ac_rhs( xm_zm, xm_zmm1, wpxp2, &
                              invrs_dzt ) &
   result( term_ac )
 

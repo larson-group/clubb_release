@@ -125,18 +125,18 @@ module penta_lu_solvers
       upper_1,          & ! First U band 
       upper_2,          & ! Second U band 
       lower_diag_invrs, & ! Inverse of the diagonal of L
-      lower_1             ! First L band
+      lower_1,          & ! First L band
+      lower_2             ! Second L band
 
     integer :: i, k, j    ! Loop variables
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper_1, upper_2, lower_1, lower_diag_invrs ) &
+    !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs ) &
     !$acc      copyin( rhs, lhs ) &
     !$acc      copyout( soln )
-    
-    !$acc kernels
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper_1(i,1)          = lower_diag_invrs(i,1) * lhs(-1,i,1) 
@@ -147,38 +147,45 @@ module penta_lu_solvers
       upper_1(i,2)          = lower_diag_invrs(i,2) * ( lhs(-1,i,2) - lower_1(i,2) * upper_2(i,1) )
       upper_2(i,2)          = lower_diag_invrs(i,2) * lhs(-2,i,2)
     end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      do k = 3, ndim-2
+        lower_2(i,k) = lhs(2,i,k)
+        lower_1(i,k) = lhs(1,i,k) - lower_2(i,k) * upper_1(i,k-2)
 
-    do k = 3, ndim-2
-      do i = 1, ngrdcol
-        lower_1(i,k)          = lhs(1,i,k) - lhs(2,i,k) * upper_1(i,k-2)
-
-        lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lhs(2,i,k) * upper_2(i,k-2) &
+        lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lower_2(i,k) * upper_2(i,k-2) &
                                                              - lower_1(i,k) * upper_1(i,k-1) )
 
-        upper_1(i,k)          = lower_diag_invrs(i,k) * ( lhs(-1,i,k) - lower_1(i,k) * upper_2(i,k-1) )
-        upper_2(i,k)          = lower_diag_invrs(i,k) * lhs(-2,i,k)
+        upper_1(i,k) = lower_diag_invrs(i,k) * ( lhs(-1,i,k) - lower_1(i,k) * upper_2(i,k-1) )
+        upper_2(i,k) = lower_diag_invrs(i,k) * lhs(-2,i,k)
       end do
     end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      lower_1(i,ndim-1) = lhs(1,i,ndim-1) - lhs(2,i,ndim-1) * upper_1(i,ndim-3)
+      lower_2(i,ndim-1) = lhs(2,i,ndim-1)
+      lower_1(i,ndim-1) = lhs(1,i,ndim-1) - lower_2(i,ndim-1) * upper_1(i,ndim-3)
 
       lower_diag_invrs(i,ndim-1) = 1.0_core_rknd  &
-                                   / ( lhs(0,i,ndim-1) - lhs(2,i,ndim-1) * upper_2(i,ndim-3) &
+                                   / ( lhs(0,i,ndim-1) - lower_2(i,ndim-1) * upper_2(i,ndim-3) &
                                                        - lower_1(i,ndim-1) * upper_1(i,ndim-2) )
 
       upper_1(i,ndim-1)  = lower_diag_invrs(i,ndim-1) * ( lhs(-1,i,ndim-1) - lower_1(i,ndim-1) &
-                                                      * upper_2(i,ndim-2) )
+                                                                             * upper_2(i,ndim-2) )
 
-      lower_1(i,ndim) = lhs(1,i,ndim) - lhs(2,i,ndim) * upper_1(i,ndim-2)
+      lower_2(i,ndim) = lhs(2,i,ndim)
+      lower_1(i,ndim) = lhs(1,i,ndim) - lower_2(i,ndim) * upper_1(i,ndim-2)
 
       lower_diag_invrs(i,ndim) = 1.0_core_rknd  &
-                                 / ( lhs(0,i,ndim-1) - lhs(2,i,ndim) * upper_2(i,ndim-2) &
+                                 / ( lhs(0,i,ndim-1) - lower_2(i,ndim) * upper_2(i,ndim-2) &
                                                      - lower_1(i,ndim) * upper_1(i,ndim-1) )
     end do
-
+    !$acc end parallel loop
     
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol 
 
       soln(i,1)   = lower_diag_invrs(i,1) * rhs(i,1) 
@@ -186,10 +193,14 @@ module penta_lu_solvers
       soln(i,2)   = lower_diag_invrs(i,2) * ( rhs(i,2) - lower_1(i,2) * soln(i,1) )
 
       do k = 3, ndim
-        soln(i,k) = lower_diag_invrs(i,k) * ( rhs(i,k) - lhs(2,i,k) * soln(i,k-2) &
+        soln(i,k) = lower_diag_invrs(i,k) * ( rhs(i,k) - lower_2(i,k) * soln(i,k-2) &
                                                        - lower_1(i,k) * soln(i,k-1) )
       end do
+    end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol 
       soln(i,ndim-1) = soln(i,ndim-1) - upper_1(i,ndim-1) * soln(i,ndim)
 
       do k = ndim-2, 1, -1
@@ -197,8 +208,7 @@ module penta_lu_solvers
       end do
 
     end do
-
-    !$acc end kernels
+    !$acc end parallel loop
 
     !$acc end data
 
@@ -237,18 +247,18 @@ module penta_lu_solvers
       upper_1,          & ! First U band 
       upper_2,          & ! Second U band 
       lower_diag_invrs, & ! Inverse of the diagonal of L
-      lower_1             ! First L band
+      lower_1,          & ! First L band
+      lower_2             ! Second L band
 
     integer :: i, k, j    ! Loop variables
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper_1, upper_2, lower_1, lower_diag_invrs ) &
+    !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs ) &
     !$acc      copyin( rhs, lhs ) &
     !$acc      copyout( soln )
 
-    !$acc kernels
-
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper_1(i,1)          = lower_diag_invrs(i,1) * lhs(-1,i,1) 
@@ -259,38 +269,45 @@ module penta_lu_solvers
       upper_1(i,2)          = lower_diag_invrs(i,2) * ( lhs(-1,i,2) - lower_1(i,2) * upper_2(i,1) )
       upper_2(i,2)          = lower_diag_invrs(i,2) * lhs(-2,i,2)
     end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      do k = 3, ndim-2
+        lower_2(i,k) = lhs(2,i,k)
+        lower_1(i,k) = lhs(1,i,k) - lower_2(i,k) * upper_1(i,k-2)
 
-    do k = 3, ndim-2
-      do i = 1, ngrdcol
-        lower_1(i,k)          = lhs(1,i,k) - lhs(2,i,k) * upper_1(i,k-2)
-
-        lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lhs(2,i,k) * upper_2(i,k-2) &
+        lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lower_2(i,k) * upper_2(i,k-2) &
                                                              - lower_1(i,k) * upper_1(i,k-1) )
 
-        upper_1(i,k)          = lower_diag_invrs(i,k) * ( lhs(-1,i,k) - lower_1(i,k) * upper_2(i,k-1) )
-        upper_2(i,k)          = lower_diag_invrs(i,k) * lhs(-2,i,k)
+        upper_1(i,k) = lower_diag_invrs(i,k) * ( lhs(-1,i,k) - lower_1(i,k) * upper_2(i,k-1) )
+        upper_2(i,k) = lower_diag_invrs(i,k) * lhs(-2,i,k)
       end do
     end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      lower_1(i,ndim-1) = lhs(1,i,ndim-1) - lhs(2,i,ndim-1) * upper_1(i,ndim-3)
+      lower_2(i,ndim-1) = lhs(2,i,ndim-1)
+      lower_1(i,ndim-1) = lhs(1,i,ndim-1) - lower_2(i,ndim-1) * upper_1(i,ndim-3)
 
       lower_diag_invrs(i,ndim-1) = 1.0_core_rknd  &
-                                   / ( lhs(0,i,ndim-1) - lhs(2,i,ndim-1) * upper_2(i,ndim-3) &
+                                   / ( lhs(0,i,ndim-1) - lower_2(i,ndim-1) * upper_2(i,ndim-3) &
                                                        - lower_1(i,ndim-1) * upper_1(i,ndim-2) )
 
       upper_1(i,ndim-1) = lower_diag_invrs(i,ndim-1) * ( lhs(-1,i,ndim-1) - lower_1(i,ndim-1) &
-                                                     * upper_2(i,ndim-2) )
+                                                                            * upper_2(i,ndim-2) )
 
-      lower_1(i,ndim) = lhs(1,i,ndim) - lhs(2,i,ndim) * upper_1(i,ndim-2)
+      lower_2(i,ndim) = lhs(2,i,ndim)
+      lower_1(i,ndim) = lhs(1,i,ndim) - lower_2(i,ndim) * upper_1(i,ndim-2)
 
       lower_diag_invrs(i,ndim) = 1.0_core_rknd  &
-                                 / ( lhs(0,i,ndim-1) - lhs(2,i,ndim) * upper_2(i,ndim-2) &
+                                 / ( lhs(0,i,ndim-1) - lower_2(i,ndim) * upper_2(i,ndim-2) &
                                                      - lower_1(  i,ndim) * upper_1(i,ndim-1) )
     end do
+    !$acc end parallel loop
 
-    
+    !$acc parallel loop gang vector collapse(2) default(present)
     do j = 1, nrhs
       do i = 1, ngrdcol 
 
@@ -299,10 +316,16 @@ module penta_lu_solvers
         soln(i,2,j)   = lower_diag_invrs(i,2) * ( rhs(i,2,j) - lower_1(i,2) * soln(i,1,j) )
 
         do k = 3, ndim
-          soln(i,k,j) = lower_diag_invrs(i,k) * ( rhs(i,k,j) - lhs(2,i,k) * soln(i,k-2,j) &
+          soln(i,k,j) = lower_diag_invrs(i,k) * ( rhs(i,k,j) - lower_2(i,k) * soln(i,k-2,j) &
                                                              - lower_1(i,k) * soln(i,k-1,j) )
         end do
+      end do
+    end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do j = 1, nrhs
+      do i = 1, ngrdcol 
         soln(i,ndim-1,j) = soln(i,ndim-1,j) - upper_1(i,ndim-1) * soln(i,ndim,j)
 
         do k = ndim-2, 1, -1
@@ -311,8 +334,7 @@ module penta_lu_solvers
 
       end do
     end do
-
-    !$acc end kernels
+    !$acc end parallel loop
 
     !$acc end data
 

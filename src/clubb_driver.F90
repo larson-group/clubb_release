@@ -1148,6 +1148,39 @@ module clubb_driver
       ! Print the date and time
       call write_date( l_write_to_file, iunit )
 
+      call write_text( "", l_write_to_file, iunit )
+      call write_text( "--------------------------------------------------", &
+                       l_write_to_file, iunit )
+      call write_text( "Latest git log entry", l_write_to_file, iunit )
+      call write_text( "--------------------------------------------------", &
+                       l_write_to_file, iunit )
+      call write_text( "", l_write_to_file, iunit )
+      if ( l_write_to_file ) close( unit=iunit )
+
+      if ( l_write_to_file ) then
+        call execute_command_line( 'git log -n 1' )
+        call execute_command_line( 'echo "Branch name:" >> '//case_info_file )
+        call execute_command_line( 'git rev-parse --abbrev-ref HEAD >> '//case_info_file )
+        call execute_command_line( 'echo "(If no branch name is shown HEAD may be detached)"'// &
+                                   ' >> '//case_info_file )
+        call execute_command_line( 'echo "" >> '//case_info_file )
+        call execute_command_line( 'git log -n 1 >> '//case_info_file )
+      end if
+
+      if ( l_write_to_file ) then
+        open(unit=iunit, file=case_info_file, status='OLD', action='write', position='APPEND')
+      end if
+
+      call write_text( NEW_LINE('A')//"A detailed git diff can be found "// &
+                       "at the end of this file"//NEW_LINE('A'), &
+                       l_write_to_file, iunit )
+
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
+      call write_text( "Tunable Parameters:", l_write_to_file, iunit)
+      call write_text( "--------------------------------------------------", &
+        l_write_to_file, iunit )
+
       ! Print the list of parameters that are being used before the run.
       call write_text( "Parameter          Value", l_write_to_file, iunit, '(4x,A24)')
       call write_text( "---------          -----", l_write_to_file, iunit, '(4x,A24)')
@@ -1497,9 +1530,23 @@ module clubb_driver
       call write_text( "--------------------------------------------------", &
                        l_write_to_file, iunit )
 
-       call print_clubb_config_flags( iunit, clubb_config_flags ) ! Intent(in)
+      call print_clubb_config_flags( fstdout, clubb_config_flags ) ! Intent(in)
+      call print_clubb_config_flags( iunit, clubb_config_flags ) ! Intent(in)
 
-      if ( l_write_to_file ) close(unit=iunit)
+      call write_text( "--------------------------------------------------", &
+                       l_write_to_file, iunit )
+      call write_text( "git diff src/", l_write_to_file, iunit )
+      call write_text( "--------------------------------------------------", &
+                       l_write_to_file, iunit )
+
+      if ( l_write_to_file ) then
+        write(fstdout, *) "See *setup.txt file in output folder"//NEW_LINE('A')
+        close(unit=iunit)
+      end if
+
+      if ( l_write_to_file ) then
+        call execute_command_line( 'git --no-pager diff >> '//case_info_file )
+      end if
 
     end if ! clubb_at_least_debug_level( 1 )
 
@@ -1513,15 +1560,7 @@ module clubb_driver
            l_host_applies_sfc_fluxes,                         & ! Intent(in)
            saturation_formula,                                & ! Intent(in)
            l_input_fields,                                    & ! Intent(in)
-           iiPDF_type,                                        & ! intent(in)
-           ipdf_call_placement,                               & ! intent(in)
-           l_predict_upwp_vpwp,                               & ! intent(in)
-           l_min_xp2_from_corr_wx,                            & ! intent(in)
-           l_prescribed_avg_deltaz,                           & ! intent(in)
-           l_damp_wp2_using_em,                               & ! intent(in)
-           l_stability_correct_tau_zm,                        & ! intent(in)
-           l_enable_relaxed_clipping,                         & ! intent(in)
-           l_diag_Lscale_from_tau,                            & ! intent(in)
+           clubb_config_flags,                                & ! intent(in)
            err_code_dummy )                                     ! Intent(out)
            
     ! Setup grid

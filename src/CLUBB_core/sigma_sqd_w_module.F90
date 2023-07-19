@@ -94,7 +94,7 @@ module sigma_sqd_w_module
 
     ! ---- Begin Code ----
 
-    !$acc declare create( max_corr_w_x_sqd )
+    !$acc enter data create( max_corr_w_x_sqd )
 
     !----------------------------------------------------------------
     ! Compute sigma_sqd_w with new formula from Vince
@@ -138,6 +138,8 @@ module sigma_sqd_w_module
       end do
     end do
     !$acc end parallel loop
+
+    !$acc exit data delete( max_corr_w_x_sqd )
 
     return
 

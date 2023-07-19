@@ -14,7 +14,7 @@ module calc_roots
   contains
 
   !=============================================================================
-  pure function cubic_solve( nz, a_coef, b_coef, c_coef, d_coef ) &
+  function cubic_solve( nz, a_coef, b_coef, c_coef, d_coef ) &
   result( roots )
 
     ! Description:
@@ -172,7 +172,7 @@ module calc_roots
   end function cubic_solve
 
   !=============================================================================
-  pure function quadratic_solve( nz, a_coef, b_coef, c_coef ) &
+  function quadratic_solve( nz, a_coef, b_coef, c_coef ) &
   result( roots )
 
     ! Description:
@@ -261,7 +261,7 @@ module calc_roots
   end function quadratic_solve
 
   !=============================================================================
-  pure function cube_root( x )
+  function cube_root( x )
 
     ! Description:
     ! Calculates the cube root of x.

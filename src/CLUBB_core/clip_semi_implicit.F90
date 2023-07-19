@@ -366,7 +366,7 @@ module clip_semi_implicit
   end function clip_semi_imp_lhs
 
   !=============================================================================
-  pure function compute_clip_lhs( dt_clip, B_fnc ) & 
+  function compute_clip_lhs( dt_clip, B_fnc ) & 
   result( lhs_contribution )
 
     ! Description:

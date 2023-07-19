@@ -619,7 +619,7 @@ module clip_explicit
 
     ! Since there is no covariance clipping at the upper or lower boundaries,
     ! the change in x'y' due to covariance clipping at those levels is 0.
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       xpyp_chnge(i,1)  = 0.0_core_rknd
       xpyp_chnge(i,nz) = 0.0_core_rknd
@@ -970,7 +970,7 @@ module clip_explicit
         end if
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     if ( l_stats_samp ) then
       !$acc update host( xp2 )
@@ -1180,7 +1180,7 @@ module clip_explicit
 
     !----------------------- Begin Code-----------------------
 
-    !$acc declare create( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl )
+    !$acc enter data create( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl )
 
     ! Compute the upper and lower limits of w'^3 at every level,
     ! based on the skewness of w, Sk_w, such that:
@@ -1205,7 +1205,7 @@ module clip_explicit
         wp2_zt_cubed(i,k) = wp2_zt(i,k)**3
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     if ( l_use_wp3_lim_with_smth_Heaviside ) then 
 
@@ -1217,7 +1217,7 @@ module clip_explicit
           zagl_thresh(i,k) = zagl_thresh(i,k)  - 1.0_core_rknd 
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
       H_zagl(:,:) = smooth_heaviside_peskin(nz, ngrdcol, zagl_thresh(:,:), 0.6_core_rknd) 
 
@@ -1230,7 +1230,7 @@ module clip_explicit
                                      * 0.0021_core_rknd *Skw_max_mag**2 )
         end do
       end do
-     !$acc end parallel
+     !$acc end parallel loop
 
     else ! default method 
 
@@ -1248,7 +1248,7 @@ module clip_explicit
           endif
         end do
       end do
-      !$acc end parallel
+      !$acc end parallel loop
 
     end if
   
@@ -1263,7 +1263,7 @@ module clip_explicit
         end if
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
 
     ! Clipping abs(wp3) to 100. This keeps wp3 from growing too large in some 
     ! deep convective cases, which helps prevent these cases from blowing up.
@@ -1275,7 +1275,9 @@ module clip_explicit
         end if
       end do
     end do
-    !$acc end parallel
+    !$acc end parallel loop
+
+    !$acc exit data delete( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl )
 
   end subroutine clip_skewness_core
 

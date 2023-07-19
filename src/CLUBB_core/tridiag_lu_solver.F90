@@ -123,8 +123,8 @@ module tridiag_lu_solvers
     upper(1)            = lower_diag_invrs(1) * lhs(-1,1) 
 
     do k = 2, ndim-1
-        lower_diag_invrs(k) = 1.0_core_rknd / ( lhs(0,k) - lhs(1,k) * upper(k-1)  )
-        upper(k)            = lower_diag_invrs(k) * lhs(-1,k) 
+      lower_diag_invrs(k) = 1.0_core_rknd / ( lhs(0,k) - lhs(1,k) * upper(k-1)  )
+      upper(k)            = lower_diag_invrs(k) * lhs(-1,k) 
     end do
 
     lower_diag_invrs(ndim) = 1.0_core_rknd / ( lhs(0,ndim) - lhs(1,ndim) * upper(ndim-1)  )
@@ -138,7 +138,6 @@ module tridiag_lu_solvers
     do k = ndim-1, 1, -1
       soln(k) = soln(k) - upper(k) * soln(k+1)
     end do
-
 
     !$acc end kernels
 
@@ -185,26 +184,29 @@ module tridiag_lu_solvers
     !$acc      copyin( rhs, lhs ) &
     !$acc      copyout( soln )
     
-    !$acc kernels
-    
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper(i,1)            = lower_diag_invrs(i,1) * lhs(-1,i,1) 
     end do
+    !$acc end parallel loop
 
-
+    !$acc parallel loop gang vector default(present)
     do k = 2, ndim-1
       do i = 1, ngrdcol
         lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lhs(1,i,k) * upper(i,k-1)  )
         upper(i,k)            = lower_diag_invrs(i,k) * lhs(-1,i,k) 
       end do
     end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) - lhs(1,i,ndim) * upper(i,ndim-1)  )
     end do
+    !$acc end parallel loop
 
-    
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol 
 
       soln(i,1)   = lower_diag_invrs(i,1) * rhs(i,1) 
@@ -212,14 +214,17 @@ module tridiag_lu_solvers
       do k = 2, ndim
         soln(i,k) = lower_diag_invrs(i,k) * ( rhs(i,k) - lhs(1,i,k) * soln(i,k-1) )
       end do
+    end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol 
       do k = ndim-1, 1, -1
         soln(i,k) = soln(i,k) - upper(i,k) * soln(i,k+1)
       end do
 
     end do
-
-    !$acc end kernels
+    !$acc end parallel loop
 
     !$acc end data
 
@@ -266,26 +271,29 @@ module tridiag_lu_solvers
     !$acc      copyin( rhs, lhs ) &
     !$acc      copyout( soln )
 
-    !$acc kernels
-
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper(i,1)            = lower_diag_invrs(i,1) * lhs(-1,i,1) 
     end do
+    !$acc end parallel loop
 
-
-    do k = 2, ndim-1
-      do i = 1, ngrdcol
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      do k = 2, ndim-1
         lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lhs(1,i,k) * upper(i,k-1)  )
         upper(i,k)            = lower_diag_invrs(i,k) * lhs(-1,i,k) 
       end do
     end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) - lhs(1,i,ndim) * upper(i,ndim-1)  )
     end do
+    !$acc end parallel loop
 
-    
+    !$acc parallel loop gang vector collapse(2) default(present)
     do j = 1, nrhs
       do i = 1, ngrdcol 
 
@@ -294,15 +302,19 @@ module tridiag_lu_solvers
         do k = 2, ndim
           soln(i,k,j) = lower_diag_invrs(i,k) * ( rhs(i,k,j) - lhs(1,i,k) * soln(i,k-1,j) )
         end do
+      end do
+    end do
+    !$acc end parallel loop
 
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do j = 1, nrhs
+      do i = 1, ngrdcol 
         do k = ndim-1, 1, -1
           soln(i,k,j) = soln(i,k,j) - upper(i,k) * soln(i,k+1,j)
         end do
-
       end do
     end do
-
-    !$acc end kernels
+    !$acc end parallel loop
 
     !$acc end data
 

@@ -120,10 +120,8 @@ module fill_holes
 
     ! --------------------- Begin Code --------------------- 
 
-    !$acc declare copyin( dz, rho_ds ) &
-    !$acc           copy( field ) &
-    !$acc         create( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
-    !$acc                 numer_integral_global, field_avg_global, mass_fraction_global )
+    !$acc enter data create( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
+    !$acc                    numer_integral_global, field_avg_global, mass_fraction_global )
 
     l_field_below_threshold = .false.
 
@@ -140,10 +138,12 @@ module fill_holes
 
     ! If all field values are above the specified threshold, no hole filling is required
     if ( .not. l_field_below_threshold ) then
+      !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
+      !$acc                   numer_integral_global, field_avg_global, mass_fraction_global )
       return
     end if
 
-    !$acc parallel loop collapse(2) default(present)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         rho_ds_dz(i,k) = rho_ds(i,k) * dz(i,k)
@@ -236,6 +236,8 @@ module fill_holes
 
     ! If all field values are above the threshold, no further hole filling is required
     if ( .not. l_field_below_threshold ) then
+      !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
+      !$acc                   numer_integral_global, field_avg_global, mass_fraction_global )
       return
     end if
 
@@ -246,14 +248,14 @@ module fill_holes
     ! if any holes need filling before the final step of updating the field. 
 
     ! Compute the numerator and denominator integrals
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       numer_integral_global(i) = 0.0_core_rknd
       denom_integral_global(i) = 0.0_core_rknd
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       do k = 2, upper_hf_level
         numer_integral_global(i) = numer_integral_global(i) + rho_ds_dz(i,k) * field(i,k)
@@ -264,7 +266,7 @@ module fill_holes
     !$acc end parallel loop
 
     
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! Find the vertical average of field, using the precomputed numerator and denominator,
@@ -285,7 +287,7 @@ module fill_holes
     !$acc end parallel loop
 
     ! To compute the clipped field's vertical integral we only need to recompute the numerator
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       numer_integral_global(i) = 0.0_core_rknd
       do k = 2, upper_hf_level
@@ -294,7 +296,7 @@ module fill_holes
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
 
       ! Do not complete calculations or update field values for this 
@@ -322,6 +324,9 @@ module fill_holes
 
     end do
     !$acc end parallel loop
+    
+    !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
+    !$acc                   numer_integral_global, field_avg_global, mass_fraction_global )
 
     return
 
@@ -822,11 +827,16 @@ module fill_holes
 
          if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
 
+            !$acc data copyin( gr, gr%dzt, rho_ds_zt ) &
+            !$acc        copy( hydromet(:,i) )
+
             ! Apply the hole filling algorithm
             ! upper_hf_level = nz since we are filling the zt levels
             call fill_holes_vertical( gr%nz, 1, num_hf_draw_points, zero_threshold, gr%nz, & ! In
                                       gr%dzt, rho_ds_zt,                                   & ! In
                                       hydromet(:,i) )                                      ! InOut
+
+            !$acc end data
 
          endif ! Variable is a mixing ratio and l_hole_fill is true
 

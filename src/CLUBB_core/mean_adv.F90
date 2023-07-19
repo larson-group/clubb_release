@@ -30,7 +30,7 @@ module mean_adv
   contains
 
   !=============================================================================
-  pure subroutine term_ma_zt_lhs( nz, ngrdcol, wm_zt, weights_zt2zm, & ! Intent(in)
+  subroutine term_ma_zt_lhs( nz, ngrdcol, wm_zt, weights_zt2zm, & ! Intent(in)
                                   invrs_dzt, invrs_dzm,     & ! Intent(in)
                                   l_upwind_xm_ma,           & ! Intent(in)
                                   lhs_ma )                    ! Intent(out)
@@ -244,7 +244,7 @@ module mean_adv
 
       ! Most of the interior model; normal conditions.
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz, 1
+      do k = 2, nz-1, 1
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -266,7 +266,7 @@ module mean_adv
       ! derivative d(var_zt)/dz over the model top is set to 0, in order
       ! to stay consistent with the zero-flux boundary condition option
       ! in the eddy diffusion code.
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -317,7 +317,7 @@ module mean_adv
       !$acc end parallel loop
 
       ! Upper Boundary
-      !$acc parallel loop default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         if ( wm_zt(i,nz) >= zero ) then  ! Mean wind is in upward direction
 
@@ -354,7 +354,7 @@ module mean_adv
   end subroutine term_ma_zt_lhs
 
   !=============================================================================
-  pure subroutine term_ma_zm_lhs( nz, ngrdcol, wm_zm, &
+  subroutine term_ma_zm_lhs( nz, ngrdcol, wm_zm, &
                                   invrs_dzm, weights_zm2zt, & 
                                   lhs_ma )
 

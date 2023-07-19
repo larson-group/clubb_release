@@ -30,7 +30,7 @@ module turbulent_adv_pdf
   contains
 
   !=============================================================================
-  pure subroutine xpyp_term_ta_pdf_lhs( nz, ngrdcol, gr, coef_wpxpyp_implicit, & ! In
+  subroutine xpyp_term_ta_pdf_lhs( nz, ngrdcol, gr, coef_wpxpyp_implicit, & ! In
                                         rho_ds_zt, rho_ds_zm,            & ! In
                                         invrs_rho_ds_zm,                 & ! In
                                         l_upwind_xpyp_turbulent_adv,     & ! In
@@ -478,7 +478,7 @@ module turbulent_adv_pdf
   end subroutine xpyp_term_ta_pdf_lhs
 
   !=============================================================================================
-  pure subroutine xpyp_term_ta_pdf_lhs_godunov( nz, ngrdcol, gr, & ! Intent(in)
+  subroutine xpyp_term_ta_pdf_lhs_godunov( nz, ngrdcol, gr, & ! Intent(in)
                                                 coef_wpxpyp_implicit, & ! Intent(in)
                                                 invrs_rho_ds_zm, rho_ds_zm,  & ! Intent(in)
                                                 lhs_ta )
@@ -589,7 +589,7 @@ module turbulent_adv_pdf
   end subroutine xpyp_term_ta_pdf_lhs_godunov
 
   !=============================================================================
-  pure subroutine xpyp_term_ta_pdf_rhs( nz, ngrdcol, gr, term_wpxpyp_explicit,  & ! In
+  subroutine xpyp_term_ta_pdf_rhs( nz, ngrdcol, gr, term_wpxpyp_explicit,  & ! In
                                         rho_ds_zt, rho_ds_zm,                   & ! In
                                         invrs_rho_ds_zm,                        & ! In
                                         l_upwind_xpyp_turbulent_adv,            & ! In
@@ -892,7 +892,7 @@ module turbulent_adv_pdf
 
 
     ! Set lower boundary value to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_ta(i,1) = zero
     end do
@@ -947,7 +947,7 @@ module turbulent_adv_pdf
     end if
 
     ! Set upper boundary value to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_ta(i,nz) = zero
     end do
@@ -960,7 +960,7 @@ module turbulent_adv_pdf
   end subroutine xpyp_term_ta_pdf_rhs
 
   !=============================================================================
-  pure subroutine xpyp_term_ta_pdf_rhs_godunov( nz, ngrdcol, gr, & ! Intent(in)
+  subroutine xpyp_term_ta_pdf_rhs_godunov( nz, ngrdcol, gr, & ! Intent(in)
                                                 term_wpxpyp_explicit_zm, & ! Intent(in)
                                                 invrs_rho_ds_zm, & ! Intent(in)
                                                 sgn_turbulent_vel, & ! Intent(in)
@@ -1018,7 +1018,7 @@ module turbulent_adv_pdf
     !$acc      copyout( rhs_ta )
 
     ! Set lower boundary value to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_ta(i,1) = 0.0_core_rknd
     end do
@@ -1042,7 +1042,7 @@ module turbulent_adv_pdf
     !$acc end parallel loop
 
     ! Set upper boundary value to 0
-    !$acc parallel loop default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       rhs_ta(i,nz) = 0.0_core_rknd
     end do
