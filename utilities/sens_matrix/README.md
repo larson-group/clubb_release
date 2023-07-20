@@ -7,7 +7,13 @@ here we provide a set of scripts that
 1. analyze the sensitivity of model outputted metrics to tunable parameters, and
 2. recommend a combination of tuning parameter values that brings the model closer to observations.
 
-To use the tuning tool:
+#### Software requirements:
+
+RegTune requires python and dash.  To install dash, run
+
+`pip install dash`
+
+#### To use the tuning tool:
 
 1.  Start with an untuned global numerical model.  Run a single global simulation with parameters 
 at their default values.  Output the metrics and parameter values to a "default" netcdf file.
@@ -25,7 +31,7 @@ with the recommended parameter values.
 The scripts are written entirely in python.  The results may be plotted on a web-based
 dashboard created using python dash.  Unit tests may be performed by running pytest.
 
-This folder contains several files:
+#### This folder contains several files:
 
 *set_up_dashboard_inputs.py* allows the user to state which regional metrics to match,
 how strongly to weight each metric, what parameters to tune, and what observed values
