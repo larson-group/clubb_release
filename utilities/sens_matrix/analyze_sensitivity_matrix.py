@@ -140,9 +140,17 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     obsMetricValsCol = \
             setupObsCol(obsMetricValsDict, metricsNames)
 
+    print("\nobsMetricValsCol =")
+    print(obsMetricValsCol)
+
     # Set up a column vector of metric values from the default simulation
     defaultMetricValsCol = \
         setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
+
+    print("\ndefaultMetricValsCol =")
+    print(defaultMetricValsCol)
+
+#    sys.exit("Prints")
 
     # Based on the default simulation,
     #    set up a column vector of metrics and a row vector of parameter values.
@@ -204,14 +212,16 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     # Initially, set values to the default-simulation values
     magParamValsRow = np.abs(defaultParamValsRow)
     # Now replace any zero default values with the value from the sensitivity run
-    for idx, elem in enumerate(defaultParamValsRow):
-        if (np.abs(elem[idx]) <= np.finfo(elem[idx].dtype).eps): # if default value is zero
-            magParamValsRow[idx] = np.abs(sensParamValsRow[idx]) # set to sensitivity value
+    for idx, elem in np.ndenumerate(defaultParamValsRow):
+        if (np.abs(elem) <= np.finfo(elem.dtype).eps): # if default value is zero
+            magParamValsRow[0,idx[1]] = np.abs(sensParamValsRow[0,idx[1]]) # set to sensitivity value
     if np.any( np.isclose(magParamValsRow, np.zeros((1,numParams))) ):
+        print("\nsensParamValsRow =")
+        print(sensParamValsRow)
         print("\nmagParamValsRow =")
         print(magParamValsRow)
         sys.exit("Error: A parameter value from both default and sensitivity simulation is zero.")
-
+    
     # Matrix of metric values from default simulation
     # Each column in the matrix is repeated numParams times, for later multiplication
     defaultMetricValsMatrix = defaultMetricValsCol @ np.ones((1,numParams))

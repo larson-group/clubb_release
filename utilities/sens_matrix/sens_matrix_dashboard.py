@@ -18,6 +18,7 @@ def main():
     import pdb
     import sklearn
     import plotly.figure_factory as ff
+    from plotly.subplots import make_subplots
     #from plotly.figure_factory import create_quiver
     from itertools import chain
 
@@ -257,7 +258,7 @@ def main():
               title = """Fractional biases of default simulation and approximations thereof.<br>
                     Plotted quantities have the structure -(def-obs), -(def-fwd), -(def-lin)""")
     biasesFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
-    biasesFig.update_xaxes(title="Metric and region")
+    biasesFig.update_xaxes(title="Regional metric")
     biasesFig.layout.legend.title = "Default or which approximation"
     biasesFig.update_layout(hovermode="x")
     biasesFig.data[1].name = "fracDefBiasesApprox, " \
@@ -289,9 +290,9 @@ def main():
                       index=metricsNamesOrdered,
                       columns= ['fracDefBias'])
     biasesOrderFig = px.line(df, x=df.index, y=df.columns,
-              title = """Predicted and actual removal of regional biases""")
-    biasesOrderFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
-    biasesOrderFig.update_xaxes(title="Metric and region")
+              title = """<span style='color:blue'>Predicted</span> and <span style='color:red'>actual</span> removal of regional biases""")
+    biasesOrderFig.update_yaxes(title="-Normalized bias")
+    biasesOrderFig.update_xaxes(title="Regional metric")
     biasesOrderFig.update_layout(hovermode="x")
     biasesOrderFig.update_layout(showlegend=False)
     biasesOrderFig.update_traces(mode='markers', line_color='black')  # Plot default biases as black dots
@@ -345,12 +346,19 @@ def main():
         arrowcolor='blue'
         )
     # Add a hand-made legend
-    biasesOrderFig.add_annotation(text='tuner prediction of bias removal',
+    biasesOrderFig.add_annotation(text='Tuner prediction of bias removal',
                                   font=dict(color='blue'),
-                                  align='left', xref='paper', yref='paper', x=0.05, y=0.9, showarrow=False)
-    biasesOrderFig.add_annotation(text='realized E3SM bias removal',
-                                  font=dict(color='red'), #'rgba(255,0,0,0.0)'),
-                                  align='left', xref='paper', yref='paper', x=0.05, y=0.8, showarrow=False)
+                                  align='left', xref='paper', yref='paper', 
+                                  x=0.05, y=0.98, showarrow=False)
+    biasesOrderFig.add_annotation(text='Error bar on tuner prediction',
+                                  font=dict(color='skyblue'),
+                                  align='left', xref='paper', yref='paper', 
+                                  x=0.05, y=0.91, showarrow=False)
+    biasesOrderFig.add_annotation(text='Realized E3SM bias removal',
+                                  font=dict(color='red'),  # keep E3SM legend 
+                                  #font=dict(color='rgba(255,0,0,0.0)'), # omit E3SM legend
+                                  align='left', xref='paper', yref='paper', 
+                                  x=0.05, y=0.84, showarrow=False)
     # Plot arrows showing the bias removal of E3SM's solution
     for i, item in enumerate(metricsNamesOrdered):
         biasesOrderFig.add_annotation(
@@ -368,8 +376,8 @@ def main():
         arrowhead=3,
         arrowsize=1,
         arrowwidth=2,
-        arrowcolor='red' #,
-        #opacity=0.0
+        arrowcolor='red'  
+        #,opacity=0.0  # omit arrow for E3SM's solution
 	    )
 #     # Plot 0-curvature error bars on prediction arrow
 #     for i, item in enumerate(metricsNamesOrdered):
@@ -398,6 +406,7 @@ def main():
     #                       marker=dict(color='green', size=14)))
     #pdb.set_trace()
 
+    #biasesOrderFig.write_image('biasesOrderFig.png', scale=6)
 
     # Create plot showing how well the regional biases are actually removed
     metricsSens = np.linalg.norm(normlzdWeightedSensMatrix, axis=1) # measure of sensitivity of each metric
@@ -414,7 +423,7 @@ def main():
     biasContrOrderFig = px.bar(df, x=df.index, y=df.columns,
               title = """Linear contributions to actual removal of regional biases""")
     biasContrOrderFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
-    biasContrOrderFig.update_xaxes(title="Metric and region")
+    biasContrOrderFig.update_xaxes(title="Regional metric")
     biasContrOrderFig.update_layout(hovermode="x")
     biasContrOrderFig.update_layout(showlegend=True)
     #biasContrOrderFig.update_traces(mode='markers', line_color='black')  # Plot default biases as black dots
@@ -468,9 +477,9 @@ def main():
                       index=metricsNamesOrdered,
                       columns=paramsNames)
     biasContrNLOrderFig = px.bar(df, x=df.index, y=df.columns,
-              title = """Linear + nonlinear contributions to actual removal of regional biases""")
-    biasContrNLOrderFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
-    biasContrNLOrderFig.update_xaxes(title="Metric and region")
+              title = """Linear + nonlinear contributions of parameters to actual removal of regional biases""")
+    biasContrNLOrderFig.update_yaxes(title="Contribution to bias removal")
+    biasContrNLOrderFig.update_xaxes(title="Regional metric")
     biasContrNLOrderFig.update_layout(hovermode="x")
     biasContrNLOrderFig.update_layout(showlegend=True)
     biasContrNLOrderFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
@@ -522,7 +531,7 @@ def main():
                                  x='isNonlin', color='paramsNames') #,
               #title = """Long: Linear ++ nonlinear contributions to actual removal of regional biases""")
     #biasContrGroupedFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
-    #biasContrGroupedFig.update_xaxes(title="Metric and region")
+    #biasContrGroupedFig.update_xaxes(title="Regional metric")
     ##biasContrGroupedFig.update_xaxes(visible=False)
     ##biasContrGroupedFig.update_yaxes(visible=False)
     biasContrGroupedFig.update_layout(hovermode="x")
@@ -642,7 +651,7 @@ def main():
               title = """Maximum normalized sensitivity of each metric with respect to parameters.<br>
                        (Low sensitivity means that the metric is unbudgeable by these parameters.)""" )
     maxSensMetricsFig.update_yaxes(title="Max |sens row|")
-    maxSensMetricsFig.update_xaxes(title="Metric and region")
+    maxSensMetricsFig.update_xaxes(title="Regional metric")
     maxSensMetricsFig.update_layout(hovermode="x")
     maxSensMetricsFig.update_traces(mode='lines+markers')
 
@@ -659,11 +668,13 @@ def main():
     #                   'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(obsMetricValsCol[:,0])
                       }, index=metricsNames )
     biasesVsSensFig = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
-                                 text=metricsNames, title = """Regional biases vs. RMSE(sensitivity).""" )
+                                 text=metricsNames, 
+                                 title = """Regional biases vs. magnitude of sensitivity.""")
     biasesVsSensFig.update_yaxes(title="Regional biases")
-    biasesVsSensFig.update_xaxes(title="Sensitivity of regional metrics to parameter changes")
+    biasesVsSensFig.update_xaxes(title="Magnitude of sensitivity of regional metrics to parameter changes")
+    biasesVsSensFig.update_layout(showlegend=False)
     biasesVsSensFig.update_layout(hovermode="x")
-    biasesVsSensFig.update_layout( width=1000, height=500  )
+    biasesVsSensFig.update_layout( width=700, height=500  )
 
     # Compute length of arrows between default and tuned biases
     #metricsNamesPadded = ",,".join(metricsNames).split(",")
@@ -769,7 +780,7 @@ def main():
                        Each column (line) shows how sensitive the metrics are to a change in a single parameter value.<br>
                        (A positive value means that an increase in parameter value brings the default simulation closer to obs.)""" )
     normlzdSensMatrixColsFig.update_yaxes(title="Norml sens, (|param|/|obsmetric|) * dmetric/dparam")
-    normlzdSensMatrixColsFig.update_xaxes(title="Metric and region")
+    normlzdSensMatrixColsFig.update_xaxes(title="Regional metric")
     normlzdSensMatrixColsFig.layout.legend.title = "Parameter"
     normlzdSensMatrixColsFig.update_layout(hovermode="x")
     #pdb.set_trace()
@@ -931,7 +942,70 @@ def main():
     paramsFig.update_layout( width=1000, height=500  )
 
     #pdb.set_trace()
-        
+
+    roundedNormlzdSensMatrix = np.around( normlzdSensMatrix, decimals=2)
+    df_sensmat = pd.DataFrame(roundedNormlzdSensMatrix,
+                  index=metricsNames,
+                  columns=paramsNames)
+    normlzdSensMatrixFig = ff.create_annotated_heatmap(
+                   z=df_sensmat.to_numpy(),
+                   x=df_sensmat.columns.tolist(),
+                   y=df_sensmat.index.tolist(),
+                   coloraxis="coloraxis",
+                   #colorscale=px.colors.diverging.balance,
+                   showscale=False, ygap=1, xgap=1
+                   )
+    normlzdSensMatrixFig.update_xaxes(side="bottom")
+    normlzdSensMatrixFig.update_layout(
+    title_text='Color-coded normalized sensitivity matrix', 
+    title_x=0.5, 
+    #width=800, 
+    #height=1400,
+    xaxis_showgrid=False,
+    yaxis_showgrid=False,
+    xaxis_zeroline=False,
+    yaxis_zeroline=False,
+    yaxis_autorange='reversed',
+    template='plotly_white'
+    )
+    df_biasArray = pd.DataFrame( np.around(defaultBiasesCol/np.abs(obsMetricValsCol), decimals=2),
+                   index=metricsNames,
+                   columns= ['Normalized Biases'])
+    normlzdBiasArrayFig = ff.create_annotated_heatmap(
+                   z=df_biasArray.to_numpy(),
+                   x=df_biasArray.columns.tolist(),
+                   y=df_biasArray.index.tolist(),
+                   #colorscale=normlzdSensMatrixFig.colorscale,
+                   #colorscale=px.colors.diverging.balance,
+                   coloraxis="coloraxis",
+                   showscale=True, ygap=1, xgap=1
+                   )
+    normlzdBiasArrayFig.update_layout(
+    title_text='', 
+    title_x=0.5, 
+    #width=10, 
+    #height=1400,
+    xaxis_showgrid=False,
+    yaxis_showgrid=False,
+    xaxis_zeroline=False,
+    yaxis_zeroline=False,
+    yaxis_autorange='reversed',
+    template='plotly_white'
+    )
+    sensMatrixBiasFig = make_subplots(
+    rows=1, cols=2,
+    column_widths=[0.9, 0.1],
+    horizontal_spacing=0.2,
+    )
+    sensMatrixBiasFig.add_trace(normlzdSensMatrixFig.data[0], row=1, col=1)
+    #sensMatrixBiasFig.add_trace(normlzdBiasArrayFig.data[0], 1, 1)
+    sensMatrixBiasFig.add_trace(normlzdBiasArrayFig.data[0], row=1, col=2)
+    sensMatrixBiasFig.update_layout(
+        title_text='Color-coded normalized sensitivity matrix',
+        height=700,
+        template='plotly_white') 
+    sensMatrixBiasFig.update_layout(coloraxis=dict(colorscale='RdBu',cmin=-1,cmax=1), showlegend=False)
+
     cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrix )
     roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
     df = pd.DataFrame(roundedCosAnglesMatrix,
@@ -1040,9 +1114,12 @@ def main():
         #dcc.Graph( id='biasesFig', figure=biasesFig ),
         #dcc.Graph( id='biasContrOrderFig', figure=biasContrOrderFig ),
 
-        dcc.Graph( id='biasesVsSensFig', figure=biasesVsSensFig ),
+        dcc.Graph( id='biasesVsSensFig', figure=biasesVsSensFig, 
+#  config= { 'toImageButtonOptions': { 'scale': 6 } }
+                   ),
+        dcc.Graph( id='sensMatrixBiasFig', figure=sensMatrixBiasFig ),   
         dcc.Graph( id='corrArrayFig', figure=corrArrayFig ),
-        
+     
 
         dcc.Graph( id='biasSensDirScatterFig', figure=biasSensDirMatrixScatterFig ),
         dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ),
