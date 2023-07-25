@@ -244,7 +244,7 @@ module mean_adv
 
       ! Most of the interior model; normal conditions.
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1, 1
+      do k = 2, nz, 1
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]

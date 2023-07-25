@@ -75,7 +75,7 @@ module Skx_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        Skx(i,k) = xp3(i,k) / ( ( xp2(i,k) + Skx_denom_tol ) * sqrt( xp2(i,k) + Skx_denom_tol ) )
+        Skx(i,k) = xp3(i,k) * sqrt(( xp2(i,k) + Skx_denom_tol )**(-3))
       end do
     end do
     !$acc end parallel loop
