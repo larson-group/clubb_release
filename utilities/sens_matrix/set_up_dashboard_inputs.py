@@ -44,10 +44,10 @@ def setUpInputs():
     #   the corresponding metric in the fitting process.
     #   Use a large weight for global (GLB) metrics.
     metricsNamesAndWeights = [ \
-                        ['SWCF_GLB', 8.00], \
-                        ['SWCF_DYCOMS', 4.00], \
-                        ['SWCF_HAWAII', 8.00], \
-                        ['SWCF_VOCAL', 4.00], \
+                        ['SWCF_GLB', 16.00], \
+                        ['SWCF_DYCOMS', 1.00], \
+                        ['SWCF_HAWAII', 2.00], \
+                        ['SWCF_VOCAL', 2.00], \
                         ['SWCF_VOCAL_near', 1.00], \
                         ['SWCF_LBA', 1.00], \
                         ['SWCF_WP', 1.00], \
@@ -56,9 +56,9 @@ def setUpInputs():
                         ['SWCF_SP', 1.00],  \
 ##                        ['SWCF_PA', 1.01], \
                         ['SWCF_CAF', 1.00], \
-                        ['SWCF_Nambian', 4.00], \
-                        ['SWCF_Nambian_near', 4.00], \
-                        ['LWCF_GLB', 8.00], \
+                        ['SWCF_Nambian', 1.00], \
+                        ['SWCF_Nambian_near', 1.00], \
+                        ['LWCF_GLB', 1.00], \
 ###                        ['LWCF_DYCOMS', 1.01], \
 ###                        ['LWCF_HAWAII', 1.01], \
 ###                        ['LWCF_VOCAL', 1.01], \
@@ -69,7 +69,7 @@ def setUpInputs():
 ###                        ['LWCF_SP', 1.01], \
 ####                        ['LWCF_PA',  1.01], \
 ###                        ['LWCF_CAF', 1.01], \
-                        ['PRECT_GLB', 8.00] \
+                        ['PRECT_GLB', 3.00] \
 ##                        ['PRECT_LBA', 1.00], \
 ##                        ['PRECT_WP', 1.00], \
 ###                        ['PRECT_EP', 1.01], \
@@ -112,30 +112,30 @@ def setUpInputs():
                     ['clubb_c8', 1.0, \
                      folder_name + 'sens0707_14_Regional.nc',  \
                      folder_name + 'sens0707_15_Regional.nc'], \
-#                    ['clubb_c_k10', 1.0, \
-#                     folder_name + 'sens0707_12_Regional.nc', \
-#                     folder_name + 'sens0707_23_Regional.nc'], \
+                    ['clubb_c_k10', 1.0, \
+                     folder_name + 'sens0707_12_Regional.nc', \
+                     folder_name + 'sens0707_13_Regional.nc'], \
                     ['clubb_c_invrs_tau_n2', 1.0, \
                      folder_name + 'sens0707_10_Regional.nc',
                      folder_name + 'sens0707_11_Regional.nc'], \
-#                    ['clubb_altitude_threshold', 0.001, \
-#                     folder_name + 'chrysalis.bmg20220630.sens1107_12.ne30pg2_r05_oECv3_Regional.nc',
-#                     folder_name + 'chrysalis.bmg20220630.sens1107_13.ne30pg2_r05_oECv3_Regional.nc'], \
+                    ['clubb_altitude_threshold', 0.001, \
+                     folder_name + 'sens0707_20_Regional.nc',
+                     folder_name + 'sens0707_21_Regional.nc'], \
 ##                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc',
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_sfc', 1.0, \
                      folder_name + 'sens0707_6_Regional.nc',
                      folder_name + 'sens0707_7_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-#                     folder_name + 'chrysalis.bmg20220630.sens1107_6.ne30pg2_r05_oECv3_Regional.nc', \
-#                     folder_name + 'chrysalis.bmg20220630.sens1107_7.ne30pg2_r05_oECv3_Regional.nc'], \
+                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
+                     folder_name + 'sens0707_8_Regional.nc', \
+                     folder_name + 'sens0707_9_Regional.nc'], \
                     ['clubb_c_invrs_tau_n2_wp2', 1.0, \
                      folder_name + 'sens0707_4_Regional.nc',
                      folder_name + 'sens0707_5_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
-#                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
-#                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
+##                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
+##                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
+##                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
 ##                    ['clubb_c_k1', 1.0, \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_25.ne30pg2_r05_oECv3_Regional.nc', \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_26.ne30pg2_r05_oECv3_Regional.nc'], \
@@ -145,20 +145,14 @@ def setUpInputs():
 ##                    ['micro_vqit', 1.0, \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_n2_xp2', 1.0, \
-#                     folder_name + 'sens0707_16_Regional.nc', \
-#                     folder_name + 'sens0707_16_Regional.nc'], \
+##                    ['clubb_c_invrs_tau_n2_xp2', 1.0, \
+##                     folder_name + 'sens0707_16_Regional.nc', \
+##                     folder_name + 'sens0707_16_Regional.nc'], \
 ##                     '20220903/anvil.bmg20220630.sens723_12.ne30pg2_r05_oECv3_Regional.nc',
 ##                     '20220903/anvil.bmg20220630.sens723_13.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-##                     '20220903/anvil.bmg20220630.sens723_16.ne30pg2_r05_oECv3_Regional.nc',
-##                     '20220903/anvil.bmg20220630.sens723_17.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-##                     '20220903/anvil.bmg20220630.sens723_14.ne30pg2_r05_oECv3_Regional.nc', \
-##                     '20220903/anvil.bmg20220630.sens723_15.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c8', 1.0, \
-##                     '20220903/anvil.bmg20220630.sens723_8.ne30pg2_r05_oECv3_Regional.nc',  \
-##                     '20220903/anvil.bmg20220630.sens723_9.ne30pg2_r05_oECv3_Regional.nc'], \
+                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
+                     folder_name + 'sens0707_16_Regional.nc',
+                     folder_name + 'sens0707_17_Regional.nc'], \
                         ]
 
     # Split up the above list into parameter names, scales, and filenames.
@@ -189,6 +183,7 @@ def setUpInputs():
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
            folder_name + 'sens0707_1_Regional.nc'
+           #folder_name + 'sens0707_24_Regional.nc'
            # folder_name + 'chrysalis.bmg20220630.sens1107_30.ne30pg2_r05_oECv3_Regional.nc'
 #            folder_name + 'chrysalis.bmg20220630.sens1107_23.ne30pg2_r05_oECv3_Regional.nc'
 
