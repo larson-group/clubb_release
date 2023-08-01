@@ -103,7 +103,7 @@ vars_zt =
 'SIZEFIX_NS', 'SIZEFIX_NG', 'NEGFIX_NR', 'NEGFIX_NC', 'NEGFIX_NI', 'NEGFIX_NS', 
 'NEGFIX_NG', 'NIM_MORR_CL', 'QC_INST', 'QR_INST', 'QI_INST', 'QS_INST', 'QG_INST',
 'NC_INST', 'NR_INST', 'NI_INST', 'NS_INST', 'NG_INST', 'T_in_K_mc', 'cloud_frac_refined',
-'rcm_refined', 'hl_on_Cp_residual', 'qto_residual', 
+'rcm_refined', 'hl_on_Cp_residual', 'qto_residual',
 ''
 
 vars_lh_zt =

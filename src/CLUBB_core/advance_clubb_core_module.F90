@@ -814,7 +814,6 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2
        brunt_vaisala_freq_sqd_dry,   & ! dry N^2
        brunt_vaisala_freq_sqd_moist, & ! moist N^2
-       brunt_vaisala_freq_sqd_plus,  & ! N^2 from another way
        brunt_vaisala_freq_sqd_splat, &
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
        sqrt_Ri_zm                      ! square root of Richardson number
@@ -856,6 +855,9 @@ module advance_clubb_core_module
     logical :: l_samp_stats_in_pdf_call
 
     ! Flag to determine whether invrs_tau_N2_iso is used in C4 terms.
+    ! Important! This flag is only in use when l_diag_Lscale_from_tau = true
+    ! Setting l_use_invrs_tau_N2_iso = true will not change anything unless
+    ! l_diag_Lscale_from_tau is also true
     logical, parameter :: l_use_invrs_tau_N2_iso = .false.
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -873,7 +875,7 @@ module advance_clubb_core_module
 
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
-      
+
     type(pdf_parameter) :: pdf_params_single_col(ngrdcol), &
                            pdf_params_zm_single_col(ngrdcol)
 
@@ -1565,8 +1567,7 @@ module advance_clubb_core_module
                                         brunt_vaisala_freq_sqd,                        & ! Out
                                         brunt_vaisala_freq_sqd_mixed,                  & ! Out
                                         brunt_vaisala_freq_sqd_dry,                    & ! Out
-                                        brunt_vaisala_freq_sqd_moist,                  & ! Out
-                                        brunt_vaisala_freq_sqd_plus )                    ! Out
+                                        brunt_vaisala_freq_sqd_moist )                   ! Out
 
     else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
@@ -1586,7 +1587,6 @@ module advance_clubb_core_module
                         clubb_config_flags%l_modify_limiters_for_cnvg_test,       & ! In
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,     & ! Out
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! Out
-                        brunt_vaisala_freq_sqd_plus,                              & ! Out
                         sqrt_Ri_zm,                                               & ! Out
                         invrs_tau_zt, invrs_tau_zm,                               & ! Out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd,       & ! Out
@@ -1750,11 +1750,11 @@ module advance_clubb_core_module
                                       exner, rtm, rcm,                               & ! In
                                       p_in_Pa, thvm, ice_supersat_frac,              & ! In
                                       clubb_params(ilambda0_stability_coef),         & ! In
-                                      clubb_params(ibv_efold), & ! In
+                                      clubb_params(ibv_efold),                       & ! In
                                       clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
                                       clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
                                       stability_correction )                           ! Out
-          
+
       if ( l_stats_samp ) then
         !$acc update host( stability_correction )
         do i = 1, ngrdcol
@@ -1795,7 +1795,16 @@ module advance_clubb_core_module
       end do
     end do
     !$acc end parallel loop
-    
+
+    if ( .not. clubb_config_flags%l_diag_Lscale_from_tau .and. l_use_invrs_tau_N2_iso) then
+      write(fstderr,*) "Error! l_use_invrs_tau_N2_iso is not used when "// &
+                       "l_diag_Lscale_from_tau=false."// &
+                       "If you want to use Lscale code, go to file "// &
+                       "src/CLUBB_core/advance_clubb_core_module.F90 and "// &
+                       "change l_use_invrs_tau_N2_iso to false"
+      error stop
+    end if
+
     if ( .not. l_use_invrs_tau_N2_iso ) then
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1833,10 +1842,10 @@ module advance_clubb_core_module
                              stats_zm(i))                                ! intent(inout)
         call stat_update_var(isqrt_Ri_zm, sqrt_Ri_zm(i,:), & ! intent(in)
                              stats_zm(i))                  ! intent(inout)
+        call stat_update_var(iinvrs_tau_wp3_zm, invrs_tau_wp3_zm(i,:), &   ! intent(in)
+                             stats_zm(i))                                ! intent(inout)
 
         if ( clubb_config_flags%l_diag_Lscale_from_tau ) then
-          call stat_update_var(iinvrs_tau_wp3_zm, invrs_tau_wp3_zm(i,:), &   ! intent(in)
-                               stats_zm(i))                                ! intent(inout)
           call stat_update_var(iinvrs_tau_no_N2_zm, invrs_tau_no_N2_zm(i,:), & ! intent(in)
                                stats_zm(i))                                  ! intent(inout)
           call stat_update_var(iinvrs_tau_bkgnd, invrs_tau_bkgnd(i,:), & ! intent(in)
@@ -3397,20 +3406,20 @@ module advance_clubb_core_module
 
     !-------------------------------------- Begin Code --------------------------------------
 
-    !$acc enter data create( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &   
-    !$acc                    wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &       
-    !$acc                    vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, & 
-    !$acc                    gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &         
-    !$acc                    Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &         
-    !$acc                    Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &  
+    !$acc enter data create( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &
+    !$acc                    wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &
+    !$acc                    vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, &
+    !$acc                    gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &
+    !$acc                    Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &
+    !$acc                    Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &
     !$acc                    wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
     !$acc                    wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
     !$acc                    rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
 
     !$acc enter data if( l_call_pdf_closure_twice ) &
-    !$acc            create( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &  
-    !$acc                    w_down_in_cloud_zm, cloudy_updraft_frac_zm,  & 
-    !$acc                    cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &     
+    !$acc            create( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &
+    !$acc                    w_down_in_cloud_zm, cloudy_updraft_frac_zm,  &
+    !$acc                    cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &
     !$acc                    wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
     !$acc                    wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm )
 
@@ -4107,20 +4116,20 @@ module advance_clubb_core_module
 
     end if ! l_rcm_supersat_adj
 
-    !$acc exit data delete( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &   
-    !$acc                   wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &       
-    !$acc                   vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, & 
-    !$acc                   gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &         
-    !$acc                   Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &         
-    !$acc                   Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &  
+    !$acc exit data delete( wp2_zt,wp3_zm, rtp2_zt,rtp3_zm, thlp2_zt,  thlp3_zm, &
+    !$acc                   wprtp_zt, wpthlp_zt, rtpthlp_zt, up2_zt, up3_zm, &
+    !$acc                   vp2_zt, vp3_zm, upwp_zt, vpwp_zt, gamma_Skw_fnc, &
+    !$acc                   gamma_Skw_fnc_zt,sigma_sqd_w_zt,  Skw_zt, Skw_zm, &
+    !$acc                   Skrt_zt, Skrt_zm, Skthl_zt, Skthl_zm, Sku_zt, &
+    !$acc                   Sku_zm, Skv_zt, Skv_zm, wp2up2_zt, &
     !$acc                   wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
     !$acc                   wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
     !$acc                   rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
 
     !$acc exit data if( l_call_pdf_closure_twice ) &
-    !$acc           delete( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &  
-    !$acc                   w_down_in_cloud_zm, cloudy_updraft_frac_zm,  & 
-    !$acc                   cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &     
+    !$acc           delete( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &
+    !$acc                   w_down_in_cloud_zm, cloudy_updraft_frac_zm,  &
+    !$acc                   cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &
     !$acc                   wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
     !$acc                   wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm )
 

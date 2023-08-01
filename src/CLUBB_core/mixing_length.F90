@@ -1255,7 +1255,6 @@ module mixing_length
                         l_modify_limiters_for_cnvg_test, & ! intent in 
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
-                        brunt_vaisala_freq_sqd_plus, & !intent out
                         sqrt_Ri_zm, & ! intent out
                         invrs_tau_zt, invrs_tau_zm, & ! intent out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
@@ -1377,7 +1376,6 @@ module mixing_length
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry,   &
       brunt_vaisala_freq_sqd_moist, &
-      brunt_vaisala_freq_sqd_plus,  &
       sqrt_Ri_zm,                   &
       invrs_tau_zt,                 &
       invrs_tau_zm,                 &
@@ -1494,8 +1492,7 @@ module mixing_length
                                       brunt_vaisala_freq_sqd, & ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,& ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, & ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist, & ! intent(out)
-                                      brunt_vaisala_freq_sqd_plus ) ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist ) ! intent(out)
 
     ! Unpack tunable parameters
     C_invrs_tau_bkgnd = clubb_params(iC_invrs_tau_bkgnd)

@@ -276,7 +276,7 @@ module advance_helper_module
       l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
     ! ---------------- Output Variables ----------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
       stability_correction
       
     ! ---------------- Local Variables ----------------
@@ -285,7 +285,6 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry, & !  []
       brunt_vaisala_freq_sqd_moist, &
-      brunt_vaisala_freq_sqd_plus, &
       lambda0_stability, &
       Lscale_zm
 
@@ -295,7 +294,7 @@ module advance_helper_module
 
     !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                    brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                    brunt_vaisala_freq_sqd_plus, lambda0_stability, Lscale_zm )
+    !$acc                    lambda0_stability, Lscale_zm )
 
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
@@ -306,8 +305,7 @@ module advance_helper_module
                                       brunt_vaisala_freq_sqd, &         ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, &     ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist, &   ! intent(out)
-                                      brunt_vaisala_freq_sqd_plus )     ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist )    ! intent(out)
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -350,8 +348,7 @@ module advance_helper_module
                                            brunt_vaisala_freq_sqd, &
                                            brunt_vaisala_freq_sqd_mixed,&
                                            brunt_vaisala_freq_sqd_dry, &
-                                           brunt_vaisala_freq_sqd_moist, &
-                                           brunt_vaisala_freq_sqd_plus )
+                                           brunt_vaisala_freq_sqd_moist )
 
   ! Description:
   !   Calculate the Brunt-Vaisala frequency squared, N^2.
@@ -419,8 +416,7 @@ module advance_helper_module
       brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry,&
-      brunt_vaisala_freq_sqd_moist, &
-      brunt_vaisala_freq_sqd_plus
+      brunt_vaisala_freq_sqd_moist
 
     !---------------------------- Local Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -438,8 +434,7 @@ module advance_helper_module
     !$acc data copyin( gr, gr%zt, &
     !$acc              thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac ) &
     !$acc      copyout( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc               brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc               brunt_vaisala_freq_sqd_plus ) &
+    !$acc               brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist ) &
     !$acc       create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
     !$acc               ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, stat_dry, &
     !$acc               stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, stat_dry_virtual, &
@@ -523,18 +518,6 @@ module advance_helper_module
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k=1, nz
-      do i = 1, ngrdcol
-        brunt_vaisala_freq_sqd_plus(i,k) = grav/stat_dry_virtual(i,k) &
-                  * ( ( ice_supersat_frac(i,k) * one_half + (one-ice_supersat_frac(i,k))) &
-                      * ddzt_stat_liq_zm(i,k) &
-                      + ( ice_supersat_frac(i,k) * Lv - (one-ice_supersat_frac(i,k)) *0.608*Cp)&
-                        * ddzt_rtm_zm(i,k) )
-      end do
-    end do ! k=1, gr%nz
-    !$acc end parallel loop
-
-    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
         ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
@@ -551,11 +534,10 @@ module advance_helper_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        if ( ice_supersat_frac(i,k) > zero_threshold  ) then
-          brunt_vaisala_freq_sqd_mixed(i,k) = brunt_vaisala_freq_sqd_moist(i,k)
-        else
-          brunt_vaisala_freq_sqd_mixed(i,k) = brunt_vaisala_freq_sqd_dry(i,k)
-        end if
+         brunt_vaisala_freq_sqd_mixed(i,k) = &
+             brunt_vaisala_freq_sqd_moist(i,k) + &
+                 exp( - bv_efold * ice_supersat_frac(i,k) ) * &
+                 ( brunt_vaisala_freq_sqd_dry(i,k) - brunt_vaisala_freq_sqd_moist(i,k) )
       end do
     end do
     !$acc end parallel loop
@@ -697,7 +679,6 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_mixed,&
       brunt_vaisala_freq_sqd_dry, &
       brunt_vaisala_freq_sqd_moist, &
-      brunt_vaisala_freq_sqd_plus, &
       Richardson_num, &
       fnc_Richardson, &
       fnc_Richardson_clipped, &
@@ -730,7 +711,7 @@ module advance_helper_module
 
     !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                    brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                    brunt_vaisala_freq_sqd_plus, Richardson_num, Cx_fnc_interp, &
+    !$acc                    Richardson_num, Cx_fnc_interp, &
     !$acc                    Ri_zm, ddzt_um, ddzt_vm, shear_sqd, turb_freq_sqd, Lscale_zm, &
     !$acc                    Richardson_num_clipped, Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                    fnc_Richardson_clipped, fnc_Richardson_smooth )
@@ -749,8 +730,7 @@ module advance_helper_module
                                       brunt_vaisala_freq_sqd, &         ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, &     ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist, &   ! intent(out)
-                                      brunt_vaisala_freq_sqd_plus )     ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist )    ! intent(out)
 
     Richardson_num_max = clubb_params(iRichardson_num_max)
     Richardson_num_min = clubb_params(iRichardson_num_min)

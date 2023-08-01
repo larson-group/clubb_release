@@ -4237,7 +4237,7 @@ module stats_zt_module
         iwp2_zt = k
 
         call stat_assign( var_index=iwp2_zt, var_name="wp2_zt", &
-             var_description="wp2_zt, w'^2 interpolated to thermodyamic levels", &
+             var_description="wp2_zt, w'^2 interpolated to thermodynamic levels", &
              var_units="m^2/s^2", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -4353,7 +4353,7 @@ module stats_zt_module
                                  var_name=trim( hm_type(1:2) )//"p2_zt", &
                                  var_description="<" &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
-                                 // "'^2> on thermodyamic levels (from " &
+                                 // "'^2> on thermodynamic levels (from " &
                                  // "integration over PDF) [(kg/kg)^2]", &
                                  var_units="(kg/kg)^2", &
                                  l_silhs=.false., grid_kind=stats_zt )
@@ -4364,7 +4364,7 @@ module stats_zt_module
                                  var_name=trim( hm_type(1:2) )//"p2_zt", &
                                  var_description="<" &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
-                                 // "'^2> on thermodyamic levels (from " &
+                                 // "'^2> on thermodynamic levels (from " &
                                  // "integration over PDF) [(num/kg)^2]", &
                                  var_units="(num/kg)^2", &
                                  l_silhs=.false., grid_kind=stats_zt )

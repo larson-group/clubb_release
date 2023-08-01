@@ -105,6 +105,9 @@ t_variables | character array
 
   Key variables for UWM: qcm/rcm, cloud_frac, rtm/qtm, thlm, um, vm, wp3
 
+  Note that all variables listed here must be included in the corresponding array
+  in input/stats/tuning_stats.in
+
 weight_var_nl  | real array
  The weight applied to each variable in the cost function
 
