@@ -146,13 +146,16 @@ def setUpInputs():
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
 ##                    ['clubb_c_invrs_tau_n2_xp2', 1.0, \
-##                     folder_name + 'sens0707_16_Regional.nc', \
-##                     folder_name + 'sens0707_16_Regional.nc'], \
+##                     folder_name + 'sens0707_18_Regional.nc', \
+##                     folder_name + 'sens0707_19_Regional.nc'], \
 ##                     '20220903/anvil.bmg20220630.sens723_12.ne30pg2_r05_oECv3_Regional.nc',
 ##                     '20220903/anvil.bmg20220630.sens723_13.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_bkgnd', 1.0, \
                      folder_name + 'sens0707_16_Regional.nc',
                      folder_name + 'sens0707_17_Regional.nc'], \
+                    ['clubb_c_wp2_splat', 1.0, \
+                     folder_name + 'sens0707_22_Regional.nc',
+                     folder_name + 'sens0707_23_Regional.nc'], \
                         ]
 
     # Split up the above list into parameter names, scales, and filenames.
