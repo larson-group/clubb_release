@@ -55,6 +55,10 @@ def main():
     # Global mean, NOTE PRECT is in the unit of m/s
     obsMetricValsDict = {'LWCF': 28.008, 'PRECT': 0.000000033912037, 'SWCF': -45.81}
 
+    obsMetricValsCol = np.column_stack((28.008, 0.000000033912037, -45.81))
+
+    normMetricValsCol = obsMetricValsCol
+
     # Calculate changes in parameter values needed to match metrics.
     defaultMetricValsCol, defaultBiasesCol, \
     defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals, \
@@ -72,7 +76,7 @@ def main():
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                       metricsWeights,
                       sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
-                       obsMetricValsDict)
+                      obsMetricValsCol, normMetricValsCol)
 
     # See if new global simulation output based on a linear combination
     #    of the SVD-calculated parameter values matches what we expect.
@@ -89,7 +93,7 @@ def main():
 def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                       metricsWeights,
                       sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
-                      obsMetricValsDict):
+                      obsMetricValsCol, normMetricValsCol):
     """
     Input: Information about metrics and parameter values from
             a default simulation, some sensitivity simulations, and observations.
@@ -135,10 +139,6 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
     print("\ntransformedParamsNames = ")
     print(transformedParamsNames)
-
-    # Set up a column vector of observed metrics
-    obsMetricValsCol = \
-            setupObsCol(obsMetricValsDict, metricsNames)
 
     print("\nobsMetricValsCol =")
     print(obsMetricValsCol)
@@ -227,7 +227,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     defaultMetricValsMatrix = defaultMetricValsCol @ np.ones((1,numParams))
 
     # Calculate the sensitivity matrix and the sensitivity matrix
-    # normalized by the discrepancies from observations in default simulation.
+    #     normalized by the discrepancies from observations in default simulation.
     # Use untransformed (original) parameter values.
     defaultBiasesColOrig, sensMatrixOrig, normlzdSensMatrixOrig, biasNormlzdSensMatrixOrig = \
          constructSensMatrix(sensMetricValsMatrix, sensParamValsOrigRow,
@@ -235,7 +235,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                             #defaultMetricValsMatrix, defaultParamValsOrigRow, # deriv = sens - default
                             defaultMetricValsCol,
                             np.full_like(magParamValsRow,1.0),
-                            obsMetricValsCol,
+                            obsMetricValsCol, normMetricValsCol,
                             numMetrics, numParams,
                             beVerbose=False)
 
@@ -243,7 +243,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     print(sensMatrixOrig)
 
     # Calculate the sensitivity matrix and the sensitivity matrix
-    # normalized by the discrepancies from observations in default simulation.
+    #     normalized by the discrepancies from observations in default simulation.
     # Use transformed parameter values.
     defaultBiasesCol, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix = \
          constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
@@ -251,7 +251,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                             #defaultMetricValsMatrix, defaultParamValsRow, # deriv = sens - default
                             defaultMetricValsCol,
                             magParamValsRow,
-                            obsMetricValsCol,
+                            obsMetricValsCol, normMetricValsCol,
                             numMetrics, numParams,
                             beVerbose=True)
 
@@ -263,7 +263,8 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
     # Compute dot products of  bias vector and matrix columns
     normlzdDefaultBiasesCol = ( metricsWeights * (-defaultBiasesCol) /
-                                np.abs(obsMetricValsCol) )
+                                np.abs(normMetricValsCol) )
+                                #np.abs(obsMetricValsCol) )
     augSensMatrix = np.hstack( (normlzdDefaultBiasesCol, normlzdWeightedSensMatrix) )
     augSensMatrixColNorm = normalize(augSensMatrix, axis=0, norm='l2')
     # Normalized this way, dotMatrix = cos(angle between columns).
@@ -310,7 +311,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals = \
     calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
                    sensMatrix, normlzdWeightedSensMatrix, \
-                   obsMetricValsCol, defaultBiasesCol, defaultParamValsOrigRow, \
+                   obsMetricValsCol, normMetricValsCol, defaultBiasesCol, defaultParamValsOrigRow, \
                    sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames )
 
@@ -318,7 +319,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, defaultBiasesApproxHiValsPC = \
     calcParamsSoln(svdInvrsNormlzdWeightedPC, metricsWeights, magParamValsRow, \
                    sensMatrix, normlzdWeightedSensMatrix, \
-                   obsMetricValsCol, defaultBiasesCol, defaultParamValsOrigRow, \
+                   obsMetricValsCol, normMetricValsCol, defaultBiasesCol, defaultParamValsOrigRow, \
                    sValsTruncInvNormlzdWeightedPC, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames )
 
@@ -377,7 +378,7 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                         defaultMetricValsMatrix, defaultParamValsRow,
                         defaultMetricValsCol,
                         magParamValsRow,
-                        obsMetricValsCol,
+                        obsMetricValsCol, normMetricValsCol,
                         numMetrics, numParams,
                         beVerbose):
     """
@@ -449,7 +450,8 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     # Matrix of inverse biases.
     # Used for forming normalized sensitivity derivatives.
     #pdb.set_trace()
-    invrsObsMatrix = np.reciprocal(np.abs(obsMetricValsCol)) @ np.ones((1,numParams))
+    #invrsObsMatrix = np.reciprocal(np.abs(obsMetricValsCol)) @ np.ones((1,numParams))
+    invrsObsMatrix = np.reciprocal(np.abs(normMetricValsCol)) @ np.ones((1,numParams))
 
 #    if beVerbose:
 #        print("\ninvrsBiasesMatrix =")
@@ -563,7 +565,7 @@ def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio):
 
 def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
                    sensMatrix, normlzdWeightedSensMatrix, \
-                   obsMetricValsCol, defaultBiasesCol, defaultParamValsOrigRow, \
+                   obsMetricValsCol, normMetricValsCol, defaultBiasesCol, defaultParamValsOrigRow, \
                    sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames ):
 
@@ -575,12 +577,14 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
     # dnormlzdParamsSoln = dparamsSoln / ( normalizing param value from default simulation
     #                                       (or sens sim if default param value is zero.) )
     dnormlzdParamsSoln = svdInvrsNormlzdWeighted @ \
-                      ( metricsWeights * (-defaultBiasesCol) / np.abs(obsMetricValsCol) )
+                      ( metricsWeights * (-defaultBiasesCol) / np.abs(normMetricValsCol) )
+                      #( metricsWeights * (-defaultBiasesCol) / np.abs(obsMetricValsCol) )
     # Unnormalized parameter value perturbations from the default values, delta_p
     dparamsSoln = dnormlzdParamsSoln * np.transpose(magParamValsRow)
     # defaultBiasesApprox = (forward model soln - default soln)
     defaultBiasesApprox = ( normlzdWeightedSensMatrix @ dnormlzdParamsSoln ) \
-                          * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
+                          * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
+                          #* np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
 
     # As a check, do an alternative calculation of defaultBiasesApprox based on
     #    the unnormalized, unweighted sensitivity matrix:
@@ -631,30 +635,6 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
 
     return (paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, dnormlzdParamsSoln, \
             defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals)
-
-def setupObsCol(obsMetricValsDict, metricsNames):
-    """
-    Input: A python dictionary of observed metrics.
-    Output: A column vector of observed metrics
-    """
-
-    import numpy as np
-    import pdb
-
-    # Number of metrics
-    numMetrics = len(metricsNames)
-
-    # Set up column vector of numMetrics elements containing
-    # "true" metric values from observations
-    obsMetricValsCol = np.zeros((numMetrics,1))
-    for idx in np.arange(numMetrics):
-        metricName = metricsNames[idx]
-        obsMetricValsCol[idx] = obsMetricValsDict[metricName]
-
-    print("\nobsMetricValsCol =")
-    print(obsMetricValsCol)
-
-    return obsMetricValsCol
 
 def setupDefaultMetricValsCol(metricsNames, defaultNcFilename):
     """
@@ -859,7 +839,7 @@ def calcLinSolnDiff(linSolnNcFilename, defaultNcFilename,
     return linSolnDiff
 
 def findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
-                 defaultBiasesCol, obsMetricValsCol, magParamValsRow, defaultParamValsOrigRow):
+                 defaultBiasesCol, normMetricValsCol, magParamValsRow, defaultParamValsOrigRow):
 
     import numpy as np
     from sklearn import linear_model
@@ -867,27 +847,27 @@ def findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
 
 #    ransac = linear_model.RANSACRegressor(max_trials=1000,random_state=0,
 #                                          base_estimator=linear_model.LinearRegression(), residual_threshold=None)
-#    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) )
-#    defaultBiasesApproxRansac = ransac.predict(normlzdSensMatrix) * np.abs(obsMetricValsCol)
+#    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(normMetricValsCol) )
+#    defaultBiasesApproxRansac = ransac.predict(normlzdSensMatrix) * np.abs(normMetricValsCol)
 #    dnormlzdParamsSolnRansac = np.transpose( ransac.estimator_.coef_ )
 #    ransac = linear_model.RANSACRegressor(max_trials=10000,random_state=0,
 #             base_estimator=linear_model.ElasticNet(fit_intercept=False, random_state=0, tol=1e-3,
 #                                                    l1_ratio=0.0, alpha=5),
 #                                          residual_threshold=None)
-#    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) )
+#    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(normMetricValsCol) )
 #    defaultBiasesApproxRansac = np.transpose( np.atleast_2d( ransac.predict(normlzdSensMatrix) ) ) \
-#                                * np.abs(obsMetricValsCol)
+#                                * np.abs(normMetricValsCol)
 #    dnormlzdParamsSolnRansac = np.transpose( np.atleast_2d( ransac.estimator_.coef_ ) )
 #    inlier_mask = ransac.inlier_mask_
 #    outlier_mask = np.logical_not(inlier_mask)
 
 
     ransac = linear_model.HuberRegressor(fit_intercept=False)
-    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) )
+    ransac.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(normMetricValsCol) )
     defaultBiasesApproxRansac = np.transpose( np.atleast_2d( ransac.predict(normlzdSensMatrix) ) ) \
-                                * np.abs(obsMetricValsCol)
+                                * np.abs(normMetricValsCol)
     dnormlzdParamsSolnRansac = np.transpose( np.atleast_2d( ransac.coef_ ) )
-#    defaultBiasesApproxRansac = ransac.predict(normlzdSensMatrix) * np.abs(obsMetricValsCol)
+#    defaultBiasesApproxRansac = ransac.predict(normlzdSensMatrix) * np.abs(normMetricValsCol)
 #    dnormlzdParamsSolnRansac = np.transpose( ransac.coef_ )
 
     dparamsSolnRansac = dnormlzdParamsSolnRansac * np.transpose(magParamValsRow)
@@ -910,7 +890,7 @@ def findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
             dnormlzdParamsSolnRansac, paramsSolnRansac)
 
 def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
-                 defaultBiasesCol, obsMetricValsCol, metricsWeights, \
+                 defaultBiasesCol, normMetricValsCol, metricsWeights, \
                  magParamValsRow, defaultParamValsOrigRow, \
                  normlzdCurvMatrix):
 
@@ -924,11 +904,11 @@ def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
     regr = Lasso(fit_intercept=False, random_state=0, tol=1e-10, alpha=0.01)
     #regr = LassoCV(fit_intercept=True, random_state=0, eps=1e-5, tol=1e-10, cv=metricsWeights.size)
     #print( "alpha_ = ", regr.alpha_ )
-    regr.fit(normlzdWeightedSensMatrix, -metricsWeights * defaultBiasesCol / np.abs(obsMetricValsCol) )
-    #regr.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(obsMetricValsCol) )
+    regr.fit(normlzdWeightedSensMatrix, -metricsWeights * defaultBiasesCol / np.abs(normMetricValsCol) )
+    #regr.fit(normlzdSensMatrix, -defaultBiasesCol / np.abs(normMetricValsCol) )
 
     defaultBiasesApproxElastic = np.transpose( np.atleast_2d(regr.predict(normlzdWeightedSensMatrix)) ) \
-                          * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol)
+                          * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
     dnormlzdParamsSolnElastic = np.transpose( np.atleast_2d(regr.coef_) )
     dparamsSolnElastic = dnormlzdParamsSolnElastic * np.transpose(magParamValsRow)
     paramsSolnElastic = np.transpose(defaultParamValsOrigRow) + dparamsSolnElastic
@@ -942,8 +922,8 @@ def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
     #     the normalized, weighted right-hand side.
     defaultBiasesApproxElasticNonlin = \
             normlzdWeightedSensMatrix @ dnormlzdParamsSolnElastic \
-                        * np.reciprocal(metricsWeights) * np.abs(obsMetricValsCol) \
-            + 0.5 * normlzdCurvMatrix @ (dnormlzdParamsSolnElastic**2) * np.abs(obsMetricValsCol)
+                        * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol) \
+            + 0.5 * normlzdCurvMatrix @ (dnormlzdParamsSolnElastic**2) * np.abs(normMetricValsCol)
 
     #pdb.set_trace()
 

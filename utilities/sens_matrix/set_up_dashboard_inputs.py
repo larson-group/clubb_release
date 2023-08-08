@@ -28,7 +28,7 @@ def setUpInputs():
     from itertools import chain
 
     from analyze_sensitivity_matrix import \
-            analyzeSensMatrix, setupObsCol, setupDefaultMetricValsCol, \
+            analyzeSensMatrix, setupDefaultMetricValsCol, \
             findOutliers, findParamsUsingElastic
     from test_analyzeSensMatrix import write_test_netcdf_files
 
@@ -43,65 +43,69 @@ def setUpInputs():
     # The second column is a vector of (positive) weights.  A small value de-emphasizes
     #   the corresponding metric in the fitting process.
     #   Use a large weight for global (GLB) metrics.
-    metricsNamesAndWeights = [ \
-                        ['SWCF_GLB', 16.00], \
-                        ['SWCF_DYCOMS', 1.00], \
-                        ['SWCF_HAWAII', 2.00], \
-                        ['SWCF_VOCAL', 2.00], \
-                        ['SWCF_VOCAL_near', 1.00], \
-                        ['SWCF_LBA', 1.00], \
-                        ['SWCF_WP', 1.00], \
-                        ['SWCF_EP', 1.00], \
-                        ['SWCF_NP', 1.00], \
-                        ['SWCF_SP', 1.00],  \
-##                        ['SWCF_PA', 1.01], \
-                        ['SWCF_CAF', 1.00], \
-                        ['SWCF_Namibia', 1.00], \
-                        ['SWCF_Namibia_near', 1.00], \
-                        ['LWCF_GLB', 1.00], \
-###                        ['LWCF_DYCOMS', 1.01], \
-###                        ['LWCF_HAWAII', 1.01], \
-###                        ['LWCF_VOCAL', 1.01], \
-##                        ['LWCF_LBA', 1.00], \
-##                        ['LWCF_WP', 1.00], \
-###                        ['LWCF_EP', 1.01], \
-###                        ['LWCF_NP', 1.01], \
-###                        ['LWCF_SP', 1.01], \
-####                        ['LWCF_PA',  1.01], \
-###                        ['LWCF_CAF', 1.01], \
-                        ['PRECT_GLB', 3.00], \
-##                        ['PRECT_LBA', 1.00], \
-##                        ['PRECT_WP', 1.00], \
-###                        ['PRECT_EP', 1.01], \
-###                        ['PRECT_NP', 1.01], \
-###                        ['PRECT_SP', 1.01], \
-####                        ['PRECT_PA', 1.01], \
-##                        ['PRECT_CAF', 1.00] \
-#                        ['PSL_DYCOMS', 1.e0], \
-#                        ['PSL_HAWAII', 1.e0], \
-#                        ['PSL_VOCAL', 1.e0], \
-##                        ['PSL_VOCAL_near', 1.00], \
-#                        ['PSL_LBA', 1.e0], \
-#                        ['PSL_WP', 1.e0], \
-#                        ['PSL_EP', 1.e0], \
-#                        ['PSL_NP', 1.e0], \
-#                        ['PSL_SP', 1.e0],  \
-##                        ['PSL_PA', 1.00], \
-#                        ['PSL_CAF', 1.e0], \
-##                        ['PSL_Namibia', 1.00], \
-##                        ['PSL_Namibia_near', 1.00], \
+    # The third column is a vector of normalization values for metrics.  
+    #   If a value in the 3rd column is set to -999, then the metric is simply normalized by the observed value.
+    #   Otherwise, the value in the 3rd column is itself the normalization value for the metric.  
+    metricsNamesWeightsAndNorms = [ \
+                        ['SWCF_GLB', 4.00, -999], \
+#                        ['SWCF_DYCOMS', 1.00, -999], \
+#                        ['SWCF_HAWAII', 2.00, -999], \
+#                        ['SWCF_VOCAL', 2.00, -999], \
+#                        ['SWCF_VOCAL_near', 1.00, -999], \
+#                        ['SWCF_LBA', 1.00, -999], \
+#                        ['SWCF_WP', 1.00, -999], \
+#                        ['SWCF_EP', 1.00, -999], \
+#                        ['SWCF_NP', 1.00, -999], \
+#                        ['SWCF_SP', 1.00, -999],  \
+##                        ['SWCF_PA', 1.01, -999], \
+#                        ['SWCF_CAF', 1.00, -999], \
+#                        ['SWCF_Namibia', 1.00, -999], \
+#                        ['SWCF_Namibia_near', 1.00, -999], \
+                        ['LWCF_GLB', 4.00, -999], \
+###                        ['LWCF_DYCOMS', 1.01, -999], \
+###                        ['LWCF_HAWAII', 1.01, -999], \
+###                        ['LWCF_VOCAL', 1.01, -999], \
+##                        ['LWCF_LBA', 1.00, -999], \
+##                        ['LWCF_WP', 1.00, -999], \
+###                        ['LWCF_EP', 1.01, -999], \
+###                        ['LWCF_NP', 1.01, -999], \
+###                        ['LWCF_SP', 1.01, -999], \
+####                        ['LWCF_PA',  1.01, -999], \
+###                        ['LWCF_CAF', 1.01, -999], \
+                        ['PRECT_GLB', 4.00, -999], \
+##                        ['PRECT_LBA', 1.00, -999], \
+##                        ['PRECT_WP', 1.00, -999], \
+###                        ['PRECT_EP', 1.01, -999], \
+###                        ['PRECT_NP', 1.01, -999], \
+###                        ['PRECT_SP', 1.01, -999], \
+####                        ['PRECT_PA', 1.01, -999], \
+##                        ['PRECT_CAF', 1.00, -999], \
+                        ['PSL_DYCOMS', 1.e0, 1e3], \
+                        ['PSL_HAWAII', 1.e0, 1e3], \
+                        ['PSL_VOCAL', 1.e0, 1e3], \
+##                        ['PSL_VOCAL_near', 1.00, 1e3], \
+                        ['PSL_LBA', 1.e0, 1e3], \
+                        ['PSL_WP', 1.e0, 1e3], \
+                        ['PSL_EP', 1.e0, 1e3], \
+                        ['PSL_NP', 1.e0, 1e3], \
+                        ['PSL_SP', 1.e0, 1e3],  \
+                        ['PSL_PA', 1.00, 1e3], \
+                        ['PSL_CAF', 1.e0, 1e3], \
+##                        ['PSL_Namibia', 1.00, 1e3], \
+##                        ['PSL_Namibia_near', 1.00, 1e3], \
                          ]
 
-#                        ['PRECT_DYCOMS', 0.01], \
-#                        ['PRECT_HAWAII', 0.01], \
-#                        ['PRECT_VOCAL', 0.01], \
+#                        ['PRECT_DYCOMS', 0.01, -999], \
+#                        ['PRECT_HAWAII', 0.01, -999], \
+#                        ['PRECT_VOCAL', 0.01, -999], \
 
 
     # Split up the list above into metric names and the corresponding weights.
-    dfMetricsNamesAndWeights =  \
-        pd.DataFrame( metricsNamesAndWeights, columns = ['metricsNames', 'metricsWeights'] )
-    metricsNames = dfMetricsNamesAndWeights[['metricsNames']].to_numpy().astype(str)[:,0]
-    metricsWeights = dfMetricsNamesAndWeights[['metricsWeights']].to_numpy()
+    dfMetricsNamesWeightsAndNorms =  \
+        pd.DataFrame( metricsNamesWeightsAndNorms, columns = ['metricsNames', 'metricsWeights', 'metricsNorms'] )
+    metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
+    metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
+    metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
 
     # Parameters are tunable model parameters, e.g. clubb_C8.
     # The float listed below after the parameter name is a factor that is used below for scaling plots.
@@ -198,8 +202,8 @@ def setUpInputs():
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-           folder_name + 'sens0707_29_Regional.nc'
-           #folder_name + 'sens0707_24_Regional.nc'
+           folder_name + 'sens0707_1_Regional.nc'
+           #folder_name + 'sens0707_29_Regional.nc'
            # folder_name + 'chrysalis.bmg20220630.sens1107_30.ne30pg2_r05_oECv3_Regional.nc'
 #            folder_name + 'chrysalis.bmg20220630.sens1107_23.ne30pg2_r05_oECv3_Regional.nc'
 
@@ -238,15 +242,48 @@ def setUpInputs():
 
 
     # Set up a column vector of observed metrics
-    obsMetricValsCol = setupObsCol(obsMetricValsDict, metricsNames)
+    obsMetricValsCol = setUpObsCol(obsMetricValsDict, metricsNames)
+
+    # Set up a normalization vector for metrics, normMetricValsCol.
+    # It equals the observed value when metricsNorms has the special value of -999, 
+    #     but otherwise it is set manually in metricsNorms itself.
+    normMetricValsCol = metricsNorms
+    for idx in np.arange(len(metricsNorms)):
+        if np.isclose(metricsNorms[idx],-999.0): 
+            normMetricValsCol[idx] = obsMetricValsCol[idx]
 
     return (metricsNames, metricsWeights, \
         paramsNames, paramsScales, \
         transformedParamsNames, \
         sensNcFilenames, sensNcFilenamesExt, \
         defaultNcFilename, linSolnNcFilename, \
-        obsMetricValsDict, obsMetricValsCol, \
+        obsMetricValsCol, normMetricValsCol, \
         reglrCoef)
+
+def setUpObsCol(obsMetricValsDict, metricsNames):
+    """ 
+    Input: A python dictionary of observed metrics.
+    Output: A column vector of observed metrics
+    """
+
+    import numpy as np
+    import pdb 
+
+    # Number of metrics
+    numMetrics = len(metricsNames)
+
+    # Set up column vector of numMetrics elements containing
+    # "true" metric values from observations
+    obsMetricValsCol = np.zeros((numMetrics,1))
+    for idx in np.arange(numMetrics):
+        metricName = metricsNames[idx]
+        obsMetricValsCol[idx] = obsMetricValsDict[metricName]
+
+    print("\nobsMetricValsCol =")
+    print(obsMetricValsCol)
+
+    return obsMetricValsCol
+
 
 
 #if __name__ == '__main__':
