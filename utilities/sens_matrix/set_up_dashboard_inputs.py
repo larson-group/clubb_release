@@ -56,8 +56,8 @@ def setUpInputs():
                         ['SWCF_SP', 1.00],  \
 ##                        ['SWCF_PA', 1.01], \
                         ['SWCF_CAF', 1.00], \
-                        ['SWCF_Nambian', 1.00], \
-                        ['SWCF_Nambian_near', 1.00], \
+                        ['SWCF_Namibia', 1.00], \
+                        ['SWCF_Namibia_near', 1.00], \
                         ['LWCF_GLB', 1.00], \
 ###                        ['LWCF_DYCOMS', 1.01], \
 ###                        ['LWCF_HAWAII', 1.01], \
@@ -69,7 +69,7 @@ def setUpInputs():
 ###                        ['LWCF_SP', 1.01], \
 ####                        ['LWCF_PA',  1.01], \
 ###                        ['LWCF_CAF', 1.01], \
-                        ['PRECT_GLB', 3.00] \
+                        ['PRECT_GLB', 3.00], \
 ##                        ['PRECT_LBA', 1.00], \
 ##                        ['PRECT_WP', 1.00], \
 ###                        ['PRECT_EP', 1.01], \
@@ -77,18 +77,31 @@ def setUpInputs():
 ###                        ['PRECT_SP', 1.01], \
 ####                        ['PRECT_PA', 1.01], \
 ##                        ['PRECT_CAF', 1.00] \
+#                        ['PSL_DYCOMS', 1.e0], \
+#                        ['PSL_HAWAII', 1.e0], \
+#                        ['PSL_VOCAL', 1.e0], \
+##                        ['PSL_VOCAL_near', 1.00], \
+#                        ['PSL_LBA', 1.e0], \
+#                        ['PSL_WP', 1.e0], \
+#                        ['PSL_EP', 1.e0], \
+#                        ['PSL_NP', 1.e0], \
+#                        ['PSL_SP', 1.e0],  \
+##                        ['PSL_PA', 1.00], \
+#                        ['PSL_CAF', 1.e0], \
+##                        ['PSL_Namibia', 1.00], \
+##                        ['PSL_Namibia_near', 1.00], \
                          ]
 
 #                        ['PRECT_DYCOMS', 0.01], \
 #                        ['PRECT_HAWAII', 0.01], \
 #                        ['PRECT_VOCAL', 0.01], \
 
+
     # Split up the list above into metric names and the corresponding weights.
     dfMetricsNamesAndWeights =  \
         pd.DataFrame( metricsNamesAndWeights, columns = ['metricsNames', 'metricsWeights'] )
     metricsNames = dfMetricsNamesAndWeights[['metricsNames']].to_numpy().astype(str)[:,0]
     metricsWeights = dfMetricsNamesAndWeights[['metricsWeights']].to_numpy()
-
 
     # Parameters are tunable model parameters, e.g. clubb_C8.
     # The float listed below after the parameter name is a factor that is used below for scaling plots.
@@ -97,7 +110,7 @@ def setUpInputs():
     #    up and in the other, it is perturbed down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
-    folder_name = 'Regional_files/20230720/'  # folder where regional netcdf files are stored.
+    folder_name = 'Regional_files/20230804/'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/20221120_2yr/'  # folder where regional netcdf files are stored.
     paramsNamesScalesAndFilenames = [ \
 ##                    ['clubb_c7', 1.0, \
@@ -153,9 +166,9 @@ def setUpInputs():
                     ['clubb_c_invrs_tau_bkgnd', 1.0, \
                      folder_name + 'sens0707_16_Regional.nc',
                      folder_name + 'sens0707_17_Regional.nc'], \
-                    ['clubb_c_wp2_splat', 1.0, \
-                     folder_name + 'sens0707_22_Regional.nc',
-                     folder_name + 'sens0707_23_Regional.nc'], \
+#                    ['clubb_c_wp2_splat', 1.0, \
+#                     folder_name + 'sens0707_26_Regional.nc',
+#                     folder_name + 'sens0707_27_Regional.nc'], \
                         ]
 
     # Split up the above list into parameter names, scales, and filenames.
@@ -185,7 +198,7 @@ def setUpInputs():
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-           folder_name + 'sens0707_1_Regional.nc'
+           folder_name + 'sens0707_29_Regional.nc'
            #folder_name + 'sens0707_24_Regional.nc'
            # folder_name + 'chrysalis.bmg20220630.sens1107_30.ne30pg2_r05_oECv3_Regional.nc'
 #            folder_name + 'chrysalis.bmg20220630.sens1107_23.ne30pg2_r05_oECv3_Regional.nc'
@@ -206,9 +219,23 @@ def setUpInputs():
     'LWCF_CAF': 43.99757003784179687500, 'PRECT_CAF':0.000000042313699, 'SWCF_CAF': -52.50243378, 'TMQ_CAF':36.79592514,\
     'LWCF_VOCAL': 43.99757004, 'PRECT_VOCAL':0.000000001785546, 'SWCF_VOCAL': -77.26232147, 'TMQ_VOCAL':17.59922791, \
     'LWCF_VOCAL_near': 15.4783, 'PRECT_VOCAL_near':0.0000000037719, 'SWCF_VOCAL_near': -58.4732, 'TMQ_VOCAL_near': 14.9315, \
-    'LWCF_Nambian': 12.3294, 'PRECT_Nambian':0.00000000177636 , 'SWCF_Nambian': -66.9495, 'TMQ_Nambian': 24.4823, \
-    'LWCF_Nambian_near': 10.904, 'PRECT_Nambian_near':0.00000000238369 , 'SWCF_Nambian_near': -36.1216, 'TMQ_Nambian_near': 17.5188, \
+    'LWCF_Namibia': 12.3294, 'PRECT_Namibia':0.00000000177636 , 'SWCF_Namibia': -66.9495, 'TMQ_Namibia': 24.4823, \
+    'LWCF_Namibia_near': 10.904, 'PRECT_Namibia_near':0.00000000238369 , 'SWCF_Namibia_near': -36.1216, 'TMQ_Namibia_near': 17.5188, \
+    'PSL_DYCOMS': 101868.515625, \
+    'PSL_HAWAII': 101656.578125, \
+    'PSL_VOCAL': 101668.703125, \
+    'PSL_VOCAL_near': 101766.8203125, \
+    'PSL_Namibia_near': 101741.7265625, \
+    'PSL_Namibia far': 101550.6640625, \
+    'PSL_LBA': 101052.40625, \
+    'PSL_WP':  100909.4140625, \
+    'PSL_EP':  101116.875, \
+    'PSL_SP':  100021.4921875, \
+    'PSL_NP':  101314.546875, \
+    'PSL_PA':  100990.25, \
+    'PSL_CAF': 100941.7890625
         }
+
 
     # Set up a column vector of observed metrics
     obsMetricValsCol = setupObsCol(obsMetricValsDict, metricsNames)

@@ -679,6 +679,12 @@ def setupDefaultMetricValsCol(metricsNames, defaultNcFilename):
         # Assume each metric is stored as length-1 array, rather than scalar.
         #   Hence the "[0]" at the end is needed.
         defaultMetricValsCol[idx] = f_defaultMetricsParams.variables[metricName][0]
+        #if (metricName[0:3] == 'PSL'):  # subtract 9e4 from sea-level pressure for better scaling
+        #    defaultMetricValsCol[idx] = f_defaultMetricsParams.variables[metricName][0] - 9.e4
+        #    print("metricName[0:3]=", metricName[0:3])
+        #    print("defaultMetricValsCol=", defaultMetricValsCol[idx])
+        #else:
+        #    defaultMetricValsCol[idx] = f_defaultMetricsParams.variables[metricName][0]
 
     print("\ndefaultMetricValsCol =")
     print(defaultMetricValsCol)
@@ -778,6 +784,12 @@ def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
         for row in np.arange(numMetrics):
             metricName = metricsNames[row]
             sensMetricValsMatrix[row,col] = f_sens.variables[metricName][0]
+            #if (metricName[0:3] == 'PSL'):  # subtract 9e4 from sea-level pressure for better scaling
+            #    sensMetricValsMatrix[row,col] = f_sens.variables[metricName][0] - 9.e4
+            #    print("metricName[0:3]=", metricName[0:3])
+            #    print("sensMetricValsMatrix=", sensMetricValsMatrix[row][col])
+            #else:
+            #    sensMetricValsMatrix[row,col] = f_sens.variables[metricName][0]
         f_sens.close()
 
     #sensMetricValsMatrix = np.array([[1., 2.], [3., 4.]])

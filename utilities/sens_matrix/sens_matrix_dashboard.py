@@ -68,7 +68,7 @@ def main():
           analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                             metricsWeights,
                             sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
-                             obsMetricValsDict)
+                            obsMetricValsDict)
 
 
     paramsLowValsPCBound, paramsHiValsPCBound = \
@@ -84,8 +84,12 @@ def main():
     normlzdCurvMatrix, normlzdSensMatrixPoly, threeDotFig = \
         constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
                                    metricsWeights, obsMetricValsCol, magParamValsRow, \
-                                   defaultBiasesCol, normlzdSensMatrix, \
+                                   defaultBiasesCol, \
                                    sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+
+    # For the remaining calculations, define linear sensitivity based on polynomial
+    #    (quadratic) curve fit, rather than a finite difference between simulated regional values.
+    normlzdSensMatrix = normlzdSensMatrixPoly
 
     defaultBiasesApproxNonlin, \
     dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
@@ -95,8 +99,7 @@ def main():
                          metricsWeights, obsMetricValsCol, magParamValsRow, \
                          sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
                          defaultParamValsOrigRow, \
-                         #dnormlzdParamsSoln, normlzdSensMatrix, defaultBiasesCol, \
-                         dnormlzdParamsSoln, normlzdSensMatrixPoly, defaultBiasesCol, \
+                         dnormlzdParamsSoln, normlzdSensMatrix, defaultBiasesCol, \
                          normlzdCurvMatrix, \
                          reglrCoef)
 
@@ -1058,7 +1061,6 @@ def main():
     template='plotly_white'
     )
 
-
     cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrix )
     invrsCosFactorMinusMatrix = np.power( 2. * ( 1. - cosAnglesMatrix ) , -0.5 )
     invrsCosFactorPlusMatrix = np.power( 2. * ( 1. + cosAnglesMatrix ) , -0.5 )
@@ -1258,7 +1260,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
 
 def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames,
                                metricsWeights, obsMetricValsCol, magParamValsRow,
-                               defaultBiasesCol, normlzdSensMatrix,
+                               defaultBiasesCol,
                                sens1NcFilenames, sens2NcFilenames, defaultNcFilename):
 
     """
@@ -1573,7 +1575,7 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
     print( 'normlzdCurvMatrix=', normlzdCurvMatrix )
     print( 'normlzdCurvMatrix2=', normlzdCurvMatrix2 )
     print( 'normlzdCurvMatrixPoly=', normlzdCurvMatrixPoly )
-    print( 'normlzdSensMatrix=', normlzdSensMatrix )
+    #print( 'normlzdSensMatrix=', normlzdSensMatrix )
     print( 'normlzdSensMatrixPoly=', normlzdSensMatrixPoly )
 
     return ( normlzdCurvMatrix, normlzdSensMatrixPoly, threeDotFig )
