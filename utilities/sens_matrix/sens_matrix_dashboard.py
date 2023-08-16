@@ -25,23 +25,67 @@ def main():
     from itertools import chain
 
     from analyze_sensitivity_matrix import \
-            analyzeSensMatrix, setupDefaultMetricValsCol, \
+            analyzeSensMatrix, \
             findOutliers, findParamsUsingElastic
     from test_analyzeSensMatrix import write_test_netcdf_files
-    from set_up_dashboard_inputs import setUpInputs
+    from set_up_dashboard_inputs import setUpInputs, setUpPreliminaries, \
+                                        setupDefaultMetricValsCol
 
 
     # The user should input all tuning data into file set_up_dashboard_inputs.py
-    metricsNames, metricsWeights, \
+    metricsNames, metricsWeights, metricsNorms, \
+    obsMetricValsDict, \
     paramsNames, paramsScales, \
     transformedParamsNames, \
     sensNcFilenames, sensNcFilenamesExt, \
     defaultNcFilename, linSolnNcFilename, \
-    obsMetricValsCol, normMetricValsCol, \
     reglrCoef \
     = \
         setUpInputs()
 
+    obsMetricValsCol, normMetricValsCol, \
+    defaultBiasesCol, \
+    defaultParamValsOrigRow,\
+    magParamValsRow, \
+    dnormlzdPrescribedParams \
+    = setUpPreliminaries(metricsNames, metricsNorms,
+                           obsMetricValsDict,
+                           paramsNames, transformedParamsNames,
+                           sensNcFilenames,
+                           defaultNcFilename
+                          )
+
+    #print("dnormlzdParamsSoln.T=", dnormlzdParamsSoln.T)
+    #print("normlzdSensMatrix=", normlzdSensMatrix)
+    #print("normlzdSensMatrix@dnormlzdParamsSoln=", normlzdSensMatrix @ dnormlzdParamsSoln)
+
+    # Construct numMetrics x numParams matrix of second derivatives, d2metrics/dparams2.
+    # The derivatives are normalized by observed metric values and max param values.
+    normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, normlzdOrdDparamsMin, normlzdOrdDparamsMax = \
+        constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
+                                   metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
+                                   sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+
+    # For the remaining calculations, define linear sensitivity based on polynomial
+    #    (quadratic) curve fit, rather than a finite difference between simulated regional values.
+    normlzdSensMatrix = normlzdSensMatrixPoly
+
+    #normlzdPrescribedBiasesCol = fwdFnc( dnormlzdPrescribedParams, normlzdSensMatrix, normlzdCurvMatrix )
+
+    #prescribedBiasesCol = normlzdPrescribedBiasesCol * some sort of weighting.
+
+    defaultBiasesApproxNonlin, \
+    dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
+    defaultBiasesApproxNonlin2x, \
+    defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv = \
+        solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
+                         metricsWeights, normMetricValsCol, magParamValsRow, \
+                         sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
+                         defaultParamValsOrigRow, \
+                         normlzdSensMatrix, defaultBiasesCol, \
+                         #normlzdSensMatrix, defaultBiasesCol-prescribedBiasesCol, \
+                         normlzdCurvMatrix, \
+                         reglrCoef)
 
     # Calculate changes in parameter values needed to match metrics.
     defaultMetricValsCol, defaultBiasesCol, \
@@ -62,43 +106,6 @@ def main():
                             metricsWeights,
                             sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
                             obsMetricValsCol, normMetricValsCol)
-
-
-    #print("dnormlzdParamsSoln.T=", dnormlzdParamsSoln.T)
-    #print("normlzdSensMatrix=", normlzdSensMatrix)
-    #print("normlzdSensMatrix@dnormlzdParamsSoln=", normlzdSensMatrix @ dnormlzdParamsSoln)
-
-    # Construct numMetrics x numParams matrix of second derivatives, d2metrics/dparams2.
-    # The derivatives are normalized by observed metric values and max param values.
-    normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, normlzdOrdDparamsMin, normlzdOrdDparamsMax = \
-        constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
-                                   metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
-                                   defaultBiasesCol, \
-                                   sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
-
-    threeDotFig = \
-        createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
-                               metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
-                               defaultBiasesCol,
-                               normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
-                               normlzdOrdDparamsMin, normlzdOrdDparamsMax,
-                               sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
-
-    # For the remaining calculations, define linear sensitivity based on polynomial
-    #    (quadratic) curve fit, rather than a finite difference between simulated regional values.
-    normlzdSensMatrix = normlzdSensMatrixPoly
-
-    defaultBiasesApproxNonlin, \
-    dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
-    defaultBiasesApproxNonlin2x, \
-    defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv = \
-        solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
-                         metricsWeights, normMetricValsCol, magParamValsRow, \
-                         sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
-                         defaultParamValsOrigRow, \
-                         dnormlzdParamsSoln, normlzdSensMatrix, defaultBiasesCol, \
-                         normlzdCurvMatrix, \
-                         reglrCoef)
 
     # Find best-fit params by use of the Elastic Net algorithm
     defaultBiasesApproxElastic, defaultBiasesApproxElasticNonlin, \
@@ -144,14 +151,21 @@ def main():
     ##############################################
 
 
-    # Calculate symmetric error bars on fitted parameter values, 
+    # Calculate symmetric error bars on fitted parameter values,
     #    based on difference in sensitivity matrix, i.e., based on size of nonlinear terms.
-    #    For use in figures such as paramsBarChart.  
+    #    For use in figures such as paramsBarChart.
     paramsLowValsPCBound, paramsHiValsPCBound = \
         calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
                      metricsWeights, obsMetricValsCol, normMetricValsCol,
                      magParamValsRow,
                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+
+    threeDotFig = \
+        createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
+                               metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
+                               normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
+                               normlzdOrdDparamsMin, normlzdOrdDparamsMax,
+                               sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
 
     # Set up a column vector of metric values from the default simulation
@@ -556,7 +570,7 @@ def main():
     
     dfLinNonlin_long = pd.concat([dfLin_long, dfNonlin_long], ignore_index=True)
     
-    biasLinNlIndivContrbBarFig = px.bar(dfLinNonlin_long, 
+    biasLinNlIndivContrbBarFig = px.bar(dfLinNonlin_long,
                                  facet_col='metricsNamesOrdered', y='Contribution to bias removal', 
                                  x='isNonlin', color='paramsNames') #,
               #title = """Long: Linear ++ nonlinear contributions to actual removal of regional biases""")
@@ -603,7 +617,7 @@ def main():
     #                           name='Region of improvement', mode='none',
     #                           fillcolor='rgba(253,253,150,0.7)'))
     biasVsBiasApproxScatterplot.update_xaxes(title="(defaultBiasesApproxNonlin)/obs")
-    biasVsBiasApproxScatterplot.update_yaxes(title="-defaultBiasesCol/obs")   
+    biasVsBiasApproxScatterplot.update_yaxes(title="-defaultBiasesCol/obs")
     biasVsBiasApproxScatterplot.update_traces(textposition='top center')
     biasVsBiasApproxScatterplot.update_yaxes(visible=True,zeroline=True,zerolinewidth=2,zerolinecolor='lightblue') # Plot x axis
     biasVsBiasApproxScatterplot.update_layout( width=800, height=500  )
@@ -1168,7 +1182,7 @@ def main():
         dcc.Graph( id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig ),
         dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
         dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ),
-        dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ), 
+        dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ),
         dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ),
 #  config= { 'toImageButtonOptions': { 'scale': 6 } }
         dcc.Graph( id='sensMatrixBiasFig', figure=sensMatrixBiasFig ),   
@@ -1214,7 +1228,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
                      metricsWeights, normMetricValsCol, magParamValsRow, \
                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
                      defaultParamValsOrigRow, \
-                     dnormlzdParamsSoln, normlzdSensMatrix, defaultBiasesCol, \
+                     normlzdSensMatrix, defaultBiasesCol, \
                      normlzdCurvMatrix, \
                      reglrCoef):
 
@@ -1242,7 +1256,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
 
     # Perform nonlinear optimization
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
-    dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(dnormlzdParamsSoln), \
+    dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow)), \
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
                                normlzdCurvMatrix, reglrCoef),\
@@ -1251,7 +1265,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
 
     # Check whether the minimizer actually reduces chisqd
     # Initial value of chisqd, which assumes parameter perturbations are zero
-    chisqdZero = objFnc(np.zeros_like(dnormlzdParamsSoln).T, \
+    chisqdZero = objFnc(np.zeros_like(defaultParamValsOrigRow), \
                         normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights, \
                         normlzdCurvMatrix, reglrCoef)
     # Optimized value of chisqd, which uses optimal values of parameter perturbations
@@ -1267,7 +1281,6 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
     #print("paramsSoln.T=", paramsSoln.T)
     print("paramsSolnNonlin.T=", paramsSolnNonlin.T)
     print("normlzdSensMatrix@dnPS.x.T=", normlzdSensMatrix @ dnormlzdParamsSolnNonlin)
-    print("normlzdSensMatrix@dnormlzdParamsSoln=", normlzdSensMatrix @ dnormlzdParamsSoln)
     print("normlzdDefaultBiasesCol.T=", normlzdDefaultBiasesCol.T)
     #print("normlzdSensMatrix=", normlzdSensMatrix)
 
@@ -1304,7 +1317,6 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
 
 def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames,
                                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
-                               defaultBiasesCol,
                                sens1NcFilenames, sens2NcFilenames, defaultNcFilename):
 
     """
@@ -1322,8 +1334,9 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
     #import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupDefaultMetricValsCol, setupDefaultParamVectors, \
-                                           setupSensArrays
+    from analyze_sensitivity_matrix import setupSensArrays
+    from set_up_dashboard_inputs import setupDefaultParamVectors, \
+                                        setupDefaultMetricValsCol
     from scipy.interpolate import UnivariateSpline
 
     if ( len(paramsNames) != len(sens1NcFilenames)   ):
@@ -1464,7 +1477,6 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
 
 def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
                                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
-                               defaultBiasesCol,
                                normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
                                normlzdOrdDparamsMin, normlzdOrdDparamsMax,
                                sens1NcFilenames, sens2NcFilenames, defaultNcFilename):
@@ -1484,8 +1496,9 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
     #import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupDefaultMetricValsCol, setupDefaultParamVectors, \
-                                           setupSensArrays
+    from analyze_sensitivity_matrix import setupSensArrays
+    from set_up_dashboard_inputs import setupDefaultParamVectors, \
+                                        setupDefaultMetricValsCol
     from scipy.interpolate import UnivariateSpline
 
     if ( len(paramsNames) != len(sens1NcFilenames)   ):
@@ -1621,8 +1634,9 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, par
     import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupDefaultMetricValsCol, setupDefaultParamVectors, \
+    from analyze_sensitivity_matrix import setupDefaultParamVectors, \
                                            setupSensArrays
+    from set_up_dashboard_inputs import setupDefaultMetricValsCol
 
     if ( len(paramsNames) != len(sensNcFilenames)   ):
         print("Number of parameters must equal number of netcdf files.")
@@ -1745,8 +1759,9 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
     #import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupDefaultMetricValsCol, setupDefaultParamVectors, \
-                                           setupSensArrays, calcSvdInvrs, calcParamsSoln
+    from analyze_sensitivity_matrix import setupSensArrays, calcSvdInvrs, calcParamsSoln
+    from set_up_dashboard_inputs import setupDefaultParamVectors, \
+                                        setupDefaultMetricValsCol
 
     if ( len(paramsNames) != len(sensNcFilenames)   ):
         print("Number of parameters must equal number of netcdf files.")
@@ -1839,9 +1854,9 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
     #import matplotlib.pyplot as plt
     import pdb
 
-    from analyze_sensitivity_matrix import setupDefaultMetricValsCol, setupSensArrays, \
+    from analyze_sensitivity_matrix import setupSensArrays, \
                                            constructSensMatrix, calcSvdInvrs, calcParamsSoln
-
+    from set_up_dashboard_inputs import setupDefaultMetricValsCol
 
     # Based on the numParams sensitivity simulations,
     #    set up a row vector of modified parameter values.

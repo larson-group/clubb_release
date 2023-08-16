@@ -105,6 +105,8 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     import netCDF4
     import pdb
     from sklearn.preprocessing import normalize
+    from set_up_dashboard_inputs import setupDefaultParamVectors, \
+                                        setupDefaultMetricValsCol
 
     if ( len(paramsNames) != len(sensNcFilenames)   ):
         print("Number of parameters must equal number of netcdf files.")
@@ -636,83 +638,7 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
     return (paramsSoln, paramsLowVals, paramsHiVals, dparamsSoln, dnormlzdParamsSoln, \
             defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals)
 
-def setupDefaultMetricValsCol(metricsNames, defaultNcFilename):
-    """
-    Input: Filename containing default-simulation metrics.
-    Output: Column vector of default-sim metrics.
-    """
 
-    import numpy as np
-    import netCDF4
-
-    # Number of metrics
-    numMetrics = len(metricsNames)
-
-    # Read netcdf file with metrics and parameters from default simulation
-    f_defaultMetricsParams = netCDF4.Dataset(defaultNcFilename, 'r')
-
-    # Set up column vector of numMetrics elements containing
-    # metric values from default simulation
-    defaultMetricValsCol = np.zeros((numMetrics,1))
-    for idx in np.arange(numMetrics):
-        metricName = metricsNames[idx]
-        # Assume each metric is stored as length-1 array, rather than scalar.
-        #   Hence the "[0]" at the end is needed.
-        defaultMetricValsCol[idx] = f_defaultMetricsParams.variables[metricName][0]
-        #if (metricName[0:3] == 'PSL'):  # subtract 9e4 from sea-level pressure for better scaling
-        #    defaultMetricValsCol[idx] = f_defaultMetricsParams.variables[metricName][0] - 9.e4
-        #    print("metricName[0:3]=", metricName[0:3])
-        #    print("defaultMetricValsCol=", defaultMetricValsCol[idx])
-        #else:
-        #    defaultMetricValsCol[idx] = f_defaultMetricsParams.variables[metricName][0]
-
-    print("\ndefaultMetricValsCol =")
-    print(defaultMetricValsCol)
-
-    f_defaultMetricsParams.close()
-
-    return defaultMetricValsCol
-
-
-def setupDefaultParamVectors(paramsNames, transformedParamsNames,
-                        numParams,
-                        defaultNcFilename):
-    """
-    Input: Filename containing default-simulation metrics and parameters.
-    Output: Row vector of default-sim parameter values.
-    """
-
-    import numpy as np
-    import netCDF4
-
-    # Read netcdf file with metrics and parameters from default simulation
-    f_defaultMetricsParams = netCDF4.Dataset(defaultNcFilename, 'r')
-
-    # Create row vector size numParams containing
-    # parameter values from default simulation
-    defaultParamValsOrigRow = np.zeros((1, numParams))
-    defaultParamValsRow = np.zeros((1, numParams))
-    for idx in np.arange(numParams):
-        paramName = paramsNames[idx]
-        # Assume each metric is stored as length-1 array, rather than scalar.
-        #   Hence the "[0]" at the end is needed.
-        defaultParamValsOrigRow[0,idx] = f_defaultMetricsParams.variables[paramName][0]
-        # Transform [0,1] variable to extend over range [0,infinity]
-        if paramName in transformedParamsNames:
-            #defaultParamValsRow[0,idx] = -np.log(1-defaultParamValsOrigRow[0,idx])
-            defaultParamValsRow[0,idx] = np.log(defaultParamValsOrigRow[0,idx])
-        else:
-            defaultParamValsRow[0,idx] = defaultParamValsOrigRow[0,idx]
-
-    print("\ndefaultParamValsOrigRow =")
-    print(defaultParamValsOrigRow)
-
-    print("\ndefaultParamValsRow =")
-    print(defaultParamValsRow)
-
-    f_defaultMetricsParams.close()
-
-    return (defaultParamValsRow, defaultParamValsOrigRow)
 
 def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
