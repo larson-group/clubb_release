@@ -64,12 +64,6 @@ def main():
                             obsMetricValsCol, normMetricValsCol)
 
 
-    paramsLowValsPCBound, paramsHiValsPCBound = \
-        calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
-                     metricsWeights, obsMetricValsCol, normMetricValsCol,
-                     magParamValsRow,
-                     sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
-
     #print("dnormlzdParamsSoln.T=", dnormlzdParamsSoln.T)
     #print("normlzdSensMatrix=", normlzdSensMatrix)
     #print("normlzdSensMatrix@dnormlzdParamsSoln=", normlzdSensMatrix @ dnormlzdParamsSoln)
@@ -150,7 +144,14 @@ def main():
     ##############################################
 
 
-
+    # Calculate symmetric error bars on fitted parameter values, 
+    #    based on difference in sensitivity matrix, i.e., based on size of nonlinear terms.
+    #    For use in figures such as paramsBarChart.  
+    paramsLowValsPCBound, paramsHiValsPCBound = \
+        calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
+                     metricsWeights, obsMetricValsCol, normMetricValsCol,
+                     magParamValsRow,
+                     sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
 
     # Set up a column vector of metric values from the default simulation
@@ -318,22 +319,22 @@ def main():
     df = pd.DataFrame(fracBiasesOrderMatrix,
                       index=metricsNamesOrdered,
                       columns= ['fracDefBias'])
-    biasesOrderFig = px.line(df, x=df.index, y=df.columns,
+    biasesOrderedArrowFig = px.line(df, x=df.index, y=df.columns,
               title = """<span style='color:blue'>Predicted</span> and <span style='color:red'>actual</span> removal of regional biases""")
-    biasesOrderFig.update_yaxes(title="-Normalized bias")
-    biasesOrderFig.update_xaxes(title="Regional metric")
-    biasesOrderFig.update_layout(hovermode="x")
-    biasesOrderFig.update_layout(showlegend=False)
-    biasesOrderFig.update_traces(mode='markers', line_color='black')  # Plot default biases as black dots
-    biasesOrderFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
-    biasesOrderFig.update_layout( width=700, height=500  )
+    biasesOrderedArrowFig.update_yaxes(title="-Normalized bias")
+    biasesOrderedArrowFig.update_xaxes(title="Regional metric")
+    biasesOrderedArrowFig.update_layout(hovermode="x")
+    biasesOrderedArrowFig.update_layout(showlegend=False)
+    biasesOrderedArrowFig.update_traces(mode='markers', line_color='black')  # Plot default biases as black dots
+    biasesOrderedArrowFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    biasesOrderedArrowFig.update_layout( width=700, height=500  )
     # Now plot an arrow for each region that points from default-run bias to new bias after tuning
     xArrow = np.arange(len(metricsNamesOrdered)) # x-coordinate of arrows
     yArrow = -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
     gap = 0.2  # horizontal spacing between arrows
     # Plot error bar on prediction arrow.  Bar runs between 0- and 2x-curvature solns.
     for i, item in enumerate(metricsNamesOrdered):
-        biasesOrderFig.add_annotation(
+        biasesOrderedArrowFig.add_annotation(
         x =  xArrow[i]-gap,  # ith arrow's head
         # ith arrow's head:
         y = (-defaultBiasesApproxNonlinNoCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(normMetricValsCol[metricsSensOrdered[i],0]),
@@ -352,11 +353,11 @@ def main():
         arrowwidth=6,
         arrowcolor='lightskyblue' # https://stackoverflow.com/questions/72496150/user-friendly-names-for-plotly-css-colors
 	    )
-    #biasesOrderFig.add_scatter(x=df.index, y=df.columns, line_color='pink')  # attempt to make black dot appear on top
-    biasesOrderFig.update_traces(mode='markers', line_color='black')
+    #biasesOrderedArrowFig.add_scatter(x=df.index, y=df.columns, line_color='pink')  # attempt to make black dot appear on top
+    biasesOrderedArrowFig.update_traces(mode='markers', line_color='black')
     # Plot arrows showing the tuner's nonlinear predicted bias removal
     for i, item in enumerate(metricsNamesOrdered):
-        biasesOrderFig.add_annotation(
+        biasesOrderedArrowFig.add_annotation(
         x=  xArrow[i] - gap,  # ith arrow's head
         # ith arrow's head:
         y= (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(normMetricValsCol[metricsSensOrdered[i],0]),
@@ -375,22 +376,22 @@ def main():
         arrowcolor='blue'
         )
     # Add a hand-made legend
-    biasesOrderFig.add_annotation(text='Tuner prediction of bias removal',
+    biasesOrderedArrowFig.add_annotation(text='Tuner prediction of bias removal',
                                   font=dict(color='blue'),
                                   align='left', xref='paper', yref='paper', 
                                   x=0.05, y=0.98, showarrow=False)
-    biasesOrderFig.add_annotation(text='Error bar on tuner prediction',
+    biasesOrderedArrowFig.add_annotation(text='Error bar on tuner prediction',
                                   font=dict(color='skyblue'),
                                   align='left', xref='paper', yref='paper', 
                                   x=0.05, y=0.91, showarrow=False)
-    biasesOrderFig.add_annotation(text='Realized E3SM bias removal',
+    biasesOrderedArrowFig.add_annotation(text='Realized E3SM bias removal',
                                   font=dict(color='red'),  # keep E3SM legend 
                                   #font=dict(color='rgba(255,0,0,0.0)'), # omit E3SM legend
                                   align='left', xref='paper', yref='paper', 
                                   x=0.05, y=0.84, showarrow=False)
     # Plot arrows showing the bias removal of E3SM's solution
     for i, item in enumerate(metricsNamesOrdered):
-        biasesOrderFig.add_annotation(
+        biasesOrderedArrowFig.add_annotation(
         x=  xArrow[i]+gap,  # ith arrow's head
         # ith arrow's head:
         y= (-linSolnBiasesCol-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(normMetricValsCol[metricsSensOrdered[i],0]),
@@ -410,7 +411,7 @@ def main():
 	    )
 #     # Plot 0-curvature error bars on prediction arrow
 #     for i, item in enumerate(metricsNamesOrdered):
-#         biasesOrderFig.add_annotation(
+#         biasesOrderedArrowFig.add_annotation(
 #         x =  xArrow[i]-gap,  # ith arrow's head
 #         # ith arrow's head:
 #         y = (-defaultBiasesApproxNonlinNoCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(normMetricValsCol[metricsSensOrdered[i],0]),
@@ -420,7 +421,7 @@ def main():
 # 	    )
 #     # Plot 2x-curvature error bars on prediction arrow
 #     for i, item in enumerate(metricsNamesOrdered):
-#         biasesOrderFig.add_annotation(
+#         biasesOrderedArrowFig.add_annotation(
 #         x =  xArrow[i]-gap,  # ith arrow's head
 #         # ith arrow's head:
 #         y = (-defaultBiasesApproxNonlin2xCurv-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(normMetricValsCol[metricsSensOrdered[i],0]),
@@ -430,12 +431,12 @@ def main():
 # 	    )               
 
 
-    #biasesOrderFig.add_trace(go.Scatter(x=xArrow, y=yArrow,
+    #biasesOrderedArrowFig.add_trace(go.Scatter(x=xArrow, y=yArrow,
     #                      name='Region of improvement', mode='markers',
     #                       marker=dict(color='green', size=14)))
     #pdb.set_trace()
 
-    #biasesOrderFig.write_image('biasesOrderFig.png', scale=6)
+    #biasesOrderedArrowFig.write_image('biasesOrderedArrowFig.png', scale=6)
 
     # Create plot showing how well the regional biases are actually removed
     metricsSens = np.linalg.norm(normlzdWeightedSensMatrix, axis=1) # measure of sensitivity of each metric
@@ -505,14 +506,14 @@ def main():
     df = pd.DataFrame(-1*curvParamsMatrixOrdered + -1*normlzdSensParamsMatrixOrdered,
                       index=metricsNamesOrdered,
                       columns=paramsNames)
-    biasContrNLOrderFig = px.bar(df, x=df.index, y=df.columns,
+    biasTotContrbBarFig = px.bar(df, x=df.index, y=df.columns,
               title = """Linear + nonlinear contributions of parameters to actual removal of regional biases""")
-    biasContrNLOrderFig.update_yaxes(title="Contribution to bias removal")
-    biasContrNLOrderFig.update_xaxes(title="Regional metric")
-    biasContrNLOrderFig.update_layout(hovermode="x")
-    biasContrNLOrderFig.update_layout(showlegend=True)
-    biasContrNLOrderFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
-    biasContrNLOrderFig.update_layout( width=800, height=500  )
+    biasTotContrbBarFig.update_yaxes(title="Contribution to bias removal")
+    biasTotContrbBarFig.update_xaxes(title="Regional metric")
+    biasTotContrbBarFig.update_layout(hovermode="x")
+    biasTotContrbBarFig.update_layout(showlegend=True)
+    biasTotContrbBarFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    biasTotContrbBarFig.update_layout( width=800, height=500  )
 
 
 
@@ -522,8 +523,8 @@ def main():
     dfLin = pd.DataFrame(-1*normlzdSensParamsMatrixOrdered,
                       index=metricsNamesOrdered,
                       columns=paramsNames)
-    # biasContrGroupedFig = go.Figure()
-    # biasContrGroupedFig.add_trace( go.Bar(x=df.index, y=list(curvParamsMatrixOrdered[:,2:3])) )
+    # biasLinNlIndivContrbBarFig = go.Figure()
+    # biasLinNlIndivContrbBarFig.add_trace( go.Bar(x=df.index, y=list(curvParamsMatrixOrdered[:,2:3])) )
     #df_long = pd.wide_to_long( df, i=df.index, j=df.columns, stubnames=[''] )
     dfLin = dfLin.reset_index()
     dfLin.rename(columns = {'index':'metricsNamesOrdered'}, inplace = True)
@@ -539,8 +540,8 @@ def main():
     dfNonlin = pd.DataFrame(-1*curvParamsMatrixOrdered,
                       index=metricsNamesOrdered,
                       columns=paramsNames)
-    # biasContrGroupedFig = go.Figure()
-    # biasContrGroupedFig.add_trace( go.Bar(x=df.index, y=list(curvParamsMatrixOrdered[:,2:3])) )
+    # biasLinNlIndivContrbBarFig = go.Figure()
+    # biasLinNlIndivContrbBarFig.add_trace( go.Bar(x=df.index, y=list(curvParamsMatrixOrdered[:,2:3])) )
     #df_long = pd.wide_to_long( df, i=df.index, j=df.columns, stubnames=[''] )
     dfNonlin = dfNonlin.reset_index()
     dfNonlin.rename(columns = {'index':'metricsNamesOrdered'}, inplace = True)
@@ -555,29 +556,29 @@ def main():
     
     dfLinNonlin_long = pd.concat([dfLin_long, dfNonlin_long], ignore_index=True)
     
-    biasContrGroupedFig = px.bar(dfLinNonlin_long, 
+    biasLinNlIndivContrbBarFig = px.bar(dfLinNonlin_long, 
                                  facet_col='metricsNamesOrdered', y='Contribution to bias removal', 
                                  x='isNonlin', color='paramsNames') #,
               #title = """Long: Linear ++ nonlinear contributions to actual removal of regional biases""")
-    #biasContrGroupedFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
-    #biasContrGroupedFig.update_xaxes(title="Regional metric")
-    ##biasContrGroupedFig.update_xaxes(visible=False)
-    ##biasContrGroupedFig.update_yaxes(visible=False)
-    biasContrGroupedFig.update_layout(hovermode="x")
-    biasContrGroupedFig.update_layout(showlegend=True)
-    ##biasContrGroupedFig.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
-    #biasContrGroupedFig.for_each_annotation(lambda a: a.update(text=''))
-    biasContrGroupedFig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-    biasContrGroupedFig.update_annotations(textangle=-90)
-    biasContrGroupedFig.update_layout(margin = dict(t = 160))
-    for axis in biasContrGroupedFig.layout:
-        #if type(biasContrGroupedFig.layout[axis]) == go.layout.YAxis:
-        #    biasContrGroupedFig.layout[axis].title.text = 'Contribution to bias removal'
-        if type(biasContrGroupedFig.layout[axis]) == go.layout.XAxis:
-            biasContrGroupedFig.layout[axis].title.text = ''
-    #biasContrGroupedFig.layout.title.text = ''
-    #biasContrGroupedFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
-    biasContrGroupedFig.update_layout( width=1000, height=450  )
+    #biasLinNlIndivContrbBarFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
+    #biasLinNlIndivContrbBarFig.update_xaxes(title="Regional metric")
+    ##biasLinNlIndivContrbBarFig.update_xaxes(visible=False)
+    ##biasLinNlIndivContrbBarFig.update_yaxes(visible=False)
+    biasLinNlIndivContrbBarFig.update_layout(hovermode="x")
+    biasLinNlIndivContrbBarFig.update_layout(showlegend=True)
+    ##biasLinNlIndivContrbBarFig.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
+    #biasLinNlIndivContrbBarFig.for_each_annotation(lambda a: a.update(text=''))
+    biasLinNlIndivContrbBarFig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+    biasLinNlIndivContrbBarFig.update_annotations(textangle=-90)
+    biasLinNlIndivContrbBarFig.update_layout(margin = dict(t = 160))
+    for axis in biasLinNlIndivContrbBarFig.layout:
+        #if type(biasLinNlIndivContrbBarFig.layout[axis]) == go.layout.YAxis:
+        #    biasLinNlIndivContrbBarFig.layout[axis].title.text = 'Contribution to bias removal'
+        if type(biasLinNlIndivContrbBarFig.layout[axis]) == go.layout.XAxis:
+            biasLinNlIndivContrbBarFig.layout[axis].title.text = ''
+    #biasLinNlIndivContrbBarFig.layout.title.text = ''
+    #biasLinNlIndivContrbBarFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    biasLinNlIndivContrbBarFig.update_layout( width=1000, height=450  )
     #print("curvParams =", -1*curvParamsMatrixOrdered)
     #print("normlzdSens =", -1*normlzdSensParamsMatrixOrdered)
     
@@ -595,18 +596,18 @@ def main():
                                           text=metricsNames, title="Bias approx vs bias" )
     biasSensDirMatrixOneOneLine = px.line(df, x="bias", y="bias")
     #biasSensDirMatrixOneMOneLine = px.line(df, x="bias", y=-df.loc[:,"bias"])
-    biasSensDirMatrixScatterFig = go.Figure(data=biasSensDirMatrixScatter.data
+    biasVsBiasApproxScatterplot = go.Figure(data=biasSensDirMatrixScatter.data
                                               + biasSensDirMatrixOneOneLine.data)
     #biasRange = (max(df.loc[:,"bias"]), min(df.loc[:,"bias"]))
-    #biasSensDirMatrixScatterFig.add_trace(go.Scatter(x=biasRange, y=biasRange, fill='tozeroy',
+    #biasVsBiasApproxScatterplot.add_trace(go.Scatter(x=biasRange, y=biasRange, fill='tozeroy',
     #                           name='Region of improvement', mode='none',
     #                           fillcolor='rgba(253,253,150,0.7)'))
-    biasSensDirMatrixScatterFig.update_xaxes(title="(defaultBiasesApproxNonlin)/obs")
-    biasSensDirMatrixScatterFig.update_yaxes(title="-defaultBiasesCol/obs")   
-    biasSensDirMatrixScatterFig.update_traces(textposition='top center')
-    biasSensDirMatrixScatterFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=2,zerolinecolor='lightblue') # Plot x axis
-    biasSensDirMatrixScatterFig.update_layout( width=800, height=500  )
-    biasSensDirMatrixScatterFig.update_layout(title="Bias approx vs bias")
+    biasVsBiasApproxScatterplot.update_xaxes(title="(defaultBiasesApproxNonlin)/obs")
+    biasVsBiasApproxScatterplot.update_yaxes(title="-defaultBiasesCol/obs")   
+    biasVsBiasApproxScatterplot.update_traces(textposition='top center')
+    biasVsBiasApproxScatterplot.update_yaxes(visible=True,zeroline=True,zerolinewidth=2,zerolinecolor='lightblue') # Plot x axis
+    biasVsBiasApproxScatterplot.update_layout( width=800, height=500  )
+    biasVsBiasApproxScatterplot.update_layout(title="Bias approx vs bias")
     #normlzdSensMatrixColsFig.layout.legend.title = "Parameter"
     #pdb.set_trace()
 
@@ -696,14 +697,14 @@ def main():
                        'default tuning': -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0]),
     #                   'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(normMetricValsCol[:,0])
                       }, index=metricsNames )
-    biasesVsSensFig = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
+    biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
                                  text=metricsNames, 
                                  title = """Regional biases vs. magnitude of sensitivity.""")
-    biasesVsSensFig.update_yaxes(title="Regional biases")
-    biasesVsSensFig.update_xaxes(title="Magnitude of sensitivity of regional metrics to parameter changes")
-    biasesVsSensFig.update_layout(showlegend=False)
-    biasesVsSensFig.update_layout(hovermode="x")
-    biasesVsSensFig.update_layout( width=700, height=500  )
+    biasesVsSensMagScatterplot.update_yaxes(title="Regional biases")
+    biasesVsSensMagScatterplot.update_xaxes(title="Magnitude of sensitivity of regional metrics to parameter changes")
+    biasesVsSensMagScatterplot.update_layout(showlegend=False)
+    biasesVsSensMagScatterplot.update_layout(hovermode="x")
+    biasesVsSensMagScatterplot.update_layout( width=700, height=500  )
 
     # Compute length of arrows between default and tuned biases
     #metricsNamesPadded = ",,".join(metricsNames).split(",")
@@ -899,34 +900,34 @@ def main():
                   index=paramsAbbrv, columns=["Default plus error bars"] )
     df["err_minus"] = ( defaultParamValsOrigRow[0,:] -  paramsLowValsPCBound[:,0] ) * paramsScales
     df["err_plus"]  = ( paramsHiValsPCBound[:,0] - defaultParamValsOrigRow[0,:] ) * paramsScales
-    paramsBar = px.scatter(df, x=df.index, y=df.columns,
+    paramsBarChart = px.scatter(df, x=df.index, y=df.columns,
               error_y="err_plus", error_y_minus="err_minus",
               title =  """Best-fit parameter values""" )
-    paramsBar.update_traces( go.Scatter(
+    paramsBarChart.update_traces( go.Scatter(
                             mode='markers',
                             marker=dict(color='black', size=14),
                             error_y=dict( color='black', thickness=2, width=10 )
                                     ))
-    #paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsLowValsPCBound[:,0]*paramsScales,
+    #paramsBarChart.add_trace(go.Scatter(x=paramsNames, y=paramsLowValsPCBound[:,0]*paramsScales,
     #                               name=r'$paramsSolnPC - \sigma$',
     #                               line=dict(color='white', width=0), mode='lines', showlegend=False))
-    #paramsBar.add_trace(go.Scatter(x=paramsNames, y=paramsHiValsPCBound[:,0]*paramsScales, fill='tonexty',
+    #paramsBarChart.add_trace(go.Scatter(x=paramsNames, y=paramsHiValsPCBound[:,0]*paramsScales, fill='tonexty',
     #                           name='Default Parameter Values +- sigma', mode='none',
     #                               fillcolor='rgba(253,253,150,1.0)'))
-    #paramsBar.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:]*paramsScales,
+    #paramsBarChart.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:]*paramsScales,
     #                               name='Default Parameter Values', line=dict(color='black', width=6) ))
-    paramsBar.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSoln[:,0]*paramsScales,
+    paramsBarChart.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSoln[:,0]*paramsScales,
                                    mode='markers',
                                    marker=dict(color='green', size=8),
                                    name='Linear regression, |dp|=' 
                                        + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSoln)) ))
-    paramsBar.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnNonlin[:,0]*paramsScales,
+    paramsBarChart.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnNonlin[:,0]*paramsScales,
                                    mode='markers',
                                    marker_symbol='x',
                                    marker=dict(color='orange',  size=12),
                                    name='paramsSolnNonlin, |dpPC|='
                                        + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnNonlin)) ))
-    paramsBar.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnElastic[:,0]*paramsScales,
+    paramsBarChart.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnElastic[:,0]*paramsScales,
                                    mode='markers',
                                    marker_symbol='square',
                                    marker=dict(color='cyan', size=8),
@@ -936,10 +937,10 @@ def main():
     #paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnPCBound[:,0]*paramsScales,
     #                                name='paramsSolnPCBound, |dpBound|='
     #                               + '{:.2e}'.format(0.0) ))
-    paramsBar.update_yaxes(title="User-scaled parameter value")
-    paramsBar.update_xaxes(title="Parameter Name")
-    paramsBar.update_layout(hovermode="x")
-    paramsBar.update_layout( width=1000, height=500  )
+    paramsBarChart.update_yaxes(title="User-scaled parameter value")
+    paramsBarChart.update_xaxes(title="Parameter Name")
+    paramsBarChart.update_layout(hovermode="x")
+    paramsBarChart.update_layout( width=1000, height=500  )
 
 
     # Plot the parameter values recommended by SVD.
@@ -1047,14 +1048,14 @@ def main():
     #print("maskedAngles =", maskedRoundedCosAnglesMatrix)
     #print("cosAnglesMatrix =", cosAnglesMatrix)
     #print("upTriMask =", upTriMask)
-    corrArrayFig = ff.create_annotated_heatmap(
+    metricsCorrArrayFig = ff.create_annotated_heatmap(
                    z=df_mask.to_numpy(),
                    x=df_mask.columns.tolist(),
                    y=df_mask.columns.tolist(),
                    colorscale=px.colors.diverging.balance,
                    showscale=True, ygap=1, xgap=1
                    )
-    #corrArrayFig = go.Figure(data=go.Heatmap(
+    #metricsCorrArrayFig = go.Figure(data=go.Heatmap(
     #                z=roundedCosAnglesMatrix,  
     ##                labels=dict(x="Metrics", y="Metrics")x=['SWCF_GLB', 'SWCF_DYCOMS', 'SWCF_HAWAII', 'SWCF_VOCAL', 'SWCF_VOCAL_near', 'SWCF_LBA', 'SWCF_WP', 'SWCF_EP', 'SWCF_NP', 'SWCF_SP', 'SWCF_CAF', 'SWCF_Nambian', 'SWCF_Nambian_near', 'LWCF_GLB', 'PRECT_GLB'])
     ##                 labels=dict(x="hullo")
@@ -1062,15 +1063,15 @@ def main():
     #                y=metricsNames.tolist() )
     ##                text_auto=True  )
     #                )
-    #    corrArrayFig = px.imshow(
+    #    metricsCorrArrayFig = px.imshow(
     #                   img=roundedCosAnglesMatrix,
     #                   x=metricsNames.tolist(),
     #                   y=metricsNames.tolist(),
     #                   color_continuous_scale=px.colors.diverging.balance
     #                    )
-    #    corrArrayFig.update_traces(text=roundedCosAnglesMatrix)
-    corrArrayFig.update_xaxes(side="bottom")
-    corrArrayFig.update_layout(
+    #    metricsCorrArrayFig.update_traces(text=roundedCosAnglesMatrix)
+    metricsCorrArrayFig.update_xaxes(side="bottom")
+    metricsCorrArrayFig.update_layout(
     title_text='cos(angle) among metrics (i.e., rows of sens matrix)', 
     title_x=0.5, 
     width=800, 
@@ -1092,16 +1093,16 @@ def main():
                   columns=np.concatenate((paramsNames,['bias vector'])))
     upTriMask = np.logical_not( np.tril(np.ones_like(roundedCosAnglesMatrix, dtype=bool)) )
     df_mask = df.mask(upTriMask)
-    corrParamsArrayFig = ff.create_annotated_heatmap(
+    paramsCorrArrayFig = ff.create_annotated_heatmap(
                    z=df_mask.to_numpy(),
                    x=df_mask.columns.tolist(),
                    y=df_mask.columns.tolist(),
                    colorscale=px.colors.diverging.balance,
                    showscale=True, ygap=1, xgap=1
                    )
-    corrParamsArrayFig.update_xaxes(side="bottom")
-    corrParamsArrayFig.update_layout(
-    title_text='cos(angle) among metrics (i.e., rows of sens matrix)',
+    paramsCorrArrayFig.update_xaxes(side="bottom")
+    paramsCorrArrayFig.update_layout(
+    title_text='cos(angle) among parameters (i.e., columns of sens matrix)',
     title_x=0.5,
     width=800,
     height=700,
@@ -1163,17 +1164,16 @@ def main():
 
         html.Div(children=''' '''),
         
-        dcc.Graph( id='paramsBar', figure=paramsBar ),
-        dcc.Graph( id='biasesOrderFig', figure=biasesOrderFig ),
-        dcc.Graph( id='biasContrNLOrderFig', figure=biasContrNLOrderFig ),
-        dcc.Graph( id='biasContrGroupedFig', figure=biasContrGroupedFig ),
-        dcc.Graph( id='biasesVsSensFig', figure=biasesVsSensFig, 
+        dcc.Graph( id='paramsBarChart', figure=paramsBarChart ),
+        dcc.Graph( id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig ),
+        dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
+        dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ),
+        dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ), 
+        dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ),
 #  config= { 'toImageButtonOptions': { 'scale': 6 } }
-                   ),
         dcc.Graph( id='sensMatrixBiasFig', figure=sensMatrixBiasFig ),   
-        dcc.Graph( id='corrArrayFig', figure=corrArrayFig ),
-        dcc.Graph( id='corrParamsArrayFig', figure=corrParamsArrayFig ),
-        dcc.Graph( id='biasSensDirScatterFig', figure=biasSensDirMatrixScatterFig ),
+        dcc.Graph( id='paramsCorrArrayFig', figure=paramsCorrArrayFig ),
+        dcc.Graph( id='metricsCorrArrayFig', figure=metricsCorrArrayFig ),
         dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ),
         dcc.Graph( id='threeDotFig', figure=threeDotFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
