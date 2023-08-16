@@ -43,13 +43,6 @@ def main():
         setUpInputs()
 
 
-    # Estimate non-linearity of the global model to perturbations in parameter values.
-    # To do so, calculate radius of curvature of the three points from the default simulation
-    #   and the two sensitivity simulations.
-    #calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, paramsScales,
-    #                      metricsWeights, obsMetricValsCol,
-    #                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
-
     # Calculate changes in parameter values needed to match metrics.
     defaultMetricValsCol, defaultBiasesCol, \
     defaultBiasesApprox, defaultBiasesApproxLowVals, defaultBiasesApproxHiVals, \
@@ -81,11 +74,21 @@ def main():
     #print("normlzdSensMatrix=", normlzdSensMatrix)
     #print("normlzdSensMatrix@dnormlzdParamsSoln=", normlzdSensMatrix @ dnormlzdParamsSoln)
 
-    normlzdCurvMatrix, normlzdSensMatrixPoly, threeDotFig = \
+    # Construct numMetrics x numParams matrix of second derivatives, d2metrics/dparams2.
+    # The derivatives are normalized by observed metric values and max param values.
+    normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, normlzdOrdDparamsMin, normlzdOrdDparamsMax = \
         constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
                                    metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
                                    defaultBiasesCol, \
                                    sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+
+    threeDotFig = \
+        createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
+                               metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
+                               defaultBiasesCol,
+                               normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
+                               normlzdOrdDparamsMin, normlzdOrdDparamsMax,
+                               sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
     # For the remaining calculations, define linear sensitivity based on polynomial
     #    (quadratic) curve fit, rather than a finite difference between simulated regional values.
@@ -103,18 +106,6 @@ def main():
                          normlzdCurvMatrix, \
                          reglrCoef)
 
-    # Create scatterplot to look at outliers
-    #createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, normMetricValsCol, metricsNames, paramsNames)
-
-    ## Find outliers by use of the ransac algorithm
-    #outlier_mask, defaultBiasesApproxRansac, normlzdWeightedDefaultBiasesApproxRansac, \
-    #dnormlzdParamsSolnRansac, paramsSolnRansac = \
-    #    findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
-    #                 defaultBiasesCol, normMetricValsCol, magParamValsRow, defaultParamValsOrigRow)
-    #print( "ransac_outliers = ", metricsNames[outlier_mask] )
-    #print( "ransac_inliers = ", metricsNames[~outlier_mask] )
-    ##pdb.set_trace()
-
     # Find best-fit params by use of the Elastic Net algorithm
     defaultBiasesApproxElastic, defaultBiasesApproxElasticNonlin, \
     dnormlzdParamsSolnElastic, paramsSolnElastic = \
@@ -130,6 +121,37 @@ def main():
     print("defaultBiasesApproxElasticCheck = ", defaultBiasesApproxElasticCheck)
 
     #pdb.set_trace()
+
+    # Estimate non-linearity of the global model to perturbations in parameter values.
+    # To do so, calculate radius of curvature of the three points from the default simulation
+    #   and the two sensitivity simulations.
+    #calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, paramsScales,
+    #                      metricsWeights, obsMetricValsCol,
+    #                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+
+    # Create scatterplot to look at outliers
+    #createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, normMetricValsCol, metricsNames, paramsNames)
+
+    ## Find outliers by use of the ransac algorithm
+    #outlier_mask, defaultBiasesApproxRansac, normlzdWeightedDefaultBiasesApproxRansac, \
+    #dnormlzdParamsSolnRansac, paramsSolnRansac = \
+    #    findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
+    #                 defaultBiasesCol, normMetricValsCol, magParamValsRow, defaultParamValsOrigRow)
+    #print( "ransac_outliers = ", metricsNames[outlier_mask] )
+    #print( "ransac_inliers = ", metricsNames[~outlier_mask] )
+    ##pdb.set_trace()
+
+
+
+    ##############################################
+    #
+    #    Create plots
+    #
+    ##############################################
+
+
+
+
 
     # Set up a column vector of metric values from the default simulation
     defaultMetricValsCol = setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
@@ -1061,6 +1083,36 @@ def main():
     template='plotly_white'
     )
 
+    # Create color-coded matrix that displays correlations among parameter vectors
+    normlzdSensMatrixConcatBiases = np.hstack((normlzdSensMatrix, normlzdDefaultBiasesCol))
+    cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixConcatBiases.T )
+    roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
+    df = pd.DataFrame(roundedCosAnglesMatrix,
+                  index=np.concatenate((paramsNames,['bias vector'])),
+                  columns=np.concatenate((paramsNames,['bias vector'])))
+    upTriMask = np.logical_not( np.tril(np.ones_like(roundedCosAnglesMatrix, dtype=bool)) )
+    df_mask = df.mask(upTriMask)
+    corrParamsArrayFig = ff.create_annotated_heatmap(
+                   z=df_mask.to_numpy(),
+                   x=df_mask.columns.tolist(),
+                   y=df_mask.columns.tolist(),
+                   colorscale=px.colors.diverging.balance,
+                   showscale=True, ygap=1, xgap=1
+                   )
+    corrParamsArrayFig.update_xaxes(side="bottom")
+    corrParamsArrayFig.update_layout(
+    title_text='cos(angle) among metrics (i.e., rows of sens matrix)',
+    title_x=0.5,
+    width=800,
+    height=700,
+    xaxis_showgrid=False,
+    yaxis_showgrid=False,
+    xaxis_zeroline=False,
+    yaxis_zeroline=False,
+    yaxis_autorange='reversed',
+    template='plotly_white'
+    )
+
     cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrix )
     invrsCosFactorMinusMatrix = np.power( 2. * ( 1. - cosAnglesMatrix ) , -0.5 )
     invrsCosFactorPlusMatrix = np.power( 2. * ( 1. + cosAnglesMatrix ) , -0.5 )
@@ -1115,30 +1167,29 @@ def main():
         dcc.Graph( id='biasesOrderFig', figure=biasesOrderFig ),
         dcc.Graph( id='biasContrNLOrderFig', figure=biasContrNLOrderFig ),
         dcc.Graph( id='biasContrGroupedFig', figure=biasContrGroupedFig ),
-        
-        #dcc.Graph( id='paramsFig', figure=paramsFig ),
-        #dcc.Graph( id='biasesFig', figure=biasesFig ),
-        #dcc.Graph( id='biasContrOrderFig', figure=biasContrOrderFig ),
-
         dcc.Graph( id='biasesVsSensFig', figure=biasesVsSensFig, 
 #  config= { 'toImageButtonOptions': { 'scale': 6 } }
                    ),
         dcc.Graph( id='sensMatrixBiasFig', figure=sensMatrixBiasFig ),   
         dcc.Graph( id='corrArrayFig', figure=corrArrayFig ),
-     
-
+        dcc.Graph( id='corrParamsArrayFig', figure=corrParamsArrayFig ),
         dcc.Graph( id='biasSensDirScatterFig', figure=biasSensDirMatrixScatterFig ),
         dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ),
         dcc.Graph( id='threeDotFig', figure=threeDotFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
         dcc.Graph( id='dpMinScatterFig', figure=dpMinMatrixScatterFig ),
         dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ),
-        #dcc.Graph( id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig ),
         dcc.Graph( id='residVsBiasFig', figure=residVsBiasFig ),
         dcc.Graph( id='diffBiasesVsSensFig', figure=diffBiasesVsSensFig ),
         dcc.Graph( id='relBiasesVsSensFig', figure=relBiasesVsSensFig ),
         dcc.Graph( id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig ),
         dcc.Graph( id='normlzdSensMatrixRowsFig', figure=normlzdSensMatrixRowsFig ),
+ 
+        #dcc.Graph( id='paramsFig', figure=paramsFig ),
+        #dcc.Graph( id='biasesFig', figure=biasesFig ),
+        #dcc.Graph( id='biasContrOrderFig', figure=biasContrOrderFig ),
+        #dcc.Graph( id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig ),
+
         #dcc.Graph( id='vhNormlzdColsFig', figure=vhNormlzdColsFig ),
         #dcc.Graph( id='uNormlzdWeightedColsFig', figure=uNormlzdWeightedColsFig ),
         #dcc.Graph( id='uNormlzdColsFig', figure=uNormlzdColsFig ),
@@ -1171,16 +1222,10 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
     import pdb
     from scipy.optimize import minimize
 
-    # Construct numMetrics x numParams matrix of second derivatives, d2metrics/dparams2.
-    # The derivatives are normalized by observed metric values and max param values.
-    #normlzdCurvMatrix, normlzdSensMatrixPoly, threeDotFig = \
-    #    constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
-    #                               metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
-    #                               sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
-
     # Define objective function that is to be minimized.
     def objFnc(dnormlzdParams, normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
                normlzdCurvMatrix, reglrCoef):
+
         import numpy as np
         import pdb
 
@@ -1191,7 +1236,6 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
                                 , ord=2 \
                                )**1  \
                 + reglrCoef * np.linalg.norm( dnormlzdParams, ord=1 )
-        #chisqdOrig = np.linalg.norm( (-normlzdDefaultBiasesCol ) * np.reciprocal(metricsWeights) )**2
 
         return chisqd
 
@@ -1226,7 +1270,6 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
     print("normlzdSensMatrix@dnormlzdParamsSoln=", normlzdSensMatrix @ dnormlzdParamsSoln)
     print("normlzdDefaultBiasesCol.T=", normlzdDefaultBiasesCol.T)
     #print("normlzdSensMatrix=", normlzdSensMatrix)
-    #pdb.set_trace()
 
     normlzdWeightedDefaultBiasesApproxNonlin = \
              fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, normlzdCurvMatrix) \
@@ -1244,6 +1287,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
     defaultBiasesApproxNonlin2x = normlzdWeightedDefaultBiasesApproxNonlin2x \
                                 * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
 
+    # To provide error bars, calculate solution with no nonlinear term and double the nonlinear term
     defaultBiasesApproxNonlinNoCurv = \
              fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 0*normlzdCurvMatrix) \
              * np.abs(normMetricValsCol)
@@ -1298,16 +1342,16 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
     # Set up a column vector of metric values from the default simulation
     defaultMetricValsCol = \
         setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
+    defaultMetricValsMatrix = defaultMetricValsCol @ np.ones((1,numParams))
+    normlzdDefaultMetricValsMatrix = defaultMetricValsMatrix * invrsObsMatrix
 
     # Based on the default simulation,
     #    set up a column vector of metrics and a row vector of parameter values.
     defaultParamValsRow, defaultParamValsOrigRow = \
-        setupDefaultParamVectors(metricsNames, paramsNames, transformedParamsNames,
-                                 numMetrics, numParams,
+        setupDefaultParamVectors(paramsNames, transformedParamsNames,
+                                 numParams,
                                  defaultNcFilename)
     normlzdDefaultParamValsRow = defaultParamValsRow * np.reciprocal(magParamValsRow)
-    defaultMetricValsMatrix = defaultMetricValsCol @ np.ones((1,numParams))
-    normlzdDefaultMetricValsMatrix = defaultMetricValsMatrix * invrsObsMatrix
 
     # Based on the numParams sensitivity simulations,
     #    set up a row vector of modified parameter values.
@@ -1334,23 +1378,11 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
     normlzdCurvMatrix2 = np.zeros_like(sens1MetricValsMatrix)  # 2nd way of calculating derivs
     normlzdCurvMatrixPoly = np.zeros_like(sens1MetricValsMatrix)  # 3rd way of calculating derivs
     normlzdSensMatrixPoly = np.zeros_like(sens1MetricValsMatrix)  # Approx of linear sensitivity
+    normlzdConstMatrixPoly = np.zeros_like(sens1MetricValsMatrix)  # Approx of linear sensitivity
+    normlzdOrdDparamsMin = np.zeros_like(sens1MetricValsMatrix)
+    normlzdOrdDparamsMax = np.zeros_like(sens1MetricValsMatrix)
 
-    # Calculate differences in parameter values between default, sensitivity,
-    #    and extended sensitivity runs.
-#    delta_params_def_sens = sensParamValsRow - defaultParamValsRow
-#    delta_params_def_sensExt = sensParamValsRowExt - defaultParamValsRow
-#    delta_params_sens_sensExt = sensParamValsRowExt - sensParamValsRow
-
-    # Calculate numMetrics x numParams matrix of metric values.
-#    delta_metrics_def_sens = sensMetricValsMatrix - defaultMetricValsMatrix
-#    delta_metrics_def_sensExt = sensMetricValsMatrixExt - defaultMetricValsMatrix
-#    delta_metrics_sens_sensExt = sensMetricValsMatrixExt - sensMetricValsMatrix
-    threeDotFig = make_subplots( rows=numMetrics, cols=numParams,
-                                shared_xaxes=True
-                                #horizontal_spacing = 0.1/numParams,
-                                #vertical_spacing = 0.1/numMetrics
-                                ) 
-    normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
+    # Compute quadratic coefficients using a polynomial fit to metric and parameters
     for arrayCol in np.arange(numParams):
         for arrayRow in np.arange(numMetrics):
 
@@ -1405,6 +1437,9 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
                         normlzdSens1MetricValsMatrix[arrayRow,arrayCol],
                         normlzdDefaultMetricValsMatrix[arrayRow,arrayCol] ]
 
+            normlzdOrdDparamsMin[arrayRow,arrayCol] = np.min(normlzdOrdDparams)
+            normlzdOrdDparamsMax[arrayRow,arrayCol]  = np.max(normlzdOrdDparams)
+
             # Calculate second-order spline based on three given (x,y) points.
             metricValsSpline = UnivariateSpline(normlzdOrdParams,normlzdOrdMetrics,s=0,k=2)
             # Based on spline, find 2nd derivative at arbitrary point (1).
@@ -1417,54 +1452,87 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
             normlzdCurvMatrix2[arrayRow,arrayCol] = 2*polyCoefs[0]
             #pdb.set_trace()
 
-            # Distance between points in simulations = sqrt(dparam**2 + dmetric**2)
-#            length_def_sens = np.linalg.norm([delta_params_def_sens[0][arrayCol],
-#                                              delta_metrics_def_sens[arrayRow][arrayCol]])
-#            length_def_sensExt = np.linalg.norm([delta_params_def_sensExt[0][arrayCol],
-#                                                 delta_metrics_def_sensExt[arrayRow][arrayCol]])
-#            length_sens_sensExt = np.linalg.norm([delta_params_sens_sensExt[0][arrayCol],
-#                                                  delta_metrics_sens_sensExt[arrayRow][arrayCol]])
-#            semi_perim = 0.5 * ( length_def_sens + length_def_sensExt + length_sens_sensExt )
-#            # area of triangle formed by points.  Use Heron's formula.
-#            area = np.sqrt( semi_perim *
-#                           (semi_perim-length_def_sens) *
-#                           (semi_perim-length_def_sensExt) *
-#                           (semi_perim-length_sens_sensExt)
-#                          )
-#            if (area == 0.0):
-#                print( '\nIn calcNormlzdRadiusCurv, area == 0.0 for param ', paramsNames[arrayCol],
-#                        'and metric ', metricsNames[arrayRow] )
-
-            # Greatest distance between parameter values in the 3 simulations:
-#            max_params_width = \
-#            np.max(np.abs([delta_params_def_sens[0][arrayCol],
-#                        delta_params_def_sensExt[0][arrayCol],
-#                        delta_params_sens_sensExt[0][arrayCol]]))
-#            if (max_params_width == 0.0):
-#                print( '\nIn calcNormlzdRadiusCurv, max_params_width == 0.0 for param ', paramsNames[arrayCol],
-#                        'and metric ', metricsNames[arrayRow] )
-
-            # Calculate Menger curvature from triangle area and distance between points:
-#            normlzd_radius_of_curv[arrayRow][arrayCol] = 0.25 * length_def_sens*length_def_sensExt*length_sens_sensExt \
-#                                                / area / max_params_width
+            # Check results using a 3rd calculation
+            polyCoefs = np.polyfit(normlzdOrdDparams, normlzdOrdMetrics, 2)
+            normlzdCurvMatrixPoly[arrayRow][arrayCol] = 2. * polyCoefs[0]
+            normlzdSensMatrixPoly[arrayRow,arrayCol] = polyCoefs[1]
+            normlzdConstMatrixPoly[arrayRow,arrayCol] = polyCoefs[2]
 
 
+    return ( normlzdCurvMatrixPoly, normlzdSensMatrixPoly, normlzdConstMatrixPoly, \
+             normlzdOrdDparamsMin, normlzdOrdDparamsMax )
 
-#    fig, axs = plt.subplots(numMetrics, numParams)
-#    for arrayCol in np.arange(numParams):
-#        for arrayRow in np.arange(numMetrics):
+def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
+                               metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
+                               defaultBiasesCol,
+                               normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
+                               normlzdOrdDparamsMin, normlzdOrdDparamsMax,
+                               sens1NcFilenames, sens2NcFilenames, defaultNcFilename):
 
-#            paramVals = [defaultParamValsRow[0][arrayCol], sensParamValsRow[0][arrayCol], sensParamValsRowExt[0][arrayCol]]
-#            metricVals = [defaultMetricValsMatrix[arrayRow][arrayCol], sensMetricValsMatrix[arrayRow][arrayCol],
-#                  sensMetricValsMatrixExt[arrayRow][arrayCol]]
+    """
+    For nonlinear 2nd-order term of Taylor series: 0.5*dp^2*d2m/dp2+...,
+    construct a numMetrics x numParams matrix of 2nd-order derivatives, d2m/dp2.
+    Each row is a different metric.  Each column is a different parameter.
+    The matrix is nondimensionalized by the observed values of metrics
+    and maximum values of parameters.
+    """
+    import numpy as np
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+    import sys
+    import netCDF4
+    #import matplotlib.pyplot as plt
+    import pdb
 
-#            axs[arrayRow, arrayCol].scatter( paramVals, metricVals )
-#            axs[arrayRow, arrayCol].set_xlabel(paramsNames[arrayCol])
-#            axs[arrayRow, arrayCol].set_ylabel(metricsNames[arrayRow])
-#            fig.show()
+    from analyze_sensitivity_matrix import setupDefaultMetricValsCol, setupDefaultParamVectors, \
+                                           setupSensArrays
+    from scipy.interpolate import UnivariateSpline
 
-#    for arrayCol in np.arange(numParams):
-#        for arrayRow in np.arange(numMetrics):
+    if ( len(paramsNames) != len(sens1NcFilenames)   ):
+        print("Number of parameters must equal number of netcdf files.")
+        quit()
+
+    # Number of tunable parameters
+    numParams = len(paramsNames)
+
+    # Number of metrics
+    numMetrics = len(metricsNames)
+
+    # Based on the default simulation,
+    #    set up a column vector of metrics and a row vector of parameter values.
+    defaultParamValsRow, defaultParamValsOrigRow = \
+        setupDefaultParamVectors(paramsNames, transformedParamsNames,
+                                 numParams,
+                                 defaultNcFilename)
+
+    # Set up a column vector of metric values from the default simulation
+    defaultMetricValsCol = \
+        setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
+    defaultMetricValsMatrix = defaultMetricValsCol @ np.ones((1,numParams))
+
+    # Based on the numParams sensitivity simulations,
+    #    set up a row vector of modified parameter values.
+    # Also set up numMetrics x numParams matrix,
+    #    each column of which lists the metrics
+    #    from one of the sensitivity simulations
+    sens1MetricValsMatrix, sens1ParamValsRow, sens1ParamValsOrigRow = \
+        setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
+                        numMetrics, numParams,
+                        sens1NcFilenames)
+
+    # Set up sensitivity-simulation matrices from the extended sensitivity simulation
+    sens2MetricValsMatrix, sens2ParamValsRow, sens2ParamValsOrigRow = \
+        setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
+                        numMetrics, numParams,
+                        sens2NcFilenames)
+
+    threeDotFig = make_subplots( rows=numMetrics, cols=numParams,
+                                shared_xaxes=True
+                                #horizontal_spacing = 0.1/numParams,
+                                #vertical_spacing = 0.1/numMetrics
+                                )
+    for arrayCol in np.arange(numParams):
+        for arrayRow in np.arange(numMetrics):
 
             paramVals = [defaultParamValsRow[0][arrayCol], 
                          sens1ParamValsRow[0][arrayCol], 
@@ -1477,55 +1545,23 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
             threeDotFig.add_trace(
                 go.Scatter(x=paramVals, y=metricVals, 
                                mode='markers',
-                               marker=dict(color='black', size=4)), 
+                               marker=dict(color='black', size=5)),
                            row=arrayRow+1, 
                            col=arrayCol+1
                                   )
-            #axs[row, col].plot( paramVals, metricVals, marker=".", ls="" )
-
-            # Calculate normlzdCurvMatrix that ensures parabolas pass through points
-            #numerator = -normlzdDefaultBiasesCol[arrayRow] - normlzdSensMatrix[arrayRow][arrayCol] * normlzdOrdDparams[arrayCol]
-            #if np.isclose(0.0, normlzdOrdDparams[arrayCol]):
-            #    normlzdCurvMatrix3[arrayRow,arrayCol] = 0
-            #else:
-            #    normlzdCurvMatrix3[arrayRow,arrayCol] = 2 * numerator / (normlzdOrdDparams[arrayCol]**2)
-
-            # Check results using a 3rd calculation
-            polyCoefs = np.polyfit(normlzdOrdDparams, normlzdOrdMetrics, 2)
-            #print("metricsNames[arrayRow]= ", metricsNames[arrayRow])
-            #print("defaultMetricValsMatrix[arrayRow][arrayCol] =", defaultMetricValsMatrix[arrayRow][arrayCol])
-            #print("polyCoefs[2]*abs(normMetricValsCol[arrayRow]) =", polyCoefs[2]*abs(normMetricValsCol[arrayRow]))
-            normlzdCurvMatrixPoly[arrayRow][arrayCol] = 2. * polyCoefs[0]
-            normlzdSensMatrixPoly[arrayRow,arrayCol] = polyCoefs[1]
-
 
             # Plot quadratic curve passing through 3 dots
             paramPts = np.linspace( np.min(paramVals), np.max(paramVals), num=60 )
-            dnormlzdParamPts = np.linspace( np.min(normlzdOrdDparams), np.max(normlzdOrdDparams), num=60 )
             #print("paramPts =", paramPts)
-            #dnormlzdParamPts = ( paramPts - np.transpose(defaultParamValsOrigRow[0][arrayCol]) ) \
-            #                        / np.transpose(magParamValsRow[0][arrayCol])
-            #metricPts = np.zeros_like(paramPts)
+            dnormlzdParamPts = np.linspace( normlzdOrdDparamsMin[arrayRow,arrayCol],
+                                            normlzdOrdDparamsMax[arrayRow,arrayCol], num=60 )
             metricPts = np.zeros_like(dnormlzdParamPts)
             for idx, dnormlzdParamPt in enumerate(dnormlzdParamPts):
-                ##print("dnormlzdParamPt =", dnormlzdParamPt)
-                ##print("defaultParamValsOrigRow =", defaultParamValsOrigRow)
-                ##print("magParamValsRow =", magParamValsRow)
-                #dnormlzdParamPtCol = np.zeros((numParams,1))
-                #dnormlzdParamPtCol[arrayCol][0] = dnormlzdParamPt
-                ##print("dnormlzdParamPtCol =", dnormlzdParamPtCol)
-                ##print("fwdFnc =",  fwdFnc( dnormlzdParamPtCol, normlzdSensMatrix, normlzdCurvMatrixPoly) )
-                #metricPtsCol = fwdFnc( dnormlzdParamPtCol, normlzdSensMatrix, normlzdCurvMatrixPoly)
-                #metricPtsCol = metricPtsCol * np.abs(normMetricValsCol) + defaultMetricValsCol
-                #metricPts[idx] = metricPtsCol[arrayRow]
-                #metricPts[idx] = normlzdSensMatrix[arrayRow][arrayCol]*dnormlzdParamPt \
-                #                 + 0.5*normlzdCurvMatrixPoly[arrayRow][arrayCol]*dnormlzdParamPt*dnormlzdParamPt
-                #metricPts[idx] = defaultMetricValsCol[arrayRow] \
-                #                 + metricPts[idx] * np.abs(normMetricValsCol[arrayRow])
-                metricPts[idx] = polyCoefs[0] * dnormlzdParamPt**2 \
-                                 + polyCoefs[1] * dnormlzdParamPt \
-                                 + polyCoefs[2]
+                metricPts[idx] = 0.5 * normlzdCurvMatrix[arrayRow,arrayCol] * dnormlzdParamPt**2 \
+                                 + normlzdSensMatrixPoly[arrayRow,arrayCol] * dnormlzdParamPt \
+                                 + normlzdConstMatrix[arrayRow,arrayCol]
                 metricPts[idx] = metricPts[idx] * np.abs(normMetricValsCol[arrayRow])
+
             #print("metricPts =", metricPts)
             threeDotFig.add_trace(
                         go.Scatter(x=paramPts, y=metricPts,
@@ -1547,6 +1583,8 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
                            row=arrayRow+1,
                            col=arrayCol+1
                                   )
+
+            # Label the metric and parameter for the subplots
             if (arrayRow == numMetrics-1):  # Put params labels only along bottom of plot
                 #threeDotFig.update_xaxes(title=dict(text=paramsNames[arrayCol], 
                 #                         tickangle=45),
@@ -1563,22 +1601,10 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
             threeDotFig.update_layout(showlegend=False,
                     title_text="Simulated metric values vs. parameter values for each metric", 
                     height=2500)
-            #axs[row, col].plot( paramVals, obsMetricValsCol[row][0] * np.ones((3,1)), color="r" )
-            #axs[row, col].set_xlabel(paramsNames[col])
-            #axs[row, col].set_ylabel(metricsNames[row])
-            #fig.show()
             
-    #threeDotFig.update_layout(xaxis)            
-    #print("threeDotFig.layout=", threeDotFig.layout)
+    threeDotFig.update_xaxes(tickangle=45) # Put params label at 45-degree angle
 
-    threeDotFig.update_xaxes(tickangle=45)    
-    print( 'normlzdCurvMatrix=', normlzdCurvMatrix )
-    print( 'normlzdCurvMatrix2=', normlzdCurvMatrix2 )
-    print( 'normlzdCurvMatrixPoly=', normlzdCurvMatrixPoly )
-    #print( 'normlzdSensMatrix=', normlzdSensMatrix )
-    print( 'normlzdSensMatrixPoly=', normlzdSensMatrixPoly )
-
-    return ( normlzdCurvMatrix, normlzdSensMatrixPoly, threeDotFig )
+    return ( threeDotFig )
 
 
 def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, paramsScales,
@@ -1615,8 +1641,8 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, par
     # Based on the default simulation,
     #    set up a column vector of metrics and a row vector of parameter values.
     defaultParamValsRow, defaultParamValsOrigRow = \
-        setupDefaultParamVectors(metricsNames, paramsNames, transformedParamsNames,
-                                 numMetrics, numParams,
+        setupDefaultParamVectors(paramsNames, transformedParamsNames,
+                                 numParams,
                                  defaultNcFilename)
 
     defaultMetricValsMatrix = defaultMetricValsCol @ np.ones((1,numParams))
@@ -1739,8 +1765,8 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
     # Based on the default simulation,
     #    set up a column vector of metrics and a row vector of parameter values.
     defaultParamValsRow, defaultParamValsOrigRow = \
-        setupDefaultParamVectors(metricsNames, paramsNames, transformedParamsNames,
-                                 numMetrics, numParams,
+        setupDefaultParamVectors(paramsNames, transformedParamsNames,
+                                 numParams,
                                  defaultNcFilename)
 
     defaultMetricValsMatrix = defaultMetricValsCol @ np.ones((1,numParams))

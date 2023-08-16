@@ -153,10 +153,10 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 #    sys.exit("Prints")
 
     # Based on the default simulation,
-    #    set up a column vector of metrics and a row vector of parameter values.
+    #    set up a row vector of parameter values.
     defaultParamValsRow, defaultParamValsOrigRow = \
-            setupDefaultParamVectors(metricsNames, paramsNames, transformedParamsNames,
-                                numMetrics, numParams,
+            setupDefaultParamVectors(paramsNames, transformedParamsNames,
+                                numParams,
                                 defaultNcFilename)
 
     # Make sure that each sensitivity simulation changes one and only one parameter.
@@ -596,7 +596,7 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
         print(defaultBiasesApprox)
         sys.exit("\nError: Two calculations of defaultBiasesApprox do not agree.")
 
-    #pdb.set_trace()
+    # Do we want defaultParamValsOrigRow or defaultParamValsRow in this line??:
     paramsSoln = np.transpose(defaultParamValsOrigRow) + dparamsSoln
     # Create matrix whose columns are the columns of v divided by singular values
     #    (see 15.4.18 of Numerical Recipes)
@@ -673,8 +673,9 @@ def setupDefaultMetricValsCol(metricsNames, defaultNcFilename):
 
     return defaultMetricValsCol
 
-def setupDefaultParamVectors(metricsNames, paramsNames, transformedParamsNames,
-                        numMetrics, numParams,
+
+def setupDefaultParamVectors(paramsNames, transformedParamsNames,
+                        numParams,
                         defaultNcFilename):
     """
     Input: Filename containing default-simulation metrics and parameters.

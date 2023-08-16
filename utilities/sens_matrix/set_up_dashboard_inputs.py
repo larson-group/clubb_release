@@ -47,21 +47,21 @@ def setUpInputs():
     #   If a value in the 3rd column is set to -999, then the metric is simply normalized by the observed value.
     #   Otherwise, the value in the 3rd column is itself the normalization value for the metric.  
     metricsNamesWeightsAndNorms = [ \
-                        ['SWCF_GLB', 4.00, -999], \
-#                        ['SWCF_DYCOMS', 1.00, -999], \
-#                        ['SWCF_HAWAII', 2.00, -999], \
-#                        ['SWCF_VOCAL', 2.00, -999], \
-#                        ['SWCF_VOCAL_near', 1.00, -999], \
-#                        ['SWCF_LBA', 1.00, -999], \
-#                        ['SWCF_WP', 1.00, -999], \
-#                        ['SWCF_EP', 1.00, -999], \
-#                        ['SWCF_NP', 1.00, -999], \
-#                        ['SWCF_SP', 1.00, -999],  \
+                        ['SWCF_GLB', 16.00, -999], \
+                        ['SWCF_DYCOMS', 1.00, -999], \
+                        ['SWCF_HAWAII', 2.00, -999], \
+                        ['SWCF_VOCAL', 2.00, -999], \
+                        ['SWCF_VOCAL_near', 1.00, -999], \
+                        ['SWCF_LBA', 1.00, -999], \
+                        ['SWCF_WP', 1.00, -999], \
+                        ['SWCF_EP', 1.00, -999], \
+                        ['SWCF_NP', 1.00, -999], \
+                        ['SWCF_SP', 1.00, -999],  \
 ##                        ['SWCF_PA', 1.01, -999], \
-#                        ['SWCF_CAF', 1.00, -999], \
-#                        ['SWCF_Namibia', 1.00, -999], \
-#                        ['SWCF_Namibia_near', 1.00, -999], \
-                        ['LWCF_GLB', 4.00, -999], \
+                        ['SWCF_CAF', 1.00, -999], \
+                        ['SWCF_Namibia', 1.00, -999], \
+                        ['SWCF_Namibia_near', 1.00, -999], \
+                        ['LWCF_GLB', 1.00, -999], \
 ###                        ['LWCF_DYCOMS', 1.01, -999], \
 ###                        ['LWCF_HAWAII', 1.01, -999], \
 ###                        ['LWCF_VOCAL', 1.01, -999], \
@@ -72,7 +72,7 @@ def setUpInputs():
 ###                        ['LWCF_SP', 1.01, -999], \
 ####                        ['LWCF_PA',  1.01, -999], \
 ###                        ['LWCF_CAF', 1.01, -999], \
-                        ['PRECT_GLB', 4.00, -999], \
+                        ['PRECT_GLB', 3.00, -999], \
 ##                        ['PRECT_LBA', 1.00, -999], \
 ##                        ['PRECT_WP', 1.00, -999], \
 ###                        ['PRECT_EP', 1.01, -999], \
@@ -80,17 +80,17 @@ def setUpInputs():
 ###                        ['PRECT_SP', 1.01, -999], \
 ####                        ['PRECT_PA', 1.01, -999], \
 ##                        ['PRECT_CAF', 1.00, -999], \
-                        ['PSL_DYCOMS', 1.e0, 1e3], \
-                        ['PSL_HAWAII', 1.e0, 1e3], \
-                        ['PSL_VOCAL', 1.e0, 1e3], \
-##                        ['PSL_VOCAL_near', 1.00, 1e3], \
-                        ['PSL_LBA', 1.e0, 1e3], \
-                        ['PSL_WP', 1.e0, 1e3], \
-                        ['PSL_EP', 1.e0, 1e3], \
-                        ['PSL_NP', 1.e0, 1e3], \
-                        ['PSL_SP', 1.e0, 1e3],  \
-                        ['PSL_PA', 1.00, 1e3], \
-                        ['PSL_CAF', 1.e0, 1e3], \
+#                        ['PSL_DYCOMS', 1.e0, 1e3], \
+#                        ['PSL_HAWAII', 1.e0, 1e3], \
+#                        ['PSL_VOCAL', 1.e0, 1e3], \
+#                        ['PSL_VOCAL_near', 1.00, 1e3], \
+#                        ['PSL_LBA', 1.e0, 1e3], \
+#                        ['PSL_WP', 1.e0, 1e3], \
+#                        ['PSL_EP', 1.e0, 1e3], \
+#                        ['PSL_NP', 1.e0, 1e3], \
+#                        ['PSL_SP', 1.e0, 1e3],  \
+#                        ['PSL_PA', 1.00, 1e3], \
+#                        ['PSL_CAF', 1.e0, 1e3], \
 ##                        ['PSL_Namibia', 1.00, 1e3], \
 ##                        ['PSL_Namibia_near', 1.00, 1e3], \
                          ]
@@ -98,7 +98,6 @@ def setUpInputs():
 #                        ['PRECT_DYCOMS', 0.01, -999], \
 #                        ['PRECT_HAWAII', 0.01, -999], \
 #                        ['PRECT_VOCAL', 0.01, -999], \
-
 
     # Split up the list above into metric names and the corresponding weights.
     dfMetricsNamesWeightsAndNorms =  \
@@ -162,9 +161,9 @@ def setUpInputs():
 ##                    ['micro_vqit', 1.0, \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
-##                    ['clubb_c_invrs_tau_n2_xp2', 1.0, \
-##                     folder_name + 'sens0707_18_Regional.nc', \
-##                     folder_name + 'sens0707_19_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2_xp2', 1.0, \
+#                     folder_name + 'sens0707_18_Regional.nc', \
+#                     folder_name + 'sens0707_19_Regional.nc'], \
 ##                     '20220903/anvil.bmg20220630.sens723_12.ne30pg2_r05_oECv3_Regional.nc',
 ##                     '20220903/anvil.bmg20220630.sens723_13.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_bkgnd', 1.0, \
