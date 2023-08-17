@@ -161,17 +161,17 @@ def setUpInputs():
 ##                    ['micro_vqit', 1.0, \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_n2_xp2', 1.0, \
-#                     folder_name + 'sens0707_18_Regional.nc', \
-#                     folder_name + 'sens0707_19_Regional.nc'], \
+##                    ['clubb_c_invrs_tau_n2_xp2', 1.0, \
+##                     folder_name + 'sens0707_18_Regional.nc', \
+##                     folder_name + 'sens0707_19_Regional.nc'], \
 ##                     '20220903/anvil.bmg20220630.sens723_12.ne30pg2_r05_oECv3_Regional.nc',
 ##                     '20220903/anvil.bmg20220630.sens723_13.ne30pg2_r05_oECv3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-                     folder_name + 'sens0707_16_Regional.nc',
-                     folder_name + 'sens0707_17_Regional.nc'], \
-#                    ['clubb_c_wp2_splat', 1.0, \
-#                     folder_name + 'sens0707_26_Regional.nc',
-#                     folder_name + 'sens0707_27_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
+#                     folder_name + 'sens0707_16_Regional.nc',
+#                     folder_name + 'sens0707_17_Regional.nc'], \
+##                    ['clubb_c_wp2_splat', 1.0, \
+##                     folder_name + 'sens0707_26_Regional.nc',
+##                     folder_name + 'sens0707_27_Regional.nc'], \
                         ]
 
     # Split up the above list into parameter names, scales, and filenames.
@@ -192,6 +192,35 @@ def setUpInputs():
     #    the relationship between parameters and metrics more linear:
     #transformedParamsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2', 'clubb_c_invrs_tau_n2_clear_wp3'])
     transformedParamsNames = np.array([''])
+
+    prescribedParamsNamesScalesAndValues = \
+                [ \
+#                    ['clubb_c8', 1.0, 0.5 ], \
+#                    ['clubb_c8', 1.0, 0.47843581 ], \
+#                    ['clubb_c8', 1.0, 2.47843581 ], \
+#                    ['clubb_c_k10', 1.0, 3.0 ], \
+                     ['clubb_c_invrs_tau_bkgnd', 1.0, 1.1, \
+                     folder_name + 'sens0707_16_Regional.nc', \
+                     folder_name + 'sens0707_17_Regional.nc'], \
+                ]
+    # Split up the above list into parameter names, scales, and filenames.
+    dfprescribedParamsNamesScalesAndValues =  \
+        pd.DataFrame( prescribedParamsNamesScalesAndValues, \
+                          columns = ['prescribedParamsNames', 
+                                     'prescribedParamsScales',
+                                     'prescribedParamVals',
+                                     'prescribedSensNcFilenames', 'prescribedSensNcFilenamesExt'
+                                    ] \
+                    )
+    prescribedParamsNames = dfprescribedParamsNamesScalesAndValues[['prescribedParamsNames']].to_numpy().astype(str)[:,0]
+    # Extract scaling factors of parameter values from user-defined list paramsNamesScalesAndFilenames.
+    # The scaling is not used for any calculations, but it allows us to avoid plotting very large or small values.
+    prescribedParamsScales = dfprescribedParamsNamesScalesAndValues[['prescribedParamsScales']].to_numpy().astype(float)[:,0]
+    prescribedParamVals = dfprescribedParamsNamesScalesAndValues[['prescribedParamVals']].to_numpy().astype(float)[:,0]
+    prescribedParamValsRow = prescribedParamVals
+    prescribedSensNcFilenames = dfprescribedParamsNamesScalesAndValues[['prescribedSensNcFilenames']].to_numpy().astype(str)[:,0]
+    prescribedSensNcFilenamesExt = dfprescribedParamsNamesScalesAndValues[['prescribedSensNcFilenamesExt']].to_numpy().astype(str)[:,0]
+    prescribedTransformedParamsNames = np.array([''])
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
@@ -243,6 +272,10 @@ def setUpInputs():
             obsMetricValsDict, \
             paramsNames, paramsScales, \
             transformedParamsNames, \
+            prescribedParamsNames, prescribedParamsScales, \
+            prescribedTransformedParamsNames, \
+            prescribedParamValsRow, \
+            prescribedSensNcFilenames, prescribedSensNcFilenamesExt, \
             sensNcFilenames, sensNcFilenamesExt, \
             defaultNcFilename, linSolnNcFilename, \
             reglrCoef)
@@ -251,11 +284,14 @@ def setUpInputs():
 def setUpPreliminaries(metricsNames, metricsNorms, \
                        obsMetricValsDict, \
                        paramsNames, transformedParamsNames, \
+                       prescribedParamsNames, prescribedParamValsRow, \
+                       prescribedTransformedParamsNames, \
                        sensNcFilenames, \
                        defaultNcFilename \
                       ):
 
     import numpy as np
+    import pdb
     import netCDF4
 
     # Set up a column vector of observed metrics
@@ -323,17 +359,44 @@ def setUpPreliminaries(metricsNames, metricsNorms, \
     # defaultBiasesCol = + delta_b
     defaultBiasesCol = np.subtract(defaultMetricValsCol, obsMetricValsCol)
 
-    dnormlzdPrescribedParams = 0
+    # Based on the default simulation,
+    #    set up a row vector of prescribed parameter values.
+    numPrescribedParams = len(prescribedParamsNames)
+    defaultPrescribedParamValsRow, defaultPrescribedParamValsOrigRow = \
+            setupDefaultParamVectors(prescribedParamsNames, prescribedTransformedParamsNames,
+                                     numPrescribedParams,
+                                     defaultNcFilename)
 
-    #dnormlzdPrescribedParams = ( prescribedParamValsRow - defaultPrescribedParamValsRow )
-    #                            / magPrescribedParamValsRow
+    # Calculate the magnitude of the maximum value of parameters
+    #    from the default run (and sensitivity runs as a backup), for later use
+    #    in scaling the normalized sensitivity matrix.
+    # Initially, set values to the default-simulation values
+    magPrescribedParamValsRow = np.abs(defaultPrescribedParamValsRow)
+    # Now replace any zero default values with the value from the sensitivity run
+    for idx, elem in np.ndenumerate(defaultPrescribedParamValsRow):
+        if (np.abs(elem) <= np.finfo(elem.dtype).eps): # if default value is zero
+            magPrescribedParamValsRow[0,idx[1]] = np.abs(prescribedParamValsRow[0,idx[1]]) # set to prescribed value
+    if np.any( np.isclose(magPrescribedParamValsRow, np.zeros((1,numPrescribedParams))) ):
+        print("\nprescribedParamValsRow =")
+        print(prescribedParamValsRow)
+        print("\nmagPrescribedParamValsRow =")
+        print(magPrescribedParamValsRow)
+        sys.exit("Error: A prescribed parameter value is zero and so is the prescribed default value.")
+
+    dnormlzdPrescribedParams = ( prescribedParamValsRow - defaultPrescribedParamValsRow ) \
+                                / magPrescribedParamValsRow
+
+    #pdb.set_trace()
+
+    dnormlzdPrescribedParams = dnormlzdPrescribedParams.T
 
 
     return ( obsMetricValsCol, normMetricValsCol, \
              defaultBiasesCol, \
              defaultParamValsOrigRow, \
              magParamValsRow, \
-             dnormlzdPrescribedParams
+             dnormlzdPrescribedParams, \
+             magPrescribedParamValsRow
            )
 
 
