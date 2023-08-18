@@ -200,11 +200,13 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     sensMetricValsMatrix, sensParamValsRow, sensParamValsOrigRow = \
             setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
-                    sensNcFilenames)
+                    sensNcFilenames,
+                    beVerbose=False)
     sensMetricValsMatrixExt, sensParamValsRowExt, sensParamValsOrigRowExt = \
             setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
-                    sensNcFilenamesExt)
+                    sensNcFilenamesExt,
+                    beVerbose=False)
 
     #pdb.set_trace()
 
@@ -255,7 +257,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                             magParamValsRow,
                             obsMetricValsCol, normMetricValsCol,
                             numMetrics, numParams,
-                            beVerbose=True)
+                            beVerbose=False)
 
     uNormlzd, sNormlzd, vhNormlzd = np.linalg.svd(normlzdSensMatrix, full_matrices=False)
 
@@ -304,7 +306,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     svdInvrsNormlzdWeighted, svdInvrsNormlzdWeightedPC, \
     sValsTruncInvNormlzdWeighted, sValsTruncInvNormlzdWeightedPC, \
     vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted = \
-    calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio)
+    calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio, beVerbose=False)
 
     #print("\nNormalized, weighted SVD inverse =")
     #print(svdInvrsNormlzdWeighted)
@@ -483,7 +485,8 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     return  (defaultBiasesCol, sensMatrix, normlzdSensMatrix, biasNormlzdSensMatrix)
 
 
-def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio):
+def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio,
+                 beVerbose):
     """
     Input: sensitivity matrix
     Output: singular value decomposition of sensitivity matrix
@@ -498,28 +501,31 @@ def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio):
     # vh = V^T = transpose of right-singular vector matrix, V.
     u, s, vh = np.linalg.svd(normlzdWeightedSensMatrix, full_matrices=False)
 
-    print("\nSingular values =")
-    print(s)
+    if beVerbose:
+        print("\nSingular values =")
+        print(s)
 
-    #print("\nvh =")
-    #print(vh)
+        print("\nvh =")
+        print(vh)
 
-    #print("\nu =")
-    #print(u)
+        print("\nu =")
+        print(u)
 
     sValsTrunc = s
 
     sValsTrunc[sValsTrunc < 1e-10] = -1
 
-    print("\nTruncated Singular values =")
-    print(sValsTrunc)
+    if beVerbose:
+        print("\nTruncated Singular values =")
+        print(sValsTrunc)
 
     sValsTruncInv = np.reciprocal(sValsTrunc)
 
     sValsTruncInv[sValsTruncInv < 0] = 0
 
-    #print("\nInverse truncated singular values =")
-    #print(sValsTruncInv)
+    if beVerbose:
+        print("\nInverse truncated singular values =")
+        print(sValsTruncInv)
 
     svdInvrs = np.transpose(vh) @ np.diag(sValsTruncInv) @ np.transpose(u)
 
@@ -531,9 +537,9 @@ def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio):
         print(svdInvrs @ normlzdWeightedSensMatrix)
         sys.exit("\nError: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
 
-    #print("\nSVD inverse =")
-    #print(svdInvrs)
-
+    if beVerbose:
+        print("\nSVD inverse =")
+        print(svdInvrs)
 
     # Delete the small singular values in order to show just the most important patterns.
     # After this deletion, store inverse singular values in sValsInvPC.
@@ -547,8 +553,9 @@ def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio):
         else:
             sValsInvPC[idx] = sValsTruncInv[idx]
 
-    print("\nsValsInvPC =")
-    print(sValsInvPC)
+    if beVerbose:
+        print("\nsValsInvPC =")
+        print(sValsInvPC)
 
     #pdb.set_trace()
 
@@ -642,7 +649,8 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, magParamValsRow, \
 
 def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
-                    sensNcFilenames):
+                    sensNcFilenames,
+                    beVerbose):
     """
     Input: List of filenames, one per each sensitivity simulation.
     Output: Row vector of modified parameter values from sensitivity simulations.
@@ -676,12 +684,12 @@ def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
         f_sensParams.close()
 
     #sensParamValsRow = np.array([[2., 4.]])
-
-    print("\nsensParamValsOrigRow =")
-    print(sensParamValsOrigRow)
-
-    print("\nsensParamValsRow =")
-    print(sensParamValsRow)
+ 
+    if beVerbose:
+        print("\nsensParamValsOrigRow =")
+        print(sensParamValsOrigRow)
+        print("\nsensParamValsRow =")
+        print(sensParamValsRow)
 
     # numMetrics x numParams matrix of metric values
     # from sensitivity simulations
@@ -701,8 +709,9 @@ def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
 
     #sensMetricValsMatrix = np.array([[1., 2.], [3., 4.]])
 
-    print("\nsensMetricValsMatrix =")
-    print(sensMetricValsMatrix)
+    if beVerbose:
+        print("\nsensMetricValsMatrix =")
+        print(sensMetricValsMatrix)
 
     return(sensMetricValsMatrix, sensParamValsRow, sensParamValsOrigRow)
 
@@ -819,7 +828,8 @@ def findOutliers(normlzdSensMatrix, normlzdWeightedSensMatrix, \
 def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
                  defaultBiasesCol, normMetricValsCol, metricsWeights, \
                  magParamValsRow, defaultParamValsOrigRow, \
-                 normlzdCurvMatrix):
+                 normlzdCurvMatrix,
+                 beVerbose):
 
     import numpy as np
     from sklearn.linear_model import ElasticNet, ElasticNetCV
@@ -840,8 +850,9 @@ def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
     dparamsSolnElastic = dnormlzdParamsSolnElastic * np.transpose(magParamValsRow)
     paramsSolnElastic = np.transpose(defaultParamValsOrigRow) + dparamsSolnElastic
 
-    print( "paramsSolnElastic = ", paramsSolnElastic )
-    print( "dparamsSolnElastic = ", dparamsSolnElastic )
+    if beVerbose:
+        print( "paramsSolnElastic = ", paramsSolnElastic )
+        print( "dparamsSolnElastic = ", dparamsSolnElastic )
 
     #pdb.set_trace()
 

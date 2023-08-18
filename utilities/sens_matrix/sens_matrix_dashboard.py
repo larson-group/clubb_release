@@ -56,15 +56,16 @@ def main():
     = setUpPreliminaries(metricsNames, metricsNorms,
                            obsMetricValsDict,
                            paramsNames, transformedParamsNames,
-                           prescribedParamsNames, prescribedParamValsRow,   
-                           prescribedTransformedParamsNames, \
+                           prescribedParamsNames, prescribedParamValsRow,
+                           prescribedTransformedParamsNames,
                            sensNcFilenames,
                            defaultNcFilename
                           )
 
     # Construct numMetrics x numParams matrix of second derivatives, d2metrics/dparams2.
     # The derivatives are normalized by observed metric values and max param values.
-    normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, normlzdOrdDparamsMin, normlzdOrdDparamsMax = \
+    normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, \
+    normlzdOrdDparamsMin, normlzdOrdDparamsMax = \
         constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
                                    metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
                                    sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
@@ -82,7 +83,7 @@ def main():
                                    prescribedSensNcFilenames, prescribedSensNcFilenamesExt, defaultNcFilename)
 
     # This is the prescribed correction to the metrics that appears on the left-hand side of the Taylor equation.
-    #   It is not a bias from the obs.  It is a correction to the simulated default metric values 
+    #   It is not a bias from the obs.  It is a correction to the simulated default metric values
     #   based on prescribed param values.
     normlzdPrescribedBiasesCol = fwdFnc( dnormlzdPrescribedParams, normlzdPrescribedSensMatrixPoly, normlzdPrescribedCurvMatrix )
 
@@ -102,14 +103,15 @@ def main():
     dnormlzdParamsSolnLin, paramsSolnLin, \
     defaultBiasesApproxNonlin2x, \
     defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv = \
-        solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
-                         metricsWeights, normMetricValsCol, magParamValsRow, \
-                         sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
-                         defaultParamValsOrigRow, \
-                         normlzdSensMatrixPoly, defaultBiasesCol, \
-                         #normlzdSensMatrixPoly, defaultBiasesCol-prescribedBiasesCol, \
-                         normlzdCurvMatrix, \
-                         reglrCoef)
+        solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
+                         metricsWeights, normMetricValsCol, magParamValsRow,
+                         sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
+                         defaultParamValsOrigRow,
+                         normlzdSensMatrixPoly, defaultBiasesCol,
+                         #normlzdSensMatrixPoly, defaultBiasesCol-prescribedBiasesCol,
+                         normlzdCurvMatrix,
+                         reglrCoef,
+                         beVerbose=False)
 
     #pdb.set_trace()
 
@@ -140,16 +142,17 @@ def main():
     # Find best-fit params by use of the Elastic Net algorithm
     defaultBiasesApproxElastic, defaultBiasesApproxElasticNonlin, \
     dnormlzdParamsSolnElastic, paramsSolnElastic = \
-        findParamsUsingElastic(normlzdSensMatrixPoly, normlzdWeightedSensMatrixPoly, \
-                     defaultBiasesCol, normMetricValsCol, metricsWeights, \
-                     magParamValsRow, defaultParamValsOrigRow, \
-                     normlzdCurvMatrix)
+        findParamsUsingElastic(normlzdSensMatrixPoly, normlzdWeightedSensMatrixPoly,
+                     defaultBiasesCol, normMetricValsCol, metricsWeights,
+                     magParamValsRow, defaultParamValsOrigRow,
+                     normlzdCurvMatrix,
+                     beVerbose=False)
 
     defaultBiasesApproxElasticCheck = ( normlzdWeightedSensMatrixPoly @ dnormlzdParamsSolnElastic ) \
                             * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
 
-    print("defaultBiasesApproxElastic = ", defaultBiasesApproxElastic)
-    print("defaultBiasesApproxElasticCheck = ", defaultBiasesApproxElasticCheck)
+    #print("defaultBiasesApproxElastic = ", defaultBiasesApproxElastic)
+    #print("defaultBiasesApproxElasticCheck = ", defaultBiasesApproxElasticCheck)
 
     #pdb.set_trace()
 
@@ -1245,13 +1248,14 @@ def fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix):
 
     return normlzdDefaultBiasesApproxNonlin
 
-def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
-                     metricsWeights, normMetricValsCol, magParamValsRow, \
-                     sensNcFilenames, sensNcFilenamesExt, defaultNcFilename, \
-                     defaultParamValsOrigRow, \
-                     normlzdSensMatrix, defaultBiasesCol, \
-                     normlzdCurvMatrix, \
-                     reglrCoef):
+def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
+                     metricsWeights, normMetricValsCol, magParamValsRow,
+                     sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
+                     defaultParamValsOrigRow,
+                     normlzdSensMatrix, defaultBiasesCol,
+                     normlzdCurvMatrix,
+                     reglrCoef,
+                     beVerbose):
 
     import numpy as np
     import pdb
@@ -1293,17 +1297,20 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames, \
     chisqdMin = objFnc(dnormlzdParamsSolnNonlin.T, \
                         normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights, \
                         normlzdCurvMatrix, reglrCoef)
-    print("chisqdZero =", chisqdZero)  
-    print("chisqdMin =", chisqdMin)      
+
+    if beVerbose:
+        print("chisqdZero =", chisqdZero)
+        print("chisqdMin =", chisqdMin)
     
 
     dparamsSolnNonlin = dnormlzdParamsSolnNonlin * np.transpose(magParamValsRow)
     paramsSolnNonlin = np.transpose(defaultParamValsOrigRow) + dparamsSolnNonlin
-    #print("paramsSoln.T=", paramsSoln.T)
-    print("paramsSolnNonlin.T=", paramsSolnNonlin.T)
-    print("normlzdSensMatrix@dnPS.x.T=", normlzdSensMatrix @ dnormlzdParamsSolnNonlin)
-    print("normlzdDefaultBiasesCol.T=", normlzdDefaultBiasesCol.T)
-    #print("normlzdSensMatrix=", normlzdSensMatrix)
+    if beVerbose:
+        print("paramsSoln.T=", paramsSoln.T)
+        print("paramsSolnNonlin.T=", paramsSolnNonlin.T)
+        print("normlzdSensMatrix@dnPS.x.T=", normlzdSensMatrix @ dnormlzdParamsSolnNonlin)
+        print("normlzdDefaultBiasesCol.T=", normlzdDefaultBiasesCol.T)
+        print("normlzdSensMatrix=", normlzdSensMatrix)
 
     normlzdWeightedDefaultBiasesApproxNonlin = \
              fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, normlzdCurvMatrix) \
@@ -1407,7 +1414,8 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
     sens1MetricValsMatrix, sens1ParamValsRow, sens1ParamValsOrigRow = \
         setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                         numMetrics, numParams,
-                        sens1NcFilenames)
+                        sens1NcFilenames,
+                        beVerbose=False)
     normlzdSens1ParamValsRow = sens1ParamValsRow * np.reciprocal(magParamValsRow)
     normlzdSens1MetricValsMatrix = sens1MetricValsMatrix * invrsObsMatrix
 
@@ -1415,7 +1423,8 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
     sens2MetricValsMatrix, sens2ParamValsRow, sens2ParamValsOrigRow = \
         setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                         numMetrics, numParams,
-                        sens2NcFilenames)
+                        sens2NcFilenames,
+                        beVerbose=False)
     normlzdSens2ParamValsRow = sens2ParamValsRow * np.reciprocal(magParamValsRow)
     normlzdSens2MetricValsMatrix = sens2MetricValsMatrix * invrsObsMatrix
 
@@ -1573,13 +1582,15 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
     sens1MetricValsMatrix, sens1ParamValsRow, sens1ParamValsOrigRow = \
         setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                         numMetrics, numParams,
-                        sens1NcFilenames)
+                        sens1NcFilenames,
+                        beVerbose=False)
 
     # Set up sensitivity-simulation matrices from the extended sensitivity simulation
     sens2MetricValsMatrix, sens2ParamValsRow, sens2ParamValsOrigRow = \
         setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                         numMetrics, numParams,
-                        sens2NcFilenames)
+                        sens2NcFilenames,
+                        beVerbose=False)
 
     threeDotFig = make_subplots( rows=numMetrics, cols=numParams,
                                 shared_xaxes=True
@@ -1711,13 +1722,15 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, par
     sensMetricValsMatrix, sensParamValsRow, sensParamValsOrigRow = \
         setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                         numMetrics, numParams,
-                        sensNcFilenames)
+                        sensNcFilenames,
+                        beVerbose=False)
 
     # Set up sensitivity-simulation matrices from the extended sensitivity simulation
     sensMetricValsMatrixExt, sensParamValsRowExt, sensParamValsOrigRowExt = \
         setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                         numMetrics, numParams,
-                        sensNcFilenamesExt)
+                        sensNcFilenamesExt,
+                        beVerbose=False)
 
     normlzd_radius_of_curv = np.full_like(sensMetricValsMatrix, 0.0)
 
@@ -1858,7 +1871,7 @@ def calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
     svdInvrsNormlzdWeighted, svdInvrsNormlzdWeightedPC, \
     sValsTruncInvNormlzdWeighted, sValsTruncInvNormlzdWeightedPC, \
     vhNormlzdWeighted, uNormlzdWeighted, sNormlzdWeighted = \
-         calcSvdInvrs(normlzdWeightedSensMatrixDiff, sValsRatio)
+         calcSvdInvrs(normlzdWeightedSensMatrixDiff, sValsRatio, beVerbose=False)
 
     paramsSolnPC, paramsLowValsPC, paramsHiValsPC, dparamsSolnPCBound, dnormlzdParamsSolnPC, \
     defaultBiasesApproxPC, defaultBiasesApproxLowValsPC, \
@@ -1908,13 +1921,8 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
     sensMetricValsMatrix, sensParamValsRow, sensParamValsOrigRow = \
         setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                         numMetrics, numParams,
-                        sensNcFilenames)
-
-    # Set up sensitivity-simulation matrices from the extended sensitivity simulation
-    #sensMetricValsMatrixExt, sensParamValsRowExt, sensParamValsOrigRowExt = \
-    #    setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
-    #                    numMetrics, numParams,
-    #                    sensNcFilenamesExt)
+                        sensNcFilenames,
+                        beVerbose=False)
 
     # Matrix of metric values from default simulation
     # Each column in the matrix is repeated numParams times, for later multiplication
