@@ -47,6 +47,9 @@ def main():
     = \
         setUpInputs()
 
+
+    #print("New run --------------------------------------")
+
     obsMetricValsCol, normMetricValsCol, \
     defaultBiasesCol, \
     defaultParamValsOrigRow,\
@@ -62,6 +65,8 @@ def main():
                            defaultNcFilename
                           )
 
+    #print("Orig defaultBiasesCol=", defaultBiasesCol)
+
     # Construct numMetrics x numParams matrix of second derivatives, d2metrics/dparams2.
     # The derivatives are normalized by observed metric values and max param values.
     normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, \
@@ -69,6 +74,9 @@ def main():
         constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
                                    metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
                                    sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+
+    #print("normlzdSensMatrixPoly=", normlzdSensMatrixPoly)
+    #print("normlzdCurvMatrix=", normlzdCurvMatrix)
 
     # In order to weight certain metrics, multiply each row of normlzdSensMatrixPoly
     # by metricsWeights
@@ -82,14 +90,24 @@ def main():
                                    metricsWeights, obsMetricValsCol, normMetricValsCol, magPrescribedParamValsRow, \
                                    prescribedSensNcFilenames, prescribedSensNcFilenamesExt, defaultNcFilename)
 
+    #print("normlzdPrecribedSensMatrixPoly=", normlzdPrescribedSensMatrixPoly)
+    #print("normlzdPrecribedCurvMatrix=", normlzdPrescribedCurvMatrix)
+
     # This is the prescribed correction to the metrics that appears on the left-hand side of the Taylor equation.
     #   It is not a bias from the obs.  It is a correction to the simulated default metric values
     #   based on prescribed param values.
     normlzdPrescribedBiasesCol = fwdFnc( dnormlzdPrescribedParams, normlzdPrescribedSensMatrixPoly, normlzdPrescribedCurvMatrix )
 
+    #print("normlzdPrecribedBiasesCol=", normlzdPrescribedBiasesCol)
+
     prescribedBiasesCol = normlzdPrescribedBiasesCol * np.abs(normMetricValsCol)
 
-    defaultBiasesCol = defaultBiasesCol - prescribedBiasesCol
+    #print("precribedBiasesCol=", prescribedBiasesCol)
+
+    # defaultBiasesCol + prescribedBiasesCol = -fwdFnc_tuned_params  (see objFnc)
+    defaultBiasesCol = defaultBiasesCol + prescribedBiasesCol
+
+    #print("Orig+Prescribed defaultBiasesCol=", defaultBiasesCol)
 
     #pdb.set_trace()
 
@@ -112,6 +130,13 @@ def main():
                          normlzdCurvMatrix,
                          reglrCoef,
                          beVerbose=False)
+
+
+    #print("dnormlzdPrecribedParams=", dnormlzdPrescribedParams)
+    #print("dnormlzdParamsSolnNonlin=", dnormlzdParamsSolnNonlin)
+    #print("paramsSolnNonlin=", paramsSolnNonlin)
+    #print("magParamValsRow=", magParamValsRow)
+    #print("magPrescribedParamValsRow=", magPrescribedParamValsRow)
 
     #pdb.set_trace()
 
@@ -1153,7 +1178,7 @@ def main():
     )
 
     cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixPoly )
-    invrsCosFactorMinusMatrix = np.power( 2. * ( 1. - cosAnglesMatrix ) , -0.5 )
+    invrsCosFactorMinusMatrix = np.power( np.maximum( np.finfo(float).eps, 2. * ( 1. - cosAnglesMatrix ) ) , -0.5 )
     invrsCosFactorPlusMatrix = np.power( 2. * ( 1. + cosAnglesMatrix ) , -0.5 )
     dbOnAbsSensVector = \
         -defaultBiasesCol/np.abs(normMetricValsCol) \
@@ -1281,11 +1306,12 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
 
     # Perform nonlinear optimization
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
+    #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.ones_like(np.transpose(defaultParamValsOrigRow)), \
     dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow)), \
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
                                normlzdCurvMatrix, reglrCoef),\
-                               method='Powell')
+                               method='Powell', tol=1e-12)
     dnormlzdParamsSolnNonlin = np.atleast_2d(dnormlzdParamsSolnNonlin.x).T
 
     # Check whether the minimizer actually reduces chisqd

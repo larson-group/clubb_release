@@ -137,9 +137,6 @@ def setUpInputs():
                     ['clubb_altitude_threshold', 0.001, \
                      folder_name + 'sens0707_20_Regional.nc',
                      folder_name + 'sens0707_21_Regional.nc'], \
-##                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-##                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc',
-##                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
                     ['clubb_c_invrs_tau_sfc', 1.0, \
                      folder_name + 'sens0707_6_Regional.nc',
                      folder_name + 'sens0707_7_Regional.nc'], \
@@ -166,9 +163,9 @@ def setUpInputs():
 ##                     folder_name + 'sens0707_19_Regional.nc'], \
 ##                     '20220903/anvil.bmg20220630.sens723_12.ne30pg2_r05_oECv3_Regional.nc',
 ##                     '20220903/anvil.bmg20220630.sens723_13.ne30pg2_r05_oECv3_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-#                     folder_name + 'sens0707_16_Regional.nc',
-#                     folder_name + 'sens0707_17_Regional.nc'], \
+                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
+                     folder_name + 'sens0707_16_Regional.nc',
+                     folder_name + 'sens0707_17_Regional.nc'], \
 ##                    ['clubb_c_wp2_splat', 1.0, \
 ##                     folder_name + 'sens0707_26_Regional.nc',
 ##                     folder_name + 'sens0707_27_Regional.nc'], \
@@ -195,13 +192,9 @@ def setUpInputs():
 
     prescribedParamsNamesScalesAndValues = \
                 [ \
-#                    ['clubb_c8', 1.0, 0.5 ], \
-#                    ['clubb_c8', 1.0, 0.47843581 ], \
-#                    ['clubb_c8', 1.0, 2.47843581 ], \
-#                    ['clubb_c_k10', 1.0, 3.0 ], \
-                     ['clubb_c_invrs_tau_bkgnd', 1.0, 1.1, \
-                     folder_name + 'sens0707_16_Regional.nc', \
-                     folder_name + 'sens0707_17_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_bkgnd', 1.0, 1.50686559, \
+#                     folder_name + 'sens0707_16_Regional.nc', \
+#                     folder_name + 'sens0707_17_Regional.nc'], \
                 ]
     # Split up the above list into parameter names, scales, and filenames.
     dfprescribedParamsNamesScalesAndValues =  \
@@ -221,6 +214,7 @@ def setUpInputs():
     prescribedSensNcFilenames = dfprescribedParamsNamesScalesAndValues[['prescribedSensNcFilenames']].to_numpy().astype(str)[:,0]
     prescribedSensNcFilenamesExt = dfprescribedParamsNamesScalesAndValues[['prescribedSensNcFilenamesExt']].to_numpy().astype(str)[:,0]
     prescribedTransformedParamsNames = np.array([''])
+
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
@@ -385,6 +379,10 @@ def setUpPreliminaries(metricsNames, metricsNorms, \
 
     dnormlzdPrescribedParams = ( prescribedParamValsRow - defaultPrescribedParamValsRow ) \
                                 / magPrescribedParamValsRow
+
+    #print("prescribedParamValsRow=", prescribedParamValsRow)
+    #print("defaultPrescribedParamValsRow=", defaultPrescribedParamValsRow)
+    #print("magPrescribedParamValsRow=", magPrescribedParamValsRow)
 
     #pdb.set_trace()
 
