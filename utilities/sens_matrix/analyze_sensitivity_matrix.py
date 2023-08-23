@@ -266,6 +266,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     normlzdWeightedSensMatrix = np.diag(np.transpose(metricsWeights)[0]) @ normlzdSensMatrix
 
     # Compute dot products of  bias vector and matrix columns
+    # IS THIS THE CORRECT DEFINITION OF normlzdDefaultBiasesCol???
     normlzdDefaultBiasesCol = ( metricsWeights * (-defaultBiasesCol) /
                                 np.abs(normMetricValsCol) )
                                 #np.abs(obsMetricValsCol) )
@@ -536,6 +537,7 @@ def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio,
         print("\nsvdInvrs @ normlzdWeightedSensMatrix =")
         print(svdInvrs @ normlzdWeightedSensMatrix)
         sys.exit("\nError: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
+        #print("\nError: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
 
     if beVerbose:
         print("\nSVD inverse =")

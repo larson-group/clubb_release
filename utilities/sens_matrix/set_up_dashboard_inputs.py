@@ -47,6 +47,7 @@ def setUpInputs():
     #   If a value in the 3rd column is set to -999, then the metric is simply normalized by the observed value.
     #   Otherwise, the value in the 3rd column is itself the normalization value for the metric.  
     metricsNamesWeightsAndNorms = [ \
+                        ['SWCF_RMSE', 4.00, 15.], \
                         ['SWCF_GLB', 16.00, -999], \
                         ['SWCF_DYCOMS', 1.00, -999], \
                         ['SWCF_HAWAII', 2.00, -999], \
@@ -233,6 +234,7 @@ def setUpInputs():
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
     # NOTE: PRECT is in the unit of m/s
     obsMetricValsDict = { \
+    'SWCF_RMSE': 0, \
     'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_GLB': -45.81, 'TMQ_GLB': 24.423, \
     'LWCF_DYCOMS': 19.36681938, 'PRECT_DYCOMS':0.000000007141516, 'SWCF_DYCOMS': -63.49394226, 'TMQ_DYCOMS':20.33586884,\
     'LWCF_LBA': 43.83245087, 'PRECT_LBA':0.000000063727875, 'SWCF_LBA': -55.10041809, 'TMQ_LBA': 44.27890396,\
