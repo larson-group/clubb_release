@@ -47,6 +47,12 @@ def setUpInputs():
     #   If a value in the 3rd column is set to -999, then the metric is simply normalized by the observed value.
     #   Otherwise, the value in the 3rd column is itself the normalization value for the metric.  
     metricsNamesWeightsAndNorms = [ \
+#                        ['TMQ_RMSE', 1.00, 15.], \
+#                        ['PSL_RMSE', 1.00, 1000.], \
+#                        ['TS_RMSE', 1.00, 15.], \
+#                        ['LHFLX_RMSE', 1.00, 15.], \
+#                        ['SHFLX_RMSE', 1.00, 15.], \
+#                        ['CLDLOW_RMSE', 1.00, 15.], \
                         ['SWCF_RMSE', 4.00, 15.], \
                         ['SWCF_GLB', 16.00, -999], \
                         ['SWCF_DYCOMS', 1.00, -999], \
@@ -58,7 +64,7 @@ def setUpInputs():
                         ['SWCF_EP', 1.00, -999], \
                         ['SWCF_NP', 1.00, -999], \
                         ['SWCF_SP', 1.00, -999],  \
-##                        ['SWCF_PA', 1.01, -999], \
+#                        ['SWCF_PA', 1.01, -999], \
                         ['SWCF_CAF', 1.00, -999], \
                         ['SWCF_Namibia', 1.00, -999], \
                         ['SWCF_Namibia_near', 1.00, -999], \
@@ -67,10 +73,10 @@ def setUpInputs():
 ###                        ['LWCF_HAWAII', 1.01, -999], \
 ###                        ['LWCF_VOCAL', 1.01, -999], \
 ##                        ['LWCF_LBA', 1.00, -999], \
-##                        ['LWCF_WP', 1.00, -999], \
+#                       ['LWCF_WP', 1.00, -999], \
 ###                        ['LWCF_EP', 1.01, -999], \
-###                        ['LWCF_NP', 1.01, -999], \
-###                        ['LWCF_SP', 1.01, -999], \
+#                        ['LWCF_NP', 1.01, -999], \
+#                        ['LWCF_SP', 1.01, -999], \
 ####                        ['LWCF_PA',  1.01, -999], \
 ###                        ['LWCF_CAF', 1.01, -999], \
                         ['PRECT_GLB', 3.00, -999], \
@@ -106,6 +112,7 @@ def setUpInputs():
     metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
     metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
     metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
+
 
     # Parameters are tunable model parameters, e.g. clubb_C8.
     # The float listed below after the parameter name is a factor that is used below for scaling plots.
@@ -144,9 +151,9 @@ def setUpInputs():
                     ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
                      folder_name + 'sens0707_8_Regional.nc', \
                      folder_name + 'sens0707_9_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
-                     folder_name + 'sens0707_4_Regional.nc',
-                     folder_name + 'sens0707_5_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
+#                     folder_name + 'sens0707_4_Regional.nc',
+#                     folder_name + 'sens0707_5_Regional.nc'], \
 ##                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
@@ -193,6 +200,9 @@ def setUpInputs():
 
     prescribedParamsNamesScalesAndValues = \
                 [ \
+                    ['clubb_c_invrs_tau_n2_wp2', 1.0, 0.1, \
+                     folder_name + 'sens0707_4_Regional.nc',
+                     folder_name + 'sens0707_5_Regional.nc'], \
 #                    ['clubb_c_invrs_tau_bkgnd', 1.0, 1.50686559, \
 #                     folder_name + 'sens0707_16_Regional.nc', \
 #                     folder_name + 'sens0707_17_Regional.nc'], \
@@ -234,7 +244,7 @@ def setUpInputs():
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
     # NOTE: PRECT is in the unit of m/s
     obsMetricValsDict = { \
-    'SWCF_RMSE': 0, \
+    'SWCF_RMSE': 0, 'TMQ_RMSE': 0, 'PSL_RMSE': 0, 'TS_RMSE': 0, 'LHFLX_RMSE': 0, 'SHFLX_RMSE': 0, 'CLDLOW_RMSE': 0, \
     'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_GLB': -45.81, 'TMQ_GLB': 24.423, \
     'LWCF_DYCOMS': 19.36681938, 'PRECT_DYCOMS':0.000000007141516, 'SWCF_DYCOMS': -63.49394226, 'TMQ_DYCOMS':20.33586884,\
     'LWCF_LBA': 43.83245087, 'PRECT_LBA':0.000000063727875, 'SWCF_LBA': -55.10041809, 'TMQ_LBA': 44.27890396,\

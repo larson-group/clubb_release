@@ -31,6 +31,7 @@ def main():
     from set_up_dashboard_inputs import setUpInputs, setUpPreliminaries, \
                                         setupDefaultMetricValsCol
 
+    #print("New run --------------------------------------")
 
     # The user should input all tuning data into file set_up_dashboard_inputs.py
     metricsNames, metricsWeights, metricsNorms, \
@@ -48,7 +49,8 @@ def main():
         setUpInputs()
 
 
-    #print("New run --------------------------------------")
+    # Number of metrics
+    numMetrics = len(metricsNames)
 
     obsMetricValsCol, normMetricValsCol, \
     defaultBiasesCol, \
@@ -96,7 +98,8 @@ def main():
     # This is the prescribed correction to the metrics that appears on the left-hand side of the Taylor equation.
     #   It is not a bias from the obs.  It is a correction to the simulated default metric values
     #   based on prescribed param values.
-    normlzdPrescribedBiasesCol = fwdFnc( dnormlzdPrescribedParams, normlzdPrescribedSensMatrixPoly, normlzdPrescribedCurvMatrix )
+    normlzdPrescribedBiasesCol = \
+         fwdFnc( dnormlzdPrescribedParams, normlzdPrescribedSensMatrixPoly, normlzdPrescribedCurvMatrix, numMetrics )
 
     #print("normlzdPrecribedBiasesCol=", normlzdPrescribedBiasesCol)
 
@@ -128,6 +131,15 @@ def main():
                          reglrCoef,
                          beVerbose=False)
 
+    print("Tuned parameter values (paramsSolnNonlin)")
+    for idx in range(0,len(paramsNames)): print("{:33s} {:7.7g}".format( paramsNames[idx], paramsSolnNonlin[idx][0] ) )
+
+    normlzdLinplusSensMatrixPoly = normlzdSemiLinMatrixFnc(
+                                        dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly, 
+                                        normlzdCurvMatrix, numMetrics)
+
+    #normlzdLinplusSensMatrixPoly = normlzdSensMatrixPoly \
+    #           + 0.5 * normlzdCurvMatrix * ( np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T )
 
     #print("dnormlzdPrecribedParams=", dnormlzdPrescribedParams)
     #print("dnormlzdParamsSolnNonlin=", dnormlzdParamsSolnNonlin)
@@ -186,7 +198,7 @@ def main():
     #                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
     # Create scatterplot to look at outliers
-    #createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, normMetricValsCol, metricsNames, paramsNames)
+    #createPcaBiplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol, normMetricValsCol, metricsNames, paramsNames)
 
     ## Find outliers by use of the ransac algorithm
     #outlier_mask, defaultBiasesApproxRansac, normlzdWeightedDefaultBiasesApproxRansac, \
@@ -241,26 +253,26 @@ def main():
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
     chisqdZero = objFnc(np.zeros_like(defaultParamValsOrigRow), \
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, metricsWeights, \
-                        normlzdCurvMatrix, reglrCoef)
+                        normlzdCurvMatrix, reglrCoef, numMetrics)
     # Optimized value of chisqd, which uses optimal values of parameter perturbations
     chisqdMin = objFnc(dnormlzdParamsSolnNonlin.T, \
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, metricsWeights, \
-                        normlzdCurvMatrix, reglrCoef)
+                        normlzdCurvMatrix, reglrCoef, numMetrics)
 
-    print("chisqdZero =", chisqdZero)
-    print("chisqdMin =", chisqdMin)
+    #print("chisqdZero =", chisqdZero)
+    #print("chisqdMin =", chisqdMin)
     print("chisqdMinRatio =", chisqdMin/chisqdZero)
 
     chisqdUnweightedZero = objFnc(np.zeros_like(defaultParamValsOrigRow), \
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, np.ones_like(metricsWeights), \
-                        normlzdCurvMatrix, reglrCoef)
+                        normlzdCurvMatrix, reglrCoef, numMetrics)
     # Optimized value of chisqd, which uses optimal values of parameter perturbations
     chisqdUnweightedMin = objFnc(dnormlzdParamsSolnNonlin.T, \
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, np.ones_like(metricsWeights), \
-                        normlzdCurvMatrix, reglrCoef)
+                        normlzdCurvMatrix, reglrCoef, numMetrics)
 
-    print("chisqdUnweightedZero =", chisqdUnweightedZero)
-    print("chisqdUnweightedMin =", chisqdUnweightedMin)
+    #print("chisqdUnweightedZero =", chisqdUnweightedZero)
+    #print("chisqdUnweightedMin =", chisqdUnweightedMin)
     print("chisqdUnweightedMinRatio =", chisqdUnweightedMin/chisqdUnweightedZero)
 
 
@@ -538,27 +550,27 @@ def main():
 
     #biasesOrderedArrowFig.write_image('biasesOrderedArrowFig.png', scale=6)
 
-    # Create plot showing how well the regional biases are actually removed
+    ## Create plot showing how well the regional biases are actually removed
     metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1) # measure of sensitivity of each metric
-    # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
+    ## metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
     metricsSensOrdered = metricsSens.argsort()
     metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
     normlzdSensMatrixOrdered = normlzdSensMatrixPoly[metricsSensOrdered,:]
-    # Form matrix of parameter perturbations, for later multiplication into the sensitivity matrix
+    ## Form matrix of parameter perturbations, for later multiplication into the sensitivity matrix
     dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
     normlzdSensParamsMatrixOrdered = normlzdSensMatrixOrdered * dnormlzdParamsSolnNonlinMatrix
-    df = pd.DataFrame(-1*normlzdSensParamsMatrixOrdered,
-                      index=metricsNamesOrdered,
-                      columns=paramsNames)
-    biasContrOrderFig = px.bar(df, x=df.index, y=df.columns,
-              title = """Linear contributions to actual removal of regional biases""")
-    biasContrOrderFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
-    biasContrOrderFig.update_xaxes(title="Regional metric")
-    biasContrOrderFig.update_layout(hovermode="x")
-    biasContrOrderFig.update_layout(showlegend=True)
-    #biasContrOrderFig.update_traces(mode='markers', line_color='black')  # Plot default biases as black dots
-    biasContrOrderFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
-    biasContrOrderFig.update_layout( width=800, height=500  )
+    #df = pd.DataFrame(-1*normlzdSensParamsMatrixOrdered,
+    #                  index=metricsNamesOrdered,
+    #                  columns=paramsNames)
+    #biasContrOrderFig = px.bar(df, x=df.index, y=df.columns,
+    #          title = """Linear contributions to actual removal of regional biases""")
+    #biasContrOrderFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")
+    #biasContrOrderFig.update_xaxes(title="Regional metric")
+    #biasContrOrderFig.update_layout(hovermode="x")
+    #biasContrOrderFig.update_layout(showlegend=True)
+    ##biasContrOrderFig.update_traces(mode='markers', line_color='black')  # Plot default biases as black dots
+    #biasContrOrderFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    #biasContrOrderFig.update_layout( width=800, height=500  )
     # Now plot an arrow for each region that points from default-run bias to new bias after tuning
     # xArrow = np.arange(len(metricsNamesOrdered)) # x-coordinate of arrows
     # yArrow = -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
@@ -598,19 +610,21 @@ def main():
     dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
     curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrdered,:] * dnormlzdParamsSolnNonlinMatrix**2
     #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
-    df = pd.DataFrame(-1*curvParamsMatrixOrdered + -1*normlzdSensParamsMatrixOrdered,
-                      index=metricsNamesOrdered,
-                      columns=paramsNames)
-    biasTotContrbBarFig = px.bar(df, x=df.index, y=df.columns,
-              title = """Linear + nonlinear contributions of parameters to actual removal of regional biases""")
-    biasTotContrbBarFig.update_yaxes(title="Contribution to bias removal")
-    biasTotContrbBarFig.update_xaxes(title="Regional metric")
-    biasTotContrbBarFig.update_layout(hovermode="x")
-    biasTotContrbBarFig.update_layout(showlegend=True)
-    biasTotContrbBarFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
-    biasTotContrbBarFig.update_layout( width=800, height=500  )
+    minusNonlinMatrixOrdered = -1*curvParamsMatrixOrdered + -1*normlzdSensParamsMatrixOrdered
 
+    biasTotContrbBarFig = \
+          createBarChart( minusNonlinMatrixOrdered, index=metricsNamesOrdered, columns=paramsNames,
+                          orientation = 'v',
+                          title="""Linear + nonlinear contributions of parameters to actual removal of regional biases""",
+                          xlabel="Regional metric", ylabel="Contribution to bias removal", 
+                          width=800, height=500 )
 
+    paramsTotContrbBarFig = \
+          createBarChart( minusNonlinMatrixOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
+                          orientation = 'v',
+                          title="""Linear + nonlinear contributions of parameters to actual removal of regional biases""",
+                          xlabel="Parameter", ylabel="Contribution to bias removal", 
+                          width=800, height=500 )
 
     #dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
     #curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrdered,:] * dnormlzdParamsSolnNonlinMatrix**2
@@ -780,15 +794,18 @@ def main():
     # Plot the biases versus sensitivity of each regional metric.
     #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
     #df = pd.DataFrame({'Max abs normlzd sensitivity': np.max(np.abs(normlzdSensMatrixPoly), axis=1), # max |row elements|
-    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.sum(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
-    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
-    df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdSensMatrixPoly, axis=1), # sum of row elements
+    df = pd.DataFrame({'Max abs normlzd sensitivity': np.sum(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
+    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1), # rms of row elements
+    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdSensMatrixPoly, axis=1), # rms of row elements
     #df = pd.DataFrame({'Max abs normlzd sensitivity':
     #                    -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0])*np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
-                       'default tuning': -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0]),
+                       'Max abs normlzd lin+ sensitivity': np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1), # sum of row elements
+                       'Default biases': -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0]),
     #                   'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(normMetricValsCol[:,0])
                       }, index=metricsNames )
-    biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
+    #biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
+    #biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y='default tuning',
+    biasesVsSensMagScatterplot = px.scatter(df, x=['Max abs normlzd sensitivity','Max abs normlzd lin+ sensitivity'], y='Default biases',
                                  text=metricsNames, 
                                  title = """Regional biases vs. magnitude of sensitivity.""")
     biasesVsSensMagScatterplot.update_yaxes(title="Regional biases")
@@ -1064,16 +1081,19 @@ def main():
 
     #pdb.set_trace()
 
-    roundedNormlzdSensMatrix = np.around( normlzdSensMatrixPoly, decimals=2)
+    roundedNormlzdSensMatrix = np.around( normlzdLinplusSensMatrixPoly, decimals=2)
     df_sensmat = pd.DataFrame(roundedNormlzdSensMatrix,
                   index=metricsNames,
                   columns=paramsNames)
+    matMaxAbs = np.max(np.abs(roundedNormlzdSensMatrix))
     normlzdSensMatrixFig = ff.create_annotated_heatmap(
                    z=df_sensmat.to_numpy(),
                    x=df_sensmat.columns.tolist(),
                    y=df_sensmat.index.tolist(),
-                   coloraxis="coloraxis",
+                   #coloraxis="coloraxis",
                    #colorscale=px.colors.diverging.balance,
+                   colorscale='balance',
+                   zmin=-matMaxAbs, zmax=matMaxAbs,
                    showscale=False, ygap=1, xgap=1
                    )
     normlzdSensMatrixFig.update_xaxes(side="bottom")
@@ -1086,19 +1106,21 @@ def main():
     yaxis_showgrid=False,
     xaxis_zeroline=False,
     yaxis_zeroline=False,
-    yaxis_autorange='reversed',
+    #yaxis_autorange='reversed',
     template='plotly_white'
     )
-    df_biasArray = pd.DataFrame( np.around(defaultBiasesCol/np.abs(normMetricValsCol), decimals=2),
+    df_biasArray = pd.DataFrame( -np.around(defaultBiasesCol/np.abs(normMetricValsCol), decimals=2),
                    index=metricsNames,
-                   columns= ['Normalized Biases'])
+                   columns= ['-Normalized Biases'])
     normlzdBiasArrayFig = ff.create_annotated_heatmap(
                    z=df_biasArray.to_numpy(),
                    x=df_biasArray.columns.tolist(),
                    y=df_biasArray.index.tolist(),
                    #colorscale=normlzdSensMatrixFig.colorscale,
                    #colorscale=px.colors.diverging.balance,
-                   coloraxis="coloraxis",
+                   #coloraxis="coloraxis",
+                   colorscale='balance',
+                   zmin=-matMaxAbs, zmax=matMaxAbs,
                    showscale=True, ygap=1, xgap=1
                    )
     normlzdBiasArrayFig.update_layout(
@@ -1110,8 +1132,8 @@ def main():
     yaxis_showgrid=False,
     xaxis_zeroline=False,
     yaxis_zeroline=False,
-    yaxis_autorange='reversed',
-    template='plotly_white'
+    #yaxis_autorange='reversed',
+    #template='plotly_white'
     )
     sensMatrixBiasFig = make_subplots(
     rows=1, cols=2,
@@ -1127,7 +1149,9 @@ def main():
         template='plotly_white') 
     sensMatrixBiasFig.update_layout(coloraxis=dict(colorscale='RdBu',cmin=-1,cmax=1), showlegend=False)
 
-    cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixPoly )
+    #pdb.set_trace()
+
+    cosAnglesMatrix = calcMatrixAngles( normlzdLinplusSensMatrixPoly )
     roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
     df = pd.DataFrame(roundedCosAnglesMatrix,
                   index=metricsNames,
@@ -1176,7 +1200,7 @@ def main():
     )
 
     # Create color-coded matrix that displays correlations among parameter vectors
-    normlzdSensMatrixConcatBiases = np.hstack((normlzdSensMatrixPoly, normlzdDefaultBiasesCol))
+    normlzdSensMatrixConcatBiases = np.hstack((normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol))
     cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixConcatBiases.T )
     roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
     df = pd.DataFrame(roundedCosAnglesMatrix,
@@ -1258,6 +1282,7 @@ def main():
         dcc.Graph( id='paramsBarChart', figure=paramsBarChart ),
         dcc.Graph( id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig ),
         dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
+        dcc.Graph( id='paramsTotContrbBarFig', figure=paramsTotContrbBarFig ),
         dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ),
         dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ),
         dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ),
@@ -1291,26 +1316,38 @@ def main():
 
     return
 
+# Calculate semi-linear matrix, sensMatrix + curvMatrix*dp, for use in forward solution
+def normlzdSemiLinMatrixFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics):
+    import numpy as np
+
+    normlzdSemiLinMatrix = \
+        normlzdSensMatrix \
+        + 0.5 * normlzdCurvMatrix * ( np.ones((numMetrics,1)) @ dnormlzdParams.T )
+
+    return normlzdSemiLinMatrix
+
 # Calculate forward nonlinear solution, normalized but not weighted
-def fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix):
+def fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics):
     import numpy as np
 
     normlzdDefaultBiasesApproxNonlin = \
-            normlzdSensMatrix @ dnormlzdParams \
-            + 0.5 * normlzdCurvMatrix @ (dnormlzdParams * dnormlzdParams) 
+        normlzdSemiLinMatrixFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics) @ dnormlzdParams
+
+            #normlzdSensMatrix @ dnormlzdParams \
+            #+ 0.5 * normlzdCurvMatrix @ (dnormlzdParams * dnormlzdParams) 
 
     return normlzdDefaultBiasesApproxNonlin
 
 # Define objective function that is to be minimized.
 def objFnc(dnormlzdParams, normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
-           normlzdCurvMatrix, reglrCoef):
+           normlzdCurvMatrix, reglrCoef, numMetrics):
 
     import numpy as np
     import pdb
 
     dnormlzdParams = np.atleast_2d(dnormlzdParams).T # convert from 1d row array to 2d column array
     chisqd = np.linalg.norm( (-normlzdDefaultBiasesCol \
-                              - fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix) \
+                              - fwdFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics) \
                              ) * metricsWeights \
                                 , ord=2 \
                            )**1  \
@@ -1332,13 +1369,15 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
     from scipy.optimize import minimize
 
 
+    numMetrics = len(metricsNames)
+
     # Perform nonlinear optimization
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
     #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.ones_like(np.transpose(defaultParamValsOrigRow)), \
     dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow)), \
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
-                               normlzdCurvMatrix, reglrCoef),\
+                               normlzdCurvMatrix, reglrCoef, numMetrics),\
                                method='Powell', tol=1e-12)
     dnormlzdParamsSolnNonlin = np.atleast_2d(dnormlzdParamsSolnNonlin.x).T
 
@@ -1353,12 +1392,12 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
         print("normlzdSensMatrix=", normlzdSensMatrix)
 
     normlzdWeightedDefaultBiasesApproxNonlin = \
-             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, normlzdCurvMatrix) \
+             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, normlzdCurvMatrix, numMetrics) \
              * metricsWeights
 
     scale = 2
     normlzdWeightedDefaultBiasesApproxNonlin2x = \
-             fwdFnc(scale*dnormlzdParamsSolnNonlin, normlzdSensMatrix, 1*normlzdCurvMatrix) \
+             fwdFnc(scale*dnormlzdParamsSolnNonlin, normlzdSensMatrix, 1*normlzdCurvMatrix, numMetrics) \
              * metricsWeights
 
     # defaultBiasesApprox = (forward model soln - default soln)
@@ -1370,18 +1409,18 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
 
     # To provide error bars, calculate solution with no nonlinear term and double the nonlinear term
     defaultBiasesApproxNonlinNoCurv = \
-             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 0*normlzdCurvMatrix) \
+             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 0*normlzdCurvMatrix, numMetrics) \
              * np.abs(normMetricValsCol)
 
     defaultBiasesApproxNonlin2xCurv = \
-             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 2*normlzdCurvMatrix) \
+             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 2*normlzdCurvMatrix, numMetrics) \
              * np.abs(normMetricValsCol)
 
 
 
     dnormlzdParamsSolnLin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow)), \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
-                               0*normlzdCurvMatrix, reglrCoef),\
+                               0*normlzdCurvMatrix, reglrCoef, numMetrics),\
                                method='Powell')
     dnormlzdParamsSolnLin = np.atleast_2d(dnormlzdParamsSolnLin.x).T
     dparamsSolnLin = dnormlzdParamsSolnLin * np.transpose(magParamValsRow)
@@ -1565,6 +1604,29 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
 
     return ( normlzdCurvMatrixPoly, normlzdSensMatrixPoly, normlzdConstMatrixPoly, \
              normlzdOrdDparamsMin, normlzdOrdDparamsMax )
+
+def createBarChart( matrix, index, columns, 
+                        orientation,
+                        title, 
+                        xlabel, ylabel,
+                        width, height):
+
+    import plotly.express as px
+    import pandas as pd
+
+    df = pd.DataFrame(matrix,
+                      index=index,
+                      columns=columns)
+    barChart = px.bar(df, x=df.index, y=df.columns, orientation=orientation,
+                          title = title)
+    barChart.update_xaxes(title=xlabel)
+    barChart.update_yaxes(title=ylabel)
+    barChart.update_layout(hovermode="x")
+    barChart.update_layout(showlegend=True)
+    barChart.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    barChart.update_layout( width=width, height=height  )
+
+    return barChart
 
 def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
                                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
@@ -2032,23 +2094,6 @@ def calcMatrixAngles( matrix ):
     return cosAnglesMatrix
 
 def createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, normMetricValsCol, metricsNames, paramsNames):
-
-    import numpy as np
-    from pca import pca
-    import pdb
-
-    # reduce the data towards 2 PCs
-    model = pca(n_components=2, detect_outliers='ht2')
-
-    # Augmented array with LHS and RHS
-    augMatrix = np.concatenate((normlzdSensMatrix, -defaultBiasesCol / np.abs(normMetricValsCol) ), axis=1)
-
-    paramsList = list(paramsNames)
-    paramsList.append('dbias')
-    augParamsNames = np.asarray(paramsList)
-
-def createPcaBiplot(normlzdSensMatrix, defaultBiasesCol, normMetricValsCol, metricsNames, paramsNames):
-
 
     import numpy as np
     from pca import pca

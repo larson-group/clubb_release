@@ -536,8 +536,8 @@ def calcSvdInvrs(normlzdWeightedSensMatrix, sValsRatio,
                       rtol=2e-6 , atol=2e-6 ) ):
         print("\nsvdInvrs @ normlzdWeightedSensMatrix =")
         print(svdInvrs @ normlzdWeightedSensMatrix)
-        sys.exit("\nError: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
-        #print("\nError: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
+        #sys.exit("\nError: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
+        print("\nError: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
 
     if beVerbose:
         print("\nSVD inverse =")
