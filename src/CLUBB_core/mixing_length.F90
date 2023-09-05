@@ -1583,7 +1583,7 @@ module mixing_length
     if ( l_modify_limiters_for_cnvg_test ) then 
 
       !Remove the limiters to improve the solution convergence 
-      brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz,ngrdcol,gr, brunt_vaisala_freq_sqd )
+      brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz,ngrdcol,gr, brunt_vaisala_freq_sqd_mixed )
 
     else  ! default method  
 
@@ -1592,13 +1592,13 @@ module mixing_length
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            tmp_calc(i,k) = 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd(i,k))**3
+            tmp_calc(i,k) = 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3
           end do
         end do
         !$acc end parallel loop
 
         brunt_vaisala_freq_clipped = smooth_min( nz, ngrdcol, &
-                                                 brunt_vaisala_freq_sqd, &
+                                                 brunt_vaisala_freq_sqd_mixed, &
                                                  tmp_calc, &
                                                  1.0e-4_core_rknd * min_max_smth_mag)
 
@@ -1609,8 +1609,8 @@ module mixing_length
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            brunt_vaisala_freq_clipped(i,k) = min( brunt_vaisala_freq_sqd(i,k), &
-                                                   1.e8_core_rknd * abs(brunt_vaisala_freq_sqd(i,k))**3)
+            brunt_vaisala_freq_clipped(i,k) = min( brunt_vaisala_freq_sqd_mixed(i,k), &
+                                                   1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3)
           end do
         end do
         !$acc end parallel loop
@@ -1841,7 +1841,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          invrs_tau_xp2_zm(i,k) = 0.1_core_rknd * invrs_tau_bkgnd(i,k) + invrs_tau_sfc(i,k) &
+          invrs_tau_xp2_zm(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_sfc(i,k) &
                                   + invrs_tau_shear(i,k) + C_invrs_tau_N2_xp2 * brunt_freq_pos(i,k)
         end do
       end do
@@ -1849,16 +1849,16 @@ module mixing_length
 
       ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac )
 
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
-          if ( ice_supersat_frac_zm(i,k) <= 0.01_core_rknd &
-               .and. invrs_tau_xp2_zm(i,k)  >= 0.003_core_rknd ) then
-            invrs_tau_xp2_zm(i,k) = 0.003_core_rknd
-          end if
-        end do
-      end do
-      !$acc end parallel loop
+!      !$acc parallel loop gang vector collapse(2) default(present)
+!      do k = 1, nz
+!        do i = 1, ngrdcol
+!          if ( ice_supersat_frac_zm(i,k) <= 0.01_core_rknd &
+!               .and. invrs_tau_xp2_zm(i,k)  >= 0.003_core_rknd ) then
+!            invrs_tau_xp2_zm(i,k) = 0.003_core_rknd
+!          end if
+!        end do
+!      end do
+!      !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
