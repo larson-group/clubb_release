@@ -108,7 +108,7 @@ module error
     file_unit = 15  ! File unit number connected with tuning_filename
 
 
-  character(len=10), dimension(:), allocatable, private ::  &
+  character(len=20), dimension(:), allocatable, private ::  &
     hoc_v,  & ! Variables in CLUBB GrADS files
     les_v  ! Variables in LES GrADS files
 
@@ -287,7 +287,7 @@ module error
       hoc_stats_file_nl, & 
       les_stats_file_nl
 
-    character(len=10), dimension(max_variables) :: &
+    character(len=20), dimension(max_variables) :: &
       t_variables ! List of variables to be read from the GrADS output
 
     ! Variables for parameter loops (ploops) tuner
@@ -373,7 +373,7 @@ module error
       z_f_nl = 0
 
       ! Initialize variable names to spaces
-      t_variables(1:max_variables)  = "          "
+      t_variables(1:max_variables)  = "                    "
 
       iunit = 10
 
@@ -420,7 +420,7 @@ module error
       ! Allocate the arrays for the tuning variables
 
       do i = 1, max_variables, 2 ! 1, 3, 5, 7
-        if (t_variables(i) == "          ") exit
+        if (t_variables(i) == "                    ") exit
         v_total = (i + 1) / 2
       end do
 

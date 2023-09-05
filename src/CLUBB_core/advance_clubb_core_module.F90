@@ -983,7 +983,7 @@ module advance_clubb_core_module
     !$acc              invrs_tau_sfc, invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
     !$acc              brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc              brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc              brunt_vaisala_freq_sqd_plus, brunt_vaisala_freq_sqd_splat, &
+    !$acc              brunt_vaisala_freq_sqd_splat, &
     !$acc              brunt_vaisala_freq_sqd_zt, sqrt_Ri_zm, Lscale_max, &
     !$acc              tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
 
@@ -1549,6 +1549,7 @@ module advance_clubb_core_module
           invrs_tau_xp2_zm(i,k)  = invrs_tau_zm(i,k)
           invrs_tau_wpxp_zm(i,k) = invrs_tau_zm(i,k)
           invrs_tau_wp3_zt(i,k)  = invrs_tau_zt(i,k)
+          invrs_tau_wp3_zm(i,k)  = invrs_tau_zm(i,k)
 
           tau_max_zm(i,k) = taumax
           tau_max_zt(i,k) = taumax
@@ -2899,7 +2900,7 @@ module advance_clubb_core_module
     !$acc                   invrs_tau_sfc, invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
     !$acc                   brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                   brunt_vaisala_freq_sqd_plus, brunt_vaisala_freq_sqd_splat, &
+    !$acc                   brunt_vaisala_freq_sqd_splat, &
     !$acc                   brunt_vaisala_freq_sqd_zt, sqrt_Ri_zm, Lscale_max, &
     !$acc                   tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
 

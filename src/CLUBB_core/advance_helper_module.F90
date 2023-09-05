@@ -332,7 +332,7 @@ module advance_helper_module
 
     !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                   brunt_vaisala_freq_sqd_plus, lambda0_stability, Lscale_zm )
+    !$acc                   lambda0_stability, Lscale_zm )
 
     return
 
@@ -897,8 +897,8 @@ module advance_helper_module
 
     !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                   brunt_vaisala_freq_sqd_plus, Richardson_num, Cx_fnc_interp, &
-    !$acc                   Ri_zm, ddzt_um, ddzt_vm, shear_sqd, turb_freq_sqd, Lscale_zm, &
+    !$acc                   Richardson_num, Cx_fnc_interp, Ri_zm, &
+    !$acc                   ddzt_um, ddzt_vm, shear_sqd, turb_freq_sqd, Lscale_zm, &
     !$acc                   Richardson_num_clipped, Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                   fnc_Richardson_clipped, fnc_Richardson_smooth )
 
