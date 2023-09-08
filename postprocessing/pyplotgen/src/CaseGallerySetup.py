@@ -8,6 +8,7 @@ import numpy as np
 
 from config.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from config.VariableGroupBaseBudgetsSamStyle import VariableGroupBaseBudgetsSamStyle
+from config.VariableGroupBaseBudgetsLumpedBuoy import VariableGroupBaseBudgetsLumpedBuoy
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSubcolumns import VariableGroupSubcolumns
 from config.VariableGroupSamProfiles import VariableGroupSamProfiles
