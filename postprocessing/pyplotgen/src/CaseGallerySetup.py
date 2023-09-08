@@ -29,9 +29,9 @@ class CaseGallerySetup:
     """
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
-                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_folders=[], cam_folders=[],
-                 time_height=False, animation=None, samstyle=False, plot_subcolumns=False, image_extension=".png",
-                 total_panels_to_plot=0, priority_vars=False):
+                 plot_les=False, plot_budgets=False, lumped_buoy_budgets=False, plot_r408=False, plot_hoc=False,
+                 e3sm_folders=[], cam_folders=[], time_height=False, animation=None, samstyle=False,
+                 plot_subcolumns=False, image_extension=".png", total_panels_to_plot=0, priority_vars=False):
         """
         Initialize a CaseGallerySetup object with the passed parameters
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
@@ -45,6 +45,7 @@ class CaseGallerySetup:
         :param plot_les: If True pyplotgen plots LES lines, if False pyplotgen does not plot LES lines
         :param plot_budgets: If True pyplotgen will plot Budgets in addition to the other plots
             If False (default), pyplotgen will not plot budgets
+        :param lumped_buoy_budgets: If True and if plot_budgets in true, wpxp_bp and wpxp_pr3 will be lumped into one budget term
         :param plot_r408: If True, pyplotgen will plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
             If False (default), pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
         :param plot_hoc: If True, pyplotgen will plot the HOC 2005 dependent_data lines
@@ -63,6 +64,7 @@ class CaseGallerySetup:
         self.clubb_datasets = clubb_folders
         self.blacklisted_variables = case_definition['blacklisted_vars']
         self.plot_budgets = plot_budgets
+        self.lumped_buoy_budgets = lumped_buoy_budgets
         self.plot_r408 = plot_r408
         self.plot_hoc = plot_hoc
         self.plot_les = plot_les
@@ -90,6 +92,7 @@ class CaseGallerySetup:
 
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
+            self.lumped_buoy_budgets = False
 
         # Load benchmark files
         if self.plot_les:
@@ -157,8 +160,12 @@ class CaseGallerySetup:
                     folder_name = os.path.basename(input_folder)
                     if input_folder in self.clubb_datasets.keys():
                         if not self.sam_style_budgets:
-                            budget_variables = VariableGroupBaseBudgets(self, priority_vars=self.priority_vars,
-                                                         clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
+                            if not self.lumped_buoy_budgets:
+                                budget_variables = VariableGroupBaseBudgets(self, priority_vars=self.priority_vars,
+                                                             clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
+                            else:
+                                budget_variables = VariableGroupBaseBudgetsLumpedBuoy(self, priority_vars=self.priority_vars,
+                                                             clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
                         else:
                             budget_variables = VariableGroupBaseBudgetsSamStyle(self, priority_vars=self.priority_vars,
                                                          clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
