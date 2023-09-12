@@ -32,7 +32,8 @@ class Panel:
     VALID_PANEL_TYPES = [TYPE_PROFILE, TYPE_BUDGET, TYPE_TIMESERIES, TYPE_TIMEHEIGHT, TYPE_ANIMATION, TYPE_SUBCOLUMN]
 
     def __init__(self, plots, bkgrnd_rcm_tavg, altitude_bkgrnd_rcm, start_alt_idx, end_alt_idx,
-                 panel_type="profile", title="Unnamed panel", dependent_title="dependent variable", sci_scale = None, centered = False):
+                 panel_type="profile", title="Unnamed panel", dependent_title="dependent variable", sci_scale = None,
+                 centered = False, background_rcm = False):
         """
         Creates a new panel
 
@@ -48,6 +49,7 @@ class Panel:
             If not specified, the matplotlib default sci scaling will be used.
         :param centered: If True, the Panel will be centered around 0.
             Profile plots are usually centered, while budget plots are not.
+        :param background_rcm: Show a height-based "contour" plot of time-averaged rcm behind CLUBB profiles.
         """
         self.panel_type = panel_type
         self.all_plots = plots
@@ -62,6 +64,7 @@ class Panel:
         self.__init_axis_titles__()
         self.sci_scale = sci_scale
         self.centered = centered
+        self.background_rcm = background_rcm
 
     def __init_axis_titles__(self):
         """
@@ -230,8 +233,10 @@ class Panel:
             box = ax.get_position()
             ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
             # Put a legend to the right of the current axis
-            #ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-            ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
+            if not self.background_rcm:
+                ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
 
         # Center plots
         if max_panel_value != 0:
@@ -247,19 +252,20 @@ class Panel:
             plt.axvline(x=0, color='grey', ls='-')
 
         # Background rcm contour plot
-        num_points = self.end_alt_idx - self.start_alt_idx + 1
-        bkgrnd_rcm_tavg_contours = np.eye( num_points )
-        for i in range(num_points):
-            for j in range(num_points):
-                bkgrnd_rcm_tavg_contours[i,j] = self.bkgrnd_rcm_tavg[self.start_alt_idx+i]
-        x_vector_contour = np.zeros( num_points )
-        x_diff = xlim[1] - xlim[0]
-        x_interval = x_diff / ( num_points - 1 )
-        for k in range(num_points):
-            x_vector_contour[k] = xlim[0] + float(k) * x_interval
-        plt.contourf( x_vector_contour, self.altitude_bkgrnd_rcm[self.start_alt_idx:self.end_alt_idx+1], bkgrnd_rcm_tavg_contours,
-                      cmap=plt.set_cmap("cool") )
-        plt.colorbar( label="rcm [kg/kg]", orientation="vertical" )
+        if self.background_rcm:
+            num_points = self.end_alt_idx - self.start_alt_idx + 1
+            bkgrnd_rcm_tavg_contours = np.eye( num_points )
+            for i in range(num_points):
+                for j in range(num_points):
+                    bkgrnd_rcm_tavg_contours[i,j] = self.bkgrnd_rcm_tavg[self.start_alt_idx+i]
+            x_vector_contour = np.zeros( num_points )
+            x_diff = xlim[1] - xlim[0]
+            x_interval = x_diff / ( num_points - 1 )
+            for k in range(num_points):
+                x_vector_contour[k] = xlim[0] + float(k) * x_interval
+            plt.contourf( x_vector_contour, self.altitude_bkgrnd_rcm[self.start_alt_idx:self.end_alt_idx+1], bkgrnd_rcm_tavg_contours,
+                          cmap=plt.set_cmap("cool") )
+            plt.colorbar( label="rcm [kg/kg]", orientation="vertical" )
 
         # Create folders
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must

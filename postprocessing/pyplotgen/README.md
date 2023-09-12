@@ -50,6 +50,7 @@ The user can either change this line of code to match their file name (probably 
 | --thin | Plot lines with a thin width |
 | -b --plot-budgets | Includes budget panels in output |
 | --lumped-buoy-budgets | Lump together wpxp_bp and wpxp_pr3 terms in CLUBB's budgets |
+| --background_rcm | Show a height-based "contour" plot of time-averaged rcm behind CLUBB profiles |
 | -t --time-height-plots | Instead of time-averaged profiles, create contour plots from 2d data |
 | --diff [FOLDER PATHNAME] | (Experimental) Plots the difference between the input folder and the folder specified after --diff instead of plotting a regular profile |
 | --no-legends | Panels are drawn without a line legend |

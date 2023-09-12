@@ -36,7 +36,7 @@ class VariableGroup:
     def __init__(self, case, clubb_datasets=None, sam_benchmark_dataset=None, coamps_benchmark_dataset=None,
                  wrf_benchmark_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
-                 priority_vars=False):
+                 priority_vars=False, background_rcm=False):
         """
         Initialize a VariableGroup object with the passed parameters
 
@@ -52,6 +52,7 @@ class VariableGroup:
         :param e3sm_datasets: A dictionary of or a single NetCDF4 Dataset object containing e3sm output
         :param sam_datasets: A dictionary of or a single NetCDF4 Dataset object containing sam output
         :param wrf_datasets: A dictionary of or a single NetCDF4 Dataset object containing wrf output
+        :param background_rcm: Show a height-based "contour" plot of time-averaged rcm behind CLUBB profiles.
         """
         self.variables = []
         self.panels = []
@@ -75,6 +76,9 @@ class VariableGroup:
         self.time_height = case.time_height
         self.animation = case.animation
         self.priority_vars = priority_vars
+        self.background_rcm = background_rcm
+
+        print(self.background_rcm)
 
         # Loop over the list self.variable_definitions which is only defined in the subclasses
         # that can be found in the config folder such as VariableGroupBase
@@ -91,23 +95,45 @@ class VariableGroup:
             else:
                 logToFile('\tVariable {} is blacklisted and will therefore not be plotted.'.format(variable))
 
-        if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
-            bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['rcm'] )
-            self.altitude_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['altitude'] )
-            time_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['time'] )
-            start_time_seconds = 60.0 * self.start_time # self.start_time is in minutes, while time_bkgrnd_rcm is in seconds.
-            end_time_seconds = 60.0 * self.end_time # self.end_time is in minutes, while time_bkgrnd_rcm is in seconds.
-            start_time_idx, end_time_idx = DataReader.__getStartEndIndex__(time_bkgrnd_rcm, start_time_seconds, end_time_seconds)
-            self.start_alt_idx, self.end_alt_idx = DataReader.__getStartEndIndex__(self.altitude_bkgrnd_rcm, self.height_min_value, self.height_max_value)
-            nzt = np.shape(bkgrnd_rcm)[1]
-            self.bkgrnd_rcm_tavg = np.zeros(nzt)
-            for z_indx in range(nzt):
-                lev_sum = 0
-                count = 0
-                for t_indx in range(start_time_idx, end_time_idx):
-                    lev_sum = lev_sum + bkgrnd_rcm[t_indx,z_indx]
-                    count = count + 1
-                self.bkgrnd_rcm_tavg[z_indx] = lev_sum / float(count)
+        if self.background_rcm:
+            if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
+                # Extract rcm from the zt NetCDF file. Also extract the time and height values to which the
+                # rcm data points correspond.
+                bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['rcm'] )
+                self.altitude_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['altitude'] )
+                time_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['time'] )
+                # Find the indices in the rcm data that correspond to the start time and end time requested as the
+                # time-averaging interval for the case, as well as the minimum height and maximum height requested
+                # for the plots.
+                start_time_seconds = 60.0 * self.start_time # self.start_time is in minutes, while time_bkgrnd_rcm is in seconds.
+                end_time_seconds = 60.0 * self.end_time # self.end_time is in minutes, while time_bkgrnd_rcm is in seconds.
+                start_time_idx, end_time_idx = DataReader.__getStartEndIndex__(time_bkgrnd_rcm, start_time_seconds, end_time_seconds)
+                self.start_alt_idx, self.end_alt_idx = DataReader.__getStartEndIndex__(self.altitude_bkgrnd_rcm, self.height_min_value, self.height_max_value)
+                # Calculate the time-averaged vertical profile of rcm for use as contours in the background of plots
+                # of CLUBB time-averaged vertical profiles of various model fields.
+                nzt = np.shape(bkgrnd_rcm)[1]
+                self.bkgrnd_rcm_tavg = np.zeros(nzt)
+                for z_indx in range(nzt):
+                    lev_sum = 0
+                    count = 0
+                    for t_indx in range(start_time_idx, end_time_idx):
+                        lev_sum = lev_sum + bkgrnd_rcm[t_indx,z_indx]
+                        count = count + 1
+                    self.bkgrnd_rcm_tavg[z_indx] = lev_sum / float(count)
+            else:
+                # Set the relevant "output" variables to a value just to have them set.
+                # They will be flagged out of interacting with the code.
+                self.bkgrnd_rcm_tavg = 0
+                self.altitude_bkgrnd_rcm = 0
+                self.start_alt_idx = 0
+                self.end_alt_idx = 0
+        else:
+            # Set the relevant "output" variables to a value just to have them set.
+            # They will be flagged out of interacting with the code.
+            self.bkgrnd_rcm_tavg = 0
+            self.altitude_bkgrnd_rcm = 0
+            self.start_alt_idx = 0
+            self.end_alt_idx = 0
 
         self.generatePanels()
         
@@ -410,7 +436,8 @@ class VariableGroup:
                                            sci_scale=sci_scale, centered=centered)
                 else:
                     panel = Panel(plotset, self.bkgrnd_rcm_tavg, self.altitude_bkgrnd_rcm, self.start_alt_idx, self.end_alt_idx,
-                                  title=title, dependent_title=axis_label, panel_type=panel_type, sci_scale=sci_scale, centered=centered)
+                                  title=title, dependent_title=axis_label, panel_type=panel_type, sci_scale=sci_scale,
+                                  centered=centered, background_rcm=self.background_rcm)
                 self.panels.append(panel)
 
     def __getTitles__(self, variable_def_dict, plotted_models_varname):
