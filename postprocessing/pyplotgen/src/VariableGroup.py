@@ -91,6 +91,24 @@ class VariableGroup:
             else:
                 logToFile('\tVariable {} is blacklisted and will therefore not be plotted.'.format(variable))
 
+        if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
+            bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['rcm'] )
+            self.altitude_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['altitude'] )
+            time_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['time'] )
+            start_time_seconds = 60.0 * self.start_time # self.start_time is in minutes, while time_bkgrnd_rcm is in seconds.
+            end_time_seconds = 60.0 * self.end_time # self.end_time is in minutes, while time_bkgrnd_rcm is in seconds.
+            start_time_idx, end_time_idx = DataReader.__getStartEndIndex__(time_bkgrnd_rcm, start_time_seconds, end_time_seconds)
+            self.start_alt_idx, self.end_alt_idx = DataReader.__getStartEndIndex__(self.altitude_bkgrnd_rcm, self.height_min_value, self.height_max_value)
+            nzt = np.shape(bkgrnd_rcm)[1]
+            self.bkgrnd_rcm_tavg = np.zeros(nzt)
+            for z_indx in range(nzt):
+                lev_sum = 0
+                count = 0
+                for t_indx in range(start_time_idx, end_time_idx):
+                    lev_sum = lev_sum + bkgrnd_rcm[t_indx,z_indx]
+                    count = count + 1
+                self.bkgrnd_rcm_tavg[z_indx] = lev_sum / float(count)
+
         self.generatePanels()
         
     def addVariable(self, variable_def_dict):
@@ -391,8 +409,8 @@ class VariableGroup:
                     panel = AnimationPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
                                            sci_scale=sci_scale, centered=centered)
                 else:
-                    panel = Panel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
-                                  sci_scale=sci_scale, centered=centered)
+                    panel = Panel(plotset, self.bkgrnd_rcm_tavg, self.altitude_bkgrnd_rcm, self.start_alt_idx, self.end_alt_idx,
+                                  title=title, dependent_title=axis_label, panel_type=panel_type, sci_scale=sci_scale, centered=centered)
                 self.panels.append(panel)
 
     def __getTitles__(self, variable_def_dict, plotted_models_varname):
