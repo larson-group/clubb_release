@@ -258,13 +258,15 @@ class Panel:
             for i in range(num_points):
                 for j in range(num_points):
                     bkgrnd_rcm_tavg_contours[i,j] = self.bkgrnd_rcm_tavg[self.start_alt_idx+i]
+            min_value = min( self.bkgrnd_rcm_tavg )
+            max_value = max( self.bkgrnd_rcm_tavg )
             x_vector_contour = np.zeros( num_points )
             x_diff = xlim[1] - xlim[0]
             x_interval = x_diff / ( num_points - 1 )
             for k in range(num_points):
                 x_vector_contour[k] = xlim[0] + float(k) * x_interval
             plt.contourf( x_vector_contour, self.altitude_bkgrnd_rcm[self.start_alt_idx:self.end_alt_idx+1], bkgrnd_rcm_tavg_contours,
-                          cmap=plt.set_cmap("cool") )
+                          vmin=min_value, vmax=2.0*max_value, cmap=plt.set_cmap("gist_yarg") )
             plt.colorbar( label="rcm [kg/kg]", orientation="vertical" )
 
         # Create folders
