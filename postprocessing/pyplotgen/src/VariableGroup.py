@@ -78,8 +78,6 @@ class VariableGroup:
         self.priority_vars = priority_vars
         self.background_rcm = background_rcm
 
-        print(self.background_rcm)
-
         # Loop over the list self.variable_definitions which is only defined in the subclasses
         # that can be found in the config folder such as VariableGroupBase
         for variable in self.variable_definitions:
