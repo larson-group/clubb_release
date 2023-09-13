@@ -601,7 +601,7 @@ module model_flags
     l_lmm_stepping = .false.
     l_e3sm_config = .false.
     l_vary_convect_depth = .false.
-    l_use_tke_in_wp3_pr_turb_term = .false.
+    l_use_tke_in_wp3_pr_turb_term = .true.
     l_use_tke_in_wp2_wp3_K_dfsn = .false.
     l_use_wp3_lim_with_smth_Heaviside = .false.
     l_smooth_Heaviside_tau_wpxp = .false.

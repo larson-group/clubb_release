@@ -1,50 +1,58 @@
 &configurable_clubb_flags_nl
 iiPDF_type                   = 1
-ipdf_call_placement          = 1
+ipdf_call_placement          = 2
+penta_solve_method           = 1
+tridiag_solve_method         = 1
 
-l_godunov_upwind_wpxp_ta     = .false.,
-l_upwind_xpyp_ta             = .true.,
-l_godunov_upwind_xpyp_ta     = .false.,
-l_upwind_xm_ma               = .true.,
-l_quintic_poly_interp        = .false.,
-l_tke_aniso                  = .true.,
-l_vert_avg_closure           = .false.,
-l_standard_term_ta           = .false.,
-l_partial_upwind_wp3         = .false.,
-l_use_cloud_cover            = .false.,
-l_rcm_supersat_adj           = .true.,
-l_damp_wp3_Skw_squared       = .true.,
-l_min_wp2_from_corr_wx       = .true.,
-l_min_xp2_from_corr_wx       = .true.,
-l_C2_cloud_frac              = .false.,
-l_predict_upwp_vpwp          = .true.,
-l_diag_Lscale_from_tau       = .false.,
-l_stability_correct_tau_zm   = .false.,
-l_damp_wp2_using_em          = .true.,
-l_use_C7_Richardson          = .true.,
-l_use_precip_frac            = .true.,
-l_do_expldiff_rtm_thlm       = .false.,
-l_use_C11_Richardson         = .false.,
-l_use_shear_Richardson       = .false.,
-l_prescribed_avg_deltaz      = .false.,
-l_diffuse_rtm_and_thlm       = .false.,
-l_stability_correct_Kh_N2_zm = .false.,
-l_trapezoidal_rule_zt        = .false.,
-l_trapezoidal_rule_zm        = .false.,
-l_call_pdf_closure_twice     = .false.,
-l_Lscale_plume_centered      = .false.,
-l_brunt_vaisala_freq_moist   = .false.,
-l_use_thvm_in_bv_freq        = .false.,
-l_lmm_stepping               = .false.,
-l_e3sm_config                = .false.,
-l_vary_convect_depth         = .false.,
-l_use_tke_in_wp3_pr_turb_term = .false.,
-l_use_tke_in_wp2_wp3_K_dfsn  = .false.
-l_mono_flux_lim_thlm         = .true.,
-l_mono_flux_lim_rtm          = .true.,
-l_mono_flux_lim_um           = .true.,
-l_mono_flux_lim_vm           = .true.,
-l_mono_flux_lim_spikefix     = .true.
+
+l_godunov_upwind_wpxp_ta          = .false.,
+l_upwind_xpyp_ta                  = .true.,
+l_godunov_upwind_xpyp_ta          = .false.,
+l_upwind_xm_ma                    = .true.,
+l_quintic_poly_interp             = .false.,
+l_tke_aniso                       = .true.,
+l_vert_avg_closure                = .false.,
+l_standard_term_ta                = .false.,
+l_partial_upwind_wp3              = .false.,
+l_use_cloud_cover                 = .false.,
+l_rcm_supersat_adj                = .true.,
+l_damp_wp3_Skw_squared            = .true.,
+l_min_wp2_from_corr_wx            = .true.,
+l_min_xp2_from_corr_wx            = .true.,
+l_C2_cloud_frac                   = .false.,
+l_predict_upwp_vpwp               = .true.,
+l_diag_Lscale_from_tau            = .false.,
+l_stability_correct_tau_zm        = .false.,
+l_damp_wp2_using_em               = .true.,
+l_use_C7_Richardson               = .true.,
+l_use_precip_frac                 = .true.,
+l_do_expldiff_rtm_thlm            = .false.,
+l_use_C11_Richardson              = .false.,
+l_use_shear_Richardson            = .false.,
+l_prescribed_avg_deltaz           = .false.,
+l_diffuse_rtm_and_thlm            = .false.,
+l_stability_correct_Kh_N2_zm      = .false.,
+l_trapezoidal_rule_zt             = .false.,
+l_trapezoidal_rule_zm             = .false.,
+l_call_pdf_closure_twice          = .false.,
+l_Lscale_plume_centered           = .false.,
+l_brunt_vaisala_freq_moist        = .false.,
+l_use_thvm_in_bv_freq             = .false.,
+l_lmm_stepping                    = .false.,
+l_e3sm_config                     = .false.,
+l_vary_convect_depth              = .false.,
+l_use_tke_in_wp3_pr_turb_term     = .true.,
+l_use_tke_in_wp2_wp3_K_dfsn       = .false.,
+l_use_wp3_lim_with_smth_Heaviside = .false.,
+l_smooth_Heaviside_tau_wpxp       = .false.,
+l_modify_limiters_for_cnvg_test   = .false.,
+l_enable_relaxed_clipping         = .false.,
+l_linearize_pbl_winds             = .false.,
+l_mono_flux_lim_thlm              = .true.,
+l_mono_flux_lim_rtm               = .true.,
+l_mono_flux_lim_um                = .true.,
+l_mono_flux_lim_vm                = .true.,
+l_mono_flux_lim_spikefix          = .true.
 /
 
 &configurable_silhs_flags_nl
@@ -61,4 +69,8 @@ l_lh_instant_var_covar_src  = .true.
 l_lh_limit_weights          = .true.
 l_lh_var_frac               = .false.
 l_lh_normalize_weights      = .true.
+/
+
+&configurable_multi_column_nl
+num_standalone_columns = 1
 /
