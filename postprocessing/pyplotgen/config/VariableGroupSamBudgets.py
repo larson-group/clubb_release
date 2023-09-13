@@ -15,7 +15,7 @@ class VariableGroupSamBudgets(VariableGroup):
                  wrf_benchmark_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, verbose=False,
-                 priority_vars=False, background_rcm=False):
+                 priority_vars=False, background_rcm=False, background_rcm_folder=None):
         """
 
         :param clubb_datasets:
@@ -981,7 +981,8 @@ class VariableGroupSamBudgets(VariableGroup):
                          coamps_benchmark_dataset=coamps_benchmark_dataset, wrf_benchmark_dataset=wrf_benchmark_dataset,
                          r408_dataset=r408_dataset, cam_datasets=cam_datasets,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
-                         priority_vars=priority_vars, background_rcm=background_rcm)
+                         priority_vars=priority_vars, background_rcm=background_rcm,
+                         background_rcm_folder=background_rcm_folder)
 
     def getHlResidual(self, dataset_override=None):
         """

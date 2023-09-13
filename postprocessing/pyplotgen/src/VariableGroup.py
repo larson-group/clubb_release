@@ -36,7 +36,7 @@ class VariableGroup:
     def __init__(self, case, clubb_datasets=None, sam_benchmark_dataset=None, coamps_benchmark_dataset=None,
                  wrf_benchmark_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
-                 priority_vars=False, background_rcm=False):
+                 priority_vars=False, background_rcm=False, background_rcm_folder=None):
         """
         Initialize a VariableGroup object with the passed parameters
 
@@ -53,6 +53,7 @@ class VariableGroup:
         :param sam_datasets: A dictionary of or a single NetCDF4 Dataset object containing sam output
         :param wrf_datasets: A dictionary of or a single NetCDF4 Dataset object containing wrf output
         :param background_rcm: Show a height-based "contour" plot of time-averaged rcm behind CLUBB profiles.
+        :param background_rcm_folder: Folder of CLUBB output data from which to pull the background rcm (if background_rcm is enabled).
         """
         self.variables = []
         self.panels = []
@@ -77,6 +78,7 @@ class VariableGroup:
         self.animation = case.animation
         self.priority_vars = priority_vars
         self.background_rcm = background_rcm
+        self.background_rcm_folder = background_rcm_folder
 
         # Loop over the list self.variable_definitions which is only defined in the subclasses
         # that can be found in the config folder such as VariableGroupBase
@@ -97,9 +99,9 @@ class VariableGroup:
             if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
                 # Extract rcm from the zt NetCDF file. Also extract the time and height values to which the
                 # rcm data points correspond.
-                bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['rcm'] )
-                self.altitude_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['altitude'] )
-                time_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.casename]['zt'].variables['time'] )
+                bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.background_rcm_folder]['zt'].variables['rcm'] )
+                self.altitude_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.background_rcm_folder]['zt'].variables['altitude'] )
+                time_bkgrnd_rcm = np.squeeze( self.clubb_datasets[self.background_rcm_folder]['zt'].variables['time'] )
                 # Find the indices in the rcm data that correspond to the start time and end time requested as the
                 # time-averaging interval for the case, as well as the minimum height and maximum height requested
                 # for the plots.

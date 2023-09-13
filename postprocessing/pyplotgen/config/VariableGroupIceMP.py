@@ -11,10 +11,11 @@ class VariableGroupIceMP(VariableGroup):
 
     """
 
-    def __init__(self, case, clubb_datasets=None, sam_benchmark_dataset=None, sam_datasets=None, coamps_benchmark_dataset=None,
-                  wrf_benchmark_dataset=None, 
+    def __init__(self, case, clubb_datasets=None, sam_benchmark_dataset=None, sam_datasets=None,
+                 coamps_benchmark_dataset=None, wrf_benchmark_dataset=None, 
                  r408_dataset=None, hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, wrf_datasets=None, priority_vars=False, background_rcm=False):
+                 e3sm_datasets=None, wrf_datasets=None, priority_vars=False, background_rcm=False,
+                 background_rcm_folder=None):
         """
 
         :param clubb_datasets:
@@ -147,7 +148,8 @@ class VariableGroupIceMP(VariableGroup):
                          wrf_benchmark_dataset=wrf_benchmark_dataset, 
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
                          cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
-                         priority_vars=priority_vars, background_rcm=background_rcm)
+                         priority_vars=priority_vars, background_rcm=background_rcm,
+                         background_rcm_folder=background_rcm_folder)
 
     def getNimSamLine(self, dataset_override=None):
         """

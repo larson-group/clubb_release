@@ -114,6 +114,12 @@ class CaseGallerySetup:
         self.e3sm_datasets = self.__loadModelFiles__(e3sm_folders, case_definition, "e3sm")
         self.cam_file = self.__loadModelFiles__(cam_folders, case_definition, "cam")
 
+        # Preserve the CLUBB folder listed first to use for background rcm plots.
+        if len(clubb_folders) != 0:
+            self.background_rcm_folder = clubb_folders[0]
+        else:
+            self.background_rcm_folder = None
+
         # Call generateSubcolumnPanels twice, once for CLUBB and once for WRF,
         # since the WRF-LASSO cases may also have subcolumn output to plot
         self.__generateSubcolumnPanels__(silhs_datasets=self.clubb_datasets)
@@ -242,7 +248,7 @@ class CaseGallerySetup:
                                   sam_datasets=self.sam_datasets,
                                   wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
                                   e3sm_datasets=self.e3sm_datasets, cam_datasets=self.cam_file, priority_vars=self.priority_vars,
-                                  background_rcm=self.background_rcm)
+                                  background_rcm=self.background_rcm, background_rcm_folder=self.background_rcm_folder)
             self.panels.extend(temp_group.panels)
 
         if self.sam_datasets is not None and len(self.sam_datasets) != 0:
