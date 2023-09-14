@@ -68,6 +68,8 @@ def main():
                           )
 
     #print("Orig defaultBiasesCol=", defaultBiasesCol)
+    #print("metricsNames=", metricsNames)
+    #print("obsMetricValsCol=", obsMetricValsCol)
 
     # Construct numMetrics x numParams matrix of second derivatives, d2metrics/dparams2.
     # The derivatives are normalized by observed metric values and max param values.
@@ -107,7 +109,8 @@ def main():
 
     #print("precribedBiasesCol=", prescribedBiasesCol)
 
-    # defaultBiasesCol + prescribedBiasesCol = -fwdFnc_tuned_params  (see objFnc)
+    # defaultBiasesCol + prescribedBiasesCol = -fwdFnc_tuned_params  (see objFnc).
+    # This lumps the prescribed-parameter adjustment into defaultBiasesCol
     defaultBiasesCol = defaultBiasesCol + prescribedBiasesCol
 
     #print("Orig+Prescribed defaultBiasesCol=", defaultBiasesCol)
@@ -238,16 +241,6 @@ def main():
                                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
 
-    # Set up a column vector of metric values from the default simulation
-    defaultMetricValsCol = setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
-
-    # Set up a column vector of metric values from the global simulation based on optimized
-    #     parameter values.
-    linSolnMetricValsCol = setupDefaultMetricValsCol(metricsNames, linSolnNcFilename)
-
-    # Store biases in default simulation, ( global_model - default )
-    linSolnBiasesCol = np.subtract(linSolnMetricValsCol, defaultMetricValsCol)
-
     # Check whether the minimizer actually reduces chisqd
     # Initial value of chisqd, which assumes parameter perturbations are zero
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
@@ -275,6 +268,33 @@ def main():
     #print("chisqdUnweightedMin =", chisqdUnweightedMin)
     print("chisqdUnweightedMinRatio =", chisqdUnweightedMin/chisqdUnweightedZero)
 
+    # Set up a column vector of metric values from the global simulation based on optimized
+    #     parameter values.
+    linSolnMetricValsCol = setupDefaultMetricValsCol(metricsNames, linSolnNcFilename)
+
+    # Store biases in default simulation, ( global_model - obs )
+    linSolnBiasesCol = np.subtract(linSolnMetricValsCol, obsMetricValsCol)
+    #linSolnBiasesCol = linSolnBiasesCol + prescribedBiasesCol
+
+    # Check whether the minimizer actually reduces chisqd
+    # Initial value of chisqd, which assumes parameter perturbations are zero
+    normlzdLinSolnBiasesCol = linSolnBiasesCol/np.abs(normMetricValsCol)
+    chisqdLinSolnMin = objFnc(np.zeros_like(defaultParamValsOrigRow), \
+                        normlzdSensMatrixPoly, normlzdLinSolnBiasesCol, metricsWeights, \
+                        normlzdCurvMatrix, reglrCoef, numMetrics)
+
+    #print("chisqdZero =", chisqdZero)
+    #print("chisqdMin =", chisqdMin)
+    print("chisqdLinSolnMinRatio =", chisqdLinSolnMin/chisqdZero)
+
+    chisqdUnweightedLinSolnMin = objFnc(np.zeros_like(defaultParamValsOrigRow), \
+                        normlzdSensMatrixPoly, normlzdLinSolnBiasesCol, np.ones_like(metricsWeights), \
+                        normlzdCurvMatrix, reglrCoef, numMetrics)
+
+    #print("chisqdUnweightedZero =", chisqdUnweightedZero)
+    #print("chisqdUnweightedMin =", chisqdUnweightedMin)
+    print("chisqdUnweightedLinSolnMinRatio =", chisqdUnweightedLinSolnMin/chisqdUnweightedZero)
+    print("-----------------------------------------------------")
 
     # Calculate the fraction of the default-sim bias that remains after tuning.
     # This is unweighted and hence is not necessarily less than one.
@@ -319,10 +339,10 @@ def main():
     # This is unweighted and hence is not necessarily less than one.
     # defaultBiasesApprox = J*delta_p = ( fwd - def )
     # numerator = ( linSoln - def ) + ( def - obs ) = ( linSoln - obs )
-    linSolnBias = ( linSolnBiasesCol + defaultBiasesCol )
+    #linSolnBias = ( linSolnBiasesCol + defaultBiasesCol )
     # defaultBiasesCol = delta_b = ( default - obs ) = denominator
-    linSolnBiasMagRatio = np.linalg.norm(linSolnBias/np.abs(normMetricValsCol))**2 / \
-                          np.linalg.norm(defaultBiasesCol/np.abs(normMetricValsCol))**2
+    #linSolnBiasMagRatio = np.linalg.norm(linSolnBias/np.abs(normMetricValsCol))**2 / \
+    #                      np.linalg.norm(defaultBiasesCol/np.abs(normMetricValsCol))**2
 
     # Calculate the fraction of bias removed by the non-PC soln, but normalized and weighted,
     # like the equations that the SVD actually solves, so that according to theory,
@@ -369,8 +389,8 @@ def main():
 #                                  metricsWeights*defaultBiasesCol )
 
     # weightedBiasLin = metricsWeights * ( lin - obs ) = numerator
-    weightedBiasLinSoln = metricsWeights * ( linSolnBiasesCol + defaultBiasesCol ) / np.abs(normMetricValsCol)
-    weightedBiasLinSolnMagRatio = np.linalg.norm(weightedBiasLinSoln)**2 / np.linalg.norm(normlzdMDeltaB)**2
+    #weightedBiasLinSoln = metricsWeights * ( linSolnBiasesCol + defaultBiasesCol ) / np.abs(normMetricValsCol)
+    #weightedBiasLinSolnMagRatio = np.linalg.norm(weightedBiasLinSoln)**2 / np.linalg.norm(normlzdMDeltaB)**2
 
 
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -506,7 +526,8 @@ def main():
         biasesOrderedArrowFig.add_annotation(
         x=  xArrow[i]+gap,  # ith arrow's head
         # ith arrow's head:
-        y= (-linSolnBiasesCol-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(normMetricValsCol[metricsSensOrdered[i],0]),
+        #y= (-linSolnBiasesCol-defaultBiasesCol)[metricsSensOrdered[i],0]/np.abs(normMetricValsCol[metricsSensOrdered[i],0]),
+        y= (-linSolnBiasesCol)[metricsSensOrdered[i],0]/np.abs(normMetricValsCol[metricsSensOrdered[i],0]),
         ax= xArrow[i]+gap,  # ith arrow's tail
         ay=  yArrow[i],  # ith arrow's tail
         xref='x',
@@ -619,10 +640,24 @@ def main():
                           xlabel="Regional metric", ylabel="Contribution to bias removal", 
                           width=800, height=500 )
 
-    paramsTotContrbBarFig = \
-          createBarChart( minusNonlinMatrixOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
+#    paramsTotContrbBarFig = \
+#          createBarChart( minusNonlinMatrixOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
+#                          orientation = 'v',
+#                          title="""Linear + nonlinear contributions of parameters to actual removal of regional biases""",
+#                          xlabel="Parameter", ylabel="Contribution to bias removal",
+#                          width=800, height=500 )
+
+    sensMatrixBarFig = \
+          createBarChart( normlzdSensMatrixOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
                           orientation = 'v',
-                          title="""Linear + nonlinear contributions of parameters to actual removal of regional biases""",
+                          title="""Linear contributions of parameters to actual removal of regional biases""",
+                          xlabel="Parameter", ylabel="Contribution to bias removal",
+                          width=800, height=500 )
+
+    linplusSensMatrixBarFig = \
+          createBarChart( normlzdLinplusSensMatrixPoly[metricsSensOrdered,:].T, index=paramsNames, columns=metricsNamesOrdered,
+                          orientation = 'v',
+                          title="""Linplus contributions of parameters to actual removal of regional biases""",
                           xlabel="Parameter", ylabel="Contribution to bias removal", 
                           width=800, height=500 )
 
@@ -1231,7 +1266,7 @@ def main():
 
     cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixPoly )
     invrsCosFactorMinusMatrix = np.power( np.maximum( np.finfo(float).eps, 2. * ( 1. - cosAnglesMatrix ) ) , -0.5 )
-    invrsCosFactorPlusMatrix = np.power( 2. * ( 1. + cosAnglesMatrix ) , -0.5 )
+    invrsCosFactorPlusMatrix = np.power( np.maximum( np.finfo(float).eps, 2. * ( 1. + cosAnglesMatrix ) ), -0.5 )
     dbOnAbsSensVector = \
         -defaultBiasesCol/np.abs(normMetricValsCol) \
             / np.linalg.norm(normlzdSensMatrixPoly, axis=1).reshape(-1, 1)
@@ -1282,7 +1317,9 @@ def main():
         dcc.Graph( id='paramsBarChart', figure=paramsBarChart ),
         dcc.Graph( id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig ),
         dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
-        dcc.Graph( id='paramsTotContrbBarFig', figure=paramsTotContrbBarFig ),
+#        dcc.Graph( id='paramsTotContrbBarFig', figure=paramsTotContrbBarFig ),
+        dcc.Graph( id='sensMatrixBarFig', figure=sensMatrixBarFig ),
+        dcc.Graph( id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig ),
         dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ),
         dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ),
         dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ),

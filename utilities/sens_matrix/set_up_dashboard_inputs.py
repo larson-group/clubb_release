@@ -53,33 +53,38 @@ def setUpInputs():
 #                        ['LHFLX_RMSE', 1.00, 15.], \
 #                        ['SHFLX_RMSE', 1.00, 15.], \
 #                        ['CLDLOW_RMSE', 1.00, 15.], \
-                        ['SWCF_RMSE', 4.00, 15.], \
+                        ['SWCF_RACC', 0.01, 0.2], \
+                        ['SWCF_RMSEP', 8.01, 15.], \
+                        ['SWCF_RMSE', 0.01, 15.], \
                         ['SWCF_GLB', 16.00, -999], \
                         ['SWCF_DYCOMS', 1.00, -999], \
-                        ['SWCF_HAWAII', 2.00, -999], \
-                        ['SWCF_VOCAL', 2.00, -999], \
+                        ['SWCF_HAWAII', 1.00, -999], \
+                        ['SWCF_VOCAL', 1.00, -999], \
                         ['SWCF_VOCAL_near', 1.00, -999], \
                         ['SWCF_LBA', 1.00, -999], \
                         ['SWCF_WP', 1.00, -999], \
                         ['SWCF_EP', 1.00, -999], \
                         ['SWCF_NP', 1.00, -999], \
                         ['SWCF_SP', 1.00, -999],  \
-#                        ['SWCF_PA', 1.01, -999], \
+##                        ['SWCF_PA', 1.01, -999], \
                         ['SWCF_CAF', 1.00, -999], \
-                        ['SWCF_Namibia', 1.00, -999], \
+                        ['SWCF_Namibia', 3.00, -999], \
                         ['SWCF_Namibia_near', 1.00, -999], \
                         ['LWCF_GLB', 1.00, -999], \
 ###                        ['LWCF_DYCOMS', 1.01, -999], \
 ###                        ['LWCF_HAWAII', 1.01, -999], \
 ###                        ['LWCF_VOCAL', 1.01, -999], \
 ##                        ['LWCF_LBA', 1.00, -999], \
-#                       ['LWCF_WP', 1.00, -999], \
+##                       ['LWCF_WP', 1.00, -999], \
 ###                        ['LWCF_EP', 1.01, -999], \
-#                        ['LWCF_NP', 1.01, -999], \
-#                        ['LWCF_SP', 1.01, -999], \
+##                        ['LWCF_NP', 1.01, -999], \
+##                        ['LWCF_SP', 1.01, -999], \
 ####                        ['LWCF_PA',  1.01, -999], \
 ###                        ['LWCF_CAF', 1.01, -999], \
                         ['PRECT_GLB', 3.00, -999], \
+                        ['PRECT_RACC', 0.01, 1.0], \
+                        ['PRECT_RMSEP', 0.01, 1.0], \
+                        ['PRECT_RMSE', 0.01, 1.0], \
 ##                        ['PRECT_LBA', 1.00, -999], \
 ##                        ['PRECT_WP', 1.00, -999], \
 ###                        ['PRECT_EP', 1.01, -999], \
@@ -121,7 +126,7 @@ def setUpInputs():
     #    up and in the other, it is perturbed down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
-    folder_name = 'Regional_files/20230804/'  # folder where regional netcdf files are stored.
+    folder_name = 'Regional_files/20230910/'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/20221120_2yr/'  # folder where regional netcdf files are stored.
     paramsNamesScalesAndFilenames = [ \
 ##                    ['clubb_c7', 1.0, \
@@ -145,9 +150,9 @@ def setUpInputs():
                     ['clubb_altitude_threshold', 0.001, \
                      folder_name + 'sens0707_20_Regional.nc',
                      folder_name + 'sens0707_21_Regional.nc'], \
-                    ['clubb_c_invrs_tau_sfc', 1.0, \
-                     folder_name + 'sens0707_6_Regional.nc',
-                     folder_name + 'sens0707_7_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_sfc', 1.0, \
+#                     folder_name + 'sens0707_6_Regional.nc',
+#                     folder_name + 'sens0707_7_Regional.nc'], \
                     ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
                      folder_name + 'sens0707_8_Regional.nc', \
                      folder_name + 'sens0707_9_Regional.nc'], \
@@ -200,12 +205,30 @@ def setUpInputs():
 
     prescribedParamsNamesScalesAndValues = \
                 [ \
+#                    ['clubb_c8', 1.0, 0.7, \
+#                     folder_name + 'sens0707_14_Regional.nc',  \
+#                     folder_name + 'sens0707_15_Regional.nc'], \
+#                    ['clubb_c_k10', 1.0, 0.3, \
+#                     folder_name + 'sens0707_12_Regional.nc', \
+#                     folder_name + 'sens0707_13_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2', 1.0, 0.4, \
+#                     folder_name + 'sens0707_10_Regional.nc',
+#                     folder_name + 'sens0707_11_Regional.nc'], \
+                    ['clubb_c_invrs_tau_sfc', 1.0, 0.05, \
+                     folder_name + 'sens0707_6_Regional.nc',
+                     folder_name + 'sens0707_7_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, 0.00045, \
+#                     folder_name + 'sens0707_8_Regional.nc', \
+#                     folder_name + 'sens0707_9_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_shear', 1.0, 0.22, \
+#                     folder_name + 'sens0707_2_Regional.nc', \
+#                     folder_name + 'sens0707_3_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_bkgnd', 1.0, 1.1, \
+#                     folder_name + 'sens0707_16_Regional.nc',
+#                     folder_name + 'sens0707_17_Regional.nc'], \
                     ['clubb_c_invrs_tau_n2_wp2', 1.0, 0.1, \
                      folder_name + 'sens0707_4_Regional.nc',
                      folder_name + 'sens0707_5_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_bkgnd', 1.0, 1.50686559, \
-#                     folder_name + 'sens0707_16_Regional.nc', \
-#                     folder_name + 'sens0707_17_Regional.nc'], \
                 ]
     # Split up the above list into parameter names, scales, and filenames.
     dfprescribedParamsNamesScalesAndValues =  \
@@ -235,7 +258,7 @@ def setUpInputs():
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-           folder_name + 'sens0707_1_Regional.nc'
+           folder_name + 'sens0707_25_Regional.nc'
            #folder_name + 'sens0707_29_Regional.nc'
            # folder_name + 'chrysalis.bmg20220630.sens1107_30.ne30pg2_r05_oECv3_Regional.nc'
 #            folder_name + 'chrysalis.bmg20220630.sens1107_23.ne30pg2_r05_oECv3_Regional.nc'
@@ -244,6 +267,8 @@ def setUpInputs():
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
     # NOTE: PRECT is in the unit of m/s
     obsMetricValsDict = { \
+    'SWCF_RACC': 0, \
+    'SWCF_RMSEP': 0, \
     'SWCF_RMSE': 0, 'TMQ_RMSE': 0, 'PSL_RMSE': 0, 'TS_RMSE': 0, 'LHFLX_RMSE': 0, 'SHFLX_RMSE': 0, 'CLDLOW_RMSE': 0, \
     'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_GLB': -45.81, 'TMQ_GLB': 24.423, \
     'LWCF_DYCOMS': 19.36681938, 'PRECT_DYCOMS':0.000000007141516, 'SWCF_DYCOMS': -63.49394226, 'TMQ_DYCOMS':20.33586884,\
@@ -259,6 +284,9 @@ def setUpInputs():
     'LWCF_VOCAL_near': 15.4783, 'PRECT_VOCAL_near':0.0000000037719, 'SWCF_VOCAL_near': -58.4732, 'TMQ_VOCAL_near': 14.9315, \
     'LWCF_Namibia': 12.3294, 'PRECT_Namibia':0.00000000177636 , 'SWCF_Namibia': -66.9495, 'TMQ_Namibia': 24.4823, \
     'LWCF_Namibia_near': 10.904, 'PRECT_Namibia_near':0.00000000238369 , 'SWCF_Namibia_near': -36.1216, 'TMQ_Namibia_near': 17.5188, \
+    'PRECT_RACC': 0, \
+    'PRECT_RMSEP': 0, \
+    'PRECT_RMSE': 0, \
     'PSL_DYCOMS': 101868.515625, \
     'PSL_HAWAII': 101656.578125, \
     'PSL_VOCAL': 101668.703125, \
@@ -360,6 +388,8 @@ def setUpPreliminaries(metricsNames, metricsNorms, \
     # Set up a column vector of metric values from the default simulation
     defaultMetricValsCol = \
         setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
+
+    #print("defaultMetricValsCol=", defaultMetricValsCol)
 
     # Store biases in default simulation
     # defaultBiasesCol = + delta_b
