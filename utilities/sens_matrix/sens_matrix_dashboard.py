@@ -633,8 +633,15 @@ def main():
     #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
     minusNonlinMatrixOrdered = -1*curvParamsMatrixOrdered + -1*normlzdSensParamsMatrixOrdered
 
+
+    #wide_df = px.data.medals_wide()
+    #paramsTotContrbBarFig = px.bar(wide_df, x="nation", y=["gold", "silver", "bronze"], base=[0,0,0])
+    #pdb.set_trace()
+
     biasTotContrbBarFig = \
           createBarChart( minusNonlinMatrixOrdered, index=metricsNamesOrdered, columns=paramsNames,
+           #               barBase = np.zeros(numMetrics),
+                          #barBase = -defaultBiasesCol[metricsSensOrdered]/np.abs(normMetricValsCol[metricsSensOrdered]) @ np.ones((1,len(paramsNames))),
                           orientation = 'v',
                           title="""Linear + nonlinear contributions of parameters to actual removal of regional biases""",
                           xlabel="Regional metric", ylabel="Contribution to bias removal", 
@@ -649,6 +656,7 @@ def main():
 
     sensMatrixBarFig = \
           createBarChart( normlzdSensMatrixOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
+          #                barBase = np.zeros_like(paramsScales),
                           orientation = 'v',
                           title="""Linear contributions of parameters to actual removal of regional biases""",
                           xlabel="Parameter", ylabel="Contribution to bias removal",
@@ -656,6 +664,7 @@ def main():
 
     linplusSensMatrixBarFig = \
           createBarChart( normlzdLinplusSensMatrixPoly[metricsSensOrdered,:].T, index=paramsNames, columns=metricsNamesOrdered,
+          #                barBase = np.zeros_like(paramsScales),
                           orientation = 'v',
                           title="""Linplus contributions of parameters to actual removal of regional biases""",
                           xlabel="Parameter", ylabel="Contribution to bias removal", 
@@ -1643,18 +1652,23 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
              normlzdOrdDparamsMin, normlzdOrdDparamsMax )
 
 def createBarChart( matrix, index, columns, 
+     #                   barBase,
                         orientation,
                         title, 
                         xlabel, ylabel,
                         width, height):
 
     import plotly.express as px
+    import plotly.graph_objects as go
     import pandas as pd
 
     df = pd.DataFrame(matrix,
                       index=index,
                       columns=columns)
-    barChart = px.bar(df, x=df.index, y=df.columns, orientation=orientation,
+    barChart = px.bar(df, x=df.index, y=df.columns,
+                          #base=barBase,
+                          #offset=1,
+                          orientation=orientation,
                           title = title)
     barChart.update_xaxes(title=xlabel)
     barChart.update_yaxes(title=ylabel)
@@ -1662,6 +1676,7 @@ def createBarChart( matrix, index, columns,
     barChart.update_layout(showlegend=True)
     barChart.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
     barChart.update_layout( width=width, height=height  )
+    #barChart.update_layout(barmode='relative')
 
     return barChart
 
