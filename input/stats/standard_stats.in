@@ -133,7 +133,7 @@ vars_zm =
 'upthlp', 'uprtp', 'vpthlp', 'vprtp',
 'upthvp', 'uprcp', 'vpthvp', 'vprcp',
 'rho_zm', 'sigma_sqd_w', 'Skw_velocity',
-'gamma_Skw_fnc', 'coef_wp4_implicit', 'C6rt_Skw_fnc', 'C6thl_Skw_fnc',
+'gamma_Skw_fnc', 'coef_wp4_implicit', 'C6rt_Skw_fnc', 'C6thl_Skw_fnc', 'C6_term'
 'C7_Skw_fnc', 'C1_Skw_fnc', 'a3_coef', 'wp3_on_wp2', 'wp3_on_wp2_cfl_num', 'rcm_zm', 'rtm_zm',
 'thlm_zm', 'cloud_frac_zm', 'ice_supersat_frac_zm', 'rho_ds_zm', 'thv_ds_zm',
 'em', 'mean_w_up', 'mean_w_down', 'shear', 'wp3_zm','thlp3_zm','rtp3_zm',
@@ -167,7 +167,8 @@ vars_zm =
 'rtpthlp_dp2', 'rtpthlp_cl', 'rtpthlp_sf', 'rtpthlp_forcing', 'rtpthlp_mc',
 'wpthlp_enter_mfl', 'wpthlp_exit_mfl', 'wprtp_enter_mfl', 'wprtp_exit_mfl',
 'wpthlp_mfl_min', 'wpthlp_mfl_max', 'wprtp_mfl_min', 'wprtp_mfl_max', 'stability_correction',
-'bv_freq_sqd', 'bv_freq_sqd_splat', 'shear_sqd', 'invrs_tau_zm', 'invrs_tau_xp2_zm', 'invrs_tau_wp2_zm',
+'bv_freq_sqd', 'bv_freq_sqd_splat', 'bv_freq_sqd_mixed', 'bv_freq_sqd_moist', 'bv_freq_sqd_dry',
+'shear_sqd', 'invrs_tau_zm', 'invrs_tau_xp2_zm', 'invrs_tau_wp2_zm',
 'invrs_tau_wpxp_zm', 'invrs_tau_wp3_zm', 'invrs_tau_no_N2_zm', 'invrs_tau_bkgnd',
 'invrs_tau_sfc', 'invrs_tau_shear', 'Richardson_num',
 ''

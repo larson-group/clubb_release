@@ -320,6 +320,9 @@ module stats_zm_module
         iC1_Skw_fnc, &
         ibrunt_vaisala_freq_sqd, &
         ibrunt_vaisala_freq_sqd_splat, &
+        ibrunt_vaisala_freq_sqd_mixed, &
+        ibrunt_vaisala_freq_sqd_moist, &
+        ibrunt_vaisala_freq_sqd_dry, &
         iRichardson_num, &
         ishear_sqd, &
         ihydrometp2, &
@@ -2505,6 +2508,30 @@ module stats_zm_module
         ibrunt_vaisala_freq_sqd_splat = k
         call stat_assign( var_index=ibrunt_vaisala_freq_sqd_splat, var_name="bv_freq_sqd_splat", &
              var_description="Brunt-Vaisala freq. squared for splatting", &
+             var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'bv_freq_sqd_mixed' )
+        ibrunt_vaisala_freq_sqd_mixed = k
+        call stat_assign( var_index=ibrunt_vaisala_freq_sqd_mixed, var_name="bv_freq_sqd_mixed", &
+             var_description="Interpolated Brunt-Vaisala freq. squared between moist and dry air", &
+             var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'bv_freq_sqd_moist' )
+        ibrunt_vaisala_freq_sqd_moist = k
+        call stat_assign( var_index=ibrunt_vaisala_freq_sqd_moist, var_name="bv_freq_sqd_moist", &
+             var_description="Brunt-Vaisala freq. squared in moist air", &
+             var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'bv_freq_sqd_dry' )
+        ibrunt_vaisala_freq_sqd_dry = k
+        call stat_assign( var_index=ibrunt_vaisala_freq_sqd_dry, var_name="bv_freq_sqd_dry", &
+             var_description="Brunt-Vaisala freq. squared in dry air", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1

@@ -362,6 +362,9 @@ module advance_clubb_core_module
         iinvrs_tau_shear,        &
         ibrunt_vaisala_freq_sqd, &
         ibrunt_vaisala_freq_sqd_splat, &
+        ibrunt_vaisala_freq_sqd_mixed, &
+        ibrunt_vaisala_freq_sqd_moist, &
+        ibrunt_vaisala_freq_sqd_dry, &
         isqrt_Ri_zm
 
     use stats_variables, only: &
@@ -1829,7 +1832,8 @@ module advance_clubb_core_module
       !$acc update host( invrs_tau_zm, invrs_tau_xp2_zm, invrs_tau_wp2_zm, invrs_tau_wpxp_zm, &
       !$acc              sqrt_Ri_zm, invrs_tau_wp3_zm, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
       !$acc              invrs_tau_sfc, invrs_tau_shear, brunt_vaisala_freq_sqd, &
-      !$acc              brunt_vaisala_freq_sqd_splat )
+      !$acc              brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_mixed, &
+      !$acc              brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry )
 
       do i = 1, ngrdcol
     
@@ -1855,11 +1859,17 @@ module advance_clubb_core_module
                                stats_zm(i))                        ! intent(inout)
           call stat_update_var(iinvrs_tau_shear, invrs_tau_shear(i,:), & ! intent(in)
                                stats_zm(i))                            ! intent(inout)
-          call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd(i,:), & ! intent(in)
-                               stats_zm(i))                                          ! intent(inout)
         end if
+        call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd(i,:), & ! intent(in)
+                             stats_zm(i))
         call stat_update_var(ibrunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_splat(i,:), & ! intent(in)
-                               stats_zm(i))
+                             stats_zm(i))                                       ! intent(inout)
+        call stat_update_var(ibrunt_vaisala_freq_sqd_mixed, brunt_vaisala_freq_sqd_mixed(i,:), & ! intent(in)
+                             stats_zm(i))                                          ! intent(inout)
+        call stat_update_var(ibrunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_moist(i,:), & ! intent(in)
+                             stats_zm(i))                                          ! intent(inout)
+        call stat_update_var(ibrunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_dry(i,:), & ! intent(in)
+                             stats_zm(i))                                          ! intent(inout)
       end do
     end if
 
