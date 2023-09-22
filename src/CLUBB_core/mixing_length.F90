@@ -1255,7 +1255,7 @@ module mixing_length
                         l_modify_limiters_for_cnvg_test, & ! intent in 
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
-                        sqrt_Ri_zm, & ! intent out
+                        Ri_zm, & ! intent out
                         invrs_tau_zt, invrs_tau_zm, & ! intent out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
                         invrs_tau_shear, invrs_tau_N2_iso, & ! intent out
@@ -1366,7 +1366,7 @@ module mixing_length
     ! Flag to activate modifications on limiters for convergence test 
     ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
     ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
-    ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
+    ! (reduce threshold on limiters for Ri_zm in mixing_length.F90)
     logical, intent(in) :: &
       l_modify_limiters_for_cnvg_test
 
@@ -1376,7 +1376,7 @@ module mixing_length
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry,   &
       brunt_vaisala_freq_sqd_moist, &
-      sqrt_Ri_zm,                   &
+      Ri_zm,                        &
       invrs_tau_zt,                 &
       invrs_tau_zm,                 &
       invrs_tau_sfc,                &
@@ -1441,8 +1441,8 @@ module mixing_length
       brunt_vaisala_freq_clipped, &
       ice_supersat_frac_zm, &
       invrs_tau_shear_smooth, &
-      sqrt_Ri_zm_clipped, &
-      sqrt_Ri_zm_smooth, &
+      Ri_zm_clipped, &
+      Ri_zm_smooth, &
       em_clipped, &
       tau_zm_unclipped, & 
       tau_zt_unclipped, &
@@ -1462,8 +1462,8 @@ module mixing_length
     !$acc                    ddzt_umvm, tau_zt )
 
     !$acc enter data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
-    !$acc            create( sqrt_Ri_zm_clipped, ddzt_umvm_clipped, &
-    !$acc                    tau_zm_unclipped, tau_zt_unclipped, sqrt_Ri_zm_smooth, em_clipped, &
+    !$acc            create( Ri_zm_clipped, ddzt_umvm_clipped, &
+    !$acc                    tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                    tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
     !$acc parallel loop gang vector default(present)
@@ -1626,13 +1626,13 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          sqrt_Ri_zm_clipped(i,k) = sqrt( max( 0.0_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
-                                / max( ddzt_umvm(i,k), 1.0e-12_core_rknd) )
+          Ri_zm_clipped(i,k) = max( 0.0_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
+                                  / max( ddzt_umvm(i,k), 1.0e-12_core_rknd )
         end do
       end do
       !$acc end parallel loop
 
-      sqrt_Ri_zm = zm2zt2zm( nz, ngrdcol, gr, sqrt_Ri_zm_clipped )
+      Ri_zm = zm2zt2zm( nz, ngrdcol, gr, Ri_zm_clipped )
 
     else ! default method 
 
@@ -1647,7 +1647,7 @@ module mixing_length
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            sqrt_Ri_zm(i,k) = sqrt( brunt_vaisala_freq_clipped(i,k) / ddzt_umvm_clipped(i,k)   )
+            Ri_zm(i,k) = brunt_vaisala_freq_clipped(i,k) / ddzt_umvm_clipped(i,k)
           end do
         end do
         !$acc end parallel loop
@@ -1657,8 +1657,8 @@ module mixing_length
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            sqrt_Ri_zm(i,k) = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
-                                    / max( ddzt_umvm(i,k), 1.0e-7_core_rknd) )
+            Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
+                            / max( ddzt_umvm(i,k), 1.0e-7_core_rknd )
           end do
         end do
         !$acc end parallel loop
@@ -1900,11 +1900,11 @@ module mixing_length
 
     if ( l_smooth_min_max ) then
 
-      sqrt_Ri_zm_clipped = smooth_max( nz, ngrdcol, sqrt_Ri_zm, zero, &
-                                       12.0_core_rknd * min_max_smth_mag )
+      Ri_zm_clipped = smooth_max( nz, ngrdcol, Ri_zm, zero, &
+                                  12.0_core_rknd * min_max_smth_mag )
 
-      sqrt_Ri_zm_smooth = smooth_min( nz, ngrdcol, sqrt_Ri_zm_clipped, 12.0_core_rknd, &
-                                      12.0_core_rknd * min_max_smth_mag )
+      Ri_zm_smooth = smooth_min( nz, ngrdcol, Ri_zm_clipped, 12.0_core_rknd, &
+                                 12.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1913,7 +1913,7 @@ module mixing_length
           if ( gr%zt(i,k) > altitude_threshold ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one + H_invrs_tau_wpxp_N2(i,k) & 
-                                                * C_invrs_tau_wpxp_Ri * sqrt_Ri_zm_smooth(i,k) )
+                                                * C_invrs_tau_wpxp_Ri * sqrt ( Ri_zm_smooth(i,k) ))
 
           end if
         end do 
@@ -1929,7 +1929,7 @@ module mixing_length
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one  + H_invrs_tau_wpxp_N2(i,k) & 
                                       * C_invrs_tau_wpxp_Ri &
-                                      * min( max( sqrt_Ri_zm(i,k), zero), 12.0_core_rknd ) )
+                                      * min( max( sqrt( Ri_zm(i,k) ), zero), 12.0_core_rknd ) )
           end if
         end do 
       end do
@@ -2039,8 +2039,8 @@ module mixing_length
     !$acc                   ddzt_umvm, tau_zt )
 
     !$acc exit data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
-    !$acc           delete( sqrt_Ri_zm_clipped, ddzt_umvm_clipped, &
-    !$acc                   tau_zm_unclipped, tau_zt_unclipped, sqrt_Ri_zm_smooth, em_clipped, &
+    !$acc           delete( Ri_zm_clipped, ddzt_umvm_clipped, &
+    !$acc                   tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                   tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
     return

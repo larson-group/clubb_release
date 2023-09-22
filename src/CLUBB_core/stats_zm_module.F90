@@ -49,7 +49,7 @@ module stats_zm_module
         irtpthvp, &
         ithlpthvp, &
         itau_zm, &
-        isqrt_Ri_zm, &
+        iRi_zm, &
         iKh_zm, &
         iK_hm, &
         iwprcp, &
@@ -2536,9 +2536,9 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
-      case ( 'sqrt_Ri_zm' )
-        isqrt_Ri_zm = k
-        call stat_assign( var_index=isqrt_Ri_zm,var_name="sqrt_Ri_zm", &
+      case ( 'Ri_zm' )
+        iRi_zm = k
+        call stat_assign( var_index=iRi_zm,var_name="Ri_zm", &
              var_description="Richardson number [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
