@@ -323,7 +323,6 @@ module stats_zm_module
         ibrunt_vaisala_freq_sqd_mixed, &
         ibrunt_vaisala_freq_sqd_moist, &
         ibrunt_vaisala_freq_sqd_dry, &
-        iRichardson_num, &
         ishear_sqd, &
         ihydrometp2, &
         iwphydrometp, &
@@ -2540,13 +2539,6 @@ module stats_zm_module
         iRi_zm = k
         call stat_assign( var_index=iRi_zm,var_name="Ri_zm", &
              var_description="Richardson number [-]", var_units="-", &
-             l_silhs=.false., grid_kind=stats_zm )
-        k = k + 1
-
-      case ( 'Richardson_num' )
-        iRichardson_num = k
-        call stat_assign( var_index=iRichardson_num, var_name="Richardson_num", &
-             var_description="Richardson_num, Richardson number", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

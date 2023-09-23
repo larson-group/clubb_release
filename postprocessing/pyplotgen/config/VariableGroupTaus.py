@@ -79,19 +79,6 @@ class VariableGroupTaus(VariableGroup):
             },
             {'var_names':
                 {
-                'clubb': ['Richardson_num'],
-                'sam': ['RICHARDSON_NUM'], # Dummy
-                'coamps': ['Richardson_num'], # Dummy
-                'r408': ['Richardson_num'], # Dummy
-                'hoc': ['Richardson_num'], # Dummy
-                'e3sm': ['Richardson_num'], # Dummy
-                'cam': ['Richardson_num'], # Dummy
-                'wrf': ['Richardson_num'], # Dummy
-                },
-             'sci_scale': 0,
-            },
-            {'var_names':
-                {
                 'clubb': ['Kh_zm'],
                 'sam': ['KH_ZM'],
                 'coamps': ['Kh_zm'],

@@ -598,8 +598,7 @@ module advance_helper_module
         ibv_efold
 
     use stats_variables, only: &
-        iRichardson_num, &    ! Variable(s)
-        ishear_sqd, &
+        ishear_sqd, &           ! Variable(s)
         l_stats_samp
 
     use stats_type_utilities, only: &
@@ -615,12 +614,8 @@ module advance_helper_module
       Cx_fnc_Richardson_below_ground_value = one
 
     logical, parameter :: &
-      l_Cx_fnc_Richardson_vert_avg = .false., & ! Vertically average Cx_fnc_Richardson over a
+      l_Cx_fnc_Richardson_vert_avg = .false.    ! Vertically average Cx_fnc_Richardson over a
                                                 !  distance of Lscale
-      l_Richardson_vert_avg = .false.,        & ! Vertically average Richardson_num over a
-                                                !  distance of Lscale
-      l_use_shear_turb_freq_sqd = .false.       ! Use turb_freq_sqd and shear_sqd in denominator of
-                                                !  Richardson_num
 
     real( kind = core_rknd ), parameter :: &
       min_max_smth_mag = 1.0e-9_core_rknd ! "base" smoothing magnitude before scaling 
@@ -679,7 +674,6 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_mixed,&
       brunt_vaisala_freq_sqd_dry, &
       brunt_vaisala_freq_sqd_moist, &
-      Richardson_num, &
       fnc_Richardson, &
       fnc_Richardson_clipped, &
       fnc_Richardson_smooth, &
@@ -687,10 +681,8 @@ module advance_helper_module
       ddzt_um, &
       ddzt_vm, &
       shear_sqd, &
-      turb_freq_sqd, &
       Lscale_zm, &
       Cx_fnc_interp, &
-      Richardson_num_clipped, &
       Cx_fnc_Richardson_avg
 
     real ( kind = core_rknd ) :: &
@@ -711,15 +703,10 @@ module advance_helper_module
 
     !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                    brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                    Richardson_num, Cx_fnc_interp, &
-    !$acc                    Ri_zm, ddzt_um, ddzt_vm, shear_sqd, turb_freq_sqd, Lscale_zm, &
-    !$acc                    Richardson_num_clipped, Cx_fnc_Richardson_avg, fnc_Richardson, &
+    !$acc                    Cx_fnc_interp, &
+    !$acc                    Ri_zm, ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, &
+    !$acc                    Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                    fnc_Richardson_clipped, fnc_Richardson_smooth )
-
-    if ( l_modify_limiters_for_cnvg_test .and. l_use_shear_turb_freq_sqd ) then
-      error stop "ERROR: l_modify_limiters_for_cnvg_test .and. l_use_shear_turb_freq_sqd "// &
-                 "both true in compute_Cx_fnc_Richardson"
-    end if
 
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
@@ -754,68 +741,33 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    if ( l_use_shear_turb_freq_sqd ) then
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
-          turb_freq_sqd(i,k) = em(i,k) / Lscale_zm(i,k)**2
-          Richardson_num(i,k) = brunt_vaisala_freq_sqd(i,k) / max( shear_sqd(i,k), turb_freq_sqd(i,k), &
-                                                                   Richardson_num_divisor_threshold )
-        end do
+    if ( l_stats_samp ) then
+      !$acc update host(shear_sqd)
+      do i = 1, ngrdcol
+        call stat_update_var( ishear_sqd, shear_sqd(i,:), & ! intent(in)
+                              stats_zm(i) )               ! intent(inout)
       end do
-      !$acc end parallel loop
-
-      if ( l_stats_samp ) then
-        !$acc update host(shear_sqd)
-        do i = 1, ngrdcol
-          call stat_update_var( ishear_sqd, shear_sqd(i,:), & ! intent(in)
-                                stats_zm(i) )               ! intent(inout)
-        end do
-      end if
-      
-    else
-
-      if ( l_use_shear_Richardson ) then
-
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            Richardson_num(i,k) = brunt_vaisala_freq_sqd_mixed(i,k) * invrs_num_div_thresh
-
-            Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed(i,k) ) &
-                         / max( shear_sqd(i,k), 1.0e-7_core_rknd )
-          end do
-        end do
-        !$acc end parallel loop
-
-      else
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            Richardson_num(i,k) = brunt_vaisala_freq_sqd(i,k) * invrs_num_div_thresh
-            Ri_zm(i,k) = Richardson_num(i,k)
-          end do
-        end do
-        !$acc end parallel loop
-      endif
-
     end if
 
-    if ( l_Richardson_vert_avg ) then
+    if ( l_use_shear_Richardson ) then
 
-      ! Clip below-min values of Richardson_num
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          Richardson_num_clipped(i,k) = max( Richardson_num(i,k), Richardson_num_min )
+          Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed(i,k) ) &
+                       / max( shear_sqd(i,k), 1.0e-7_core_rknd )
         end do
       end do
       !$acc end parallel loop
 
-      Richardson_num = Lscale_width_vert_avg( nz, ngrdcol, gr, smth_type, &
-                                              Richardson_num, Lscale_zm, rho_ds_zm, &
-                                              Richardson_num_max )
+    else
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          Ri_zm(i,k) = brunt_vaisala_freq_sqd(i,k) * invrs_num_div_thresh
+        end do
+      end do
+      !$acc end parallel loop
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
@@ -886,20 +838,11 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    ! Stats sampling
-    if ( l_stats_samp ) then
-      !$acc update host(Richardson_num)
-      do i = 1, ngrdcol
-        call stat_update_var( iRichardson_num, Richardson_num(i,:), & ! intent(in)
-                              stats_zm(i) )                      ! intent(inout)
-      end do
-    end if
-
     !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                   Richardson_num, Cx_fnc_interp, Ri_zm, &
-    !$acc                   ddzt_um, ddzt_vm, shear_sqd, turb_freq_sqd, Lscale_zm, &
-    !$acc                   Richardson_num_clipped, Cx_fnc_Richardson_avg, fnc_Richardson, &
+    !$acc                   Cx_fnc_interp, Ri_zm, &
+    !$acc                   ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, &
+    !$acc                   Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                   fnc_Richardson_clipped, fnc_Richardson_smooth )
 
     return

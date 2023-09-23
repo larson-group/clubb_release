@@ -1089,8 +1089,7 @@ module stats_variables
     ibrunt_vaisala_freq_sqd_mixed = 0, &
     ibrunt_vaisala_freq_sqd_moist = 0, &
     ibrunt_vaisala_freq_sqd_dry = 0, &
-    iRi_zm = 0, &
-    iRichardson_num = 0, &
+    iRi_zm = 0,          &
     ishear_sqd = 0,      &
     iC6_term
 
@@ -1098,7 +1097,7 @@ module stats_variables
 !$omp   threadprivate(iC7_Skw_fnc, iC1_Skw_fnc, iRi_zm)
 !$omp   threadprivate(ibrunt_vaisala_freq_sqd, ibrunt_vaisala_freq_sqd_splat)
 !$omp   threadprivate(ibrunt_vaisala_freq_sqd_mixed, ibrunt_vaisala_freq_sqd_moist)
-!$omp   threadprivate(ibrunt_vaisala_freq_sqd_dry, iRichardson_num, ishear_sqd)
+!$omp   threadprivate(ibrunt_vaisala_freq_sqd_dry, ishear_sqd)
 
   integer, public :: &
     icoef_wp4_implicit = 0
