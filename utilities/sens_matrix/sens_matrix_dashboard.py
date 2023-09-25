@@ -8,10 +8,10 @@
 def main():
 
     import dash
-    #from dash import dcc
-    import dash_core_components as dcc
-    #from dash import html
-    import dash_html_components as html
+    from dash import dcc
+    #import dash_core_components as dcc
+    from dash import html
+    #import dash_html_components as html
     import plotly.express as px
     import plotly.graph_objects as go
     import pandas as pd
@@ -226,7 +226,7 @@ def main():
 
     # Calculate symmetric error bars on fitted parameter values,
     #    based on difference in sensitivity matrix, i.e., based on size of nonlinear terms.
-    #    For use in figures such as paramsBarChart.
+    #    For use in figures such as paramsErrorBarsFig.
     paramsLowValsPCBound, paramsHiValsPCBound = \
         calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
                      metricsWeights, obsMetricValsCol, normMetricValsCol,
@@ -239,7 +239,6 @@ def main():
                                normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
                                normlzdOrdDparamsMin, normlzdOrdDparamsMax,
                                sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
-
 
     # Check whether the minimizer actually reduces chisqd
     # Initial value of chisqd, which assumes parameter perturbations are zero
@@ -670,6 +669,11 @@ def main():
                           xlabel="Parameter", ylabel="Contribution to bias removal", 
                           width=800, height=500 )
 
+    minusNormlzdDefaultBiasesCol = \
+             -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
+    metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrdered],paramsNames,
+                                            minusNormlzdDefaultBiasesCol,minusNonlinMatrixOrdered)
+
     #dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
     #curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrdered,:] * dnormlzdParamsSolnNonlinMatrix**2
     #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
@@ -1052,34 +1056,34 @@ def main():
                   index=paramsAbbrv, columns=["Default plus error bars"] )
     df["err_minus"] = ( defaultParamValsOrigRow[0,:] -  paramsLowValsPCBound[:,0] ) * paramsScales
     df["err_plus"]  = ( paramsHiValsPCBound[:,0] - defaultParamValsOrigRow[0,:] ) * paramsScales
-    paramsBarChart = px.scatter(df, x=df.index, y=df.columns,
+    paramsErrorBarsFig = px.scatter(df, x=df.index, y=df.columns,
               error_y="err_plus", error_y_minus="err_minus",
               title =  """Best-fit parameter values""" )
-    paramsBarChart.update_traces( go.Scatter(
+    paramsErrorBarsFig.update_traces( go.Scatter(
                             mode='markers',
                             marker=dict(color='black', size=14),
                             error_y=dict( color='black', thickness=2, width=10 )
                                     ))
-    #paramsBarChart.add_trace(go.Scatter(x=paramsNames, y=paramsLowValsPCBound[:,0]*paramsScales,
+    #paramsErrorBarsFig.add_trace(go.Scatter(x=paramsNames, y=paramsLowValsPCBound[:,0]*paramsScales,
     #                               name=r'$paramsSolnPC - \sigma$',
     #                               line=dict(color='white', width=0), mode='lines', showlegend=False))
-    #paramsBarChart.add_trace(go.Scatter(x=paramsNames, y=paramsHiValsPCBound[:,0]*paramsScales, fill='tonexty',
+    #paramsErrorBarsFig.add_trace(go.Scatter(x=paramsNames, y=paramsHiValsPCBound[:,0]*paramsScales, fill='tonexty',
     #                           name='Default Parameter Values +- sigma', mode='none',
     #                               fillcolor='rgba(253,253,150,1.0)'))
-    #paramsBarChart.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:]*paramsScales,
+    #paramsErrorBarsFig.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:]*paramsScales,
     #                               name='Default Parameter Values', line=dict(color='black', width=6) ))
-    paramsBarChart.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnLin[:,0]*paramsScales,
+    paramsErrorBarsFig.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnLin[:,0]*paramsScales,
                                    mode='markers',
                                    marker=dict(color='green', size=8),
                                    name='Linear regression, |dp|=' 
                                        + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnLin)) ))
-    paramsBarChart.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnNonlin[:,0]*paramsScales,
+    paramsErrorBarsFig.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnNonlin[:,0]*paramsScales,
                                    mode='markers',
                                    marker_symbol='x',
                                    marker=dict(color='orange',  size=12),
                                    name='paramsSolnNonlin, |dpPC|='
                                        + '{:.2e}'.format(np.linalg.norm(dnormlzdParamsSolnNonlin)) ))
-    paramsBarChart.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnElastic[:,0]*paramsScales,
+    paramsErrorBarsFig.add_trace(go.Scatter(x=paramsAbbrv, y=paramsSolnElastic[:,0]*paramsScales,
                                    mode='markers',
                                    marker_symbol='square',
                                    marker=dict(color='cyan', size=8),
@@ -1089,10 +1093,10 @@ def main():
     #paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnPCBound[:,0]*paramsScales,
     #                                name='paramsSolnPCBound, |dpBound|='
     #                               + '{:.2e}'.format(0.0) ))
-    paramsBarChart.update_yaxes(title="User-scaled parameter value")
-    paramsBarChart.update_xaxes(title="Parameter Name")
-    paramsBarChart.update_layout(hovermode="x")
-    paramsBarChart.update_layout( width=1000, height=500  )
+    paramsErrorBarsFig.update_yaxes(title="User-scaled parameter value")
+    paramsErrorBarsFig.update_xaxes(title="Parameter Name")
+    paramsErrorBarsFig.update_layout(hovermode="x")
+    paramsErrorBarsFig.update_layout( width=1000, height=500  )
 
 
     # Plot the parameter values recommended by SVD.
@@ -1318,13 +1322,15 @@ def main():
 
 
 
+
     sensMatrixDashboard.layout = html.Div(children=[
         html.H1(children='Sensitivity matrix diagnostics'),
 
         html.Div(children=''' '''),
         
-        dcc.Graph( id='paramsBarChart', figure=paramsBarChart ),
+        dcc.Graph( id='paramsErrorBarsFig', figure=paramsErrorBarsFig ),
         dcc.Graph( id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig ),
+        dcc.Graph( id='metricsBarChart', figure=metricsBarChart ),
         dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
 #        dcc.Graph( id='paramsTotContrbBarFig', figure=paramsTotContrbBarFig ),
         dcc.Graph( id='sensMatrixBarFig', figure=sensMatrixBarFig ),
@@ -1417,10 +1423,12 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
 
     numMetrics = len(metricsNames)
 
+    #pdb.set_trace()
+
     # Perform nonlinear optimization
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
     #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.ones_like(np.transpose(defaultParamValsOrigRow)), \
-    dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow)), \
+    dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
                                normlzdCurvMatrix, reglrCoef, numMetrics),\
@@ -1464,7 +1472,7 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
 
 
 
-    dnormlzdParamsSolnLin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow)), \
+    dnormlzdParamsSolnLin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
                                0*normlzdCurvMatrix, reglrCoef, numMetrics),\
                                method='Powell')
@@ -1650,6 +1658,59 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
 
     return ( normlzdCurvMatrixPoly, normlzdSensMatrixPoly, normlzdConstMatrixPoly, \
              normlzdOrdDparamsMin, normlzdOrdDparamsMax )
+
+
+def createMetricsBarChart( metricsNames, paramsNames, biases, sensMatrix ):
+
+
+    import plotly.graph_objects as go
+    import numpy as np
+    import pdb
+
+    biases = np.reshape(biases, (-1,1))
+    barBase = np.copy(biases)  # np.copy prevents biases variable from changing
+    rightEnd = np.copy(biases)
+    leftEnd = np.copy(biases)
+    barsData = []
+    for col in range(len(paramsNames)):
+        #print("paramsNames[col]=", paramsNames[col])
+        sensCol = sensMatrix[:,[col]]
+        #print("sensCol=", sensCol )
+        #print("rightEnd=", rightEnd )
+        for row in range( len(sensCol) ):
+            if ( np.sign(sensCol[row]) > 0 ):
+                barBase[row] = rightEnd[row]
+            else:
+                barBase[row] = leftEnd[row]
+
+        #print("barBase=", barBase)
+        #print("biases during=", biases)
+        barsData.append( go.Bar(name=paramsNames[col], y=metricsNames, x=sensCol[:,0],
+            base=barBase[:,0], orientation="h" ) )
+        rightEnd = rightEnd + np.maximum( np.zeros_like(sensCol), sensCol )
+        leftEnd  = leftEnd + np.minimum( np.zeros_like(sensCol), sensCol )
+
+    #print("biases after=", biases)
+    # Insert a black line in each bar to denote default biases that we want to remove
+    barsData.append( go.Bar(name='default bias',
+                            y=metricsNames, x=np.zeros(len(metricsNames)), base=biases[:,0],
+                            orientation="h",
+                            marker_line_color = 'black', marker_color='black', marker_line_width = 4
+                            )
+                   )
+
+    metricsBarChart = go.Figure(data=barsData)
+
+    # Change the bar mode
+    metricsBarChart.update_layout(barmode='stack')
+    metricsBarChart.update_xaxes(visible=True,zeroline=True,zerolinewidth=4,zerolinecolor='gray') # Plot y axis
+    metricsBarChart.update_layout( width=800, height=50*len(metricsNames)  )
+    metricsBarChart.update_xaxes(title="-Normalized biases")
+
+    #pdb.set_trace()
+
+    return metricsBarChart
+
 
 def createBarChart( matrix, index, columns, 
      #                   barBase,

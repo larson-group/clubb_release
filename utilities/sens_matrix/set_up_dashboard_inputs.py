@@ -53,9 +53,9 @@ def setUpInputs():
 #                        ['LHFLX_RMSE', 1.00, 15.], \
 #                        ['SHFLX_RMSE', 1.00, 15.], \
 #                        ['CLDLOW_RMSE', 1.00, 15.], \
-                        ['SWCF_RACC', 0.01, 0.2], \
-                        ['SWCF_RMSEP', 8.01, 15.], \
-                        ['SWCF_RMSE', 0.01, 15.], \
+#                        ['SWCF_RACC', 0.01, 0.2], \
+                        ['SWCF_RMSEP', 4.01, 15.], \
+#                        ['SWCF_RMSE', 0.01, 15.], \
                         ['SWCF_GLB', 16.00, -999], \
                         ['SWCF_DYCOMS', 1.00, -999], \
                         ['SWCF_HAWAII', 1.00, -999], \
@@ -68,7 +68,7 @@ def setUpInputs():
                         ['SWCF_SP', 1.00, -999],  \
 ##                        ['SWCF_PA', 1.01, -999], \
                         ['SWCF_CAF', 1.00, -999], \
-                        ['SWCF_Namibia', 3.00, -999], \
+                        ['SWCF_Namibia', 4.00, -999], \
                         ['SWCF_Namibia_near', 1.00, -999], \
                         ['LWCF_GLB', 1.00, -999], \
 ###                        ['LWCF_DYCOMS', 1.01, -999], \
@@ -82,9 +82,9 @@ def setUpInputs():
 ####                        ['LWCF_PA',  1.01, -999], \
 ###                        ['LWCF_CAF', 1.01, -999], \
                         ['PRECT_GLB', 3.00, -999], \
-                        ['PRECT_RACC', 0.01, 1.0], \
-                        ['PRECT_RMSEP', 0.01, 1.0], \
-                        ['PRECT_RMSE', 0.01, 1.0], \
+#                        ['PRECT_RACC', 0.01, 1.0], \
+#                        ['PRECT_RMSEP', 0.01, 1.0], \
+#                        ['PRECT_RMSE', 0.01, 1.0], \
 ##                        ['PRECT_LBA', 1.00, -999], \
 ##                        ['PRECT_WP', 1.00, -999], \
 ###                        ['PRECT_EP', 1.01, -999], \
@@ -182,6 +182,9 @@ def setUpInputs():
 ##                    ['clubb_c_wp2_splat', 1.0, \
 ##                     folder_name + 'sens0707_26_Regional.nc',
 ##                     folder_name + 'sens0707_27_Regional.nc'], \
+#                    ['cldfrc_dp2', 1.0, \
+#                     folder_name + 'sens0707_38_Regional.nc',
+#                     folder_name + 'sens0707_39_Regional.nc'], \
                         ]
 
     # Split up the above list into parameter names, scales, and filenames.
