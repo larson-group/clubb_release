@@ -140,6 +140,8 @@ def main():
     normlzdLinplusSensMatrixPoly = normlzdSemiLinMatrixFnc(
                                         dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly, 
                                         normlzdCurvMatrix, numMetrics)
+    normlzdWeightedLinplusSensMatrixPoly = np.diag(np.transpose(metricsWeights)[0]) @ normlzdLinplusSensMatrixPoly
+
 
     #normlzdLinplusSensMatrixPoly = normlzdSensMatrixPoly \
     #           + 0.5 * normlzdCurvMatrix * ( np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T )
@@ -243,6 +245,7 @@ def main():
     # Check whether the minimizer actually reduces chisqd
     # Initial value of chisqd, which assumes parameter perturbations are zero
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
+    normlzdWeightedDefaultBiasesCol = metricsWeights * normlzdDefaultBiasesCol
     chisqdZero = objFnc(np.zeros_like(defaultParamValsOrigRow), \
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, metricsWeights, \
                         normlzdCurvMatrix, reglrCoef, numMetrics)
@@ -654,10 +657,11 @@ def main():
 #                          width=800, height=500 )
 
     sensMatrixBarFig = \
-          createBarChart( normlzdSensMatrixOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
+          createBarChart( minusNonlinMatrixOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
+          #createBarChart( normlzdSensMatrixOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
           #                barBase = np.zeros_like(paramsScales),
                           orientation = 'v',
-                          title="""Linear contributions of parameters to actual removal of regional biases""",
+                          title="""Linear+nonlinear contributions of parameters to actual removal of regional biases""",
                           xlabel="Parameter", ylabel="Contribution to bias removal",
                           width=800, height=500 )
 
@@ -1249,6 +1253,7 @@ def main():
 
     # Create color-coded matrix that displays correlations among parameter vectors
     normlzdSensMatrixConcatBiases = np.hstack((normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol))
+    #normlzdSensMatrixConcatBiases = np.hstack((normlzdWeightedLinplusSensMatrixPoly, -1*normlzdWeightedDefaultBiasesCol))
     cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixConcatBiases.T )
     roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
     df = pd.DataFrame(roundedCosAnglesMatrix,
@@ -1334,7 +1339,7 @@ def main():
         dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
 #        dcc.Graph( id='paramsTotContrbBarFig', figure=paramsTotContrbBarFig ),
         dcc.Graph( id='sensMatrixBarFig', figure=sensMatrixBarFig ),
-        dcc.Graph( id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig ),
+        #dcc.Graph( id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig ),
         dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ),
         dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ),
         dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ),
