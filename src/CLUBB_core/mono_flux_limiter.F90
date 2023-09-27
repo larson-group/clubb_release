@@ -978,20 +978,12 @@ module mono_flux_limiter
             !Remove the spike at the top of the domain
             xm(i,nz) = xm_enter_mfl(i,nz)
 
-            !This code can be uncommented to ensure conservation
-            !if (abs(sum(rho_ds_zt(2:gr%nz) * xm(2:gr%nz) / gr%invrs_dzt(2:gr%nz)) - & 
-            !    sum(rho_ds_zt(2:gr%nz) * xm_enter_mfl(2:gr%nz) / gr%invrs_dzt(2:gr%nz)))&
-            !    > (1000 * xm_tol)) then
-            !   write(fstderr,*) "NON-CONSERVATION in MFL", trim( solve_type ), &
-            !      abs(sum(rho_ds_zt(2:gr%nz) * xm(2:gr%nz) / gr%invrs_dzt(2:gr%nz)) - &
-            !       sum(rho_ds_zt(2:gr%nz) * xm_enter_mfl(2:gr%nz) / &
-            !              gr%invrs_dzt(2:gr%nz)))
-            !
-            !   write(fstderr,*) "XM_ENTER_MFL=", xm_enter_mfl 
-            !   write(fstderr,*) "XM_AFTER_SPIKE_REMOVAL", xm 
-            !   write(fstderr,*) "XM_TOL", xm_tol
-            !   write(fstderr,*) "XM_ADJ_COEF", xm_adj_coef   
-            !endif
+            !Check to ensure the vertical integral is not zero to avoid a divide
+            !by zero error
+            if ( abs(xm_vert_integral) < eps ) then
+               write(fstderr,*) "Vertical integral of xm is zero;", & 
+                                "mfl will remove spike at top of domain,", &
+                                "but it will not conserve xm."
 
           endif ! xm_vert_integral < eps
         endif ! spike at domain top

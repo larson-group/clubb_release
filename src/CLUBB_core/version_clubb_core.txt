@@ -1,0 +1,65 @@
+commit c50ab36d29f7c3cdbadbfa6cfa5cf935451e26a2
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Nov 28 19:13:50 2022 -0600
+
+    I added "smooth" max clipping for invrs_tau_shear, which is a variable
+    that is supposed to be positive definite, yet was obtaining negative
+    values at the model lower boundary owing to linear extension at the
+    boundaries as part of the linear interpolation call.
+    
+    This change is BIT_CHANGING.
+
+commit 985d68817941185e26f11a232e6214e1d80b9f13
+Merge: 216528613 61b4a67e1
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Nov 28 13:20:27 2022 +0100
+
+    Merge branch 'master' of https://github.com/larson-group/clubb
+
+commit 216528613a53b626f93c97867ec2b69bb7ba9da1
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Mon Nov 28 13:18:48 2022 +0100
+
+    Creates separate file for inputting data to the tuner
+
+commit 61b4a67e170bc2243263ac19fb90b24f5a1e455b
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Nov 24 16:20:47 2022 -0600
+
+    Replacing $ with & in namelist definition to make consistent.
+
+commit 873ae270b4c4c112e6e7da83ba0f7df4aff9b958
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Nov 22 14:13:31 2022 -0600
+
+    Removing unwanted files.
+
+commit 33dd904e2f71c1cf801dbcdd71e8b796cc1c55f1
+Author: huebler <huebler@uwm.edu>
+Date:   Fri Nov 18 15:24:09 2022 -0600
+
+    Adding capability to change matrix solving method via clubb_config_flags.
+
+commit cc464d80a7a992f426920d24659455a72a223a91
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Nov 22 14:01:37 2022 -0600
+
+    Delete error_diffs.txt
+
+commit 2bd6ee654291f54e5cef61d19ed05e2bf3aa3180
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Tue Nov 22 14:01:26 2022 -0600
+
+    Delete clubb.in
+
+commit 3ebfa3db3b485a4f58bd654b25f8608c1aa7d7bd
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Nov 18 23:45:39 2022 -0600
+
+    Making GPU and CPU versions of the penta_lu solver the same as discussed in larson-group/clubb#1024.
+
+commit a8f324c4ae9dc0526fb9a1e622e32c8c20a4e0de
+Author: huebler <huebler@uwm.edu>
+Date:   Fri Nov 18 15:33:55 2022 -0600
+
+    Fixing small bug, need to pass _copy arrays to prevent lapack mangling the real ones.
