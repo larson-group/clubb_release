@@ -673,6 +673,9 @@ def main():
                           xlabel="Parameter", ylabel="Contribution to bias removal", 
                           width=800, height=500 )
 
+    metricsCorrArrayFig = createCorrArrayFig( normlzdLinplusSensMatrixPoly, metricsNames,
+                          title='cos(angle) among metrics (i.e., rows of sens matrix)' ) 
+
     minusNormlzdDefaultBiasesCol = \
              -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
     metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrdered],paramsNames,
@@ -1133,123 +1136,43 @@ def main():
 
     #pdb.set_trace()
 
-    roundedNormlzdSensMatrix = np.around( normlzdLinplusSensMatrixPoly, decimals=2)
-    df_sensmat = pd.DataFrame(roundedNormlzdSensMatrix,
-                  index=metricsNames,
-                  columns=paramsNames)
-    matMaxAbs = np.max(np.abs(roundedNormlzdSensMatrix))
-    normlzdSensMatrixFig = ff.create_annotated_heatmap(
-                   z=df_sensmat.to_numpy(),
-                   x=df_sensmat.columns.tolist(),
-                   y=df_sensmat.index.tolist(),
-                   #coloraxis="coloraxis",
-                   #colorscale=px.colors.diverging.balance,
-                   colorscale='balance',
-                   zmin=-matMaxAbs, zmax=matMaxAbs,
-                   showscale=False, ygap=1, xgap=1
-                   )
-    normlzdSensMatrixFig.update_xaxes(side="bottom")
-    normlzdSensMatrixFig.update_layout(
-    title_text='Color-coded normalized sensitivity matrix', 
-    title_x=0.5, 
-    #width=800, 
-    #height=1400,
-    xaxis_showgrid=False,
-    yaxis_showgrid=False,
-    xaxis_zeroline=False,
-    yaxis_zeroline=False,
-    #yaxis_autorange='reversed',
-    template='plotly_white'
-    )
-    df_biasArray = pd.DataFrame( -np.around(defaultBiasesCol/np.abs(normMetricValsCol), decimals=2),
-                   index=metricsNames,
-                   columns= ['-Normalized Biases'])
-    normlzdBiasArrayFig = ff.create_annotated_heatmap(
-                   z=df_biasArray.to_numpy(),
-                   x=df_biasArray.columns.tolist(),
-                   y=df_biasArray.index.tolist(),
-                   #colorscale=normlzdSensMatrixFig.colorscale,
-                   #colorscale=px.colors.diverging.balance,
-                   #coloraxis="coloraxis",
-                   colorscale='balance',
-                   zmin=-matMaxAbs, zmax=matMaxAbs,
-                   showscale=True, ygap=1, xgap=1
-                   )
-    normlzdBiasArrayFig.update_layout(
-    title_text='', 
-    title_x=0.5, 
-    #width=10, 
-    #height=1400,
-    xaxis_showgrid=False,
-    yaxis_showgrid=False,
-    xaxis_zeroline=False,
-    yaxis_zeroline=False,
-    #yaxis_autorange='reversed',
-    #template='plotly_white'
-    )
-    sensMatrixBiasFig = make_subplots(
-    rows=1, cols=2,
-    column_widths=[0.9, 0.1],
-    horizontal_spacing=0.2,
-    )
-    sensMatrixBiasFig.add_trace(normlzdSensMatrixFig.data[0], row=1, col=1)
-    #sensMatrixBiasFig.add_trace(normlzdBiasArrayFig.data[0], 1, 1)
-    sensMatrixBiasFig.add_trace(normlzdBiasArrayFig.data[0], row=1, col=2)
-    sensMatrixBiasFig.update_layout(
-        title_text='Color-coded normalized sensitivity matrix',
-        height=700,
-        template='plotly_white') 
-    sensMatrixBiasFig.update_layout(coloraxis=dict(colorscale='RdBu',cmin=-1,cmax=1), showlegend=False)
+    # Create figure that shows the sensitivity matrix and bias column, both color coded.
+    sensMatrixBiasFig = createMatrixPlusColFig( matrix = normlzdLinplusSensMatrixPoly,
+                         matIndexLabel = metricsNames,
+                         matColLabel = paramsNames,
+                         colVector = -np.around(defaultBiasesCol/np.abs(normMetricValsCol), decimals=2),
+                         colVectIndexLabel = metricsNames,
+                         colVectColLabel = ['-Normalized Biases'],
+                         plotTitle='Color-coded normalized sensitivity matrix',
+                         reversedYAxis = 'reversed' )
 
-    #pdb.set_trace()
 
-    cosAnglesMatrix = calcMatrixAngles( normlzdLinplusSensMatrixPoly )
-    roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
-    df = pd.DataFrame(roundedCosAnglesMatrix,
-                  index=metricsNames,
-                  columns=metricsNames)
-    upTriMask = np.logical_not( np.tril(np.ones_like(roundedCosAnglesMatrix, dtype=bool)) )
-    df_mask = df.mask(upTriMask)
-    #maskedRoundedCosAnglesMatrix = np.ma.masked_array(roundedCosAnglesMatrix, mask=upTriMask)
-    #maskedRoundedCosAnglesMatrix.filled(np.nan)
-    #print("maskedAngles =", maskedRoundedCosAnglesMatrix)
-    #print("cosAnglesMatrix =", cosAnglesMatrix)
-    #print("upTriMask =", upTriMask)
-    metricsCorrArrayFig = ff.create_annotated_heatmap(
-                   z=df_mask.to_numpy(),
-                   x=df_mask.columns.tolist(),
-                   y=df_mask.columns.tolist(),
-                   colorscale=px.colors.diverging.balance,
-                   showscale=True, ygap=1, xgap=1
-                   )
-    #metricsCorrArrayFig = go.Figure(data=go.Heatmap(
-    #                z=roundedCosAnglesMatrix,  
-    ##                labels=dict(x="Metrics", y="Metrics")x=['SWCF_GLB', 'SWCF_DYCOMS', 'SWCF_HAWAII', 'SWCF_VOCAL', 'SWCF_VOCAL_near', 'SWCF_LBA', 'SWCF_WP', 'SWCF_EP', 'SWCF_NP', 'SWCF_SP', 'SWCF_CAF', 'SWCF_Nambian', 'SWCF_Nambian_near', 'LWCF_GLB', 'PRECT_GLB'])
-    ##                 labels=dict(x="hullo")
-    #                x=metricsNames.tolist(),
-    #                y=metricsNames.tolist() )
-    ##                text_auto=True  )
-    #                )
-    #    metricsCorrArrayFig = px.imshow(
-    #                   img=roundedCosAnglesMatrix,
-    #                   x=metricsNames.tolist(),
-    #                   y=metricsNames.tolist(),
-    #                   color_continuous_scale=px.colors.diverging.balance
-    #                    )
-    #    metricsCorrArrayFig.update_traces(text=roundedCosAnglesMatrix)
-    metricsCorrArrayFig.update_xaxes(side="bottom")
-    metricsCorrArrayFig.update_layout(
-    title_text='cos(angle) among metrics (i.e., rows of sens matrix)', 
-    title_x=0.5, 
-    width=800, 
-    height=700,
-    xaxis_showgrid=False,
-    yaxis_showgrid=False,
-    xaxis_zeroline=False,
-    yaxis_zeroline=False,
-    yaxis_autorange='reversed',
-    template='plotly_white'
-    )
+    # Create figure that plots color-coded parameter correlation matrix plus parameter-bias correlation column.
+    XT_dot_X_Linplus = normlzdLinplusSensMatrixPoly.T @ normlzdLinplusSensMatrixPoly
+    (XT_dot_X_Linplus_corr, stdMatrixInv ) = covMatrix2corrMatrix( XT_dot_X_Linplus, returnStd=True )
+    normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdLinplusSensMatrixPoly.T @ normlzdDefaultBiasesCol
+    paramsCorrArrayBiasFig = createMatrixPlusColFig( matrix = XT_dot_X_Linplus_corr,
+                         matIndexLabel = paramsNames,
+                         matColLabel = paramsNames,
+                         colVector = -np.around(normlzdStdDefaultBiasesCol, decimals=2),
+                         colVectIndexLabel = paramsNames,
+                         colVectColLabel = ['-Normalized, Standardized Biases'],
+                         plotTitle='XTdotX and bias column, converted to correlation',
+                         reversedYAxis = 'reversed' )
+
+    # Create figure that plots color-coded projection matrix plus bias column.
+    XT_dot_X_Linplus_inv = np.linalg.inv( XT_dot_X_Linplus )
+    projMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
+    print("projMatrix rows=", np.linalg.norm( projMatrix, axis=1))
+    projectionMatrixFig = createMatrixPlusColFig( matrix = projMatrix,
+                         matIndexLabel = metricsNames,
+                         matColLabel = metricsNames,
+                         colVector = -np.around(normlzdDefaultBiasesCol, decimals=2),
+                         colVectIndexLabel = metricsNames,
+                         colVectColLabel = ['-Normalized Biases'],
+                         plotTitle='Projection matrix',
+                         reversedYAxis = 'reversed' )
+
 
     # Create color-coded matrix that displays correlations among parameter vectors
     normlzdSensMatrixConcatBiases = np.hstack((normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol))
@@ -1345,8 +1268,10 @@ def main():
         dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ),
 #  config= { 'toImageButtonOptions': { 'scale': 6 } }
         dcc.Graph( id='sensMatrixBiasFig', figure=sensMatrixBiasFig ),   
+        dcc.Graph( id='paramsCorrArrayBiasFig', figure=paramsCorrArrayBiasFig ),
         dcc.Graph( id='paramsCorrArrayFig', figure=paramsCorrArrayFig ),
         dcc.Graph( id='metricsCorrArrayFig', figure=metricsCorrArrayFig ),
+        dcc.Graph( id='projectionMatrixFig', figure=projectionMatrixFig ),
         dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ),
         dcc.Graph( id='threeDotFig', figure=threeDotFig ),
         dcc.Graph( id='biasesSensScatterFig', figure=biasSensMatrixScatterFig ),
@@ -1372,6 +1297,20 @@ def main():
     sensMatrixDashboard.run_server(debug=True)
 
     return
+
+def covMatrix2corrMatrix( covMatrix, returnStd=False ):
+
+    # https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
+
+    import numpy as np
+
+    stdVector = np.sqrt( np.diag( covMatrix ) )
+    stdMatrixInv = np.diag( 1.0 / stdVector )
+    corrMatrix = stdMatrixInv @ covMatrix @ stdMatrixInv
+    if returnStd:
+        return ( corrMatrix, stdMatrixInv )
+    else:
+        return corrMatrix
 
 # Calculate semi-linear matrix, sensMatrix + curvMatrix*dp, for use in forward solution
 def normlzdSemiLinMatrixFnc(dnormlzdParams, normlzdSensMatrix, normlzdCurvMatrix, numMetrics):
@@ -1665,6 +1604,87 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
              normlzdOrdDparamsMin, normlzdOrdDparamsMax )
 
 
+
+
+def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
+                            colVector, colVectIndexLabel, colVectColLabel,
+                            plotTitle, reversedYAxis=None ):
+    '''Creates a figure that displays a color-coded matrix and an accompanying column vector.'''
+
+    import numpy as np
+    import pandas as pd
+    import plotly.figure_factory as ff
+    import plotly.express as px
+    from plotly.subplots import make_subplots
+    import pdb
+
+    # First create a sub-figure that displays color-coded matrix
+    roundedNormlzdSensMatrix = np.around( matrix, decimals=2)
+    df_sensmat = pd.DataFrame(roundedNormlzdSensMatrix,
+                  index=matIndexLabel,
+                  columns=matColLabel)
+    matMaxAbs = np.max(np.abs(roundedNormlzdSensMatrix))
+    matSubfig = px.imshow(
+                   df_sensmat.to_numpy(),
+                   x=df_sensmat.columns.tolist(),
+                   y=df_sensmat.index.tolist(),
+                   text_auto=True
+                   )
+    matSubfig.update_xaxes(side="bottom")
+    matSubfig.update_layout(
+    title_text=plotTitle,
+    title_x=0.5,
+    #width=800,
+    #height=1400,
+    xaxis_showgrid=False,
+    yaxis_showgrid=False,
+    xaxis_zeroline=False,
+    yaxis_zeroline=False,
+    )
+
+    # Now create a sub-figure showing a color-coded column matrix
+    df_biasArray = pd.DataFrame( colVector,
+                   index=colVectIndexLabel,
+                   columns= colVectColLabel)
+    colVectSubfig = px.imshow(
+                   df_biasArray.to_numpy(),
+                   x=df_biasArray.columns.tolist(),
+                   y=df_biasArray.index.tolist(),
+                   text_auto=True
+                   )
+    colVectSubfig.update_layout(
+    title_text='', 
+    title_x=0.5, 
+    #width=10, 
+    #height=1400,
+    xaxis_showgrid=False,
+    yaxis_showgrid=False,
+    xaxis_zeroline=False,
+    yaxis_zeroline=False,
+    )
+
+    # Now combine the matrix and column sub-figures into one figure
+    matrixPlusColFig = make_subplots(
+    rows=1, cols=2,
+    column_widths=[0.9, 0.1],
+    horizontal_spacing=0.3,
+    )
+    matrixPlusColFig.add_trace(matSubfig.data[0], row=1, col=1)
+    matrixPlusColFig.add_trace(colVectSubfig.data[0], row=1, col=2)
+    matrixPlusColFig.update_layout(
+        title_text=plotTitle,
+        height=700,
+        width= 1000,
+        template='plotly_white')
+    matrixPlusColFig.update_layout(coloraxis=dict(colorscale='RdBu_r',cmin=-matMaxAbs,cmax=matMaxAbs), showlegend=False)
+    matrixPlusColFig.update_yaxes( autorange=reversedYAxis, row=1, col=2 ) 
+    matrixPlusColFig.update_yaxes( autorange=reversedYAxis, row=1, col=1 ) 
+
+    #pdb.set_trace()
+
+    return ( matrixPlusColFig )
+
+
 def createMetricsBarChart( metricsNames, paramsNames, biases, sensMatrix ):
 
 
@@ -1892,6 +1912,68 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
 
     return ( threeDotFig )
 
+def createCorrArrayFig( matrix, indexLabels, title ):
+
+    import numpy as np
+    import pandas as pd
+    import plotly.figure_factory as ff
+    import plotly.express as px
+    import pdb
+
+    cosAnglesMatrix = calcMatrixAngles( matrix )
+    #cosAnglesMatrix = np.copy( matrix )
+    roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
+
+    df = pd.DataFrame(roundedCosAnglesMatrix,
+                  index=indexLabels,
+                  columns=indexLabels)
+    # Display only the lower-triangular elements of the matrix
+    upTriMask = np.logical_not( np.tril(np.ones_like(roundedCosAnglesMatrix, dtype=bool)) )
+    df_mask = df.mask(upTriMask)
+    #maskedRoundedCosAnglesMatrix = np.ma.masked_array(roundedCosAnglesMatrix, mask=upTriMask)
+    #maskedRoundedCosAnglesMatrix.filled(np.nan)
+    #print("maskedAngles =", maskedRoundedCosAnglesMatrix)
+    #print("cosAnglesMatrix =", cosAnglesMatrix)
+    #print("upTriMask =", upTriMask)
+    corrArrayFig = ff.create_annotated_heatmap(
+                   z=df_mask.to_numpy(),
+                   x=df_mask.columns.tolist(),
+                   y=df_mask.columns.tolist(),
+                   colorscale=px.colors.diverging.balance,
+                   showscale=True, ygap=1, xgap=1
+                   )
+    #metricsCorrArrayFig = go.Figure(data=go.Heatmap(
+    #                z=roundedCosAnglesMatrix,  
+    ##                labels=dict(x="Metrics", y="Metrics")x=['SWCF_GLB', 'SWCF_DYCOMS', 'SWCF_HAWAII', 'SWCF_VOCAL', 'SWCF_VOCAL_near', 'SWCF_LBA', 'SWCF_WP', 'SWCF_EP', 'SWCF_NP', 'SWCF_SP', 'SWCF_CAF', 'SWCF_Nambian', 'SWCF_Nambian_near', 'LWCF_GLB', 'PRECT_GLB'])
+    ##                 labels=dict(x="hullo")
+    #                x=metricsNames.tolist(),
+    #                y=metricsNames.tolist() )
+    ##                text_auto=True  )
+    #                )
+    #    metricsCorrArrayFig = px.imshow(
+    #                   img=roundedCosAnglesMatrix,
+    #                   x=metricsNames.tolist(),
+    #                   y=metricsNames.tolist(),
+    #                   color_continuous_scale=px.colors.diverging.balance
+    #                    )
+    #    metricsCorrArrayFig.update_traces(text=roundedCosAnglesMatrix)
+    corrArrayFig.update_xaxes(side="bottom")
+    corrArrayFig.update_layout(
+    title_text=title, 
+    title_x=0.5, 
+    width=800, 
+    height=700,
+    xaxis_showgrid=False,
+    yaxis_showgrid=False,
+    xaxis_zeroline=False,
+    yaxis_zeroline=False,
+    yaxis_autorange='reversed',
+    template='plotly_white'
+    )
+
+    #pdb.set_trace()
+
+    return ( corrArrayFig )
 
 def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, paramsScales,
                           metricsWeights, obsMetricValsCol,
