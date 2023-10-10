@@ -536,7 +536,8 @@ then
 	# Move files from default output directory to the specified directory
 	if [ $NIGHTLY == false ];
 	then
-		mv ../output/* $CUSTOM_OUTPUT_DIR
+		mv ../output/*.nc $CUSTOM_OUTPUT_DIR
+		mv ../output/*_setup.txt $CUSTOM_OUTPUT_DIR
 	fi
 fi
 

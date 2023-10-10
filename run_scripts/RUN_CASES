@@ -1,7 +1,7 @@
 ! $Id$
-! Declare any cases that should be run with run_scm_all.bash and 
-! run_bindiff_all.bash. Any blank lines and lines starting with '!' will
-! be ignored.
+! Declare any cases that should be run with run_scm_all.bash and run_bindiff_all.bash.
+! Any blank lines and lines starting with '!' will be ignored in run_scm_all
+! while run_bindiff_all runs all cases regardless if commented or not.
 
 arm
 !arm_3year
