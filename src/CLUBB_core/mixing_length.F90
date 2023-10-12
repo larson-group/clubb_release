@@ -1309,7 +1309,8 @@ module mixing_length
         iC_invrs_tau_N2_clear_wp3,   &
         iC_invrs_tau_wpxp_Ri,        &
         ialtitude_threshold,         &
-        ibv_efold
+        ibv_efold,                   &
+        iwpxp_Ri_exp
 
     use error_code, only: &
       err_code, &
@@ -1420,7 +1421,8 @@ module mixing_length
       C_invrs_tau_wpxp_N2_thresh, &
       C_invrs_tau_N2_clear_wp3,   &
       C_invrs_tau_wpxp_Ri,        &
-      altitude_threshold
+      altitude_threshold,         &
+      wpxp_Ri_exp
 
     real( kind = core_rknd ), parameter :: &
       min_max_smth_mag = 1.0e-9_core_rknd, &  ! "base" smoothing magnitude before scaling 
@@ -1506,6 +1508,7 @@ module mixing_length
     C_invrs_tau_N2_clear_wp3 = clubb_params(iC_invrs_tau_N2_clear_wp3)
     C_invrs_tau_wpxp_Ri = clubb_params(iC_invrs_tau_wpxp_Ri)
     altitude_threshold = clubb_params(ialtitude_threshold)
+    wpxp_Ri_exp = clubb_params(iwpxp_Ri_exp)
 
     if ( l_smooth_min_max ) then
 
@@ -1920,7 +1923,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-    else 
+    else ! l_smooth_min_max
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1929,7 +1932,7 @@ module mixing_length
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one  + H_invrs_tau_wpxp_N2(i,k) & 
                                       * C_invrs_tau_wpxp_Ri &
-                                      * min( max( sqrt( Ri_zm(i,k) ), zero), 12.0_core_rknd ) )
+                                      * min( max( Ri_zm(i,k)**wpxp_Ri_exp, zero), 12.0_core_rknd ))
           end if
         end do 
       end do

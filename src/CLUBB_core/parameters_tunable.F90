@@ -111,7 +111,8 @@ module parameters_tunable
        "rtp2_clip_coef              ", "Cx_min                      ", &
        "Cx_max                      ", "Richardson_num_min          ", &
        "Richardson_num_max          ", "a3_coef_min                 ", &
-       "a_const                     ", "bv_efold                    "/)
+       "a_const                     ", "bv_efold                    ", &
+       "wpxp_Ri_exp                 "/)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -144,7 +145,7 @@ module parameters_tunable
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
-               a3_coef_min, a_const, bv_efold )
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold )
 
     implicit none
 
@@ -170,7 +171,8 @@ module parameters_tunable
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold
 
 
     ! NOTE: In CLUBB standalone, as well as some host models, the hardcoded
@@ -351,6 +353,8 @@ module parameters_tunable
     a_const = 1.8_core_rknd ! Used in sfc_varnce_module.F90 to set surface values
     bv_efold = 5._core_rknd ! Control parameter for inverse e-folding of
                             ! cloud fraction in the mixed Brunt Vaisala frequency
+    wpxp_Ri_exp = .5_core_rknd  ! Exponent determining the influence of
+                                ! the Richardson number on invrs_tau_wpxp
 
     return
 
@@ -465,7 +469,8 @@ module parameters_tunable
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold
 
     !-------------------- Begin code --------------------
 
@@ -512,8 +517,8 @@ module parameters_tunable
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, & ! intent(out)
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, & ! intent(out)
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, & ! intent(out)
-               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, & ! intent(out)
-               a_const, bv_efold ) ! intent(out)
+               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, & ! intent(out)
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold ) ! intent(out)
 
 
     ! It was decided after some experimentation, that the best
@@ -938,8 +943,8 @@ module parameters_tunable
                               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-                              Cx_min, Cx_max, Richardson_num_min, &
-                              Richardson_num_max, a3_coef_min, a_const, bv_efold, &
+                              Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+                              wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, &
                               params )
 
     ! Description:
@@ -979,7 +984,8 @@ module parameters_tunable
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -1014,7 +1020,8 @@ module parameters_tunable
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold
 
     ! ---- Begin Code ----
 
@@ -1055,8 +1062,8 @@ module parameters_tunable
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &   ! intent(in)
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, & ! intent(in)
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, & ! intent(in)
-               Cx_min, Cx_max, Richardson_num_min, & ! intent(in)
-               Richardson_num_max, a3_coef_min, a_const, bv_efold, & ! intent(in)
+               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, & ! intent(in)
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, & ! intent(in)
                params ) ! intent(out)
 
 !    l_error = .false.
@@ -1197,7 +1204,8 @@ module parameters_tunable
         iRichardson_num_max, &
         ia3_coef_min, &
         ia_const, &
-        ibv_efold
+        ibv_efold, &
+        iwpxp_Ri_exp
 
     implicit none
 
@@ -1246,8 +1254,8 @@ module parameters_tunable
       C_invrs_tau_shear_minmax, C_invrs_tau_N2_minmax, C_invrs_tau_N2_wp2_minmax, &
       C_invrs_tau_N2_xp2_minmax, C_invrs_tau_N2_wpxp_minmax, C_invrs_tau_N2_clear_wp3_minmax, &
       C_invrs_tau_wpxp_Ri_minmax, C_invrs_tau_wpxp_N2_thresh_minmax, Cx_min_minmax, &
-      Cx_max_minmax, Richardson_num_min_minmax, Richardson_num_max_minmax, a3_coef_min_minmax, &
-      a_const_minmax, bv_efold_minmax
+      Cx_max_minmax, Richardson_num_min_minmax, Richardson_num_max_minmax, &
+      wpxp_Ri_exp_minmax, a3_coef_min_minmax, a_const_minmax, bv_efold_minmax
 
     namelist /init_minmax/  & 
       C1_minmax, C1b_minmax, C1c_minmax, C2rt_minmax, C2thl_minmax, C2rtthl_minmax, C4_minmax, &
@@ -1273,7 +1281,7 @@ module parameters_tunable
       C_invrs_tau_N2_xp2_minmax, C_invrs_tau_N2_wpxp_minmax, C_invrs_tau_N2_clear_wp3_minmax, &
       C_invrs_tau_wpxp_Ri_minmax, C_invrs_tau_wpxp_N2_thresh_minmax, Cx_min_minmax, &
       Cx_max_minmax, Richardson_num_min_minmax, Richardson_num_max_minmax, a3_coef_min_minmax, &
-      a_const_minmax, bv_efold_minmax
+      a_const_minmax, bv_efold_minmax, wpxp_Ri_exp_minmax
 
 
 ! ----- Begin code -------------
@@ -1384,6 +1392,7 @@ module parameters_tunable
     params_minmax(:,ia3_coef_min) = a3_coef_min_minmax
     params_minmax(:,ia_const) = a_const_minmax
     params_minmax(:,ibv_efold) = bv_efold_minmax
+    params_minmax(:,iwpxp_Ri_exp) = wpxp_Ri_exp_minmax
 
     ! Error checks:  if a minimum value is entered, it must have a
     ! corresponding maximum value of greater value; the min and max values
@@ -1550,8 +1559,8 @@ module parameters_tunable
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-               Cx_min, Cx_max, Richardson_num_min, &
-               Richardson_num_max, a3_coef_min, a_const, bv_efold, params )
+               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, params )
 
     ! Description:
     ! Takes the list of scalar variables and puts them into a 1D vector.
@@ -1666,7 +1675,8 @@ module parameters_tunable
         iRichardson_num_max, &
         ia3_coef_min, &
         ia_const, &
-        ibv_efold
+        ibv_efold, &
+        iwpxp_Ri_exp
 
     implicit none
 
@@ -1692,7 +1702,8 @@ module parameters_tunable
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -1797,6 +1808,7 @@ module parameters_tunable
     params(ia3_coef_min) = a3_coef_min
     params(ia_const) = a_const
     params(ibv_efold) = bv_efold
+    params(iwpxp_Ri_exp) = wpxp_Ri_exp
 
 
     return
@@ -1827,8 +1839,8 @@ module parameters_tunable
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-               Cx_min, Cx_max, Richardson_num_min, &
-               Richardson_num_max, a3_coef_min, a_const, bv_efold )
+               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold )
 
     ! Description:
     ! Takes the 1D vector and returns the list of scalar variables.
@@ -1944,6 +1956,7 @@ module parameters_tunable
         ia3_coef_min, &
         ia_const, &
         ibv_efold, &
+        iwpxp_Ri_exp, &
         nparams
 
     implicit none
@@ -1973,7 +1986,8 @@ module parameters_tunable
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold
 
     C1      = params(iC1)
     C1b     = params(iC1b)
@@ -2088,6 +2102,7 @@ module parameters_tunable
     a3_coef_min = params(ia3_coef_min)
     a_const = params(ia_const)
     bv_efold = params(ibv_efold)
+    wpxp_Ri_exp = params(iwpxp_Ri_exp)
 
     return
   end subroutine unpack_parameters
@@ -2116,8 +2131,8 @@ module parameters_tunable
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-               Cx_min, Cx_max, Richardson_num_min, &
-               Richardson_num_max, a3_coef_min, a_const, bv_efold )
+               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold )
 
     ! Description:
     ! Set all tunable parameters to NaN
@@ -2150,7 +2165,8 @@ module parameters_tunable
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+      wpxp_Ri_exp, a3_coef_min, a_const, bv_efold
 
     ! --- Begin Code ---
 
@@ -2254,6 +2270,7 @@ module parameters_tunable
     a3_coef_min                  = init_value
     a_const                      = init_value
     bv_efold                     = init_value
+    wpxp_Ri_exp                  = init_value
     return
 
   end subroutine init_parameters_999

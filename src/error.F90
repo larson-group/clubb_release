@@ -261,7 +261,8 @@ module error
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, a3_coef_min, a_const, bv_efold
+      Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, wpxp_Ri_exp, &
+      a3_coef_min, a_const, bv_efold
 
     !-----------------------------------------------------------------------
 
@@ -356,8 +357,8 @@ module error
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-               Cx_min, Cx_max, Richardson_num_min, &
-               Richardson_num_max, a3_coef_min, a_const, bv_efold )
+               Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+               wpxp_Ri_exp, a3_coef_min, a_const, bv_efold )
 
     ! Re-read namelists if requested
     if ( l_read_files ) then
@@ -413,8 +414,8 @@ module error
                             C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                             C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
                             C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
-                            Cx_min, Cx_max, Richardson_num_min, &
-                            Richardson_num_max, a3_coef_min, a_const, bv_efold, &
+                            Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
+                            wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, &
                             params )
 
       ! Allocate the arrays for the tuning variables
