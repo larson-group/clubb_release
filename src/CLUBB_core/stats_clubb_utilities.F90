@@ -32,50 +32,8 @@ module stats_clubb_utilities
     !   None
     !-----------------------------------------------------------------------
 
-    use stats_variables, only: & 
-        ztscr01, & 
-        ztscr02, & 
-        ztscr03, & 
-        ztscr04, & 
-        ztscr05, & 
-        ztscr06, & 
-        ztscr07, & 
-        ztscr08, & 
-        ztscr09, & 
-        ztscr10, & 
-        ztscr11, & 
-        ztscr12, & 
-        ztscr13, & 
-        ztscr14, & 
-        ztscr15, & 
-        ztscr16, & 
-        ztscr17, & 
-        ztscr18, & 
-        ztscr19, & 
-        ztscr20, & 
-        ztscr21
-
     use stats_variables, only: &
         l_silhs_out ! Variable(s)
-
-    use stats_variables, only: &
-        zmscr01, &
-        zmscr02, &
-        zmscr03, &
-        zmscr04, &
-        zmscr05, &
-        zmscr06, &
-        zmscr07, &
-        zmscr08, &
-        zmscr09, &
-        zmscr10, &
-        zmscr11, &
-        zmscr12, &
-        zmscr13, &
-        zmscr14, &
-        zmscr15, &
-        zmscr16, &
-        zmscr17
 
     use stats_variables, only: &
         l_stats, &
@@ -730,52 +688,6 @@ module stats_clubb_utilities
     allocate( stats_zt%file%grid_avg_var( stats_zt%num_output_fields ) )
     allocate( stats_zt%file%z( stats_zt%kk ) )
 
-    ! Allocate scratch space
-
-    allocate( ztscr01(stats_zt%kk) )
-    allocate( ztscr02(stats_zt%kk) )
-    allocate( ztscr03(stats_zt%kk) )
-    allocate( ztscr04(stats_zt%kk) )
-    allocate( ztscr05(stats_zt%kk) )
-    allocate( ztscr06(stats_zt%kk) )
-    allocate( ztscr07(stats_zt%kk) )
-    allocate( ztscr08(stats_zt%kk) )
-    allocate( ztscr09(stats_zt%kk) )
-    allocate( ztscr10(stats_zt%kk) )
-    allocate( ztscr11(stats_zt%kk) )
-    allocate( ztscr12(stats_zt%kk) )
-    allocate( ztscr13(stats_zt%kk) )
-    allocate( ztscr14(stats_zt%kk) )
-    allocate( ztscr15(stats_zt%kk) )
-    allocate( ztscr16(stats_zt%kk) )
-    allocate( ztscr17(stats_zt%kk) )
-    allocate( ztscr18(stats_zt%kk) )
-    allocate( ztscr19(stats_zt%kk) )
-    allocate( ztscr20(stats_zt%kk) )
-    allocate( ztscr21(stats_zt%kk) )
-
-    ztscr01 = 0.0_core_rknd
-    ztscr02 = 0.0_core_rknd
-    ztscr03 = 0.0_core_rknd
-    ztscr04 = 0.0_core_rknd
-    ztscr05 = 0.0_core_rknd
-    ztscr06 = 0.0_core_rknd
-    ztscr07 = 0.0_core_rknd
-    ztscr08 = 0.0_core_rknd
-    ztscr09 = 0.0_core_rknd
-    ztscr10 = 0.0_core_rknd
-    ztscr11 = 0.0_core_rknd
-    ztscr12 = 0.0_core_rknd
-    ztscr13 = 0.0_core_rknd
-    ztscr14 = 0.0_core_rknd
-    ztscr15 = 0.0_core_rknd
-    ztscr16 = 0.0_core_rknd
-    ztscr17 = 0.0_core_rknd
-    ztscr18 = 0.0_core_rknd
-    ztscr19 = 0.0_core_rknd
-    ztscr20 = 0.0_core_rknd
-    ztscr21 = 0.0_core_rknd
-
     fname = trim( fname_zt )
 
     if ( l_grads ) then
@@ -1165,46 +1077,6 @@ module stats_clubb_utilities
 
     allocate( stats_zm%file%grid_avg_var( stats_zm%num_output_fields ) )
     allocate( stats_zm%file%z( stats_zm%kk ) )
-
-    ! Allocate scratch space
-
-    allocate( zmscr01(stats_zm%kk) )
-    allocate( zmscr02(stats_zm%kk) )
-    allocate( zmscr03(stats_zm%kk) )
-    allocate( zmscr04(stats_zm%kk) )
-    allocate( zmscr05(stats_zm%kk) )
-    allocate( zmscr06(stats_zm%kk) )
-    allocate( zmscr07(stats_zm%kk) )
-    allocate( zmscr08(stats_zm%kk) )
-    allocate( zmscr09(stats_zm%kk) )
-    allocate( zmscr10(stats_zm%kk) )
-    allocate( zmscr11(stats_zm%kk) )
-    allocate( zmscr12(stats_zm%kk) )
-    allocate( zmscr13(stats_zm%kk) )
-    allocate( zmscr14(stats_zm%kk) )
-    allocate( zmscr15(stats_zm%kk) )
-    allocate( zmscr16(stats_zm%kk) )
-    allocate( zmscr17(stats_zm%kk) )
-
-    ! Initialize to 0
-    zmscr01 = 0.0_core_rknd
-    zmscr02 = 0.0_core_rknd
-    zmscr03 = 0.0_core_rknd
-    zmscr04 = 0.0_core_rknd
-    zmscr05 = 0.0_core_rknd
-    zmscr06 = 0.0_core_rknd
-    zmscr07 = 0.0_core_rknd
-    zmscr08 = 0.0_core_rknd
-    zmscr09 = 0.0_core_rknd
-    zmscr10 = 0.0_core_rknd
-    zmscr11 = 0.0_core_rknd
-    zmscr12 = 0.0_core_rknd
-    zmscr13 = 0.0_core_rknd
-    zmscr14 = 0.0_core_rknd
-    zmscr15 = 0.0_core_rknd
-    zmscr16 = 0.0_core_rknd
-    zmscr17 = 0.0_core_rknd
-
 
     fname = trim( fname_zm )
     if ( l_grads ) then
@@ -3217,48 +3089,6 @@ module stats_clubb_utilities
         l_output_rad_files, &
         l_silhs_out
 
-    use stats_variables, only: & 
-        ztscr01, &  ! Variable(s)
-        ztscr02, & 
-        ztscr03, & 
-        ztscr04, & 
-        ztscr05, & 
-        ztscr06, & 
-        ztscr07, & 
-        ztscr08, & 
-        ztscr09, & 
-        ztscr10, & 
-        ztscr11, & 
-        ztscr12, & 
-        ztscr13, & 
-        ztscr14, & 
-        ztscr15, & 
-        ztscr16, & 
-        ztscr17, & 
-        ztscr18, & 
-        ztscr19, & 
-        ztscr20, & 
-        ztscr21
-
-    use stats_variables, only: & 
-        zmscr01, &  ! Variable(s)
-        zmscr02, & 
-        zmscr03, & 
-        zmscr04, & 
-        zmscr05, & 
-        zmscr06, & 
-        zmscr07, & 
-        zmscr08, & 
-        zmscr09, & 
-        zmscr10, & 
-        zmscr11, & 
-        zmscr12, & 
-        zmscr13, & 
-        zmscr14, & 
-        zmscr15, & 
-        zmscr16, & 
-        zmscr17
-
     use stats_variables, only: &
         isclrm, & 
         isclrm_f, & 
@@ -3372,27 +3202,6 @@ module stats_clubb_utilities
           deallocate( stats_zt%file%lon_vals )
         end if
 
-        deallocate ( ztscr01 )
-        deallocate ( ztscr02 )
-        deallocate ( ztscr03 )
-        deallocate ( ztscr04 )
-        deallocate ( ztscr05 )
-        deallocate ( ztscr06 )
-        deallocate ( ztscr07 )
-        deallocate ( ztscr08 )
-        deallocate ( ztscr09 )
-        deallocate ( ztscr10 )
-        deallocate ( ztscr11 )
-        deallocate ( ztscr12 )
-        deallocate ( ztscr13 )
-        deallocate ( ztscr14 )
-        deallocate ( ztscr15 )
-        deallocate ( ztscr16 )
-        deallocate ( ztscr17 )
-        deallocate ( ztscr18 )
-        deallocate ( ztscr19 )
-        deallocate ( ztscr20 )
-        deallocate ( ztscr21 )
       end if
 
       if ( l_silhs_out .and. allocated(stats_lh_zt%z) ) then
@@ -3451,24 +3260,7 @@ module stats_clubb_utilities
         if ( allocated( stats_zm%file%lon_vals ) ) then
           deallocate( stats_zm%file%lon_vals )
         end if
-
-        deallocate ( zmscr01 )
-        deallocate ( zmscr02 )
-        deallocate ( zmscr03 )
-        deallocate ( zmscr04 )
-        deallocate ( zmscr05 )
-        deallocate ( zmscr06 )
-        deallocate ( zmscr07 )
-        deallocate ( zmscr08 )
-        deallocate ( zmscr09 )
-        deallocate ( zmscr10 )
-        deallocate ( zmscr11 )
-        deallocate ( zmscr12 )
-        deallocate ( zmscr13 )
-        deallocate ( zmscr14 )
-        deallocate ( zmscr15 )
-        deallocate ( zmscr16 )
-        deallocate ( zmscr17 )
+        
       end if
 
       if ( l_output_rad_files ) then
