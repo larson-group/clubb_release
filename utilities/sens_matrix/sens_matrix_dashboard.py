@@ -1363,11 +1363,14 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
     import numpy as np
     import pdb
     from scipy.optimize import minimize
-
+    from scipy.optimize import Bounds
 
     numMetrics = len(metricsNames)
 
     #pdb.set_trace()
+
+    # Don't let parameter values go negative
+    lowerBoundsCol =  -defaultParamValsOrigRow[0]/magParamValsRow[0]
 
     # Perform nonlinear optimization
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
@@ -1376,7 +1379,8 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
     #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
                                args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
                                normlzdCurvMatrix, reglrCoef, numMetrics),\
-                               method='Powell', tol=1e-12)
+                               method='Powell', tol=1e-12,
+                               bounds=Bounds(lb=lowerBoundsCol) )
     dnormlzdParamsSolnNonlin = np.atleast_2d(dnormlzdParamsSolnNonlin.x).T
 
 
@@ -1603,7 +1607,27 @@ def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames
     return ( normlzdCurvMatrixPoly, normlzdSensMatrixPoly, normlzdConstMatrixPoly, \
              normlzdOrdDparamsMin, normlzdOrdDparamsMax )
 
-
+#def constructNormlzd2ndOrderTensor(numParams, numMetrics,
+#                                   normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, corrParam):
+#    '''Constructs a numParams x numMetrics x numParams tensor of second derivatives, d2metrics/dparams1dparams2.
+#    The derivatives are normalized by observed metric values and max param values.'''
+#
+#    normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, \
+#    normlzdOrdDparamsMin, normlzdOrdDparamsMax = \
+#        constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
+#                                   metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
+#                                   sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+#
+#    for i in np.arange(numMetrics):
+#        # Construct matrix with M(j,k)=0 if curv opposite for i,j; otherwise, M(j,k)=1.
+#        curvParamMatrix = np.outer( normlzdCurvMatrix[i,:], np.ones(numParams) )
+#        corrParamMatrix = 0.5 * np.abs( np.sign( curvParamMatrix ) + np.sign( curvParamMatrix.T ) )
+#        corrParamMatrix = np.fill_diagonal(corrParamMatrix, 1.0)
+#        diagSqrtCurvMatrix = np.diag(np.sqrt(normlzdCurvMatrix[i,:]))
+#
+#    # d4 = np.einsum('j,jik,k->i', params, offdiagtensor, params)
+#
+#    return ( normlzd2ndOrderTensor  )
 
 
 def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
@@ -1891,9 +1915,7 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
                                   )
 
             # Label the metric and parameter for the subplots
-            if (arrayRow == numMetrics-1):  # Put params labels only along bottom of plot
-                #threeDotFig.update_xaxes(title=dict(text=paramsNames[arrayCol], 
-                #                         tickangle=45),
+            if (arrayRow == numMetrics-1):  # Put params labels along bottom of plot
                 threeDotFig.update_xaxes(title_text=paramsNames[arrayCol]\
                                          .replace('clubb_','').replace('c_invrs_tau_','')\
                                          .replace('wpxp_n2','n2').replace('threshold','thresh'),
@@ -1901,7 +1923,13 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
                                          tickangle=45,
                                          row=arrayRow+1, col=arrayCol+1
                                          )
-                threeDotFig.update_xaxes(tickangle=45,row=arrayRow+1, col=arrayCol+1)
+            if (arrayRow == 0):  # Put params labels along top of plot
+                threeDotFig.update_xaxes(title_text=paramsNames[arrayCol]\
+                                         .replace('clubb_','').replace('c_invrs_tau_','')\
+                                         .replace('wpxp_n2','n2').replace('threshold','thresh'),
+                                         row=arrayRow+1, col=arrayCol+1,
+                                         #side="top", title_standoff=100
+                                         )
             if (arrayCol == 0): # Insert metrics label only along left edge of plot
                 threeDotFig.update_yaxes(title_text=metricsNames[arrayRow], row=arrayRow+1, col=arrayCol+1)
             threeDotFig.update_layout(showlegend=False,
