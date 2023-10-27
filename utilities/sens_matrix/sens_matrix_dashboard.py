@@ -678,8 +678,10 @@ def main():
 
     minusNormlzdDefaultBiasesCol = \
              -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
+    residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered,0] \
+                       / np.abs(normMetricValsCol[metricsSensOrdered,0]),
     metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrdered],paramsNames,
-                                            minusNormlzdDefaultBiasesCol,minusNonlinMatrixOrdered)
+                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixOrdered)
 
     #dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
     #curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrdered,:] * dnormlzdParamsSolnNonlinMatrix**2
@@ -848,19 +850,20 @@ def main():
 
     # Plot the biases versus sensitivity of each regional metric.
     #    More specifically, plot the maximum magnitude value of each row of the sensitivity matrix.
+    df = pd.DataFrame({
     #df = pd.DataFrame({'Max abs normlzd sensitivity': np.max(np.abs(normlzdSensMatrixPoly), axis=1), # max |row elements|
-    df = pd.DataFrame({'Max abs normlzd sensitivity': np.sum(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
+    #df = pd.DataFrame({'Max abs normlzd sensitivity': np.sum(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
     #df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1), # rms of row elements
     #df = pd.DataFrame({'Max abs normlzd sensitivity': np.linalg.norm(normlzdSensMatrixPoly, axis=1), # rms of row elements
     #df = pd.DataFrame({'Max abs normlzd sensitivity':
     #                    -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0])*np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1), # sum of row elements
                        'Max abs normlzd lin+ sensitivity': np.linalg.norm(normlzdLinplusSensMatrixPoly, axis=1), # sum of row elements
-                       'Default biases': -defaultBiasesCol[:,0]/np.abs(normMetricValsCol[:,0]),
+                       'Default biases': np.abs(-defaultBiasesCol[:,0])/np.abs(normMetricValsCol[:,0]),
     #                   'revised tuning': (-defaultBiasesApproxElastic-defaultBiasesCol)[:,0]/np.abs(normMetricValsCol[:,0])
                       }, index=metricsNames )
     #biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y=df.columns[1:2],
     #biasesVsSensMagScatterplot = px.scatter(df, x='Max abs normlzd sensitivity', y='default tuning',
-    biasesVsSensMagScatterplot = px.scatter(df, x=['Max abs normlzd sensitivity','Max abs normlzd lin+ sensitivity'], y='Default biases',
+    biasesVsSensMagScatterplot = px.scatter(df, x=['Max abs normlzd lin+ sensitivity'], y='Default biases',
                                  text=metricsNames, 
                                  title = """Regional biases vs. magnitude of sensitivity.""")
     biasesVsSensMagScatterplot.update_yaxes(title="Regional biases")
@@ -1149,8 +1152,10 @@ def main():
 
     # Create figure that plots color-coded parameter correlation matrix plus parameter-bias correlation column.
     XT_dot_X_Linplus = normlzdLinplusSensMatrixPoly.T @ normlzdLinplusSensMatrixPoly
+    #XT_dot_X_Linplus = normlzdWeightedLinplusSensMatrixPoly.T @ normlzdWeightedLinplusSensMatrixPoly
     (XT_dot_X_Linplus_corr, stdMatrixInv ) = covMatrix2corrMatrix( XT_dot_X_Linplus, returnStd=True )
     normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdLinplusSensMatrixPoly.T @ normlzdDefaultBiasesCol
+    #normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdWeightedLinplusSensMatrixPoly.T @ normlzdWeightedDefaultBiasesCol
     paramsCorrArrayBiasFig = createMatrixPlusColFig( matrix = XT_dot_X_Linplus_corr,
                          matIndexLabel = paramsNames,
                          matColLabel = paramsNames,
@@ -1709,7 +1714,7 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
     return ( matrixPlusColFig )
 
 
-def createMetricsBarChart( metricsNames, paramsNames, biases, sensMatrix ):
+def createMetricsBarChart( metricsNames, paramsNames, biases, residBias, sensMatrix ):
 
 
     import plotly.graph_objects as go
@@ -1739,12 +1744,22 @@ def createMetricsBarChart( metricsNames, paramsNames, biases, sensMatrix ):
         rightEnd = rightEnd + np.maximum( np.zeros_like(sensCol), sensCol )
         leftEnd  = leftEnd + np.minimum( np.zeros_like(sensCol), sensCol )
 
-    #print("biases after=", biases)
-    # Insert a black line in each bar to denote default biases that we want to remove
+    # Insert a narrow gray line in each bar to denote default biases that we want to remove
+    residBias = np.reshape(residBias, (-1,1))
+    barsData.append( go.Bar(name='residual bias',
+                            y=metricsNames, x=-residBias[:,0]+biases[:,0], base=residBias[:,0],
+                            orientation="h",
+                            width = 0.2,
+                            marker_line_color = 'black', marker_color='black', marker_line_width = 3,
+                            opacity = 1.0
+                           )
+                   )
+
+    # Insert a black vertical line in each bar to denote default biases that we want to remove
     barsData.append( go.Bar(name='default bias',
                             y=metricsNames, x=np.zeros(len(metricsNames)), base=biases[:,0],
                             orientation="h",
-                            marker_line_color = 'black', marker_color='black', marker_line_width = 4
+                            marker_line_color = 'black', marker_color='black', marker_line_width = 5
                             )
                    )
 
