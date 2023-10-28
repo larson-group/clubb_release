@@ -54,12 +54,12 @@ def setUpInputs():
 #                        ['SHFLX_RMSE', 1.00, 15.], \
 #                        ['CLDLOW_RMSE', 1.00, 15.], \
 #                        ['SWCF_RACC', 0.01, 0.2], \
-                        ['SWCF_RMSEP', 4.01, 15.], \
+#                        ['SWCF_RMSEP', 0.01, 15.], \
 #                        ['SWCF_RMSE', 0.01, 15.], \
                         ['SWCF_GLB', 16.00, -999], \
                         ['SWCF_DYCOMS', 1.00, -999], \
-                        ['SWCF_HAWAII', 1.00, -999], \
-                        ['SWCF_VOCAL', 1.00, -999], \
+                        ['SWCF_HAWAII', 2.00, -999], \
+                        ['SWCF_VOCAL', 2.00, -999], \
                         ['SWCF_VOCAL_near', 1.00, -999], \
                         ['SWCF_LBA', 1.00, -999], \
                         ['SWCF_WP', 1.00, -999], \
@@ -68,7 +68,7 @@ def setUpInputs():
                         ['SWCF_SP', 1.00, -999],  \
 ##                        ['SWCF_PA', 1.01, -999], \
                         ['SWCF_CAF', 1.00, -999], \
-                        ['SWCF_Namibia', 4.00, -999], \
+                        ['SWCF_Namibia', 1.00, -999], \
                         ['SWCF_Namibia_near', 1.00, -999], \
                         ['LWCF_GLB', 1.00, -999], \
 ###                        ['LWCF_DYCOMS', 1.01, -999], \
@@ -126,8 +126,8 @@ def setUpInputs():
     #    up and in the other, it is perturbed down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
-    folder_name = 'Regional_files/20230910/'  # folder where regional netcdf files are stored.
-    #folder_name = 'Regional_files/20221120_2yr/'  # folder where regional netcdf files are stored.
+    folder_name = 'Regional_files/20231027/'  # folder where regional netcdf files are stored.
+    #folder_name = 'Regional_files/20230910/'  # folder where regional netcdf files are stored.
     paramsNamesScalesAndFilenames = [ \
 ##                    ['clubb_c7', 1.0, \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_2.ne30pg2_r05_oECv3_Regional.nc',  \
@@ -150,15 +150,15 @@ def setUpInputs():
                     ['clubb_altitude_threshold', 0.001, \
                      folder_name + 'sens0707_20_Regional.nc',
                      folder_name + 'sens0707_21_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_sfc', 1.0, \
-#                     folder_name + 'sens0707_6_Regional.nc',
-#                     folder_name + 'sens0707_7_Regional.nc'], \
+                    ['clubb_c_invrs_tau_sfc', 1.0, \
+                     folder_name + 'sens0707_6_Regional.nc',
+                     folder_name + 'sens0707_7_Regional.nc'], \
                     ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
                      folder_name + 'sens0707_8_Regional.nc', \
                      folder_name + 'sens0707_9_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
-#                     folder_name + 'sens0707_4_Regional.nc',
-#                     folder_name + 'sens0707_5_Regional.nc'], \
+                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
+                     folder_name + 'sens0707_4_Regional.nc',
+                     folder_name + 'sens0707_5_Regional.nc'], \
 ##                    ['clubb_c_invrs_tau_wpxp_ri', 1.0, \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_16.ne30pg2_r05_oECv3_Regional.nc', \
 ##                     folder_name + 'chrysalis.bmg20220630.sens1107_17.ne30pg2_r05_oECv3_Regional.nc'], \
@@ -214,13 +214,13 @@ def setUpInputs():
 #                    ['clubb_c_k10', 1.0, 0.3, \
 #                     folder_name + 'sens0707_12_Regional.nc', \
 #                     folder_name + 'sens0707_13_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_n2', 1.0, 0.4, \
+#                    ['clubb_c_invrs_tau_n2', 1.0, 0.2, \
 #                     folder_name + 'sens0707_10_Regional.nc',
 #                     folder_name + 'sens0707_11_Regional.nc'], \
-                    ['clubb_c_invrs_tau_sfc', 1.0, 0.05, \
-                     folder_name + 'sens0707_6_Regional.nc',
-                     folder_name + 'sens0707_7_Regional.nc'], \
-#                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, 0.00045, \
+#                    ['clubb_c_invrs_tau_sfc', 1.0, 0.05, \
+#                     folder_name + 'sens0707_6_Regional.nc',
+#                     folder_name + 'sens0707_7_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, 0.00042, \
 #                     folder_name + 'sens0707_8_Regional.nc', \
 #                     folder_name + 'sens0707_9_Regional.nc'], \
 #                    ['clubb_c_invrs_tau_shear', 1.0, 0.22, \
@@ -229,9 +229,9 @@ def setUpInputs():
 #                    ['clubb_c_invrs_tau_bkgnd', 1.0, 1.1, \
 #                     folder_name + 'sens0707_16_Regional.nc',
 #                     folder_name + 'sens0707_17_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2_wp2', 1.0, 0.1, \
-                     folder_name + 'sens0707_4_Regional.nc',
-                     folder_name + 'sens0707_5_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2_wp2', 1.0, 0.1, \
+#                     folder_name + 'sens0707_4_Regional.nc',
+#                     folder_name + 'sens0707_5_Regional.nc'], \
                 ]
     # Split up the above list into parameter names, scales, and filenames.
     dfprescribedParamsNamesScalesAndValues =  \
@@ -261,7 +261,8 @@ def setUpInputs():
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-           folder_name + 'sens0707_25_Regional.nc'
+           folder_name + 'sens0707_1_Regional.nc'
+           #folder_name + 'sens0707_25_Regional.nc'
            #folder_name + 'sens0707_29_Regional.nc'
            # folder_name + 'chrysalis.bmg20220630.sens1107_30.ne30pg2_r05_oECv3_Regional.nc'
 #            folder_name + 'chrysalis.bmg20220630.sens1107_23.ne30pg2_r05_oECv3_Regional.nc'

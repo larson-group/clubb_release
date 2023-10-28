@@ -679,9 +679,10 @@ def main():
     minusNormlzdDefaultBiasesCol = \
              -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
     residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered,0] \
-                       / np.abs(normMetricValsCol[metricsSensOrdered,0]),
+                       / np.abs(normMetricValsCol[metricsSensOrdered,0])
     metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrdered],paramsNames,
-                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixOrdered)
+                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixOrdered,
+                                            title='Removal of biases in each metric by each parameter')
 
     #dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
     #curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrdered,:] * dnormlzdParamsSolnNonlinMatrix**2
@@ -971,8 +972,7 @@ def main():
                   index=metricsNames,
                   columns=np.append('Norm bias', paramsNames) )
     normlzdSensMatrixColsFig = px.line(df, x=df.index, y=df.columns,
-              title =  """Columns of normalized, unweighted sensitivity matrix (plus the bias
-                                       vector).<br>
+              title =  """Columns of normalized, unweighted sensitivity matrix (plus the bias vector).<br>
                        Each column (line) shows how sensitive the metrics are to a change in a single parameter value.<br>
                        (A positive value means that an increase in parameter value brings the default simulation closer to obs.)""" )
     normlzdSensMatrixColsFig.update_yaxes(title="Norml sens, (|param|/|obsmetric|) * dmetric/dparam")
@@ -1152,23 +1152,25 @@ def main():
 
     # Create figure that plots color-coded parameter correlation matrix plus parameter-bias correlation column.
     XT_dot_X_Linplus = normlzdLinplusSensMatrixPoly.T @ normlzdLinplusSensMatrixPoly
+    #XT_dot_X_Linplus = normlzdSensMatrixPoly.T @ normlzdSensMatrixPoly
     #XT_dot_X_Linplus = normlzdWeightedLinplusSensMatrixPoly.T @ normlzdWeightedLinplusSensMatrixPoly
     (XT_dot_X_Linplus_corr, stdMatrixInv ) = covMatrix2corrMatrix( XT_dot_X_Linplus, returnStd=True )
     normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdLinplusSensMatrixPoly.T @ normlzdDefaultBiasesCol
+    #normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdSensMatrixPoly.T @ normlzdDefaultBiasesCol
     #normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdWeightedLinplusSensMatrixPoly.T @ normlzdWeightedDefaultBiasesCol
     paramsCorrArrayBiasFig = createMatrixPlusColFig( matrix = XT_dot_X_Linplus_corr,
                          matIndexLabel = paramsNames,
                          matColLabel = paramsNames,
                          colVector = -np.around(normlzdStdDefaultBiasesCol, decimals=2),
                          colVectIndexLabel = paramsNames,
-                         colVectColLabel = ['-Normalized, Standardized Biases'],
-                         plotTitle='XTdotX and bias column, converted to correlation',
+                         colVectColLabel = ['Projection onto -biases'],
+                         plotTitle='Cosines of angles between columns of sensitivity matrix',
                          reversedYAxis = 'reversed' )
 
     # Create figure that plots color-coded projection matrix plus bias column.
     XT_dot_X_Linplus_inv = np.linalg.inv( XT_dot_X_Linplus )
     projMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
-    print("projMatrix rows=", np.linalg.norm( projMatrix, axis=1))
+    #print("projMatrix rows=", np.linalg.norm( projMatrix, axis=1))
     projectionMatrixFig = createMatrixPlusColFig( matrix = projMatrix,
                          matIndexLabel = metricsNames,
                          matColLabel = metricsNames,
@@ -1714,7 +1716,7 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
     return ( matrixPlusColFig )
 
 
-def createMetricsBarChart( metricsNames, paramsNames, biases, residBias, sensMatrix ):
+def createMetricsBarChart( metricsNames, paramsNames, biases, residBias, sensMatrix, title ):
 
 
     import plotly.graph_objects as go
@@ -1744,13 +1746,13 @@ def createMetricsBarChart( metricsNames, paramsNames, biases, residBias, sensMat
         rightEnd = rightEnd + np.maximum( np.zeros_like(sensCol), sensCol )
         leftEnd  = leftEnd + np.minimum( np.zeros_like(sensCol), sensCol )
 
-    # Insert a narrow gray line in each bar to denote default biases that we want to remove
+    # Insert a narrow black horizontal line in each bar to denote the improvement wrought by tuning
     residBias = np.reshape(residBias, (-1,1))
-    barsData.append( go.Bar(name='residual bias',
+    barsData.append( go.Bar(name='+ tuning correction',
                             y=metricsNames, x=-residBias[:,0]+biases[:,0], base=residBias[:,0],
                             orientation="h",
                             width = 0.2,
-                            marker_line_color = 'black', marker_color='black', marker_line_width = 3,
+                            marker_line_color = 'black', marker_color='black', marker_line_width = 2,
                             opacity = 1.0
                            )
                    )
@@ -1766,6 +1768,7 @@ def createMetricsBarChart( metricsNames, paramsNames, biases, residBias, sensMat
     metricsBarChart = go.Figure(data=barsData)
 
     # Change the bar mode
+    metricsBarChart.update_layout(title = title)
     metricsBarChart.update_layout(barmode='stack')
     metricsBarChart.update_xaxes(visible=True,zeroline=True,zerolinewidth=4,zerolinecolor='gray') # Plot y axis
     metricsBarChart.update_layout( width=800, height=50*len(metricsNames)  )
@@ -1948,7 +1951,7 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
             if (arrayCol == 0): # Insert metrics label only along left edge of plot
                 threeDotFig.update_yaxes(title_text=metricsNames[arrayRow], row=arrayRow+1, col=arrayCol+1)
             threeDotFig.update_layout(showlegend=False,
-                    title_text="Simulated metric values vs. parameter values for each metric", 
+                    title_text="Simulated metric values vs. parameter values",
                     height=2500)
             
     threeDotFig.update_xaxes(tickangle=45) # Put params label at 45-degree angle
