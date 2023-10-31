@@ -1909,7 +1909,7 @@ module mixing_length
       Ri_zm_smooth = smooth_max( nz, ngrdcol, Ri_zm, zero, &
                                   12.0_core_rknd * min_max_smth_mag )
 
-      Ri_zm_smooth = smooth_min( nz, ngrdcol, Ri_zm_smooth, 12.0_core_rknd, &
+      Ri_zm_smooth = smooth_min( nz, ngrdcol, Ri_zm_smooth**wpxp_Ri_exp, 12.0_core_rknd, &
                                  12.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1918,8 +1918,8 @@ module mixing_length
 
           if ( gr%zt(i,k) > altitude_threshold ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
-                                      * ( one + H_invrs_tau_wpxp_N2(i,k) & 
-                                          * C_invrs_tau_wpxp_Ri * sqrt(Ri_zm_smooth(i,k)) )
+                                      * ( one + H_invrs_tau_wpxp_N2(i,k) &
+                                          * C_invrs_tau_wpxp_Ri * Ri_zm_smooth(i,k) )
 
           end if
         end do 
@@ -1935,7 +1935,7 @@ module mixing_length
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one  + H_invrs_tau_wpxp_N2(i,k) & 
                                       * C_invrs_tau_wpxp_Ri &
-                                      * min( max( Ri_zm(i,k)**wpxp_Ri_exp, zero), 12.0_core_rknd ))
+                                      * min( max( Ri_zm(i,k), zero)**wpxp_Ri_exp, 12.0_core_rknd ))
           end if
         end do 
       end do
