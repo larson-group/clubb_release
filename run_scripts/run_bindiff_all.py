@@ -286,7 +286,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, l_verbose, thresh):
             print(">>>Differences in common variables detected for case {}<<<".format(case))
             if save_to_file:
                 # Create file to save diff log for <case> into
-                diff_file_name = outFilePath + case + filePostFix
+                diff_file_name = os.path.join(outFilePath, case + filePostFix)
                 if DEBUG:
                     print(diff_file_name)
                 # Check if we need to create a file

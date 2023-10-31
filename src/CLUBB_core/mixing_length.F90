@@ -1436,10 +1436,10 @@ module mixing_length
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       ddzt_um, &
       ddzt_vm, &
-      ddzt_umvm, &
-      ddzt_umvm_clipped, &
-      sqrt_ddzt_umvm, &
-      smooth_sqrt_ddzt_umvm, &
+      ddzt_umvm_sqd, &
+      ddzt_umvm_sqd_clipped, &
+      norm_ddzt_umvm, &
+      smooth_norm_ddzt_umvm, &
       brunt_vaisala_freq_clipped, &
       ice_supersat_frac_zm, &
       invrs_tau_shear_smooth, &
@@ -1458,13 +1458,13 @@ module mixing_length
 
     !$acc enter data create( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
     !$acc                    smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
-    !$acc                    ddzt_um, ddzt_vm, sqrt_ddzt_umvm, smooth_sqrt_ddzt_umvm, &
+    !$acc                    ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                    brunt_vaisala_freq_clipped, &
     !$acc                    ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                    ddzt_umvm, tau_zt )
+    !$acc                    ddzt_umvm_sqd, tau_zt )
 
     !$acc enter data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
-    !$acc            create( Ri_zm_clipped, ddzt_umvm_clipped, &
+    !$acc            create( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &
     !$acc                    tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                    tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
@@ -1542,18 +1542,18 @@ module mixing_length
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        ddzt_umvm(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
-        sqrt_ddzt_umvm(i,k) = sqrt( ddzt_umvm(i,k) ) 
+        ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
+        norm_ddzt_umvm(i,k) = sqrt( ddzt_umvm_sqd(i,k) )
       end do
     end do
     !$acc end parallel loop
 
-    smooth_sqrt_ddzt_umvm = zm2zt2zm( nz, ngrdcol, gr, sqrt_ddzt_umvm )
+    smooth_norm_ddzt_umvm = zm2zt2zm( nz, ngrdcol, gr, norm_ddzt_umvm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        invrs_tau_shear_smooth(i,k) = C_invrs_tau_shear *  smooth_sqrt_ddzt_umvm(i,k)
+        invrs_tau_shear_smooth(i,k) = C_invrs_tau_shear *  smooth_norm_ddzt_umvm(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -1630,7 +1630,7 @@ module mixing_length
       do k = 1, nz
         do i = 1, ngrdcol
           Ri_zm_clipped(i,k) = max( 0.0_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
-                                  / max( ddzt_umvm(i,k), 1.0e-12_core_rknd )
+                                  / max( ddzt_umvm_sqd(i,k), 1.0e-12_core_rknd )
         end do
       end do
       !$acc end parallel loop
@@ -1644,13 +1644,13 @@ module mixing_length
         brunt_vaisala_freq_clipped = smooth_max( nz, ngrdcol, 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth, &
                                                  1.0e-4_core_rknd * min_max_smth_mag )
 
-        ddzt_umvm_clipped = smooth_max( nz, ngrdcol, ddzt_umvm, 1.0e-7_core_rknd, &
+        ddzt_umvm_sqd_clipped = smooth_max( nz, ngrdcol, ddzt_umvm_sqd, 1.0e-7_core_rknd, &
                                         1.0e-6_core_rknd * min_max_smth_mag )
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            Ri_zm(i,k) = brunt_vaisala_freq_clipped(i,k) / ddzt_umvm_clipped(i,k)
+            Ri_zm(i,k) = brunt_vaisala_freq_clipped(i,k) / ddzt_umvm_sqd_clipped(i,k)
           end do
         end do
         !$acc end parallel loop
@@ -1661,7 +1661,7 @@ module mixing_length
         do k = 1, nz
           do i = 1, ngrdcol
             Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
-                            / max( ddzt_umvm(i,k), 1.0e-7_core_rknd )
+                            / max( ddzt_umvm_sqd(i,k), 1.0e-7_core_rknd )
           end do
         end do
         !$acc end parallel loop
@@ -1757,7 +1757,8 @@ module mixing_length
         invrs_tau_N2_iso(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_shear(i,k) &
                                 + C_invrs_tau_N2_wp2 * brunt_freq_pos(i,k)
 
-        invrs_tau_wp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) + C_invrs_tau_N2_wp2 * brunt_freq_pos(i,k)
+        invrs_tau_wp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
+                                C_invrs_tau_N2_wp2 * brunt_freq_pos(i,k)
 
         invrs_tau_zm(i,k) = invrs_tau_no_N2_zm(i,k) + C_invrs_tau_N2 * brunt_freq_pos(i,k)
       end do
@@ -1778,7 +1779,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          invrs_tau_xp2_zm(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_sfc(i,k) + invrs_tau_shear(i,k) &
+          invrs_tau_xp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) &
                                   + C_invrs_tau_N2_xp2 * brunt_freq_pos(i,k) & ! 0
                                   + C_invrs_tau_sfc * two &
                                   * sqrt(em(i,k)) / ( gr%zm(i,k) - sfc_elevation(i) + z_displace )  ! small
@@ -1795,7 +1796,7 @@ module mixing_length
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            tmp_calc(i,k) = sqrt( ddzt_umvm(i,k) / brunt_vaisala_freq_clipped(i,k) )
+            tmp_calc(i,k) = sqrt( ddzt_umvm_sqd(i,k) / brunt_vaisala_freq_clipped(i,k) )
           end do
         end do
         !$acc end parallel loop
@@ -1820,7 +1821,7 @@ module mixing_length
         do k = 1, nz
           do i = 1, ngrdcol
             invrs_tau_xp2_zm(i,k) &
-              = min( max( sqrt( ddzt_umvm(i,k) &
+              = min( max( sqrt( ddzt_umvm_sqd(i,k) &
                                 / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) ), &
                           0.3_core_rknd ), one ) &
                      * invrs_tau_xp2_zm(i,k)
@@ -1844,8 +1845,8 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          invrs_tau_xp2_zm(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_sfc(i,k) &
-                                  + invrs_tau_shear(i,k) + C_invrs_tau_N2_xp2 * brunt_freq_pos(i,k)
+          invrs_tau_xp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
+                                  C_invrs_tau_N2_xp2 * brunt_freq_pos(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -1866,7 +1867,9 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          invrs_tau_wpxp_zm(i,k) = invrs_tau_zm(i,k) + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud(i,k)
+          invrs_tau_wpxp_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
+                                   C_invrs_tau_N2 * brunt_freq_pos(i,k) + &
+                                   C_invrs_tau_N2_wpxp * brunt_freq_out_cloud(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -1903,10 +1906,10 @@ module mixing_length
 
     if ( l_smooth_min_max ) then
 
-      Ri_zm_clipped = smooth_max( nz, ngrdcol, Ri_zm, zero, &
+      Ri_zm_smooth = smooth_max( nz, ngrdcol, Ri_zm, zero, &
                                   12.0_core_rknd * min_max_smth_mag )
 
-      Ri_zm_smooth = smooth_min( nz, ngrdcol, Ri_zm_clipped, 12.0_core_rknd, &
+      Ri_zm_smooth = smooth_min( nz, ngrdcol, Ri_zm_smooth, 12.0_core_rknd, &
                                  12.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1916,7 +1919,7 @@ module mixing_length
           if ( gr%zt(i,k) > altitude_threshold ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one + H_invrs_tau_wpxp_N2(i,k) & 
-                                                * C_invrs_tau_wpxp_Ri * sqrt ( Ri_zm_smooth(i,k) ))
+                                          * C_invrs_tau_wpxp_Ri * sqrt(Ri_zm_smooth(i,k)) )
 
           end if
         end do 
@@ -2036,13 +2039,13 @@ module mixing_length
 
     !$acc exit data delete( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
     !$acc                   smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
-    !$acc                   ddzt_um, ddzt_vm, sqrt_ddzt_umvm, smooth_sqrt_ddzt_umvm, &
+    !$acc                   ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                   brunt_vaisala_freq_clipped, &
     !$acc                   ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                   ddzt_umvm, tau_zt )
+    !$acc                   ddzt_umvm_sqd, tau_zt )
 
     !$acc exit data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
-    !$acc           delete( Ri_zm_clipped, ddzt_umvm_clipped, &
+    !$acc           delete( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &
     !$acc                   tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                   tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
