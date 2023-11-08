@@ -1571,11 +1571,9 @@ module clubb_driver
               
     ! Define tunable constant parameters
     call setup_parameters_api( &
-           deltaz, params, gr%nz,                                & ! intent(in)
-           grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
-           thermodynamic_heights(begin_height:end_height),       & ! intent(in)
-           l_prescribed_avg_deltaz,                              & ! intent(in)
-           lmin, nu_vert_res_dep, err_code_dummy )                 ! intent(out)  
+           deltaz, params, gr, grid_type,          & ! intent(in)
+           l_prescribed_avg_deltaz,                & ! intent(in)
+           lmin, nu_vert_res_dep, err_code_dummy )   ! intent(out)  
 
     ! Allocate and initialize variables
 
@@ -7038,11 +7036,9 @@ module clubb_driver
       ! The only reason we need to call this is to setup the multicolumn version 
       ! of nu_vert_res_dep. 
       call setup_parameters_api( &
-             deltaz_col, params, gr%nz, ngrdcol,                                  & ! intent(in)
-             grid_type, momentum_heights_col(:,begin_height:end_height),          & ! intent(in)
-             thermodynamic_heights_col(:,begin_height:end_height),                & ! intent(in)
-             l_prescribed_avg_deltaz,                                             & ! intent(in)
-             lmin_col, nu_vert_res_dep_col, err_code_dummy )                        ! intent(out)  
+             deltaz_col, params, gr, ngrdcol, grid_type,     & ! intent(in)
+             l_prescribed_avg_deltaz,                        & ! intent(in)
+             lmin_col, nu_vert_res_dep_col, err_code_dummy )   ! intent(out)  
 
       ! Allocate the inouts we want to save
       allocate(um_col(ngrdcol,gr_col%nz))

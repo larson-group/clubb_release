@@ -2446,10 +2446,12 @@ contains
   ! setup_parameters - Sets up model parameters for a single column
   !================================================================================================
   subroutine setup_parameters_api_single_col( &
-             deltaz, params, nzmax, &
-             grid_type, momentum_heights, thermodynamic_heights, &
+             deltaz, params, gr, grid_type, &
              l_prescribed_avg_deltaz, &
              lmin, nu_vert_res_dep, err_code_api )
+
+    use grid_class, only: &
+        grid    ! Type(s)
 
     use parameters_tunable, only: &
         setup_parameters
@@ -2467,7 +2469,8 @@ contains
       params  ! Tuneable model parameters      [-]
 
     ! Grid definition
-    integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
+    type(grid), target, intent(in) :: &
+      gr
 
     ! If CLUBB is running on its own, this option determines
     ! if it is using:
@@ -2479,19 +2482,6 @@ contains
     !    momentum grid levels (with thermodynamic levels set
     !    halfway between momentum levels).
     integer, intent(in) :: grid_type
-
-    ! If the CLUBB parameterization is implemented in a host model,
-    ! it needs to use the host model's momentum level altitudes
-    ! and thermodynamic level altitudes.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on thermodynamic levels (grid_type = 2),
-    ! it needs to use the thermodynamic level altitudes as input.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on momentum levels (grid_type = 3),
-    ! it needs to use the momentum level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
-      momentum_heights,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
@@ -2507,20 +2497,13 @@ contains
       err_code_api ! Error condition 
       
       
-    real( kind = core_rknd ), dimension(1,nzmax) :: &
-      momentum_heights_col,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights_col    ! Thermodynamic level altitudes (input) [m]
-      
     real( kind = core_rknd ), dimension(1) ::  &
       deltaz_col  ! Change per height level        [m]
 
-    momentum_heights_col(1,:) = momentum_heights
-    thermodynamic_heights_col(1,:) = thermodynamic_heights
     deltaz_col(1) = deltaz
 
     call setup_parameters( & 
-              deltaz_col, params, nzmax, 1, &
-              grid_type, momentum_heights, thermodynamic_heights, &
+              deltaz_col, params, gr, 1, grid_type, &
               l_prescribed_avg_deltaz, &
               lmin, nu_vert_res_dep, err_code_api )
 
@@ -2531,10 +2514,12 @@ contains
   !================================================================================================
   
   subroutine setup_parameters_api_multi_col( &
-             deltaz, params, nzmax, ngrdcol, &
-             grid_type, momentum_heights, thermodynamic_heights, &
+             deltaz, params, gr, ngrdcol, grid_type, &
              l_prescribed_avg_deltaz, &
              lmin, nu_vert_res_dep, err_code_api )
+
+    use grid_class, only: &
+        grid
 
     use parameters_tunable, only: &
         setup_parameters
@@ -2547,8 +2532,10 @@ contains
     ! Input Variables
 
     ! Grid definition
+    type(grid), target, intent(in) :: &
+      gr
+
     integer, intent(in) :: &
-      nzmax, &  ! Vertical grid levels            [#]
       ngrdcol   ! Number of grid columns          [#]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
@@ -2567,19 +2554,6 @@ contains
     !    halfway between momentum levels).
     integer, intent(in) :: grid_type
 
-    ! If the CLUBB parameterization is implemented in a host model,
-    ! it needs to use the host model's momentum level altitudes
-    ! and thermodynamic level altitudes.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on thermodynamic levels (grid_type = 2),
-    ! it needs to use the thermodynamic level altitudes as input.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on momentum levels (grid_type = 3),
-    ! it needs to use the momentum level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) :: &
-      momentum_heights,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
-
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
@@ -2594,8 +2568,7 @@ contains
       err_code_api ! Error condition 
 
     call setup_parameters( & 
-              deltaz, params, nzmax, ngrdcol, &
-              grid_type, momentum_heights, thermodynamic_heights, &
+              deltaz, params, gr, ngrdcol, grid_type, &
               l_prescribed_avg_deltaz, &
               lmin, nu_vert_res_dep, err_code_api )
 
@@ -2605,8 +2578,7 @@ contains
   ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
   !================================================================================================
 
-  subroutine adj_low_res_nu_api_single_col( nzmax, grid_type, deltaz,  & ! Intent(in)
-                                 momentum_heights, thermodynamic_heights, & ! Intent(in)
+  subroutine adj_low_res_nu_api_single_col( gr, grid_type, deltaz,  & ! Intent(in)
                                  l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
                                  nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
                                  nu_vert_res_dep )  ! Intent(out)
@@ -2618,7 +2590,8 @@ contains
     ! Input Variables
 
     ! Grid definition
-    integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
+    type(grid), target, intent(in) :: &
+      gr
 
     ! If CLUBB is running on it's own, this option determines
     ! if it is using:
@@ -2633,19 +2606,6 @@ contains
 
     real( kind = core_rknd ), intent(in) ::  &
       deltaz  ! Change per height level        [m]
-
-    ! If the CLUBB parameterization is implemented in a host model,
-    ! it needs to use the host model's momentum level altitudes
-    ! and thermodynamic level altitudes.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on thermodynamic levels (grid_type = 2),
-    ! it needs to use the thermodynamic level altitudes as input.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on momentum levels (grid_type = 3),
-    ! it needs to use the momentum level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
-      momentum_heights,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
@@ -2668,16 +2628,9 @@ contains
     real( kind = core_rknd ), dimension(1) ::  &
       deltaz_col  ! Change per height level        [m]
       
-    real( kind = core_rknd ), dimension(1,nzmax) :: &
-      momentum_heights_col,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights_col    ! Thermodynamic level altitudes (input) [m]
-
     deltaz_col(1) = deltaz
-    momentum_heights_col(1,:) = momentum_heights
-    thermodynamic_heights_col(1,:) = thermodynamic_heights
 
-    call adj_low_res_nu( nzmax, 1, grid_type, deltaz_col, & ! Intent(in)
-                         momentum_heights_col, thermodynamic_heights_col, & ! Intent(in)
+    call adj_low_res_nu( gr, 1, grid_type, deltaz_col, & ! Intent(in)
                          l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
                          nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
                          nu_vert_res_dep )  ! Intent(out)
@@ -2688,8 +2641,7 @@ contains
   ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
   !================================================================================================
 
-  subroutine adj_low_res_nu_api_multi_col( nzmax, ngrdcol, grid_type, deltaz,  & ! Intent(in)
-                                 momentum_heights, thermodynamic_heights, & ! Intent(in)
+  subroutine adj_low_res_nu_api_multi_col( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
                                  l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
                                  nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
                                  nu_vert_res_dep )  ! Intent(out)
@@ -2701,8 +2653,10 @@ contains
     ! Input Variables
 
     ! Grid definition
+    type(grid), target, intent(in) :: &
+      gr
+
     integer, intent(in) :: &
-      nzmax, &  ! Vertical grid levels            [#]
       ngrdcol
 
     ! If CLUBB is running on it's own, this option determines
@@ -2718,19 +2672,6 @@ contains
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       deltaz  ! Change per height level        [m]
-
-    ! If the CLUBB parameterization is implemented in a host model,
-    ! it needs to use the host model's momentum level altitudes
-    ! and thermodynamic level altitudes.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on thermodynamic levels (grid_type = 2),
-    ! it needs to use the thermodynamic level altitudes as input.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on momentum levels (grid_type = 3),
-    ! it needs to use the momentum level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) :: &
-      momentum_heights,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
@@ -2749,8 +2690,7 @@ contains
     type(nu_vertical_res_dep), intent(out) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
-    call adj_low_res_nu( nzmax, ngrdcol, grid_type, deltaz, & ! Intent(in)
-                         momentum_heights, thermodynamic_heights, & ! Intent(in)
+    call adj_low_res_nu( gr, ngrdcol, grid_type, deltaz, & ! Intent(in)
                          l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
                          nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
                          nu_vert_res_dep )  ! Intent(out)

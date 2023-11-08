@@ -362,8 +362,7 @@ module parameters_tunable
 
   !=============================================================================
   subroutine setup_parameters( & 
-              deltaz, params, nzmax, ngrdcol, &
-              grid_type, momentum_heights, thermodynamic_heights, &
+              deltaz, params, gr, ngrdcol, grid_type, &
               l_prescribed_avg_deltaz, &
               lmin, nu_vert_res_dep, err_code_out )
 
@@ -380,6 +379,9 @@ module parameters_tunable
         one,     &
         zero,    &
         fstderr
+
+    use grid_class, only: &
+        grid    ! Type(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -400,8 +402,10 @@ module parameters_tunable
     ! Input Variables
 
     ! Grid definition
+    type(grid), target, intent(in) :: &
+      gr
+
     integer, intent(in) :: &
-      nzmax,  & ! Vertical grid levels            [#]
       ngrdcol   ! Number of grid columns          [#]
       
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
@@ -420,19 +424,6 @@ module parameters_tunable
     !    momentum grid levels (with thermodynamic levels set
     !    halfway between momentum levels).
     integer, intent(in) :: grid_type
-
-    ! If the CLUBB parameterization is implemented in a host model,
-    ! it needs to use the host model's momentum level altitudes
-    ! and thermodynamic level altitudes.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on thermodynamic levels (grid_type = 2),
-    ! it needs to use the thermodynamic level altitudes as input.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on momentum levels (grid_type = 3),
-    ! it needs to use the momentum level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) :: &
-      momentum_heights,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
@@ -529,8 +520,7 @@ module parameters_tunable
 
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu( &
-             nzmax, ngrdcol, grid_type, deltaz,  & ! Intent(in)
-             momentum_heights, thermodynamic_heights, & ! Intent(in)
+             gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
              l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
              nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
              nu_vert_res_dep )  ! Intent(out)
@@ -708,8 +698,7 @@ module parameters_tunable
 
   !=============================================================================
   subroutine adj_low_res_nu( &
-                 nzmax, ngrdcol, grid_type, deltaz, & ! Intent(in)
-                 momentum_heights, thermodynamic_heights, & ! Intent(in)
+                 gr, ngrdcol, grid_type, deltaz, & ! Intent(in)
                  l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
                  nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, & ! Intent(out)
                  nu_vert_res_dep )  ! Intent(out)
@@ -726,6 +715,9 @@ module parameters_tunable
 
     use constants_clubb, only: &
         fstderr ! Constant(s)
+
+    use grid_class, only: &
+        grid    ! Type(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -753,8 +745,10 @@ module parameters_tunable
     ! Input Variables
 
     ! Grid definition
+    type(grid), target, intent(in) :: &
+      gr
+
     integer, intent(in) :: &
-      nzmax, &  ! Vertical grid levels            [#]
       ngrdcol
 
     ! If CLUBB is running on it's own, this option determines
@@ -770,19 +764,6 @@ module parameters_tunable
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       deltaz  ! Change per height level        [m]
-
-    ! If the CLUBB parameterization is implemented in a host model,
-    ! it needs to use the host model's momentum level altitudes
-    ! and thermodynamic level altitudes.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on thermodynamic levels (grid_type = 2),
-    ! it needs to use the thermodynamic level altitudes as input.
-    ! If the CLUBB model is running by itself, but is using a
-    ! stretched grid entered on momentum levels (grid_type = 3),
-    ! it needs to use the momentum level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) :: &
-      momentum_heights,      & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
@@ -851,10 +832,8 @@ module parameters_tunable
 
           ! Find the average deltaz over the grid based on momentum level
           ! inputs.
-
-          avg_deltaz  &
-             = ( momentum_heights(i,nzmax) - momentum_heights(i,1) )  &
-               / real( nzmax - 1, kind = core_rknd )
+          avg_deltaz = ( gr%zm(i,gr%nz) - gr%zm(i,1) )  &
+                       / real( gr%nz - 1, kind = core_rknd )
 
         else if ( grid_type == 1 ) then
 
@@ -869,11 +848,11 @@ module parameters_tunable
 
           ! Find the average deltaz over the stretched grid based on
           ! thermodynamic level inputs.
+          avg_deltaz = ( gr%zt(i,gr%nz) - gr%zt(i,1) ) &
+                       / real( gr%nz - 1, kind = core_rknd )
 
-          avg_deltaz  &
-            = ( thermodynamic_heights(i,nzmax) - thermodynamic_heights(i,1) )  &
-               / real( nzmax - 1, kind = core_rknd )
         else
+
           ! Eric Raut added to remove compiler warning. (Obviously, this value is not used)
           avg_deltaz = 0.0_core_rknd
           write(fstderr,*) "Invalid grid_type:", grid_type

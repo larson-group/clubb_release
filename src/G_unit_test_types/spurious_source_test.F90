@@ -638,8 +638,7 @@ module spurious_source_test
                          gr, begin_height, end_height          )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
-    call adj_low_res_nu_api( gr%nz, grid_type, deltaz, &
-                             momentum_heights, thermodynamic_heights, &
+    call adj_low_res_nu_api( gr, grid_type, deltaz, &
                              l_prescribed_avg_deltaz, mult_coef, &
                              nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &
                              nu_vert_res_dep )
