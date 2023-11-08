@@ -158,10 +158,6 @@ module spurious_source_test
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
-    integer :: &
-      begin_height, & ! Lower bound for *_heights arrays [-]
-      end_height      ! Upper bound for *_heights arrays [-]
-
     real( kind = core_rknd ) ::  & 
       dt                 ! Timestep                                 [s]
 
@@ -635,7 +631,7 @@ module spurious_source_test
     call setup_grid_api( nz, sfc_elevation, l_implemented,        &
                          grid_type, deltaz, zm_init, zm_top,      &
                          momentum_heights, thermodynamic_heights, &
-                         gr, begin_height, end_height          )
+                         gr )
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
     call adj_low_res_nu_api( gr, grid_type, deltaz, &

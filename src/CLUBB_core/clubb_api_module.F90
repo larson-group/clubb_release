@@ -2174,7 +2174,7 @@ contains
   subroutine setup_grid_api_single_col( nzmax, sfc_elevation, l_implemented, &
                                         grid_type, deltaz, zm_init, zm_top, &
                                         momentum_heights, thermodynamic_heights, &
-                                        gr, begin_height, end_height )
+                                        gr )
                             
     use grid_class, only: & 
         grid, & ! Type
@@ -2204,10 +2204,6 @@ contains
       momentum_heights,   & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-    integer, intent(out) :: &
-      begin_height, &  ! Lower bound for *_heights arrays [-]
-      end_height       ! Upper bound for *_heights arrays [-]
-    
     real( kind = core_rknd ), dimension(1) ::  &
       sfc_elevation_col  ! Elevation of ground level    [m AMSL]
       
@@ -2227,10 +2223,10 @@ contains
     momentum_heights_col(1,:)       = momentum_heights
     thermodynamic_heights_col(1,:)  = thermodynamic_heights
 
-    call setup_grid( nzmax, 1, sfc_elevation_col, l_implemented,     & ! intent(in)
-                     grid_type, deltaz_col, zm_init_col, zm_top_col,      & ! intent(in)
+    call setup_grid( nzmax, 1, sfc_elevation_col, l_implemented,      & ! intent(in)
+                     grid_type, deltaz_col, zm_init_col, zm_top_col,  & ! intent(in)
                      momentum_heights_col, thermodynamic_heights_col, & ! intent(in)
-                     gr, begin_height, end_height             ) ! intent(out)
+                     gr )                                               ! intent(out)
 
   end subroutine setup_grid_api_single_col
   
@@ -2240,7 +2236,7 @@ contains
   subroutine setup_grid_api_multi_col( nzmax, ngrdcol, sfc_elevation, l_implemented, &
                                        grid_type, deltaz, zm_init, zm_top, &
                                        momentum_heights, thermodynamic_heights, &
-                                       gr, begin_height, end_height )
+                                       gr )
                             
     use grid_class, only: & 
         grid, & ! Type
@@ -2271,15 +2267,11 @@ contains
       momentum_heights,   & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-    integer, intent(out) :: &
-      begin_height, &  ! Lower bound for *_heights arrays [-]
-      end_height       ! Upper bound for *_heights arrays [-]
 
-
-    call setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented,  & ! intent(in)
-                     grid_type, deltaz, zm_init, zm_top,            & ! intent(in)
-                     momentum_heights, thermodynamic_heights,       & ! intent(in)
-                     gr, begin_height, end_height )                   ! intent(out)
+    call setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented, & ! intent(in)
+                     grid_type, deltaz, zm_init, zm_top,           & ! intent(in)
+                     momentum_heights, thermodynamic_heights,      & ! intent(in)
+                     gr )                                            ! intent(out)
 
   end subroutine setup_grid_api_multi_col
 

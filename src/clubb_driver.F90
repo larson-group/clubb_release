@@ -389,8 +389,6 @@ module clubb_driver
     ! Grid altitude arrays
     real( kind = core_rknd ), dimension(:), allocatable ::  & 
       momentum_heights, thermodynamic_heights ! [m]
-      
-    integer :: begin_height, end_height
 
     ! Dummy dx and dy horizontal grid spacing.
     real( kind = core_rknd ) :: dummy_dx, dummy_dy  ! [m]
@@ -1564,10 +1562,10 @@ module clubb_driver
            err_code_dummy )                                     ! Intent(out)
            
     ! Setup grid
-    call setup_grid_api( nzmax, sfc_elevation(1), l_implemented,     & ! intent(in)
+    call setup_grid_api( nzmax, sfc_elevation(1), l_implemented,  & ! intent(in)
                          grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
                          momentum_heights, thermodynamic_heights, & ! intent(in)
-                         gr, begin_height, end_height  )         ! intent(out)
+                         gr )                                       ! intent(out)
               
     ! Define tunable constant parameters
     call setup_parameters_api( &
@@ -2467,8 +2465,7 @@ module clubb_driver
         ! configurable_model_flags.in 
         call advance_clubb_core_standalone_multicol( &
                num_standalone_columns, multicol_nc_file, &                          ! Intent(in)
-               momentum_heights(begin_height:end_height), &                         ! Intent(in)
-               thermodynamic_heights(begin_height:end_height), &                    ! Intent(in)
+               nzmax, momentum_heights, thermodynamic_heights, &                    ! Intent(in)
                zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &       ! Intent(in)
                params, &                                                            ! Intent(in)
                gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, &  ! Intent(in)
@@ -6334,7 +6331,7 @@ module clubb_driver
   !-----------------------------------------------------------------------
   subroutine advance_clubb_core_standalone_multicol( &
     ngrdcol, multicol_nc_file, &
-    momentum_heights, thermodynamic_heights, &
+    nzmax, momentum_heights, thermodynamic_heights, &
     zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &
     params, &
     gr, l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
@@ -6492,7 +6489,10 @@ module clubb_driver
 
     type(grid), target, intent(in) :: gr
 
-    real( kind = core_rknd), dimension(gr%nz), intent(in) :: &
+    integer, intent(in) :: &
+      nzmax
+
+    real( kind = core_rknd), dimension(nzmax), intent(in) :: &
       momentum_heights, &
       thermodynamic_heights
 
@@ -6858,7 +6858,7 @@ module clubb_driver
 
     integer :: i, n
 
-    real( kind = core_rknd), dimension(ngrdcol,gr%nz) :: &
+    real( kind = core_rknd), dimension(ngrdcol,nzmax) :: &
       momentum_heights_col, &
       thermodynamic_heights_col
 
@@ -6867,7 +6867,7 @@ module clubb_driver
       zm_top_col, &
       deltaz_col
 
-    integer :: begin_height, end_height, err_code_dummy
+    integer :: err_code_dummy
 
     character(len=35) :: TimeUnits
 
@@ -7028,10 +7028,10 @@ module clubb_driver
       end do
 
       ! Initialize multicolumn grid variable, gr_col
-      call setup_grid_api( gr%nz, ngrdcol, sfc_elevation_col, l_implemented,      & ! intent(in)
-                           grid_type, deltaz_col, zm_init_col, zm_top_col,        & ! intent(in)
-                           momentum_heights_col, thermodynamic_heights_col,       & ! intent(in)
-                           gr_col, begin_height, end_height  )                      ! intent(out)
+      call setup_grid_api( nzmax, ngrdcol, sfc_elevation_col, l_implemented, & ! intent(in)
+                           grid_type, deltaz_col, zm_init_col, zm_top_col,   & ! intent(in)
+                           momentum_heights_col, thermodynamic_heights_col,  & ! intent(in)
+                           gr_col )                                            ! intent(out)
 
       ! The only reason we need to call this is to setup the multicolumn version 
       ! of nu_vert_res_dep. 

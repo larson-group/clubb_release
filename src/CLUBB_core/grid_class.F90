@@ -255,7 +255,7 @@ module grid_class
   subroutine setup_grid( nzmax, ngrdcol, sfc_elevation, l_implemented,  &
                          grid_type, deltaz, zm_init, zm_top,            &
                          momentum_heights, thermodynamic_heights,       &
-                         gr, begin_height, end_height )
+                         gr )
 
     ! Description:
     !   Grid Constructor
@@ -328,11 +328,11 @@ module grid_class
       momentum_heights,   & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
-    integer, intent(out) :: &
+    ! Local Variables
+    integer :: &
       begin_height, &  ! Lower bound for *_heights arrays [-]
       end_height       ! Upper bound for *_heights arrays [-]
 
-    ! Local Variables
     integer :: ierr, & ! Allocation stat
                i, k    ! Loop index
 

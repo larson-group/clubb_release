@@ -4178,7 +4178,6 @@ module advance_clubb_core_module
       !---------------------------------------------------------------------
 
       use grid_class, only: &
-          setup_grid, & ! Procedure
           grid ! Type
 
       use parameter_indices, only:  &
