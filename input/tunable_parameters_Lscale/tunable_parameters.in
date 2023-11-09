@@ -101,4 +101,7 @@ Richardson_num_max = 400.0 ! Threshold on Richardson number
 Cx_min = 0.33              ! Threshold on Cx_fnc_Richardson
 Cx_max = 0.95              ! Threshold on Cx_fnc_Richardson
 a_const = 1.8             ! Used for sfc values in sfc_varnce_module, usually =1.8 if l_vary_convect_depth=F, =0.6 if T
+bv_efold = 5.0            ! Control parameter for inverse e-folding of cloud fraction in the mixed Brunt Vaisala frequency  [-]
+wpxp_Ri_exp = .5          ! Exponent determining the influence of the Richardson number on invrs_tau_wpxp  [-]
+z_displace = 25.0         ! displacement of log law profile above ground  [m]
 /

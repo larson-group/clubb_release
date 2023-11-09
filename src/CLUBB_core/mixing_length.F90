@@ -1245,7 +1245,7 @@ module mixing_length
                         rtm, thlm, thvm, & !intent in
                         rcm, ice_supersat_frac, &! intent in
                         em, sqrt_em_zt, & ! intent in
-                        ufmin, z_displace, tau_const, & ! intent in
+                        ufmin, tau_const, & ! intent in
                         sfc_elevation, Lscale_max, & ! intent in
                         clubb_params, & ! intent in
                         l_e3sm_config, & ! intent in
@@ -1297,7 +1297,7 @@ module mixing_length
         core_rknd
 
     use parameter_indices, only: &
-        nparams,                    & ! Variable(s)
+        nparams,                     & ! Variable(s)
         iC_invrs_tau_bkgnd,          &
         iC_invrs_tau_shear,          &
         iC_invrs_tau_sfc,            &
@@ -1310,7 +1310,8 @@ module mixing_length
         iC_invrs_tau_wpxp_Ri,        &
         ialtitude_threshold,         &
         ibv_efold,                   &
-        iwpxp_Ri_exp
+        iwpxp_Ri_exp,                &
+        iz_displace
 
     use error_code, only: &
       err_code, &
@@ -1346,7 +1347,6 @@ module mixing_length
 
     real(kind = core_rknd), intent(in) :: &
       ufmin,         &
-      z_displace,    &
       tau_const
       
     real(kind = core_rknd), dimension(ngrdcol), intent(in) :: &
@@ -1422,7 +1422,8 @@ module mixing_length
       C_invrs_tau_N2_clear_wp3,   &
       C_invrs_tau_wpxp_Ri,        &
       altitude_threshold,         &
-      wpxp_Ri_exp
+      wpxp_Ri_exp,                &
+      z_displace
 
     real( kind = core_rknd ), parameter :: &
       min_max_smth_mag = 1.0e-9_core_rknd, &  ! "base" smoothing magnitude before scaling 
@@ -1467,6 +1468,9 @@ module mixing_length
     !$acc            create( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &
     !$acc                    tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                    tmp_calc, tmp_calc_max, tmp_calc_min_max )
+
+    ! Unpack z_displace first because it's needed for the error check
+    z_displace = clubb_params(iz_displace)
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol

@@ -820,8 +820,7 @@ module advance_clubb_core_module
 
 
     real( kind = core_rknd ), parameter :: &
-       ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
-       z_displace = 25.0_core_rknd   ! displacement of log law profile above ground   [m]
+       ufmin = 0.01_core_rknd           ! minimum value of friction velocity     [m/s]
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       Lscale_max    ! Max. allowable mixing length (based on grid box size) [m]
@@ -1578,7 +1577,7 @@ module advance_clubb_core_module
                         rtm, thlm, thvm,                                          & ! In
                         rcm, ice_supersat_frac,                                   & ! In
                         em, sqrt_em_zt,                                           & ! In
-                        ufmin, z_displace, tau_const,                             & ! In
+                        ufmin, tau_const,                                         & ! In
                         sfc_elevation, Lscale_max,                                & ! In
                         clubb_params,                                             & ! In
                         clubb_config_flags%l_e3sm_config,                         & ! In
