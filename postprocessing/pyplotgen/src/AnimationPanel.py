@@ -53,7 +53,12 @@ class AnimationPanel(Panel):
             Profile plots are usually centered, while budget plots are not.
         """
         #copied this from ContourPanel.py ?
-        super().__init__(plots, panel_type, title, dependent_title, sci_scale=None, centered=False)         
+        # Note: 0s added to make animations ignore background-rcm option for now
+        #       If, at some point, we want this to work with animations,
+        #       we would need to modify the super call here and kind of copy the code from Panel
+        #       that handles background-rcm into AnimationPanel
+        super().__init__(plots, 0, 0, 0, 0,
+                         panel_type, title, dependent_title, sci_scale=None, centered=False)         
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
              alphabetic_id="", paired_plots = True, image_extension=".png", movie_extension=".mp4"):
@@ -168,8 +173,10 @@ class AnimationPanel(Panel):
                 # Suppress "All-NaN slice encountered" warning
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    current_min=np.nanmin(np.ndarray.flatten(c_data))
-                    current_max=np.nanmax(np.ndarray.flatten(c_data))
+                    # Exclude first frame from finding min/max since it 
+                    # may have some very extreme values
+                    current_min=np.nanmin(np.ndarray.flatten(c_data[1:,:]))
+                    current_max=np.nanmax(np.ndarray.flatten(c_data[1:,:]))
                     if current_min < min_x_value:
                         min_x_value = current_min
                     elif np.isnan(current_min):
