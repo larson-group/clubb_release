@@ -96,7 +96,11 @@ module spurious_source_test
     use model_flags, only: &
         set_default_clubb_config_flags ! Procedure(s)
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
+
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
@@ -242,6 +246,9 @@ module spurious_source_test
       wprtp,  & ! w'r_t'                                    [(kg/kg) m/s]
       thlm,   & ! th_l (liquid water potential temperature) [K]
       wpthlp    ! w'th_l'                                   [K m/s]
+
+    type (stats_metadata_type) :: &
+      stats_metadata
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(1,nz,sclr_dim) ::  & 
@@ -1014,6 +1021,7 @@ module spurious_source_test
                              l_mono_flux_lim_vm, &
                              l_mono_flux_lim_spikefix, &
                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
+                             stats_metadata, &
                              stats_zt, stats_zm, stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp, &

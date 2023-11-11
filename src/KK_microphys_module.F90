@@ -44,6 +44,7 @@ module KK_microphys_module
                                  thlm, wm_zt, p_in_Pa, exner, rho,      & ! In
                                  cloud_frac, w_std_dev, dzq, rcm,       & ! In
                                  Ncm, chi, rvm, hydromet,               & ! In
+                                 stats_metadata,                        & ! In
                                  hydromet_mc, hydromet_vel,             & ! Out
                                  Ncm_mc, rcm_mc, rvm_mc, thlm_mc,       & ! Out
                                  microphys_stats_zt,                    & ! Out
@@ -90,24 +91,13 @@ module KK_microphys_module
         microphys_stats_alloc, &
         microphys_put_var
 
-    use stats_variables, only: &
-        im_vol_rad_rain, & ! Variables
-        iNrm_auto, &
-        iNrm_evap, &
-        iNrm_evap_adj, &
-        iNrm_src_adj, &
-        irrm_accr, &
-        irrm_auto, &
-        irrm_evap, &
-        irrm_evap_adj, &
-        irrm_src_adj, &
-        irrm_mc_nonadj
+    use grid_class, only: &
+        grid ! Type
 
-    use grid_class, only: grid ! Type
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
-
-    type(grid), target, intent(in) :: gr
 
     ! Local Constants
     integer, parameter :: &
@@ -117,6 +107,9 @@ module KK_microphys_module
       num_stats_sfc = 0           ! No sfc variables sampled in this routine
 
     ! Input Variables
+    type(grid), target, intent(in) :: &
+      gr
+
     real( kind = core_rknd ), intent(in) :: &
       dt          ! Model time step duration                 [s]
 
@@ -144,6 +137,9 @@ module KK_microphys_module
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -367,21 +363,21 @@ module KK_microphys_module
                               hydromet_mc, hydromet_vel )
 
     !!! Output values for statistics
-    call microphys_put_var( irrm_evap, KK_evap_tndcy, microphys_stats_zt )
-    call microphys_put_var( irrm_auto, KK_auto_tndcy, microphys_stats_zt )
-    call microphys_put_var( irrm_accr, KK_accr_tndcy, microphys_stats_zt )
-    call microphys_put_var( im_vol_rad_rain, KK_mean_vol_rad, microphys_stats_zt )
-    call microphys_put_var( iNrm_evap, KK_Nrm_evap_tndcy, microphys_stats_zt )
-    call microphys_put_var( iNrm_auto, KK_Nrm_auto_tndcy, microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_evap, KK_evap_tndcy, microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_auto, KK_auto_tndcy, microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_accr, KK_accr_tndcy, microphys_stats_zt )
+    call microphys_put_var( stats_metadata%im_vol_rad_rain, KK_mean_vol_rad, microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNrm_evap, KK_Nrm_evap_tndcy, microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNrm_auto, KK_Nrm_auto_tndcy, microphys_stats_zt )
     if ( l_src_adj_enabled ) then
-      call microphys_put_var( irrm_src_adj, adj_terms%rrm_src_adj, microphys_stats_zt )
-      call microphys_put_var( iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_zt )
+      call microphys_put_var( stats_metadata%irrm_src_adj, adj_terms%rrm_src_adj, microphys_stats_zt )
+      call microphys_put_var( stats_metadata%iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_zt )
     end if
     if ( l_evap_adj_enabled ) then
-      call microphys_put_var( irrm_evap_adj, adj_terms%rrm_evap_adj, microphys_stats_zt )
-      call microphys_put_var( iNrm_evap_adj, adj_terms%Nrm_evap_adj, microphys_stats_zt )
+      call microphys_put_var( stats_metadata%irrm_evap_adj, adj_terms%rrm_evap_adj, microphys_stats_zt )
+      call microphys_put_var( stats_metadata%iNrm_evap_adj, adj_terms%Nrm_evap_adj, microphys_stats_zt )
     end if
-    call microphys_put_var( irrm_mc_nonadj, KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, &
+    call microphys_put_var( stats_metadata%irrm_mc_nonadj, KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, &
                             microphys_stats_zt )
 
     return
@@ -389,7 +385,7 @@ module KK_microphys_module
   end subroutine KK_local_microphys
 
   !=============================================================================
-  subroutine KK_upscaled_microphys( gr, dt, nz, pdf_dim, l_stats_samp, & ! In
+  subroutine KK_upscaled_microphys( gr, dt, nz, pdf_dim,               & ! In
                                     wm_zt, rtm, thlm, p_in_Pa,         & ! In
                                     exner, rho, rcm,                   & ! In
                                     pdf_params, hydromet_pdf_params,   & ! In
@@ -398,7 +394,8 @@ module KK_microphys_module
                                     mu_x_1_n, mu_x_2_n,                & ! In
                                     sigma_x_1_n, sigma_x_2_n,          & ! In
                                     corr_array_1_n, corr_array_2_n,    & ! In
-                                    stats_zt, stats_zm, &
+                                    stats_metadata,                    & ! In
+                                    stats_zt, stats_zm,                & ! InOut
                                     hydromet_mc, hydromet_vel,         & ! Out
                                     rcm_mc, rvm_mc, thlm_mc,           & ! Out
                                     hydromet_vel_covar_zt_impc,        & ! Out
@@ -486,39 +483,28 @@ module KK_microphys_module
     use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
 
-    use stats_variables, only: &
-        iVrrprrp_expcalc, &
-        iVNrpNrp_expcalc, &
-        irrm_src_adj, &
-        iNrm_src_adj, &
-        irrm_evap_adj, &
-        iNrm_evap_adj, &
-        irrm_mc_nonadj
+    use stats_type, only: &
+        stats ! Type
 
-    use stats_type, only: stats ! Type
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm
-
-    type (grid), target, intent(in) :: gr
 
     ! Local Constants
     logical, parameter :: &
       l_clip_positive_sed = .true.  ! Clip positive Vrr and VNr terms to zero
 
-    ! Input Variables
+    !-------------------------- Input Variables --------------------------
+    type (grid), target, intent(in) :: &
+      gr
+
     real( kind = core_rknd ), intent(in) :: &
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
       pdf_dim   ! Number of variables in the correlation arrays
-
-    logical, intent(in) :: &
-      l_stats_samp    ! Flag to sample statistics
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wm_zt,   & ! Mean vertical velocity on thermodynamic levels  [m/s]
@@ -547,12 +533,19 @@ module KK_microphys_module
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), &
-    intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
-    ! Output Variables
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !-------------------------- InOut Variables --------------------------
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
+
+    !-------------------------- Output Variables --------------------------
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
@@ -573,7 +566,7 @@ module KK_microphys_module
       thlp2_mc,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
       rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
-    ! Local Variables
+    !-------------------------- Local Variables --------------------------
     real( kind = core_rknd ), dimension(nz) :: &
       rrm,    & ! Mean rain water mixing ratio, < r_r > [kg/kg]
       Nrm,    & ! Mean rain drop concentration, < N_r > [num/kg]
@@ -722,7 +715,7 @@ module KK_microphys_module
       cloud_top_level, & ! Vertical level index of cloud top 
       k                  ! Loop index
 
-    ! ---- Begin Code ----
+    !-------------------------- Begin Code --------------------------
 
     !!! Initialize microphysics fields.
     call KK_microphys_init( nz, hydromet, &
@@ -814,7 +807,8 @@ module KK_microphys_module
                                sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                                sigma_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                                KK_mvr_coef, mixt_frac(k), precip_frac_1, &
-                               precip_frac_2, k, l_stats_samp, &
+                               precip_frac_2, k, &
+                               stats_metadata, &
                                stats_zt, & 
                                Vrrprrp_zt_impc(k), Vrrprrp_zt_expc(k), &
                                VNrpNrp_zt_impc(k), VNrpNrp_zt_expc(k) )
@@ -856,7 +850,8 @@ module KK_microphys_module
                                          pdf_params%thl_1(1,k), pdf_params%thl_2(1,k), &
                                          pdf_params%crt_1(1,k), pdf_params%crt_2(1,k), &
                                          pdf_params%cthl_1(1,k), pdf_params%cthl_2(1,k), &
-                                         k, l_stats_samp, &
+                                         k, &
+                                         stats_metadata, &
                                          stats_zt, &
                                          wprtp_mc_zt(k), &
                                          wpthlp_mc_zt(k), &
@@ -906,14 +901,16 @@ module KK_microphys_module
                                sigma_Nr_1_n, sigma_Nr_2_n, corr_rr_Nr_1_n, &
                                corr_rr_Nr_2_n, mixt_frac(k), precip_frac_1, &
                                precip_frac_2, KK_mvr_coef, KK_mean_vol_rad(k), &
-                               k, l_stats_samp, &
+                               k, &
+                               stats_metadata, &
                                stats_zt )
 
        !!! Statistical output for mean microphysics tendenices.
        call KK_stats_output( KK_evap_tndcy(k), KK_auto_tndcy(k), &
                              KK_accr_tndcy(k), KK_mean_vol_rad(k), &
                              KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
-                             l_stats_samp, k, &
+                             k, &
+                             stats_metadata, &
                              stats_zt )
 
 
@@ -1038,55 +1035,55 @@ module KK_microphys_module
     hydromet_vel_covar_zt_expc(:,iiNr) = VNrpNrp_zt_expc
 
     ! Statistics
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
-       if ( iVrrprrp_expcalc > 0 ) then
+       if ( stats_metadata%iVrrprrp_expcalc > 0 ) then
 
           ! The covariance < V_rr'r_r' > calculated completely explicitly.
           ! When semi-implicit turbulent advection is used, this result can be
           ! compared to the < V_rr'r_r' > results used in the code, which are
           ! calculated semi-implicitly.
-          call stat_update_var( iVrrprrp_expcalc, &
+          call stat_update_var( stats_metadata%iVrrprrp_expcalc, &
                                 zt2zm( gr, Vrrprrp_zt_impc * rrm &
                                        + Vrrprrp_zt_expc ), stats_zm )
 
        endif
 
-       if ( iVNrpNrp_expcalc > 0 ) then
+       if ( stats_metadata%iVNrpNrp_expcalc > 0 ) then
 
           ! The covariance < V_Nr'N_r' > calculated completely explicitly.
           ! When semi-implicit turbulent advection is used, this result can be
           ! compared to the < V_Nr'N_r' > results used in the code, which are
           ! calculated semi-implicitly.
-          call stat_update_var( iVNrpNrp_expcalc, &
+          call stat_update_var( stats_metadata%iVNrpNrp_expcalc, &
                                 zt2zm( gr, VNrpNrp_zt_impc * Nrm &
                                        + VNrpNrp_zt_expc ), stats_zm )
 
        endif
 
        ! Stats output for microphysics adjustment terms
-       if ( irrm_src_adj > 0 ) then
-         call stat_update_var( irrm_src_adj, adj_terms%rrm_src_adj, stats_zt )
+       if ( stats_metadata%irrm_src_adj > 0 ) then
+         call stat_update_var( stats_metadata%irrm_src_adj, adj_terms%rrm_src_adj, stats_zt )
        end if
 
-       if ( iNrm_src_adj > 0 ) then
-         call stat_update_var( iNrm_src_adj, adj_terms%Nrm_src_adj, stats_zt )
+       if ( stats_metadata%iNrm_src_adj > 0 ) then
+         call stat_update_var( stats_metadata%iNrm_src_adj, adj_terms%Nrm_src_adj, stats_zt )
        end if
 
-       if ( irrm_evap_adj > 0 ) then
-         call stat_update_var( irrm_evap_adj, adj_terms%rrm_evap_adj, stats_zt )
+       if ( stats_metadata%irrm_evap_adj > 0 ) then
+         call stat_update_var( stats_metadata%irrm_evap_adj, adj_terms%rrm_evap_adj, stats_zt )
        end if
 
-       if ( iNrm_evap_adj > 0 ) then
-         call stat_update_var( iNrm_evap_adj, adj_terms%Nrm_evap_adj, stats_zt )
+       if ( stats_metadata%iNrm_evap_adj > 0 ) then
+         call stat_update_var( stats_metadata%iNrm_evap_adj, adj_terms%Nrm_evap_adj, stats_zt )
        end if
 
-       if ( irrm_mc_nonadj > 0 ) then
-         call stat_update_var( irrm_mc_nonadj, KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, &
+       if ( stats_metadata%irrm_mc_nonadj > 0 ) then
+         call stat_update_var( stats_metadata%irrm_mc_nonadj, KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, &
                                stats_zt )
        end if
 
-    endif ! l_stats_samp
+    endif ! stats_metadata%l_stats_samp
 
 
     return
@@ -1492,7 +1489,8 @@ module KK_microphys_module
                                 sigma_Nr_1_n, sigma_Nr_2_n, corr_rr_Nr_1_n, &
                                 corr_rr_Nr_2_n, mixt_frac, precip_frac_1, &
                                 precip_frac_2, KK_mvr_coef, KK_mean_vol_rad, &
-                                level, l_stats_samp, &
+                                level, &
+                                stats_metadata, &
                                 stats_zt )
 
     ! Description:
@@ -1509,17 +1507,15 @@ module KK_microphys_module
     use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
-    use stats_variables, only : &
-        iKK_mvr_variance_zt
+    use stats_type, only: &
+        stats ! Type
 
-    use stats_type, only: stats ! Type
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_zt
-
-    ! Input Variables
+    !--------------------------- Input Variables ---------------------------
     real( kind = core_rknd ), intent(in) :: &
       mu_rr_1,        & ! Mean of rr (1st PDF component) in-precip (ip)  [kg/kg]
       mu_rr_2,        & ! Mean of rr (2nd PDF component) ip              [kg/kg]
@@ -1550,21 +1546,26 @@ module KK_microphys_module
     integer, intent(in) :: &
       level   ! Vertical level index 
 
-    logical, intent(in) :: &
-      l_stats_samp     ! Flag to record statistical output.
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
-    ! Local Variables
+    !--------------------------- InOut ---------------------------
+    type(stats), target, intent(inout) :: &
+      stats_zt
+
+    !--------------------------- Local Variables ---------------------------
     real( kind = core_rknd ) :: &
       KK_mvr_variance    ! Variance of KK rain drop mean vol rad   [m^2]
 
+    !--------------------------- Begin Code ---------------------------
 
     !!! Output the statistics for upscaled KK.
 
     ! Statistics
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
        ! Variance of KK rain drop mean volume radius.
-       if ( iKK_mvr_variance_zt > 0 ) then
+       if ( stats_metadata%iKK_mvr_variance_zt > 0 ) then
 
           ! Calculate the variance of KK rain drop mean volume radius,
           ! < R_vr'^2 >.
@@ -1577,12 +1578,12 @@ module KK_microphys_module
                              KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
                              precip_frac_1, precip_frac_2 )
 
-          call stat_update_var_pt( iKK_mvr_variance_zt, level, &
+          call stat_update_var_pt( stats_metadata%iKK_mvr_variance_zt, level, &
                                    KK_mvr_variance, stats_zt )
 
-       endif ! iKK_mvr_variance_zt > 0
+       endif ! stats_metadata%iKK_mvr_variance_zt > 0
 
-    endif ! l_stats_samp
+    endif ! stats_metadata%l_stats_samp
 
 
     return
@@ -1593,7 +1594,8 @@ module KK_microphys_module
   subroutine KK_stats_output( KK_evap_tndcy, KK_auto_tndcy, &
                               KK_accr_tndcy, KK_mean_vol_rad, &
                               KK_Nrm_evap_tndcy, KK_Nrm_auto_tndcy, &
-                              l_stats_samp, level, &
+                              level, &
+                              stats_metadata, &
                               stats_zt )
 
     ! Description:
@@ -1604,25 +1606,18 @@ module KK_microphys_module
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use stats_variables, only: &
-        im_vol_rad_rain, &
-        irrm_evap,       &
-        irrm_auto,       &
-        irrm_accr,       &
-        iNrm_evap,       &
-        iNrm_auto
-
     use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
+
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_zt
-
-    ! Input Variables
+    !------------------------- Input Variables -------------------------
     real( kind = core_rknd ), intent(in) :: &
       KK_evap_tndcy,     & ! Mean KK (dr_r/dt) due to evaporation    [(kg/kg)/s]
       KK_auto_tndcy,     & ! Mean KK (dr_r/dt) due to autoconversion [(kg/kg)/s]
@@ -1631,44 +1626,49 @@ module KK_microphys_module
       KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation   [(num/kg)/s]
       KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.     [(num/kg)/s]
 
-    logical, intent(in) :: &
-      l_stats_samp         ! Flag to sample statistical output
-
     integer, intent(in) :: & 
       level    ! Vertical level index
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !------------------------- InOut Variables -------------------------
+    type(stats), target, intent(inout) :: &
+      stats_zt
+
+    !------------------------- Begin Code -------------------------
 
     ! Statistics
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
        ! Mean rain water mixing ratio microphysics tendencies.
-       if ( irrm_evap > 0 ) then
-          call stat_update_var_pt( irrm_evap, level, KK_evap_tndcy, stats_zt )
+       if ( stats_metadata%irrm_evap > 0 ) then
+          call stat_update_var_pt( stats_metadata%irrm_evap, level, KK_evap_tndcy, stats_zt )
        endif
 
-       if ( irrm_auto > 0 ) then
-          call stat_update_var_pt( irrm_auto, level, KK_auto_tndcy, stats_zt )
+       if ( stats_metadata%irrm_auto > 0 ) then
+          call stat_update_var_pt( stats_metadata%irrm_auto, level, KK_auto_tndcy, stats_zt )
        endif
 
-       if ( irrm_accr > 0 ) then
-          call stat_update_var_pt( irrm_accr, level, KK_accr_tndcy, stats_zt )
+       if ( stats_metadata%irrm_accr > 0 ) then
+          call stat_update_var_pt( stats_metadata%irrm_accr, level, KK_accr_tndcy, stats_zt )
        endif
 
        ! Rain drop mean volume radius.
-       if ( im_vol_rad_rain > 0 ) then
-          call stat_update_var_pt( im_vol_rad_rain, level, KK_mean_vol_rad, stats_zt )
+       if ( stats_metadata%im_vol_rad_rain > 0 ) then
+          call stat_update_var_pt( stats_metadata%im_vol_rad_rain, level, KK_mean_vol_rad, stats_zt )
        endif
 
        ! Mean rain drop concentration microphysics tendencies.
-       if ( iNrm_evap > 0 ) then
-          call stat_update_var_pt( iNrm_evap, level, KK_Nrm_evap_tndcy, stats_zt )
+       if ( stats_metadata%iNrm_evap > 0 ) then
+          call stat_update_var_pt( stats_metadata%iNrm_evap, level, KK_Nrm_evap_tndcy, stats_zt )
        endif
 
-       if ( iNrm_auto > 0 ) then
-          call stat_update_var_pt( iNrm_auto, level, KK_Nrm_auto_tndcy, stats_zt )
+       if ( stats_metadata%iNrm_auto > 0 ) then
+          call stat_update_var_pt( stats_metadata%iNrm_auto, level, KK_Nrm_auto_tndcy, stats_zt )
        endif
 
-    endif ! l_stats_samp
+    endif ! stats_metadata%l_stats_samp
 
 
     return

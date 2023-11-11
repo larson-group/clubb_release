@@ -178,6 +178,7 @@ module simple_rad_module
 
 !-------------------------------------------------------------------------------
   subroutine simple_rad( gr, rho, rho_zm, rtm, rcm, exner,  &
+                         stats_metadata, &
                          stats_sfc, &
                          Frad_LW, radht_LW )
 ! Description:
@@ -198,8 +199,8 @@ module simple_rad_module
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
-    use stats_variables, only:  & 
-        iz_inversion, l_stats_samp ! Variable(s)
+    use stats_variables, only: &
+      stats_metadata_type
 
     use interpolation, only: lin_interpolate_two_points ! Procedure(s)
 
@@ -216,11 +217,6 @@ module simple_rad_module
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_sfc
-
-    type (grid), target, intent(in) :: gr
-
     ! External
     intrinsic :: exp
 
@@ -230,6 +226,7 @@ module simple_rad_module
       ls_div = 3.75e-6_core_rknd
 
     ! Input Variables
+    type (grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       rho,    & ! Density on thermodynamic grid  [kg/m^3] 
@@ -237,6 +234,12 @@ module simple_rad_module
       rtm,    & ! Total water mixing ratio       [kg/kg]
       rcm,    & ! Cloud water mixing ratio       [kg/kg]
       exner     ! Exner function.                [-]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    type(stats), target, intent(inout) :: &
+      stats_sfc
     
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
@@ -314,9 +317,9 @@ module simple_rad_module
       end do ! k=1..gr%nz
 
       ! Update surface statistics
-      if ( l_stats_samp ) then
+      if ( stats_metadata%l_stats_samp ) then
 
-        call stat_update_var_pt( iz_inversion, 1, z_i, stats_sfc )
+        call stat_update_var_pt( stats_metadata%iz_inversion, 1, z_i, stats_sfc )
 
       end if
 

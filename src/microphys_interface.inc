@@ -9,6 +9,7 @@ interface
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, w_std_dev, &
                             dzq, rcm, Nc, chi, rvm, hydromet, &
+                            stats_metadata, &
                             hydromet_mc, hydromet_vel, Ncm_mc, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             microphys_stats_zt, microphys_stats_sfc )
@@ -18,6 +19,9 @@ interface
     use clubb_precision, only: core_rknd
 
     use grid_class, only: grid ! Type
+
+     use stats_variables, only: &
+        stats_metadata_type
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type   ! Type
@@ -53,6 +57,9 @@ interface
 
     real( kind = core_rknd ), dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! Output Variables
 

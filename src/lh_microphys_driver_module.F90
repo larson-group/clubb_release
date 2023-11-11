@@ -24,6 +24,7 @@ contains
                lh_Nc_clipped, & ! In
                l_lh_importance_sampling, &
                l_lh_instant_var_covar_src, &
+               stats_metadata, &
                stats_zt, stats_zm, stats_sfc, stats_lh_zt, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
@@ -63,22 +64,21 @@ contains
     use estimate_scm_microphys_module, only: &
       est_single_column_tndcy
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+      stats ! Type
+
+    use stats_variables, only: &
+      stats_metadata_type
 
     implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc, &
-      stats_lh_zt
-
-    type(grid), target, intent(in) :: gr
 
     ! Interface block
 #include "microphys_interface.inc"
 
     ! Input Variables
+    type(grid), target, intent(in) :: &
+      gr
+
     real( kind = core_rknd ), intent(in) :: &
       dt ! Model timestep       [s]
 
@@ -125,6 +125,15 @@ contains
       l_lh_importance_sampling, & ! Do importance sampling (SILHS) [-]
       l_lh_instant_var_covar_src  ! Produce instantaneous var/covar tendencies [-]
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc, &
+      stats_lh_zt
+
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
@@ -167,7 +176,7 @@ contains
 
     ! Call the latin hypercube microphysics driver for microphys_sub
     call est_single_column_tndcy &
-         ( gr, dt, nz, num_samples, pdf_dim, &                             ! Intent(in)
+         ( gr, dt, nz, num_samples, pdf_dim, &                         ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, &                      ! Intent(in)
            lh_sample_point_weights, pdf_params, precip_fracs, &        ! Intent(in)
            p_in_Pa, exner, rho, &                                      ! Intent(in)
@@ -176,6 +185,7 @@ contains
            lh_rc_clipped, lh_rv_clipped, &                             ! Intent(in)
            lh_Nc_clipped, &                                            ! Intent(in)
            l_lh_instant_var_covar_src, &                               ! Intent(in)
+           stats_metadata, &                                           ! Intent(in) 
            stats_zt, stats_zm, stats_sfc, stats_lh_zt, &               ! intent(inout)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &               ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                         ! Intent(out)

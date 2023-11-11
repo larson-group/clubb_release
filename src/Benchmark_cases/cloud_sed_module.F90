@@ -61,6 +61,7 @@ contains
   !=============================================================================
   subroutine cloud_drop_sed( gr, rcm, Ncm, &
                              rho_zm, rho, exner, sigma_g, &
+                             stats_metadata, &
                              stats_zt, stats_zm, & 
                              rcm_mc, thlm_mc )
 
@@ -99,8 +100,8 @@ contains
         zt2zm, & ! Procedure(s)
         ddzm
 
-    use grid_class, only: grid ! Type
-
+    use grid_class, only: &
+        grid ! Type
 
     use constants_clubb, only: &
         five,       & ! Constant(s)
@@ -117,10 +118,8 @@ contains
     use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
 
-    use stats_variables, only: & 
-        ised_rcm,     & ! Variable(s)
-        iFcsed,       &
-        l_stats_samp
+    use stats_variables, only: &
+        stats_metadata_type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -129,16 +128,13 @@ contains
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm
-
-    type (grid), target, intent(in) :: gr
-
     ! External
     intrinsic :: exp, log
 
     ! Input Variables
+    type (grid), target, intent(in) :: &
+      gr
+
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       rcm,    & ! Mean cloud water mixing ratio        [kg/kg]
       Ncm,    & ! Mean cloud droplet concentration     [num/kg]
@@ -149,7 +145,14 @@ contains
     real( kind = core_rknd ), intent(in) :: &
       sigma_g   ! Geometric standard deviation of cloud droplets   [-]
 
+    type (stats_metadata_type), intent(in) :: &
+          stats_metadata
+
     ! Input/Output Variables
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
+
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
       rcm_mc,  & ! r_c tendency due to microphysics     [kg/kg)/s] 
       thlm_mc    ! thlm tendency due to microphysics    [K/s] 
@@ -193,11 +196,11 @@ contains
     ! sed_rcm units:  [ kg (liquid) / kg (air) ] / s
     sed_rcm = (one/rho) * ddzm( gr, Fcsed )
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
  
-       call stat_update_var( ised_rcm, sed_rcm, stats_zt )
+       call stat_update_var( stats_metadata%ised_rcm, sed_rcm, stats_zt )
 
-       call stat_update_var( iFcsed, Fcsed, stats_zm )
+       call stat_update_var( stats_metadata%iFcsed, Fcsed, stats_zm )
 
     endif
 

@@ -27,7 +27,8 @@ module precipitation_fraction
                               hydromet, cloud_frac, cloud_frac_1, &
                               cloud_frac_2, ice_supersat_frac, &
                               ice_supersat_frac_1, ice_supersat_frac_2, &
-                              mixt_frac, clubb_params, l_stats_samp, &
+                              mixt_frac, clubb_params, &
+                              stats_metadata, &
                               stats_sfc, & 
                               precip_frac, &
                               precip_frac_1, &
@@ -60,9 +61,6 @@ module precipitation_fraction
         l_frozen_hm,  &
         hydromet_tol
 
-    use stats_variables, only: &
-        iprecip_frac_tol
-
     use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
@@ -74,11 +72,15 @@ module precipitation_fraction
         err_code, &                     ! Error Indicator
         clubb_fatal_error               ! Constant
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
+
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
-    ! Input Variables
+    !------------------------- Input Variables -------------------------
     integer, intent(in) :: &
       nz,       & ! Number of model vertical grid levels
       ngrdcol     ! Number of grid columns
@@ -97,15 +99,15 @@ module precipitation_fraction
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-    logical, intent(in) :: &
-      l_stats_samp     ! Flag to record statistical output.
       
-    ! Inout Variables
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !------------------------- Inout Variables -------------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_sfc
 
-    ! Output Variables
+    !------------------------- Output Variables -------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       precip_frac,   & ! Precipitation fraction (overall)               [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
@@ -114,7 +116,7 @@ module precipitation_fraction
     real( kind = core_rknd ), dimension(ngrdcol), intent(out) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
-    ! Local Variables
+    !------------------------- Local Variables -------------------------
 
     ! "Maximum allowable" hydrometeor mixing ratio in-precip component mean.
     real( kind = core_rknd ), parameter :: &
@@ -375,14 +377,14 @@ module precipitation_fraction
 
 
     ! Statistics
-    if ( l_stats_samp ) then
-      if ( iprecip_frac_tol > 0 ) then
+    if ( stats_metadata%l_stats_samp ) then
+      if ( stats_metadata%iprecip_frac_tol > 0 ) then
         do j = 1, ngrdcol
-          call stat_update_var_pt( iprecip_frac_tol, 1, precip_frac_tol(j), & ! intent(in)
+          call stat_update_var_pt( stats_metadata%iprecip_frac_tol, 1, precip_frac_tol(j), & ! intent(in)
                                    stats_sfc(j) ) ! intent(inout)
         end do
-      end if ! iprecip_frac_tol
-    end if ! l_stats_samp
+      end if ! stats_metadata%iprecip_frac_tol
+    end if ! stats_metadata%l_stats_samp
 
 
     ! Assertion check for precip_frac, precip_frac_1, and precip_frac_2.

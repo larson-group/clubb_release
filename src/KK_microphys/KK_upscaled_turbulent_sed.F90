@@ -30,7 +30,8 @@ module KK_upscaled_turbulent_sed
                                 sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                                 sigma_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                                 KK_mvr_coef, mixt_frac, precip_frac_1, &
-                                precip_frac_2, level, l_stats_samp, &
+                                precip_frac_2, level, &
+                                stats_metadata, &
                                 stats_zt, &
                                 Vrrprrp_impc, Vrrprrp_expc, &
                                 VNrpNrp_impc, VNrpNrp_expc )
@@ -73,11 +74,11 @@ module KK_upscaled_turbulent_sed
     use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
-    use stats_variables, only: & 
-        irr_KK_mvr_covar_zt, & ! Variable(s)
-        iNr_KK_mvr_covar_zt
+    use stats_type, only: &
+        stats ! Type
 
-    use stats_type, only: stats ! Type
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
@@ -119,8 +120,8 @@ module KK_upscaled_turbulent_sed
     integer, intent(in) :: &
       level   ! Vertical level index 
 
-    logical, intent(in) :: &
-      l_stats_samp     ! Flag to record statistical output.
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -240,31 +241,31 @@ module KK_upscaled_turbulent_sed
 
 
     ! Statistics
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
        ! Covariance of r_r and KK rain drop mean volume radius.
-       if ( irr_KK_mvr_covar_zt > 0 ) then
+       if ( stats_metadata%irr_KK_mvr_covar_zt > 0 ) then
 
           rr_KK_mvr_covar &
           = rr_KK_mvr_covar_coefA * rrm + rr_KK_mvr_covar_termB
 
-          call stat_update_var_pt( irr_KK_mvr_covar_zt, level, &
+          call stat_update_var_pt( stats_metadata%irr_KK_mvr_covar_zt, level, &
                                    rr_KK_mvr_covar, stats_zt )
 
        endif
 
        ! Covariance of N_r and KK rain drop mean volume radius.
-       if ( iNr_KK_mvr_covar_zt > 0 ) then
+       if ( stats_metadata%iNr_KK_mvr_covar_zt > 0 ) then
 
           Nr_KK_mvr_covar &
           = Nr_KK_mvr_covar_coefA * Nrm + Nr_KK_mvr_covar_termB
 
-          call stat_update_var_pt( iNr_KK_mvr_covar_zt, level, &
+          call stat_update_var_pt( stats_metadata%iNr_KK_mvr_covar_zt, level, &
                                    Nr_KK_mvr_covar, stats_zt )
 
        endif
 
-    endif ! l_stats_samp
+    endif ! stats_metadata%l_stats_samp
 
 
     return

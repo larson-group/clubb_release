@@ -44,6 +44,7 @@ module advance_microphys_module
                                 clubb_params, nu_vert_res_dep, &           ! In
                                 tridiag_solve_method, &                    ! In
                                 l_upwind_xm_ma, &                          ! In
+                                stats_metadata, &                          ! In
                                 stats_zt, stats_zm, stats_sfc, &           ! Inout
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                                 K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
@@ -99,24 +100,8 @@ module advance_microphys_module
         iiri, &
         iiNi
 
-    use stats_variables, only: & 
-        l_stats_samp
-
-    !use stats_variables, only: & 
-        !iVrrprrp, & ! Variable(s)
-        !iVNrpNrp
-
-    use stats_variables, only: & 
-        iprecip_rate_zt, & ! Variable(s) 
-        iFprec, &
-        iprecip_rate_sfc, & 
-        irain_flux_sfc, & 
-        irrm_sfc
-
-    use stats_variables, only: & 
-        iNcm,         & ! Variable(s)
-        iK_hm,        & 
-        iNc_in_cloud
+    use stats_variables, only: &
+        stats_metadata_type
 
     use stats_type_utilities, only: & 
         stat_update_var,    & ! Procedure(s)
@@ -125,18 +110,15 @@ module advance_microphys_module
     use stats_clubb_utilities, only: &
         stats_accumulate_hydromet  ! Procedure(s)
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm, &
-      stats_sfc
+    !---------------------- Input Variables ----------------------
+    type (grid), target, intent(in) :: &
+      gr
 
-    type (grid), target, intent(in) :: gr
-
-    ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
       dt           ! Model timestep duration         [s]
 
@@ -184,7 +166,15 @@ module advance_microphys_module
                      ! approximation rather than a centered differencing for turbulent or
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
-    ! Input/Output Variables
+    type (stats_metadata_type), intent(in) :: &
+          stats_metadata
+
+    !---------------------- Input/Output Variables ----------------------
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm, &
+      stats_sfc
+
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
       hydromet,        & ! Hydrometeor mean, <h_m> (thermo. levels)    [units]
       hydromet_vel_zt, & ! Mean hydrometeor sed. vel. on thermo. levs. [m/s]
@@ -199,14 +189,14 @@ module advance_microphys_module
       rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp.   [K/s]
 
-    ! Output Variables
+    !---------------------- Output Variables ----------------------
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: &
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)   [(m/s)units]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       wpNcp          ! Covariance < w'N_c' > (momentum levels)   [(m/s)(num/kg)]
 
-    ! Local Variables
+    !---------------------- Local Variables ----------------------
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
       hydromet_vel    ! Mean hydrometeor sedimentation velocity, <V_xx> [m/s]
 
@@ -237,6 +227,8 @@ module advance_microphys_module
       l_prevent_hm_ta_above_cloud = .false. ! Set K_hm to 0 above cloud top to
                                             ! prevent turbulent advection of
                                             ! hydrometeors to those levels.
+
+    !---------------------- Begin Code ----------------------
 
     ! Initialize intent(out) variables -- covariances <w'hm'> (for any
     ! hydrometeor, hm) and <w'Nc'>.
@@ -294,10 +286,10 @@ module advance_microphys_module
 
     endif ! hydromet_dim > 0
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
       do i = 1, hydromet_dim, 1
         do k = 1, gr%nz, 1
-          call stat_update_var_pt( iK_hm(i), k, K_hm(k,i), stats_zm )
+          call stat_update_var_pt( stats_metadata%iK_hm(i), k, K_hm(k,i), stats_zm )
         end do
       end do ! i = hydromet_dim, 1
     end if 
@@ -329,6 +321,7 @@ module advance_microphys_module
                                  nu_vert_res_dep, &
                                  l_upwind_xm_ma, &
                                  tridiag_solve_method, &
+                                 stats_metadata, &
                                  stats_zt, stats_zm, &
                                  hydromet, hydromet_vel_zt, &
                                  hydrometp2, rvm_mc, thlm_mc, &
@@ -373,6 +366,7 @@ module advance_microphys_module
                          nu_vert_res_dep, &
                          l_upwind_xm_ma, &
                          tridiag_solve_method, &
+                         stats_metadata, &
                          stats_zt, stats_zm, &
                          Ncm, Nc_in_cloud, &
                          wpNcp )
@@ -409,12 +403,12 @@ module advance_microphys_module
 
     endif ! l_predict_Nc
 
-    if ( l_stats_samp ) then
-      call stat_update_var( iNcm, Ncm, stats_zt )
-      call stat_update_var( iNc_in_cloud, Nc_in_cloud, stats_zt )
-    endif ! l_stats_samp
+    if ( stats_metadata%l_stats_samp ) then
+      call stat_update_var( stats_metadata%iNcm, Ncm, stats_zt )
+      call stat_update_var( stats_metadata%iNc_in_cloud, Nc_in_cloud, stats_zt )
+    endif ! stats_metadata%l_stats_samp
 
-    if ( l_stats_samp .and. iirr > 0 ) then
+    if ( stats_metadata%l_stats_samp .and. iirr > 0 ) then
 
       ! Rainfall rate (mm/day) is defined on thermodynamic levels.  The rainfall
       ! rate is given by the equation:
@@ -429,7 +423,7 @@ module advance_microphys_module
       !                                * ( 86400 s/day ) * ( 1000 mm/m ).
       ! Rainfall rate is defined as positive.  Since V_rr is always negative,
       ! the minus (-) sign is necessary.
-      call stat_update_var( iprecip_rate_zt,  & 
+      call stat_update_var( stats_metadata%iprecip_rate_zt,  & 
                             max( - ( hydromet(:,iirr) &
                                      * hydromet_vel_zt(:,iirr) &
                                      + hydromet_vel_covar_zt(:,iirr) ), &
@@ -448,7 +442,7 @@ module advance_microphys_module
       !                              * rho_a * L_v.
       ! It is generally a convention in meteorology to show Precipitation Flux
       ! as a positive downward quantity, so the minus (-) sign is necessary.
-      call stat_update_var( iFprec,  & 
+      call stat_update_var( stats_metadata%iFprec,  & 
                             max( - ( zt2zm( gr, hydromet(:,iirr) )  & 
                                      * hydromet_vel(:,iirr) &
                                      + hydromet_vel_covar(:,iirr) ), &
@@ -459,7 +453,7 @@ module advance_microphys_module
       ! See notes above.
 
       if ( trim( microphys_scheme ) /= "morrison" ) then
-        call stat_update_var_pt( iprecip_rate_sfc, 1,  & 
+        call stat_update_var_pt( stats_metadata%iprecip_rate_sfc, 1,  & 
                                  max( - ( hydromet(2,iirr) &
                                           * hydromet_vel_zt(2,iirr) &
                                           + hydromet_vel_covar_zt(2,iirr) ), &
@@ -469,7 +463,7 @@ module advance_microphys_module
                                   * mm_per_m, stats_sfc )
       endif ! microphys_scheme /= "morrison"
 
-      call stat_update_var_pt( irain_flux_sfc, 1, & 
+      call stat_update_var_pt( stats_metadata%irain_flux_sfc, 1, & 
                                max( - ( zt2zm( gr, hydromet(:,iirr), 1 )  & 
                                         * hydromet_vel(1,iirr) &
                                         + hydromet_vel_covar(1,iirr) ), &
@@ -477,12 +471,13 @@ module advance_microphys_module
                                * rho_zm(1) * Lv, stats_sfc )
 
       ! Also store the value of surface rain water mixing ratio.
-      call stat_update_var_pt( irrm_sfc, 1,  & 
+      call stat_update_var_pt( stats_metadata%irrm_sfc, 1,  & 
                                ( zt2zm( gr, hydromet(:,iirr), 1 ) ), stats_sfc )
 
-    endif ! l_stats_samp and iirr > 0
+    endif ! stats_metadata%l_stats_samp and iirr > 0
 
     call stats_accumulate_hydromet( gr, hydromet, rho_ds_zt, &
+                                    stats_metadata, &
                                     stats_zt, stats_sfc )
 
     call write_adv_micro_errors( gr, dt, time_current, wm_zt, wp2, & ! In
@@ -512,6 +507,7 @@ module advance_microphys_module
                                   nu_vert_res_dep, &
                                   l_upwind_xm_ma, &
                                   tridiag_solve_method, &
+                                  stats_metadata, &
                                   stats_zt, stats_zm, & 
                                   hydromet, hydromet_vel_zt, &
                                   hydrometp2, rvm_mc, thlm_mc, &
@@ -570,8 +566,8 @@ module advance_microphys_module
         stat_end_update,      &
         stat_end_update_pt
 
-    use stats_variables, only: & 
-        l_stats_samp
+    use stats_variables, only: &
+        stats_metadata_type
 
     use array_index, only:  & 
         hydromet_list, & ! Variable(s)
@@ -579,23 +575,14 @@ module advance_microphys_module
         iirr,         &
         iiNr
 
-    use stats_variables, only: & 
-        iVrrprrp,     & ! Variable(s)
-        iVNrpNrp,     &
-        ihydrometp2,  &
-        iwphydrometp
-
     use stats_type, only: stats ! Type
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm
+    !---------------------------- Input Variables ----------------------------
+    type (grid), target, intent(in) :: &
+      gr
 
-    type (grid), target, intent(in) :: gr
-
-    ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
       dt    ! Duration of one model time step         [s]
 
@@ -630,7 +617,14 @@ module advance_microphys_module
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
-    ! Input/Output Variables
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !---------------------------- Input/Output Variables ----------------------------
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
+
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
       hydromet,        & ! Hydrometeor mean, <h_m> (thermodynamic levs.) [units]
       hydromet_vel_zt, & ! Mean hydrometeor sed. velocity on thermo. levs. [m/s]
@@ -640,7 +634,7 @@ module advance_microphys_module
       rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp.   [K/s]
 
-    ! Output Variables
+    !---------------------------- Output Variables ----------------------------
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: &
       wphydrometp,  & ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
       hydromet_vel    ! Mean hydrometeor sedimentation velocity, <V_hm>    [m/s]
@@ -649,7 +643,7 @@ module advance_microphys_module
       hydromet_vel_covar,    & ! Covariance of V_hm & h_m (m-levs)  [units(m/s)]
       hydromet_vel_covar_zt    ! Covariance of V_hm & h_m (t-levs)  [units(m/s)]
 
-    ! Local Variables
+    !---------------------------- Local Variables ----------------------------
     real( kind = core_rknd ), dimension(3,1,gr%nz) :: & 
       lhs_ta    ! LHS corresponding to contribution from turbulent adv.  [1/s]
 
@@ -689,17 +683,19 @@ module advance_microphys_module
     integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
                ixrm_bt, ixrm_mc
 
+    !---------------------------- Begin Code ----------------------------
+
     ! Loop over each type of precipitating hydrometeor and advance one model
     ! time step.
     do i = 1, hydromet_dim
 
        ! Set up the stats indices for hydrometeor index i
-       call setup_stats_indices( i,                           & ! Intent(in)
+       call setup_stats_indices( i, stats_metadata,           & ! Intent(in)
                                  ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
                                  ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                  max_velocity )                 ! Intent(inout)
 
-       if ( l_stats_samp ) then
+       if ( stats_metadata%l_stats_samp ) then
 
           ! Update explicit contributions to the hydrometeor species
           call stat_update_var( ixrm_mc, hydromet_mc(:,i), stats_zt )
@@ -721,7 +717,7 @@ module advance_microphys_module
              enddo
           endif
 
-       endif ! l_stats_samp
+       endif ! stats_metadata%l_stats_samp
 
        ! Set realistic limits on sedimentation velocities, following the
        ! numbers in the Morrison microphysics.
@@ -793,6 +789,7 @@ module advance_microphys_module
                            hydromet_vel_covar_zt_impc(:,i),                 & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,           & ! In
                            l_upwind_xm_ma,                                  & ! In
+                           stats_metadata,                                  & ! In
                            lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs,      & ! Out
                            lhs )                                              ! Out
 
@@ -802,6 +799,7 @@ module advance_microphys_module
                            K_hm(:,i), nu_vert_res_dep%nu_hm(1), cloud_frac,     & ! In
                            hydromet_vel_covar_zt_expc(:,i),                     & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,               & ! In
+                           stats_metadata,                                      & ! In
                            stats_zt,                                            & ! In
                            rhs )                                                  ! Out
 
@@ -810,7 +808,8 @@ module advance_microphys_module
                              lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs,      & ! In
                              cloud_frac,                                      & ! In
                              tridiag_solve_method,                            & ! In
-                             stats_zt,                                        & ! In
+                             stats_metadata,                                  & ! In
+                             stats_zt,                                        & ! InOut
                              lhs, rhs, hydromet(:,i) )                          ! Out
 
        if ( clubb_at_least_debug_level( 0 ) ) then 
@@ -828,10 +827,11 @@ module advance_microphys_module
 
     ! Now that all precipitating hydrometeors have been advanced, fill holes in
     ! hydromet profiles.
-    call fill_holes_driver( gr, gr%nz, dt, hydromet_dim,     & ! Intent(in)
+    call fill_holes_driver( gr, gr%nz, dt, hydromet_dim, & ! Intent(in)
                             l_fill_holes_hm,             & ! Intent(in)
                             rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
-                            stats_zt, &                    ! intent(inout)
+                            stats_metadata,              & ! Intent(in)
+                            stats_zt,                    & ! intent(inout)
                             thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
 
     ! Loop over each type of precipitating hydrometeor and calculate hydrometeor
@@ -840,7 +840,7 @@ module advance_microphys_module
     do i = 1, hydromet_dim
 
        ! Set up the stats indices for hydrometeor at index i
-       call setup_stats_indices( i,                           & ! Intent(in)
+       call setup_stats_indices( i, stats_metadata,           & ! Intent(in)
                                  ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
                                  ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                  max_velocity )                 ! Intent(inout)
@@ -915,38 +915,38 @@ module advance_microphys_module
 
        ! Statistics for all covariances involving hydrometeors:  < w'h_m' >,
        ! <V_rr'r_r'>, and <V_Nr'N_r'>.
-       if ( l_stats_samp ) then
+       if ( stats_metadata%l_stats_samp ) then
 
-          if ( ihydrometp2(i) > 0 ) then
+          if ( stats_metadata%ihydrometp2(i) > 0 ) then
 
              ! Covariance of vertical velocity and the hydrometeor.
-             call stat_update_var( ihydrometp2(i), hydrometp2(:,i), stats_zm )
+             call stat_update_var( stats_metadata%ihydrometp2(i), hydrometp2(:,i), stats_zm )
 
           endif
 
-          if ( iwphydrometp(i) > 0 ) then
+          if ( stats_metadata%iwphydrometp(i) > 0 ) then
 
              ! Covariance of vertical velocity and the hydrometeor.
-             call stat_update_var( iwphydrometp(i), wphydrometp(:,i), stats_zm )
+             call stat_update_var( stats_metadata%iwphydrometp(i), wphydrometp(:,i), stats_zm )
 
           endif
 
-          if ( trim( hydromet_list(i) ) == "rrm" .and. iVrrprrp > 0 ) then
+          if ( trim( hydromet_list(i) ) == "rrm" .and. stats_metadata%iVrrprrp > 0 ) then
 
              ! Covariance of sedimentation velocity of r_r and r_r.
-             call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirr), &
+             call stat_update_var( stats_metadata%iVrrprrp, hydromet_vel_covar(:,iirr), &
                                    stats_zm )
 
-          elseif ( trim( hydromet_list(i) ) == "Nrm" .and. iVNrpNrp > 0 ) then
+          elseif ( trim( hydromet_list(i) ) == "Nrm" .and. stats_metadata%iVNrpNrp > 0 ) then
 
              ! Covariance of sedimentation velocity of N_r and N_r.
-             call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNr), stats_zm )
+             call stat_update_var( stats_metadata%iVNrpNrp, hydromet_vel_covar(:,iiNr), stats_zm )
 
           endif
 
-       endif ! l_stats_samp
+       endif ! stats_metadata%l_stats_samp
 
-       if ( l_stats_samp ) then
+       if ( stats_metadata%l_stats_samp ) then
 
           ! Total time tendency
           if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
@@ -964,7 +964,7 @@ module advance_microphys_module
              enddo
           endif
 
-       endif ! l_stats_samp
+       endif ! stats_metadata%l_stats_samp
 
     enddo ! i = 1, hydromet_dim, 1
 
@@ -979,6 +979,7 @@ module advance_microphys_module
                           nu_vert_res_dep, &
                           l_upwind_xm_ma, &
                           tridiag_solve_method, &
+                          stats_metadata, &
                           stats_zt, stats_zm, &
                           Ncm, Nc_in_cloud, &
                           wpNcp )
@@ -1030,24 +1031,17 @@ module advance_microphys_module
         stat_end_update,      &
         stat_end_update_pt
 
-    use stats_variables, only: & 
-        l_stats_samp, &
-        iNcm_bt,      &
-        iNcm_mc,      &
-        iNcm_cl,      &
-        iwpNcp
+    use stats_variables, only: &
+        stats_metadata_type
 
     use stats_type, only: stats ! Type
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm
+    !------------------------------- Input Variables -------------------------------
+    type (grid), target, intent(in) :: &
+      gr
 
-    type (grid), target, intent(in) :: gr
-
-    ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
       dt    ! Duration of one model time step         [s]
 
@@ -1076,7 +1070,14 @@ module advance_microphys_module
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
 
-    ! Input/Output Variables
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !------------------------------- InOut Variables -------------------------------
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm
+
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
@@ -1126,6 +1127,8 @@ module advance_microphys_module
 
     integer :: k    ! Loop index
 
+    !------------------------------- Begin Code -------------------------------
+
     ! The mean sedimentation velocity of cloud droplet concentration, < V_Nc >,
     ! and the covariance of N_c sedimentation velocity with N_c, < V_Nc'Nc' >,
     ! are not used in the advancement of < N_c >.  Sedimentation velocity of N_c
@@ -1136,28 +1139,28 @@ module advance_microphys_module
     Ncm_vel    = zero
     Ncm_vel_zt = zero
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
        ! Update explicit contributions to cloud droplet concentration.
-       call stat_update_var( iNcm_mc, Ncm_mc, stats_zt )
+       call stat_update_var( stats_metadata%iNcm_mc, Ncm_mc, stats_zt )
 
        ! Save prior value of Ncm for determining total time tendency.
        ! The value of Ncm at thermodynamic level k = 1 is simply set to the
        ! value of Ncm at k = 2.  Don't include budget stats for level k = 1.
        do k = 2, gr%nz, 1
           if ( l_in_cloud_Nc_diff ) then
-             call stat_begin_update_pt( iNcm_bt, k, &
+             call stat_begin_update_pt( stats_metadata%iNcm_bt, k, &
                                         ( Nc_in_cloud(k) &
                                          * max(cloud_frac(k),cloud_frac_min) ) &
                                         / dt, stats_zt )
           else
-             call stat_begin_update_pt( iNcm_bt, k, &
+             call stat_begin_update_pt( stats_metadata%iNcm_bt, k, &
                                         Ncm(k) / dt, &
                                         stats_zt )
           endif
        enddo
 
-    endif ! l_stats_samp
+    endif ! stats_metadata%l_stats_samp
 
     ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
     ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
@@ -1180,6 +1183,7 @@ module advance_microphys_module
                         Ncm_vel_covar_zt_impc, & ! In
                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
                         l_upwind_xm_ma, & ! In
+                        stats_metadata, & ! In
                         lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs, &
                         lhs ) ! Out
 
@@ -1192,6 +1196,7 @@ module advance_microphys_module
                            K_Nc, nu_vert_res_dep%nu_hm(1), cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           stats_metadata, &
                            stats_zt, &
                            rhs )
 
@@ -1202,6 +1207,7 @@ module advance_microphys_module
                            K_Nc, nu_vert_res_dep%nu_hm(1), cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           stats_metadata, &
                            stats_zt, &
                            rhs )
 
@@ -1215,7 +1221,8 @@ module advance_microphys_module
                              lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs, & ! In
                              cloud_frac,                                 & ! In
                              tridiag_solve_method,                       & ! In
-                             stats_zt,                                   & ! In
+                             stats_metadata,                             & ! In
+                             stats_zt,                                   & ! InOut
                              lhs, rhs, Nc_in_cloud )                       ! Out
 
        Ncm = Nc_in_cloud * max( cloud_frac, cloud_frac_min )
@@ -1226,7 +1233,8 @@ module advance_microphys_module
                              lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs, & ! In
                              cloud_frac,                                 & ! In
                              tridiag_solve_method,                       & ! In
-                             stats_zt,                                   & ! In
+                             stats_metadata,                             & ! In
+                             stats_zt,                                   & ! InOut
                              lhs, rhs, Ncm )                               ! Out
 
        Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
@@ -1269,8 +1277,8 @@ module advance_microphys_module
     endif ! Ncm < Ncm_min
 
     ! Store the previous value of Ncm for the effect of clipping.
-    if ( l_stats_samp ) then
-       call stat_begin_update( gr%nz, iNcm_cl, &
+    if ( stats_metadata%l_stats_samp ) then
+       call stat_begin_update( gr%nz, stats_metadata%iNcm_cl, &
                                Ncm / dt, stats_zt )
     endif
 
@@ -1285,8 +1293,8 @@ module advance_microphys_module
     endif ! Ncm < Ncm_min
 
     ! Enter the new value of Ncm for the effect of clipping.
-    if ( l_stats_samp ) then
-       call stat_end_update( gr%nz, iNcm_cl, &
+    if ( stats_metadata%l_stats_samp ) then
+       call stat_end_update( gr%nz, stats_metadata%iNcm_cl, &
                              Ncm / dt, stats_zt )
     endif
 
@@ -1318,28 +1326,28 @@ module advance_microphys_module
     wpNcp(gr%nz) = zero
 
     ! Statistics for all covariances involving N_c:  < w'N_c' >.
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
-       if ( iwpNcp > 0 ) then
+       if ( stats_metadata%iwpNcp > 0 ) then
 
           ! Covariance of vertical velocity and N_c.
-          call stat_update_var( iwpNcp, wpNcp, stats_zm )
+          call stat_update_var( stats_metadata%iwpNcp, wpNcp, stats_zm )
 
        endif
 
-    endif ! l_stats_samp
+    endif ! stats_metadata%l_stats_samp
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
        ! Total time tendency
        ! The value of Ncm at thermodynamic level k = 1 is simply set to the
        ! value of Ncm at k = 2.  Don't include budget stats for level k = 1.
        do k = 2, gr%nz, 1
-          call stat_end_update_pt( iNcm_bt, k, &
+          call stat_end_update_pt( stats_metadata%iNcm_bt, k, &
                                    Ncm(k) / dt, stats_zt )
        enddo ! k = 2, gr%nz, 1
 
-    endif ! l_stats_samp
+    endif ! stats_metadata%l_stats_samp
 
 
     return
@@ -1351,6 +1359,7 @@ module advance_microphys_module
                               lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs, &
                               cloud_frac, &
                               tridiag_solve_method, &
+                              stats_metadata, &
                               stats_zt, &
                               lhs, rhs, hmm )
 
@@ -1378,46 +1387,15 @@ module advance_microphys_module
     use parameters_microphys, only: &
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
 
-    use stats_variables, only: & 
-        irrm_ma, & 
-        irrm_sd, & 
-        irrm_ts, & 
-        irrm_ta, & 
-        irim_ma, & 
-        irim_sd, & 
-        irim_ta, & 
-        irsm_ma, & 
-        irsm_sd, & 
-        irsm_ta, & 
-        irgm_ma, & 
-        irgm_sd, & 
-        irgm_ta, & 
-        l_stats_samp
-
-    use stats_variables, only: & 
-        iNrm_ma, & 
-        iNrm_sd, & 
-        iNrm_ts, & 
-        iNrm_ta, & 
-        iNim_ma, & 
-        iNim_sd, & 
-        iNim_ta, & 
-        iNsm_ma, & 
-        iNsm_sd, & 
-        iNsm_ta, & 
-        iNgm_ma, & 
-        iNgm_sd, & 
-        iNgm_ta
-
-    use stats_variables, only: & 
-        iNcm_ma, & 
-        iNcm_ta
+    use stats_variables, only: &
+        stats_metadata_type
 
     use stats_type_utilities, only: &
         stat_update_var_pt, & ! Procedure(s)
         stat_end_update_pt
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
 
     implicit none
 
@@ -1449,6 +1427,9 @@ module advance_microphys_module
     real( kind = core_rknd ), intent(in), dimension(3,gr%nz) :: & 
       lhs_ma    ! LHS corresponding to contribution from mean advection  [1/s]
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
     !------------------------ Input/Output Variables ------------------------
     real( kind = core_rknd ), intent(inout), dimension(3,gr%nz) :: & 
       lhs    ! Left hand side
@@ -1477,49 +1458,49 @@ module advance_microphys_module
 
     select case( solve_type )
     case( "rrm" )
-      ihmm_ma = irrm_ma
-      ihmm_ta = irrm_ta
-      ihmm_sd = irrm_sd
-      ihmm_ts = irrm_ts
+      ihmm_ma = stats_metadata%irrm_ma
+      ihmm_ta = stats_metadata%irrm_ta
+      ihmm_sd = stats_metadata%irrm_sd
+      ihmm_ts = stats_metadata%irrm_ts
     case( "rim" )
-      ihmm_ma = irim_ma
-      ihmm_ta = irim_ta
-      ihmm_sd = irim_sd
+      ihmm_ma = stats_metadata%irim_ma
+      ihmm_ta = stats_metadata%irim_ta
+      ihmm_sd = stats_metadata%irim_sd
       ihmm_ts = 0
     case( "rsm" )
-      ihmm_ma = irsm_ma
-      ihmm_ta = irsm_ta
-      ihmm_sd = irsm_sd
+      ihmm_ma = stats_metadata%irsm_ma
+      ihmm_ta = stats_metadata%irsm_ta
+      ihmm_sd = stats_metadata%irsm_sd
       ihmm_ts = 0
     case( "rgm" )
-      ihmm_ma = irgm_ma
-      ihmm_ta = irgm_ta
-      ihmm_sd = irgm_sd
+      ihmm_ma = stats_metadata%irgm_ma
+      ihmm_ta = stats_metadata%irgm_ta
+      ihmm_sd = stats_metadata%irgm_sd
       ihmm_ts = 0
     case( "Ncm" )
-      ihmm_ma = iNcm_ma
-      ihmm_ta = iNcm_ta
+      ihmm_ma = stats_metadata%iNcm_ma
+      ihmm_ta = stats_metadata%iNcm_ta
       ihmm_sd = 0
       ihmm_ts = 0
     case( "Nrm" )
-      ihmm_ma = iNrm_ma
-      ihmm_ta = iNrm_ta
-      ihmm_sd = iNrm_sd
-      ihmm_ts = iNrm_ts
+      ihmm_ma = stats_metadata%iNrm_ma
+      ihmm_ta = stats_metadata%iNrm_ta
+      ihmm_sd = stats_metadata%iNrm_sd
+      ihmm_ts = stats_metadata%iNrm_ts
     case( "Nim" )
-      ihmm_ma = iNim_ma
-      ihmm_ta = iNim_ta
-      ihmm_sd = iNim_sd
+      ihmm_ma = stats_metadata%iNim_ma
+      ihmm_ta = stats_metadata%iNim_ta
+      ihmm_sd = stats_metadata%iNim_sd
       ihmm_ts = 0
     case( "Nsm" )
-      ihmm_ma = iNsm_ma
-      ihmm_ta = iNsm_ta
-      ihmm_sd = iNsm_sd
+      ihmm_ma = stats_metadata%iNsm_ma
+      ihmm_ta = stats_metadata%iNsm_ta
+      ihmm_sd = stats_metadata%iNsm_sd
       ihmm_ts = 0
     case( "Ngm" )
-      ihmm_ma = iNgm_ma
-      ihmm_ta = iNgm_ta
-      ihmm_sd = iNgm_sd
+      ihmm_ma = stats_metadata%iNgm_ma
+      ihmm_ta = stats_metadata%iNgm_ta
+      ihmm_sd = stats_metadata%iNgm_sd
       ihmm_ts = 0
     case default
       ihmm_ma = 0
@@ -1536,7 +1517,7 @@ module advance_microphys_module
 
 
     ! Statistics
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
        do k = 1, gr%nz, 1
 
@@ -1611,7 +1592,7 @@ module advance_microphys_module
 
        enddo ! 1..gr%nz
 
-    endif ! l_stats_samp
+    endif ! stats_metadata%l_stats_samp
 
 
     ! Boundary conditions on results
@@ -1632,6 +1613,7 @@ module advance_microphys_module
                             Vhmphmp_zt_impc, &
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                             l_upwind_xm_ma, &
+                            stats_metadata, &
                             lhs_ta, lhs_ma, sed_turb_lhs, sed_diff_lhs, &
                             lhs )
 
@@ -1670,41 +1652,10 @@ module advance_microphys_module
     use parameters_microphys, only: &
         l_upwind_diff_sed  ! Use "upwind" differencing approx. for sedimentation
 
-    use stats_variables, only: & 
-        irrm_ma, & ! Variable(s)
-        irrm_sd, & 
-        irrm_ts, & 
-        irrm_ta, & 
-        iNrm_ma, & 
-        iNrm_sd, & 
-        iNrm_ts, & 
-        iNrm_ta, & 
-        iNcm_ma, &
-        iNcm_ta, &
-        irim_ma, & 
-        irim_sd, & 
-        irim_ta, & 
-        irsm_ma, & 
-        irsm_sd, & 
-        irsm_ta, & 
-        irgm_ma, & 
-        irgm_sd, & 
-        irgm_ta, & 
-        iNim_ma, & 
-        iNim_sd, & 
-        iNim_ta, & 
-        iNsm_ma, & 
-        iNsm_sd, & 
-        iNsm_ta, & 
-        iNgm_ma, & 
-        iNgm_sd, & 
-        iNgm_ta
-
-    use stats_variables, only: & 
-        l_stats_samp
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
-
 
     !------------------------------ Input Variables ------------------------------
     type (grid), target, intent(in) :: gr
@@ -1744,6 +1695,9 @@ module advance_microphys_module
       l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
                      ! approximation rather than a centered differencing for turbulent or
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     !------------------------------ Output Variables ------------------------------
     real( kind = core_rknd ), intent(out), dimension(3,1,gr%nz) :: & 
@@ -1793,49 +1747,49 @@ module advance_microphys_module
 
     select case( solve_type )
     case ( "rrm" )
-      ihmm_ma = irrm_ma
-      ihmm_ta = irrm_ta
-      ihmm_sd = irrm_sd
-      ihmm_ts = irrm_ts
+      ihmm_ma = stats_metadata%irrm_ma
+      ihmm_ta = stats_metadata%irrm_ta
+      ihmm_sd = stats_metadata%irrm_sd
+      ihmm_ts = stats_metadata%irrm_ts
     case ( "Nrm" )
-      ihmm_ma = iNrm_ma
-      ihmm_ta = iNrm_ta
-      ihmm_sd = iNrm_sd
-      ihmm_ts = iNrm_ts
+      ihmm_ma = stats_metadata%iNrm_ma
+      ihmm_ta = stats_metadata%iNrm_ta
+      ihmm_sd = stats_metadata%iNrm_sd
+      ihmm_ts = stats_metadata%iNrm_ts
     case ( "rim" )
-      ihmm_ma = irim_ma
-      ihmm_ta = irim_ta
-      ihmm_sd = irim_sd
+      ihmm_ma = stats_metadata%irim_ma
+      ihmm_ta = stats_metadata%irim_ta
+      ihmm_sd = stats_metadata%irim_sd
       ihmm_ts = 0
     case ( "rsm" )
-      ihmm_ma = irsm_ma
-      ihmm_ta = irsm_ta
-      ihmm_sd = irsm_sd
+      ihmm_ma = stats_metadata%irsm_ma
+      ihmm_ta = stats_metadata%irsm_ta
+      ihmm_sd = stats_metadata%irsm_sd
       ihmm_ts = 0
     case ( "rgm" )
-      ihmm_ma = irgm_ma
-      ihmm_ta = irgm_ta
-      ihmm_sd = irgm_sd
+      ihmm_ma = stats_metadata%irgm_ma
+      ihmm_ta = stats_metadata%irgm_ta
+      ihmm_sd = stats_metadata%irgm_sd
       ihmm_ts = 0
     case ( "Ncm" )
-      ihmm_ma = iNcm_ma
-      ihmm_ta = iNcm_ta
+      ihmm_ma = stats_metadata%iNcm_ma
+      ihmm_ta = stats_metadata%iNcm_ta
       ihmm_sd = 0
       ihmm_ts = 0
     case( "Nim" )
-      ihmm_ma = iNim_ma
-      ihmm_ta = iNim_ta
-      ihmm_sd = iNim_sd
+      ihmm_ma = stats_metadata%iNim_ma
+      ihmm_ta = stats_metadata%iNim_ta
+      ihmm_sd = stats_metadata%iNim_sd
       ihmm_ts = 0
     case( "Nsm" )
-      ihmm_ma = iNsm_ma
-      ihmm_ta = iNsm_ta
-      ihmm_sd = iNsm_sd
+      ihmm_ma = stats_metadata%iNsm_ma
+      ihmm_ta = stats_metadata%iNsm_ta
+      ihmm_sd = stats_metadata%iNsm_sd
       ihmm_ts = 0
     case( "Ngm" )
-      ihmm_ma = iNgm_ma
-      ihmm_ta = iNgm_ta
-      ihmm_sd = iNgm_sd
+      ihmm_ma = stats_metadata%iNgm_ma
+      ihmm_ta = stats_metadata%iNgm_ta
+      ihmm_sd = stats_metadata%iNgm_sd
       ihmm_ts = 0
     case default
       ihmm_ma = 0
@@ -1965,7 +1919,7 @@ module advance_microphys_module
 
        endif ! l_sed
 
-       if ( l_stats_samp ) then
+       if ( stats_metadata%l_stats_samp ) then
 
           ! Statistics:  implicit contributions to hydrometeor hmm.
           if ( ihmm_sd > 0 .and. l_sed ) then
@@ -1994,7 +1948,7 @@ module advance_microphys_module
                                   invrs_rho_ds_zt(k), k )
           endif
 
-       endif ! l_stats_samp
+       endif ! stats_metadata%l_stats_samp
 
     enddo ! 2..gr%nz-1
 
@@ -2023,6 +1977,7 @@ module advance_microphys_module
                             K_hm, nu, cloud_frac, &
                             Vhmphmp_zt_expc, &
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                            stats_metadata, &
                             stats_zt, &
                             rhs )
 
@@ -2038,8 +1993,8 @@ module advance_microphys_module
         zt2zm, &    ! Procedure(s)
         zm2zt
 
-    use grid_class, only: grid ! Type
-
+    use grid_class, only: &
+        grid ! Type
 
     use constants_clubb, only: &
         one_half,       & ! Constant(s)
@@ -2055,33 +2010,16 @@ module advance_microphys_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
-    use stats_variables, only: & 
-        irrm_ta, & ! Variable(s)
-        irrm_ts, &
-        iNrm_ta, &
-        iNrm_ts, &
-        l_stats_samp
-
     use stats_variables, only: &
-        iNim_ta, &
-        iNsm_ta, &
-        iNgm_ta, &
-        iNcm_ta, &
-        irim_ta, &
-        irsm_ta, &
-        irgm_ta
+        stats_metadata_type
 
     use stats_type_utilities, only: &
         stat_begin_update_pt ! Procedure(s)
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
 
     implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_zt
-
-    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -2089,7 +2027,10 @@ module advance_microphys_module
       k_tdiag   = 2, & ! Thermodynamic main diagonal index.
       km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
-    ! Input Variables
+    !-------------------------- Input Variables --------------------------
+    type (grid), target, intent(in) :: &
+      gr
+
     character(len=*), intent(in) :: &
       solve_type  ! Description of which hydrometeor is being solved for.
 
@@ -2112,11 +2053,18 @@ module advance_microphys_module
     real( kind = core_rknd ), intent(in) :: &
       nu                 ! Background diffusion coefficient         [m^2/s]
 
-    ! Output Variable
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !-------------------------- Input Variables --------------------------
+    type(stats), target, intent(inout) :: &
+      stats_zt
+
+    !-------------------------- Output Variable --------------------------
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
       rhs   ! Right hand side
 
-    ! Local Variables
+    !-------------------------- Local Variables --------------------------
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Vhmphmp_expc  ! Explicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
 
@@ -2137,7 +2085,8 @@ module advance_microphys_module
 
     integer :: ihmm_ta, & ! Turbulent advection budget toggle.
                ihmm_ts    ! Turbulent sedimentation budget toggle.
- 
+
+    !-------------------------- Begin Code --------------------------
 
     ! Initializing ihmm_ta and ihmm_ts in order to avoid compiler warnings.
     ihmm_ta = 0
@@ -2145,31 +2094,31 @@ module advance_microphys_module
 
     select case( solve_type )
     case ( "rrm" )
-      ihmm_ta = irrm_ta
-      ihmm_ts = irrm_ts
+      ihmm_ta = stats_metadata%irrm_ta
+      ihmm_ts = stats_metadata%irrm_ts
     case ( "Nrm" )
-      ihmm_ta = iNrm_ta
-      ihmm_ts = iNrm_ts
+      ihmm_ta = stats_metadata%iNrm_ta
+      ihmm_ts = stats_metadata%iNrm_ts
     case( "rim" )
-      ihmm_ta = irim_ta
+      ihmm_ta = stats_metadata%irim_ta
       ihmm_ts = 0
     case( "rsm" )
-      ihmm_ta = irsm_ta
+      ihmm_ta = stats_metadata%irsm_ta
       ihmm_ts = 0
     case( "rgm" )
-      ihmm_ta = irgm_ta
+      ihmm_ta = stats_metadata%irgm_ta
       ihmm_ts = 0
     case( "Ncm" )
-      ihmm_ta = iNcm_ta
+      ihmm_ta = stats_metadata%iNcm_ta
       ihmm_ts = 0
     case( "Nim" )
-      ihmm_ta = iNim_ta
+      ihmm_ta = stats_metadata%iNim_ta
       ihmm_ts = 0
     case( "Nsm" )
-      ihmm_ta = iNsm_ta
+      ihmm_ta = stats_metadata%iNsm_ta
       ihmm_ts = 0
     case( "Ngm" )
-      ihmm_ta = iNgm_ta
+      ihmm_ta = stats_metadata%iNgm_ta
       ihmm_ts = 0
     case default
       ihmm_ta = 0
@@ -2264,7 +2213,7 @@ module advance_microphys_module
        endif
 
        
-       if ( l_stats_samp ) then
+       if ( stats_metadata%l_stats_samp ) then
 
           ! Statistics: explicit contributions for the hydrometeor.
 
@@ -2310,7 +2259,7 @@ module advance_microphys_module
                                         stats_zt )
           endif ! ihmm_ts > 0 and l_sed
 
-       endif ! l_stats_samp
+       endif ! stats_metadata%l_stats_samp
 
     enddo ! k = 2, gr%nz, 1
     

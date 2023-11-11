@@ -44,6 +44,7 @@ module advance_windm_edsclrm_module
                                     l_lmm_stepping, &
                                     l_linearize_pbl_winds, &
                                     order_xp2_xpyp, order_wp2_wp3, order_windm, &
+                                    stats_metadata, &
                                     stats_zt, stats_zm, stats_sfc, & 
                                     um, vm, edsclrm, &
                                     upwp, vpwp, wpedsclrp, &
@@ -84,14 +85,7 @@ module advance_windm_edsclrm_module
         stat_update_var
 
     use stats_variables, only: &
-        ium_ref, & ! Variables
-        ivm_ref, &
-        ium_sdmp, &
-        ivm_sdmp, &
-        ium_ndg, &
-        ivm_ndg, &
-        iwindm_matrix_condt_num, &
-        l_stats_samp
+        stats_metadata_type
 
     use clip_explicit, only:  &
         clip_covar  ! Procedure(s)
@@ -189,6 +183,9 @@ module advance_windm_edsclrm_module
       order_xp2_xpyp, &
       order_wp2_wp3, &
       order_windm
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! ------------------------ Input/Output Variables ------------------------
     type (stats), dimension(ngrdcol), target, intent(inout) :: &
@@ -394,6 +391,7 @@ module advance_windm_edsclrm_module
       call compute_uv_tndcy( nz, ngrdcol, windm_edsclrm_um, & ! intent(in)
                              fcor, vm, vg,                  & ! intent(in)
                              um_forcing, l_implemented,     & ! intent(in)
+                             stats_metadata,                & ! intent(in)
                              stats_zt,                      & ! intent(inout)
                              um_tndcy )                       ! intent(out)
 
@@ -401,6 +399,7 @@ module advance_windm_edsclrm_module
       call compute_uv_tndcy( nz, ngrdcol, windm_edsclrm_vm, & ! intent(in)
                              fcor, um, ug,                  & ! intent(in)
                              vm_forcing, l_implemented,     & ! intent(in)
+                             stats_metadata,                & ! intent(in)
                              stats_zt,                      & ! intent(inout) 
                              vm_tndcy )                       ! intent(out)
 
@@ -432,6 +431,7 @@ module advance_windm_edsclrm_module
                               lhs_diff, um, um_tndcy,                 & ! intent(in)
                               rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
                               l_imp_sfc_momentum_flux, upwp(:,1),     & ! intent(in)
+                              stats_metadata,                         & ! intent(in)
                               stats_zt,                               & ! intent(inout)
                               rhs(:,:,windm_edsclrm_um) )               ! intent(out)
 
@@ -441,6 +441,7 @@ module advance_windm_edsclrm_module
                               lhs_diff, vm, vm_tndcy,                 & ! intent(in)
                               rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
                               l_imp_sfc_momentum_flux, vpwp(:,1),     & ! intent(in)
+                              stats_metadata,                         & ! intent(in)
                               stats_zt,                               & ! intent(inout)
                               rhs(:,:,windm_edsclrm_vm) )               ! intent(out)
 
@@ -497,8 +498,9 @@ module advance_windm_edsclrm_module
 
       ! Decompose and back substitute for um and vm
       nrhs = 2
-      call windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, iwindm_matrix_condt_num, & ! intent(in)
+      call windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, stats_metadata%iwindm_matrix_condt_num, & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
+                                stats_metadata,                                 & ! intent(in)
                                 stats_sfc, &                                      ! intent(inout)
                                 lhs, rhs, &                                       ! intent(inout)
                                 solution )                                        ! intent(out)
@@ -533,7 +535,7 @@ module advance_windm_edsclrm_module
       end do
       !$acc end parallel loop
 
-      if ( l_stats_samp ) then
+      if ( stats_metadata%l_stats_samp ) then
 
         !$acc update host( um, lhs_diff, lhs_ma_zt, invrs_rho_ds_zt, u_star_sqd, &
         !$acc              rho_ds_zm, wind_speed, vm )
@@ -541,22 +543,24 @@ module advance_windm_edsclrm_module
         do i = 1, ngrdcol
           ! Implicit contributions to um and vm
           call windm_edsclrm_implicit_stats( nz, windm_edsclrm_um, um(i,:),       & ! intent(in)
-                                             gr%invrs_dzt(i,:),                     & ! intent(in)
+                                             gr%invrs_dzt(i,:),                   & ! intent(in)
                                              lhs_diff(:,i,:), lhs_ma_zt(:,i,:),   & ! intent(in)
                                              invrs_rho_ds_zt(i,:), u_star_sqd(i), & ! intent(in)
                                              rho_ds_zm(i,:), wind_speed(i,:),     & ! intent(in)
                                              l_imp_sfc_momentum_flux,             & ! intent(in)
+                                             stats_metadata,                      & ! intent(in)
                                              stats_zt(i) )                          ! intent(inout)
 
           call windm_edsclrm_implicit_stats( nz, windm_edsclrm_vm, vm(i,:),       & ! intent(in)
-                                             gr%invrs_dzt(i,:),                     & ! intent(in)
+                                             gr%invrs_dzt(i,:),                   & ! intent(in)
                                              lhs_diff(:,i,:), lhs_ma_zt(:,i,:),   & ! intent(in)
                                              invrs_rho_ds_zt(i,:), u_star_sqd(i), & ! intent(in)
                                              rho_ds_zm(i,:), wind_speed(i,:),     & ! intent(in)
                                              l_imp_sfc_momentum_flux,             & ! intent(in)
+                                             stats_metadata,                      & ! intent(in)
                                              stats_zt(i) )                          ! intent(inout)
         end do
-      end if ! l_stats_samp
+      end if ! stats_metadata%l_stats_samp
   
       ! The values of um(1) and vm(1) are located below the model surface and
       ! do not affect the rest of the model.  The values of um(1) or vm(1) are
@@ -597,11 +601,11 @@ module advance_windm_edsclrm_module
           return
         end if
           
-        if ( l_stats_samp ) then
+        if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_begin_update( nz, ium_sdmp, um(i,:) / dt, & ! intent(in)
+            call stat_begin_update( nz, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )           ! intent(inout)
-            call stat_begin_update( nz, ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+            call stat_begin_update( nz, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )           ! intent(inout)
           end do
         end if
@@ -616,11 +620,11 @@ module advance_windm_edsclrm_module
                                        vm_ref(i,1:nz), vm(i,1:nz), uv_sponge_damp_profile )
         end do
 
-        if ( l_stats_samp ) then
+        if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_end_update( nz, ium_sdmp, um(i,:) / dt, & ! intent(in) 
+            call stat_end_update( nz, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in) 
                                   stats_zt(i) )           ! intent(inout)
-            call stat_end_update( nz, ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+            call stat_end_update( nz, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
           end do
         end if
@@ -661,12 +665,12 @@ module advance_windm_edsclrm_module
       if ( l_uv_nudge ) then
 
         ! Reflect nudging in budget
-        if ( l_stats_samp ) then
+        if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
           do i = 1, ngrdcol
-            call stat_begin_update( nz, ium_ndg, um(i,:) / dt, & ! intent(in)
+            call stat_begin_update( nz, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
-            call stat_begin_update( nz, ivm_ndg, vm(i,:) / dt, & ! intent(in)
+            call stat_begin_update( nz, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
           end do
         end if
@@ -680,24 +684,24 @@ module advance_windm_edsclrm_module
         end do
         !$acc end parallel loop
 
-        if ( l_stats_samp ) then
+        if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
           do i = 1, ngrdcol
-            call stat_end_update( nz, ium_ndg, um(i,:) / dt, & ! intent(in)
+            call stat_end_update( nz, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
-            call stat_end_update( nz, ivm_ndg, vm(i,:) / dt, & ! intent(in)
+            call stat_end_update( nz, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
           end do
         end if
     
       end if ! l_uv_nudge
 
-      if ( l_stats_samp ) then
+      if ( stats_metadata%l_stats_samp ) then
         !$acc update host( um_ref, vm_ref )
         do i = 1, ngrdcol
-          call stat_update_var( ium_ref, um_ref(i,:), & ! intent(in)
+          call stat_update_var( stats_metadata%ium_ref, um_ref(i,:), & ! intent(in)
                                 stats_zt(i) )         ! intent(inout)
-          call stat_update_var( ivm_ref, vm_ref(i,:), & ! intent(in)
+          call stat_update_var( stats_metadata%ivm_ref, vm_ref(i,:), & ! intent(in)
                                 stats_zt(i) )         ! intent(inout)
         end do
       end if
@@ -734,6 +738,7 @@ module advance_windm_edsclrm_module
         call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, up2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          upwp, upwp_chnge )                             ! intent(inout)
 
@@ -754,6 +759,7 @@ module advance_windm_edsclrm_module
         call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, vp2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          vpwp, vpwp_chnge )                             ! intent(inout)
       else
@@ -766,12 +772,14 @@ module advance_windm_edsclrm_module
         call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          upwp, upwp_chnge )                             ! intent(inout)
 
         call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          vpwp, vpwp_chnge )                             ! intent(inout)
       endif ! l_tke_aniso
@@ -813,6 +821,7 @@ module advance_windm_edsclrm_module
                               lhs_diff, um_pert, um_tndcy,              & ! intent(in)
                               rho_ds_zm, invrs_rho_ds_zt,               & ! intent(in)
                               l_imp_sfc_momentum_flux, upwp_pert(:,1),  & ! intent(in)
+                              stats_metadata,                           & ! intent(in)
                               stats_zt,                                 & ! intent(inout)
                               rhs(:,:,windm_edsclrm_um) )                 ! intent(out)
       
@@ -822,6 +831,7 @@ module advance_windm_edsclrm_module
                               lhs_diff, vm_pert, vm_tndcy,              & ! intent(in)
                               rho_ds_zm, invrs_rho_ds_zt,               & ! intent(in)
                               l_imp_sfc_momentum_flux, vpwp_pert(:,1),  & ! intent(in)
+                              stats_metadata,                           & ! intent(in)
                               stats_zt,                                 & ! intent(inout)
                               rhs(:,:,windm_edsclrm_vm) )                 ! intent(out)
 
@@ -878,8 +888,9 @@ module advance_windm_edsclrm_module
       
       ! Decompose and back substitute for um and vm
       nrhs = 2
-      call windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, iwindm_matrix_condt_num, & ! intent(in)
+      call windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, stats_metadata%iwindm_matrix_condt_num, & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
+                                stats_metadata,                                 & ! intent(in)
                                 stats_sfc, &                                      ! intent(in)
                                 lhs, rhs, &                                       ! intent(inout)
                                 solution )                                        ! intent(out)
@@ -974,6 +985,7 @@ module advance_windm_edsclrm_module
         call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, up2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          upwp_pert, upwp_chnge )                        ! intent(inout)
         
@@ -994,6 +1006,7 @@ module advance_windm_edsclrm_module
         call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, vp2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          vpwp_pert, vpwp_chnge )                        ! intent(inout)
       else
@@ -1006,14 +1019,16 @@ module advance_windm_edsclrm_module
         call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          upwp_pert, upwp_chnge )                        ! intent(inout)
 
         call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, wp2,              & ! intent(in)
-                         l_predict_upwp_vpwp,                       & ! intent(in)
-                         stats_zm,                                  & ! intent(inout)
-                         vpwp_pert, vpwp_chnge )                      ! intent(inout)
+                         l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
+                         l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
+                         stats_zm,                                    & ! intent(inout)
+                         vpwp_pert, vpwp_chnge )                        ! intent(inout)
         
       end if ! l_tke_aniso
     end if ! l_perturbed_wind
@@ -1104,6 +1119,7 @@ module advance_windm_edsclrm_module
                                 edsclrm_forcing(:,:,edsclr),                    & ! intent(in)
                                 rho_ds_zm, invrs_rho_ds_zt,                     & ! intent(in)
                                 l_imp_sfc_momentum_flux, wpedsclrp(:,1,edsclr), & ! intent(in)
+                                stats_metadata,                                 & ! intent(in)
                                 stats_zt,                                       & ! intent(inout)
                                 rhs(:,:,edsclr) )                                 ! intent(out)
       enddo
@@ -1154,6 +1170,7 @@ module advance_windm_edsclrm_module
       ! Decompose and back substitute for all eddy-scalar variables
       call windm_edsclrm_solve( nz, ngrdcol, gr, edsclr_dim, 0, & ! intent(in)
                                 tridiag_solve_method,           & ! intent(in)
+                                stats_metadata,                 & ! intent(in)
                                 stats_sfc,                      & ! intent(inout)
                                 lhs, rhs,                       & ! intent(inout)
                                 solution )                        ! intent(out)
@@ -1290,6 +1307,7 @@ module advance_windm_edsclrm_module
   !=============================================================================
   subroutine windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, ixm_matrix_condt_num, &
                                   tridiag_solve_method, &
+                                  stats_metadata, &
                                   stats_sfc, & 
                                   lhs, rhs, solution )
 
@@ -1794,8 +1812,8 @@ module advance_windm_edsclrm_module
     use matrix_solver_wrapper, only:  & 
         tridiag_solve ! Procedure(s)
 
-    use stats_variables, only: & 
-        l_stats_samp
+    use stats_variables, only: &
+        stats_metadata_type
 
     use stats_type_utilities, only:  &
         stat_update_var_pt  ! Subroutine
@@ -1819,7 +1837,8 @@ module advance_windm_edsclrm_module
       nz, &
       ngrdcol
     
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
 
     integer, intent(in) :: &
       nrhs ! Number of right-hand side (explicit) vectors & Number of solution vectors.
@@ -1829,6 +1848,9 @@ module advance_windm_edsclrm_module
 
     integer, intent(in) :: &
       tridiag_solve_method  ! Specifier for method to solve tridiagonal systems
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! ------------------------ Inout variables ------------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -1853,7 +1875,7 @@ module advance_windm_edsclrm_module
     ! ------------------------ Begin Code ------------------------
 
     ! Solve tridiagonal system for xm.
-    if ( l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
+    if ( stats_metadata%l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
 
       call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in) 
                           ngrdcol, nz, nrhs,                      & ! Intent(in) 
@@ -1877,13 +1899,14 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_solve
 
   !=============================================================================
-  subroutine windm_edsclrm_implicit_stats( nz, solve_type, xm, & !intent(in)
+  subroutine windm_edsclrm_implicit_stats( nz, solve_type, xm, &
                                            invrs_dzt, & 
                                            lhs_diff, lhs_ma_zt, & 
                                            invrs_rho_ds_zt, u_star_sqd,&
                                            rho_ds_zm, wind_speed, &
                                            l_imp_sfc_momentum_flux, &
-                                           stats_zt ) ! intent(inout)
+                                           stats_metadata, &
+                                           stats_zt ) 
 
     ! Description:
     ! Compute implicit contributions to um and vm
@@ -1891,15 +1914,9 @@ module advance_windm_edsclrm_module
     ! References:
     ! None
     !-----------------------------------------------------------------------
-
-    use stats_variables, only: & 
-        ium_ma,  & ! Variables
-        ium_ta,  & 
-        ivm_ma,  &
-        ivm_ta
         
     use constants_clubb, only: &
-      zero
+        zero
 
     use stats_type_utilities, only:  &
         stat_end_update_pt,  & ! Subroutines
@@ -1908,14 +1925,15 @@ module advance_windm_edsclrm_module
     use clubb_precision, only:  & 
         core_rknd
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
+
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
-    type (stats), target, intent(inout) :: &
-      stats_zt
-
-    ! Input variables
+    !---------------------- Input Variables ----------------------
     integer, intent(in) :: &
       nz
     
@@ -1942,7 +1960,14 @@ module advance_windm_edsclrm_module
     logical, intent(in) :: &
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
-    ! Local variables
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !---------------------- InOut variables ----------------------
+    type (stats), target, intent(inout) :: &
+      stats_zt
+
+    !---------------------- Local variables ----------------------
     integer :: k, kp1, km1 ! Array indices
     
     real( kind = core_rknd ), dimension(nz) :: &
@@ -1951,14 +1976,16 @@ module advance_windm_edsclrm_module
     ! Budget indices
     integer :: ixm_ma, ixm_ta
 
+    !---------------------- Begin Code ----------------------
+
     select case ( solve_type )
     case ( windm_edsclrm_um )
-      ixm_ma = ium_ma
-      ixm_ta = ium_ta
+      ixm_ma = stats_metadata%ium_ma
+      ixm_ta = stats_metadata%ium_ta
 
     case ( windm_edsclrm_vm )
-      ixm_ma = ivm_ma
-      ixm_ta = ivm_ta
+      ixm_ma = stats_metadata%ivm_ma
+      ixm_ta = stats_metadata%ivm_ta
 
     case default
       ixm_ma = 0
@@ -1975,7 +2002,7 @@ module advance_windm_edsclrm_module
       ! xm term ta is modified at level 2 to include the effects of the
       ! surface flux.  In this case, this effects the implicit portion of
       ! the term, which handles the main diagonal for the turbulent advection term 
-      if ( ium_ta + ivm_ta > 0 ) then
+      if ( stats_metadata%ium_ta + stats_metadata%ivm_ta > 0 ) then
         imp_sfc_flux(2) =  - invrs_rho_ds_zt(2) * invrs_dzt(2) &
                              * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
       endif
@@ -2038,6 +2065,7 @@ module advance_windm_edsclrm_module
   subroutine compute_uv_tndcy( nz, ngrdcol, solve_type, &
                                fcor, perp_wind_m, perp_wind_g, &
                                xm_forcing, l_implemented, &
+                               stats_metadata, & 
                                stats_zt, & 
                                xm_tndcy )
 
@@ -2074,14 +2102,8 @@ module advance_windm_edsclrm_module
     use stats_type_utilities, only: & 
         stat_update_var
 
-    use stats_variables, only:      &
-        ium_gf, & 
-        ium_cf, & 
-        ivm_gf, & 
-        ivm_cf, & 
-        ium_f,  &
-        ivm_f,  &
-        l_stats_samp
+    use stats_variables, only: &
+        stats_metadata_type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -2108,6 +2130,9 @@ module advance_windm_edsclrm_module
 
     logical, intent(in) :: & 
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
       
     ! -------------------------- InOut Variables --------------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -2141,9 +2166,9 @@ module advance_windm_edsclrm_module
 
       case ( windm_edsclrm_um )
 
-        ixm_gf = ium_gf
-        ixm_cf = ium_cf
-        ixm_f  = ium_f
+        ixm_gf = stats_metadata%ium_gf
+        ixm_cf = stats_metadata%ium_cf
+        ixm_f  = stats_metadata%ium_f
         
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
@@ -2163,9 +2188,9 @@ module advance_windm_edsclrm_module
 
       case ( windm_edsclrm_vm )
 
-        ixm_gf = ivm_gf
-        ixm_cf = ivm_cf
-        ixm_f  = ivm_f
+        ixm_gf = stats_metadata%ivm_gf
+        ixm_cf = stats_metadata%ivm_cf
+        ixm_f  = stats_metadata%ivm_f
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
@@ -2208,7 +2233,7 @@ module advance_windm_edsclrm_module
       end do
       !$acc end parallel loop
 
-      if ( l_stats_samp ) then
+      if ( stats_metadata%l_stats_samp ) then
 
         !$acc update host( xm_gf, xm_cf, xm_forcing )
 
@@ -2377,6 +2402,7 @@ module advance_windm_edsclrm_module
                                 lhs_diff, xm, xm_tndcy,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_imp_sfc_momentum_flux, xpwp_sfc, &
+                                stats_metadata, &
                                 stats_zt, &
                                 rhs )
     ! Description:
@@ -2410,9 +2436,7 @@ module advance_windm_edsclrm_module
         diffusion_zt_lhs    ! Procedure(s)
 
     use stats_variables, only: &
-        ium_ta,  & ! Variable(s)
-        ivm_ta,  &
-        l_stats_samp
+        stats_metadata_type
 
     use stats_type_utilities, only: &
         stat_begin_update_pt,  & ! Procedure(s)
@@ -2430,7 +2454,8 @@ module advance_windm_edsclrm_module
       nz, &
       ngrdcol
     
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
     
     integer, intent(in) :: &
       solve_type ! Description of what is being solved for
@@ -2453,6 +2478,9 @@ module advance_windm_edsclrm_module
     logical, intent(in) :: &
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
     !------------------- Inout Variable -------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zt
@@ -2474,9 +2502,9 @@ module advance_windm_edsclrm_module
 
     select case ( solve_type )
       case ( windm_edsclrm_um )
-        ixm_ta = ium_ta
+        ixm_ta = stats_metadata%ium_ta
       case ( windm_edsclrm_vm )
-        ixm_ta = ivm_ta
+        ixm_ta = stats_metadata%ivm_ta
       case default  ! Eddy scalars
         ixm_ta = 0
     end select
@@ -2513,7 +2541,7 @@ module advance_windm_edsclrm_module
     end do
     !$acc end parallel loop
 
-    if ( l_stats_samp .and. ixm_ta > 0 ) then
+    if ( stats_metadata%l_stats_samp .and. ixm_ta > 0 ) then
 
       !$acc update host( lhs_diff, xm )
       
@@ -2555,7 +2583,7 @@ module advance_windm_edsclrm_module
       end do
       !$acc end parallel loop
 
-      if ( l_stats_samp .and. ixm_ta > 0 ) then
+      if ( stats_metadata%l_stats_samp .and. ixm_ta > 0 ) then
 
         !$acc update host( invrs_rho_ds_zt, rho_ds_zm, xpwp_sfc )
       

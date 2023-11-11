@@ -15,7 +15,7 @@ module latin_hypercube_driver_module
 
   private ! Default scope
 
-#ifdef SILHS
+#ifdef SILHS 
   public :: latin_hypercube_2D_output, &
     latin_hypercube_2D_close, stats_accumulate_lh, generate_silhs_sample, &
     copy_X_nl_into_hydromet_all_pts, clip_transform_silhs_output
@@ -25,12 +25,12 @@ module latin_hypercube_driver_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine generate_silhs_sample &
-             ( iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! intent(in)
+  subroutine generate_silhs_sample( &
+               iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! intent(in)
                l_calc_weights_all_levs_itime, &                            ! intent(in)
                pdf_params, delta_zm, Lscale, &                             ! intent(in)
                lh_seed, &                                                  ! intent(in)
-!              rho_ds_zt, &
+               !rho_ds_zt, &
                mu1, mu2, sigma1, sigma2, &                                 ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                 ! intent(in)
                precip_fracs, silhs_config_flags, &                         ! intent(in)
@@ -39,6 +39,7 @@ module latin_hypercube_driver_module
                l_tke_aniso, &                                              ! intent(in)
                l_standard_term_ta, &                                       ! intent(in)
                vert_decorr_coef, &                                         ! intent(in)
+               stats_metadata, &                                           ! intent(in)
                stats_lh_zt, stats_lh_sfc, &                                ! intent(inout)
                X_nl_all_levs, X_mixt_comp_all_levs, &                      ! intent(out)
                lh_sample_point_weights )                                   ! intent(out)
@@ -93,18 +94,14 @@ module latin_hypercube_driver_module
       vertical_avg  ! Procedure
       
     use stats_variables, only: &
-      l_stats_samp      ! Variable(s)
-      
+      stats_metadata_type
+
     use mt95, only: &
       genrand_intg  ! Type
 
     use stats_type, only: stats ! Type 
 
     implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_lh_zt, &
-      stats_lh_sfc
 
     ! External
     intrinsic :: allocated, mod, maxloc, epsilon, transpose
@@ -177,6 +174,14 @@ module latin_hypercube_driver_module
 
     real( kind = core_rknd ), intent(in) :: &
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    ! ---------------- InOut Variables ----------------
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt, &
+      stats_lh_sfc
     
     ! ---------------- Output Variables ----------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nz,pdf_dim) :: &
@@ -392,13 +397,14 @@ module latin_hypercube_driver_module
            X_nl_all_levs )                                       ! Out
      
     
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
       !$acc wait
       !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights,X_mixt_comp_all_levs) wait
       call stats_accumulate_uniform_lh( nz, num_samples, ngrdcol, l_in_precip(:,:,:), &
                                         X_mixt_comp_all_levs(:,:,:), &
                                         X_u_all_levs(:,:,:,iiPDF_chi), pdf_params, &
                                         lh_sample_point_weights(:,:,:), k_lh_start(:), &
+                                        stats_metadata, &
                                         stats_lh_zt, stats_lh_sfc )
     end if
 
@@ -412,6 +418,7 @@ module latin_hypercube_driver_module
         call output_2D_lognormal_dist_file( nz, num_samples, pdf_dim, &
                                             real(X_nl_all_levs(i,:,:,:), kind = stat_rknd), &
                                             clubb_params, &
+                                            stats_metadata, &
                                             l_uv_nudge, &
                                             l_tke_aniso, &
                                             l_standard_term_ta )
@@ -427,6 +434,7 @@ module latin_hypercube_driver_module
                                           X_mixt_comp_all_levs(i,:,:), &
                                           lh_sample_point_weights(i,:,:), &
                                           clubb_params, &
+                                          stats_metadata, &
                                           l_uv_nudge, &
                                           l_tke_aniso, &
                                           l_standard_term_ta )
@@ -1923,12 +1931,13 @@ module latin_hypercube_driver_module
   end subroutine compute_arb_overlap
 
 !-------------------------------------------------------------------------------
-  subroutine stats_accumulate_lh &
-             ( gr, nz, num_samples, pdf_dim, rho_ds_zt, &
+  subroutine stats_accumulate_lh( &
+               gr, nz, num_samples, pdf_dim, rho_ds_zt, &
                lh_sample_point_weights, X_nl_all_levs, &
                lh_rt_clipped, lh_thl_clipped, & 
                lh_rc_clipped, lh_rv_clipped, & 
                lh_Nc_clipped, &
+               stats_metadata, &
                stats_lh_zt, stats_lh_sfc )
 
 ! Description:
@@ -1942,42 +1951,6 @@ module latin_hypercube_driver_module
     use parameters_model, only: hydromet_dim ! Variable
 
     use grid_class, only: grid
-
-    use stats_variables, only: &
-      l_stats_samp, & ! Variable(s)
-      ilh_rrm, &
-      ilh_Nrm, &
-      ilh_rim, &
-      ilh_Nim, &
-      ilh_rsm, &
-      ilh_Nsm, &
-      ilh_rgm, &
-      ilh_Ngm, &
-      ilh_thlm, &
-      ilh_rcm, &
-      ilh_Ncm, &
-      ilh_Ncnm, &
-      ilh_rvm, &
-      ilh_wm, &
-      ilh_cloud_frac, &
-      ilh_cloud_frac_unweighted, &
-      ilh_chi, &
-      ilh_chip2, &
-      ilh_eta
-
-    use stats_variables, only: &
-      ilh_wp2_zt, &  ! Variable(s)
-      ilh_Nrp2_zt, &
-      ilh_Ncp2_zt, &
-      ilh_Ncnp2_zt, &
-      ilh_rcp2_zt, &
-      ilh_rtp2_zt, &
-      ilh_thlp2_zt, &
-      ilh_rrp2_zt, &
-      ilh_vwp, &
-      ilh_lwp, &
-      ilh_sample_weights_sum, &
-      ilh_sample_weights_avg
 
     use math_utilities, only: & ! Procedure(s)
       compute_sample_mean, & ! Procedure(s)
@@ -2008,20 +1981,21 @@ module latin_hypercube_driver_module
     use clubb_precision, only: & 
       core_rknd    ! Constant
 
-   use advance_helper_module, only: &
+    use advance_helper_module, only: &
       vertical_integral ! Procedure(s)
 
-   use stats_type, only: stats ! Type
+    use stats_type, only: &
+      stats ! Type
+
+    use stats_variables, only: &
+      stats_metadata_type
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_lh_zt, &
-      stats_lh_sfc
 
+    !-------------------------- Input Variables --------------------------
     type (grid), target, intent(in) :: gr
 
-    ! Input Variables
     integer, intent(in) :: &
       pdf_dim,     & ! Number of variables to sample
       num_samples,   & ! Number of calls to microphysics per timestep (normally=2)
@@ -2035,7 +2009,7 @@ module latin_hypercube_driver_module
 
     real( kind = core_rknd ), intent(in), dimension(num_samples,nz,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-      
+
     real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
@@ -2043,7 +2017,15 @@ module latin_hypercube_driver_module
       lh_rv_clipped,  & ! rv generated from silhs sample points
       lh_Nc_clipped     ! Nc generated from silhs sample points
 
-    ! Local variables
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !-------------------------- InOut Variables --------------------------
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt, &
+      stats_lh_sfc
+
+    !-------------------------- Local variables --------------------------
     real( kind = core_rknd ), dimension(num_samples,nz) :: &
       Ncn_all_points ! Cloud nuclei conc. for all levs.; Nc=Ncn*H(chi) [#/kg]
 
@@ -2073,91 +2055,92 @@ module latin_hypercube_driver_module
       lh_eta,   & ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
       lh_chip2           ! Average value of the variance of the LH est. of chi       [kg/kg]
 
-
     real(kind=core_rknd) :: xtmp
 
     integer :: sample, ivar, k
 
-    ! ---- Begin Code ----
-
-    if ( l_stats_samp ) then
+    !-------------------------- Begin Code --------------------------
+    if ( stats_metadata%l_stats_samp ) then
 
       ! For all cases where l_lh_importance_sampling is false, the weights
       ! will be 1 (all points equally weighted)
 
-      if ( ilh_rcm + ilh_rcp2_zt + ilh_lwp > 0 ) then
+      if ( stats_metadata%ilh_rcm + stats_metadata%ilh_rcp2_zt + stats_metadata%ilh_lwp > 0 ) then
         lh_rcm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                       lh_rc_clipped )
         ! Switch back to using stat_update_var once the code is generalized
         ! to pass in the number of vertical levels.
-!        call stat_update_var( ilh_rcm, lh_rcm, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_rcm, lh_rcm, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_rcm, k, lh_rcm(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_rcm, k, lh_rcm(k), stats_lh_zt )
         enddo ! k = 1, nz
 
-        if ( ilh_lwp > 0 ) then
+        if ( stats_metadata%ilh_lwp > 0 ) then
           xtmp &
           = vertical_integral &
                ( (nz - 2 + 1), rho_ds_zt(2:nz), &
                  lh_rcm(2:nz), gr%dzt(1,2:nz) )
 
-          call stat_update_var_pt( ilh_lwp, 1, xtmp, stats_lh_sfc )
+          call stat_update_var_pt( stats_metadata%ilh_lwp, 1, xtmp, stats_lh_sfc )
         end if
       end if
 
-      if ( ilh_sample_weights_sum > 0 ) then
+      if ( stats_metadata%ilh_sample_weights_sum > 0 ) then
           xtmp = sum(lh_sample_point_weights(:,:))
-          call stat_update_var_pt( ilh_sample_weights_sum, 1, xtmp, stats_lh_sfc )
+          call stat_update_var_pt( stats_metadata%ilh_sample_weights_sum, 1, xtmp, stats_lh_sfc )
       end if
       
-      if ( ilh_sample_weights_avg > 0 ) then
+      if ( stats_metadata%ilh_sample_weights_avg > 0 ) then
           xtmp = sum(lh_sample_point_weights(:,:)) / real( num_samples*nz, kind = core_rknd )
-          call stat_update_var_pt( ilh_sample_weights_avg, 1, xtmp, stats_lh_sfc )
+          call stat_update_var_pt( stats_metadata%ilh_sample_weights_avg, 1, xtmp, stats_lh_sfc )
       end if
         
-      if ( ilh_thlm + ilh_thlp2_zt > 0 ) then
+      if ( stats_metadata%ilh_thlm + stats_metadata%ilh_thlp2_zt > 0 ) then
         lh_thlm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                        real( lh_thl_clipped, kind = core_rknd ) )
         ! Switch back to using stat_update_var once the code is generalized
         ! to pass in the number of vertical levels.
-!        call stat_update_var( ilh_thlm, lh_thlm, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_thlm, lh_thlm, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_thlm, k, lh_thlm(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_thlm, k, lh_thlm(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
-      if ( ilh_rvm + ilh_rtp2_zt > 0 ) then
+      if ( stats_metadata%ilh_rvm + stats_metadata%ilh_rtp2_zt > 0 ) then
         lh_rvm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                       lh_rv_clipped )
         ! Switch back to using stat_update_var once the code is generalized
         ! to pass in the number of vertical levels.
-!        call stat_update_var( ilh_rvm, lh_rvm, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_rvm, lh_rvm, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_rvm, k, lh_rvm(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_rvm, k, lh_rvm(k), stats_lh_zt )
         enddo ! k = 1, nz
-        if ( ilh_vwp > 0 ) then
+        if ( stats_metadata%ilh_vwp > 0 ) then
           xtmp &
           = vertical_integral &
                ( (nz - 2 + 1), rho_ds_zt(2:nz), &
                  lh_rvm(2:nz), gr%dzt(1,2:nz) )
 
-          call stat_update_var_pt( ilh_vwp, 1, xtmp, stats_lh_sfc )
+          call stat_update_var_pt( stats_metadata%ilh_vwp, 1, xtmp, stats_lh_sfc )
         end if
       end if
 
-      if ( ilh_wm + ilh_wp2_zt > 0 ) then
+      if ( stats_metadata%ilh_wm + stats_metadata%ilh_wp2_zt > 0 ) then
         lh_wm  = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                       real( X_nl_all_levs(:,:,iiPDF_w), kind = core_rknd) )
         ! Switch back to using stat_update_var once the code is generalized
         ! to pass in the number of vertical levels.
-!        call stat_update_var( ilh_wm, lh_wm, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_wm, lh_wm, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_wm, k, lh_wm(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_wm, k, lh_wm(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
-      if ( ilh_rrm + ilh_Nrm + ilh_rim + ilh_Nim + ilh_rsm + ilh_Nsm + &
-           ilh_rgm + ilh_Ngm + ilh_Ncnm + ilh_Ncm > 0 ) then
+      if (   stats_metadata%ilh_rrm  + stats_metadata%ilh_Nrm &
+           + stats_metadata%ilh_rim  + stats_metadata%ilh_Nim &
+           + stats_metadata%ilh_rsm  + stats_metadata%ilh_Nsm &
+           + stats_metadata%ilh_rgm  + stats_metadata%ilh_Ngm &
+           + stats_metadata%ilh_Ncnm + stats_metadata%ilh_Ncm > 0 ) then
 
         lh_hydromet = 0._core_rknd
         call copy_X_nl_into_hydromet_all_pts( nz, pdf_dim, num_samples, & ! In
@@ -2179,26 +2162,26 @@ module latin_hypercube_driver_module
 
       ! Switch back to using stat_update_var once the code is generalized
       ! to pass in the number of vertical levels.
-      if ( ilh_Ncnm > 0 ) then
+      if ( stats_metadata%ilh_Ncnm > 0 ) then
         lh_Ncnm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                        Ncn_all_points(:,:) )
-!        call stat_update_var( ilh_Ncnm, lh_Ncnm, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_Ncnm, lh_Ncnm, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_Ncnm, k, lh_Ncnm(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_Ncnm, k, lh_Ncnm(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
-      if ( ilh_Ncm > 0 ) then
+      if ( stats_metadata%ilh_Ncm > 0 ) then
         lh_Ncm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                       lh_Nc_clipped(:,:) )
-!        call stat_update_var( ilh_Ncm, lh_Ncm, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_Ncm, lh_Ncm, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_Ncm, k, lh_Ncm(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_Ncm, k, lh_Ncm(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Latin hypercube estimate of cloud fraction
-      if ( ilh_cloud_frac > 0 ) then
+      if ( stats_metadata%ilh_cloud_frac > 0 ) then
         lh_cloud_frac(:) = zero
         do sample = 1, num_samples
           where ( X_nl_all_levs(sample,:,iiPDF_chi) > zero )
@@ -2207,15 +2190,15 @@ module latin_hypercube_driver_module
         end do
         lh_cloud_frac(:) = lh_cloud_frac(:) / real( num_samples, kind = core_rknd )
 
-!        call stat_update_var( ilh_cloud_frac, lh_cloud_frac, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_cloud_frac, lh_cloud_frac, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_cloud_frac, k, lh_cloud_frac(k), &
+           call stat_update_var_pt( stats_metadata%ilh_cloud_frac, k, lh_cloud_frac(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Sample of lh_cloud_frac that is not weighted
-      if ( ilh_cloud_frac_unweighted > 0 ) then
+      if ( stats_metadata%ilh_cloud_frac_unweighted > 0 ) then
         lh_cloud_frac(:) = zero
         do sample = 1, num_samples
           where ( X_nl_all_levs(sample,:,iiPDF_chi) > zero )
@@ -2224,139 +2207,139 @@ module latin_hypercube_driver_module
         end do
         lh_cloud_frac(:) = lh_cloud_frac(:) / real( num_samples, kind = core_rknd )
 
-!        call stat_update_var( ilh_cloud_frac_unweighted, lh_cloud_frac, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_cloud_frac_unweighted, lh_cloud_frac, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_cloud_frac_unweighted, k, &
+           call stat_update_var_pt( stats_metadata%ilh_cloud_frac_unweighted, k, &
                                     lh_cloud_frac(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Latin hypercube estimate of chi
-      if ( ilh_chi > 0 ) then
+      if ( stats_metadata%ilh_chi > 0 ) then
         lh_chi(1:nz) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                X_nl_all_levs(1:num_samples, 1:nz, iiPDF_chi) )
-!        call stat_update_var( ilh_chi, lh_chi, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_chi, lh_chi, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_chi, k, lh_chi(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_chi, k, lh_chi(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Latin hypercube estimate of variance of chi
-      if ( ilh_chip2 > 0 ) then
+      if ( stats_metadata%ilh_chip2 > 0 ) then
         lh_chip2(1:nz) &
         = compute_sample_variance( nz, num_samples, &
                                    X_nl_all_levs(:,:,iiPDF_chi), &
                                    lh_sample_point_weights, lh_chi(1:nz) )
-!        call stat_update_var( ilh_chip2, lh_chip2, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_chip2, lh_chip2, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_chip2, k, lh_chip2(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_chip2, k, lh_chip2(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Latin hypercube estimate of eta
-      if ( ilh_eta > 0 ) then
+      if ( stats_metadata%ilh_eta > 0 ) then
         lh_eta(1:nz) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                X_nl_all_levs(1:num_samples, 1:nz, iiPDF_eta) )
 
-!        call stat_update_var( ilh_eta, lh_eta, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_eta, lh_eta, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_eta, k, lh_eta(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_eta, k, lh_eta(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
-      if ( ilh_wp2_zt > 0 ) then
+      if ( stats_metadata%ilh_wp2_zt > 0 ) then
         ! Compute the variance of vertical velocity
         lh_wp2_zt = compute_sample_variance( nz, num_samples, &
                                              X_nl_all_levs(:,:,iiPDF_w), &
                                              lh_sample_point_weights, lh_wm )
-!        call stat_update_var( ilh_wp2_zt, lh_wp2_zt, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_wp2_zt, lh_wp2_zt, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_wp2_zt, k, lh_wp2_zt(k), stats_lh_zt )
+           call stat_update_var_pt( stats_metadata%ilh_wp2_zt, k, lh_wp2_zt(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
-      if ( ilh_rcp2_zt  > 0 ) then
+      if ( stats_metadata%ilh_rcp2_zt  > 0 ) then
         ! Compute the variance of cloud water mixing ratio
         lh_rcp2_zt = compute_sample_variance &
                      ( nz, num_samples, lh_rc_clipped, &
                        lh_sample_point_weights, lh_rcm )
-!        call stat_update_var( ilh_rcp2_zt, lh_rcp2_zt, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_rcp2_zt, lh_rcp2_zt, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_rcp2_zt, k, lh_rcp2_zt(k), &
+           call stat_update_var_pt( stats_metadata%ilh_rcp2_zt, k, lh_rcp2_zt(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
-      if ( ilh_rtp2_zt > 0 ) then
+      if ( stats_metadata%ilh_rtp2_zt > 0 ) then
         ! Compute the variance of total water
         lh_rtp2_zt = compute_sample_variance &
                      ( nz, num_samples, &
                        lh_rt_clipped, lh_sample_point_weights, &
                        lh_rvm+lh_rcm )
-!        call stat_update_var( ilh_rtp2_zt, lh_rtp2_zt, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_rtp2_zt, lh_rtp2_zt, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_rtp2_zt, k, lh_rtp2_zt(k), &
+           call stat_update_var_pt( stats_metadata%ilh_rtp2_zt, k, lh_rtp2_zt(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
-      if ( ilh_thlp2_zt > 0 ) then
+      if ( stats_metadata%ilh_thlp2_zt > 0 ) then
         ! Compute the variance of liquid potential temperature
         lh_thlp2_zt = compute_sample_variance( nz, num_samples, &
                         lh_thl_clipped, lh_sample_point_weights, &
                         lh_thlm )
-!        call stat_update_var( ilh_thlp2_zt, lh_thlp2_zt, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_thlp2_zt, lh_thlp2_zt, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_thlp2_zt, k, lh_thlp2_zt(k), &
+           call stat_update_var_pt( stats_metadata%ilh_thlp2_zt, k, lh_thlp2_zt(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Compute the variance of rain water mixing ratio
-      if ( iirr > 0 .and. ilh_rrp2_zt > 0 ) then
+      if ( iirr > 0 .and. stats_metadata%ilh_rrp2_zt > 0 ) then
         lh_rrp2_zt = compute_sample_variance &
                         ( nz, num_samples, hydromet_all_points(:,:,iirr), &
                           lh_sample_point_weights, lh_hydromet(:,iirr) )
-!        call stat_update_var( ilh_rrp2_zt, lh_rrp2_zt, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_rrp2_zt, lh_rrp2_zt, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_rrp2_zt, k, lh_rrp2_zt(k), &
+           call stat_update_var_pt( stats_metadata%ilh_rrp2_zt, k, lh_rrp2_zt(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Compute the variance of cloud nuclei concentration (simplifed)
-      if ( iiPDF_Ncn > 0 .and. ilh_Ncnp2_zt > 0 ) then
+      if ( iiPDF_Ncn > 0 .and. stats_metadata%ilh_Ncnp2_zt > 0 ) then
         lh_Ncnp2_zt = compute_sample_variance &
                       ( nz, num_samples, Ncn_all_points(:,:), &
                         lh_sample_point_weights, lh_Ncnm(:) )
-!        call stat_update_var( ilh_Ncnp2_zt, lh_Ncnp2_zt, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_Ncnp2_zt, lh_Ncnp2_zt, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_Ncnp2_zt, k, lh_Ncnp2_zt(k), &
+           call stat_update_var_pt( stats_metadata%ilh_Ncnp2_zt, k, lh_Ncnp2_zt(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Compute the variance of cloud droplet concentration
-      if ( ilh_Ncp2_zt > 0 ) then
+      if ( stats_metadata%ilh_Ncp2_zt > 0 ) then
         lh_Ncp2_zt = compute_sample_variance &
                      ( nz, num_samples, lh_Nc_clipped(:,:), &
                        lh_sample_point_weights, lh_Ncm(:) )
-!        call stat_update_var( ilh_Ncp2_zt, lh_Ncp2_zt, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_Ncp2_zt, lh_Ncp2_zt, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_Ncp2_zt, k, lh_Ncp2_zt(k), &
+           call stat_update_var_pt( stats_metadata%ilh_Ncp2_zt, k, lh_Ncp2_zt(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Compute the variance of rain droplet number concentration
-      if ( iiNr > 0 .and. ilh_Nrp2_zt > 0 ) then
+      if ( iiNr > 0 .and. stats_metadata%ilh_Nrp2_zt > 0 ) then
         lh_Nrp2_zt = compute_sample_variance( nz, num_samples, hydromet_all_points(:,:,iiNr),&
                                               lh_sample_point_weights, lh_hydromet(:,iiNr) )
-!        call stat_update_var( ilh_Nrp2_zt, lh_Nrp2_zt, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_Nrp2_zt, lh_Nrp2_zt, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_Nrp2_zt, k, lh_Nrp2_zt(k), &
+           call stat_update_var_pt( stats_metadata%ilh_Nrp2_zt, k, lh_Nrp2_zt(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
@@ -2364,63 +2347,63 @@ module latin_hypercube_driver_module
       ! Averages of points being fed into the microphysics
       ! These are for diagnostic purposes, and are not needed for anything
       if ( iirr > 0 ) then
-!        call stat_update_var( ilh_rrm, lh_hydromet(:,iirr), stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_rrm, lh_hydromet(:,iirr), stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_rrm, k, lh_hydromet(k,iirr), &
+           call stat_update_var_pt( stats_metadata%ilh_rrm, k, lh_hydromet(k,iirr), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
       if ( iiNr > 0 ) then
-!        call stat_update_var( ilh_Nrm, lh_hydromet(:,iiNr), stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_Nrm, lh_hydromet(:,iiNr), stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_Nrm, k, lh_hydromet(k,iiNr), &
+           call stat_update_var_pt( stats_metadata%ilh_Nrm, k, lh_hydromet(k,iiNr), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
       if ( iiri > 0 ) then
-!        call stat_update_var( ilh_rim, lh_hydromet(:,iiri), stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_rim, lh_hydromet(:,iiri), stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_rim, k, lh_hydromet(k,iiri), &
+           call stat_update_var_pt( stats_metadata%ilh_rim, k, lh_hydromet(k,iiri), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
       if ( iiNi > 0 ) then
-!        call stat_update_var( ilh_Nim, lh_hydromet(:,iiNi), stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_Nim, lh_hydromet(:,iiNi), stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_Nim, k, lh_hydromet(k,iiNi), &
+           call stat_update_var_pt( stats_metadata%ilh_Nim, k, lh_hydromet(k,iiNi), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
       if ( iirs > 0 ) then
-!        call stat_update_var( ilh_rsm, lh_hydromet(:,iirs), stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_rsm, lh_hydromet(:,iirs), stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_rsm, k, lh_hydromet(k,iirs), &
+           call stat_update_var_pt( stats_metadata%ilh_rsm, k, lh_hydromet(k,iirs), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
       if ( iiNs > 0 ) then
-!        call stat_update_var( ilh_Nsm, lh_hydromet(:,iiNs), stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_Nsm, lh_hydromet(:,iiNs), stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_Nsm, k, lh_hydromet(k,iiNs), &
+           call stat_update_var_pt( stats_metadata%ilh_Nsm, k, lh_hydromet(k,iiNs), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
       if ( iirg > 0 ) then
-!        call stat_update_var( ilh_rgm, lh_hydromet(:,iirg), stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_rgm, lh_hydromet(:,iirg), stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_rgm, k, lh_hydromet(k,iirg), &
+           call stat_update_var_pt( stats_metadata%ilh_rgm, k, lh_hydromet(k,iirg), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
       if ( iiNg > 0 ) then
-!        call stat_update_var( ilh_Ngm, lh_hydromet(:,iiNg), stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_Ngm, lh_hydromet(:,iiNg), stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_Ngm, k, lh_hydromet(k,iiNg), &
+           call stat_update_var_pt( stats_metadata%ilh_Ngm, k, lh_hydromet(k,iiNg), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
-    end if ! l_stats_samp
+    end if ! stats_metadata%l_stats_samp
 
     return
   end subroutine stats_accumulate_lh
@@ -2429,6 +2412,7 @@ module latin_hypercube_driver_module
   subroutine stats_accumulate_uniform_lh( nz, num_samples, ngrdcol, l_in_precip_all_levs, &
                                           X_mixt_comp_all_levs, X_u_chi_all_levs, pdf_params, &
                                           lh_sample_point_weights, k_lh_start, &
+                                          stats_metadata, &
                                           stats_lh_zt, stats_lh_sfc )
 
   ! Description:
@@ -2443,16 +2427,8 @@ module latin_hypercube_driver_module
       core_rknd            ! Constant
 
     use stats_type_utilities, only: &
-!      stat_update_var,   & ! Procedure(s)
+      !stat_update_var,   & ! Procedure(s)
       stat_update_var_pt
-
-    use stats_variables, only: &
-      ilh_precip_frac, &  ! Variable(s)
-      ilh_mixt_frac, &
-      ilh_precip_frac_unweighted, &
-      ilh_mixt_frac_unweighted, &
-      ik_lh_start, &
-      ilh_samp_frac_category
 
     use math_utilities, only: &
       compute_sample_mean ! Procedure
@@ -2469,15 +2445,15 @@ module latin_hypercube_driver_module
       num_importance_categories, & ! Constant
       define_importance_categories
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+      stats ! Type
+
+    use stats_variables, only: &
+      stats_metadata_type
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_lh_zt, &
-      stats_lh_sfc
-
-    ! Input Variables
+    !------------------------------- Input Variables -------------------------------
     integer, intent(in) :: &
       nz,          & ! Number of vertical levels
       num_samples, & ! Number of SILHS sample points
@@ -2503,8 +2479,16 @@ module latin_hypercube_driver_module
     integer, dimension(ngrdcol), intent(in) :: &
       k_lh_start           ! Vertical level for sampling preferentially within       [-]
                            ! cloud
+    
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
-    ! Local Variables
+    !------------------------------- InOut Variables -------------------------------
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt, &
+      stats_lh_sfc
+
+    !------------------------------- Local Variables -------------------------------
     type(importance_category_type), dimension(num_importance_categories) :: &
       importance_categories
 
@@ -2516,7 +2500,7 @@ module latin_hypercube_driver_module
       int_in_precip, & ! '1' for samples in precipitation, '0' otherwise
       int_mixt_comp    ! '1' for samples in the first PDF component, '0' otherwise
 
-    real( kind = core_rknd ), dimension(num_samples) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz) :: &
       one_weights
 
     real( kind = core_rknd ), dimension(nz,num_importance_categories) :: &
@@ -2533,9 +2517,8 @@ module latin_hypercube_driver_module
       category_counts  ! Count of number of samples in each importance category
 
     integer :: k, isample, icategory, i
-  !-----------------------------------------------------------------------
 
-    !----- Begin Code -----
+    !------------------------------- Begin Code -------------------------------
     
     do i = 1, ngrdcol
 
@@ -2543,7 +2526,7 @@ module latin_hypercube_driver_module
       ! to pass in the number of vertical levels.
 
       ! Estimate of lh_precip_frac
-      if ( ilh_precip_frac > 0 ) then
+      if ( stats_metadata%ilh_precip_frac > 0 ) then
         where ( l_in_precip_all_levs(i,:,:) )
           int_in_precip = 1.0_core_rknd
         else where
@@ -2551,15 +2534,15 @@ module latin_hypercube_driver_module
         end where
         lh_precip_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights(i,:,:), &
                                                  int_in_precip )
-  !      call stat_update_var( ilh_precip_frac, lh_precip_frac, stats_lh_zt )
+  !      call stat_update_var( stats_metadata%ilh_precip_frac, lh_precip_frac, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_precip_frac, k, lh_precip_frac(k), &
+           call stat_update_var_pt( stats_metadata%ilh_precip_frac, k, lh_precip_frac(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Unweighted estimate of lh_precip_frac
-      if ( ilh_precip_frac_unweighted > 0 ) then
+      if ( stats_metadata%ilh_precip_frac_unweighted > 0 ) then
         where ( l_in_precip_all_levs(i,:,:) )
           int_in_precip = 1.0_core_rknd
         else where
@@ -2568,15 +2551,15 @@ module latin_hypercube_driver_module
         one_weights = one
         lh_precip_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
                                                  int_in_precip )
-  !      call stat_update_var( ilh_precip_frac_unweighted, lh_precip_frac, stats_lh_zt )
+  !      call stat_update_var( stats_metadata%ilh_precip_frac_unweighted, lh_precip_frac, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_precip_frac_unweighted, k, &
+           call stat_update_var_pt( stats_metadata%ilh_precip_frac_unweighted, k, &
                                     lh_precip_frac(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Estimate of lh_mixt_frac
-      if ( ilh_mixt_frac > 0 ) then
+      if ( stats_metadata%ilh_mixt_frac > 0 ) then
         where ( X_mixt_comp_all_levs(i,:,:) == 1 )
           int_mixt_comp = 1.0_core_rknd
         else where
@@ -2584,15 +2567,15 @@ module latin_hypercube_driver_module
         end where
         lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights(i,:,:), &
                                                int_mixt_comp )
-  !      call stat_update_var( ilh_mixt_frac, lh_mixt_frac, stats_lh_zt )
+  !      call stat_update_var( stats_metadata%ilh_mixt_frac, lh_mixt_frac, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_mixt_frac, k, lh_mixt_frac(k), &
+           call stat_update_var_pt( stats_metadata%ilh_mixt_frac, k, lh_mixt_frac(k), &
                                     stats_lh_zt )
         enddo ! k = 1, nz
       end if
 
       ! Unweighted estimate of lh_mixt_frac
-      if ( ilh_mixt_frac_unweighted > 0 ) then
+      if ( stats_metadata%ilh_mixt_frac_unweighted > 0 ) then
         where ( X_mixt_comp_all_levs(i,:,:) == 1 )
           int_mixt_comp = 1.0_core_rknd
         else where
@@ -2601,9 +2584,9 @@ module latin_hypercube_driver_module
         one_weights = one
         lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
                                                int_mixt_comp )
-  !      call stat_update_var( ilh_mixt_frac_unweighted, lh_mixt_frac, stats_lh_zt )
+  !      call stat_update_var( stats_metadata%ilh_mixt_frac_unweighted, lh_mixt_frac, stats_lh_zt )
         do k = 1, nz
-           call stat_update_var_pt( ilh_mixt_frac_unweighted, k, &
+           call stat_update_var_pt( stats_metadata%ilh_mixt_frac_unweighted, k, &
                                     lh_mixt_frac(k), stats_lh_zt )
         enddo ! k = 1, nz
       end if
@@ -2611,10 +2594,10 @@ module latin_hypercube_driver_module
       ! k_lh_start is an integer, so it would be more appropriate to sample it
       ! as an integer, but as far as I can tell our current sampling
       ! infrastructure mainly supports sampling real numbers.
-      call stat_update_var_pt( ik_lh_start, 1, real( k_lh_start(i), kind=core_rknd ), stats_lh_sfc )
+      call stat_update_var_pt( stats_metadata%ik_lh_start, 1, real( k_lh_start(i), kind=core_rknd ), stats_lh_sfc )
 
-      if ( allocated( ilh_samp_frac_category ) ) then
-        if ( ilh_samp_frac_category(1) > 0 ) then
+      if ( allocated( stats_metadata%ilh_samp_frac_category ) ) then
+        if ( stats_metadata%ilh_samp_frac_category(1) > 0 ) then
 
           importance_categories = define_importance_categories( )
 
@@ -2658,16 +2641,16 @@ module latin_hypercube_driver_module
           lh_samp_frac(1,:) = zero
 
           do icategory=1, num_importance_categories
-  !          call stat_update_var( ilh_samp_frac_category(icategory), lh_samp_frac(:,icategory), &
+  !          call stat_update_var( stats_metadata%ilh_samp_frac_category(icategory), lh_samp_frac(:,icategory), &
   !                                stats_lh_zt )
             do k = 1, nz
-               call stat_update_var_pt( ilh_samp_frac_category(icategory), k, &
+               call stat_update_var_pt( stats_metadata%ilh_samp_frac_category(icategory), k, &
                                         lh_samp_frac(k,icategory), stats_lh_zt )
             enddo ! k = 1, nz
           end do ! icategory=1, num_importance_categories
 
-        end if ! ilh_samp_frac_category(1) > 0
-      end if ! allocated( ilh_samp_frac_category )
+        end if ! stats_metadata%ilh_samp_frac_category(1) > 0
+      end if ! allocated( stats_metadata%ilh_samp_frac_category )
       
     end do
 

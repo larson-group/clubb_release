@@ -16,9 +16,9 @@ module stats_rad_zm_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_rad_zm( vars_rad_zm, &
-                                l_error, & !intent(in)
-                                stats_rad_zm ) ! intent(inout)
+  subroutine stats_init_rad_zm( vars_rad_zm,                    & ! intent(in)
+                                l_error,                        & ! intent(in)
+                                stats_metadata, stats_rad_zm )    ! intent(inout)
 
 !     Description:
 !     Initializes array indices for stats_rad_zm variables
@@ -27,52 +27,47 @@ module stats_rad_zm_module
     use constants_clubb, only:  &
         fstderr ! Constant(s)
 
-    use stats_variables, only: & 
-        iFrad_LW_rad, & ! Variable(s)
-        iFrad_SW_rad, &
-        iFrad_SW_up_rad, &
-        iFrad_LW_up_rad, &
-        iFrad_SW_down_rad, &
-        iFrad_LW_down_rad
-
-    use stats_variables, only: &
-        ifulwcl, ifdlwcl, ifdswcl, ifuswcl ! Variable(s)
-
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
+    use stats_type, only: &
+        stats ! Type
 
-    use stats_type, only: stats ! Type
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
+    !------------------------ Input Variable ------------------------
+    character(len= * ), dimension(nvarmax_rad_zm), intent(in) :: vars_rad_zm
+
+    !--------------------- InOut Variables ---------------------      
     type (stats), target, intent(inout) :: &
       stats_rad_zm
 
-    ! Input Variable
-    character(len= * ), dimension(nvarmax_rad_zm), intent(in) :: vars_rad_zm
+    type (stats_metadata_type), intent(inout) :: &
+      stats_metadata
 
-    ! Input/Output Variable        
     logical, intent(inout) :: l_error
 
-    ! Local Varables
+    !------------------------ Local Varables ------------------------
     integer :: i, k
 
-    ! ---- Begin Code ----
+    !------------------------ Begin Code ------------------------
 
     ! Default initialization for array indices for stats_rad_zm
 
-    iFrad_LW_rad = 0
-    iFrad_SW_rad = 0
-    iFrad_SW_up_rad = 0
-    iFrad_LW_up_rad = 0
-    iFrad_SW_down_rad = 0
-    iFrad_LW_down_rad = 0
+    stats_metadata%iFrad_LW_rad = 0
+    stats_metadata%iFrad_SW_rad = 0
+    stats_metadata%iFrad_SW_up_rad = 0
+    stats_metadata%iFrad_LW_up_rad = 0
+    stats_metadata%iFrad_SW_down_rad = 0
+    stats_metadata%iFrad_LW_down_rad = 0
 
-    ifulwcl = 0
-    ifdlwcl = 0
-    ifdswcl = 0
-    ifuswcl = 0
+    stats_metadata%ifulwcl = 0
+    stats_metadata%ifdlwcl = 0
+    stats_metadata%ifdswcl = 0
+    stats_metadata%ifuswcl = 0
 
 !     Assign pointers for statistics variables stats_rad_zm
 
@@ -82,77 +77,77 @@ module stats_rad_zm_module
       select case ( trim(vars_rad_zm(i)) )
 
       case('fulwcl')
-        ifulwcl = k
-        call stat_assign( var_index=ifulwcl, var_name="fulwcl", & ! intent(in)
+        stats_metadata%ifulwcl = k
+        call stat_assign( var_index=stats_metadata%ifulwcl, var_name="fulwcl", & ! intent(in)
              var_description="Upward clear-sky LW flux [W/m^2]", var_units="W/m^2", & ! intent(in)
              l_silhs=.false., & ! intent(in)
              grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case( 'fdlwcl' )
-        ifdlwcl = k
-        call stat_assign( var_index=ifdlwcl, var_name="fdlwcl", & ! intent(in)
+        stats_metadata%ifdlwcl = k
+        call stat_assign( var_index=stats_metadata%ifdlwcl, var_name="fdlwcl", & ! intent(in)
              var_description="Downward clear-sky LW flux [W/m^2]", var_units="W/m^2", & !intent(in)
              l_silhs=.false., & ! intent(in)
              grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case( 'fdswcl' )
-        ifdswcl = k
-        call stat_assign( var_index=ifdswcl, var_name="fdswcl", & ! intent(in)
+        stats_metadata%ifdswcl = k
+        call stat_assign( var_index=stats_metadata%ifdswcl, var_name="fdswcl", & ! intent(in)
              var_description="Downward clear-sky SW flux [W/m^2]", var_units="W/m^2", & !intent(in)
              l_silhs=.false., & ! intent(in)
              grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case( 'fuswcl' )
-        ifuswcl = k
-        call stat_assign( var_index=ifuswcl, var_name="fuswcl", & ! intent(in)
+        stats_metadata%ifuswcl = k
+        call stat_assign( var_index=stats_metadata%ifuswcl, var_name="fuswcl", & ! intent(in)
              var_description="Upward clear-sky SW flux [W/m^2]", var_units="W/m^2", & ! intent(in)
              l_silhs=.false., & ! intent(in)
              grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_LW_rad')
-        iFrad_LW_rad = k
+        stats_metadata%iFrad_LW_rad = k
 
-        call stat_assign( var_index=iFrad_LW_rad, var_name="Frad_LW_rad", & ! intent(in)
+        call stat_assign( var_index=stats_metadata%iFrad_LW_rad, var_name="Frad_LW_rad", & ! intent(in)
              var_description="Net long-wave radiative flux [W/m^2]", var_units="W/m^2", & ! In
              l_silhs=.false., & ! intent(in)
              grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_SW_rad')
-        iFrad_SW_rad = k
+        stats_metadata%iFrad_SW_rad = k
 
-        call stat_assign( var_index=iFrad_SW_rad, var_name="Frad_SW_rad", & ! intent(in)
+        call stat_assign( var_index=stats_metadata%iFrad_SW_rad, var_name="Frad_SW_rad", & ! intent(in)
              var_description="Net short-wave radiative flux [W/m^2]", var_units="W/m^2", & ! In
              l_silhs=.false., & ! intent(in)
              grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_SW_up_rad')
-        iFrad_SW_up_rad = k
+        stats_metadata%iFrad_SW_up_rad = k
 
-        call stat_assign( var_index=iFrad_SW_up_rad, var_name="Frad_SW_up_rad", & ! intent(in)
+        call stat_assign( var_index=stats_metadata%iFrad_SW_up_rad, var_name="Frad_SW_up_rad", & ! intent(in)
              var_description="Short-wave upwelling radiative flux [W/m^2]", var_units="W/m^2", &!In
              l_silhs=.false., & ! intent(in)
              grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_LW_up_rad')
-        iFrad_LW_up_rad = k
+        stats_metadata%iFrad_LW_up_rad = k
 
-        call stat_assign( var_index=iFrad_LW_up_rad, var_name="Frad_LW_up_rad", & ! intent(in)
+        call stat_assign( var_index=stats_metadata%iFrad_LW_up_rad, var_name="Frad_LW_up_rad", & ! intent(in)
              var_description="Long-wave upwelling radiative flux [W/m^2]", var_units="W/m^2", &!In
              l_silhs=.false., & ! intent(in)
              grid_kind=stats_rad_zm ) ! intent(inout)
         k = k + 1
 
       case ('Frad_SW_down_rad')
-        iFrad_SW_down_rad = k
+        stats_metadata%iFrad_SW_down_rad = k
  
-        call stat_assign( var_index=iFrad_SW_down_rad, var_name="Frad_SW_down_rad", & ! intent(in)
+        call stat_assign( var_index=stats_metadata%iFrad_SW_down_rad, var_name="Frad_SW_down_rad", & ! intent(in)
              var_description="Short-wave downwelling radiative flux [W/m^2]", & ! intent(in)
              var_units="W/m^2", & ! intent(in)
              l_silhs=.false., & ! intent(in)
@@ -160,9 +155,9 @@ module stats_rad_zm_module
         k = k + 1
 
       case ('Frad_LW_down_rad')
-        iFrad_LW_down_rad = k
+        stats_metadata%iFrad_LW_down_rad = k
 
-        call stat_assign( var_index=iFrad_LW_down_rad, var_name="Frad_LW_down_rad", & ! intent(in)
+        call stat_assign( var_index=stats_metadata%iFrad_LW_down_rad, var_name="Frad_LW_down_rad", & ! intent(in)
              var_description="Long-wave downwelling radiative flux [W/m^2]", & ! intent(in)
              var_units="W/m^2", & ! intent(in)
              l_silhs=.false., & ! intent(in)

@@ -12,6 +12,7 @@ module ice_dfsn_module
   contains
 !-------------------------------------------------------------------------------
   subroutine ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, & 
+                       stats_metadata, &
                        stats_zt, &
                        rcm_icedfsn, thlm_icedfsn )
 ! Description:
@@ -74,29 +75,29 @@ module ice_dfsn_module
     use saturation, only:  & 
         sat_mixrat_liq ! Procedure(s)
 
-    use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
+    use T_in_K_module, only: &
+        thlm2T_in_K ! Procedure(s)
 
     use stats_type_utilities, only: & 
         stat_update_var
 
-    use stats_variables, only: l_stats_samp,  & ! Variable(s)
-        ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
+    use stats_variables, only: &
+        stats_metadata_type
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
 
     implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_zt
-
-    type(grid), target, intent(in) :: gr
 
     ! Constant Parameters
     ! Number of ice crystals per unit volume of air    [m^{-3}]
     ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
     real(kind = core_rknd), parameter :: N_i = 2000._core_rknd
 
-    ! Input variables
+    !---------------------- Input variables ----------------------
+    type(grid), target, intent(in) :: &
+      gr
+
     real( kind = core_rknd ), intent(in)::  & 
       dt      ! Model timestep                                     [s]
 
@@ -107,7 +108,14 @@ module ice_dfsn_module
       p_in_Pa, & ! Air pressure                         [Pa]
       rho        ! Air density on thermodynamic grid    [kg m^{-3}]
 
-    ! Output variables
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !---------------------- InOut variables ----------------------
+    type(stats), target, intent(inout) :: &
+      stats_zt
+
+    !---------------------- Output variables ----------------------
     real(kind = core_rknd), dimension(gr%nz), intent(out)::  & 
       rcm_icedfsn, & ! Time tendency of rcm due to ice diffusional growth  [kg kg^{-1} s^{-1}]
       thlm_icedfsn   ! Time tendency of thlm due to ice diffusional growth [K/s]
@@ -134,7 +142,7 @@ module ice_dfsn_module
 
     integer :: k
 
-    ! ---- Begin Code ----
+    !---------------------- Begin Code ----------------------
 
     ! Determine absolute temperature
     T_in_K = thlm2T_in_K( gr%nz, thlm, exner, rcm )
@@ -290,19 +298,19 @@ module ice_dfsn_module
     ! eMFc
 
 !
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
 !       diam(:) ! Icedfs diameter; Michael Falk, 1 Nov 2006
 !       m(:)    ! Icedfs mass; Michael Falk, 1 Nov 2006
 !       dqc_dt_icedfs(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006
 !       u_T_cm(:)        ! Icedfs fallspeed (cm/s); Michael Falk, 1 Nov 2006
-      call stat_update_var( ircm_icedfs, rcm_icedfsn, stats_zt )
+      call stat_update_var( stats_metadata%ircm_icedfs, rcm_icedfsn, stats_zt )
 
-      call stat_update_var( idiam, diam, stats_zt )
+      call stat_update_var( stats_metadata%idiam, diam, stats_zt )
 
-      call stat_update_var( imass_ice_cryst, mass_ice_cryst, stats_zt )
+      call stat_update_var( stats_metadata%imass_ice_cryst, mass_ice_cryst, stats_zt )
 
-      call stat_update_var( iu_T_cm, u_T_cm, stats_zt )
+      call stat_update_var( stats_metadata%iu_T_cm, u_T_cm, stats_zt )
 
     end if
 

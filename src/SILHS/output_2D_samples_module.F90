@@ -112,9 +112,10 @@ module output_2D_samples_module
   end subroutine open_2D_samples_file
 
 !-------------------------------------------------------------------------------
-  subroutine output_2D_lognormal_dist_file &
-             ( nz, num_samples, pdf_dim, X_nl_all_levs, &
+  subroutine output_2D_lognormal_dist_file (&
+               nz, num_samples, pdf_dim, X_nl_all_levs, &
                clubb_params, &
+               stats_metadata, &
                l_uv_nudge, &
                l_tke_aniso, &
                l_standard_term_ta )
@@ -124,14 +125,19 @@ module output_2D_samples_module
 !   None
 !-------------------------------------------------------------------------------
 #ifdef NETCDF
-    use output_netcdf, only: write_netcdf ! Procedure(s)
+    use output_netcdf, only: &
+      write_netcdf ! Procedure(s)
 #endif
 
-    use clubb_precision, only: stat_rknd, core_rknd ! Constant(s)
+    use clubb_precision, only: &
+      stat_rknd, & ! Constant(s)
+      core_rknd 
 
-    use parameter_indices, only: nparams ! Constant(s)
+    use parameter_indices, only: &
+      nparams ! Constant(s)
 
-    use stats_variables, only: l_stats_last !Time-to-print flag
+    use stats_variables, only: &
+      stats_metadata_type
 
     implicit none
 
@@ -146,6 +152,9 @@ module output_2D_samples_module
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+      
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging
@@ -160,7 +169,7 @@ module output_2D_samples_module
 
     ! ---- Begin Code ----
 
-    if ( .not. l_stats_last ) return
+    if ( .not. stats_metadata%l_stats_last ) return
 
     do j = 1, pdf_dim
       allocate( lognormal_sample_file%samples_of_var(j)%ptr(num_samples,1,1,nz) )
@@ -190,10 +199,11 @@ module output_2D_samples_module
   end subroutine output_2D_lognormal_dist_file
 
 !-------------------------------------------------------------------------------
-  subroutine output_2D_uniform_dist_file &
-             ( nz, num_samples, dp2, X_u_all_levs, X_mixt_comp_all_levs, &
+  subroutine output_2D_uniform_dist_file( &
+               nz, num_samples, dp2, X_u_all_levs, X_mixt_comp_all_levs, &
                lh_sample_point_weights, &
                clubb_params, &
+               stats_metadata, &
                l_uv_nudge, &
                l_tke_aniso, &
                l_standard_term_ta )
@@ -210,9 +220,10 @@ module output_2D_samples_module
       core_rknd, &          ! Precision(s)
       stat_rknd
 
-    use parameter_indices, only: nparams
+    use stats_variables, only: &
+      stats_metadata_type
 
-    use stats_variables, only: l_stats_last !Time-to-print flag
+    use parameter_indices, only: nparams
 
     implicit none
 
@@ -234,6 +245,9 @@ module output_2D_samples_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
     logical, intent(in) :: &
       l_uv_nudge,         & ! For wind speed nudging
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
@@ -247,7 +261,7 @@ module output_2D_samples_module
 
     ! ---- Begin Code ----
 
-    if ( .not. l_stats_last ) return
+    if ( .not. stats_metadata%l_stats_last ) return
 
     do j = 1, dp2+2
       allocate( uniform_sample_file%samples_of_var(j)%ptr(num_samples,1,1,nz) )

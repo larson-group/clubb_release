@@ -54,6 +54,7 @@ module pdf_closure_module
                           wphydrometp, wp2hmp,                        &
                           rtphmp, thlphmp,                            &
                           clubb_params,                               &
+                          stats_metadata,                             &
                           iiPDF_type,                                 &
                           sigma_sqd_w,                                &
                           pdf_params, pdf_implicit_coefs_terms,       &
@@ -167,14 +168,6 @@ module pdf_closure_module
         sat_mixrat_liq, & ! Procedure(s)
         sat_mixrat_ice
 
-    use stats_variables, only: &
-        ircp2,            & ! Variables
-        iwprtp2,          &
-        iwprtpthlp,       &
-        iwpthlp2,         &
-        iw_up_in_cloud,   &
-        iw_down_in_cloud
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -182,6 +175,9 @@ module pdf_closure_module
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
+
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
@@ -253,6 +249,9 @@ module pdf_closure_module
                     ! Gaussian) PDF type to use for the w, rt, and theta-l (or
                     ! w, chi, and eta) portion of CLUBB's multivariate,
                     ! two-component PDF.
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     !----------------------------- InOut Variables -----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
@@ -860,7 +859,7 @@ module pdf_closure_module
                        pdf_params%mixt_frac, &
                        wp4 )
 
-    if ( l_explicit_turbulent_adv_xpyp .or. iwprtp2 > 0 ) then
+    if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwprtp2 > 0 ) then
       call calc_wpxp2_pdf( nz, ngrdcol, &
                            wm, rtm, pdf_params%w_1, pdf_params%w_2,        &
                            pdf_params%rt_1, pdf_params%rt_2,               &
@@ -871,7 +870,7 @@ module pdf_closure_module
                            wprtp2 )
     end if
 
-    if ( l_explicit_turbulent_adv_xpyp .or. iwpthlp2 > 0 ) then
+    if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwpthlp2 > 0 ) then
       call calc_wpxp2_pdf( nz, ngrdcol, &
                            wm, thlm, pdf_params%w_1, pdf_params%w_2,          &
                            pdf_params%thl_1, pdf_params%thl_2,                &
@@ -882,7 +881,7 @@ module pdf_closure_module
                            wpthlp2 )
     end if
 
-    if ( l_explicit_turbulent_adv_xpyp .or. iwprtpthlp > 0 ) then
+    if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwprtpthlp > 0 ) then
       
       call calc_wpxpyp_pdf( nz, ngrdcol, &
                             wm, rtm, thlm, pdf_params%w_1, pdf_params%w_2,      &
@@ -1335,7 +1334,7 @@ module pdf_closure_module
 
 #ifndef CLUBB_CAM
       !  if CLUBB is used in CAM we want this variable computed no matter what
-      if ( ircp2 > 0 ) then
+      if ( stats_metadata%ircp2 > 0 ) then
 #endif
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1,nz
@@ -1359,7 +1358,7 @@ module pdf_closure_module
 
     if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
            .or. iiPDF_type == iiPDF_new_hybrid ) &
-         .and. ( iw_up_in_cloud > 0 .or. iw_down_in_cloud > 0 ) ) then
+         .and. ( stats_metadata%iw_up_in_cloud > 0 .or. stats_metadata%iw_down_in_cloud > 0 ) ) then
                  
       call calc_w_up_in_cloud( nz, ngrdcol, &                                      ! In
                                pdf_params%mixt_frac, &                             ! In
@@ -1454,8 +1453,9 @@ module pdf_closure_module
                pdf_params%crt_1(i,:), pdf_params%crt_2(i,:), & ! intent(in)
                pdf_params%cthl_1(i,:), pdf_params%cthl_2(i,:), & ! intent(in)
                pdf_params, & ! intent(in)
-               sclrpthvp(i,:,:), sclrprcp(i,:,:), wpsclrp2(i,:,:), &  ! intent(in)
-               wpsclrprtp(i,:,:), wpsclrpthlp(i,:,:), wp2sclrp(i,:,:) ) ! intent(in)
+               sclrpthvp(i,:,:), sclrprcp(i,:,:), wpsclrp2(i,:,:), & ! intent(in)
+               wpsclrprtp(i,:,:), wpsclrpthlp(i,:,:), wp2sclrp(i,:,:), & ! intent(in)
+               stats_metadata ) ! intent(in)
       end do
     end if
 
@@ -1498,11 +1498,11 @@ module pdf_closure_module
         write(fstderr,*) "Intent(out)"
 
         write(fstderr,*) "wp4 = ", wp4
-        if ( l_explicit_turbulent_adv_xpyp .or. iwprtp2 > 0 ) then
+        if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwprtp2 > 0 ) then
           write(fstderr,*) "wprtp2 = ", wprtp2
         end if
         write(fstderr,*) "wp2rtp = ", wp2rtp
-        if ( l_explicit_turbulent_adv_xpyp .or. iwpthlp2 > 0 ) then
+        if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwpthlp2 > 0 ) then
           write(fstderr,*) "wpthlp2 = ", wpthlp2
         end if
         write(fstderr,*) "cloud_frac = ", cloud_frac
@@ -1518,13 +1518,13 @@ module pdf_closure_module
         write(fstderr,*) "thlprcp = ", thlprcp
 #ifndef CLUBB_CAM
         !  if CLUBB is used in CAM we want this variable computed no matter what
-        if ( ircp2 > 0 ) then
+        if ( stats_metadata%ircp2 > 0 ) then
 #endif
           write(fstderr,*) "rcp2 = ", rcp2
 #ifndef CLUBB_CAM
         end if
 #endif
-        if ( l_explicit_turbulent_adv_xpyp .or. iwprtpthlp > 0 ) then
+        if ( l_explicit_turbulent_adv_xpyp .or. stats_metadata%iwprtpthlp > 0 ) then
           write(fstderr,*) "wprtpthlp = ", wprtpthlp
         end if
         write(fstderr,*) "rcp2 = ", rcp2

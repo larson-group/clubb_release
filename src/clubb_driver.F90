@@ -16,6 +16,9 @@ module clubb_driver
 
   use stats_type, only: stats ! Type
 
+  use stats_variables, only: &
+      stats_metadata_type
+
   use mt95, only: &
     genrand_intg
 
@@ -33,6 +36,9 @@ module clubb_driver
 
 !$omp threadprivate(stats_zt, stats_zm, stats_lh_zt, stats_lh_sfc)
 !$omp threadprivate(stats_rad_zt, stats_rad_zm, stats_sfc)
+      
+  type (stats_metadata_type), public :: &
+    stats_metadata
 
   ! Setup run_clubb() as the sole external interface
   private ::  &
@@ -143,24 +149,6 @@ module clubb_driver
       l_pos_def, l_hole_fill, &
       l_gamma_Skw, l_byteswap_io, &
       l_quintic_poly_interp !-------------------------------------------- Variable(s)
-
-    use stats_variables, only: l_stats_last, l_stats_samp, & !--------------- Variable(s)
-      l_output_rad_files
-
-    use stats_variables, only: &
-        irtm_mc,     & !----------------------------------------------------- Variables
-        irvm_mc,     &
-        ircm_mc,     &
-        ithlm_mc,    &
-        iwprtp_mc,   &
-        iwpthlp_mc,  &
-        irtp2_mc,    &
-        ithlp2_mc,   &
-        irtpthlp_mc, &
-        iFrad
-
-    use stats_variables, only: &
-        l_allow_small_stats_tout
 
     use stats_clubb_utilities, only:  & 
         stats_begin_timestep, stats_end_timestep,  & !----------------------- Procedure(s)
@@ -367,7 +355,8 @@ module clubb_driver
       forcings_file_path     ! Path to the forcing files
 
     logical :: & 
-      l_stats ! Whether statistics are computed and output to disk
+      l_stats, & ! Whether statistics are computed and output to disk
+      l_allow_small_stats_tout
 
     character(len=10) :: & 
       stats_fmt  ! File format for stats; typically GrADS.
@@ -687,7 +676,7 @@ module clubb_driver
     real( kind = core_rknd ), dimension(:,:,:), allocatable :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
-    logical :: l_silhs_out    ! Whether to output SILHS files
+    logical :: l_silhs_out_in    ! Whether to output SILHS files
 
     type(hydromet_pdf_parameter), dimension(:,:), allocatable :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
@@ -858,7 +847,7 @@ module clubb_driver
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
-      
+
     real( kind = core_rknd ), dimension(1) :: &
       sfc_elevation
     
@@ -1083,6 +1072,8 @@ module clubb_driver
     read(unit=iunit, nml=model_setting)
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
+
+    stats_metadata%l_allow_small_stats_tout = l_allow_small_stats_tout
 
     open(unit=iunit, file=runfile, status='old', action='read')
     read(unit=iunit, nml=configurable_clubb_flags_nl)
@@ -1907,7 +1898,7 @@ module clubb_driver
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
           ! At this point, input fields haven't been set up, so don't clean them up.
-          call cleanup_clubb( l_input_fields=.false., gr=gr )
+          call cleanup_clubb( l_input_fields=.false., stats_metadata=stats_metadata, gr=gr )
           return
         end if
     end if
@@ -2054,7 +2045,7 @@ module clubb_driver
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
               ! At this point, input fields haven't been set up, so don't clean them up.
-              call cleanup_clubb( l_input_fields=.false., gr=gr )
+              call cleanup_clubb( l_input_fields=.false., stats_metadata=stats_metadata, gr=gr )
               return
           end if
       end if
@@ -2085,7 +2076,7 @@ module clubb_driver
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
               ! At this point, input fields haven't been set up, so don't clean them up.
-              call cleanup_clubb( l_input_fields=.false., gr=gr )
+              call cleanup_clubb( l_input_fields=.false., stats_metadata=stats_metadata, gr=gr )
               return
           end if
       end if
@@ -2158,30 +2149,31 @@ module clubb_driver
 
     ! Only output radiation files if using a radiation scheme
     if ( trim( rad_scheme ) == "bugsrad" ) then
-      l_output_rad_files = .true.
+      stats_metadata%l_output_rad_files = .true.
     end if
 
 #ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then
-      l_silhs_out = .true.
+      l_silhs_out_in = .true.
     else
-      l_silhs_out = .false.
+      l_silhs_out_in = .false.
     end if
 #else
-      l_silhs_out = .false.
+      l_silhs_out_in = .false.
 #endif
 
 !$OMP CRITICAL
     ! This is a kludge added because the grid used by BUGSrad does
     ! not include CLUBB's ghost point. -nielsenb 20 Oct 2009
-    if ( l_output_rad_files ) then
+    if ( stats_metadata%l_output_rad_files ) then
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
                        complete_momentum(2:total_atmos_dim + 1), day, month, year, & ! Intent(in)
-                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!intent(in)
+                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out_in,&!intent(in)
+                       stats_metadata, & ! intent(inout)
                        stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                        stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                        stats_rad_zt, stats_rad_zm ) ! intent(inout)
@@ -2191,7 +2183,8 @@ module clubb_driver
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
-                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out,&!intent(in)
+                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out_in,&!intent(in)
+                       stats_metadata, & ! intent(inout)
                        stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                        stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                        stats_rad_zt, stats_rad_zm ) ! intent(inout)
@@ -2203,7 +2196,7 @@ module clubb_driver
 
       ! Setup 2D output of all subcolumns (if enabled)
       call latin_hypercube_2D_output_api &
-           ( fname_prefix, fdir, stats_tout, gr%nz, & ! Intent(in)
+           ( fname_prefix, fdir, stats_metadata%stats_tout, gr%nz, & ! Intent(in)
              gr%zt, time_initial, lh_num_samples, & ! Intent(in)
              nlon, nlat, (/lon_vals/), (/lat_vals/) )    ! Intent(in)
 
@@ -2225,11 +2218,11 @@ module clubb_driver
       error stop "dt_rad must be a multiple of dt_main"
     end if
 
-    if( l_stats ) then
+    if( stats_metadata%l_stats ) then
 
-      if ( .not. (( abs(dt_rad/stats_tout - real(floor(dt_rad/stats_tout), kind=core_rknd)) &
+      if ( .not. (( abs(dt_rad/stats_metadata%stats_tout - real(floor(dt_rad/stats_metadata%stats_tout), kind=core_rknd)) &
             < 1.e-8_core_rknd) .or. &
-         ( abs(stats_tout/dt_rad - real(floor(stats_tout/dt_rad), kind=core_rknd)) &
+         ( abs(stats_metadata%stats_tout/dt_rad - real(floor(stats_metadata%stats_tout/dt_rad), kind=core_rknd)) &
             < 1.e-8_core_rknd)) ) then
         error stop &
               "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
@@ -2241,7 +2234,7 @@ module clubb_driver
 
       write(fstderr,*) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
       err_code = clubb_fatal_error
-      call cleanup_clubb( l_input_fields, gr )
+      call cleanup_clubb( l_input_fields, stats_metadata, gr )
       return
 
     end if
@@ -2251,8 +2244,8 @@ module clubb_driver
       error stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
 
     end if
-    stats_nsamp = nint( stats_tsamp / dt_main )
-    stats_nout = nint( stats_tout / dt_main )
+    stats_nsamp = nint( stats_metadata%stats_tsamp / dt_main )
+    stats_nout = nint( stats_metadata%stats_tout / dt_main )
 
     !initialize timers    
     time_loop_init = 0.0_core_rknd
@@ -2279,7 +2272,8 @@ module clubb_driver
       
       ! When this time step is over, the time will be time + dt_main
       ! We use integer timestep for stats_begin_step
-        call stats_begin_timestep( itime, stats_nsamp, stats_nout ) ! Intent(in)
+        call stats_begin_timestep( itime, stats_nsamp, stats_nout, & ! Intent(in)
+                                   stats_metadata )                  ! Intent(inout)
 
       ! If we're doing an inputfields run, get the values for our
       ! model arrays from a netCDF or GrADS file.
@@ -2356,6 +2350,7 @@ module clubb_driver
                                p_in_Pa, exner(1,:), rho, rho_zm, thvm(1,:), & ! In
                                Frad_SW_up, Frad_SW_down, Frad_LW_down, & ! In
                                l_modify_bc_for_cnvg_test, & ! In
+                               stats_metadata, & ! In
                                rtm(1,:), wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
                                vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
@@ -2437,6 +2432,7 @@ module clubb_driver
                dummy_dx, dummy_dy, &                                                ! Intent(in)
                params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
                clubb_config_flags, &                                                ! Intent(in)
+               stats_metadata, &                                                    ! Intent(in)
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
                thlm(1,:), rtm(1,:), wprtp, wpthlp, &                                ! Intent(inout)
@@ -2485,6 +2481,7 @@ module clubb_driver
                dummy_dx, dummy_dy, &                                                ! Intent(in)
                params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
                clubb_config_flags, &                                                ! Intent(in)
+               stats_metadata, &                                                    ! Intent(in)
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
                um, vm, upwp, vpwp, up2, vp2, up3, vp3, &                            ! Intent(inout)
                thlm(1,:), rtm(1,:), wprtp, wpthlp, &                                ! Intent(inout)
@@ -2524,11 +2521,11 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters_api( gr, gr%nz, pdf_dim, dt_main,          & ! Intent(in)
+         call setup_pdf_parameters_api( gr, gr%nz, pdf_dim, dt_main,                & ! Intent(in)
                         Nc_in_cloud, cloud_frac, Kh_zm,                             & ! Intent(in)
                         ice_supersat_frac, hydromet, wphydrometp,                   & ! Intent(in)
                         corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
-                        pdf_params, l_stats_samp,                                   & ! Intent(in)
+                        pdf_params,                                                 & ! Intent(in)
                         params,                                                     & ! Intent(in)
                         clubb_config_flags%iiPDF_type,                              & ! Intent(in)
                         l_use_precip_frac,                                          & ! Intent(in)
@@ -2537,6 +2534,7 @@ module clubb_driver
                         clubb_config_flags%l_calc_w_corr,                           & ! Intent(in)
                         clubb_config_flags%l_const_Nc_in_cloud,                     & ! Intent(in)
                         clubb_config_flags%l_fix_w_chi_eta_correlations,            & ! Intent(in)
+                        stats_metadata,                                             & ! Intent(in)
                         stats_zt, stats_zm, stats_sfc,                              & ! intent(inout)
                         hydrometp2,                                                 & ! Intent(out)
                         mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                           & ! Intent(out)
@@ -2561,7 +2559,8 @@ module clubb_driver
                                    corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:), & ! Intent(in)
                                    pdf_params, hydromet_pdf_params(1,:),             & ! Intent(in)
                                    precip_fracs,                                     & ! Intent(in)
-                                   stats_zt, stats_zm,                        & ! intent(inout)
+                                   stats_metadata,                                   & ! Intent(in)
+                                   stats_zt, stats_zm,                               & ! intent(inout)
                                    rtphmp_zt, thlphmp_zt, wp2hmp )                     ! Intent(out)
 
       endif ! not microphys_scheme == "none"
@@ -2634,7 +2633,8 @@ module clubb_driver
                clubb_config_flags%l_tke_aniso,                               & ! In
                clubb_config_flags%l_standard_term_ta,                        & ! In
                vert_decorr_coef,                                             & ! In
-               stats_lh_zt, stats_lh_sfc,                                    & ! intent(inout)
+               stats_metadata,                                               & ! In
+               stats_lh_zt, stats_lh_sfc,                                    & ! InOut
                X_nl_all_levs, X_mixt_comp_all_levs,                          & ! Out
                lh_sample_point_weights ) ! Out
        
@@ -2656,6 +2656,7 @@ module clubb_driver
                lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:),             & ! In
                lh_rc_clipped(1,:,:), lh_rv_clipped(1,:,:),              & ! In
                lh_Nc_clipped(1,:,:),                                    & ! In
+               stats_metadata,                                          & ! In
                stats_lh_zt, stats_lh_sfc )                                ! intent(inout)
           
                
@@ -2698,7 +2699,9 @@ module clubb_driver
                               lh_Nc_clipped(1,:,:), &                                 ! In
                               silhs_config_flags%l_lh_importance_sampling, &          ! In
                               silhs_config_flags%l_lh_instant_var_covar_src, &        ! In
-                              stats_zt, stats_zm, stats_sfc, stats_lh_zt, &  ! intent(inout)
+                              stats_metadata, &                                       ! In
+                              stats_zt, stats_zm, &                                   ! Inout
+                              stats_sfc, stats_lh_zt, &                               ! Inout
                               Nccnm, &                                                ! Inout
                               hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &                  ! Out
                               thlm_mc, hydromet_vel_zt, &                             ! Out
@@ -2732,7 +2735,8 @@ module clubb_driver
                               params, nu_vert_res_dep,                    & ! In
                               clubb_config_flags%tridiag_solve_method,    & ! In
                               clubb_config_flags%l_upwind_xm_ma,          & ! In
-                              stats_zt, stats_zm, stats_sfc,              & ! intent(inout)
+                              stats_metadata,                             & ! In
+                              stats_zt, stats_zm, stats_sfc,              & ! Inout
                               hydromet, hydromet_vel_zt, hydrometp2,      & ! Inout
                               K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc,    & ! Inout
                               wphydrometp, wpNcp )                          ! Out
@@ -2749,17 +2753,17 @@ module clubb_driver
           endif
       end if
 
-      if ( l_stats_samp ) then
+      if ( stats_metadata%l_stats_samp ) then
         ! Total microphysical tendency of vapor and cloud water mixing ratios
-        call stat_update_var( irvm_mc, rvm_mc, stats_zt )         ! kg/kg/s
-        call stat_update_var( ircm_mc, rcm_mc, stats_zt )         ! kg/kg/s
-        call stat_update_var( irtm_mc, rvm_mc+rcm_mc, stats_zt )  ! kg/kg/s
-        call stat_update_var( ithlm_mc, thlm_mc, stats_zt )       ! K/s
-        call stat_update_var( iwprtp_mc, wprtp_mc, stats_zm )     ! m*(kg/kg)/s^2
-        call stat_update_var( iwpthlp_mc, wpthlp_mc, stats_zm )   ! K*m/s^2
-        call stat_update_var( irtp2_mc, rtp2_mc, stats_zm )       ! (kg/kg)^2/s
-        call stat_update_var( ithlp2_mc, thlp2_mc, stats_zm )     ! K^2/s
-        call stat_update_var( irtpthlp_mc, rtpthlp_mc, stats_zm ) ! K*(kg/kg)/s
+        call stat_update_var( stats_metadata%irvm_mc, rvm_mc, stats_zt )         ! kg/kg/s
+        call stat_update_var( stats_metadata%ircm_mc, rcm_mc, stats_zt )         ! kg/kg/s
+        call stat_update_var( stats_metadata%irtm_mc, rvm_mc+rcm_mc, stats_zt )  ! kg/kg/s
+        call stat_update_var( stats_metadata%ithlm_mc, thlm_mc, stats_zt )       ! K/s
+        call stat_update_var( stats_metadata%iwprtp_mc, wprtp_mc, stats_zm )     ! m*(kg/kg)/s^2
+        call stat_update_var( stats_metadata%iwpthlp_mc, wpthlp_mc, stats_zm )   ! K*m/s^2
+        call stat_update_var( stats_metadata%irtp2_mc, rtp2_mc, stats_zm )       ! (kg/kg)^2/s
+        call stat_update_var( stats_metadata%ithlp2_mc, thlp2_mc, stats_zm )     ! K^2/s
+        call stat_update_var( stats_metadata%irtpthlp_mc, rtpthlp_mc, stats_zm ) ! K*(kg/kg)/s
       endif
 
       ! Radiation is always called on the first timestep in order to ensure
@@ -2775,19 +2779,21 @@ module clubb_driver
         ! -dschanen 17 Aug 2009
         if ( l_silhs_rad ) then
 
-          call silhs_radiation_driver &
-               ( gr, gr%nz, lh_num_samples, pdf_dim, hydromet_dim,                & !In
-                 time_current, time_initial, rho, rho_zm,                               & !In
+          call silhs_radiation_driver( &
+                 gr, gr%nz, lh_num_samples, pdf_dim, hydromet_dim,                      & !In
+                 time_current, time_initial, rho, rho_zm,                               & ! In
                  p_in_Pa, exner(1,:), cloud_frac, ice_supersat_frac, X_nl_all_levs(1,:,:,:), & !In
-                 lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:), lh_rc_clipped(1,:,:),     & !In
-                 lh_sample_point_weights(1,:,:), hydromet,                              & !In
-                 radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )        !out
+                 lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:), lh_rc_clipped(1,:,:),     & ! In
+                 lh_sample_point_weights(1,:,:), hydromet,                              & ! In
+                 stats_metadata,                                                        & ! In
+                 radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )        ! Out
 
         else
 
-          call advance_clubb_radiation &
-               ( gr, time_current, time_initial, rho, rho_zm, p_in_Pa,             & ! In
+          call advance_clubb_radiation( &
+                 gr, time_current, time_initial, rho, rho_zm, p_in_Pa,             & ! In
                  exner(1,:), cloud_frac, ice_supersat_frac, thlm(1,:), rtm(1,:), rcm(1,:), hydromet, & ! In
+                 stats_metadata, & ! In
                  radht, Frad, Frad_SW_up, Frad_LW_up,                                 & ! Out
                  Frad_SW_down, Frad_LW_down )                                           ! Out
 
@@ -2795,19 +2801,20 @@ module clubb_driver
 
       end if ! mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1
 
-      if ( l_stats_samp ) then
-         call stat_update_var( iFrad, Frad, stats_zm )
+      if ( stats_metadata%l_stats_samp ) then
+         call stat_update_var( stats_metadata%iFrad, Frad, stats_zm )
       endif
 
       ! Update the radiation variables here so they are updated every timestep
       call update_radiation_variables( gr%nz, radht, Frad_SW_up, Frad_LW_up, &
-                                       Frad_SW_down, Frad_LW_down )
+                                       Frad_SW_down, Frad_LW_down, &
+                                       stats_metadata )
 
       ! End statistics timestep
-      call stats_end_timestep( params, &                    ! intent(in)
+      call stats_end_timestep( params, stats_metadata,        & ! intent(in)
                                stats_zt, stats_zm, stats_sfc, & ! intent(inout)
-                               stats_lh_zt, stats_lh_sfc, & ! intent(inout)
-                               stats_rad_zt, stats_rad_zm & ! intent(inout)
+                               stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
+                               stats_rad_zt, stats_rad_zm     & ! intent(inout)
 #ifdef NETCDF
                                , clubb_config_flags%l_uv_nudge, &
                                clubb_config_flags%l_tke_aniso, &
@@ -2826,7 +2833,7 @@ module clubb_driver
       ! This was moved from above to be less confusing to the user,
       ! since before it would appear as though the last timestep
       ! was not executed. -dschanen 19 May 08
-      if ( ( l_stats_last .or. l_stats ) .and. l_stdout ) then
+      if ( ( stats_metadata%l_stats_last .or. stats_metadata%l_stats ) .and. l_stdout ) then
         write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
           itime, '; time = ', time_current
       end if
@@ -2884,7 +2891,7 @@ module clubb_driver
 !-------------------------------------------------------------------------------
 
     ! Free memory
-    call cleanup_clubb( l_input_fields, gr )
+    call cleanup_clubb( l_input_fields, stats_metadata, gr )
 
     deallocate( um )        ! u wind
     deallocate( vm )        ! v wind
@@ -4239,7 +4246,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
 
-  subroutine cleanup_clubb( l_input_fields, gr )
+  subroutine cleanup_clubb( l_input_fields, stats_metadata, gr )
     
     use grid_class, only: &
         grid
@@ -4284,6 +4291,9 @@ module clubb_driver
     use stats_clubb_utilities, only:  &
         stats_finalize
 
+    use stats_variables, only: &
+      stats_metadata_type
+
 
 #ifdef SILHS
     use parameters_microphys, only: &
@@ -4302,6 +4312,9 @@ module clubb_driver
     ! Input Variables
     logical, intent(in) :: &
       l_input_fields
+
+    type (stats_metadata_type), intent(inout) :: &
+      stats_metadata
       
     ! Output Variables
     type(grid), target, intent(inout) :: &
@@ -4352,7 +4365,8 @@ module clubb_driver
       call cleanup_input_fields()
     end if
 
-    call stats_finalize( stats_zt, stats_zm, stats_sfc, &
+    call stats_finalize( stats_metadata, &
+                         stats_zt, stats_zm, stats_sfc, &
                          stats_lh_zt, stats_lh_sfc, &
                          stats_rad_zt, stats_rad_zm )
 
@@ -4860,6 +4874,7 @@ module clubb_driver
                                  p_in_Pa, exner, rho, rho_zm, thvm, &
                                  Frad_SW_up, Frad_SW_down, Frad_LW_down, &
                                  l_modify_bc_for_cnvg_test, &
+                                 stats_metadata, &
                                  rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
                                  thlm_forcing, rtm_forcing, um_forcing, &
                                  vm_forcing, wprtp_forcing, wpthlp_forcing, &
@@ -4885,16 +4900,7 @@ module clubb_driver
     use grid_class, only: zt2zm, zm2zt !---------------------- Procedure(s)
 
     use stats_variables, only: &
-      ish, & !------------------------------------------------ Variable(s)
-      ilh, &
-      iwpthlp_sfc, &
-      iwprtp_sfc, &
-      iupwp_sfc, &
-      ivpwp_sfc, &
-      iustar, &
-      isoil_heat_flux, &
-      l_stats_samp, &
-      iT_sfc
+      stats_metadata_type
 
     use stats_type_utilities, only: stat_update_var_pt !------ Procedure(s)
 
@@ -5010,6 +5016,9 @@ module clubb_driver
     ! (surface fluxes computed at fixed 25 m height).
     logical, intent(in) :: &
       l_modify_bc_for_cnvg_test
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       rtm,             & ! total water mixing ratio, r_t (thermo. levs.) [kg/kg]
@@ -5483,6 +5492,7 @@ module clubb_driver
       call advance_soil_veg( dt, rho_zm(1), &
                              Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
                              Frad_LW_down(1), wpthep, &
+                             stats_metadata, &
                              stats_sfc, &
                              soil_heat_flux )
     else
@@ -5491,32 +5501,32 @@ module clubb_driver
     end if
 
     ! Store values of surface fluxes for statistics
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
-      call stat_update_var_pt( ish, 1, wpthlp_sfc*rho_zm(1)*Cp,&       ! intent(in)
+      call stat_update_var_pt( stats_metadata%ish, 1, wpthlp_sfc*rho_zm(1)*Cp,&       ! intent(in)
                                stats_sfc )                             ! intent(inout)
 
-      call stat_update_var_pt( ilh, 1, wprtp_sfc*rho_zm(1)*Lv, &       ! intent(in)
+      call stat_update_var_pt( stats_metadata%ilh, 1, wprtp_sfc*rho_zm(1)*Lv, &       ! intent(in)
                                stats_sfc )                             ! intent(inout)
 
-      call stat_update_var_pt( iwpthlp_sfc, 1, wpthlp_sfc, &           ! intent(in)
+      call stat_update_var_pt( stats_metadata%iwpthlp_sfc, 1, wpthlp_sfc, &           ! intent(in)
                                stats_sfc )                             ! intent(inout)
 
-      call stat_update_var_pt( iwprtp_sfc, 1, wprtp_sfc, &             ! intent(in)
+      call stat_update_var_pt( stats_metadata%iwprtp_sfc, 1, wprtp_sfc, &             ! intent(in)
                                stats_sfc )                             ! intent(inout)
 
-      call stat_update_var_pt( iupwp_sfc, 1, upwp_sfc, &               ! intent(in)
+      call stat_update_var_pt( stats_metadata%iupwp_sfc, 1, upwp_sfc, &               ! intent(in)
                                stats_sfc )                             ! intent(inout)
 
-      call stat_update_var_pt( ivpwp_sfc, 1, vpwp_sfc, &               ! intent(in)
+      call stat_update_var_pt( stats_metadata%ivpwp_sfc, 1, vpwp_sfc, &               ! intent(in)
                                stats_sfc )                             ! intent(inout)
 
-      call stat_update_var_pt( iustar, 1, ustar,  &                    ! intent(in)
+      call stat_update_var_pt( stats_metadata%iustar, 1, ustar,  &                    ! intent(in)
                                stats_sfc )                             ! intent(inout)
 
-      call stat_update_var_pt( isoil_heat_flux, 1, soil_heat_flux, &   ! intent(in)
+      call stat_update_var_pt( stats_metadata%isoil_heat_flux, 1, soil_heat_flux, &   ! intent(in)
                                stats_sfc )                             ! intent(inout)
-      call stat_update_var_pt( iT_sfc, 1, T_sfc, &                     ! intent(in)
+      call stat_update_var_pt( stats_metadata%iT_sfc, 1, T_sfc, &                     ! intent(in)
                                stats_sfc )                             ! intent(inout)
 
     endif
@@ -5696,9 +5706,10 @@ module clubb_driver
   end subroutine read_surface_var_for_bc
 
 !-------------------------------------------------------------------------------
-  subroutine advance_clubb_radiation &
-             ( gr, time_current, time_initial, rho, rho_zm, p_in_Pa, &
+  subroutine advance_clubb_radiation( &
+               gr, time_current, time_initial, rho, rho_zm, p_in_Pa, &
                exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, &
+               stats_metadata, &
                radht, Frad, Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
 ! Description:
@@ -5764,15 +5775,18 @@ module clubb_driver
       lat_vals, &
       lon_vals
 
+    use stats_variables, only: &
+      stats_metadata_type
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: trim
 
     ! Input Variables
+    type (grid), target, intent(in) :: &
+      gr
+
     real(kind=time_precision), intent(in) :: &
       time_current, & ! Current time (UTC)               [s]
       time_initial    ! Start time of model run (UTC)    [s]
@@ -5790,6 +5804,9 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species                                         [units vary]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -5985,6 +6002,7 @@ module clubb_driver
       end if
 
       call simple_rad( gr, rho, rho_zm, rtm, rcm, exner, & ! In
+                       stats_metadata,                   & ! In
                        stats_sfc,                        & ! intent(inout)
                        Frad_LW, radht_LW )                 ! Out
 
@@ -6027,7 +6045,8 @@ module clubb_driver
 
   !-----------------------------------------------------------------------------
   subroutine update_radiation_variables( nz, radht, Frad_SW_up, Frad_LW_up, &
-                                         Frad_SW_down, Frad_LW_down )
+                                         Frad_SW_down, Frad_LW_down, &
+                                         stats_metadata )
 
     ! Description:
     !   Updates the radiation variables using the stat_var_update() subroutine.
@@ -6035,15 +6054,6 @@ module clubb_driver
     ! References:
     !   None
     !---------------------------------------------------------------------------
-
-    use stats_variables, only: &
-      iradht_LW, iradht_SW, iFrad_SW, iFrad_LW, iFrad_SW_up, & !------------------------ Variables
-      iFrad_LW_up, iFrad_SW_down, iFrad_LW_down, iT_in_k_rad, ircil_rad, &
-      io3l_rad, irsm_rad, ircm_in_cloud_rad, icloud_frac_rad, iice_supersat_frac_rad, &
-      iradht_rad, iradht_LW_rad, iFrad_SW_rad, &
-      iFrad_LW_rad, iFrad_SW_up_rad, iFrad_LW_up_rad, iFrad_SW_down_rad, &
-      iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl, iradht, &
-      ip_in_mb_rad, isp_humidity_rad
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW, T_in_k, rcil, o3l, & !---------------------- Variables
@@ -6054,7 +6064,8 @@ module clubb_driver
     use grid_class, only: &
       flip !------------------------------------------------------------------------- Prodecure(s)
 
-    use stats_variables, only: l_stats_samp, l_output_rad_files !--------------------- Variable(s)
+    use stats_variables, only: &
+      stats_metadata_type
 
     use stats_type_utilities, only: &
       stat_update_var !----------------------------------------------------------------- Procedure
@@ -6079,95 +6090,98 @@ module clubb_driver
       Frad_SW_down, & ! SW radiative downwelling flux      [W/m^2]
       Frad_LW_down    ! LW radiative downwelling flux      [W/m^2]
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
     ! Local Variables
 
     integer :: rad_zt_dim, rad_zm_dim ! Dimensions of the radiation grid
 
     ! ---- Begin Code ----
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
-      call stat_update_var( iradht, radht, stats_zt )
+      call stat_update_var( stats_metadata%iradht, radht, stats_zt )
 
-      call stat_update_var( iradht_LW, radht_LW, stats_zt )
+      call stat_update_var( stats_metadata%iradht_LW, radht_LW, stats_zt )
 
-      call stat_update_var( iradht_SW, radht_SW, stats_zt )
+      call stat_update_var( stats_metadata%iradht_SW, radht_SW, stats_zt )
 
-      call stat_update_var( iFrad_SW, Frad_SW, stats_zm )
+      call stat_update_var( stats_metadata%iFrad_SW, Frad_SW, stats_zm )
 
-      call stat_update_var( iFrad_LW, Frad_LW, stats_zm )
+      call stat_update_var( stats_metadata%iFrad_LW, Frad_LW, stats_zm )
 
-      call stat_update_var( iFrad_SW_up, Frad_SW_up, stats_zm )
+      call stat_update_var( stats_metadata%iFrad_SW_up, Frad_SW_up, stats_zm )
 
-      call stat_update_var( iFrad_LW_up, Frad_LW_up, stats_zm )
+      call stat_update_var( stats_metadata%iFrad_LW_up, Frad_LW_up, stats_zm )
 
-      call stat_update_var( iFrad_SW_down, Frad_SW_down, stats_zm )
+      call stat_update_var( stats_metadata%iFrad_SW_down, Frad_SW_down, stats_zm )
 
-      call stat_update_var( iFrad_LW_down, Frad_LW_down, stats_zm )
+      call stat_update_var( stats_metadata%iFrad_LW_down, Frad_LW_down, stats_zm )
 
-      if ( l_output_rad_files ) then
+      if ( stats_metadata%l_output_rad_files ) then
 
         rad_zt_dim = (nz-1)+lin_int_buffer+extended_atmos_range_size
         rad_zm_dim = (nz-1)+lin_int_buffer+extended_atmos_range_size+1
 
-        call stat_update_var( iT_in_K_rad, real( flip(T_in_K(1,:), rad_zt_dim),&
+        call stat_update_var( stats_metadata%iT_in_K_rad, real( flip(T_in_K(1,:), rad_zt_dim),&
                  kind = core_rknd ), stats_rad_zt )
 
-        call stat_update_var( ircil_rad, real( flip(rcil(1,:), rad_zt_dim), &
+        call stat_update_var( stats_metadata%ircil_rad, real( flip(rcil(1,:), rad_zt_dim), &
                  kind = core_rknd  ), stats_rad_zt )
 
-        call stat_update_var( io3l_rad, real( flip(o3l(1,:), rad_zt_dim), &
+        call stat_update_var( stats_metadata%io3l_rad, real( flip(o3l(1,:), rad_zt_dim), &
                  kind = core_rknd  ), stats_rad_zt )
 
-        call stat_update_var( irsm_rad, real( flip(rsm_2d(1,:), rad_zt_dim), &
+        call stat_update_var( stats_metadata%irsm_rad, real( flip(rsm_2d(1,:), rad_zt_dim), &
                  kind = core_rknd  ), stats_rad_zt )
 
-        call stat_update_var( ircm_in_cloud_rad, &
+        call stat_update_var( stats_metadata%ircm_in_cloud_rad, &
           real( flip(rcm_in_cloud_2d(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
-        call stat_update_var( icloud_frac_rad, &
+        call stat_update_var( stats_metadata%icloud_frac_rad, &
           real( flip(cloud_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
         
-        call stat_update_var( iice_supersat_frac_rad, &
+        call stat_update_var( stats_metadata%iice_supersat_frac_rad, &
           real( flip(ice_supersat_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
-        call stat_update_var( iradht_rad, real(flip((radht_SW_2d(1,:) + &
+        call stat_update_var( stats_metadata%iradht_rad, real(flip((radht_SW_2d(1,:) + &
                radht_LW_2d(1,:)), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
-        call stat_update_var( iradht_LW_rad, &
+        call stat_update_var( stats_metadata%iradht_LW_rad, &
           real( flip(radht_LW_2d(1,:), rad_zt_dim), kind = core_rknd  ),stats_rad_zt )
 
-        call stat_update_var( ip_in_mb_rad, &
+        call stat_update_var( stats_metadata%ip_in_mb_rad, &
           real( flip(p_in_mb(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
-        call stat_update_var( isp_humidity_rad, &
+        call stat_update_var( stats_metadata%isp_humidity_rad, &
           real( flip(sp_humidity(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
-        call stat_update_var( iFrad_SW_rad, real( flip((Frad_uSW(1,:) - &
+        call stat_update_var( stats_metadata%iFrad_SW_rad, real( flip((Frad_uSW(1,:) - &
              Frad_dSW(1,:)), rad_zm_dim), kind = core_rknd  ), stats_rad_zm )
 
-        call stat_update_var( iFrad_LW_rad, real( flip((Frad_uLW(1,:) - &
+        call stat_update_var( stats_metadata%iFrad_LW_rad, real( flip((Frad_uLW(1,:) - &
              Frad_dLW(1,:)), rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
-        call stat_update_var( iFrad_SW_up_rad, &
+        call stat_update_var( stats_metadata%iFrad_SW_up_rad, &
              real( flip(Frad_uSW(1,:), rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
-        call stat_update_var( iFrad_LW_up_rad, real( flip(Frad_uLW(1,:), &
+        call stat_update_var( stats_metadata%iFrad_LW_up_rad, real( flip(Frad_uLW(1,:), &
              rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
-        call stat_update_var( iFrad_SW_down_rad, real( flip(Frad_dSW(1,:), &
+        call stat_update_var( stats_metadata%iFrad_SW_down_rad, real( flip(Frad_dSW(1,:), &
              rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
-        call stat_update_var( iFrad_LW_down_rad, real( flip(Frad_dLW(1,:), &
+        call stat_update_var( stats_metadata%iFrad_LW_down_rad, real( flip(Frad_dLW(1,:), &
              rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
-        call stat_update_var( ifdswcl, real( flip(fdswcl(1,:), rad_zm_dim), &
+        call stat_update_var( stats_metadata%ifdswcl, real( flip(fdswcl(1,:), rad_zm_dim), &
              kind = core_rknd ), stats_rad_zm )
-        call stat_update_var( ifuswcl, real( flip(fuswcl(1,:), rad_zm_dim), &
+        call stat_update_var( stats_metadata%ifuswcl, real( flip(fuswcl(1,:), rad_zm_dim), &
              kind = core_rknd ), stats_rad_zm )
-        call stat_update_var( ifdlwcl, real( flip(fdlwcl(1,:), rad_zm_dim), &
+        call stat_update_var( stats_metadata%ifdlwcl, real( flip(fdlwcl(1,:), rad_zm_dim), &
              kind = core_rknd ), stats_rad_zm )
-        call stat_update_var( ifulwcl, real( flip(fulwcl(1,:), rad_zm_dim), &
+        call stat_update_var( stats_metadata%ifulwcl, real( flip(fulwcl(1,:), rad_zm_dim), &
              kind = core_rknd ), stats_rad_zm )
 
       end if ! l_output_rad_files
@@ -6177,12 +6191,13 @@ module clubb_driver
   end subroutine update_radiation_variables
 
   !-----------------------------------------------------------------------
-  subroutine silhs_radiation_driver &
-             ( gr, nz, lh_num_samples, pdf_dim, hydromet_dim, time_current, &
+  subroutine silhs_radiation_driver( &
+               gr, nz, lh_num_samples, pdf_dim, hydromet_dim, time_current, &
                time_initial, rho, rho_zm, p_in_Pa, exner, &
                cloud_frac, ice_supersat_frac, X_nl_all_levs, &
                lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
                lh_sample_point_weights, hydromet, &
+               stats_metadata, &
                radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )
 
   ! Description:
@@ -6201,15 +6216,18 @@ module clubb_driver
       core_rknd
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
-        clubb_fatal_error              ! Constant
+      clubb_at_least_debug_level,  & ! Procedure
+      err_code,                    & ! Error Indicator
+      clubb_fatal_error              ! Constant
 
     use latin_hypercube_driver_module, only: &
       copy_X_nl_into_hydromet_all_pts   !--------------------- Procedure
 
     use constants_clubb, only: &
       fstderr        !------------------------------------------- Constant
+
+    use stats_variables, only: &
+      stats_metadata_type
 
     implicit none
 
@@ -6248,6 +6266,9 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet             ! Hydrometeor mean fields
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -6289,11 +6310,12 @@ module clubb_driver
 
     do isample=1, lh_num_samples
       ! Call a radiation scheme
-      call advance_clubb_radiation &
-           ( gr, time_current, time_initial, rho, rho_zm, p_in_Pa, &           ! Intent(in)
-             exner, cloud_frac, ice_supersat_frac, lh_thl_clipped(isample,:), & ! Intent(in)
-             lh_rt_clipped(isample,:), lh_rc_clipped(isample,:), &         ! Intent(in)
+      call advance_clubb_radiation( &
+             gr, time_current, time_initial, rho, rho_zm, p_in_Pa, &                 ! Intent(in)
+             exner, cloud_frac, ice_supersat_frac, lh_thl_clipped(isample,:), &      ! Intent(in)
+             lh_rt_clipped(isample,:), lh_rc_clipped(isample,:), &                   ! Intent(in)
              hydromet_all_pts(isample,:,:), &                                        ! Intent(in)
+             stats_metadata, &                                                       ! Intent(in)
              radht_samples(isample,:), Frad_samples(isample,:), &                    ! Intent(out)
              Frad_SW_up_samples(isample,:), Frad_LW_up_samples(isample,:), &         ! Intent(out)
              Frad_SW_down_samples(isample,:), Frad_LW_down_samples(isample,:) )      ! Intent(out)
@@ -6354,6 +6376,7 @@ module clubb_driver
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
+    stats_metadata, &                                       ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
     um, vm, upwp, vpwp, up2, vp2, up3, vp3, &               ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
@@ -6443,14 +6466,17 @@ module clubb_driver
     use stats_sfc_module, only: &
         stats_init_sfc ! Procedure(s)
 
+    use stats_variables, only: &
+        stats_metadata_type
+
     use grid_class, only: &
-      grid
+        grid
 
     use clubb_precision, only: &
-      core_rknd
+        core_rknd
 
     use parameter_indices, only: &
-      nparams
+        nparams
 
     use parameters_tunable, only: &
         nu_vertical_res_dep !---------------------------- Type(s)
@@ -6461,10 +6487,6 @@ module clubb_driver
       init_pdf_params, &              !----------------------------------- Procedure(s)
       copy_single_pdf_params_to_multi, &
       copy_multi_pdf_params_to_single
-    
-      
-    use stats_variables, only : &
-      l_stats
 
     use parameter_indices, only: &
       nparams
@@ -6609,6 +6631,9 @@ module clubb_driver
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! ------------------------- Input/Output Variables -------------------------
     type(stats), target, intent(inout) :: &
@@ -7308,6 +7333,7 @@ module clubb_driver
       host_dx_col, host_dy_col,                                                 & ! intent(in)
       clubb_params, nu_vert_res_dep_col, lmin_col,                              & ! intent(in)
       clubb_config_flags,                                                       & ! intent(in)
+      stats_metadata,                                                           & ! Intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col,                                & ! intent(inout)
       um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col,   & ! intent(inout)
       thlm_col, rtm_col, wprtp_col, wpthlp_col,                                 & ! intent(inout)
@@ -7355,7 +7381,7 @@ module clubb_driver
     !     stats_sfc = stats_sfc_col(1)
     ! because of some mysterious pointer issue. However, the only thing that 
     ! updates in stats is the field values, so we can copy only those instead.
-    if ( l_stats ) then 
+    if ( stats_metadata%l_stats ) then 
       stats_zm%accum_field_values = stats_zm_col(1)%accum_field_values
       stats_zm%accum_num_samples = stats_zm_col(1)%accum_num_samples
       
@@ -7440,7 +7466,7 @@ module clubb_driver
 
     ! If the number of grid columns to use is more than 1, then we want to 
     ! to output the multicolumn data to netcdf files
-    if ( ngrdcol > 1 .and. l_stats ) then
+    if ( ngrdcol > 1 .and. stats_metadata%l_stats ) then
 
       ! If this is the first call, we have to create and define the netcdf file
       if ( l_first_call ) then

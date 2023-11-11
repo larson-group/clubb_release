@@ -32,6 +32,7 @@ module advance_xp3_module
                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, & ! Intent(in)
                           sclrm, sclrp2, wpsclrp, wpsclrp2,          & ! Intent(in)
                           l_lmm_stepping,                            & ! Intent(in)
+                          stats_metadata,                            & ! Intent(in)
                           stats_zt,                                  & ! intent(inout)
                           rtp3, thlp3, sclrp3 )                        ! Intent(inout)
 
@@ -58,7 +59,11 @@ module advance_xp3_module
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
+
+    use stats_variables, only: &  
+        stats_metadata_type
 
     implicit none
 
@@ -95,6 +100,9 @@ module advance_xp3_module
     logical, intent(in) :: &
       l_lmm_stepping    ! Apply Linear Multistep Method (LMM) Stepping
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
     ! --------------------- Input/Output Variables ---------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zt
@@ -118,6 +126,7 @@ module advance_xp3_module
                                  invrs_rho_ds_zt,               & ! Intent(in)
                                  invrs_tau_zt, tau_max_zt,      & ! Intent(in) 
                                  rt_tol, l_lmm_stepping,        & ! Intent(in)
+                                 stats_metadata,                & ! Intent(in)
                                  stats_zt,                      & ! intent(inout)
                                  rtp3 )                           ! Intent(inout)
 
@@ -129,6 +138,7 @@ module advance_xp3_module
                                  invrs_rho_ds_zt,                 & ! Intent(in)
                                  invrs_tau_zt, tau_max_zt,        & ! Intent(in) 
                                  thl_tol, l_lmm_stepping,         & ! Intent(in)
+                                 stats_metadata,                  & ! Intent(in)
                                  stats_zt,                        & ! intent(inout)
                                  thlp3 )                            ! Intent(inout)
 
@@ -141,6 +151,7 @@ module advance_xp3_module
                                   invrs_rho_ds_zt,                                      & ! In
                                   invrs_tau_zt, tau_max_zt,                             & ! In 
                                   sclr_tol(sclr), l_lmm_stepping,                       & ! In
+                                  stats_metadata,                                       & ! Intent(in)
                                   stats_zt,                                             & ! In/Out
                                   sclrp3(:,:,sclr) )                                      ! In/Out
     end do ! i = 1, sclr_dim
@@ -156,7 +167,8 @@ module advance_xp3_module
                                      invrs_rho_ds_zt,                 & ! Intent(in)
                                      invrs_tau_zt, tau_max_zt,        & ! Intent(in) 
                                      x_tol, l_lmm_stepping,           & ! Intent(in)
-                                     stats_zt,                        & ! intent(inout)
+                                     stats_metadata,                  & ! Intent(in)
+                                     stats_zt,                        & ! Intent(inout)
                                      xp3 )                              ! Intent(inout)
 
     ! Description:
@@ -274,15 +286,7 @@ module advance_xp3_module
         stat_update_var
 
     use stats_variables, only: &
-        irtp3_bt,     & ! Variable(s)
-        irtp3_tp,     &
-        irtp3_ac,     &
-        irtp3_dp,     &
-        ithlp3_bt,    &
-        ithlp3_tp,    &
-        ithlp3_ac,    &
-        ithlp3_dp,    &
-        l_stats_samp
+        stats_metadata_type
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -320,6 +324,9 @@ module advance_xp3_module
     logical, intent(in) :: &
       l_lmm_stepping    ! Apply Linear Multistep Method (LMM) Stepping
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
     ! ----------------------- Input/Output Variable -----------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zt
@@ -356,21 +363,21 @@ module advance_xp3_module
 
     ! ----------------------- Begin Code -----------------------
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
       select case ( solve_type )
       case( xp3_rtp3 )
         ! Budget stats for rtp3
-        ixp3_bt = irtp3_bt
-        ixp3_tp = irtp3_tp
-        ixp3_ac = irtp3_ac
-        ixp3_dp = irtp3_dp
+        ixp3_bt = stats_metadata%irtp3_bt
+        ixp3_tp = stats_metadata%irtp3_tp
+        ixp3_ac = stats_metadata%irtp3_ac
+        ixp3_dp = stats_metadata%irtp3_dp
       case( xp3_thlp3 )
         ! Budget stats for thlp3
-        ixp3_bt = ithlp3_bt
-        ixp3_tp = ithlp3_tp
-        ixp3_ac = ithlp3_ac
-        ixp3_dp = ithlp3_dp
+        ixp3_bt = stats_metadata%ithlp3_bt
+        ixp3_tp = stats_metadata%ithlp3_tp
+        ixp3_ac = stats_metadata%ithlp3_ac
+        ixp3_dp = stats_metadata%ithlp3_dp
       case default
         ! Budgets aren't setup for the passive scalars
         ixp3_bt = 0
@@ -386,7 +393,7 @@ module advance_xp3_module
         end do
       end if ! l_predict_xp3
 
-    end if ! l_stats_samp
+    end if ! stats_metadata%l_stats_samp
 
     ! Initialize variables
     term_tp = zero
@@ -443,7 +450,7 @@ module advance_xp3_module
     xp3(:,1) = zero
     xp3(:,nz) = zero
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
       do i = 1, ngrdcol
         call stat_update_var( ixp3_tp, term_tp(i,:),  & ! intent(in)
                               stats_zt(i) )             ! intent(inout)
@@ -457,7 +464,7 @@ module advance_xp3_module
                                 stats_zt(i) )                 ! Intent(inout)
         end if ! l_predict_xp3
       end do
-    end if ! l_stats_samp
+    end if ! stats_metadata%l_stats_samp
 
     return
 

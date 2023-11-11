@@ -42,6 +42,7 @@ module clip_explicit
                                 l_predict_upwp_vpwp, &
                                 l_tke_aniso, &
                                 l_linearize_pbl_winds, &
+                                stats_metadata, &
                                 stats_zm, & 
                                 wprtp, wpthlp, upwp, vpwp, wpsclrp, &
                                 upwp_pert, vpwp_pert )
@@ -74,7 +75,11 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
+
+     use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
@@ -114,6 +119,9 @@ module clip_explicit
       l_tke_aniso,           & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                ! (u'^2 + v'^2 + w'^2)
       l_linearize_pbl_winds    ! Flag (used by E3SM) to linearize PBL winds
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! --------------------- Input/Output Variables ---------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -189,6 +197,7 @@ module clip_explicit
     call clip_covar( nz, ngrdcol, gr, clip_wprtp, l_first_clip_ts,  & ! intent(in) 
                      l_last_clip_ts, dt, wp2, rtp2,                 & ! intent(in)
                      l_predict_upwp_vpwp,                           & ! intent(in)
+                     stats_metadata,                                & ! intent(in)
                      stats_zm,                                      & ! intent(inout)
                      wprtp, wprtp_chnge )                             ! intent(inout)
 
@@ -227,6 +236,7 @@ module clip_explicit
     call clip_covar( nz, ngrdcol, gr, clip_wpthlp, l_first_clip_ts, & ! intent(in)
                      l_last_clip_ts, dt, wp2, thlp2,                & ! intent(in)
                      l_predict_upwp_vpwp,                           & ! intent(in)
+                     stats_metadata,                                & ! intent(in)
                      stats_zm,                                      & ! intent(inout)
                      wpthlp, wpthlp_chnge )                           ! intent(inout)
 
@@ -266,6 +276,7 @@ module clip_explicit
       call clip_covar( nz, ngrdcol, gr, clip_wpsclrp, l_first_clip_ts,  & ! intent(in)
                        l_last_clip_ts, dt, wp2(:,:), sclrp2(:,:,sclr),  & ! intent(in)
                        l_predict_upwp_vpwp,                             & ! intent(in)
+                       stats_metadata,                                  & ! intent(in)
                        stats_zm,                                        & ! intent(inout)
                        wpsclrp(:,:,sclr), wpsclrp_chnge(:,:,sclr) )       ! intent(inout)
     enddo
@@ -307,6 +318,7 @@ module clip_explicit
       call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
                        l_last_clip_ts, dt, wp2, up2,                & ! intent(in)
                        l_predict_upwp_vpwp,                         & ! intent(in)
+                       stats_metadata,                              & ! intent(in)
                        stats_zm,                                    & ! intent(inout)
                        upwp, upwp_chnge )                             ! intent(inout)
                      
@@ -314,6 +326,7 @@ module clip_explicit
         call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, up2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          upwp_pert, upwp_chnge )                        ! intent(inout)
       endif ! l_linearize_pbl_winds
@@ -322,6 +335,7 @@ module clip_explicit
       call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
                        l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
                        l_predict_upwp_vpwp,                         & ! intent(in)
+                       stats_metadata,                              & ! intent(in)
                        stats_zm,                                    & ! intent(inout)
                        upwp, upwp_chnge )                             ! intent(inout)
                      
@@ -329,6 +343,7 @@ module clip_explicit
           call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
                            l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
                            l_predict_upwp_vpwp,                         & ! intent(in)
+                           stats_metadata,                              & ! intent(in)
                            stats_zm,                                    & ! intent(inout)
                            upwp_pert, upwp_chnge )                        ! intent(inout)
       endif ! l_linearize_pbl_winds
@@ -371,6 +386,7 @@ module clip_explicit
       call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
                        l_last_clip_ts, dt, wp2, vp2,                & ! intent(in)
                        l_predict_upwp_vpwp,                         & ! intent(in)
+                       stats_metadata,                              & ! intent(in)
                        stats_zm,                                    & ! intent(inout)
                        vpwp, vpwp_chnge )                             ! intent(inout)
                      
@@ -378,6 +394,7 @@ module clip_explicit
         call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, vp2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          vpwp_pert, vpwp_chnge )                        ! intent(inout)
       endif ! l_linearize_pbl_winds
@@ -386,6 +403,7 @@ module clip_explicit
       call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
                        l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
                        l_predict_upwp_vpwp,                         & ! intent(in)
+                       stats_metadata,                              & ! intent(in)
                        stats_zm,                                    & ! intent(inout)
                        vpwp, vpwp_chnge )                             ! intent(inout)
                      
@@ -393,6 +411,7 @@ module clip_explicit
         call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
                          l_predict_upwp_vpwp,                         & ! intent(in)
+                         stats_metadata,                              & ! intent(in)                       stats_metadata,                              & ! intent(in)
                          stats_zm,                                    & ! intent(inout)
                          vpwp_pert, vpwp_chnge )                        ! intent(inout)
       endif ! l_linearize_pbl_winds
@@ -408,6 +427,7 @@ module clip_explicit
   subroutine clip_covar( nz, ngrdcol, gr, solve_type, l_first_clip_ts,  & 
                          l_last_clip_ts, dt, xp2, yp2,  &
                          l_predict_upwp_vpwp, &
+                         stats_metadata, &
                          stats_zm, &
                          xpyp, xpyp_chnge )
 
@@ -466,13 +486,8 @@ module clip_explicit
         stat_modify, & 
         stat_end_update
 
-    use stats_variables, only: & 
-        iwprtp_cl, &
-        iwpthlp_cl, &
-        irtpthlp_cl, &
-        iupwp_cl, &
-        ivpwp_cl, &
-        l_stats_samp
+    use stats_variables, only: &
+        stats_metadata_type
 
     use stats_type, only: stats ! Type
 
@@ -506,6 +521,9 @@ module clip_explicit
                           ! approximated by eddy diffusivity when <u> and <v> are advanced in
                           ! subroutine advance_windm_edsclrm.
                           
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
     ! -------------------------- InOut Variables --------------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zm
@@ -532,20 +550,20 @@ module clip_explicit
 
     select case ( solve_type )
     case ( clip_wprtp )   ! wprtp clipping budget term
-      ixpyp_cl = iwprtp_cl
+      ixpyp_cl = stats_metadata%iwprtp_cl
     case ( clip_wpthlp )   ! wpthlp clipping budget term
-      ixpyp_cl = iwpthlp_cl
+      ixpyp_cl = stats_metadata%iwpthlp_cl
     case ( clip_rtpthlp )   ! rtpthlp clipping budget term
-      ixpyp_cl = irtpthlp_cl
+      ixpyp_cl = stats_metadata%irtpthlp_cl
     case ( clip_upwp )   ! upwp clipping budget term
       if ( l_predict_upwp_vpwp ) then
-        ixpyp_cl = iupwp_cl
+        ixpyp_cl = stats_metadata%iupwp_cl
       else
         ixpyp_cl = 0
       endif ! l_predict_upwp_vpwp
     case ( clip_vpwp )   ! vpwp clipping budget term
       if ( l_predict_upwp_vpwp ) then
-        ixpyp_cl = ivpwp_cl
+        ixpyp_cl = stats_metadata%ivpwp_cl
       else
         ixpyp_cl = 0
       endif ! l_predict_upwp_vpwp
@@ -554,7 +572,7 @@ module clip_explicit
     end select
 
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( xpyp )
 
@@ -626,7 +644,7 @@ module clip_explicit
     end do
     !$acc end parallel loop
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( xpyp )
 
@@ -651,6 +669,7 @@ module clip_explicit
   subroutine clip_covar_level( solve_type, level, l_first_clip_ts,  & 
                                l_last_clip_ts, dt, xp2, yp2,  &
                                l_predict_upwp_vpwp, &
+                               stats_metadata, &
                                stats_zm, & 
                                xpyp, xpyp_chnge )
 
@@ -707,13 +726,8 @@ module clip_explicit
         stat_modify_pt,       & 
         stat_end_update_pt
 
-    use stats_variables, only: & 
-        iwprtp_cl, &
-        iwpthlp_cl, &
-        irtpthlp_cl, &
-        iupwp_cl, &
-        ivpwp_cl, &
-        l_stats_samp
+    use stats_variables, only: &
+        stats_metadata_type
 
     use stats_type, only: stats ! Type
 
@@ -722,7 +736,7 @@ module clip_explicit
     type (stats), target, intent(inout) :: &
       stats_zm
 
-    ! Input Variables
+    !------------------------- Input Variables -------------------------
     integer, intent(in) :: & 
       solve_type, & ! Variable being solved; used for STATS
       level         ! Vertical level index
@@ -745,38 +759,43 @@ module clip_explicit
                           ! approximated by eddy diffusivity when <u> and <v> are advanced in
                           ! subroutine advance_windm_edsclrm.
 
-    ! Output Variable
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    !------------------------- InOut Variable -------------------------
     real( kind = core_rknd ), intent(inout) :: & 
       xpyp   ! Covariance of x and y, <x'y'>              [{x units}*{y units}]
 
+    !------------------------- Output Variable -------------------------
     real( kind = core_rknd ), intent(out) :: &
       xpyp_chnge  ! Net change in <x'y'> due to clipping  [{x units}*{y units}]
 
 
-    ! Local Variables
+    !------------------------- Local Variables -------------------------
     real( kind = core_rknd ) ::  & 
       max_mag_corr    ! Maximum magnitude of a correlation allowed
 
     integer :: & 
       ixpyp_cl    ! Statistics index
 
+    !------------------------- Begin Code -------------------------
 
     select case ( solve_type )
     case ( clip_wprtp )   ! wprtp clipping budget term
-      ixpyp_cl = iwprtp_cl
+      ixpyp_cl = stats_metadata%iwprtp_cl
     case ( clip_wpthlp )   ! wpthlp clipping budget term
-      ixpyp_cl = iwpthlp_cl
+      ixpyp_cl = stats_metadata%iwpthlp_cl
     case ( clip_rtpthlp )   ! rtpthlp clipping budget term
-      ixpyp_cl = irtpthlp_cl
+      ixpyp_cl = stats_metadata%irtpthlp_cl
     case ( clip_upwp )   ! upwp clipping budget term
       if ( l_predict_upwp_vpwp ) then
-        ixpyp_cl = iupwp_cl
+        ixpyp_cl = stats_metadata%iupwp_cl
       else
         ixpyp_cl = 0
       endif ! l_predict_upwp_vpwp
     case ( clip_vpwp )   ! vpwp clipping budget term
       if ( l_predict_upwp_vpwp ) then
-        ixpyp_cl = ivpwp_cl
+        ixpyp_cl = stats_metadata%ivpwp_cl
       else
         ixpyp_cl = 0
       endif ! l_predict_upwp_vpwp
@@ -785,7 +804,7 @@ module clip_explicit
     end select
 
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
        if ( l_first_clip_ts ) then
           call stat_begin_update_pt( ixpyp_cl, level, xpyp / dt, & ! intent(in)
                                      stats_zm ) ! intent(inout)
@@ -836,7 +855,7 @@ module clip_explicit
 
     endif
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
        if ( l_last_clip_ts ) then
           call stat_end_update_pt( ixpyp_cl, level, xpyp / dt, & ! intent(in)
                                    stats_zm ) ! intent(inout)
@@ -852,7 +871,8 @@ module clip_explicit
 
   !=============================================================================
   subroutine clip_variance( nz, ngrdcol, gr, solve_type, dt, threshold, &
-                            stats_zm, & ! intent(inout)
+                            stats_metadata, &
+                            stats_zm, &
                             xp2 )
 
     ! Description:
@@ -880,13 +900,8 @@ module clip_explicit
         stat_begin_update,  & ! Procedure(s)
         stat_end_update
 
-    use stats_variables, only: & 
-        iwp2_cl, & 
-        irtp2_cl, & 
-        ithlp2_cl, & 
-        iup2_cl, & 
-        ivp2_cl, & 
-        l_stats_samp
+    use stats_variables, only: &
+        stats_metadata_type
 
     use stats_type, only: stats ! Type
 
@@ -907,6 +922,9 @@ module clip_explicit
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       threshold   ! Minimum value of x'^2                   [{x units}^2]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! -------------------- InOut Variables --------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -929,21 +947,21 @@ module clip_explicit
 
     select case ( solve_type )
     case ( clip_wp2 )   ! wp2 clipping budget term
-      ixp2_cl = iwp2_cl
+      ixp2_cl = stats_metadata%iwp2_cl
     case ( clip_rtp2 )   ! rtp2 clipping budget term
-      ixp2_cl = irtp2_cl
+      ixp2_cl = stats_metadata%irtp2_cl
     case ( clip_thlp2 )   ! thlp2 clipping budget term
-      ixp2_cl = ithlp2_cl
+      ixp2_cl = stats_metadata%ithlp2_cl
     case ( clip_up2 )   ! up2 clipping budget term
-      ixp2_cl = iup2_cl
+      ixp2_cl = stats_metadata%iup2_cl
     case ( clip_vp2 )   ! vp2 clipping budget term
-      ixp2_cl = ivp2_cl
+      ixp2_cl = stats_metadata%ivp2_cl
     case default   ! scalars are involved
       ixp2_cl = 0
     end select
 
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
       !$acc update host( xp2 )
       do i = 1, ngrdcol
         call stat_begin_update( nz, ixp2_cl, xp2(i,:) / dt, & ! intent(in)
@@ -972,7 +990,7 @@ module clip_explicit
     end do
     !$acc end parallel loop
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
       !$acc update host( xp2 )
       do i = 1, ngrdcol
         call stat_end_update( nz, ixp2_cl, xp2(i,:) / dt, & ! intent(in)
@@ -990,6 +1008,7 @@ module clip_explicit
   subroutine clip_skewness( nz, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
                             Skw_max_mag, wp2_zt,                & ! intent(in)
                             l_use_wp3_lim_with_smth_Heaviside,  & ! intent(in)
+                            stats_metadata,                     & ! intent(in)
                             stats_zt,                           & ! intent(inout)
                             wp3 )                                 ! intent(out)
 
@@ -1042,9 +1061,8 @@ module clip_explicit
         stat_begin_update,  & ! Procedure(s)
         stat_end_update
 
-    use stats_variables, only: & 
-        iwp3_cl, & 
-        l_stats_samp     
+    use stats_variables, only: &
+        stats_metadata_type
 
     use stats_type, only: stats ! Type
 
@@ -1075,6 +1093,9 @@ module clip_explicit
     logical, intent(in):: &
       l_use_wp3_lim_with_smth_Heaviside
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
     ! ----------------------- Input/Output Variables -----------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_zt
@@ -1091,12 +1112,12 @@ module clip_explicit
     !$acc              sfc_elevation, wp2_zt ) &
     !$acc        copy( wp3 )
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( wp3 )
 
       do i = 1, ngrdcol
-        call stat_begin_update( nz, iwp3_cl, wp3(i,:) / dt, & ! intent(in)
+        call stat_begin_update( nz, stats_metadata%iwp3_cl, wp3(i,:) / dt, & ! intent(in)
                                 stats_zt(i) ) ! intent(inout)
       end do
     end if
@@ -1106,12 +1127,12 @@ module clip_explicit
                              l_use_wp3_lim_with_smth_Heaviside, & ! intent(in)
                              wp3 )                                ! intent(inout)
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( wp3 )
 
       do i = 1, ngrdcol
-        call stat_end_update( nz, iwp3_cl, wp3(i,:) / dt, & ! intent(in)
+        call stat_end_update( nz, stats_metadata%iwp3_cl, wp3(i,:) / dt, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
       end do
     end if

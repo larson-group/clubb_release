@@ -40,8 +40,8 @@ module output_grads
   subroutine open_grads( iunit, fdir, fname,  & 
                          ia, iz, nlat, nlon, z, & 
                          day, month, year, lat_vals, lon_vals, & 
-                         time, dtwrite, & 
-                         nvar, &
+                         time, & 
+                         stats_metadata, nvar, &
                          grads_file )
 ! Description:
 !   Opens and initialize variable components for derived type 'grads_file'
@@ -61,7 +61,7 @@ module output_grads
         time_precision ! Variable
 
     use stats_variables, only: &
-        l_allow_small_stats_tout
+        stats_metadata_type
 
     implicit none
 
@@ -95,8 +95,9 @@ module output_grads
 
     real( kind = time_precision ), intent(in) ::  & 
       time        ! Time since Model start          [s]
-    real( kind = core_rknd ), intent(in) :: &
-      dtwrite     ! Time interval for output        [s]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! Number of GrADS variables to store            [#]
     integer, intent(in) :: nvar
@@ -144,17 +145,17 @@ module output_grads
     grads_file%lat_vals  = lat_vals
     grads_file%lon_vals  = lon_vals
 
-    grads_file%dtwrite = dtwrite
+    grads_file%dtwrite = stats_metadata%stats_tout
 
     grads_file%nvar = nvar
 
     ! Check to make sure the timestep is appropriate. GrADS does not support an
     ! output timestep less than 1 minute.
-    if (dtwrite < sec_per_min) then
+    if ( stats_metadata%stats_tout < sec_per_min ) then
       write(fstderr,*) "Warning: GrADS requires an output timestep of at least &
                        &one minute, but the requested output timestep &
                        &(stats_tout) is less than one minute."
-      if (.not. l_allow_small_stats_tout) then
+      if (.not. stats_metadata%l_allow_small_stats_tout) then
         write(fstderr,*) "To override this warning, set l_allow_small_stats_tout = &
                          &.true. in the stats_setting namelist in the &
                          &appropriate *_model.in file."
@@ -193,7 +194,7 @@ module output_grads
 
       call check_grads( iunit, fdir, fname,  & ! intent(in)
                         ia, iz, &  ! intent(in)
-                        day, month, year, time, dtwrite, & ! intent(in) 
+                        day, month, year, time, stats_metadata%stats_tout, & ! intent(in) 
                         nvar,  &  ! intent(in)
                         l_error, grads_file%ntimes, grads_file%nrecord, & ! intent(out)
                         grads_file%time ) ! intnet(out)

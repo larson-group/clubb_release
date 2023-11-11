@@ -70,10 +70,10 @@ module stats_type_utilities
     !Example of the old format
     !changed by Joshua Fasching 23 August 2007
 
-    !stats_zt%file%var(ithlm)%ptr => stats_zt%accum_field_values(:,k)
-    !stats_zt%file%var(ithlm)%name = "thlm"
-    !stats_zt%file%var(ithlm)%description = "thetal (K)"
-    !stats_zt%file%var(ithlm)%units = "K"
+    !stats_zt%file%var(stats_metadata%ithlm)%ptr => stats_zt%accum_field_values(:,k)
+    !stats_zt%file%var(stats_metadata%ithlm)%name = "thlm"
+    !stats_zt%file%var(stats_metadata%ithlm)%description = "thetal (K)"
+    !stats_zt%file%var(stats_metadata%ithlm)%units = "K"
 
     return
 
@@ -203,11 +203,11 @@ module stats_type_utilities
     !
     ! Example:
     !
-    !  call stat_begin_update( irtm_bt, real(rtm / dt), stats_zt )
+    !  call stat_begin_update( stats_metadata%irtm_bt, real(rtm / dt), stats_zt )
     !
     !  !!! Perform clipping of rtm !!!
     !
-    !  call stat_end_update( irtm_bt, real(rtm / dt), stats_zt )
+    !  call stat_end_update( stats_metadata%irtm_bt, real(rtm / dt), stats_zt )
     !
     ! This subroutine is often used with stats budget terms for variables that
     ! have both implicit and explicit components (e.g. wp3_ta).  The explicit
@@ -336,11 +336,11 @@ nz
     !
     ! Example:
     !
-    !  call stat_begin_update( irtm_bt, real(rtm / dt), stats_zt )
+    !  call stat_begin_update( stats_metadata%irtm_bt, real(rtm / dt), stats_zt )
     !
     !  !!! Perform clipping of rtm !!!
     !
-    !  call stat_end_update( irtm_bt, real(rtm / dt), stats_zt )
+    !  call stat_end_update( stats_metadata%irtm_bt, real(rtm / dt), stats_zt )
     !
     ! This subroutine is often used with stats budget terms for variables that
     ! have both implicit and explicit components (e.g. wp3_ta).  The explicit

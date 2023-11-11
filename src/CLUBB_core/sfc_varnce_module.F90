@@ -19,6 +19,7 @@ module sfc_varnce_module
                               !wp2_splat_sfc, tau_zm_sfc, &
                               l_vary_convect_depth, &
                               clubb_params, &
+                              stats_metadata, &
                               stats_zm, &
                               wp2, up2, vp2, & 
                               thlp2, rtp2, rtpthlp, & 
@@ -86,13 +87,7 @@ module sfc_varnce_module
         stat_update_var_pt
 
     use stats_variables, only: &
-        l_stats_samp,  &
-        ithlp2_sf,     &
-        irtp2_sf,      &
-        irtpthlp_sf,   &
-        iup2_sf,       &
-        ivp2_sf,       &
-        iwp2_sf
+        stats_metadata_type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -154,6 +149,9 @@ module sfc_varnce_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
     !-------------------------- InOut Variables --------------------------
     type (stats), target, intent(inout), dimension(ngrdcol) :: &
       stats_zm
@@ -211,32 +209,32 @@ module sfc_varnce_module
     up2_sfc_coef = clubb_params(iup2_sfc_coef)
 
     ! Reflect surface varnce changes in budget
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp )
 
       do i = 1, ngrdcol
-        call stat_begin_update_pt( ithlp2_sf, 1,      & ! intent(in)
+        call stat_begin_update_pt( stats_metadata%ithlp2_sf, 1,      & ! intent(in)
                                    thlp2(i,1) / dt,   & ! intent(in)
                                    stats_zm(i) )        ! intent(inout)
 
-        call stat_begin_update_pt( irtp2_sf, 1,       & ! intent(in)
+        call stat_begin_update_pt( stats_metadata%irtp2_sf, 1,       & ! intent(in)
                                    rtp2(i,1) / dt,    & ! intent(in)
                                    stats_zm(i) )        ! intent(inout)
 
-        call stat_begin_update_pt( irtpthlp_sf, 1,    & ! intent(in)
+        call stat_begin_update_pt( stats_metadata%irtpthlp_sf, 1,    & ! intent(in)
                                    rtpthlp(i,1) / dt, & ! intent(in)
                                    stats_zm(i) )        ! intent(inout)
 
-        call stat_begin_update_pt( iup2_sf, 1,        & ! intent(in)
+        call stat_begin_update_pt( stats_metadata%iup2_sf, 1,        & ! intent(in)
                                    up2(i,1) / dt,     & ! intent(in)
                                    stats_zm(i) )        ! intent(inout)
 
-        call stat_begin_update_pt( ivp2_sf, 1,        & ! intent(in)
+        call stat_begin_update_pt( stats_metadata%ivp2_sf, 1,        & ! intent(in)
                                    vp2(i,1) / dt,     & ! intent(in)
                                    stats_zm(i) ) ! intent(inout)
 
-        call stat_begin_update_pt( iwp2_sf, 1,        & ! intent(in)
+        call stat_begin_update_pt( stats_metadata%iwp2_sf, 1,        & ! intent(in)
                                    wp2(i,1) / dt,     & ! intent(in)
                                    stats_zm(i) )        ! intent(inout)
       end do
@@ -714,32 +712,32 @@ module sfc_varnce_module
       end do
     end if
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp )
 
       do i = 1, ngrdcol
-        call stat_end_update_pt( ithlp2_sf, 1,    & ! intent(in)
+        call stat_end_update_pt( stats_metadata%ithlp2_sf, 1,    & ! intent(in)
                                  thlp2(i,1) / dt, & ! intent(in)
                                  stats_zm(i) )      ! intent(inout)
 
-        call stat_end_update_pt( irtp2_sf, 1,     & ! intent(in)
+        call stat_end_update_pt( stats_metadata%irtp2_sf, 1,     & ! intent(in)
                                  rtp2(i,1) / dt,  & ! intent(in)
                                  stats_zm(i) )      ! intent(inout)
 
-        call stat_end_update_pt( irtpthlp_sf, 1,    & ! intent(in)
+        call stat_end_update_pt( stats_metadata%irtpthlp_sf, 1,    & ! intent(in)
                                  rtpthlp(i,1) / dt, & ! intent(in)
                                  stats_zm(i) )        ! intent(inout)
 
-        call stat_end_update_pt( iup2_sf, 1,    & ! intent(in)
+        call stat_end_update_pt( stats_metadata%iup2_sf, 1,    & ! intent(in)
                                  up2(i,1) / dt, & ! intent(in)
                                  stats_zm(i) )    ! intent(inout)
 
-        call stat_end_update_pt( ivp2_sf, 1,    & ! intent(in)
+        call stat_end_update_pt( stats_metadata%ivp2_sf, 1,    & ! intent(in)
                                  vp2(i,1) / dt, & ! intent(in)
                                  stats_zm(i) )    ! intent(inout)
 
-        call stat_end_update_pt( iwp2_sf, 1,    & ! intent(in)
+        call stat_end_update_pt( stats_metadata%iwp2_sf, 1,    & ! intent(in)
                                  wp2(i,1) / dt, & ! intent(in)
                                  stats_zm(i) )    ! intent(inout)
       end do

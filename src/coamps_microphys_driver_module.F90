@@ -19,6 +19,7 @@ module coamps_microphys_driver_module
            rtm, wm_zm, p_in_Pa, exner, rho, & 
            thlm, rim, rrm, rgm, rsm, & 
            rcm, Ncm, Nrm, Nim, &
+           stats_metadata, &
            stats_zt, &
            Nccnm, cond, &
            Vrs, Vri, Vrr, VNr, Vrg, & 
@@ -58,11 +59,8 @@ module coamps_microphys_driver_module
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
-    use stats_variables, only: l_stats_samp,  & ! Variable(s)
-        im_vol_rad_rain, & 
-        im_vol_rad_cloud, &
-        isnowslope, & 
-        iNsm
+    use stats_variables, only: &
+        stats_metadata_type
 
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
@@ -74,11 +72,6 @@ module coamps_microphys_driver_module
     use stats_type, only: stats ! Type
 
     implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_zt 
-
-    type (grid), target, intent(in) :: gr
 
 ! External Calls
     external ::  & 
@@ -165,6 +158,8 @@ module coamps_microphys_driver_module
       wtm   = 1.0  ! Weighting array for mass point (never used)
 
 ! Input Variables
+    type (grid), target, intent(in) :: gr
+
     character(len=*), intent(in) :: runtype
 
 ! Note: Time variables "timea_in" and "deltf_in" need to be passed in
@@ -194,6 +189,12 @@ module coamps_microphys_driver_module
       Nrm,        & ! Number of rain drops       [count/kg]
       Ncm,        & ! Number of cloud droplets   [count/kg]
       Nim           ! Number of ice crystals     [count/kg]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    type(stats), target, intent(inout) :: &
+      stats_zt 
 
     real(kind = core_rknd), dimension(gr%nz), intent(inout) :: & 
       Nccnm         ! Number of cloud nuclei     [count/kg]
@@ -924,12 +925,12 @@ module coamps_microphys_driver_module
       rvm_mc(1)    = 0.0_core_rknd
       thlm_mc(1)   = 0.0_core_rknd
 
-      if ( l_stats_samp ) then
+      if ( stats_metadata%l_stats_samp ) then
         ! Mean volume radius of rain and cloud droplets
         do k=2,kk+1
-          call stat_update_var_pt( im_vol_rad_rain, k, &
+          call stat_update_var_pt( stats_metadata%im_vol_rad_rain, k, &
                real(rvr(1,1,k-1) / 100.0, kind = core_rknd), stats_zt )
-          call stat_update_var_pt( im_vol_rad_cloud, k, &
+          call stat_update_var_pt( stats_metadata%im_vol_rad_cloud, k, &
                real(rvc(1,1,k-1) / 100.0, kind = core_rknd), stats_zt )
         end do
 
@@ -937,14 +938,14 @@ module coamps_microphys_driver_module
 ! Addition by Adam Smith, 24 April 2008
 ! Adding calculation for snow particle number concentration
         do k = 2,kk,1
-          call stat_update_var_pt( isnowslope, k, real(snowslope(1,1,k), &
+          call stat_update_var_pt( stats_metadata%isnowslope, k, real(snowslope(1,1,k), &
             kind = core_rknd), stats_zt)
         end do
 
 ! Addition by Adam Smith, 25 April 2008
 ! Adding calculation for snow particle number concentration
         do k=2, kk+1
-          call stat_update_var_pt( iNsm, k, real(Nsm(k), kind = core_rknd) ,stats_zt )
+          call stat_update_var_pt( stats_metadata%iNsm, k, real(Nsm(k), kind = core_rknd) ,stats_zt )
         end do
 
       end if

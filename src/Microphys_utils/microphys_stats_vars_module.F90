@@ -125,7 +125,7 @@ module microphys_stats_vars_module
   end subroutine microphys_put_var
   !-----------------------------------------------------------------------
 
-  subroutine microphys_stats_accumulate( microphys_stats_vars, l_stats_samp, grid )
+  subroutine microphys_stats_accumulate( microphys_stats_vars, stats_metadata, grid )
 
   ! Description:
   !   Samples all variables stored in the microphys_stats_vars structure by
@@ -142,14 +142,17 @@ module microphys_stats_vars_module
     use stats_type, only: &
       stats           ! Type
 
+    use stats_variables, only: &
+      stats_metadata_type
+
     implicit none
 
     ! Input Variables
     type(microphys_stats_vars_type), intent(in) :: &
       microphys_stats_vars
 
-    logical, intent(in) :: &
-      l_stats_samp              ! Are we sampling this timestep?
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     ! Input/Output Variables
     type(stats), intent(inout) :: &
@@ -161,7 +164,7 @@ module microphys_stats_vars_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
       do i=1, microphys_stats_vars%num_vars
 
@@ -170,7 +173,7 @@ module microphys_stats_vars_module
 
       end do ! i=1, microphys_stats_vars%num_vars
 
-    end if ! l_stats_samp
+    end if ! stats_metadata%l_stats_samp
 
   end subroutine microphys_stats_accumulate
   !-----------------------------------------------------------------------

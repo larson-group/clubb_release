@@ -25,6 +25,7 @@ module mixed_moment_PDF_integrals
                                         corr_array_1_n, corr_array_2_n, &
                                         pdf_params, hydromet_pdf_params, &
                                         precip_fracs, &
+                                        stats_metadata, &
                                         stats_zt, stats_zm, &
                                         rtphmp_zt, thlphmp_zt, wp2hmp ) 
 
@@ -72,27 +73,21 @@ module mixed_moment_PDF_integrals
     use stats_type_utilities, only: &
         stat_update_var    ! Procedure(s)
 
-    use stats_variables, only: &
-        iwp2hmp,      & ! Variable(s)
-        irtphmp,      &
-        ithlphmp,     &
-        ihmxphmyp,    &
-        l_stats_samp
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
+
+    use stats_variables, only: &
+        stats_metadata_type
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
-      stats_zt, &
-      stats_zm 
 
+    !------------------------ Input Variables ------------------------
     type (grid), target, intent(in) :: gr
 
-    ! Input Variables
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
       pdf_dim   ! Number of variables in the correlation array
@@ -120,7 +115,15 @@ module mixed_moment_PDF_integrals
     type(precipitation_fractions), intent(in) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    ! Output Variables
+    !------------------------ InOut Variables ------------------------
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    type(stats), target, intent(inout) :: &
+      stats_zt, &
+      stats_zm 
+
+    !------------------------ Output Variables ------------------------
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       wp2hmp,     & ! Higher-order mixed moment:  < w'^2 hm' > [(m/s)^2<hm un.>]
       rtphmp_zt,  & ! Covariance of rt and hm (on t-levs.)     [(kg/kg)<hm un.>]
@@ -400,35 +403,35 @@ module mixed_moment_PDF_integrals
 
 
     ! Statistics
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
 
        do hm_idx = 1, hydromet_dim, 1
 
-          if ( iwp2hmp(hm_idx) > 0 ) then
-             call stat_update_var( iwp2hmp(hm_idx), wp2hmp(:,hm_idx), stats_zt )
-          endif ! iwp2hmp(hm_idx) > 0
+          if ( stats_metadata%iwp2hmp(hm_idx) > 0 ) then
+             call stat_update_var( stats_metadata%iwp2hmp(hm_idx), wp2hmp(:,hm_idx), stats_zt )
+          endif ! stats_metadata%iwp2hmp(hm_idx) > 0
 
-          if ( irtphmp(hm_idx) > 0 ) then
-             call stat_update_var( irtphmp(hm_idx), &
+          if ( stats_metadata%irtphmp(hm_idx) > 0 ) then
+             call stat_update_var( stats_metadata%irtphmp(hm_idx), &
                                    zt2zm( gr, rtphmp_zt(:,hm_idx) ), stats_zm )
-          endif ! irtphmp(hm_idx) > 0
+          endif ! stats_metadata%irtphmp(hm_idx) > 0
 
-          if ( ithlphmp(hm_idx) > 0 ) then
-             call stat_update_var( ithlphmp(hm_idx), &
+          if ( stats_metadata%ithlphmp(hm_idx) > 0 ) then
+             call stat_update_var( stats_metadata%ithlphmp(hm_idx), &
                                    zt2zm( gr, thlphmp_zt(:,hm_idx) ), stats_zm )
-          endif ! ithlphmp(hm_idx) > 0
+          endif ! stats_metadata%ithlphmp(hm_idx) > 0
 
           do hmy_idx = hm_idx+1, hydromet_dim, 1
-             if ( ihmxphmyp(hmy_idx,hm_idx) > 0 ) then
-                call stat_update_var( ihmxphmyp(hmy_idx,hm_idx), &
+             if ( stats_metadata%ihmxphmyp(hmy_idx,hm_idx) > 0 ) then
+                call stat_update_var( stats_metadata%ihmxphmyp(hmy_idx,hm_idx), &
                                       zt2zm( gr, hmxphmyp_zt(:,hmy_idx,hm_idx) ), &
                                       stats_zm )
-             endif ! ihmxphmyp(hmy_idx,hm_idx) > 0
+             endif ! stats_metadata%ihmxphmyp(hmy_idx,hm_idx) > 0
           enddo ! hmy_idx = hm_idx+1, hydromet_dim, 1
 
        enddo ! hm_idx = 1, hydromet_dim, 1
 
-    endif ! l_stats_samp
+    endif ! stats_metadata%l_stats_samp
 
 
     return

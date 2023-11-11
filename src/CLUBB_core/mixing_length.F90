@@ -17,6 +17,7 @@ module mixing_length
   subroutine compute_mixing_length( nz, ngrdcol, gr, thvm, thlm, &
                                     rtm, em, Lscale_max, p_in_Pa, &
                                     exner, thv_ds, mu, lmin, l_implemented, &
+                                    stats_metadata, &
                                     Lscale, Lscale_up, Lscale_down )
 
     ! Description:
@@ -138,6 +139,8 @@ module mixing_length
     use saturation, only:  &
         sat_mixrat_liq ! Procedure(s)
         
+    use stats_variables, only: & 
+        stats_metadata_type
 
     implicit none
 
@@ -180,6 +183,9 @@ module mixing_length
       Lscale,    & ! Mixing length      [m]
       Lscale_up, & ! Mixing length up   [m]
       Lscale_down  ! Mixing length down [m]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     !--------------------------------- Local Variables ---------------------------------
 
@@ -871,6 +877,7 @@ module mixing_length
                                     pdf_params, em, thv_ds_zt, Lscale_max, lmin, &
                                     clubb_params, &
                                     l_Lscale_plume_centered, &
+                                    stats_metadata, &
                                     stats_zt, & 
                                     Lscale, Lscale_up, Lscale_down)
 
@@ -895,14 +902,10 @@ module mixing_length
         core_rknd
 
     use stats_variables, only: &
-        l_stats_samp
+        stats_metadata_type
 
     use pdf_parameter_module, only: &
         pdf_parameter
-
-    use stats_variables, only: &
-        iLscale_pert_1, & ! Variable(s)
-        iLscale_pert_2
 
     use stats_type_utilities, only:   &
         stat_update_var
@@ -915,7 +918,8 @@ module mixing_length
     use constants_clubb, only:  &
         fstderr  ! Variable(s)
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+        stats ! Type
 
     implicit none
 
@@ -958,6 +962,9 @@ module mixing_length
 
     logical, intent(in) :: &
       l_Lscale_plume_centered    ! Alternate that uses the PDF to compute the perturbed values
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     !--------------------------------- InOut Variables ---------------------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -1059,6 +1066,7 @@ module mixing_length
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_1,  & ! In
                     rtm_pert_1, em, Lscale_max, p_in_Pa,               & ! In
                     exner, thv_ds_zt, mu_pert_1, lmin, l_implemented,  & ! In
+                    stats_metadata,                                    & ! In
                     Lscale_pert_1, Lscale_up, Lscale_down )              ! Out
 
 
@@ -1088,6 +1096,7 @@ module mixing_length
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_2, & ! In
                     rtm_pert_2, em, Lscale_max, p_in_Pa,              & ! In
                     exner, thv_ds_zt, mu_pert_2, lmin, l_implemented, & ! In
+                    stats_metadata,                                   & ! In
                     Lscale_pert_2, Lscale_up, Lscale_down )             ! Out
 
     else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
@@ -1155,11 +1164,13 @@ module mixing_length
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_pos_rt,  & ! In
                 rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,                   & ! In
                 exner, thv_ds_zt, mu_pert_pos_rt, lmin, l_implemented,      & ! In
+                stats_metadata,                                             & ! In
                 Lscale_pert_1, Lscale_up, Lscale_down )                       ! Out
 
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_neg_rt,  & ! In
                 rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,                   & ! In
                 exner, thv_ds_zt, mu_pert_neg_rt, lmin, l_implemented,      & ! In
+                stats_metadata,                                             & ! In
                 Lscale_pert_2, Lscale_up, Lscale_down )                       ! Out
     else
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1172,15 +1183,15 @@ module mixing_length
       !$acc end parallel loop
     end if ! l_avg_Lscale
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
       !$acc update host( Lscale_pert_1, Lscale_pert_2 )
       do i = 1, ngrdcol
-        call stat_update_var( iLscale_pert_1, Lscale_pert_1(i,:), & ! intent(in)
+        call stat_update_var( stats_metadata%iLscale_pert_1, Lscale_pert_1(i,:), & ! intent(in)
                               stats_zt(i) )                       ! intent(inout)
-        call stat_update_var( iLscale_pert_2, Lscale_pert_2(i,:), & ! intent(in)
+        call stat_update_var( stats_metadata%iLscale_pert_2, Lscale_pert_2(i,:), & ! intent(in)
                               stats_zt(i) )                       ! intent(inout)
       end do
-    end if ! l_stats_samp
+    end if ! stats_metadata%l_stats_samp
 
 
     ! ********** NOTE: **********
@@ -1194,6 +1205,7 @@ module mixing_length
     call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm,            & ! In
                           rtm, em, Lscale_max, p_in_Pa,                 & ! In
                           exner, thv_ds_zt, newmu, lmin, l_implemented, & ! In
+                          stats_metadata,                               & ! In
                           Lscale, Lscale_up, Lscale_down )                ! Out
 
     if ( l_avg_Lscale ) then

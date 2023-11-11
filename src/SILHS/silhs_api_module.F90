@@ -85,6 +85,9 @@ module silhs_api_module
     vert_decorr_coef, &
     importance_prob_thresh
 
+  use latin_hypercube_driver_module, only : &
+    stats_accumulate_lh_api => stats_accumulate_lh
+
 #endif
 
   implicit none
@@ -147,6 +150,7 @@ contains
     l_tke_aniso, & ! In
     l_standard_term_ta, & ! In
     vert_decorr_coef, & ! In
+    stats_metadata, & ! In
     stats_lh_zt, stats_lh_sfc, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
@@ -171,13 +175,13 @@ contains
     use mt95, only: &
       genrand_intg
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+      stats ! Type
+
+    use stats_variables, only: &
+      stats_metadata_type
 
     implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_lh_zt, &
-      stats_lh_sfc
 
     ! Input Variables
     integer, intent(in) :: &
@@ -247,6 +251,13 @@ contains
 
     real( kind = core_rknd ), intent(in) :: &
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt, &
+      stats_lh_sfc
     
     ! -------------- Local Variables --------------
       
@@ -297,7 +308,7 @@ contains
       l_calc_weights_all_levs_itime, & ! In
       pdf_params, delta_zm_col, Lscale_col, & ! In
       lh_seed, & ! In
-!     rho_ds_zt_col, & ! Unused
+      !rho_ds_zt_col, & ! Unused
       mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
       corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, & ! In
       precip_fracs, silhs_config_flags, & ! In
@@ -306,6 +317,7 @@ contains
       l_tke_aniso, & ! In
       l_standard_term_ta, & ! In
       vert_decorr_coef, & ! In
+      stats_metadata, & ! In
       stats_lh_zt, stats_lh_sfc, & ! intent(inout)
       X_nl_all_levs_col, X_mixt_comp_all_levs_col, & ! Out
       lh_sample_point_weights_col ) ! Out
@@ -330,6 +342,7 @@ contains
     l_tke_aniso, & ! In
     l_standard_term_ta, & ! In
     vert_decorr_coef, & ! In
+    stats_metadata, & ! In
     stats_lh_zt, stats_lh_sfc, & ! intent(inout)
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
@@ -354,13 +367,13 @@ contains
     use mt95, only: &
       genrand_intg
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+      stats ! Type
+
+    use stats_variables, only: &
+      stats_metadata_type
 
     implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_lh_zt, &
-      stats_lh_sfc
 
     ! Input Variables
     integer, intent(in) :: &
@@ -385,6 +398,11 @@ contains
       
     integer( kind = genrand_intg ), intent(in) :: &
       lh_seed      ! Random number generator seed
+
+    ! InOut Variables
+    type(stats), target, intent(inout) :: &
+      stats_lh_zt, &
+      stats_lh_sfc
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nz,pdf_dim) :: &
@@ -430,13 +448,16 @@ contains
 
     real( kind = core_rknd ), intent(in) :: &
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
     
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! In
       l_calc_weights_all_levs_itime, & ! In
       pdf_params, delta_zm, Lscale, & ! In
       lh_seed, & ! In
-!     rho_ds_zt, &
+      !rho_ds_zt, &
       mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
       precip_fracs, silhs_config_flags, & ! In
@@ -445,72 +466,12 @@ contains
       l_tke_aniso, & ! In
       l_standard_term_ta, & ! In
       vert_decorr_coef, & ! In
+      stats_metadata, & ! In
       stats_lh_zt, stats_lh_sfc, & ! intent(inout)
       X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
       lh_sample_point_weights ) ! Out
 
   end subroutine generate_silhs_sample_api_multi_col
-
-  !================================================================================================
-  ! stats_accumulate_lh - Clips subcolumns from latin hypercube and creates stats.
-  !================================================================================================
-
-  subroutine stats_accumulate_lh_api( gr, &
-    nz, num_samples, pdf_dim, rho_ds_zt, &
-    lh_sample_point_weights, X_nl_all_levs, &
-    lh_rt_clipped, lh_thl_clipped, & 
-    lh_rc_clipped, lh_rv_clipped, & 
-    lh_Nc_clipped, &
-    stats_lh_zt, stats_lh_sfc )
-
-    use grid_class, only: grid
-
-    use stats_type, only: stats
-
-    use latin_hypercube_driver_module, only : stats_accumulate_lh
-
-    use clubb_precision, only: &
-      core_rknd    ! Constant
-
-    implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_lh_zt, &
-      stats_lh_sfc
-
-    type(grid), target, intent(in) :: gr
-
-    ! Input Variables
-    integer, intent(in) :: &
-      pdf_dim,     & ! Number of variables to sample
-      num_samples,   & ! Number of calls to microphysics per timestep (normally=2)
-      nz                 ! Number of vertical model levels
-
-    real( kind = core_rknd ), intent(in), dimension(nz) :: &
-      rho_ds_zt  ! Dry, static density (thermo. levs.) [kg/m^3]
-
-    real( kind = core_rknd ), intent(in), dimension(num_samples,nz) :: &
-      lh_sample_point_weights
-
-    real( kind = core_rknd ), intent(in), dimension(num_samples,nz,pdf_dim) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
-      lh_rt_clipped,  & ! rt generated from silhs sample points
-      lh_thl_clipped, & ! thl generated from silhs sample points
-      lh_rc_clipped,  & ! rc generated from silhs sample points
-      lh_rv_clipped,  & ! rv generated from silhs sample points
-      lh_Nc_clipped     ! Nc generated from silhs sample points
-
-    call stats_accumulate_lh( gr, &
-      nz, num_samples, pdf_dim, rho_ds_zt, &
-      lh_sample_point_weights, X_nl_all_levs, &
-      lh_rt_clipped, lh_thl_clipped, & 
-      lh_rc_clipped, lh_rv_clipped, & 
-      lh_Nc_clipped, &
-      stats_lh_zt, stats_lh_sfc )
-
-  end subroutine stats_accumulate_lh_api
 
   !================================================================================================
   ! est_kessler_microphys - Computes microphysical grid box means of Kessler autoconversion scheme.

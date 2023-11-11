@@ -28,6 +28,7 @@ module soil_vegetation
   subroutine advance_soil_veg( dt, rho_sfc, &
                                Frad_SW_net, Frad_SW_down_sfc, &
                                Frad_LW_down_sfc, wpthep, &
+                               stats_metadata, &
                                stats_sfc, &
                                soil_heat_flux )
     !
@@ -78,21 +79,24 @@ module soil_vegetation
     !
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: core_rknd ! Constant
+    use clubb_precision, only: &
+      core_rknd ! Constant
 
-    use stats_variables, only: l_stats_samp, &
-                                iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K ! Variables
+    use stats_type_utilities, only: &
+      stat_update_var_pt ! Procedure(s)
 
-    use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
+    use constants_clubb, only: &
+      pi, &
+      Cp, &
+      stefan_boltzmann ! Variable(s)
 
-    use constants_clubb, only: pi, Cp, stefan_boltzmann ! Variable(s)
+    use stats_type, only: &
+      stats ! Type
 
-    use stats_type, only: stats ! Type
+    use stats_variables, only: &
+      stats_metadata_type
 
     implicit none
-
-    type(stats), target, intent(inout) :: &
-      stats_sfc
 
     ! This subroutine does not produce any output variables. Instead the module
     ! variables listed below are updated.
@@ -115,6 +119,12 @@ module soil_vegetation
       Frad_SW_down_sfc, &    ! SW downwelling flux        [W/m^3]
       Frad_LW_down_sfc, &    ! LW downwelling flux        [W/m^2]
       wpthep                 ! Turbulent Flux of equivalent potential temperature   [K]
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
+
+    type(stats), target, intent(inout) :: &
+      stats_sfc
 
     ! Output variable
     real( kind = core_rknd ), intent(out) :: soil_heat_flux ! Soil Heat flux [W/m^2]
@@ -146,10 +156,10 @@ module soil_vegetation
                      sqrt( ks*3600.e0_core_rknd*24.e0_core_rknd* &
                      365.e0_core_rknd )) ! Known magic number
 
-    if ( l_stats_samp ) then
-      call stat_update_var_pt( iveg_T_in_K, 1, veg_T_in_K, stats_sfc )
-      call stat_update_var_pt( isfc_soil_T_in_K, 1, sfc_soil_T_in_K, stats_sfc )
-      call stat_update_var_pt( ideep_soil_T_in_K, 1, deep_soil_T_in_K, stats_sfc )
+    if ( stats_metadata%l_stats_samp ) then
+      call stat_update_var_pt( stats_metadata%iveg_T_in_K, 1, veg_T_in_K, stats_sfc )
+      call stat_update_var_pt( stats_metadata%isfc_soil_T_in_K, 1, sfc_soil_T_in_K, stats_sfc )
+      call stat_update_var_pt( stats_metadata%ideep_soil_T_in_K, 1, deep_soil_T_in_K, stats_sfc )
     end if
 
     Frad_LW_up_sfc = stefan_boltzmann * (veg_T_in_K**4)

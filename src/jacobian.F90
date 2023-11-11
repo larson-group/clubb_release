@@ -15,6 +15,9 @@ program jacobian
   use clubb_driver, only:  & 
       run_clubb ! Procedure(s)
 
+  use clubb_driver, only: &
+      stats_metadata
+
   use parameter_indices, only:  & 
       nparams ! Variable(s)
 
@@ -31,10 +34,6 @@ program jacobian
       stat_file_average_interval,  & ! Procedure(s) 
       stat_file_num_vertical_levels, &
       stat_file_vertical_levels
-
-  use stats_variables, only:  & 
-      fname_zt,  & ! Variable(s) 
-      fname_zm
 
   use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
@@ -281,8 +280,8 @@ program jacobian
 
   ! Obtain number of vertical levels from the generated GrADS files
 
-  nzt = stat_file_num_vertical_levels( "thlm", "../output/"//trim( fname_zt )//".ctl" )
-  nzm = stat_file_num_vertical_levels( "thlm", "../output/"//trim( fname_zm )//".ctl" )
+  nzt = stat_file_num_vertical_levels( "thlm", "../output/"//trim( stats_metadata%fname_zt )//".ctl" )
+  nzm = stat_file_num_vertical_levels( "thlm", "../output/"//trim( stats_metadata%fname_zm )//".ctl" )
 
   ! Initialize the structures holding the variables
 
@@ -302,9 +301,9 @@ program jacobian
   var2zt%nz      = nzt
 
   var1zt%z = stat_file_vertical_levels &
-    ( var1zt%name(1), "../output/"//trim( fname_zt )//".ctl", nzt )
+    ( var1zt%name(1), "../output/"//trim( stats_metadata%fname_zt )//".ctl", nzt )
   var2zt%z = stat_file_vertical_levels &
-    ( var1zt%name(1), "../output/"//trim( fname_zt )//".ctl", nzt )
+    ( var1zt%name(1), "../output/"//trim( stats_metadata%fname_zt )//".ctl", nzt )
 
   allocate( var1zm%value(nzm, nvarzm), & 
             var2zm%value(nzm, nvarzm), & 
@@ -322,9 +321,9 @@ program jacobian
   var2zm%nz      = nzm
 
   var1zm%z = stat_file_vertical_levels &
-    ( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl", nzm )
+    ( var1zm%name(1), "../output/"//trim( stats_metadata%fname_zm )//".ctl", nzm )
   var2zm%z = stat_file_vertical_levels &
-    ( var1zm%name(1), "../output/"//trim( fname_zm )//".ctl", nzm )
+    ( var1zm%name(1), "../output/"//trim( stats_metadata%fname_zm )//".ctl", nzm )
 
   var1zt%name(1:nvarzt) =  & 
   (/"cloud_frac  ", "rcm         ", "rtm         ", & 
@@ -358,9 +357,9 @@ program jacobian
 
   ! Set var1 fields with initial run results
 
-  call getvariables( var1zt, trim( fname_zt )//".ctl" )
+  call getvariables( var1zt, trim( stats_metadata%fname_zt )//".ctl" )
 
-  call getvariables( var1zm, trim( fname_zm )//".ctl" )
+  call getvariables( var1zm, trim( stats_metadata%fname_zm )//".ctl" )
 
   do i = 1, clubb_params%entries
     tmp_param = clubb_params%value(i)
@@ -382,8 +381,8 @@ program jacobian
 
     ! Set var2 results with results from altering the constants
 
-    call getvariables( var2zt, trim( fname_zt )//".ctl" )
-    call getvariables( var2zm, trim( fname_zm )//".ctl" )
+    call getvariables( var2zt, trim( stats_metadata%fname_zt )//".ctl" )
+    call getvariables( var2zm, trim( stats_metadata%fname_zm )//".ctl" )
 
     do j = 1, nvarzt
       impact_matrix(i, j) =  & 

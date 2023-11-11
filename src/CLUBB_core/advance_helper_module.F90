@@ -562,6 +562,7 @@ module advance_helper_module
                                         l_use_thvm_in_bv_freq, &
                                         l_use_shear_Richardson, &
                                         l_modify_limiters_for_cnvg_test, & 
+                                        stats_metadata, &
                                         stats_zm, & 
                                         Cx_fnc_Richardson )
 
@@ -596,8 +597,7 @@ module advance_helper_module
         ibv_efold
 
     use stats_variables, only: &
-        ishear_sqd, &           ! Variable(s)
-        l_stats_samp
+        stats_metadata_type
 
     use stats_type_utilities, only: &
         stat_update_var      ! Procedure
@@ -606,7 +606,7 @@ module advance_helper_module
 
     implicit none
 
-    !!------------------------------ Constant Parameters !------------------------------
+    !------------------------------ Constant Parameters ------------------------------
     real( kind = core_rknd ), parameter :: &
       Richardson_num_divisor_threshold = 1.0e-6_core_rknd, &
       Cx_fnc_Richardson_below_ground_value = one
@@ -621,7 +621,7 @@ module advance_helper_module
                                           ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
                                           ! for a plot on how output behaves with varying min_max_smth_mag
 
-    !------------------------------ Input ------------------------------
+    !------------------------------ Input Variables ------------------------------
     integer, intent(in) :: &
       nz, &
       ngrdcol
@@ -657,6 +657,9 @@ module advance_helper_module
     ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
     logical, intent(in) :: &
       l_modify_limiters_for_cnvg_test
+
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     !------------------------------ InOut Variable ------------------------------
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -739,10 +742,10 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    if ( l_stats_samp ) then
+    if ( stats_metadata%l_stats_samp ) then
       !$acc update host(shear_sqd)
       do i = 1, ngrdcol
-        call stat_update_var( ishear_sqd, shear_sqd(i,:), & ! intent(in)
+        call stat_update_var( stats_metadata%ishear_sqd, shear_sqd(i,:), & ! intent(in)
                               stats_zm(i) )               ! intent(inout)
       end do
     end if
