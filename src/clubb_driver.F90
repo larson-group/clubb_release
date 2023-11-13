@@ -39,6 +39,8 @@ module clubb_driver
       
   type (stats_metadata_type), public :: &
     stats_metadata
+    
+!$omp threadprivate(stats_metadata)
 
   ! Setup run_clubb() as the sole external interface
   private ::  &
