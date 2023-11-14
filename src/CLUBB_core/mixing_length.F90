@@ -1720,7 +1720,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          tmp_calc(i,k) = one - ice_supersat_frac_zm(i,k) / 0.007_core_rknd
+          tmp_calc(i,k) = one - ice_supersat_frac_zm(i,k) / 0.001_core_rknd
         end do
       end do
       !$acc end parallel loop
@@ -1747,7 +1747,7 @@ module mixing_length
           brunt_freq_out_cloud(i,k) &
             = brunt_freq_pos(i,k) &
                 * min(one, max(zero_threshold, &
-                               one - ( ( ice_supersat_frac_zm(i,k) / 0.007_core_rknd) )))
+                               one - ( ( ice_supersat_frac_zm(i,k) / 0.001_core_rknd) )))
         end do
       end do
       !$acc end parallel loop
@@ -1774,7 +1774,8 @@ module mixing_length
                                 + C_invrs_tau_N2_wp2 * brunt_freq_pos(i,k)
 
         invrs_tau_wp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
-                                C_invrs_tau_N2_wp2 * brunt_freq_pos(i,k)
+                                C_invrs_tau_N2 * brunt_freq_pos(i,k) + &
+                                C_invrs_tau_N2_wp2 * brunt_freq_out_cloud(i,k)
 
         invrs_tau_zm(i,k) = invrs_tau_no_N2_zm(i,k) + C_invrs_tau_N2 * brunt_freq_pos(i,k)
       end do
@@ -1862,7 +1863,8 @@ module mixing_length
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_xp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
-                                  C_invrs_tau_N2_xp2 * brunt_freq_pos(i,k)
+                                  C_invrs_tau_N2 * brunt_freq_pos(i,k) + &
+                                  C_invrs_tau_N2_xp2 * brunt_freq_out_cloud(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -1923,10 +1925,10 @@ module mixing_length
     if ( l_smooth_min_max ) then
 
       Ri_zm_smooth = smooth_max( nz, ngrdcol, Ri_zm, zero, &
-                                  12.0_core_rknd * min_max_smth_mag )
+                                  2.0_core_rknd * min_max_smth_mag )
 
-      Ri_zm_smooth = smooth_min( nz, ngrdcol, Ri_zm_smooth**wpxp_Ri_exp, 12.0_core_rknd, &
-                                 12.0_core_rknd * min_max_smth_mag )
+      Ri_zm_smooth = smooth_min( nz, ngrdcol, C_invrs_tau_wpxp_Ri * Ri_zm_smooth**wpxp_Ri_exp, &
+                                 2.0_core_rknd, 2.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1935,7 +1937,7 @@ module mixing_length
           if ( gr%zt(i,k) > altitude_threshold ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one + H_invrs_tau_wpxp_N2(i,k) &
-                                          * C_invrs_tau_wpxp_Ri * Ri_zm_smooth(i,k) )
+                                          * Ri_zm_smooth(i,k) )
 
           end if
         end do 
@@ -1950,8 +1952,8 @@ module mixing_length
           if ( gr%zt(i,k) > altitude_threshold ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one  + H_invrs_tau_wpxp_N2(i,k) & 
-                                      * C_invrs_tau_wpxp_Ri &
-                                      * min( max( Ri_zm(i,k), zero)**wpxp_Ri_exp, 12.0_core_rknd ))
+                                      * min( C_invrs_tau_wpxp_Ri &
+                                      * max( Ri_zm(i,k), zero)**wpxp_Ri_exp, 2.0_core_rknd ))
           end if
         end do 
       end do
