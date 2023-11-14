@@ -307,10 +307,10 @@ module constants_clubb
 
   ! Tolerances below which we consider moments to be zero
   real( kind = core_rknd ), parameter, public ::  & 
-    w_tol        = 2.e-2_core_rknd, & ! [m/s]
-    thl_tol      = 1.e-2_core_rknd, & ! [K]
-    rt_tol       = 1.e-8_core_rknd, & ! [kg/kg]
-    chi_tol = 1.e-8_core_rknd, & ! [kg/kg]
+    w_tol   = 2.e-2_core_rknd, & ! [m/s]
+    thl_tol = 1.e-2_core_rknd, & ! [K]
+    rt_tol  = max( 1.e-8_core_rknd, epsilon(pi) ), & ! [kg/kg]
+    chi_tol = max( 1.e-8_core_rknd, epsilon(pi) ), & ! [kg/kg]
     eta_tol = chi_tol       ! [kg/kg]
 
   ! Tolerances for use by the monatonic flux limiter.
