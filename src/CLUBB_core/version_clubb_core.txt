@@ -1,0 +1,112 @@
+commit 54063504021c09c54346da26e76e5888b2f50fe2
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Tue Nov 14 15:39:40 2023 -0600
+
+    BIT_CHANGING! Updated taus code calculations - CLUBB ticket #1115 (#1125)
+    
+    - Changed invrs_tau_xp2/wp2 calculations to match the wpxp calculation:
+       Those now have a brunt_freq_pos and a brunt_freq_out_cloud term
+    - Changed tmp_calc magic number from .007 to .001
+    - Changed upper clipping bound for Ri_zm from 12 to 2 in invrs_tau_wpxp calculation
+    - Reversed accidental changes to input_misc/tuner/error_four_cases.in
+
+commit 527360ddcce694dc3b89e69890792de97bd411da
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Nov 14 15:05:55 2023 -0600
+
+    Setting the minimum tolerance to be epsilon, this is BIT_CHANGING but only for single precision. See larson-group/clubb#1126
+
+commit 8bb631162837feba13cb64f43c1a40aa47873020
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Nov 14 13:45:56 2023 -0600
+
+    Changing order of sqrt and **3 to improve stability, see clubb#1126. Since this is a change to the order of operations, it is BIT_CHANGING.
+
+commit f4dabf64f8f2e4b1345d7a071020a406f365dedc
+Author: huebler <huebler@uwm.edu>
+Date:   Mon Nov 13 13:51:36 2023 -0600
+
+    stats_metadata needs to be threadprivate to make our standalone thread test work.
+
+commit 3dc7571b0baa54dc855087caef4c36315b067fbb
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Fri Nov 10 18:15:20 2023 -0600
+
+    New Stats Indices Type (#1118)
+    
+    * Grouping stats indices into a derived type and making that accessible globally, for now. This does not run yet, but a checkpoint I wish to save.
+    
+    * Checkpoint to save
+    
+    * Checkpoint
+    
+    * It actually works now and is BFB with every case.
+    
+    * Starting to push the new derived type through the argument list.
+    
+    * The new dervied type, now stats_metadata, has been fed through the argument list.
+    
+    * Moved l_stats_samp into stats_metadata
+    
+    * Moved all the other stats_variables into stats_metadata
+    
+    * Small cleanup
+    
+    * Fixes a stats bug when calling compute_sample_mean in silhs.
+    
+    * Arrays in stats_metadata need only be allocated once, but we may want to call the stats init routines to set up more stats variables. So now we check for allocation before allocating. Also made the stat_indices type publicly available through clubb_api.
+    
+    * This should be initialized to 0. The new changes in cam were able to tease this out, which is a good sign.
+    
+    * A couple more to initialize to zero.
+    
+    * Moving stats_metadata to before stats_ variables in argument lists, just for consistency.
+    
+    * Changing stat_indices to stats_metadata_type
+
+commit 37ef1bb08dd6e2246215d26d3fc4128d9ffe3cec
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Fri Nov 10 15:47:14 2023 -0600
+
+    Quick fix for AnimationPanel so it works with the background-rcm changes (#1123)
+    
+    - Modified super call in AnimationPanel constructor
+    - Removed first frame from consideration when determining x-axis scaling since the starting values are sometimes large compared to the other time steps
+
+commit 63825a3122331a050c2e4972913b86cae0ce4b83
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Thu Nov 9 15:04:06 2023 -0600
+
+    Z displace tunable (#1122)
+    
+    CLUBB ticket #1115
+    Added the previously hard-coded z_displace as a tunable parameter.
+
+commit 84ce1af7b0d5df14062d543b1cf684bea914378e
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Nov 8 17:40:24 2023 -0600
+
+    Removing begin_height and end_height as outputs from setup_grid. They
+    are only necessary as local variables inside of setup_grid.
+
+commit d8f2de7144923bda3de7c3d1995433caa8877821
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Nov 8 15:28:52 2023 -0600
+
+    Updated CLUBB so that adj_low_res_nu (which can be called on its own
+    or called through calling setup_parameters) no longer uses
+    momentum_heights and thermodynamic_heights, but rather makes use
+    of gr%zm and gr%zt, which are always set and available by the
+    time the calls are made.
+
+commit 05a4556763f089ac3afdb1aeb032e827040cc874
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Tue Oct 31 18:42:54 2023 -0500
+
+    BIT_CHANGING! Fixed some issues with wpxp_Ri_exp, changed z_displace value - CLUBB ticket #1115 (#1120)
+    
+    - Removed commented lines from tunable_parameters.in file in input/tunable_parameters_tauMatchLscale
+    - Increased z_displace value from 10 to 25. This value was chosen so that the taus code with the parameter and flag settings in input/tunable_parameters_tauMatchLscale match the master Lscale output below clouds
+    - Fixed some issues with the new parameter wpxp_Ri_exp:
+       - Moved new exponentiation to a place so that it emulates the previous version with sqrt(Ri_zm)
+       - Adjusted code for l_smooth_min_max=true to match the default version
