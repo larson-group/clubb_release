@@ -878,7 +878,7 @@ module mixing_length
                                     clubb_params, &
                                     l_Lscale_plume_centered, &
                                     stats_metadata, &
-                                    stats_zt, & 
+                                    stats_zt, &
                                     Lscale, Lscale_up, Lscale_down)
 
     use constants_clubb, only: &
@@ -1951,9 +1951,9 @@ module mixing_length
         do i = 1, ngrdcol
           if ( gr%zt(i,k) > altitude_threshold ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
-                                      * ( one  + H_invrs_tau_wpxp_N2(i,k) & 
+                                      * ( one  + H_invrs_tau_wpxp_N2(i,k) &
                                       * min( C_invrs_tau_wpxp_Ri &
-                                      * max( Ri_zm(i,k), zero)**wpxp_Ri_exp, 2.0_core_rknd ))
+                                      * max( Ri_zm(i,k), zero)**wpxp_Ri_exp, 2.0_core_rknd ) )
           end if
         end do 
       end do

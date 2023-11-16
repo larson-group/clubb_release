@@ -3013,7 +3013,7 @@ module advance_clubb_core_module
         stat_update_var_pt
 
     use stats_variables, only: &
-        stats_metadata_type       
+        stats_metadata_type
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -3982,6 +3982,15 @@ module advance_clubb_core_module
                                 wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
                                 ice_supersat_frac_zm, rcm_zm, wp2thvp_zm,    & ! intent(inout)
                                 wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm )   ! intent(inout)
+    else ! l_trapezoidal_rule_zt
+      cloud_frac_zm = zt2zm( nz, ngrdcol, gr, cloud_frac )
+      ! Since top momentum level is higher than top thermo. level,
+      ! set variables at top momentum level to 0.
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        cloud_frac_zm(i,nz)  = 0.0_core_rknd
+      end do
+      !$acc end parallel loop
     end if ! l_trapezoidal_rule_zt
 
     ! If l_trapezoidal_rule_zm is true, call trapezoidal_rule_zm for
@@ -4753,7 +4762,7 @@ module advance_clubb_core_module
       !-----------------------------------------------------------------------
 
       use grid_class, only: &
-        grid, & ! Type
+          grid, & ! Type
           zt2zm ! Procedure
 
       use parameters_model, only: &
@@ -4765,7 +4774,7 @@ module advance_clubb_core_module
       use clubb_precision, only: &
           core_rknd ! Variable(s)
 
-      use stats_variables, only: &   
+      use stats_variables, only: &
           stats_metadata_type
 
       implicit none
@@ -4777,7 +4786,7 @@ module advance_clubb_core_module
 
       type (grid), target, intent(in) :: &
         gr
-    
+
       logical, intent(in) :: &
         l_call_pdf_closure_twice
 

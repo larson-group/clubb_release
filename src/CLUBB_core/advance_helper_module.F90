@@ -1657,13 +1657,13 @@ module advance_helper_module
     !------------------------- Output Variables -------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       smth_output    ! Same units as input
-    
+
     !------------------------- Local Variables -------------------------
     real ( kind = core_rknd ) :: &
       input_over_smth_range  ! input divided by smth_range
 
     integer :: i, k
-      
+
     !------------------------- Begin Code -------------------------
 
     !$acc data copyin( input ) &
@@ -1691,7 +1691,7 @@ module advance_helper_module
     !$acc end parallel loop
 
     !$acc end data
-    
+
     return
 
   end function smooth_heaviside_peskin

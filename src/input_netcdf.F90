@@ -62,7 +62,7 @@ module input_netcdf
     character(len=*), intent(in) :: &
       test_variable ! Variable used to determine the dimensions in the file
 
-    character(len=*), intent(in) ::  & 
+    character(len=*), intent(in) :: &
       path ! The file name
 
     ! Output Variables

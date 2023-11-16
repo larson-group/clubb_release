@@ -9,7 +9,9 @@ The changed plot routine outputs animations of profile plots instead of simple p
 :date: October 2020
 '''
 
+import glob
 import os
+import shutil
 import warnings
 from datetime import datetime
 from textwrap import fill
@@ -21,8 +23,6 @@ from cycler import cycler
 from config import Style_definitions
 from src.interoperability import clean_path, clean_title
 
-import glob
-import shutil
 try:
     import cv2  #opencv-python for writing the movies
 except ImportError:
@@ -51,6 +51,7 @@ class AnimationPanel(Panel):
             If not specified, the matplotlib default sci scaling will be used.
         :param centered: If True, the Panel will be centered around 0.
             Profile plots are usually centered, while budget plots are not.
+        Warning! Arguments `sci_scale` and `centered` are unused here!
         """
         #copied this from ContourPanel.py ?
         # Note: 0s added to make animations ignore background-rcm option for now
@@ -58,7 +59,7 @@ class AnimationPanel(Panel):
         #       we would need to modify the super call here and kind of copy the code from Panel
         #       that handles background-rcm into AnimationPanel
         super().__init__(plots, 0, 0, 0, 0,
-                         panel_type, title, dependent_title, sci_scale=None, centered=False)         
+                         panel_type, title, dependent_title, sci_scale=None, centered=False)
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
              alphabetic_id="", paired_plots = True, image_extension=".png", movie_extension=".mp4"):
@@ -73,9 +74,10 @@ class AnimationPanel(Panel):
         :param alphabetic_id: A string printed into the Panel at coordinates (.9,.9) as an identifier.
         :param paired_plots: If no format is specified and paired_plots is True,
             use the color/style rotation specified in Style_definitions.py
-        :param image_extension: Present in case movies can be made from different image types (only .png for now) 
-        :param movie_extension: Passed so the movies are output to the user's desired format (mp4, avi, etc.) 
+        :param image_extension: Present in case movies can be made from different image types (only .png for now)
+        :param movie_extension: Passed so the movies are output to the user's desired format (mp4, avi, etc.)
         :return: None
+        Warning! Argument `replace_images` is unused here!
         """
         #find tmax and x_dataset
         #tmax -- # of time steps of shortest simulation
@@ -94,14 +96,12 @@ class AnimationPanel(Panel):
         #extraneous time steps from those simulations that have extra steps
         if np.all(sim_lengths==tmax):
             filteringFlag=False
-            pass
         else:
             filteringFlag=True
             idx = 0
             for var in self.all_plots:
                 if idx == idx_max:
                     idx+=1
-                    continue
                 else:
                     temp_x_data=var.x
                     temp_y_data=var.y
@@ -123,16 +123,16 @@ class AnimationPanel(Panel):
                 # Create new figure and axis
                 warnings.simplefilter("ignore")
                 plt.subplot(111)
-    
+
             # Set line color/style. This will cycle through all colors,
             # then once colors run out use a new style and cycle through colors again
-            default_cycler = ( cycler(linestyle=Style_definitions.STYLE_ROTATION) 
+            default_cycler = ( cycler(linestyle=Style_definitions.STYLE_ROTATION)
                                * cycler(color=Style_definitions.COLOR_ROTATION))
             plt.rc('axes', prop_cycle=default_cycler)
-    
+
             # Set graph size
             plt.figure(figsize=Style_definitions.FIGSIZE)
-    
+
             # Set font sizes
             plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
             plt.rc('axes', titlesize=Style_definitions.AXES_TITLE_FONT_SIZE)     # fontsize of the axes title
@@ -141,7 +141,7 @@ class AnimationPanel(Panel):
             plt.rc('ytick', labelsize=Style_definitions.Y_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
             plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
             plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
-    
+
             label_scale_factor = ""
             # Use custom sci scaling
             if self.sci_scale is not None:
@@ -153,13 +153,13 @@ class AnimationPanel(Panel):
             # Use pyplot's default sci scaling
             else:
                 plt.ticklabel_format(style='sci', axis='x', scilimits=Style_definitions.POW_LIMS)
-    
+
             # Prevent x-axis label from getting cut off
             plt.gcf().subplots_adjust(bottom=0.15)
-   
+
             # Plot dashed line. This var will oscillate between true and false
-            plot_dashed = True 
-          
+            plot_dashed = True
+
             for var in self.all_plots:
                 legend_char_wrap_length = 17
                 var.label = var.label.replace('_', ' ') # replace _'s in foldernames with spaces for the legend label
@@ -168,12 +168,12 @@ class AnimationPanel(Panel):
                 if self.sci_scale is not None:
                     c_data[t,:] = c_data[t,:] * math_scale_factor
                 y_data = var.y
-    
+
                 # Find min/max values for fixed x-axis
                 # Suppress "All-NaN slice encountered" warning
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    # Exclude first frame from finding min/max since it 
+                    # Exclude first frame from finding min/max since it
                     # may have some very extreme values
                     current_min=np.nanmin(np.ndarray.flatten(c_data[1:,:]))
                     current_max=np.nanmax(np.ndarray.flatten(c_data[1:,:]))
@@ -186,7 +186,7 @@ class AnimationPanel(Panel):
                     elif np.isnan(current_max):
                         max_x_value = 1.0
 
-                #shape sanity check    
+                #shape sanity check
                 if c_data[t,:].shape[0] != y_data.shape[0]:
                     raise ValueError("X and Y dependent_data have different shapes X: "+str(c_data[t,:].shape)
                                      + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title +
@@ -225,28 +225,28 @@ class AnimationPanel(Panel):
                         line_width = Style_definitions.FLAT_LINE_THICKNESS
                         line_style = '-'
                         plot_dashed = True
-    
+
                     plt.plot(c_data[t,:], y_data, linestyle=line_style, label=var.label, linewidth=line_width)
                 else:
                     plt.plot(c_data[t,:], y_data, label=var.label, linewidth=line_width)
-    
+
             # Show grid if enabled
             ax = plt.gca()
             ax.grid(Style_definitions.SHOW_GRID)
-        
+
             ax.set_prop_cycle(default_cycler)
-        
+
             # Set titles---top title includes minute counter for reference
             plt.title(self.title +'\nMinute = {}'.format(int(x_dataset[t])))
             plt.ylabel(self.y_title)
             plt.text(1, -0.15, label_scale_factor, transform=ax.transAxes, fontsize=Style_definitions.MEDIUM_FONT_SIZE)
             plt.xlabel(self.x_title)
-       
+
             # Add alphabetic ID
             if alphabetic_id != "":
                 ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes,
                         fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
-        
+
             # Plot legend
             if no_legends is False:
                 # Shrink current axis by 20%
@@ -254,7 +254,7 @@ class AnimationPanel(Panel):
                 ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
                 # Put a legend to the right of the current axis
                 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        
+
             # Fix x-axis
             if min_x_value != 0 and max_x_value != 0:
                 plt.xlim( min_x_value - abs(min_x_value) * Style_definitions.MOVIE_XAXIS_SCALE_FACTOR,
@@ -264,15 +264,15 @@ class AnimationPanel(Panel):
             elif min_x_value == 0:
                 plt.xlim( min_x_value - abs(max_x_value) * Style_definitions.MOVIE_XAXIS_SCALE_FACTOR,
                           max_x_value + abs(max_x_value) * Style_definitions.MOVIE_XAXIS_SCALE_FACTOR)
-            elif max_x_value == 0: 
+            elif max_x_value == 0:
                 plt.xlim( min_x_value - abs(min_x_value) * Style_definitions.MOVIE_XAXIS_SCALE_FACTOR,
                           max_x_value + abs(min_x_value) * Style_definitions.MOVIE_XAXIS_SCALE_FACTOR)
- 
+
             # Emphasize 0 line in profile plots if 0 is in x-axis range
             xlim = plt.xlim()
-            if 0 >= xlim[0] and 0 <= xlim[1]:
+            if xlim[0] <= 0 <= xlim[1]:
                 plt.axvline(x=0, color='grey', ls='-')
-        
+
             # Create folders
             # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
             # use two separate try blocks
@@ -284,14 +284,14 @@ class AnimationPanel(Panel):
                 os.mkdir(output_folder + "/" + casename)
             except FileExistsError:
                 pass # do nothing
-    
+
             #create tmp folder to house original images for movie
             temp_dir='tmp'
             try:
                 os.mkdir(output_folder + "/" + casename + "/" + temp_dir)
             except FileExistsError:
                 pass #do nothing
-    
+
             # Generate image filename
             filename = self.panel_type + "_"+ str(datetime.now())
             # Force subcolumn plots to show up on top
@@ -315,7 +315,7 @@ class AnimationPanel(Panel):
             img = cv2.imread(filename2)
             height, width, layers = img.shape
             size = (width,height)
-            img_array.append(img)                
+            img_array.append(img)
 
         # Set proper codec
         if movie_extension == ".mp4":

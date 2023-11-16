@@ -105,6 +105,7 @@ class Panel:
         :paired_plots: If no format is specified and paired_plots is True,
             use the color/style rotation specified in Style_definitions.py
         :return: None
+        Warning! Argument `replace_images` is unused here!
         """
         # Suppress deprecation warnings
         with warnings.catch_warnings():
@@ -248,7 +249,7 @@ class Panel:
         xlim = plt.xlim()
         if xlim[0] == 0 and xlim[1] == 0:
             plt.xlim=(-1,1)
-        if self.panel_type == Panel.TYPE_PROFILE and 0 >= xlim[0] and 0 <= xlim[1]:
+        if self.panel_type == Panel.TYPE_PROFILE and xlim[0] <= 0 <= xlim[1]:
             plt.axvline(x=0, color='grey', ls='-')
 
         # Background rcm contour plot
