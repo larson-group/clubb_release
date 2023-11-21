@@ -42,3 +42,10 @@ denominator. If no arguments are proficed, the script will check all files in
 the src, Benchmark_cases, CLUBB_core, KK_microphys, and Latin_hypercube directories.
 USAGE: "python check_division.py <filename>.F90"
 
+print_tunable_parameters_table.py prints out a table of the tunable parameters
+with their values in markdown format. The output can be copied and pasted directly
+into a github comment and will be formatted as a table there. If multiple files
+are listed as arguments, then the output will have a column for each file listing
+the values of the parameters if they are present or an indicator if commented out.
+USAGE: "python print_tunable_parameters_table.py [options] 
+               <list of tunable_parameters.in files>"
