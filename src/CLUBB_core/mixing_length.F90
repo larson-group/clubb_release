@@ -1925,10 +1925,10 @@ module mixing_length
     if ( l_smooth_min_max ) then
 
       Ri_zm_smooth = smooth_max( nz, ngrdcol, Ri_zm, zero, &
-                                  2.0_core_rknd * min_max_smth_mag )
+                                  12.0_core_rknd * min_max_smth_mag )
 
       Ri_zm_smooth = smooth_min( nz, ngrdcol, C_invrs_tau_wpxp_Ri * Ri_zm_smooth**wpxp_Ri_exp, &
-                                 2.0_core_rknd, 2.0_core_rknd * min_max_smth_mag )
+                                 12.0_core_rknd, 12.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -1953,7 +1953,7 @@ module mixing_length
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one  + H_invrs_tau_wpxp_N2(i,k) &
                                       * min( C_invrs_tau_wpxp_Ri &
-                                      * max( Ri_zm(i,k), zero)**wpxp_Ri_exp, 2.0_core_rknd ) )
+                                      * max( Ri_zm(i,k), zero)**wpxp_Ri_exp, 12.0_core_rknd ) )
           end if
         end do 
       end do
