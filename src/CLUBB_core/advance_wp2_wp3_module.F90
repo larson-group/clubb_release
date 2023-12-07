@@ -4278,7 +4278,7 @@ module advance_wp2_wp3_module
         ! The turbulent advection discretization assumes that wp3 has a value
         ! of 0 at momentum level 1.
         k = 2
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
@@ -4315,7 +4315,7 @@ module advance_wp2_wp3_module
         ! The model is presently applying the u.b. condition on the
         ! 2nd highest thermodynamic level.
         k = nz-1
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
 
           ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -4395,7 +4395,7 @@ module advance_wp2_wp3_module
         ! The turbulent advection discretization assumes that wp3 has a value
         ! of 0 at momentum level 1.
         k = 2
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
@@ -4430,7 +4430,7 @@ module advance_wp2_wp3_module
         ! The model is presently applying the u.b. condition on the
         ! 2nd highest thermodynamic level.
         k = nz-1
-        !$acc parallel loop gang vector collapse(2) default(present)
+        !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
 
           ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -4522,7 +4522,7 @@ module advance_wp2_wp3_module
       ! The turbulent advection discretization assumes that wp3 has a value
       ! of 0 at momentum level 1.
       k = 2
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
 
         ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
@@ -4559,7 +4559,7 @@ module advance_wp2_wp3_module
       ! The model is presently applying the u.b. condition on the
       ! 2nd highest thermodynamic level.
       k = nz-1
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
 
         ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
