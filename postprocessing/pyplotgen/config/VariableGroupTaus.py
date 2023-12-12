@@ -79,6 +79,36 @@ class VariableGroupTaus(VariableGroup):
             },
             {'var_names':
                 {
+                'clubb': ['bv_freq_pos'],
+                'sam': [],
+                'coamps': [],
+                'r408': ['bv_freq_pos'],
+                'hoc': ['bv_freq_pos'],
+                'e3sm': ['bv_freq_pos'],
+                'cam': ['bv_freq_pos'],
+                'wrf': ['bv_freq_pos'],
+                },
+                'title': 'Positive part of Brunt-Vaisala frequency',
+                'axis_title': 'bv_freq_pos [$\mathrm{1/s}$]',
+                'sci_scale': 0,
+            },
+            {'var_names':
+                {
+                'clubb': ['bv_freq_out_cloud'],
+                'sam': [],
+                'coamps': [],
+                'r408': ['bv_freq_out_cloud'],
+                'hoc': ['bv_freq_out_cloud'],
+                'e3sm': ['bv_freq_out_cloud'],
+                'cam': ['bv_freq_out_cloud'],
+                'wrf': ['bv_freq_out_cloud'],
+                },
+                'title': 'Out-of-cloud part of Brunt-Vaisala frequency',
+                'axis_title': 'bv_freq_out_cloud [$\mathrm{1/s}$]',
+                'sci_scale': 0,
+            },
+            {'var_names':
+                {
                 'clubb': ['Kh_zm'],
                 'sam': ['KH_ZM'],
                 'coamps': ['Kh_zm'],
@@ -87,6 +117,19 @@ class VariableGroupTaus(VariableGroup):
                 'e3sm': ['Kh_zm'],
                 'cam': ['Kh_zm'],
                 'wrf': ['Kh_zm'],
+                },
+             'sci_scale': 0,
+            },
+            {'var_names':
+                {
+                'clubb': ['Ri_zm'],
+                'sam': ['RI_ZM'],       # Dummy
+                'coamps': ['Ri_zm'],    # Dummy
+                'r408': ['Ri_zm'],      # Dummy
+                'hoc': ['Ri_zm'],       # Dummy
+                'e3sm': ['Ri_zm'],      # Dummy
+                'cam': ['Ri_zm'],       # Dummy
+                'wrf': ['Ri_zm'],       # Dummy
                 },
              'sci_scale': 0,
             },
@@ -237,7 +280,6 @@ class VariableGroupTaus(VariableGroup):
                 'title': 'C7_Skw_fnc',
                 'sci_scale': 0,
             },
-
         ]
 
         # Call ctor of parent class

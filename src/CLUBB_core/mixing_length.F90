@@ -1260,11 +1260,13 @@ module mixing_length
                         ufmin, tau_const, & ! intent in
                         sfc_elevation, Lscale_max, & ! intent in
                         clubb_params, & ! intent in
+                        stats_metadata, & ! intent in
                         l_e3sm_config, & ! intent in
                         l_brunt_vaisala_freq_moist, & !intent in
                         l_use_thvm_in_bv_freq, &! intent in
                         l_smooth_Heaviside_tau_wpxp, & ! intent in
-                        l_modify_limiters_for_cnvg_test, & ! intent in 
+                        l_modify_limiters_for_cnvg_test, & ! intent in
+                        stats_zm, & ! intent inout
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
                         Ri_zm, & ! intent out
@@ -1285,6 +1287,9 @@ module mixing_length
         calc_brunt_vaisala_freq_sqd, &
         smooth_heaviside_peskin, &
         smooth_min, smooth_max
+
+    use stats_type_utilities, only:   &
+        stat_update_var ! Procedure
 
     use constants_clubb, only: &
         one_fourth,     &
@@ -1330,6 +1335,11 @@ module mixing_length
       clubb_fatal_error, &
       clubb_at_least_debug_level
 
+    use stats_variables, only: &
+      stats_metadata_type
+
+    use stats_type, only: stats ! Type
+
     implicit none
 
     !--------------------------------- Input Variables ---------------------------------
@@ -1367,6 +1377,9 @@ module mixing_length
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+ 
+    type (stats_metadata_type), intent(in) :: &
+      stats_metadata
 
     logical, intent(in) :: &
       l_e3sm_config,              &
@@ -1382,6 +1395,10 @@ module mixing_length
     ! (reduce threshold on limiters for Ri_zm in mixing_length.F90)
     logical, intent(in) :: &
       l_modify_limiters_for_cnvg_test
+
+    !--------------------------- Input/Output Variables ---------------------------
+    type (stats), target, intent(inout), dimension(ngrdcol) :: &
+      stats_zm
 
     !--------------------------------- Output Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
@@ -1601,7 +1618,7 @@ module mixing_length
     !  be slightly stably stratified.
     if ( l_modify_limiters_for_cnvg_test ) then 
 
-      !Remove the limiters to improve the solution convergence 
+      !Remove the limiters to improve the solution convergence
       brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz,ngrdcol,gr, brunt_vaisala_freq_sqd_mixed )
 
     else  ! default method  
@@ -1638,7 +1655,17 @@ module mixing_length
 
       end if
 
-    end if 
+    end if
+
+    if ( stats_metadata%l_stats_samp ) then
+
+      !$acc update host( brunt_vaisala_freq_sqd_smth )
+
+      do i = 1, ngrdcol
+        call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_smth, brunt_vaisala_freq_sqd_smth(i,:), & ! intent(in)
+                             stats_zm(i))                                          ! intent(inout)
+      end do
+    end if
 
     if ( l_modify_limiters_for_cnvg_test ) then
 
@@ -1763,6 +1790,19 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+
+    ! Write both bv extra terms to invrs_taus to disk
+    if ( stats_metadata%l_stats_samp ) then
+
+      !$acc update host( brunt_vaisala_freq_sqd_smth )
+
+      do i = 1, ngrdcol
+        call stat_update_var(stats_metadata%ibrunt_freq_pos, brunt_freq_pos(i,:), & ! intent(in)
+                             stats_zm(i))                                          ! intent(inout)
+        call stat_update_var(stats_metadata%ibrunt_freq_out_cloud, brunt_freq_out_cloud(i,:), & ! intent(in)
+                             stats_zm(i))                                          ! intent(inout)
+      end do
+    end if
 
     ! This time scale is used optionally for the return-to-isotropy term. It
     ! omits invrs_tau_sfc based on the rationale that the isotropization
@@ -1955,7 +1995,7 @@ module mixing_length
                                       * min( C_invrs_tau_wpxp_Ri &
                                       * max( Ri_zm(i,k), zero)**wpxp_Ri_exp, 12.0_core_rknd ) )
           end if
-        end do 
+        end do
       end do
       !$acc end parallel loop
 

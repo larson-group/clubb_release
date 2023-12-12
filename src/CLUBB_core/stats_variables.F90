@@ -914,6 +914,9 @@ module stats_variables
       ibrunt_vaisala_freq_sqd_mixed = 0, &
       ibrunt_vaisala_freq_sqd_moist = 0, &
       ibrunt_vaisala_freq_sqd_dry = 0, &
+      ibrunt_vaisala_freq_sqd_smth = 0, &
+      ibrunt_freq_pos = 0, &
+      ibrunt_freq_out_cloud = 0, &
       iRi_zm = 0,          &
       ishear_sqd = 0,      &
       iC6_term = 0

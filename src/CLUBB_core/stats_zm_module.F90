@@ -2241,6 +2241,30 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ( 'bv_freq_sqd_smth' )
+        stats_metadata%ibrunt_vaisala_freq_sqd_smth = k
+        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_smth, var_name="bv_freq_sqd_smth", &
+             var_description="Smoothed Brunt-Vaisala freq. squared", &
+             var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'bv_freq_out_cloud' )
+        stats_metadata%ibrunt_freq_out_cloud = k
+        call stat_assign( var_index=stats_metadata%ibrunt_freq_out_cloud, var_name="bv_freq_out_cloud", &
+             var_description="Out-of-cloud part of Brunt-Vaisala freq.", &
+             var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'bv_freq_pos' )
+        stats_metadata%ibrunt_freq_pos = k
+        call stat_assign( var_index=stats_metadata%ibrunt_freq_pos, var_name="bv_freq_pos", &
+             var_description="Positive part of Brunt-Vaisala freq.", &
+             var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
       case ( 'Ri_zm' )
         stats_metadata%iRi_zm = k
         call stat_assign( var_index=stats_metadata%iRi_zm,var_name="Ri_zm", &
