@@ -1531,13 +1531,13 @@ module advance_clubb_core_module
                         ufmin, tau_const,                                         & ! In
                         sfc_elevation, Lscale_max,                                & ! In
                         clubb_params,                                             & ! In
-                        stats_metadata                                            & ! In
+                        stats_metadata,                                           & ! In
                         clubb_config_flags%l_e3sm_config,                         & ! In
                         clubb_config_flags%l_brunt_vaisala_freq_moist,            & ! In
                         clubb_config_flags%l_use_thvm_in_bv_freq,                 & ! In
                         clubb_config_flags%l_smooth_Heaviside_tau_wpxp,           & ! In
                         clubb_config_flags%l_modify_limiters_for_cnvg_test,       & ! In
-                        stats_zm                                                  & ! Inout
+                        stats_zm,                                                 & ! Inout
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,     & ! Out
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! Out
                         Ri_zm,                                                    & ! Out
