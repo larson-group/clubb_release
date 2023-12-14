@@ -339,18 +339,28 @@ module diffusion
 
 
       ! extra terms with upwind scheme 
-      ! k = 1 (bottom level); lowere boundary level 
+      ! k = 1 (bottom level); lower boundary level 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        lhs_upwind(kp1_tdiag,i,1) = + min( drhoKdz_zt(i,1) , zero ) * gr%invrs_dzm(i,1)  
-        lhs_upwind(k_tdiag,i,1)   = - min( drhoKdz_zt(i,1) , zero ) * gr%invrs_dzm(i,1)
+        lhs_upwind(kp1_tdiag,i,1) = zero
+        lhs_upwind(k_tdiag,i,1)   = zero
         lhs_upwind(km1_tdiag,i,1) = zero
+      end do
+      !$acc end parallel loop
+
+      ! extra terms with upwind scheme 
+      ! k = 2 (bottom level); lower boundary level 
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        lhs_upwind(kp1_tdiag,i,2) = + min( drhoKdz_zt(i,2) , zero ) * gr%invrs_dzm(i,2)  
+        lhs_upwind(k_tdiag,i,2)   = - min( drhoKdz_zt(i,2) , zero ) * gr%invrs_dzm(i,2)
+        lhs_upwind(km1_tdiag,i,2) = zero
       end do
       !$acc end parallel loop
 
       ! Most of the interior model; normal conditions.
         !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1, 1
+      do k = 3, nz-1, 1
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -379,10 +389,18 @@ module diffusion
 
     end if
 
-    ! k = 1 (bottom level); lower boundary level.
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      lhs(kp1_tdiag,i,1) = zero
+      lhs(k_tdiag,i,1)   = zero
+      lhs(km1_tdiag,i,1) = zero
+    end do
+    !$acc end parallel loop
+
+    ! k = 2 (bottom level); lower boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
-    ! These k=1 lines currently do not have any effect on model results.  
-    ! These k=1 level of this "lhs" array is not fed into
+    ! These k=2 lines currently do not have any effect on model results.  
+    ! These k=2 level of this "lhs" array is not fed into
     ! the final LHS matrix that will be used to solve for the next timestep.
 
     if ( .not. l_upwind_Kh_dp_term ) then
@@ -390,15 +408,15 @@ module diffusion
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-        lhs(kp1_tdiag,i,1) = - gr%invrs_dzt(i,1) * invrs_rho_ds_zt(i,1) &
-                               * ( K_zm(i,1) + nu(i) ) * rho_ds_zm(i,1) * gr%invrs_dzm(i,1)
+        lhs(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
+                               * ( K_zm(i,2) + nu(i) ) * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-        lhs(k_tdiag,i,1)   = + gr%invrs_dzt(i,1) * invrs_rho_ds_zt(i,1) &
-                               * ( K_zm(i,1) + nu(i) ) * rho_ds_zm(i,1) * gr%invrs_dzm(i,1)
+        lhs(k_tdiag,i,2)   = + gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
+                               * ( K_zm(i,2) + nu(i) ) * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
 
         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-        lhs(km1_tdiag,i,1) = zero
+        lhs(km1_tdiag,i,2) = zero
       end do
       !$acc end parallel loop
 
@@ -407,15 +425,15 @@ module diffusion
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
-        lhs(kp1_tdiag,i,1) = - gr%invrs_dzt(i,1) * ( K_zt(i,1) + nu(i) ) * gr%invrs_dzm(i,1) & 
-                             + lhs_upwind(kp1_tdiag,i,1)
+        lhs(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * ( K_zt(i,2) + nu(i) ) * gr%invrs_dzm(i,2) & 
+                             + lhs_upwind(kp1_tdiag,i,2)
 
         ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
-        lhs(k_tdiag,i,1)   = + gr%invrs_dzt(i,1) * ( K_zt(i,1) + nu(i) ) * gr%invrs_dzm(i,1) & 
+        lhs(k_tdiag,i,2)   = + gr%invrs_dzt(i,2) * ( K_zt(i,2) + nu(i) ) * gr%invrs_dzm(i,2) & 
                              + lhs_upwind(k_tdiag,i,1)
 
         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
-        lhs(km1_tdiag,i,1) = zero + lhs_upwind(km1_tdiag,i,1) 
+        lhs(km1_tdiag,i,2) = zero + lhs_upwind(km1_tdiag,i,2) 
       end do
       !$acc end parallel loop
 
@@ -425,7 +443,7 @@ module diffusion
 
       ! Most of the interior model; normal conditions.
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1, 1
+      do k = 3, nz-1, 1
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
