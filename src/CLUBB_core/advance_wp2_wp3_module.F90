@@ -2139,6 +2139,19 @@ module advance_wp2_wp3_module
 
     endif
 
+    ! Lower boundary for w'3 at t-level 2
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do i = 1, ngrdcol
+      do b = 1, ndiags5
+        if ( b /= 3 ) then
+          lhs(b,i,3) = 0.0_core_rknd
+        else
+          lhs(b,i,3) = 1.0_core_rknd
+        end if
+      end do
+    end do
+    !$acc end parallel loop
+
     !$acc end data
 
     return
@@ -2605,6 +2618,7 @@ module advance_wp2_wp3_module
     do i = 1, ngrdcol
       rhs(i,1) = 0.0_core_rknd
       rhs(i,2) = wp2(i,1)
+      rhs(i,3) = 0.0_core_rknd
 
       rhs(i,2*nz-1) = 0.0_core_rknd
       rhs(i,2*nz) = w_tol_sqd
