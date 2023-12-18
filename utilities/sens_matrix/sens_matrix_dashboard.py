@@ -48,6 +48,7 @@ def main():
     = \
         setUpInputs()
 
+    #pdb.set_trace()
 
     # Number of metrics
     numMetrics = len(metricsNames)
@@ -725,6 +726,7 @@ def main():
     
     biasLinNlIndivContrbBarFig = px.bar(dfLinNonlin_long,
                                  facet_col='metricsNamesOrdered', y='Contribution to bias removal', 
+                                 facet_col_spacing=0.005, # default 0.03
                                  x='isNonlin', color='paramsNames') #,
               #title = """Long: Linear ++ nonlinear contributions to actual removal of regional biases""")
     #biasLinNlIndivContrbBarFig.update_yaxes(title="-(Def-Sim) / abs(obs metric value)")

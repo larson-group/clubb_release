@@ -54,23 +54,49 @@ def setUpInputs():
 #                        ['SHFLX_RMSE', 1.00, 15.], \
 #                        ['CLDLOW_RMSE', 1.00, 15.], \
 #                        ['SWCF_RACC', 0.01, 0.2], \
-#                        ['SWCF_RMSEP', 0.01, 15.], \
+#                        ['SWCF_RMSEP', 1.0, 15.], \
 #                        ['SWCF_RMSE', 0.01, 15.], \
-                        ['SWCF_GLB', 16.00, -999], \
-                        ['SWCF_DYCOMS', 1.00, -999], \
-                        ['SWCF_HAWAII', 2.00, -999], \
-                        ['SWCF_VOCAL', 2.00, -999], \
-                        ['SWCF_VOCAL_near', 1.00, -999], \
-                        ['SWCF_LBA', 1.00, -999], \
-                        ['SWCF_WP', 1.00, -999], \
-                        ['SWCF_EP', 1.00, -999], \
-                        ['SWCF_NP', 1.00, -999], \
-                        ['SWCF_SP', 1.00, -999],  \
+#                        ['SWCF_GLB', 1.00, -999], \
+#                        ['SWCF_DYCOMS', 1.00, -999], \
+#                        ['SWCF_HAWAII', 2.00, -999], \
+#                        ['SWCF_VOCAL', 2.00, -999], \
+#                        ['SWCF_VOCAL_near', 0.1, -999], \
+#                        ['SWCF_LBA', 1.00, -999], \
+#                        ['SWCF_WP', 1.00, -999], \
+#                        ['SWCF_EP', 1.00, -999], \
+#                        ['SWCF_NP', 1.00, -999], \
+#                        ['SWCF_SP', 1.00, -999],  \
 ##                        ['SWCF_PA', 1.01, -999], \
-                        ['SWCF_CAF', 1.00, -999], \
-                        ['SWCF_Namibia', 1.00, -999], \
-                        ['SWCF_Namibia_near', 1.00, -999], \
-                        ['LWCF_GLB', 1.00, -999], \
+#                        ['SWCF_CAF', 1.00, -999], \
+#                        ['SWCF_Namibia', 1.00, -999], \
+#                        ['SWCF_Namibia_near', 0.1, -999], \
+    ['SWCF_1_1', 0.0056, -999], ['SWCF_1_2', 0.0056, -999],  ['SWCF_1_3', 0.0056, -999], ['SWCF_1_4', 0.0056, -999], \
+    ['SWCF_1_5', 0.0056, -999], ['SWCF_1_6', 0.0056, -999],  ['SWCF_1_7', 0.0056, -999], ['SWCF_1_8', 0.0056, -999], \
+    ['SWCF_1_9', 0.0056, -999], ['SWCF_1_10', 0.0056, -999], ['SWCF_1_11', 0.0056, -999], ['SWCF_1_12', 0.0056, -999], \
+    ['SWCF_2_1', 0.015, -999], ['SWCF_2_2', 0.015, -999],  ['SWCF_2_3', 0.015, -999], ['SWCF_2_4', 0.015, -999], \
+    ['SWCF_2_5', 0.015, -999], ['SWCF_2_6', 0.015, -999],  ['SWCF_2_7', 0.015, -999], ['SWCF_2_8', 0.015, -999], \
+    ['SWCF_2_9', 0.015, -999], ['SWCF_2_10', 0.015, -999], ['SWCF_2_11', 0.015, -999], ['SWCF_2_12', 0.015, -999], \
+    ['SWCF_3_1', 0.0208, -999], ['SWCF_3_2', 0.0208, -999],  ['SWCF_3_3', 0.0208, -999], ['SWCF_3_4', 0.0208, -999], \
+    ['SWCF_3_5', 0.0208, -999], ['SWCF_3_6', 0.0208, -999],  ['SWCF_3_7', 0.0208, -999], ['SWCF_3_8', 0.0208, -999], \
+    ['SWCF_3_9', 0.0208, -999], ['SWCF_3_10', 0.0208, -999], ['SWCF_3_11', 0.0208, -999], ['SWCF_3_12', 0.0208, -999], \
+    ['SWCF_4_1', 0.0208, -999], ['SWCF_4_2', 0.0208, -999],  ['SWCF_4_3', 0.0208, -999], ['SWCF_4_4', 0.0208, -999], \
+    ['SWCF_4_5', 0.0208, -999], ['SWCF_4_6', 0.0208, -999],  ['SWCF_4_7', 0.0208, -999], ['SWCF_4_8', 0.0208, -999], \
+    ['SWCF_4_9', 0.0208, -999], ['SWCF_4_10', 0.0208, -999], ['SWCF_4_11', 0.0208, -999], ['SWCF_4_12', 0.0208, -999], \
+    ['SWCF_5_1', 0.015, -999], ['SWCF_5_2', 0.015, -999],  ['SWCF_5_3', 0.015, -999], ['SWCF_5_4', 0.015, -999], \
+    ['SWCF_5_5', 0.015, -999], ['SWCF_5_6', 0.015, -999],  ['SWCF_5_7', 0.015, -999], ['SWCF_5_8', 0.015, -999], \
+    ['SWCF_5_9', 0.015, -999], ['SWCF_5_10', 0.015, -999], ['SWCF_5_11', 0.015, -999], ['SWCF_5_12', 0.015, -999], \
+    ['SWCF_6_1', 0.0056, -999], ['SWCF_6_2', 0.0056, -999],  ['SWCF_6_3', 0.0056, -999], ['SWCF_6_4', 0.0056, -999], \
+    ['SWCF_6_5', 0.0056, -999], ['SWCF_6_6', 0.0056, -999],  ['SWCF_6_7', 0.0056, -999], ['SWCF_6_8', 0.0056, -999], \
+    ['SWCF_6_9', 0.0056, -999], ['SWCF_6_10', 0.0056, -999], ['SWCF_6_11', 0.0056, -999], ['SWCF_6_12', 0.0056, -999], \
+#     ['SWCF_1_1', 0.41, -999], ['SWCF_1_2', 0.41, -999], ['SWCF_1_3', 0.41, -999], ['SWCF_1_4', 0.41, -999], \
+#     ['SWCF_1_5', 0.41, -999], ['SWCF_1_6', 0.41, -999], ['SWCF_1_7', 0.41, -999], ['SWCF_1_8', 0.41, -999], \
+#     ['SWCF_2_1', 1.00, -999], ['SWCF_2_2', 1.00, -999], ['SWCF_2_3', 1.00, -999], ['SWCF_2_4', 1.00, -999], \
+#     ['SWCF_2_5', 1.00, -999], ['SWCF_2_6', 1.00, -999], ['SWCF_2_7', 1.00, -999], ['SWCF_2_8', 1.00, -999], \
+#     ['SWCF_3_1', 1.00, -999], ['SWCF_3_2', 1.00, -999], ['SWCF_3_3', 1.00, -999], ['SWCF_3_4', 1.00, -999], \
+#     ['SWCF_3_5', 1.00, -999], ['SWCF_3_6', 1.00, -999], ['SWCF_3_7', 1.00, -999], ['SWCF_3_8', 1.00, -999], \
+#     ['SWCF_4_1', 0.41, -999], ['SWCF_4_2', 0.41, -999], ['SWCF_4_3', 0.41, -999], ['SWCF_4_4', 0.41, -999], \
+#     ['SWCF_4_5', 0.41, -999], ['SWCF_4_6', 0.41, -999], ['SWCF_4_7', 0.41, -999], ['SWCF_4_8', 0.41, -999], \
+#                        ['LWCF_GLB', 1.00, -999], \
 ###                        ['LWCF_DYCOMS', 1.01, -999], \
 ###                        ['LWCF_HAWAII', 1.01, -999], \
 ###                        ['LWCF_VOCAL', 1.01, -999], \
@@ -81,7 +107,7 @@ def setUpInputs():
 ##                        ['LWCF_SP', 1.01, -999], \
 ####                        ['LWCF_PA',  1.01, -999], \
 ###                        ['LWCF_CAF', 1.01, -999], \
-                        ['PRECT_GLB', 3.00, -999], \
+#                        ['PRECT_GLB', 3.00, -999], \
 #                        ['PRECT_RACC', 0.01, 1.0], \
 #                        ['PRECT_RMSEP', 0.01, 1.0], \
 #                        ['PRECT_RMSE', 0.01, 1.0], \
@@ -126,7 +152,8 @@ def setUpInputs():
     #    up and in the other, it is perturbed down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
-    folder_name = 'Regional_files/20231027/'  # folder where regional netcdf files are stored.
+    folder_name = 'Regional_files/20231204_30x30regs/'  # folder where regional netcdf files are stored.
+    #folder_name = 'Regional_files/20231027/'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/20230910/'  # folder where regional netcdf files are stored.
     paramsNamesScalesAndFilenames = [ \
 ##                    ['clubb_c7', 1.0, \
@@ -303,8 +330,44 @@ def setUpInputs():
     'PSL_SP':  100021.4921875, \
     'PSL_NP':  101314.546875, \
     'PSL_PA':  100990.25, \
-    'PSL_CAF': 100941.7890625
-        }
+    'PSL_CAF': 100941.7890625, \
+    'SWCF_1_1': -40.59888, 'SWCF_1_2': -38.27685, 'SWCF_1_3': -29.92496, 'SWCF_1_4': -28.98982, \
+    'SWCF_1_5': -26.83143, 'SWCF_1_6': -25.31917, 'SWCF_1_7': -27.9917, 'SWCF_1_8': -24.87963, \
+    'SWCF_1_9': -17.89297, 'SWCF_1_10': -18.54498, 'SWCF_1_11': -19.26345, 'SWCF_1_12': -37.08834, \
+    'SWCF_2_1': -34.4901, 'SWCF_2_2': -30.40586, 'SWCF_2_3': -30.86093, 'SWCF_2_4': -39.89378, \
+    'SWCF_2_5': -52.95258, 'SWCF_2_6': -71.01636, 'SWCF_2_7': -67.66965, 'SWCF_2_8': -58.65926, \
+    'SWCF_2_9': -35.28358, 'SWCF_2_10': -49.01012, 'SWCF_2_11': -57.6655, 'SWCF_2_12': -47.73322, \
+    'SWCF_3_1': -24.91453, 'SWCF_3_2': -18.33076, 'SWCF_3_3': -37.69804, 'SWCF_3_4': -64.86975, \
+    'SWCF_3_5': -54.89531, 'SWCF_3_6': -42.75589, 'SWCF_3_7': -38.91958, 'SWCF_3_8': -53.20009, \
+    'SWCF_3_9': -47.8519, 'SWCF_3_10': -49.38494, 'SWCF_3_11': -35.26117, 'SWCF_3_12': -31.96173, \
+    'SWCF_4_1': -46.085, 'SWCF_4_2': -36.71035, 'SWCF_4_3': -43.04711, 'SWCF_4_4': -45.04954, \
+    'SWCF_4_5': -40.85117, 'SWCF_4_6': -52.4172, 'SWCF_4_7': -44.30988, 'SWCF_4_8': -32.32601, \
+    'SWCF_4_9': -36.84876, 'SWCF_4_10': -62.21399, 'SWCF_4_11': -46.25127, 'SWCF_4_12': -35.85495, \
+    'SWCF_5_1': -64.23532, 'SWCF_5_2': -66.20067, 'SWCF_5_3': -66.24201, 'SWCF_5_4': -63.59531, \
+    'SWCF_5_5': -55.99519, 'SWCF_5_6': -57.86568, 'SWCF_5_7': -60.74911, 'SWCF_5_8': -66.81461, \
+    'SWCF_5_9': -63.63784, 'SWCF_5_10': -53.90995, 'SWCF_5_11': -60.69987, 'SWCF_5_12': -70.45469, \
+    'SWCF_6_1': -24.44015, 'SWCF_6_2': -22.021, 'SWCF_6_3': -22.83143, 'SWCF_6_4': -19.53066, \
+    'SWCF_6_5': -22.34129, 'SWCF_6_6': -30.43135, 'SWCF_6_7': -39.39627, 'SWCF_6_8': -37.68586, \
+    'SWCF_6_9': -38.25595, 'SWCF_6_10': -31.7473, 'SWCF_6_11': -27.47777, 'SWCF_6_12': -27.86843
+#    'SWCF_1_1': -42.18101, 'SWCF_1_2': -32.30865, 'SWCF_1_3': -32.55965, 'SWCF_1_4': -45.65011, \
+#    'SWCF_1_5': -50.19252, 'SWCF_1_6': -32.94496, 'SWCF_1_7': -37.16001, 'SWCF_1_8': -47.75633, \
+#    'SWCF_2_1': -24.65771, 'SWCF_2_2': -29.43244, 'SWCF_2_3': -58.16404, 'SWCF_2_4': -52.84988, \
+#    'SWCF_2_5': -48.13301, 'SWCF_2_6': -48.1224, 'SWCF_2_7': -46.68948, 'SWCF_2_8': -35.85141, \
+#    'SWCF_3_1': -46.92494, 'SWCF_3_2': -46.37671, 'SWCF_3_3': -46.52961, 'SWCF_3_4': -49.72062, \
+#    'SWCF_3_5': -46.60182,  'SWCF_3_6': -42.66064, 'SWCF_3_7': -55.72744, 'SWCF_3_8': -45.17018, \
+#    'SWCF_4_1': -52.65081, 'SWCF_4_2': -50.30189, 'SWCF_4_3': -46.82841, 'SWCF_4_4': -48.10809, \
+#    'SWCF_4_5': -53.8271, 'SWCF_4_6': -54.2933, 'SWCF_4_7': -47.07664, 'SWCF_4_8': -54.32018 
+    }
+
+    # Comment out if not using 20x20reg files
+    metricsNamesWeightsAndNorms = setUp_x_MetricsList(defaultNcFilename)
+    # Split up the list above into metric names and the corresponding weights.
+    dfMetricsNamesWeightsAndNorms =  \
+        pd.DataFrame( metricsNamesWeightsAndNorms, columns = ['metricsNames', 'metricsWeights', 'metricsNorms'] )
+    metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
+    metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
+    metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
+    obsMetricValsDict = setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
 
     return (metricsNames, metricsWeights, metricsNorms, \
             obsMetricValsDict, \
@@ -399,6 +462,8 @@ def setUpPreliminaries(metricsNames, metricsNorms, \
     # defaultBiasesCol = + delta_b
     defaultBiasesCol = np.subtract(defaultMetricValsCol, obsMetricValsCol)
 
+    #pdb.set_trace()
+
     # Based on the default simulation,
     #    set up a row vector of prescribed parameter values.
     numPrescribedParams = len(prescribedParamsNames)
@@ -444,8 +509,71 @@ def setUpPreliminaries(metricsNames, metricsNorms, \
            )
 
 
-def setUpObsCol(obsMetricValsDict, metricsNames):
+def setUp_x_ObsMetricValsDict(obsPathAndFilename):
     """ 
+    This is intended for the case in which 20x20deg fields are used.
+    Input: Filename containing observed values of metrics.
+    Output: Dictionary of observations.
+    """
+
+    import numpy as np
+    import netCDF4
+    import re
+
+    # Read netcdf file with metrics and parameters from default simulation
+    f_obs = netCDF4.Dataset(obsPathAndFilename, 'r')
+
+    obsMetricValsDict = {}
+    for varName in f_obs.variables:
+        #print(varName)
+        if re.search("^SWCF_[0-9]+_",varName) and not "MSWCF" in varName:
+            varEntry = f_obs[varName]
+            varVal = varEntry[:].data[:][0]
+            obsMetricValsDict[varName] = varVal
+            #print((varName, varVal))
+
+    f_obs.close()
+
+    #print(obsMetricValsDict)
+    #print(len(obsMetricValsDict))
+
+    return obsMetricValsDict
+
+
+def setUp_x_MetricsList(defPathAndFilename):
+    """
+    This is intended for the case in which 20x20deg fields are used.
+    Input: Filename of default run.
+    Output: List of 20x20reg metric values.
+    """
+
+    import numpy as np
+    import netCDF4
+    import re
+
+    # Read netcdf file with metrics and parameters from default simulation
+    f_def = netCDF4.Dataset(defPathAndFilename, 'r')
+
+    metricsNamesWeightsAndNorms = []
+    for varName in f_def.variables:
+        #print(varName)
+        if re.match("^numb_[0-9]+_[0-9]+",varName):
+            areaWeightEntry = f_def[varName]
+            areaWeightVal = areaWeightEntry[:].data[:][0]
+            SWCF_string = varName.replace("numb", "SWCF")
+            metricsNamesWeightsAndNorms.append([SWCF_string,  areaWeightVal, -999])
+            #print((SWCF_string, areaWeightVal))
+
+    f_def.close()
+
+    #print(obsMetricValsDict)
+    #print(metricsNamesWeightsAndNorms)
+
+    return metricsNamesWeightsAndNorms
+
+
+def setUpObsCol(obsMetricValsDict, metricsNames):
+    """
     Input: A python dictionary of observed metrics.
     Output: A column vector of observed metrics
     """
