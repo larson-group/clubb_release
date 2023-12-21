@@ -4029,7 +4029,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       do k = 1, 2
+        ! Set term at lower boundary to 0
         lhs_ta_wp3(k,i,1) = zero
+        lhs_ta_wp3(k,i,2) = zero
         ! Set term at upper boundary to 0
         lhs_ta_wp3(k,i,nz) = zero
       end do
@@ -4038,7 +4040,7 @@ module advance_wp2_wp3_module
 
     ! Calculate term at all interior grid levels.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
+    do k = 3, nz-1
       do i = 1, ngrdcol
 
         ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -4228,7 +4230,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, ngrdcol
       do i = 1, 5
+        ! Set lower boundary to 0
         lhs_ta_wp3(i,k,1) = zero
+        lhs_ta_wp3(i,k,2) = zero
         ! Set upper boundary to 0
         lhs_ta_wp3(i,k,nz) = zero
       end do
@@ -4286,40 +4290,6 @@ module advance_wp2_wp3_module
 
           end do
         end do
-        !$acc end parallel loop
-
-        ! Lower Boundary
-        ! The turbulent advection discretization assumes that wp3 has a value
-        ! of 0 at momentum level 1.
-        k = 2
-        !$acc parallel loop gang vector default(present)
-        do i = 1, ngrdcol
-
-          ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-          lhs_ta_wp3(kp1_tdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) &
-              * gr%invrs_dzt(i,k) &
-                * rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
-                * gr%weights_zt2zm(i,k,t_above)
-
-          ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-          lhs_ta_wp3(k_mdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k) * a3(i,k) * wp2(i,k)
-
-          ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-          lhs_ta_wp3(k_tdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) &
-              * gr%invrs_dzt(i,k) &
-                * rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
-                * gr%weights_zt2zm(i,k,t_below)
-
-          ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-          lhs_ta_wp3(km1_mdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k-1) * a3(i,k-1) * wp2(i,k-1)
-
-        enddo
         !$acc end parallel loop
 
         ! Upper Boundary
@@ -4403,38 +4373,6 @@ module advance_wp2_wp3_module
 
           end do
         end do
-        !$acc end parallel loop
-
-        ! Lower Boundary
-        ! The turbulent advection discretization assumes that wp3 has a value
-        ! of 0 at momentum level 1.
-        k = 2
-        !$acc parallel loop gang vector default(present)
-        do i = 1, ngrdcol
-
-          ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-          lhs_ta_wp3(kp1_tdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) &
-              * gr%invrs_dzt(i,k) * rho_ds_zt(i,k+1) &
-              * min( a1(i,k) * wp3_on_wp2(i,k), zero )
-
-          ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-          lhs_ta_wp3(k_mdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k) * a3(i,k) * wp2(i,k)
-
-          ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-          lhs_ta_wp3(k_tdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) &
-              * gr%invrs_dzt(i,k) * rho_ds_zt(i,k) &
-              * max( a1(i,k) * wp3_on_wp2(i,k), zero )
-
-          ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-          lhs_ta_wp3(km1_mdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k-1) * a3(i,k-1) * wp2(i,k-1)
-
-        enddo
         !$acc end parallel loop
 
         ! Upper Boundary
@@ -4530,40 +4468,6 @@ module advance_wp2_wp3_module
 
         end do
       end do
-      !$acc end parallel loop
-
-      ! Lower Boundary
-      ! The turbulent advection discretization assumes that wp3 has a value
-      ! of 0 at momentum level 1.
-      k = 2
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-
-        ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-        lhs_ta_wp3(kp1_tdiag,i,k) &
-        = + invrs_rho_ds_zt(i,k) &
-            * a1_zt(i,k) * gr%invrs_dzt(i,k) &
-            * rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
-            * gr%weights_zt2zm(i,k,t_above)
-
-        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-        lhs_ta_wp3(k_mdiag,i,k) &
-        = + invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr%invrs_dzt(i,k) &
-            * rho_ds_zm(i,k) * wp2(i,k)
-
-        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-        lhs_ta_wp3(k_tdiag,i,k) &
-        = + invrs_rho_ds_zt(i,k) &
-            * a1_zt(i,k) * gr%invrs_dzt(i,k) &
-            * rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
-            * gr%weights_zt2zm(i,k,t_below)
-
-        ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-        lhs_ta_wp3(km1_mdiag,i,k) &
-        = - invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr%invrs_dzt(i,k) &
-            * rho_ds_zm(i,k-1) * wp2(i,k-1)
-
-      enddo
       !$acc end parallel loop
 
       ! Upper Boundary
@@ -4730,8 +4634,9 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector default(present)
     do k = 1, ngrdcol
       do i = 1, 2
+      ! Set lower boundary to 0
       lhs_tp_wp3(i,k,1) = zero
-
+      lhs_tp_wp3(i,k,2) = zero
       ! Set upper boundary to 0
       lhs_tp_wp3(i,k,nz) = zero
       end do
@@ -4740,7 +4645,7 @@ module advance_wp2_wp3_module
 
     ! Calculate term at all interior grid levels.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
+    do k = 3, nz-1
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
         lhs_tp_wp3(k_mdiag,i,k) &
@@ -4857,7 +4762,9 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
+      ! Set lower boundary to 0
       lhs_ac_pr2_wp3(i,1) = zero
+      lhs_ac_pr2_wp3(i,2) = zero
       ! Set upper boundary to 0
       lhs_ac_pr2_wp3(i,nz) = zero
     end do
@@ -4865,7 +4772,7 @@ module advance_wp2_wp3_module
 
     ! Calculate term at all interior grid levels.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
+    do k = 3, nz-1
       do i = 1, ngrdcol
 
        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
@@ -4976,8 +4883,9 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
+      ! Set lower boundary to 0
       lhs_pr1_wp3(i,1) = zero
-
+      lhs_pr1_wp3(i,2) = zero
       ! Set upper boundary to 0
       lhs_pr1_wp3(i,nz) = zero
     end do
@@ -4986,7 +4894,7 @@ module advance_wp2_wp3_module
     ! Calculate term at all interior grid levels.
     if ( l_damp_wp3_Skw_squared ) then
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 3, nz-1
         do i = 1, ngrdcol
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_pr1_wp3(i,k) = + ( C8 * invrs_tau_wp3_zt(i,k) ) &
@@ -4997,7 +4905,7 @@ module advance_wp2_wp3_module
 
     else
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 3, nz-1
         do i = 1, ngrdcol
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_pr1_wp3(i,k) = + ( C8 * invrs_tau_wp3_zt(i,k) ) &
@@ -5103,7 +5011,9 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
+      ! Set lower boundary to 0
       rhs_ta_wp3(i,1) = zero
+      rhs_ta_wp3(i,2) = zero
       ! Set upper boundary to 0
       rhs_ta_wp3(i,nz) = zero
     end do
@@ -5111,7 +5021,7 @@ module advance_wp2_wp3_module
 
     ! Calculate term at all interior grid levels.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz
+    do k = 3, nz
       do i = 1, ngrdcol
         rhs_ta_wp3(i,k) = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
                             * ( rho_ds_zm(i,k) * wp4(i,k) - rho_ds_zm(i,k-1) * wp4(i,k-1) )
@@ -5191,7 +5101,9 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
+      ! Set lower boundary to 0
       rhs_bp1_pr2_wp3(i,1) = zero    
+      rhs_bp1_pr2_wp3(i,2) = zero    
       ! Set upper boundary to 0
       rhs_bp1_pr2_wp3(i,nz) = zero
     end do
@@ -5199,7 +5111,7 @@ module advance_wp2_wp3_module
 
     ! Calculate term at all interior grid levels.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
+    do k = 3, nz-1
       do i = 1, ngrdcol
         rhs_bp1_pr2_wp3(i,k) = + ( one - C11_Skw_fnc(i,k) ) &
                                  * three * ( grav / thv_ds_zt(i,k) ) * wp2thvp(i,k)
@@ -5293,7 +5205,9 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
+      ! Set lower boundary to 0
       rhs_pr_turb_wp3(i,1) = zero
+      rhs_pr_turb_wp3(i,2) = zero
       ! Set upper boundary to 0
       rhs_pr_turb_wp3(i,nz) = zero
     end do
@@ -5302,7 +5216,7 @@ module advance_wp2_wp3_module
     if ( .not. l_use_tke_in_wp3_pr_turb_term ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr_turb_wp3(i,k) &
           = - C_wp3_pr_turb * Kh_zt(i,k) * gr%invrs_dzt(i,k) &
@@ -5316,7 +5230,7 @@ module advance_wp2_wp3_module
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr_turb_wp3(i,k) &
           = - C_wp3_pr_turb * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
@@ -5425,13 +5339,14 @@ module advance_wp2_wp3_module
     do i = 1, ngrdcol
       ! Set lower boundary condition
       rhs_pr_dfsn_wp3(i,1) = zero
+      rhs_pr_dfsn_wp3(i,2) = zero
       ! Set upper boundary to 0
       rhs_pr_dfsn_wp3(i,nz) = zero
     end do
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
+    do k = 3, nz-1
       do i = 1, ngrdcol
         rhs_pr_dfsn_wp3(i,k) &
          = + C_wp3_pr_dfsn * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
@@ -5539,7 +5454,9 @@ module advance_wp2_wp3_module
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
+      ! Set lower boundary to 0
       rhs_pr1_wp3(i,1) = zero
+      rhs_pr1_wp3(i,2) = zero
       ! Set upper boundary to 0
       rhs_pr1_wp3(i,nz) = zero
     end do
@@ -5548,7 +5465,7 @@ module advance_wp2_wp3_module
     ! Calculate term at all interior grid levels.
     if ( l_damp_wp3_Skw_squared ) then
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr1_wp3(i,k) = + ( C8 * invrs_tau_wp3_zt(i,k) ) &
                              * ( two * C8b * Skw_zt(i,k)**2 ) * wp3(i,k)
@@ -5557,7 +5474,7 @@ module advance_wp2_wp3_module
       !$acc end parallel loop
     else
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr1_wp3(i,k) = + ( C8 * invrs_tau_wp3_zt(i,k) ) &
                              * ( four * C8b * Skw_zt(i,k)**4 ) * wp3(i,k)
