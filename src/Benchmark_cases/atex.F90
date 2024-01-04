@@ -15,7 +15,8 @@ module atex
   contains
 
   !======================================================================
-  subroutine atex_tndcy( gr, time, time_initial, &
+  subroutine atex_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+                         gr, time, time_initial, &
                          rtm, &
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, & 
@@ -31,27 +32,38 @@ module atex
 
   !----------------------------------------------------------------------
 
-  use constants_clubb, only: fstderr ! Constant(s)
+  use constants_clubb, only: &
+    fstderr ! Constant(s)
 
-  use grid_class, only: grid ! Type
+  use grid_class, only: &
+    grid ! Type
 
-  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+  use grid_class, only: &
+    zt2zm ! Procedure(s)
 
-  use grid_class, only: zt2zm ! Procedure(s)
-
-  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+  use clubb_precision, only: &
+    time_precision, & ! Variable(s)
+    core_rknd
 
   use error_code, only: &
-        clubb_fatal_error, &            ! Constant
-        err_code                        ! Error indicator
+    clubb_fatal_error, &            ! Constant
+    err_code                        ! Error indicator
 
-  use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
-   
+  use array_index, only: &
+    sclr_idx_type   
+
   implicit none
+
+  !--------------------- Input Variables ---------------------
+  integer, intent(in) :: &
+    sclr_dim, & 
+    edsclr_dim
+
+  type (sclr_idx_type), intent(in) :: &
+    sclr_idx
 
   type (grid), target, intent(in) :: gr
 
-  ! Input Variables
   real(kind=time_precision), intent(in) ::  & 
     time,         & ! Current time     [s]
     time_initial ! Initial time     [s]
@@ -59,7 +71,7 @@ module atex
   real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
     rtm      ! Total water mixing ratio        [kg/kg]
 
-  ! Output Variables
+  !--------------------- Output Variables ---------------------
   real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
     wm_zt,        & ! w wind on thermodynamic grid                [m/s]
     wm_zm,        & ! w wind on momentum grid                     [m/s]
@@ -76,6 +88,8 @@ module atex
   ! Internal variables
   integer :: i
   real( kind = core_rknd ) :: z_inversion
+
+  !--------------------- Begin Code ---------------------
 
   ! Forcings are applied only after t = 5400 s
   wm_zt = 0._core_rknd
@@ -163,11 +177,11 @@ module atex
   end if ! time >= time_initial + 5400.0_core_rknd
 
   ! Test scalars with thetal and rt if desired
-  if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-  if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+  if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+  if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-  if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-  if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+  if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+  if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
   return
   end subroutine atex_tndcy

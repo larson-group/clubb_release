@@ -17,7 +17,8 @@ module dycoms2_rf01
   contains
 
   !----------------------------------------------------------------------
-  subroutine dycoms2_rf01_tndcy( gr, thlm_forcing, rtm_forcing, &
+  subroutine dycoms2_rf01_tndcy( gr, sclr_dim, edsclr_dim, sclr_idx, &
+                                 thlm_forcing, rtm_forcing, &
                                  sclrm_forcing, edsclrm_forcing )
 ! Description:
 !   Subroutine to set theta and water tendencies for DYCOMS RF01 case.
@@ -26,17 +27,27 @@ module dycoms2_rf01
 !   <http://www.atmos.ucla.edu/~bstevens/dycoms/rf01/rf01.html>
 !----------------------------------------------------------------------
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use array_index, only: &
+      sclr_idx_type
 
-    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variables(s)
+    use grid_class, only: &
+      grid
 
-    use grid_class, only: grid
-
-    use clubb_precision, only: core_rknd ! Variable(s)
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
     implicit none
 
-    type(grid), target, intent(in) :: gr
+    !--------------------- Input Variables ---------------------
+    type(grid), target, intent(in) :: &
+      gr
+
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
@@ -54,20 +65,21 @@ module dycoms2_rf01
 
 
     ! Test scalars with thetal and rt if desired
-    if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-    if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
     return
   end subroutine dycoms2_rf01_tndcy
   
   !======================================================================
   subroutine dycoms2_rf01_sfclyr( time, sfctype, p_sfc,  & 
-                                    exner_sfc, ubar, & 
-                                    thlm_sfc, rtm_sfc, rho_sfc, &
-                                    wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
+                                  exner_sfc, ubar, & 
+                                  thlm_sfc, rtm_sfc, rho_sfc, &
+                                  saturation_formula, &
+                                  wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
   ! Description:
   !   This subroutine computes surface fluxes of
   !   heat and moisture according to GCSS DYCOMS II RF 01 specifications
@@ -104,6 +116,9 @@ module dycoms2_rf01
     thlm_sfc,  & ! theta_l at first model layer                  [K]
     rtm_sfc,   & ! Total water mixing ratio at first model layer [kg/kg]
     rho_sfc   ! Density at the surface                        [kg/m^3]
+
+  integer, intent(in) :: &
+    saturation_formula ! Integer that stores the saturation formula to be used
 
   ! Output variables
   real( kind = core_rknd ), intent(out) ::  & 
@@ -146,7 +161,7 @@ module dycoms2_rf01
   else if ( sfctype == 1 ) then
 
     wpthlp_sfc = compute_wpthlp_sfc( Cd, ubar, thlm_sfc, T_sfc, exner_sfc )
-    wprtp_sfc = compute_wprtp_sfc( Cd, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
+    wprtp_sfc = compute_wprtp_sfc( Cd, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc, saturation_formula ) )
 
   else  ! Undefined value for sfctype
 

@@ -21,7 +21,9 @@ module sounding
 
   contains
   !------------------------------------------------------------------------
-  subroutine read_sounding( gr, iunit, runtype, p_sfc, zm_init, & 
+  subroutine read_sounding( sclr_dim, edsclr_dim, sclr_idx, &
+                            gr, iunit, runtype, p_sfc, zm_init, & 
+                            saturation_formula, &
                             l_modify_ic_with_cubic_int, &
                             thlm, theta_type, rtm, um, vm, ugm, vgm, &
                             alt_type, press, subs_type, wm, &
@@ -34,23 +36,17 @@ module sounding
     !------------------------------------------------------------------------
 
     use constants_clubb, only:  & 
-        fstderr, & ! Constant
-        fstdout, &
-        g_per_kg
-
-    use parameters_model, only: & 
-        sclr_dim, &! Variable(s)
-        edsclr_dim
+      fstderr, & ! Constant
+      fstdout, &
+      g_per_kg
 
     use interpolation, only:  & 
-        lin_interpolate_two_points, & ! Procedure(s)
-        mono_cubic_interp, &
-        binary_search
+      lin_interpolate_two_points, & ! Procedure(s)
+      mono_cubic_interp, &
+      binary_search
 
-    use array_index, only: & 
-        iisclr_rt, &  ! Variable
-        iisclr_thl
-    !           ,iisclr_CO2
+    use array_index, only: &
+      sclr_idx_type
 
     use error_code, only: &
       clubb_at_least_debug_level  ! Procedure
@@ -76,28 +72,36 @@ module sounding
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
-    use grid_class, only: grid
+    use grid_class, only: &
+      grid
 
     implicit none
-
-    type(grid), target, intent(in) :: gr
-
-    ! External
-    intrinsic :: trim, exp
 
     ! Constant parameter
     integer, parameter :: nmaxsnd = 10000
 
-    ! Input variables
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
+    type(grid), target, intent(in) :: &
+      gr
+
     integer, intent(in) :: iunit ! File unit to use for namelist
 
     character(len=*), intent(in) ::  & 
       runtype ! Used to determine if this in a DYCOMS II RF02 simulation
 
-
     real( kind = core_rknd ), intent(in) :: &
       p_sfc, & ! Pressure at the surface [Pa]
       zm_init ! Height at zm(1)         [m]
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     ! Flag for interpolating the sounding profile with Steffen's monotone cubic 
     ! method to obtain smoother initial condition profile, which is found to be 
@@ -108,7 +112,7 @@ module sounding
     logical, intent(in) :: &
       l_modify_ic_with_cubic_int
 
-    ! Output variables
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       thlm,  & ! Liquid water potential temperature    [K]
       rtm,   & ! Total water mixing ratio              [kg/kg]
@@ -134,7 +138,7 @@ module sounding
     real( kind = core_rknd ), intent(out), dimension(gr%nz, edsclr_dim) ::  & 
       edsclrm ! Eddy Passive scalar output [units vary]
 
-    ! Local variables
+    !--------------------- Local Variables ---------------------
 
     ! Input variables from namelist
     integer :: nlevels  ! Levels in the input sounding
@@ -170,7 +174,7 @@ module sounding
 
     integer :: idx  ! Result of binary search -- sounding level index.
 
-    ! ---- Begin Code ----
+    !--------------------- Begin Code ---------------------
 
     theta_type = theta_name ! Default value
     alt_type = z_name ! Default value
@@ -201,6 +205,7 @@ module sounding
     if( l_sounding_exists ) then
       ! Read in SAM-Like <runtype>_sounding.in file
       call read_sounding_file( iunit, runtype, nlevels, nmaxsnd, p_sfc, &
+                               saturation_formula, &
                                zm_init, z, theta, theta_type, rt, u, v, &
                                ug, vg, alt_type, p_in_Pa, subs_type, subs, &
                                sounding_retVars )
@@ -221,7 +226,8 @@ module sounding
       !                  <runtype>_edsclr_sounding.in
       if( sclr_dim > 0 ) then
         if( l_sclr_sounding_exists ) then
-          call read_sclr_sounding_file( iunit, runtype, nmaxsnd, sclr, &
+          call read_sclr_sounding_file( sclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
+                                        sclr, &
                                         sclr_sounding_retVars )
         else
           error stop 'Cannot open <runtype>_sclr_sounding.in file'
@@ -229,7 +235,8 @@ module sounding
       end if
       if( edsclr_dim > 0 ) then
         if( l_edsclr_sounding_exists  ) then
-          call read_edsclr_sounding_file( iunit, runtype, nmaxsnd, edsclr )
+          call read_edsclr_sounding_file( edsclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
+                                          edsclr )
         else
           error stop 'Cannot open <runtype>_edsclr_sounding.in file'
         end if
@@ -402,13 +409,13 @@ module sounding
             vgm(i)  = vm(i)
             ! Passive Scalars
             ! Change this if they are not equal to theta_l and rt in RF02
-            if ( iisclr_thl > 0  ) then
-              sclrm(i, iisclr_thl)   = thlm(i)
-              edsclrm(i, iisclr_thl) = thlm(i)
+            if ( sclr_idx%iisclr_thl > 0  ) then
+              sclrm(i, sclr_idx%iisclr_thl)   = thlm(i)
+              edsclrm(i, sclr_idx%iisclr_thl) = thlm(i)
             end if
-            if ( iisclr_rt > 0 ) then
-              sclrm(i, iisclr_rt)    = rtm(i)
-              edsclrm(i, iisclr_rt)  = rtm(i)
+            if ( sclr_idx%iisclr_rt > 0 ) then
+              sclrm(i, sclr_idx%iisclr_rt)    = rtm(i)
+              edsclrm(i, sclr_idx%iisclr_rt)  = rtm(i)
             end if
           end if  
 
@@ -453,13 +460,13 @@ module sounding
               rtm(i)  = (9.45_core_rknd)/g_per_kg ! Known magic number
               ! Passive Scalars
               ! Change this if they are not equal to theta_l and rt in RF02
-              if ( iisclr_thl > 0  ) then
-                sclrm(i, iisclr_thl)   = thlm(i)
-                edsclrm(i, iisclr_thl) = thlm(i)
+              if ( sclr_idx%iisclr_thl > 0  ) then
+                sclrm(i, sclr_idx%iisclr_thl)   = thlm(i)
+                edsclrm(i, sclr_idx%iisclr_thl) = thlm(i)
               end if
-              if ( iisclr_rt > 0 ) then
-                sclrm(i, iisclr_rt)    = rtm(i)
-                edsclrm(i, iisclr_rt)  = rtm(i)
+              if ( sclr_idx%iisclr_rt > 0 ) then
+                sclrm(i, sclr_idx%iisclr_rt)    = rtm(i)
+                edsclrm(i, sclr_idx%iisclr_rt)  = rtm(i)
               end if
               press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), &
                                                      p_in_Pa(k), p_in_Pa(k-1) )
@@ -479,13 +486,13 @@ module sounding
               500.0_core_rknd ) )  )/g_per_kg ! Known magic number
               ! Passive Scalars
               ! Same as above
-              if ( iisclr_thl > 0  ) then
-                sclrm(i, iisclr_thl)   = thlm(i)
-                edsclrm(i, iisclr_thl) = thlm(i)
+              if ( sclr_idx%iisclr_thl > 0  ) then
+                sclrm(i, sclr_idx%iisclr_thl)   = thlm(i)
+                edsclrm(i, sclr_idx%iisclr_thl) = thlm(i)
               end if
-              if ( iisclr_rt > 0 ) then
-                sclrm(i, iisclr_rt)    = rtm(i)
-                edsclrm(i, iisclr_rt)  = rtm(i)
+              if ( sclr_idx%iisclr_rt > 0 ) then
+                sclrm(i, sclr_idx%iisclr_rt)    = rtm(i)
+                edsclrm(i, sclr_idx%iisclr_rt)  = rtm(i)
               end if
               press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), &
                                                      p_in_Pa(k), p_in_Pa(k-1) )
@@ -545,7 +552,7 @@ module sounding
       else
 
         call convert_snd2extended_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, & ! Intent(in)
-                                   sounding_retVars )   ! Intent(in)
+                                       sounding_retVars, saturation_formula )   ! Intent(in)
       end if
     end if ! rad_scheme == "bugsrad"
     ! Deallocate sounding and scalar sounding profiles.  If this doesn't happen,
@@ -567,6 +574,7 @@ module sounding
 
   !-----------------------------------------------------------------------------
   subroutine read_sounding_file( iunit, runtype, nlevels, nmaxsnd, p_sfc, &
+                                 saturation_formula, &
                                  zm_init, z, theta, theta_type, rt, u, v, &
                                  ug, vg, alt_type, p_in_Pa, subs_type, subs, &
                                  retVars )
@@ -612,6 +620,9 @@ module sounding
     integer, intent(in) :: &
       nmaxsnd   ! Maximum number of levels allowed in the sounding.in file
 
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+
     ! Output Variable(s)
     integer, intent(out) :: nlevels ! Number of levels from the sounding.in file
 
@@ -642,6 +653,7 @@ module sounding
     call fill_blanks_one_dim_vars( n_snd_var, retVars )
 
     call read_z_profile( n_snd_var, nmaxsnd, retVars, p_sfc, zm_init, &
+                         saturation_formula, &
                          z, p_in_Pa, alt_type )
 
     call read_theta_profile( n_snd_var, nmaxsnd, retVars, theta_type, theta )
@@ -664,7 +676,9 @@ module sounding
   end subroutine read_sounding_file
 
   !-------------------------------------------------------------------------------------------------
-  subroutine read_sclr_sounding_file( iunit, runtype, nmaxsnd, sclr, retVars )
+  subroutine read_sclr_sounding_file( sclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
+                                      sclr, &
+                                      retVars )
     !
     ! Description: This subroutine reads in a <runtype>_sclr_sounding.in file and
     !   returns the values contained in that file.
@@ -678,9 +692,8 @@ module sounding
     use input_reader, only: &
       one_dim_read_var ! Type
 
-    use parameters_model, only: sclr_dim ! Variable
-
-    use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2
+    use array_index, only: &
+      sclr_idx_type
 
     use input_names, only: &
       CO2_name, &
@@ -694,7 +707,13 @@ module sounding
 
     implicit none
 
-    ! Input Variable(s)
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
     integer, intent(in) :: iunit ! I/O unit
 
     character(len=*), intent(in) :: runtype ! String identifying the model case;
@@ -703,14 +722,15 @@ module sounding
     integer, intent(in) :: &
       nmaxsnd   ! Maximum number of levels allowed in the sounding.in file
 
-    ! Output Variable(s)
+    !--------------------- InOut Variables ---------------------
     real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: & 
       sclr        ! Scalar sounding [?]
 
-
+    !--------------------- Output Variables --------------------
     type(one_dim_read_var), dimension(sclr_dim), intent(out) :: &
       retVars ! Structure containing scalar sounding
 
+    !--------------------- Local Variables --------------------
     integer :: i
 
     call read_one_dim_file( iunit, sclr_dim, &
@@ -721,15 +741,15 @@ module sounding
     do i=1, sclr_dim
       select case ( trim( retVars(i)%name ) )
       case( CO2_name )
-        if( i /= iisclr_CO2 .and. iisclr_CO2 > 0) then
+        if( i /= sclr_idx%iisclr_CO2 .and. sclr_idx%iisclr_CO2 > 0) then
           error stop "iisclr_CO2 index does not match column."
         end if
       case ( rt_name )
-        if( i /= iisclr_rt .and. iisclr_rt > 0) then
+        if( i /= sclr_idx%iisclr_rt .and. sclr_idx%iisclr_rt > 0) then
           error stop "iisclr_rt index does not match column."
         end if
       case ( theta_name, thetal_name, temperature_name )
-        if( i /= iisclr_thl .and. iisclr_thl > 0) then
+        if( i /= sclr_idx%iisclr_thl .and. sclr_idx%iisclr_thl > 0) then
           error stop "iisclr_thl index does not match column."
         end if
       end select
@@ -740,7 +760,8 @@ module sounding
   end subroutine read_sclr_sounding_file
 
   !-------------------------------------------------------------------------------------------------
-  subroutine read_edsclr_sounding_file( iunit, runtype, nmaxsnd, edsclr )
+  subroutine read_edsclr_sounding_file( edsclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
+                                        edsclr )
     !
     !  Description: This subroutine reads in a <runtype>_edsclr_sounding.in file and
     !  returns the values contained in that file.
@@ -749,9 +770,8 @@ module sounding
     use input_reader, only: read_one_dim_file, &
                             one_dim_read_var, deallocate_one_dim_vars
 
-    use parameters_model, only: edsclr_dim
-
-    use array_index, only: iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
+    use array_index, only: &
+      sclr_idx_type
 
     use input_names, only: &
       CO2_name, &
@@ -765,10 +785,13 @@ module sounding
 
     implicit none
 
-    ! External
-    intrinsic :: size, trim
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      edsclr_dim
 
-    ! Input Variable(s)
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
     integer, intent(in) :: iunit ! I/O unit
 
     character(len=*), intent(in) :: &
@@ -777,15 +800,16 @@ module sounding
     integer, intent(in) :: &
       nmaxsnd   ! Maximum number of levels allowed in the sounding.in file
 
-    ! Output Variable(s)
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: & 
     edsclr ! Eddy Scalars [?]
 
+    !--------------------- Local Variables ---------------------
     type(one_dim_read_var), dimension(edsclr_dim) :: retVars
 
     integer :: i 
 
-    ! ---- Begin Code ----
+    !--------------------- Begin Code ---------------------
 
     call read_one_dim_file( iunit, edsclr_dim, &
       '../input/case_setups/'//trim( runtype )//'_edsclr_sounding.in', retVars )
@@ -797,15 +821,15 @@ module sounding
       select case ( trim( retVars(i)%name ) )
 
       case( CO2_name )
-        if( i /= iiedsclr_CO2 .and. iiedsclr_CO2 > 0) then
+        if( i /= sclr_idx%iiedsclr_CO2 .and. sclr_idx%iiedsclr_CO2 > 0) then
           error stop "iisclr_CO2 index does not match column."
         end if
       case( rt_name )
-        if( i /= iiedsclr_rt .and. iiedsclr_rt > 0) then
+        if( i /= sclr_idx%iiedsclr_rt .and. sclr_idx%iiedsclr_rt > 0) then
           error stop "iisclr_rt index does not match column."
         end if
       case( theta_name, thetal_name, temperature_name )
-        if( i /= iiedsclr_thl .and. iiedsclr_thl > 0) then
+        if( i /= sclr_idx%iiedsclr_thl .and. sclr_idx%iiedsclr_thl > 0) then
           error stop "iisclr_thl index does not match column."
         end if
       end select

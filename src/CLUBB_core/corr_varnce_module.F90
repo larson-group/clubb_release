@@ -6,20 +6,6 @@ module corr_varnce_module
   use clubb_precision, only: &
       core_rknd
 
-  use array_index, only: &
-      iiPDF_chi, &
-      iiPDF_eta, &
-      iiPDF_w, &
-      iiPDF_rr, &
-      iiPDF_rs, &
-      iiPDF_ri, &
-      iiPDF_rg, &
-      iiPDF_Nr, &
-      iiPDF_Ns, &
-      iiPDF_Ni, &
-      iiPDF_Ng, &
-      iiPDF_Ncn
-
   use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
         clubb_fatal_error, &            ! Constant
@@ -92,45 +78,116 @@ module corr_varnce_module
   end type hmp2_ip_on_hmm2_ip_intrcpt_type
 
 
-  ! Prescribed parameter for <N_cn'^2> / <N_cn>^2.
-  ! NOTE: In the case that l_const_Nc_in_cloud is true, Ncn is constant
-  !       throughout the entire grid box, so the parameter below should be
-  !       ignored.
-  real( kind = core_rknd ), public :: &
-    Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2> / <N_cn>^2 [-]
 
-!$omp threadprivate(Ncnp2_on_Ncnm2)
+  type hm_metadata_type
+
+    ! Variables
+    ! Microphysics mixing ratios
+    integer :: &
+      iirr,   & ! Hydrometeor array index for rain water mixing ratio, rr
+      iirs,   & ! Hydrometeor array index for snow mixing ratio, rs
+      iiri,   & ! Hydrometeor array index for ice mixing ratio, ri
+      iirg      ! Hydrometeor array index for graupel mixing ratio, rg
+
+    ! Microphysics concentrations
+    integer :: &
+      iiNr,   & ! Hydrometeor array index for rain drop concentration, Nr
+      iiNs,   & ! Hydrometeor array index for snow concentration, Ns
+      iiNi,   & ! Hydrometeor array index for ice concentration, Ni
+      iiNg      ! Hydrometeor array index for graupel concentration, Ng
+
+    ! Logical fields
+    logical, dimension(:), allocatable :: &
+      l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+
+    character(len=10), dimension(:), allocatable :: & 
+      hydromet_list
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
+
+    ! Latin hypercube indices / Correlation array indices
+    integer :: &
+      iiPDF_chi = -1, &
+      iiPDF_eta = -1, &
+      iiPDF_w   = -1
+
+    integer :: &
+     iiPDF_rr = -1, &
+     iiPDF_rs = -1, &
+     iiPDF_ri = -1, &
+     iiPDF_rg = -1
+
+    integer :: &
+     iiPDF_Nr  = -1, &
+     iiPDF_Ns  = -1, &
+     iiPDF_Ni  = -1, &
+     iiPDF_Ng  = -1, &
+     iiPDF_Ncn = -1
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+       hmp2_ip_on_hmm2_ip
+
+    ! Prescribed parameter for <N_cn'^2> / <N_cn>^2.
+    ! NOTE: In the case that l_const_Nc_in_cloud is true, Ncn is constant
+    !       throughout the entire grid box, so the parameter below should be
+    !       ignored.
+    real( kind = core_rknd ) :: &
+      Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2> / <N_cn>^2 [-]
+
+  end type hm_metadata_type 
+
+  ! This "renaming" is used to shorten the matrix declarations below.
+  integer, parameter :: c = core_rknd
 
   integer, parameter, public :: &
     d_var_total = 12 ! Size of the default correlation arrays
 
-  integer, public :: &
-    pdf_dim
-!$omp threadprivate(pdf_dim)
+  real( kind = core_rknd ), public, dimension(d_var_total,d_var_total) :: &
+    corr_array_n_cloud_def = reshape( &
+  !  chi   eta    w      Ncn     rr      Nr      ri      Ni      rs      Ns      rg      Ng
+  (/1._c,-.6_c, .09_c , .09_c , .788_c, .675_c, .240_c, .222_c, .240_c, .222_c, .240_c, .222_c, & ! chi
+    0._c, 1._c, .027_c, .027_c, .114_c, .115_c,-.029_c, .093_c, .022_c, .013_c, 0._c  , 0._c  , & ! eta
+    0._c, 0._c, 1._c  , .34_c , .315_c, .270_c, .120_c, .167_c, 0._c  , 0._c  , 0._c  , 0._c  , & ! w
+    0._c, 0._c, 0._c  , 1._c  , 0._c  , 0._c  , .464_c, .320_c, .168_c, .232_c, 0._c  , 0._c  , & ! Ncn
+    0._c, 0._c, 0._c  , 0._c  , 1._c  , .821_c, 0._c  , 0._c  , .173_c, .164_c, .319_c, .308_c, & ! rr
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 1._c  , .152_c, .143_c, 0._c  , 0._c  , .285_c, .273_c, & ! Nr
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .585_c, .571_c, .379_c, .363_c, & ! ri
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .571_c, .550_c, .363_c, .345_c, & ! Ni
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .485_c, .470_c, & ! rs
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .470_c, .450_c, & ! Ns
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, & ! rg
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c/), & ! Ng
+    (/d_var_total,d_var_total/) ), &
 
-  real( kind = core_rknd ), dimension(:), allocatable, public :: &
-     hmp2_ip_on_hmm2_ip
-
-!$omp threadprivate(hmp2_ip_on_hmm2_ip)
-
-  real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
-    corr_array_n_cloud, &
-    corr_array_n_below
-!$omp threadprivate(corr_array_n_cloud, corr_array_n_below)
-
-  real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
-      corr_array_n_cloud_def, &
-      corr_array_n_below_def
-!$omp threadprivate( corr_array_n_cloud_def, corr_array_n_below_def )
+    corr_array_n_below_def = reshape( &
+  !  chi   eta    w      Ncn     rr      Nr      ri      Ni      rs      Ns      rg      Ng
+  (/1._c, .3_c, .09_c , .09_c , .788_c, .675_c, .240_c, .222_c, .240_c, .222_c, .240_c, .222_c, &! chi
+    0._c, 1._c, .027_c, .027_c, .114_c, .115_c,-.029_c, .093_c, .022_c, .013_c, 0._c  , 0._c  , &! eta
+    0._c, 0._c, 1._c  , .34_c , .315_c, .270_c, .120_c, .167_c, 0._c  , 0._c  , 0._c  , 0._c  , &! w
+    0._c, 0._c, 0._c  , 1._c  , 0._c  , 0._c  , .464_c, .320_c, .168_c, .232_c, 0._c  , 0._c  , &! Ncn
+    0._c, 0._c, 0._c  , 0._c  , 1._c  , .821_c, 0._c  , 0._c  , .173_c, .164_c, .319_c, .308_c, &! rr
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 1._c  , .152_c, .143_c, 0._c  , 0._c  , .285_c, .273_c, &! Nr
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .585_c, .571_c, .379_c, .363_c, &! ri
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .571_c, .550_c, .363_c, .345_c, &! Ni
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .485_c, .470_c, &! rs
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .470_c, .450_c, &! Ns
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, &! rg
+    0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c/), &! Ng
+    (/d_var_total,d_var_total/) )
 
   private
 
   public :: hmp2_ip_on_hmm2_ip_ratios_type, &
             hmp2_ip_on_hmm2_ip_slope_type, &
             hmp2_ip_on_hmm2_ip_intrcpt_type, &
-            read_correlation_matrix, init_pdf_indices, &
-            setup_corr_varnce_array, cleanup_corr_matrix_arrays, &
-            assert_corr_symmetric, print_corr_matrix, init_hydromet_arrays
+            read_correlation_matrix, &
+            setup_corr_varnce_array, &
+            assert_corr_symmetric, print_corr_matrix, &
+            hm_metadata_type, &
+            init_pdf_hydromet_arrays
+
 
   private :: get_corr_var_index, def_corr_idx
 
@@ -138,93 +195,7 @@ module corr_varnce_module
   contains
 
   !-----------------------------------------------------------------------------
-  subroutine init_default_corr_arrays(  ) 
-
-    ! Description:
-    ! Initializes the default correlation arrays.
-    !---------------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        one,  & ! Constant(s)
-        zero
-
-    implicit none
-
-    integer:: indx
-
-    ! This "renaming" is used to shorten the matrix declarations below.
-    integer, parameter :: c = core_rknd
-
-    ! ---- Begin Code ----
- 
-    ! Allocate Arrays.
-    allocate( corr_array_n_cloud_def(d_var_total,d_var_total) )
-    allocate( corr_array_n_below_def(d_var_total,d_var_total) )
-
-    ! Initialize all values to 0.
-    corr_array_n_cloud_def = zero
-    corr_array_n_below_def = zero
-
-    ! Set the correlation of any variable with itself to 1.
-    do indx = 1, d_var_total, 1
-       corr_array_n_cloud_def(indx,indx) = one
-       corr_array_n_below_def(indx,indx) = one
-    enddo
-
-    ! Set up default normal space correlation arrays.
-    ! The default normal space correlation arrays used here are the normal space
-    ! correlation arrays used for the ARM 97 case.  Any changes should be made
-    ! concurrently here and in
-    ! ../../input/case_setups/arm_97_corr_array_cloud.in (for "in-cloud") and
-    ! in ../../input/case_setups/arm_97_corr_array_cloud.in (for "below-cloud").
-    corr_array_n_cloud_def = reshape( &
-
-(/1._c,-.6_c, .09_c , .09_c , .788_c, .675_c, .240_c, .222_c, .240_c, .222_c, .240_c, .222_c, &! chi
-  0._c, 1._c, .027_c, .027_c, .114_c, .115_c,-.029_c, .093_c, .022_c, .013_c, 0._c  , 0._c  , &! eta
-  0._c, 0._c, 1._c  , .34_c , .315_c, .270_c, .120_c, .167_c, 0._c  , 0._c  , 0._c  , 0._c  , &! w
-  0._c, 0._c, 0._c  , 1._c  , 0._c  , 0._c  , .464_c, .320_c, .168_c, .232_c, 0._c  , 0._c  , &! Ncn
-  0._c, 0._c, 0._c  , 0._c  , 1._c  , .821_c, 0._c  , 0._c  , .173_c, .164_c, .319_c, .308_c, &! rr
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 1._c  , .152_c, .143_c, 0._c  , 0._c  , .285_c, .273_c, &! Nr
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .585_c, .571_c, .379_c, .363_c, &! ri
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .571_c, .550_c, .363_c, .345_c, &! Ni
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .485_c, .470_c, &! rs
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .470_c, .450_c, &! Ns
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, &! rg
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c/), &! Ng
-
-    shape(corr_array_n_cloud_def) )
-!  chi   eta    w      Ncn     rr      Nr      ri      Ni      rs      Ns      rg      Ng
-
-    corr_array_n_cloud_def = transpose( corr_array_n_cloud_def )
-
-
-    corr_array_n_below_def = reshape( &
-
-(/1._c, .3_c, .09_c , .09_c , .788_c, .675_c, .240_c, .222_c, .240_c, .222_c, .240_c, .222_c, &! chi
-  0._c, 1._c, .027_c, .027_c, .114_c, .115_c,-.029_c, .093_c, .022_c, .013_c, 0._c  , 0._c  , &! eta
-  0._c, 0._c, 1._c  , .34_c , .315_c, .270_c, .120_c, .167_c, 0._c  , 0._c  , 0._c  , 0._c  , &! w
-  0._c, 0._c, 0._c  , 1._c  , 0._c  , 0._c  , .464_c, .320_c, .168_c, .232_c, 0._c  , 0._c  , &! Ncn
-  0._c, 0._c, 0._c  , 0._c  , 1._c  , .821_c, 0._c  , 0._c  , .173_c, .164_c, .319_c, .308_c, &! rr
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 1._c  , .152_c, .143_c, 0._c  , 0._c  , .285_c, .273_c, &! Nr
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .585_c, .571_c, .379_c, .363_c, &! ri
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .571_c, .550_c, .363_c, .345_c, &! Ni
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .485_c, .470_c, &! rs
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .470_c, .450_c, &! Ns
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, &! rg
-  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c/), &! Ng
-
-    shape(corr_array_n_below_def) )
-!  chi   eta    w      Ncn     rr      Nr      ri      Ni      rs      Ns      rg      Ng
-
-    corr_array_n_below_def = transpose( corr_array_n_below_def )
-
-
-    return
-
-  end subroutine init_default_corr_arrays
-
-  !-----------------------------------------------------------------------------
-  function def_corr_idx( iiPDF_x ) result(ii_def_corr)
+  function def_corr_idx( iiPDF_x, hm_metadata ) result(ii_def_corr)
 
     ! Description:
     !   Map from a iiPDF index to the corresponding index in the default 
@@ -259,51 +230,57 @@ module corr_varnce_module
 
     integer :: ii_def_corr
 
+    ! ---- Local Variables ----
+    type (hm_metadata_type) :: &
+      hm_metadata
+
     ! ---- Begin Code ----
 
     ii_def_corr = -1
 
-      if (iiPDF_x == iiPDF_chi) then
+      if (iiPDF_x == hm_metadata%iiPDF_chi) then
          ii_def_corr = ii_chi
 
-      elseif (iiPDF_x == iiPDF_eta) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_eta) then
         ii_def_corr = ii_eta
 
-      elseif (iiPDF_x == iiPDF_w) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_w) then
         ii_def_corr = ii_w
 
-      elseif (iiPDF_x == iiPDF_Ncn) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_Ncn) then
         ii_def_corr = ii_Ncn
 
-      elseif (iiPDF_x == iiPDF_rr) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_rr) then
         ii_def_corr = ii_rr
 
-      elseif (iiPDF_x == iiPDF_Nr) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_Nr) then
         ii_def_corr = ii_Nr
 
-      elseif (iiPDF_x == iiPDF_ri) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_ri) then
         ii_def_corr = ii_ri
 
-      elseif (iiPDF_x == iiPDF_Ni) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_Ni) then
         ii_def_corr = ii_Ni
 
-      elseif (iiPDF_x == iiPDF_rs) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_rs) then
         ii_def_corr = ii_rs
 
-      elseif (iiPDF_x == iiPDF_Ns) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_Ns) then
         ii_def_corr = ii_Ns
 
-      elseif (iiPDF_x == iiPDF_rg) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_rg) then
         ii_def_corr = ii_rg
 
-      elseif (iiPDF_x == iiPDF_Ng) then
+      elseif (iiPDF_x == hm_metadata%iiPDF_Ng) then
         ii_def_corr = ii_Ng
 
       endif
+
   end function def_corr_idx
 
   !-----------------------------------------------------------------------------
-  subroutine set_corr_arrays_to_default(  ) 
+  subroutine set_corr_arrays_to_default( pdf_dim, hm_metadata, &
+                                         corr_array_n_cloud, corr_array_n_below ) 
 
     ! Description:
     !   If there are no corr_array.in files for the current case, default 
@@ -316,11 +293,22 @@ module corr_varnce_module
 
     implicit none
 
-    ! Local Variables
-    integer :: i, j ! Loop iterators
+    !------------------------ Input Variables ------------------------
+    integer, intent(in) :: &
+      pdf_dim
 
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
-    ! ---- Begin Code ----
+    !------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), intent(out), dimension(pdf_dim,pdf_dim) :: &
+      corr_array_n_cloud, &
+      corr_array_n_below
+
+    !------------------------ Local Variables ------------------------
+    integer :: i, j, idx_i, idx_j ! Loop iterators
+
+    !------------------------ Begin Code ------------------------
 
     corr_array_n_cloud = zero
     corr_array_n_below = zero
@@ -331,22 +319,29 @@ module corr_varnce_module
     enddo
 
     do i = 1, pdf_dim-1
-       do j = i+1, pdf_dim
-          if ( def_corr_idx(i) > def_corr_idx(j) ) then
-             corr_array_n_cloud(j, i) = corr_array_n_cloud_def(def_corr_idx(j), def_corr_idx(i))
-             corr_array_n_below(j, i) = corr_array_n_below_def(def_corr_idx(j), def_corr_idx(i))
-          else
-             corr_array_n_cloud(j, i) = corr_array_n_cloud_def(def_corr_idx(i), def_corr_idx(j))
-             corr_array_n_below(j, i) = corr_array_n_below_def(def_corr_idx(i), def_corr_idx(j))
-          endif
-       enddo
-    enddo
+      do j = i+1, pdf_dim
+
+        idx_i = def_corr_idx(i,hm_metadata)
+        idx_j = def_corr_idx(j,hm_metadata)
+
+        if ( idx_i > idx_j ) then
+          corr_array_n_cloud(j, i) = corr_array_n_cloud_def( idx_i, idx_j )
+          corr_array_n_below(j, i) = corr_array_n_below_def( idx_i, idx_j )
+        else
+          corr_array_n_cloud(j, i) = corr_array_n_cloud_def( idx_j, idx_i )
+          corr_array_n_below(j, i) = corr_array_n_below_def( idx_j, idx_i )
+        end if
+      end do
+    end do
+
+    return
 
   end subroutine set_corr_arrays_to_default
 
 
   !-----------------------------------------------------------------------------
-  subroutine read_correlation_matrix( iunit, input_file, pdf_dim, &
+  subroutine read_correlation_matrix( iunit, input_file, &
+                                      pdf_dim, hm_metadata, &
                                       corr_array_n )
 
     ! Description:
@@ -370,6 +365,9 @@ module corr_varnce_module
     integer, intent(in) :: &
       iunit, &    ! File I/O unit
       pdf_dim! number of variables in the array
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     character(len=*), intent(in) :: input_file ! Path to the file
 
@@ -417,10 +415,10 @@ module corr_varnce_module
     ! Start at 2 because the first index is always just 1.0 in the first row
     ! and the rest of the rows are ignored
     do i=2, nCols
-      var_index1 = get_corr_var_index( retVars(i)%name )
+      var_index1 = get_corr_var_index( retVars(i)%name, hm_metadata )
       if( var_index1 > -1 ) then
         do j=1, (i-1)
-          var_index2 = get_corr_var_index( retVars(j)%name )
+          var_index2 = get_corr_var_index( retVars(j)%name, hm_metadata )
           if( var_index2 > -1 ) then
             call set_lower_triangular_matrix &
                  ( pdf_dim, var_index1, var_index2, retVars(i)%values(j), & ! intent(in)
@@ -437,7 +435,7 @@ module corr_varnce_module
   end subroutine read_correlation_matrix
 
   !--------------------------------------------------------------------------
-  function get_corr_var_index( var_name ) result( i )
+  function get_corr_var_index( var_name, hm_metadata ) result( i )
 
     ! Definition:
     !   Returns the index for a variable based on its name.
@@ -446,6 +444,9 @@ module corr_varnce_module
     implicit none
 
     character(len=*), intent(in) :: var_name ! The name of the variable
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     ! Output variable
     integer :: i
@@ -456,40 +457,40 @@ module corr_varnce_module
     select case( trim(var_name) )
 
     case( "chi" )
-      i = iiPDF_chi
+      i = hm_metadata%iiPDF_chi
 
     case( "eta" )
-      i = iiPDF_eta
+      i = hm_metadata%iiPDF_eta
 
     case( "w" )
-      i = iiPDF_w
+      i = hm_metadata%iiPDF_w
 
     case( "Ncn" )
-      i = iiPDF_Ncn
+      i = hm_metadata%iiPDF_Ncn
 
     case( "rr" )
-      i = iiPDF_rr
+      i = hm_metadata%iiPDF_rr
 
     case( "Nr" )
-      i = iiPDF_Nr
+      i = hm_metadata%iiPDF_Nr
 
     case( "ri" )
-      i = iiPDF_ri
+      i = hm_metadata%iiPDF_ri
 
     case( "Ni" )
-      i = iiPDF_Ni
+      i = hm_metadata%iiPDF_Ni
 
     case( "rs" )
-      i = iiPDF_rs
+      i = hm_metadata%iiPDF_rs
 
     case( "Ns" )
-      i = iiPDF_Ns
+      i = hm_metadata%iiPDF_Ns
         
     case( "rg" )
-      i = iiPDF_rg
+      i = hm_metadata%iiPDF_rg
 
     case( "Ng" )
-      i = iiPDF_Ng
+      i = hm_metadata%iiPDF_Ng
 
     end select
 
@@ -497,111 +498,62 @@ module corr_varnce_module
 
   end function get_corr_var_index
 
-  !===============================================================================
-  subroutine init_pdf_indices( hydromet_dim, iirr, iiNr,    & ! intent(in)
-                               iiri, iiNi, iirs, iiNs,      & ! intent(in)
-                               iirg, iiNg                   ) ! intent(in)
-
-  ! Description:
+  !================================================================================================
+  ! subroutine init_pdf_hydromet_arrays
   ! 
-  ! Setup for the iiPDF indices. These indices are used to address 
-  ! chi(s), eta(t), w and the hydrometeors in the mean/stdev/corr arrays
+  ! DESCRIPTION: 
+  !     This subroutine intializes the hydromet arrays(iirr, iiNr, etc.) to the values specified by
+  !     the input arguements, this determines which hyrometeors are to be used by the microphysics
+  !     scheme. It also sets up the corresponding pdf and hydromet arrays, and calculates the 
+  !     subgrid variance ratio for each hydrometeor.
   ! 
-  ! References:
-  !-------------------------------------------------------------------------------
-
-    
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      hydromet_dim, & ! Total number of hydrometeor species.
-      iirr,         & ! Index of rain water mixing ratio
-      iiNr,         & ! Index of rain drop concentration
-      iiri,         & ! Index of ice mixing ratio
-      iiNi,         & ! Index of ice crystal concentration
-      iirs,         & ! Index of snow mixing ratio
-      iiNs,         & ! Index of snow flake concentration
-      iirg,         & ! Index of graupel mixing ratio
-      iiNg            ! Index of graupel concentration
-
-    ! Local Variables
-    integer :: &
-      pdf_count, & ! Count number of PDF variables
-      i            ! Hydrometeor loop index
-
-  !--------------------- Begin Code --------------------------------
-
-    iiPDF_chi = 1 ! Extended liquid water mixing ratio, chi
-    iiPDF_eta = 2 ! 'eta' orthogonal to 'chi'
-    iiPDF_w   = 3 ! vertical velocity
-    iiPDF_Ncn = 4 ! Simplified cloud nuclei concentration or extended Nc.
-
-    pdf_count = iiPDF_Ncn
-
-    ! Loop over hydrometeors.
-    ! Hydrometeor indices in the PDF arrays should be in the same order as
-    ! found in the hydrometeor arrays.
-    if ( hydromet_dim > 0 ) then
-
-       do i = 1, hydromet_dim, 1
-
-          if ( i == iirr ) then
-             pdf_count = pdf_count + 1
-             iiPDF_rr = pdf_count
-          endif
-
-          if ( i == iiNr ) then
-             pdf_count = pdf_count + 1
-             iiPDF_Nr = pdf_count
-          endif
-
-          if ( i == iiri ) then
-             pdf_count = pdf_count + 1
-             iiPDF_ri = pdf_count
-          endif
-
-          if ( i == iiNi ) then
-             pdf_count = pdf_count + 1
-             iiPDF_Ni = pdf_count
-          endif
-
-          if ( i == iirs ) then
-             pdf_count = pdf_count + 1
-             iiPDF_rs = pdf_count
-          endif
-
-          if ( i == iiNs ) then
-             pdf_count = pdf_count + 1
-             iiPDF_Ns = pdf_count
-          endif
-
-          if ( i == iirg ) then
-             pdf_count = pdf_count + 1
-             iiPDF_rg = pdf_count
-          endif
-        
-          if ( i == iiNg ) then
-             pdf_count = pdf_count + 1
-             iiPDF_Ng = pdf_count
-          endif   
-
-       enddo ! i = 1, hydromet_dim, 1
-
-    endif ! hydromet_dim > 0
-
-    pdf_dim = pdf_count
-
-
-    return
-
-  end subroutine init_pdf_indices
-
-  !===============================================================================
-  subroutine init_hydromet_arrays( hydromet_dim, iirr, iiNr,    & ! intent(in)
-                                   iiri, iiNi, iirs, iiNs,      & ! intent(in)
-                                   iirg, iiNg                   ) ! intent(in)
+  ! OPTIONAL FUNCTIONALITY:
+  !     The subgrid variance ratio for each hydrometeor is calculated based on the grid spacing 
+  !     defined by the host model. The calculation is a linear equation defined by a slope and
+  !     intercept, each of which may or may not be passed in to this subroutine. If the slope
+  !     and/or intercept are not passed in through the arguement list the default values, which 
+  !     are set in the corresponding type definitions, will be used. Otherwise the values
+  !     specified by the aruements will be used.
+  ! 
+  ! NOTES: 
+  !     'hmp2_ip_on_hmm2_ip_slope_in' is of type 'hmp2_ip_on_hmm2_ip_slope_type' and
+  !     'hmp2_ip_on_hmm2_ip_intrcpt_in' is of type 'hmp2_ip_on_hmm2_ip_intrcpt_in', both of which 
+  !     are deinfed in corr_vrnce_module.F90, and made public through this API.
+  ! 
+  !     If full control over the hydrometeor variance ratios is desired, pass in slopes that are
+  !     initialized to 0.0, this causes the ratios to no longer depend on the grid spacing. Then
+  !     pass in the intercepts set to the values of the desired ratios.
+  ! 
+  ! ARGUEMENTS:
+  !     host_dx (real) - Horizontal grid spacings
+  !     host_dy (real)
+  ! 
+  !     hydromet_dim (integer) - Number of enabled hydrometeors
+  ! 
+  !         Each of these is an index value corresponding to a hydrometeor,
+  !         used to index the hydrometeor arrays. Each index has to be unqiue
+  !         for each different hyrometeor that is enabled. Setting one of these
+  !         indices to -1 disables that hydrometeor
+  !     iirr (integer) - Index of rain water mixing ratio
+  !     iiri (integer) - Index of rain drop concentration
+  !     iirs (integer) - Index of ice mixing ratio
+  !     iirg (integer) - Index of ice crystal concentration
+  !     iiNr (integer) - Index of snow mixing ratio
+  !     iiNi (integer) - Index of snow flake concentration
+  !     iiNs (integer) - Index of graupel mixing ratio
+  !     iiNg (integer) - Index of graupel concentration
+  ! 
+  !     hmp2_ip_on_hmm2_ip_slope_in (hmp2_ip_on_hmm2_ip_slope_type) - Custom slope values
+  !     hmp2_ip_on_hmm2_ip_intrcpt_in (hmp2_ip_on_hmm2_ip_intrcpt_type) - Custom intercept values
+  ! 
+  !================================================================================================
+  subroutine init_pdf_hydromet_arrays( host_dx, host_dy, hydromet_dim,  & ! intent(in)
+                                       iirr, iiNr, iiri, iiNi,          & ! intent(in)
+                                       iirs, iiNs, iirg, iiNg,          & ! intent(in)
+                                       Ncnp2_on_Ncnm2,                  & ! intent(in)
+                                       hm_metadata, pdf_dim,         & ! intent(out)
+                                       hmp2_ip_on_hmm2_ip_slope_in,     & ! optional(in)
+                                       hmp2_ip_on_hmm2_ip_intrcpt_in    ) ! optional(in)
   ! Description:
   ! 
   ! Initialization for the hydromet arrays. How the arrays are initialized is
@@ -619,15 +571,12 @@ module corr_varnce_module
         Ns_tol, &
         Ng_tol
 
-    use array_index, only: &
-        hydromet_list,  & ! Names of the hydrometeor species
-        hydromet_tol,   & ! List of tolerances for each enabled hydrometeor
-        l_frozen_hm,    & ! True means hydrometeor is frozen
-        l_mix_rat_hm      ! True means hydrometeor is a mixing ratio
-
     implicit none
 
-    ! Input Variables
+    !------------------------ Input Variables ------------------------
+    real( kind = core_rknd ), intent(in) :: &
+      host_dx, host_dy  ! Horizontal grid spacing, defined by host model [m]
+
     integer, intent(in) :: &
       hydromet_dim, & ! Total number of hydrometeor species.
       iirr,         & ! Index of rain water mixing ratio
@@ -638,88 +587,264 @@ module corr_varnce_module
       iiNs,         & ! Index of snow flake concentration
       iirg,         & ! Index of graupel mixing ratio
       iiNg            ! Index of graupel concentration
+
+    real( kind = core_rknd ), intent(in) :: &
+      Ncnp2_on_Ncnm2
+
+    !------------------------ InOut Variables ------------------------
+    type (hm_metadata_type), intent(out) :: &
+      hm_metadata
+
+    !------------------------ Output Variables ------------------------
+    integer, intent(out) :: &
+      pdf_dim
+
+    !------------------------ Optional Input Variables ------------------------
+
+    ! Used to overwrite default values of slope and intercept
+    type( hmp2_ip_on_hmm2_ip_slope_type ), optional, intent(in) :: &
+        hmp2_ip_on_hmm2_ip_slope_in    ! Custom slopes to overwrite defaults [1/m]
+      
+    type( hmp2_ip_on_hmm2_ip_intrcpt_type ), optional, intent(in) :: &
+        hmp2_ip_on_hmm2_ip_intrcpt_in   ! Custom intercepts to overwrite defaults [-]
     
-    !--------------------- Begin Code --------------------------------
+    !------------------------ Local Variables ------------------------    
+    integer :: i, pdf_count
+
+    type( hmp2_ip_on_hmm2_ip_slope_type ) :: &
+        hmp2_ip_on_hmm2_ip_slope
+      
+    type( hmp2_ip_on_hmm2_ip_intrcpt_type ) :: &
+        hmp2_ip_on_hmm2_ip_intrcpt
+
+    !------------------------ Begin Code ------------------------
+
+    ! Save indices
+    hm_metadata%iirr = iirr
+    hm_metadata%iiri = iiri
+    hm_metadata%iirs = iirs
+    hm_metadata%iirg = iirg
+    hm_metadata%iiNr = iiNr
+    hm_metadata%iiNi = iiNi
+    hm_metadata%iiNs = iiNs
+    hm_metadata%iiNg = iiNg
+
+    ! Overwrite default Ncnp2_on_Ncnm2 if it's not NaN
+    if ( Ncnp2_on_Ncnm2 == Ncnp2_on_Ncnm2 ) then
+      hm_metadata%Ncnp2_on_Ncnm2 = Ncnp2_on_Ncnm2
+    end if
+
+    !-----------------------------------------------------------
+    ! Calculate the subgrid variances of the hydrometeors
+    !-----------------------------------------------------------
+
+    ! If slope and intercept are present in call, then overwrite default values
+    if ( present( hmp2_ip_on_hmm2_ip_slope_in ) ) then
+        hmp2_ip_on_hmm2_ip_slope = hmp2_ip_on_hmm2_ip_slope_in
+    end if
+
+    if ( present( hmp2_ip_on_hmm2_ip_intrcpt_in ) ) then
+        hmp2_ip_on_hmm2_ip_intrcpt = hmp2_ip_on_hmm2_ip_intrcpt_in
+    end if
+
+    allocate( hm_metadata%hmp2_ip_on_hmm2_ip(hydromet_dim) )
+    hm_metadata%hmp2_ip_on_hmm2_ip = 0.0_core_rknd
+
+    if ( iirr > 0 ) then
+       hm_metadata%hmp2_ip_on_hmm2_ip(iirr) &
+                                = hmp2_ip_on_hmm2_ip_intrcpt%rr  &
+                                  + hmp2_ip_on_hmm2_ip_slope%rr * max( host_dx, host_dy )
+    endif
+
+    if ( iirs > 0 ) then
+      hm_metadata%hmp2_ip_on_hmm2_ip(iirs) &
+                                  = hmp2_ip_on_hmm2_ip_intrcpt%rs &
+                                  + hmp2_ip_on_hmm2_ip_slope%rs * max( host_dx, host_dy )
+    endif
+
+    if ( iiri > 0 ) then
+      hm_metadata%hmp2_ip_on_hmm2_ip(iiri) &
+                                  = hmp2_ip_on_hmm2_ip_intrcpt%ri &
+                                  + hmp2_ip_on_hmm2_ip_slope%ri * max( host_dx, host_dy )
+    endif
+
+    if ( iirg > 0 ) then
+      hm_metadata%hmp2_ip_on_hmm2_ip(iirg) &
+                                  = hmp2_ip_on_hmm2_ip_intrcpt%rg &
+                                  + hmp2_ip_on_hmm2_ip_slope%rg * max( host_dx, host_dy )
+    endif
+
+    if ( iiNr > 0 ) then
+      hm_metadata%hmp2_ip_on_hmm2_ip(iiNr) &
+                                  = hmp2_ip_on_hmm2_ip_intrcpt%Nr &
+                                  + hmp2_ip_on_hmm2_ip_slope%Nr * max( host_dx, host_dy )
+    endif
+
+    if ( iiNs > 0 ) then
+      hm_metadata%hmp2_ip_on_hmm2_ip(iiNs) &
+                                  = hmp2_ip_on_hmm2_ip_intrcpt%Ns &
+                                  + hmp2_ip_on_hmm2_ip_slope%Ns * max( host_dx, host_dy )
+    endif
+
+    if ( iiNi > 0 ) then
+      hm_metadata%hmp2_ip_on_hmm2_ip(iiNi) &
+                                  = hmp2_ip_on_hmm2_ip_intrcpt%Ni &
+                                  + hmp2_ip_on_hmm2_ip_slope%Ni * max( host_dx, host_dy )
+    endif
+
+    if ( iiNg > 0 ) then
+      hm_metadata%hmp2_ip_on_hmm2_ip(iiNg) &
+                                  = hmp2_ip_on_hmm2_ip_intrcpt%Ng &
+                                  + hmp2_ip_on_hmm2_ip_slope%Ng * max( host_dx, host_dy )
+    endif
 
 
+    !-----------------------------------------------------------
     ! Set up predictive precipitating hydrometeor arrays.
-    allocate( hydromet_list(hydromet_dim) )
-    allocate( hydromet_tol(hydromet_dim) )
-    allocate( l_mix_rat_hm(hydromet_dim) )
-    allocate( l_frozen_hm(hydromet_dim) )
+    !-----------------------------------------------------------
+    allocate( hm_metadata%hydromet_list(hydromet_dim) )
+    allocate( hm_metadata%hydromet_tol(hydromet_dim) )
+    allocate( hm_metadata%l_mix_rat_hm(hydromet_dim) )
+    allocate( hm_metadata%l_frozen_hm(hydromet_dim) )
 
     if ( iirr > 0 ) then
        ! The microphysics scheme predicts rain water mixing ratio, rr.
-       hydromet_list(iirr)      = "rrm"
-       l_mix_rat_hm(iirr)       = .true.
-       l_frozen_hm(iirr)        = .false.
-       hydromet_tol(iirr)       = rr_tol
+       hm_metadata%hydromet_list(iirr)      = "rrm"
+       hm_metadata%l_mix_rat_hm(iirr)       = .true.
+       hm_metadata%l_frozen_hm(iirr)        = .false.
+       hm_metadata%hydromet_tol(iirr)       = rr_tol
     endif
 
     if ( iiri > 0 ) then
        ! The microphysics scheme predicts ice mixing ratio, ri.
-       hydromet_list(iiri)      = "rim"
-       l_mix_rat_hm(iiri)       = .true.
-       l_frozen_hm(iiri)        = .true.
-       hydromet_tol(iiri)       = ri_tol
+       hm_metadata%hydromet_list(iiri)      = "rim"
+       hm_metadata%l_mix_rat_hm(iiri)       = .true.
+       hm_metadata%l_frozen_hm(iiri)        = .true.
+       hm_metadata%hydromet_tol(iiri)       = ri_tol
     endif
 
     if ( iirs > 0 ) then
        ! The microphysics scheme predicts snow mixing ratio, rs.
-       hydromet_list(iirs)      = "rsm"
-       l_mix_rat_hm(iirs)       = .true.
-       l_frozen_hm(iirs)        = .true.
-       hydromet_tol(iirs)       = rs_tol
+       hm_metadata%hydromet_list(iirs)      = "rsm"
+       hm_metadata%l_mix_rat_hm(iirs)       = .true.
+       hm_metadata%l_frozen_hm(iirs)        = .true.
+       hm_metadata%hydromet_tol(iirs)       = rs_tol
     endif
 
     if ( iirg > 0 ) then
        ! The microphysics scheme predicts graupel mixing ratio, rg.
-       hydromet_list(iirg)      = "rgm"
-       l_mix_rat_hm(iirg)       = .true.
-       l_frozen_hm(iirg)        = .true.
-       hydromet_tol(iirg)       = rg_tol
+       hm_metadata%hydromet_list(iirg)      = "rgm"
+       hm_metadata%l_mix_rat_hm(iirg)       = .true.
+       hm_metadata%l_frozen_hm(iirg)        = .true.
+       hm_metadata%hydromet_tol(iirg)       = rg_tol
     endif
 
     if ( iiNr > 0 ) then
        ! The microphysics scheme predicts rain drop concentration, Nr.
-       hydromet_list(iiNr)      = "Nrm"
-       l_frozen_hm(iiNr)        = .false.
-       l_mix_rat_hm(iiNr)       = .false.
-       hydromet_tol(iiNr)       = Nr_tol
+       hm_metadata%hydromet_list(iiNr)      = "Nrm"
+       hm_metadata%l_frozen_hm(iiNr)        = .false.
+       hm_metadata%l_mix_rat_hm(iiNr)       = .false.
+       hm_metadata%hydromet_tol(iiNr)       = Nr_tol
     endif
 
     if ( iiNi > 0 ) then
        ! The microphysics scheme predicts ice concentration, Ni.
-       hydromet_list(iiNi)      = "Nim"
-       l_mix_rat_hm(iiNi)       = .false.
-       l_frozen_hm(iiNi)        = .true.
-       hydromet_tol(iiNi)       = Ni_tol
+       hm_metadata%hydromet_list(iiNi)      = "Nim"
+       hm_metadata%l_mix_rat_hm(iiNi)       = .false.
+       hm_metadata%l_frozen_hm(iiNi)        = .true.
+       hm_metadata%hydromet_tol(iiNi)       = Ni_tol
     endif
 
     if ( iiNs > 0 ) then
        ! The microphysics scheme predicts snowflake concentration, Ns.
-       hydromet_list(iiNs)      = "Nsm"
-       l_mix_rat_hm(iiNs)       = .false.
-       l_frozen_hm(iiNs)        = .true.
-       hydromet_tol(iiNs)       = Ns_tol
+       hm_metadata%hydromet_list(iiNs)      = "Nsm"
+       hm_metadata%l_mix_rat_hm(iiNs)       = .false.
+       hm_metadata%l_frozen_hm(iiNs)        = .true.
+       hm_metadata%hydromet_tol(iiNs)       = Ns_tol
     endif
 
     if ( iiNg > 0 ) then
        ! The microphysics scheme predicts graupel concentration, Ng.
-       hydromet_list(iiNg)      = "Ngm"
-       l_mix_rat_hm(iiNg)       = .false.
-       l_frozen_hm(iiNg)        = .true.
-       hydromet_tol(iiNg)       = Ng_tol
+       hm_metadata%hydromet_list(iiNg)      = "Ngm"
+       hm_metadata%l_mix_rat_hm(iiNg)       = .false.
+       hm_metadata%l_frozen_hm(iiNg)        = .true.
+       hm_metadata%hydromet_tol(iiNg)       = Ng_tol
     endif
+
+
+    !-----------------------------------------------------------
+    ! Set up the PDF indices
+    !-----------------------------------------------------------
+
+    hm_metadata%iiPDF_chi = 1 ! Extended liquid water mixing ratio, chi
+    hm_metadata%iiPDF_eta = 2 ! 'eta' orthogonal to 'chi'
+    hm_metadata%iiPDF_w   = 3 ! vertical velocity
+    hm_metadata%iiPDF_Ncn = 4 ! Simplified cloud nuclei concentration or extended Nc.
+
+    pdf_count = hm_metadata%iiPDF_Ncn
+
+    ! Loop over hydrometeors.
+    ! Hydrometeor indices in the PDF arrays should be in the same order as
+    ! found in the hydrometeor arrays.
+    if ( hydromet_dim > 0 ) then
+
+       do i = 1, hydromet_dim, 1
+
+          if ( i == iirr ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_rr = pdf_count
+          endif
+
+          if ( i == iiNr ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_Nr = pdf_count
+          endif
+
+          if ( i == iiri ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_ri = pdf_count
+          endif
+
+          if ( i == iiNi ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_Ni = pdf_count
+          endif
+
+          if ( i == iirs ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_rs = pdf_count
+          endif
+
+          if ( i == iiNs ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_Ns = pdf_count
+          endif
+
+          if ( i == iirg ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_rg = pdf_count
+          endif
+        
+          if ( i == iiNg ) then
+             pdf_count = pdf_count + 1
+             hm_metadata%iiPDF_Ng = pdf_count
+          endif   
+
+       enddo ! i = 1, hydromet_dim, 1
+
+    endif ! hydromet_dim > 0
+
+    pdf_dim = pdf_count
 
     return
 
-  end subroutine init_hydromet_arrays
+  end subroutine init_pdf_hydromet_arrays
 
 !===============================================================================
   subroutine setup_corr_varnce_array( input_file_cloud, input_file_below, &
-                                      iunit, &
-                                      l_fix_w_chi_eta_correlations )
+                                      pdf_dim, hm_metadata, iunit, &
+                                      l_fix_w_chi_eta_correlations, &
+                                      corr_array_n_cloud, corr_array_n_below )
 
 ! Description:
 !   Setup an array with the x'^2/xm^2 variables on the diagonal and the other
@@ -740,65 +865,77 @@ module corr_varnce_module
     ! External
     intrinsic :: max, epsilon, trim
 
+
+    !------------------------ Input Variables ------------------------
     character(len=*), intent(in) :: &
       input_file_cloud, &    ! Path to the in cloud correlation file
       input_file_below       ! Path to the out of cloud correlation file
 
-    ! Input Variables
+    integer, intent(in) :: &
+      pdf_dim
+      
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
+
     integer, intent(in) :: &
       iunit ! The file unit
 
     logical, intent(in) :: &
       l_fix_w_chi_eta_correlations ! Use a fixed correlation for s and t Mellor(chi/eta)
 
-    ! Local variables
+    !------------------------ Output Variables ------------------------
+    real( kind = core_rknd ), intent(out), dimension(pdf_dim,pdf_dim) :: &
+      corr_array_n_cloud, &
+      corr_array_n_below
+
+    !------------------------ Local variables ------------------------
     logical :: l_warning, l_corr_file_1_exist, l_corr_file_2_exist
     integer :: i
 
-    ! ---- Begin Code ----
-
-    allocate( corr_array_n_cloud(pdf_dim,pdf_dim) )
-    allocate( corr_array_n_below(pdf_dim,pdf_dim) )
+    !------------------------ Begin Code ------------------------
 
     inquire( file = input_file_cloud, exist = l_corr_file_1_exist )
     inquire( file = input_file_below, exist = l_corr_file_2_exist )
 
     if ( l_corr_file_1_exist .and. l_corr_file_2_exist ) then
 
-       call read_correlation_matrix( iunit, trim( input_file_cloud ), pdf_dim, & ! In
+       call read_correlation_matrix( iunit, trim( input_file_cloud ), &
+                                     pdf_dim, hm_metadata, & ! In
                                      corr_array_n_cloud ) ! Out
 
-       call read_correlation_matrix( iunit, trim( input_file_below ), pdf_dim, & ! In
+       call read_correlation_matrix( iunit, trim( input_file_below ), &
+                                     pdf_dim, hm_metadata, & ! In
                                      corr_array_n_below ) ! Out
 
     else ! Read in default correlation matrices
         
-        if ( clubb_at_least_debug_level( 1 ) ) then
-            write(fstderr,*) "Warning: "//trim( input_file_cloud )//" was not found! " // &
-                             "The default correlation arrays will be used." 
-        end if
+      if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) "Warning: "//trim( input_file_cloud )//" was not found! " // &
+                         "The default correlation arrays will be used." 
+      end if
 
-       call init_default_corr_arrays( )
-
-       call set_corr_arrays_to_default( )
+      call set_corr_arrays_to_default( pdf_dim, hm_metadata, &
+                                       corr_array_n_cloud, corr_array_n_below )
 
     endif
-
+      
     ! Mirror the correlation matrices
     call mirror_lower_triangular_matrix( pdf_dim, & ! intent(in)
                                          corr_array_n_cloud ) ! intent(inout)
+
     call mirror_lower_triangular_matrix( pdf_dim, & ! intent(in)
                                          corr_array_n_below ) ! intent(inout)
+    
 
     ! Sanity check to avoid confusing non-convergence results.
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-      if ( .not. l_fix_w_chi_eta_correlations .and. iiPDF_Ncn > 0 ) then
+      if ( .not. l_fix_w_chi_eta_correlations .and. hm_metadata%iiPDF_Ncn > 0 ) then
         l_warning = .false.
         do i = 1, pdf_dim
-          if ( ( (abs(corr_array_n_cloud(i,iiPDF_Ncn)) > eps) .or.  &
-                 (abs(corr_array_n_below(i,iiPDF_Ncn))) > eps) .and. &
-               i /= iiPDF_Ncn ) then
+          if ( ( (abs(corr_array_n_cloud(i,hm_metadata%iiPDF_Ncn)) > eps) .or.  &
+                 (abs(corr_array_n_below(i,hm_metadata%iiPDF_Ncn))) > eps) .and. &
+               i /= hm_metadata%iiPDF_Ncn ) then
             l_warning = .true.
           end if
         end do ! 1..pdf_dim
@@ -816,42 +953,6 @@ module corr_varnce_module
     return
 
   end subroutine setup_corr_varnce_array
-
-  !-----------------------------------------------------------------------------
-  subroutine cleanup_corr_matrix_arrays( )
-
-    ! Description:
-    !   De-allocate latin hypercube arrays
-    ! References:
-    !   None
-    !---------------------------------------------------------------------------
-    implicit none
-
-    ! External
-    intrinsic :: allocated
-
-    ! ---- Begin Code ----
-
-    if ( allocated( corr_array_n_cloud ) ) then
-      deallocate( corr_array_n_cloud )
-    end if
-
-    if ( allocated( corr_array_n_below ) ) then
-      deallocate( corr_array_n_below )
-    end if
-
-    if ( allocated( corr_array_n_cloud_def ) ) then
-      deallocate( corr_array_n_cloud_def )
-    end if
-
-    if ( allocated( corr_array_n_below_def ) ) then
-      deallocate( corr_array_n_below_def )
-    end if
-
-
-    return
-
-  end subroutine cleanup_corr_matrix_arrays
 
   !-----------------------------------------------------------------------------
   subroutine assert_corr_symmetric( corr_array_n, & ! intent(in)

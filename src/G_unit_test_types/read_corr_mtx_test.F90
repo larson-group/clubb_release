@@ -17,23 +17,24 @@ module read_corr_mtx_test
   ! Included Modules
   use corr_varnce_module, &
     only: read_correlation_matrix, & !Subroutine(s)
-      init_pdf_indices, &
-      print_corr_matrix
+      init_pdf_hydromet_arrays, &
+      print_corr_matrix, &
+      hm_metadata_type
 
   use clubb_precision, only: core_rknd
 
   use matrix_operations, only: print_lower_triangular_matrix ! Procedure
 
   use constants_clubb, only: &
-        zero
+        zero, &
+        one
 
   implicit none
 
   ! Local Constants
   ! Passed in to read_correlation_matrix
   integer, parameter :: &
-    iunit = 5, &    !input unit
-    pdf_dim= 12  !number of variables
+    iunit = 5  ! input unit
 
   character(LEN=*), parameter :: &
     input_file = "../input_misc/corr_array.in" ! Path to the file
@@ -56,10 +57,16 @@ module read_corr_mtx_test
       corr_array, & ! Retrieved correlation variance array
       test_corr_array! Expected correlation variance array
 
-  integer:: n_row, n_col, & !indeces
+  integer :: n_row, n_col, & !indeces
     errors !Number of errors found between the two arrays
 
   logical :: show_corr_arrays ! the member variable of show_corr_arrays_input
+
+  type (hm_metadata_type) :: &
+      hm_metadata
+
+  integer :: &
+    pdf_dim
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
@@ -74,6 +81,21 @@ module read_corr_mtx_test
     else
       show_corr_arrays = .false.
     end if
+
+    ! setup the system under test
+    call init_pdf_hydromet_arrays( one, one, 12,              & ! intent(in)
+                                   5, 6, 7, 8,                & ! intent(in)
+                                   9, 10, 11, 12,             & ! intent(in)
+                                   one,                       & ! intent(in)
+                                   hm_metadata, pdf_dim )    ! intent(out)
+
+    if ( pdf_dim /= 12 ) then
+      print *, "Error calling init_pdf_hydromet_arrays"
+      print *, "--- pdf_dim expected: 12"
+      print *, "--- pdf_dim actual:", pdf_dim
+      read_corr_mtx_unit_test = 1 ! Exit Code = 1, Fail
+    end if
+
 
     ! Allocate Arrays
     allocate( test_corr_array(pdf_dim,pdf_dim) )
@@ -122,14 +144,10 @@ module read_corr_mtx_test
       0.0_c,     0.0_c,     0.0_c,      0.0_c,     0.0_c,       1.0_c      &! Ng
     /), shape(test_corr_array) )
 
-    ! setup the system under test
-    call init_pdf_indices(12, 5, 6, &
-                           7, 8, 9, 10, &
-                           11, 12)
-
     ! Read the correlation aray in the given test file
-    call read_correlation_matrix(iunit, input_file, &
-      pdf_dim, corr_array)
+    call read_correlation_matrix( iunit, input_file,        & ! In
+                                  pdf_dim, hm_metadata,  & ! In
+                                  corr_array )
 
     ! Print out the array if required
     if (show_corr_arrays) then

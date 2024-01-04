@@ -7,8 +7,7 @@ module mixing_length
 
   private ! Default Scope
 
-  public :: compute_mixing_length, &
-            calc_Lscale_directly,  &
+  public :: calc_Lscale_directly,  &
             diagnose_Lscale_from_tau
 
   contains
@@ -16,7 +15,9 @@ module mixing_length
   !=============================================================================
   subroutine compute_mixing_length( nz, ngrdcol, gr, thvm, thlm, &
                                     rtm, em, Lscale_max, p_in_Pa, &
-                                    exner, thv_ds, mu, lmin, l_implemented, &
+                                    exner, thv_ds, mu, lmin, &
+                                    saturation_formula, &
+                                    l_implemented, &
                                     stats_metadata, &
                                     Lscale, Lscale_up, Lscale_down )
 
@@ -175,6 +176,9 @@ module mixing_length
       
     real( kind = core_rknd ), intent(in) :: &
       lmin    ! CLUBB tunable parameter lmin
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     logical, intent(in) :: &
       l_implemented ! Flag for CLUBB being implemented in a larger model
@@ -346,7 +350,7 @@ module mixing_length
     ! rsatl_par_1(i,3:) = sat_mixrat_liq_acc( nz-2, ngrdcol, p_in_Pa(i,3:), tl_par_1(i,3:) )
     ! since subarray 3:, the start_index is 3 and it is an optional argument
     start_index = 3
-    rsatl_par_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl_par_1, start_index )
+    rsatl_par_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, start_index )
     
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector default(present)
@@ -435,7 +439,7 @@ module mixing_length
 
             tl_par_j = thl_par_j*exner(i,j)
 
-            rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j )
+            rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j, saturation_formula )
 
             tl_par_j_sqd = tl_par_j**2
 
@@ -594,7 +598,7 @@ module mixing_length
     ! rsatl_par_1(i,2:) = sat_mixrat_liq_acc( nz-1, p_in_Pa(i,2:), tl_par_1(i,2:) )
     ! since subarray 2:, the start_index is 2 and it is an optional argument
     start_index = 2
-    rsatl_par_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl_par_1, start_index )
+    rsatl_par_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, start_index )
 
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector default(present)
@@ -682,7 +686,7 @@ module mixing_length
 
             tl_par_j = thl_par_j*exner(i,j)
 
-            rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j )
+            rsatl_par_j = sat_mixrat_liq( p_in_Pa(i,j), tl_par_j, saturation_formula )
 
             tl_par_j_sqd = tl_par_j**2
 
@@ -876,6 +880,7 @@ module mixing_length
                                     thlm, thvm, newmu, rtp2, thlp2, rtpthlp, &
                                     pdf_params, em, thv_ds_zt, Lscale_max, lmin, &
                                     clubb_params, &
+                                    saturation_formula, &
                                     l_Lscale_plume_centered, &
                                     stats_metadata, &
                                     stats_zt, &
@@ -959,6 +964,9 @@ module mixing_length
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     logical, intent(in) :: &
       l_Lscale_plume_centered    ! Alternate that uses the PDF to compute the perturbed values
@@ -1065,7 +1073,9 @@ module mixing_length
 
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_1,  & ! In
                     rtm_pert_1, em, Lscale_max, p_in_Pa,               & ! In
-                    exner, thv_ds_zt, mu_pert_1, lmin, l_implemented,  & ! In
+                    exner, thv_ds_zt, mu_pert_1, lmin,                 & ! In 
+                    saturation_formula,                                & ! In
+                    l_implemented,                                     & ! In
                     stats_metadata,                                    & ! In
                     Lscale_pert_1, Lscale_up, Lscale_down )              ! Out
 
@@ -1095,7 +1105,9 @@ module mixing_length
 
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_2, & ! In
                     rtm_pert_2, em, Lscale_max, p_in_Pa,              & ! In
-                    exner, thv_ds_zt, mu_pert_2, lmin, l_implemented, & ! In
+                    exner, thv_ds_zt, mu_pert_2, lmin,                & ! In 
+                    saturation_formula,                               & ! In
+                    l_implemented,                                    & ! In
                     stats_metadata,                                   & ! In
                     Lscale_pert_2, Lscale_up, Lscale_down )             ! Out
 
@@ -1163,13 +1175,17 @@ module mixing_length
       ! Call length with perturbed values of thl and rt
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_pos_rt,  & ! In
                 rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,                   & ! In
-                exner, thv_ds_zt, mu_pert_pos_rt, lmin, l_implemented,      & ! In
+                exner, thv_ds_zt, mu_pert_pos_rt, lmin,                     & ! In 
+                saturation_formula,                                         & ! In
+                l_implemented,                                              & ! In
                 stats_metadata,                                             & ! In
                 Lscale_pert_1, Lscale_up, Lscale_down )                       ! Out
 
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_neg_rt,  & ! In
                 rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,                   & ! In
-                exner, thv_ds_zt, mu_pert_neg_rt, lmin, l_implemented,      & ! In
+                exner, thv_ds_zt, mu_pert_neg_rt, lmin,                     & ! In 
+                saturation_formula,                                         & ! In
+                l_implemented,                                              & ! In
                 stats_metadata,                                             & ! In
                 Lscale_pert_2, Lscale_up, Lscale_down )                       ! Out
     else
@@ -1204,7 +1220,9 @@ module mixing_length
     ! Diagnose CLUBB's turbulent mixing length scale.
     call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm,            & ! In
                           rtm, em, Lscale_max, p_in_Pa,                 & ! In
-                          exner, thv_ds_zt, newmu, lmin, l_implemented, & ! In
+                          exner, thv_ds_zt, newmu, lmin,                & ! In 
+                          saturation_formula,                           & ! In
+                          l_implemented,                                & ! In
                           stats_metadata,                               & ! In
                           Lscale, Lscale_up, Lscale_down )                ! Out
 
@@ -1261,6 +1279,7 @@ module mixing_length
                         sfc_elevation, Lscale_max, & ! intent in
                         clubb_params, & ! intent in
                         stats_metadata, & ! intent in
+                        saturation_formula, & ! intent in
                         l_e3sm_config, & ! intent in
                         l_brunt_vaisala_freq_moist, & !intent in
                         l_use_thvm_in_bv_freq, &! intent in
@@ -1380,6 +1399,9 @@ module mixing_length
  
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     logical, intent(in) :: &
       l_e3sm_config,              &
@@ -1521,6 +1543,7 @@ module mixing_length
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, smooth_thlm, & ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, & ! intent(in)
+                                      saturation_formula, & ! intent(in)
                                       l_brunt_vaisala_freq_moist, & ! intent(in)
                                       l_use_thvm_in_bv_freq, & ! intent(in)
                                       clubb_params(ibv_efold), & ! intent(in)

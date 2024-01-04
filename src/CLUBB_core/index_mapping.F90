@@ -52,26 +52,6 @@ module index_mapping
   !   None
   !-------------------------------------------------------------------------
 
-  ! Hydrometeor array indices
-  use array_index, only: &
-      iirr, & ! Hydrometeor array index for rain water mixing ratio, rr
-      iirs, & ! Hydrometeor array index for snow mixing ratio, rs
-      iiri, & ! Hydrometeor array index for ice mixing ratio, ri
-      iirg, & ! Hydrometeor array index for graupel mixing ratio, rg
-      iiNr, & ! Hydrometeor array index for rain drop concentration, Nr
-      iiNs, & ! Hydrometeor array index for snow concentration, Ns
-      iiNi, & ! Hydrometeor array index for ice concentration, Ni
-      iiNg, &    ! Hydrometeor array index for graupel concentration, Ng
-  ! PDF array indices
-      iiPDF_rr, & ! PDF array index for rain water mixing ratio, rr
-      iiPDF_rs, & ! PDF array index for snow mixing ratio, rs
-      iiPDF_ri, & ! PDF array index for ice mixing ratio, ri
-      iiPDF_rg, & ! PDF array index for graupel mixing ratio, rg
-      iiPDF_Nr, & ! PDF array index for rain drop concentration, Nr
-      iiPDF_Ns, & ! PDF array index for snow concentration, Ns
-      iiPDF_Ni, & ! PDF array index for ice concentration, Ni
-      iiPDF_Ng    ! PDF array index for graupel concentration, Ng
-
   implicit none
 
   private ! Default Scope
@@ -85,7 +65,7 @@ module index_mapping
 contains
 
   !=============================================================================
-  function pdf2hydromet_idx( pdf_idx ) result( hydromet_idx )
+  function pdf2hydromet_idx( pdf_idx, hm_metadata ) result( hydromet_idx )
 
     ! Description:
     ! Returns the position of a specific precipitating hydrometeor corresponding
@@ -95,11 +75,17 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
+    use corr_varnce_module, only: &
+      hm_metadata_type
+
     implicit none
 
     ! Input Variables
     integer, intent(in) :: &
       pdf_idx    ! Index of a hydrometeor in the PDF array.
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     ! Return Variable
     integer :: &
@@ -109,55 +95,54 @@ contains
     ! Initialize hydromet_idx
     hydromet_idx = 0
 
-    if ( pdf_idx == iiPDF_rr ) then
+    if ( pdf_idx == hm_metadata%iiPDF_rr ) then
 
        ! Index for rain water mixing ratio, rr.
-       hydromet_idx = iirr
+       hydromet_idx = hm_metadata%iirr
 
-    elseif ( pdf_idx == iiPDF_Nr ) then
+    elseif ( pdf_idx == hm_metadata%iiPDF_Nr ) then
 
        ! Index for rain drop concentration, Nr.
-       hydromet_idx = iiNr
+       hydromet_idx = hm_metadata%iiNr
 
-    elseif ( pdf_idx == iiPDF_rs ) then
+    elseif ( pdf_idx == hm_metadata%iiPDF_rs ) then
 
        ! Index for snow mixing ratio, rs.
-       hydromet_idx = iirs
+       hydromet_idx = hm_metadata%iirs
 
-    elseif ( pdf_idx == iiPDF_Ns ) then
+    elseif ( pdf_idx == hm_metadata%iiPDF_Ns ) then
 
        ! Index for snow flake concentration, Ns.
-       hydromet_idx = iiNs
+       hydromet_idx = hm_metadata%iiNs
 
-    elseif ( pdf_idx == iiPDF_rg ) then
+    elseif ( pdf_idx == hm_metadata%iiPDF_rg ) then
 
        ! Index for graupel mixing ratio, rg.
-       hydromet_idx = iirg
+       hydromet_idx = hm_metadata%iirg
 
-    elseif ( pdf_idx == iiPDF_Ng ) then
+    elseif ( pdf_idx == hm_metadata%iiPDF_Ng ) then
 
        ! Index for graupel concentration, Ng.
-       hydromet_idx = iiNg
+       hydromet_idx = hm_metadata%iiNg
 
-    elseif ( pdf_idx == iiPDF_ri ) then
+    elseif ( pdf_idx == hm_metadata%iiPDF_ri ) then
 
        ! Index for ice mixing ratio, ri.
-       hydromet_idx = iiri
+       hydromet_idx = hm_metadata%iiri
 
-    elseif ( pdf_idx == iiPDF_Ni ) then
+    elseif ( pdf_idx == hm_metadata%iiPDF_Ni ) then
 
        ! Index for ice concentration, Ni.
-       hydromet_idx = iiNi
+       hydromet_idx = hm_metadata%iiNi
 
     endif
-
 
     return
 
   end function pdf2hydromet_idx
 
   !=============================================================================
-  function hydromet2pdf_idx( hydromet_idx ) result( pdf_idx )
+  function hydromet2pdf_idx( hydromet_idx, hm_metadata ) result( pdf_idx )
 
     ! Description:
     ! Returns the position of a specific precipitating hydrometeor corresponding
@@ -167,11 +152,17 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
+    use corr_varnce_module, only: &
+      hm_metadata_type
+
     implicit none
 
     ! Input Variable
     integer, intent(in) :: &
       hydromet_idx    ! Index of a hydrometeor in the hydromet array.
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     ! Return Variable
     integer :: &
@@ -181,45 +172,45 @@ contains
     ! Initialize pdf_idx.
     pdf_idx = 0
 
-    if ( hydromet_idx == iirr ) then
+    if ( hydromet_idx == hm_metadata%iirr ) then
 
        ! Index for rain water mixing ratio, rr.
-       pdf_idx = iiPDF_rr
+       pdf_idx = hm_metadata%iiPDF_rr
 
-    elseif ( hydromet_idx == iiNr ) then
+    elseif ( hydromet_idx == hm_metadata%iiNr ) then
 
        ! Index for rain drop concentration, Nr.
-       pdf_idx = iiPDF_Nr
+       pdf_idx = hm_metadata%iiPDF_Nr
 
-    elseif ( hydromet_idx == iiri ) then
+    elseif ( hydromet_idx == hm_metadata%iiri ) then
 
        ! Index for ice mixing ratio, ri.
-       pdf_idx = iiPDF_ri
+       pdf_idx = hm_metadata%iiPDF_ri
 
-    elseif ( hydromet_idx == iiNi ) then
+    elseif ( hydromet_idx == hm_metadata%iiNi ) then
 
        ! Index for ice concentration, Ni.
-       pdf_idx = iiPDF_Ni
+       pdf_idx = hm_metadata%iiPDF_Ni
 
-    elseif ( hydromet_idx == iirs ) then
+    elseif ( hydromet_idx == hm_metadata%iirs ) then
 
        ! Index for snow mixing ratio, rs.
-       pdf_idx = iiPDF_rs
+       pdf_idx = hm_metadata%iiPDF_rs
 
-    elseif ( hydromet_idx == iiNs ) then
+    elseif ( hydromet_idx == hm_metadata%iiNs ) then
 
        ! Index for snow flake concentration, Ns.
-       pdf_idx = iiPDF_Ns
+       pdf_idx = hm_metadata%iiPDF_Ns
 
-    elseif ( hydromet_idx == iirg ) then
+    elseif ( hydromet_idx == hm_metadata%iirg ) then
 
        ! Index for graupel mixing ratio, rg.
-       pdf_idx = iiPDF_rg
+       pdf_idx = hm_metadata%iiPDF_rg
 
-    elseif ( hydromet_idx == iiNg ) then
+    elseif ( hydromet_idx == hm_metadata%iiNg ) then
 
        ! Index for graupel concentration, Ng.
-       pdf_idx = iiPDF_Ng
+       pdf_idx = hm_metadata%iiPDF_Ng
 
     endif
 
@@ -229,7 +220,7 @@ contains
   end function hydromet2pdf_idx
 
   !=============================================================================
-  function rx2Nx_hm_idx( rx_idx ) result( Nx_idx )
+  function rx2Nx_hm_idx( rx_idx, hm_metadata ) result( Nx_idx )
 
     ! Description:
     ! Returns the position in the hydrometeor array of the specific
@@ -240,11 +231,17 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
+    use corr_varnce_module, only: &
+        hm_metadata_type
+
     implicit none
 
     ! Input Variable
     integer, intent(in) :: &
       rx_idx    ! Index of the mixing ratio in the hydrometeor array.
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     ! Return Variable
     integer :: &
@@ -254,35 +251,34 @@ contains
     ! Initialize Nx_idx.
     Nx_idx = 0
 
-    if ( rx_idx == iirr ) then
+    if ( rx_idx == hm_metadata%iirr ) then
 
        ! Index for rain drop concentration, Nr.
-       Nx_idx = iiNr
+       Nx_idx = hm_metadata%iiNr
 
-    elseif ( rx_idx == iiri ) then
+    elseif ( rx_idx == hm_metadata%iiri ) then
 
        ! Index for ice crystal concentration, Ni.
-       Nx_idx = iiNi
+       Nx_idx = hm_metadata%iiNi
 
-    elseif ( rx_idx == iirs ) then
+    elseif ( rx_idx == hm_metadata%iirs ) then
 
        ! Index for snow flake concentration, Ns.
-       Nx_idx = iiNs
+       Nx_idx = hm_metadata%iiNs
 
-    elseif ( rx_idx == iirg ) then
+    elseif ( rx_idx == hm_metadata%iirg ) then
 
        ! Index for graupel concentration, Ng.
-       Nx_idx = iiNg
+       Nx_idx = hm_metadata%iiNg
 
     endif
-
 
     return
 
   end function rx2Nx_hm_idx
 
   !=============================================================================
-  function Nx2rx_hm_idx( Nx_idx ) result( rx_idx )
+  function Nx2rx_hm_idx( Nx_idx, hm_metadata ) result( rx_idx )
 
     ! Description:
     ! Returns the position in the hydrometeor array of the specific
@@ -293,11 +289,17 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
+    use corr_varnce_module, only: &
+        hm_metadata_type
+
     implicit none
 
     ! Input Variable
     integer, intent(in) :: &
       Nx_idx    ! Index of the concentration in the hydrometeor array.
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     ! Return Variable
     integer :: &
@@ -307,25 +309,25 @@ contains
     ! Initialize rx_idx.
     rx_idx = 0
 
-    if ( Nx_idx == iiNr ) then
+    if ( Nx_idx == hm_metadata%iiNr ) then
 
        ! Index for rain water mixing ratio, rr.
-       rx_idx = iirr
+       rx_idx = hm_metadata%iirr
 
-    elseif ( Nx_idx == iiNi ) then
+    elseif ( Nx_idx == hm_metadata%iiNi ) then
 
        ! Index for ice mixing ratio, ri.
-       rx_idx = iiri
+       rx_idx = hm_metadata%iiri
 
-    elseif ( Nx_idx == iiNs ) then
+    elseif ( Nx_idx == hm_metadata%iiNs ) then
 
        ! Index for snow mixing ratio, rs.
-       rx_idx = iirs
+       rx_idx = hm_metadata%iirs
 
-    elseif ( Nx_idx == iiNg ) then
+    elseif ( Nx_idx == hm_metadata%iiNg ) then
 
        ! Index for graupel mixing ratio, rg.
-       rx_idx = iirg
+       rx_idx = hm_metadata%iirg
 
     endif
 
@@ -335,7 +337,7 @@ contains
   end function Nx2rx_hm_idx
 
   !=============================================================================
-  function mvr_hm_max( hydromet_idx ) result( mvr_hydromet_max )
+  function mvr_hm_max( hydromet_idx, hm_metadata ) result( mvr_hydromet_max )
 
     ! Description:
     ! Returns the maximum allowable mean volume radius of a specific
@@ -345,6 +347,9 @@ contains
 
     ! References:
     !-----------------------------------------------------------------------
+    
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use constants_clubb, only: &
         mvr_rain_max,    & ! Constant(s)
@@ -362,6 +367,10 @@ contains
     integer, intent(in) :: &
       hydromet_idx    ! Index of a hydrometeor in the hydromet array.
 
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
+
+
     ! Return Variable
     real( kind = core_rknd ) :: &
       mvr_hydromet_max    ! Maximum allowable mean volume radius    [m]
@@ -370,22 +379,22 @@ contains
     ! Initialize mvr_hydromet_max.
     mvr_hydromet_max = zero
 
-    if ( hydromet_idx == iirr .or. hydromet_idx == iiNr ) then
+    if ( hydromet_idx == hm_metadata%iirr .or. hydromet_idx == hm_metadata%iiNr ) then
 
        ! Maximum allowable mean volume radius for rain drops.
        mvr_hydromet_max = mvr_rain_max
 
-    elseif ( hydromet_idx == iiri .or. hydromet_idx == iiNi ) then
+    elseif ( hydromet_idx == hm_metadata%iiri .or. hydromet_idx == hm_metadata%iiNi ) then
 
        ! Maximum allowable mean volume radius for ice crystals.
        mvr_hydromet_max = mvr_ice_max
 
-    elseif ( hydromet_idx == iirs .or. hydromet_idx == iiNs ) then
+    elseif ( hydromet_idx == hm_metadata%iirs .or. hydromet_idx == hm_metadata%iiNs ) then
 
        ! Maximum allowable mean volume radius for snow flakes.
        mvr_hydromet_max = mvr_snow_max
 
-    elseif ( hydromet_idx == iirg .or. hydromet_idx == iiNg ) then
+    elseif ( hydromet_idx == hm_metadata%iirg .or. hydromet_idx == hm_metadata%iiNg ) then
 
        ! Maximum allowable mean volume radius for graupel.
        mvr_hydromet_max = mvr_graupel_max

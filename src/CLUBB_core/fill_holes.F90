@@ -462,6 +462,7 @@ module fill_holes
 
   !-----------------------------------------------------------------------
   subroutine fill_holes_hydromet( nz, hydromet_dim, hydromet, & ! Intent(in)
+                                  l_frozen_hm, l_mix_rat_hm, & ! Intent(in)
                                   hydromet_filled ) ! Intent(out)
 
   ! Description:
@@ -481,10 +482,6 @@ module fill_holes
     use clubb_precision, only: &
         core_rknd
 
-    use array_index, only: &
-        l_frozen_hm, & ! Variable(s)
-        l_mix_rat_hm
-
     use constants_clubb, only: &
         zero
 
@@ -495,6 +492,10 @@ module fill_holes
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -643,12 +644,12 @@ module fill_holes
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_driver( gr, nz, dt, hydromet_dim,        & ! Intent(in)
-                                l_fill_holes_hm,             & ! Intent(in)
-                                rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
-                                stats_metadata,              & ! Intent(in)
-                                stats_zt,                    & ! intent(inout)
-                                thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
+  subroutine fill_holes_driver( gr, nz, dt, hydromet_dim, hm_metadata,   & ! Intent(in)
+                                l_fill_holes_hm,                            & ! Intent(in)
+                                rho_ds_zm, rho_ds_zt, exner,                & ! Intent(in)
+                                stats_metadata,                             & ! Intent(in)
+                                stats_zt,                                   & ! intent(inout)
+                                thlm_mc, rvm_mc, hydromet )                   ! Intent(inout)
 
   ! Description:
   ! Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
@@ -679,17 +680,8 @@ module fill_holes
         fstderr,         &
         num_hf_draw_points
 
-    use array_index, only: &
-        hydromet_list, & ! Names of the hydrometeor species
-        hydromet_tol
-
-    use array_index, only: &
-        l_mix_rat_hm, & ! Variable(s)
-        l_frozen_hm
-
-    use index_mapping, only: &
-        Nx2rx_hm_idx, & ! Procedure(s)
-        mvr_hm_max
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use stats_type_utilities, only: &
         stat_begin_update, & ! Subroutines
@@ -701,16 +693,24 @@ module fill_holes
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
 
-    use stats_type, only: stats ! Type
+    use stats_type, only: &
+      stats ! Type
 
     implicit none
 
     !----------------------- Input Variables -----------------------
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
 
-    integer, intent(in) :: hydromet_dim, nz
+    integer, intent(in) :: &
+      hydromet_dim, &
+      nz
 
-    logical, intent(in) :: l_fill_holes_hm
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
+
+    logical, intent(in) :: &
+      l_fill_holes_hm
 
     real( kind = core_rknd ), intent(in) ::  &
       dt           ! Timestep         [s]
@@ -762,10 +762,11 @@ module fill_holes
        do i = 1, hydromet_dim
 
           ! Set up the stats indices for hydrometeor at index i
-          call setup_stats_indices( i, stats_metadata,           & ! Intent(in)
-                                    ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                    ixrm_cl, ixrm_mc,            & ! Intent(inout)
-                                    max_velocity )                 ! Intent(inout)
+          call setup_stats_indices( i, stats_metadata, hydromet_dim,  & ! Intent(in)
+                                    hm_metadata%hydromet_list,     & ! Intent(in)
+                                    ixrm_bt, ixrm_hf, ixrm_wvhf,      & ! Intent(inout)
+                                    ixrm_cl, ixrm_mc,                 & ! Intent(inout)
+                                    max_velocity )                      ! Intent(inout)
 
           call stat_begin_update( gr%nz, ixrm_hf, hydromet(:,i) / dt, & ! intent(in)
                                   stats_zt ) ! intent(inout)
@@ -780,6 +781,7 @@ module fill_holes
     if ( any( hydromet < zero_threshold ) .and. l_fill_holes_hm ) then
 
        call fill_holes_hydromet( nz, hydromet_dim, hydromet, & ! Intent(in)
+                                 hm_metadata%l_frozen_hm, hm_metadata%l_mix_rat_hm, & ! Intent(in)
                                  hydromet_filled ) ! Intent(out)
 
        hydromet = hydromet_filled
@@ -791,12 +793,13 @@ module fill_holes
     do i = 1, hydromet_dim
 
       ! Set up the stats indices for hydrometeor at index i
-      call setup_stats_indices( i, stats_metadata,           & ! Intent(in)
-                                ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                ixrm_cl, ixrm_mc,            & ! Intent(inout)
-                                max_velocity )                 ! Intent(inout)
+      call setup_stats_indices( i, stats_metadata, hydromet_dim,  & ! Intent(in)
+                                hm_metadata%hydromet_list,     & ! Intent(in)
+                                ixrm_bt, ixrm_hf, ixrm_wvhf,      & ! Intent(inout)
+                                ixrm_cl, ixrm_mc,                 & ! Intent(inout)
+                                max_velocity )                      ! Intent(inout)
 
-      hydromet_name = hydromet_list(i)
+      hydromet_name = hm_metadata%hydromet_list(i)
 
       ! Print warning message if any hydrometeor species has a value < 0.
       if ( clubb_at_least_debug_level( 1 ) ) then
@@ -879,7 +882,7 @@ module fill_holes
       endif
 
       ! Clipping for hydrometeor mixing ratios.
-      if ( l_mix_rat_hm(i) ) then
+      if ( hm_metadata%l_mix_rat_hm(i) ) then
 
          ! Store the previous value of the hydrometeor for the effect of
          ! clipping.
@@ -902,13 +905,13 @@ module fill_holes
          ! ratios by setting them to 0.
          do k = 2, gr%nz, 1
 
-            if ( hydromet(k,i) <= hydromet_tol(i) ) then
+            if ( hydromet(k,i) <= hm_metadata%hydromet_tol(i) ) then
 
                rvm_mc(k) &
                = rvm_mc(k) &
                  + ( hydromet(k,i) / dt )
 
-               if ( .not. l_frozen_hm(i) ) then
+               if ( .not. hm_metadata%l_frozen_hm(i) ) then
 
                   ! Rain water mixing ratio
    
@@ -944,21 +947,23 @@ module fill_holes
     enddo ! i = 1, hydromet_dim, 1
 
     ! Calculate clipping for hydrometeor concentrations.
-    call clip_hydromet_conc_mvr( gr%nz, hydromet_dim, hydromet, & ! Intent(in)
-                                 hydromet_clipped )        ! Intent(out)
+    call clip_hydromet_conc_mvr( gr%nz, hydromet_dim, hm_metadata, & ! Intent(in)
+                                 hydromet,                            & ! Intent(in)
+                                 hydromet_clipped )                     ! Intent(out)
 
     ! Clip hydrometeor concentrations and output stats.
     do i = 1, hydromet_dim
 
-       if ( .not. l_mix_rat_hm(i) ) then
+       if ( .not. hm_metadata%l_mix_rat_hm(i) ) then
 
           if ( stats_metadata%l_stats_samp ) then
 
              ! Set up the stats indices for hydrometeor at index i
-             call setup_stats_indices( i, stats_metadata,           & ! In
-                                       ixrm_bt, ixrm_hf, ixrm_wvhf, & ! In/Out
-                                       ixrm_cl, ixrm_mc,            & ! In/Out
-                                       max_velocity )                 ! In/Out
+             call setup_stats_indices( i, stats_metadata, hydromet_dim,   & ! Intent(in)
+                                       hm_metadata%hydromet_list,      & ! Intent(in)
+                                       ixrm_bt, ixrm_hf, ixrm_wvhf,       & ! In/Out
+                                       ixrm_cl, ixrm_mc,                  & ! In/Out
+                                       max_velocity )                       ! In/Out
 
              ! Store the previous value of the hydrometeor for the effect of
              ! clipping.
@@ -986,8 +991,9 @@ module fill_holes
   end subroutine fill_holes_driver
 
   !=============================================================================
-  subroutine clip_hydromet_conc_mvr( nz, hydromet_dim, hydromet, & ! Intent(in)
-                                     hydromet_clipped )        ! Intent(out)
+  subroutine clip_hydromet_conc_mvr( nz, hydromet_dim, hm_metadata,  & ! Intent(in) 
+                                     hydromet,                          & ! Intent(in)
+                                     hydromet_clipped )                   ! Intent(out)
 
     ! Description:
     ! Increases the value of a hydrometeor concentration when it is too small,
@@ -1001,6 +1007,9 @@ module fill_holes
     use grid_class, only: &
         grid ! Type
 
+    use corr_varnce_module, only: &
+        hm_metadata_type
+
     use constants_clubb, only: &
         pi,          & ! Variable(s)
         four_thirds, &
@@ -1008,10 +1017,6 @@ module fill_holes
         zero,        &
         rho_lw,      &
         rho_ice
-
-    use array_index, only: &
-        l_mix_rat_hm, & ! Variable(s)
-        l_frozen_hm
 
     use index_mapping, only: &
         Nx2rx_hm_idx, & ! Procedure(s)
@@ -1028,6 +1033,9 @@ module fill_holes
     
     integer, intent(in) :: &
       hydromet_dim    ! Number of hydrometeor fields
+
+    type (hm_metadata_type), intent(in) :: &
+          hm_metadata
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor fields    [units vary]
@@ -1048,11 +1056,11 @@ module fill_holes
     ! Clipping for hydrometeor concentrations.
     do idx = 1, hydromet_dim
 
-       if ( .not. l_mix_rat_hm(idx) ) then
+       if ( .not. hm_metadata%l_mix_rat_hm(idx) ) then
 
           ! The field is a hydrometeor concentration.
 
-          if ( .not. l_frozen_hm(idx) ) then
+          if ( .not. hm_metadata%l_frozen_hm(idx) ) then
 
              ! Clipping for mean rain drop concentration, <Nr>.
              !
@@ -1071,7 +1079,7 @@ module fill_holes
              ! mean volume radius.
 
              Nxm_min_coef &
-             = one / ( four_thirds * pi * rho_lw * mvr_hm_max(idx)**3 )
+             = one / ( four_thirds * pi * rho_lw * mvr_hm_max(idx,hm_metadata)**3 )
 
           else ! l_frozen_hm(idx)
 
@@ -1093,7 +1101,7 @@ module fill_holes
              ! hydrometeor mean volume radius for frozen hydrometeor species, x.
 
              Nxm_min_coef &
-             = one / ( four_thirds * pi * rho_ice * mvr_hm_max(idx)**3 )
+             = one / ( four_thirds * pi * rho_ice * mvr_hm_max(idx,hm_metadata)**3 )
 
           endif ! .not. l_frozen_hm(idx)
 
@@ -1101,12 +1109,12 @@ module fill_holes
           ! when necessary.
           do k = 2, nz, 1
 
-             if ( hydromet(k,Nx2rx_hm_idx(idx)) > zero ) then
+             if ( hydromet(k,Nx2rx_hm_idx(idx,hm_metadata)) > zero ) then
 
                 ! Hydrometeor mixing ratio, <rx>, is found at the grid level.
                 hydromet_clipped(k,idx) &
                 = max( hydromet(k,idx), &
-                       Nxm_min_coef * hydromet(k,Nx2rx_hm_idx(idx)) )
+                       Nxm_min_coef * hydromet(k,Nx2rx_hm_idx(idx,hm_metadata)) )
 
              else ! <rx> = 0
 
@@ -1134,10 +1142,11 @@ module fill_holes
   end subroutine clip_hydromet_conc_mvr
 
   !-----------------------------------------------------------------------
-  subroutine setup_stats_indices( ihm, stats_metadata,         & ! Intent(in)
-                                  ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                  ixrm_cl, ixrm_mc,            & ! Intent(inout)
-                                  max_velocity )                 ! Intent(inout)
+  subroutine setup_stats_indices( ihm, stats_metadata, hydromet_dim,  & ! Intent(in)
+                                  hydromet_list,                      & ! Intent(in)
+                                  ixrm_bt, ixrm_hf, ixrm_wvhf,        & ! Intent(inout)
+                                  ixrm_cl, ixrm_mc,                   & ! Intent(inout)
+                                  max_velocity )                        ! Intent(inout)
 
   ! Description:
   !
@@ -1151,10 +1160,6 @@ module fill_holes
   ! None
   !-----------------------------------------------------------------------
 
-
-    use array_index, only: &
-        hydromet_list  ! Names of the hydrometeor species
-
     use clubb_precision, only: &
         core_rknd
 
@@ -1167,10 +1172,13 @@ module fill_holes
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: ihm
+    integer, intent(in) :: ihm, hydromet_dim
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
+    
+    character(len=10), dimension(hydromet_dim), intent(in) :: & 
+      hydromet_list
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout) :: &

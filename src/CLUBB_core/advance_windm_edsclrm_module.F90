@@ -28,7 +28,7 @@ module advance_windm_edsclrm_module
   contains
 
   !=============================================================================
-  subroutine advance_windm_edsclrm( nz, ngrdcol, gr, dt, &
+  subroutine advance_windm_edsclrm( nz, ngrdcol, edsclr_dim, gr, dt, &
                                     wm_zt, Km_zm, Kmh_zm, &
                                     ug, vg, um_ref, vm_ref, &
                                     wp2, up2, vp2, um_forcing, vm_forcing, &
@@ -70,8 +70,7 @@ module advance_windm_edsclrm_module
         zm2zt
 
     use parameters_model, only:  &
-        ts_nudge,  & ! Variable(s)
-        edsclr_dim
+        ts_nudge ! Variable(s)
 
     use parameters_tunable, only: &
         nu_vertical_res_dep    ! Type(s)
@@ -125,7 +124,8 @@ module advance_windm_edsclrm_module
     ! ------------------------ Input Variables ------------------------
     integer, intent(in) :: &
       nz, &
-      ngrdcol
+      ngrdcol, &
+      edsclr_dim
 
     type (grid), target, intent(in) :: &
       gr

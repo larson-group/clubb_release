@@ -23,6 +23,7 @@ module fire
   !======================================================================
   subroutine fire_sfclyr( time, ubar, p_sfc, & 
                           thlm_sfc, rtm_sfc, exner_sfc, & 
+                          saturation_formula, &
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
                                           
   ! Description:
@@ -60,6 +61,9 @@ module fire
     rtm_sfc, & ! Total water mixing ratio at first model layer [kg/kg]
     exner_sfc
 
+  integer, intent(in) :: &
+    saturation_formula ! Integer that stores the saturation formula to be used
+
   ! Output Variables
   real( kind = core_rknd ), intent(out) ::  & 
     wpthlp_sfc, &   ! surface thetal flux        [K m/s]
@@ -92,7 +96,7 @@ module fire
   ustar = 0.3_core_rknd
 
   wpthlp_sfc = compute_wpthlp_sfc ( Cz, ubar, thlm_sfc, T_sfc, exner_sfc )
-  wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
+  wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc, saturation_formula ) )
 
   return
   end subroutine fire_sfclyr

@@ -16,7 +16,7 @@ module spurious_source_test
     !
     ! This function checks CLUBB's predictive equations for <rt> and <thl> for
     ! spurious sources and sinks.  The CLUBB code solves <rt> and <w'rt'>
-    ! together, as well as <thl> and <w'thl'> together, in subroutine
+    ! together, as well as <thl> and <w'thl'> together,10 in subroutine
     ! advance_xm_wpxp.  This function initializes profiles for a number of
     ! variables that are needed as input to that function.  It then calculates
     ! the vertical integrals of both <rt> and <thl> before the call to
@@ -87,9 +87,6 @@ module spurious_source_test
         implicit_coefs_terms,   & ! Variable Type
         init_pdf_implicit_coefs_terms
 
-    use parameters_model, only: &
-        sclr_dim    ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -115,7 +112,13 @@ module spurious_source_test
       stats_sfc
 
     type (grid), target :: gr
-    
+
+    integer, parameter :: &
+      sclr_dim = 0 ! Number of passive scalars
+
+    real( kind = core_rknd ), dimension(1), parameter :: &
+      sclr_tol = 0.0_core_rknd
+
     integer, parameter :: &
       nz = 76 ! Number of vertical grid levels
               ! Note:  this needs to match the number of grid levels calculated
@@ -369,14 +372,15 @@ module spurious_source_test
       wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
 
     integer :: &
-      iiPDF_type,          & ! Selected option for the two-component normal
-                             ! (double Gaussian) PDF type to use for the w, rt,
-                             ! and theta-l (or w, chi, and eta) portion of
-                             ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement, & ! Selected option for the placement of the call to
-                             ! CLUBB's PDF.
-      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
+      iiPDF_type,           & ! Selected option for the two-component normal
+                              ! (double Gaussian) PDF type to use for the w, rt,
+                              ! and theta-l (or w, chi, and eta) portion of
+                              ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,  & ! Selected option for the placement of the call to
+                              ! CLUBB's PDF.
+      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula      ! Integer that stores the saturation formula to be used
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -493,15 +497,14 @@ module spurious_source_test
       l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
       l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
-      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+      l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
+                                      ! to avoid double counting.
     integer, parameter :: &
       order_xm_wpxp = 1, &
       order_xp2_xpyp = 2, &
       order_wp2_wp3 =3
-       
-    
 
 
     ! Set the default tunable parameter values
@@ -563,6 +566,7 @@ module spurious_source_test
                                          ipdf_call_placement, &
                                          penta_solve_method, &
                                          tridiag_solve_method, &
+                                         saturation_formula, &
                                          l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &
@@ -616,7 +620,8 @@ module spurious_source_test
                                          l_mono_flux_lim_rtm, &
                                          l_mono_flux_lim_um, &
                                          l_mono_flux_lim_vm, &
-                                         l_mono_flux_lim_spikefix )
+                                         l_mono_flux_lim_spikefix, &
+                                         l_host_applies_sfc_fluxes )
                                          
     ! Initialize pdf_implicit_coefs_terms
     call init_pdf_implicit_coefs_terms( nz, 1, sclr_dim, &
@@ -981,7 +986,8 @@ module spurious_source_test
        = vertical_integral( gr%nz-1, rho_ds_zt(1,2:gr%nz), &
                             thlm(1,2:gr%nz), gr%dzt(1,2:gr%nz) )
        
-       call advance_xm_wpxp( nz, 1, gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
+       call advance_xm_wpxp( nz, 1, sclr_dim, sclr_tol, gr, dt, &
+                             sigma_sqd_w, wm_zm, wm_zt, wp2, &
                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                              invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                              rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
@@ -1001,6 +1007,7 @@ module spurious_source_test
                              iiPDF_type, &
                              penta_solve_method, &
                              tridiag_solve_method, &
+                             saturation_formula, &
                              l_predict_upwp_vpwp, &
                              l_diffuse_rtm_and_thlm, &
                              l_stability_correct_Kh_N2_zm, &

@@ -36,7 +36,8 @@ module clip_explicit
   contains
 
   !=============================================================================
-  subroutine clip_covars_denom( nz, ngrdcol, gr, dt, rtp2, thlp2, up2, vp2, wp2, &
+  subroutine clip_covars_denom( nz, ngrdcol, sclr_dim, gr, dt, &
+                                rtp2, thlp2, up2, vp2, wp2, &
                                 sclrp2, wprtp_cl_num, wpthlp_cl_num, &
                                 wpsclrp_cl_num, upwp_cl_num, vpwp_cl_num, &
                                 l_predict_upwp_vpwp, &
@@ -69,9 +70,6 @@ module clip_explicit
     use grid_class, only: &
         grid ! Type
 
-    use parameters_model, only: &
-        sclr_dim ! Variable(s)
-
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
@@ -86,7 +84,8 @@ module clip_explicit
     ! --------------------- Input Variables ---------------------
     integer, intent(in) :: &
       nz, &
-      ngrdcol
+      ngrdcol, &
+      sclr_dim
 
     type (grid), target, intent(in) :: gr
     

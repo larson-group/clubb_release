@@ -19,6 +19,7 @@ module coamps_microphys_driver_module
            rtm, wm_zm, p_in_Pa, exner, rho, & 
            thlm, rim, rrm, rgm, rsm, & 
            rcm, Ncm, Nrm, Nim, &
+           saturation_formula, &
            stats_metadata, &
            stats_zt, &
            Nccnm, cond, &
@@ -189,6 +190,9 @@ module coamps_microphys_driver_module
       Nrm,        & ! Number of rain drops       [count/kg]
       Ncm,        & ! Number of cloud droplets   [count/kg]
       Nim           ! Number of ice crystals     [count/kg]
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -576,10 +580,10 @@ module coamps_microphys_driver_module
       do k=1, kk, 1
         qsatv3d(1,1,k) = real(sat_mixrat_liq( &
                 real(pr3d(1,1,k), kind = core_rknd), &
-                real(temp3d(1,1,k), kind = core_rknd) ))
+                real(temp3d(1,1,k), kind = core_rknd), saturation_formula ))
         qsati3d(1,1,k) = real(sat_mixrat_ice( &
                 real(pr3d(1,1,k), kind = core_rknd), &
-                real(temp3d(1,1,k), kind = core_rknd) ))
+                real(temp3d(1,1,k), kind = core_rknd), saturation_formula ))
       end do
 
 ! Setup COAMPS m (mass) grid variables

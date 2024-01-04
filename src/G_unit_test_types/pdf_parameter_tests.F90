@@ -158,10 +158,7 @@ module pdf_parameter_tests
         iiPDF_LY93,       &
         iiPDF_new_hybrid, &
         l_gamma_Skw
-
-    use parameters_model, only: &
-        sclr_dim    ! Variable(s)
-
+        
     use parameter_indices, only: &
         nparams    ! Variable(s)
 
@@ -190,6 +187,12 @@ module pdf_parameter_tests
     ! Local Variables
     integer, parameter :: &
       nz = 1
+
+    integer, parameter :: &
+      sclr_dim = 0 ! Number of passive scalars
+
+    real( kind = core_rknd ), dimension(1), parameter :: &
+      sclr_tol = 0.0_core_rknd
 
     real( kind = core_rknd ), dimension(nz) :: &
       wm,      & ! Mean of w (overall)                 [m/s]
@@ -426,14 +429,15 @@ module pdf_parameter_tests
     integer :: idx    ! Loop index
   
     integer :: &
-      iiPDF_type,          & ! Selected option for the two-component normal
-                             ! (double Gaussian) PDF type to use for the w, rt,
-                             ! and theta-l (or w, chi, and eta) portion of
-                             ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement, & ! Selected option for the placement of the call to
-                             ! CLUBB's PDF.
-      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
+      iiPDF_type,           & ! Selected option for the two-component normal
+                              ! (double Gaussian) PDF type to use for the w, rt,
+                              ! and theta-l (or w, chi, and eta) portion of
+                              ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,  & ! Selected option for the placement of the call to
+                              ! CLUBB's PDF.
+      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula      ! Integer that stores the saturation formula to be used
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -549,9 +553,10 @@ module pdf_parameter_tests
       l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
       l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
-      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+      l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
+                                      ! to avoid double counting.
     real( kind = core_rknd ) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
@@ -644,6 +649,7 @@ module pdf_parameter_tests
                                          ipdf_call_placement, &
                                          penta_solve_method, &
                                          tridiag_solve_method, &
+                                         saturation_formula, &
                                          l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &
@@ -697,7 +703,8 @@ module pdf_parameter_tests
                                          l_mono_flux_lim_rtm, &
                                          l_mono_flux_lim_um, &
                                          l_mono_flux_lim_vm, &
-                                         l_mono_flux_lim_spikefix )
+                                         l_mono_flux_lim_spikefix, &
+                                         l_host_applies_sfc_fluxes )
 
     iiPDF_type = test_pdf_type
 
@@ -1583,7 +1590,8 @@ module pdf_parameter_tests
              gamma_Skw_fnc(1,:) = gamma_coef
           endif
 
-          call new_hybrid_pdf_driver( gr%nz, 1, wm, rtm, thlm, um, vm,          &! In
+          call new_hybrid_pdf_driver( gr%nz, 1, sclr_dim,                 & ! In
+                                      wm, rtm, thlm, um, vm,          &! In
                                       wp2(1,:), rtp2(1,:), thlp2(1,:), up2(1,:), vp2(1,:),         &! In
                                       Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:),     &! In
                                       sclrm, sclrp2, wpsclrp,             &! In
@@ -1632,7 +1640,7 @@ module pdf_parameter_tests
                                     l_predict_upwp_vpwp, &
                                     sigma_sqd_w )
 
-          call ADG1_pdf_driver( gr%nz, 1,                                & ! In 
+          call ADG1_pdf_driver( gr%nz, 1, sclr_dim, sclr_tol,            & ! In 
                                 wm, rtm, thlm, um, vm,                   & ! In 
                                 wp2, rtp2, thlp2, up2, vp2,              & ! In 
                                 Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In 

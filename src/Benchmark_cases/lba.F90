@@ -17,7 +17,8 @@ module lba
   contains
 
   !----------------------------------------------------------------------
-  subroutine lba_tndcy( gr, thlm_forcing, rtm_forcing, & 
+  subroutine lba_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+                        gr, thlm_forcing, rtm_forcing, & 
                         sclrm_forcing, edsclrm_forcing )
     !       Description:
     !       Subroutine to set theta and water tendencies for LBA case.
@@ -26,23 +27,28 @@ module lba
     !       http://www.mmm.ucar.edu/gcss-wg4/gcss/case4.html
     !----------------------------------------------------------------------
 
+    use array_index, only: &
+      sclr_idx_type
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
-    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
-
-    use array_index, only:  & 
-        iisclr_thl, iisclr_rt ! Variable(s)
-
-    use clubb_precision, only: core_rknd ! Variable(s)
-
-    use grid_class, only: grid
+    use grid_class, only: &
+      grid
 
     implicit none
 
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
     type(grid), target, intent(in) :: gr
 
-    ! Output Variables
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
       thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
@@ -53,7 +59,7 @@ module lba
     real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Passive eddy-scalar forcing [units vary]
 
-    ! ---- Begin Code ----
+    !--------------------- Begin Code ---------------------
 
     ! Large-scale temperature tendency
     thlm_forcing(:) = 0.0_core_rknd
@@ -62,11 +68,11 @@ module lba
     rtm_forcing(:) = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
-    if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-    if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
     return
   end subroutine lba_tndcy

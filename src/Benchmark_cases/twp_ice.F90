@@ -20,6 +20,7 @@ module twp_ice
   !----------------------------------------------------------------------
   subroutine twp_ice_sfclyr( time, z, exner_sfc, thlm_sfc, & 
                               ubar, rtm, p_sfc,  & 
+                              saturation_formula, &
                               wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
     ! Description:
     !   This subroutine computes surface fluxes of horizontal momentum,
@@ -64,6 +65,9 @@ module twp_ice
       rtm,           & ! rt at (2)           [kg/kg]
       p_sfc             ! surface pressure    [Pa]
 
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+
     ! Output variables
     real( kind = core_rknd ), intent(out) ::  & 
       wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
@@ -106,7 +110,7 @@ module twp_ice
            ((log(standard_flux_alt/z0))/(log(z/z0)))
 
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, T_sfc, exner_sfc )
-    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
+    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc,saturation_formula) )
     !upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
     !vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
 

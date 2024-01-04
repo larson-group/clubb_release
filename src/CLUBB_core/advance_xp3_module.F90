@@ -26,7 +26,7 @@ module advance_xp3_module
   contains
 
   !=============================================================================
-  subroutine advance_xp3( nz, ngrdcol, gr, dt,                       & ! Intent(in)
+  subroutine advance_xp3( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt,   & ! Intent(in)
                           rtm, thlm, rtp2, thlp2, wprtp,             & ! Intent(in)
                           wpthlp, wprtp2, wpthlp2, rho_ds_zm,        & ! Intent(in)
                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, & ! Intent(in)
@@ -52,10 +52,6 @@ module advance_xp3_module
         rt_tol,  & ! Variable(s)
         thl_tol
 
-    use parameters_model, only: &
-        sclr_dim, & ! Variable(s)
-        sclr_tol
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -69,10 +65,15 @@ module advance_xp3_module
 
     ! --------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      nz, &
-      ngrdcol
+      nz,           & ! Number of vertical levels
+      ngrdcol,      & ! Number of grid columns
+      sclr_dim        ! Number of passive scalars
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
     
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
   
     real( kind = core_rknd ), intent(in) :: &
       dt                 ! Model timestep                            [s]

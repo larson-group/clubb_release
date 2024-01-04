@@ -15,9 +15,11 @@ module stats_zm_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_zm( vars_zm,                    & ! intent(in)
-                            l_error,                    & ! intent(inout)
-                            stats_metadata, stats_zm )    ! intent(inout)
+  subroutine stats_init_zm( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
+                            hydromet_list, l_mix_rat_hm,        & ! intent(in)
+                            vars_zm,                            & ! intent(in)
+                            l_error,                            & ! intent(inout)
+                            stats_metadata, stats_zm )            ! intent(inout)
 
 ! Description:
 !   Initializes array indices for stats_zm
@@ -35,15 +37,6 @@ module stats_zm_module
     use stats_type_utilities, only: &
         stat_assign ! Procedure
 
-    use parameters_model, only: &
-        hydromet_dim, & ! Variable(s)
-        sclr_dim,     &
-        edsclr_dim
-
-    use array_index, only: &
-        hydromet_list, & ! Variable(s)
-        l_mix_rat_hm
-
     use stats_type, only: &
         stats ! Type
 
@@ -55,7 +48,18 @@ module stats_zm_module
     ! External
     intrinsic :: trim
 
-    !--------------------- Input Variable ---------------------
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      hydromet_dim, &
+      sclr_dim, &
+      edsclr_dim
+
+    character(len=10), dimension(hydromet_dim), intent(in) :: & 
+      hydromet_list
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+
     character(len= * ), dimension(nvarmax_zm), intent(in) :: &
       vars_zm ! stats_zm variable names
 

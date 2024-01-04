@@ -43,7 +43,7 @@ module advance_helper_module
     ! with the magnitude of data in the data structure that is to be smoothed, in order to
     ! obtain a sensible degree of smoothing (not too much, not too little).
 
-    module procedure smooth_min_scalar_array
+    module procedure smooth_min_sclr_idx
     module procedure smooth_min_array_scalar
     module procedure smooth_min_arrays
     module procedure smooth_min_scalars
@@ -64,7 +64,7 @@ module advance_helper_module
     ! with the magnitude of data in the data structure that is to be smoothed, in order to
     ! obtain a sensible degree of smoothing (not too much, not too little).
 
-    module procedure smooth_max_scalar_array
+    module procedure smooth_max_sclr_idx
     module procedure smooth_max_array_scalar
     module procedure smooth_max_arrays
     module procedure smooth_max_scalars
@@ -222,6 +222,7 @@ module advance_helper_module
                                         p_in_Pa, thvm, ice_supersat_frac, &
                                         lambda0_stability_coef, &
                                         bv_efold, &
+                                        saturation_formula, &
                                         l_brunt_vaisala_freq_moist, &
                                         l_use_thvm_in_bv_freq, &
                                         stability_correction )
@@ -268,6 +269,9 @@ module advance_helper_module
       bv_efold                      ! Control parameter for inverse e-folding of
                                     ! cloud fraction in the mixed Brunt Vaisala frequency
 
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+
     logical, intent(in) :: &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
@@ -297,6 +301,7 @@ module advance_helper_module
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &              ! intent(in)
+                                      saturation_formula, &             ! intent(in)
                                       l_brunt_vaisala_freq_moist, &     ! intent(in)
                                       l_use_thvm_in_bv_freq, &          ! intent(in)
                                       bv_efold, &                       ! intent(in)
@@ -340,6 +345,7 @@ module advance_helper_module
   subroutine calc_brunt_vaisala_freq_sqd(  nz, ngrdcol, gr, thlm, &
                                            exner, rtm, rcm, p_in_Pa, thvm, &
                                            ice_supersat_frac, &
+                                           saturation_formula, &
                                            l_brunt_vaisala_freq_moist, &
                                            l_use_thvm_in_bv_freq, &
                                            bv_efold, &
@@ -399,6 +405,9 @@ module advance_helper_module
       p_in_Pa, &  ! Air pressure                       [Pa]
       thvm,    &  ! Virtual potential temperature      [K]
       ice_supersat_frac
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     logical, intent(in) :: &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -467,7 +476,7 @@ module advance_helper_module
 
     T_in_K = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
     T_in_K_zm = zt2zm( nz, ngrdcol, gr, T_in_K )
-    rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K )
+    rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula )
     rsat_zm = zt2zm( nz, ngrdcol, gr, rsat )
     ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
 
@@ -558,6 +567,7 @@ module advance_helper_module
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
                                         ice_supersat_frac, &
                                         clubb_params, &
+                                        saturation_formula, &
                                         l_brunt_vaisala_freq_moist, &
                                         l_use_thvm_in_bv_freq, &
                                         l_use_shear_Richardson, &
@@ -645,6 +655,9 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+
     logical, intent(in) :: &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
@@ -712,6 +725,7 @@ module advance_helper_module
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &              ! intent(in)
+                                      saturation_formula, &             ! intent(in)
                                       l_brunt_vaisala_freq_moist, &     ! intent(in)
                                       l_use_thvm_in_bv_freq, &          ! intent(in)
                                       clubb_params(ibv_efold), &        ! intent(in)
@@ -1181,7 +1195,7 @@ module advance_helper_module
   end subroutine wp3_term_splat_lhs
 
 !===============================================================================
-  function smooth_min_scalar_array( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  function smooth_min_sclr_idx( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
   result( output_var )
 
   ! Description:
@@ -1238,7 +1252,7 @@ module advance_helper_module
 
     return
 
-  end function smooth_min_scalar_array
+  end function smooth_min_sclr_idx
 
 !===============================================================================
   function smooth_min_array_scalar( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
@@ -1401,7 +1415,7 @@ module advance_helper_module
   end function smooth_min_scalars
 
 !===============================================================================
-  function smooth_max_scalar_array( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
+  function smooth_max_sclr_idx( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
   result( output_var )
 
   ! Description:
@@ -1458,7 +1472,7 @@ module advance_helper_module
 
     return
 
-  end function smooth_max_scalar_array
+  end function smooth_max_sclr_idx
 
 !===============================================================================
   function smooth_max_array_scalar( nz, ngrdcol, input_var1, input_var2, smth_coef ) &

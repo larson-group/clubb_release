@@ -503,8 +503,7 @@ subroutine logical_flags_driver( current_date, current_time )
     Qsort_flags ! Procedure(s)
 
   use model_flags, only: &
-    set_default_clubb_config_flags, & ! Procedure(s)
-    l_quintic_poly_interp ! Variable(s)
+    set_default_clubb_config_flags ! Procedure(s)
 
   use clubb_precision, only: &
     core_rknd ! Variable(s)
@@ -519,7 +518,7 @@ subroutine logical_flags_driver( current_date, current_time )
     i8 = selected_int_kind( 15 )
 
   integer, parameter :: &
-    ndim = 10, & ! Temporarily hardwired for a fixed number of flags
+    ndim = 9, & ! Temporarily hardwired for a fixed number of flags
     two_ndim = 2**ndim, &
     iunit = 10
 
@@ -549,14 +548,15 @@ subroutine logical_flags_driver( current_date, current_time )
   integer :: i, j
 
   integer :: &
-    iiPDF_type,          & ! Selected option for the two-component normal
-                           ! (double Gaussian) PDF type to use for the w, rt,
-                           ! and theta-l (or w, chi, and eta) portion of
-                           ! CLUBB's multivariate, two-component PDF.
-    ipdf_call_placement, & ! Selected option for the placement of the call to
-                           ! CLUBB's PDF.
-    penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
-    tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
+    iiPDF_type,           & ! Selected option for the two-component normal
+                            ! (double Gaussian) PDF type to use for the w, rt,
+                            ! and theta-l (or w, chi, and eta) portion of
+                            ! CLUBB's multivariate, two-component PDF.
+    ipdf_call_placement,  & ! Selected option for the placement of the call to
+                            ! CLUBB's PDF.
+    penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
+    tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
+    saturation_formula      ! Integer that stores the saturation formula to be used
 
   logical :: &
     l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -672,12 +672,15 @@ subroutine logical_flags_driver( current_date, current_time )
     l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
     l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
     l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
-    l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+    l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                     ! eliminates spurious drying tendencies at model top
+    l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
+                                    ! to avoid double counting.
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
-    l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
+    saturation_formula, &
+    l_upwind_xpyp_ta, l_upwind_xm_ma, &
     l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
     l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
     l_use_cloud_cover, l_rcm_supersat_adj, &
@@ -690,7 +693,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
     l_lmm_stepping, l_e3sm_config, l_vary_convect_depth, l_use_tke_in_wp3_pr_turb_term, &
     l_use_tke_in_wp2_wp3_K_dfsn, l_use_wp3_lim_with_smth_Heaviside, &
-    l_smooth_Heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test
+    l_smooth_Heaviside_tau_wpxp, l_modify_limiters_for_cnvg_test, l_host_applies_sfc_fluxes
 
   ! ---- Begin Code ----
 
@@ -698,6 +701,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                        ipdf_call_placement, & ! Intent(out)
                                        penta_solve_method, & ! Intent(out)
                                        tridiag_solve_method, & ! Intent(out)
+                                       saturation_formula, & ! Intent(out)
                                        l_use_precip_frac, & ! Intent(out)
                                        l_predict_upwp_vpwp, & ! Intent(out)
                                        l_min_wp2_from_corr_wx, & ! Intent(out)
@@ -751,19 +755,19 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_mono_flux_lim_rtm, & ! Intent(out)
                                        l_mono_flux_lim_um, & ! Intent(out)
                                        l_mono_flux_lim_vm, & ! Intent(out)
-                                       l_mono_flux_lim_spikefix ) ! Intent(out)
+                                       l_mono_flux_lim_spikefix, & ! Intent(out)
+                                       l_host_applies_sfc_fluxes ) ! Intent(out)
 
   ! Determine the current flags
   model_flags_default(1) = l_godunov_upwind_wpxp_ta
   model_flags_default(2) = l_godunov_upwind_xpyp_ta
   model_flags_default(3) = l_upwind_xpyp_ta
   model_flags_default(4) = l_upwind_xm_ma
-  model_flags_default(5) = l_quintic_poly_interp
-  model_flags_default(6) = l_vert_avg_closure
-  model_flags_default(7) = l_standard_term_ta
-  model_flags_default(8) = l_tke_aniso
-  model_flags_default(9) = l_use_cloud_cover
-  model_flags_default(10) = l_rcm_supersat_adj
+  model_flags_default(5) = l_vert_avg_closure
+  model_flags_default(6) = l_standard_term_ta
+  model_flags_default(7) = l_tke_aniso
+  model_flags_default(8) = l_use_cloud_cover
+  model_flags_default(9) = l_rcm_supersat_adj
 
   ! This should always be 1.0; it's here as a sanity check
   cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
@@ -871,12 +875,11 @@ subroutine logical_flags_driver( current_date, current_time )
     l_godunov_upwind_xpyp_ta = model_flags_array(1,2)
     l_upwind_xpyp_ta = model_flags_array(1,3)
     l_upwind_xm_ma = model_flags_array(1,4)
-    l_quintic_poly_interp = model_flags_array(1,5)
-    l_vert_avg_closure = model_flags_array(1,6)
-    l_standard_term_ta = model_flags_array(1,7)
-    l_tke_aniso = model_flags_array(1,8)
-    l_use_cloud_cover = model_flags_array(1,9)
-    l_rcm_supersat_adj = model_flags_array(1,10)
+    l_vert_avg_closure = model_flags_array(1,5)
+    l_standard_term_ta = model_flags_array(1,6)
+    l_tke_aniso = model_flags_array(1,7)
+    l_use_cloud_cover = model_flags_array(1,8)
+    l_rcm_supersat_adj = model_flags_array(1,9)
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.

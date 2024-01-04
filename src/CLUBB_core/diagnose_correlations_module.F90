@@ -21,7 +21,8 @@ module diagnose_correlations_module
   contains 
 
 !-----------------------------------------------------------------------
-  subroutine diagnose_correlations( pdf_dim, corr_array_pre, & ! Intent(in)
+  subroutine diagnose_correlations( pdf_dim, iiPDF_w, & ! Intent(in)
+                                    corr_array_pre, & ! Intent(in)
                                     l_calc_w_corr, & ! Intent(in)
                                     corr_array )                   ! Intent(out)
     ! Description:
@@ -36,9 +37,6 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-!    use array_index, only: &
-!        iiPDF_w ! Variable(s)
-
     use constants_clubb, only: &
         zero
 
@@ -48,7 +46,8 @@ module diagnose_correlations_module
 
     ! Input Variables
     integer, intent(in) :: &
-      pdf_dim  ! number of diagnosed correlations
+      pdf_dim, &  ! number of diagnosed correlations
+      iiPDF_w
 
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
       corr_array_pre   ! Prescribed correlations
@@ -79,8 +78,9 @@ module diagnose_correlations_module
     end do 
 
     ! Swap the w-correlations to the first row for the prescribed correlations
-    call rearrange_corr_array( pdf_dim, corr_array_pre, & ! Intent(in)
-                               corr_array_pre_swapped)        ! Intent(inout)
+    call rearrange_corr_array( pdf_dim, iiPDF_w,        & ! Intent(in)
+                               corr_array_pre,          & ! Intent(in)
+                               corr_array_pre_swapped )   ! Intent(inout)
 
     ! diagnose correlations
     
@@ -93,8 +93,9 @@ module diagnose_correlations_module
                         corr_array_swapped ) ! intent(inout)
 
     ! Swap rows back
-    call rearrange_corr_array( pdf_dim, corr_array_swapped, & ! Intent(in)
-                               corr_array)        ! Intent(out)
+    call rearrange_corr_array( pdf_dim, iiPDF_w,   & ! Intent(in)
+                               corr_array_swapped, & ! Intent(in)
+                               corr_array)           ! Intent(out)
 
   end subroutine diagnose_correlations
 
@@ -538,9 +539,9 @@ module diagnose_correlations_module
 
 
   !-----------------------------------------------------------------------
-  subroutine calc_cholesky_corr_mtx_approx &
-                     ( n_variables, corr_matrix, & ! intent(in)
-                       corr_cholesky_mtx, corr_mtx_approx ) ! intent(out)
+  subroutine calc_cholesky_corr_mtx_approx( n_variables, iiPDF_w,  & ! Intent(in)
+                                            corr_matrix, & ! intent(in)
+                                            corr_cholesky_mtx, corr_mtx_approx ) ! intent(out)
 
     ! Description:
     !   This subroutine calculates the transposed correlation cholesky matrix
@@ -561,7 +562,8 @@ module diagnose_correlations_module
 
     ! Input Variables
     integer, intent(in) :: &
-      n_variables  ! number of variables in the correlation matrix [-]
+      n_variables, &  ! number of variables in the correlation matrix [-]
+      iiPDF_w
 
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
       corr_matrix ! correlation matrix [-]
@@ -584,20 +586,23 @@ module diagnose_correlations_module
 
     !-------------------- Begin code --------------------
 
-    call rearrange_corr_array( n_variables, corr_matrix, & ! Intent(in)
-                               corr_mtx_swap )             ! Intent(inout)
+    call rearrange_corr_array( n_variables, iiPDF_w,  & ! Intent(in)
+                               corr_matrix,           & ! Intent(in)
+                               corr_mtx_swap )          ! Intent(inout)
 
     call setup_corr_cholesky_mtx( n_variables, corr_mtx_swap, & ! intent(in)
                                   corr_cholesky_mtx_swap )      ! intent(out)
 
-    call rearrange_corr_array( n_variables, corr_cholesky_mtx_swap, & ! Intent(in)
-                               corr_cholesky_mtx )                    ! Intent(inout)
+    call rearrange_corr_array( n_variables, iiPDF_w,    & ! Intent(in)
+                               corr_cholesky_mtx_swap,  & ! Intent(in)
+                               corr_cholesky_mtx )        ! Intent(inout)
 
     call cholesky_to_corr_mtx_approx( n_variables, corr_cholesky_mtx_swap, & ! intent(in)
                                       corr_mtx_approx_swap )                 ! intent(out)
 
-    call rearrange_corr_array( n_variables, corr_mtx_approx_swap, &  ! Intent(in)
-                               corr_mtx_approx )                     ! Intent(inout)
+    call rearrange_corr_array( n_variables, iiPDF_w,  & ! Intent(in)
+                               corr_mtx_approx_swap,  & ! Intent(in)
+                               corr_mtx_approx )        ! Intent(inout)
 
     call corr_array_assertion_checks( n_variables, corr_mtx_approx ) ! intent(in)
 
@@ -847,8 +852,9 @@ module diagnose_correlations_module
 
 
 !-----------------------------------------------------------------------
-  subroutine rearrange_corr_array( pdf_dim, corr_array, & ! Intent(in)
-                                   corr_array_swapped)        ! Intent(out)
+  subroutine rearrange_corr_array( pdf_dim, iiPDF_w,    & ! Intent(in)
+                                   corr_array,          & ! Intent(in)
+                                   corr_array_swapped)    ! Intent(out)
     ! Description:
     !   This subroutine swaps the w-correlations to the first row if the input
     !   matrix is in the same order as the *_corr_array_cloud.in files. It swaps
@@ -862,16 +868,14 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use array_index, only: &
-        iiPDF_w ! Variable(s)
-
     implicit none
 
     intrinsic :: max, sqrt, transpose
 
     ! Input Variables
     integer, intent(in) :: &
-      pdf_dim  ! number of diagnosed correlations
+      pdf_dim, &  ! number of diagnosed correlations
+      iiPDF_w
 
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
       corr_array   ! Correlation matrix
@@ -885,7 +889,6 @@ module diagnose_correlations_module
       swap_array
 
     !-------------------- Begin code --------------------
-
 
     ! Swap the w-correlations to the first row for the prescribed correlations
     corr_array_swapped = corr_array

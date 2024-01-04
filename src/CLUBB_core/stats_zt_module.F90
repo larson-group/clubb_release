@@ -15,9 +15,11 @@ module stats_zt_module
   contains
 
   !=============================================================================
-  subroutine stats_init_zt( vars_zt,                    & ! intent(in)
-                            l_error,                    & ! intent(inout)
-                            stats_metadata, stats_zt )    ! intent(inout)
+  subroutine stats_init_zt( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
+                            hydromet_list, l_mix_rat_hm,        & ! intent(in)
+                            vars_zt,                            & ! intent(in)
+                            l_error,                            & ! intent(inout)
+                            stats_metadata, stats_zt )            ! intent(inout)
 
     ! Description:
     ! Initializes array indices for stats_zt
@@ -32,18 +34,8 @@ module stats_zt_module
     use constants_clubb, only:  &
         fstderr ! Constant(s)
 
-
     use stats_type_utilities, only: &
         stat_assign ! Procedure
-
-    use parameters_model, only: &
-        hydromet_dim, & ! Variable(s)
-        sclr_dim,     &
-        edsclr_dim
-
-    use array_index, only: &
-        hydromet_list, &  ! Variable(s)
-        l_mix_rat_hm
 
     use stats_type, only: &
         stats ! Type
@@ -59,6 +51,17 @@ module stats_zt_module
     ! Local Constants
 
     !--------------------- Input Variable ---------------------
+    integer, intent(in) :: &
+      hydromet_dim, &
+      sclr_dim, &
+      edsclr_dim
+
+    character(len=10), dimension(hydromet_dim), intent(in) :: & 
+      hydromet_list
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+
     character(len= * ), dimension(nvarmax_zt), intent(in) :: &
       vars_zt
 

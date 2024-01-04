@@ -20,8 +20,15 @@ module stat_file_module
    ! These are used in a 2D or 3D host model to output multiple columns
    ! Set clubb_i and clubb_j according to the column within the host model;
    ! The indices must not exceed nlon (for i) or nlat (for j).
-   integer, save, public :: clubb_i = 1, clubb_j = 1
-!$omp threadprivate(clubb_i, clubb_j)
+   !
+   !!!!!!!!! Unused Warning !!!!!!!!!!!!
+   ! Currently we do not save stats output with lat and lon indexing, and
+   ! because of this, we hardcode these as 1. When implementing the multiple 
+   ! column stats outputting in the future, we should collapse the lat and 
+   ! lon dimension, and use a generic "column" dimension instead.
+   integer, parameter, public :: &
+    clubb_i = 1, &
+    clubb_j = 1
 
    private ! Default scope
 

@@ -17,7 +17,8 @@ module astex_a209
   contains
 
   !----------------------------------------------------------------------
-  subroutine astex_a209_tndcy( gr, wm_zt, wm_zm,  & 
+  subroutine astex_a209_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+                               gr, wm_zt, wm_zm,  & 
                                thlm_forcing, rtm_forcing, &
                                sclrm_forcing, edsclrm_forcing )
 
@@ -27,22 +28,31 @@ module astex_a209
     !   http://www.euclipse.nl/wp3/ASTEX_Lagrangian/Introduction.shtml
     !----------------------------------------------------------------------
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use grid_class, only: &
+      grid ! Type
 
-    use grid_class, only: grid ! Type
+    use grid_class, only: &
+      zt2zm ! Procedure(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
-    use grid_class, only: zt2zm ! Procedure(s)
-
-    use clubb_precision, only: core_rknd ! Variable(s)
-
-    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
+    use array_index, only: &
+      sclr_idx_type
 
     implicit none
 
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
     type (grid), target, intent(in) :: gr
 
-    ! Output Variables
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       wm_zt,         & ! w wind on the thermodynamic grid        [m/s]
       wm_zm,         & ! w wind on the momentum grid             [m/s]
@@ -55,9 +65,11 @@ module astex_a209
     real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) ::  & 
       edsclrm_forcing ! Passive scalar forcing  [units/s]
 
-    ! Local variables
+    !--------------------- Local Variables ---------------------
 
     integer :: i
+
+    !--------------------- Begin Code ---------------------
 
     ! Compute large-scale subsidence
 
@@ -86,11 +98,11 @@ module astex_a209
     rtm_forcing = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
-    if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-    if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
     return
   end subroutine astex_a209_tndcy
@@ -98,6 +110,7 @@ module astex_a209
   !----------------------------------------------------------------------
   subroutine astex_a209_sfclyr( time, ubar, rtm, thlm, &
                                 lowestlevel, exner_sfc, p_sfc, & 
+                                saturation_formula, &
                                 wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
 
     ! Description:
@@ -148,6 +161,8 @@ module astex_a209
       exner_sfc,   & ! This is the surface pressure [Pa].
       p_sfc           ! Sea surface pressure [Pa].
       
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     ! Output variables
 
@@ -200,7 +215,7 @@ module astex_a209
                                   T_sfc_given(before_time) )
    
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, T_sfc, exner_sfc )
-    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
+    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc,saturation_formula) )
 
     !wpthlp_sfc = sensible_heat_flx / ( rho_sfc * Cp )
     !wprtp_sfc  = latent_heat_flx / ( rho_sfc * Lv )

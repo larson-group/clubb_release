@@ -220,8 +220,9 @@ module sfc_flux
   end function compute_wprtp_sfc
   
 !===============================================================================
-  subroutine set_sclr_sfc_rtm_thlm ( wpthlp_sfc, wprtp_sfc, &
-                                       wpsclrp_sfc, wpedsclrp_sfc )
+  subroutine set_sclr_sfc_rtm_thlm ( sclr_dim, edsclr_dim, sclr_idx, &
+                                     wpthlp_sfc, wprtp_sfc, &
+                                     wpsclrp_sfc, wpedsclrp_sfc )
 
 !
 !  Description:
@@ -230,34 +231,46 @@ module sfc_flux
 !    None
 !-------------------------------------------------------------------------------
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
-    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
+    use array_index, only: &
+      sclr_idx_type
+
     use clubb_precision, only: core_rknd ! Variable(s)
 
     implicit none
 
-    ! Input Variables
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
     real( kind = core_rknd ), intent(in) ::  & 
       wpthlp_sfc, & ! surface thetal flux        [K m/s]
       wprtp_sfc     ! surface moisture flux      [kg/kg m/s]
       
-    ! Output Variables
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), intent(out), dimension(sclr_dim) ::  & 
       wpsclrp_sfc       ! scalar surface flux            [units m/s]
+
     real( kind = core_rknd ), intent(out), dimension(edsclr_dim) ::  & 
       wpedsclrp_sfc     ! eddy-scalar surface flux       [units m/s]
 
-    !---------------Begin Code-------------------
+    !--------------------- Locally Variables ---------------------
+
+
+    !--------------------- Begin Code ---------------------
     
     wpsclrp_sfc(:)   = 0.0_core_rknd ! Initialize flux to 0 
     wpedsclrp_sfc(:) = 0.0_core_rknd ! Initialize flux to 0 
 
     ! Let passive scalars be equal to rt and theta_l for now
-    if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-    if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+    if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(sclr_idx%iisclr_thl) = wpthlp_sfc
+    if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(sclr_idx%iisclr_rt)  = wprtp_sfc
 
-    if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-    if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
+    if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_thl) = wpthlp_sfc
+    if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_rt)  = wprtp_sfc
 
     return
   end subroutine set_sclr_sfc_rtm_thlm

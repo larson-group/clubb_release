@@ -28,10 +28,12 @@ module microphys_driver
   contains
 
   !=============================================================================
-  subroutine calc_microphys_scheme_tendcies( gr, dt, time_current, n_variables, runtype, & ! In
+  subroutine calc_microphys_scheme_tendcies( gr, dt, time_current,      & ! In
+                                pdf_dim, hydromet_dim, runtype,         & ! In
                                 thlm, p_in_Pa, exner, rho, rho_zm, rtm, & ! In
                                 rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &  ! In
                                 hydromet, Nc_in_cloud, &                  ! In
+                                hm_metadata, &                         ! In
                                 pdf_params, hydromet_pdf_params, &        ! In
                                 precip_fracs, &                           ! In
                                 X_nl_all_levs, X_mixt_comp_all_levs, &    ! In
@@ -44,6 +46,7 @@ module microphys_driver
                                 lh_Nc_clipped, &                          ! In
                                 l_lh_importance_sampling, &               ! In
                                 l_lh_instant_var_covar_src, &             ! In
+                                saturation_formula, &                     ! In
                                 stats_metadata, &                         ! In
                                 stats_zt, stats_zm, &                     ! Inout
                                 stats_sfc, stats_lh_zt, &                 ! Inout
@@ -115,9 +118,6 @@ module microphys_driver
     use clubb_api_module, only: &
       update_xp2_mc_api
 
-    use parameters_model, only: & 
-        hydromet_dim   ! Variable(s)
-
     use model_flags, only: &
         l_morr_xp2_mc  ! Flag(s)
 
@@ -144,13 +144,8 @@ module microphys_driver
         stat_begin_update, &
         stat_end_update
 
-    use array_index, only:  & 
-        iirr, & ! Variable(s)
-        iirs, &
-        iiri, &
-        iirg, &
-        iiNr, &
-        iiNi
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use stats_variables, only: &
         stats_metadata_type
@@ -166,9 +161,6 @@ module microphys_driver
     use clubb_precision, only: &
         time_precision, & ! Constant(s)
         core_rknd
-
-    use corr_varnce_module, only: &
-        pdf_dim! Variable(s)
 
     use microphys_stats_vars_module, only: &
         microphys_stats_vars_type,  & ! Type
@@ -190,7 +182,8 @@ module microphys_driver
       time_current ! Current time     [s]
 
     integer, intent(in) :: &
-      n_variables   ! Number of variables in the correlation arrays
+      pdf_dim,      & ! Number of variables in the correlation arrays
+      hydromet_dim    ! Number of hydrometeor species
 
     character(len=*), intent(in) :: & 
       runtype ! Name of the run, for case specific effects.
@@ -214,6 +207,9 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
+
     type(pdf_parameter), intent(in) :: & 
       pdf_params     ! PDF parameters
 
@@ -233,13 +229,13 @@ module microphys_driver
     real( kind = core_rknd ), dimension(lh_num_samples,gr%nz), intent(in) :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
-    real( kind = core_rknd ), dimension(gr%nz,n_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz,pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(gr%nz, n_variables, n_variables), &
+    real( kind = core_rknd ), dimension(gr%nz, pdf_dim, pdf_dim), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -255,10 +251,13 @@ module microphys_driver
       l_lh_importance_sampling, & ! Do importance sampling (SILHS) [-]
       l_lh_instant_var_covar_src  ! Produce instantaneous var/covar tendencies [-]
 
-    ! Input/Output Variables
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
+    ! Input/Output Variables
     type(stats), target, intent(inout) :: &
       stats_zt, &
       stats_zm, &
@@ -344,6 +343,24 @@ module microphys_driver
 
     logical :: l_latin_hypercube_input
 
+    ! Just to avoid typing hm_metadata%iixx everywhere
+    integer :: &
+      iirr, &
+      iirs, &
+      iiri, &
+      iirg, &
+      iiNr, &
+      iiNi
+
+    !------------------------ Begin Code ------------------------
+
+    iirr = hm_metadata%iirr
+    iirs = hm_metadata%iirs
+    iiri = hm_metadata%iiri
+    iirg = hm_metadata%iirg
+    iiNr = hm_metadata%iiNr
+    iiNi = hm_metadata%iiNi
+
     ! We must initialize intent(out) variables. If we do not, and they do not
     ! otherwise get assigned (e.g. microphys_scheme=="none"), then we are not
     ! within the realms of Fortran standards compliance.
@@ -422,6 +439,7 @@ module microphys_driver
              thlm, hydromet(:,iiri), hydromet(:,iirr),  &  ! In
              hydromet(:,iirg), hydromet(:,iirs), & ! In
              rcm, Ncm_microphys, hydromet(:,iiNr), hydromet(:,iiNi), & !In
+             saturation_formula, &
              stats_metadata, &
              stats_zt, &
              Nccnm, cond, & ! Inout
@@ -463,7 +481,8 @@ module microphys_driver
       if ( lh_microphys_type /= lh_microphys_disabled ) then
 #ifdef SILHS
         call lh_microphys_driver( &
-               gr, dt, gr%nz, lh_num_samples, pdf_dim, & ! In
+               gr, dt, gr%nz, lh_num_samples, & ! In
+               pdf_dim, hydromet_dim, hm_metadata, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, precip_fracs, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
@@ -473,6 +492,7 @@ module microphys_driver
                lh_Nc_clipped, & ! In
                l_lh_importance_sampling, & ! In
                l_lh_instant_var_covar_src, & ! In
+               saturation_formula, & ! In
                stats_metadata, & ! In
                stats_zt, stats_zm, & ! InOut
                stats_sfc, stats_lh_zt, & ! InOut
@@ -491,7 +511,8 @@ module microphys_driver
             + lh_sample_point_weights(1,1) + real( X_mixt_comp_all_levs(1,1) )
         endif
 #endif /* SILHS */
-        call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, &
+        call stats_accumulate_lh_tend( gr, hydromet_dim, hm_metadata, &
+                                       hydromet_mc, Ncm_mc, &
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc, &
@@ -524,11 +545,13 @@ module microphys_driver
           thlm_morr = thlm
         endif
 
-        call morrison_microphys_driver &
-             ( gr, dt, gr%nz, &
+        call morrison_microphys_driver( &
+               gr, dt, gr%nz, &
+               hydromet_dim, hm_metadata, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, wtmp, &
                delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, &
+               saturation_formula, &
                stats_metadata, &
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
@@ -566,8 +589,9 @@ module microphys_driver
       if ( lh_microphys_type /= lh_microphys_disabled ) then
 
 #ifdef SILHS
-        call lh_microphys_driver &
-             ( gr, dt, gr%nz, lh_num_samples, pdf_dim, & ! In
+        call lh_microphys_driver( &
+               gr, dt, gr%nz, lh_num_samples, & ! In
+               pdf_dim, hydromet_dim, hm_metadata, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, precip_fracs, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
@@ -577,6 +601,7 @@ module microphys_driver
                lh_Nc_clipped, & ! In
                l_lh_importance_sampling, & ! In
                l_lh_instant_var_covar_src, & ! In
+               saturation_formula, & ! In
                stats_metadata, &
                stats_zt, stats_zm, stats_sfc, stats_lh_zt, & ! intent(inout)
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
@@ -590,7 +615,8 @@ module microphys_driver
         error stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
 #endif /* SILHS */
 
-        call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, &
+        call stats_accumulate_lh_tend( gr, hydromet_dim, hm_metadata, &
+                                       hydromet_mc, Ncm_mc, &
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc, &
@@ -616,10 +642,13 @@ module microphys_driver
 
         if ( l_local_kk ) then
 
-          call KK_local_microphys( gr, dt, gr%nz, l_latin_hypercube_input, & ! In
+          call KK_local_microphys( gr, dt, gr%nz,                          & ! In
+                                   hydromet_dim, hm_metadata,           & ! In
+                                   l_latin_hypercube_input,                & ! In
                                    thlm, wm_zt, p_in_Pa, exner, rho,       & ! In
                                    cloud_frac, wtmp, delta_zt, rcm,        & ! In
                                    Ncm_microphys, chi, rvm, hydromet,      & ! In
+                                   saturation_formula,                     & ! In
                                    stats_metadata,                         & ! In
                                    hydromet_mc, hydromet_vel_zt,           & ! Out
                                    Ncm_mc, rcm_mc, rvm_mc, thlm_mc,        & ! Out
@@ -628,23 +657,25 @@ module microphys_driver
 
         else
 
-          call KK_upscaled_microphys( gr, dt, gr%nz, n_variables,           & ! In
-                                      wm_zt, rtm, thlm, p_in_Pa,            & ! In
-                                      exner, rho, rcm,                      & ! In
-                                      pdf_params, hydromet_pdf_params,      & ! In
-                                      precip_fracs,                         & ! In
-                                      hydromet,                             & ! In
-                                      mu_x_1_n, mu_x_2_n,                   & ! In
-                                      sigma_x_1_n, sigma_x_2_n,             & ! In
-                                      corr_array_1_n, corr_array_2_n,       & ! In
-                                      stats_metadata,                       & ! In
-                                      stats_zt, stats_zm,                   & ! InOut
-                                      hydromet_mc, hydromet_vel_zt,         & ! Out
-                                      rcm_mc, rvm_mc, thlm_mc,              & ! Out
-                                      hydromet_vel_covar_zt_impc,           & ! Out
-                                      hydromet_vel_covar_zt_expc,           & ! Out
-                                      wprtp_mc, wpthlp_mc, rtp2_mc,         & ! Out
-                                      thlp2_mc, rtpthlp_mc                  ) ! Out
+          call KK_upscaled_microphys( gr, dt, gr%nz,                          & ! In
+                                      pdf_dim, hydromet_dim, hm_metadata,  & ! In
+                                      wm_zt, rtm, thlm, p_in_Pa,              & ! In
+                                      exner, rho, rcm,                        & ! In
+                                      pdf_params, hydromet_pdf_params,        & ! In
+                                      precip_fracs,                           & ! In
+                                      hydromet,                               & ! In
+                                      mu_x_1_n, mu_x_2_n,                     & ! In
+                                      sigma_x_1_n, sigma_x_2_n,               & ! In
+                                      corr_array_1_n, corr_array_2_n,         & ! In
+                                      saturation_formula,                     & ! In
+                                      stats_metadata,                         & ! In
+                                      stats_zt, stats_zm,                     & ! InOut
+                                      hydromet_mc, hydromet_vel_zt,           & ! Out
+                                      rcm_mc, rvm_mc, thlm_mc,                & ! Out
+                                      hydromet_vel_covar_zt_impc,             & ! Out
+                                      hydromet_vel_covar_zt_expc,             & ! Out
+                                      wprtp_mc, wpthlp_mc, rtp2_mc,           & ! Out
+                                      thlp2_mc, rtpthlp_mc                    ) ! Out
 
           if ( l_silhs_KK_convergence_adj_mean ) then
             ! SILHS cannot currently predict the turbulent sedimentation
@@ -671,6 +702,7 @@ module microphys_driver
 
       ! Call the simplified ice diffusion scheme
       call ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, &
+                     saturation_formula, &
                      stats_metadata, &
                      stats_zt, &
                      rcm_mc, thlm_mc )

@@ -12,8 +12,9 @@ module transform_to_pdf_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine transform_uniform_samples_to_pdf &
-             ( nz, ngrdcol, num_samples, pdf_dim, d_uniform_extra, & ! In
+  subroutine transform_uniform_samples_to_pdf( &
+               nz, ngrdcol, num_samples, pdf_dim, d_uniform_extra, & ! In
+               hm_metadata, & ! In
                Sigma_Cholesky1, Sigma_Cholesky2, & ! In
                mu1, mu2, X_mixt_comp_all_levs, & ! In
                X_u_all_levs, cloud_frac, & ! In
@@ -30,10 +31,8 @@ module transform_to_pdf_module
 !     p. 4010--4026, Larson, et al. 2005
 !-------------------------------------------------------------------------------
 
-    use array_index, only: &
-      iiPDF_chi, & ! Variable(s)
-      iiPDF_eta, &
-      iiPDF_w
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     use constants_clubb, only:  &
       one, &
@@ -42,9 +41,6 @@ module transform_to_pdf_module
     use clubb_precision, only: &
       core_rknd
       
-    use array_index, only: &
-      iiPDF_Ncn      ! Variable
-
     implicit none
 
     ! External
@@ -57,6 +53,9 @@ module transform_to_pdf_module
       num_samples,  & ! Number of subcolumn samples
       pdf_dim, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
       
     real( kind = core_rknd ), dimension(pdf_dim,ngrdcol,nz,pdf_dim), intent(in) :: &
       Sigma_Cholesky1, & ! Correlations Cholesky matrix, 1st component [-]
@@ -100,7 +99,7 @@ module transform_to_pdf_module
     ! ---- Begin Code ----
 
     ! Determine which variables are a lognormal distribution
-    p = max( iiPDF_chi, iiPDF_eta, iiPDF_w )
+    p = max( hm_metadata%iiPDF_chi, hm_metadata%iiPDF_eta, hm_metadata%iiPDF_w )
     l_d_variable_lognormal(1:p) = .false. ! The 1st 3 variates
     l_d_variable_lognormal(p+1:pdf_dim) = .true.  ! Hydrometeors
 
@@ -123,7 +122,7 @@ module transform_to_pdf_module
                           
     
     !$acc parallel loop collapse(4) default(present) async(1)
-    do p = max( iiPDF_chi, iiPDF_eta, iiPDF_w )+1, pdf_dim
+    do p = max( hm_metadata%iiPDF_chi, hm_metadata%iiPDF_eta, hm_metadata%iiPDF_w )+1, pdf_dim
       do k = 1, nz
         do sample = 1, num_samples
           do i = 1, ngrdcol
@@ -135,7 +134,7 @@ module transform_to_pdf_module
     end do
     
     !$acc parallel loop collapse(4) default(present) async(1)
-    do p = iiPDF_Ncn+1, pdf_dim
+    do p = hm_metadata%iiPDF_Ncn+1, pdf_dim
       do k = 1, nz 
         do sample = 1, num_samples
           do i = 1, ngrdcol
@@ -169,15 +168,16 @@ module transform_to_pdf_module
               ! Cloud fraction in the 1st PDF component is 0.
               ! All sample point values of chi must be <= 0.
               ! Clip the sample point value of chi back to 0.
-              X_nl_all_levs(i,sample,k,iiPDF_chi) = min(X_nl_all_levs(i,sample,k,iiPDF_chi), zero)
+              X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_chi) &
+                    = min(X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_chi), zero)
 
             elseif ( cloud_frac(i,sample,k) > ( one - epsilon( cloud_frac(i,sample,k) ) ) ) then
 
               ! Cloud fraction in the 1st PDF component is 1.
               ! All sample point values of chi must be > 0.
               ! Clip the sample point value of chi to epsilon.
-              X_nl_all_levs(i,sample,k,iiPDF_chi) = max( X_nl_all_levs(i,sample,k,iiPDF_chi), &
-                                                         epsilon( zero ) )
+              X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_chi) &
+                    = max( X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_chi), epsilon( zero ) )
 
             endif
 

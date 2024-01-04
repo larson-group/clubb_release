@@ -17,7 +17,8 @@ module gabls2
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine gabls2_tndcy( gr, time, time_initial, &
+  subroutine gabls2_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+                           gr, time, time_initial, &
                            wm_zt, wm_zm, thlm_forcing, & 
                            rtm_forcing, & 
                            sclrm_forcing, edsclrm_forcing )
@@ -30,27 +31,36 @@ module gabls2
 !   http://people.su.se/~gsven/gabls/
 !-------------------------------------------------------------------------------
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use grid_class, only: &
+      grid ! Type
 
-    use grid_class, only: grid ! Type
+    use grid_class, only: &
+      zt2zm ! Procedure(s)
 
+    use clubb_precision, only: &
+      time_precision, & ! Variable(s)
+      core_rknd 
 
-    use grid_class, only: zt2zm ! Procedure(s)
-
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
-
-    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl
+    use array_index, only: &
+      sclr_idx_type
 
     implicit none
 
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
     type (grid), target, intent(in) :: gr
 
-    ! Input Variables
     real(kind=time_precision), intent(in) :: & 
       time,        & ! Current length of timestep      [s]
       time_initial   ! Current length of timestep      [s]
 
-    ! Output Variables
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
       wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
       wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
@@ -63,8 +73,11 @@ module gabls2
     real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar forcing         [units vary/s]
 
-    ! Local Variables, general
+    !--------------------- Local Variables ---------------------
     integer :: k ! Loop index
+
+    !--------------------- Begin Code ---------------------
+
 
     ! Compute vertical motion
     ! 93600 seconds = 26 hours of simulation time;
@@ -104,11 +117,11 @@ module gabls2
 
 
     ! Test scalars with thetal and rt if desired
-    if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-    if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
 
     return
@@ -120,6 +133,7 @@ module gabls2
   subroutine gabls2_sfclyr( time, time_initial, &
                             lowest_level, p_sfc, & 
                             ubar, thlm, rtm, exner_sfc, &
+                            saturation_formula, &
                             wpthlp_sfc, wprtp_sfc, ustar, T_sfc )
 ! Description:
 !   Surface forcing subroutine for GABLS2 case.  Written
@@ -159,6 +173,9 @@ module gabls2
                            ! (theta = theta-l because there's no liquid in this case)  [K]
       rtm,                 &   ! rt at the lowest above-ground model level.  [kg/kg]
       exner_sfc
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     ! Output variables
     real( kind = core_rknd ), intent(out) :: & 
@@ -216,7 +233,7 @@ module gabls2
 
     ! Compute heat and moisture fluxes
     wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, T_sfc, exner_sfc ) 
-    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
+    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc,saturation_formula) )
     ! The latent heat flux at the surface is 2.5% of its potential value
     wprtp_sfc = wprtp_sfc * 0.025_core_rknd ! Known magic number
 

@@ -29,15 +29,11 @@ module latin_hypercube_driver_module
                iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! intent(in)
                l_calc_weights_all_levs_itime, &                            ! intent(in)
                pdf_params, delta_zm, Lscale, &                             ! intent(in)
-               lh_seed, &                                                  ! intent(in)
+               lh_seed, hm_metadata, &                                  ! intent(in)
                !rho_ds_zt, &
                mu1, mu2, sigma1, sigma2, &                                 ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                 ! intent(in)
                precip_fracs, silhs_config_flags, &                         ! intent(in)
-               clubb_params, &                                             ! intent(in)
-               l_uv_nudge, &                                               ! intent(in)
-               l_tke_aniso, &                                              ! intent(in)
-               l_standard_term_ta, &                                       ! intent(in)
                vert_decorr_coef, &                                         ! intent(in)
                stats_metadata, &                                           ! intent(in)
                stats_lh_zt, stats_lh_sfc, &                                ! intent(inout)
@@ -51,9 +47,6 @@ module latin_hypercube_driver_module
 ! References:
 ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:overview_silhs
 !-------------------------------------------------------------------------------
-
-    use array_index, only: &
-      iiPDF_chi    ! Variables
 
     use transform_to_pdf_module, only: &
       transform_uniform_samples_to_pdf      ! Procedure
@@ -99,7 +92,11 @@ module latin_hypercube_driver_module
     use mt95, only: &
       genrand_intg  ! Type
 
-    use stats_type, only: stats ! Type 
+    use stats_type, only: &
+      stats ! Type 
+
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     implicit none
 
@@ -136,6 +133,9 @@ module latin_hypercube_driver_module
     integer( kind = genrand_intg ), intent(in) :: &
       lh_seed      ! Random number generator seed
 
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
+
 !   real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
 !     rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
@@ -158,19 +158,6 @@ module latin_hypercube_driver_module
 
     type(silhs_config_flags_type), intent(in) :: &
       silhs_config_flags ! Flags for the SILHS sampling code [-]
-
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-    logical, intent(in) :: &
-      l_uv_nudge,         & ! For wind speed nudging.
-      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
-                            ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
-                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
-                            ! derivative in advance_wp2_wp3_module.F90 and in
-                            ! advance_xp2_xpyp_module.F90.
-
 
     real( kind = core_rknd ), intent(in) :: &
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
@@ -321,6 +308,7 @@ module latin_hypercube_driver_module
     call generate_all_uniform_samples( &
            iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
            nz, ngrdcol, k_lh_start, X_vert_corr, rand_pool,              & ! Intent(in)
+           hm_metadata%iiPDF_chi,                                     & ! Intent(in)
            pdf_params%cloud_frac_1,                                      & ! Intent(in)
            pdf_params%cloud_frac_2,                                      & ! Intent(in)
            pdf_params%mixt_frac, precip_fracs,                           & ! Intent(in)
@@ -388,8 +376,9 @@ module latin_hypercube_driver_module
     ! Generate LH sample, represented by X_u and X_nl, for level k
     ! Transform the uniformly distributed samples to
     !   ones distributed according to CLUBB's PDF.
-    call transform_uniform_samples_to_pdf &
-         ( nz, ngrdcol, num_samples, pdf_dim, d_uniform_extra, & ! In
+    call transform_uniform_samples_to_pdf( &
+           nz, ngrdcol, num_samples, pdf_dim, d_uniform_extra, & ! In
+           hm_metadata,                                     & ! In
            Sigma_Cholesky1, Sigma_Cholesky2,                   & ! In
            mu1, mu2, X_mixt_comp_all_levs,                     & ! In
            X_u_all_levs, cloud_frac,                           & ! In
@@ -402,7 +391,7 @@ module latin_hypercube_driver_module
       !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights,X_mixt_comp_all_levs) wait
       call stats_accumulate_uniform_lh( nz, num_samples, ngrdcol, l_in_precip(:,:,:), &
                                         X_mixt_comp_all_levs(:,:,:), &
-                                        X_u_all_levs(:,:,:,iiPDF_chi), pdf_params, &
+                                        X_u_all_levs(:,:,:,hm_metadata%iiPDF_chi), pdf_params, &
                                         lh_sample_point_weights(:,:,:), k_lh_start(:), &
                                         stats_metadata, &
                                         stats_lh_zt, stats_lh_sfc )
@@ -417,11 +406,7 @@ module latin_hypercube_driver_module
       do i = 1, ngrdcol
         call output_2D_lognormal_dist_file( nz, num_samples, pdf_dim, &
                                             real(X_nl_all_levs(i,:,:,:), kind = stat_rknd), &
-                                            clubb_params, &
-                                            stats_metadata, &
-                                            l_uv_nudge, &
-                                            l_tke_aniso, &
-                                            l_standard_term_ta )
+                                            stats_metadata )
       end do
     end if
     
@@ -433,11 +418,7 @@ module latin_hypercube_driver_module
                                           X_u_all_levs(i,:,:,:), &
                                           X_mixt_comp_all_levs(i,:,:), &
                                           lh_sample_point_weights(i,:,:), &
-                                          clubb_params, &
-                                          stats_metadata, &
-                                          l_uv_nudge, &
-                                          l_tke_aniso, &
-                                          l_standard_term_ta )
+                                          stats_metadata )
       end do
     end if
 
@@ -463,8 +444,8 @@ module latin_hypercube_driver_module
           l_error = l_error .or. l_error_in_sub
 
           ! Check for correct transformation in normal space
-          call assert_correct_cloud_normal( num_samples, X_u_all_levs(i,:,k,iiPDF_chi), & ! In
-                                            X_nl_all_levs(i,:,k,iiPDF_chi), & ! In
+          call assert_correct_cloud_normal( num_samples, X_u_all_levs(i,:,k,hm_metadata%iiPDF_chi), & ! In
+                                            X_nl_all_levs(i,:,k,hm_metadata%iiPDF_chi), & ! In
                                             X_mixt_comp_all_levs(i,:,k), & ! In
                                             pdf_params%cloud_frac_1(i,k), & ! In
                                             pdf_params%cloud_frac_2(i,k), & ! In
@@ -606,6 +587,7 @@ module latin_hypercube_driver_module
   subroutine generate_all_uniform_samples( &
                iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
                nz, ngrdcol, k_lh_start, X_vert_corr, rand_pool,              & ! Intent(in)
+               iiPDF_chi,                                                    & ! Intent(in)
                cloud_frac_1,                                                 & ! Intent(in)
                cloud_frac_2,                                                 & ! Intent(in)
                mixt_frac, precip_fracs,                                      & ! Intent(in)
@@ -651,9 +633,6 @@ module latin_hypercube_driver_module
     use latin_hypercube_arrays, only: &
       one_height_time_matrix      ! Variable
 
-    use array_index, only: &
-      iiPDF_chi                   ! Variable
-
     implicit none
 
     ! Local Constants
@@ -674,6 +653,9 @@ module latin_hypercube_driver_module
       
     integer, dimension(ngrdcol), intent(in) :: &
       k_lh_start
+
+    integer, intent(in) :: &
+      iiPDF_chi
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       cloud_frac_1, cloud_frac_2, &     ! The PDF parameters at k_lh_start
@@ -1014,14 +996,14 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine clip_transform_silhs_output( gr, nz, ngrdcol, num_samples,   & ! In
-                                          pdf_dim, hydromet_dim,          & ! In
-                                          X_mixt_comp_all_levs,           & ! In
-                                          X_nl_all_levs,                  & ! Inout
-                                          pdf_params, l_use_Ncn_to_Nc,    & ! In
-                                          lh_rt_clipped, lh_thl_clipped,  & ! Out
-                                          lh_rc_clipped, lh_rv_clipped,   & ! Out
-                                          lh_Nc_clipped                   ) ! Out
+  subroutine clip_transform_silhs_output( gr, nz, ngrdcol, num_samples,           & ! In
+                                          pdf_dim, hydromet_dim, hm_metadata,  & ! In
+                                          X_mixt_comp_all_levs,                   & ! In
+                                          X_nl_all_levs,                          & ! Inout
+                                          pdf_params, l_use_Ncn_to_Nc,            & ! In
+                                          lh_rt_clipped, lh_thl_clipped,          & ! Out
+                                          lh_rc_clipped, lh_rv_clipped,           & ! Out
+                                          lh_Nc_clipped                           ) ! Out
 
   ! Description:
   !   Derives from the SILHS sampling structure X_nl_all_levs the variables
@@ -1048,10 +1030,8 @@ module latin_hypercube_driver_module
     use fill_holes, only: &
         clip_hydromet_conc_mvr    ! Procedure(s)
 
-    use array_index, only: &
-        iiPDF_chi, &  ! Variable(s)
-        iiPDF_eta, &
-        iiPDF_Ncn
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use transform_to_pdf_module, only: &
         chi_eta_2_rtthl ! Awesome procedure
@@ -1073,6 +1053,9 @@ module latin_hypercube_driver_module
       num_samples,  & ! Number of SILHS sample points
       pdf_dim,      & ! Number of variates in X_nl
       hydromet_dim    ! Number of hydrometeor species
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     type (grid), target, intent(in) :: gr
 
@@ -1120,8 +1103,8 @@ module latin_hypercube_driver_module
                           pdf_params%crt_1, pdf_params%cthl_1,          & ! Intent(in)
                           pdf_params%crt_2, pdf_params%cthl_2,          & ! Intent(in)
                           pdf_params%chi_1, pdf_params%chi_2,           & ! Intent(in)
-                          X_nl_all_levs(:,:,:,iiPDF_chi),               & ! Intent(in) 
-                          X_nl_all_levs(:,:,:,iiPDF_eta),               & ! Intent(in)
+                          X_nl_all_levs(:,:,:,hm_metadata%iiPDF_chi),& ! Intent(in) 
+                          X_nl_all_levs(:,:,:,hm_metadata%iiPDF_eta),& ! Intent(in)
                           X_mixt_comp_all_levs(:,:,:),                  & ! Intent(in)
                           lh_rt_clipped(:,:,:), lh_thl_clipped(:,:,:)   ) ! Intent(out)
     
@@ -1146,7 +1129,7 @@ module latin_hypercube_driver_module
           lh_rt_clipped(i,sample,k) = max( lh_rt_clipped(i,sample,k), rt_tol )
           
           ! Compute lh_rc, rc = chi * H(chi), where H(x) is the Heaviside step function
-          lh_rc_clipped(i,sample,k) = max( X_nl_all_levs(i,sample,k,iiPDF_chi), zero )
+          lh_rc_clipped(i,sample,k) = max( X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_chi), zero )
           
           ! Clip lh_rc.
           lh_rc_clipped(i,sample,k) = min( lh_rc_clipped(i,sample,k), &
@@ -1157,13 +1140,13 @@ module latin_hypercube_driver_module
           
           if ( l_use_Ncn_to_Nc ) then
              ! Compute lh_Nc, Nc = Ncn * H(chi), where H(x) is the Heaviside step function
-             if ( X_nl_all_levs(i,sample,k,iiPDF_chi) > zero ) then
-               lh_Nc_clipped(i,sample,k) = X_nl_all_levs(i,sample,k,iiPDF_Ncn)
+             if ( X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_chi) > zero ) then
+               lh_Nc_clipped(i,sample,k) = X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_Ncn)
              else
                lh_Nc_clipped(i,sample,k) = zero
              end if
           else
-             lh_Nc_clipped(i,sample,k) = X_nl_all_levs(i,sample,k,iiPDF_Ncn)
+             lh_Nc_clipped(i,sample,k) = X_nl_all_levs(i,sample,k,hm_metadata%iiPDF_Ncn)
           endif ! l_use_Ncn_to_Nc
         
         end do
@@ -1185,21 +1168,22 @@ module latin_hypercube_driver_module
            ! with the size pdf_dim, into arrays with the size hydromet_dim.
            do hm_idx = 1, hydromet_dim, 1
               hydromet_pts(:,hm_idx) &
-              = X_nl_all_levs(i,sample,:,hydromet2pdf_idx(hm_idx))
+              = X_nl_all_levs(i,sample,:,hydromet2pdf_idx(hm_idx,hm_metadata))
            enddo ! hm_idx = 1, hydromet_dim, 1
 
            ! Clip the hydrometeor concentration sample points based on
            ! maintaining the value of the hydrometeor mixing ratio sample points
            ! and satisfying the maximum allowable mean volume radius for that
            ! hydrometeor species.
-           call clip_hydromet_conc_mvr( nz, hydromet_dim, hydromet_pts, & ! In
-                                        hydromet_pts_clipped )        ! Out
+           call clip_hydromet_conc_mvr( nz, hydromet_dim, hm_metadata, & ! In
+                                        hydromet_pts,                     & ! In
+                                        hydromet_pts_clipped )              ! Out
 
            ! Unpack the clipped SILHS hydrometeor sample points, which are stored
            ! in arrays with the size hydromet_dim, back into arrays with the size
            ! pdf_dim.
            do hm_idx = 1, hydromet_dim, 1
-             X_nl_all_levs(i,sample,:,hydromet2pdf_idx(hm_idx)) &
+             X_nl_all_levs(i,sample,:,hydromet2pdf_idx(hm_idx,hm_metadata)) &
               = hydromet_pts_clipped(:,hm_idx)
            enddo ! hm_idx = 1, hydromet_dim, 1
 
@@ -1519,25 +1503,20 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine latin_hypercube_2D_output &
-             ( fname_prefix, fdir, stats_tout, nz, &
+  subroutine latin_hypercube_2D_output( &
+               fname_prefix, fdir, stats_tout, &
+               nz, pdf_dim, &
                stats_zt, time_initial, num_samples, &
-               nlon, nlat, lon_vals, lat_vals )
+               nlon, nlat, lon_vals, lat_vals, &
+               hm_metadata, &
+               clubb_params, sclr_dim, sclr_tol, &
+               l_uv_nudge, &
+               l_tke_aniso, &
+               l_standard_term_ta )
 !-------------------------------------------------------------------------------
 
-    use array_index, only: &
-      iiPDF_chi, & ! Variables
-      iiPDF_eta, &
-      iiPDF_w, &
-      iiPDF_rr, & 
-      iiPDF_ri, &
-      iiPDF_rs, &
-      iiPDF_rg, &
-      iiPDF_Nr, &
-      iiPDF_Ni, &
-      iiPDF_Ns, &
-      iiPDF_Ng, &
-      iiPDF_Ncn
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     use clubb_precision, only: &
       time_precision, & ! Constant
@@ -1550,9 +1529,8 @@ module latin_hypercube_driver_module
       lognormal_sample_file, & ! Instance of a type
       uniform_sample_file
 
-    use corr_varnce_module, only: &
-      pdf_dim! Variable
-
+    use parameter_indices, only: &
+      nparams    ! Variable(s)
 
     implicit none
 
@@ -1568,7 +1546,8 @@ module latin_hypercube_driver_module
       time_initial  ! Initial time                      [s]
 
     integer, intent(in) :: &
-      nz ! Number of vertical levels
+      nz, & ! Number of vertical levels
+      pdf_dim
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       stats_zt ! Altitudes [m]
@@ -1585,13 +1564,61 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nlat), intent(in) ::  &
       lat_vals  ! Latitude values  [Degrees N]
 
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
+
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    integer, intent(in) :: &
+      sclr_dim 
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+      sclr_tol
+
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                            ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+
     ! Local Variables
     character(len=100), allocatable, dimension(:) :: &
       variable_names, variable_descriptions, variable_units
 
     integer :: p
 
+    integer :: &
+      iiPDF_chi, &
+      iiPDF_eta, &
+      iiPDF_w, &
+      iiPDF_rr, & 
+      iiPDF_ri, &
+      iiPDF_rs, &
+      iiPDF_rg, &
+      iiPDF_Nr, &
+      iiPDF_Ni, &
+      iiPDF_Ns, &
+      iiPDF_Ng, &
+      iiPDF_Ncn
+
     ! ---- Begin Code ----
+
+    iiPDF_chi = hm_metadata%iiPDF_chi
+    iiPDF_eta = hm_metadata%iiPDF_eta
+    iiPDF_w   = hm_metadata%iiPDF_w
+    iiPDF_rr  = hm_metadata%iiPDF_rr
+    iiPDF_ri  = hm_metadata%iiPDF_ri
+    iiPDF_rs  = hm_metadata%iiPDF_rs
+    iiPDF_rg  = hm_metadata%iiPDF_rg
+    iiPDF_Nr  = hm_metadata%iiPDF_Nr
+    iiPDF_Ni  = hm_metadata%iiPDF_Ni
+    iiPDF_Ns  = hm_metadata%iiPDF_Ns
+    iiPDF_Ng  = hm_metadata%iiPDF_Ng
+    iiPDF_Ncn = hm_metadata%iiPDF_Ncn
 
     if ( l_output_2D_lognormal_dist ) then
 
@@ -1662,6 +1689,10 @@ module latin_hypercube_driver_module
                                  time_initial, stats_tout, stats_zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
                                  nlon, nlat, lon_vals, lat_vals, & ! In
+                                 clubb_params, sclr_dim, sclr_tol, &
+                                 l_uv_nudge, &
+                                 l_tke_aniso, &
+                                 l_standard_term_ta, &
                                  lognormal_sample_file ) ! In/Out
 
       deallocate( variable_names, variable_descriptions, variable_units )
@@ -1758,6 +1789,10 @@ module latin_hypercube_driver_module
                                  variable_names(1:p), variable_descriptions(1:p), & ! In
                                  variable_units(1:p), & ! In
                                  nlon, nlat, lon_vals, lat_vals, & ! In
+                                 clubb_params, sclr_dim, sclr_tol, &
+                                 l_uv_nudge, &
+                                 l_tke_aniso, &
+                                 l_standard_term_ta, &
                                  uniform_sample_file ) ! In/Out
 
       deallocate( variable_names, variable_descriptions, variable_units )
@@ -1933,6 +1968,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine stats_accumulate_lh( &
                gr, nz, num_samples, pdf_dim, rho_ds_zt, &
+               hydromet_dim, hm_metadata,&
                lh_sample_point_weights, X_nl_all_levs, &
                lh_rt_clipped, lh_thl_clipped, & 
                lh_rc_clipped, lh_rv_clipped, & 
@@ -1948,8 +1984,6 @@ module latin_hypercube_driver_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use parameters_model, only: hydromet_dim ! Variable
-
     use grid_class, only: grid
 
     use math_utilities, only: & ! Procedure(s)
@@ -1960,19 +1994,8 @@ module latin_hypercube_driver_module
 !      stat_update_var, & ! Procedure(s)
       stat_update_var_pt
 
-    use array_index, only: &
-      iirr, & ! Variables(s)
-      iirs, & 
-      iiri, & 
-      iirg, & 
-      iiNr, &
-      iiNs, &
-      iiNi, &
-      iiNg, &
-      iiPDF_chi, &
-      iiPDF_eta, &
-      iiPDF_w,   &
-      iiPDF_Ncn
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     use constants_clubb, only: & 
       zero, &            ! Constant(s)
@@ -1992,14 +2015,17 @@ module latin_hypercube_driver_module
 
     implicit none
 
-
     !-------------------------- Input Variables --------------------------
     type (grid), target, intent(in) :: gr
 
     integer, intent(in) :: &
-      pdf_dim,     & ! Number of variables to sample
-      num_samples,   & ! Number of calls to microphysics per timestep (normally=2)
-      nz                 ! Number of vertical model levels
+      pdf_dim,        & ! Number of variables to sample
+      num_samples,    & ! Number of calls to microphysics per timestep (normally=2)
+      nz,             & ! Number of vertical model levels
+      hydromet_dim      ! Number of hydrometeor species
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real( kind = core_rknd ), intent(in), dimension(nz) :: &
       rho_ds_zt  ! Dry, static density (thermo. levs.) [kg/m^3]
@@ -2059,7 +2085,35 @@ module latin_hypercube_driver_module
 
     integer :: sample, ivar, k
 
+    integer :: &
+      iirr, & 
+      iirs, & 
+      iiri, & 
+      iirg, & 
+      iiNr, &
+      iiNs, &
+      iiNi, &
+      iiNg, &
+      iiPDF_chi, &
+      iiPDF_eta, &
+      iiPDF_w,   &
+      iiPDF_Ncn
+
     !-------------------------- Begin Code --------------------------
+
+    iirr      = hm_metadata%iirr
+    iirs      = hm_metadata%iirs
+    iiri      = hm_metadata%iiri
+    iirg      = hm_metadata%iirg
+    iiNr      = hm_metadata%iiNr
+    iiNs      = hm_metadata%iiNs
+    iiNi      = hm_metadata%iiNi
+    iiNg      = hm_metadata%iiNg
+    iiPDF_chi = hm_metadata%iiPDF_chi
+    iiPDF_eta = hm_metadata%iiPDF_eta
+    iiPDF_w   = hm_metadata%iiPDF_w
+    iiPDF_Ncn = hm_metadata%iiPDF_Ncn
+
     if ( stats_metadata%l_stats_samp ) then
 
       ! For all cases where l_lh_importance_sampling is false, the weights
@@ -2143,11 +2197,12 @@ module latin_hypercube_driver_module
            + stats_metadata%ilh_Ncnm + stats_metadata%ilh_Ncm > 0 ) then
 
         lh_hydromet = 0._core_rknd
-        call copy_X_nl_into_hydromet_all_pts( nz, pdf_dim, num_samples, & ! In
-                                      X_nl_all_levs, &  ! In
-                                      lh_hydromet, & ! In
-                                      hydromet_all_points, &  ! Out
-                                      Ncn_all_points ) ! Out
+        call copy_X_nl_into_hydromet_all_pts( nz, pdf_dim, num_samples,     & ! In
+                                              X_nl_all_levs,                & ! In
+                                              hydromet_dim, hm_metadata, & ! In
+                                              lh_hydromet,                  & ! In
+                                              hydromet_all_points,          & ! Out
+                                              Ncn_all_points                ) ! Out
 
         ! Get rid of an annoying compiler warning.
         ivar = 1
@@ -2659,10 +2714,11 @@ module latin_hypercube_driver_module
 
   !-----------------------------------------------------------------------------
   subroutine copy_X_nl_into_hydromet_all_pts( nz, pdf_dim, num_samples, &
-                                      X_nl_all_levs, &
-                                      hydromet, &
-                                      hydromet_all_points, &
-                                      Ncn_all_points )
+                                              X_nl_all_levs, &
+                                              hydromet_dim, hm_metadata, &
+                                              hydromet, &
+                                              hydromet_all_points, &
+                                              Ncn_all_points )
 
   ! Description:
   !   Copy the points from the latin hypercube sample to an array with just the
@@ -2670,27 +2726,8 @@ module latin_hypercube_driver_module
   ! References:
   !   None
   !-----------------------------------------------------------------------------
-    use parameters_model, only: &
-      hydromet_dim ! Variable
-
-    use array_index, only: &
-      iirr, & ! Variables
-      iirs, & 
-      iiri, & 
-      iirg, & 
-      iiNr, &
-      iiNs, &
-      iiNi, &
-      iiNg, &
-      iiPDF_rr, &
-      iiPDF_rs, &
-      iiPDF_ri, &
-      iiPDF_rg, &
-      iiPDF_Nr, &
-      iiPDF_Ns, &
-      iiPDF_Ng, &
-      iiPDF_Ncn, &
-      iiPDF_Ni
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     use clubb_precision, only: &
       core_rknd
@@ -2698,9 +2735,13 @@ module latin_hypercube_driver_module
     implicit none
 
     integer, intent(in) :: &
-      nz,            & ! Number of vertical levels
-      pdf_dim,   & ! Number of variates
-      num_samples    ! Number of calls to microphysics
+      nz,             & ! Number of vertical levels
+      pdf_dim,        & ! Number of variates
+      num_samples,    & ! Number of calls to microphysics
+      hydromet_dim      ! Number of hydrometeor species
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -2719,45 +2760,45 @@ module latin_hypercube_driver_module
     do sample = 1, num_samples
       ! Copy the sample points into the temporary arrays
       do ivar = 1, hydromet_dim, 1
-        if ( ivar == iirr .and. iiPDF_rr > 0 ) then
+        if ( ivar == hm_metadata%iirr .and. hm_metadata%iiPDF_rr > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(sample,:,ivar) = &
-            real( X_nl_all_levs(sample,:,iiPDF_rr), kind = core_rknd )
+            real( X_nl_all_levs(sample,:,hm_metadata%iiPDF_rr), kind = core_rknd )
 
-        else if ( ivar == iirs .and. iiPDF_rs > 0 ) then
+        else if ( ivar == hm_metadata%iirs .and. hm_metadata%iiPDF_rs > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(sample,:,ivar) = &
-            real( X_nl_all_levs(sample,:,iiPDF_rs), kind = core_rknd )
+            real( X_nl_all_levs(sample,:,hm_metadata%iiPDF_rs), kind = core_rknd )
 
-        else if ( ivar == iiri .and. iiPDF_ri > 0 ) then
+        else if ( ivar == hm_metadata%iiri .and. hm_metadata%iiPDF_ri > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(sample,:,ivar) = &
-            real( X_nl_all_levs(sample,:,iiPDF_ri), kind = core_rknd )
+            real( X_nl_all_levs(sample,:,hm_metadata%iiPDF_ri), kind = core_rknd )
 
-        else if ( ivar == iirg .and. iiPDF_rg > 0 ) then
+        else if ( ivar == hm_metadata%iirg .and. hm_metadata%iiPDF_rg > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(sample,:,ivar) = &
-            real( X_nl_all_levs(sample,:,iiPDF_rg), kind = core_rknd )
+            real( X_nl_all_levs(sample,:,hm_metadata%iiPDF_rg), kind = core_rknd )
 
-        else if ( ivar == iiNr .and. iiPDF_Nr > 0 ) then
+        else if ( ivar == hm_metadata%iiNr .and. hm_metadata%iiPDF_Nr > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(sample,:,ivar) = &
-            real( X_nl_all_levs(sample,:,iiPDF_Nr), kind = core_rknd )
+            real( X_nl_all_levs(sample,:,hm_metadata%iiPDF_Nr), kind = core_rknd )
 
-        else if ( ivar == iiNs .and. iiPDF_Ns > 0 ) then
+        else if ( ivar == hm_metadata%iiNs .and. hm_metadata%iiPDF_Ns > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(sample,:,ivar) = &
-            real( X_nl_all_levs(sample,:,iiPDF_Ns), kind = core_rknd )
+            real( X_nl_all_levs(sample,:,hm_metadata%iiPDF_Ns), kind = core_rknd )
 
-        else if ( ivar == iiNg .and. iiPDF_Ng > 0 ) then
+        else if ( ivar == hm_metadata%iiNg .and. hm_metadata%iiPDF_Ng > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(sample,:,ivar) = &
-            real( X_nl_all_levs(sample,:,iiPDF_Ng), kind = core_rknd )
+            real( X_nl_all_levs(sample,:,hm_metadata%iiPDF_Ng), kind = core_rknd )
 
-        else if ( ivar == iiNi .and. iiPDF_Ni > 0 ) then
+        else if ( ivar == hm_metadata%iiNi .and. hm_metadata%iiPDF_Ni > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(sample,:,ivar) = &
-            real( X_nl_all_levs(sample,:,iiPDF_Ni), kind = core_rknd )
+            real( X_nl_all_levs(sample,:,hm_metadata%iiPDF_Ni), kind = core_rknd )
 
         else ! Use the mean field, rather than a sample point
           ! This is the case for hail and graupel in the Morrison microphysics
@@ -2767,9 +2808,9 @@ module latin_hypercube_driver_module
         end if
       end do ! 1..hydromet_dim
       ! Copy Ncn into Ncn all points
-      if ( iiPDF_Ncn > 0 ) then
+      if ( hm_metadata%iiPDF_Ncn > 0 ) then
         Ncn_all_points(sample,:) = &
-          real( X_nl_all_levs(sample,:,iiPDF_Ncn), kind=core_rknd )
+          real( X_nl_all_levs(sample,:,hm_metadata%iiPDF_Ncn), kind=core_rknd )
       end if
     end do ! 1..num_samples
 

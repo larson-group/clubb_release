@@ -12,6 +12,7 @@ module ice_dfsn_module
   contains
 !-------------------------------------------------------------------------------
   subroutine ice_dfsn( gr, dt, thlm, rcm, exner, p_in_Pa, rho, & 
+                       saturation_formula, &
                        stats_metadata, &
                        stats_zt, &
                        rcm_icedfsn, thlm_icedfsn )
@@ -107,6 +108,9 @@ module ice_dfsn_module
       exner,   & ! Exner function                       [-]
       p_in_Pa, & ! Air pressure                         [Pa]
       rho        ! Air density on thermodynamic grid    [kg m^{-3}]
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -213,7 +217,7 @@ module ice_dfsn_module
       IF ( rcm(k) >= 1.0E-5_core_rknd .AND. T_in_K(k) < T_freeze_K ) THEN
 
         ! Find saturation mixing ratio over vapor [kg kg^{-1}]
-        r_s(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k) )
+        r_s(k) = sat_mixrat_liq( p_in_Pa(k), T_in_K(k), saturation_formula )
 
         ! Saturation vapor pressure over liquid in Pa
         e_s(k) = ( r_s(k)*p_in_Pa(k) ) / ( ep + r_s(k) )

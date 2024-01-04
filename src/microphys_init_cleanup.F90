@@ -31,8 +31,10 @@ module microphys_init_cleanup
                              l_diagnose_correlations, &
                              l_const_Nc_in_cloud, &
                              l_fix_w_chi_eta_correlations, &
-                             hydromet_dim, silhs_config_flags, &
-                             vert_decorr_coef_out )
+                             hydromet_dim, pdf_dim, hm_metadata, &
+                             silhs_config_flags, &
+                             vert_decorr_coef_out, &
+                             corr_array_n_cloud, corr_array_n_below )
 
     ! Description:
     ! Set indices to the various hydrometeor species and define hydromet_dim for
@@ -106,9 +108,6 @@ module microphys_init_cleanup
         NNUCCC_REDUCE_COEF
     ! Change by Marc Pilon on 11/16/11
 
-    use array_index, only: & 
-        iiPDF_Ncn
-
     use constants_clubb, only: &
         cm3_per_m3, &
         zero,           &
@@ -163,11 +162,7 @@ module microphys_init_cleanup
     use corr_varnce_module, only: &
         hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
         hmp2_ip_on_hmm2_ip_intrcpt_type,    &
-        hmp2_ip_on_hmm2_ip, &
-        Ncnp2_on_Ncnm2,                     & ! Variable(s)
-        pdf_dim,                            &
-        corr_array_n_cloud,                 &
-        corr_array_n_below,                 &
+        hm_metadata_type,                &
         setup_corr_varnce_array               ! Procedure(s)
 
     use pdf_utilities, only: &
@@ -208,7 +203,7 @@ module microphys_init_cleanup
     ! External
     intrinsic :: trim
 
-    ! Input variables
+    !------------------------ Input Variables ------------------------
     integer, intent(in) :: &
       iunit ! File unit
 
@@ -231,22 +226,33 @@ module microphys_init_cleanup
     logical, intent(in) :: &
       l_diagnose_correlations ! Diagnose correlations instead of using fixed ones
 
-    ! Input/Output variables
+    !------------------------ Input/Output Variables ------------------------
     logical, intent(inout) :: &
       l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
       l_fix_w_chi_eta_correlations    ! Use a fixed correlation for s and t Mellor(chi/eta)
 
-    ! Output variables
+    !------------------------ Output Variables ------------------------
     integer, intent(out) :: & 
       hydromet_dim ! Number of hydrometeor fields.
 
-    type(silhs_config_flags_type), intent(out) :: &
+    integer, intent(out) :: &
+      pdf_dim
+
+    type (hm_metadata_type), intent(out) :: &
+      hm_metadata
+
+    type (silhs_config_flags_type), intent(out) :: &
       silhs_config_flags ! Flags for the SILHS sampling code
 
     real( kind = core_rknd ), intent(out) :: &
       vert_decorr_coef_out    ! Empirically defined de-correlation constant [-]
 
-    ! Local variables
+
+    real( kind = core_rknd ), dimension(:,:), allocatable, intent(out) :: &
+      corr_array_n_cloud, &
+      corr_array_n_below
+
+    !------------------------ Local variables ------------------------
     character(len=30) :: lh_microphys_type
     integer, parameter :: res = 20   ! Used for lookup tables with GFDL activation
     integer, parameter :: res2 = 20  ! Used for lookup tables with GFDL activation
@@ -306,6 +312,8 @@ module microphys_init_cleanup
       l_lh_var_frac, &
       l_lh_normalize_weights
 
+    real( kind = core_rknd ) :: &
+      Ncnp2_on_Ncnm2
 
     namelist /microphysics_setting/ &
       microphys_scheme, l_cloud_sed, sigma_g, &
@@ -824,8 +832,10 @@ module microphys_init_cleanup
 
     ! Set up pdf indices, hydromet indicies, hydromet arrays, and hydromet variance ratios
     call init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim,  & ! intent(in)
-                                       iirr, iiri, iirs, iirg,          & ! intent(in)
-                                       iiNr, iiNi, iiNs, iiNg,          & ! intent(in)
+                                       iirr, iiNr, iiri, iiNi,          & ! intent(in)
+                                       iirs, iiNs, iirg, iiNg,          & ! intent(in)
+                                       Ncnp2_on_Ncnm2,                  & ! intent(in)
+                                       hm_metadata, pdf_dim,         & ! intent(out)
                                        hmp2_ip_on_hmm2_ip_slope,        & ! optional(in)
                                        hmp2_ip_on_hmm2_ip_intrcpt       ) ! optional(in)
 
@@ -904,13 +914,17 @@ module microphys_init_cleanup
        error stop
     endif
 
+    allocate(corr_array_n_cloud(pdf_dim,pdf_dim))
+    allocate(corr_array_n_below(pdf_dim,pdf_dim))
+
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
 
     ! Allocate and set the arrays containing the correlations
-    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, &
-                                  iunit, & ! Intent(in)
-                                  l_fix_w_chi_eta_correlations ) ! Intent(in)
+    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, & ! In
+                                  pdf_dim, hm_metadata, iunit,             & ! In
+                                  l_fix_w_chi_eta_correlations,               & ! In
+                                  corr_array_n_cloud, corr_array_n_below )      ! Out
 
     ! Print the in-cloud and below-cloud actual (real-space) correlation arrays.
     ! This should only be done when zeta_vrnce_rat = 0.  Even when this is true,
@@ -942,22 +956,22 @@ module microphys_init_cleanup
 
        ! Ncn:  sigma_Ncn_i^2/mu_Ncn_i^2
        if ( .not. l_const_Nc_in_cloud ) then
-          sigma2_on_mu2_ip_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2
-          sigma2_on_mu2_ip_below(iiPDF_Ncn) = Ncnp2_on_Ncnm2
+          sigma2_on_mu2_ip_cloud(hm_metadata%iiPDF_Ncn) = hm_metadata%Ncnp2_on_Ncnm2
+          sigma2_on_mu2_ip_below(hm_metadata%iiPDF_Ncn) = hm_metadata%Ncnp2_on_Ncnm2
        else
-          sigma2_on_mu2_ip_cloud(iiPDF_Ncn) = zero
-          sigma2_on_mu2_ip_below(iiPDF_Ncn) = zero
+          sigma2_on_mu2_ip_cloud(hm_metadata%iiPDF_Ncn) = zero
+          sigma2_on_mu2_ip_below(hm_metadata%iiPDF_Ncn) = zero
        endif
        ! Ncn:  sigma_Ncn_i_n
-       sigma_x_n_cloud(iiPDF_Ncn) &
-       = stdev_L2N( sigma2_on_mu2_ip_cloud(iiPDF_Ncn) )
-       sigma_x_n_below(iiPDF_Ncn) = sigma_x_n_cloud(iiPDF_Ncn)
+       sigma_x_n_cloud(hm_metadata%iiPDF_Ncn) &
+       = stdev_L2N( sigma2_on_mu2_ip_cloud(hm_metadata%iiPDF_Ncn) )
+       sigma_x_n_below(hm_metadata%iiPDF_Ncn) = sigma_x_n_cloud(hm_metadata%iiPDF_Ncn)
 
        ! Loop over all hydrometeors.
-       do ivar = iiPDF_Ncn+1, pdf_dim, 1
+       do ivar = hm_metadata%iiPDF_Ncn+1, pdf_dim, 1
           ! Hydrometeor sigma_hm_i^2/mu_hm_i^2
           sigma2_on_mu2_ip_cloud(ivar) &
-          = clubb_params(iomicron) * hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar))
+          = clubb_params(iomicron) * hm_metadata%hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar,hm_metadata))
           sigma2_on_mu2_ip_below(ivar) = sigma2_on_mu2_ip_cloud(ivar)
           ! Hydrometeor sigma_hm_i_n
           sigma_x_n_cloud(ivar) = stdev_L2N( sigma2_on_mu2_ip_cloud(ivar) )
@@ -965,7 +979,7 @@ module microphys_init_cleanup
        enddo ! i = 1, hydromet_dim, 1
 
        ! Calculate the correlations given the normal space correlations.
-       call denorm_transform_corr( 1, one_lev, pdf_dim, &
+       call denorm_transform_corr( 1, one_lev, pdf_dim, hm_metadata, &
                                    sigma_x_n_cloud, sigma_x_n_below, &
                                    sigma2_on_mu2_ip_cloud, &
                                    sigma2_on_mu2_ip_below, &
@@ -1039,45 +1053,15 @@ module microphys_init_cleanup
     use parameters_microphys, only: &
         l_hydromet_sed
 
-    use array_index, only: &
-        hydromet_list,  & ! Variable(s)
-        hydromet_tol,   &
-        l_mix_rat_hm, & ! Variable(s)
-        l_frozen_hm
-
-    use corr_varnce_module, only: &
-        hmp2_ip_on_hmm2_ip
-
     implicit none
 
     intrinsic :: allocated
 
     ! ---- Begin Code ----
 
-    if ( allocated( hydromet_list ) ) then
-       deallocate( hydromet_list )
-    endif
-
     if ( allocated( l_hydromet_sed ) ) then
        deallocate( l_hydromet_sed )
     endif
-
-    if ( allocated( l_mix_rat_hm ) ) then
-       deallocate( l_mix_rat_hm )
-    endif
-
-    if ( allocated( l_frozen_hm ) ) then
-       deallocate( l_frozen_hm )
-    endif
-
-    if ( allocated( hydromet_tol ) ) then
-       deallocate( hydromet_tol )
-    endif
-
-    if ( allocated( hmp2_ip_on_hmm2_ip ) ) then
-       deallocate( hmp2_ip_on_hmm2_ip )
-    endif
-
 
     return
 

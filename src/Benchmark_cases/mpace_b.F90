@@ -18,7 +18,8 @@ module mpace_b
   contains
 
   !----------------------------------------------------------------------
-  subroutine mpace_b_tndcy( gr, p_in_Pa, thvm, & 
+  subroutine mpace_b_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+                            gr, p_in_Pa, thvm, & 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                             sclrm_forcing, edsclrm_forcing )
 
@@ -33,36 +34,42 @@ module mpace_b
   !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
   !-----------------------------------------------------------------------
 
-    use constants_clubb, only: Rd, Cp, &
-                               grav, sec_per_day, g_per_kg ! Variable(s)
+    use constants_clubb, only: &
+      Rd, & ! Variable(s)
+      Cp, &
+      grav, &
+      sec_per_day, &
+      g_per_kg 
 
-    use grid_class, only: grid ! Type
+    use grid_class, only: &
+      grid ! Type
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use grid_class, only: &
+      zt2zm ! Procedure(s)
 
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
-    use grid_class, only: zt2zm ! Procedure(s)
-
-    use clubb_precision, only: core_rknd ! Variable(s)
-
-    use array_index, only: iiedsclr_rt, iiedsclr_thl, iisclr_rt, iisclr_thl ! Variable(s)
+    use array_index, only: &
+      sclr_idx_type
 
     implicit none
 
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
     type (grid), target, intent(in) :: gr
 
-    ! Local constants, subsidence
-    real( kind = core_rknd ), parameter :: & 
-      D     = 5.8e-6_core_rknd,  & ! 1/s
-      p_sfc  = 101000._core_rknd, & ! Pa
-      pinv  = 85000._core_rknd     ! Pa; ditto
-
-    ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       p_in_Pa, & ! Pressure                               [Pa]
       thvm       ! Virtual potential temperature          [K]
 
-    ! Output Variables
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
       wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
       wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
@@ -75,16 +82,23 @@ module mpace_b
     real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar LS tendency     [units/s]
 
-    ! Local Variables, subsidence scheme
+    !--------------------- Local Variables ---------------------
+
+    ! Local constants, subsidence
+    real( kind = core_rknd ), parameter :: & 
+      D     = 5.8e-6_core_rknd,  & ! 1/s
+      p_sfc = 101000._core_rknd, & ! Pa
+      pinv  = 85000._core_rknd     ! Pa; ditto
+
     real( kind = core_rknd ) :: & 
       velocity_omega
 
-
-    ! Local Variables
-    real( kind = core_rknd ) :: t_tendency
+    real( kind = core_rknd ) :: &
+      t_tendency
 
     integer :: k ! loop index
-    !-----------------------------------------------------------------------
+
+    !--------------------- Begin Code ---------------------
 
     ! Compute vertical motion
     do k=2,gr%nz
@@ -116,11 +130,11 @@ module mpace_b
     end do
 
     ! Test scalars with thetal and rt if desired
-    if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-    if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
     return
   end subroutine mpace_b_tndcy

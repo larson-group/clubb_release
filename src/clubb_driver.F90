@@ -109,7 +109,8 @@ module clubb_driver
       precipitation_fractions, &
       init_precip_fracs_api, &
       advance_clubb_core_api, &
-      setup_clubb_core_api, &
+      check_clubb_settings_api, &
+      setup_parameters_model_api, &
       setup_grid_api, &
       setup_parameters_api
 
@@ -126,10 +127,6 @@ module clubb_driver
         clubb_fatal_error              ! ------------------------------------ Constant
 
     use clubb_precision, only: time_precision, core_rknd !------------------- Constants
-
-    use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & !------------ Variables
-      iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
-      iiri, iirs, iirg
 
     use microphys_driver, only: &
         calc_microphys_scheme_tendcies  !------------------------------------ Procedure(s)
@@ -150,7 +147,7 @@ module clubb_driver
       l_silhs_rad, & !--------------------------------------------------- Constants
       l_pos_def, l_hole_fill, &
       l_gamma_Skw, l_byteswap_io, &
-      l_quintic_poly_interp !-------------------------------------------- Variable(s)
+      saturation_flatau
 
     use stats_clubb_utilities, only:  & 
         stats_begin_timestep, stats_end_timestep,  & !----------------------- Procedure(s)
@@ -251,9 +248,7 @@ module clubb_driver
         rtm_nudge_max_altitude
 
     use corr_varnce_module, only: &
-        corr_array_n_cloud, & !------------------------------------------- Variable(s)
-        corr_array_n_below, &
-        pdf_dim
+        hm_metadata_type !------------------------------------------- Type(s)    
 
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters    !----------------------------------------- Procedure(s)
@@ -273,6 +268,9 @@ module clubb_driver
     use parameters_silhs, only: &
         silhs_config_flags_type !----------------------------------------- Type(s)
 
+    use array_index, only: &
+        sclr_idx_type !----------------------------------------------- Type(s)
+
 #ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
     ! ensure that no model uses the same file number simultaneously
@@ -288,7 +286,6 @@ module clubb_driver
 
     ! Constant Parameters
     logical, parameter :: &
-      l_host_applies_sfc_fluxes = .false., &
       l_implemented = .false.
 
     logical, parameter :: &
@@ -323,6 +320,9 @@ module clubb_driver
       ts_nudge           ! Timescale for u/v nudging     [s]
 
     real( kind = core_rknd ), dimension(sclr_max) :: & 
+      sclr_tol_nl        ! Thresholds on the passive scalars     [units vary]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: & 
       sclr_tol        ! Thresholds on the passive scalars     [units vary]
 
     real(kind=time_precision) :: & 
@@ -348,9 +348,6 @@ module clubb_driver
     ! Flag to activate modifications on boundary condition for convergence test
     ! (surface fluxes computed at fixed 25 m height).
     logical :: l_modify_bc_for_cnvg_test
-
-    character(len=6) :: &
-      saturation_formula ! "bolton" approx. or "flatau" approx.
 
     character(len=128) ::  & 
       restart_path_case,   & ! GrADS file used in case of restart
@@ -393,6 +390,21 @@ module clubb_driver
       hydromet_dim,    & ! Number of hydrometeor species        [#]
       sclr_dim,        & ! Number of passive scalars            [#]
       edsclr_dim         ! Number of passive scalars            [#]
+
+    type (sclr_idx_type) :: &
+      sclr_idx
+  
+    type (hm_metadata_type) :: &
+      hm_metadata
+
+    integer :: &
+      iisclr_rt    = -1, &     !------------ Variables
+      iisclr_thl   = -1, &
+      iisclr_CO2   = -1, &
+      iiedsclr_rt  = -1, &
+      iiedsclr_thl = -1, &
+      iiedsclr_CO2 = -1, &
+      pdf_dim
 
     integer :: itime_nearest ! Used for and inputfields run [s]
 
@@ -642,6 +654,10 @@ module clubb_driver
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      corr_array_n_cloud, &
+      corr_array_n_below
+
     real( kind = core_rknd ), dimension(:,:,:,:), allocatable :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -721,14 +737,15 @@ module clubb_driver
       nu_vert_res_dep    ! Vertical resolution dependent nu values
   
     integer :: &
-      iiPDF_type,          & ! Selected option for the two-component normal
-                             ! (double Gaussian) PDF type to use for the w, rt,
-                             ! and theta-l (or w, chi, and eta) portion of
-                             ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement, & ! Selected option for the placement of the call to
-                             ! CLUBB's PDF.
-      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
+      iiPDF_type,           & ! Selected option for the two-component normal
+                              ! (double Gaussian) PDF type to use for the w, rt,
+                              ! and theta-l (or w, chi, and eta) portion of
+                              ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,  & ! Selected option for the placement of the call to
+                              ! CLUBB's PDF.
+      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula      ! Integer that stores the saturation formula to be used
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -844,8 +861,10 @@ module clubb_driver
       l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
       l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
-      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+      l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
+                                      ! to avoid double counting.
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -863,13 +882,13 @@ module clubb_driver
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, l_modify_ic_with_cubic_int, &
-      l_modify_bc_for_cnvg_test, saturation_formula, &
+      l_modify_bc_for_cnvg_test, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, &
       uv_sponge_damp_settings, wp2_sponge_damp_settings, &
       wp3_sponge_damp_settings, up2_vp2_sponge_damp_settings, &
       l_soil_veg, l_uv_nudge, l_restart, restart_path_case, &
       time_restart, l_input_fields, debug_level, &
-      sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
+      sclr_tol_nl, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
       l_diagnose_correlations, l_calc_w_corr
@@ -881,7 +900,8 @@ module clubb_driver
 
     namelist /configurable_clubb_flags_nl/ &
       iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &
-      l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
+      saturation_formula, &
+      l_upwind_xpyp_ta, l_upwind_xm_ma, &
       l_tke_aniso, l_vert_avg_closure, l_standard_term_ta, &
       l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
       l_use_cloud_cover, l_rcm_supersat_adj, &
@@ -897,7 +917,8 @@ module clubb_driver
       l_use_tke_in_wp2_wp3_K_dfsn, l_use_wp3_lim_with_smth_Heaviside, l_smooth_Heaviside_tau_wpxp, &
       l_modify_limiters_for_cnvg_test, l_enable_relaxed_clipping, &
       l_linearize_pbl_winds, l_mono_flux_lim_thlm, &
-      l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix
+      l_mono_flux_lim_rtm, l_mono_flux_lim_um, l_mono_flux_lim_vm, l_mono_flux_lim_spikefix, &
+      l_host_applies_sfc_fluxes
 
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -976,19 +997,17 @@ module clubb_driver
     rtm_nudge_max_altitude = 0.0_core_rknd
 
     ! Use the Flatau polynomial approximation for computing saturation in advance_clubb_core_module
-    saturation_formula = "flatau"
+    saturation_formula = saturation_flatau
 
     sclr_dim   = 0
-    iisclr_thl = -1
-    iisclr_rt  = -1
-    iisclr_CO2 = -1
+    sclr_idx%iisclr_thl = -1
+    sclr_idx%iisclr_rt  = -1
+    sclr_idx%iisclr_CO2 = -1
 
     edsclr_dim = 0
-    iiedsclr_thl = -1
-    iiedsclr_rt  = -1
-    iiedsclr_CO2 = -1
-
-    sclr_tol(1:sclr_max) = 1.e-2_core_rknd
+    sclr_idx%iiedsclr_thl = -1
+    sclr_idx%iiedsclr_rt  = -1
+    sclr_idx%iiedsclr_CO2 = -1
 
     l_use_Ncn_to_Nc = .true.
 
@@ -1014,6 +1033,7 @@ module clubb_driver
                                          ipdf_call_placement, & ! Intent(out)
                                          penta_solve_method, & ! Intent(out)
                                          tridiag_solve_method, & ! Intent(out)
+                                         saturation_formula, &  ! Intent(out)
                                          l_use_precip_frac, & ! Intent(out)
                                          l_predict_upwp_vpwp, & ! Intent(out)
                                          l_min_wp2_from_corr_wx, & ! Intent(out)
@@ -1067,13 +1087,25 @@ module clubb_driver
                                          l_mono_flux_lim_rtm, & ! Intent(out)
                                          l_mono_flux_lim_um, & ! Intent(out)
                                          l_mono_flux_lim_vm, & ! Intent(out)
-                                         l_mono_flux_lim_spikefix ) ! Intent(out)
+                                         l_mono_flux_lim_spikefix, &
+                                         l_host_applies_sfc_fluxes ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
     read(unit=iunit, nml=model_setting)
     read(unit=iunit, nml=stats_setting)
     close(unit=iunit)
+
+    sclr_idx%iisclr_thl = iisclr_thl
+    sclr_idx%iisclr_rt  = iisclr_rt
+    sclr_idx%iisclr_CO2 = iisclr_CO2
+
+    sclr_idx%iiedsclr_thl = iiedsclr_thl
+    sclr_idx%iiedsclr_rt  = iiedsclr_rt
+    sclr_idx%iiedsclr_CO2 = iiedsclr_CO2
+
+    allocate( sclr_tol(sclr_dim) )
+    sclr_tol(1:sclr_dim) = sclr_tol_nl(1:sclr_dim)
 
     stats_metadata%l_allow_small_stats_tout = l_allow_small_stats_tout
 
@@ -1281,7 +1313,7 @@ module clubb_driver
       call write_text( "l_modify_bc_for_cnvg_test = ", l_modify_bc_for_cnvg_test, l_write_to_file, iunit )
       call write_text( "l_input_xpwp_sfc = ", l_input_xpwp_sfc, l_write_to_file, iunit )
 
-      call write_text( "saturation_formula = " // saturation_formula, &
+      call write_text( "saturation_formula = ", saturation_formula, &
         l_write_to_file, iunit )
 
       call write_text( "thlm_sponge_damp_settings%l_sponge_damping = ", & 
@@ -1436,8 +1468,10 @@ module clubb_driver
                          l_diagnose_correlations, &                         ! Intent(in)
                          l_const_Nc_in_cloud, &                             ! Intent(inout)
                          l_fix_w_chi_eta_correlations, &                    ! Intent(inout)
-                         hydromet_dim, silhs_config_flags, &                ! Intent(out)
-                         vert_decorr_coef )                                 ! Intent(out)
+                         hydromet_dim, pdf_dim, hm_metadata, &           ! Intent(out)
+                         silhs_config_flags, &                              ! Intent(out)
+                         vert_decorr_coef, &                                ! Intent(out)
+                         corr_array_n_cloud, corr_array_n_below )           ! Intent(out)
 
     ! Setup radiation parameters
     call init_radiation( iunit, runfile, case_info_file, & ! Intent(in)
@@ -1452,6 +1486,7 @@ module clubb_driver
                                              ipdf_call_placement, & ! Intent(in)
                                              penta_solve_method, & ! Intent(in)
                                              tridiag_solve_method, & ! Intent(in)
+                                             saturation_formula, & ! Intent(in)
                                              l_use_precip_frac, & ! Intent(in)
                                              l_predict_upwp_vpwp, & ! Intent(in)
                                              l_min_wp2_from_corr_wx, & ! Intent(in)
@@ -1506,6 +1541,7 @@ module clubb_driver
                                              l_mono_flux_lim_um, & ! Intent(in)
                                              l_mono_flux_lim_vm, & ! Intent(in)
                                              l_mono_flux_lim_spikefix, & ! Intent(in)
+                                             l_host_applies_sfc_fluxes, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
@@ -1544,15 +1580,14 @@ module clubb_driver
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
 
-    call setup_clubb_core_api(                                & ! Intent(in)
-           nzmax, T0, ts_nudge,                               & ! Intent(in)
-           hydromet_dim, sclr_dim,                            & ! Intent(in)
-           sclr_tol(1:sclr_dim), edsclr_dim, params,          & ! Intent(in)
-           l_host_applies_sfc_fluxes,                         & ! Intent(in)
-           saturation_formula,                                & ! Intent(in)
-           l_input_fields,                                    & ! Intent(in)
-           clubb_config_flags,                                & ! intent(in)
-           err_code_dummy )                                     ! Intent(out)
+    ! Define model constant parameters
+    call setup_parameters_model_api( T0, ts_nudge, params(iSkw_max_mag) )     ! intent(in)
+
+    call check_clubb_settings_api( nzmax, params,       & ! Intent(in)
+                                   l_implemented,       & ! Intent(in)
+                                   l_input_fields,      & ! Intent(in)
+                                   clubb_config_flags,  & ! intent(in)
+                                   err_code_dummy )       ! Intent(out)
            
     ! Setup grid
     call setup_grid_api( nzmax, sfc_elevation(1), l_implemented,  & ! intent(in)
@@ -1912,12 +1947,11 @@ module clubb_driver
       clubb_config_flags%l_godunov_upwind_xpyp_ta = model_flags_array(2)
       clubb_config_flags%l_upwind_xpyp_ta = model_flags_array(3)
       clubb_config_flags%l_upwind_xm_ma = model_flags_array(4)
-      l_quintic_poly_interp = model_flags_array(5)
-      clubb_config_flags%l_vert_avg_closure = model_flags_array(6)
-      clubb_config_flags%l_standard_term_ta = model_flags_array(7)
-      clubb_config_flags%l_tke_aniso = model_flags_array(8)
-      clubb_config_flags%l_use_cloud_cover = model_flags_array(9)
-      clubb_config_flags%l_rcm_supersat_adj = model_flags_array(10)
+      clubb_config_flags%l_vert_avg_closure = model_flags_array(5)
+      clubb_config_flags%l_standard_term_ta = model_flags_array(6)
+      clubb_config_flags%l_tke_aniso = model_flags_array(7)
+      clubb_config_flags%l_use_cloud_cover = model_flags_array(8)
+      clubb_config_flags%l_rcm_supersat_adj = model_flags_array(9)
 
       if ( clubb_config_flags%l_vert_avg_closure ) then
         clubb_config_flags%l_trapezoidal_rule_zt    = .true.
@@ -2028,10 +2062,10 @@ module clubb_driver
       time_current = time_initial
       iinit = 1
 
-      call initialize_clubb &
-           ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
-             clubb_config_flags%l_uv_nudge,                                 & ! Intent(in)
-             clubb_config_flags%l_tke_aniso,                                & ! Intent(in)
+      call initialize_clubb( &
+             gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
+             sclr_dim, edsclr_dim, sclr_idx,                                & ! Intent(in)
+             clubb_config_flags,                                            & ! Intent(in)
              l_modify_ic_with_cubic_int,                                    & ! Intent(in)
              thlm(1,:), rtm(1,:), um, vm, ug, vg, wp2, up2, vp2, rcm(1,:),  & ! Intent(inout)
              wm_zt, wm_zm, em, exner(1,:),                                  & ! Intent(inout)
@@ -2059,10 +2093,10 @@ module clubb_driver
       ! It also includes other important initializations such as um_ref and vm_ref.
       ! Therefore it should be executed prior to a restart. The restart should overwrite
       ! the initial sounding anyway.
-      call initialize_clubb &
-           ( gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
-             clubb_config_flags%l_uv_nudge,                                 & ! Intent(in)
-             clubb_config_flags%l_tke_aniso,                                & ! Intent(in)
+      call initialize_clubb( &
+             gr, iunit, trim( forcings_file_path ), p_sfc, zm_init,         & ! Intent(in)
+             sclr_dim, edsclr_dim, sclr_idx,                            & ! Intent(in)
+             clubb_config_flags,                                            & ! Intent(in)
              l_modify_ic_with_cubic_int,                                    & ! Intent(in)
              thlm(1,:), rtm(1,:), um, vm, ug, vg, wp2, up2, vp2, rcm(1,:),  & ! Intent(inout)
              wm_zt, wm_zm, em, exner(1,:),                                  & ! Intent(inout)
@@ -2106,31 +2140,31 @@ module clubb_driver
       iinit = floor( ( time_current - time_initial ) / real(dt_main,kind=time_precision) ) + 1
 
       call restart_clubb &
-           ( gr, iunit, runfile,                            & ! Intent(in)
-             restart_path_case, time_restart,               & ! Intent(in)
-             um, upwp, vm, vpwp, up2, vp2, rtm(1,:),        & ! Intent(inout)
-             wprtp, thlm(1,:), wpthlp, rtp2, rtp3,          & ! Intent(inout)
-             thlp2, thlp3, rtpthlp, wp2, wp3(1,:),          & ! Intent(inout)
-             p_in_Pa, exner(1,:), rcm(1,:), cloud_frac,     & ! Intent(inout)
-             wpthvp, wp2thvp, rtpthvp, thlpthvp,            & ! Intent(inout)
-             wp2rtp, wp2thlp, uprcp, vprcp,                 & ! Intent(inout)
-             rc_coef, wp4, wpup2, wpvp2, wp2up2,            & ! Intent(inout)
-             wp2vp2, ice_supersat_frac,                     & ! Intent(inout)
-             wm_zt, rho, rho_zm, rho_ds_zm,                 & ! Intent(inout)
-             rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt(1,:),     & ! Intent(inout)
-             thlm_forcing, rtm_forcing, wprtp_forcing,      & ! Intent(inout)
-             wpthlp_forcing, rtp2_forcing,                  & ! Intent(inout)
-             thlp2_forcing, rtpthlp_forcing,                & ! Intent(inout)
-             hydromet, hydrometp2, wphydrometp,             & ! Intent(inout)
-             Ncm, Nccnm, thvm(1,:), em, tau_zm, tau_zt,     & ! Intent(inout)
-             Kh_zt, Kh_zm, ug, vg, Lscale(1,:),             & ! Intent(inout)
-             Lscale_up, Lscale_down, thlprcp,               & ! Intent(inout)
-             sigma_sqd_w, sigma_sqd_w_zt, radht,            & ! Intent(inout)
-             pdf_params, pdf_params_zm,                     & ! Intent(inout)
-             rcm_mc, rvm_mc, thlm_mc,                       & ! Intent(out)
-             wprtp_mc, wpthlp_mc, rtp2_mc,                  & ! Intent(out)
-             thlp2_mc, rtpthlp_mc,                          & ! Intent(out)
-             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )      ! Intent(out)
+           ( gr, iunit, runfile, hydromet_dim, hm_metadata,  & ! Intent(in)
+             restart_path_case, time_restart,                   & ! Intent(in)
+             um, upwp, vm, vpwp, up2, vp2, rtm(1,:),            & ! Intent(inout)
+             wprtp, thlm(1,:), wpthlp, rtp2, rtp3,              & ! Intent(inout)
+             thlp2, thlp3, rtpthlp, wp2, wp3(1,:),              & ! Intent(inout)
+             p_in_Pa, exner(1,:), rcm(1,:), cloud_frac,         & ! Intent(inout)
+             wpthvp, wp2thvp, rtpthvp, thlpthvp,                & ! Intent(inout)
+             wp2rtp, wp2thlp, uprcp, vprcp,                     & ! Intent(inout)
+             rc_coef, wp4, wpup2, wpvp2, wp2up2,                & ! Intent(inout)
+             wp2vp2, ice_supersat_frac,                         & ! Intent(inout)
+             wm_zt, rho, rho_zm, rho_ds_zm,                     & ! Intent(inout)
+             rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt(1,:),         & ! Intent(inout)
+             thlm_forcing, rtm_forcing, wprtp_forcing,          & ! Intent(inout)
+             wpthlp_forcing, rtp2_forcing,                      & ! Intent(inout)
+             thlp2_forcing, rtpthlp_forcing,                    & ! Intent(inout)
+             hydromet, hydrometp2, wphydrometp,                 & ! Intent(inout)
+             Ncm, Nccnm, thvm(1,:), em, tau_zm, tau_zt,         & ! Intent(inout)
+             Kh_zt, Kh_zm, ug, vg, Lscale(1,:),                 & ! Intent(inout)
+             Lscale_up, Lscale_down, thlprcp,                   & ! Intent(inout)
+             sigma_sqd_w, sigma_sqd_w_zt, radht,                & ! Intent(inout)
+             pdf_params, pdf_params_zm,                         & ! Intent(inout)
+             rcm_mc, rvm_mc, thlm_mc,                           & ! Intent(out)
+             wprtp_mc, wpthlp_mc, rtp2_mc,                      & ! Intent(out)
+             thlp2_mc, rtpthlp_mc,                              & ! Intent(out)
+             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )          ! Intent(out)
  
       ! Calculate invrs_rho_ds_zm and invrs_rho_ds_zt from the values of
       ! rho_ds_zm and rho_ds_zt, respectively, which were read in from the input
@@ -2171,10 +2205,16 @@ module clubb_driver
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
+                       hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! Intent(in)
+                       hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
                        complete_momentum(2:total_atmos_dim + 1), day, month, year, & ! Intent(in)
                        (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out_in,&!intent(in)
+                       params, &
+                       clubb_config_flags%l_uv_nudge, &
+                       clubb_config_flags%l_tke_aniso, &
+                       clubb_config_flags%l_standard_term_ta, &
                        stats_metadata, & ! intent(inout)
                        stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                        stats_lh_zt, stats_lh_sfc, & ! intent(inout)
@@ -2183,9 +2223,15 @@ module clubb_driver
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
+                       hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, & ! Intent(in)
+                       hm_metadata%hydromet_list, hm_metadata%l_mix_rat_hm, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
                        (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out_in,&!intent(in)
+                       params, &
+                       clubb_config_flags%l_uv_nudge, &
+                       clubb_config_flags%l_tke_aniso, &
+                       clubb_config_flags%l_standard_term_ta, &
                        stats_metadata, & ! intent(inout)
                        stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                        stats_lh_zt, stats_lh_sfc, & ! intent(inout)
@@ -2193,14 +2239,28 @@ module clubb_driver
     end if
 !$OMP END CRITICAL
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "FATAL ERROR in stats_init"
+          error stop
+      end if
+    end if
+
 #ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then
 
       ! Setup 2D output of all subcolumns (if enabled)
-      call latin_hypercube_2D_output_api &
-           ( fname_prefix, fdir, stats_metadata%stats_tout, gr%nz, & ! Intent(in)
+      call latin_hypercube_2D_output_api( &
+             fname_prefix, fdir, stats_metadata%stats_tout, &
+             gr%nz, pdf_dim, & ! Intent(in)
              gr%zt, time_initial, lh_num_samples, & ! Intent(in)
-             nlon, nlat, (/lon_vals/), (/lat_vals/) )    ! Intent(in)
+             nlon, nlat, (/lon_vals/), (/lat_vals/), &
+             hm_metadata, &
+             params, &
+             sclr_dim, sclr_tol, &
+             clubb_config_flags%l_uv_nudge, &
+             clubb_config_flags%l_tke_aniso, &
+             clubb_config_flags%l_standard_term_ta )    ! Intent(in)
 
     end if
 #endif /* SILHS */
@@ -2292,7 +2352,7 @@ module clubb_driver
              time_current + real(dt_main,kind=time_precision), & ! Intent(in)
              itime_nearest )                                     ! Intent(out)
 
-        call stat_fields_reader( gr, max( itime_nearest, 1 ), & ! In
+        call stat_fields_reader( gr, max( itime_nearest, 1 ), hydromet_dim, hm_metadata, & ! In
                                  um, upwp, vm, vpwp, up2, vp2, rtm(1,:), & ! Inout
                                  wprtp, thlm(1,:), wpthlp, rtp2, rtp3, & ! Inout
                                  thlp2, thlp3, rtpthlp, wp2, wp3(1,:), & ! Inout
@@ -2326,7 +2386,9 @@ module clubb_driver
 
       ! Check for NaN values in the model arrays
       if ( clubb_at_least_debug_level( 2 ) ) then
-        if ( invalid_model_arrays( gr%nz, um, vm, rtm(1,:), wprtp, thlm(1,:), wpthlp, &
+        if ( invalid_model_arrays( gr%nz, hydromet_dim, hm_metadata%hydromet_list, &
+                                   sclr_dim, edsclr_dim, &
+                                   um, vm, rtm(1,:), wprtp, thlm(1,:), wpthlp, &
                                    rtp2, thlp2, rtpthlp, wp2, wp3(1,:), &
                                    wp2thvp, rtpthvp, thlpthvp, &
                                    hydromet, sclrm, edsclrm ) ) then
@@ -2348,10 +2410,12 @@ module clubb_driver
                            thvm )
 
       ! Set large-scale tendencies and subsidence profiles
-      call prescribe_forcings( gr, dt_main, um, vm, thlm(1,:), & ! In
+      call prescribe_forcings( sclr_dim, edsclr_dim, sclr_idx, & ! In
+                               gr, dt_main, um, vm, thlm(1,:), & ! In
                                p_in_Pa, exner(1,:), rho, rho_zm, thvm(1,:), & ! In
                                Frad_SW_up, Frad_SW_down, Frad_LW_down, & ! In
                                l_modify_bc_for_cnvg_test, & ! In
+                               clubb_config_flags%saturation_formula, & ! In
                                stats_metadata, & ! In
                                rtm(1,:), wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
                                thlm_forcing, rtm_forcing, um_forcing, & ! Inout
@@ -2385,14 +2449,14 @@ module clubb_driver
 
       ! Compute total water in ice phase mixing ratio
       rfrzm = zero
-      if ( iiri > 0 ) then
-        rfrzm = rfrzm + hydromet(:,iiri)
+      if ( hm_metadata%iiri > 0 ) then
+        rfrzm = rfrzm + hydromet(:,hm_metadata%iiri)
       end if
-      if ( iirs > 0 ) then
-        rfrzm = rfrzm + hydromet(:,iirs)
+      if ( hm_metadata%iirs > 0 ) then
+        rfrzm = rfrzm + hydromet(:,hm_metadata%iirs)
       end if
-      if ( iirg > 0 ) then
-        rfrzm = rfrzm + hydromet(:,iirg)
+      if ( hm_metadata%iirg > 0 ) then
+        rfrzm = rfrzm + hydromet(:,hm_metadata%iirg)
       end if
 
       rcm_zm = zt2zm( gr, rcm(1,:) )
@@ -2417,7 +2481,9 @@ module clubb_driver
       if ( num_standalone_columns == 1 ) then
         ! Call the clubb core api for one column
         call advance_clubb_core_api( &
-               gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, &  ! Intent(in)
+               gr, l_implemented, dt_main, fcor, sfc_elevation(1), &                ! Intent(in)
+               hydromet_dim, &                                                      ! intent(in)
+               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                      ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &                 ! Intent(in)
                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &                     ! Intent(in)
                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &                       ! Intent(in)
@@ -2428,7 +2494,8 @@ module clubb_driver
                rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
                p_in_Pa, rho_zm, rho, exner(1,:), &                                  ! Intent(in)
                rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt(1,:), hydromet, &              ! Intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt(1,:), &                        ! Intent(in) 
+               hydromet, hm_metadata%l_mix_rat_hm, &                             ! Intent(in)
                rfrzm, radf, wphydrometp, &                                          ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
@@ -2466,7 +2533,9 @@ module clubb_driver
                nzmax, momentum_heights, thermodynamic_heights, &                    ! Intent(in)
                zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &       ! Intent(in)
                params, &                                                            ! Intent(in)
-               gr, l_implemented, dt_main, fcor, sfc_elevation(1), hydromet_dim, &  ! Intent(in)
+               gr, l_implemented, dt_main, fcor, sfc_elevation(1), &                ! intent(in)
+               hydromet_dim, &                                                      ! intent(in)
+               sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                      ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &                 ! Intent(in)
                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &                     ! Intent(in)
                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &                       ! Intent(in)
@@ -2477,7 +2546,8 @@ module clubb_driver
                rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &                         ! Intent(in)
                p_in_Pa, rho_zm, rho, exner(1,:), &                                  ! Intent(in)
                rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt(1,:), hydromet, &              ! Intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt(1,:), &                        ! Intent(in) 
+               hydromet, hm_metadata%l_mix_rat_hm, &                             ! Intent(in)
                rfrzm, radf, wphydrometp, &                                          ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
@@ -2523,10 +2593,11 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters_api( gr, gr%nz, pdf_dim, dt_main,                & ! Intent(in)
+         call setup_pdf_parameters_api( gr, gr%nz, pdf_dim, hydromet_dim, dt_main,  & ! Intent(in)
                         Nc_in_cloud, cloud_frac, Kh_zm,                             & ! Intent(in)
                         ice_supersat_frac, hydromet, wphydrometp,                   & ! Intent(in)
                         corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
+                        hm_metadata,                                             & ! Intent(in)
                         pdf_params,                                                 & ! Intent(in)
                         params,                                                     & ! Intent(in)
                         clubb_config_flags%iiPDF_type,                              & ! Intent(in)
@@ -2555,7 +2626,8 @@ module clubb_driver
          end if
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
-         call hydrometeor_mixed_moments( gr, gr%nz, pdf_dim, hydromet,               & ! Intent(in)
+         call hydrometeor_mixed_moments( gr, gr%nz, pdf_dim, hydromet_dim,           & ! Intent(in)
+                                   hydromet, hm_metadata,                         & ! Intent(in)
                                    mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                 & ! Intent(in)
                                    sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),           & ! Intent(in)
                                    corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:), & ! Intent(in)
@@ -2625,15 +2697,11 @@ module clubb_driver
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, 1, & ! In
                l_calc_weights_all_levs_itime,                                & ! In
                pdf_params, delta_zm, Lscale,                                 & ! In
-               lh_seed,                                                      & ! In
+               lh_seed, hm_metadata,                                      & ! In
                rho_ds_zt,                                                    & ! In
                mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,                 & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
                precip_fracs, silhs_config_flags,                             & ! In
-               params,                                                       & ! In
-               clubb_config_flags%l_uv_nudge,                                & ! In
-               clubb_config_flags%l_tke_aniso,                               & ! In
-               clubb_config_flags%l_standard_term_ta,                        & ! In
                vert_decorr_coef,                                             & ! In
                stats_metadata,                                               & ! In
                stats_lh_zt, stats_lh_sfc,                                    & ! InOut
@@ -2641,19 +2709,20 @@ module clubb_driver
                lh_sample_point_weights ) ! Out
        
        
-        call clip_transform_silhs_output_api( gr, gr%nz, 1, lh_num_samples,       & ! In
-                                              pdf_dim, hydromet_dim,          & ! In
-                                              X_mixt_comp_all_levs,           & ! In
-                                              X_nl_all_levs,                  & ! Inout
-                                              pdf_params, l_use_Ncn_to_Nc,    & ! In
-                                              lh_rt_clipped, lh_thl_clipped,  & ! Out
-                                              lh_rc_clipped, lh_rv_clipped,   & ! Out
-                                              lh_Nc_clipped                   ) ! Out
+        call clip_transform_silhs_output_api( gr, gr%nz, 1, lh_num_samples,           & ! In
+                                              pdf_dim, hydromet_dim, hm_metadata,  & ! In
+                                              X_mixt_comp_all_levs,                   & ! In
+                                              X_nl_all_levs,                          & ! Inout
+                                              pdf_params, l_use_Ncn_to_Nc,            & ! In
+                                              lh_rt_clipped, lh_thl_clipped,          & ! Out
+                                              lh_rc_clipped, lh_rv_clipped,           & ! Out
+                                              lh_Nc_clipped                           ) ! Out
         !$acc end data
         !$acc wait
                                           
-        call stats_accumulate_lh &
-             ( gr, gr%nz, lh_num_samples, pdf_dim, rho_ds_zt(1,:),      & ! In
+        call stats_accumulate_lh( &
+               gr, gr%nz, lh_num_samples, pdf_dim, rho_ds_zt(1,:),      & ! In
+               hydromet_dim, hm_metadata,                            & ! In
                lh_sample_point_weights(1,:,:),  X_nl_all_levs(1,:,:,:), & ! In
                lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:),             & ! In
                lh_rc_clipped(1,:,:), lh_rv_clipped(1,:,:),              & ! In
@@ -2685,10 +2754,12 @@ module clubb_driver
       !----------------------------------------------------------------
 
       ! Call microphysics scheme and produce microphysics tendencies.
-      call calc_microphys_scheme_tendcies( gr, dt_main, time_current, pdf_dim, runtype, & ! In
-                              thlm(1,:), p_in_Pa, exner(1,:), rho, rho_zm, rtm(1,:), &               ! In
-                              rcm(1,:), cloud_frac, wm_zt, wm_zm, wp2_zt(1,:), &           ! In
+      call calc_microphys_scheme_tendcies( gr, dt_main, time_current, &               ! In
+                              pdf_dim, hydromet_dim, runtype, &                       ! In
+                              thlm(1,:), p_in_Pa, exner(1,:), rho, rho_zm, rtm(1,:), &! In
+                              rcm(1,:), cloud_frac, wm_zt, wm_zm, wp2_zt(1,:), &      ! In
                               hydromet, Nc_in_cloud, &                                ! In
+                              hm_metadata, &                                       ! In
                               pdf_params, hydromet_pdf_params(1,:), &                 ! In
                               precip_fracs, &                                         ! In
                               X_nl_all_levs(1,:,:,:), X_mixt_comp_all_levs(1,:,:), &  ! In
@@ -2701,6 +2772,7 @@ module clubb_driver
                               lh_Nc_clipped(1,:,:), &                                 ! In
                               silhs_config_flags%l_lh_importance_sampling, &          ! In
                               silhs_config_flags%l_lh_instant_var_covar_src, &        ! In
+                              clubb_config_flags%saturation_formula, &                ! In
                               stats_metadata, &                                       ! In
                               stats_zt, stats_zm, &                                   ! Inout
                               stats_sfc, stats_lh_zt, &                               ! Inout
@@ -2727,8 +2799,10 @@ module clubb_driver
       Skw_zm = zt2zm( gr, zm2zt( gr, Skw_zm ) )
 
       ! Advance predictive microphysics fields one model timestep.
-      call advance_microphys( gr, dt_main, time_current, wm_zt, wp2,      & ! In
-                              exner(1,:), rho, rho_zm, rcm(1,:),               & ! In
+      call advance_microphys( gr, dt_main, time_current,                  & ! In
+                              hydromet_dim, hm_metadata,               & ! In
+                              wm_zt, wp2,                                 & ! In
+                              exner(1,:), rho, rho_zm, rcm(1,:),          & ! In
                               cloud_frac, Kh_zm, Skw_zm,                  & ! In
                               rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zt, & ! In
                               hydromet_mc, Ncm_mc, Lscale(1,:),           & ! In
@@ -2782,7 +2856,7 @@ module clubb_driver
         if ( l_silhs_rad ) then
 
           call silhs_radiation_driver( &
-                 gr, gr%nz, lh_num_samples, pdf_dim, hydromet_dim,                      & !In
+                 gr, gr%nz, lh_num_samples, pdf_dim, hydromet_dim, hm_metadata,      & !In
                  time_current, time_initial, rho, rho_zm,                               & ! In
                  p_in_Pa, exner(1,:), cloud_frac, ice_supersat_frac, X_nl_all_levs(1,:,:,:), & !In
                  lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:), lh_rc_clipped(1,:,:),     & ! In
@@ -2793,11 +2867,13 @@ module clubb_driver
         else
 
           call advance_clubb_radiation( &
-                 gr, time_current, time_initial, rho, rho_zm, p_in_Pa,             & ! In
-                 exner(1,:), cloud_frac, ice_supersat_frac, thlm(1,:), rtm(1,:), rcm(1,:), hydromet, & ! In
-                 stats_metadata, & ! In
-                 radht, Frad, Frad_SW_up, Frad_LW_up,                                 & ! Out
-                 Frad_SW_down, Frad_LW_down )                                           ! Out
+                 gr, time_current, time_initial, hydromet_dim,  & ! In
+                 rho, rho_zm, p_in_Pa,                          & ! In
+                 exner(1,:), cloud_frac, ice_supersat_frac,     & ! In
+                 thlm(1,:), rtm(1,:), rcm(1,:), hydromet,       & ! In
+                 hm_metadata, stats_metadata,                & ! In
+                 radht, Frad, Frad_SW_up, Frad_LW_up,           & ! Out
+                 Frad_SW_down, Frad_LW_down )                     ! Out
 
         end if ! l_silhs_rad
 
@@ -3055,10 +3131,10 @@ module clubb_driver
   end subroutine run_clubb
 
   !-----------------------------------------------------------------------
-  subroutine initialize_clubb &
-             ( gr, iunit, forcings_file_path, p_sfc, zm_init, &
-               l_uv_nudge, &
-               l_tke_aniso, &
+  subroutine initialize_clubb( &
+               gr, iunit, forcings_file_path, p_sfc, zm_init, &
+               sclr_dim, edsclr_dim, sclr_idx, &
+               clubb_config_flags, &
                l_modify_ic_with_cubic_int, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
@@ -3087,10 +3163,6 @@ module clubb_driver
 
 
     use grid_class, only: grid ! Type
-
-    use parameters_model, only:  & 
-        sclr_dim, &
-        edsclr_dim
 
     use parameters_microphys, only: &
         Nc0_in_cloud, & !----------------------------------------------- Variable(s)
@@ -3149,6 +3221,12 @@ module clubb_driver
     use clubb_precision, only: &
       core_rknd !------------------------------------------------------ Variable(s)
 
+    use model_flags, only: &
+      clubb_config_flags_type
+
+    use array_index, only: &
+      sclr_idx_type
+
     implicit none
 
     type (grid), target, intent(in) :: gr
@@ -3165,9 +3243,15 @@ module clubb_driver
       p_sfc,  & ! Pressure at the surface        [Pa]
       zm_init   ! Initial moment. level altitude [m]
 
-    logical, intent(in) :: &
-      l_uv_nudge, & ! For wind speed nudging
-      l_tke_aniso   ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
+    type (clubb_config_flags_type), intent(in) :: &
+      clubb_config_flags
 
     ! Flag for interpolating the sounding profile with Steffen's monotone cubic 
     ! method to obtain smoother initial condition profile, which is found to be 
@@ -3245,21 +3329,25 @@ module clubb_driver
     !---- Begin code ----
 
     ! Read sounding information
-    call read_sounding( gr, iunit, runtype, p_sfc, zm_init, &    ! Intent(in) 
+    call read_sounding( sclr_dim, edsclr_dim, sclr_idx, &    ! Intent(in) 
+                        gr, iunit, runtype, p_sfc, zm_init, &    ! Intent(in) 
+                        clubb_config_flags%saturation_formula, & ! Intent(in) 
                         l_modify_ic_with_cubic_int, &            ! Intent(in)
                         thlm, theta_type, rtm, um, vm, ug, vg, & ! Intent(out)
                         alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
 
     ! Covert sounding input to CLUBB compatible input
-    call initialize_clubb_variables( gr, alt_type, theta_type,         & ! Intent(in)
-                                     p_sfc, rtm_sfc, rtm,          & ! Intent(in)
-                                     thlm, p_in_Pa, p_in_Pa_zm,    & ! Intent(inout)
-                                     exner, rho, rho_zm,           & ! Intent(out)
-                                     rcm, thvm, rho_ds_zm,         & ! Intent(out)
-                                     rho_ds_zt, invrs_rho_ds_zm,   & ! Intent(out)
-                                     invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(out)
-                                     thv_ds_zt, sclrm, edsclrm )     ! Intent(out)
+    call initialize_clubb_variables( sclr_dim, edsclr_dim, sclr_idx,      & ! Intent(in)
+                                     gr, alt_type, theta_type,                & ! Intent(in)
+                                     p_sfc, rtm_sfc, rtm,                     & ! Intent(in)
+                                     clubb_config_flags%saturation_formula,   & ! Intent(in)
+                                     thlm, p_in_Pa, p_in_Pa_zm,               & ! Intent(inout)
+                                     exner, rho, rho_zm,                      & ! Intent(out)
+                                     rcm, thvm, rho_ds_zm,                    & ! Intent(out)
+                                     rho_ds_zt, invrs_rho_ds_zm,              & ! Intent(out)
+                                     invrs_rho_ds_zt, thv_ds_zm,              & ! Intent(out)
+                                     thv_ds_zt, sclrm, edsclrm )                ! Intent(out)
 
     if ( trim( rad_scheme ) == "bugsrad" ) then
       call determine_extended_atmos_bounds( gr%nz, gr%zt(1,:),              & ! Intent(in)
@@ -3718,7 +3806,7 @@ module clubb_driver
 
     !!!! Initialize w'^2 based on initial TKE !!!
 
-    if ( l_tke_aniso ) then
+    if ( clubb_config_flags%l_tke_aniso ) then
 
       ! TKE:  em = (1/2) * ( w'^2 + u'^2 + v'^2 )
       ! Evenly divide TKE into its component
@@ -3737,7 +3825,7 @@ module clubb_driver
     end if ! l_tke_aniso
 
     ! Moved this to be more general -dschanen July 16 2007
-    if ( l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then
+    if ( clubb_config_flags%l_uv_nudge .or. uv_sponge_damp_settings%l_sponge_damping ) then
       um_ref = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
       vm_ref = vm ! ditto
     end if
@@ -3752,9 +3840,12 @@ module clubb_driver
 
     return
   end subroutine initialize_clubb
+
   !-----------------------------------------------------------------------------
-  subroutine initialize_clubb_variables( gr, alt_type, theta_type, &
+  subroutine initialize_clubb_variables( sclr_dim, edsclr_dim, sclr_idx, &
+                                         gr, alt_type, theta_type, &
                                          p_sfc, rtm_sfc, rtm, & !thlm_sfc, &
+                                         saturation_formula, &
                                          thlm, p_in_Pa, p_in_Pa_zm, &
                                          exner, rho, rho_zm, &
                                          rcm, thvm, rho_ds_zm, &
@@ -3784,7 +3875,6 @@ module clubb_driver
     use grid_class, only: &
         zt2zm ! Procedure(s)
 
-
     use constants_clubb, only:  & ! Constant(s)
         one,   & ! 1
         Rd,    & ! Gas constant for dry air          [J/(kg K)]
@@ -3801,9 +3891,7 @@ module clubb_driver
         calculate_thvm    ! Procedure(s)
 
     use parameters_model, only:  & 
-        T0,  &  !------------------------------------- Variable(s)
-        sclr_dim, &
-        edsclr_dim
+        T0     !------------------------------------- Variable(s)
 
     use model_flags, only:  &
         l_use_boussinesq
@@ -3823,17 +3911,23 @@ module clubb_driver
         rcm_sat_adj
 
     use array_index, only: &
-        iisclr_thl, & !------------------------------- Variable(s)
-        iiedsclr_thl
+        sclr_idx_type
 
     use clubb_precision, only: &
         core_rknd !----------------------------------- Variable(s)
 
     implicit none
 
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
     type (grid), target, intent(in) :: gr
 
-    ! Input Variables
     character(len=*), intent(in) :: &
       alt_type,   & ! Type of altitude sounding (altitude or pressure)
       theta_type    ! Type of temperature sounding (temp., theta, or theta_l)
@@ -3841,19 +3935,22 @@ module clubb_driver
     real( kind = core_rknd ), intent(in) ::  &
       p_sfc,     & ! Surface pressure                              [Pa]
       rtm_sfc !,& ! Surface total water mixing ratio               [kg/kg]
-!     thlm_sfc    ! Surface liquid water potential temperature     [K]
+      !thlm_sfc    ! Surface liquid water potential temperature     [K]
 
     real( kind = core_rknd ), dimension(1,gr%nz), intent(in) ::  &
       rtm    ! Total water mixing ratio (thermodynamic levels)    [kg/kg]
 
-    ! Input/Output Variables
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+
+    !--------------------- InOut Variables ---------------------
     real( kind = core_rknd ), dimension(1,gr%nz), intent(inout) ::  &
       thlm       ! Liquid water potential temperature (thermo. levs.)  [K] 
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       p_in_Pa    ! Pressure (thermodynamic levels)                     [Pa]
 
-    ! Output Variables
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(1,gr%nz), intent(out) ::  &
       exner,           & ! Exner function (thermodynamic levels)     [-] 
       thvm,            & ! Virtual potential temp. (thermo. levs.)   [K]
@@ -3876,7 +3973,7 @@ module clubb_driver
     real( kind = core_rknd ), dimension(gr%nz,edsclr_dim), intent(inout) ::  & 
       edsclrm ! Eddy-diffusivity passive scalar   [units vary]
 
-    ! Local Variables
+    !--------------------- Local Variables ---------------------
     real( kind = core_rknd ) ::  &
       pd_sfc, & ! Dry surface pressure                [Pa]
       rv_sfc    ! Surface water vapor mixing ratio    [kg/kg]
@@ -3897,7 +3994,7 @@ module clubb_driver
 
     integer :: k   ! Array index
 
-    ! ---- Begin Code ----
+    !--------------------- Begin Code ---------------------
 
     ! The value of rtm at the surface is output from the sounding, as long as
     ! the initial sounding extendeds to the model surface (at gr%zm(1,1)).
@@ -4005,7 +4102,7 @@ module clubb_driver
        ! temperature, which is equal to theta * exner.
        do k = 1, gr%nz
           rcm(1,k) &
-          = max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), thm(1,k) * exner(1,k) ), &
+          = max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), thm(1,k) * exner(1,k), saturation_formula ), &
                  zero_threshold )
        enddo
 
@@ -4017,11 +4114,11 @@ module clubb_driver
        enddo
 
        ! Testing of passive scalars
-       if ( iisclr_thl > 0 ) then
-          sclrm(:,iisclr_thl) = thlm(1,:)
+       if ( sclr_idx%iisclr_thl > 0 ) then
+          sclrm(:,sclr_idx%iisclr_thl) = thlm(1,:)
        endif
-       if ( iiedsclr_thl > 0 ) then
-          edsclrm(:,iiedsclr_thl) = thlm(1,:)
+       if ( sclr_idx%iiedsclr_thl > 0 ) then
+          edsclrm(:,sclr_idx%iiedsclr_thl) = thlm(1,:)
        endif
 
 
@@ -4040,7 +4137,7 @@ module clubb_driver
        ! Find mean cloud water mixing ratio.
        do k = 1, gr%nz, 1
           ! Compute cloud water mixing ratio using an iterative method.
-          rcm(1,k) = rcm_sat_adj( thlm(1,k), rtm(1,k), p_in_Pa(k), exner(1,k) )
+          rcm(1,k) = rcm_sat_adj( thlm(1,k), rtm(1,k), p_in_Pa(k), exner(1,k), saturation_formula )
        enddo
 
        ! Compute initial theta.
@@ -4049,11 +4146,11 @@ module clubb_driver
        enddo
 
        ! Testing of passive scalars
-       if ( iisclr_thl > 0 ) then
-          sclrm(:,iisclr_thl) = thlm(1,:)
+       if ( sclr_idx%iisclr_thl > 0 ) then
+          sclrm(:,sclr_idx%iisclr_thl) = thlm(1,:)
        endif
-       if ( iiedsclr_thl > 0 ) then
-          edsclrm(:,iiedsclr_thl) = thlm(1,:)
+       if ( sclr_idx%iiedsclr_thl > 0 ) then
+          edsclrm(:,sclr_idx%iiedsclr_thl) = thlm(1,:)
        endif
 
 
@@ -4287,9 +4384,6 @@ module clubb_driver
     use microphys_init_cleanup, only: &
         cleanup_microphys
 
-    use corr_varnce_module, only: &
-        cleanup_corr_matrix_arrays
-
     use stats_clubb_utilities, only:  &
         stats_finalize
 
@@ -4361,8 +4455,6 @@ module clubb_driver
 
     call cleanup_microphys( )
 
-    call cleanup_corr_matrix_arrays( )
-
     if( l_input_fields ) then
       call cleanup_input_fields()
     end if
@@ -4384,7 +4476,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine restart_clubb &
-             ( gr, iunit, runfile, & ! In
+             ( gr, iunit, runfile, hydromet_dim, hm_metadata, & ! In
                restart_path_case, time_restart, & ! In
                um, upwp, vm, vpwp, up2, vp2, rtm, & ! Inout
                wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
@@ -4467,8 +4559,6 @@ module clubb_driver
 
     use pdf_parameter_module, only: pdf_parameter !--------------- Type(s)
 
-    use parameters_model, only: hydromet_dim ! ------------------- Integer
-
     use clubb_precision, only: time_precision, core_rknd !-------- Variable(s)
 
     use soil_vegetation, only: &
@@ -4480,6 +4570,8 @@ module clubb_driver
         l_ice_microphys, &
         l_graupel
 
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     implicit none
 
@@ -4491,6 +4583,12 @@ module clubb_driver
     character(len=*), intent(in) ::  & 
       runfile,            & ! Filename for the namelist
       restart_path_case     ! Path to GrADS data for restart
+
+    integer, intent(in) :: &
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real(kind=time_precision), intent(in) :: & 
       time_restart
@@ -4793,7 +4891,7 @@ module clubb_driver
     end if
 
     ! Read data from stats files
-    call stat_fields_reader( gr, timestep, & ! In
+    call stat_fields_reader( gr, timestep, hydromet_dim, hm_metadata, & ! In
                              um, upwp, vm, vpwp, up2, vp2, rtm, & ! Inout
                              wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
                              thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
@@ -4872,10 +4970,12 @@ module clubb_driver
   end subroutine restart_clubb
 
   !----------------------------------------------------------------------
-  subroutine prescribe_forcings( gr, dt, um, vm, thlm, &
+  subroutine prescribe_forcings( sclr_dim, edsclr_dim, sclr_idx, &
+                                 gr, dt, um, vm, thlm, &
                                  p_in_Pa, exner, rho, rho_zm, thvm, &
                                  Frad_SW_up, Frad_SW_down, Frad_LW_down, &
                                  l_modify_bc_for_cnvg_test, &
+                                 saturation_formula, &
                                  stats_metadata, &
                                  rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
                                  thlm_forcing, rtm_forcing, um_forcing, &
@@ -4910,10 +5010,6 @@ module clubb_driver
       Cp, Lv, kappa, p0, & !---------------------------------- Variable(s)
       zero, fstderr
 
-    use parameters_model, only: &
-        sclr_dim,   & !--------------------------------------- Variable(s)
-        edsclr_dim
-
     use clubb_precision, only: core_rknd !-------------------- Variable(s)
 
     use time_dependent_input, only: &
@@ -4923,8 +5019,8 @@ module clubb_driver
 
     use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
-    use array_index, only: & 
-        iisclr_rt, iisclr_thl !------------------------------ Variable(s)
+    use array_index, only: &
+      sclr_idx_type
 
     ! Case specific modules
     use arm, only: arm_sfclyr !------------------------------ Procedure(s)
@@ -4995,9 +5091,17 @@ module clubb_driver
 
     implicit none
 
+    ! Input Variables
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
     type (grid), target, intent(in) :: gr
 
-    ! Input Variables
     real(kind=core_rknd), intent(in) :: & 
       dt         ! Model timestep         [s]
 
@@ -5018,6 +5122,9 @@ module clubb_driver
     ! (surface fluxes computed at fixed 25 m height).
     logical, intent(in) :: &
       l_modify_bc_for_cnvg_test
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -5126,8 +5233,9 @@ module clubb_driver
       !   "gabls3_night", "arm_97", "gabls3", "twp_ice",
       !   "arm", "arm_0003", "arm_3year", "astex_a209", & "cobra".
 
-      call apply_time_dependent_forcings &
-          ( gr, time_current, gr%nz, rtm, rho, exner,& ! In
+      call apply_time_dependent_forcings( &
+            sclr_dim, edsclr_dim, sclr_idx, & ! In
+            gr, time_current, gr%nz, rtm, rho, exner, & ! In
             thlm_forcing, rtm_forcing, um_ref, vm_ref, um_forcing, vm_forcing, & ! In/Out
             wm_zt, wm_zm, ug, vg, & ! In/Out
             sclrm_forcing, edsclrm_forcing ) ! In/Out
@@ -5145,30 +5253,39 @@ module clubb_driver
       select case ( runtype )
 
 !    case ( "astex_a209" ) ! ASTEX Sc case for K & K
-!      call astex_a209_tndcy( wm_zt, wm_zm,  &           ! Intent(out)
-!                       thlm_forcing, rtm_forcing , &    ! Intent(out)
-!                       sclrm_forcing, edsclrm_forcing ) ! Intent(out)
+!      call astex_a209_tndcy( sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+!                             wm_zt, wm_zm,  &                      ! Intent(out)
+!                             thlm_forcing, rtm_forcing , &         ! Intent(out)
+!                             sclrm_forcing, edsclrm_forcing )      ! Intent(out)
 
       case ( "atex" ) ! ATEX case
-        call atex_tndcy( gr, time_current, time_initial, &   ! Intent(in)
-                         rtm, &                          ! Intent(in)
-                         wm_zt, wm_zm, &                 ! Intent(out)
-                         thlm_forcing, rtm_forcing, &    ! Intent(out)
-                         sclrm_forcing, edsclrm_forcing )! Intent(out)
+
+        call atex_tndcy( sclr_dim, edsclr_dim, sclr_idx, &  ! Intent(in)
+                         gr, time_current, time_initial, &      ! Intent(in)
+                         rtm, &                                 ! Intent(in)
+                         wm_zt, wm_zm, &                        ! Intent(out)
+                         thlm_forcing, rtm_forcing, &           ! Intent(out)
+                         sclrm_forcing, edsclrm_forcing )       ! Intent(out)
 
       case ( "bomex" ) ! BOMEX Cu case
-        call bomex_tndcy( gr, rtm, &                           ! Intent(in)
-                          thlm_forcing, rtm_forcing, &     ! Intent(out)
-                          sclrm_forcing, edsclrm_forcing ) ! Intent(out)
+
+        call bomex_tndcy( sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                          gr, rtm, &                            ! Intent(in)
+                          thlm_forcing, rtm_forcing, &          ! Intent(out)
+                          sclrm_forcing, edsclrm_forcing )      ! Intent(out)
 
       case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
-        call dycoms2_rf01_tndcy( gr, thlm_forcing, rtm_forcing,  &    ! Intent(out)
-                                 sclrm_forcing, edsclrm_forcing ) ! Intent(out)
+
+        call dycoms2_rf01_tndcy( gr, sclr_dim, edsclr_dim, sclr_idx, &  ! Intent(in)
+                                 thlm_forcing, rtm_forcing,  &              ! Intent(out)
+                                 sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
       case ( "dycoms2_rf02" ) ! DYCOMS2 RF02 case
-        call dycoms2_rf02_tndcy( gr, wm_zt, wm_zm,   &                ! Intent(inout)
-                                 thlm_forcing, rtm_forcing, &     ! Intent(out) 
-                                 sclrm_forcing, edsclrm_forcing ) ! Intent(out)
+
+        call dycoms2_rf02_tndcy( sclr_dim, edsclr_dim, sclr_idx, gr, & ! Intent(in)
+                                 wm_zt, wm_zm,   &                         ! Intent(inout)
+                                 thlm_forcing, rtm_forcing, &              ! Intent(out) 
+                                 sclrm_forcing, edsclrm_forcing )          ! Intent(out)
 
       case ( "fire", "generic" ) ! FIRE Sc case
         ! Analytic radiation is computed elsewhere
@@ -5176,31 +5293,40 @@ module clubb_driver
         rtm_forcing = 0._core_rknd
 
       case ( "gabls2" ) ! GABLS 2 case
-        call gabls2_tndcy( gr, time_current, time_initial,  &   ! Intent(in) 
-                           wm_zt, wm_zm, thlm_forcing, &    ! Intent(out)
-                           rtm_forcing, &                   ! Intent(out)
-                           sclrm_forcing, edsclrm_forcing ) ! Intent(out)
+
+        call gabls2_tndcy( sclr_dim, edsclr_dim, sclr_idx, &  ! Intent(in) 
+                           gr, time_current, time_initial,  &     ! Intent(in) 
+                           wm_zt, wm_zm, thlm_forcing, &          ! Intent(out)
+                           rtm_forcing, &                         ! Intent(out)
+                           sclrm_forcing, edsclrm_forcing )       ! Intent(out)
 
       case ( "lba" )
-        call lba_tndcy( gr, thlm_forcing, rtm_forcing, &     ! Intent(out)
-                        sclrm_forcing, edsclrm_forcing ) ! Intent(out)
+
+        call lba_tndcy( sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                        gr, thlm_forcing, rtm_forcing, &      ! Intent(out)
+                        sclrm_forcing, edsclrm_forcing )      ! Intent(out)
 
       case ( "mpace_a" ) ! mpace_a arctic stratus case
 
-        call mpace_a_tndcy( gr, time_current, p_in_Pa, &                   ! Intent(in) 
+        call mpace_a_tndcy( sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in) 
+                            gr, time_current, p_in_Pa, &               ! Intent(in) 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                             um_ref, vm_ref, &                          ! Intent(out)
                             sclrm_forcing, edsclrm_forcing )           ! Intent(out)
 
       case ( "mpace_b" ) ! mpace_b arctic stratus case
 
-        call mpace_b_tndcy( gr, p_in_Pa, thvm, &                           ! Intent(in)
+        call mpace_b_tndcy( sclr_dim, edsclr_dim, sclr_idx, &      ! Intent(in)
+                            gr, p_in_Pa, thvm, &                       ! Intent(in)
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                             sclrm_forcing, edsclrm_forcing )           ! Intent(out)
+
       case ( "rico" ) ! RICO case
-        call rico_tndcy( gr, rtm, exner, &                    ! Intent(in)
-                         thlm_forcing, rtm_forcing, &     ! Intent(out)   
-                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
+
+        call rico_tndcy( sclr_dim, edsclr_dim, sclr_idx, &  ! Intent(in)
+                         gr, rtm, exner, &                      ! Intent(in)
+                         thlm_forcing, rtm_forcing, &           ! Intent(out)   
+                         sclrm_forcing, edsclrm_forcing )       ! Intent(out)
 
       case ( "neutral" )
             thlm_forcing = 0.0_core_rknd
@@ -5209,9 +5335,12 @@ module clubb_driver
             edsclrm_forcing = 0.0_core_rknd
 
       case ( "wangara" ) ! Wangara dry CBL
-        call wangara_tndcy( gr, wm_zt, wm_zm,  &                  ! Intent(out) compute_momentum
-                            thlm_forcing, rtm_forcing, &      ! Intent(out)
-                            sclrm_forcing, edsclrm_forcing )  ! Intent(out)
+
+        ! compute_momentum
+        call wangara_tndcy( gr, sclr_dim, edsclr_dim, sclr_idx, & ! Intent(in)
+                            wm_zt, wm_zm,  &                          ! Intent(out) 
+                            thlm_forcing, rtm_forcing, &              ! Intent(out)
+                            sclrm_forcing, edsclrm_forcing )          ! Intent(out)
 
       case default
 
@@ -5251,6 +5380,7 @@ module clubb_driver
                           ! 101540 Pa is the sfc pressure.
                           !gr%zt(1,2), 299.8_core_rknd, 101540._core_rknd,  &           ! Intent(in)
                         z_bot, p_sfc, exner_bot, &                      ! Intent(in)
+                        saturation_formula, &                           ! Intent(in)
                         upwp_sfc, vpwp_sfc, wpthlp_sfc, &               ! Intent(out)
                         wprtp_sfc, ustar, T_sfc )                       ! Intent(out)
 
@@ -5277,11 +5407,15 @@ module clubb_driver
                                           sens_ht, latent_ht )  ! Intent(out)
 
     case ( "cobra" )
+
       l_compute_momentum_flux = .true.
-      call cobra_sfclyr( time_current, z_bot, rho_bot,      &      ! Intent(in)
-                         thlm_bot, ubar,                    &      ! Intent(in)
-                         wpthlp_sfc, wprtp_sfc, ustar,      &      ! Intent(out)
-                         wpsclrp_sfc, wpedsclrp_sfc, T_sfc )       ! Intent(out)
+
+      call cobra_sfclyr( sclr_dim, edsclr_dim, sclr_idx,  & ! Intent(in)
+                         time_current, z_bot, rho_bot,        & ! Intent(in)
+                         thlm_bot, ubar,                      & ! Intent(in)
+                         wpthlp_sfc, wprtp_sfc, ustar,        & ! Intent(out)
+                         wpsclrp_sfc, wpedsclrp_sfc, T_sfc )    ! Intent(out)
+
     case ( "clex9_nov02" )
       ! There are no surface momentum or heat fluxes
       ! for the CLEX-9: Nov. 02 Altocumulus case.
@@ -5308,6 +5442,7 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       call astex_a209_sfclyr( time_current, ubar, rtm_bot, &    ! Intent(in)
                           thlm_bot, z_bot, exner_bot, p_sfc, &  ! Intent(in)
+                          saturation_formula,                &  ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
 
     case ( "nov11_altocu" )
@@ -5337,6 +5472,7 @@ module clubb_driver
       l_fixed_flux            = .true.
       call fire_sfclyr( time_current, ubar, p_sfc,           & ! Intent(in)
                         thlm_bot, rtm_bot, exner_bot,        & ! Intent(in)
+                        saturation_formula,                  & ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
 
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
@@ -5347,10 +5483,11 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.
-      call cloud_feedback_sfclyr( time_current, sfctype,       & ! Intent(in)
-                                  thlm_bot, rtm_bot, z_bot,    & ! Intent(in)
-                                  ubar, p_sfc, T_sfc,          & ! Intent(in)
-                                  wpthlp_sfc, wprtp_sfc, ustar)  ! Intent(out)
+      call cloud_feedback_sfclyr( time_current, sfctype,                  & ! Intent(in)
+                                  thlm_bot, rtm_bot, z_bot,               & ! Intent(in)
+                                  ubar, p_sfc, T_sfc,                     & ! Intent(in)
+                                  saturation_formula,                     & ! Intent(in)
+                                  wpthlp_sfc, wprtp_sfc, ustar)             ! Intent(out)
 
     case ( "arm" )
       l_compute_momentum_flux = .true.
@@ -5403,10 +5540,11 @@ module clubb_driver
     case ( "dycoms2_rf01" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call dycoms2_rf01_sfclyr( time_current, sfctype, p_sfc, &       ! Intent(in)
-                                exner_bot, ubar,              &       ! Intent(in)
-                                thlm_bot, rtm_bot, rho_bot,   &       ! Intent(in)
-                                wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+      call dycoms2_rf01_sfclyr( time_current, sfctype, p_sfc,           & ! Intent(in)
+                                exner_bot, ubar,                        & ! Intent(in)
+                                thlm_bot, rtm_bot, rho_bot,             & ! Intent(in)
+                                saturation_formula,                     & ! Intent(in)
+                                wpthlp_sfc, wprtp_sfc, ustar, T_sfc )     ! Intent(out)
     case ( "dycoms2_rf02" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
@@ -5416,10 +5554,11 @@ module clubb_driver
     case ( "gabls2" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call gabls2_sfclyr( time_current, time_initial, &         ! Intent(in)
-                          z_bot, p_sfc, &                       ! Intent(in)
-                          ubar, thlm_bot, rtm_bot, exner_bot, & ! Intent(in)
-                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
+      call gabls2_sfclyr( time_current, time_initial,             & ! Intent(in)
+                          z_bot, p_sfc,                           & ! Intent(in)
+                          ubar, thlm_bot, rtm_bot, exner_bot,     & ! Intent(in)
+                          saturation_formula,                     & ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar, T_sfc )     ! Intent(out)
 
     case ( "lba" )
       l_compute_momentum_flux = .true.
@@ -5452,6 +5591,7 @@ module clubb_driver
       l_set_sclr_sfc_rtm_thlm = .true.
       call twp_ice_sfclyr( time_current, z_bot, exner_bot, thlm_bot, & ! Intent(in)
                            ubar, rtm_bot, p_sfc,               &       ! Intent(in)
+                           saturation_formula,                       & ! Intent(in)
                            wpthlp_sfc, wprtp_sfc, ustar, T_sfc )       ! Intent(out)
 
     case ( "wangara" )
@@ -5473,7 +5613,8 @@ module clubb_driver
     end if
 
     if( l_set_sclr_sfc_rtm_thlm ) then
-      call set_sclr_sfc_rtm_thlm( wpthlp_sfc, wprtp_sfc, &      ! Intent(in)
+      call set_sclr_sfc_rtm_thlm( sclr_dim, edsclr_dim, sclr_idx, &
+                                  wpthlp_sfc, wprtp_sfc, &      ! Intent(in)
                                   wpsclrp_sfc, wpedsclrp_sfc )  ! Intent(out)
     end if
 
@@ -5481,8 +5622,8 @@ module clubb_driver
     if ( sfctype == 0 .and. l_fixed_flux ) then
       wpthlp_sfc = sens_ht
       wprtp_sfc  = latent_ht
-      if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = sens_ht
-      if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = latent_ht
+      if ( sclr_idx%iisclr_thl > 0 ) wpsclrp(:,sclr_idx%iisclr_thl) = sens_ht
+      if ( sclr_idx%iisclr_rt > 0 ) wpsclrp(:,sclr_idx%iisclr_rt)   = latent_ht
     end if
 
     !---------------------------------------------------------------
@@ -5709,9 +5850,11 @@ module clubb_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_radiation( &
-               gr, time_current, time_initial, rho, rho_zm, p_in_Pa, &
-               exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, &
-               stats_metadata, &
+               gr, time_current, time_initial, hydromet_dim, &
+               rho, rho_zm, p_in_Pa, &
+               exner, cloud_frac, ice_supersat_frac, &
+               thlm, rtm, rcm, hydromet, &
+               hm_metadata, stats_metadata, &
                radht, Frad, Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
 ! Description:
@@ -5747,11 +5890,6 @@ module clubb_driver
         err_code,                    & !-------------------------------- Error Indicator
         clubb_fatal_error              !-------------------------------- Constant
 
-    use parameters_model, only: hydromet_dim !-------------------------- Variable(s)
-
-    use array_index, only: iirs, iiri !--------------------------------- Variable(s)
-
-
     use grid_class, only: zt2zm !--------------------------------------- Procedure
 
     use interpolation, only: binary_search, lin_interpolate_on_grid !--- Procdure(s)
@@ -5780,6 +5918,9 @@ module clubb_driver
     use stats_variables, only: &
       stats_metadata_type
 
+    use corr_varnce_module, only: &
+        hm_metadata_type
+
     implicit none
 
     ! External
@@ -5792,6 +5933,9 @@ module clubb_driver
     real(kind=time_precision), intent(in) :: &
       time_current, & ! Current time (UTC)               [s]
       time_initial    ! Start time of model run (UTC)    [s]
+
+    integer, intent(in) :: &
+      hydromet_dim
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       rho,              & ! Density on thermo. grid                          [kg/m^3]
@@ -5806,6 +5950,9 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species                                         [units vary]
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -5880,14 +6027,14 @@ module clubb_driver
 #ifdef radoffline /*This directive is needed for BUGSrad to work with CLUBB.*/
 
       ! Copy snow and ice
-      if ( iirs > 0 ) then
-        rsm = hydromet(1:gr%nz,iirs)
+      if ( hm_metadata%iirs > 0 ) then
+        rsm = hydromet(1:gr%nz,hm_metadata%iirs)
       else
         rsm = 0.0_core_rknd
       endif
 
-      if ( iiri > 0 ) then
-        rim = hydromet(1:gr%nz,iiri)
+      if ( hm_metadata%iiri > 0 ) then
+        rim = hydromet(1:gr%nz,hm_metadata%iiri)
       else
         rim = 0.0_core_rknd
       end if
@@ -6194,8 +6341,8 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine silhs_radiation_driver( &
-               gr, nz, lh_num_samples, pdf_dim, hydromet_dim, time_current, &
-               time_initial, rho, rho_zm, p_in_Pa, exner, &
+               gr, nz, lh_num_samples, pdf_dim, hydromet_dim, hm_metadata, &
+               time_current, time_initial, rho, rho_zm, p_in_Pa, exner, &
                cloud_frac, ice_supersat_frac, X_nl_all_levs, &
                lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
                lh_sample_point_weights, hydromet, &
@@ -6231,17 +6378,23 @@ module clubb_driver
     use stats_variables, only: &
       stats_metadata_type
 
+    use corr_varnce_module, only: &
+      hm_metadata_type
+
     implicit none
 
     ! Input Variables
+    type(grid), target, intent(in) :: &
+      gr
+
     integer, intent(in) :: &
       nz, &                 ! Number of vertical levels
       lh_num_samples, &     ! Number of SILHS sample points
       pdf_dim, &            ! Number of lognormal variates
       hydromet_dim          ! Number of hydrometeor species
-      
-    type(grid), target, intent(in) :: &
-      gr
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real( kind = time_precision ), intent(in) :: &
       time_current, & ! Current time of simulation               [s]
@@ -6303,9 +6456,10 @@ module clubb_driver
 
     !----- Begin Code -----
 
-    call copy_X_nl_into_hydromet_all_pts &
-         ( nz, pdf_dim, lh_num_samples, &                 ! Intent(in)
+    call copy_X_nl_into_hydromet_all_pts( &
+           nz, pdf_dim, lh_num_samples, &                 ! Intent(in)
            X_nl_all_levs, &                               ! Intent(in)
+           hydromet_dim, hm_metadata, &                ! Intent(in)
            hydromet, &                                    ! Intent(in)
            hydromet_all_pts, &                            ! Intent(out)
            Ncn_all_points )                               ! Intent(out)
@@ -6313,11 +6467,12 @@ module clubb_driver
     do isample=1, lh_num_samples
       ! Call a radiation scheme
       call advance_clubb_radiation( &
-             gr, time_current, time_initial, rho, rho_zm, p_in_Pa, &                 ! Intent(in)
+             gr, time_current, time_initial, hydromet_dim, &                         ! Intent(in)
+             rho, rho_zm, p_in_Pa, &                                                 ! Intent(in)
              exner, cloud_frac, ice_supersat_frac, lh_thl_clipped(isample,:), &      ! Intent(in)
              lh_rt_clipped(isample,:), lh_rc_clipped(isample,:), &                   ! Intent(in)
              hydromet_all_pts(isample,:,:), &                                        ! Intent(in)
-             stats_metadata, &                                                       ! Intent(in)
+             hm_metadata, stats_metadata, &                                       ! Intent(in)
              radht_samples(isample,:), Frad_samples(isample,:), &                    ! Intent(out)
              Frad_SW_up_samples(isample,:), Frad_LW_up_samples(isample,:), &         ! Intent(out)
              Frad_SW_down_samples(isample,:), Frad_LW_down_samples(isample,:) )      ! Intent(out)
@@ -6354,11 +6509,13 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine advance_clubb_core_standalone_multicol( &
-    ngrdcol, multicol_nc_file, &
-    nzmax, momentum_heights, thermodynamic_heights, &
-    zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &
-    params, &
-    gr, l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
+    ngrdcol, multicol_nc_file, &                            ! intent(in)
+    nzmax, momentum_heights, thermodynamic_heights, &       ! intent(in)
+    zm_init, zm_top, deltaz, grid_type, &                   ! intent(in)
+    l_prescribed_avg_deltaz, params, &                      ! intent(in)
+    gr, l_implemented, dt, fcor, sfc_elevation, &           ! intent(in)
+    hydromet_dim, &                                         ! intent(in)
+    sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &         ! intent(in)
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
     sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
     wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
@@ -6369,7 +6526,8 @@ module clubb_driver
     rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(in)
     p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
-    invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
+    invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
+    hydromet, l_mix_rat_hm, &                               ! intent(in)
     rfrzm, radf, &                                          ! intent(in)
 #ifdef CLUBBND_CAM
     varmu, &                                                ! intent(in)
@@ -6452,10 +6610,6 @@ module clubb_driver
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type(s)
 
-    use parameters_model, only: &
-        sclr_dim, & ! Variable(s)
-        edsclr_dim
-
     use model_flags, only: &
         clubb_config_flags_type
         
@@ -6502,6 +6656,9 @@ module clubb_driver
     use output_netcdf, only: &
       format_date
 
+    use array_index, only: &
+      sclr_idx_type
+
     implicit none
 
     ! ------------------------- Input Variables -------------------------
@@ -6543,7 +6700,15 @@ module clubb_driver
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
     integer, intent(in) :: &
-      hydromet_dim      ! Total number of hydrometeors          [#]
+      hydromet_dim,   & ! Total number of hydrometeor species       [#]
+      sclr_dim,       & ! Number of passive scalars                 [#]
+      edsclr_dim        ! Number of eddy-diff. passive scalars      [#]
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  &
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
@@ -6569,6 +6734,9 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet           ! Collection of hydrometeors                [units vary]
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
@@ -7315,7 +7483,9 @@ module clubb_driver
 
    ! Call advance_clubb_core with the 2D arrays
     call advance_clubb_core( gr_col, gr%nz, ngrdcol, &
-      l_implemented, dt, fcor_col, sfc_elevation_col, hydromet_dim,             & ! intent(in)
+      l_implemented, dt, fcor_col, sfc_elevation_col,                           & ! intent(in)
+      hydromet_dim,                                                             & ! intent(in)
+      sclr_dim, sclr_tol, edsclr_dim, sclr_idx,                             & ! intent(in)
       thlm_forcing_col, rtm_forcing_col, um_forcing_col, vm_forcing_col,        & ! intent(in)
       sclrm_forcing_col, edsclrm_forcing_col, wprtp_forcing_col,                & ! intent(in)
       wpthlp_forcing_col, rtp2_forcing_col, thlp2_forcing_col,                  & ! intent(in)
@@ -7326,8 +7496,9 @@ module clubb_driver
       rtm_ref_col, thlm_ref_col, um_ref_col, vm_ref_col, ug_col, vg_col,        & ! Intent(in)
       p_in_Pa_col, rho_zm_col, rho_col, exner_col,                              & ! intent(in)
       rho_ds_zm_col, rho_ds_zt_col, invrs_rho_ds_zm_col,                        & ! intent(in)
-      invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, hydromet_col,          & ! intent(in)
-      rfrzm_col, radf_col, & ! intent(in)
+      invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col,                        & ! intent(in)
+      hydromet_col, l_mix_rat_hm,                                               & ! intent(in)
+      rfrzm_col, radf_col,                                                      & ! intent(in)
 #ifdef CLUBBND_CAM
       varmu_col,                                                                & ! intent(in)
 #endif

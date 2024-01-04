@@ -36,7 +36,7 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure( nz, ngrdcol,                                &
+  subroutine pdf_closure( nz, ngrdcol, sclr_dim, sclr_tol,            &
                           hydromet_dim, p_in_Pa, exner, thv_ds,       &
                           wm, wp2, wp3,                               &
                           Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,     &
@@ -54,8 +54,10 @@ module pdf_closure_module
                           wphydrometp, wp2hmp,                        &
                           rtphmp, thlphmp,                            &
                           clubb_params,                               &
+                          saturation_formula,                         &
                           stats_metadata,                             &
                           iiPDF_type,                                 &
+                          l_mix_rat_hm,                               & 
                           sigma_sqd_w,                                &
                           pdf_params, pdf_implicit_coefs_terms,       &
                           wpup2, wpvp2,                               &
@@ -117,8 +119,7 @@ module pdf_closure_module
         w_tol
 
     use parameters_model, only: &
-        mixt_frac_max_mag, & ! Variable(s)
-        sclr_dim             ! Number of passive scalar variables
+        mixt_frac_max_mag  ! Variable(s)
 
     use parameter_indices, only: &
         nparams,                       & ! Variable(s)
@@ -155,9 +156,6 @@ module pdf_closure_module
         calc_corr_chi_x,          &
         calc_corr_eta_x
 
-    use array_index, only: &
-        l_mix_rat_hm  ! Variable(s)
-
     use model_flags, only: &
         l_explicit_turbulent_adv_xpyp ! Variable(s)
 
@@ -183,9 +181,13 @@ module pdf_closure_module
 
     !----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
-      hydromet_dim, & ! Number of hydrometeor species              [#]
-      nz, &
-      ngrdcol
+      nz,           & ! Number of vertical levels
+      ngrdcol,      & ! Number of grid columns
+      hydromet_dim, & ! Number of hydrometeor species
+      sclr_dim        ! Number of passive scalars
+      
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
       p_in_Pa,     & ! Pressure                                   [Pa]
@@ -249,6 +251,12 @@ module pdf_closure_module
                     ! Gaussian) PDF type to use for the w, rt, and theta-l (or
                     ! w, chi, and eta) portion of CLUBB's multivariate,
                     ! two-component PDF.
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -546,7 +554,7 @@ module pdf_closure_module
     ! theta-l, and passive scalar variables.
     if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
       
-      call ADG1_pdf_driver( nz, ngrdcol,                                        & ! In
+      call ADG1_pdf_driver( nz, ngrdcol, sclr_dim, sclr_tol,                    & ! In
                             wm, rtm, thlm, um, vm,                              & ! In
                             wp2, rtp2, thlp2, up2, vp2,                         & ! In
                             Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,           & ! In
@@ -569,7 +577,7 @@ module pdf_closure_module
                             
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
       
-      call ADG2_pdf_driver( nz, ngrdcol,                                      & ! In
+      call ADG2_pdf_driver( nz, ngrdcol, sclr_dim, sclr_tol,                  & ! In
                             wm, rtm, thlm, wp2, rtp2, thlp2,                  & ! In
                             Skw, wprtp, wpthlp, sqrt_wp2, beta,               & ! In
                             sclrm, sclrp2, wpsclrp, l_scalar_calc,            & ! In
@@ -641,7 +649,8 @@ module pdf_closure_module
                           pdf_params%mixt_frac(i,:) )                               ! Out
       end do
     elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
-      call new_hybrid_pdf_driver( nz, ngrdcol, wm, rtm, thlm, um, vm, & ! In
+      call new_hybrid_pdf_driver( nz, ngrdcol, sclr_dim,              & ! In
+                                  wm, rtm, thlm, um, vm,              & ! In
                                   wp2, rtp2, thlp2, up2, vp2,         & ! In
                                   Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
                                   sclrm, sclrp2, wpsclrp,             & ! In
@@ -1007,8 +1016,8 @@ module pdf_closure_module
 
     else ! sclr_dim <= 0  or  do_liquid_only_in_clubb = .T.
 
-      pdf_params%rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1 )
-      pdf_params%rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2 )
+      pdf_params%rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1, saturation_formula )
+      pdf_params%rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2, saturation_formula )
 
     end if !sclr_dim > 0
       
@@ -1022,8 +1031,8 @@ module pdf_closure_module
     end if
 
 #else
-    rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1 )
-    rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2 ) ! h1g, 2010-06-16 end mod
+    rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1, saturation_formula  )
+    rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2, saturation_formula  ) ! h1g, 2010-06-16 end mod
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -1060,6 +1069,7 @@ module pdf_closure_module
                                           pdf_params%rc_1, pdf_params%cloud_frac_1, &
                                           p_in_Pa, tl1, &
                                           pdf_params%rsatl_1, pdf_params%crt_1, &
+                                          saturation_formula, &
                                           pdf_params%ice_supersat_frac_1, rc_1_ice )
     end if
 
@@ -1086,6 +1096,7 @@ module pdf_closure_module
                                           pdf_params%rc_2, pdf_params%cloud_frac_2, &
                                           p_in_Pa, tl2, &
                                           pdf_params%rsatl_2, pdf_params%crt_2, &
+                                          saturation_formula, &
                                           pdf_params%ice_supersat_frac_2, rc_2_ice )
 
       ! Compute ice cloud fraction, ice_supersat_frac
@@ -1446,7 +1457,8 @@ module pdf_closure_module
       do i = 1, ngrdcol
           
         call pdf_closure_check( & 
-               nz, wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
+               nz, sclr_dim, &
+               wp4(i,:), wprtp2(i,:), wp2rtp(i,:), wpthlp2(i,:), & ! intent(in)
                wp2thlp(i,:), cloud_frac(i,:), rcm(i,:), wpthvp(i,:), wp2thvp(i,:), &  ! intent(in)
                rtpthvp(i,:), thlpthvp(i,:), wprcp(i,:), wp2rcp(i,:), & ! intent(in)
                rtprcp(i,:), thlprcp(i,:), rcp2(i,:), wprtpthlp(i,:), & ! intent(in)
@@ -2591,6 +2603,7 @@ module pdf_closure_module
                                             rc_in, cloud_frac, &
                                             p_in_Pa, tl, &
                                             rsatl, crt, &
+                                            saturation_formula, &
                                             ice_supersat_frac, rc )
   ! Description:
   !   A version of the cloud fraction calculation modified to work
@@ -2639,6 +2652,9 @@ module pdf_closure_module
       crt,        & ! r_t coef. in chi/eta eqns.                        [-]
       tl            ! Quantities needed to predict higher order moments
                     ! tl = thl*exner
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     ! ---------------------- Output Variables ----------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
@@ -2691,7 +2707,7 @@ module pdf_closure_module
     !$acc data create( rsat_ice )
 
     ! Calculate the saturation mixing ratio of ice
-    rsat_ice = sat_mixrat_ice( nz, ngrdcol, p_in_Pa, tl )
+    rsat_ice = sat_mixrat_ice( nz, ngrdcol, p_in_Pa, tl, saturation_formula )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz

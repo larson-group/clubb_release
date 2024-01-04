@@ -12,7 +12,7 @@ module model_flags
 
   implicit none
 
-  public :: setup_model_flags, clubb_config_flags_type, set_default_clubb_config_flags, &
+  public :: clubb_config_flags_type, set_default_clubb_config_flags, &
             initialize_clubb_config_flags_type, print_clubb_config_flags
 
   private ! Default Scope
@@ -114,38 +114,16 @@ module model_flags
   ! The default values are chosen below and overwritten if desired by the user
   !----------------------------------------------------------------------------- 
 
-  ! Flag to use high accuracy for the parabolic cylinder function
+  ! Use a quintic polynomial in mono_cubic_interp
   logical, public :: &
-    l_high_accuracy_parab_cyl_fnc = .false. 
-
-!$omp threadprivate(l_high_accuracy_parab_cyl_fnc)
-
-  logical, public :: & 
-    l_quintic_poly_interp = .false. ! Use a quintic polynomial in mono_cubic_interp
-
-!$omp threadprivate(l_quintic_poly_interp)
-
-  ! Use to determine whether a host model has already applied the surface flux,
-  ! to avoid double counting.
-  logical, public :: &
-    l_host_applies_sfc_fluxes = .false.
-
-!$omp threadprivate(l_host_applies_sfc_fluxes)
-
-  integer, public :: &
-    saturation_formula = saturation_flatau ! Integer that stores the saturation formula to be used
-
-!$omp threadprivate(saturation_formula)
-!$acc declare create(saturation_formula)
+    l_quintic_poly_interp = .false. 
 
   logical, parameter, public :: &
     l_silhs_rad = .false.    ! Resolve radiation over subcolumns using SILHS
 
-#ifdef GFDL
-  logical, public :: &
-     I_sat_sphum       ! h1g, 2010-06-15
-!$omp threadprivate( I_sat_sphum )
-#endif
+  ! Previously used within 'ifdef GFDL'
+  logical, parameter, public :: &
+     I_sat_sphum = .false.       ! h1g, 2010-06-15
 
   ! Derived type to hold all configurable CLUBB flags
   type clubb_config_flags_type
@@ -153,14 +131,15 @@ module model_flags
     ! corresponding .in files which would supercede the default values!
     
     integer :: &
-      iiPDF_type,          & ! Selected option for the two-component normal
-                             ! (double Gaussian) PDF type to use for the w, rt,
-                             ! and theta-l (or w, chi, and eta) portion of
-                             ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement, & ! Selected option for the placement of the call to
-                             ! CLUBB's PDF.
-      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
+      iiPDF_type,           & ! Selected option for the two-component normal
+                              ! (double Gaussian) PDF type to use for the w, rt,
+                              ! and theta-l (or w, chi, and eta) portion of
+                              ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,  & ! Selected option for the placement of the call to
+                              ! CLUBB's PDF.
+      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula      ! Integer that stores the saturation formula to be used
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -276,84 +255,21 @@ module model_flags
       l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
       l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
-      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that 
+      l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that 
                                       ! eliminates spurious drying tendencies at model top
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
+                                      ! to avoid double counting.
 
   end type clubb_config_flags_type
 
   contains
 
 !===============================================================================
-  subroutine setup_model_flags & 
-             ( l_host_applies_sfc_fluxes_in, & 
-               saturation_formula_in &
-#ifdef GFDL
-               ,  I_sat_sphum_in   &  ! h1g, 2010-06-15
-#endif
-                )
-
-! Description:
-!   Setup flags that influence the numerics, etc. of CLUBB core
-
-! References:
-!   None
-!-------------------------------------------------------------------------------
-
-    implicit none
-
-    ! External
-    intrinsic :: trim
-
-    ! Input Variables
-    logical, intent(in) ::  & 
-      l_host_applies_sfc_fluxes_in
-
-    character(len=*), intent(in) :: &
-      saturation_formula_in
-
-#ifdef GFDL
-    logical, intent(in) ::  & 
-      I_sat_sphum_in           ! h1g, 2010-06-15
-#endif
-
-    !---- Begin Code ----
-
-    ! Logicals
-
-    l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes_in
-
-    l_high_accuracy_parab_cyl_fnc = .false.
-
-    ! Integers
-
-    ! Set up the saturation formula value
-    select case ( trim( saturation_formula_in ) )
-    case ( "bolton", "Bolton" )
-      saturation_formula = saturation_bolton
-
-    case ( "flatau", "Flatau" )
-      saturation_formula = saturation_flatau
-
-    case ( "gfdl", "GFDL" )
-      saturation_formula = saturation_gfdl
-
-    case ( "lookup" )
-      saturation_formula = saturation_lookup
-
-      ! Add new saturation formulas after this.
-    end select
-
-#ifdef GFDL
-    I_sat_sphum = I_sat_sphum_in  ! h1g, 2010-06-15
-#endif
-    return
-  end subroutine setup_model_flags
-
-!===============================================================================
   subroutine set_default_clubb_config_flags( iiPDF_type, &
                                              ipdf_call_placement, &
                                              penta_solve_method, &
                                              tridiag_solve_method, &
+                                             saturation_formula, &
                                              l_use_precip_frac, &
                                              l_predict_upwp_vpwp, &
                                              l_min_wp2_from_corr_wx, &
@@ -407,7 +323,8 @@ module model_flags
                                              l_mono_flux_lim_rtm, &
                                              l_mono_flux_lim_um, &
                                              l_mono_flux_lim_vm, &
-                                             l_mono_flux_lim_spikefix )
+                                             l_mono_flux_lim_spikefix, &
+                                             l_host_applies_sfc_fluxes )
 
 ! Description:
 !   Sets all CLUBB flags to a default setting.
@@ -420,14 +337,15 @@ module model_flags
 
     ! Output variables
     integer, intent(out) :: &
-      iiPDF_type,          & ! Selected option for the two-component normal
-                             ! (double Gaussian) PDF type to use for the w, rt,
-                             ! and theta-l (or w, chi, and eta) portion of
-                             ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement, & ! Selected option for the placement of the call to
-                             ! CLUBB's PDF.
-      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
+      iiPDF_type,           & ! Selected option for the two-component normal
+                              ! (double Gaussian) PDF type to use for the w, rt,
+                              ! and theta-l (or w, chi, and eta) portion of
+                              ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,  & ! Selected option for the placement of the call to
+                              ! CLUBB's PDF.
+      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula      ! Integer that stores the saturation formula to be used
 
     logical, intent(out) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -543,8 +461,10 @@ module model_flags
       l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
       l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
-      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+      l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
+                                      ! to avoid double counting.
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -555,6 +475,7 @@ module model_flags
     ipdf_call_placement = ipdf_post_advance_fields
     penta_solve_method = lapack
     tridiag_solve_method = lapack
+    saturation_formula = saturation_flatau
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.
     l_min_wp2_from_corr_wx = .true.
@@ -613,6 +534,7 @@ module model_flags
     l_mono_flux_lim_um = .true.
     l_mono_flux_lim_vm = .true.
     l_mono_flux_lim_spikefix = .true.
+    l_host_applies_sfc_fluxes = .false.
 
     return
   end subroutine set_default_clubb_config_flags
@@ -622,6 +544,7 @@ module model_flags
                                                  ipdf_call_placement, &
                                                  penta_solve_method, &
                                                  tridiag_solve_method, &
+                                                 saturation_formula, &
                                                  l_use_precip_frac, &
                                                  l_predict_upwp_vpwp, &
                                                  l_min_wp2_from_corr_wx, &
@@ -676,6 +599,7 @@ module model_flags
                                                  l_mono_flux_lim_um, &
                                                  l_mono_flux_lim_vm, &
                                                  l_mono_flux_lim_spikefix, &
+                                                 l_host_applies_sfc_fluxes, &
                                                  clubb_config_flags )
 
 ! Description:
@@ -689,14 +613,15 @@ module model_flags
 
     ! Input variables
     integer, intent(in) :: &
-      iiPDF_type,          & ! Selected option for the two-component normal
-                             ! (double Gaussian) PDF type to use for the w, rt,
-                             ! and theta-l (or w, chi, and eta) portion of
-                             ! CLUBB's multivariate, two-component PDF.
-      ipdf_call_placement, & ! Selected option for the placement of the call to
-                             ! CLUBB's PDF.
-      penta_solve_method,  & ! Option to set the penta-diagonal matrix solving method
-      tridiag_solve_method   ! Option to set the tri-diagonal matrix solving method
+      iiPDF_type,           & ! Selected option for the two-component normal
+                              ! (double Gaussian) PDF type to use for the w, rt,
+                              ! and theta-l (or w, chi, and eta) portion of
+                              ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement,  & ! Selected option for the placement of the call to
+                              ! CLUBB's PDF.
+      penta_solve_method,   & ! Option to set the penta-diagonal matrix solving method
+      tridiag_solve_method, & ! Option to set the tri-diagonal matrix solving method
+      saturation_formula      ! Integer that stores the saturation formula to be used
 
     logical, intent(in) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -812,8 +737,10 @@ module model_flags
       l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
       l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
-      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+      l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
+                                      ! to avoid double counting.
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -826,6 +753,7 @@ module model_flags
     clubb_config_flags%ipdf_call_placement = ipdf_call_placement
     clubb_config_flags%penta_solve_method = penta_solve_method
     clubb_config_flags%tridiag_solve_method = tridiag_solve_method
+    clubb_config_flags%saturation_formula = saturation_formula
     clubb_config_flags%l_use_precip_frac = l_use_precip_frac
     clubb_config_flags%l_predict_upwp_vpwp = l_predict_upwp_vpwp
     clubb_config_flags%l_min_wp2_from_corr_wx = l_min_wp2_from_corr_wx
@@ -880,6 +808,8 @@ module model_flags
     clubb_config_flags%l_mono_flux_lim_um = l_mono_flux_lim_um
     clubb_config_flags%l_mono_flux_lim_vm = l_mono_flux_lim_vm
     clubb_config_flags%l_mono_flux_lim_spikefix = l_mono_flux_lim_spikefix
+    clubb_config_flags%l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes
+    
 
     return
   end subroutine initialize_clubb_config_flags_type
@@ -965,6 +895,7 @@ module model_flags
     write(iunit,*) "l_mono_flux_lim_um = ",clubb_config_flags%l_mono_flux_lim_vm
     write(iunit,*) "l_mono_flux_lim_vm = ",clubb_config_flags%l_mono_flux_lim_um
     write(iunit,*) "l_mono_flux_lim_spikefix = ",clubb_config_flags%l_mono_flux_lim_spikefix
+    write(iunit,*) "l_host_applies_sfc_fluxes = ",clubb_config_flags%l_host_applies_sfc_fluxes
 
     return
   end subroutine print_clubb_config_flags

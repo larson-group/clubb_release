@@ -40,10 +40,13 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_local_microphys( gr, dt, nz, l_latin_hypercube,             & ! In
+  subroutine KK_local_microphys( gr, dt, nz,                            & ! In
+                                 hydromet_dim, hm_metadata,          & ! In
+                                 l_latin_hypercube,                     & ! In
                                  thlm, wm_zt, p_in_Pa, exner, rho,      & ! In
                                  cloud_frac, w_std_dev, dzq, rcm,       & ! In
                                  Ncm, chi, rvm, hydromet,               & ! In
+                                 saturation_formula,                    & ! In
                                  stats_metadata,                        & ! In
                                  hydromet_mc, hydromet_vel,             & ! Out
                                  Ncm_mc, rcm_mc, rvm_mc, thlm_mc,       & ! Out
@@ -77,9 +80,6 @@ module KK_microphys_module
     use advance_microphys_module, only: &
         get_cloud_top_level    ! Procedure(s)
 
-    use parameters_model, only: &
-        hydromet_dim  ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd       ! Variable(s)
 
@@ -96,6 +96,9 @@ module KK_microphys_module
 
     use stats_variables, only: &
         stats_metadata_type
+
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     implicit none
 
@@ -114,7 +117,11 @@ module KK_microphys_module
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
-      nz          ! Number of model vertical grid levels
+      nz, &          ! Number of model vertical grid levels
+      hydromet_dim  
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     logical, intent(in) :: &
       l_latin_hypercube    ! Flag to use Latin Hypercube interface
@@ -137,6 +144,9 @@ module KK_microphys_module
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -211,7 +221,7 @@ module KK_microphys_module
     call microphys_stats_alloc( 1, num_stats_sfc, microphys_stats_sfc )
 
     !!! Initialize microphysics fields.
-    call KK_microphys_init( nz, hydromet, &
+    call KK_microphys_init( nz, hydromet_dim, hydromet, hm_metadata, &
                             hydromet_mc, hydromet_vel, rrm, Nrm, &
                             KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
@@ -241,7 +251,8 @@ module KK_microphys_module
        !!! Calculate the coefficients for the KK microphysics tendencies.
        call KK_tendency_coefs( thlm(k), exner(k), p_in_Pa(k), rho(k), &
                                KK_evap_coef, KK_auto_coef, &
-                               KK_accr_coef, KK_mvr_coef )
+                               KK_accr_coef, KK_mvr_coef, &
+                               saturation_formula )
 
 
        !!! Calculate the local KK rain drop mean volume radius.
@@ -351,7 +362,8 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet, &
+                                           hydromet_dim, hm_metadata%iiri )
 
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
@@ -359,7 +371,8 @@ module KK_microphys_module
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_microphys_output( nz, Vrr, VNr, rrm_mc, Nrm_mc, &
+    call KK_microphys_output( nz, hydromet_dim, hm_metadata, &
+                              Vrr, VNr, rrm_mc, Nrm_mc, &
                               hydromet_mc, hydromet_vel )
 
     !!! Output values for statistics
@@ -385,23 +398,25 @@ module KK_microphys_module
   end subroutine KK_local_microphys
 
   !=============================================================================
-  subroutine KK_upscaled_microphys( gr, dt, nz, pdf_dim,               & ! In
-                                    wm_zt, rtm, thlm, p_in_Pa,         & ! In
-                                    exner, rho, rcm,                   & ! In
-                                    pdf_params, hydromet_pdf_params,   & ! In
-                                    precip_fracs,                      & ! In
-                                    hydromet,                          & ! In
-                                    mu_x_1_n, mu_x_2_n,                & ! In
-                                    sigma_x_1_n, sigma_x_2_n,          & ! In
-                                    corr_array_1_n, corr_array_2_n,    & ! In
-                                    stats_metadata,                    & ! In
-                                    stats_zt, stats_zm,                & ! InOut
-                                    hydromet_mc, hydromet_vel,         & ! Out
-                                    rcm_mc, rvm_mc, thlm_mc,           & ! Out
-                                    hydromet_vel_covar_zt_impc,        & ! Out
-                                    hydromet_vel_covar_zt_expc,        & ! Out
-                                    wprtp_mc, wpthlp_mc, rtp2_mc,      & ! Out
-                                    thlp2_mc, rtpthlp_mc )               ! Out
+  subroutine KK_upscaled_microphys( gr, dt, nz,                           & ! In
+                                    pdf_dim, hydromet_dim, hm_metadata,& ! In
+                                    wm_zt, rtm, thlm, p_in_Pa,            & ! In
+                                    exner, rho, rcm,                      & ! In
+                                    pdf_params, hydromet_pdf_params,      & ! In
+                                    precip_fracs,                         & ! In
+                                    hydromet,                             & ! In
+                                    mu_x_1_n, mu_x_2_n,                   & ! In
+                                    sigma_x_1_n, sigma_x_2_n,             & ! In
+                                    corr_array_1_n, corr_array_2_n,       & ! In
+                                    saturation_formula,                   & ! In
+                                    stats_metadata,                       & ! In
+                                    stats_zt, stats_zm,                   & ! InOut
+                                    hydromet_mc, hydromet_vel,            & ! Out
+                                    rcm_mc, rvm_mc, thlm_mc,              & ! Out
+                                    hydromet_vel_covar_zt_impc,           & ! Out
+                                    hydromet_vel_covar_zt_expc,           & ! Out
+                                    wprtp_mc, wpthlp_mc, rtp2_mc,         & ! Out
+                                    thlp2_mc, rtpthlp_mc )                  ! Out
 
     ! Description:
     ! Version of KK microphysics scheme that is analytically upscaled by
@@ -436,10 +451,8 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        zt2zm    ! Procedure(s)
-
-
-    use grid_class, only: grid ! Type
+        zt2zm,  & ! Procedure(s)
+        grid      ! Type
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -470,13 +483,6 @@ module KK_microphys_module
         hydromet_pdf_parameter, &  ! Variable(s)
         precipitation_fractions
 
-    use parameters_model, only: &
-        hydromet_dim  ! Variable(s)
-
-    use array_index, only: &
-        iirr, & ! Constant(s)
-        iiNr
-
     use clubb_precision, only: &
         core_rknd        ! Variable(s)
 
@@ -488,6 +494,9 @@ module KK_microphys_module
 
     use stats_variables, only: &
         stats_metadata_type
+
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     implicit none
 
@@ -503,8 +512,12 @@ module KK_microphys_module
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
-      nz,          & ! Number of model vertical grid levels
-      pdf_dim   ! Number of variables in the correlation arrays
+      nz,         & ! Number of model vertical grid levels
+      pdf_dim,    & ! Number of variables in the correlation arrays
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wm_zt,   & ! Mean vertical velocity on thermodynamic levels  [m/s]
@@ -536,6 +549,9 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -718,7 +734,7 @@ module KK_microphys_module
     !-------------------------- Begin Code --------------------------
 
     !!! Initialize microphysics fields.
-    call KK_microphys_init( nz, hydromet, &
+    call KK_microphys_init( nz, hydromet_dim, hydromet, hm_metadata, &
                             hydromet_mc, hydromet_vel, rrm, Nrm, &
                             KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
@@ -735,11 +751,13 @@ module KK_microphys_module
        !!! Calculate the coefficients for the KK microphysics tendencies.
        call KK_tendency_coefs( thlm(k), exner(k), p_in_Pa(k), rho(k), &
                                KK_evap_coef, KK_auto_coef, &
-                               KK_accr_coef, KK_mvr_coef )
+                               KK_accr_coef, KK_mvr_coef, &
+                               saturation_formula )
 
 
        !!! Unpack the PDF parameters.
-       call unpack_pdf_params_KK( pdf_dim, mu_x_1_n(k,:), mu_x_2_n(k,:), &
+       call unpack_pdf_params_KK( pdf_dim, hm_metadata, &
+                                  mu_x_1_n(k,:), mu_x_2_n(k,:), &
                                   sigma_x_1_n(k,:), sigma_x_2_n(k,:), &
                                   corr_array_1_n(k,:,:), &
                                   corr_array_2_n(k,:,:), &
@@ -991,7 +1009,8 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet, &
+                                           hydromet_dim, hm_metadata%iiri )
 
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
@@ -999,7 +1018,8 @@ module KK_microphys_module
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_microphys_output( nz, Vrr, VNr, rrm_mc, Nrm_mc, &
+    call KK_microphys_output( nz, hydromet_dim, hm_metadata, &
+                              Vrr, VNr, rrm_mc, Nrm_mc, &
                               hydromet_mc, hydromet_vel )
 
     !!! Turbulent sedimentation above cloud top should have a value of 0.
@@ -1029,10 +1049,10 @@ module KK_microphys_module
     ! The implicit and explicit components used to calculate the covariances of
     ! hydrometeor sedimentation velocities and their associated hydrometeors
     ! (<V_rr'r_r'> and <V_Nr'N_r'>) are fed into the output arrays.
-    hydromet_vel_covar_zt_impc(:,iirr) = Vrrprrp_zt_impc
-    hydromet_vel_covar_zt_expc(:,iirr) = Vrrprrp_zt_expc
-    hydromet_vel_covar_zt_impc(:,iiNr) = VNrpNrp_zt_impc
-    hydromet_vel_covar_zt_expc(:,iiNr) = VNrpNrp_zt_expc
+    hydromet_vel_covar_zt_impc(:,hm_metadata%iirr) = Vrrprrp_zt_impc
+    hydromet_vel_covar_zt_expc(:,hm_metadata%iirr) = Vrrprrp_zt_expc
+    hydromet_vel_covar_zt_impc(:,hm_metadata%iiNr) = VNrpNrp_zt_impc
+    hydromet_vel_covar_zt_expc(:,hm_metadata%iiNr) = VNrpNrp_zt_expc
 
     ! Statistics
     if ( stats_metadata%l_stats_samp ) then
@@ -1091,7 +1111,7 @@ module KK_microphys_module
   end subroutine KK_upscaled_microphys
 
   !=============================================================================
-  subroutine KK_microphys_init( nz, hydromet, &
+  subroutine KK_microphys_init( nz, hydromet_dim, hydromet, hm_metadata, &
                                 hydromet_mc, hydromet_vel, rrm, Nrm, &
                                 KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                                 KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
@@ -1106,12 +1126,8 @@ module KK_microphys_module
     use constants_clubb, only: &
         zero
 
-    use parameters_model, only: &
-        hydromet_dim  ! Variable(s)
-
-    use array_index, only: &
-        iirr, & ! Constant(s)
-        iiNr
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1120,10 +1136,14 @@ module KK_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz          ! Number of model vertical grid levels
+      nz, &           ! Number of model vertical grid levels
+      hydromet_dim
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -1159,10 +1179,10 @@ module KK_microphys_module
 
     hydromet_mc(:,:) = zero
     hydromet_vel(:,:) = zero
-
+    
     ! Set up mean field variables for <r_r> and <N_r>.
-    rrm = hydromet(:,iirr)
-    Nrm = hydromet(:,iiNr)
+    rrm = hydromet(:,hm_metadata%iirr)
+    Nrm = hydromet(:,hm_metadata%iiNr)
 
     ! Set KK microphysics tendency adjustment flags
     l_src_adj_enabled  = .true.
@@ -1175,7 +1195,8 @@ module KK_microphys_module
   !=============================================================================
   subroutine KK_tendency_coefs( thlm, exner, p_in_Pa, rho, &
                                 KK_evap_coef, KK_auto_coef, &
-                                KK_accr_coef, KK_mvr_coef )
+                                KK_accr_coef, KK_mvr_coef, &
+                                saturation_formula )
 
     ! Description:
 
@@ -1243,6 +1264,9 @@ module KK_microphys_module
       exner,   & ! Exner function                                  [-]
       rho        ! Density                                         [kg/m^3]
 
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       KK_evap_coef, & ! KK evaporation coefficient                 [(kg/kg)/s]
@@ -1262,14 +1286,14 @@ module KK_microphys_module
 
     ! Saturation mixing ratio (based on liquid water temperature and
     ! pressure), r_sl = r_s(T_l,p).
-    r_sl = sat_mixrat_liq( p_in_Pa, T_liq_in_K )
+    r_sl = sat_mixrat_liq( p_in_Pa, T_liq_in_K, saturation_formula )
 
     ! Beta(T_l).
     Beta_Tl = (Rd/Rv) * ( Lv / ( Rd * T_liq_in_K ) )  &
                       * ( Lv / ( Cp * T_liq_in_K ) )
 
     ! Coefficient for KK evaporation.
-    KK_evap_coef = three * C_evap * G_T_p( T_liq_in_K, p_in_Pa )   &
+    KK_evap_coef = three * C_evap * G_T_p( T_liq_in_K, p_in_Pa, saturation_formula )   &
                          * ( four_thirds * pi * rho_lw )**two_thirds  &
                          * ( ( one + Beta_Tl * r_sl ) / r_sl )
 
@@ -1769,7 +1793,8 @@ module KK_microphys_module
   end subroutine KK_sedimentation
 
   !=============================================================================
-  subroutine KK_microphys_output( nz, Vrr, VNr, rrm_mc, Nrm_mc, &
+  subroutine KK_microphys_output( nz, hydromet_dim, hm_metadata, &
+                                  Vrr, VNr, rrm_mc, Nrm_mc, &
                                   hydromet_mc, hydromet_vel )
 
     ! Description:
@@ -1777,12 +1802,8 @@ module KK_microphys_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use parameters_model, only: &
-        hydromet_dim  ! Variable(s)
-
-    use array_index, only: &
-        iirr, & ! Constant(s)
-        iiNr
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1791,7 +1812,11 @@ module KK_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz          ! Number of model vertical grid levels
+      nz, &           ! Number of model vertical grid levels
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real( kind = core_rknd ), dimension(nz), intent(in) ::  &
       Vrr,    & ! Mean sedimentation velocity of < r_r >   [m/s]
@@ -1808,12 +1833,12 @@ module KK_microphys_module
     !!! Output mean hydrometeor tendencies and mean sedimentation velocities.
 
     ! Mean field tendencies.
-    hydromet_mc(:,iirr) = rrm_mc
-    hydromet_mc(:,iiNr) = Nrm_mc
+    hydromet_mc(:,hm_metadata%iirr) = rrm_mc
+    hydromet_mc(:,hm_metadata%iiNr) = Nrm_mc
 
     ! Sedimentation Velocities.
-    hydromet_vel(:,iirr) = Vrr
-    hydromet_vel(:,iiNr) = VNr
+    hydromet_vel(:,hm_metadata%iirr) = Vrr
+    hydromet_vel(:,hm_metadata%iiNr) = VNr
 
 
     return
@@ -1821,7 +1846,8 @@ module KK_microphys_module
   end subroutine KK_microphys_output
 
   !=============================================================================
-  subroutine unpack_pdf_params_KK( pdf_dim, mu_x_1_n, mu_x_2_n, &
+  subroutine unpack_pdf_params_KK( pdf_dim, hm_metadata, &
+                                   mu_x_1_n, mu_x_2_n, &
                                    sigma_x_1_n, sigma_x_2_n, &
                                    corr_array_1_n, &
                                    corr_array_2_n, &
@@ -1859,15 +1885,8 @@ module KK_microphys_module
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter  ! Variable(s)      
 
-    use array_index, only: &
-        iirr,     & ! Variable(s)
-        iiNr,     & 
-        iiPDF_w,   & 
-        iiPDF_chi, &
-        iiPDF_eta, &
-        iiPDF_rr,  &
-        iiPDF_Nr,  &
-        iiPDF_Ncn
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -1877,6 +1896,9 @@ module KK_microphys_module
     ! Input Variables
     integer, intent(in) :: &
       pdf_dim   ! Number of variables in the correlation array.
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real( kind = core_rknd ), dimension(pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
@@ -1967,77 +1989,77 @@ module KK_microphys_module
 
 
     ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
-    mu_w_1        = mu_x_1_n(iiPDF_w)
-    mu_w_2        = mu_x_2_n(iiPDF_w)
-    mu_chi_1      = mu_x_1_n(iiPDF_chi)
-    mu_chi_2      = mu_x_2_n(iiPDF_chi)
-    mu_eta_1      = mu_x_1_n(iiPDF_eta)
-    mu_eta_2      = mu_x_2_n(iiPDF_eta)
-    mu_rr_1_n     = mu_x_1_n(iiPDF_rr)
-    mu_rr_2_n     = mu_x_2_n(iiPDF_rr)
-    mu_Nr_1_n     = mu_x_1_n(iiPDF_Nr)
-    mu_Nr_2_n     = mu_x_2_n(iiPDF_Nr)
-    mu_Ncn_1_n    = mu_x_1_n(iiPDF_Ncn)
-    mu_Ncn_2_n    = mu_x_2_n(iiPDF_Ncn)
-    sigma_w_1     = sigma_x_1_n(iiPDF_w)
-    sigma_w_2     = sigma_x_2_n(iiPDF_w)
-    sigma_chi_1   = sigma_x_1_n(iiPDF_chi)
-    sigma_chi_2   = sigma_x_2_n(iiPDF_chi)
-    sigma_eta_1   = sigma_x_1_n(iiPDF_eta)
-    sigma_eta_2   = sigma_x_2_n(iiPDF_eta)
-    sigma_rr_1_n  = sigma_x_1_n(iiPDF_rr)
-    sigma_rr_2_n  = sigma_x_2_n(iiPDF_rr)
-    sigma_Nr_1_n  = sigma_x_1_n(iiPDF_Nr)
-    sigma_Nr_2_n  = sigma_x_2_n(iiPDF_Nr)
-    sigma_Ncn_1_n = sigma_x_1_n(iiPDF_Ncn)
-    sigma_Ncn_2_n = sigma_x_2_n(iiPDF_Ncn)
+    mu_w_1        = mu_x_1_n(hm_metadata%iiPDF_w)
+    mu_w_2        = mu_x_2_n(hm_metadata%iiPDF_w)
+    mu_chi_1      = mu_x_1_n(hm_metadata%iiPDF_chi)
+    mu_chi_2      = mu_x_2_n(hm_metadata%iiPDF_chi)
+    mu_eta_1      = mu_x_1_n(hm_metadata%iiPDF_eta)
+    mu_eta_2      = mu_x_2_n(hm_metadata%iiPDF_eta)
+    mu_rr_1_n     = mu_x_1_n(hm_metadata%iiPDF_rr)
+    mu_rr_2_n     = mu_x_2_n(hm_metadata%iiPDF_rr)
+    mu_Nr_1_n     = mu_x_1_n(hm_metadata%iiPDF_Nr)
+    mu_Nr_2_n     = mu_x_2_n(hm_metadata%iiPDF_Nr)
+    mu_Ncn_1_n    = mu_x_1_n(hm_metadata%iiPDF_Ncn)
+    mu_Ncn_2_n    = mu_x_2_n(hm_metadata%iiPDF_Ncn)
+    sigma_w_1     = sigma_x_1_n(hm_metadata%iiPDF_w)
+    sigma_w_2     = sigma_x_2_n(hm_metadata%iiPDF_w)
+    sigma_chi_1   = sigma_x_1_n(hm_metadata%iiPDF_chi)
+    sigma_chi_2   = sigma_x_2_n(hm_metadata%iiPDF_chi)
+    sigma_eta_1   = sigma_x_1_n(hm_metadata%iiPDF_eta)
+    sigma_eta_2   = sigma_x_2_n(hm_metadata%iiPDF_eta)
+    sigma_rr_1_n  = sigma_x_1_n(hm_metadata%iiPDF_rr)
+    sigma_rr_2_n  = sigma_x_2_n(hm_metadata%iiPDF_rr)
+    sigma_Nr_1_n  = sigma_x_1_n(hm_metadata%iiPDF_Nr)
+    sigma_Nr_2_n  = sigma_x_2_n(hm_metadata%iiPDF_Nr)
+    sigma_Ncn_1_n = sigma_x_1_n(hm_metadata%iiPDF_Ncn)
+    sigma_Ncn_2_n = sigma_x_2_n(hm_metadata%iiPDF_Ncn)
 
     ! Unpack variables from hydromet_pdf_params
-    mu_rr_1     = hydromet_pdf_params%mu_hm_1(iirr)
-    mu_rr_2     = hydromet_pdf_params%mu_hm_2(iirr)
-    mu_Nr_1     = hydromet_pdf_params%mu_hm_1(iiNr)
-    mu_Nr_2     = hydromet_pdf_params%mu_hm_2(iiNr)
+    mu_rr_1     = hydromet_pdf_params%mu_hm_1(hm_metadata%iirr)
+    mu_rr_2     = hydromet_pdf_params%mu_hm_2(hm_metadata%iirr)
+    mu_Nr_1     = hydromet_pdf_params%mu_hm_1(hm_metadata%iiNr)
+    mu_Nr_2     = hydromet_pdf_params%mu_hm_2(hm_metadata%iiNr)
     mu_Ncn_1    = hydromet_pdf_params%mu_Ncn_1
     mu_Ncn_2    = hydromet_pdf_params%mu_Ncn_2
-    sigma_rr_1  = hydromet_pdf_params%sigma_hm_1(iirr)
-    sigma_rr_2  = hydromet_pdf_params%sigma_hm_2(iirr)
-    sigma_Nr_1  = hydromet_pdf_params%sigma_hm_1(iiNr)
-    sigma_Nr_2  = hydromet_pdf_params%sigma_hm_2(iiNr)
+    sigma_rr_1  = hydromet_pdf_params%sigma_hm_1(hm_metadata%iirr)
+    sigma_rr_2  = hydromet_pdf_params%sigma_hm_2(hm_metadata%iirr)
+    sigma_Nr_1  = hydromet_pdf_params%sigma_hm_1(hm_metadata%iiNr)
+    sigma_Nr_2  = hydromet_pdf_params%sigma_hm_2(hm_metadata%iiNr)
     sigma_Ncn_1 = hydromet_pdf_params%sigma_Ncn_1
     sigma_Ncn_2 = hydromet_pdf_params%sigma_Ncn_2
 
-    rr_1          = hydromet_pdf_params%hm_1(iirr)
-    rr_2          = hydromet_pdf_params%hm_2(iirr)
-    Nr_1          = hydromet_pdf_params%hm_1(iiNr)
-    Nr_2          = hydromet_pdf_params%hm_2(iiNr)
+    rr_1          = hydromet_pdf_params%hm_1(hm_metadata%iirr)
+    rr_2          = hydromet_pdf_params%hm_2(hm_metadata%iirr)
+    Nr_1          = hydromet_pdf_params%hm_1(hm_metadata%iiNr)
+    Nr_2          = hydromet_pdf_params%hm_2(hm_metadata%iiNr)
 
     ! Unpack corr_array_1_n into correlations (1st PDF component).
-    corr_chi_eta_1   = corr_array_1_n(iiPDF_eta, iiPDF_chi)
-    corr_w_chi_1     = corr_array_1_n(iiPDF_w,iiPDF_chi)
-    corr_chi_rr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_chi)
-    corr_chi_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_chi)
-    corr_chi_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_chi)
-    corr_eta_rr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_eta)
-    corr_eta_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_eta)
-    corr_eta_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_eta)
-    corr_w_rr_1_n    = corr_array_1_n(iiPDF_rr, iiPDF_w)
-    corr_w_Nr_1_n    = corr_array_1_n(iiPDF_Nr, iiPDF_w)
-    corr_w_Ncn_1_n   = corr_array_1_n(iiPDF_Ncn, iiPDF_w)
-    corr_rr_Nr_1_n   = corr_array_1_n(iiPDF_Nr, iiPDF_rr)
+    corr_chi_eta_1   = corr_array_1_n(hm_metadata%iiPDF_eta, hm_metadata%iiPDF_chi)
+    corr_w_chi_1     = corr_array_1_n(hm_metadata%iiPDF_w,hm_metadata%iiPDF_chi)
+    corr_chi_rr_1_n  = corr_array_1_n(hm_metadata%iiPDF_rr, hm_metadata%iiPDF_chi)
+    corr_chi_Nr_1_n  = corr_array_1_n(hm_metadata%iiPDF_Nr, hm_metadata%iiPDF_chi)
+    corr_chi_Ncn_1_n = corr_array_1_n(hm_metadata%iiPDF_Ncn, hm_metadata%iiPDF_chi)
+    corr_eta_rr_1_n  = corr_array_1_n(hm_metadata%iiPDF_rr, hm_metadata%iiPDF_eta)
+    corr_eta_Nr_1_n  = corr_array_1_n(hm_metadata%iiPDF_Nr, hm_metadata%iiPDF_eta)
+    corr_eta_Ncn_1_n = corr_array_1_n(hm_metadata%iiPDF_Ncn, hm_metadata%iiPDF_eta)
+    corr_w_rr_1_n    = corr_array_1_n(hm_metadata%iiPDF_rr, hm_metadata%iiPDF_w)
+    corr_w_Nr_1_n    = corr_array_1_n(hm_metadata%iiPDF_Nr, hm_metadata%iiPDF_w)
+    corr_w_Ncn_1_n   = corr_array_1_n(hm_metadata%iiPDF_Ncn, hm_metadata%iiPDF_w)
+    corr_rr_Nr_1_n   = corr_array_1_n(hm_metadata%iiPDF_Nr, hm_metadata%iiPDF_rr)
 
     ! Unpack corr_array_2_n into correlations (2nd PDF component).
-    corr_chi_eta_2   = corr_array_2_n(iiPDF_eta, iiPDF_chi)
-    corr_w_chi_2     = corr_array_2_n(iiPDF_w,iiPDF_chi)
-    corr_chi_rr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_chi)
-    corr_chi_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_chi)
-    corr_chi_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_chi)
-    corr_eta_rr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_eta)
-    corr_eta_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_eta)
-    corr_eta_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_eta)
-    corr_w_rr_2_n    = corr_array_2_n(iiPDF_rr, iiPDF_w)
-    corr_w_Nr_2_n    = corr_array_2_n(iiPDF_Nr, iiPDF_w)
-    corr_w_Ncn_2_n   = corr_array_2_n(iiPDF_Ncn, iiPDF_w)
-    corr_rr_Nr_2_n   = corr_array_2_n(iiPDF_Nr, iiPDF_rr)
+    corr_chi_eta_2   = corr_array_2_n(hm_metadata%iiPDF_eta, hm_metadata%iiPDF_chi)
+    corr_w_chi_2     = corr_array_2_n(hm_metadata%iiPDF_w,hm_metadata%iiPDF_chi)
+    corr_chi_rr_2_n  = corr_array_2_n(hm_metadata%iiPDF_rr, hm_metadata%iiPDF_chi)
+    corr_chi_Nr_2_n  = corr_array_2_n(hm_metadata%iiPDF_Nr, hm_metadata%iiPDF_chi)
+    corr_chi_Ncn_2_n = corr_array_2_n(hm_metadata%iiPDF_Ncn, hm_metadata%iiPDF_chi)
+    corr_eta_rr_2_n  = corr_array_2_n(hm_metadata%iiPDF_rr, hm_metadata%iiPDF_eta)
+    corr_eta_Nr_2_n  = corr_array_2_n(hm_metadata%iiPDF_Nr, hm_metadata%iiPDF_eta)
+    corr_eta_Ncn_2_n = corr_array_2_n(hm_metadata%iiPDF_Ncn, hm_metadata%iiPDF_eta)
+    corr_w_rr_2_n    = corr_array_2_n(hm_metadata%iiPDF_rr, hm_metadata%iiPDF_w)
+    corr_w_Nr_2_n    = corr_array_2_n(hm_metadata%iiPDF_Nr, hm_metadata%iiPDF_w)
+    corr_w_Ncn_2_n   = corr_array_2_n(hm_metadata%iiPDF_Ncn, hm_metadata%iiPDF_w)
+    corr_rr_Nr_2_n   = corr_array_2_n(hm_metadata%iiPDF_Nr, hm_metadata%iiPDF_rr)
 
 
     return

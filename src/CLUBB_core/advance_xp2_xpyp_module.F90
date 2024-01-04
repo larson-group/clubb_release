@@ -47,7 +47,7 @@ module advance_xp2_xpyp_module
   contains
 
   !=============================================================================
-  subroutine advance_xp2_xpyp( nz, ngrdcol, gr,                           & ! In
+  subroutine advance_xp2_xpyp( nz, ngrdcol, sclr_dim, sclr_tol, gr, sclr_idx,& ! In
                                invrs_tau_xp2_zm, invrs_tau_C4_zm,         & ! In
                                invrs_tau_C14_zm, wm_zm,                   & ! In
                                rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,  & ! In
@@ -133,10 +133,6 @@ module advance_xp2_xpyp_module
     use parameters_tunable, only: &
         nu_vertical_res_dep    ! Type(s)
 
-    use parameters_model, only: &
-        sclr_dim, & ! Variable(s)
-        sclr_tol
-
     use grid_class, only: & 
         grid, & ! Type
         zm2zt, & ! Procedure(s)
@@ -175,8 +171,7 @@ module advance_xp2_xpyp_module
         stats_metadata_type
 
     use array_index, only: &
-        iisclr_rt, &
-        iisclr_thl
+        sclr_idx_type
         
     use mean_adv, only:  & 
         term_ma_zm_lhs      ! Procedure(s)
@@ -190,10 +185,18 @@ module advance_xp2_xpyp_module
 
     !------------------------------ Input Variables ------------------------------
     integer, intent(in) :: &
-      nz, &
-      ngrdcol
+      nz,       & ! Number of vertical levels
+      ngrdcol,  & ! Number of grid columns
+      sclr_dim    ! Number of passive scalars
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
     
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
     
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  & 
       invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
@@ -563,7 +566,8 @@ module advance_xp2_xpyp_module
     end if ! l_lmm_stepping
    
     ! Calculate all the explicit and implicit turbulent advection terms 
-    call calc_xp2_xpyp_ta_terms( nz, ngrdcol, gr, wprtp, wprtp2, wpthlp, wpthlp2, wprtpthlp,      & ! In
+    call calc_xp2_xpyp_ta_terms( nz, ngrdcol, sclr_dim, gr,                          & ! In
+                                 wprtp, wprtp2, wpthlp, wpthlp2, wprtpthlp,          & ! In
                                  rtp2, thlp2, rtpthlp, upwp, vpwp, up2, vp2, wp2,    & ! In
                                  wp2_zt, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, & ! In
                                  sclrp2, sclrprtp, sclrpthlp,                        & ! In
@@ -600,7 +604,7 @@ module advance_xp2_xpyp_module
            
       ! All left hand side matricies are equal for rtp2, thlp2, rtpthlp, and scalars.
       ! Thus only one solve is neccesary, using combined right hand sides
-      call solve_xp2_xpyp_with_single_lhs( nz, ngrdcol, gr,                                 & ! In
+      call solve_xp2_xpyp_with_single_lhs( nz, ngrdcol, sclr_dim, sclr_tol, gr, sclr_idx,      & ! In
                                            C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp,     & ! In
                                            wpthlp, rtp2_forcing, thlp2_forcing,             & ! In
                                            rtpthlp_forcing, sclrm, wpsclrp,                 & ! In
@@ -617,7 +621,7 @@ module advance_xp2_xpyp_module
     else
           
       ! Left hand sides are potentially different, this requires multiple solves
-      call solve_xp2_xpyp_with_multiple_lhs( nz, ngrdcol, gr,                              & ! In
+      call solve_xp2_xpyp_with_multiple_lhs( nz, ngrdcol, sclr_dim, sclr_tol, gr, sclr_idx,   & ! In
                                              C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d,     & ! In
                                              invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp,   & ! In
                                              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! In
@@ -1205,7 +1209,7 @@ module advance_xp2_xpyp_module
                                        stats_metadata,                          & ! In
                                        stats_zm,                                & ! InOut
                                        sclrp2(:,:,sclr) )                         ! InOut
-          if ( sclr == iisclr_rt ) then
+          if ( sclr == sclr_idx%iisclr_rt ) then
             ! Here again, we do this kluge here to make sclr'rt' == rt'^2
             call pos_definite_variances( nz, ngrdcol, gr,                           & ! In
                                          xp2_xpyp_sclrprtp, dt, sclr_tol(sclr)**2,  & ! In
@@ -1214,7 +1218,7 @@ module advance_xp2_xpyp_module
                                          stats_zm,                                  & ! InOut
                                          sclrprtp(:,:,sclr) )                         ! InOut
           end if
-          if ( sclr == iisclr_thl ) then
+          if ( sclr == sclr_idx%iisclr_thl ) then
             ! As with sclr'rt' above, but for sclr'thl'
             call pos_definite_variances( nz, ngrdcol, gr,                           & ! In
                                          xp2_xpyp_sclrpthlp, dt, sclr_tol(sclr)**2, & ! In
@@ -1255,7 +1259,7 @@ module advance_xp2_xpyp_module
       ! same place, clipping for sclr'r_t' only has to be done once.
       do sclr = 1, sclr_dim, 1
 
-        if  ( sclr == iisclr_rt ) then
+        if  ( sclr == sclr_idx%iisclr_rt ) then
           ! Treat this like a variance if we're emulating rt
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nz, 1
@@ -1290,7 +1294,7 @@ module advance_xp2_xpyp_module
       ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
       ! same place, clipping for sclr'th_l' only has to be done once.
       do sclr = 1, sclr_dim, 1
-        if ( sclr == iisclr_thl ) then
+        if ( sclr == sclr_idx%iisclr_thl ) then
           ! As above, but for thl
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nz, 1
@@ -1420,7 +1424,8 @@ module advance_xp2_xpyp_module
   end subroutine advance_xp2_xpyp
   
   !============================================================================================
-  subroutine solve_xp2_xpyp_with_single_lhs( nz, ngrdcol, gr, C2x, invrs_tau_xp2_zm, rtm, thlm, wprtp, &
+  subroutine solve_xp2_xpyp_with_single_lhs( nz, ngrdcol, sclr_dim, sclr_tol, gr, sclr_idx, &
+                                             C2x, invrs_tau_xp2_zm, rtm, thlm, wprtp, &
                                              wpthlp, rtp2_forcing, thlp2_forcing, &
                                              rtpthlp_forcing, sclrm, wpsclrp, &
                                              lhs_ta, lhs_ma, lhs_diff, &
@@ -1456,14 +1461,9 @@ module advance_xp2_xpyp_module
       zero_threshold, &
       gamma_over_implicit_ts, &
       one_half
-    
-    use parameters_model, only: &
-      sclr_dim, & ! Variable(s)
-      sclr_tol
         
     use array_index, only: &
-      iisclr_rt, &
-      iisclr_thl
+      sclr_idx_type
 
     use stats_type, only: &
       stats ! Type
@@ -1475,10 +1475,18 @@ module advance_xp2_xpyp_module
       
     ! -------- Input Variables --------
     integer, intent(in) :: &
-      nz, &
-      ngrdcol
+      nz,       & ! Number of vertical levels
+      ngrdcol,  & ! Number of grid columns
+      sclr_dim    ! Number of passive scalars
 
-    type (grid), target, intent(in) :: gr
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+    type (grid), target, intent(in) :: &
+      gr
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
     
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  & 
       C2x,              &
@@ -1645,7 +1653,7 @@ module advance_xp2_xpyp_module
                            rhs(:,:,3+sclr) )                            ! Out
 
         !!!!!***** sclr'r_t' *****!!!!!
-        if ( sclr == iisclr_rt ) then
+        if ( sclr == sclr_idx%iisclr_rt ) then
           ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
           ! handle this as we would a variance, even though generally speaking
           ! the scalar is not rt
@@ -1681,7 +1689,7 @@ module advance_xp2_xpyp_module
                            rhs(:,:,3+sclr+sclr_dim) )                   ! Out
 
         !!!!!***** sclr'th_l' *****!!!!!
-        if ( sclr == iisclr_thl ) then
+        if ( sclr == sclr_idx%iisclr_thl ) then
           ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
           ! handle this as we did with sclr_rt, above.
           !$acc parallel loop gang vector collapse(2) default(present)
@@ -1819,7 +1827,7 @@ module advance_xp2_xpyp_module
   end subroutine solve_xp2_xpyp_with_single_lhs
   
   !============================================================================================
-  subroutine solve_xp2_xpyp_with_multiple_lhs( nz, ngrdcol, gr, &
+  subroutine solve_xp2_xpyp_with_multiple_lhs( nz, ngrdcol, sclr_dim, sclr_tol, gr, sclr_idx, &
                                                C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
                                                invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp, &
                                                rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
@@ -1855,17 +1863,12 @@ module advance_xp2_xpyp_module
         zero_threshold, &
         gamma_over_implicit_ts, &
         one_half
-      
-    use parameters_model, only: &
-        sclr_dim, & ! Variable(s)
-        sclr_tol
 
     use model_flags, only: &
         iiPDF_ADG1    ! Variable(s)
           
     use array_index, only: &
-        iisclr_rt, &
-        iisclr_thl
+        sclr_idx_type
 
     use stats_type, only: &
         stats ! Type
@@ -1877,10 +1880,18 @@ module advance_xp2_xpyp_module
       
     !------------------------ Input Variables ------------------------
     integer, intent(in) :: &
-      nz, &
-      ngrdcol
+      nz,       & ! Number of vertical levels
+      ngrdcol,  & ! Number of grid columns
+      sclr_dim    ! Number of passive scalars
 
-    type (grid), target, intent(in) :: gr
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+    type (grid), target, intent(in) :: &
+      gr
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
       
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  & 
       C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
@@ -2254,7 +2265,7 @@ module advance_xp2_xpyp_module
           endif ! l_lmm_stepping
       
           !!!!!***** sclr'r_t' *****!!!!!
-          if ( sclr == iisclr_rt ) then
+          if ( sclr == sclr_idx%iisclr_rt ) then
              ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
              ! handle this as we would a variance, even though generally speaking
              ! the scalar is not rt
@@ -2294,7 +2305,7 @@ module advance_xp2_xpyp_module
       
           !!!!!***** sclr'th_l' *****!!!!!
 
-          if ( sclr == iisclr_thl ) then
+          if ( sclr == sclr_idx%iisclr_thl ) then
             ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
             ! handle this as we did with sclr_rt, above.
             sclrpthlp_forcing(:,:) = thlp2_forcing(:,:)
@@ -2371,7 +2382,7 @@ module advance_xp2_xpyp_module
                              sclr_rhs(:,:,sclr) ) ! Out
 
           !!!!!***** sclr'r_t' *****!!!!!
-          if ( sclr == iisclr_rt ) then
+          if ( sclr == sclr_idx%iisclr_rt ) then
             ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
             ! handle this as we would a variance, even though generally speaking
             ! the scalar is not rt
@@ -2408,7 +2419,7 @@ module advance_xp2_xpyp_module
 
           !!!!!***** sclr'th_l' *****!!!!!
 
-          if ( sclr == iisclr_thl ) then
+          if ( sclr == sclr_idx%iisclr_thl ) then
             ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
             ! handle this as we did with sclr_rt, above.
             !$acc parallel loop gang vector collapse(2) default(present)
@@ -3678,7 +3689,8 @@ module advance_xp2_xpyp_module
   end subroutine xp2_xpyp_rhs
 
   !=============================================================================================
-  subroutine calc_xp2_xpyp_ta_terms( nz, ngrdcol, gr, wprtp, wprtp2, wpthlp, wpthlp2, wprtpthlp, &
+  subroutine calc_xp2_xpyp_ta_terms( nz, ngrdcol, sclr_dim, gr, &
+                                     wprtp, wprtp2, wpthlp, wpthlp2, wprtpthlp, &
                                      rtp2, thlp2, rtpthlp, upwp, vpwp, up2, vp2, wp2, &
                                      wp2_zt, wpsclrp, wpsclrp2, wpsclrprtp, wpsclrpthlp, &
                                      sclrp2, sclrprtp, sclrpthlp, &
@@ -3720,9 +3732,6 @@ module advance_xp2_xpyp_module
         zero, &
         zero_threshold
       
-    use parameters_model, only: &
-        sclr_dim  ! Number of passive scalar variables
-      
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
@@ -3750,10 +3759,12 @@ module advance_xp2_xpyp_module
 
     !------------------- Input Variables -------------------
     integer, intent(in) :: &
-      nz, &
-      ngrdcol
+      nz,       & ! Number of vertical levels
+      ngrdcol,  & ! Number of grid columns
+      sclr_dim    ! Number of passive scalars
     
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
         
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]

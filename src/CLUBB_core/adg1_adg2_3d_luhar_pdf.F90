@@ -29,7 +29,7 @@ module adg1_adg2_3d_luhar_pdf
   contains
 
   !=============================================================================
-  subroutine ADG1_pdf_driver( nz, ngrdcol,                              & ! In
+  subroutine ADG1_pdf_driver( nz, ngrdcol, sclr_dim, sclr_tol,          & ! In
                               wm, rtm, thlm, um, vm,                    & ! In
                               wp2, rtp2, thlp2, up2, vp2,               & ! In
                               Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, & ! In
@@ -60,18 +60,18 @@ module adg1_adg2_3d_luhar_pdf
         rt_tol,  & ! Constant(s)
         thl_tol
 
-    use parameters_model, only: &
-        sclr_dim, & ! Variable(s)
-        sclr_tol
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     implicit none
-    
+
     integer, intent(in) :: &
-      ngrdcol,  & ! Number of grid columns
-      nz          ! Number of vertical level
+      nz,           & ! Number of vertical levels
+      ngrdcol,      & ! Number of grid columns
+      sclr_dim        ! Number of passive scalars
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
     ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
@@ -211,7 +211,7 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine ADG1_pdf_driver
 
   !=============================================================================
-  subroutine ADG2_pdf_driver( nz, ngrdcol,                              & ! In
+  subroutine ADG2_pdf_driver( nz, ngrdcol, sclr_dim, sclr_tol,          & ! In
                               wm, rtm, thlm, wp2, rtp2, thlp2,          & ! In
                               Skw, wprtp, wpthlp, sqrt_wp2, beta,       & ! In
                               sclrm, sclrp2, wpsclrp, l_scalar_calc,    & ! In
@@ -241,18 +241,18 @@ module adg1_adg2_3d_luhar_pdf
         rt_tol,    &
         thl_tol
 
-    use parameters_model, only: &
-        sclr_dim, & ! Variable(s)
-        sclr_tol
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     implicit none
-    
+
     integer, intent(in) :: &
-      ngrdcol,  & ! Number of grid columns
-      nz          ! Number of vertical level
+      nz,           & ! Number of vertical levels
+      ngrdcol,      & ! Number of grid columns
+      sclr_dim        ! Number of passive scalars
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
     ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 

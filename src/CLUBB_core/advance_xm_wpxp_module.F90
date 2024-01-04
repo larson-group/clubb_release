@@ -48,7 +48,8 @@ module advance_xm_wpxp_module
   contains
 
   !=============================================================================
-  subroutine advance_xm_wpxp( nz, ngrdcol, gr, dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
+  subroutine advance_xm_wpxp( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt, &
+                              sigma_sqd_w, wm_zm, wm_zt, wp2, &
                               Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                               invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                               rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
@@ -68,6 +69,7 @@ module advance_xm_wpxp_module
                               iiPDF_type, &
                               penta_solve_method, &
                               tridiag_solve_method, &
+                              saturation_formula, &
                               l_predict_upwp_vpwp, &
                               l_diffuse_rtm_and_thlm, &
                               l_stability_correct_Kh_N2_zm, &
@@ -140,7 +142,6 @@ module advance_xm_wpxp_module
         eps
 
     use parameters_model, only: & 
-        sclr_dim, &  ! Variable(s)
         ts_nudge
 
     use grid_class, only: & 
@@ -191,12 +192,16 @@ module advance_xm_wpxp_module
     implicit none
 
     ! -------------------- Input Variables --------------------
-    
     integer, intent(in) :: &
-      nz, &
-      ngrdcol
+      nz,       & ! Number of vertical levels
+      ngrdcol,  & ! Number of grid columns
+      sclr_dim    ! Number of passive scalars
+
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
       
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
 
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
@@ -295,7 +300,8 @@ module advance_xm_wpxp_module
                               ! w, chi, and eta) portion of CLUBB's multivariate,
                               ! two-component PDF.
       penta_solve_method,   & ! Method to solve then penta-diagonal system
-      tridiag_solve_method    ! Specifier for method to solve tridiagonal systems
+      tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems
+      saturation_formula      ! Integer that stores the saturation formula to be used
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -770,7 +776,7 @@ module advance_xm_wpxp_module
       end do
     end if
 
-    call  calc_xm_wpxp_ta_terms( nz, ngrdcol, gr, wp2rtp, &  ! intent(in)
+    call  calc_xm_wpxp_ta_terms( nz, ngrdcol, sclr_dim, gr, wp2rtp, &  ! intent(in)
                                  wp2thlp, wp2sclrp, & ! intent(in)
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, & ! intent(in)
                                  sigma_sqd_w, wp3_on_wp2_zt, & ! intent(in)
@@ -794,6 +800,7 @@ module advance_xm_wpxp_module
                                  Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
                                  ice_supersat_frac,                                & ! In
                                  clubb_params, nu_vert_res_dep,                    & ! In
+                                 saturation_formula,                               & ! In
                                  l_diffuse_rtm_and_thlm,                           & ! In
                                  l_stability_correct_Kh_N2_zm,                     & ! In
                                  l_upwind_xm_ma,                                   & ! In
@@ -807,7 +814,8 @@ module advance_xm_wpxp_module
     if ( ( iiPDF_type == iiPDF_new ) .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) then
 
       ! LHS matrices are unique, multiple band solves required
-      call solve_xm_wpxp_with_multiple_lhs( nz, ngrdcol, gr, dt, l_iter, nrhs, wm_zt, wp2,  & ! In
+      call solve_xm_wpxp_with_multiple_lhs( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt,        & ! In
+                                            l_iter, nrhs, wm_zt, wp2,                       & ! In
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,  & ! In
                                             thlm_forcing,   wpthlp_forcing, rho_ds_zm,      & ! In
                                             rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,    & ! In
@@ -838,8 +846,8 @@ module advance_xm_wpxp_module
     else
         
       ! LHS matrices are equivalent, only one solve required
-      call solve_xm_wpxp_with_single_lhs( nz, ngrdcol, gr, dt, l_iter, nrhs, wm_zt, wp2,   & ! In 
-                                          invrs_tau_C6_zm, tau_max_zm,                     & ! In
+      call solve_xm_wpxp_with_single_lhs( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt, l_iter, nrhs, & ! In 
+                                          wm_zt, wp2, invrs_tau_C6_zm, tau_max_zm,         & ! In
                                           rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,   & ! In
                                           thlm_forcing, wpthlp_forcing, rho_ds_zm,         & ! In
                                           rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,     & ! In
@@ -936,7 +944,7 @@ module advance_xm_wpxp_module
         !$acc              um_old, upwp_old, vm_old, vpwp_old )
 
         do i = 1, ngrdcol
-          call error_prints_xm_wpxp( nz, gr%zm(i,:), gr%zt(i,:), & ! intent(in) 
+          call error_prints_xm_wpxp( nz, sclr_dim, gr%zm(i,:), gr%zt(i,:), & ! intent(in) 
                                      dt, sigma_sqd_w(i,:), wm_zm(i,:), wm_zt(i,:), wp2(i,:), & ! intent(in)
                                      Lscale(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), & ! intent(in)
                                      Kh_zt(i,:), Kh_zm(i,:), invrs_tau_C6_zm(i,:), Skw_zm(i,:), & ! intent(in)
@@ -1405,6 +1413,7 @@ module advance_xm_wpxp_module
                                      Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,      & ! In
                                      ice_supersat_frac,                                 & ! In
                                      clubb_params, nu_vert_res_dep,                     & ! In
+                                     saturation_formula,                                & ! In
                                      l_diffuse_rtm_and_thlm,                            & ! In
                                      l_stability_correct_Kh_N2_zm,                      & ! In
                                      l_upwind_xm_ma,                                    & ! In
@@ -1491,6 +1500,9 @@ module advance_xm_wpxp_module
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     logical, intent(in) :: &
       l_diffuse_rtm_and_thlm,       & ! This flag determines whether or not we want CLUBB to do
@@ -1588,6 +1600,7 @@ module advance_xm_wpxp_module
                                           p_in_Pa, thvm, ice_supersat_frac, &
                                           clubb_params(ilambda0_stability_coef), &
                                           clubb_params(ibv_efold), &
+                                          saturation_formula, &
                                           l_brunt_vaisala_freq_moist, &
                                           l_use_thvm_in_bv_freq,&
                                           Kh_N2_zm )
@@ -1993,7 +2006,7 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_rhs
   
   !=============================================================================================
-  subroutine calc_xm_wpxp_ta_terms( nz, ngrdcol, gr, wp2rtp, &
+  subroutine calc_xm_wpxp_ta_terms( nz, ngrdcol, sclr_dim, gr, wp2rtp, &
                                     wp2thlp, wp2sclrp, &
                                     rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                     sigma_sqd_w, wp3_on_wp2_zt, &
@@ -2028,9 +2041,6 @@ module advance_xm_wpxp_module
         zero, &
         zero_threshold
       
-    use parameters_model, only: &
-        sclr_dim  ! Number of passive scalar variables
-      
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
@@ -2058,7 +2068,8 @@ module advance_xm_wpxp_module
     !------------------- Input Variables -------------------
     integer, intent(in) :: &
       nz, &
-      ngrdcol
+      ngrdcol, &
+      sclr_dim
 
     type (grid), target, intent(in) :: gr
     
@@ -2587,8 +2598,8 @@ module advance_xm_wpxp_module
   end subroutine calc_xm_wpxp_ta_terms
   
   !==========================================================================================
-  subroutine solve_xm_wpxp_with_single_lhs( nz, ngrdcol, gr, dt, l_iter, nrhs, wm_zt, wp2, &
-                                            invrs_tau_C6_zm, tau_max_zm, &
+  subroutine solve_xm_wpxp_with_single_lhs( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt, l_iter, nrhs, &
+                                            wm_zt, wp2, invrs_tau_C6_zm, tau_max_zm, &
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp, &
                                             thlm_forcing, wpthlp_forcing, rho_ds_zm, &
                                             rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
@@ -2644,10 +2655,6 @@ module advance_xm_wpxp_module
       
     use stats_variables, only: &
         stats_metadata_type
-        
-    use parameters_model, only: & 
-        sclr_dim, &  ! Variable(s)
-        sclr_tol
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -2672,12 +2679,16 @@ module advance_xm_wpxp_module
     implicit none
     
     ! ------------------- Input Variables -------------------
-
     integer, intent(in) :: &
-      nz, &
-      ngrdcol
+      nz,       & ! Number of vertical levels
+      ngrdcol,  & ! Number of grid columns
+      sclr_dim    ! Number of passive scalars
 
-    type (grid), target, intent(in) :: gr
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+    type (grid), target, intent(in) :: &
+      gr
     
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
@@ -3605,34 +3616,35 @@ module advance_xm_wpxp_module
   
   !==========================================================================================
 
-  subroutine solve_xm_wpxp_with_multiple_lhs( nz, ngrdcol, gr, dt, l_iter, nrhs, wm_zt, wp2, &
-                                            rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp, &
-                                            thlm_forcing,   wpthlp_forcing, rho_ds_zm, &
-                                            rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
-                                            thv_ds_zm, rtp2, thlp2, l_implemented, &
-                                            sclrpthvp, sclrm_forcing, sclrp2, &
-                                            low_lev_effect, high_lev_effect, C7_Skw_fnc, &
-                                            lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
-                                            lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpsclrp, &
-                                            rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpsclrp, &
-                                            lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp, &
-                                            lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
-                                            penta_solve_method, &
-                                            tridiag_solve_method, &
-                                            l_predict_upwp_vpwp, &
-                                            l_diffuse_rtm_and_thlm, &
-                                            l_upwind_xm_ma, &
-                                            l_tke_aniso, &
-                                            l_enable_relaxed_clipping, &
-                                            l_mono_flux_lim_thlm, &
-                                            l_mono_flux_lim_rtm, &
-                                            l_mono_flux_lim_um, &
-                                            l_mono_flux_lim_vm, &
-                                            l_mono_flux_lim_spikefix, &
-                                            order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
-                                            stats_metadata, &
-                                            stats_zt, stats_zm, stats_sfc, & 
-                                            rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )
+  subroutine solve_xm_wpxp_with_multiple_lhs( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt, &
+                                              l_iter, nrhs, wm_zt, wp2, &
+                                              rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp, &
+                                              thlm_forcing,   wpthlp_forcing, rho_ds_zm, &
+                                              rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
+                                              thv_ds_zm, rtp2, thlp2, l_implemented, &
+                                              sclrpthvp, sclrm_forcing, sclrp2, &
+                                              low_lev_effect, high_lev_effect, C7_Skw_fnc, &
+                                              lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm, &
+                                              lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpsclrp, &
+                                              rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpsclrp, &
+                                              lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp, &
+                                              lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
+                                              penta_solve_method, &
+                                              tridiag_solve_method, &
+                                              l_predict_upwp_vpwp, &
+                                              l_diffuse_rtm_and_thlm, &
+                                              l_upwind_xm_ma, &
+                                              l_tke_aniso, &
+                                              l_enable_relaxed_clipping, &
+                                              l_mono_flux_lim_thlm, &
+                                              l_mono_flux_lim_rtm, &
+                                              l_mono_flux_lim_um, &
+                                              l_mono_flux_lim_vm, &
+                                              l_mono_flux_lim_spikefix, &
+                                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
+                                              stats_metadata, &
+                                              stats_zt, stats_zm, stats_sfc, & 
+                                              rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )
     !            
     ! Description: This subroutine solves all xm_wpxp when all the LHS matrices are NOT equal.
     !              This means multiple solves are required, one for each unique LHS.
@@ -3654,10 +3666,6 @@ module advance_xm_wpxp_module
     use stats_variables, only: &
         stats_metadata_type
         
-    use parameters_model, only: & 
-        sclr_dim, &  ! Variable(s)
-        sclr_tol
-        
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
@@ -3678,10 +3686,15 @@ module advance_xm_wpxp_module
     
     ! ------------------- Input Variables -------------------
     integer, intent(in) :: &
-      nz, &
-      ngrdcol
+      nz,       & ! Number of vertical levels
+      ngrdcol,  & ! Number of grid columns
+      sclr_dim    ! Number of passive scalars
 
-    type (grid), target, intent(in) :: gr
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+      sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
+
+    type (grid), target, intent(in) :: &
+      gr
     
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
@@ -5920,7 +5933,7 @@ module advance_xm_wpxp_module
   end subroutine diagnose_upxp
 
   !=============================================================================
-  subroutine error_prints_xm_wpxp( nz, zt, zm, &
+  subroutine error_prints_xm_wpxp( nz, sclr_dim, zt, zm, &
                                    dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                                    Lscale, wp3_on_wp2, wp3_on_wp2_zt, &
                                    Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, &
@@ -5954,9 +5967,6 @@ module advance_xm_wpxp_module
     use constants_clubb, only: &
         fstderr    ! Variable(s)
 
-    use parameters_model, only: &
-        sclr_dim    ! Variable(s)
-
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type(s)
 
@@ -5967,7 +5977,8 @@ module advance_xm_wpxp_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz
+      nz, &
+      sclr_dim
       
     real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]

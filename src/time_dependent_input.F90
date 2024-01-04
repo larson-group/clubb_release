@@ -482,8 +482,9 @@ module time_dependent_input
   end function read_to_grid
 
   !================================================================================================
-  subroutine apply_time_dependent_forcings &
-            ( gr, time, grid_size, rtm, rho, exner,  &
+  subroutine apply_time_dependent_forcings( &
+              sclr_dim, edsclr_dim, sclr_idx, &
+              gr, time, grid_size, rtm, rho, exner,  &
               thlm_f, rtm_f, um_ref, vm_ref, um_f, vm_f, &
               wm_zt, wm_zm,  ug, vg, &
               sclrm_forcing, edsclrm_forcing )
@@ -492,9 +493,6 @@ module time_dependent_input
     !  memory (time_dependent_forcing_data) into the format used by CLUBB.
     !
     !---------------------------------------------------------------------------------
-
-
-    use grid_class, only: grid ! Type
 
     use constants_clubb, only: &
       grav, & ! Variable(s)
@@ -521,22 +519,32 @@ module time_dependent_input
       vg_name, &
       omega_mb_hr_name
 
-    use grid_class, only : zt2zm ! Procedure(s)
+    use grid_class, only : &
+      grid, & ! Type
+      zt2zm   ! Procedure(s)
 
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+    use clubb_precision, only: &
+      time_precision, &
+      core_rknd ! Variable(s)
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
-
-    use array_index, only: iisclr_rt, iisclr_thl, & ! Variable(s)
-                           iiedsclr_rt, iiedsclr_thl
+    use array_index, only: &
+      sclr_idx_type
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
 
-    ! Input Variable(s)
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
 
-    real(kind=time_precision), intent(in) :: time ! Model Time [s]
+    type (grid), target, intent(in) :: &
+      gr
+
+    real(kind=time_precision), intent(in) :: &
+      time ! Model Time [s]
 
     integer, intent(in) :: grid_size ! Size of the model grid
 
@@ -545,8 +553,7 @@ module time_dependent_input
       rho,     & ! Air Density                                [kg/m^3]
       rtm        ! Total Water Mixing Ratio                   [kg/kg]
 
-    ! Output Variable(s)
-
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), dimension(grid_size), intent(inout) :: &
       thlm_f, & ! Potential Temperature forcing     [K/s]
       rtm_f,  & ! Total Water Mixing Ration forcing [kg/kg/s]
@@ -565,14 +572,14 @@ module time_dependent_input
     real( kind = core_rknd ), dimension(grid_size, edsclr_dim), intent(inout) :: &
       edsclrm_forcing ! Edscalar forcing [-]
 
-    ! Local Variable(s)
+    !--------------------- Local Variables ---------------------
     integer :: i, j, before_time, after_time
 
     real( kind = core_rknd ), dimension(grid_size) :: temp_array
 
     real( kind = core_rknd ) :: time_frac
 
-    ! ----------------- Begin Code --------------------
+    !--------------------- Begin Code ---------------------
 
     time_frac = -1.0_core_rknd ! Default initialization
 
@@ -610,8 +617,8 @@ module time_dependent_input
 
           end select
 
-          if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_f
-          if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_f
+          if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_f
+          if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_f
 
         case(rt_f_name, sp_humidity_f_name)
 
@@ -626,8 +633,8 @@ module time_dependent_input
 
           end select
 
-          if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_f
-          if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_f
+          if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_f
+          if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_f
 
 
         case(um_ref_name)

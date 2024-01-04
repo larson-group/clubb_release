@@ -48,7 +48,8 @@ module mpace_a
   contains
 
 !----------------------------------------------------------------------
-  subroutine mpace_a_tndcy( gr, time, p_in_Pa, & 
+  subroutine mpace_a_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+                            gr, time, p_in_Pa, & 
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & 
                             um_hoc_grid, vm_hoc_grid, & 
                             sclrm_forcing, edsclrm_forcing )
@@ -60,37 +61,51 @@ module mpace_a
 !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Rd, & ! Variable(s)
-                         sec_per_hr, g_per_kg, fstderr
+    use constants_clubb, only: &
+      Cp, &       ! Variable(s)
+      Rd, & 
+      sec_per_hr, &
+      g_per_kg, &
+      fstderr
 
-    use grid_class, only: grid ! Type
+    use grid_class, only: &
+      grid ! Type
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use grid_class, only: &
+      zt2zm ! Procedure(s)
 
+    use interpolation, only: &
+      zlinterp_fnc, &   ! Procedure(s)
+      linear_interp_factor 
 
-    use grid_class, only: zt2zm ! Procedure(s)
+    use clubb_precision, only: &
+      time_precision, &  ! Variable(s)
+      core_rknd
 
-    use interpolation, only: zlinterp_fnc, linear_interp_factor ! Procedure(s)
+    use error_code, only: &
+      clubb_at_least_debug_level  ! Procedure
 
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
-
-    use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
-
-    use error_code, only: clubb_at_least_debug_level  ! Procedure
+    use array_index, only: &
+      sclr_idx_type
 
     ! Note that this subroutine is from the time_dependent_input module, but
     ! mpace_a does not have time dependent input.
-    use time_dependent_input, only: time_select !Procedure(s)
+    use time_dependent_input, only: &
+      time_select ! Procedure(s)
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
 
-    ! Local constants, subsidence
-    real( kind = core_rknd ), parameter :: & 
-      p_sfc  = 101000._core_rknd   ! Pa
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
 
-    ! Input Variables
+    type (grid), target, intent(in) :: &
+      gr
+
     real(kind=time_precision), intent(in) ::  & 
       time  ! Current time of simulation      [s]
 
@@ -110,18 +125,23 @@ module mpace_a
     real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar forcing         [units/s]
 
-    ! Local Variables, general
+    !--------------------- Local Variables ---------------------
+
+    ! Local constants, subsidence
+    real( kind = core_rknd ), parameter :: & 
+      p_sfc  = 101000._core_rknd   ! Pa
+
     integer :: i, k ! Loop indices
 
     ! Local Variables, subsidence scheme
-!        real :: velocity_omega [Pa/s]
+    ! real :: velocity_omega [Pa/s]
 
     ! Open external files (21 Aug 2007, Michael Falk)
 
     integer before_time,after_time
     real( kind = core_rknd ) :: ratio
 
-!      real, dimension(file_nlevels) :: omega_column
+    ! real, dimension(file_nlevels) :: omega_column
     real( kind = core_rknd ), dimension(file_nlevels) :: dTdt_column
     real( kind = core_rknd ), dimension(file_nlevels) :: dqdt_column
     real( kind = core_rknd ), dimension(file_nlevels) :: vertT_column
@@ -129,7 +149,7 @@ module mpace_a
     real( kind = core_rknd ), dimension(file_nlevels) :: um_column
     real( kind = core_rknd ), dimension(file_nlevels) :: vm_column
 
-!      real, dimension(gr%nz) :: omega_hoc_grid
+    ! real, dimension(gr%nz) :: omega_hoc_grid
     real( kind = core_rknd ), dimension(gr%nz) :: dTdt_hoc_grid
     real( kind = core_rknd ), dimension(gr%nz) :: dqdt_hoc_grid
     real( kind = core_rknd ), dimension(gr%nz) :: vertT_hoc_grid
@@ -139,7 +159,7 @@ module mpace_a
     um_hoc_grid,       & ! Observed wind, for nudging         [m/s]
     vm_hoc_grid       ! Observed wind, for nudging         [m/s]
 
-    !----------------BEGIN CODE------------------------
+    !--------------------- Begin Code ---------------------
    
     before_time = -1
     after_time = -1
@@ -224,11 +244,11 @@ module mpace_a
     end do
 
     ! Test scalars with thetal and rt if desired
-    if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-    if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
     return
   end subroutine mpace_a_tndcy

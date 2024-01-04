@@ -13,7 +13,8 @@ module wangara
 
   contains
 !----------------------------------------------------------------------
-  subroutine wangara_tndcy( gr, wm_zt, wm_zm,  & 
+  subroutine wangara_tndcy( gr, sclr_dim, edsclr_dim, sclr_idx, &
+                            wm_zt, wm_zm,  & 
                             thlm_forcing, rtm_forcing, & 
                             sclrm_forcing, edsclrm_forcing )
 ! Description:
@@ -24,18 +25,27 @@ module wangara
 !   JAS, Vol. 59, pp. 3552--3571.
 !----------------------------------------------------------------------
 
+    use array_index, only: &
+      sclr_idx_type
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
-    use clubb_precision, only: core_rknd ! Variable(s)
-
-    use array_index, only: iisclr_thl, iisclr_rt, iiedsclr_thl, iiedsclr_rt ! Variable(s)
-
-    use grid_class, only: grid
+    use grid_class, only: &
+      grid
 
     implicit none
 
-    type(grid), target, intent(in) :: gr
+    ! Input Variables
+    type(grid), target, intent(in) :: &
+      gr
+
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
@@ -60,11 +70,11 @@ module wangara
     thlm_forcing = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
-    if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-    if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
     return
   end subroutine wangara_tndcy

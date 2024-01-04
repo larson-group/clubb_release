@@ -12,8 +12,9 @@ module estimate_scm_microphys_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine est_single_column_tndcy &
-             ( gr, dt, nz, num_samples, pdf_dim, &
+  subroutine est_single_column_tndcy( &
+               gr, dt, nz, num_samples, &
+               pdf_dim, hydromet_dim, hm_metadata, &
                X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
                pdf_params, precip_fracs, p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, &
@@ -21,6 +22,7 @@ module estimate_scm_microphys_module
                lh_rc_clipped, lh_rv_clipped, &
                lh_Nc_clipped, &
                l_lh_instant_var_covar_src, &
+               saturation_formula, &
                stats_metadata, &
                stats_zt, stats_zm, stats_sfc, stats_lh_zt, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
@@ -41,8 +43,6 @@ module estimate_scm_microphys_module
 
     use grid_class, only: grid ! Type
 
-    use parameters_model, only: &
-      hydromet_dim ! Variable
 
     use parameters_microphys, only: &
       l_var_covar_src
@@ -78,11 +78,8 @@ module estimate_scm_microphys_module
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
 
-    use array_index, only: &
-      iiNr, & ! Variable(s)
-      iirr, &
-      iiPDF_chi, &
-      iiPDF_w
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     use lh_microphys_var_covar_module, only: &
       lh_microphys_var_covar_driver   ! Procedure
@@ -118,7 +115,11 @@ module estimate_scm_microphys_module
     integer, intent(in) :: &
       nz,            & ! Number of vertical levels
       num_samples,   & ! Number of calls to microphysics
-      pdf_dim     ! Number of variates
+      pdf_dim,       & ! Number of variates
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
       X_nl_all_levs    ! Sample that is transformed ultimately to normal-lognormal
@@ -154,6 +155,9 @@ module estimate_scm_microphys_module
 
     logical, intent(in) :: &
       l_lh_instant_var_covar_src ! Produce instantaneous var/covar tendencies [-]
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -225,7 +229,19 @@ module estimate_scm_microphys_module
 
     integer :: ivar, sample
 
+    ! Just to avoid typing hm_metadata%iiPDF_x everywhere
+    integer :: &
+      iiNr, &
+      iirr, &
+      iiPDF_chi, &
+      iiPDF_w
+
     ! ---- Begin Code ----
+
+    iiNr      = hm_metadata%iiNr
+    iirr      = hm_metadata%iirr
+    iiPDF_chi = hm_metadata%iiPDF_chi
+    iiPDF_w   = hm_metadata%iiPDF_w
 
     w_all_points   = real( X_nl_all_levs(:,:,iiPDF_w), kind=core_rknd )
     chi_all_points = real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd )
@@ -233,6 +249,7 @@ module estimate_scm_microphys_module
     call copy_X_nl_into_hydromet_all_pts &
          ( nz, pdf_dim, num_samples, & ! Intent(in)
            X_nl_all_levs,                & ! Intent(in)
+           hydromet_dim, hm_metadata, & ! Intent(in)
            hydromet,                     & ! Intent(in)
            hydromet_all_points,          & ! Intent(out)
            Ncn_all_points )                ! Intent(out)
@@ -242,13 +259,15 @@ module estimate_scm_microphys_module
       cloud_frac_unused = unused_var
       w_std_dev_unused  = unused_var
       ! Call the microphysics scheme to obtain a sample point
-      call microphys_sub &
-           ( gr, dt, nz, & ! In
+      call microphys_sub( &
+             gr, dt, nz, & ! In
+             hydromet_dim, hm_metadata, & ! In
              l_latin_hypercube, lh_thl_clipped(sample,:), w_all_points(sample,:), p_in_Pa, & ! In
              exner, rho, cloud_frac_unused, w_std_dev_unused, & ! In
              dzq, lh_rc_clipped(sample,:), lh_Nc_clipped(sample,:), & ! In
              chi_all_points(sample,:), lh_rv_clipped(sample,:), & ! In
              hydromet_all_points(sample,:,:), & ! In
+             saturation_formula, &
              stats_metadata, & ! In
              lh_hydromet_mc_all(sample,:,:), lh_hydromet_vel_all(sample,:,:), & ! Out
              lh_Ncm_mc_all(sample,:), & ! Out
@@ -331,6 +350,7 @@ module estimate_scm_microphys_module
     if ( l_silhs_KK_convergence_adj_mean ) then
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirr),           & ! intent(in)
                                 hydromet(:,iiNr), hydromet,                     & ! intent(in)
+                                hydromet_dim, hm_metadata%iiri,              & ! intent(in)
                                 microphys_stats_zt_avg,                         & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
                                 stats_lh_zt,                                    & ! intent(inout)
@@ -348,7 +368,8 @@ module estimate_scm_microphys_module
 
         if( stats_metadata%isilhs_variance_category(1) > 0 ) then
           call silhs_category_variance_driver( &
-                 nz, num_samples, pdf_dim, hydromet_dim, X_nl_all_levs,     & ! Intent(in)
+                 nz, num_samples, pdf_dim, hydromet_dim, hm_metadata,    & ! Intent(in)
+                 X_nl_all_levs,                                             & ! Intent(in)
                  X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
                  lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
                  precip_fracs,                                              & ! intent(in)
@@ -540,6 +561,7 @@ module estimate_scm_microphys_module
 
   !-----------------------------------------------------------------------------
   subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrm, Nrm, hydromet, &
+                                  hydromet_dim, iiri,                     &
                                   microphys_stats_zt,                     &
                                   stats_metadata,                         &
                                   stats_lh_zt,                            &
@@ -572,9 +594,6 @@ module estimate_scm_microphys_module
     use constants_clubb, only: &
         zero    ! Constant
 
-    use parameters_model, only: &
-        hydromet_dim    ! Variable(s)
-
     use stats_type_utilities, only: &
         stat_update_var ! Procedure
 
@@ -605,7 +624,9 @@ module estimate_scm_microphys_module
       dt   ! Model timestep
 
     integer, intent(in) :: &
-      nz   ! Number of vertical grid levels
+      nz, &   ! Number of vertical grid levels
+      hydromet_dim, &
+      iiri
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       exner, & ! Exner function                            [-]
@@ -691,7 +712,8 @@ module estimate_scm_microphys_module
 
     end do
 
-    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet, &
+                                           hydromet_dim, iiri )
 
     !!! Mean sedimentation above cloud top should have a value of 0.
     if ( cloud_top_level > 1 ) then

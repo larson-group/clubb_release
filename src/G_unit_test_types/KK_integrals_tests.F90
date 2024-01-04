@@ -33,8 +33,8 @@ module KK_integrals_tests
     use clubb_precision, only: &
         dp ! double precision
 
-    use model_flags, only: &
-        l_high_accuracy_parab_cyl_fnc
+    use parabolic, only:  & 
+      l_high_accuracy_parab_cyl_fnc ! Variable
 
     implicit none
 

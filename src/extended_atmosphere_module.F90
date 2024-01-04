@@ -96,7 +96,7 @@ module extended_atmosphere_module
 
   !-------------------------------------------------------------------------------------------------
   subroutine convert_snd2extended_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, &
-                                     sounding_profiles )
+                                       sounding_profiles, saturation_formula )
     !
     !  Description: This subroutine converts information retrieved from the
     !    sounding files of a case into a format usable for an extended atmosphere.
@@ -150,6 +150,9 @@ module extended_atmosphere_module
     type(one_dim_read_var), dimension(n_snd_var), intent(in) :: &
       sounding_profiles ! Sounding profile
 
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+
     ! Local Variables
 
     real( kind = core_rknd ),  dimension(:), allocatable :: &
@@ -180,6 +183,7 @@ module extended_atmosphere_module
     ! Either convert to pressure or from pressure
 
     call read_z_profile( n_snd_var, extended_atmos_dim, sounding_profiles, p_sfc, zm_init, &
+                         saturation_formula, &
                          extended_alt , extended_p_in_Pa, alt_type )
 
     if ( alt_type == z_name ) then

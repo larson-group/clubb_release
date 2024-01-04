@@ -8,17 +8,13 @@ module saturation
 !   to liquid or ice.
 !-----------------------------------------------------------------------
 
-#ifdef GFDL
-    use model_flags, only: &  ! h1g, 2010-06-18
-       I_sat_sphum
-#endif
+  use model_flags, only: &  ! h1g, 2010-06-18
+     I_sat_sphum
 
   use clubb_precision, only: &
     core_rknd ! Variable(s)
 
-
   use model_flags, only: &
-    saturation_formula, & ! Variable
     saturation_bolton, &
     saturation_gfdl, &
     saturation_flatau, &
@@ -43,11 +39,9 @@ module saturation
   end interface sat_mixrat_ice
 
   ! Lookup table of values for saturation 
-  real( kind = core_rknd ), private, dimension(188:343) :: &
-    svp_liq_lookup_table
-
-  data svp_liq_lookup_table(188:343) / &
-    0.049560547_core_rknd, 0.059753418_core_rknd, 0.070129395_core_rknd, 0.083618164_core_rknd, &
+  real( kind = core_rknd ), parameter, private, dimension(188:343) :: &
+    svp_liq_lookup_table = &
+    (/ 0.049560547_core_rknd, 0.059753418_core_rknd, 0.070129395_core_rknd, 0.083618164_core_rknd, &
     0.09814453_core_rknd, 0.11444092_core_rknd, 0.13446045_core_rknd, 0.15686035_core_rknd,     &
     0.18218994_core_rknd, 0.21240234_core_rknd, 0.24725342_core_rknd, 0.28668213_core_rknd,     &
     0.33184814_core_rknd, 0.3826294_core_rknd, 0.4416504_core_rknd, 0.50775146_core_rknd,       &
@@ -85,15 +79,16 @@ module saturation
     15629.823_core_rknd, 16396.268_core_rknd, 17194.799_core_rknd, 18026.516_core_rknd,         &
     18892.55_core_rknd, 19794.07_core_rknd, 20732.262_core_rknd, 21708.352_core_rknd,           &
     22723.592_core_rknd, 23779.273_core_rknd, 24876.709_core_rknd, 26017.258_core_rknd,         &
-    27202.3_core_rknd, 28433.256_core_rknd, 29711.578_core_rknd, 31038.766_core_rknd /
+    27202.3_core_rknd, 28433.256_core_rknd, 29711.578_core_rknd, 31038.766_core_rknd /)
 !$acc declare create( svp_liq_lookup_table )
-!$omp threadprivate( svp_liq_lookup_table )
+
 
   contains
 
   !-------------------------------------------------------------------------
   ! Wrapped in interface sat_mixrat_liq
-  function sat_mixrat_liq_k( p_in_Pa, T_in_K )
+  function sat_mixrat_liq_k( p_in_Pa, T_in_K, &
+                             saturation_formula )
 !$acc routine seq
   ! Description:
   !   Used to compute the saturation mixing ratio of liquid water.
@@ -105,7 +100,8 @@ module saturation
     use constants_clubb, only: & 
         ep    
 
-    use constants_clubb, only: T_freeze_K
+    use constants_clubb, only: &
+        T_freeze_K
 
     implicit none
 
@@ -113,6 +109,9 @@ module saturation
     real( kind = core_rknd ), intent(in) ::  & 
       p_in_Pa,  & ! Pressure    [Pa]
       T_in_K      ! Temperature [K]
+
+    integer, intent(in) :: &
+      saturation_formula
 
     ! -------------------- Output Variables --------------------
     real( kind = core_rknd ) ::  & 
@@ -260,31 +259,32 @@ module saturation
       sat_mixrat_liq_k = ep
     else
 
-#ifdef GFDL
-
-      ! GFDL uses specific humidity
-      ! Formula for Saturation Specific Humidity
       if ( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
+
+        ! GFDL uses specific humidity
+        ! Formula for Saturation Specific Humidity
         sat_mixrat_liq_k = ep * ( esat / ( p_in_Pa &
                                              - (1.0_core_rknd-ep) * esat ) )
       else
-        sat_mixrat_liq_k = ep * ( esat / ( p_in_Pa - esat ) )
+
+        ! Formula for Saturation Mixing Ratio:
+        !
+        ! rs = (epsilon) * [ esat / ( p - esat ) ];
+        ! where epsilon = R_d / R_v
+        sat_mixrat_liq_k = ep * esat / ( p_in_Pa - esat )
+
       endif                     ! h1g, 2010-06-18 end mod
-#else
-      ! Formula for Saturation Mixing Ratio:
-      !
-      ! rs = (epsilon) * [ esat / ( p - esat ) ];
-      ! where epsilon = R_d / R_v
-      sat_mixrat_liq_k = ep * esat / ( p_in_Pa - esat )
-#endif
+
     end if
 
     return
+
   end function sat_mixrat_liq_k
 
   !-------------------------------------------------------------------------
   !
   function sat_mixrat_liq_2D( nz, ngrdcol, p_in_Pa, T_in_K, &
+                              saturation_formula, &
                               start_index_in )
   !
   ! Description:
@@ -306,8 +306,8 @@ module saturation
       nz, &
       ngrdcol
 
-    integer, intent(in), optional :: &
-      start_index_in
+    integer, intent(in) :: &
+      saturation_formula
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
       p_in_Pa,  & ! Pressure    [Pa]
@@ -316,6 +316,10 @@ module saturation
     ! -------------------- Output Variables --------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
       sat_mixrat_liq_2D
+
+    ! -------------------- Optional Input --------------------
+    integer, intent(in), optional :: &
+      start_index_in
 
     ! -------------------- Local Variables --------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -502,23 +506,22 @@ module saturation
           sat_mixrat_liq_2D(i,k) = ep
         else
 
-#ifdef GFDL
-
-          ! GFDL uses specific humidity
-          ! Formula for Saturation Specific Humidity
           if ( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
-            sat_mixrat_liq_2D(i,k) = ep(i,k) * ( esat(i,k) / ( p_in_Pa(i,k) &
-                                                 - (1.0_core_rknd-ep) * esat(i,k) ) )
+
+            ! GFDL uses specific humidity
+            ! Formula for Saturation Specific Humidity
+            sat_mixrat_liq_2D(i,k) = ep * ( esat(i,k) &
+                                     / ( p_in_Pa(i,k) - (1.0_core_rknd-ep * esat(i,k) ) ) )
           else
-            sat_mixrat_liq_2D(i,k) = ep(i,k) * ( esat(i,k) / ( p_in_Pa(i,k) - esat(i,k) ) )
+
+            ! Formula for Saturation Mixing Ratio:
+            !
+            ! rs = (epsilon) * [ esat / ( p - esat ) ];
+            ! where epsilon = R_d / R_v
+            sat_mixrat_liq_2D(i,k) = ep * esat(i,k) / ( p_in_Pa(i,k) - esat(i,k) )
+          
           endif                     ! h1g, 2010-06-18 end mod
-#else
-          ! Formula for Saturation Mixing Ratio:
-          !
-          ! rs = (epsilon) * [ esat / ( p - esat ) ];
-          ! where epsilon = R_d / R_v
-          sat_mixrat_liq_2D(i,k) = ep * esat(i,k) / ( p_in_Pa(i,k) - esat(i,k) )
-#endif
+
         end if
         
       end do
@@ -532,6 +535,7 @@ module saturation
   !-----------------------------------------------------------------
   ! Wrapped in interface sat_vapor_press_liq
   subroutine sat_vapor_press_liq( T_in_K, &
+                                  saturation_formula, &
                                   esat )
 
   ! Description:
@@ -541,11 +545,6 @@ module saturation
   ! References:
   !   None
   !-----------------------------------------------------------------
-    use model_flags, only: &
-        saturation_formula, & ! Variable
-        saturation_bolton, &
-        saturation_gfdl, &
-        saturation_flatau
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -555,6 +554,9 @@ module saturation
     ! ------------------------ Input Variables ------------------------
     real( kind = core_rknd ), intent(in) :: &
       T_in_K     ! Temperature                          [K]
+
+    integer, intent(in) :: &
+      saturation_formula
 
     ! ------------------------ Output Variables ------------------------
     real( kind = core_rknd ), intent(out) :: &
@@ -840,7 +842,7 @@ module saturation
 
   !------------------------------------------------------------------------
   ! Wrapped in interface sat_mixrat_ice
-  function sat_mixrat_ice_k( p_in_Pa, T_in_K )
+  function sat_mixrat_ice_k( p_in_Pa, T_in_K, saturation_formula )
 
   ! Description:
   !   Used to compute the saturation mixing ratio of ice.
@@ -861,6 +863,9 @@ module saturation
     real( kind = core_rknd ), intent(in) :: &
       p_in_Pa, &          ! Pressure [Pa]
       T_in_K              ! Temperature [K]
+
+    integer, intent(in) :: &
+      saturation_formula
 
     ! ------------------------ Output Variables ------------------------
     real( kind = core_rknd ) :: &
@@ -883,17 +888,17 @@ module saturation
     T_in_K_col(1,1) = T_in_K
 
     ! Call 2D version 
-    sat_mixrat_ice_col = sat_mixrat_ice_2D( 1, 1, p_in_Pa_col, T_in_K_col )
+    sat_mixrat_ice_col = sat_mixrat_ice_2D( 1, 1, p_in_Pa_col, T_in_K_col, saturation_formula )
 
     ! Copy 2D result into output
-    sat_mixrat_ice_k = sat_mixrat_ice_col(1,1)
+    sat_mixrat_ice_k = sat_mixrat_ice_col( 1, 1 )
 
     return
   end function sat_mixrat_ice_k
 
   !------------------------------------------------------------------------
   ! Wrapped in interface sat_mixrat_ice
-  function sat_mixrat_ice_2D( nz, ngrdcol, p_in_Pa, T_in_K )
+  function sat_mixrat_ice_2D( nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula )
 
   ! Description:
   !   Used to compute the saturation mixing ratio of ice.
@@ -919,6 +924,9 @@ module saturation
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       p_in_Pa, &          ! Pressure [Pa]
       T_in_K              ! Temperature [K]
+
+    integer, intent(in) :: &
+      saturation_formula
 
     ! ------------------------ Output Variables ------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -1040,25 +1048,23 @@ module saturation
           sat_mixrat_ice_2D(i,k) = ep
         else
 
-#ifdef GFDL
-          ! GFDL uses specific humidity
-          ! Formula for Saturation Specific Humidity
-          if( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
+          if ( I_sat_sphum )  then   ! h1g, 2010-06-18 begin mod
+
+            ! GFDL uses specific humidity
+            ! Formula for Saturation Specific Humidity
             sat_mixrat_ice_2D(i,k) = ep * ( esat_ice(i,k) &
                                   / ( p_in_Pa(i,k) - (1.0_core_rknd-ep) * esat_ice(i,k) ) )
           else
-            sat_mixrat_ice_2D(i,k) = ep * ( esat_ice(i,k) / ( p_in_Pa(i,k) - esat_ice(i,k) ) )
+
+            ! Formula for Saturation Mixing Ratio:
+            !
+            ! rs = (epsilon) * [ esat / ( p - esat ) ];
+            ! where epsilon = R_d / R_v
+            sat_mixrat_ice_2D(i,k) = ep * esat_ice(i,k) / ( p_in_Pa(i,k) - esat_ice(i,k) )
+          
           endif                     ! h1g, 2010-06-18 end mod
-#else
-          ! Formula for Saturation Mixing Ratio:
-          !
-          ! rs = (epsilon) * [ esat / ( p - esat ) ];
-          ! where epsilon = R_d / R_v
-
-          sat_mixrat_ice_2D(i,k) = ep * esat_ice(i,k) / ( p_in_Pa(i,k) - esat_ice(i,k) )
-#endif
-
         end if
+
       end do
     end do
     !$acc end parallel loop
@@ -1069,7 +1075,7 @@ module saturation
   end function sat_mixrat_ice_2D
 
   !------------------------------------------------------------------------
-  subroutine sat_vapor_press_ice( nz, ngrdcol, T_in_K, &
+  subroutine sat_vapor_press_ice( nz, ngrdcol, T_in_K, saturation_formula, &
                                   esat_ice )
   !
   ! Description:
@@ -1079,11 +1085,6 @@ module saturation
   !   None
   !------------------------------------------------------------------------
  
-    use model_flags, only: &
-        saturation_formula, & ! Variable(s)
-        saturation_bolton, &
-        saturation_gfdl, &
-        saturation_flatau
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1097,6 +1098,9 @@ module saturation
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       T_in_K      ! Temperature     [K]
+
+    integer, intent(in) :: &
+      saturation_formula
 
     ! ---------------------- Output Variable ----------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
@@ -1324,7 +1328,7 @@ module saturation
 ! <--- h1g, 2010-06-16
 
 !-------------------------------------------------------------------------
-  function rcm_sat_adj( thlm, rtm, p_in_Pa, exner ) result ( rcm )
+  function rcm_sat_adj( thlm, rtm, p_in_Pa, exner, saturation_formula ) result ( rcm )
 
     ! Description:
     !
@@ -1362,6 +1366,9 @@ module saturation
       p_in_Pa, & ! Pressure                          [Pa]
       exner      ! Exner function                     [-]
 
+    integer, intent(in) :: &
+      saturation_formula
+
     ! Output Variable(s)
     real( kind = core_rknd ) :: rcm ! Cloud water mixing ratio      [kg/kg]
 
@@ -1382,7 +1389,7 @@ module saturation
     do iteration = 1, itermax, 1
 
       answer = theta - (Lv/(Cp*exner)) &
-                       *(MAX( rtm - sat_mixrat_liq(p_in_Pa,theta*exner), zero_threshold ))
+                       *(MAX( rtm - sat_mixrat_liq(p_in_Pa,theta*exner, saturation_formula), zero_threshold ))
 
       if ( ABS(answer - thlm) <= tolerance ) then
         exit
@@ -1408,7 +1415,7 @@ module saturation
       
       error stop "Error in rcm_sat_adj: could not determine rcm"
     else
-      rcm = MAX( rtm - sat_mixrat_liq( p_in_Pa, theta*exner), zero_threshold )
+      rcm = MAX( rtm - sat_mixrat_liq( p_in_Pa, theta*exner, saturation_formula), zero_threshold )
       return
     end if
 

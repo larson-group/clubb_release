@@ -213,7 +213,7 @@ module inputfields
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine stat_fields_reader( gr, timestep, &
+  subroutine stat_fields_reader( gr, timestep, hydromet_dim, hm_metadata, &
                                  um, upwp, vm, vpwp, up2, vp2, rtm, &
                                  wprtp, thlm, wpthlp, rtp2, rtp3, &
                                  thlp2, thlp3, rtpthlp, wp2, wp3, &
@@ -244,7 +244,6 @@ module inputfields
     use grid_class, only: & 
         zt2zm ! Procedure(s)
 
- 
     use constants_clubb, only:  &
         rt_tol,    & ! Variable(s)
         thl_tol,   &
@@ -258,11 +257,8 @@ module inputfields
     use pdf_parameter_module, only: &
         pdf_parameter    ! Type(s)
 
-    use parameters_model, only: &
-        hydromet_dim   ! Integer
-
-    use array_index, only:  & 
-        iirr, iiNr, iirs, iiri, iirg, iiNi, iiNg, iiNs
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     use stat_file_utils, only: & 
         LES_grid_to_CLUBB_grid, & ! Procedure(s)
@@ -285,13 +281,23 @@ module inputfields
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: max, trim, any
 
     ! Arguments
-    integer, intent(in) :: timestep
+
+    type (grid), target, intent(in) :: &
+      gr
+
+    integer, intent(in) :: &
+      timestep
+
+    integer, intent(in) :: &
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real( kind = core_rknd ), dimension(gr%nz), target, intent(inout) :: &
       um,         & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
@@ -406,7 +412,20 @@ module inputfields
       coamps_variables, & ! A list of coamps variables to read in.
       RAMS_variables ! A list of RAMS LES variables to read in.
 
+
+    integer :: & 
+      iirr, iiNr, iirs, iiri, iirg, iiNi, iiNg, iiNs
+
     ! ---- Begin Code ----
+
+    iirr = hm_metadata%iirr
+    iiNr = hm_metadata%iiNr
+    iirs = hm_metadata%iirs
+    iiri = hm_metadata%iiri
+    iirg = hm_metadata%iirg
+    iiNi = hm_metadata%iiNi
+    iiNg = hm_metadata%iiNg
+    iiNs = hm_metadata%iiNs
 
     select case ( stats_input_type )
 

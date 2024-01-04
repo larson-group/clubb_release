@@ -32,7 +32,7 @@ module sponge_layer_damping
       sponge_damp_depth      ! Damping depth as a fraction of domain height  [-]
 
     logical :: &
-      l_sponge_damping       ! True if damping is being used
+      l_sponge_damping = .false.       ! True if damping is being used, default false
 
   end type sponge_damp_settings
 
@@ -54,9 +54,6 @@ module sponge_layer_damping
     wp2_sponge_damp_settings,     &
     wp3_sponge_damp_settings,     &
     up2_vp2_sponge_damp_settings
-!$omp threadprivate( thlm_sponge_damp_settings, rtm_sponge_damp_settings, &
-!$omp                uv_sponge_damp_settings, wp2_sponge_damp_settings, &
-!$omp                wp3_sponge_damp_settings, up2_vp2_sponge_damp_settings )
 
   type(sponge_damp_profile), public :: &
     thlm_sponge_damp_profile,    & ! Variable(s)
@@ -65,9 +62,6 @@ module sponge_layer_damping
     wp2_sponge_damp_profile,     &
     wp3_sponge_damp_profile,     &
     up2_vp2_sponge_damp_profile
-!$omp threadprivate( thlm_sponge_damp_profile, rtm_sponge_damp_profile, &
-!$omp                uv_sponge_damp_profile, wp2_sponge_damp_profile, &
-!$omp                wp3_sponge_damp_profile, up2_vp2_sponge_damp_profile )
 
 
   private

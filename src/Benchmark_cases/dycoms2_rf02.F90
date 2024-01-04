@@ -15,7 +15,8 @@ module dycoms2_rf02
   contains
 
   !----------------------------------------------------------------------
-  subroutine dycoms2_rf02_tndcy( gr, wm_zt, wm_zm,    &
+  subroutine dycoms2_rf02_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+                                 gr, wm_zt, wm_zm,    &
                                  thlm_forcing, rtm_forcing,  & 
                                  sclrm_forcing, edsclrm_forcing )
     ! Description:
@@ -33,26 +34,34 @@ module dycoms2_rf02
     !  http://www.atmos.ucla.edu/~bstevens/Documents/dycoms.pdf 
     !----------------------------------------------------------------------
 
+    use array_index, only: &
+      sclr_idx_type
 
-    use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+    use clubb_precision, only: &
+      core_rknd ! Variable(s)
 
-    use array_index, only:  & 
-        iisclr_thl, iisclr_rt, iiedsclr_rt, iiedsclr_thl ! Variable(s)
-
-    use clubb_precision, only: core_rknd ! Variable(s)
-
-    use grid_class, only: grid
+    use grid_class, only: &
+      grid
 
     implicit none
 
-    type(grid), target, intent(in) :: gr
+    !--------------------- Input Variables ---------------------
+    integer, intent(in) :: &
+      sclr_dim, & 
+      edsclr_dim
 
-    ! Input/Output Variables
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
+
+    type(grid), target, intent(in) :: &
+      gr
+
+    !--------------------- InOut Variables ---------------------
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       wm_zt, & ! W wind component at thermodynamic levels   [m/s]
       wm_zm    ! W wind component at momentum levels        [m/s]
 
-    ! Output Variables
+    !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       thlm_forcing, & ! theta_l forcing                [K/s]
       rtm_forcing     ! r_t forcing                    [(kg/kg)/s] 
@@ -63,7 +72,7 @@ module dycoms2_rf02
     real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
       edsclrm_forcing  ! Eddy-passive scalar tendency   [units/s]
 
-    ! ---- Begin Code ----
+    !--------------------- Begin Code ---------------------
 
     ! Enter the final thlm and rtm tendency
 
@@ -80,11 +89,11 @@ module dycoms2_rf02
     wm_zm(gr%nz) = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
-    if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-    if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+    if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+    if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-    if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-    if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+    if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+    if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
     return
   end subroutine dycoms2_rf02_tndcy

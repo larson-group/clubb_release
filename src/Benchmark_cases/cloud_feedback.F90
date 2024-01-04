@@ -21,6 +21,7 @@ module cloud_feedback
   subroutine cloud_feedback_sfclyr( time, sfctype,                &
                                     thlm_sfc, rtm_sfc, lowest_level, &
                                     ubar, p_sfc, T_sfc,                &
+                                    saturation_formula, &
                                     wpthlp_sfc, wprtp_sfc, ustar )
 
   ! Description:
@@ -59,6 +60,9 @@ module cloud_feedback
     p_sfc,      & ! Surface pressure    [Pa]
     ubar,      & ! This is root (u^2 + v^2), per ATEX and RICO spec.
     lowest_level ! This is z at the lowest above-ground model level.  [m]
+
+  integer, intent(in) :: &
+    saturation_formula ! Integer that stores the saturation formula to be used
 
   ! Output variables
   real( kind = core_rknd ), intent(out) ::  & 
@@ -130,7 +134,7 @@ module cloud_feedback
          ((log(standard_flux_alt/z0))/(log(lowest_level/z0)))
  
   if ( sfctype == 1 ) then
-    wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc ) )
+    wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc, saturation_formula ) )
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, & 
                                      T_sfc, exner_sfc )
   else

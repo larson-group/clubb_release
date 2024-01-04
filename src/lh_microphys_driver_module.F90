@@ -13,8 +13,9 @@ module lh_microphys_driver_module
 contains
 
   !=============================================================================
-  subroutine lh_microphys_driver &
-             ( gr, dt, nz, num_samples, pdf_dim, &
+  subroutine lh_microphys_driver( &
+               gr, dt, nz, num_samples, &
+               pdf_dim, hydromet_dim, hm_metadata, &
                X_nl_all_levs, lh_sample_point_weights, &
                pdf_params, precip_fracs, p_in_Pa, exner, rho, &
                rcm, delta_zt, cloud_frac, &
@@ -24,6 +25,7 @@ contains
                lh_Nc_clipped, & ! In
                l_lh_importance_sampling, &
                l_lh_instant_var_covar_src, &
+               saturation_formula, &
                stats_metadata, &
                stats_zt, stats_zm, stats_sfc, stats_lh_zt, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
@@ -42,9 +44,8 @@ contains
     !   None
     !---------------------------------------------------------------------------
 
-    use parameters_model, only: hydromet_dim ! Variable
-
-    use grid_class, only: grid ! Type
+    use grid_class, only: &
+      grid ! Type
 
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
@@ -59,7 +60,7 @@ contains
       core_rknd
       
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+       clubb_at_least_debug_level  ! Procedure
 
     use estimate_scm_microphys_module, only: &
       est_single_column_tndcy
@@ -69,6 +70,9 @@ contains
 
     use stats_variables, only: &
       stats_metadata_type
+
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     implicit none
 
@@ -83,9 +87,13 @@ contains
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
-      pdf_dim,     & ! Number of variables to sample
-      num_samples,   & ! Number of calls to microphysics per timestep (normally=2)
-      nz               ! Number of vertical model levels
+      num_samples,  & ! Number of calls to microphysics per timestep (normally=2)
+      nz,           & ! Number of vertical model levels
+      pdf_dim,      & ! Number of variables to sample
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(num_samples,nz,pdf_dim) :: &
@@ -124,6 +132,9 @@ contains
     logical, intent(in) :: &
       l_lh_importance_sampling, & ! Do importance sampling (SILHS) [-]
       l_lh_instant_var_covar_src  ! Produce instantaneous var/covar tendencies [-]
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -175,8 +186,9 @@ contains
     end if
 
     ! Call the latin hypercube microphysics driver for microphys_sub
-    call est_single_column_tndcy &
-         ( gr, dt, nz, num_samples, pdf_dim, &                         ! Intent(in)
+    call est_single_column_tndcy( &
+           gr, dt, nz, num_samples, &                                  ! Intent(in)
+           pdf_dim, hydromet_dim, hm_metadata, &                    ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, &                      ! Intent(in)
            lh_sample_point_weights, pdf_params, precip_fracs, &        ! Intent(in)
            p_in_Pa, exner, rho, &                                      ! Intent(in)
@@ -185,6 +197,7 @@ contains
            lh_rc_clipped, lh_rv_clipped, &                             ! Intent(in)
            lh_Nc_clipped, &                                            ! Intent(in)
            l_lh_instant_var_covar_src, &                               ! Intent(in)
+           saturation_formula, &                                       ! Intent(in)
            stats_metadata, &                                           ! Intent(in) 
            stats_zt, stats_zm, stats_sfc, stats_lh_zt, &               ! intent(inout)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &               ! Intent(out)

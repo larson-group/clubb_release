@@ -25,6 +25,10 @@ module output_2D_samples_module
                                    time, dtwrite, zgrid, variable_names, &
                                    variable_descriptions, variable_units, &
                                    nlon, nlat, lon_vals, lat_vals, &
+                                   clubb_params, sclr_dim, sclr_tol, &
+                                   l_uv_nudge, &
+                                   l_tke_aniso, &
+                                   l_standard_term_ta, &
                                    sample_file )
 ! Description:
 !   Open a 2D sample file
@@ -32,10 +36,17 @@ module output_2D_samples_module
 !   None
 !-------------------------------------------------------------------------------
 #ifdef NETCDF
-    use output_netcdf, only: open_netcdf_for_writing ! Procedure(s)
+    use output_netcdf, only: &
+        open_netcdf_for_writing, & ! Procedure
+        first_write
 #endif
 
-    use clubb_precision, only: time_precision, core_rknd ! Constant(s)
+    use clubb_precision, only: &
+        time_precision, &
+        core_rknd ! Constant(s)
+
+    use parameter_indices, only: &
+        nparams    ! Variable(s)
 
     implicit none
 
@@ -83,6 +94,24 @@ module output_2D_samples_module
     real( kind = core_rknd ), dimension(nlat), intent(in) ::  &
       lat_vals  ! Latitude values  [Degrees N]
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    integer, intent(in) :: &
+      sclr_dim 
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+      sclr_tol
+
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                            ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+
     character(len=100) :: fname
     integer :: i
 
@@ -104,6 +133,13 @@ module output_2D_samples_module
     call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, nz, zgrid, &
                       day, month, year, lat_vals, lon_vals, &
                       time, dtwrite, n_2D_variables, sample_file, num_samples )
+
+    ! Finalize the variable definitions
+    call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+                      l_uv_nudge, & ! intent(in)
+                      l_tke_aniso, & ! intent(in)
+                      l_standard_term_ta, & ! intent(in)
+                      sample_file ) ! intent(inout)
 #else
     error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
@@ -112,13 +148,9 @@ module output_2D_samples_module
   end subroutine open_2D_samples_file
 
 !-------------------------------------------------------------------------------
-  subroutine output_2D_lognormal_dist_file (&
-               nz, num_samples, pdf_dim, X_nl_all_levs, &
-               clubb_params, &
-               stats_metadata, &
-               l_uv_nudge, &
-               l_tke_aniso, &
-               l_standard_term_ta )
+  subroutine output_2D_lognormal_dist_file ( nz, num_samples, pdf_dim, &
+                                             X_nl_all_levs, &
+                                             stats_metadata )
 ! Description:
 !   Output a 2D snapshot of latin hypercube samples
 ! References:
@@ -149,21 +181,9 @@ module output_2D_samples_module
 
     real(kind=stat_rknd), intent(in), dimension(num_samples,nz,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
       
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
-
-    logical, intent(in) :: &
-      l_uv_nudge,         & ! For wind speed nudging
-      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                            ! (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
-                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
-                            ! derivative in advance_wp2_wp3_module.F90 and in
-                            ! advance_xp2_xpyp_module.F90.
 
     integer :: sample, j
 
@@ -182,11 +202,7 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( clubb_params, &
-                       l_uv_nudge, &
-                       l_tke_aniso, &
-                       l_standard_term_ta, &
-                       lognormal_sample_file )
+    call write_netcdf( lognormal_sample_file )
 #else
     error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
@@ -199,14 +215,11 @@ module output_2D_samples_module
   end subroutine output_2D_lognormal_dist_file
 
 !-------------------------------------------------------------------------------
-  subroutine output_2D_uniform_dist_file( &
-               nz, num_samples, dp2, X_u_all_levs, X_mixt_comp_all_levs, &
-               lh_sample_point_weights, &
-               clubb_params, &
-               stats_metadata, &
-               l_uv_nudge, &
-               l_tke_aniso, &
-               l_standard_term_ta )
+  subroutine output_2D_uniform_dist_file( nz, num_samples, dp2, &
+                                          X_u_all_levs, &
+                                          X_mixt_comp_all_levs, &
+                                          lh_sample_point_weights, &
+                                          stats_metadata )
 ! Description:
 !   Output a 2D snapshot of latin hypercube uniform distribution, i.e. (0,1)
 ! References:
@@ -242,20 +255,8 @@ module output_2D_samples_module
     real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_sample_point_weights ! Weight of each sample
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
-
-    logical, intent(in) :: &
-      l_uv_nudge,         & ! For wind speed nudging
-      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                            ! (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
-                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
-                            ! derivative in advance_wp2_wp3_module.F90 and in
-                            ! advance_xp2_xpyp_module.F90.
 
     integer :: sample, j, k
 
@@ -281,11 +282,7 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( clubb_params, &
-                       l_uv_nudge, &
-                       l_tke_aniso, &
-                       l_standard_term_ta, &
-                       uniform_sample_file )
+    call write_netcdf( uniform_sample_file )
 #else
     error stop "This version of CLUBB was not compiled for netCDF output"
 #endif

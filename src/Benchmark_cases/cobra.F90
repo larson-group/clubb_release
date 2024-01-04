@@ -14,7 +14,8 @@ module cobra
   contains
 
   !-----------------------------------------------------------------------
-  subroutine cobra_sfclyr( time, z, rho_sfc, thlm_sfc, ubar, & 
+  subroutine cobra_sfclyr( sclr_dim, edsclr_dim, sclr_idx, &
+                           time, z, rho_sfc, thlm_sfc, ubar, & 
                            wpthlp_sfc, wprtp_sfc, ustar, & 
                            wpsclrp_sfc, wpedsclrp_sfc, T_sfc )
 
@@ -28,25 +29,33 @@ module cobra
   !       case.
   !-----------------------------------------------------------------------
 
-  use constants_clubb, only: grav ! Variable(s)
+  use constants_clubb, only: &
+    grav ! Variable(s)
 
-  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+  use interpolation, only: &
+    linear_interp_factor
 
-  use interpolation, only: linear_interp_factor
+  use clubb_precision, only: &
+    time_precision, & ! Variable(s)
+    core_rknd 
 
-  use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+  use diag_ustar_module, only: &
+    diag_ustar ! Variable(s)
 
-  use diag_ustar_module, only: diag_ustar ! Variable(s)
+  use sfc_flux, only: &
+    convert_sens_ht_to_km_s, & ! Procedure(s)
+    convert_latent_ht_to_m_s 
 
-  use sfc_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
+  use time_dependent_input, only: &
+    latent_ht_given, & ! Variable (s)
+    sens_ht_given, &
+    time_sfc_given, &
+    CO2_sfc_given, &
+    T_sfc_given, &
+    time_select ! Procedure(s)
 
   use array_index, only: &
-    iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variable(s)
-    iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2
-
-  use time_dependent_input, only: latent_ht_given, sens_ht_given, time_sfc_given, &
-                                  CO2_sfc_given, T_sfc_given,& ! Variable (s)
-                                  time_select ! Procedure(s)
+    sclr_idx_type
 
   implicit none
 
@@ -58,7 +67,14 @@ module cobra
   integer, parameter :: &
     ntimes = 49
 
-  ! Input variables
+  !--------------------- Input Variables ---------------------
+  integer, intent(in) :: &
+    sclr_dim, & 
+    edsclr_dim
+
+  type (sclr_idx_type), intent(in) :: &
+    sclr_idx
+
   real(kind=time_precision), intent(in) ::  & 
     time      ! Current time                [s]
 
@@ -68,7 +84,7 @@ module cobra
     thlm_sfc,  & ! Theta_l at zt(2)            [K]
     ubar         ! mean sfc wind speed         [m/s]
 
-  ! Output variables
+  !--------------------- Output Variables ---------------------
   real( kind = core_rknd ), intent(out) ::  & 
     wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
     wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
@@ -82,22 +98,25 @@ module cobra
   real( kind = core_rknd ), intent(out), dimension(edsclr_dim) ::  & 
     wpedsclrp_sfc  ! w' edsclr' surface flux       [units m/s]
 
-  ! Local variables
+  !--------------------- Local Variables ---------------------
   integer :: &
     before_time, after_time
+
   real( kind = core_rknd ) ::  &  
     heat_flx, moisture_flx, &                 ! [W/m^2]
     heat_flx2, moisture_flx2, &
     time_frac, &
     bflx
-  real( kind = core_rknd ) :: CO2_flx
-  real( kind = core_rknd ) :: CO2_flx2
+
+  real( kind = core_rknd ) :: &
+    CO2_flx, &
+    CO2_flx2
 
   ! COBRA roughness height
   ! real, parameter :: z0 = 0.035_core_rknd  ! ARM momentum roughness height
   real( kind = core_rknd ), parameter :: z0 = 1.75_core_rknd   ! momentum roughness height
 
-  !-----------------BEGIN CODE-------------------------
+  !--------------------- Begin Code ---------------------
 
   ! Default Initialization
   heat_flx = 0.0_core_rknd
@@ -147,13 +166,13 @@ module cobra
   wpthlp_sfc = heat_flx2
   wprtp_sfc  = moisture_flx2
 
-  if ( iisclr_CO2 > 0 ) wpsclrp_sfc(iisclr_CO2) = CO2_flx2
-  if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-  if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+  if ( sclr_idx%iisclr_CO2 > 0 ) wpsclrp_sfc(sclr_idx%iisclr_CO2) = CO2_flx2
+  if ( sclr_idx%iisclr_thl > 0 ) wpsclrp_sfc(sclr_idx%iisclr_thl) = wpthlp_sfc
+  if ( sclr_idx%iisclr_rt  > 0 ) wpsclrp_sfc(sclr_idx%iisclr_rt)  = wprtp_sfc
 
-  if ( iiedsclr_CO2 > 0 ) wpedsclrp_sfc(iiedsclr_CO2) = CO2_flx2
-  if ( iiedsclr_thl > 0 ) wpedsclrp_sfc(iiedsclr_thl) = wpthlp_sfc
-  if ( iiedsclr_rt  > 0 ) wpedsclrp_sfc(iiedsclr_rt)  = wprtp_sfc
+  if ( sclr_idx%iiedsclr_CO2 > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_CO2) = CO2_flx2
+  if ( sclr_idx%iiedsclr_thl > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_thl) = wpthlp_sfc
+  if ( sclr_idx%iiedsclr_rt  > 0 ) wpedsclrp_sfc(sclr_idx%iiedsclr_rt)  = wprtp_sfc
 
   return
   end subroutine cobra_sfclyr

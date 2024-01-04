@@ -18,9 +18,15 @@ module stats_clubb_utilities
   !-----------------------------------------------------------------------
   subroutine stats_init( iunit, fname_prefix, fdir, l_stats_in, &
                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
+                         hydromet_dim, sclr_dim, edsclr_dim, sclr_tol, &
+                         hydromet_list, l_mix_rat_hm, &
                          nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
                          lon_vals, lat_vals, time_current, delt, l_silhs_out_in, &
+                         clubb_params, &
+                         l_uv_nudge, &
+                         l_tke_aniso, &
+                         l_standard_term_ta, &
                          stats_metadata, &
                          stats_zt, stats_zm, stats_sfc, &
                          stats_lh_zt, stats_lh_sfc, &
@@ -36,6 +42,9 @@ module stats_clubb_utilities
     use stats_variables, only: &
         stats_metadata_type
 
+    use parameter_indices, only: &
+        nparams
+
     use clubb_precision, only: &
         time_precision, & ! Constant(s)
         core_rknd
@@ -45,7 +54,8 @@ module stats_clubb_utilities
 
 #ifdef NETCDF
     use output_netcdf, only: &
-        open_netcdf_for_writing     ! Procedure
+        open_netcdf_for_writing, & ! Procedure
+        first_write
 #endif
 
     use stats_zm_module, only: &
@@ -78,11 +88,6 @@ module stats_clubb_utilities
 
     use constants_clubb, only: &
         fstdout, fstderr, var_length ! Constants
-
-    use parameters_model, only: &
-        hydromet_dim, &  ! Variable(s)
-        sclr_dim, &
-        edsclr_dim
 
     use error_code, only: &
         clubb_at_least_debug_level, &   ! Procedure
@@ -125,7 +130,20 @@ module stats_clubb_utilities
     real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
       gzt, gzm  ! Thermodynamic and momentum levels           [m]
 
-    integer, intent(in) :: nnrad_zt ! Grid points in the radiation grid [count]
+    integer, intent(in) :: &
+      nnrad_zt,     & ! Grid points in the radiation grid [count]
+      hydromet_dim, &
+      sclr_dim,     &
+      edsclr_dim
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+      sclr_tol
+
+    character(len=10), dimension(hydromet_dim), intent(in) :: & 
+      hydromet_list
+
+    logical, dimension(hydromet_dim), intent(in) :: &
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
     real( kind = core_rknd ), intent(in), dimension(nnrad_zt) :: grad_zt ! Radiation levels [m]
 
@@ -150,6 +168,21 @@ module stats_clubb_utilities
     logical, intent(in) :: &
       l_silhs_out_in  ! Whether to output SILHS files (stats_lh_zt, stats_lh_sfc)  [boolean]
 
+    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                            ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+
+    type (stats_metadata_type), intent(inout) :: &
+      stats_metadata
+
     type (stats), target, intent(inout) :: &
       stats_zt, &
       stats_zm, &
@@ -158,9 +191,6 @@ module stats_clubb_utilities
       stats_lh_sfc, &
       stats_rad_zt, &
       stats_rad_zm
-
-    type (stats_metadata_type), intent(inout) :: &
-      stats_metadata
 
     ! Local Variables
     logical :: l_error
@@ -678,6 +708,14 @@ module stats_clubb_utilities
 
     fname = trim( stats_metadata%fname_zt )
 
+    ! Default initialization for array indices for zt
+
+    call stats_init_zt( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
+                        hydromet_list, l_mix_rat_hm,        & ! intent(in)
+                        vars_zt,                            & ! intent(in)
+                        l_error,                            & ! intent(inout)
+                        stats_metadata, stats_zt )            ! intent(inout)
+
     if ( stats_metadata%l_grads ) then
 
       ! Open GrADS file
@@ -695,18 +733,22 @@ module stats_clubb_utilities
                         time_current, stats_metadata%stats_tout, stats_zt%num_output_fields, &  ! In
                         stats_zt%file ) ! InOut
 
-      if ( err_code == clubb_fatal_error ) return
+      ! Finalize the variable definitions
+      call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+                        l_uv_nudge, & ! intent(in)
+                        l_tke_aniso, & ! intent(in)
+                        l_standard_term_ta, & ! intent(in)
+                        stats_zt%file ) ! intent(inout)
+
+      if ( err_code == clubb_fatal_error ) then
+        write(fstderr,*) "Fatal error setting up stats_zt"
+        return
+      end if
 #else
       error stop "This CLUBB program was not compiled with netCDF support."
 #endif
 
     end if
-
-    ! Default initialization for array indices for zt
-
-    call stats_init_zt( vars_zt,                    & ! intent(in)
-                        l_error,                    & ! intent(inout)
-                        stats_metadata, stats_zt )    ! intent(inout)
 
 
     ! Setup output file for stats_lh_zt (Latin Hypercube stats)
@@ -772,6 +814,10 @@ module stats_clubb_utilities
       allocate( stats_lh_zt%file%grid_avg_var( stats_lh_zt%num_output_fields ) )
       allocate( stats_lh_zt%file%z( stats_lh_zt%kk ) )
 
+      call stats_init_lh_zt( vars_lh_zt,                    & ! intent(in)
+                             l_error,                       & ! intent(inout)
+                             stats_metadata, stats_lh_zt )    ! intent(inout)
+
 
       fname = trim( stats_metadata%fname_lh_zt )
 
@@ -792,16 +838,22 @@ module stats_clubb_utilities
                           time_current, stats_metadata%stats_tout, stats_lh_zt%num_output_fields, &  ! In
                           stats_lh_zt%file ) ! InOut
 
-        if ( err_code == clubb_fatal_error ) return
+        ! Finalize the variable definitions
+        call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+                          l_uv_nudge, & ! intent(in)
+                          l_tke_aniso, & ! intent(in)
+                          l_standard_term_ta, & ! intent(in)
+                          stats_lh_zt%file ) ! intent(inout)
+
+        if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "Fatal error setting up stats_lh_zt"
+          return
+        end if
 #else
         error stop "This CLUBB program was not compiled with netCDF support."
 #endif
 
       end if
-
-      call stats_init_lh_zt( vars_lh_zt,                    & ! intent(in)
-                             l_error,                       & ! intent(inout)
-                             stats_metadata, stats_lh_zt )    ! intent(inout)
 
       ivar = 1
       do while ( ichar(vars_lh_sfc(ivar)(1:1)) /= 0  & 
@@ -845,6 +897,10 @@ module stats_clubb_utilities
       allocate( stats_lh_sfc%file%grid_avg_var( stats_lh_sfc%num_output_fields ) )
       allocate( stats_lh_sfc%file%z( stats_lh_sfc%kk ) )
 
+      call stats_init_lh_sfc( vars_lh_sfc,                    & ! intent(in)
+                              l_error,                        & ! intent(inout)
+                              stats_metadata, stats_lh_sfc )    ! intent(inout)
+
       fname = trim( stats_metadata%fname_lh_sfc )
 
       if ( stats_metadata%l_grads ) then
@@ -864,16 +920,24 @@ module stats_clubb_utilities
                           time_current, stats_metadata%stats_tout, stats_lh_sfc%num_output_fields, &  ! In
                           stats_lh_sfc%file ) ! InOut
 
+        ! Finalize the variable definitions
+        call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+                          l_uv_nudge, & ! intent(in)
+                          l_tke_aniso, & ! intent(in)
+                          l_standard_term_ta, & ! intent(in)
+                          stats_lh_sfc%file ) ! intent(inout)
+
+        if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "Fatal error setting up stats_lh_sfc"
+          return
+        end if
+
         if ( err_code == clubb_fatal_error ) return
 #else
         error stop "This CLUBB program was not compiled with netCDF support."
 #endif
 
       end if
-
-      call stats_init_lh_sfc( vars_lh_sfc,                    & ! intent(in)
-                              l_error,                        & ! intent(inout)
-                              stats_metadata, stats_lh_sfc )    ! intent(inout)
 
     end if ! l_silhs_out
 
@@ -1069,6 +1133,12 @@ module stats_clubb_utilities
     allocate( stats_zm%file%grid_avg_var( stats_zm%num_output_fields ) )
     allocate( stats_zm%file%z( stats_zm%kk ) )
 
+    call stats_init_zm( hydromet_dim, sclr_dim, edsclr_dim, & ! intent(in)
+                        hydromet_list, l_mix_rat_hm,        & ! intent(in)
+                        vars_zm,                            & ! intent(in)
+                        l_error,                            & ! intent(inout)
+                        stats_metadata, stats_zm )            ! intent(inout)
+
     fname = trim( stats_metadata%fname_zm )
     if ( stats_metadata%l_grads ) then
 
@@ -1086,16 +1156,22 @@ module stats_clubb_utilities
                         day, month, year, lat_vals, lon_vals, &  ! In
                         time_current, stats_metadata%stats_tout, stats_zm%num_output_fields, &  ! In
                         stats_zm%file ) ! InOut
+      
+      ! Finalize the variable definitions
+      call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+                        l_uv_nudge, & ! intent(in)
+                        l_tke_aniso, & ! intent(in)
+                        l_standard_term_ta, & ! intent(in)
+                        stats_zm%file ) ! intent(inout)
 
-      if ( err_code == clubb_fatal_error ) return
+      if ( err_code == clubb_fatal_error ) then
+        write(fstderr,*) "Fatal error setting up stats_zm"
+        return
+      end if
 #else
       error stop "This CLUBB program was not compiled with netCDF support."
 #endif
     end if
-
-    call stats_init_zm( vars_zm,                    & ! intent(in)
-                        l_error,                    & ! intent(inout)
-                        stats_metadata, stats_zm )    ! intent(inout)
 
     ! Initialize stats_rad_zt (radiation points)
 
@@ -1142,6 +1218,10 @@ module stats_clubb_utilities
       allocate( stats_rad_zt%file%grid_avg_var( stats_rad_zt%num_output_fields ) )
       allocate( stats_rad_zt%file%z( stats_rad_zt%kk ) )
 
+      call stats_init_rad_zt( vars_rad_zt,                    & ! intent(in)
+                              l_error,                        & ! intent(inout)
+                              stats_metadata, stats_rad_zt )    ! intent(inout)
+
       fname = trim( stats_metadata%fname_rad_zt )
       if ( stats_metadata%l_grads ) then
 
@@ -1162,15 +1242,21 @@ module stats_clubb_utilities
                           stats_rad_zt%num_output_fields, & ! intent(in)
                           stats_rad_zt%file ) ! intent(inout)
 
-        if ( err_code == clubb_fatal_error ) return
+        ! Finalize the variable definitions
+        call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+                          l_uv_nudge, & ! intent(in)
+                          l_tke_aniso, & ! intent(in)
+                          l_standard_term_ta, & ! intent(in)
+                          stats_rad_zt%file ) ! intent(inout)
+
+        if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "Fatal error setting up stats_rad_zt"
+          return
+        end if
 #else
         error stop "This CLUBB program was not compiled with netCDF support."
 #endif
       end if
-
-      call stats_init_rad_zt( vars_rad_zt,                    & ! intent(in)
-                              l_error,                        & ! intent(inout)
-                              stats_metadata, stats_rad_zt )    ! intent(inout)
 
       ! Initialize stats_rad_zm (radiation points)
 
@@ -1216,6 +1302,10 @@ module stats_clubb_utilities
       allocate( stats_rad_zm%file%grid_avg_var( stats_rad_zm%num_output_fields ) )
       allocate( stats_rad_zm%file%z( stats_rad_zm%kk ) )
 
+      call stats_init_rad_zm( vars_rad_zm,                    & ! intent(in)
+                              l_error,                        & ! intent(inout)
+                              stats_metadata, stats_rad_zm )    ! intent(inout)
+
       fname = trim( stats_metadata%fname_rad_zm )
       if ( stats_metadata%l_grads ) then
 
@@ -1236,15 +1326,24 @@ module stats_clubb_utilities
                           stats_rad_zm%num_output_fields, & ! intent(in)
                           stats_rad_zm%file ) ! intent(inout)
 
+        ! Finalize the variable definitions
+        call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+                          l_uv_nudge, & ! intent(in)
+                          l_tke_aniso, & ! intent(in)
+                          l_standard_term_ta, & ! intent(in)
+                          stats_rad_zm%file ) ! intent(inout)
+
+        if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "Fatal error setting up stats_rad_zm"
+          return
+        end if
+
         if ( err_code == clubb_fatal_error ) return
 #else
         error stop "This CLUBB program was not compiled with netCDF support."
 #endif
       end if
 
-      call stats_init_rad_zm( vars_rad_zm,                    & ! intent(in)
-                              l_error,                        & ! intent(inout)
-                              stats_metadata, stats_rad_zm )    ! intent(inout)
     end if ! l_output_rad_files
 
 
@@ -1291,6 +1390,10 @@ module stats_clubb_utilities
     allocate( stats_sfc%file%grid_avg_var( stats_sfc%num_output_fields ) )
     allocate( stats_sfc%file%z( stats_sfc%kk ) )
 
+    call stats_init_sfc( vars_sfc,                    & ! intent(in)
+                         l_error,                     & ! intent(inout)
+                         stats_metadata, stats_sfc )    ! intent(inout)
+
     fname = trim( stats_metadata%fname_sfc )
 
     if ( stats_metadata%l_grads ) then
@@ -1310,15 +1413,21 @@ module stats_clubb_utilities
                         time_current, stats_metadata%stats_tout, stats_sfc%num_output_fields, &  ! In
                         stats_sfc%file ) ! InOut
 
-      if ( err_code == clubb_fatal_error ) return
+      ! Finalize the variable definitions
+      call first_write( clubb_params, sclr_dim, sclr_tol, & ! intent(in)
+                        l_uv_nudge, & ! intent(in)
+                        l_tke_aniso, & ! intent(in)
+                        l_standard_term_ta, & ! intent(in)
+                        stats_sfc%file ) ! intent(inout)
+
+      if ( err_code == clubb_fatal_error ) then
+        write(fstderr,*) "Fatal error setting up stats_sfc"
+        return
+      end if
 #else
       error stop "This CLUBB program was not compiled with netCDF support."
 #endif
     end if
-
-    call stats_init_sfc( vars_sfc,                    & ! intent(in)
-                         l_error,                     & ! intent(inout)
-                         stats_metadata, stats_sfc )    ! intent(inout)
 
     ! Check for errors
 
@@ -1338,7 +1447,10 @@ module stats_clubb_utilities
     stats_metadata%l_stats_samp  = .false.
     stats_metadata%l_stats_last  = .false.
 
+    if ( err_code == clubb_fatal_error ) error stop
+
     return
+    
   end subroutine stats_init
 
   !-----------------------------------------------------------------------
@@ -1644,45 +1756,26 @@ module stats_clubb_utilities
       else ! l_netcdf
 
 #ifdef NETCDF
-        call write_netcdf( clubb_params, & ! intent(in)
-                           l_uv_nudge, & ! intent(in)
-                           l_tke_aniso, & ! intent(in)
-                           l_standard_term_ta, & ! intent(in)
-                           stats_zt%file  ) ! intent(inout)
-        call write_netcdf( clubb_params, & ! intent(in)
-                           l_uv_nudge, & ! intent(in)
-                           l_tke_aniso, & ! intent(in)
-                           l_standard_term_ta, & ! intent(in)
-                           stats_zm%file  ) ! intent(inout)
+        call write_netcdf( stats_zt%file  ) ! intent(inout)
+
+        call write_netcdf( stats_zm%file  ) ! intent(inout)
+
         if ( stats_metadata%l_silhs_out ) then
-          call write_netcdf( clubb_params, & ! intent(in)
-                             l_uv_nudge, & ! intent(in)
-                             l_tke_aniso, & ! intent(in)
-                             l_standard_term_ta, & ! intent(in)
-                             stats_lh_zt%file  ) ! intent(inout)
-          call write_netcdf( clubb_params, & ! intent(in)
-                             l_uv_nudge, & ! intent(in)
-                             l_tke_aniso, & ! intent(in)
-                             l_standard_term_ta, & ! intent(in)
-                             stats_lh_sfc%file  ) ! intent(inout)
+
+          call write_netcdf( stats_lh_zt%file  ) ! intent(inout)
+
+          call write_netcdf( stats_lh_sfc%file  ) ! intent(inout)
+
         end if
         if ( stats_metadata%l_output_rad_files ) then
-          call write_netcdf( clubb_params, & ! intent(in)
-                             l_uv_nudge, & ! intent(in)
-                             l_tke_aniso, & ! intent(in)
-                             l_standard_term_ta, & ! intent(in)
-                             stats_rad_zt%file  ) ! intent(inout)
-          call write_netcdf( clubb_params, & ! intent(in)
-                             l_uv_nudge, & ! intent(in)
-                             l_tke_aniso, & ! intent(in)
-                             l_standard_term_ta, & ! intent(in)
-                             stats_rad_zm%file  ) ! intent(inout)
+
+          call write_netcdf( stats_rad_zt%file  ) ! intent(inout)
+
+          call write_netcdf( stats_rad_zm%file  ) ! intent(inout)
+
         end if
-        call write_netcdf( clubb_params, & ! intent(in)
-                           l_uv_nudge, & ! intent(in)
-                           l_tke_aniso, & ! intent(in)
-                           l_standard_term_ta, & ! intent(in)
-                           stats_sfc%file  ) ! intent(inout)
+
+        call write_netcdf( stats_sfc%file  ) ! intent(inout)
             
         if ( err_code == clubb_fatal_error ) return
 #else
@@ -1727,7 +1820,8 @@ module stats_clubb_utilities
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate( &
-                     nz, invrs_dzm, zt, dzm, dzt, dt, &
+                     nz, sclr_dim, edsclr_dim, &
+                     invrs_dzm, zt, dzm, dzt, dt, &
                      um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
@@ -1752,6 +1846,7 @@ module stats_clubb_utilities
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
                      wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp, &
                      wpsclrpthlp, wpedsclrp, edsclrm, edsclrm_forcing, &
+                     saturation_formula, &
                      stats_metadata, &
                      stats_zt, stats_zm, stats_sfc )
 
@@ -1767,7 +1862,6 @@ module stats_clubb_utilities
     use constants_clubb, only: &
         cloud_frac_min, &  ! Constant
         eps
-
 
     use pdf_utilities, only: &
         compute_variance_binormal    ! Procedure
@@ -1786,10 +1880,6 @@ module stats_clubb_utilities
 
     use constants_clubb, only: & 
         rc_tol, fstderr    ! Constant(s)
-
-    use parameters_model, only: & 
-        sclr_dim,  &        ! Variable(s)
-        edsclr_dim
 
     use stats_type_utilities, only: & 
         stat_update_var,  & ! Procedure(s)
@@ -1814,7 +1904,9 @@ module stats_clubb_utilities
 
     ! Input Variable(s)
     integer, intent(in) :: &
-      nz
+      nz, &
+      sclr_dim, &
+      edsclr_dim
     
     real( kind = core_rknd ), intent(in), dimension(nz) :: & 
       invrs_dzm, & ! The inverse spacing between thermodynamic grid
@@ -1958,6 +2050,9 @@ module stats_clubb_utilities
       edsclrm,         & ! Eddy-diff passive scalar         [units vary] 
       edsclrm_forcing    ! Large-scale forcing of edscalar  [units vary]
 
+    integer, intent(in) :: &
+      saturation_formula
+
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
@@ -2085,7 +2180,7 @@ module stats_clubb_utilities
                             stats_zt ) ! intent(inout)
       if ( stats_metadata%irsati > 0 ) then
         do k = 1, nz
-          rsati(k) = sat_mixrat_ice( p_in_Pa(k), T_in_K(k) )
+          rsati(k) = sat_mixrat_ice( p_in_Pa(k), T_in_K(k), saturation_formula )
         end do
         call stat_update_var( stats_metadata%irsati, rsati, & ! intent(in)
                               stats_zt ) ! intent(inout)
@@ -2558,24 +2653,22 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_hydromet( gr, hydromet, rho_ds_zt, & ! intent(in)
-                                        stats_metadata,          & ! intent(in)
-                                        stats_zt, stats_sfc )      ! intent(inout)
+  subroutine stats_accumulate_hydromet( gr, hydromet_dim, hm_metadata, & ! intent(in)
+                                        hydromet, rho_ds_zt,              & ! intent(in)
+                                        stats_metadata,                   & ! intent(in)
+                                        stats_zt, stats_sfc )               ! intent(inout)
 ! Description:
 !   Compute stats related the hydrometeors
 
 ! References:
 !   None
 !------------------------------------------------------------------------------
-    use parameters_model, only: &
-        hydromet_dim ! Variable(s)
 
     use grid_class, only: &
         grid ! Type
         
-    use array_index, only:  & 
-        iirr, iirs, iiri, iirg, & ! Variable(s)
-        iiNr, iiNs, iiNi, iiNg
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use advance_helper_module, only: &
         vertical_integral ! Procedure(s)
@@ -2595,7 +2688,14 @@ module stats_clubb_utilities
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), target, intent(in) :: &
+      gr
+
+    integer, intent(in) :: &
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -2620,55 +2720,55 @@ module stats_clubb_utilities
 
     if ( stats_metadata%l_stats_samp ) then
 
-      if ( iirr > 0 ) then
-        call stat_update_var( stats_metadata%irrm, hydromet(:,iirr), & ! intent(in)
+      if ( hm_metadata%iirr > 0 ) then
+        call stat_update_var( stats_metadata%irrm, hydromet(:,hm_metadata%iirr), & ! intent(in)
                               stats_zt ) ! intent(inout)
       end if
 
-      if ( iirs > 0 ) then
-        call stat_update_var( stats_metadata%irsm, hydromet(:,iirs), & ! intent(in)
+      if ( hm_metadata%iirs > 0 ) then
+        call stat_update_var( stats_metadata%irsm, hydromet(:,hm_metadata%iirs), & ! intent(in)
                               stats_zt ) ! intent(inout)
       end if 
 
-      if ( iiri > 0 ) then 
-        call stat_update_var( stats_metadata%irim, hydromet(:,iiri), & ! intent(in)
+      if ( hm_metadata%iiri > 0 ) then 
+        call stat_update_var( stats_metadata%irim, hydromet(:,hm_metadata%iiri), & ! intent(in)
                               stats_zt ) ! intent(inout)
       end if
 
-      if ( iirg > 0 ) then
+      if ( hm_metadata%iirg > 0 ) then
         call stat_update_var( stats_metadata%irgm,  &  ! intent(in)
-                              hydromet(:,iirg), & ! intent(in)
+                              hydromet(:,hm_metadata%iirg), & ! intent(in)
                               stats_zt ) ! intent(inout)
       end if
 
-      if ( iiNi > 0 ) then
-        call stat_update_var( stats_metadata%iNim, hydromet(:,iiNi), & ! intent(in)
+      if ( hm_metadata%iiNi > 0 ) then
+        call stat_update_var( stats_metadata%iNim, hydromet(:,hm_metadata%iiNi), & ! intent(in)
                               stats_zt ) ! intent(inout)
       end if
 
-      if ( iiNr > 0 ) then
-        call stat_update_var( stats_metadata%iNrm, hydromet(:,iiNr), & ! intent(in)
+      if ( hm_metadata%iiNr > 0 ) then
+        call stat_update_var( stats_metadata%iNrm, hydromet(:,hm_metadata%iiNr), & ! intent(in)
                               stats_zt ) ! intent(inout)
       end if
 
-      if ( iiNs > 0 ) then
-        call stat_update_var( stats_metadata%iNsm, hydromet(:,iiNs), & ! intent(in)
+      if ( hm_metadata%iiNs > 0 ) then
+        call stat_update_var( stats_metadata%iNsm, hydromet(:,hm_metadata%iiNs), & ! intent(in)
                               stats_zt ) ! intent(inout)
       end if
 
-      if ( iiNg > 0 ) then
-        call stat_update_var( stats_metadata%iNgm, hydromet(:,iiNg), & ! intent(in)
+      if ( hm_metadata%iiNg > 0 ) then
+        call stat_update_var( stats_metadata%iNgm, hydromet(:,hm_metadata%iiNg), & ! intent(in)
                               stats_zt ) ! intent(inout)
       end if
 
       ! Snow Water Path
-      if ( stats_metadata%iswp > 0 .and. iirs > 0 ) then
+      if ( stats_metadata%iswp > 0 .and. hm_metadata%iirs > 0 ) then
 
         ! Calculate snow water path
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirs), gr%dzt(1,2:gr%nz) )
+                 hydromet(2:gr%nz,hm_metadata%iirs), gr%dzt(1,2:gr%nz) )
 
         call stat_update_var_pt( stats_metadata%iswp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2676,12 +2776,12 @@ module stats_clubb_utilities
       end if ! stats_metadata%iswp > 0 .and. iirs > 0
 
       ! Ice Water Path
-      if ( stats_metadata%iiwp > 0 .and. iiri > 0 ) then
+      if ( stats_metadata%iiwp > 0 .and. hm_metadata%iiri > 0 ) then
 
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iiri), gr%dzt(1,2:gr%nz) )
+                 hydromet(2:gr%nz,hm_metadata%iiri), gr%dzt(1,2:gr%nz) )
 
         call stat_update_var_pt( stats_metadata%iiwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2689,12 +2789,12 @@ module stats_clubb_utilities
       end if
 
       ! Rain Water Path
-      if ( stats_metadata%irwp > 0 .and. iirr > 0 ) then
+      if ( stats_metadata%irwp > 0 .and. hm_metadata%iirr > 0 ) then
 
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirr), gr%dzt(1,2:gr%nz) )
+                 hydromet(2:gr%nz,hm_metadata%iirr), gr%dzt(1,2:gr%nz) )
 
         call stat_update_var_pt( stats_metadata%irwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2705,7 +2805,8 @@ module stats_clubb_utilities
     return
   end subroutine stats_accumulate_hydromet
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_lh_tend( gr, lh_hydromet_mc, lh_Ncm_mc, &
+  subroutine stats_accumulate_lh_tend( gr, hydromet_dim, hm_metadata, &
+                                       lh_hydromet_mc, lh_Ncm_mc, &
                                        lh_thlm_mc, lh_rvm_mc, lh_rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc, &
@@ -2719,16 +2820,8 @@ module stats_clubb_utilities
 !   None
 !------------------------------------------------------------------------------
 
-    use parameters_model, only: &
-        hydromet_dim ! Variable(s)
-
     use grid_class, only: &
         grid ! Type
-
-    use array_index, only:  & 
-        iirr, iirs, iiri, iirg, & ! Variable(s)
-        iiNr, iiNs, iiNi, iiNg
-
 
     use stats_type_utilities, only: & 
         stat_update_var ! Procedure(s)
@@ -2739,13 +2832,24 @@ module stats_clubb_utilities
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use stats_type, only: stats ! Type
+    use corr_varnce_module, only: &
+      hm_metadata_type
+
+    use stats_type, only: &
+      stats ! Type
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    !----------------------- Input Variables -----------------------
+    type (grid), target, intent(in) :: &
+      gr
 
-    ! Input Variables
+    integer, intent(in) :: &
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
+
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       lh_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
 
@@ -2767,8 +2871,11 @@ module stats_clubb_utilities
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
+    !----------------------- InOut Variables -----------------------
     type (stats), target, intent(inout) :: &
       stats_lh_zt
+
+    !----------------------- Begin Code -----------------------
 
     if ( stats_metadata%l_stats_samp ) then
 
@@ -2782,61 +2889,73 @@ module stats_clubb_utilities
       call stat_update_var( stats_metadata%ilh_Ncm_mc, lh_Ncm_mc, & ! intent(in)
                             stats_lh_zt ) ! intent(inout)
 
-      if ( iirr > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rrm_mc, lh_hydromet_mc(:,iirr), & ! intent(in)
+      if ( hm_metadata%iirr > 0 ) then
+        call stat_update_var( stats_metadata%ilh_rrm_mc, lh_hydromet_mc(:,hm_metadata%iirr), & ! intent(in)
                               stats_lh_zt ) ! intent(inout)
       end if
 
-      if ( iirs > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rsm_mc, lh_hydromet_mc(:,iirs), & ! intent(in)
-                              stats_lh_zt ) ! intent(inout)
+      if ( hm_metadata%iirs > 0 ) then
+        call stat_update_var( stats_metadata%ilh_rsm_mc,              & ! intent(in)
+                              lh_hydromet_mc(:,hm_metadata%iirs),  & ! intent(in)
+                              stats_lh_zt )                             ! intent(inout)
       end if 
 
-      if ( iiri > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rim_mc, lh_hydromet_mc(:,iiri), & ! intent(in)
-                              stats_lh_zt ) ! intent(inout)
+      if ( hm_metadata%iiri > 0 ) then
+        call stat_update_var( stats_metadata%ilh_rim_mc,              & ! intent(in)
+                              lh_hydromet_mc(:,hm_metadata%iiri),  & ! intent(in)
+                              stats_lh_zt )                             ! intent(inout)
       end if
 
-      if ( iirg > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rgm_mc, lh_hydromet_mc(:,iirg), & ! intent(in)
-                              stats_lh_zt ) ! intent(inout)
+      if ( hm_metadata%iirg > 0 ) then
+        call stat_update_var( stats_metadata%ilh_rgm_mc,              & ! intent(in)
+                              lh_hydromet_mc(:,hm_metadata%iirg),  & ! intent(in)
+                              stats_lh_zt )                             ! intent(inout)
       end if
 
-      if ( iiNi > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nim_mc, lh_hydromet_mc(:,iiNi), & ! intent(in)
-                              stats_lh_zt ) ! intent(inout)
+      if ( hm_metadata%iiNi > 0 ) then
+        call stat_update_var( stats_metadata%ilh_Nim_mc,              & ! intent(in)
+                              lh_hydromet_mc(:,hm_metadata%iiNi),  & ! intent(in)
+                              stats_lh_zt )                             ! intent(inout)
       end if
 
-      if ( iiNr > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nrm_mc, lh_hydromet_mc(:,iiNr), & ! intent(in)
-                              stats_lh_zt ) ! intent(inout)
+      if ( hm_metadata%iiNr > 0 ) then
+        call stat_update_var( stats_metadata%ilh_Nrm_mc,              & ! intent(in)
+                              lh_hydromet_mc(:,hm_metadata%iiNr),  & ! intent(in)
+                              stats_lh_zt )                             ! intent(inout)
       end if
 
-      if ( iiNs > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nsm_mc, lh_hydromet_mc(:,iiNs), & ! intent(in)
-                              stats_lh_zt ) ! intent(inout)
+      if ( hm_metadata%iiNs > 0 ) then
+        call stat_update_var( stats_metadata%ilh_Nsm_mc,              & ! intent(in)
+                              lh_hydromet_mc(:,hm_metadata%iiNs),  & ! intent(in)
+                              stats_lh_zt )                             ! intent(inout)
       end if
 
-      if ( iiNg > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Ngm_mc, lh_hydromet_mc(:,iiNg), & ! intent(in)
-                              stats_lh_zt ) ! intent(inout)
+      if ( hm_metadata%iiNg > 0 ) then
+        call stat_update_var( stats_metadata%ilh_Ngm_mc,              & ! intent(in)
+                              lh_hydromet_mc(:,hm_metadata%iiNg),  & ! intent(in)
+                              stats_lh_zt )                             ! intent(inout)
       end if 
 
       call stat_update_var( stats_metadata%iAKm, AKm, & ! intent(in)
-                            stats_lh_zt ) ! intent(inout)
+                            stats_lh_zt )               ! intent(inout)
+
       call stat_update_var( stats_metadata%ilh_AKm, lh_AKm, & ! intent(in)
-                            stats_lh_zt) ! intent(inout)
+                            stats_lh_zt)                      ! intent(inout)
+
       call stat_update_var( stats_metadata%ilh_rcm_avg, lh_rcm_avg, & ! intent(in)
-                            stats_lh_zt ) ! intent(inout)
+                            stats_lh_zt )                             ! intent(inout)
+
       call stat_update_var( stats_metadata%iAKstd, AKstd, & ! intent(in)
-                            stats_lh_zt ) ! intent(inout)
+                            stats_lh_zt )                   ! intent(inout)
+
       call stat_update_var( stats_metadata%iAKstd_cld, AKstd_cld, & ! intent(in)
-                            stats_lh_zt ) ! intent(inout)
+                            stats_lh_zt )                       ! intent(inout)
 
       call stat_update_var( stats_metadata%iAKm_rcm, AKm_rcm, & ! intent(in)
-                            stats_lh_zt) ! intent(inout)
+                            stats_lh_zt)                        ! intent(inout)
+
       call stat_update_var( stats_metadata%iAKm_rcc, AKm_rcc, & ! intent(in)
-                            stats_lh_zt ) ! intent(inout)
+                            stats_lh_zt )                       ! intent(inout)
 
     end if ! stats_metadata%l_stats_samp
 

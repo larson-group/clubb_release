@@ -97,7 +97,8 @@ module KK_utilities
 
     use parabolic, only:  & 
         gamma,  & ! Procedure(s) 
-        parab
+        parab, &
+        l_high_accuracy_parab_cyl_fnc ! Variable
 
     use constants_clubb, only:  & 
         pi_dp,       & ! Constant(s)
@@ -107,9 +108,6 @@ module KK_utilities
 
     use clubb_precision, only: &
         dp ! double precision
-
-    use model_flags, only: &
-        l_high_accuracy_parab_cyl_fnc
 
     use Parabolic_constants, only: &
         epss
@@ -168,7 +166,7 @@ module KK_utilities
   end function Dv_fnc
 
   !=============================================================================
-  function G_T_p( T_in_K, p_in_Pa )
+  function G_T_p( T_in_K, p_in_Pa, saturation_formula )
 
     ! Description:
     ! Calculate G(T,p) from the drop radius growth equation.  This is used as a
@@ -207,6 +205,9 @@ module KK_utilities
       T_in_K,  & ! Temperature  [K]
       p_in_Pa    ! Pressure     [Pa]
 
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+
     ! Return Variable
     real( kind = core_rknd ) :: &
       G_T_p  ! Function G(T,p) as found in the evaporation equation  [m^2/s]
@@ -236,6 +237,7 @@ module KK_utilities
 
     ! Calculate saturation mixing ratio and saturation vapor pressure.
     call sat_vapor_press_liq( T_in_K, &
+                              saturation_formula, &
                               esatv )
 
     ! The values of F_k and F_d are found in Rogers and Yau (1989);

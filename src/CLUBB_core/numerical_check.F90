@@ -76,7 +76,8 @@ module numerical_check
   end subroutine length_check
 
 !---------------------------------------------------------------------------
-  subroutine pdf_closure_check( nz, wp4, wprtp2, wp2rtp, wpthlp2, & 
+  subroutine pdf_closure_check( nz, sclr_dim, &
+                                wp4, wprtp2, wp2rtp, wpthlp2, & 
                                 wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
                                 rtpthvp, thlpthvp, wprcp, wp2rcp, & 
                                 rtprcp, thlprcp, rcp2, wprtpthlp, & 
@@ -92,9 +93,6 @@ module numerical_check
 ! Joshua Fasching February 2008
 !---------------------------------------------------------------------------
 
-    use parameters_model, only: & 
-        sclr_dim ! Variable
-
     use pdf_parameter_module, only:  &
         pdf_parameter  ! type
 
@@ -107,7 +105,8 @@ module numerical_check
     implicit none
 
     integer, intent(in) :: &
-      nz
+      nz, &
+      sclr_dim
 
     ! Parameter Constants
     character(len=*), parameter :: proc_name = &
@@ -276,8 +275,9 @@ module numerical_check
   end subroutine pdf_closure_check
 
 !-------------------------------------------------------------------------------
-  subroutine parameterization_check & 
-             ( nz, thlm_forcing, rtm_forcing, um_forcing,                       & ! intent(in)
+  subroutine parameterization_check(                                        & 
+               nz, sclr_dim, edsclr_dim,                                    & ! intent(in)
+               thlm_forcing, rtm_forcing, um_forcing,                       & ! intent(in)
                vm_forcing, wm_zm, wm_zt, p_in_Pa,                           & ! intent(in)
                rho_zm, rho, exner, rho_ds_zm,                               & ! intent(in)
                rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! intent(in)
@@ -300,10 +300,6 @@ module numerical_check
     use grid_class, only: & 
         grid ! Type
 
-    use parameters_model, only: & 
-        sclr_dim,  & ! Variable
-        edsclr_dim
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -322,7 +318,9 @@ module numerical_check
     implicit none
 
     integer, intent(in) :: &
-      nz
+      nz, &
+      sclr_dim, &
+      edsclr_dim
 
     ! Constant Parameters
     ! Name of the procedure using parameterization_check
@@ -510,7 +508,7 @@ module numerical_check
   end subroutine parameterization_check
 
 !-----------------------------------------------------------------------
-  subroutine sfc_varnce_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, & 
+  subroutine sfc_varnce_check( sclr_dim, wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, & 
            rtp2_sfc, rtpthlp_sfc, &
            sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 !
@@ -522,8 +520,6 @@ module numerical_check
 !
 !
 !-----------------------------------------------------------------------
-    use parameters_model, only: & 
-        sclr_dim ! Variable
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -536,6 +532,9 @@ module numerical_check
       proc_name = "calc_surface_varnce"
 
     ! Input Variables
+    integer, intent(in) :: &
+      sclr_dim
+      
     real( kind = core_rknd ),intent(in) ::  & 
       wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
       up2_sfc,     & ! u'^2                              [m^2/s^2]
@@ -629,7 +628,9 @@ module numerical_check
   end subroutine rad_check
 
 !-----------------------------------------------------------------------
-  logical function invalid_model_arrays( nz, um, vm, rtm, wprtp, thlm, wpthlp, &
+  logical function invalid_model_arrays( nz, hydromet_dim, hydromet_list, &
+                                         sclr_dim, edsclr_dim, &
+                                         um, vm, rtm, wprtp, thlm, wpthlp, &
                                          rtp2, thlp2, rtpthlp, wp2, wp3, &
                                          wp2thvp, rtpthvp, thlpthvp, &
                                          hydromet, sclrm, edsclrm )
@@ -644,21 +645,19 @@ module numerical_check
     use constants_clubb, only: & 
         fstderr   ! Constant(s)
 
-    use parameters_model, only: & 
-        sclr_dim,  & ! Variable(s)
-        edsclr_dim, &
-        hydromet_dim
-
-    use array_index, only: &
-        hydromet_list ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     implicit none
     
     integer, intent(in) :: &
-      nz
+      nz, &
+      hydromet_dim, &
+      sclr_dim, &
+      edsclr_dim
+
+    character(len=10), dimension(hydromet_dim), intent(in) :: & 
+      hydromet_list
 
     real( kind = core_rknd ), dimension(nz), intent(in) ::  &
       um,       & ! eastward grid-mean wind comp. (thermo. levs.)  [m/s]

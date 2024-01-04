@@ -15,7 +15,8 @@ module rico
   contains
 
 !----------------------------------------------------------------------
-  subroutine rico_tndcy( gr, rtm, exner, &
+  subroutine rico_tndcy( sclr_dim, edsclr_dim, sclr_idx, &
+                         gr, rtm, exner, &
                          thlm_forcing, rtm_forcing, & 
                          sclrm_forcing, edsclrm_forcing )
 !
@@ -28,36 +29,43 @@ module rico
 !   RICO: http://www.knmi.nl/samenw/rico/setup3d.html
 !-----------------------------------------------------------------------
 
-  use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
+  use grid_class, only: &
+    grid
 
-  use grid_class, only: grid
+  use grid_class, only: &
+    zt2zm ! Procedure(s)
 
-  use grid_class, only: zt2zm ! Procedure(s)
+  use array_index, only: &
+    sclr_idx_type
 
-  use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
-
-  use constants_clubb, only: g_per_kg ! Variable(s)
+  use constants_clubb, only: &
+    g_per_kg ! Variable(s)
 
   use spec_hum_to_mixing_ratio, only: &
       force_spec_hum_to_mixing_ratio ! Procedure(s)
 
-  use clubb_precision, only: core_rknd ! Variable(s)
-
- 
-!  use stats_variables
+  use clubb_precision, only: &
+    core_rknd ! Variable(s)
 
 
   implicit none
 
-  type (grid), target, intent(in) :: gr
+  !--------------------- Input Variables ---------------------
+  integer, intent(in) :: &
+    sclr_dim, & 
+    edsclr_dim
 
-  ! Input Variables
+  type (sclr_idx_type), intent(in) :: &
+    sclr_idx
+
+  type (grid), target, intent(in) :: &
+    gr
 
   real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
     rtm,   & ! Mean total water mixing ratio    [kg/kg]
     exner    ! Exner function                   [-]
 
-  ! Output Variables
+  !--------------------- Output Variables ---------------------
   real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
     thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
     rtm_forcing     ! Large-scale rtm tendency                [kg kg^-1 s^-1]
@@ -68,12 +76,14 @@ module rico
   real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
     edsclrm_forcing ! Passive eddy-scalar LS tendency     [units/s]
 
-  ! Local Variables, general
+  !--------------------- Local Variables ---------------------
   integer :: k          ! Loop index
 
   real( kind = core_rknd )    :: &
     t_tendency,  & ! Temperature (not potential temperature) tendency [K s^-1]
     qtm_forcing    ! Large-scale forcing of specific humidity         [kg/kg/s]
+
+  !--------------------- Begin Code ---------------------
 
   ! Compute large-scale horizontal temperature advection
   ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
@@ -122,11 +132,11 @@ module rico
   end do
 
   ! Test scalars with thetal and rt if desired
-  if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-  if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+  if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing
+  if ( sclr_idx%iisclr_rt  > 0 ) sclrm_forcing(:,sclr_idx%iisclr_rt)  = rtm_forcing
 
-  if ( iiedsclr_thl > 0 ) edsclrm_forcing(:,iiedsclr_thl) = thlm_forcing
-  if ( iiedsclr_rt  > 0 ) edsclrm_forcing(:,iiedsclr_rt)  = rtm_forcing
+  if ( sclr_idx%iiedsclr_thl > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_thl) = thlm_forcing
+  if ( sclr_idx%iiedsclr_rt  > 0 ) edsclrm_forcing(:,sclr_idx%iiedsclr_rt)  = rtm_forcing
 
   end subroutine rico_tndcy
  !----------------------------------------------------------------------
@@ -135,6 +145,7 @@ module rico
  !----------------------------------------------------------------------
   subroutine rico_sfclyr( time, um_sfc, vm_sfc, thlm, rtm, &
                           lowestlevel, p_sfc, exner_sfc, & 
+                          saturation_formula, &
                           upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
                           wprtp_sfc, ustar, T_sfc )
   !----------------------------------------------------------------------
@@ -208,6 +219,9 @@ module rico
     p_sfc,          & ! This is the surface pressure [Pa].
     exner_sfc
 
+  integer, intent(in) :: &
+    saturation_formula ! Integer that stores the saturation formula to be used
+
   ! Output variables
   real( kind = core_rknd ), intent(out) ::  & 
     upwp_sfc,   & ! The upward flux of u-momentum         [(m^2 s^-2]
@@ -253,14 +267,14 @@ module rico
 ! Compute heat and moisture fluxes
   if (l_use_old_atex) then ! Use ATEX version
     wpthlp_sfc = compute_wpthlp_sfc( Cz, ubar, thlm, T_sfc, exner_sfc )
-    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
+    wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc,saturation_formula) )
   call compute_momentum_flux( um_sfc, vm_sfc, ubar, ustar, &
                               upwp_sfc, vpwp_sfc )
   else ! Use RICO version
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm, T_sfc, exner_sfc )
 !    wprtp_sfc  = -Cz * ubar * ( .01726 - sat_mixrat_liq(p_sfc,T_sfc) ) ! kg kg^-1  m s^-1
 !    wprtp_sfc  = -Cz * ubar * ( .01626 - sat_mixrat_liq(p_sfc,T_sfc) ) ! kg kg^-1  m s^-1
-    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc) )
+    wprtp_sfc  = compute_wprtp_sfc( Cq, ubar, rtm, sat_mixrat_liq(p_sfc,T_sfc,saturation_formula) )
     upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
     vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
 

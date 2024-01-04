@@ -109,7 +109,7 @@ sclr_dim   = 0  ! Total number of scalars
 iisclr_rt  = -1  ! Location in the array to place a scalar like total water
 iisclr_thl = -2 ! Location in the array to place a scalar like thetal
 
-sclr_tol  = 1.e-2, 1.e-8 ! Tolerances below which we consider scalar to be 0.
+sclr_tol_nl  = 1.e-2, 1.e-8 ! Tolerances below which we consider scalar to be 0.
 
 ! Add scalars that are computed using simple eddy diffusivity
 ! 0 to shut off all scalar computations

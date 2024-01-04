@@ -12,7 +12,8 @@ module sfc_varnce_module
   contains
 
   !=============================================================================
-  subroutine calc_sfc_varnce( nz, ngrdcol, gr, dt, sfc_elevation, & 
+  subroutine calc_sfc_varnce( nz, ngrdcol, sclr_dim, sclr_idx, &
+                              gr, dt, sfc_elevation, & 
                               upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc, & 
                               um, vm, Lscale_up, wpsclrp_sfc, & 
                               lhs_splat_wp2, tau_zm, &
@@ -58,9 +59,6 @@ module sfc_varnce_module
         fstderr,    &
         wp2_max
 
-    use parameters_model, only: & 
-        sclr_dim  ! Variable(s)
-
     use parameter_indices, only: &
         nparams, &
         ia_const, &
@@ -75,11 +73,10 @@ module sfc_varnce_module
         clubb_fatal_error              ! Constant
 
     use array_index, only: &
-        iisclr_rt, & ! Index for a scalar emulating rt
-        iisclr_thl   ! Index for a scalar emulating thetal
+        sclr_idx_type
 
     use stats_type, only: &
-      stats ! Type
+        stats ! Type
 
     use stats_type_utilities, only: & 
         stat_end_update_pt,   & ! Procedure(s)
@@ -116,7 +113,11 @@ module sfc_varnce_module
     !-------------------------- Input Variables --------------------------
     integer, intent(in) :: &
       nz, &
-      ngrdcol
+      ngrdcol, &
+      sclr_dim
+
+    type (sclr_idx_type), intent(in) :: &
+      sclr_idx
 
     type(grid), intent(in) :: &
       gr
@@ -637,7 +638,7 @@ module sfc_varnce_module
             ! We use the following if..then's to make sclr_rt and sclr_thl
             ! close to the actual thlp2/rtp2 at the surface.
             ! -dschanen 25 Sep 08
-            if ( sclr == iisclr_rt ) then
+            if ( sclr == sclr_idx%iisclr_rt ) then
               ! If we are trying to emulate rt with the scalar, then we
               ! use the variance coefficient from above
               sclrprtp(i,1,sclr) = 0.4_core_rknd * a_const &
@@ -647,7 +648,7 @@ module sfc_varnce_module
                                 * ( wprtp_sfc(i) / uf(i) ) * ( wpsclrp_sfc(i,sclr) / uf(i) )
             endif
 
-            if ( sclr == iisclr_thl ) then
+            if ( sclr == sclr_idx%iisclr_thl ) then
               ! As above, but for thetal
               sclrpthlp(i,1,sclr) = 0.4_core_rknd * a_const &
                                  * ( wpthlp(i,1) / uf(i) ) &
@@ -750,7 +751,7 @@ module sfc_varnce_module
       !$acc              upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc )
 
       do i = 1, ngrdcol
-        call sfc_varnce_check( wp2(i,1), up2(i,1), vp2(i,1),                    & ! intent(in)
+        call sfc_varnce_check( sclr_dim, wp2(i,1), up2(i,1), vp2(i,1),          & ! intent(in)
                                thlp2(i,1), rtp2(i,1), rtpthlp(i,1),             & ! intent(in)
                                sclrp2(i,1,:), sclrprtp(i,1,:), sclrpthlp(i,1,:) ) ! intent(in)
       end do

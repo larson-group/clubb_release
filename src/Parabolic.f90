@@ -13,9 +13,16 @@
         dp ! double precision
 
   IMPLICIT NONE
+
   INTEGER, PARAMETER  :: r8 = dp
+
+  logical, public :: &
+    l_high_accuracy_parab_cyl_fnc = .false.
+
   PRIVATE
+
   PUBLIC  :: parab, gamma
+
   CONTAINS       
     RECURSIVE SUBROUTINE parab(a,x,mode,uaxx,vaxx,ierr)
     ! ---------------------------------------------------------

@@ -2047,7 +2047,8 @@ module silhs_importance_sample_module
 !----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  function determine_sample_categories( num_samples, pdf_dim, X_nl_one_lev, &
+  function determine_sample_categories( num_samples, pdf_dim, hm_metadata, &
+                                        X_nl_one_lev, &
                                         X_mixt_comp_one_lev, importance_categories ) &
   result( int_sample_category )
 
@@ -2065,9 +2066,8 @@ module silhs_importance_sample_module
     use constants_clubb, only: &
       zero     ! Constant(s)
 
-    use array_index, only: &
-      iiPDF_chi, &
-      iiPDF_rr
+    use corr_varnce_module, only: &
+      hm_metadata_type
 
     implicit none
 
@@ -2075,6 +2075,9 @@ module silhs_importance_sample_module
     integer, intent(in) :: &
       num_samples, &        ! Number of SILHS sample points
       pdf_dim          ! Number of variates in X_nl
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real( kind = core_rknd ), dimension(num_samples,pdf_dim), intent(in) :: &
       X_nl_one_lev          ! SILHS sample vector at one height level
@@ -2099,17 +2102,17 @@ module silhs_importance_sample_module
 
     do isample=1, num_samples
 
-      if ( X_nl_one_lev(isample,iiPDF_chi) < zero ) then
+      if ( X_nl_one_lev(isample,hm_metadata%iiPDF_chi) < zero ) then
         sample_category%l_in_cloud = .false.
       else
         sample_category%l_in_cloud = .true.
       end if
 
-      if ( iiPDF_rr == -1 ) then
+      if ( hm_metadata%iiPDF_rr == -1 ) then
         error stop "iiPDF_rr must be greater than zero for the category sampler to work."
       end if
 
-      if ( X_nl_one_lev(isample,iiPDF_rr) > zero ) then
+      if ( X_nl_one_lev(isample,hm_metadata%iiPDF_rr) > zero ) then
         sample_category%l_in_precip = .true.
       else
         sample_category%l_in_precip = .false.

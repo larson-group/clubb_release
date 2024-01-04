@@ -241,10 +241,6 @@ module hole_filling_tests
     use clubb_precision, only: &
         core_rknd
 
-    use array_index, only: &
-        l_frozen_hm, &
-        l_mix_rat_hm
-
     use fill_holes, only: &
         fill_holes_hydromet
 
@@ -253,6 +249,10 @@ module hole_filling_tests
     intrinsic :: reshape, transpose
 
     integer, parameter :: c = core_rknd
+
+    integer, parameter :: &
+      hm_dim = 7, &
+      hgt_dim = 6
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -264,26 +264,20 @@ module hole_filling_tests
     ! Output Variables
 
     ! Local Variables
-    integer :: hm_dim, hgt_dim, i
+    integer :: i
 
-    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+    real( kind = core_rknd ), dimension(hgt_dim,hm_dim) :: &
       testset_in,  & ! Testset input
       testset_out    ! Testset after hole filling
 
-    logical, dimension(:), allocatable :: &
+    logical, dimension(hgt_dim) :: &
       l_expect_not_filled_lev  ! Flag for expected the hole not to be filled
 
+    logical, dimension(hm_dim) :: &
+      l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+
     ! ---- Begin Code ----
-
-    hm_dim = 7
-    hgt_dim = 6
-    allocate(testset_in(hgt_dim,hm_dim))
-    allocate(testset_out(hgt_dim,hm_dim))
-
-    allocate(l_frozen_hm(hm_dim))
-    allocate(l_mix_rat_hm(hm_dim))
-
-    allocate(l_expect_not_filled_lev(hgt_dim))
 
     l_frozen_hm  = (/ .true., .false., .false., .true., .true., .true., .true. /)
     l_mix_rat_hm = (/ .false., .true., .false., .true., .true., .true., .true. /)
@@ -313,9 +307,12 @@ module hole_filling_tests
        print *, "testset_in(:,",i,") = ", testset_in(:,i)
     enddo
 
-    call fill_holes_hydromet( hgt_dim, hm_dim, testset_in, testset_out )
+    call fill_holes_hydromet( hgt_dim, hm_dim, testset_in, &
+                              l_frozen_hm, l_mix_rat_hm, &
+                              testset_out )
 
     call check_results_hm_filling( hgt_dim, hm_dim, & ! Intent(in)
+                                   l_frozen_hm, l_mix_rat_hm, & ! Intent(in)
                                    testset_in, testset_out, & ! Intent(in)
                                    tol, l_expect_not_filled_lev, & ! Intent(in)
                                    total_errors ) ! Intent(inout)
@@ -326,6 +323,7 @@ module hole_filling_tests
   !=============================================================================
 
   subroutine check_results_hm_filling( hgt_dim, hm_dim, & ! Intent(in)
+                                       l_frozen_hm, l_mix_rat_hm, & ! Intent(in)
                                        testset_in, testset_result, &
                                        tol, l_expect_not_filled_lev, & ! Intent(in)
                                        total_errors) ! Intent(inout)
@@ -336,10 +334,6 @@ module hole_filling_tests
 
     use clubb_precision, only: &
         core_rknd
-
-    use array_index, only: &
-        l_frozen_hm, &
-        l_mix_rat_hm
 
     implicit none
 
@@ -357,6 +351,10 @@ module hole_filling_tests
 
     logical, dimension(hgt_dim), intent(in) :: &
       l_expect_not_filled_lev  ! Flag for expected the hole not to be filled
+
+    logical, dimension(hm_dim) :: &
+      l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
+      l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
     ! Input/Output Variables
     integer, intent(inout) :: total_errors

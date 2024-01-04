@@ -11,11 +11,13 @@ module morrison_microphys_module
 
   contains
 !-------------------------------------------------------------------------------
-  subroutine morrison_microphys_driver &
-             ( gr, dt, nz, &
+  subroutine morrison_microphys_driver( &
+               gr, dt, nz, &
+               hydromet_dim, hm_metadata, &
                l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, w_std_dev, &
                dzq, rcm, Ncm, chi, rvm, hydromet, &
+               saturation_formula, &
                stats_metadata, &
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
@@ -27,8 +29,6 @@ module morrison_microphys_module
     ! References:
     ! None
     !-----------------------------------------------------------------------
-
-    use parameters_model, only: hydromet_dim
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_MP_graupel, only: &
@@ -52,9 +52,8 @@ module morrison_microphys_module
         l_ice_microphys, & ! Flag(s)
         l_graupel
 
-    use array_index, only:  & 
-        iirr, iirs, iiri, iirg, &
-        iiNr, iiNs, iiNi, iiNg
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use constants_clubb, only: &
         sec_per_day
@@ -99,7 +98,12 @@ module morrison_microphys_module
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
-    integer, intent(in) :: nz ! Points in the Vertical        [-]
+    integer, intent(in) :: &
+      nz, &         ! Points in the Vertical        [-]
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     logical, intent(in) :: &
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
@@ -125,6 +129,9 @@ module morrison_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+      
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
@@ -369,8 +376,27 @@ module morrison_microphys_module
       qto_after, &
       qto_residual
 
+    ! Just to avoid typing hm_metadata%iixx everywhere
+    integer ::  & 
+      iirr, &
+      iirs, &
+      iiri, &
+      iirg, &
+      iiNr, &
+      iiNs, &
+      iiNi, &
+      iiNg
 
     ! ---- Begin Code ----
+
+    iirr = hm_metadata%iirr
+    iirs = hm_metadata%iirs
+    iiri = hm_metadata%iiri
+    iirg = hm_metadata%iirg
+    iiNr = hm_metadata%iiNr
+    iiNs = hm_metadata%iiNs
+    iiNi = hm_metadata%iiNi
+    iiNg = hm_metadata%iiNg
 
     ! Get rid of compiler warnings
     if ( .false. ) then
@@ -660,7 +686,7 @@ module morrison_microphys_module
            NC_INST, NR_INST, NI_INST, NS_INST, NG_INST )
 
     if ( clubb_at_least_debug_level( 2 ) ) then
-       call print_morr_error_output( nz, gr, &
+       call print_morr_error_output( nz, gr, hydromet_dim, hm_metadata, &
                                      rcm_mc_r4, rim_mc_r4, rsm_mc_r4, &
                                      rrm_mc_r4, rgm_mc_r4, Ncm_mc_r4, &
                                      Nim_mc_r4, Nsm_mc_r4, Nrm_mc_r4, &
@@ -950,7 +976,7 @@ module morrison_microphys_module
   end subroutine morrison_microphys_driver
 
   !=============================================================================
-  subroutine print_morr_error_output( nz, gr, &
+  subroutine print_morr_error_output( nz, gr, hydromet_dim, hm_metadata, &
                                       rcm_mc_r4, rim_mc_r4, rsm_mc_r4, &
                                       rrm_mc_r4, rgm_mc_r4, Ncm_mc_r4, &
                                       Nim_mc_r4, Nsm_mc_r4, Nrm_mc_r4, &
@@ -996,18 +1022,8 @@ module morrison_microphys_module
     use constants_clubb, only: &
         fstderr    ! Constant(s)
 
-    use parameters_model, only: &
-        hydromet_dim    ! Variable(s)
-
-    use array_index, only: & 
-        iirr, & ! Variable(s)
-        iirs, &
-        iiri, &
-        iirg, &
-        iiNr, &
-        iiNs, &
-        iiNi, &
-        iiNg
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use numerical_check, only: &
         is_nan_2d,   & ! Procedure(s)
@@ -1024,6 +1040,12 @@ module morrison_microphys_module
 
     type(grid), target, intent(in) :: &
       gr
+
+    integer, intent(in) :: &
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     real, dimension(nz), intent(in) :: &
       rcm_mc_r4, & ! Mean cloud water mixing ratio tendency  [kg/kg/s]
@@ -1289,15 +1311,15 @@ module morrison_microphys_module
              write(fstderr,*) "thlm (in) = ", thlm(k)
              write(fstderr,*) "rvm (in) = ", rvm(k)
              write(fstderr,*) "rcm (in) = ", rcm(k)
-             write(fstderr,*) "rrm (in) = ", hydromet(k,iirr)
-             write(fstderr,*) "rim (in) = ", hydromet(k,iiri)
-             write(fstderr,*) "rsm (in) = ", hydromet(k,iirs)
-             write(fstderr,*) "rgm (in) = ", hydromet(k,iirg)
+             write(fstderr,*) "rrm (in) = ", hydromet(k,hm_metadata%iirr)
+             write(fstderr,*) "rim (in) = ", hydromet(k,hm_metadata%iiri)
+             write(fstderr,*) "rsm (in) = ", hydromet(k,hm_metadata%iirs)
+             write(fstderr,*) "rgm (in) = ", hydromet(k,hm_metadata%iirg)
              write(fstderr,*) "Ncm (in) = ", Ncm(k)
-             write(fstderr,*) "Nrm (in) = ", hydromet(k,iiNr)
-             write(fstderr,*) "Nim (in) = ", hydromet(k,iiNi)
-             write(fstderr,*) "Nsm (in) = ", hydromet(k,iiNs)
-             write(fstderr,*) "Ngm (in) = ", hydromet(k,iiNg)
+             write(fstderr,*) "Nrm (in) = ", hydromet(k,hm_metadata%iiNr)
+             write(fstderr,*) "Nim (in) = ", hydromet(k,hm_metadata%iiNi)
+             write(fstderr,*) "Nsm (in) = ", hydromet(k,hm_metadata%iiNs)
+             write(fstderr,*) "Ngm (in) = ", hydromet(k,hm_metadata%iiNg)
              write(fstderr,*) "rgm_sten = ", rgm_sten(k)
              write(fstderr,*) "rrm_sten = ", rrm_sten(k)
              write(fstderr,*) "rim_sten = ", rim_sten(k)

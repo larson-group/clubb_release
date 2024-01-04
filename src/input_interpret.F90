@@ -13,6 +13,7 @@ module input_interpret
 
   !-----------------------------------------------------------------------------
   subroutine read_z_profile( nvar, nsize, retVars, p_sfc, zm_init, &
+                             saturation_formula, &
                              z, p_in_Pa, alt_type )
 
     ! Description:
@@ -73,6 +74,9 @@ module input_interpret
     real( kind = core_rknd ), intent(in) :: &
       p_sfc,   & ! Pressure at the surface    [Pa]
       zm_init    ! Height at zm(1)            [m]
+
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
 
     ! Output Variable(s)
     real( kind = core_rknd ), intent(out), dimension(nsize) :: &
@@ -151,7 +155,7 @@ module input_interpret
            ! "temperature(k)" at this point in the code.
            do k = 1, nlevels
               rcm(1,k) = &
-                max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), theta(1,k) ), &
+                max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), theta(1,k), saturation_formula ), &
                      zero_threshold )
            enddo
 
@@ -172,7 +176,7 @@ module input_interpret
            ! based on potential temperature, exner, and rtm.
            do k = 1,nlevels
               rcm(1,k) = &
-                max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), theta(1,k)*exner(1,k) ), &
+                max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), theta(1,k)*exner(1,k), saturation_formula ), &
                      zero_threshold )
            enddo
 
@@ -194,7 +198,7 @@ module input_interpret
            ! an iterative method involving theta_l, total water mixing ratio,
            ! pressure, and exner.
            do k =1, nlevels, 1
-              rcm(1,k) = rcm_sat_adj( thlm(1,k), rtm(1,k), p_in_Pa(k), exner(1,k) )
+              rcm(1,k) = rcm_sat_adj( thlm(1,k), rtm(1,k), p_in_Pa(k), exner(1,k), saturation_formula )
            enddo
 
            ! Calculate theta from theta_l and cloud water mixing ratio, such

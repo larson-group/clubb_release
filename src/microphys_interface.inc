@@ -6,22 +6,26 @@
 ! number and type of arguments as this does.
 interface
   subroutine microphys_sub( gr, dt, nnzp, &
-                            l_latin_hypercube, thlm, wm, p_in_Pa, &
+                            hydromet_dim, hm_metadata, &
+                            l_latin_hypercube, &
+                            thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, w_std_dev, &
                             dzq, rcm, Nc, chi, rvm, hydromet, &
+                            saturation_formula, &
                             stats_metadata, &
                             hydromet_mc, hydromet_vel, Ncm_mc, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             microphys_stats_zt, microphys_stats_sfc )
 
-    use parameters_model, only: hydromet_dim
-
     use clubb_precision, only: core_rknd
 
     use grid_class, only: grid ! Type
 
-     use stats_variables, only: &
-        stats_metadata_type
+    use stats_variables, only: &
+      stats_metadata_type
+
+    use corr_varnce_module, only: &
+        hm_metadata_type
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type   ! Type
@@ -32,7 +36,12 @@ interface
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
-    integer, intent(in) :: nnzp ! Points in the Vertical        [-]
+    integer, intent(in) :: &
+      nnzp, &       ! Points in the Vertical        [-]
+      hydromet_dim
+
+    type (hm_metadata_type), intent(in) :: &
+      hm_metadata
 
     logical, intent(in) :: &
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
@@ -58,6 +67,9 @@ interface
     real( kind = core_rknd ), dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
+    integer, intent(in) :: &
+      saturation_formula ! Integer that stores the saturation formula to be used
+      
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 

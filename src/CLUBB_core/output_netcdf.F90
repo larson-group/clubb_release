@@ -13,9 +13,9 @@ module output_netcdf
 
   implicit none
 
-  public :: open_netcdf_for_writing, write_netcdf, close_netcdf, format_date
+  public :: open_netcdf_for_writing, write_netcdf, close_netcdf, format_date, first_write
 
-  private :: define_netcdf, write_grid, first_write
+  private :: define_netcdf, write_grid
 
   ! Constant parameters
   ! This will truncate all timesteps smaller than 1 mn to a minute for 
@@ -190,11 +190,7 @@ module output_netcdf
 
 !-------------------------------------------------------------------------------
 
-  subroutine write_netcdf( clubb_params, &
-                           l_uv_nudge, &
-                           l_tke_aniso, &
-                           l_standard_term_ta, &
-                           ncf )
+  subroutine write_netcdf( ncf )
 
 ! Description:
 !   Writes some data to the NetCDF dataset, but doesn't close it.
@@ -228,19 +224,6 @@ module output_netcdf
 
     implicit none
 
-    ! Input
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
-
-    logical, intent(in) :: &
-      l_uv_nudge,         & ! For wind speed nudging
-      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
-                            ! (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
-                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
-                            ! derivative in advance_wp2_wp3_module.F90 and in
-                            ! advance_xp2_xpyp_module.F90.
-
     type (stat_file), intent(inout) :: ncf    ! The file
 
     ! Local Variables
@@ -257,17 +240,6 @@ module output_netcdf
     end if
 
     ncf%ntimes = ncf%ntimes + 1
-
-    if ( .not. ncf%l_defined ) then
-      call first_write( clubb_params, & ! intent(in)
-                        l_uv_nudge, & ! intent(in)
-                        l_tke_aniso, & ! intent(in)
-                        l_standard_term_ta, & ! intent(in)
-                        ncf ) ! finalize the variable definitions intent(inout)
-      call write_grid( ncf )  ! define lat., long., and grid intent(inout)
-      ncf%l_defined = .true.
-      if ( err_code == clubb_fatal_error ) return
-    end if
 
     allocate( stat( ncf%nvar ) )
     if ( l_grads_netcdf_boost_ts ) then
@@ -571,7 +543,7 @@ module output_netcdf
   end subroutine close_netcdf
 
 !-------------------------------------------------------------------------------
-  subroutine first_write( clubb_params, &
+  subroutine first_write( clubb_params, sclr_dim, sclr_tol, &
                           l_uv_nudge, &
                           l_tke_aniso, &
                           l_standard_term_ta, &
@@ -602,8 +574,7 @@ module output_netcdf
 
     use parameters_model, only: &
         T0, &       ! Real variables
-        ts_nudge, &
-        sclr_tol    ! Real array variable
+        ts_nudge
 
     use parameters_tunable, only: &
         params_list ! Variable names (characters)
@@ -638,6 +609,12 @@ module output_netcdf
       l_output_file_run_date = .false.
 
     ! Input Variables
+    integer, intent(in) :: &
+      sclr_dim
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) :: &
+      sclr_tol
+
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
@@ -678,6 +655,11 @@ module output_netcdf
 !-------------------------------------------------------------------------------
 
     ! ---- Begin Code ----
+
+    ! If there is no data to write, then return
+    if ( ncf%nvar == 0 ) then
+      return
+    end if
 
     var_range(1) = -huge( var_range(1) )
     var_range(2) =  huge( var_range(2) )
@@ -867,6 +849,9 @@ module output_netcdf
     end if
 
     deallocate( stat )
+
+    call write_grid( ncf )  ! define lat., long., and grid intent(inout)
+    ncf%l_defined = .true.
 
     return
   end subroutine first_write

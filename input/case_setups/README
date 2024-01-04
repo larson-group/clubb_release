@@ -177,7 +177,7 @@ iisclr_CO2 | integer
   Location in the sclr arrays to place a scalar for CO2. See the cobra case
   for an example of this.
 
-sclr_tol | real, default precision, array 
+sclr_tol_nl | real, default precision, array 
   Tolerances below which we consider the scalar to be 0.
 
 edsclr_dim  | integer

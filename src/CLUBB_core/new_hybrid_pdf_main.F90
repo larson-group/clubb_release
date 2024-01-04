@@ -24,7 +24,8 @@ module new_hybrid_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_hybrid_pdf_driver( nz, ngrdcol, wm, rtm, thlm, um, vm, & ! In
+  subroutine new_hybrid_pdf_driver( nz, ngrdcol, sclr_dim,              & ! In
+                                    wm, rtm, thlm, um, vm,              & ! In
                                     wp2, rtp2, thlp2, up2, vp2,         & ! In
                                     Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
                                     sclrm, sclrp2, wpsclrp,             & ! In
@@ -74,9 +75,6 @@ module new_hybrid_pdf_main
         l_explicit_turbulent_adv_wpxp, &
         l_explicit_turbulent_adv_xpyp
 
-    use parameters_model, only: &
-        sclr_dim
-
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -84,7 +82,8 @@ module new_hybrid_pdf_main
 
     integer, intent(in) :: &
       nz, &
-      ngrdcol
+      ngrdcol, &
+      sclr_dim
 
     ! Input Variables
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
