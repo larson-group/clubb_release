@@ -313,7 +313,7 @@ module microphys_init_cleanup
       l_lh_normalize_weights
 
     real( kind = core_rknd ) :: &
-      Ncnp2_on_Ncnm2
+      Ncnp2_on_Ncnm2 = 1.0_core_rknd
 
     namelist /microphysics_setting/ &
       microphys_scheme, l_cloud_sed, sigma_g, &

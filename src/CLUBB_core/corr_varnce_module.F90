@@ -629,10 +629,8 @@ module corr_varnce_module
     hm_metadata%iiNs = iiNs
     hm_metadata%iiNg = iiNg
 
-    ! Overwrite default Ncnp2_on_Ncnm2 if it's not NaN
-    if ( Ncnp2_on_Ncnm2 == Ncnp2_on_Ncnm2 ) then
-      hm_metadata%Ncnp2_on_Ncnm2 = Ncnp2_on_Ncnm2
-    end if
+    ! Overwrite default Ncnp2_on_Ncnm2
+    hm_metadata%Ncnp2_on_Ncnm2 = Ncnp2_on_Ncnm2
 
     !-----------------------------------------------------------
     ! Calculate the subgrid variances of the hydrometeors
