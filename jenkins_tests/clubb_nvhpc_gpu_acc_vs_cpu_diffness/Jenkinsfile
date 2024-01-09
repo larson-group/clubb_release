@@ -6,6 +6,7 @@ pipeline {
         sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:num_standalone_columns.*:num_standalone_columns = 32:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:time_final.*:time_final = 30000:g" input/case_setups/gabls2_model.in'''
       }
     }
     stage('Compile CPU') {
