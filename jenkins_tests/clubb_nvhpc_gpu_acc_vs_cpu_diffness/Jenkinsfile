@@ -21,6 +21,7 @@ pipeline {
     }
     stage('Compile GPU') {
       steps {
+        sh '''compile/clean_all.bash'''
         sh '''compile/compile.bash -c config/linux_x86_64_nvhpc_gpu.bash'''
       }
     }
