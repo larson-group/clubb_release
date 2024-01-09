@@ -6,7 +6,7 @@ pipeline {
         sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:num_standalone_columns.*:num_standalone_columns = 32:g" input/tunable_parameters/configurable_model_flags.in'''
-        sh '''sed -i "s:time_final.*:time_final = 30000:g" input/case_setups/gabls2_model.in'''
+        sh '''sed -i "s:time_final.*:time_final = 87600:g" input/case_setups/cobra_model.in'''
       }
     }
     stage('Compile CPU') {
@@ -17,7 +17,7 @@ pipeline {
     stage('Run CPU') {
       steps {
         sh '''run_scripts/run_scm.bash arm'''
-        sh '''run_scripts/run_scm.bash gabls2'''
+        sh '''run_scripts/run_scm.bash cobra'''
         sh '''run_scripts/run_scm.bash mpace_b'''
         sh '''mv output cpu_output; mkdir output'''
       }
@@ -31,7 +31,7 @@ pipeline {
     stage('Run GPU') {
       steps {
         sh '''run_scripts/run_scm.bash arm'''
-        sh '''run_scripts/run_scm.bash gabls2'''
+        sh '''run_scripts/run_scm.bash cobra'''
         sh '''run_scripts/run_scm.bash mpace_b'''
         sh '''mv output gpu_output; mkdir output'''
       }
@@ -39,7 +39,7 @@ pipeline {
     stage('Compare Output') {
       steps {
         sh '''run_scripts/check_multicol_error.py cpu_output/arm_multicol.nc gpu_output/arm_multicol.nc'''
-        sh '''run_scripts/check_multicol_error.py cpu_output/gabls2_multicol.nc gpu_output/gabls2_multicol.nc'''
+        sh '''run_scripts/check_multicol_error.py cpu_output/cobra_multicol.nc gpu_output/cobra_multicol.nc'''
         sh '''run_scripts/check_multicol_error.py cpu_output/mpace_b_multicol.nc gpu_output/mpace_b_multicol.nc'''
       }
     }
