@@ -27,23 +27,23 @@ ARCH="-Mcache_align" # -Mcache_align is included for the use of the ACML
 DOUBLE_PRECISION="-r8"
 
 # == Optimization ==
-OPTIMIZE="-O2"
+OPTIMIZE="-O0"
 
 # == NetCDF Location ==
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
 NETCDF="$PGI_NETCDF_FORTRAN"
 
 # == Linking Flags ==
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -Mcuda"
+LDFLAGS="$(nf-config --flibs) $ARCH -acc -Mcuda  -L/opt/spack/opt/spack/linux-archrolling-zen3/gcc-13.2.1/hdf5-1.14.1-2-qzfe2jcui4sblb3pl3h2ajit5al6vn4c/lib/ -lhdf5"
 
-FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc -Minfo=accel"
+FFLAGS="$(nf-config --fflags) $ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc -Minfo=accel"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
 CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8"
-CPPFLAGS="-I$NETCDF/include"
+CPPFLAGS="$(nf-config --cflags)"
 
 # == Static library processing ==
 AR=ar
