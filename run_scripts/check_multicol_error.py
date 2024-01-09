@@ -101,7 +101,7 @@ print("\n",tabulate.tabulate(table, headers='firstrow'))
 
 if not files_differ:
     print("\nPASSED: Sum of all absolute differences does not excede",total_abs_error_threshold,"for any field.")
-    sys.exit()
+    sys.exit(0)
 else:
     print("\n###############################################################################################")
     print("WARNING: Sum of all absolute differences excedes",total_abs_error_threshold," for some fields!")
@@ -109,11 +109,11 @@ else:
     print("         is arm or bomex, this is not a good sign.")
     print("###############################################################################################\n")
 
-    print("Print max absolute difference by timestep?")
-    timestep_jump = int(input("Enter timestep jump to view, or 0 to skip: "))
+    #print("Print max absolute difference by timestep?")
+    #timestep_jump = int(input("Enter timestep jump to view, or 0 to skip: "))
 
-    if timestep_jump == 0:
-        sys.exit()
+    #if timestep_jump == 0:
+    sys.exit(1)
 
 
 table = [[ 'Timestep' ]]

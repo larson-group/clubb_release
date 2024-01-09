@@ -1,0 +1,58 @@
+pipeline {
+  agent any
+  stages {
+    stage('Modify Config Flags') {
+      steps {
+        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:num_standalone_columns.*:num_standalone_columns = 32:g" input/tunable_parameters/configurable_model_flags.in'''
+      }
+    }
+    stage('Compile CPU') {
+      steps {
+        sh '''compile/compile.bash -c config/linux_x86_64_gfortran.bash'''
+      }
+    }
+    stage('Run CPU') {
+      steps {
+        sh '''run_scripts/run_scm.bash arm'''
+        sh '''mv output cpu_output; mkdir output'''
+      }
+    }
+    stage('Compile GPU') {
+      steps {
+        sh '''compile/compile.bash -c config/linux_x86_64_nvhpc_gpu.bash'''
+      }
+    }
+    stage('Run GPU') {
+      steps {
+        sh '''run_scripts/run_scm.bash arm'''
+        sh '''mv output gpu_output; mkdir output'''
+      }
+    }
+    stage('Compare Output') {
+      steps {
+        sh '''run_scripts/check_multicol_error.py cpu_output gpu_output'''
+      }
+    }
+  }
+  post {
+    always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
+      script {
+      // This cleans out the test workspace so the next run has a fresh start
+      // However this only occurs when the test is named clubb_gfortran_build
+      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_acc_vs_cpu_diffness" )
+      	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_acc_vs_cpu_diffness" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}
