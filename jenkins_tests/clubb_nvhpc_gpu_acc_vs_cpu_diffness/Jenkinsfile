@@ -33,7 +33,7 @@ pipeline {
     }
     stage('Compare Output') {
       steps {
-        sh '''run_scripts/check_multicol_error.py cpu_output gpu_output'''
+        sh '''run_scripts/check_multicol_error.py cpu_output/arm_multicol.nc gpu_output/arm_multicol.nc'''
       }
     }
   }
