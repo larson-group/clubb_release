@@ -2688,10 +2688,11 @@ module clubb_driver
         ! Copy grid dzt to variable with column index as 1
         delta_zm = gr%dzt
                  
-        !$acc data copyout( X_mixt_comp_all_levs, X_nl_all_levs, lh_sample_point_weights, &
-        !$acc&              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, &
-        !$acc&              lh_Nc_clipped ) &
-        !$acc& async(1)
+        !$acc data  copyin( hm_metadata ) &
+        !$acc      copyout( X_mixt_comp_all_levs, X_nl_all_levs, lh_sample_point_weights, &
+        !$acc               lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, &
+        !$acc               lh_Nc_clipped ) &
+        !$acc async(1)
 
         call generate_silhs_sample_api( &
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, 1, & ! In

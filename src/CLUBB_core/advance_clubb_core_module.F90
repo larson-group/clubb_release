@@ -852,6 +852,7 @@ module advance_clubb_core_module
     !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
     !$acc              nu_vert_res_dep%nu6, &
+    !$acc              sclr_idx, sclr_tol, l_mix_rat_hm, &
     !$acc              pdf_params, pdf_params_zm, &
     !$acc              fcor, sfc_elevation, thlm_forcing, rtm_forcing, um_forcing, &
     !$acc              vm_forcing, wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
