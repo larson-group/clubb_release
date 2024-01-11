@@ -244,7 +244,7 @@ module mean_adv
 
       ! Most of the interior model; normal conditions.
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz, 1
+      do k = 3, nz-1, 1
         do i = 1, ngrdcol
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -256,8 +256,9 @@ module mean_adv
 
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs_ma(km1_tdiag,i,k) = - wm_zt(i,k) * invrs_dzt(i,k) * weights_zt2zm(i,k-1,t_below)
+
         end do
-      end do ! k = 2, nz, 1
+      end do ! k = 3, nz-1, 1
       !$acc end parallel loop
 
       ! Upper Boundary
@@ -279,6 +280,28 @@ module mean_adv
         ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
         lhs_ma(km1_tdiag,i,nz) = - wm_zt(i,nz) * invrs_dzt(i,nz) &
                                    * weights_zt2zm(i,nz-1,t_below)
+
+      end do
+      !$acc end parallel loop
+
+      ! Lower Boundary
+
+      ! Special discretization for zero derivative method, where the
+      ! derivative d(var_zt)/dz over the model bottom is set to 0.
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        
+        ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+        lhs_ma(kp1_tdiag,i,2) = + wm_zt(i,2) * invrs_dzt(i,2) &
+                                  * weights_zt2zm(i,2,t_above)
+
+        ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+        lhs_ma(k_tdiag,i,2) = - wm_zt(i,2) * invrs_dzt(i,2) &
+                                * ( one - weights_zt2zm(i,2,t_below) )
+
+        ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+        lhs_ma(km1_tdiag,i,2) = zero
+
       end do
       !$acc end parallel loop
 
@@ -286,7 +309,7 @@ module mean_adv
 
       ! Most of the interior model; normal conditions.
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz, 1
+      do k = 3, nz-1, 1
         do i = 1, ngrdcol
           if ( wm_zt(i,k) >= zero ) then  ! Mean wind is in upward direction
 
@@ -313,7 +336,7 @@ module mean_adv
           endif ! wm_zt > 0
           
         end do
-      end do ! k = 2, nz, 1
+      end do ! k = 3, nz-1, 1
       !$acc end parallel loop
 
       ! Upper Boundary
@@ -342,6 +365,35 @@ module mean_adv
           lhs_ma(km1_tdiag,i,nz) = zero
 
         end if ! wm_zt > 0
+      end do
+      !$acc end parallel loop
+
+      ! Lower Boundary
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        if ( wm_zt(i,2) >= zero ) then  ! Mean wind is in upward direction
+
+           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+           lhs_ma(kp1_tdiag,i,2) = zero
+
+           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+           lhs_ma(k_tdiag,i,2) = zero
+
+           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+           lhs_ma(km1_tdiag,i,2) = zero
+             
+        else  ! wm_zt < 0; Mean wind is in downward direction
+
+           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+           lhs_ma(kp1_tdiag,i,2) = + wm_zt(i,2) * invrs_dzm(i,2)
+
+           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+           lhs_ma(k_tdiag,i,2) = - wm_zt(i,2) * invrs_dzm(i,2)
+
+           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+           lhs_ma(km1_tdiag,i,2) = zero
+
+        endif ! wm_zt > 0
       end do
       !$acc end parallel loop
 
