@@ -11,7 +11,7 @@ pipeline {
     }
     stage('Compile CPU') {
       steps {
-        sh '''compile/compile.bash -c config/linux_x86_64_gfortran.bash'''
+        sh '''compile/compile.bash -c config/linux_x86_64_nvhpc.bash'''
       }
     }
     stage('Run CPU') {
