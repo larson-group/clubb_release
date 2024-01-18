@@ -192,8 +192,8 @@ module tridiag_lu_solvers
     !$acc end parallel loop
 
     !$acc parallel loop gang vector default(present)
-    do k = 2, ndim-1
-      do i = 1, ngrdcol
+    do i = 1, ngrdcol
+      do k = 2, ndim-1
         lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lhs(1,i,k) * upper(i,k-1)  )
         upper(i,k)            = lower_diag_invrs(i,k) * lhs(-1,i,k) 
       end do
