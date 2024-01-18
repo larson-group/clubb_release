@@ -7232,7 +7232,7 @@ module clubb_driver
       ! The only reason we need to call this is to setup the multicolumn version 
       ! of nu_vert_res_dep. 
       call setup_parameters_api( &
-             deltaz_col, params, gr, ngrdcol, grid_type,     & ! intent(in)
+             deltaz_col, params, gr_col, ngrdcol, grid_type, & ! intent(in)
              l_prescribed_avg_deltaz,                        & ! intent(in)
              lmin_col, nu_vert_res_dep_col, err_code_dummy )   ! intent(out)  
 
