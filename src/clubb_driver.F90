@@ -6606,8 +6606,6 @@ module clubb_driver
   !   https://github.com/larson-group/clubb/issues/1033
   !----------------------------------------------------------------------------
 
-    use advance_clubb_core_module, only : advance_clubb_core
-
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type(s)
 
@@ -6650,7 +6648,8 @@ module clubb_driver
 
     use clubb_api_module, only: &
       setup_grid_api, &
-      setup_parameters_api
+      setup_parameters_api, &
+      advance_clubb_core_api
 
     use netcdf
 
@@ -7483,7 +7482,7 @@ module clubb_driver
 
 
    ! Call advance_clubb_core with the 2D arrays
-    call advance_clubb_core( gr_col, gr%nz, ngrdcol, &
+    call advance_clubb_core_api( gr_col, gr%nz, ngrdcol, &
       l_implemented, dt, fcor_col, sfc_elevation_col,                           & ! intent(in)
       hydromet_dim,                                                             & ! intent(in)
       sclr_dim, sclr_tol, edsclr_dim, sclr_idx,                             & ! intent(in)
@@ -7517,7 +7516,7 @@ module clubb_driver
       sclrm_trsport_only_col,                           &  ! h1g, 2010-06-16      ! intent(inout)
 #endif
       sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col,                      & ! intent(inout)
-      wpsclrp_col, edsclrm_col,                                                 & ! intent(inout)
+      wpsclrp_col, edsclrm_col, err_code_api,                                   & ! intent(inout)
       rcm_col, cloud_frac_col,                                                  & ! intent(inout)
       wpthvp_col, wp2thvp_col, rtpthvp_col, thlpthvp_col,                       & ! intent(inout)
       sclrpthvp_col,                                                            & ! intent(inout)
@@ -7536,8 +7535,7 @@ module clubb_driver
 #endif
       thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col,           & ! intent(out)
       cloudy_updraft_frac_col, cloudy_downdraft_frac_col,                       & ! intent(out)
-      rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col,                      & ! intent(out)
-      err_code_api )                                                              ! intent(out)
+      rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col )                       ! intent(out)
     
     !---------------------------------------------------------------------------
     !         Copy first column of output arrays to single column outputs

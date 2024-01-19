@@ -847,88 +847,6 @@ module advance_clubb_core_module
 
     !----- Begin Code -----
 
-    !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
-    !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
-    !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
-    !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
-    !$acc              nu_vert_res_dep%nu6, &
-    !$acc              sclr_idx, sclr_tol, l_mix_rat_hm, &
-    !$acc              pdf_params, pdf_params_zm, &
-    !$acc              fcor, sfc_elevation, thlm_forcing, rtm_forcing, um_forcing, &
-    !$acc              vm_forcing, wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
-    !$acc              rtpthlp_forcing, wm_zm, wm_zt, rho_zm, rho, rho_ds_zm, rho_ds_zt, &
-    !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, rfrzm, &
-    !$acc              radf, wpthlp_sfc, &
-    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, sclrm_forcing, wpsclrp_sfc, edsclrm_forcing, & 
-    !$acc              wpedsclrp_sfc, upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, thlm_ref, um_ref, &
-#ifdef CLUBBND_CAM
-    !$acc              varmu, &
-#endif
-    !$acc              vm_ref, ug, vg, host_dx, host_dy ) &
-    !$acc        copy( um, upwp, vm, vpwp, up2, vp2, up3, vp3, rtm, wprtp, thlm, wpthlp, rtp2, &
-    !$acc              rtp3, thlp2, thlp3, rtpthlp, wp2, wp3, sclrm, wpsclrp, sclrp2, sclrp3, &
-    !$acc              sclrprtp, sclrpthlp, p_in_Pa, exner, rcm, cloud_frac, wpthvp, wp2thvp, &
-    !$acc              rtpthvp, thlpthvp, sclrpthvp, wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &
-    !$acc              wp4, wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, um_pert, &
-    !$acc              vm_pert, upwp_pert, vpwp_pert, &
-#ifdef GFDL
-    !$acc              sclrm_trsport_only, &
-#endif
-    !$acc              edsclrm, &
-    !$acc              pdf_params%w_1, pdf_params%w_2, &
-    !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
-    !$acc              pdf_params%rt_1, pdf_params%rt_2, &
-    !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,  &
-    !$acc              pdf_params%thl_1, pdf_params%thl_2, &
-    !$acc              pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
-    !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,  &
-    !$acc              pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2, &
-    !$acc              pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2,&
-    !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, &
-    !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%cthl_1, &
-    !$acc              pdf_params%cthl_2, pdf_params%chi_1, &
-    !$acc              pdf_params%chi_2, pdf_params%stdev_chi_1, &
-    !$acc              pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
-    !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, &
-    !$acc              pdf_params%covar_chi_eta_2, pdf_params%corr_w_chi_1, &
-    !$acc              pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
-    !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, &
-    !$acc              pdf_params%corr_chi_eta_2, pdf_params%rsatl_1, &
-    !$acc              pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
-    !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,  &
-    !$acc              pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
-    !$acc              pdf_params%ice_supersat_frac_2, &
-    !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, &
-    !$acc              pdf_params_zm%varnce_w_1, pdf_params_zm%varnce_w_2, &
-    !$acc              pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
-    !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2,  &
-    !$acc              pdf_params_zm%thl_1, pdf_params_zm%thl_2, &
-    !$acc              pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
-    !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2,  &
-    !$acc              pdf_params_zm%corr_w_thl_1, pdf_params_zm%corr_w_thl_2, &
-    !$acc              pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,&
-    !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, &
-    !$acc              pdf_params_zm%crt_1, pdf_params_zm%crt_2, pdf_params_zm%cthl_1, &
-    !$acc              pdf_params_zm%cthl_2, pdf_params_zm%chi_1, &
-    !$acc              pdf_params_zm%chi_2, pdf_params_zm%stdev_chi_1, &
-    !$acc              pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
-    !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, &
-    !$acc              pdf_params_zm%covar_chi_eta_2, pdf_params_zm%corr_w_chi_1, &
-    !$acc              pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
-    !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, &
-    !$acc              pdf_params_zm%corr_chi_eta_2, pdf_params_zm%rsatl_1, &
-    !$acc              pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
-    !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,  &
-    !$acc              pdf_params_zm%mixt_frac, pdf_params_zm%ice_supersat_frac_1, &
-    !$acc              pdf_params_zm%ice_supersat_frac_2 ) &
-    !$acc     copyout( rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, &
-    !$acc              cloudy_updraft_frac, cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, &
-    !$acc              Kh_zm, &
-#ifdef CLUBB_CAM
-    !$acc              qclvar, &
-#endif
-    !$acc              thlprcp )
-
     !$acc enter data create( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
     !$acc              wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, Lscale_zm, &
     !$acc              Lscale_down, em, tau_zm, tau_zt, &
@@ -953,9 +871,6 @@ module advance_clubb_core_module
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc            create( wpedsclrp, sclrprcp, wp2sclrp, &
     !$acc                    wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt )
-
-    !$acc enter data if( sclr_dim > 0 ) &
-    !$acc            create( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
 
     if ( clubb_config_flags%l_lmm_stepping ) then
       dt_advance = two * dt
@@ -1033,7 +948,7 @@ module advance_clubb_core_module
       if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "Fatal error when testing input"
         err_code_out = err_code
-        !return
+        return
       end if
 
     end if
@@ -1482,7 +1397,7 @@ module advance_clubb_core_module
         if ( err_code == clubb_fatal_error ) then
           err_code_out = err_code
           write(fstderr,*) "Error calling calc_Lscale_directly"
-          !return
+          return
         end if
       end if
 
@@ -1656,7 +1571,7 @@ module advance_clubb_core_module
       if ( err_code == clubb_fatal_error ) then
         err_code_out = err_code
         write(fstderr, *) "Error calling calc_sfc_varnce"
-        !return
+        return
       end if
     end if
 
@@ -1940,7 +1855,7 @@ module advance_clubb_core_module
          if ( err_code == clubb_fatal_error ) then
             err_code_out = err_code
             write(fstderr,*) "Error calling advance_xm_wpxp"
-            !return
+            return
          end if
       end if
 
@@ -2013,7 +1928,7 @@ module advance_clubb_core_module
          if ( err_code == clubb_fatal_error ) then
             err_code_out = err_code
             write(fstderr,*) "Error calling advance_xp2_xpyp"
-            !return
+            return
          end if
       end if
 
@@ -2120,7 +2035,7 @@ module advance_clubb_core_module
          if ( err_code == clubb_fatal_error ) then
             err_code_out = err_code
             write(fstderr,*) "Error calling advance_wp2_wp3"
-            !return
+            return
          end if
       end if
 
@@ -2808,7 +2723,7 @@ module advance_clubb_core_module
         write(fstderr,*) "Error occurred during parameterization_check at"// &
                          " end of advance_clubb_core"
         err_code_out = err_code
-        !return
+        return
       end if
 
     end if
@@ -2885,7 +2800,9 @@ module advance_clubb_core_module
       end do
     end if
 
-    !$acc end data
+    !$acc exit data if( sclr_dim > 0 ) &
+    !$acc           delete( wpedsclrp, sclrprcp, wp2sclrp, &
+    !$acc                   wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt )
 
     !$acc exit data delete( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
     !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, &
@@ -2907,13 +2824,6 @@ module advance_clubb_core_module
     !$acc                   brunt_vaisala_freq_sqd_splat, &
     !$acc                   brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
     !$acc                   tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
-
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( wpedsclrp, sclrprcp, wp2sclrp, &
-    !$acc                   wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt )
-
-    !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt )
 
     return
 

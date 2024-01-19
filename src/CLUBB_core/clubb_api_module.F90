@@ -523,7 +523,7 @@ contains
 #ifdef CLUBBND_CAM
     varmu, &                                                ! intent(in)
 #endif
-    wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
+    wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
@@ -644,8 +644,8 @@ contains
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
       wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
-      rtphmp,      & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
-      thlphmp        ! Covariance of thl and a hydrometeor [K <hm units>]
+      rtphmp_zt,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
+      thlphmp_zt     ! Covariance of thl and a hydrometeor [K <hm units>]
 
     real( kind = core_rknd ), intent(in) ::  &
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
@@ -871,8 +871,8 @@ contains
     real( kind = core_rknd ), dimension(1,gr%nz, hydromet_dim) :: &
       wphydrometp_col, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
       wp2hmp_col,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
-      rtphmp_col,      & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
-      thlphmp_col        ! Covariance of thl and a hydrometeor [K <hm units>]
+      rtphmp_zt_col,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
+      thlphmp_zt_col     ! Covariance of thl and a hydrometeor [K <hm units>]
 
     real( kind = core_rknd ), dimension(1) ::  &
       wpthlp_sfc_col,   & ! w' theta_l' at surface   [(m K)/s]
@@ -1077,8 +1077,8 @@ contains
 #endif
     wphydrometp_col(1,:,:) = wphydrometp
     wp2hmp_col(1,:,:) = wp2hmp
-    rtphmp_col(1,:,:) = rtphmp
-    thlphmp_col(1,:,:) = thlphmp
+    rtphmp_zt_col(1,:,:) = rtphmp_zt
+    thlphmp_zt_col(1,:,:) = thlphmp_zt
     
     host_dx_col(1) = host_dx
     host_dy_col(1) = host_dy
@@ -1158,6 +1158,95 @@ contains
     cloud_cover_col(1,:) = cloud_cover
     invrs_tau_zm_col(1,:) = invrs_tau_zm
 
+    !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
+    !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
+    !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
+    !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
+    !$acc              nu_vert_res_dep%nu6, &
+    !$acc              sclr_idx, &
+    !$acc              fcor_col, sfc_elevation_col, thlm_forcing_col, rtm_forcing_col, um_forcing_col, &
+    !$acc              vm_forcing_col, wprtp_forcing_col, wpthlp_forcing_col, rtp2_forcing_col, thlp2_forcing_col, &
+    !$acc              rtpthlp_forcing_col, wm_zm_col, wm_zt_col, rho_zm_col, rho_col, rho_ds_zm_col, rho_ds_zt_col, &
+    !$acc              invrs_rho_ds_zm_col, invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, rfrzm_col, &
+    !$acc              radf_col, wpthlp_sfc_col, &
+    !$acc              wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, edsclrm_forcing_col, & 
+    !$acc              wpedsclrp_sfc_col, upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, um_ref_col, &
+    !$acc              vm_ref_col, ug_col, vg_col, host_dx_col, host_dy_col ) &
+    !$acc        copy( um_col, upwp_col, vm_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, rtm_col, wprtp_col, thlm_col, wpthlp_col, rtp2_col, &
+    !$acc              rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, wp2_col, wp3_col, &
+    !$acc              p_in_Pa_col, exner_col, rcm_col, cloud_frac_col, wpthvp_col, wp2thvp_col, &
+    !$acc              rtpthvp_col, thlpthvp_col, wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, &
+    !$acc              wp4_col, wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, um_pert_col, &
+    !$acc              vm_pert_col, upwp_pert_col, vpwp_pert_col, &
+    !$acc              edsclrm_col, &
+    !$acc              pdf_params, pdf_params_zm, &
+    !$acc              pdf_params%w_1, pdf_params%w_2, &
+    !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+    !$acc              pdf_params%rt_1, pdf_params%rt_2, &
+    !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,  &
+    !$acc              pdf_params%thl_1, pdf_params%thl_2, &
+    !$acc              pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+    !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,  &
+    !$acc              pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2, &
+    !$acc              pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2,&
+    !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, &
+    !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%cthl_1, &
+    !$acc              pdf_params%cthl_2, pdf_params%chi_1, &
+    !$acc              pdf_params%chi_2, pdf_params%stdev_chi_1, &
+    !$acc              pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
+    !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, &
+    !$acc              pdf_params%covar_chi_eta_2, pdf_params%corr_w_chi_1, &
+    !$acc              pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
+    !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, &
+    !$acc              pdf_params%corr_chi_eta_2, pdf_params%rsatl_1, &
+    !$acc              pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
+    !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,  &
+    !$acc              pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
+    !$acc              pdf_params%ice_supersat_frac_2, &
+    !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, &
+    !$acc              pdf_params_zm%varnce_w_1, pdf_params_zm%varnce_w_2, &
+    !$acc              pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
+    !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2,  &
+    !$acc              pdf_params_zm%thl_1, pdf_params_zm%thl_2, &
+    !$acc              pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
+    !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2,  &
+    !$acc              pdf_params_zm%corr_w_thl_1, pdf_params_zm%corr_w_thl_2, &
+    !$acc              pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,&
+    !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, &
+    !$acc              pdf_params_zm%crt_1, pdf_params_zm%crt_2, pdf_params_zm%cthl_1, &
+    !$acc              pdf_params_zm%cthl_2, pdf_params_zm%chi_1, &
+    !$acc              pdf_params_zm%chi_2, pdf_params_zm%stdev_chi_1, &
+    !$acc              pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
+    !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, &
+    !$acc              pdf_params_zm%covar_chi_eta_2, pdf_params_zm%corr_w_chi_1, &
+    !$acc              pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
+    !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, &
+    !$acc              pdf_params_zm%corr_chi_eta_2, pdf_params_zm%rsatl_1, &
+    !$acc              pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
+    !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,  &
+    !$acc              pdf_params_zm%mixt_frac, pdf_params_zm%ice_supersat_frac_1, &
+    !$acc              pdf_params_zm%ice_supersat_frac_2 ) &
+    !$acc     copyout( rcm_in_layer_col, cloud_cover_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, &
+    !$acc              cloudy_updraft_frac_col, cloudy_downdraft_frac_col, invrs_tau_zm_col, Kh_zt_col, &
+    !$acc              Kh_zm_col, &
+    !$acc              thlprcp_col )
+
+    !$acc data if( sclr_dim > 0 ) &
+    !$acc      copyin( sclr_tol, sclrm_forcing_col, wpsclrp_sfc_col ) &
+    !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, sclrpthvp )
+
+    !$acc data if( hydromet_dim > 0 ) &
+    !$acc      copyin( hydromet_col, wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &
+    !$acc              l_mix_rat_hm )
+
+#ifdef CLUBBND_CAM
+    !$acc data copyin( varmu ) copyout( qclvar )
+#endif
+
+#ifdef GFDL
+    !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
+#endif
+
     call advance_clubb_core( gr, gr%nz, 1,              &
       l_implemented, dt, fcor_col, sfc_elevation_col,            &            ! intent(in)
       hydromet_dim, &                                                         ! intent(in)
@@ -1178,7 +1267,7 @@ contains
 #ifdef CLUBBND_CAM
       varmu_col, &
 #endif
-      wphydrometp_col, wp2hmp_col, rtphmp_col, thlphmp_col, &                 ! intent(in)
+      wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &                 ! intent(in)
       host_dx_col, host_dy_col, &                                             ! intent(in)
       clubb_params, nu_vert_res_dep, lmin, &                                  ! intent(in)
       clubb_config_flags, &                                                   ! intent(in)
@@ -1214,6 +1303,17 @@ contains
       rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &                      ! intent(out)
       err_code_api )                                                              ! intent(out)
     
+    !$acc end data
+    !$acc end data
+    !$acc end data
+
+#ifdef CLUBBND_CAM
+    !$acc end data
+#endif
+
+#ifdef GFDL
+    !$acc end data
+#endif
     
     ! The following does not work for stats 
     !     stats_zt = stats_zt_col(1)
@@ -1322,7 +1422,7 @@ contains
 #ifdef CLUBBND_CAM
     varmu, &                                                ! intent(in)
 #endif
-    wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
+    wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
     clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
@@ -1438,8 +1538,8 @@ contains
     real( kind = core_rknd ), dimension(ngrdcol,nz, hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
       wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
-      rtphmp,      & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
-      thlphmp        ! Covariance of thl and a hydrometeor [K <hm units>]
+      rtphmp_zt,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
+      thlphmp_zt     ! Covariance of thl and a hydrometeor [K <hm units>]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) ::  &
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
@@ -1617,6 +1717,95 @@ contains
     logical, intent(in)                 ::  do_liquid_only_in_clubb
 #endif
 
+    !$acc data copyin( gr, gr%zm, gr%zt, gr%dzm, gr%dzt, gr%invrs_dzt, gr%invrs_dzm, &
+    !$acc              gr%weights_zt2zm, gr%weights_zm2zt, &
+    !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
+    !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
+    !$acc              nu_vert_res_dep%nu6, &
+    !$acc              sclr_idx, &
+    !$acc              fcor, sfc_elevation, thlm_forcing, rtm_forcing, um_forcing, &
+    !$acc              vm_forcing, wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
+    !$acc              rtpthlp_forcing, wm_zm, wm_zt, rho_zm, rho, rho_ds_zm, rho_ds_zt, &
+    !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, rfrzm, &
+    !$acc              radf, wpthlp_sfc, &
+    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, edsclrm_forcing, & 
+    !$acc              wpedsclrp_sfc, upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, thlm_ref, um_ref, &
+    !$acc              vm_ref, ug, vg, host_dx, host_dy ) &
+    !$acc        copy( um, upwp, vm, vpwp, up2, vp2, up3, vp3, rtm, wprtp, thlm, wpthlp, rtp2, &
+    !$acc              rtp3, thlp2, thlp3, rtpthlp, wp2, wp3, &
+    !$acc              p_in_Pa, exner, rcm, cloud_frac, wpthvp, wp2thvp, &
+    !$acc              rtpthvp, thlpthvp, wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &
+    !$acc              wp4, wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, um_pert, &
+    !$acc              vm_pert, upwp_pert, vpwp_pert, &
+    !$acc              edsclrm, &
+    !$acc              pdf_params, pdf_params_zm, &
+    !$acc              pdf_params%w_1, pdf_params%w_2, &
+    !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
+    !$acc              pdf_params%rt_1, pdf_params%rt_2, &
+    !$acc              pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,  &
+    !$acc              pdf_params%thl_1, pdf_params%thl_2, &
+    !$acc              pdf_params%varnce_thl_1, pdf_params%varnce_thl_2, &
+    !$acc              pdf_params%corr_w_rt_1, pdf_params%corr_w_rt_2,  &
+    !$acc              pdf_params%corr_w_thl_1, pdf_params%corr_w_thl_2, &
+    !$acc              pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2,&
+    !$acc              pdf_params%alpha_thl, pdf_params%alpha_rt, &
+    !$acc              pdf_params%crt_1, pdf_params%crt_2, pdf_params%cthl_1, &
+    !$acc              pdf_params%cthl_2, pdf_params%chi_1, &
+    !$acc              pdf_params%chi_2, pdf_params%stdev_chi_1, &
+    !$acc              pdf_params%stdev_chi_2, pdf_params%stdev_eta_1, &
+    !$acc              pdf_params%stdev_eta_2, pdf_params%covar_chi_eta_1, &
+    !$acc              pdf_params%covar_chi_eta_2, pdf_params%corr_w_chi_1, &
+    !$acc              pdf_params%corr_w_chi_2, pdf_params%corr_w_eta_1, &
+    !$acc              pdf_params%corr_w_eta_2, pdf_params%corr_chi_eta_1, &
+    !$acc              pdf_params%corr_chi_eta_2, pdf_params%rsatl_1, &
+    !$acc              pdf_params%rsatl_2, pdf_params%rc_1, pdf_params%rc_2, &
+    !$acc              pdf_params%cloud_frac_1, pdf_params%cloud_frac_2,  &
+    !$acc              pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
+    !$acc              pdf_params%ice_supersat_frac_2, &
+    !$acc              pdf_params_zm%w_1, pdf_params_zm%w_2, &
+    !$acc              pdf_params_zm%varnce_w_1, pdf_params_zm%varnce_w_2, &
+    !$acc              pdf_params_zm%rt_1, pdf_params_zm%rt_2, &
+    !$acc              pdf_params_zm%varnce_rt_1, pdf_params_zm%varnce_rt_2,  &
+    !$acc              pdf_params_zm%thl_1, pdf_params_zm%thl_2, &
+    !$acc              pdf_params_zm%varnce_thl_1, pdf_params_zm%varnce_thl_2, &
+    !$acc              pdf_params_zm%corr_w_rt_1, pdf_params_zm%corr_w_rt_2,  &
+    !$acc              pdf_params_zm%corr_w_thl_1, pdf_params_zm%corr_w_thl_2, &
+    !$acc              pdf_params_zm%corr_rt_thl_1, pdf_params_zm%corr_rt_thl_2,&
+    !$acc              pdf_params_zm%alpha_thl, pdf_params_zm%alpha_rt, &
+    !$acc              pdf_params_zm%crt_1, pdf_params_zm%crt_2, pdf_params_zm%cthl_1, &
+    !$acc              pdf_params_zm%cthl_2, pdf_params_zm%chi_1, &
+    !$acc              pdf_params_zm%chi_2, pdf_params_zm%stdev_chi_1, &
+    !$acc              pdf_params_zm%stdev_chi_2, pdf_params_zm%stdev_eta_1, &
+    !$acc              pdf_params_zm%stdev_eta_2, pdf_params_zm%covar_chi_eta_1, &
+    !$acc              pdf_params_zm%covar_chi_eta_2, pdf_params_zm%corr_w_chi_1, &
+    !$acc              pdf_params_zm%corr_w_chi_2, pdf_params_zm%corr_w_eta_1, &
+    !$acc              pdf_params_zm%corr_w_eta_2, pdf_params_zm%corr_chi_eta_1, &
+    !$acc              pdf_params_zm%corr_chi_eta_2, pdf_params_zm%rsatl_1, &
+    !$acc              pdf_params_zm%rsatl_2, pdf_params_zm%rc_1, pdf_params_zm%rc_2, &
+    !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,  &
+    !$acc              pdf_params_zm%mixt_frac, pdf_params_zm%ice_supersat_frac_1, &
+    !$acc              pdf_params_zm%ice_supersat_frac_2 ) &
+    !$acc     copyout( rcm_in_layer, cloud_cover, wprcp, w_up_in_cloud, w_down_in_cloud, &
+    !$acc              cloudy_updraft_frac, cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, &
+    !$acc              Kh_zm, &
+    !$acc              thlprcp )
+
+    !$acc data if( sclr_dim > 0 ) &
+    !$acc      copyin( sclr_tol, sclrm_forcing, wpsclrp_sfc ) &
+    !$acc        copy( sclrm, wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )
+
+    !$acc data if( hydromet_dim > 0 ) &
+    !$acc      copyin( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
+    !$acc              l_mix_rat_hm )
+
+#ifdef CLUBBND_CAM
+    !$acc data copyin( varmu ) copyout( qclvar )
+#endif
+
+#ifdef GFDL
+    !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
+#endif
+
     call advance_clubb_core( gr, nz, ngrdcol, &
       l_implemented, dt, fcor, sfc_elevation,            &    ! intent(in)
       hydromet_dim, &                                         ! intent(in)
@@ -1637,7 +1826,7 @@ contains
 #ifdef CLUBBND_CAM
       varmu, &
 #endif
-      wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
+      wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &           ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)
       clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
       clubb_config_flags, &                                   ! intent(in)
@@ -1672,6 +1861,19 @@ contains
       cloudy_updraft_frac, cloudy_downdraft_frac, &           ! intent(out)
       rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
       err_code_api )                                          ! intent(out)
+
+    !$acc end data
+    !$acc end data
+    !$acc end data
+
+#ifdef CLUBBND_CAM
+    !$acc end data
+#endif
+
+#ifdef GFDL
+    !$acc end data
+#endif
+
 
   end subroutine advance_clubb_core_api_multi_col
 
