@@ -855,7 +855,7 @@ module mono_flux_limiter
         ! Solve the tridiagonal matrix equation.
         call mfl_xm_solve( nz, ngrdcol, solve_type, tridiag_solve_method,  & ! intent(in)
                            lhs_mfl_xm, rhs_mfl_xm,                         & ! intent(inout)
-                           xm_mfl )                                          ! intent(inout)
+                           xm_mfl )                                          ! intent(out)
 
         ! If an adjustment is for a column
         !$acc parallel loop gang vector collapse(2) default(present)
@@ -1280,7 +1280,8 @@ module mono_flux_limiter
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) ::  &
       rhs  ! Right hand side of tridiagonal matrix equation
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+    !---------------------------- Output Variables ----------------------------
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       xm   ! Value of variable being solved for at timestep (t+1)   [units vary]
 
     !---------------------------- Local Variable ----------------------------
