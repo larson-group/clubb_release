@@ -4170,7 +4170,7 @@ module advance_clubb_core_module
       err_code_out = clubb_no_error ! Initialize to no error value
       call initialize_error_headers
 
-#ifdef _OPENACC
+#ifdef CLUBB_GPU
       if ( clubb_config_flags%penta_solve_method == lapack ) then
         write(fstderr,*) "WARNING: The penta-diagonal lapack solver is not GPU accelerated"
         write(fstderr,*) " Set penta_solve_method = 2, to use an accelerated penta-diagonal solver"

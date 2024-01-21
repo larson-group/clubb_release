@@ -232,9 +232,9 @@ module latin_hypercube_driver_module
     ! Latin hypercube sampling
     !--------------------------------------------------------------
         
-#ifdef _OPENACC
+#ifdef CLUBB_GPU
     if ( .not. silhs_config_flags%l_lh_straight_mc ) then
-      error stop "CLUBB ERROR: Running SILHS with OpenACC requires lh_straight_mc=true"
+      error stop "CLUBB ERROR: Running SILHS on GPUs requires lh_straight_mc=true"
     end if
 #endif
 
@@ -303,7 +303,7 @@ module latin_hypercube_driver_module
     call generate_random_pool( nz, ngrdcol, pdf_dim, num_samples, d_uniform_extra, & ! Intent(in)
                                lh_seed,                                            & ! Intent(in)
                                rand_pool )                                           ! Intent(out)
-                               
+
     ! Generate all uniform samples, based on the rand pool
     call generate_all_uniform_samples( &
            iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
@@ -477,7 +477,10 @@ module latin_hypercube_driver_module
   !     This subroutine populates rand_pool with random numbers. There are
   !     different requirements for generating random numbers on a CPU vs a
   !     GPU, so the operation of this procedure depends on where or not 
-  !     openacc has been specified at compile time.
+  !     we compile with -DCLUBB_GPU has been specified at compile time.
+  !     We use a CUDA routine to generate on a GPU when available, but if
+  !     -DCUDA is not specified then we generate randoms on the GPU and
+  !     copy the results to the GPU.
   !
   ! References:
   !   clubb ticket 869
@@ -495,7 +498,7 @@ module latin_hypercube_driver_module
       genrand_intg, &
       genrand_init  ! Procedure
       
-#ifdef _OPENACC
+#if defined(CUDA) && defined(CLUBB_GPU)
     use curand, only: &
       curandSetPseudoRandomGeneratorSeed, & ! Procedures
       curandCreateGenerator,              &
@@ -526,7 +529,7 @@ module latin_hypercube_driver_module
       
     ! ------------------- Local Variables -------------------
     
-#ifdef _OPENACC
+#if defined(CUDA) && defined(CLUBB_GPU)
       
     integer :: &
       r_status  ! Integer use to call curand functions
@@ -543,9 +546,9 @@ module latin_hypercube_driver_module
       
     ! ---------------- Begin Code ----------------
     
-#ifdef _OPENACC
+#if defined(CUDA) && defined(CLUBB_GPU)
 
-    ! Generate randoms on GPU
+    ! Generate randoms on GPU using a CUDA function
     
     ! If first iteration, intialize generator
     if ( l_first_iter ) then
@@ -562,7 +565,7 @@ module latin_hypercube_driver_module
     
 #else
 
-    ! Generate randoms on CPU
+    ! Generate randoms on CPU using an Mersenne Twister
     
     ! Intialize generator, this is required every timestep to enable restart runs to 
     ! produce bit-for-bit results
@@ -578,6 +581,11 @@ module latin_hypercube_driver_module
         end do
       end do
     end do
+
+#ifdef CLUBB_GPU
+    ! If we are using the GPU, we need to copy the CPU generated randoms to it
+    !$acc update device( rand_pool )
+#endif
 
 #endif
     
@@ -1157,8 +1165,8 @@ module latin_hypercube_driver_module
     ! Clip the SILHS sample point values of hydrometeor concentrations.
     if ( l_clip_hydromet_samples ) then
       
-#ifdef _OPENACC
-       error stop "CLUBB ERROR: Running SILHS with OpenACC requires l_clip_hydromet_samples=false"
+#ifdef CLUBB_GPU
+       error stop "CLUBB ERROR: Running SILHS on the GPUs requires l_clip_hydromet_samples=false"
 #endif
        ! Loop over all sample columns.
        do sample = 1, num_samples, 1
