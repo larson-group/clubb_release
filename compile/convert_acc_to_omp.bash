@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# This script takes a branch of CLUBB with openacc directives and adds openmp directives.
+# To run this script, go to CLUBB's compile directory of the branch you wish to convert and type
+# ./convert_acc_to_omp.bash
+
+# For further information about this script, see
+#    https://github.com/larson-group/clubb/issues/1138
+
 if [ ! -d $PWD/intel-application-migration-tool-for-openacc-to-openmp/ ]; then
 	git clone https://github.com/intel/intel-application-migration-tool-for-openacc-to-openmp
 fi
