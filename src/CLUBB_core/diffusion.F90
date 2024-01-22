@@ -307,59 +307,73 @@ module diffusion
     !$acc              K_zm, K_zt, rho_ds_zm, invrs_rho_ds_zt, nu ) &
     !$acc     copyout( lhs ) &
     !$acc      create( lhs_upwind, drhoKdz_zt, K_zm_nu, rho_K_zm_nu, ddzm_rho_K_zm_nu )
+!$omp target data map(to:gr,gr%invrs_dzm,gr%invrs_dzt,k_zm,k_zt,&
+!$omp rho_ds_zm,invrs_rho_ds_zt,nu) map(from:lhs) map(alloc:lhs_upwind,&
+!$omp drhokdz_zt,k_zm_nu,rho_k_zm_nu,ddzm_rho_k_zm_nu)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         K_zm_nu(i,k) = K_zm(i,k) + nu(i)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( l_upwind_Kh_dp_term ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           rho_K_zm_nu(i,k) = rho_ds_zm(i,k) * K_zm_nu(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! calculate the dKh_zt/dz 
       ddzm_rho_K_zm_nu = ddzm( nz, ngrdcol, gr, rho_K_zm_nu )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           drhoKdz_zt(i,k) = - invrs_rho_ds_zt(i,k) * ddzm_rho_K_zm_nu(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
 
       ! extra terms with upwind scheme 
       ! k = 1 (bottom level); lower boundary level 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         lhs_upwind(kp1_tdiag,i,1) = zero
         lhs_upwind(k_tdiag,i,1)   = zero
         lhs_upwind(km1_tdiag,i,1) = zero
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! extra terms with upwind scheme 
       ! k = 2 (bottom level); lower boundary level 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         lhs_upwind(kp1_tdiag,i,2) = + min( drhoKdz_zt(i,2) , zero ) * gr%invrs_dzm(i,2)  
         lhs_upwind(k_tdiag,i,2)   = - min( drhoKdz_zt(i,2) , zero ) * gr%invrs_dzm(i,2)
         lhs_upwind(km1_tdiag,i,2) = zero
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Most of the interior model; normal conditions.
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 3, nz-1, 1
         do i = 1, ngrdcol
 
@@ -376,26 +390,31 @@ module diffusion
         end do
       end do 
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! k = nz (top level); upper boundary level.
       ! Only relevant if zero-flux boundary conditions are used.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         lhs_upwind(kp1_tdiag,i,nz) =  zero 
         lhs_upwind(k_tdiag,i,nz)   = + max( drhoKdz_zt(i,nz) , zero ) * gr%invrs_dzm(i,nz-1)
         lhs_upwind(km1_tdiag,i,nz) = - max( drhoKdz_zt(i,nz) , zero ) * gr%invrs_dzm(i,nz-1)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lhs(kp1_tdiag,i,1) = zero
       lhs(k_tdiag,i,1)   = zero
       lhs(km1_tdiag,i,1) = zero
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! k = 2 (bottom level); lower boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
@@ -406,6 +425,7 @@ module diffusion
     if ( .not. l_upwind_Kh_dp_term ) then
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
@@ -419,10 +439,12 @@ module diffusion
         lhs(km1_tdiag,i,2) = zero
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * ( K_zt(i,2) + nu(i) ) * gr%invrs_dzm(i,2) & 
@@ -436,6 +458,7 @@ module diffusion
         lhs(km1_tdiag,i,2) = zero + lhs_upwind(km1_tdiag,i,2) 
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if 
 
@@ -443,6 +466,7 @@ module diffusion
 
       ! Most of the interior model; normal conditions.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 3, nz-1, 1
         do i = 1, ngrdcol
 
@@ -464,10 +488,12 @@ module diffusion
         end do
       end do ! k = 2, nz-1, 1       
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -487,6 +513,7 @@ module diffusion
         end do
       end do ! k = 2, nz-1, 1
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if 
 
@@ -495,7 +522,8 @@ module diffusion
 
     if ( .not. l_upwind_Kh_dp_term ) then 
 
-      !$acc parallel loop gang vector default(present) 
+      !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,i,nz) = zero
@@ -511,10 +539,12 @@ module diffusion
             * ( K_zm(i,nz-1) + nu(i) ) * rho_ds_zm(i,nz-1) * gr%invrs_dzm(i,nz-1)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
-      !$acc parallel loop gang vector default(present) 
+      !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
         lhs(kp1_tdiag,i,nz) = zero + lhs_upwind(kp1_tdiag,i,nz)
@@ -530,10 +560,12 @@ module diffusion
           + lhs_upwind(km1_tdiag,i,nz)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if 
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -986,38 +1018,48 @@ module diffusion
     !$acc              K_zm, K_zt, rho_ds_zt, invrs_rho_ds_zm, nu ) &
     !$acc     copyout( lhs ) &
     !$acc      create( lhs_upwind, drhoKdz_zm, rho_K_zt_nu, ddzt_rho_K_zt_nu )
+!$omp target data map(to:gr,gr%invrs_dzt,gr%invrs_dzm,k_zm,k_zt,&
+!$omp rho_ds_zt,invrs_rho_ds_zm,nu) map(from:lhs) map(alloc:lhs_upwind,&
+!$omp drhokdz_zm,rho_k_zt_nu,ddzt_rho_k_zt_nu)
     
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         rho_K_zt_nu(i,k) = rho_ds_zt(i,k) * ( K_zt(i,k) + nu(i) )
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! calculate the dKh_zm/dz 
     ddzt_rho_K_zt_nu = ddzt( nz, ngrdcol, gr, rho_K_zt_nu )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         drhoKdz_zm(i,k) = - invrs_rho_ds_zm(i,k) * ddzt_rho_K_zt_nu(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! extra terms with upwind scheme 
     ! k = 1 (bottom level); lowere boundary level 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lhs_upwind(kp1_mdiag,i,1) = + min( drhoKdz_zm(i,1) , zero ) * gr%invrs_dzt(i,2)
       lhs_upwind(k_mdiag,i,1)   = - min( drhoKdz_zm(i,1) , zero ) * gr%invrs_dzt(i,2)
       lhs_upwind(km1_mdiag,i,1) = zero
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Most of the interior model; normal conditions.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz-1, 1
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
@@ -1030,16 +1072,19 @@ module diffusion
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! k = nz (top level); upper boundary level.
     ! Only relevant if zero-flux boundary conditions are used.
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lhs_upwind(kp1_mdiag,i,nz) = zero
       lhs_upwind(k_mdiag,i,nz)   = + max( drhoKdz_zm(i,nz) , zero ) * gr%invrs_dzt(i,nz)
       lhs_upwind(km1_mdiag,i,nz) = - max( drhoKdz_zm(i,nz) , zero ) * gr%invrs_dzt(i,nz)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! k = 1; lower boundary level at surface.
     ! Only relevant if zero-flux boundary conditions are used.
@@ -1050,6 +1095,7 @@ module diffusion
     if ( .not. l_upwind_Kh_dp_term ) then
       
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,i,1) = - gr%invrs_dzm(i,1) * invrs_rho_ds_zm(i,1) &
@@ -1063,10 +1109,12 @@ module diffusion
         lhs(km1_mdiag,i,1) = zero
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,i,1) = - gr%invrs_dzm(i,1) * ( K_zm(i,1) + nu(i) ) * gr%invrs_dzt(i,2) &
@@ -1080,6 +1128,7 @@ module diffusion
         lhs(km1_mdiag,i,1) =   zero + lhs_upwind(km1_mdiag,i,1)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
@@ -1087,6 +1136,7 @@ module diffusion
     if ( .not. l_upwind_Kh_dp_term ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
@@ -1107,10 +1157,12 @@ module diffusion
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
 
@@ -1132,6 +1184,7 @@ module diffusion
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
@@ -1141,6 +1194,7 @@ module diffusion
     if ( .not. l_upwind_Kh_dp_term ) then
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,i,nz) = zero
@@ -1156,10 +1210,12 @@ module diffusion
              * ( K_zt(i,nz) + nu(i) ) * rho_ds_zt(i,nz) * gr%invrs_dzt(i,nz)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
         lhs(kp1_mdiag,i,nz) =  zero &
@@ -1176,10 +1232,12 @@ module diffusion
           + lhs_upwind(km1_mdiag,i,nz)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1188,3 +1246,5 @@ module diffusion
   !=============================================================================
 
 end module diffusion
+
+

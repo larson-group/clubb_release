@@ -14,6 +14,10 @@ module code_timer_module
     real :: time_elapsed        ! Time elapsed [sec]
     real :: secstart            ! Timer starting time
   end type timer_t
+!$omp declare mapper (timer_t::x) map ( &
+!$omp  x%time_elapsed &
+!$omp , x%secstart &
+!$omp )
 
   public :: timer_t, timer_start, timer_stop
 
@@ -71,3 +75,5 @@ module code_timer_module
   !-----------------------------------------------------------------------
 
 end module code_timer_module
+
+

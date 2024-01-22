@@ -135,8 +135,11 @@ module penta_lu_solvers
     !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs ) &
     !$acc      copyin( rhs, lhs ) &
     !$acc      copyout( soln )
+!$omp target data map(to:rhs,lhs) map(from:soln) map(alloc:upper_1,&
+!$omp upper_2,lower_1,lower_2,lower_diag_invrs)
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper_1(i,1)          = lower_diag_invrs(i,1) * lhs(-1,i,1) 
@@ -148,8 +151,10 @@ module penta_lu_solvers
       upper_2(i,2)          = lower_diag_invrs(i,2) * lhs(-2,i,2)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       do k = 3, ndim-2
         lower_2(i,k) = lhs(2,i,k)
@@ -163,8 +168,10 @@ module penta_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lower_2(i,ndim-1) = lhs(2,i,ndim-1)
       lower_1(i,ndim-1) = lhs(1,i,ndim-1) - lower_2(i,ndim-1) * upper_1(i,ndim-3)
@@ -184,8 +191,10 @@ module penta_lu_solvers
                                                      - lower_1(i,ndim) * upper_1(i,ndim-1) )
     end do
     !$acc end parallel loop
+!$omp end target teams loop
     
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol 
 
       soln(i,1)   = lower_diag_invrs(i,1) * rhs(i,1) 
@@ -198,8 +207,10 @@ module penta_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol 
       soln(i,ndim-1) = soln(i,ndim-1) - upper_1(i,ndim-1) * soln(i,ndim)
 
@@ -209,8 +220,10 @@ module penta_lu_solvers
 
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
   end subroutine penta_lu_solve_single_rhs_multiple_lhs
 
@@ -257,8 +270,11 @@ module penta_lu_solvers
     !$acc data create( upper_1, upper_2, lower_1, lower_2, lower_diag_invrs ) &
     !$acc      copyin( rhs, lhs ) &
     !$acc      copyout( soln )
+!$omp target data map(to:rhs,lhs) map(from:soln) map(alloc:upper_1,&
+!$omp upper_2,lower_1,lower_2,lower_diag_invrs)
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper_1(i,1)          = lower_diag_invrs(i,1) * lhs(-1,i,1) 
@@ -270,8 +286,10 @@ module penta_lu_solvers
       upper_2(i,2)          = lower_diag_invrs(i,2) * lhs(-2,i,2)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       do k = 3, ndim-2
         lower_2(i,k) = lhs(2,i,k)
@@ -285,8 +303,10 @@ module penta_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lower_2(i,ndim-1) = lhs(2,i,ndim-1)
       lower_1(i,ndim-1) = lhs(1,i,ndim-1) - lower_2(i,ndim-1) * upper_1(i,ndim-3)
@@ -306,8 +326,10 @@ module penta_lu_solvers
                                                      - lower_1(  i,ndim) * upper_1(i,ndim-1) )
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do j = 1, nrhs
       do i = 1, ngrdcol 
 
@@ -322,8 +344,10 @@ module penta_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do j = 1, nrhs
       do i = 1, ngrdcol 
         soln(i,ndim-1,j) = soln(i,ndim-1,j) - upper_1(i,ndim-1) * soln(i,ndim,j)
@@ -335,9 +359,13 @@ module penta_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
   end subroutine penta_lu_solve_multiple_rhs_lhs
 
 end module penta_lu_solvers
+
+

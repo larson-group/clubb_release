@@ -234,9 +234,11 @@ module calc_pressure
 
     !$acc data copyin( thlm, rtm, rcm, exner, thv_ds_zt ) & 
     !$acc     copyout( thvm )
+!$omp target data map(to:thlm,rtm,rcm,exner,thv_ds_zt) map(from:thvm)
 
     ! Calculate mean theta_v
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         thvm(i,k) = thlm(i,k) + ep1 * thv_ds_zt(i,k) * rtm(i,k) &
@@ -244,8 +246,10 @@ module calc_pressure
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
     
     !$acc end data
+!$omp end target data
 
     return
 
@@ -253,3 +257,5 @@ module calc_pressure
   !=============================================================================
 
 end module calc_pressure 
+
+

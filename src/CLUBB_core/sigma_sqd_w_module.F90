@@ -95,6 +95,7 @@ module sigma_sqd_w_module
     ! ---- Begin Code ----
 
     !$acc enter data create( max_corr_w_x_sqd )
+!$omp target enter data map(alloc:max_corr_w_x_sqd)
 
     !----------------------------------------------------------------
     ! Compute sigma_sqd_w with new formula from Vince
@@ -106,6 +107,7 @@ module sigma_sqd_w_module
     ! also calculated as part of the PDF, and they are included as well.
     ! Additionally, when sclr_dim > 0, passive scalars (sclr) are also included.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         max_corr_w_x_sqd(i,k) = max( ( wpthlp(i,k) / ( sqrt( wp2(i,k) * thlp2(i,k) ) &
@@ -115,9 +117,11 @@ module sigma_sqd_w_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( l_predict_upwp_vpwp ) then
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           max_corr_w_x_sqd(i,k) = max( max_corr_w_x_sqd(i,k), &
@@ -128,21 +132,27 @@ module sigma_sqd_w_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     endif ! l_predict_upwp_vpwp
 
     ! Calculate the value of sigma_sqd_w
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         sigma_sqd_w(i,k) = gamma_Skw_fnc(i,k) * ( one - min( max_corr_w_x_sqd(i,k), one ) )
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc exit data delete( max_corr_w_x_sqd )
+!$omp target exit data map(delete:max_corr_w_x_sqd)
 
     return
 
   end subroutine compute_sigma_sqd_w
 
 end module sigma_sqd_w_module
+
+

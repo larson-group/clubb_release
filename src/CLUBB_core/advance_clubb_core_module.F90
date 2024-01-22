@@ -867,10 +867,32 @@ module advance_clubb_core_module
     !$acc              brunt_vaisala_freq_sqd_splat, &
     !$acc              brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
     !$acc              tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
+!$omp target enter data map(alloc:skw_zm,skw_zt,thvm,thvm_zm,&
+!$omp ddzm_thvm_zm,rtprcp,rcp2,wpthlp2,wprtp2,wprtpthlp,wp2rcp,wp3_zm,&
+!$omp lscale,lscale_up,lscale_zm,lscale_down,em,tau_zm,tau_zt,wp2_zt,&
+!$omp thlp2_zt,wpthlp_zt,wprtp_zt,rtp2_zt,rtpthlp_zt,up2_zt,vp2_zt,&
+!$omp upwp_zt,vpwp_zt,skw_velocity,a3_coef,a3_coef_zt,wp3_on_wp2,&
+!$omp wp3_on_wp2_zt,rc_coef_zm,km_zm,kmh_zm,gamma_skw_fnc,sigma_sqd_w,&
+!$omp sigma_sqd_w_tmp,sigma_sqd_w_zt,sqrt_em_zt,xp3_coef_fnc,w_1_zm,&
+!$omp w_2_zm,varnce_w_1_zm,varnce_w_2_zm,mixt_frac_zm,rcp2_zt,&
+!$omp cloud_frac_zm,ice_supersat_frac_zm,rtm_zm,thlm_zm,rcm_zm,&
+!$omp thlm1000,thlm700,rcm_supersat_adj,stability_correction,&
+!$omp invrs_tau_n2_zm,invrs_tau_c6_zm,invrs_tau_c1_zm,invrs_tau_xp2_zm,&
+!$omp invrs_tau_n2_iso,invrs_tau_c4_zm,invrs_tau_c14_zm,&
+!$omp invrs_tau_wp2_zm,invrs_tau_wpxp_zm,invrs_tau_wp3_zm,&
+!$omp invrs_tau_no_n2_zm,invrs_tau_bkgnd,invrs_tau_shear,invrs_tau_sfc,&
+!$omp invrs_tau_zt,invrs_tau_wp3_zt,cx_fnc_richardson,&
+!$omp brunt_vaisala_freq_sqd,brunt_vaisala_freq_sqd_mixed,&
+!$omp brunt_vaisala_freq_sqd_dry,brunt_vaisala_freq_sqd_moist,&
+!$omp brunt_vaisala_freq_sqd_splat,brunt_vaisala_freq_sqd_zt,ri_zm,&
+!$omp lscale_max,tau_max_zm,tau_max_zt,newmu,lhs_splat_wp2,&
+!$omp lhs_splat_wp3)
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc            create( wpedsclrp, sclrprcp, wp2sclrp, &
     !$acc                    wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt )
+!$omp target enter data map(alloc:wpedsclrp,sclrprcp,wp2sclrp,wpsclrp2,&
+!$omp wpsclrprtp,wpsclrpthlp,wpsclrp_zt,sclrp2_zt) if(sclr_dim>0)
 
     if ( clubb_config_flags%l_lmm_stepping ) then
       dt_advance = two * dt
@@ -893,6 +915,7 @@ module advance_clubb_core_module
 
       !$acc update host( wm_zt, wm_zm, rho_ds_zt, rtm, gr%dzt, &
       !$acc              rtm, thlm )
+!$omp target update from(wm_zt,wm_zm,rho_ds_zt,rtm,gr%dzt,rtm,thlm)
 
       ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
       ! Therefore, wm must be zero or l_implemented must be true.
@@ -926,6 +949,13 @@ module advance_clubb_core_module
       !$acc              wp2, wp3, rtp2, thlp2, rtpthlp, wpsclrp_sfc, wpedsclrp_sfc, &
       !$acc              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
       !$acc              edsclrm, edsclrm_forcing )
+!$omp target update from(thlm_forcing,rtm_forcing,um_forcing,&
+!$omp vm_forcing,wm_zm,wm_zt,p_in_pa,rho_zm,rho,exner,rho_ds_zm,&
+!$omp rho_ds_zt,invrs_rho_ds_zm,invrs_rho_ds_zt,thv_ds_zm,thv_ds_zt,&
+!$omp wpthlp_sfc,wprtp_sfc,upwp_sfc,vpwp_sfc,um,upwp,vm,vpwp,up2,vp2,&
+!$omp rtm,wprtp,thlm,wpthlp,wp2,wp3,rtp2,thlp2,rtpthlp,wpsclrp_sfc,&
+!$omp wpedsclrp_sfc,sclrm,wpsclrp,sclrp2,sclrprtp,sclrpthlp,&
+!$omp sclrm_forcing,edsclrm,edsclrm_forcing)
 
       do i = 1, ngrdcol
         call parameterization_check( &
@@ -958,6 +988,8 @@ module advance_clubb_core_module
 
       !$acc update host( rfrzm, wp2, vp2, up2, wprtp, wpthlp, upwp, vpwp, &
       !$acc              rtp2, thlp2, rtpthlp, rtm, thlm, um, vm, wp3 )
+!$omp target update from(rfrzm,wp2,vp2,up2,wprtp,wpthlp,upwp,vpwp,rtp2,&
+!$omp thlp2,rtpthlp,rtm,thlm,um,vm,wp3)
 
       do i = 1, ngrdcol
 
@@ -1018,6 +1050,7 @@ module advance_clubb_core_module
     if ( .not. clubb_config_flags%l_host_applies_sfc_fluxes ) then
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         wpthlp(i,1) = wpthlp_sfc(i)
         wprtp(i,1)  = wprtp_sfc(i)
@@ -1025,40 +1058,48 @@ module advance_clubb_core_module
         vpwp(i,1)   = vpwp_sfc(i)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( clubb_config_flags%l_linearize_pbl_winds ) then
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           upwp_pert(i,1) = upwp_sfc_pert(i)
           vpwp_pert(i,1) = vpwp_sfc_pert(i)
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       endif ! l_linearize_pbl_winds
 
       ! Set fluxes for passive scalars (if enabled)
       if ( sclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do j = 1, sclr_dim
           do i = 1, ngrdcol
             wpsclrp(i,1,j)   = wpsclrp_sfc(i,j)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if
 
       if ( edsclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do j = 1, edsclr_dim
           do i = 1, ngrdcol
             wpedsclrp(i,1,j) = wpedsclrp_sfc(i,j)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if
 
     else
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         wpthlp(i,1) = 0.0_core_rknd
         wprtp(i,1)  = 0.0_core_rknd
@@ -1066,42 +1107,51 @@ module advance_clubb_core_module
         vpwp(i,1)   = 0.0_core_rknd
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Set fluxes for passive scalars (if enabled)
       if ( sclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do j = 1, edsclr_dim
           do i = 1, ngrdcol
             wpsclrp(i,1,j) = 0.0_core_rknd
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if
 
       if ( edsclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do j = 1, edsclr_dim
           do i = 1, ngrdcol
             wpedsclrp(i,1,j) = 0.0_core_rknd
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if
 
     end if ! ~l_host_applies_sfc_fluxes
 
 #ifdef CLUBBND_CAM
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       newmu(i) = varmu(i)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 #else
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       newmu(i) = mu
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 #endif
 
     if ( clubb_config_flags%ipdf_call_placement == ipdf_pre_advance_fields &
@@ -1192,12 +1242,14 @@ module advance_clubb_core_module
     wp3_zm(:,:) = zt2zm( nz, ngrdcol, gr, wp3(:,:) )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         wp2_zt(i,k) = max( wp2_zt(i,k), w_tol_sqd )
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     beta = clubb_params(ibeta)
     Skw_denom_coef = clubb_params(iSkw_denom_coef)
@@ -1224,6 +1276,7 @@ module advance_clubb_core_module
           abs(gamma_coef-gamma_coefb) > abs(gamma_coef+gamma_coefb)*eps/2) then
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             gamma_Skw_fnc(i,k) = gamma_coefb + (gamma_coef-gamma_coefb) &
@@ -1231,14 +1284,17 @@ module advance_clubb_core_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       else
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             gamma_Skw_fnc(i,k) = gamma_coef
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       endif
 
       ! Compute sigma_sqd_w (dimensionless PDF width parameter)
@@ -1252,12 +1308,14 @@ module advance_clubb_core_module
       sigma_sqd_w(:,:) = zm2zt2zm( nz, ngrdcol, gr, sigma_sqd_w_tmp(:,:) )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           sigma_sqd_w(i,k) = max( zero_threshold, sigma_sqd_w(i,k) ) ! Pos. def. quantity
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     endif ! clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields
 
@@ -1273,23 +1331,27 @@ module advance_clubb_core_module
     ! Note:  a3 has been modified because the wp3 turbulent advection term is
     !        now discretized on its own.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         a3_coef(i,k) = -2._core_rknd * ( 1._core_rknd - sigma_sqd_w(i,k) )**2 + 3.0_core_rknd
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
     ! than -1.4 -dschanen 4 Jan 2011
     !a3_coef = max( a3_coef, -1.4_core_rknd ) ! Known magic number
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         a3_coef(i,k) = max( a3_coef(i,k), a3_coef_min )
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     a3_coef_zt(:,:) = zm2zt( nz, ngrdcol, gr, a3_coef(:,:) )
 
@@ -1299,6 +1361,7 @@ module advance_clubb_core_module
     rtpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, rtpthlp(:,:) )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         thlp2_zt(i,k) = max( thlp2_zt(i,k), thl_tol**2 ) 
@@ -1306,19 +1369,23 @@ module advance_clubb_core_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in the
     ! denominator since it's less likely to create spikes
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         wp3_on_wp2_zt(i,k) = ( wp3(i,k) / max( wp2_zt(i,k), w_tol_sqd ) )
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Clip wp3_on_wp2_zt if it's too large
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         if( wp3_on_wp2_zt(i,k) < 0._core_rknd ) then
@@ -1329,6 +1396,7 @@ module advance_clubb_core_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Compute wp3_on_wp2 by interpolating wp3_on_wp2_zt
     wp3_on_wp2(:,:) = zt2zm( nz, ngrdcol, gr, wp3_on_wp2_zt(:,:) )
@@ -1349,31 +1417,37 @@ module advance_clubb_core_module
     if ( .not. clubb_config_flags%l_tke_aniso ) then
       ! tke is assumed to be 3/2 of wp2
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           em(i,k) = three_halves * wp2(i,k) 
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     else
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           em(i,k) = 0.5_core_rknd * ( wp2(i,k) + vp2(i,k) + up2(i,k) )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     sqrt_em_zt(:,:) = zm2zt( nz, ngrdcol, gr, em(:,:) )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         sqrt_em_zt(i,k) = sqrt( max( em_min, sqrt_em_zt(i,k) ) )
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !----------------------------------------------------------------
     ! Compute mixing length and dissipation time
@@ -1406,16 +1480,19 @@ module advance_clubb_core_module
       taumax = clubb_params(itaumax)
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           tau_zt(i,k) = min( Lscale(i,k) / sqrt_em_zt(i,k), taumax )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       tau_zm(:,:) = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
           
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           tau_zm(i,k) = min( ( max( tau_zm(i,k), zero_threshold )  &
@@ -1423,8 +1500,10 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_zm(i,k)      = one / tau_zm(i,k)
@@ -1440,6 +1519,7 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! End Vince Larson's replacement.
 
@@ -1510,16 +1590,19 @@ module advance_clubb_core_module
     c_K = clubb_params(ic_K)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         Kh_zt(i,k) = c_K * Lscale(i,k) * sqrt_em_zt(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     Lscale_zm(:,:) = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         Kh_zm(i,k) = c_K * max( Lscale_zm(i,k), zero_threshold )  &
@@ -1527,6 +1610,7 @@ module advance_clubb_core_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! calculate Brunt-Vaisala frequency used for splatting
     brunt_vaisala_freq_sqd_splat  &
@@ -1582,6 +1666,7 @@ module advance_clubb_core_module
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( rtm, rcm, thlm, exner, p_in_Pa )
+!$omp target update from(rtm,rcm,thlm,exner,p_in_pa)
 
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%irvm, rtm(i,:) - rcm(i,:), & !intent(in)
@@ -1613,6 +1698,7 @@ module advance_clubb_core_module
     !----------------------------------------------------------------
     if ( clubb_config_flags%l_call_pdf_closure_twice ) then
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           w_1_zm(i,k)        = pdf_params_zm%w_1(i,k)
@@ -1623,6 +1709,7 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     else
       w_1_zm(:,:)        = zt2zm( nz, ngrdcol, gr, pdf_params%w_1(:,:) )
       w_2_zm(:,:)        = zt2zm( nz, ngrdcol, gr, pdf_params%w_2(:,:) )
@@ -1650,6 +1737,7 @@ module advance_clubb_core_module
 
       if ( stats_metadata%l_stats_samp ) then
         !$acc update host( stability_correction )
+!$omp target update from(stability_correction)
         do i = 1, ngrdcol
           call stat_update_var( stats_metadata%istability_correction, stability_correction(i,:), & ! In
                                 stats_zm(i) ) ! In/Out
@@ -1660,6 +1748,7 @@ module advance_clubb_core_module
       ! Create a damping time scale that is more strongly damped at the
       ! altitudes where the Brunt-Vaisala frequency (N^2) is large.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_N2_zm(i,k) = invrs_tau_zm(i,k) * stability_correction(i,k)
@@ -1668,8 +1757,10 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     else
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_N2_zm(i,k) = unused_var
@@ -1678,16 +1769,19 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if ! l_stability_correction
 
     ! Set invrs_tau variables for C4 and C14
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_C14_zm(i,k) = invrs_tau_wp2_zm(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( .not. clubb_config_flags%l_diag_Lscale_from_tau .and. l_use_invrs_tau_N2_iso) then
       write(fstderr,*) "Error! l_use_invrs_tau_N2_iso is not used when "// &
@@ -1700,20 +1794,24 @@ module advance_clubb_core_module
 
     if ( .not. l_use_invrs_tau_N2_iso ) then
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_C4_zm(i,k) = invrs_tau_wp2_zm(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     else
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_C4_zm(i,k) = invrs_tau_N2_iso(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     if ( stats_metadata%l_stats_samp ) then
@@ -1723,6 +1821,12 @@ module advance_clubb_core_module
       !$acc              invrs_tau_sfc, invrs_tau_shear, brunt_vaisala_freq_sqd, &
       !$acc              brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_mixed, &
       !$acc              brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry )
+!$omp target update from(invrs_tau_zm,invrs_tau_xp2_zm,&
+!$omp invrs_tau_wp2_zm,invrs_tau_wpxp_zm,ri_zm,invrs_tau_wp3_zm,&
+!$omp invrs_tau_no_n2_zm,invrs_tau_bkgnd,invrs_tau_sfc,invrs_tau_shear,&
+!$omp brunt_vaisala_freq_sqd,brunt_vaisala_freq_sqd_splat,&
+!$omp brunt_vaisala_freq_sqd_mixed,brunt_vaisala_freq_sqd_moist,&
+!$omp brunt_vaisala_freq_sqd_dry)
 
       do i = 1, ngrdcol
     
@@ -1782,12 +1886,14 @@ module advance_clubb_core_module
                                       Cx_fnc_Richardson )                              ! intent(out)
     else
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Cx_fnc_Richardson(i,k) = 0.0
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     ! Loop over the 4 main advance subroutines -- advance_xm_wpxp,
@@ -2107,6 +2213,7 @@ module advance_clubb_core_module
       !   and their fluxes (upwp, vpwp, wpedsclrp) by one time step.
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Km_zm(i,k) = Kh_zm(i,k) * C_K10   ! Coefficient for momentum
@@ -2115,9 +2222,11 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( edsclr_dim > 1 .and. clubb_config_flags%l_do_expldiff_rtm_thlm ) then
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             edsclrm(i,k,edsclr_dim-1) = thlm(i,k)
@@ -2125,6 +2234,7 @@ module advance_clubb_core_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if
 
       call advance_windm_edsclrm( nz, ngrdcol, edsclr_dim, gr, dt,            & ! intent(in)
@@ -2160,6 +2270,7 @@ module advance_clubb_core_module
                           thlm1000 )                            ! intent(out)
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol         
             if ( thlm700(i) - thlm1000(i) < 20.0_core_rknd ) then
@@ -2169,6 +2280,7 @@ module advance_clubb_core_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       end if
 
@@ -2268,6 +2380,7 @@ module advance_clubb_core_module
       vp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, vp2(:,:) ) ! Positive def. quantity
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           thlp2_zt(i,k) = max( thlp2_zt(i,k), thl_tol**2 )
@@ -2277,6 +2390,7 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( clubb_config_flags%iiPDF_type == iiPDF_ADG1 ) then
 
@@ -2285,12 +2399,14 @@ module advance_clubb_core_module
         sigma_sqd_w_zt(:,:) = zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:) )
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             sigma_sqd_w_zt(i,k) = max( sigma_sqd_w_zt(i,k), zero_threshold )
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpthlp_zt, wp2_zt, &
                                  thlp2_zt, sigma_sqd_w_zt, &
@@ -2318,12 +2434,14 @@ module advance_clubb_core_module
           sclrp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j) )
 
           !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
           do k = 1, nz
             do i = 1, ngrdcol
               sclrp2_zt(i,k)  = max( sclrp2_zt(i,k), sclr_tol(j)**2 )
             end do
           end do
           !$acc end parallel loop
+!$omp end target teams loop
 
           call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpsclrp_zt, wp2_zt, &
                                    sclrp2_zt, sigma_sqd_w_zt, &
@@ -2492,12 +2610,14 @@ module advance_clubb_core_module
 
 #ifdef CLUBB_CAM
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         qclvar(i,k) = rcp2_zt(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 #endif
 
 
@@ -2580,6 +2700,64 @@ module advance_clubb_core_module
       !$acc              sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
       !$acc              wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp, &
       !$acc              wpsclrpthlp, wpedsclrp, edsclrm, edsclrm_forcing )
+!$omp target update from(wp2,vp2,up2,wprtp,wpthlp,upwp,vpwp,rtp2,thlp2,&
+!$omp rtpthlp,rtm,thlm,um,vm,wp3,pdf_params%w_1,pdf_params%w_2,&
+!$omp pdf_params%varnce_w_1,pdf_params%varnce_w_2,pdf_params%rt_1,&
+!$omp pdf_params%rt_2,pdf_params%varnce_rt_1,pdf_params%varnce_rt_2,&
+!$omp pdf_params%thl_1,pdf_params%thl_2,pdf_params%varnce_thl_1,&
+!$omp pdf_params%varnce_thl_2,pdf_params%corr_w_rt_1,&
+!$omp pdf_params%corr_w_rt_2,pdf_params%corr_w_thl_1,&
+!$omp pdf_params%corr_w_thl_2,pdf_params%corr_rt_thl_1,&
+!$omp pdf_params%corr_rt_thl_2,pdf_params%alpha_thl,&
+!$omp pdf_params%alpha_rt,pdf_params%crt_1,pdf_params%crt_2,&
+!$omp pdf_params%cthl_1,pdf_params%cthl_2,pdf_params%chi_1,&
+!$omp pdf_params%chi_2,pdf_params%stdev_chi_1,pdf_params%stdev_chi_2,&
+!$omp pdf_params%stdev_eta_1,pdf_params%stdev_eta_2,&
+!$omp pdf_params%covar_chi_eta_1,pdf_params%covar_chi_eta_2,&
+!$omp pdf_params%corr_w_chi_1,pdf_params%corr_w_chi_2,&
+!$omp pdf_params%corr_w_eta_1,pdf_params%corr_w_eta_2,&
+!$omp pdf_params%corr_chi_eta_1,pdf_params%corr_chi_eta_2,&
+!$omp pdf_params%rsatl_1,pdf_params%rsatl_2,pdf_params%rc_1,&
+!$omp pdf_params%rc_2,pdf_params%cloud_frac_1,pdf_params%cloud_frac_2,&
+!$omp pdf_params%mixt_frac,pdf_params%ice_supersat_frac_1,&
+!$omp pdf_params%ice_supersat_frac_2,pdf_params_zm%w_1,&
+!$omp pdf_params_zm%w_2,pdf_params_zm%varnce_w_1,&
+!$omp pdf_params_zm%varnce_w_2,pdf_params_zm%rt_1,pdf_params_zm%rt_2,&
+!$omp pdf_params_zm%varnce_rt_1,pdf_params_zm%varnce_rt_2,&
+!$omp pdf_params_zm%thl_1,pdf_params_zm%thl_2,&
+!$omp pdf_params_zm%varnce_thl_1,pdf_params_zm%varnce_thl_2,&
+!$omp pdf_params_zm%corr_w_rt_1,pdf_params_zm%corr_w_rt_2,&
+!$omp pdf_params_zm%corr_w_thl_1,pdf_params_zm%corr_w_thl_2,&
+!$omp pdf_params_zm%corr_rt_thl_1,pdf_params_zm%corr_rt_thl_2,&
+!$omp pdf_params_zm%alpha_thl,pdf_params_zm%alpha_rt,&
+!$omp pdf_params_zm%crt_1,pdf_params_zm%crt_2,pdf_params_zm%cthl_1,&
+!$omp pdf_params_zm%cthl_2,pdf_params_zm%chi_1,pdf_params_zm%chi_2,&
+!$omp pdf_params_zm%stdev_chi_1,pdf_params_zm%stdev_chi_2,&
+!$omp pdf_params_zm%stdev_eta_1,pdf_params_zm%stdev_eta_2,&
+!$omp pdf_params_zm%covar_chi_eta_1,pdf_params_zm%covar_chi_eta_2,&
+!$omp pdf_params_zm%corr_w_chi_1,pdf_params_zm%corr_w_chi_2,&
+!$omp pdf_params_zm%corr_w_eta_1,pdf_params_zm%corr_w_eta_2,&
+!$omp pdf_params_zm%corr_chi_eta_1,pdf_params_zm%corr_chi_eta_2,&
+!$omp pdf_params_zm%rsatl_1,pdf_params_zm%rsatl_2,pdf_params_zm%rc_1,&
+!$omp pdf_params_zm%rc_2,pdf_params_zm%cloud_frac_1,&
+!$omp pdf_params_zm%cloud_frac_2,pdf_params_zm%mixt_frac,&
+!$omp pdf_params_zm%ice_supersat_frac_1,&
+!$omp pdf_params_zm%ice_supersat_frac_2,um,vm,upwp,vpwp,up2,vp2,thlm,&
+!$omp rtm,wprtp,wpthlp,wp2,wp3,rtp2,rtp3,thlp2,thlp3,rtpthlp,wpthvp,&
+!$omp wp2thvp,rtpthvp,thlpthvp,p_in_pa,exner,rho,rho_zm,rho_ds_zm,&
+!$omp rho_ds_zt,thv_ds_zm,thv_ds_zt,wm_zt,wm_zm,rcm,wprcp,rc_coef,&
+!$omp rc_coef_zm,rcm_zm,rtm_zm,thlm_zm,cloud_frac,ice_supersat_frac,&
+!$omp cloud_frac_zm,ice_supersat_frac_zm,rcm_in_layer,cloud_cover,&
+!$omp rcm_supersat_adj,sigma_sqd_w,thvm,ug,vg,lscale,wpthlp2,wp2thlp,&
+!$omp wprtp2,wp2rtp,lscale_up,lscale_down,tau_zt,kh_zt,wp2rcp,&
+!$omp wprtpthlp,sigma_sqd_w_zt,wp2_zt,thlp2_zt,wpthlp_zt,wprtp_zt,&
+!$omp rtp2_zt,rtpthlp_zt,up2_zt,vp2_zt,upwp_zt,vpwp_zt,wpup2,wpvp2,&
+!$omp wp2up2,wp2vp2,wp4,tau_zm,kh_zm,thlprcp,rtprcp,rcp2,em,a3_coef,&
+!$omp a3_coef_zt,wp3_zm,wp3_on_wp2,wp3_on_wp2_zt,skw_velocity,&
+!$omp w_up_in_cloud,w_down_in_cloud,cloudy_updraft_frac,&
+!$omp cloudy_downdraft_frac,sclrm,sclrp2,sclrprtp,sclrpthlp,&
+!$omp sclrm_forcing,sclrpthvp,wpsclrp,sclrprcp,wp2sclrp,wpsclrp2,&
+!$omp wpsclrprtp,wpsclrpthlp,wpedsclrp,edsclrm,edsclrm_forcing)
 
       do i = 1, ngrdcol
 
@@ -2701,6 +2879,13 @@ module advance_clubb_core_module
       !$acc              rtp2, thlp2, rtpthlp, &
       !$acc              wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2, &
       !$acc              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )
+!$omp target update from(thlm_forcing,rtm_forcing,um_forcing,&
+!$omp vm_forcing,wm_zm,wm_zt,p_in_pa,rho_zm,rho,exner,rho_ds_zm,&
+!$omp rho_ds_zt,invrs_rho_ds_zm,invrs_rho_ds_zt,thv_ds_zm,thv_ds_zt,&
+!$omp wpthlp_sfc,wprtp_sfc,upwp_sfc,vpwp_sfc,um,upwp,vm,vpwp,up2,vp2,&
+!$omp rtm,wprtp,thlm,wpthlp,wp2,wp3,rtp2,thlp2,rtpthlp,wpsclrp_sfc,&
+!$omp wpedsclrp_sfc,sclrm,wpsclrp,sclrp2,sclrprtp,sclrpthlp,&
+!$omp sclrm_forcing,edsclrm,edsclrm_forcing)
 
       do i = 1, ngrdcol
         call parameterization_check( &
@@ -2732,6 +2917,8 @@ module advance_clubb_core_module
 
       !$acc update host( wm_zt, wm_zm, rho_ds_zm, wprtp, wprtp_sfc, rho_ds_zt, &
       !$acc              rtm, rtm_forcing, thlm, thlm_forcing )
+!$omp target update from(wm_zt,wm_zm,rho_ds_zm,wprtp,wprtp_sfc,&
+!$omp rho_ds_zt,rtm,rtm_forcing,thlm,thlm_forcing)
 
       ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
       ! Therefore, wm must be zero or l_implemented must be true.
@@ -2803,6 +2990,8 @@ module advance_clubb_core_module
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc           delete( wpedsclrp, sclrprcp, wp2sclrp, &
     !$acc                   wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt )
+!$omp target exit data map(delete:wpedsclrp,sclrprcp,wp2sclrp,wpsclrp2,&
+!$omp wpsclrprtp,wpsclrpthlp,wpsclrp_zt,sclrp2_zt) if(sclr_dim>0)
 
     !$acc exit data delete( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
     !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, &
@@ -2824,6 +3013,26 @@ module advance_clubb_core_module
     !$acc                   brunt_vaisala_freq_sqd_splat, &
     !$acc                   brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
     !$acc                   tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
+!$omp target exit data map(delete:skw_zm,skw_zt,thvm,thvm_zm,&
+!$omp ddzm_thvm_zm,rtprcp,rcp2,wpthlp2,wprtp2,wprtpthlp,wp2rcp,wp3_zm,&
+!$omp lscale,lscale_up,lscale_zm,lscale_down,em,tau_zm,tau_zt,&
+!$omp sigma_sqd_w_zt,wp2_zt,thlp2_zt,wpthlp_zt,wprtp_zt,rtp2_zt,&
+!$omp rtpthlp_zt,up2_zt,vp2_zt,upwp_zt,vpwp_zt,skw_velocity,a3_coef,&
+!$omp a3_coef_zt,wp3_on_wp2,wp3_on_wp2_zt,rc_coef_zm,km_zm,kmh_zm,&
+!$omp gamma_skw_fnc,sigma_sqd_w,sigma_sqd_w_tmp,sqrt_em_zt,&
+!$omp xp3_coef_fnc,w_1_zm,w_2_zm,varnce_w_1_zm,varnce_w_2_zm,&
+!$omp mixt_frac_zm,rcp2_zt,cloud_frac_zm,ice_supersat_frac_zm,rtm_zm,&
+!$omp thlm_zm,rcm_zm,thlm1000,thlm700,rcm_supersat_adj,&
+!$omp stability_correction,invrs_tau_n2_zm,invrs_tau_c6_zm,&
+!$omp invrs_tau_c1_zm,invrs_tau_xp2_zm,invrs_tau_n2_iso,&
+!$omp invrs_tau_c4_zm,invrs_tau_c14_zm,invrs_tau_wp2_zm,&
+!$omp invrs_tau_wpxp_zm,invrs_tau_wp3_zm,invrs_tau_no_n2_zm,&
+!$omp invrs_tau_bkgnd,invrs_tau_shear,invrs_tau_sfc,invrs_tau_zt,&
+!$omp invrs_tau_wp3_zt,cx_fnc_richardson,brunt_vaisala_freq_sqd,&
+!$omp brunt_vaisala_freq_sqd_mixed,brunt_vaisala_freq_sqd_dry,&
+!$omp brunt_vaisala_freq_sqd_moist,brunt_vaisala_freq_sqd_splat,&
+!$omp brunt_vaisala_freq_sqd_zt,ri_zm,lscale_max,tau_max_zm,tau_max_zt,&
+!$omp newmu,lhs_splat_wp2,lhs_splat_wp3)
 
     return
 
@@ -3322,6 +3531,13 @@ module advance_clubb_core_module
     !$acc                    wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
     !$acc                    wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
     !$acc                    rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
+!$omp target enter data map(alloc:wp2_zt,wp3_zm,rtp2_zt,rtp3_zm,&
+!$omp thlp2_zt,thlp3_zm,wprtp_zt,wpthlp_zt,rtpthlp_zt,up2_zt,up3_zm,&
+!$omp vp2_zt,vp3_zm,upwp_zt,vpwp_zt,gamma_skw_fnc,gamma_skw_fnc_zt,&
+!$omp sigma_sqd_w_zt,skw_zt,skw_zm,skrt_zt,skrt_zm,skthl_zt,skthl_zm,&
+!$omp sku_zt,sku_zm,skv_zt,skv_zm,wp2up2_zt,wp2vp2_zt,wp4_zt,wpthvp_zt,&
+!$omp rtpthvp_zt,thlpthvp_zt,wprcp_zt,rtprcp_zt,thlprcp_zt,uprcp_zt,&
+!$omp vprcp_zt,rsat,rel_humidity,um_zm,vm_zm,t_in_k,sigma_sqd_w_tmp)
 
     !$acc enter data if( l_call_pdf_closure_twice ) &
     !$acc            create( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &
@@ -3329,13 +3545,24 @@ module advance_clubb_core_module
     !$acc                    cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &
     !$acc                    wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
     !$acc                    wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm )
+!$omp target enter data map(alloc:w_up_in_cloud_zm,wpup2_zm,wpvp2_zm,&
+!$omp w_down_in_cloud_zm,cloudy_updraft_frac_zm,&
+!$omp cloudy_downdraft_frac_zm,p_in_pa_zm,exner_zm,wprtp2_zm,wp2rtp_zm,&
+!$omp wpthlp2_zm,wp2thlp_zm,wprtpthlp_zm,wp2thvp_zm,wp2rcp_zm)&
+!$omp if(l_call_pdf_closure_twice)
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc            create( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &
     !$acc                    Sksclr_zt, Sksclr_zm, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
     !$acc                    wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrm_zm )
+!$omp target enter data map(alloc:wpsclrp_zt,sclrp2_zt,sclrp3_zm,&
+!$omp sclrprtp_zt,sclrpthlp_zt,sksclr_zt,sksclr_zm,sclrpthvp_zt,&
+!$omp sclrprcp_zt,wpsclrprtp_zm,wpsclrp2_zm,wpsclrpthlp_zm,wp2sclrp_zm,&
+!$omp sclrm_zm) if(sclr_dim>0)
 
     !$acc enter data if( hydromet_dim > 0 ) create( wphydrometp_zt, wp2hmp_zm, rtphmp, thlphmp )
+!$omp target enter data map(alloc:wphydrometp_zt,wp2hmp_zm,rtphmp,&
+!$omp thlphmp) if(hydromet_dim>0)
 
     !---------------------------------------------------------------------------
     ! Interpolate wp3, rtp3, thlp3, up3, vp3, and sclrp3 to momentum levels, and
@@ -3355,6 +3582,7 @@ module advance_clubb_core_module
     vp3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, vp3(:,:) )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         wp2_zt(i,k)   = max( wp2_zt(i,k), w_tol_sqd )
@@ -3365,18 +3593,21 @@ module advance_clubb_core_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     do j = 1, sclr_dim, 1
       sclrp2_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j) ) ! Pos. def. quantity
       sclrp3_zm(:,:,j) = zt2zm( nz, ngrdcol, gr, sclrp3(:,:,j) )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           sclrp2_zt(i,k,j)   = max( sclrp2_zt(i,k,j), sclr_tol(j)**2 )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end do ! i = 1, sclr_dim, 1
 
@@ -3438,6 +3669,8 @@ module advance_clubb_core_module
     if ( stats_metadata%l_stats_samp .and. l_samp_stats_in_pdf_call ) then
 
       !$acc update host( Skw_zt, Skw_zm, Skthl_zt, Skrt_zt, Skrt_zm, Skthl_zm )
+!$omp target update from(skw_zt,skw_zm,skthl_zt,skrt_zt,skrt_zm,&
+!$omp skthl_zm)
 
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%iSkw_zt, Skw_zt(i,:), & ! In
@@ -3468,6 +3701,7 @@ module advance_clubb_core_module
       ! Compute gamma as a function of Skw  - 14 April 06 dschanen
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
            gamma_Skw_fnc(i,k) = gamma_coefb &
@@ -3480,10 +3714,12 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
       
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           gamma_Skw_fnc(i,k) = gamma_coef
@@ -3491,11 +3727,13 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
     if ( stats_metadata%l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       !$acc update host(gamma_Skw_fnc)      
+!$omp target update from(gamma_skw_fnc)
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%igamma_Skw_fnc, gamma_Skw_fnc(i,:), & ! intent(in)
                               stats_zm(i) )                       ! intent(inout)
@@ -3517,6 +3755,7 @@ module advance_clubb_core_module
     sigma_sqd_w_zt(:,:) = zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:) )  ! Pos. def. quantity
       
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         sigma_sqd_w(i,k)    = max( zero_threshold, sigma_sqd_w(i,k) ) ! Pos. def. quantity
@@ -3524,6 +3763,7 @@ module advance_clubb_core_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !---------------------------------------------------------------------------
     ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels,
@@ -3541,6 +3781,7 @@ module advance_clubb_core_module
     vpwp_zt(:,:)    = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         rtp2_zt(i,k)    = max( rtp2_zt(i,k), rt_tol**2 )   ! Positive def. quantity
@@ -3550,10 +3791,12 @@ module advance_clubb_core_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Compute skewness velocity for stats output purposes
     if ( stats_metadata%iSkw_velocity > 0 ) then
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Skw_velocity(i,k) = ( 1.0_core_rknd / ( 1.0_core_rknd - sigma_sqd_w(i,k) ) ) &
@@ -3561,6 +3804,7 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     !----------------------------------------------------------------
@@ -3575,12 +3819,14 @@ module advance_clubb_core_module
       sclrpthlp_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, sclrpthlp(:,:,j) )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           sclrp2_zt(i,k,j) = max( sclrp2_zt(i,k,j), sclr_tol(j)**2 ) ! Pos. def. quantity
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end do ! i = 1, sclr_dim, 1
 
@@ -3669,6 +3915,7 @@ module advance_clubb_core_module
     if( l_rtm_nudge ) then
       ! Nudge rtm to prevent excessive drying
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           if ( rtm(i,k) < rtm_min .and. gr%zt(i,k) < rtm_nudge_max_altitude ) then
@@ -3677,6 +3924,7 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     if ( l_call_pdf_closure_twice ) then
@@ -3693,10 +3941,12 @@ module advance_clubb_core_module
         ! Clip if extrap. causes sclrm_zm to be less than sclr_tol
 
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           sclrm_zm(i,nz,j) = max( sclrm_zm(i,nz,j), sclr_tol(j) )
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       end do ! i = 1, sclr_dim
 
@@ -3708,6 +3958,7 @@ module advance_clubb_core_module
       p_in_Pa_zm(:,:) = zt2zm( nz, ngrdcol, gr, p_in_Pa(:,:) )
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         p_in_Pa_zm(i,1) = p_in_Pa(i,1)
 
@@ -3715,20 +3966,24 @@ module advance_clubb_core_module
         p_in_Pa_zm(i,nz) = max( p_in_Pa_zm(i,nz), 0.5_core_rknd*p_in_Pa(i,nz) )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           exner_zm(i,k) = (p_in_Pa_zm(i,k)/p0)**kappa
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       rtm_zm(:,:) = zt2zm( nz, ngrdcol, gr, rtm(:,:) )
       thlm_zm(:,:) = zt2zm( nz, ngrdcol, gr, thlm(:,:) )
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Clip if extrapolation at the top level causes rtm_zm to be < rt_tol
         rtm_zm(i,nz) = max( rtm_zm(i,nz), rt_tol )
@@ -3737,6 +3992,7 @@ module advance_clubb_core_module
         thlm_zm(i,nz) = max( thlm_zm(i,nz), thl_tol )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Interpolate hydrometeor mixed moments to momentum levels.
       do j = 1, hydromet_dim
@@ -3815,14 +4071,17 @@ module advance_clubb_core_module
       wp4(:,:) = zt2zm( nz, ngrdcol, gr, wp4_zt(:,:) )  ! Pos. def. quantity
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           wp4(i,k) = max( wp4(i,k), zero_threshold )  ! Pos. def. quantity
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ! Since top momentum level is higher than top thermo level,
         ! set variables at top momentum level to 0.
@@ -3834,6 +4093,7 @@ module advance_clubb_core_module
         wp4(i,1) = zero
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
 #ifndef CLUBB_CAM
       ! CAM-CLUBB needs cloud water variance thus always compute this
@@ -3842,18 +4102,22 @@ module advance_clubb_core_module
         rcp2(:,:) = zt2zm( nz, ngrdcol, gr, rcp2_zt(:,:) )  ! Pos. def. quantity
         
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             rcp2(i,k) = max( rcp2(i,k), zero_threshold )
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 #ifndef CLUBB_CAM
-        !$acc parallel loop gang vector default(present) 
+        !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           rcp2(i,nz) = zero
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       endif
 #endif
 
@@ -3869,7 +4133,8 @@ module advance_clubb_core_module
       wp2up2(:,:)      = zt2zm( nz, ngrdcol, gr, wp2up2_zt(:,:) )
       wp2vp2(:,:)      = zt2zm( nz, ngrdcol, gr, wp2vp2_zt(:,:) )
 
-      !$acc parallel loop gang vector default(present) 
+      !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         wpthvp(i,nz)     = 0.0_core_rknd
         thlpthvp(i,nz)   = 0.0_core_rknd
@@ -3884,9 +4149,11 @@ module advance_clubb_core_module
         wp2vp2(i,nz)     = 0.0_core_rknd
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Initialize variables to avoid uninitialized variables.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           cloud_frac_zm(i,k)        = 0.0_core_rknd
@@ -3897,6 +4164,7 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Interpolate passive scalars back onto the m grid
       do j = 1, sclr_dim
@@ -3904,6 +4172,7 @@ module advance_clubb_core_module
         sclrprcp(:,:,j)        = zt2zm( nz, ngrdcol, gr, sclrprcp_zt(:,:,j) )
 
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do k = 1, nz
           do i = 1, ngrdcol
             sclrpthvp(i,nz,j) = 0.0_core_rknd
@@ -3911,6 +4180,7 @@ module advance_clubb_core_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       end do ! i=1, sclr_dim
 
@@ -3918,6 +4188,7 @@ module advance_clubb_core_module
     
     if ( stats_metadata%l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       !$acc update host( uprcp, vprcp )
+!$omp target update from(uprcp,vprcp)
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%iuprcp,  uprcp(i,:),  & ! intent(in)
                               stats_zm(i) )           ! intent(inout)
@@ -3946,10 +4217,12 @@ module advance_clubb_core_module
       ! Since top momentum level is higher than top thermo. level,
       ! set variables at top momentum level to 0.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         cloud_frac_zm(i,nz)  = 0.0_core_rknd
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if ! l_trapezoidal_rule_zt
 
     ! If l_trapezoidal_rule_zm is true, call trapezoidal_rule_zm for
@@ -3982,6 +4255,7 @@ module advance_clubb_core_module
       ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help
       ! increase cloudiness at coarser grid resolutions.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           cloud_frac(i,k) = cloud_cover(i,k)
@@ -3989,9 +4263,11 @@ module advance_clubb_core_module
         end do
       end do
     !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         ! Clip cloud fraction here if it still exceeds 1.0 due to round off
@@ -4001,11 +4277,13 @@ module advance_clubb_core_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     T_in_K = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
     rsat = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         rel_humidity(i,k) = (rtm(i,k) - rcm(i,k)) / rsat(i,k)
@@ -4013,6 +4291,7 @@ module advance_clubb_core_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
       
     if ( l_rcm_supersat_adj ) then
       ! +PAB mods, take remaining supersaturation that may exist
@@ -4023,6 +4302,7 @@ module advance_clubb_core_module
       
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz
         do i = 1, ngrdcol
           if (rel_humidity(i,k) > 1.0_core_rknd) then
@@ -4033,6 +4313,7 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( clubb_at_least_debug_level( 1 ) .and. l_spur_supersat ) then
         write(fstderr,*) 'Warning: spurious supersaturation was removed after pdf_closure!'
@@ -4049,6 +4330,13 @@ module advance_clubb_core_module
     !$acc                   wp2vp2_zt, wp4_zt, wpthvp_zt, rtpthvp_zt, thlpthvp_zt, &
     !$acc                   wprcp_zt, rtprcp_zt, thlprcp_zt, uprcp_zt, vprcp_zt, &
     !$acc                   rsat, rel_humidity, um_zm, vm_zm, T_in_K, sigma_sqd_w_tmp )
+!$omp target exit data map(delete:wp2_zt,wp3_zm,rtp2_zt,rtp3_zm,&
+!$omp thlp2_zt,thlp3_zm,wprtp_zt,wpthlp_zt,rtpthlp_zt,up2_zt,up3_zm,&
+!$omp vp2_zt,vp3_zm,upwp_zt,vpwp_zt,gamma_skw_fnc,gamma_skw_fnc_zt,&
+!$omp sigma_sqd_w_zt,skw_zt,skw_zm,skrt_zt,skrt_zm,skthl_zt,skthl_zm,&
+!$omp sku_zt,sku_zm,skv_zt,skv_zm,wp2up2_zt,wp2vp2_zt,wp4_zt,wpthvp_zt,&
+!$omp rtpthvp_zt,thlpthvp_zt,wprcp_zt,rtprcp_zt,thlprcp_zt,uprcp_zt,&
+!$omp vprcp_zt,rsat,rel_humidity,um_zm,vm_zm,t_in_k,sigma_sqd_w_tmp)
 
     !$acc exit data if( l_call_pdf_closure_twice ) &
     !$acc           delete( w_up_in_cloud_zm, wpup2_zm, wpvp2_zm, &
@@ -4056,13 +4344,24 @@ module advance_clubb_core_module
     !$acc                   cloudy_downdraft_frac_zm, p_in_Pa_zm, exner_zm, &
     !$acc                   wprtp2_zm, wp2rtp_zm, wpthlp2_zm, &
     !$acc                   wp2thlp_zm, wprtpthlp_zm, wp2thvp_zm, wp2rcp_zm )
+!$omp target exit data map(delete:w_up_in_cloud_zm,wpup2_zm,wpvp2_zm,&
+!$omp w_down_in_cloud_zm,cloudy_updraft_frac_zm,&
+!$omp cloudy_downdraft_frac_zm,p_in_pa_zm,exner_zm,wprtp2_zm,wp2rtp_zm,&
+!$omp wpthlp2_zm,wp2thlp_zm,wprtpthlp_zm,wp2thvp_zm,wp2rcp_zm)&
+!$omp if(l_call_pdf_closure_twice)
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc           delete( wpsclrp_zt, sclrp2_zt, sclrp3_zm, sclrprtp_zt, sclrpthlp_zt, &
     !$acc                   Sksclr_zt, Sksclr_zm, sclrpthvp_zt, sclrprcp_zt, wpsclrprtp_zm, &
     !$acc                   wpsclrp2_zm, wpsclrpthlp_zm, wp2sclrp_zm, sclrm_zm )
+!$omp target exit data map(delete:wpsclrp_zt,sclrp2_zt,sclrp3_zm,&
+!$omp sclrprtp_zt,sclrpthlp_zt,sksclr_zt,sksclr_zm,sclrpthvp_zt,&
+!$omp sclrprcp_zt,wpsclrprtp_zm,wpsclrp2_zm,wpsclrpthlp_zm,wp2sclrp_zm,&
+!$omp sclrm_zm) if(sclr_dim>0)
 
     !$acc exit data if( hydromet_dim > 0 ) delete( wphydrometp_zt, wp2hmp_zm, rtphmp, thlphmp )
+!$omp target exit data map(delete:wphydrometp_zt,wp2hmp_zm,rtphmp,&
+!$omp thlphmp) if(hydromet_dim>0)
 
     return
 
@@ -4788,6 +5087,7 @@ module advance_clubb_core_module
         ! Since top momentum level is higher than top thermo. level,
         ! set variables at top momentum level to 0.
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           wprtp2_zm(i,nz)             = 0.0_core_rknd
           wpthlp2_zm(i,nz)            = 0.0_core_rknd
@@ -4798,6 +5098,7 @@ module advance_clubb_core_module
           wp2thvp_zm(i,nz)            = 0.0_core_rknd
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
         do sclr = 1, sclr_dim
           wpsclrprtp_zm(:,:,sclr)   = zt2zm( nz, ngrdcol, gr, wpsclrprtp(:,:,sclr) )
@@ -4805,12 +5106,14 @@ module advance_clubb_core_module
           wpsclrpthlp_zm(:,:,sclr)  = zt2zm( nz, ngrdcol, gr, wpsclrpthlp(:,:,sclr) )
 
           !$acc parallel loop gang vector default(present)
+!$omp target teams loop
           do i = 1, ngrdcol
             wpsclrprtp_zm(i,nz,sclr)  = 0.0_core_rknd
             wpsclrp2_zm(i,nz,sclr)    = 0.0_core_rknd
             wpsclrpthlp_zm(i,nz,sclr) = 0.0_core_rknd
           end do
           !$acc end parallel loop
+!$omp end target teams loop
         end do ! i = 1, sclr_dim
 
       end if ! .not. l_call_pdf_closure_twice
@@ -4978,13 +5281,16 @@ module advance_clubb_core_module
       ! ---------------- Begin Code ----------------
 
       ! Boundary condition: trapezoidal rule not valid at zt level 1
-      !$acc parallel loop gang vector default(present) 
+      !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         trapezoid_zt(i,1) = variable_zt(i,1)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz
         do i = 1, ngrdcol
           ! Trapezoidal rule from calculus
@@ -4995,6 +5301,7 @@ module advance_clubb_core_module
         end do
       end do ! k = 2, gr%nz
       !$acc end parallel loop
+!$omp end target teams loop
 
       return
     end subroutine calc_trapezoid_zt
@@ -5041,14 +5348,17 @@ module advance_clubb_core_module
 
       ! Boundary conditions: trapezoidal rule not valid at top zm level, nzmax.
       ! Trapezoidal rule also not used at zm level 1.
-      !$acc parallel loop gang vector default(present) 
+      !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         trapezoid_zm(i,1)  = variable_zm(i,1)
         trapezoid_zm(i,nz) = variable_zm(i,nz)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           ! Trapezoidal rule from calculus
@@ -5059,6 +5369,7 @@ module advance_clubb_core_module
         end do
       end do 
       !$acc end parallel loop
+!$omp end target teams loop
 
       return
     end subroutine calc_trapezoid_zm
@@ -5135,8 +5446,11 @@ module advance_clubb_core_module
 
       !$acc enter data create( chi_mean, vert_cloud_frac_upper, &
       !$acc                    vert_cloud_frac_lower, vert_cloud_frac )
+!$omp target enter data map(alloc:chi_mean,vert_cloud_frac_upper,&
+!$omp vert_cloud_frac_lower,vert_cloud_frac)
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
 
@@ -5145,8 +5459,10 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
 
@@ -5230,8 +5546,10 @@ module advance_clubb_core_module
         end do
       end do ! k = 2, gr%nz-1, 1
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         cloud_cover(i,1)  = cloud_frac(i,1)
         cloud_cover(i,nz) = cloud_frac(i,nz)
@@ -5240,12 +5558,15 @@ module advance_clubb_core_module
         rcm_in_layer(i,nz) = rcm(i,nz)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
 
           !$acc update host( pdf_params%mixt_frac, pdf_params%chi_1, pdf_params%chi_2, &
           !$acc              cloud_frac, rcm )
+!$omp target update from(pdf_params%mixt_frac,pdf_params%chi_1,&
+!$omp pdf_params%chi_2,cloud_frac,rcm)
 
           write(fstderr,*)  &
              "ERROR: compute_cloud_cover entered a conditional case it should not have "
@@ -5260,6 +5581,8 @@ module advance_clubb_core_module
 
       !$acc exit data delete( chi_mean, vert_cloud_frac_upper, &
       !$acc                   vert_cloud_frac_lower, vert_cloud_frac )
+!$omp target exit data map(delete:chi_mean,vert_cloud_frac_upper,&
+!$omp vert_cloud_frac_lower,vert_cloud_frac)
 
       return
 
@@ -5311,10 +5634,12 @@ module advance_clubb_core_module
 
       !$acc data copyin( rtm ) &
       !$acc        copy( rcm )
+!$omp target data map(tofrom:rcm) map(to:rtm)
 
       if ( clubb_at_least_debug_level( 3 ) ) then
 
         !$acc update host( rcm, rtm )
+!$omp target update from(rcm,rtm)
 
         do k = 1, nz
           do i = 1, ngrdcol 
@@ -5335,6 +5660,7 @@ module advance_clubb_core_module
       ! We do not clip rcm_in_layer because rcm_in_layer only influences
       ! radiation, and we do not want to bother recomputing it.  6 Aug 2009
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol 
           if ( rtm(i,k) < rcm(i,k) ) then
@@ -5343,8 +5669,10 @@ module advance_clubb_core_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc end data
+!$omp end target data
 
       return
     end subroutine clip_rcm
@@ -5399,16 +5727,20 @@ module advance_clubb_core_module
       ! Determine the maximum allowable value for Lscale (in meters).
       if ( l_implemented ) then
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           Lscale_max(i) = 0.25_core_rknd * min( host_dx(i), host_dy(i) )
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       else
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           Lscale_max(i) = 1.0e5_core_rknd
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if
 
       return
@@ -5485,3 +5817,5 @@ module advance_clubb_core_module
 
     !-----------------------------------------------------------------------
 end module advance_clubb_core_module
+
+

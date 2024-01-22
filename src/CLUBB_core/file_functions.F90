@@ -70,7 +70,9 @@ module file_functions
 ! (file_unit is assigned a value based on thread number).
 ! Then suppose, that before thread 1 exits, thread 2 opens the same file with file_unit = 1.
 ! This would cause FORTRAN to crash.
+#if defined(OPENMP_CPU)
 !$omp critical
+#endif // defined(OPENMP_CPU)
 
     ! Open data file.
     open( unit=file_unit, file=path_and_filename, action='read', status='old', &
@@ -100,7 +102,9 @@ module file_functions
     ! Close data file.
     close( file_unit )
 
+#if defined(OPENMP_CPU)
 !$omp end critical
+#endif // defined(OPENMP_CPU)
 
     return
 
@@ -164,3 +168,5 @@ module file_functions
 !===============================================================================
 
 end module file_functions
+
+

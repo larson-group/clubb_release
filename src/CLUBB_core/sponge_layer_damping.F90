@@ -35,6 +35,10 @@ module sponge_layer_damping
       l_sponge_damping = .false.       ! True if damping is being used, default false
 
   end type sponge_damp_settings
+!$omp declare mapper (sponge_damp_settings::x) map ( &
+!$omp  x%sponge_damp_depth &
+!$omp , x%l_sponge_damping &
+!$omp )
 
   type sponge_damp_profile
 
@@ -45,6 +49,10 @@ module sponge_layer_damping
       sponge_layer_depth    ! Depth of sponge damping layer  [m]
 
   end type sponge_damp_profile
+!$omp declare mapper (sponge_damp_profile::x) map ( &
+!$omp  x%tau_sponge_damp &
+!$omp , x%sponge_layer_depth &
+!$omp )
 
 
   type(sponge_damp_settings), public :: &
@@ -543,3 +551,5 @@ module sponge_layer_damping
 !===============================================================================
 
 end module sponge_layer_damping
+
+

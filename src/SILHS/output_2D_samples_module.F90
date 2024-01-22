@@ -16,7 +16,9 @@ module output_2D_samples_module
     lognormal_sample_file, &
     uniform_sample_file
 
+#if defined(OPENMP_CPU)
   !$omp threadprivate( lognormal_sample_file, uniform_sample_file )
+#endif // defined(OPENMP_CPU)
 
   contains
 !-------------------------------------------------------------------------------
@@ -326,3 +328,5 @@ module output_2D_samples_module
   end subroutine close_2D_samples_file
 
 end module output_2D_samples_module
+
+

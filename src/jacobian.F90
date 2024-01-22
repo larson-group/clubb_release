@@ -60,6 +60,11 @@ program jacobian
     real( kind = core_rknd ), pointer :: value(:)
 
   end type param_array
+!$omp declare mapper (param_array::x) map ( &
+!$omp  x%entries &
+!$omp , x%name(:) &
+!$omp , x%value(:) &
+!$omp )
   !----------------------------------------------------------------------------
   type variable_array
 
@@ -74,6 +79,12 @@ program jacobian
     real( kind = core_rknd ), pointer, dimension(:,:) :: value ! (1:nz, entries)
 
   end type variable_array
+!$omp declare mapper (variable_array::x) map ( &
+!$omp  x%entries &
+!$omp , x%z &
+!$omp , x%name(:) &
+!$omp , x%value &
+!$omp )
   !-----------------------------------------------------------------------------
 
   ! External
@@ -521,3 +532,5 @@ program jacobian
 
 !-----------------------------------------------------------------------
 end program jacobian
+
+

@@ -229,21 +229,26 @@ module mean_adv
 
     !$acc data copyin( wm_zt, invrs_dzt, invrs_dzm, weights_zt2zm ) &
     !$acc      copyout( lhs_ma )
+!$omp target data map(to:wm_zt,invrs_dzt,invrs_dzm,weights_zt2zm)&
+!$omp map(from:lhs_ma)
 
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ma(b,i,1) = 0.0_core_rknd
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
 
     if ( .not. l_upwind_xm_ma ) then  ! Use centered differencing
 
       ! Most of the interior model; normal conditions.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 3, nz-1, 1
         do i = 1, ngrdcol
 
@@ -260,6 +265,7 @@ module mean_adv
         end do
       end do ! k = 3, nz-1, 1
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Upper Boundary
 
@@ -268,6 +274,7 @@ module mean_adv
       ! to stay consistent with the zero-flux boundary condition option
       ! in the eddy diffusion code.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -283,12 +290,14 @@ module mean_adv
 
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Lower Boundary
 
       ! Special discretization for zero derivative method, where the
       ! derivative d(var_zt)/dz over the model bottom is set to 0.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         
         ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -304,11 +313,13 @@ module mean_adv
 
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else ! l_upwind_xm_ma == .true.; use "upwind" differencing
 
       ! Most of the interior model; normal conditions.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 3, nz-1, 1
         do i = 1, ngrdcol
           if ( wm_zt(i,k) >= zero ) then  ! Mean wind is in upward direction
@@ -338,9 +349,11 @@ module mean_adv
         end do
       end do ! k = 3, nz-1, 1
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Upper Boundary
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         if ( wm_zt(i,nz) >= zero ) then  ! Mean wind is in upward direction
 
@@ -367,9 +380,11 @@ module mean_adv
         end if ! wm_zt > 0
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Lower Boundary
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         if ( wm_zt(i,2) >= zero ) then  ! Mean wind is in upward direction
 
@@ -396,10 +411,12 @@ module mean_adv
         endif ! wm_zt > 0
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     endif ! l_upwind_xm_ma
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -505,18 +522,23 @@ module mean_adv
 
     !$acc data copyin( wm_zm, invrs_dzm, weights_zm2zt ) &
     !$acc      copyout( lhs_ma )
+!$omp target data map(to:wm_zm,invrs_dzm,weights_zm2zt)&
+!$omp map(from:lhs_ma)
 
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ma(b,i,1) = zero
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Most of the interior model; normal conditions.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz-1, 1
       do i = 1, ngrdcol
         
@@ -533,17 +555,21 @@ module mean_adv
       end do
     end do ! k = 2, nz-1, 1
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Set upper boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ma(b,i,nz) = zero
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -552,3 +578,5 @@ module mean_adv
   !=============================================================================
 
 end module mean_adv
+
+

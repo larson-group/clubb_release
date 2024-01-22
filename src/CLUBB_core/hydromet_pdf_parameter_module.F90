@@ -52,6 +52,11 @@ module hydromet_pdf_parameter_module
       sigma_Ncn_2    ! Standard deviation of Ncn (2nd PDF component)    [num/kg]
 
   end type hydromet_pdf_parameter
+!$omp declare mapper (hydromet_pdf_parameter::x) map ( &
+!$omp  x%corr_eta_hm_2 &
+!$omp , x%corr_hmx_hmy_2 &
+!$omp , x%sigma_ncn_2 &
+!$omp )
   
   type precipitation_fractions
     
@@ -61,6 +66,9 @@ module hydromet_pdf_parameter_module
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
       
   end type 
+!$omp declare mapper (precipitation_fractions::x) map ( &
+!$omp  x%precip_frac_2 &
+!$omp )
     
 
 contains
@@ -150,3 +158,5 @@ contains
 !===============================================================================
 
 end module hydromet_pdf_parameter_module
+
+

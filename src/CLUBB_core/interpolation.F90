@@ -542,6 +542,7 @@ module interpolation
     ! must extrapolate from the bottom or top data level for at least some
     ! of the longitude points.
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
 
       if ( p_out >= p_mid(i,1) ) then
@@ -580,6 +581,7 @@ module interpolation
 
     end do
     !$acc end parallel loop
+!$omp end target teams loop
      
     return
 
@@ -692,3 +694,5 @@ module interpolation
   end subroutine lin_interpolate_on_grid
 
 end module interpolation
+
+

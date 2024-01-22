@@ -139,16 +139,20 @@ module T_in_K_module
 
     !$acc data copyin( thlm, exner, rcm ) &
     !$acc     copyout( T_in_K )
+!$omp target data map(to:thlm,exner,rcm) map(from:t_in_k)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         T_in_K(i,k) = thlm(i,k) * exner(i,k) + Lv * rcm(i,k) / Cp
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
   end function thlm2T_in_K_2D
@@ -191,3 +195,5 @@ module T_in_K_module
 !-------------------------------------------------------------------------------
 
 end module T_in_K_module
+
+

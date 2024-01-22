@@ -31,9 +31,14 @@ module array_index
       iiedsclr_CO2    ! [kg/kg]/[K]/[1e6 mol/mol]
 
   end type sclr_idx_type
+!$omp declare mapper (sclr_idx_type::x) map ( &
+!$omp  x%iiedsclr_co2 &
+!$omp )
 
   public :: sclr_idx_type
 
 !===============================================================================
 
 end module array_index
+
+

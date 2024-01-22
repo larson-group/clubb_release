@@ -81,6 +81,7 @@ module saturation
     22723.592_core_rknd, 23779.273_core_rknd, 24876.709_core_rknd, 26017.258_core_rknd,         &
     27202.3_core_rknd, 28433.256_core_rknd, 29711.578_core_rknd, 31038.766_core_rknd /)
 !$acc declare create( svp_liq_lookup_table )
+!$omp declare target (svp_liq_lookup_table)
 
 
   contains
@@ -104,6 +105,7 @@ module saturation
         T_freeze_K
 
     implicit none
+!$omp declare target
 
     ! -------------------- Input Variables --------------------
     real( kind = core_rknd ), intent(in) ::  & 
@@ -367,6 +369,8 @@ module saturation
     !$acc data create(esat) &
     !$acc      copyin(p_in_Pa,T_in_K), &
     !$acc      copyout(sat_mixrat_liq_2D)
+!$omp target data map(to:p_in_pa,t_in_k) map(from:sat_mixrat_liq_2d)&
+!$omp map(alloc:esat)
 
     ! start_index is an optional argument and 
     ! used for choosing the sub-arrays
@@ -380,6 +384,7 @@ module saturation
     case ( saturation_flatau )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = start_index, nz
         do i = 1, ngrdcol
 
@@ -429,12 +434,14 @@ module saturation
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     case ( saturation_bolton )
 
       ! Using the Bolton 1980 approximations for SVP over vapor
       ! Generally this more computationally expensive than the Flatau polnomial expansion
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = start_index, nz
         do i = 1, ngrdcol
           esat(i,k) = 611.2_core_rknd &
@@ -443,12 +450,14 @@ module saturation
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
 ! ---> h1g
     case ( saturation_gfdl )
 
       ! Using GFDL polynomial approximation for SVP with respect to liquid
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = start_index, nz
         do i = 1, ngrdcol
 
@@ -469,12 +478,14 @@ module saturation
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
 ! <--- h1g
 
     case ( saturation_lookup ) 
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = start_index, nz
         do i = 1, ngrdcol
           T_in_K_int = int( anint( T_in_K(i,k) ) )
@@ -488,6 +499,7 @@ module saturation
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     case default
 
@@ -497,6 +509,7 @@ module saturation
     end select
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = start_index, nz
       do i = 1, ngrdcol
 
@@ -527,8 +540,10 @@ module saturation
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
     
   end function sat_mixrat_liq_2D
 
@@ -958,6 +973,8 @@ module saturation
     !$acc data create( esat_ice ) &
     !$acc      copyin( p_in_Pa, T_in_K ) &
     !$acc      copyout( sat_mixrat_ice_2D ) 
+!$omp target data map(to:p_in_pa,t_in_k) map(from:sat_mixrat_ice_2d)&
+!$omp map(alloc:esat_ice)
 
     ! Determine the SVP for the given temperature
     select case ( saturation_formula )
@@ -965,6 +982,7 @@ module saturation
 
       ! Using the Bolton 1980 approximations for SVP over ice
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do i = 1, ngrdcol
         do k = 1, nz
 
@@ -975,11 +993,13 @@ module saturation
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     case ( saturation_flatau )
 
       ! Using the Flatau, et al. polynomial approximation for SVP over ice
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do i = 1, ngrdcol
         do k = 1, nz
 
@@ -1003,12 +1023,14 @@ module saturation
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
 ! ---> h1g, 2010-06-16
     case ( saturation_gfdl )
 
       ! Using GFDL polynomial approximation for SVP with respect to ice
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do i = 1, ngrdcol
         do k = 1, nz
 
@@ -1027,6 +1049,7 @@ module saturation
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
 ! <--- h1g, 2010-06-16
 
@@ -1039,6 +1062,7 @@ module saturation
 
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -1068,8 +1092,10 @@ module saturation
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
   end function sat_mixrat_ice_2D
@@ -1422,3 +1448,5 @@ module saturation
   end function rcm_sat_adj
 
 end module saturation
+
+

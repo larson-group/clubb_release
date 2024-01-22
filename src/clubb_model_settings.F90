@@ -25,7 +25,9 @@ module clubb_model_settings
   !                      of WRF stretched grid).
 
 ! Note: Do not indent these omp directives, they must begin in the 2nd column
+#if defined(OPENMP_CPU)
 !$omp threadprivate(nzmax, grid_type)
+#endif // defined(OPENMP_CPU)
 
   ! Radiation variables
   integer, public :: &
@@ -33,50 +35,66 @@ module clubb_model_settings
     extended_atmos_top_level,    & ! Top level of the extended atmosphere
     extended_atmos_range_size      ! The number of levels in the extended atmosphere
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(extended_atmos_bottom_level, extended_atmos_top_level, &
 !$omp               extended_atmos_range_size)
+#endif // defined(OPENMP_CPU)
 
   ! The number of interpolated levels between the computational grid
   ! and the extended atmosphere
   integer, public :: &
     lin_int_buffer
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(lin_int_buffer)
+#endif // defined(OPENMP_CPU)
 
   real( kind = core_rknd ), public ::  & 
     deltaz,  & ! Change in altitude per grid level     [m]
     zm_init, & ! Initial point on the momentum grid    [m]
     zm_top     ! Maximum point on the momentum grid    [m]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(deltaz, zm_init, zm_top)
+#endif // defined(OPENMP_CPU)
 
   ! For grid_type 2 or 3 (stretched grid cases)
   character(len=100), public :: & 
     zt_grid_fname,  & ! Path and filename of thermodynamic level altitudes
     zm_grid_fname     ! Path and filename of momentum level altitudes
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(zt_grid_fname, zm_grid_fname)
+#endif // defined(OPENMP_CPU)
 
   integer, public ::  & 
     day, month, year ! Start time the of simulation
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(day, month, year)
+#endif // defined(OPENMP_CPU)
 
   real( kind = core_rknd ), public ::  & 
     lat_vals, & ! Latitude  [Degrees North]
     lon_vals    ! Longitude [Degrees East]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(lat_vals, lon_vals)
+#endif // defined(OPENMP_CPU)
 
   real( kind = core_rknd ), public ::  &
     sfc_elevation ! Elevation of ground level  [m AMSL]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(sfc_elevation)
+#endif // defined(OPENMP_CPU)
 
   character(len=50), public ::  & 
     runtype ! String identifying the model case; e.g. bomex
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(runtype)
+#endif // defined(OPENMP_CPU)
 
   integer, public :: &
     sfctype ! 0: fixed sfc sensible and latent heat fluxes as
@@ -84,19 +102,25 @@ module clubb_model_settings
   !           1: bulk formula: uses given surface temperature
   !                  and assumes over ocean
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(sfctype)
+#endif // defined(OPENMP_CPU)
 
   real(kind = time_precision ), public :: & 
     time_initial, & ! Time of start of simulation     [s]
     time_final,   & ! Time end of simulation          [s]
     time_current   !  Current time of simulation      [s]
+#if defined(OPENMP_CPU)
 !$omp threadprivate(time_initial, time_final, &
 !$omp               time_current)
+#endif // defined(OPENMP_CPU)
 
   real(kind = core_rknd ), public ::  & 
     dt_main,  & ! Main model timestep                    [s]
     dt_rad      ! Closure model timestep                 [s]
+#if defined(OPENMP_CPU)
 !$omp threadprivate(dt_main, dt_rad)
+#endif // defined(OPENMP_CPU)
 
   contains
 
@@ -150,3 +174,5 @@ module clubb_model_settings
   end subroutine initialize_clubb_model_settings
 
 end module clubb_model_settings  
+
+

@@ -63,17 +63,21 @@ module parameters_microphys
   logical, public :: &
     l_silhs_KK_convergence_adj_mean = .false.
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( l_cloud_sed, l_ice_microphys, l_graupel, l_hail, &
 !$omp                l_upwind_diff_sed, l_seifert_beheng, l_predict_Nc, &
 !$omp                l_subgrid_w, l_arctic_nucl, &
 !$omp                l_fix_pgam, l_in_cloud_Nc_diff, l_var_covar_src, &
 !$omp                l_silhs_KK_convergence_adj_mean )
+#endif // defined(OPENMP_CPU)
 
   logical, public :: & 
     l_cloud_edge_activation = .false., & ! Activate on cloud edges (Morrison)
     l_local_kk              = .false.    ! Local drizzle for Khairoutdinov & Kogan microphysics
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(l_cloud_edge_activation, l_local_kk)
+#endif // defined(OPENMP_CPU)
 
   character(len=30), public :: &
     specify_aerosol = "morrison_lognormal"  ! Specify aerosol (Morrison)
@@ -86,43 +90,61 @@ module parameters_microphys
   integer(kind=genrand_intg), public :: &
     lh_seed = 5489_genrand_intg ! Seed for the Mersenne
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( lh_num_samples, lh_sequence_length, lh_seed )
+#endif // defined(OPENMP_CPU)
 
   ! Determines how the latin hypercube samples should be used with the microphysics
   integer, public :: &
     lh_microphys_type = 3
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( lh_microphys_type )
+#endif // defined(OPENMP_CPU)
 
   character(len=50), public :: &
     microphys_scheme = "none" ! khairoutdinv_kogan, simplified_ice, coamps, etc.
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( microphys_scheme )
+#endif // defined(OPENMP_CPU)
 
   logical, dimension(:), allocatable, public :: &
     l_hydromet_sed    ! Flag to sediment mean hydrometeor fields
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( l_hydromet_sed )
+#endif // defined(OPENMP_CPU)
 
   logical, public :: l_gfdl_activation    ! Flag for GFDL activation code
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( l_gfdl_activation )
+#endif // defined(OPENMP_CPU)
 
   real(kind=time_precision), public :: &
     microphys_start_time = 0._time_precision  ! When to start the microphysics      [s]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( microphys_start_time )
+#endif // defined(OPENMP_CPU)
 
   real( kind = core_rknd ), public :: &
     Nc0_in_cloud = 100.e6_core_rknd    ! Initial cloud droplet concentration  [num/m^3]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( Nc0_in_cloud )
+#endif // defined(OPENMP_CPU)
 
   real( kind = core_rknd ), public :: &
     sigma_g  = 1.5_core_rknd ! Geometric std. dev. of cloud droplets falling in a stokes regime.
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( sigma_g )
+#endif // defined(OPENMP_CPU)
 
   private ! Default Scope
 
 end module parameters_microphys
+
+

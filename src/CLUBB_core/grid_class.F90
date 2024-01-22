@@ -196,6 +196,14 @@ module grid_class
                                      weights_zt2zm
 
   end type grid
+!$omp declare mapper (grid::x) map ( &
+!$omp  x%nz &
+!$omp , x%zt &
+!$omp , x%invrs_dzt &
+!$omp , x%dzt &
+!$omp , x%weights_zm2zt &
+!$omp , x%weights_zt2zm &
+!$omp )
 
   !   The grid is defined here so that it is common throughout the module.
   !   The implication is that only one grid can be defined !
@@ -973,7 +981,9 @@ module grid_class
         return
       endif
 
+#if defined(OPENMP_CPU)
 !$omp critical
+#endif // defined(OPENMP_CPU)
       ! Open the file zt_grid_fname.
       open( unit=file_unit, file=zt_grid_fname,  &
             status='old', action='read' )
@@ -996,7 +1006,9 @@ module grid_class
 
       ! Close the file zt_grid_fname.
       close( unit=file_unit )
+#if defined(OPENMP_CPU)
 !$omp end critical
+#endif // defined(OPENMP_CPU)
       
       if ( err_code == clubb_fatal_error ) return
 
@@ -1486,11 +1498,14 @@ module grid_class
 
     !$acc data copyin( azt, gr, gr%weights_zt2zm, gr%zt, gr%zm ) &
     !$acc      copyout( linear_interpolated_azm )
+!$omp target data map(to:azt,gr,gr%weights_zt2zm,gr%zt,gr%zm)&
+!$omp map(from:linear_interpolated_azm)
 
     ! Interpolate the value of a thermodynamic-level variable to the central
     ! momentum level, k, between two successive thermodynamic levels using
     ! linear interpolation.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz-1
       do i = 1, ngrdcol
         linear_interpolated_azm(i,k) = gr%weights_zt2zm(i,k,1) &
@@ -1498,6 +1513,7 @@ module grid_class
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Set the value of the thermodynamic-level variable, azt, at the uppermost
     ! level of the model, which is a momentum level.  The name of the variable
@@ -1506,14 +1522,17 @@ module grid_class
     ! gr%nz-1 to find the value of azm at level gr%nz (the uppermost level
     ! in the model).
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       linear_interpolated_azm(i,nz) &
         = ( ( azt(i,nz) - azt(i,nz-1) ) / ( gr%zt(i,nz) - gr%zt(i,nz-1) ) ) & 
           * ( gr%zm(i,nz) - gr%zt(i,nz) ) + azt(i,nz)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1559,6 +1578,7 @@ module grid_class
     !$acc data copyin( azt ) &
     !$acc     copyout( zt2zm2zt ) &
     !$acc      create( azt_zm )
+!$omp target data map(to:azt) map(from:zt2zm2zt) map(alloc:azt_zm)
 
     ! Interpolate azt to momentum levels 
     azt_zm = zt2zm( nz, ngrdcol, gr, azt )
@@ -1567,6 +1587,7 @@ module grid_class
     zt2zm2zt = zm2zt( nz, ngrdcol, gr, azt_zm )
 
     !$acc end data
+!$omp end target data
 
     return 
 
@@ -1612,6 +1633,7 @@ module grid_class
     !$acc data copyin( azm ) &
     !$acc     copyout( zm2zt2zm ) &
     !$acc      create( azm_zt )
+!$omp target data map(to:azm) map(from:zm2zt2zm) map(alloc:azm_zt)
 
     ! Interpolate azt to termodynamic levels 
     azm_zt = zm2zt( nz, ngrdcol, gr, azm )
@@ -1620,6 +1642,7 @@ module grid_class
     zm2zt2zm = zt2zm( nz, ngrdcol, gr, azm_zt )
 
     !$acc end data
+!$omp end target data
 
     return 
 
@@ -1957,6 +1980,8 @@ module grid_class
 
     !$acc data copyin( azm, gr, gr%weights_zm2zt, gr%zt, gr%zm ) &
     !$acc      copyout( linear_interpolated_azt )
+!$omp target data map(to:azm,gr,gr%weights_zm2zt,gr%zt,gr%zm)&
+!$omp map(from:linear_interpolated_azt)
 
     ! Set the value of the momentum-level variable, azm, at the lowermost level
     ! of the model (below the model lower boundary), which is a thermodynamic
@@ -1965,17 +1990,20 @@ module grid_class
     ! Use a linear extension based on the values of azm at levels 1 and 2 to
     ! find the value of azt at level 1 (the lowermost level in the model).
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       linear_interpolated_azt(i,1) &
         = ( ( azm(i,2) - azm(i,1) ) / ( gr%zm(i,2) - gr%zm(i,1) ) ) & 
           * ( gr%zt(i,1) - gr%zm(i,1) ) + azm(i,1)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Interpolate the value of a momentum-level variable to the central
     ! thermodynamic level, k, between two successive momentum levels using
     ! linear interpolation.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz
       do i = 1, ngrdcol
         linear_interpolated_azt(i,k) = gr%weights_zm2zt(i,k,1) &
@@ -1983,8 +2011,10 @@ module grid_class
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -2316,22 +2346,28 @@ module grid_class
     
     !$acc data copyin( gr, gr%invrs_dzt, azm ) &
     !$acc     copyout( gradzm_2D )
+!$omp target data map(to:gr,gr%invrs_dzt,azm) map(from:gradzm_2d)
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       gradzm_2D(i,1) = ( azm(i,2) - azm(i,1) ) * gr%invrs_dzt(i,2)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz
       do i = 1, ngrdcol
         gradzm_2D(i,k) = ( azm(i,k) - azm(i,k-1) ) * gr%invrs_dzt(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -2410,22 +2446,28 @@ module grid_class
 
     !$acc data copyin( gr, gr%invrs_dzm, azt ) &
     !$acc     copyout( gradzt_2D )
+!$omp target data map(to:gr,gr%invrs_dzm,azt) map(from:gradzt_2d)
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       gradzt_2D(i,nz) = ( azt(i,nz) - azt(i,nz-1) ) * gr%invrs_dzm(i,nz-1)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
     
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz-1
       do i = 1, ngrdcol
         gradzt_2D(i,k) = ( azt(i,k+1) - azt(i,k) ) * gr%invrs_dzm(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -2523,3 +2565,5 @@ module grid_class
 !===============================================================================
 
 end module grid_class
+
+

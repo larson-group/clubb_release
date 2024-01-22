@@ -206,6 +206,9 @@ module sfc_varnce_module
     !$acc enter data create( uf, depth_pos_wpthlp, min_wp2_sfc_val, &
     !$acc                    um_sfc_sqd, vm_sfc_sqd, usp2_sfc, vsp2_sfc, &
     !$acc                    ustar, zeta, wp2_splat_sfc_correction )
+!$omp target enter data map(alloc:uf,depth_pos_wpthlp,min_wp2_sfc_val,&
+!$omp um_sfc_sqd,vm_sfc_sqd,usp2_sfc,vsp2_sfc,ustar,zeta,&
+!$omp wp2_splat_sfc_correction)
 
     up2_sfc_coef = clubb_params(iup2_sfc_coef)
 
@@ -213,6 +216,7 @@ module sfc_varnce_module
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp )
+!$omp target update from(wp2,up2,vp2,thlp2,rtp2,rtpthlp)
 
       do i = 1, ngrdcol
         call stat_begin_update_pt( stats_metadata%ithlp2_sf, 1,      & ! intent(in)
@@ -242,6 +246,7 @@ module sfc_varnce_module
     end if
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       ! Find thickness of layer near surface with positive heat flux.
       ! This is used when l_vary_convect_depth=.true. in order to determine wp2.
@@ -256,6 +261,7 @@ module sfc_varnce_module
       end if
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! a_const used to be set here; now it is a tunable parameter
     !if ( .not. l_vary_convect_depth ) then
@@ -270,20 +276,25 @@ module sfc_varnce_module
 
       ! Calculate <u>^2 and <v>^2.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         um_sfc_sqd(i) = um(i,2)**2
         vm_sfc_sqd(i) = vm(i,2)**2
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Calculate surface friction velocity, u*.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ustar(i) = max( ( upwp_sfc(i)**2 + vpwp_sfc(i)**2 )**(one_fourth), ufmin )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         if ( abs(wpthlp(i,1)) > eps) then
 
@@ -304,6 +315,7 @@ module sfc_varnce_module
         endif ! wpthlp /= 0
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Andre et al, 1978, Eq. 29.
       ! Notes:  1) "reduce_coef" is a reduction coefficient intended to make
@@ -317,6 +329,7 @@ module sfc_varnce_module
       !         3) The surface correlation of rt & thl is 1.
       ! Brian Griffin; February 2, 2008.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         if ( zeta(i) < zero ) then
 
@@ -351,13 +364,16 @@ module sfc_varnce_module
         endif
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         thlp2(i,1) = max( thl_tol**2, thlp2(i,1) )
         rtp2(i,1) = max( rt_tol**2, rtp2(i,1) )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Calculate wstar following Andre et al., 1978, p. 1866.
       ! w* = ( ( 1 / T0 ) * g * <w'thl'>|_sfc * z_i )^(1/3);
@@ -365,6 +381,7 @@ module sfc_varnce_module
       ! upward component of mixing length, Lscale_up, at the surface will be
       ! used as z_i.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         wstar = ( (one/T0) * grav * wpthlp(i,1) * Lscale_up(i,2) )**(one_third)
 
@@ -392,6 +409,7 @@ module sfc_varnce_module
         endif
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Add effect of vertical compression of eddies on horizontal gustiness.
       ! First, ensure that wp2 does not make the correlation 
@@ -399,6 +417,7 @@ module sfc_varnce_module
       ! Perhaps in the future we should also ensure that the correlations 
       !   of (w,u) and (w,v) are not outside (-1,1).
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         min_wp2_sfc_val(i) &
                = max( w_tol_sqd, &
@@ -406,8 +425,10 @@ module sfc_varnce_module
                       wpthlp(i,1)**2 / ( thlp2(i,1) * max_mag_correlation_flux**2 ) )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         if ( wp2(i,1) - tau_zm(i,1) * lhs_splat_wp2(i,1) * wp2(i,1) &
              < min_wp2_sfc_val(i) ) then
@@ -422,13 +443,16 @@ module sfc_varnce_module
         end if
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         usp2_sfc(i) = usp2_sfc(i) - 0.5_core_rknd * wp2_splat_sfc_correction(i)
         vsp2_sfc(i) = vsp2_sfc(i) - 0.5_core_rknd * wp2_splat_sfc_correction(i)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Variance of u, <u'^2>, at the surface can be found from <u_s'^2>,
       ! <v_s'^2>, and mean winds (at the surface) <u> and <v>, such that:
@@ -436,11 +460,13 @@ module sfc_varnce_module
       !                  + <v_s'^2> * [ <v>^2 / ( <u>^2 + <v>^2 ) ];
       ! where <u>^2 + <v>^2 /= 0.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         up2(i,1) = usp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )  &
                    + vsp2_sfc(i) * ( vm_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Variance of v, <v'^2>, at the surface can be found from <u_s'^2>,
       ! <v_s'^2>, and mean winds (at the surface) <u> and <v>, such that:
@@ -448,16 +474,19 @@ module sfc_varnce_module
       !                  + <u_s'^2> * [ <v>^2 / ( <u>^2 + <v>^2 ) ];
       ! where <u>^2 + <v>^2 /= 0.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
         vp2(i,1) = vsp2_sfc(i) * ( um_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )  &
                    + usp2_sfc(i) * ( vm_sfc_sqd(i) / max( um_sfc_sqd(i) + vm_sfc_sqd(i) , eps ) )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Passive scalars
       if ( sclr_dim > 0 ) then
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do sclr = 1, sclr_dim
           do i = 1, ngrdcol
 
@@ -508,6 +537,7 @@ module sfc_varnce_module
           end do
         enddo ! i = 1, sclr_dim
         !$acc end parallel loop
+!$omp end target teams loop
 
       endif
 
@@ -516,6 +546,7 @@ module sfc_varnce_module
 
       ! Compute ustar^2
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ustar2 = sqrt( upwp_sfc(i) * upwp_sfc(i) + vpwp_sfc(i) * vpwp_sfc(i) )
 
@@ -540,15 +571,18 @@ module sfc_varnce_module
         uf(i) = max( ufmin, uf(i) )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Compute estimate for surface second order moments
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         wp2(i,1) = a_const * uf(i)**2
         up2(i,1) = up2_sfc_coef * a_const * uf(i)**2  ! From Andre, et al. 1978
         vp2(i,1) = up2_sfc_coef * a_const * uf(i)**2  ! "  "
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Notes:  1) With "a" having a value of 1.8, the surface correlations of
       !            both w & rt and w & thl have a value of about 0.878.
@@ -557,6 +591,7 @@ module sfc_varnce_module
 
       if ( .not. l_vary_convect_depth )  then
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           thlp2(i,1)   = 0.4_core_rknd * a_const * ( wpthlp(i,1) / uf(i) )**2
           rtp2(i,1)    = 0.4_core_rknd * a_const * ( wprtp_sfc(i) / uf(i) )**2
@@ -564,22 +599,27 @@ module sfc_varnce_module
                                                  * ( wprtp_sfc(i) / uf(i) )
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       else
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           thlp2(i,1)   = ( wpthlp(i,1) / uf(i) )**2 / ( max_mag_correlation_flux**2 * a_const )
           rtp2(i,1)    = ( wprtp_sfc(i) / uf(i) )**2 / ( max_mag_correlation_flux**2 * a_const )
           rtpthlp(i,1) = max_mag_correlation_flux * sqrt( thlp2(i,1) * rtp2(i,1) )
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         thlp2(i,1) = max( thl_tol**2, thlp2(i,1) )
         rtp2(i,1)  = max( rt_tol**2, rtp2(i,1) )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Add effect of vertical compression of eddies on horizontal gustiness.
       ! First, ensure that wp2 does not make the correlation 
@@ -587,6 +627,7 @@ module sfc_varnce_module
       ! Perhaps in the future we should also ensure that the correlations 
       !   of (w,u) and (w,v) are not outside (-1,1).
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         min_wp2_sfc_val(i) &
             = max( w_tol_sqd, &
@@ -594,8 +635,10 @@ module sfc_varnce_module
                    wpthlp(i,1)**2 / ( thlp2(i,1) * max_mag_correlation_flux**2 ) )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         if ( wp2(i,1) - tau_zm(i,1) * lhs_splat_wp2(i,1) * wp2(i,1) &
              < min_wp2_sfc_val(i) ) then
@@ -613,10 +656,12 @@ module sfc_varnce_module
         vp2(i,1) = vp2(i,1) - 0.5_core_rknd * wp2_splat_sfc_correction(i)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Passive scalars
       if ( sclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do sclr = 1, sclr_dim
           do i = 1, ngrdcol
             ! Vince Larson changed coeffs to make correlations between [-1,1].
@@ -667,6 +712,7 @@ module sfc_varnce_module
           end do
         enddo ! 1,...sclr_dim
         !$acc end parallel loop
+!$omp end target teams loop
 
       endif ! sclr_dim > 0
 
@@ -674,12 +720,15 @@ module sfc_varnce_module
 
     ! Clip wp2 at wp2_max, same as in advance_wp2_wp3
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       wp2(i,1) = min( wp2(i,1), wp2_max )
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       if ( abs(gr%zm(i,1)-sfc_elevation(i)) > abs(gr%zm(i,1)+sfc_elevation(i))*eps/2 ) then
 
@@ -695,10 +744,12 @@ module sfc_varnce_module
       end if ! gr%zm(1,1) == sfc_elevation
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( sclr_dim > 0 ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do sclr = 1, sclr_dim
         do i = 1, ngrdcol
           if ( abs(gr%zm(i,1)-sfc_elevation(i)) > abs(gr%zm(i,1)+sfc_elevation(i))*eps/2 ) then
@@ -716,6 +767,7 @@ module sfc_varnce_module
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp )
+!$omp target update from(wp2,up2,vp2,thlp2,rtp2,rtpthlp)
 
       do i = 1, ngrdcol
         call stat_end_update_pt( stats_metadata%ithlp2_sf, 1,    & ! intent(in)
@@ -749,6 +801,8 @@ module sfc_varnce_module
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp, &
       !$acc              sclrp2, sclrprtp, sclrpthlp, &
       !$acc              upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc )
+!$omp target update from(wp2,up2,vp2,thlp2,rtp2,rtpthlp,sclrp2,&
+!$omp sclrprtp,sclrpthlp,upwp_sfc,vpwp_sfc,wpthlp,wprtp_sfc)
 
       do i = 1, ngrdcol
         call sfc_varnce_check( sclr_dim, wp2(i,1), up2(i,1), vp2(i,1),          & ! intent(in)
@@ -792,6 +846,9 @@ module sfc_varnce_module
     !$acc exit data delete( uf, depth_pos_wpthlp, min_wp2_sfc_val, &
     !$acc                   um_sfc_sqd, vm_sfc_sqd, usp2_sfc, vsp2_sfc, &
     !$acc                   ustar, zeta, wp2_splat_sfc_correction )
+!$omp target exit data map(delete:uf,depth_pos_wpthlp,min_wp2_sfc_val,&
+!$omp um_sfc_sqd,vm_sfc_sqd,usp2_sfc,vsp2_sfc,ustar,zeta,&
+!$omp wp2_splat_sfc_correction)
 
     return
 
@@ -800,3 +857,5 @@ module sfc_varnce_module
 !===============================================================================
 
 end module sfc_varnce_module
+
+

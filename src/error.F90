@@ -914,8 +914,10 @@ module error
     ! OpenMP directives should work as expected now, assuming new
     ! model variables are declared threadprivate -dschanen 31 Jan 2007
 
+#if defined(OPENMP_CPU)
 !$omp parallel do default(none), private(c_run), &
 !$omp   shared(params_local, run_file, run_stat, c_total, model_flags_array, iter)
+#endif // defined(OPENMP_CPU)
     do c_run=1, c_total, 1
 
 #ifndef _OPENMP 
@@ -944,7 +946,9 @@ module error
       ! Reset error code for next iteration
       err_code = clubb_no_error
     end do ! 1..c_run
+#if defined(OPENMP_CPU)
 !$omp end parallel do
+#endif // defined(OPENMP_CPU)
 
     !-----------------------------------------------------------------------
 
@@ -1696,3 +1700,5 @@ module error
 
 end module error
 !-----------------------------------------------------------------------
+
+

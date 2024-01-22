@@ -108,6 +108,8 @@ module model_flags
     saturation_lookup = 4    ! Use a lookup table for mixing length
                              ! saturation vapor pressure calculations
   !$acc declare create(saturation_flatau,saturation_gfdl,saturation_bolton,saturation_lookup)
+!$omp declare target (saturation_flatau,saturation_gfdl,&
+!$omp saturation_bolton,saturation_lookup)
 
   !-----------------------------------------------------------------------------
   ! Options that can be changed at runtime 
@@ -261,6 +263,10 @@ module model_flags
                                       ! to avoid double counting.
 
   end type clubb_config_flags_type
+!$omp declare mapper (clubb_config_flags_type::x) map ( &
+!$omp  x%saturation_formula &
+!$omp , x%l_host_applies_sfc_fluxes &
+!$omp )
 
   contains
 
@@ -901,3 +907,5 @@ module model_flags
   end subroutine print_clubb_config_flags
 
 end module model_flags
+
+

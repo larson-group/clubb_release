@@ -159,7 +159,10 @@ module clip_explicit
     ! --------------------- Begin Code ---------------------
 
     !$acc enter data create( wprtp_chnge, wpthlp_chnge, upwp_chnge, vpwp_chnge )
+!$omp target enter data map(alloc:wprtp_chnge,wpthlp_chnge,upwp_chnge,&
+!$omp vpwp_chnge)
     !$acc enter data if( sclr_dim > 0 ) create( wpsclrp_chnge )
+!$omp target enter data map(alloc:wpsclrp_chnge) if(sclr_dim>0)
 
     !!! Clipping for w'r_t'
     !
@@ -417,7 +420,10 @@ module clip_explicit
     end if
 
     !$acc exit data delete( wprtp_chnge, wpthlp_chnge, upwp_chnge, vpwp_chnge )
+!$omp target exit data map(delete:wprtp_chnge,wpthlp_chnge,upwp_chnge,&
+!$omp vpwp_chnge)
     !$acc exit data if( sclr_dim > 0 ) delete( wpsclrp_chnge )
+!$omp target exit data map(delete:wpsclrp_chnge) if(sclr_dim>0)
 
     return
   end subroutine clip_covars_denom
@@ -574,6 +580,7 @@ module clip_explicit
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( xpyp )
+!$omp target update from(xpyp)
 
       if ( l_first_clip_ts ) then
         do i = 1, ngrdcol
@@ -607,6 +614,7 @@ module clip_explicit
     ! Note that if clipping were applied at the lower boundary, momentum will
     ! not be conserved, therefore it should never be added.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz-1
       do i = 1, ngrdcol
         xpyp_bound = max_mag_corr * sqrt( xp2(i,k) * yp2(i,k) )
@@ -633,19 +641,23 @@ module clip_explicit
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Since there is no covariance clipping at the upper or lower boundaries,
     ! the change in x'y' due to covariance clipping at those levels is 0.
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       xpyp_chnge(i,1)  = 0.0_core_rknd
       xpyp_chnge(i,nz) = 0.0_core_rknd
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( xpyp )
+!$omp target update from(xpyp)
 
       if ( l_last_clip_ts ) then
         do i = 1, ngrdcol
@@ -943,6 +955,7 @@ module clip_explicit
 
     !$acc data copyin( threshold ) &
     !$acc        copy( xp2 )
+!$omp target data map(tofrom:xp2) map(to:threshold)
 
     select case ( solve_type )
     case ( clip_wp2 )   ! wp2 clipping budget term
@@ -962,6 +975,7 @@ module clip_explicit
 
     if ( stats_metadata%l_stats_samp ) then
       !$acc update host( xp2 )
+!$omp target update from(xp2)
       do i = 1, ngrdcol
         call stat_begin_update( nz, ixp2_cl, xp2(i,:) / dt, & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
@@ -980,6 +994,7 @@ module clip_explicit
     ! negative values in thlp2(1) and rtp2(1) when running quarter_ss case with
     ! WRF-CLUBB (see wrf:ticket:51#comment:33) 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz-1, 1
       do i = 1, ngrdcol
         if ( xp2(i,k) < threshold(i,k) ) then
@@ -988,9 +1003,11 @@ module clip_explicit
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( stats_metadata%l_stats_samp ) then
       !$acc update host( xp2 )
+!$omp target update from(xp2)
       do i = 1, ngrdcol
         call stat_end_update( nz, ixp2_cl, xp2(i,:) / dt, & ! intent(in)
                               stats_zm(i) ) ! intent(inout)
@@ -998,6 +1015,7 @@ module clip_explicit
     end if
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1110,10 +1128,13 @@ module clip_explicit
     !$acc data copyin( gr, gr%zt, &
     !$acc              sfc_elevation, wp2_zt ) &
     !$acc        copy( wp3 )
+!$omp target data map(tofrom:wp3) map(to:gr,gr%zt,sfc_elevation,&
+!$omp wp2_zt)
 
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( wp3 )
+!$omp target update from(wp3)
 
       do i = 1, ngrdcol
         call stat_begin_update( nz, stats_metadata%iwp3_cl, wp3(i,:) / dt, & ! intent(in)
@@ -1129,6 +1150,7 @@ module clip_explicit
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( wp3 )
+!$omp target update from(wp3)
 
       do i = 1, ngrdcol
         call stat_end_update( nz, stats_metadata%iwp3_cl, wp3(i,:) / dt, & ! intent(in)
@@ -1137,6 +1159,7 @@ module clip_explicit
     end if
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1201,6 +1224,8 @@ module clip_explicit
     !----------------------- Begin Code-----------------------
 
     !$acc enter data create( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl )
+!$omp target enter data map(alloc:wp2_zt_cubed,wp3_lim_sqd,zagl_thresh,&
+!$omp h_zagl)
 
     ! Compute the upper and lower limits of w'^3 at every level,
     ! based on the skewness of w, Sk_w, such that:
@@ -1220,17 +1245,20 @@ module clip_explicit
     ! To lower compute time, we squared both sides of the equation and compute
     ! wp2^3 only once. -dschanen 9 Oct 2008
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         wp2_zt_cubed(i,k) = wp2_zt(i,k)**3
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( l_use_wp3_lim_with_smth_Heaviside ) then 
 
       !implement a smoothed Heaviside function to avoid discontinuities 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           zagl_thresh(i,k) = ( gr%zt(i,k) - sfc_elevation(i) ) /  100.0_core_rknd 
@@ -1238,10 +1266,12 @@ module clip_explicit
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       H_zagl(:,:) = smooth_heaviside_peskin(nz, ngrdcol, zagl_thresh(:,:), 0.6_core_rknd) 
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           wp3_lim_sqd(i,k) = wp2_zt_cubed(i,k)   &
@@ -1251,10 +1281,12 @@ module clip_explicit
         end do
       end do
      !$acc end parallel loop
+!$omp end target teams loop
 
     else ! default method 
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           if ( gr%zt(i,k) - sfc_elevation(i) <= 100.0_core_rknd ) then ! Clip for 100 m. AGL.
@@ -1269,12 +1301,14 @@ module clip_explicit
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
   
     ! Clipping for w'^3 at an upper and lower limit corresponding with
     ! the appropriate value of Sk_w.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         ! Set the magnitude to the wp3 limit and apply the sign of the current wp3
@@ -1284,10 +1318,12 @@ module clip_explicit
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Clipping abs(wp3) to 100. This keeps wp3 from growing too large in some 
     ! deep convective cases, which helps prevent these cases from blowing up.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         if ( abs(wp3(i,k)) > wp3_max ) then
@@ -1296,11 +1332,16 @@ module clip_explicit
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc exit data delete( wp2_zt_cubed, wp3_lim_sqd, zagl_thresh, H_zagl )
+!$omp target exit data map(delete:wp2_zt_cubed,wp3_lim_sqd,zagl_thresh,&
+!$omp h_zagl)
 
   end subroutine clip_skewness_core
 
 !===============================================================================
 
 end module clip_explicit
+
+

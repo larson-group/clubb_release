@@ -297,6 +297,9 @@ module advance_helper_module
     !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                    brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
     !$acc                    lambda0_stability, Lscale_zm )
+!$omp target enter data map(alloc:brunt_vaisala_freq_sqd,&
+!$omp brunt_vaisala_freq_sqd_mixed,brunt_vaisala_freq_sqd_moist,&
+!$omp brunt_vaisala_freq_sqd_dry,lambda0_stability,lscale_zm)
 
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
@@ -311,6 +314,7 @@ module advance_helper_module
                                       brunt_vaisala_freq_sqd_moist )    ! intent(out)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         if ( brunt_vaisala_freq_sqd(i,k) > zero  ) then
@@ -321,10 +325,12 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     Lscale_zm = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         stability_correction(i,k) = one + min( lambda0_stability(i,k) * brunt_vaisala_freq_sqd(i,k) &
@@ -332,10 +338,14 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
     !$acc                   lambda0_stability, Lscale_zm )
+!$omp target exit data map(delete:brunt_vaisala_freq_sqd,&
+!$omp brunt_vaisala_freq_sqd_mixed,brunt_vaisala_freq_sqd_moist,&
+!$omp brunt_vaisala_freq_sqd_dry,lambda0_stability,lscale_zm)
 
     return
 
@@ -446,6 +456,13 @@ module advance_helper_module
     !$acc               ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, stat_dry, &
     !$acc               stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, stat_dry_virtual, &
     !$acc               stat_dry_virtual_zm, ddzt_rtm_zm )
+!$omp target data map(to:gr,gr%zt,thlm,exner,rtm,rcm,p_in_pa,thvm,&
+!$omp ice_supersat_frac) map(from:brunt_vaisala_freq_sqd,&
+!$omp brunt_vaisala_freq_sqd_mixed,brunt_vaisala_freq_sqd_dry,&
+!$omp brunt_vaisala_freq_sqd_moist) map(alloc:t_in_k,t_in_k_zm,rsat,&
+!$omp rsat_zm,thm,thm_zm,ddzt_thlm,ddzt_thm,ddzt_rsat,ddzt_rtm,thvm_zm,&
+!$omp ddzt_thvm,stat_dry,stat_liq,ddzt_stat_liq,ddzt_stat_liq_zm,&
+!$omp stat_dry_virtual,stat_dry_virtual_zm,ddzt_rtm_zm)
 
     ddzt_thlm = ddzt( nz, ngrdcol, gr, thlm )
     thvm_zm = zt2zm( nz, ngrdcol, gr, thvm )
@@ -455,22 +472,26 @@ module advance_helper_module
     if ( l_use_thvm_in_bv_freq ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           brunt_vaisala_freq_sqd(i,k) = ( grav / thvm_zm(i,k) ) * ddzt_thvm(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           brunt_vaisala_freq_sqd(i,k) = ( grav / T0 ) * ddzt_thlm(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
@@ -481,18 +502,21 @@ module advance_helper_module
     ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         thm(i,k) = thlm(i,k) + Lv/(Cp*exner(i,k)) * rcm(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     thm_zm = zt2zm( nz, ngrdcol, gr, thm )
     ddzt_thm = ddzt( nz, ngrdcol, gr, thm )
     ddzt_rtm = ddzt( nz, ngrdcol, gr, rtm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         stat_dry(i,k)  =  Cp * T_in_K(i,k) + grav * gr%zt(i,k)
@@ -500,11 +524,13 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ddzt_stat_liq    = ddzt( nz, ngrdcol, gr, stat_liq )
     ddzt_stat_liq_zm = zt2zm( nz, ngrdcol, gr, ddzt_stat_liq)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         stat_dry_virtual(i,k) = stat_dry(i,k) + Cp * T_in_K(i,k) &
@@ -512,19 +538,23 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     stat_dry_virtual_zm = zt2zm( nz, ngrdcol, gr, stat_dry_virtual)
     ddzt_rtm_zm         = zt2zm( nz, ngrdcol, gr, ddzt_rtm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         brunt_vaisala_freq_sqd_dry(i,k) = ( grav / thm_zm(i,k) )* ddzt_thm(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
@@ -537,8 +567,10 @@ module advance_helper_module
       end do
     end do ! k=1, gr%nz
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
          brunt_vaisala_freq_sqd_mixed(i,k) = &
@@ -548,6 +580,7 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( l_brunt_vaisala_freq_moist ) then
 
@@ -556,6 +589,7 @@ module advance_helper_module
     end if
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -721,6 +755,11 @@ module advance_helper_module
     !$acc                    Ri_zm, ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, &
     !$acc                    Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                    fnc_Richardson_clipped, fnc_Richardson_smooth )
+!$omp target enter data map(alloc:brunt_vaisala_freq_sqd,&
+!$omp brunt_vaisala_freq_sqd_mixed,brunt_vaisala_freq_sqd_dry,&
+!$omp brunt_vaisala_freq_sqd_moist,cx_fnc_interp,ri_zm,ddzt_um,ddzt_vm,&
+!$omp shear_sqd,lscale_zm,cx_fnc_richardson_avg,fnc_richardson,&
+!$omp fnc_richardson_clipped,fnc_richardson_smooth)
 
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
@@ -749,15 +788,18 @@ module advance_helper_module
     ddzt_vm = ddzt( nz, ngrdcol, gr, vm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         shear_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( stats_metadata%l_stats_samp ) then
       !$acc update host(shear_sqd)
+!$omp target update from(shear_sqd)
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%ishear_sqd, shear_sqd(i,:), & ! intent(in)
                               stats_zm(i) )               ! intent(inout)
@@ -767,6 +809,7 @@ module advance_helper_module
     if ( l_use_shear_Richardson ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed(i,k) ) &
@@ -774,15 +817,18 @@ module advance_helper_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Ri_zm(i,k) = brunt_vaisala_freq_sqd(i,k) * invrs_num_div_thresh
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
@@ -791,6 +837,7 @@ module advance_helper_module
     if ( l_modify_limiters_for_cnvg_test ) then 
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           fnc_Richardson(i,k) = ( Ri_zm(i,k) - Richardson_num_min ) * invrs_min_max_diff
@@ -807,6 +854,7 @@ module advance_helper_module
 
       ! use smoothed max amd min to achive smoothed profile and avoid discontinuities 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Cx_fnc_interp(i,k) = fnc_Richardson_smooth(i,k) * ( Cx_max - Cx_min ) + Cx_min
@@ -818,6 +866,7 @@ module advance_helper_module
     else ! default method 
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Cx_fnc_Richardson(i,k) = ( max(min(Richardson_num_max, Ri_zm(i,k)), Richardson_num_min) &
@@ -826,6 +875,7 @@ module advance_helper_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if 
 
@@ -835,23 +885,27 @@ module advance_helper_module
                                                  Cx_fnc_Richardson_below_ground_value )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Cx_fnc_Richardson(i,k) = Cx_fnc_Richardson_avg(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     ! On some compilers, roundoff error can result in Cx_fnc_Richardson being
     ! slightly outside the range [0,1]. Thus, it is clipped here.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         Cx_fnc_Richardson(i,k) = max( zero, min( one, Cx_fnc_Richardson(i,k) ) )
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
@@ -859,6 +913,11 @@ module advance_helper_module
     !$acc                   ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, &
     !$acc                   Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                   fnc_Richardson_clipped, fnc_Richardson_smooth )
+!$omp target exit data map(delete:brunt_vaisala_freq_sqd,&
+!$omp brunt_vaisala_freq_sqd_mixed,brunt_vaisala_freq_sqd_dry,&
+!$omp brunt_vaisala_freq_sqd_moist,cx_fnc_interp,ri_zm,ddzt_um,ddzt_vm,&
+!$omp shear_sqd,lscale_zm,cx_fnc_richardson_avg,fnc_richardson,&
+!$omp fnc_richardson_clipped,fnc_richardson_smooth)
 
     return
 
@@ -930,9 +989,12 @@ module advance_helper_module
     !-------------------------- Begin Code --------------------------
 
     !$acc enter data create( one_half_avg_width, numer_terms, denom_terms )
+!$omp target enter data map(alloc:one_half_avg_width,numer_terms,&
+!$omp denom_terms)
 
     if ( smth_type == 1 ) then
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           one_half_avg_width(i,k) = max( Lscale_zm(i,k), 500.0_core_rknd )
@@ -940,6 +1002,7 @@ module advance_helper_module
       end do
     else if (smth_type == 2 ) then
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           one_half_avg_width(i,k) = 60.0_core_rknd
@@ -949,6 +1012,7 @@ module advance_helper_module
 
     ! Pre calculate numerator and denominator terms
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         numer_terms(i,k) = rho_ds_zm(i,k) * gr%dzm(i,k) * var_profile(i,k)
@@ -958,6 +1022,7 @@ module advance_helper_module
 
     ! For every grid level
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -1030,6 +1095,8 @@ module advance_helper_module
     end do
 
     !$acc exit data delete( one_half_avg_width, numer_terms, denom_terms )
+!$omp target exit data map(delete:one_half_avg_width,numer_terms,&
+!$omp denom_terms)
 
     return
 
@@ -1086,8 +1153,11 @@ module advance_helper_module
     !----------------------------- Begin Code -----------------------------
 
     !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+!$omp target enter data map(alloc:brunt_vaisala_freq_splat_clipped,&
+!$omp brunt_vaisala_freq_splat_smooth)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         brunt_vaisala_freq_splat_clipped(i,k) &
@@ -1095,19 +1165,24 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
     
     brunt_vaisala_freq_splat_smooth = zm2zt2zm( nz, ngrdcol, gr, &
                                                 brunt_vaisala_freq_splat_clipped )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         lhs_splat_wp2(i,k) = + C_wp2_splat * brunt_vaisala_freq_splat_smooth(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+!$omp target exit data map(delete:brunt_vaisala_freq_splat_clipped,&
+!$omp brunt_vaisala_freq_splat_smooth)
 
     return
 
@@ -1166,8 +1241,11 @@ module advance_helper_module
     !----------------------------- Begin Code -----------------------------
 
     !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+!$omp target enter data map(alloc:brunt_vaisala_freq_splat_clipped,&
+!$omp brunt_vaisala_freq_splat_smooth)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         brunt_vaisala_freq_splat_clipped(i,k) &
@@ -1175,11 +1253,13 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
     
     brunt_vaisala_freq_splat_smooth = zm2zt2zm( nz, ngrdcol, gr, &
                                                 brunt_vaisala_freq_splat_clipped )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         lhs_splat_wp3(i,k) = + one_half * three * C_wp2_splat &
@@ -1187,8 +1267,11 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+!$omp target exit data map(delete:brunt_vaisala_freq_splat_clipped,&
+!$omp brunt_vaisala_freq_splat_smooth)
 
     return
 
@@ -1238,8 +1321,10 @@ module advance_helper_module
 
     !$acc data copyin( input_var2 ) &
     !$acc     copyout( output_var )
+!$omp target data map(to:input_var2) map(from:output_var)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         output_var(i,k) = one_half * ( (input_var1+input_var2(i,k)) - &
@@ -1247,8 +1332,10 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1298,8 +1385,10 @@ module advance_helper_module
 
     !$acc data copyin( input_var1 ) &
     !$acc     copyout( output_var )
+!$omp target data map(to:input_var1) map(from:output_var)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         output_var(i,k) = one_half * ( (input_var1(i,k)+input_var2) - &
@@ -1307,8 +1396,10 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1358,8 +1449,10 @@ module advance_helper_module
 
     !$acc data copyin( input_var1, input_var2 ) &
     !$acc     copyout( output_var )
+!$omp target data map(to:input_var1,input_var2) map(from:output_var)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         output_var(i,k) = one_half * ( (input_var1(i,k)+input_var2(i,k)) - &
@@ -1367,8 +1460,10 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1394,6 +1489,7 @@ module advance_helper_module
         one_half
 
     implicit none
+!$omp declare target
 
   ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
@@ -1458,8 +1554,10 @@ module advance_helper_module
 
     !$acc data copyin( input_var2 ) &
     !$acc     copyout( output_var )
+!$omp target data map(to:input_var2) map(from:output_var)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         output_var(i,k) = one_half * ( (input_var1+input_var2(i,k)) + &
@@ -1467,8 +1565,10 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1518,8 +1618,10 @@ module advance_helper_module
 
     !$acc data copyin( input_var1 ) &
     !$acc     copyout( output_var )
+!$omp target data map(to:input_var1) map(from:output_var)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         output_var(i,k) = one_half * ( ( input_var1(i,k) + input_var2 ) + &
@@ -1527,8 +1629,10 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1578,8 +1682,10 @@ module advance_helper_module
 
     !$acc data copyin( input_var1, input_var2 ) &
     !$acc     copyout( output_var )
+!$omp target data map(to:input_var1,input_var2) map(from:output_var)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         output_var(i,k) = one_half * ( (input_var1(i,k)+input_var2(i,k)) + &
@@ -1587,8 +1693,10 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1614,6 +1722,7 @@ module advance_helper_module
         one_half
 
     implicit none
+!$omp declare target
 
     !----------------------------- Input Variables -----------------------------
     real ( kind = core_rknd ), intent(in) :: &
@@ -1682,8 +1791,10 @@ module advance_helper_module
 
     !$acc data copyin( input ) &
     !$acc     copyout( smth_output )
+!$omp target data map(to:input) map(from:smth_output)
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -1703,8 +1814,10 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -1793,17 +1906,21 @@ module advance_helper_module
 
     !$acc data copyin( gr, gr%invrs_dzm, Km_zm, xm ) &
     !$acc     copyout( xpwp )
+!$omp target data map(to:gr,gr%invrs_dzm,km_zm,xm) map(from:xpwp)
 
     ! Solve for x'w' at all intermediate model levels.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz-1
       do i = 1, ngrdcol
         xpwp(i,k) = Km_zm(i,k) * gr%invrs_dzm(i,k) * ( xm(i,k+1) - xm(i,k) )
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -2019,3 +2136,5 @@ module advance_helper_module
 
 
 end module advance_helper_module
+
+

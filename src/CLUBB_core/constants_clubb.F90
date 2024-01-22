@@ -244,6 +244,7 @@ module constants_clubb
     ep1 = (1.0-ep)/ep,& ! ep1 = 0.61   [-]
     ep2 = 1.0/ep        ! ep2 = 1.61   [-]
   !$acc declare create(ep)
+!$omp declare target (ep)
 
   real( kind = core_rknd ), parameter, public :: & 
     kappa = Rd / Cp     ! kappa        [-]
@@ -284,6 +285,7 @@ module constants_clubb
     ep1 = (1.0_core_rknd-ep)/ep,& ! ep1 = 0.61_core_rknd   [-]
     ep2 = 1.0_core_rknd/ep        ! ep2 = 1.61_core_rknd   [-]
 !$acc declare create(ep)
+!$omp declare target (ep)
 
   real( kind = core_rknd ), parameter, public :: & 
     kappa = Rd / Cp     ! kappa        [-]
@@ -441,3 +443,5 @@ module constants_clubb
 !=============================================================================
 
 end module constants_clubb
+
+

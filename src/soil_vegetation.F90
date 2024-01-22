@@ -14,11 +14,15 @@ module soil_vegetation
     sfc_soil_T_in_K, &
     veg_T_in_K       
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K)
+#endif // defined(OPENMP_CPU)
 
   logical, public :: l_soil_veg
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(l_soil_veg)
+#endif // defined(OPENMP_CPU)
 
   private
 
@@ -213,3 +217,5 @@ module soil_vegetation
   end subroutine initialize_soil_veg
 
 end module soil_vegetation
+
+

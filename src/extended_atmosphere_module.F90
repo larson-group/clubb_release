@@ -75,12 +75,16 @@ module extended_atmosphere_module
   integer, public :: &
     extended_atmos_dim, & ! Size of Extended Atmosphere
     total_atmos_dim     ! Total Atmosphere Size (grid + buffer + extended atmosphere)
+#if defined(OPENMP_CPU)
 !$omp threadprivate(extended_atmos_dim, total_atmos_dim)
+#endif // defined(OPENMP_CPU)
 
   real( kind = core_rknd ), public, target, allocatable, dimension(:) :: &
     complete_alt, &     ! Altitude of complete atmosphere in meters
     complete_momentum   ! Altitude of complete momentum grid in meters
+#if defined(OPENMP_CPU)
 !$omp threadprivate(complete_alt, complete_momentum)
+#endif // defined(OPENMP_CPU)
 
   ! Extended Atmosphere variables
   real( kind = core_rknd ), public, target, allocatable, dimension(:) :: &
@@ -89,8 +93,12 @@ module extended_atmosphere_module
     extended_sp_hmdty, &    ! Specific Humidity ( Water Vapor / Density )
     extended_p_in_mb, &     ! Pressure in millibars
     extended_o3l            ! Ozone ( O_3 / Density )
+#if defined(OPENMP_CPU)
 !$omp threadprivate(extended_alt, extended_T_in_K, extended_sp_hmdty)
+#endif // defined(OPENMP_CPU)
+#if defined(OPENMP_CPU)
 !$omp threadprivate(extended_p_in_mb, extended_o3l)
+#endif // defined(OPENMP_CPU)
 
   contains
 
@@ -563,3 +571,5 @@ module extended_atmosphere_module
   end subroutine finalize_extended_atm
 
 end module extended_atmosphere_module
+
+

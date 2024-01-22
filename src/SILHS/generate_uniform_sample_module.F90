@@ -12,7 +12,9 @@ module generate_uniform_sample_module
 
   integer, private :: &
     prior_iter ! Prior iteration number (for diagnostic purposes)
+#if defined(OPENMP_CPU)
 !$omp threadprivate( prior_iter )
+#endif // defined(OPENMP_CPU)
 
   contains
 
@@ -299,3 +301,5 @@ module generate_uniform_sample_module
 !------------------------------------------------------------------------
 
 end module generate_uniform_sample_module
+
+

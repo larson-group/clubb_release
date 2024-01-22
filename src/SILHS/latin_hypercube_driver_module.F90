@@ -298,6 +298,8 @@ module latin_hypercube_driver_module
     !$acc data create( rand_pool, X_u_all_levs ) &
     !$acc&     copyin( X_vert_corr, k_lh_start ) &
     !$acc& async(1)
+!$omp target data map(to:x_vert_corr,k_lh_start) map(alloc:rand_pool,&
+!$omp x_u_all_levs)
 
     ! Generate pool of random numbers
     call generate_random_pool( nz, ngrdcol, pdf_dim, num_samples, d_uniform_extra, & ! Intent(in)
@@ -328,8 +330,13 @@ module latin_hypercube_driver_module
     !$acc&             pdf_params%mixt_frac, pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
     !$acc&             precip_fracs%precip_frac_1, precip_fracs%precip_frac_2 ) &
     !$acc& async(3)
+!$omp target data map(to:pdf_params,precip_fracs,pdf_params%mixt_frac,&
+!$omp pdf_params%cloud_frac_1,pdf_params%cloud_frac_2,&
+!$omp precip_fracs%precip_frac_1,precip_fracs%precip_frac_2)&
+!$omp map(alloc:cloud_frac,l_in_precip)
     
-    !$acc parallel loop collapse(3) default(present) async(1) wait(3)
+    !$acc parallel loop collapse(3) async(1) wait(3)
+!$omp target teams loop collapse(3)
     do k = 1, nz
       do sample = 1, num_samples 
         do i = 1, ngrdcol
@@ -389,6 +396,8 @@ module latin_hypercube_driver_module
     if ( stats_metadata%l_stats_samp ) then
       !$acc wait
       !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights,X_mixt_comp_all_levs) wait
+!$omp target update from(x_u_all_levs,l_in_precip,&
+!$omp lh_sample_point_weights,x_mixt_comp_all_levs)
       call stats_accumulate_uniform_lh( nz, num_samples, ngrdcol, l_in_precip(:,:,:), &
                                         X_mixt_comp_all_levs(:,:,:), &
                                         X_u_all_levs(:,:,:,hm_metadata%iiPDF_chi), pdf_params, &
@@ -400,6 +409,7 @@ module latin_hypercube_driver_module
     if ( l_output_2D_lognormal_dist ) then
       !$acc wait
       !$acc update host(X_nl_all_levs) wait
+!$omp target update from(x_nl_all_levs)
       
       ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
       ! because they are no longer generated in generate_silhs_sample.
@@ -413,6 +423,8 @@ module latin_hypercube_driver_module
     if ( l_output_2D_uniform_dist ) then
       !$acc wait
       !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights) wait
+!$omp target update from(x_u_all_levs,x_mixt_comp_all_levs,&
+!$omp lh_sample_point_weights)
       do i = 1, ngrdcol
         call output_2D_uniform_dist_file( nz, num_samples, pdf_dim+2, &
                                           X_u_all_levs(i,:,:,:), &
@@ -426,6 +438,8 @@ module latin_hypercube_driver_module
     if ( clubb_at_least_debug_level( 2 ) ) then
       !$acc wait
       !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,X_nl_all_levs) wait
+!$omp target update from(x_u_all_levs,x_mixt_comp_all_levs,&
+!$omp x_nl_all_levs)
 
       ! Simple assertion check to ensure uniform variates are in the appropriate
       ! range
@@ -458,7 +472,9 @@ module latin_hypercube_driver_module
     end if ! clubb_at_least_debug_level( 2 )
     
     !$acc end data
+!$omp end target data
     !$acc end data
+!$omp end target data
 
     ! Stop the run if an error occurred
     if ( l_error ) then
@@ -558,8 +574,10 @@ module latin_hypercube_driver_module
     end if
     
     !$acc host_data use_device(rand_pool) 
+!$omp target data use_device_ptr(rand_pool)
     r_status = curandGenerate(cu_gen, rand_pool, ngrdcol*num_samples*nz*(pdf_dim+d_uniform_extra))
     !$acc end host_data
+!$omp end target data
     !$acc wait
     
     
@@ -585,6 +603,7 @@ module latin_hypercube_driver_module
 #ifdef CLUBB_GPU
     ! If we are using the GPU, we need to copy the CPU generated randoms to it
     !$acc update device( rand_pool )
+!$omp target update to(rand_pool)
 #endif
 
 #endif
@@ -717,7 +736,8 @@ module latin_hypercube_driver_module
 
         ! Do a straight Monte Carlo sample without LH or importance sampling.
         
-        !$acc parallel loop collapse(4) default(present) async(1)
+        !$acc parallel loop collapse(4) async(1)
+!$omp target teams loop collapse(4)
         do p = 1, pdf_dim+d_uniform_extra
           do k = 1, nz
             do sample = 1, num_samples
@@ -730,7 +750,8 @@ module latin_hypercube_driver_module
           end do
         end do
 
-        !$acc parallel loop collapse(3) default(present) async(1)
+        !$acc parallel loop collapse(3) async(1)
+!$omp target teams loop collapse(3)
         do k = 1, nz
           do sample = 1, num_samples
             do i = 1, ngrdcol
@@ -813,7 +834,8 @@ module latin_hypercube_driver_module
 
         ! Do a straight Monte Carlo sample without LH or importance sampling.
         
-        !$acc parallel loop collapse(4) default(present) async(1)
+        !$acc parallel loop collapse(4) async(1)
+!$omp target teams loop collapse(4)
         do p = 1, pdf_dim+d_uniform_extra
           do k = 1, nz
             do sample = 1, num_samples
@@ -826,7 +848,8 @@ module latin_hypercube_driver_module
           end do
         end do
 
-        !$acc parallel loop collapse(3) default(present) async(1)
+        !$acc parallel loop collapse(3) async(1)
+!$omp target teams loop collapse(3)
         do k = 1, nz
           do sample = 1, num_samples
             do i = 1, ngrdcol
@@ -1116,7 +1139,8 @@ module latin_hypercube_driver_module
                           X_mixt_comp_all_levs(:,:,:),                  & ! Intent(in)
                           lh_rt_clipped(:,:,:), lh_thl_clipped(:,:,:)   ) ! Intent(out)
     
-    !$acc parallel loop collapse(2) default(present) async(1)
+    !$acc parallel loop collapse(2) async(1)
+!$omp target teams loop collapse(2)
     do sample = 1, num_samples
       do i = 1, ngrdcol
         ! These parameters are not computed at the model lower level.
@@ -1128,7 +1152,8 @@ module latin_hypercube_driver_module
       end do
     end do
     
-    !$acc parallel loop collapse(3) default(present) async(1)
+    !$acc parallel loop collapse(3) async(1)
+!$omp target teams loop collapse(3)
     do k = 2, nz
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -1902,7 +1927,8 @@ module latin_hypercube_driver_module
     !$acc wait(1) async(2)
 
     ! Recompute from k_lh_start to nz-1 for all samples and variates, upward loop
-    !$acc parallel loop collapse(3) default(present) async(1)
+    !$acc parallel loop collapse(3) async(1)
+!$omp target teams loop collapse(3)
     do p = 1, pdf_dim + d_uniform_extra                         
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -1936,7 +1962,8 @@ module latin_hypercube_driver_module
 
 
     ! Recompute from k_lh_start down to 2 for all samples and variates, downward loop 
-    !$acc parallel loop collapse(3) default(present) async(2)
+    !$acc parallel loop collapse(3) async(2)
+!$omp target teams loop collapse(3)
     do p = 1, pdf_dim + d_uniform_extra                        
       do sample = 1, num_samples
         do i = 1, ngrdcol
@@ -2829,3 +2856,5 @@ module latin_hypercube_driver_module
 #endif /* SILHS */
 
 end module latin_hypercube_driver_module
+
+

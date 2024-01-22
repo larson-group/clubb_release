@@ -78,6 +78,9 @@ module pdf_parameter_module
       ice_supersat_frac_2    ! Ice supersaturation fraction (2nd PDF comp.)  [-]
 
   end type pdf_parameter
+!$omp declare mapper (pdf_parameter::x) map ( &
+!$omp  x%ice_supersat_frac_2 &
+!$omp )
   
   ! The implicit coefficients, semi-implicit coefficients and terms, and
   ! explicit terms for turbulent advection of turbulent fields are calculated
@@ -155,6 +158,22 @@ module pdf_parameter_module
       term_wpthlpsclrp_explicit    ! Term that is on the RHS  [(m/s)K(un. vary)]
 
   end type implicit_coefs_terms
+!$omp declare mapper (implicit_coefs_terms::x) map ( &
+!$omp  x%coef_wp4_implicit &
+!$omp , x%term_wp2rtp_explicit &
+!$omp , x%term_wp2thlp_explicit &
+!$omp , x%term_wp2up_explicit &
+!$omp , x%term_wp2vp_explicit &
+!$omp , x%term_wprtp2_explicit &
+!$omp , x%term_wpthlp2_explicit &
+!$omp , x%term_wprtpthlp_explicit &
+!$omp , x%term_wpup2_explicit &
+!$omp , x%term_wpvp2_explicit &
+!$omp , x%term_wp2sclrp_explicit &
+!$omp , x%term_wpsclrp2_explicit &
+!$omp , x%term_wprtpsclrp_explicit &
+!$omp , x%term_wpthlpsclrp_explicit &
+!$omp )
 
 ! The CLUBB_CAM preprocessor directives are being commented out because this
 ! code is now also used for WRF-CLUBB.
@@ -788,3 +807,5 @@ module pdf_parameter_module
 !#endif /* CLUBB_CAM */
 
 end module pdf_parameter_module
+
+

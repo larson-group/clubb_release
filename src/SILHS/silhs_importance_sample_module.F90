@@ -24,6 +24,11 @@ module silhs_importance_sample_module
       l_in_component_1
 
   end type importance_category_type
+!$omp declare mapper (importance_category_type::x) map ( &
+!$omp  x%l_in_cloud &
+!$omp , x%l_in_precip &
+!$omp , x%l_in_component_1 &
+!$omp )
 
   contains
 
@@ -2153,3 +2158,5 @@ module silhs_importance_sample_module
   !-----------------------------------------------------------------------
 
 end module silhs_importance_sample_module
+
+

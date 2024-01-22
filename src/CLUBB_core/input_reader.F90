@@ -44,6 +44,11 @@ module input_reader
     real( kind = core_rknd ), dimension(:), allocatable :: values   ! Values of that variable
 
   end type one_dim_read_var
+!$omp declare mapper (one_dim_read_var::x) map ( &
+!$omp  x%name &
+!$omp , x%dim_name &
+!$omp , x%values &
+!$omp )
 
   ! Derived type for representing a rank 2 variable that has been read in by one
   ! of the procedures.
@@ -60,6 +65,12 @@ module input_reader
     real( kind = core_rknd ), dimension(:,:), allocatable :: values  ! Values of that variable
 
   end type two_dim_read_var
+!$omp declare mapper (two_dim_read_var::x) map ( &
+!$omp  x%name &
+!$omp , x%dim1_name &
+!$omp , x%dim2_name &
+!$omp , x%values &
+!$omp )
 
 
   ! Constant Parameter(s)
@@ -866,3 +877,5 @@ module input_reader
 
 !------------------------------------------------------------------------------
 end module input_reader
+
+

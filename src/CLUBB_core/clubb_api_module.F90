@@ -1230,21 +1230,95 @@ contains
     !$acc              cloudy_updraft_frac_col, cloudy_downdraft_frac_col, invrs_tau_zm_col, Kh_zt_col, &
     !$acc              Kh_zm_col, &
     !$acc              thlprcp_col )
+!$omp target data map(tofrom:um_col,upwp_col,vm_col,vpwp_col,up2_col,&
+!$omp vp2_col,up3_col,vp3_col,rtm_col,wprtp_col,thlm_col,wpthlp_col,&
+!$omp rtp2_col,rtp3_col,thlp2_col,thlp3_col,rtpthlp_col,wp2_col,&
+!$omp wp3_col,p_in_pa_col,exner_col,rcm_col,cloud_frac_col,wpthvp_col,&
+!$omp wp2thvp_col,rtpthvp_col,thlpthvp_col,wp2rtp_col,wp2thlp_col,&
+!$omp uprcp_col,vprcp_col,rc_coef_col,wp4_col,wpup2_col,wpvp2_col,&
+!$omp wp2up2_col,wp2vp2_col,ice_supersat_frac_col,um_pert_col,&
+!$omp vm_pert_col,upwp_pert_col,vpwp_pert_col,edsclrm_col,pdf_params,&
+!$omp pdf_params_zm,pdf_params%w_1,pdf_params%w_2,&
+!$omp pdf_params%varnce_w_1,pdf_params%varnce_w_2,pdf_params%rt_1,&
+!$omp pdf_params%rt_2,pdf_params%varnce_rt_1,pdf_params%varnce_rt_2,&
+!$omp pdf_params%thl_1,pdf_params%thl_2,pdf_params%varnce_thl_1,&
+!$omp pdf_params%varnce_thl_2,pdf_params%corr_w_rt_1,&
+!$omp pdf_params%corr_w_rt_2,pdf_params%corr_w_thl_1,&
+!$omp pdf_params%corr_w_thl_2,pdf_params%corr_rt_thl_1,&
+!$omp pdf_params%corr_rt_thl_2,pdf_params%alpha_thl,&
+!$omp pdf_params%alpha_rt,pdf_params%crt_1,pdf_params%crt_2,&
+!$omp pdf_params%cthl_1,pdf_params%cthl_2,pdf_params%chi_1,&
+!$omp pdf_params%chi_2,pdf_params%stdev_chi_1,pdf_params%stdev_chi_2,&
+!$omp pdf_params%stdev_eta_1,pdf_params%stdev_eta_2,&
+!$omp pdf_params%covar_chi_eta_1,pdf_params%covar_chi_eta_2,&
+!$omp pdf_params%corr_w_chi_1,pdf_params%corr_w_chi_2,&
+!$omp pdf_params%corr_w_eta_1,pdf_params%corr_w_eta_2,&
+!$omp pdf_params%corr_chi_eta_1,pdf_params%corr_chi_eta_2,&
+!$omp pdf_params%rsatl_1,pdf_params%rsatl_2,pdf_params%rc_1,&
+!$omp pdf_params%rc_2,pdf_params%cloud_frac_1,pdf_params%cloud_frac_2,&
+!$omp pdf_params%mixt_frac,pdf_params%ice_supersat_frac_1,&
+!$omp pdf_params%ice_supersat_frac_2,pdf_params_zm%w_1,&
+!$omp pdf_params_zm%w_2,pdf_params_zm%varnce_w_1,&
+!$omp pdf_params_zm%varnce_w_2,pdf_params_zm%rt_1,pdf_params_zm%rt_2,&
+!$omp pdf_params_zm%varnce_rt_1,pdf_params_zm%varnce_rt_2,&
+!$omp pdf_params_zm%thl_1,pdf_params_zm%thl_2,&
+!$omp pdf_params_zm%varnce_thl_1,pdf_params_zm%varnce_thl_2,&
+!$omp pdf_params_zm%corr_w_rt_1,pdf_params_zm%corr_w_rt_2,&
+!$omp pdf_params_zm%corr_w_thl_1,pdf_params_zm%corr_w_thl_2,&
+!$omp pdf_params_zm%corr_rt_thl_1,pdf_params_zm%corr_rt_thl_2,&
+!$omp pdf_params_zm%alpha_thl,pdf_params_zm%alpha_rt,&
+!$omp pdf_params_zm%crt_1,pdf_params_zm%crt_2,pdf_params_zm%cthl_1,&
+!$omp pdf_params_zm%cthl_2,pdf_params_zm%chi_1,pdf_params_zm%chi_2,&
+!$omp pdf_params_zm%stdev_chi_1,pdf_params_zm%stdev_chi_2,&
+!$omp pdf_params_zm%stdev_eta_1,pdf_params_zm%stdev_eta_2,&
+!$omp pdf_params_zm%covar_chi_eta_1,pdf_params_zm%covar_chi_eta_2,&
+!$omp pdf_params_zm%corr_w_chi_1,pdf_params_zm%corr_w_chi_2,&
+!$omp pdf_params_zm%corr_w_eta_1,pdf_params_zm%corr_w_eta_2,&
+!$omp pdf_params_zm%corr_chi_eta_1,pdf_params_zm%corr_chi_eta_2,&
+!$omp pdf_params_zm%rsatl_1,pdf_params_zm%rsatl_2,pdf_params_zm%rc_1,&
+!$omp pdf_params_zm%rc_2,pdf_params_zm%cloud_frac_1,&
+!$omp pdf_params_zm%cloud_frac_2,pdf_params_zm%mixt_frac,&
+!$omp pdf_params_zm%ice_supersat_frac_1,&
+!$omp pdf_params_zm%ice_supersat_frac_2) map(to:gr,gr%zm,gr%zt,gr%dzm,&
+!$omp gr%dzt,gr%invrs_dzt,gr%invrs_dzm,gr%weights_zt2zm,&
+!$omp gr%weights_zm2zt,nu_vert_res_dep,nu_vert_res_dep%nu2,&
+!$omp nu_vert_res_dep%nu9,nu_vert_res_dep%nu1,nu_vert_res_dep%nu8,&
+!$omp nu_vert_res_dep%nu10,nu_vert_res_dep%nu6,sclr_idx,fcor_col,&
+!$omp sfc_elevation_col,thlm_forcing_col,rtm_forcing_col,&
+!$omp um_forcing_col,vm_forcing_col,wprtp_forcing_col,&
+!$omp wpthlp_forcing_col,rtp2_forcing_col,thlp2_forcing_col,&
+!$omp rtpthlp_forcing_col,wm_zm_col,wm_zt_col,rho_zm_col,rho_col,&
+!$omp rho_ds_zm_col,rho_ds_zt_col,invrs_rho_ds_zm_col,&
+!$omp invrs_rho_ds_zt_col,thv_ds_zm_col,thv_ds_zt_col,rfrzm_col,&
+!$omp radf_col,wpthlp_sfc_col,wprtp_sfc_col,upwp_sfc_col,vpwp_sfc_col,&
+!$omp edsclrm_forcing_col,wpedsclrp_sfc_col,upwp_sfc_pert_col,&
+!$omp vpwp_sfc_pert_col,rtm_ref_col,thlm_ref_col,um_ref_col,vm_ref_col,&
+!$omp ug_col,vg_col,host_dx_col,host_dy_col) map(from:rcm_in_layer_col,&
+!$omp cloud_cover_col,wprcp_col,w_up_in_cloud_col,w_down_in_cloud_col,&
+!$omp cloudy_updraft_frac_col,cloudy_downdraft_frac_col,&
+!$omp invrs_tau_zm_col,kh_zt_col,kh_zm_col,thlprcp_col)
 
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing_col, wpsclrp_sfc_col ) &
     !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, sclrpthvp )
+!$omp target data map(tofrom:sclrm_col,wpsclrp_col,sclrp2_col,&
+!$omp sclrp3_col,sclrprtp_col,sclrpthlp_col,sclrpthvp) map(to:sclr_tol,&
+!$omp sclrm_forcing_col,wpsclrp_sfc_col) if(sclr_dim>0)
 
     !$acc data if( hydromet_dim > 0 ) &
     !$acc      copyin( hydromet_col, wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &
     !$acc              l_mix_rat_hm )
+!$omp target data map(to:hydromet_col,wphydrometp_col,wp2hmp_col,&
+!$omp rtphmp_zt_col,thlphmp_zt_col,l_mix_rat_hm) if(hydromet_dim>0)
 
 #ifdef CLUBBND_CAM
     !$acc data copyin( varmu ) copyout( qclvar )
+!$omp target data map(to:varmu) map(from:qclvar)
 #endif
 
 #ifdef GFDL
     !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
+!$omp target data map(tofrom:sclrm_trsport_only) if(sclr_dim>0)
 #endif
 
     call advance_clubb_core( gr, gr%nz, 1,              &
@@ -1304,15 +1378,20 @@ contains
       err_code_api )                                                              ! intent(out)
     
     !$acc end data
+!$omp end target data
     !$acc end data
+!$omp end target data
     !$acc end data
+!$omp end target data
 
 #ifdef CLUBBND_CAM
     !$acc end data
+!$omp end target data
 #endif
 
 #ifdef GFDL
     !$acc end data
+!$omp end target data
 #endif
     
     ! The following does not work for stats 
@@ -1789,21 +1868,89 @@ contains
     !$acc              cloudy_updraft_frac, cloudy_downdraft_frac, invrs_tau_zm, Kh_zt, &
     !$acc              Kh_zm, &
     !$acc              thlprcp )
+!$omp target data map(tofrom:um,upwp,vm,vpwp,up2,vp2,up3,vp3,rtm,wprtp,&
+!$omp thlm,wpthlp,rtp2,rtp3,thlp2,thlp3,rtpthlp,wp2,wp3,p_in_pa,exner,&
+!$omp rcm,cloud_frac,wpthvp,wp2thvp,rtpthvp,thlpthvp,wp2rtp,wp2thlp,&
+!$omp uprcp,vprcp,rc_coef,wp4,wpup2,wpvp2,wp2up2,wp2vp2,&
+!$omp ice_supersat_frac,um_pert,vm_pert,upwp_pert,vpwp_pert,edsclrm,&
+!$omp pdf_params,pdf_params_zm,pdf_params%w_1,pdf_params%w_2,&
+!$omp pdf_params%varnce_w_1,pdf_params%varnce_w_2,pdf_params%rt_1,&
+!$omp pdf_params%rt_2,pdf_params%varnce_rt_1,pdf_params%varnce_rt_2,&
+!$omp pdf_params%thl_1,pdf_params%thl_2,pdf_params%varnce_thl_1,&
+!$omp pdf_params%varnce_thl_2,pdf_params%corr_w_rt_1,&
+!$omp pdf_params%corr_w_rt_2,pdf_params%corr_w_thl_1,&
+!$omp pdf_params%corr_w_thl_2,pdf_params%corr_rt_thl_1,&
+!$omp pdf_params%corr_rt_thl_2,pdf_params%alpha_thl,&
+!$omp pdf_params%alpha_rt,pdf_params%crt_1,pdf_params%crt_2,&
+!$omp pdf_params%cthl_1,pdf_params%cthl_2,pdf_params%chi_1,&
+!$omp pdf_params%chi_2,pdf_params%stdev_chi_1,pdf_params%stdev_chi_2,&
+!$omp pdf_params%stdev_eta_1,pdf_params%stdev_eta_2,&
+!$omp pdf_params%covar_chi_eta_1,pdf_params%covar_chi_eta_2,&
+!$omp pdf_params%corr_w_chi_1,pdf_params%corr_w_chi_2,&
+!$omp pdf_params%corr_w_eta_1,pdf_params%corr_w_eta_2,&
+!$omp pdf_params%corr_chi_eta_1,pdf_params%corr_chi_eta_2,&
+!$omp pdf_params%rsatl_1,pdf_params%rsatl_2,pdf_params%rc_1,&
+!$omp pdf_params%rc_2,pdf_params%cloud_frac_1,pdf_params%cloud_frac_2,&
+!$omp pdf_params%mixt_frac,pdf_params%ice_supersat_frac_1,&
+!$omp pdf_params%ice_supersat_frac_2,pdf_params_zm%w_1,&
+!$omp pdf_params_zm%w_2,pdf_params_zm%varnce_w_1,&
+!$omp pdf_params_zm%varnce_w_2,pdf_params_zm%rt_1,pdf_params_zm%rt_2,&
+!$omp pdf_params_zm%varnce_rt_1,pdf_params_zm%varnce_rt_2,&
+!$omp pdf_params_zm%thl_1,pdf_params_zm%thl_2,&
+!$omp pdf_params_zm%varnce_thl_1,pdf_params_zm%varnce_thl_2,&
+!$omp pdf_params_zm%corr_w_rt_1,pdf_params_zm%corr_w_rt_2,&
+!$omp pdf_params_zm%corr_w_thl_1,pdf_params_zm%corr_w_thl_2,&
+!$omp pdf_params_zm%corr_rt_thl_1,pdf_params_zm%corr_rt_thl_2,&
+!$omp pdf_params_zm%alpha_thl,pdf_params_zm%alpha_rt,&
+!$omp pdf_params_zm%crt_1,pdf_params_zm%crt_2,pdf_params_zm%cthl_1,&
+!$omp pdf_params_zm%cthl_2,pdf_params_zm%chi_1,pdf_params_zm%chi_2,&
+!$omp pdf_params_zm%stdev_chi_1,pdf_params_zm%stdev_chi_2,&
+!$omp pdf_params_zm%stdev_eta_1,pdf_params_zm%stdev_eta_2,&
+!$omp pdf_params_zm%covar_chi_eta_1,pdf_params_zm%covar_chi_eta_2,&
+!$omp pdf_params_zm%corr_w_chi_1,pdf_params_zm%corr_w_chi_2,&
+!$omp pdf_params_zm%corr_w_eta_1,pdf_params_zm%corr_w_eta_2,&
+!$omp pdf_params_zm%corr_chi_eta_1,pdf_params_zm%corr_chi_eta_2,&
+!$omp pdf_params_zm%rsatl_1,pdf_params_zm%rsatl_2,pdf_params_zm%rc_1,&
+!$omp pdf_params_zm%rc_2,pdf_params_zm%cloud_frac_1,&
+!$omp pdf_params_zm%cloud_frac_2,pdf_params_zm%mixt_frac,&
+!$omp pdf_params_zm%ice_supersat_frac_1,&
+!$omp pdf_params_zm%ice_supersat_frac_2) map(to:gr,gr%zm,gr%zt,gr%dzm,&
+!$omp gr%dzt,gr%invrs_dzt,gr%invrs_dzm,gr%weights_zt2zm,&
+!$omp gr%weights_zm2zt,nu_vert_res_dep,nu_vert_res_dep%nu2,&
+!$omp nu_vert_res_dep%nu9,nu_vert_res_dep%nu1,nu_vert_res_dep%nu8,&
+!$omp nu_vert_res_dep%nu10,nu_vert_res_dep%nu6,sclr_idx,fcor,&
+!$omp sfc_elevation,thlm_forcing,rtm_forcing,um_forcing,vm_forcing,&
+!$omp wprtp_forcing,wpthlp_forcing,rtp2_forcing,thlp2_forcing,&
+!$omp rtpthlp_forcing,wm_zm,wm_zt,rho_zm,rho,rho_ds_zm,rho_ds_zt,&
+!$omp invrs_rho_ds_zm,invrs_rho_ds_zt,thv_ds_zm,thv_ds_zt,rfrzm,radf,&
+!$omp wpthlp_sfc,wprtp_sfc,upwp_sfc,vpwp_sfc,edsclrm_forcing,&
+!$omp wpedsclrp_sfc,upwp_sfc_pert,vpwp_sfc_pert,rtm_ref,thlm_ref,&
+!$omp um_ref,vm_ref,ug,vg,host_dx,host_dy) map(from:rcm_in_layer,&
+!$omp cloud_cover,wprcp,w_up_in_cloud,w_down_in_cloud,&
+!$omp cloudy_updraft_frac,cloudy_downdraft_frac,invrs_tau_zm,kh_zt,&
+!$omp kh_zm,thlprcp)
 
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing, wpsclrp_sfc ) &
     !$acc        copy( sclrm, wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )
+!$omp target data map(tofrom:sclrm,wpsclrp,sclrp2,sclrp3,sclrprtp,&
+!$omp sclrpthlp,sclrpthvp) map(to:sclr_tol,sclrm_forcing,wpsclrp_sfc)&
+!$omp if(sclr_dim>0)
 
     !$acc data if( hydromet_dim > 0 ) &
     !$acc      copyin( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
     !$acc              l_mix_rat_hm )
+!$omp target data map(to:hydromet,wphydrometp,wp2hmp,rtphmp_zt,&
+!$omp thlphmp_zt,l_mix_rat_hm) if(hydromet_dim>0)
 
 #ifdef CLUBBND_CAM
     !$acc data copyin( varmu ) copyout( qclvar )
+!$omp target data map(to:varmu) map(from:qclvar)
 #endif
 
 #ifdef GFDL
     !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
+!$omp target data map(tofrom:sclrm_trsport_only) if(sclr_dim>0)
 #endif
 
     call advance_clubb_core( gr, nz, ngrdcol, &
@@ -1863,15 +2010,20 @@ contains
       err_code_api )                                          ! intent(out)
 
     !$acc end data
+!$omp end target data
     !$acc end data
+!$omp end target data
     !$acc end data
+!$omp end target data
 
 #ifdef CLUBBND_CAM
     !$acc end data
+!$omp end target data
 #endif
 
 #ifdef GFDL
     !$acc end data
+!$omp end target data
 #endif
 
 
@@ -3956,3 +4108,5 @@ contains
   end subroutine finalize_tau_sponge_damp_api
     
 end module clubb_api_module
+
+

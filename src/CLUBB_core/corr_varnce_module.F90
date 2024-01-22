@@ -32,6 +32,9 @@ module corr_varnce_module
       Ng = 1.0_core_rknd    ! For graupel concentration   [-]
 
   end type hmp2_ip_on_hmm2_ip_ratios_type
+!$omp declare mapper (hmp2_ip_on_hmm2_ip_ratios_type::x) map ( &
+!$omp  x%ng &
+!$omp )
 
   ! These slopes and intercepts below are used to calculate the hmp2_ip_on_hmm2_ip_ratios_type
   ! values that are defined above. This functionality is described by equations 8, 10, & 11
@@ -62,6 +65,9 @@ module corr_varnce_module
       Ng = 2.12e-5_core_rknd    ! For graupel concentration   [1/m]
 
   end type hmp2_ip_on_hmm2_ip_slope_type
+!$omp declare mapper (hmp2_ip_on_hmm2_ip_slope_type::x) map ( &
+!$omp  x%ng &
+!$omp )
 
   type hmp2_ip_on_hmm2_ip_intrcpt_type
 
@@ -76,6 +82,9 @@ module corr_varnce_module
       Ng = 0.54_core_rknd    ! For graupel concentration   [-]
 
   end type hmp2_ip_on_hmm2_ip_intrcpt_type
+!$omp declare mapper (hmp2_ip_on_hmm2_ip_intrcpt_type::x) map ( &
+!$omp  x%ng &
+!$omp )
 
 
 
@@ -137,6 +146,27 @@ module corr_varnce_module
       Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2> / <N_cn>^2 [-]
 
   end type hm_metadata_type 
+!$omp declare mapper (hm_metadata_type::x) map ( &
+!$omp  x%iirg &
+!$omp , x%iing &
+!$omp , x%l_mix_rat_hm &
+!$omp , x%hydromet_list &
+!$omp , x%hydromet_tol &
+!$omp , x%iipdf_chi &
+!$omp , x%iipdf_eta &
+!$omp , x%iipdf_w &
+!$omp , x%iipdf_rr &
+!$omp , x%iipdf_rs &
+!$omp , x%iipdf_ri &
+!$omp , x%iipdf_rg &
+!$omp , x%iipdf_nr &
+!$omp , x%iipdf_ns &
+!$omp , x%iipdf_ni &
+!$omp , x%iipdf_ng &
+!$omp , x%iipdf_ncn &
+!$omp , x%hmp2_ip_on_hmm2_ip &
+!$omp , x%ncnp2_on_ncnm2 &
+!$omp )
 
   ! This "renaming" is used to shorten the matrix declarations below.
   integer, parameter :: c = core_rknd
@@ -1055,3 +1085,5 @@ module corr_varnce_module
   !-----------------------------------------------------------------------------
 
 end module corr_varnce_module
+
+

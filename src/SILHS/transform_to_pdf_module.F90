@@ -108,6 +108,7 @@ module transform_to_pdf_module
     !---------------------------------------------------------------------------
 
     !$acc data create(std_normal) async(1)
+!$omp target data map(alloc:std_normal)
               
     ! From Latin hypercube sample, generate standard normal sample
     call cdfnorminv( pdf_dim, nz, ngrdcol, num_samples, X_u_all_levs, &  ! In
@@ -119,9 +120,11 @@ module transform_to_pdf_module
                             mu1, mu2, X_mixt_comp_all_levs,                & ! In
                             X_nl_all_levs )                                  ! Out
     !$acc end data
+!$omp end target data
                           
     
-    !$acc parallel loop collapse(4) default(present) async(1)
+    !$acc parallel loop collapse(4) async(1)
+!$omp target teams loop collapse(4)
     do p = max( hm_metadata%iiPDF_chi, hm_metadata%iiPDF_eta, hm_metadata%iiPDF_w )+1, pdf_dim
       do k = 1, nz
         do sample = 1, num_samples
@@ -133,7 +136,8 @@ module transform_to_pdf_module
       end do
     end do
     
-    !$acc parallel loop collapse(4) default(present) async(1)
+    !$acc parallel loop collapse(4) async(1)
+!$omp target teams loop collapse(4)
     do p = hm_metadata%iiPDF_Ncn+1, pdf_dim
       do k = 1, nz 
         do sample = 1, num_samples
@@ -158,7 +162,8 @@ module transform_to_pdf_module
     ! enforced by the clipping of PDF component cloud fraction.
     if ( l_clip_extreme_chi_sample_pts ) then
       
-      !$acc parallel loop collapse(3) default(present) async(1)
+      !$acc parallel loop collapse(3) async(1)
+!$omp target teams loop collapse(3)
       do k = 1, nz 
         do sample = 1, num_samples
           do i = 1, ngrdcol
@@ -253,6 +258,7 @@ module transform_to_pdf_module
     ! ---------------- Begin Code ----------------
     
     !$acc parallel loop collapse(4) async(1)
+!$omp target teams loop collapse(4)
     do sample = 1, num_samples
       do k = 1, nz
         do i = 1, ngrdcol
@@ -543,8 +549,10 @@ module transform_to_pdf_module
     ! --- Begin Code ---
     
     !$acc data copyin(Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2) async(2)
+!$omp target data map(to:sigma_cholesky1,sigma_cholesky2,mu1,mu2)
     
-    !$acc parallel loop collapse(4) default(present) async(1) wait(2)
+    !$acc parallel loop collapse(4) async(1) wait(2)
+!$omp target teams loop collapse(4)
     do  p = 1, pdf_dim
       do sample = 1, num_samples
         do k = 1, nz
@@ -577,6 +585,7 @@ module transform_to_pdf_module
     end do 
     
     !$acc end data
+!$omp end target data
 
     return
   end subroutine multiply_Cholesky
@@ -650,8 +659,11 @@ module transform_to_pdf_module
     !$acc data copyin( rt_1, rt_2, thl_1, thl_2, crt_1, crt_2, cthl_1, cthl_2, mu_chi_1, &
     !$acc&             mu_chi_2, chi, eta ) &
     !$acc& async(2)
+!$omp target data map(to:rt_1,rt_2,thl_1,thl_2,crt_1,crt_2,cthl_1,&
+!$omp cthl_2,mu_chi_1,mu_chi_2,chi,eta)
     
-    !$acc parallel loop collapse(3) default(present) async(1) wait(2)
+    !$acc parallel loop collapse(3) async(1) wait(2)
+!$omp target teams loop collapse(3)
     do sample = 1, num_samples
       do k = 2, nz
         do i = 1, ngrdcol
@@ -692,9 +704,12 @@ module transform_to_pdf_module
     end do
     
     !$acc end data
+!$omp end target data
 
     return
     
   end subroutine chi_eta_2_rtthl
 
 end module transform_to_pdf_module
+
+

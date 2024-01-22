@@ -48,6 +48,9 @@ module parameters_tunable
       nu10,  & ! Background Coefficient of Eddy Diffusion: edsclrm  [m^2/s]
       nu_hm    ! Background Coefficient of Eddy Diffusion: hydromet [m^2/s]
   end type nu_vertical_res_dep
+!$omp declare mapper (nu_vertical_res_dep::x) map ( &
+!$omp  x%nu_hm &
+!$omp )
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -2264,3 +2267,5 @@ module parameters_tunable
 !===============================================================================
 
 end module parameters_tunable
+
+

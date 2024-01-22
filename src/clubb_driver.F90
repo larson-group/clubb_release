@@ -34,13 +34,19 @@ module clubb_driver
                                         stats_rad_zm,  & ! stats_rad_zm grid
                                         stats_sfc        ! stats_sfc
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(stats_zt, stats_zm, stats_lh_zt, stats_lh_sfc)
+#endif // defined(OPENMP_CPU)
+#if defined(OPENMP_CPU)
 !$omp threadprivate(stats_rad_zt, stats_rad_zm, stats_sfc)
+#endif // defined(OPENMP_CPU)
       
   type (stats_metadata_type), public :: &
     stats_metadata
     
+#if defined(OPENMP_CPU)
 !$omp threadprivate(stats_metadata)
+#endif // defined(OPENMP_CPU)
 
   ! Setup run_clubb() as the sole external interface
   private ::  &
@@ -2198,7 +2204,9 @@ module clubb_driver
       l_silhs_out_in = .false.
 #endif
 
+#if defined(OPENMP_CPU)
 !$OMP CRITICAL
+#endif // defined(OPENMP_CPU)
     ! This is a kludge added because the grid used by BUGSrad does
     ! not include CLUBB's ghost point. -nielsenb 20 Oct 2009
     if ( stats_metadata%l_output_rad_files ) then
@@ -2237,7 +2245,9 @@ module clubb_driver
                        stats_lh_zt, stats_lh_sfc, & ! intent(inout)
                        stats_rad_zt, stats_rad_zm ) ! intent(inout)
     end if
+#if defined(OPENMP_CPU)
 !$OMP END CRITICAL
+#endif // defined(OPENMP_CPU)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
@@ -2693,6 +2703,9 @@ module clubb_driver
         !$acc               lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, &
         !$acc               lh_Nc_clipped ) &
         !$acc async(1)
+!$omp target data map(to:hm_metadata) map(from:x_mixt_comp_all_levs,&
+!$omp x_nl_all_levs,lh_sample_point_weights,lh_rt_clipped,&
+!$omp lh_thl_clipped,lh_rc_clipped,lh_rv_clipped,lh_nc_clipped)
 
         call generate_silhs_sample_api( &
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, 1, & ! In
@@ -2719,6 +2732,7 @@ module clubb_driver
                                               lh_rc_clipped, lh_rv_clipped,           & ! Out
                                               lh_Nc_clipped                           ) ! Out
         !$acc end data
+!$omp end target data
         !$acc wait
                                           
         call stats_accumulate_lh( &
@@ -7078,7 +7092,9 @@ module clubb_driver
     type( grid ), save :: &
       gr_col
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( gr_col )
+#endif // defined(OPENMP_CPU)
 
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), allocatable, dimension(:,:), save ::  &
@@ -7102,10 +7118,18 @@ module clubb_driver
       wp2_col,     & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3_col        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( um_col, upwp_col, vm_col, vpwp_col, up2_col )
+#endif // defined(OPENMP_CPU)
+#if defined(OPENMP_CPU)
 !$omp threadprivate( vp2_col, up3_col, vp3_col, rtm_col, wprtp_col, thlm_col )
+#endif // defined(OPENMP_CPU)
+#if defined(OPENMP_CPU)
 !$omp threadprivate( wpthlp_col, rtp2_col, rtp3_col, thlp2_col, thlp3_col )
+#endif // defined(OPENMP_CPU)
+#if defined(OPENMP_CPU)
 !$omp threadprivate( rtpthlp_col, wp2_col, wp3_col )
+#endif // defined(OPENMP_CPU)
 
     ! Passive scalar variables
     real( kind = core_rknd ), allocatable, dimension(:,:,:), save :: &
@@ -7116,7 +7140,9 @@ module clubb_driver
       sclrprtp_col,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp_col    ! sclr'thl' (momentum levels)          [{units vary} K]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col )
+#endif // defined(OPENMP_CPU)
 
     real( kind = core_rknd ), allocatable, dimension(:,:), save ::  &
       rcm_col,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
@@ -7126,13 +7152,19 @@ module clubb_driver
       rtpthvp_col,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
       thlpthvp_col      ! < th_l' th_v' > (momentum levels)              [K^2]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( rcm_col, cloud_frac_col, wpthvp_col, wp2thvp_col )
+#endif // defined(OPENMP_CPU)
+#if defined(OPENMP_CPU)
 !$omp threadprivate( rtpthvp_col, thlpthvp_col )
+#endif // defined(OPENMP_CPU)
 
     real( kind = core_rknd ), allocatable, dimension(:,:,:), save :: &
       sclrpthvp_col     ! < sclr' th_v' > (momentum levels)   [units vary]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( sclrpthvp_col )
+#endif // defined(OPENMP_CPU)
 
     real( kind = core_rknd ), allocatable, dimension(:,:), save ::  &
       wp2rtp_col,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
@@ -7147,8 +7179,12 @@ module clubb_driver
       wp2vp2_col,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
       ice_supersat_frac_col    ! ice cloud fraction (thermo. levels)  [-]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, wp4_col )
+#endif // defined(OPENMP_CPU)
+#if defined(OPENMP_CPU)
 !$omp threadprivate( wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col )
+#endif // defined(OPENMP_CPU)
 
     ! Variables used to track perturbed version of winds.
     real( kind = core_rknd ), allocatable, dimension(:,:), save :: &
@@ -7157,35 +7193,47 @@ module clubb_driver
       upwp_pert_col, & ! perturbed <u'w'>    [m^2/s^2]
       vpwp_pert_col    ! perturbed <v'w'>    [m^2/s^2]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( um_pert_col, vm_pert_col, upwp_pert_col, vpwp_pert_col )
+#endif // defined(OPENMP_CPU)
 
 #ifdef GFDL
     real( kind = core_rknd ), allocatable, dimension(:,:,:), save :: &  ! h1g, 2010-06-16
       sclrm_trsport_only_col  ! Passive scalar concentration due to pure transport [{units vary}/s]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( sclrm_trsport_only_col )
+#endif // defined(OPENMP_CPU)
 #endif
 
     real( kind = core_rknd ), allocatable, dimension(:,:,:), save :: &
       edsclrm_col   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( edsclrm_col )
+#endif // defined(OPENMP_CPU)
 
     real( kind = core_rknd ), save :: &
       lmin_col    ! Min. value for the length scale    [m]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( lmin_col )
+#endif // defined(OPENMP_CPU)
 
     type(nu_vertical_res_dep), save :: &
       nu_vert_res_dep_col    ! Vertical resolution dependent nu values
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( nu_vert_res_dep_col )
+#endif // defined(OPENMP_CPU)
 
     type(pdf_parameter), save :: &
       pdf_params_col,    & ! PDF parameters (thermodynamic levels)    [units vary]
       pdf_params_zm_col    ! PDF parameters on momentum levels        [units vary]
 
+#if defined(OPENMP_CPU)
  !$omp threadprivate( pdf_params_col, pdf_params_zm_col )
+#endif // defined(OPENMP_CPU)
 
     ! Variables we need to save for the netcdf writing
     integer, save :: netcdf_precision, &
@@ -7193,14 +7241,20 @@ module clubb_driver
                      column_id, vertical_id, time_id, &
                      column_var_id, vertical_var_id, time_var_id
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( netcdf_precision, status, ncid, column_id, vertical_id, time_id )
+#endif // defined(OPENMP_CPU)
+#if defined(OPENMP_CPU)
 !$omp threadprivate( column_var_id, vertical_var_id, time_var_id )
+#endif // defined(OPENMP_CPU)
 
     logical, save :: l_first_call = .true.
 
     integer, dimension(15), save :: ind
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( l_first_call, ind )
+#endif // defined(OPENMP_CPU)
 
 
     ! ------------------------ Begin Code ------------------------
@@ -7824,6 +7878,8 @@ module clubb_driver
   end subroutine advance_clubb_core_standalone_multicol
 
 end module clubb_driver
+
+
 
 
 

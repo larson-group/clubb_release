@@ -36,6 +36,9 @@ module KK_microphys_module
       Nrm_evap_adj = zero    ! Total adj. to Nrm evap terms      [(num/kg)/s]
 
   end type KK_microphys_adj_terms_type
+!$omp declare mapper (KK_microphys_adj_terms_type::x) map ( &
+!$omp  x%nrm_evap_adj &
+!$omp )
 
   contains
 
@@ -2069,3 +2072,5 @@ module KK_microphys_module
 !===============================================================================
 
 end module KK_microphys_module
+
+

@@ -15,7 +15,9 @@ module latin_hypercube_arrays
   integer, allocatable, dimension(:,:), public :: & 
     one_height_time_matrix ! matrix of rand ints
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(one_height_time_matrix)
+#endif // defined(OPENMP_CPU)
 
   contains
 
@@ -42,3 +44,5 @@ module latin_hypercube_arrays
   end subroutine cleanup_latin_hypercube_arrays
 
 end module latin_hypercube_arrays
+
+

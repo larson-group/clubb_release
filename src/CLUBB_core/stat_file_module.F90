@@ -48,6 +48,14 @@ module stat_file_module
                         ! sample point per timestep, rather than just once per
                         ! timestep.
    end type grid_avg_variable
+!$omp declare mapper (grid_avg_variable::x) map ( &
+!$omp  x%ptr &
+!$omp , x%name &
+!$omp , x%description &
+!$omp , x%units &
+!$omp , x%indx &
+!$omp , x%l_silhs &
+!$omp )
 
    type samples_of_variable
      ! Pointer to the array
@@ -63,6 +71,14 @@ module stat_file_module
                         ! sample point per timestep, rather than just once per
                         ! timestep.
    end type samples_of_variable
+!$omp declare mapper (samples_of_variable::x) map ( &
+!$omp  x%ptr &
+!$omp , x%name &
+!$omp , x%description &
+!$omp , x%units &
+!$omp , x%indx &
+!$omp , x%l_silhs &
+!$omp )
 
   ! Structure to hold the description of a NetCDF output file
   ! This makes the new code as compatible as possible with the
@@ -131,5 +147,38 @@ module stat_file_module
        samples_of_var
 
    end type stat_file
+!$omp declare mapper (stat_file::x) map ( &
+!$omp  x%fdir &
+!$omp , x%iounit &
+!$omp , x%ntimes &
+!$omp , x%l_byte_swapped &
+!$omp , x%sampdimid &
+!$omp , x%latdimid &
+!$omp , x%longdimid &
+!$omp , x%altdimid &
+!$omp , x%timedimid &
+!$omp , x%sampvarid &
+!$omp , x%latvarid &
+!$omp , x%longvarid &
+!$omp , x%altvarid &
+!$omp , x%timevarid &
+!$omp , x%ia &
+!$omp , x%iz &
+!$omp , x%nlat &
+!$omp , x%nlon &
+!$omp , x%nsamp &
+!$omp , x%z &
+!$omp , x%day &
+!$omp , x%month &
+!$omp , x%year &
+!$omp , x%samp_idx &
+!$omp , x%dtwrite &
+!$omp , x%time &
+!$omp , x%nvar &
+!$omp , x%grid_avg_var &
+!$omp , x%samples_of_var &
+!$omp )
 
  end module stat_file_module
+
+

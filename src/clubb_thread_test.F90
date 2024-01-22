@@ -123,8 +123,10 @@ program clubb_thread_test
                wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace )
 
   ! Run the model in parallel
+#if defined(OPENMP_CPU)
 !$omp parallel do default(shared), private(iter, params, iunit), &
 !$omp   shared(err_code_saves)
+#endif // defined(OPENMP_CPU)
   do iter = 1, ncases
 #ifdef _OPENMP
     iunit = omp_get_thread_num() + 10
@@ -165,7 +167,9 @@ program clubb_thread_test
     err_code_saves(iter) = err_code
 
   end do ! 1 .. ncases
+#if defined(OPENMP_CPU)
 !$omp end parallel do
+#endif // defined(OPENMP_CPU)
 
   do iter = 1, ncases
     if ( any( err_code_saves(:) == clubb_fatal_error ) ) then
@@ -175,3 +179,5 @@ program clubb_thread_test
 
 end program clubb_thread_test
 !-------------------------------------------------------------------------------
+
+

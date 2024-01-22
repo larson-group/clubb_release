@@ -128,6 +128,14 @@ module inputfields
                  ! to convert the variable to the correct units.
 
   end type input_field
+!$omp declare mapper (input_field::x) map ( &
+!$omp  x%l_input_var &
+!$omp , x%clubb_name &
+!$omp , x%clubb_grid_type &
+!$omp , x%input_file_index &
+!$omp , x%clubb_var &
+!$omp , x%adjustment &
+!$omp )
 
   contains
 
@@ -3393,3 +3401,5 @@ module inputfields
 !===============================================================================
 
 end module inputfields
+
+

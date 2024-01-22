@@ -866,6 +866,7 @@ module pdf_utilities
     integer :: i, k 
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol 
         if ( sigma_x_1_sqd(i,k) * sigma_y_1_sqd(i,k) > zero &
@@ -895,6 +896,7 @@ module pdf_utilities
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     return
 
@@ -1352,3 +1354,5 @@ module pdf_utilities
 !===============================================================================
 
 end module pdf_utilities
+
+

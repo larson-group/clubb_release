@@ -444,6 +444,10 @@ module mono_flux_limiter
     !$acc                    min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                    max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
     !$acc                    rhs_mfl_xm, l_adjustment_needed, xm_mfl )
+!$omp target enter data map(alloc:xp2_zt,xm_enter_mfl,xm_without_ta,&
+!$omp wpxp_net_adjust,min_x_allowable_lev,max_x_allowable_lev,&
+!$omp min_x_allowable,max_x_allowable,wpxp_mfl_max,wpxp_mfl_min,&
+!$omp lhs_mfl_xm,rhs_mfl_xm,l_adjustment_needed,xm_mfl)
 
     select case( solve_type )
     case ( mono_flux_rtm )  ! rtm/wprtp
@@ -471,6 +475,7 @@ module mono_flux_limiter
 
     if ( stats_metadata%l_stats_samp ) then
       !$acc update host( wpxp, xm )
+!$omp target update from(wpxp,xm)
       do i = 1, ngrdcol
         call stat_begin_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
@@ -480,6 +485,7 @@ module mono_flux_limiter
     endif
     if ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_thlm ) then
       !$acc update host( xm, xm_old, wpxp )
+!$omp target update from(xm,xm_old,wpxp)
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%ithlm_enter_mfl, xm(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
@@ -490,6 +496,7 @@ module mono_flux_limiter
       end do
     elseif ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_rtm ) then
       !$acc update host( xm, xm_old, wpxp )
+!$omp target update from(xm,xm_old,wpxp)
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%irtm_enter_mfl, xm(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
@@ -502,6 +509,7 @@ module mono_flux_limiter
     
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         ! Initialize arrays.
@@ -512,6 +520,7 @@ module mono_flux_limiter
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Interpolate x'^2 to thermodynamic levels.
     xp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, xp2(:,:) )
@@ -523,18 +532,21 @@ module mono_flux_limiter
     ! done to prevent unphysically large standard deviations caused by numerical
     ! instabilities in the x'^2 profile.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         xp2_zt(i,k) = min( max( xp2_zt(i,k), xp2_threshold ), max_xp2 )
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Find the maximum and minimum usuable values of variable x at each
     ! vertical level.  Start from level 2, which is the first level above
     ! the ground (or above the model surface).  This computation needs to be
     ! performed for all vertical levels above the ground (or model surface).
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz, 1
       do i = 1, ngrdcol
 
@@ -590,15 +602,18 @@ module mono_flux_limiter
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Boundary condition on xm_without_ta    
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       xm_without_ta(i,1) = xm(i,1)
       min_x_allowable_lev(i,1) = min_x_allowable_lev(i,2)
       max_x_allowable_lev(i,1) = max_x_allowable_lev(i,2)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Find the maximum and minimum usuable values of x that can effect the value
     ! of x at level k.  Then, find the upper and lower limits of w'x'.  Reset
@@ -609,6 +624,7 @@ module mono_flux_limiter
 
     ! Find the smallest value of all relevant level minima for variable x.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz-1
       do i = 1, ngrdcol
 
@@ -624,9 +640,11 @@ module mono_flux_limiter
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Find the largest value of all relevant level maxima for variable x.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz-1
       do i = 1, ngrdcol
 
@@ -641,8 +659,10 @@ module mono_flux_limiter
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz-1, 1
       do i = 1, ngrdcol
  
@@ -762,9 +782,11 @@ module mono_flux_limiter
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Boundary conditions
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       min_x_allowable(i,1) = 0._core_rknd
       max_x_allowable(i,1) = 0._core_rknd
@@ -779,10 +801,13 @@ module mono_flux_limiter
       wpxp_mfl_max(i,nz) = 0._core_rknd
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_thlm ) then
       !$acc update host( xm_without_ta, min_x_allowable, wpxp_mfl_min, &
       !$acc              wpxp_mfl_max, max_x_allowable )
+!$omp target update from(xm_without_ta,min_x_allowable,wpxp_mfl_min,&
+!$omp wpxp_mfl_max,max_x_allowable)
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%ithlm_without_ta, xm_without_ta(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
@@ -798,6 +823,8 @@ module mono_flux_limiter
     elseif ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_rtm ) then
       !$acc update host( xm_without_ta, min_x_allowable, max_x_allowable,  &
       !$acc              wpxp_mfl_min, wpxp_mfl_max )
+!$omp target update from(xm_without_ta,min_x_allowable,max_x_allowable,&
+!$omp wpxp_mfl_min,wpxp_mfl_max)
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%irtm_without_ta, xm_without_ta(i,:), & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
@@ -815,13 +842,17 @@ module mono_flux_limiter
     l_any_adjustment_needed = .false.
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       l_adjustment_needed(i) = .false.
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present) &
     !$acc          reduction(.or.:l_any_adjustment_needed)
+!$omp target teams loop reduction(.or.:l_any_adjustment_needed)&
+!$omp collapse(2)
     do i = 1, ngrdcol
       do k = 1, nz
         if ( abs(wpxp_net_adjust(i,k)) > eps ) then
@@ -831,6 +862,7 @@ module mono_flux_limiter
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( l_any_adjustment_needed ) then
 
@@ -859,6 +891,7 @@ module mono_flux_limiter
 
         ! If an adjustment is for a column
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol 
             if ( l_adjustment_needed(i) ) then
@@ -867,6 +900,7 @@ module mono_flux_limiter
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
         ! Check for errors
         if ( clubb_at_least_debug_level( 0 ) ) then
@@ -880,6 +914,7 @@ module mono_flux_limiter
         ! adjustments.
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 2, nz, 1
           do i = 1, ngrdcol 
 
@@ -901,13 +936,16 @@ module mono_flux_limiter
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
         ! Boundary condition on xm
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol 
           xm(i,1) = xm(i,2)
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       endif  ! l_mfl_xm_imp_adj
 
@@ -918,6 +956,7 @@ module mono_flux_limiter
 
       !Ensure there are no spikes at the top of the domain
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol 
 
         if (abs( xm(i,nz) - xm_enter_mfl(i,nz) ) > 10._core_rknd * xm_tol) then
@@ -973,11 +1012,13 @@ module mono_flux_limiter
         endif ! spike at domain top
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
     if ( stats_metadata%l_stats_samp ) then
       !$acc update host( wpxp, xm )
+!$omp target update from(wpxp,xm)
       do i = 1, ngrdcol
 
         call stat_end_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
@@ -1004,6 +1045,10 @@ module mono_flux_limiter
     !$acc                   min_x_allowable_lev, max_x_allowable_lev, min_x_allowable, &
     !$acc                   max_x_allowable, wpxp_mfl_max, wpxp_mfl_min, lhs_mfl_xm, &
     !$acc                   rhs_mfl_xm, l_adjustment_needed, xm_mfl )
+!$omp target exit data map(delete:xp2_zt,xm_enter_mfl,xm_without_ta,&
+!$omp wpxp_net_adjust,min_x_allowable_lev,max_x_allowable_lev,&
+!$omp min_x_allowable,max_x_allowable,wpxp_mfl_max,wpxp_mfl_min,&
+!$omp lhs_mfl_xm,rhs_mfl_xm,l_adjustment_needed,xm_mfl)
 
     return
     
@@ -1093,6 +1138,7 @@ module mono_flux_limiter
                            lhs )                                 ! intent(out)
     else
       !$acc parallel loop gang vector collapse(3) default(present)
+!$omp target teams loop collapse(3)
       do k = 1, nz
         do i = 1, ngrdcol
           do b = 1, ndiags3
@@ -1101,9 +1147,11 @@ module mono_flux_limiter
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     endif
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz, 1
       do i = 1, ngrdcol
         ! LHS xm time tendency.
@@ -1111,11 +1159,13 @@ module mono_flux_limiter
       end do
     end do ! xm loop: 2..nz
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Boundary conditions.
 
     ! Lower boundary
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol 
         lhs(:,i,1)       = 0.0_core_rknd
@@ -1123,6 +1173,7 @@ module mono_flux_limiter
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     return
 
@@ -1180,6 +1231,7 @@ module mono_flux_limiter
     ! value of xm at level k = 2 after the solve has been completed.
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz, 1
       do i = 1, ngrdcol
 
@@ -1209,6 +1261,7 @@ module mono_flux_limiter
       end do
     end do ! xm loop: 2..gr%nz
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Boundary conditions
 
@@ -1217,10 +1270,12 @@ module mono_flux_limiter
     ! value of xm at the lower boundary gets overwritten after the matrix is
     ! solved for the next timestep, such that xm(1) = xm(2).
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       rhs(i,1) = xm_old(i,1)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     return
 
@@ -1316,10 +1371,12 @@ module mono_flux_limiter
 
     ! Boundary condition on xm
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       xm(i,1) = xm(i,2)
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     return
   end subroutine mfl_xm_solve
@@ -1427,6 +1484,7 @@ module mono_flux_limiter
     !------------------------- Begin Code -------------------------
 
     !$acc enter data create( vert_vel_up, vert_vel_down, w_min )
+!$omp target enter data map(alloc:vert_vel_up,vert_vel_down,w_min)
 
     if ( l_constant_thickness ) then ! thickness is a constant value.
 
@@ -1532,12 +1590,14 @@ module mono_flux_limiter
       invrs_dt = 1.0_core_rknd / dt
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           w_min(i,k) = gr%dzm(i,k) * invrs_dt
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Find the average upwards vertical velocity and the average downwards
       ! vertical velocity.
@@ -1552,6 +1612,7 @@ module mono_flux_limiter
 
       ! The value of w'x' may only be altered between levels 3 and gr%nz-2.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 3, nz-2, 1
         do i = 1, ngrdcol
 
@@ -1606,6 +1667,7 @@ module mono_flux_limiter
         end do
       enddo ! k = 3, gr%nz-2
       !$acc end parallel loop
+!$omp end target teams loop
 
 
       ! Compute the number of levels that effect the central thermodynamic
@@ -1613,6 +1675,7 @@ module mono_flux_limiter
       ! reach the central thermodynamic level).
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 3, nz-2, 1
         do i = 1, ngrdcol
 
@@ -1666,6 +1729,7 @@ module mono_flux_limiter
         end do
       enddo ! k = 3, gr%nz-2
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if ! l_constant_thickness
 
@@ -1674,6 +1738,7 @@ module mono_flux_limiter
     ! However, set the values at these levels for purposes of not having odd
     ! values in the arrays.
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       low_lev_effect(i,1)  = 1
       high_lev_effect(i,1) = 1
@@ -1685,8 +1750,10 @@ module mono_flux_limiter
       high_lev_effect(i,nz)   = nz
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc exit data delete( vert_vel_up, vert_vel_down, w_min )
+!$omp target exit data map(delete:vert_vel_up,vert_vel_down,w_min)
 
     return
 
@@ -1946,6 +2013,8 @@ module mono_flux_limiter
     !------------------------- Begin Code -------------------------
 
     !$acc enter data create( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd )
+!$omp target enter data map(alloc:mean_w_down_1st,mean_w_down_2nd,&
+!$omp mean_w_up_1st,mean_w_up_2nd)
 
     call calc_mean_w_up_down_component( nz, ngrdcol, & ! intent(in)
                                         w_1_zm, varnce_w_1_zm, & ! intent(in)
@@ -1959,6 +2028,7 @@ module mono_flux_limiter
 
     ! Overall mean of downwards w.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         mean_w_down(i,k) = mixt_frac_zm(i,k) * mean_w_down_1st(i,k) &
@@ -1966,9 +2036,11 @@ module mono_flux_limiter
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Overall mean of upwards w.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         mean_w_up(i,k) = mixt_frac_zm(i,k) * mean_w_up_1st(i,k)  &
@@ -1976,9 +2048,11 @@ module mono_flux_limiter
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( stats_metadata%l_stats_samp ) then
       !$acc update host( mean_w_up, mean_w_down )
+!$omp target update from(mean_w_up,mean_w_down)
       do i = 1, ngrdcol
          call stat_update_var( stats_metadata%imean_w_up, mean_w_up(i,:), & ! intent(in)
                                stats_zm(i) ) ! intent(inout)
@@ -1989,6 +2063,8 @@ module mono_flux_limiter
     end if ! stats_metadata%l_stats_samp
 
     !$acc exit data delete( mean_w_down_1st, mean_w_down_2nd, mean_w_up_1st, mean_w_up_2nd )
+!$omp target exit data map(delete:mean_w_down_1st,mean_w_down_2nd,&
+!$omp mean_w_up_1st,mean_w_up_2nd)
 
     return
 
@@ -2070,12 +2146,14 @@ module mono_flux_limiter
     !------------------------- Begin Code -------------------------
 
     !$acc enter data create( erf_cache, exp_cache )
+!$omp target enter data map(alloc:erf_cache,exp_cache)
 
     invrs_sqrt_2pi = one / sqrt_2pi
 
     ! Loop over momentum levels from 2 to nz-1.  Levels 1 and nz
     ! are not needed.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz-1
       do i = 1, ngrdcol
       
@@ -2120,9 +2198,11 @@ module mono_flux_limiter
       end do
     end do ! k = 2, gr%nz
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Upper and lower levels are not used, set to 0 to besafe and avoid NaN problems
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       mean_w_down_i(i,1) = 0.0_core_rknd
       mean_w_up_i(i,1) = 0.0_core_rknd
@@ -2131,8 +2211,10 @@ module mono_flux_limiter
       mean_w_up_i(i,nz) = 0.0_core_rknd
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc exit data delete( erf_cache, exp_cache )
+!$omp target exit data map(delete:erf_cache,exp_cache)
 
     return
 
@@ -2141,3 +2223,5 @@ module mono_flux_limiter
 !===============================================================================
 
 end module mono_flux_limiter
+
+

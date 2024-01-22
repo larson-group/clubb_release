@@ -42,6 +42,16 @@ module parameters_silhs
       nocloud_noprecip_comp2  = 0.05_core_rknd
 
   end type eight_cluster_presc_probs_type
+!$omp declare mapper (eight_cluster_presc_probs_type::x) map ( &
+!$omp  x%cloud_precip_comp1 &
+!$omp , x%cloud_precip_comp2 &
+!$omp , x%nocloud_precip_comp1 &
+!$omp , x%nocloud_precip_comp2 &
+!$omp , x%cloud_noprecip_comp1 &
+!$omp , x%cloud_noprecip_comp2 &
+!$omp , x%nocloud_noprecip_comp1 &
+!$omp , x%nocloud_noprecip_comp2 &
+!$omp )
 
   ! Flags for the SILHS sampling code
   type silhs_config_flags_type
@@ -62,19 +72,27 @@ module parameters_silhs
         l_lh_normalize_weights         ! Normalize weights to sum to num_samples
 
   end type silhs_config_flags_type
+!$omp declare mapper (silhs_config_flags_type::x) map ( &
+!$omp  x%cluster_allocation_strategy &
+!$omp , x%l_lh_normalize_weights &
+!$omp )
 
   type(eight_cluster_presc_probs_type), public, save :: &
     eight_cluster_presc_probs                 ! Prescribed probabilities for
                                               ! l_lh_clustered_sampling = .true.
 
+#if defined(OPENMP_CPU)
   !$omp threadprivate( eight_cluster_presc_probs )
+#endif // defined(OPENMP_CPU)
 
   real( kind = core_rknd ), public :: &
     importance_prob_thresh = 1.0e-8_core_rknd, & ! Minimum PDF probability of category for
                                                  ! importance sampling
     vert_decorr_coef       = 0.03_core_rknd      ! Empirically defined de-correlation constant [-]
 
+#if defined(OPENMP_CPU)
   !$omp threadprivate( importance_prob_thresh, vert_decorr_coef )
+#endif // defined(OPENMP_CPU)
   
   
   real( kind = core_rknd ), public, parameter :: &
@@ -281,3 +299,5 @@ module parameters_silhs
 !-----------------------------------------------------------------------
 
 end module parameters_silhs
+
+

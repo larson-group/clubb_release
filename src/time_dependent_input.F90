@@ -45,34 +45,46 @@ module time_dependent_input
     wpthlp_sfc_given, &
     wpqtp_sfc_given
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( time_sfc_given, latent_ht_given, sens_ht_given, thlm_sfc_given, &
 !$omp   rtm_sfc_given, CO2_sfc_given,  upwp_sfc_given, vpwp_sfc_given, &
 !$omp   T_sfc_given, wpthlp_sfc_given, wpqtp_sfc_given )
+#endif // defined(OPENMP_CPU)
 
   type(two_dim_read_var), private, dimension(nCols) :: &
     t_dependent_forcing_data ! Data structure that defines the change in input
                              ! files over time
+#if defined(OPENMP_CPU)
 !$omp threadprivate( t_dependent_forcing_data )
+#endif // defined(OPENMP_CPU)
 
   type(one_dim_read_var), private :: dimension_var ! Data structure that describes other 
                                                    ! dimension of the two_dim_read_var
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate( dimension_var )
+#endif // defined(OPENMP_CPU)
 
   logical, public :: l_t_dependent ! Flag used to determine when
   !                                  time dependent information is read in.
   !                                  It is suggested that the flag be checked
   !                                  before using any of the variables stored
   !                                  in the module.
+#if defined(OPENMP_CPU)
 !$omp threadprivate( l_t_dependent )
+#endif // defined(OPENMP_CPU)
 
   logical, public :: l_input_xpwp_sfc ! Flag used to determine whether or not to read 
                                       ! in the surface momentum fluxes, upwp_sfc and vpwp_sfc.
+#if defined(OPENMP_CPU)
 !$omp threadprivate( l_input_xpwp_sfc )
+#endif // defined(OPENMP_CPU)
 
   logical, public :: l_ignore_forcings ! Flag used to determine if the forcings
                                        ! should be ignored for this case.
+#if defined(OPENMP_CPU)
 !$omp threadprivate( l_ignore_forcings )
+#endif // defined(OPENMP_CPU)
 
   ! File path constants
   character(len=*), private, parameter :: input_path = "../input/case_setups/"
@@ -816,3 +828,5 @@ module time_dependent_input
 
 !===========================================================================================
 end module time_dependent_input
+
+

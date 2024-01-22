@@ -246,8 +246,13 @@ module mixing_length
     !$acc                    entrain_coef, thl_par_j_precalc, rt_par_j_precalc, &
     !$acc                    tl_par_1, rt_par_1, rsatl_par_1, thl_par_1, dCAPE_dz_1, &
     !$acc                    s_par_1, rc_par_1, CAPE_incr_1, thv_par_1, tke_i )
+!$omp target enter data map(alloc:exp_mu_dzm,invrs_dzm_on_mu,&
+!$omp grav_on_thvm,lv_coef,entrain_coef,thl_par_j_precalc,&
+!$omp rt_par_j_precalc,tl_par_1,rt_par_1,rsatl_par_1,thl_par_1,&
+!$omp dcape_dz_1,s_par_1,rc_par_1,cape_incr_1,thv_par_1,tke_i)
  
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       if ( abs(mu(i)) < eps ) then
         err_code = clubb_fatal_error
@@ -255,6 +260,7 @@ module mixing_length
       end if
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( err_code == clubb_fatal_error ) then
       write(fstderr,*) "Entrainment rate mu cannot be 0"
@@ -266,6 +272,7 @@ module mixing_length
  
     ! Initialize arrays and precalculate values for computational efficiency
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do k = 1, nz
 
@@ -283,8 +290,10 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
 
       ! Avoid uninitialized memory (these values are not used in Lscale)
@@ -292,6 +301,7 @@ module mixing_length
       Lscale_down(i,1) = zero
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Precalculations of single values to avoid unnecessary calculations later
     Lv2_coef = ep * Lv**2 / ( Rd * cp )
@@ -305,6 +315,7 @@ module mixing_length
     ! recursively for a parcel as it ascends
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol  
       do j = 2, nz-1
 
@@ -316,6 +327,7 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Calculate the initial change in TKE for each level. This is done for computational
     ! efficiency, it helps because there will be at least one calculation for each grid level,
@@ -327,6 +339,7 @@ module mixing_length
 
     ! Calculate initial thl, tl, and rt for parcels at each grid level
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
      do j = 3, nz
 
@@ -339,6 +352,7 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
 
     ! Caclculate initial rsatl for parcels at each grid level
@@ -354,6 +368,7 @@ module mixing_length
     
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       do j = 3, nz
 
@@ -547,6 +562,7 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! ---------------- Downwards Length Scale Calculation ----------------
 
@@ -554,6 +570,7 @@ module mixing_length
     ! more than one level. They are used in the equations that calculate thl and rt
     ! recursively for a parcel as it descends
     !$acc parallel loop gang vector collapse(2) default(present)    
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do j = 2, nz-1
 
@@ -565,6 +582,7 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Calculate the initial change in TKE for each level. This is done for computational
     ! efficiency, it helps because there will be at least one calculation for each grid level,
@@ -576,6 +594,7 @@ module mixing_length
 
     ! Calculate initial thl, tl, and rt for parcels at each grid level
     !$acc parallel loop gang vector collapse(2) default(present)    
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do j = 2, nz-1
 
@@ -588,6 +607,7 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Caclculate initial rsatl for parcels at each grid level, this function is elemental
 
@@ -602,6 +622,7 @@ module mixing_length
 
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       do j = 2, nz-1
 
@@ -788,10 +809,12 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
       ! ---------------- Final Lscale Calculation ----------------
 
-    !$acc parallel loop gang vector default(present) 
+    !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       do k = 2, nz, 1
 
@@ -830,12 +853,15 @@ module mixing_length
       
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Ensure that no Lscale values are NaN
     if ( clubb_at_least_debug_level( 1 ) ) then
 
       !$acc update host( Lscale, Lscale_up, Lscale_down, &
       !$acc              thvm, thlm, rtm, em, exner, p_in_Pa, thv_ds )
+!$omp target update from(lscale,lscale_up,lscale_down,thvm,thlm,rtm,em,&
+!$omp exner,p_in_pa,thv_ds)
 
       do i = 1, ngrdcol
         call length_check( nz, Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:) ) ! intent(in)
@@ -869,6 +895,10 @@ module mixing_length
     !$acc                   entrain_coef, thl_par_j_precalc, rt_par_j_precalc, &
     !$acc                   tl_par_1, rt_par_1, rsatl_par_1, thl_par_1, dCAPE_dz_1, &
     !$acc                   s_par_1, rc_par_1, CAPE_incr_1, thv_par_1, tke_i )
+!$omp target exit data map(delete:exp_mu_dzm,invrs_dzm_on_mu,&
+!$omp grav_on_thvm,lv_coef,entrain_coef,thl_par_j_precalc,&
+!$omp rt_par_j_precalc,tl_par_1,rt_par_1,rsatl_par_1,thl_par_1,&
+!$omp dcape_dz_1,s_par_1,rc_par_1,cape_incr_1,thv_par_1,tke_i)
 
     return
 
@@ -1020,6 +1050,11 @@ module mixing_length
     !$acc                    thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, &
     !$acc                    rtm_pert_neg_rt, &
     !$acc                    mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt )
+!$omp target enter data map(alloc:sign_rtpthlp,lscale_pert_1,&
+!$omp lscale_pert_2,thlm_pert_1,thlm_pert_2,rtm_pert_1,rtm_pert_2,&
+!$omp thlm_pert_pos_rt,thlm_pert_neg_rt,rtm_pert_pos_rt,&
+!$omp rtm_pert_neg_rt,mu_pert_1,mu_pert_2,mu_pert_pos_rt,&
+!$omp mu_pert_neg_rt)
 
     Lscale_mu_coef = clubb_params(iLscale_mu_coef)
     Lscale_pert_coef = clubb_params(iLscale_pert_coef)
@@ -1041,22 +1076,27 @@ module mixing_length
       ! of rtm and thlm so that an average value of Lscale may be calculated.
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
           sign_rtpthlp(i,k) = sign( one, rtpthlp(i,k) )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
           rtm_pert_1(i,k)  = rtm(i,k) + Lscale_pert_coef * sqrt( max( rtp2(i,k), rt_tol**2 ) )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
           thlm_pert_1(i,k) = thlm(i,k) + sign_rtpthlp(i,k) * Lscale_pert_coef &
@@ -1064,12 +1104,15 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do  i = 1, ngrdcol
         mu_pert_1(i)   = newmu(i) / Lscale_mu_coef
       end do 
       !$acc end parallel loop
+!$omp end target teams loop
 
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_1,  & ! In
                     rtm_pert_1, em, Lscale_max, p_in_Pa,               & ! In
@@ -1081,14 +1124,17 @@ module mixing_length
 
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
           rtm_pert_2(i,k)  = rtm(i,k) - Lscale_pert_coef * sqrt( max( rtp2(i,k), rt_tol**2 ) )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
       
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
           thlm_pert_2(i,k) = thlm(i,k) - sign_rtpthlp(i,k) * Lscale_pert_coef &
@@ -1096,12 +1142,15 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
            
-      !$acc parallel loop gang vector default(present) 
+      !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do  i = 1, ngrdcol
         mu_pert_2(i)   = newmu(i) * Lscale_mu_coef
       end do 
       !$acc end parallel loop         
+!$omp end target teams loop
 
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_2, & ! In
                     rtm_pert_2, em, Lscale_max, p_in_Pa,              & ! In
@@ -1116,14 +1165,17 @@ module mixing_length
       ! Take the values of thl and rt based one 1st or 2nd plume
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           sign_rtpthlp(i,k) = sign( one, rtpthlp(i,k) )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
 
@@ -1164,13 +1216,16 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
-      !$acc parallel loop gang vector default(present) 
+      !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         mu_pert_pos_rt(i) = newmu(i) / Lscale_mu_coef
         mu_pert_neg_rt(i) = newmu(i) * Lscale_mu_coef
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Call length with perturbed values of thl and rt
       call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_pos_rt,  & ! In
@@ -1190,6 +1245,7 @@ module mixing_length
                 Lscale_pert_2, Lscale_up, Lscale_down )                       ! Out
     else
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Lscale_pert_1(i,k) = unused_var ! Undefined
@@ -1197,10 +1253,12 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if ! l_avg_Lscale
 
     if ( stats_metadata%l_stats_samp ) then
       !$acc update host( Lscale_pert_1, Lscale_pert_2 )
+!$omp target update from(lscale_pert_1,lscale_pert_2)
       do i = 1, ngrdcol
         call stat_update_var( stats_metadata%iLscale_pert_1, Lscale_pert_1(i,:), & ! intent(in)
                               stats_zt(i) )                       ! intent(inout)
@@ -1238,20 +1296,24 @@ module mixing_length
 
         ! Un-weighted average of just the perturbed values
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             Lscale(i,k) = one_half *( Lscale_pert_1(i,k) + Lscale_pert_2(i,k) )
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       else
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             Lscale(i,k) = one_third * ( Lscale(i,k) + Lscale_pert_1(i,k) + Lscale_pert_2(i,k) )
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if
     end if
 
@@ -1260,6 +1322,11 @@ module mixing_length
     !$acc                   thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, &
     !$acc                   rtm_pert_neg_rt, &
     !$acc                   mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt )
+!$omp target exit data map(delete:sign_rtpthlp,lscale_pert_1,&
+!$omp lscale_pert_2,thlm_pert_1,thlm_pert_2,rtm_pert_1,rtm_pert_2,&
+!$omp thlm_pert_pos_rt,thlm_pert_neg_rt,rtm_pert_pos_rt,&
+!$omp rtm_pert_neg_rt,mu_pert_1,mu_pert_2,mu_pert_pos_rt,&
+!$omp mu_pert_neg_rt)
 
    return
    
@@ -1514,22 +1581,34 @@ module mixing_length
     !$acc                    brunt_vaisala_freq_clipped, &
     !$acc                    ice_supersat_frac_zm, invrs_tau_shear_smooth, &
     !$acc                    ddzt_umvm_sqd, tau_zt )
+!$omp target enter data map(alloc:brunt_freq_pos,&
+!$omp brunt_vaisala_freq_sqd_smth,brunt_freq_out_cloud,smooth_thlm,&
+!$omp bvf_thresh,h_invrs_tau_wpxp_n2,ustar,ddzt_um,ddzt_vm,&
+!$omp norm_ddzt_umvm,smooth_norm_ddzt_umvm,brunt_vaisala_freq_clipped,&
+!$omp ice_supersat_frac_zm,invrs_tau_shear_smooth,ddzt_umvm_sqd,&
+!$omp tau_zt)
 
     !$acc enter data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
     !$acc            create( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &
     !$acc                    tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                    tmp_calc, tmp_calc_max, tmp_calc_min_max )
+!$omp target enter data map(alloc:ri_zm_clipped,ddzt_umvm_sqd_clipped,&
+!$omp tau_zm_unclipped,tau_zt_unclipped,ri_zm_smooth,em_clipped,&
+!$omp tmp_calc,tmp_calc_max,tmp_calc_min_max)&
+!$omp if(l_smooth_min_max.or.l_modify_limiters_for_cnvg_test)
 
     ! Unpack z_displace first because it's needed for the error check
     z_displace = clubb_params(iz_displace)
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       if ( gr%zm(i,1) - sfc_elevation(i) + z_displace < eps ) then
         err_code = clubb_fatal_error
       end if
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( clubb_at_least_debug_level(0) ) then
       if ( err_code == clubb_fatal_error ) then
@@ -1569,33 +1648,40 @@ module mixing_length
     if ( l_smooth_min_max ) then
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ustar(i) = smooth_max( ( upwp_sfc(i)**2 + vpwp_sfc(i)**2 )**one_fourth, ufmin, min_max_smth_mag )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else 
 
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         ustar(i) = max( ( upwp_sfc(i)**2 + vpwp_sfc(i)**2 )**one_fourth, ufmin )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_bkgnd(i,k) = C_invrs_tau_bkgnd / tau_const
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ddzt_um = ddzt( nz, ngrdcol, gr, um )
     ddzt_vm = ddzt( nz, ngrdcol, gr, vm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
@@ -1603,22 +1689,26 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     smooth_norm_ddzt_umvm = zm2zt2zm( nz, ngrdcol, gr, norm_ddzt_umvm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_shear_smooth(i,k) = C_invrs_tau_shear *  smooth_norm_ddzt_umvm(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Enforce that invrs_tau_shear is positive
     invrs_tau_shear = smooth_max( nz, ngrdcol, invrs_tau_shear_smooth, &
                                   zero_threshold, min_max_smth_mag )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_sfc(i,k) = C_invrs_tau_sfc &
@@ -1627,14 +1717,17 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_no_N2_zm(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_sfc(i,k) + invrs_tau_shear(i,k)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !The min function below smooths the slope discontinuity in brunt freq
     !  and thereby allows tau to remain large in Sc layers in which thlm may
@@ -1649,12 +1742,14 @@ module mixing_length
       if ( l_smooth_min_max ) then
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             tmp_calc(i,k) = 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
         brunt_vaisala_freq_clipped = smooth_min( nz, ngrdcol, &
                                                  brunt_vaisala_freq_sqd_mixed, &
@@ -1666,6 +1761,7 @@ module mixing_length
       else
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             brunt_vaisala_freq_clipped(i,k) = min( brunt_vaisala_freq_sqd_mixed(i,k), &
@@ -1673,6 +1769,7 @@ module mixing_length
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
         brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz, ngrdcol, gr, brunt_vaisala_freq_clipped )
 
@@ -1683,6 +1780,7 @@ module mixing_length
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( brunt_vaisala_freq_sqd_smth )
+!$omp target update from(brunt_vaisala_freq_sqd_smth)
 
       do i = 1, ngrdcol
         call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_smth, brunt_vaisala_freq_sqd_smth(i,:), & ! intent(in)
@@ -1693,6 +1791,7 @@ module mixing_length
     if ( l_modify_limiters_for_cnvg_test ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Ri_zm_clipped(i,k) = max( 0.0_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
@@ -1700,6 +1799,7 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       Ri_zm = zm2zt2zm( nz, ngrdcol, gr, Ri_zm_clipped )
 
@@ -1714,16 +1814,19 @@ module mixing_length
                                         1.0e-6_core_rknd * min_max_smth_mag )
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             Ri_zm(i,k) = brunt_vaisala_freq_clipped(i,k) / ddzt_umvm_sqd_clipped(i,k)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       else
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
@@ -1731,6 +1834,7 @@ module mixing_length
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       end if
 
@@ -1743,22 +1847,26 @@ module mixing_length
                                                1.0e-4_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           brunt_freq_pos(i,k) = sqrt( brunt_vaisala_freq_clipped(i,k) )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           brunt_freq_pos(i,k) = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth(i,k) ) )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
@@ -1768,12 +1876,14 @@ module mixing_length
 
       ! roll this back as well once checks have passed
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           tmp_calc(i,k) = one - ice_supersat_frac_zm(i,k) / 0.001_core_rknd
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       tmp_calc_max = smooth_max( nz, ngrdcol, zero_threshold, tmp_calc, &
                                  min_max_smth_mag)
@@ -1782,16 +1892,19 @@ module mixing_length
                                      min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           brunt_freq_out_cloud(i,k) =  brunt_freq_pos(i,k) * tmp_calc_min_max(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           brunt_freq_out_cloud(i,k) &
@@ -1801,10 +1914,12 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         if ( gr%zt(i,k) < altitude_threshold ) then
@@ -1813,11 +1928,13 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Write both bv extra terms to invrs_taus to disk
     if ( stats_metadata%l_stats_samp ) then
 
       !$acc update host( brunt_freq_pos, brunt_freq_out_cloud )
+!$omp target update from(brunt_freq_pos,brunt_freq_out_cloud)
 
       do i = 1, ngrdcol
         call stat_update_var(stats_metadata%ibrunt_freq_pos, brunt_freq_pos(i,:), & ! intent(in)
@@ -1831,6 +1948,7 @@ module mixing_length
     ! omits invrs_tau_sfc based on the rationale that the isotropization
     ! rate shouldn't be enhanced near the ground.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_N2_iso(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_shear(i,k) &
@@ -1844,19 +1962,23 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
 
     if ( l_e3sm_config ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_zm(i,k) = one_half * invrs_tau_zm(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_xp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) &
@@ -1866,6 +1988,7 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( l_smooth_min_max ) then
 
@@ -1874,12 +1997,14 @@ module mixing_length
                                                  1.0e-4_core_rknd * min_max_smth_mag )
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             tmp_calc(i,k) = sqrt( ddzt_umvm_sqd(i,k) / brunt_vaisala_freq_clipped(i,k) )
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
         tmp_calc_max = smooth_max( nz, ngrdcol, tmp_calc, &
                                    0.3_core_rknd, 0.3_core_rknd * min_max_smth_mag )
@@ -1888,16 +2013,19 @@ module mixing_length
                                        one, min_max_smth_mag )
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             invrs_tau_xp2_zm(i,k) =  tmp_calc_min_max(i,k) * invrs_tau_xp2_zm(i,k)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       else
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             invrs_tau_xp2_zm(i,k) &
@@ -1908,10 +2036,12 @@ module mixing_length
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       end if
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_wpxp_zm(i,k) = two * invrs_tau_zm(i,k) &
@@ -1919,10 +2049,12 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else ! l_e3sm_config = false
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_xp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
@@ -1931,6 +2063,7 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac )
 
@@ -1946,6 +2079,7 @@ module mixing_length
 !      !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_wpxp_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
@@ -1954,24 +2088,28 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if ! l_e3sm_config
 
     if ( l_smooth_Heaviside_tau_wpxp ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           bvf_thresh(i,k) = brunt_vaisala_freq_sqd_smth(i,k) / C_invrs_tau_wpxp_N2_thresh - one
           end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       H_invrs_tau_wpxp_N2 = smooth_heaviside_peskin( nz, ngrdcol, bvf_thresh, heaviside_smth_range )
 
     else ! l_smooth_Heaviside_tau_wpxp = .false.
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           if ( brunt_vaisala_freq_sqd_smth(i,k) > C_invrs_tau_wpxp_N2_thresh ) then
@@ -1982,6 +2120,7 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if ! l_smooth_Heaviside_tau_wpxp
 
@@ -1994,6 +2133,7 @@ module mixing_length
                                  12.0_core_rknd, 12.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
 
@@ -2006,10 +2146,12 @@ module mixing_length
         end do 
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else ! l_smooth_min_max
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           if ( gr%zt(i,k) > altitude_threshold ) then
@@ -2021,10 +2163,12 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_wp3_zm(i,k) = invrs_tau_wp2_zm(i,k) &
@@ -2032,6 +2176,7 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Calculate the maximum allowable value of time-scale tau,
     ! which depends of the value of Lscale_max.
@@ -2040,6 +2185,7 @@ module mixing_length
       em_clipped = smooth_max( nz, ngrdcol, em, em_min, min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           tau_max_zt(i,k) = Lscale_max(i) / sqrt_em_zt(i,k)
@@ -2047,10 +2193,12 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           tau_max_zt(i,k) = Lscale_max(i) / sqrt_em_zt(i,k)
@@ -2058,18 +2206,21 @@ module mixing_length
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
     if ( l_smooth_min_max ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           tau_zm_unclipped(i,k) = one / invrs_tau_zm(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       tau_zm = smooth_min( nz, ngrdcol, tau_zm_unclipped, &
                            tau_max_zm, 1.0e3_core_rknd * min_max_smth_mag )
@@ -2081,22 +2232,26 @@ module mixing_length
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           tau_zm(i,k) = min( one / invrs_tau_zm(i,k), tau_max_zm(i,k) )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       tau_zt = zm2zt( nz, ngrdcol, gr, tau_zm )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           tau_zt(i,k) = min( tau_zt(i,k), tau_max_zt(i,k) )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     end if
 
@@ -2104,6 +2259,7 @@ module mixing_length
     invrs_tau_wp3_zt = zm2zt( nz, ngrdcol, gr, invrs_tau_wp3_zm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
 
@@ -2117,6 +2273,7 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc exit data delete( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
     !$acc                   smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
@@ -2124,14 +2281,26 @@ module mixing_length
     !$acc                   brunt_vaisala_freq_clipped, &
     !$acc                   ice_supersat_frac_zm, invrs_tau_shear_smooth, &
     !$acc                   ddzt_umvm_sqd, tau_zt )
+!$omp target exit data map(delete:brunt_freq_pos,&
+!$omp brunt_vaisala_freq_sqd_smth,brunt_freq_out_cloud,smooth_thlm,&
+!$omp bvf_thresh,h_invrs_tau_wpxp_n2,ustar,ddzt_um,ddzt_vm,&
+!$omp norm_ddzt_umvm,smooth_norm_ddzt_umvm,brunt_vaisala_freq_clipped,&
+!$omp ice_supersat_frac_zm,invrs_tau_shear_smooth,ddzt_umvm_sqd,&
+!$omp tau_zt)
 
     !$acc exit data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
     !$acc           delete( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &
     !$acc                   tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                   tmp_calc, tmp_calc_max, tmp_calc_min_max )
+!$omp target exit data map(delete:ri_zm_clipped,ddzt_umvm_sqd_clipped,&
+!$omp tau_zm_unclipped,tau_zt_unclipped,ri_zm_smooth,em_clipped,&
+!$omp tmp_calc,tmp_calc_max,tmp_calc_min_max)&
+!$omp if(l_smooth_min_max.or.l_modify_limiters_for_cnvg_test)
 
     return
     
   end subroutine diagnose_Lscale_from_tau
 
 end module mixing_length
+
+

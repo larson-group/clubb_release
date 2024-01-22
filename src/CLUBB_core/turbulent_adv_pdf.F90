@@ -371,21 +371,27 @@ module turbulent_adv_pdf
     !$acc              coef_wpxpyp_implicit, rho_ds_zt, invrs_rho_ds_zm, &
     !$acc              sgn_turbulent_vel, coef_wpxpyp_implicit_zm, rho_ds_zm ) &
     !$acc      copyout( lhs_ta )
+!$omp target data map(to:gr,gr%weights_zm2zt,gr%invrs_dzm,gr%invrs_dzt,&
+!$omp coef_wpxpyp_implicit,rho_ds_zt,invrs_rho_ds_zm,sgn_turbulent_vel,&
+!$omp coef_wpxpyp_implicit_zm,rho_ds_zm) map(from:lhs_ta)
 
 
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ta(b,i,1) = zero
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( .not. l_upwind_xpyp_turbulent_adv ) then
 
       ! Centered discretization.
       !$acc parallel loop gang vector collapse(2) default(present) 
+!$omp target teams loop collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           
@@ -412,11 +418,13 @@ module turbulent_adv_pdf
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
       
     else ! l_upwind_xpyp_turbulent_adv
 
       ! "Upwind" discretization
       !$acc parallel loop gang vector collapse(2) default(present) 
+!$omp target teams loop collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
         
@@ -459,19 +467,23 @@ module turbulent_adv_pdf
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     endif
 
     ! Set upper boundary array to 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ta(b,i,nz) = zero
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -539,18 +551,23 @@ module turbulent_adv_pdf
     !$acc data copyin( gr, gr%invrs_dzm, &
     !$acc              coef_wpxpyp_implicit, invrs_rho_ds_zm, rho_ds_zm ) &
     !$acc      copyout( lhs_ta )
+!$omp target data map(to:gr,gr%invrs_dzm,coef_wpxpyp_implicit,&
+!$omp invrs_rho_ds_zm,rho_ds_zm) map(from:lhs_ta)
 
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ta(b,i,1) = 0.0_core_rknd
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Godunov-like upwind discretization
     !$acc parallel loop gang vector collapse(2) default(present) 
+!$omp target teams loop collapse(2)
     do k = 2, nz-1
       do i = 1, ngrdcol
         
@@ -572,17 +589,21 @@ module turbulent_adv_pdf
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Set upper boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do i = 1, ngrdcol
       do b = 1, ndiags3
         lhs_ta(b,i,nz) = 0.0_core_rknd
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -889,19 +910,25 @@ module turbulent_adv_pdf
     !$acc              term_wpxpyp_explicit, rho_ds_zt, invrs_rho_ds_zm, &
     !$acc              sgn_turbulent_vel, term_wpxpyp_explicit_zm, rho_ds_zm ) &
     !$acc      copyout( rhs_ta )
+!$omp target data map(to:gr,gr%invrs_dzm,gr%invrs_dzt,&
+!$omp term_wpxpyp_explicit,rho_ds_zt,invrs_rho_ds_zm,sgn_turbulent_vel,&
+!$omp term_wpxpyp_explicit_zm,rho_ds_zm) map(from:rhs_ta)
 
 
     ! Set lower boundary value to 0
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       rhs_ta(i,1) = zero
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( .not. l_upwind_xpyp_turbulent_adv ) then
 
       ! Centered discretization.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
           
@@ -912,11 +939,13 @@ module turbulent_adv_pdf
         end do
       end do ! k = 2, nz-1, 1
       !$acc end parallel loop
+!$omp end target teams loop
 
     else ! l_upwind_xpyp_turbulent_adv
 
       ! "Upwind" discretization
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1, 1
         do i = 1, ngrdcol
 
@@ -943,17 +972,21 @@ module turbulent_adv_pdf
         end do
       end do ! k = 2, nz-1, 1
       !$acc end parallel loop
+!$omp end target teams loop
       
     end if
 
     ! Set upper boundary value to 0
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       rhs_ta(i,nz) = zero
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data 
+!$omp end target data
 
     return
 
@@ -1016,15 +1049,20 @@ module turbulent_adv_pdf
     !$acc              term_wpxpyp_explicit_zm, invrs_rho_ds_zm, &
     !$acc              sgn_turbulent_vel, rho_ds_zm ) &
     !$acc      copyout( rhs_ta )
+!$omp target data map(to:gr,gr%invrs_dzm,term_wpxpyp_explicit_zm,&
+!$omp invrs_rho_ds_zm,sgn_turbulent_vel,rho_ds_zm) map(from:rhs_ta)
 
     ! Set lower boundary value to 0
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       rhs_ta(i,1) = 0.0_core_rknd
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz-1
       do i = 1, ngrdcol 
         rhs_ta(i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
@@ -1040,15 +1078,19 @@ module turbulent_adv_pdf
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Set upper boundary value to 0
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       rhs_ta(i,nz) = 0.0_core_rknd
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data 
+!$omp end target data
 
     return
 
@@ -1057,3 +1099,5 @@ module turbulent_adv_pdf
 !===============================================================================
 
 end module turbulent_adv_pdf
+
+

@@ -282,22 +282,31 @@ module advance_windm_edsclrm_module
     !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
     !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
     !$acc                    Km_zm_p_nu10, xpwp )
+!$omp target enter data map(alloc:um_old,vm_old,um_tndcy,vm_tndcy,&
+!$omp upwp_chnge,vpwp_chnge,lhs,rhs,solution,wind_speed,&
+!$omp wind_speed_pert,u_star_sqd,u_star_sqd_pert,nu_zero,lhs_diff,&
+!$omp lhs_ma_zt,km_zt,kmh_zt,km_zm_p_nu10,xpwp)
 
     !$acc enter data if( edsclr_dim > 0) create( edsclrm_old )
+!$omp target enter data map(alloc:edsclrm_old) if(edsclr_dim>0)
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       nu_zero(i) = zero
     end do
     !$acc end parallel loop
+!$omp end target teams loop
     
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         Km_zm_p_nu10(i,k) = Km_zm(i,k) + nu_vert_res_dep%nu10(i)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     l_perturbed_wind = ( .not. l_predict_upwp_vpwp ) .and. l_linearize_pbl_winds
     
@@ -308,6 +317,7 @@ module advance_windm_edsclrm_module
                            lhs_ma_zt )                         ! intent(out)
     else
       !$acc parallel loop gang vector collapse(3) default(present)
+!$omp target teams loop collapse(3)
       do k = 1, nz
         do i = 1, ngrdcol
           do j = 1, 3
@@ -316,6 +326,7 @@ module advance_windm_edsclrm_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     if ( .not. l_predict_upwp_vpwp ) then
@@ -323,12 +334,14 @@ module advance_windm_edsclrm_module
       Km_zt(:,:) = zm2zt( nz, ngrdcol, gr, Km_zm(:,:) )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Km_zt(i,k) = max( Km_zt(i,k), zero )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Calculate diffusion terms
       call diffusion_zt_lhs( nz, ngrdcol, gr, Km_zm, Km_zt, nu_vert_res_dep%nu10, & ! In
@@ -338,6 +351,7 @@ module advance_windm_edsclrm_module
       ! The lower boundary condition needs to be applied here at level 2.
       if ( .not. l_upwind_Kh_dp_term ) then 
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
           lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
@@ -353,8 +367,10 @@ module advance_windm_edsclrm_module
           lhs_diff(km1_tdiag,i,2) = zero
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       else
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
           lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) &
@@ -370,10 +386,12 @@ module advance_windm_edsclrm_module
           lhs_diff(km1_tdiag,i,2) = zero
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if
 
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             um_old(i,k) = um(i,k)
@@ -381,6 +399,7 @@ module advance_windm_edsclrm_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end if ! l_lmm_stepping
 
       !----------------------------------------------------------------
@@ -411,19 +430,23 @@ module advance_windm_edsclrm_module
       ! Compute wind speed (use threshold "eps" to prevent divide-by-zero
       ! error).
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           wind_speed(i,k) = max( sqrt( um(i,k)**2 + vm(i,k)**2 ), eps )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Compute u_star_sqd according to the definition of u_star.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         u_star_sqd(i) = sqrt( upwp(i,1)**2 + vpwp(i,1)**2 )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Compute the explicit portion of the um equation.
       ! Build the right-hand side vector.
@@ -458,34 +481,40 @@ module advance_windm_edsclrm_module
       ! Solve for x'w' at all intermediate model levels.
       ! A Crank-Nicholson timestep is used.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           upwp(i,k) = -one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
       
       call calc_xpwp( nz, ngrdcol, gr, &
                       Km_zm_p_nu10, vm, &
                       xpwp )
       
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           vpwp(i,k) = -one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
       ! means that x'w' at the top model level is 0,
       ! since x'w' = - K_zm * d(xm)/dz.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         upwp(i,nz) = zero
         vpwp(i,nz) = zero
       end do
       !$acc end parallel loop
+!$omp end target teams loop
       
       ! Compute the implicit portion of the um and vm equations.
       ! Build the left-hand side matrix.
@@ -517,28 +546,34 @@ module advance_windm_edsclrm_module
       ! Update zonal (west-to-east) component of mean wind, um
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           um(i,k) = solution(i,k,windm_edsclrm_um)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !----------------------------------------------------------------
       ! Update meridional (south-to-north) component of mean wind, vm
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           vm(i,k) = solution(i,k,windm_edsclrm_vm)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( stats_metadata%l_stats_samp ) then
 
         !$acc update host( um, lhs_diff, lhs_ma_zt, invrs_rho_ds_zt, u_star_sqd, &
         !$acc              rho_ds_zm, wind_speed, vm )
+!$omp target update from(um,lhs_diff,lhs_ma_zt,invrs_rho_ds_zt,&
+!$omp u_star_sqd,rho_ds_zm,wind_speed,vm)
 
         do i = 1, ngrdcol
           ! Implicit contributions to um and vm
@@ -569,14 +604,17 @@ module advance_windm_edsclrm_module
       ! decrease to a value of 0 at the surface, this is done to avoid
       ! confusion on plots of the vertical profiles of um and vm.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         um(i,1) = um(i,2)
         vm(i,1) = vm(i,2)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             um(i,k) = one_half * ( um_old(i,k) + um(i,k) )
@@ -584,11 +622,13 @@ module advance_windm_edsclrm_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       endif ! l_lmm_stepping ) then
 
       if ( uv_sponge_damp_settings%l_sponge_damping ) then
 
         !$acc update host( um, vm, um_ref, vm_ref )
+!$omp target update from(um,vm,um_ref,vm_ref)
         
         ! _sponge_damp_settings and _sponge_damp_profile could potentially vary
         ! from column to column, but there is no column index in those variables.
@@ -630,6 +670,7 @@ module advance_windm_edsclrm_module
         end if
 
         !$acc update device( um, vm )
+!$omp target update to(um,vm)
 
       end if ! uv_sponge_damp_settings%l_sponge_damping
 
@@ -642,24 +683,28 @@ module advance_windm_edsclrm_module
                       xpwp )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           upwp(i,k) = upwp(i,k) - one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
                                                       
       call calc_xpwp( nz, ngrdcol, gr, &
                       Km_zm_p_nu10, vm, &
                       xpwp )
                       
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           vpwp(i,k) = vpwp(i,k) - one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Adjust um and vm if nudging is turned on.
       if ( l_uv_nudge ) then
@@ -667,6 +712,7 @@ module advance_windm_edsclrm_module
         ! Reflect nudging in budget
         if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
+!$omp target update from(um,vm)
           do i = 1, ngrdcol
             call stat_begin_update( nz, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
@@ -676,6 +722,7 @@ module advance_windm_edsclrm_module
         end if
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             um(i,k) = um(i,k) - ( ( um(i,k) - um_ref(i,k) ) * (dt/ts_nudge) )
@@ -683,9 +730,11 @@ module advance_windm_edsclrm_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
         if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
+!$omp target update from(um,vm)
           do i = 1, ngrdcol
             call stat_end_update( nz, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
@@ -698,6 +747,7 @@ module advance_windm_edsclrm_module
 
       if ( stats_metadata%l_stats_samp ) then
         !$acc update host( um_ref, vm_ref )
+!$omp target update from(um_ref,vm_ref)
         do i = 1, ngrdcol
           call stat_update_var( stats_metadata%ium_ref, um_ref(i,:), & ! intent(in)
                                 stats_zt(i) )         ! intent(inout)
@@ -801,19 +851,23 @@ module advance_windm_edsclrm_module
       ! Compute wind speed (use threshold "eps" to prevent divide-by-zero
       ! error).
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           wind_speed_pert(i,k) = max( sqrt( (um_pert(i,k))**2 + (vm_pert(i,k))**2 ), eps )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Compute u_star_sqd according to the definition of u_star.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         u_star_sqd_pert(i) = sqrt( upwp_pert(i,1)**2 + vpwp_pert(i,1)**2 )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Compute the explicit portion of the um equation.
       ! Build the right-hand side vector.
@@ -848,34 +902,40 @@ module advance_windm_edsclrm_module
                       xpwp )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           upwp_pert(i,k) = -one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
                                                   
       call calc_xpwp( nz, ngrdcol, gr, &
                       Km_zm_p_nu10, vm_pert, &
                       xpwp )
       
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           vpwp_pert(i,k) = -one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
       
       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
       ! means that x'w' at the top model level is 0,
       ! since x'w' = - K_zm * d(xm)/dz.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         upwp_pert(i,nz) = zero
         vpwp_pert(i,nz) = zero
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Compute the implicit portion of the um and vm equations.
       ! Build the left-hand side matrix.
@@ -907,23 +967,27 @@ module advance_windm_edsclrm_module
       ! Update zonal (west-to-east) component of mean wind, um
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           um_pert(i,k) = solution(i,k,windm_edsclrm_um)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       !----------------------------------------------------------------
       ! Update meridional (south-to-north) component of mean wind, vm
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           vm_pert(i,k) = solution(i,k,windm_edsclrm_vm)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
   
       ! The values of um(1) and vm(1) are located below the model surface and
       ! do not affect the rest of the model.  The values of um(1) or vm(1) are
@@ -932,11 +996,13 @@ module advance_windm_edsclrm_module
       ! decrease to a value of 0 at the surface, this is done to avoid
       ! confusion on plots of the vertical profiles of um and vm.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         um_pert(i,1) = um_pert(i,2)
         vm_pert(i,1) = vm_pert(i,2)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Second part of momentum (implicit component)
 
@@ -947,24 +1013,28 @@ module advance_windm_edsclrm_module
                       xpwp )
       
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           upwp_pert(i,k) = upwp_pert(i,k) - one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
       
       call calc_xpwp( nz, ngrdcol, gr, &
                       Km_zm_p_nu10, vm_pert, &
                       xpwp )
       
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           vpwp_pert(i,k) = vpwp_pert(i,k) - one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
       
       if ( l_tke_aniso ) then
 
@@ -1042,12 +1112,14 @@ module advance_windm_edsclrm_module
       Kmh_zt(:,:) = zm2zt( nz, ngrdcol, gr, Kmh_zm(:,:) )
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           Kmh_zt(i,k) = max( Kmh_zt(i,k), zero )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Calculate diffusion terms
       call diffusion_zt_lhs( nz, ngrdcol, gr, Kmh_zm, Kmh_zt, nu_zero,  & ! intent(in)
@@ -1058,6 +1130,7 @@ module advance_windm_edsclrm_module
       if ( .not. l_upwind_Kh_dp_term ) then 
 
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
           lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
@@ -1073,10 +1146,12 @@ module advance_windm_edsclrm_module
           lhs_diff(km1_tdiag,i,2) = zero
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       else
 
         !$acc parallel loop gang vector default(present)
+!$omp target teams loop
         do i = 1, ngrdcol
           ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
           lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) &
@@ -1090,11 +1165,13 @@ module advance_windm_edsclrm_module
           lhs_diff(km1_tdiag,i,2) = zero
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       end if
 
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(3) default(present)
+!$omp target teams loop collapse(3)
         do j = 1, edsclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -1103,6 +1180,7 @@ module advance_windm_edsclrm_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       endif ! l_lmm_stepping
 
       ! Eddy-scalar surface fluxes, x'w'|_sfc, are applied through an explicit
@@ -1139,24 +1217,28 @@ module advance_windm_edsclrm_module
                         xpwp )
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 2, nz-1
           do i = 1, ngrdcol
             wpedsclrp(i,k,edsclr) = -one_half * xpwp(i,k)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end do
 
       ! A zero-flux boundary condition at the top of the model, d(xm)/dz = 0,
       ! means that x'w' at the top model level is 0,
       ! since x'w' = - K_zm * d(xm)/dz.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do j = 1, edsclr_dim
         do i = 1, ngrdcol
           wpedsclrp(i,nz,j) = zero
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! Compute the implicit portion of the xm (eddy-scalar) equations.
       ! Build the left-hand side matrix.
@@ -1185,6 +1267,7 @@ module advance_windm_edsclrm_module
       ! Update Eddy-diff. Passive Scalars
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(3) default(present)
+!$omp target teams loop collapse(3)
       do j = 1, edsclr_dim
         do k = 1, nz
           do i = 1, ngrdcol
@@ -1193,20 +1276,24 @@ module advance_windm_edsclrm_module
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       ! The value of edsclrm(1) is located below the model surface and does not
       ! effect the rest of the model.  The value of edsclrm(1) is simply set to
       ! the value of edsclrm(2) after the equation matrix has been solved.
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do edsclr = 1, edsclr_dim
         do i = 1, ngrdcol
           edsclrm(i,1,edsclr) = edsclrm(i,2,edsclr)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(3) default(present)
+!$omp target teams loop collapse(3)
         do j = 1, edsclr_dim
           do k = 1, nz
             do i = 1, ngrdcol
@@ -1215,6 +1302,7 @@ module advance_windm_edsclrm_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       endif ! l_lmm_stepping
 
       ! Second part of momentum (implicit component)
@@ -1228,12 +1316,14 @@ module advance_windm_edsclrm_module
                         xpwp )
         
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 2, nz-1
           do i = 1, ngrdcol
             wpedsclrp(i,k,edsclr) = -one_half * xpwp(i,k)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
       end do
 
       ! Note that the w'edsclr' terms are not clipped, since we don't compute
@@ -1248,6 +1338,9 @@ module advance_windm_edsclrm_module
           !$acc              up2, vp2, um_forcing, vm_forcing, edsclrm_forcing, &
           !$acc              fcor, um_old, um, vm_old, vm, edsclrm_old, &
           !$acc              edsclrm, upwp, vpwp, wpedsclrp )
+!$omp target update from(wm_zt,km_zm,ug,vg,um_ref,vm_ref,wp2,up2,vp2,&
+!$omp um_forcing,vm_forcing,edsclrm_forcing,fcor,um_old,um,vm_old,vm,&
+!$omp edsclrm_old,edsclrm,upwp,vpwp,wpedsclrp)
 
           write(fstderr,*) "Error in advance_windm_edsclrm"
 
@@ -1297,8 +1390,13 @@ module advance_windm_edsclrm_module
     !$acc                    wind_speed_pert, u_star_sqd, u_star_sqd_pert, &
     !$acc                    nu_zero, lhs_diff, lhs_ma_zt, Km_zt, Kmh_zt, &
     !$acc                    Km_zm_p_nu10, xpwp )
+!$omp target exit data map(delete:um_old,vm_old,um_tndcy,vm_tndcy,&
+!$omp upwp_chnge,vpwp_chnge,lhs,rhs,solution,wind_speed,&
+!$omp wind_speed_pert,u_star_sqd,u_star_sqd_pert,nu_zero,lhs_diff,&
+!$omp lhs_ma_zt,km_zt,kmh_zt,km_zm_p_nu10,xpwp)
 
     !$acc exit data if( edsclr_dim > 0) delete( edsclrm_old )
+!$omp target exit data map(delete:edsclrm_old) if(edsclr_dim>0)
 
     return
 
@@ -2157,6 +2255,7 @@ module advance_windm_edsclrm_module
     ! -------------------------- Begin Code --------------------------
 
     !$acc enter data create( xm_gf, xm_cf )
+!$omp target enter data map(alloc:xm_gf,xm_cf)
 
     if ( .not. l_implemented ) then
       ! Only compute the Coriolis term if the model is running on it's own,
@@ -2171,20 +2270,24 @@ module advance_windm_edsclrm_module
         ixm_f  = stats_metadata%ium_f
         
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             xm_gf(i,k) = - fcor(i) * perp_wind_g(i,k)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
         
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             xm_cf(i,k) = fcor(i) * perp_wind_m(i,k)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       case ( windm_edsclrm_vm )
 
@@ -2193,20 +2296,24 @@ module advance_windm_edsclrm_module
         ixm_f  = stats_metadata%ivm_f
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             xm_gf(i,k) = fcor(i) * perp_wind_g(i,k)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             xm_cf(i,k) = -fcor(i) * perp_wind_m(i,k)
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       case default
 
@@ -2215,6 +2322,7 @@ module advance_windm_edsclrm_module
         ixm_f = 0
 
         !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
         do k = 1, nz
           do i = 1, ngrdcol
             xm_gf(i,k) = 0._core_rknd
@@ -2222,20 +2330,24 @@ module advance_windm_edsclrm_module
           end do
         end do
         !$acc end parallel loop
+!$omp end target teams loop
 
       end select
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           xm_tndcy(i,k) = xm_gf(i,k) + xm_cf(i,k) + xm_forcing(i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( stats_metadata%l_stats_samp ) then
 
         !$acc update host( xm_gf, xm_cf, xm_forcing )
+!$omp target update from(xm_gf,xm_cf,xm_forcing)
 
         do i = 1, ngrdcol
           ! xm term gf is completely explicit; call stat_update_var.
@@ -2255,16 +2367,19 @@ module advance_windm_edsclrm_module
     else   ! implemented in a host model.
 
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           xm_tndcy(i,k) = 0.0_core_rknd
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     endif
 
     !$acc exit data delete( xm_gf, xm_cf )
+!$omp target exit data map(delete:xm_gf,xm_cf)
 
     return
 
@@ -2347,15 +2462,18 @@ module advance_windm_edsclrm_module
 
     ! Set lower boundary, see notes
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lhs(1,i,1) = 0.0_core_rknd
       lhs(2,i,1) = 1.0_core_rknd
       lhs(3,i,1) = 0.0_core_rknd
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Add terms to lhs
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz
       do i = 1, ngrdcol
         lhs(1,i,k) = 0.5_core_rknd * lhs_diff(1,i,k)
@@ -2369,16 +2487,19 @@ module advance_windm_edsclrm_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! LHS mean advection term.
     if ( .not. l_implemented ) then
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 2, nz-1
         do i = 1, ngrdcol
           lhs(1:3,i,k) = lhs(1:3,i,k) + lhs_ma_zt(:,i,k)
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
     endif
 
@@ -2386,11 +2507,13 @@ module advance_windm_edsclrm_module
 
       ! LHS momentum surface flux.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         lhs(2,i,2) = lhs(2,i,2) + invrs_rho_ds_zt(i,2) * gr%invrs_dzt(i,2) &
                                   * rho_ds_zm(i,1) * ( u_star_sqd(i) / wind_speed(i,2) )
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if ! l_imp_sfc_momentum_flux
 
     return
@@ -2511,13 +2634,16 @@ module advance_windm_edsclrm_module
 
     ! For purposes of the matrix equation, rhs(1) is simply set to 0.
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       rhs(i,1) = 0.0_core_rknd
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Non-boundary rhs calculation, this is a highly vectorized loop
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs(i,k) = 0.5_core_rknd  & 
@@ -2529,9 +2655,11 @@ module advance_windm_edsclrm_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! Upper boundary calculation
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       rhs(i,nz) = 0.5_core_rknd  & 
                   * ( - lhs_diff(3,i,nz) * xm(i,nz-1)  &
@@ -2540,10 +2668,12 @@ module advance_windm_edsclrm_module
                   + invrs_dt * xm(i,nz)                  ! RHS time tendency
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     if ( stats_metadata%l_stats_samp .and. ixm_ta > 0 ) then
 
       !$acc update host( lhs_diff, xm )
+!$omp target update from(lhs_diff,xm)
       
       do i = 1, ngrdcol
 
@@ -2576,16 +2706,19 @@ module advance_windm_edsclrm_module
 
       ! RHS generalized surface flux.
       !$acc parallel loop gang vector default(present)
+!$omp target teams loop
       do i = 1, ngrdcol
         rhs(i,2) = rhs(i,2) + invrs_rho_ds_zt(i,2)  &
                               * gr%invrs_dzt(i,2)  &
                               * rho_ds_zm(i,1) * xpwp_sfc(i)
       end do
       !$acc end parallel loop
+!$omp end target teams loop
 
       if ( stats_metadata%l_stats_samp .and. ixm_ta > 0 ) then
 
         !$acc update host( invrs_rho_ds_zt, rho_ds_zm, xpwp_sfc )
+!$omp target update from(invrs_rho_ds_zt,rho_ds_zm,xpwp_sfc)
       
         do i = 1, ngrdcol
           call stat_modify_pt( ixm_ta, 2,  &                    ! intent(in)  
@@ -2603,3 +2736,5 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_rhs
 
 end module advance_windm_edsclrm_module
+
+

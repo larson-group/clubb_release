@@ -39,7 +39,9 @@ module error_code
 
     character(len=35), public :: err_header
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(err_code,err_header)
+#endif // defined(OPENMP_CPU)
 
     ! Error Code Values
     integer, parameter, public :: & 
@@ -116,3 +118,5 @@ module error_code
         end subroutine set_clubb_debug_level
 
     end module error_code
+
+

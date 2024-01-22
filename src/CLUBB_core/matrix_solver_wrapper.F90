@@ -110,6 +110,7 @@ module matrix_solver_wrapper
     if ( present(rcond) ) then
 
       !$acc update host( lhs, rhs )
+!$omp target update from(lhs,rhs)
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -123,6 +124,7 @@ module matrix_solver_wrapper
                                dummy_soln, rcond )      ! Intent(out)
 
       !$acc update device( rcond )
+!$omp target update to(rcond)
 
     end if
 
@@ -130,6 +132,7 @@ module matrix_solver_wrapper
     if ( penta_solve_method == lapack ) then
 
       !$acc update host( lhs, rhs )
+!$omp target update from(lhs,rhs)
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
@@ -138,6 +141,7 @@ module matrix_solver_wrapper
                               soln )                    ! Intent(out)
 
       !$acc update device( soln )
+!$omp target update to(soln)
 
     else if ( penta_solve_method == penta_lu ) then 
 
@@ -228,6 +232,7 @@ module matrix_solver_wrapper
     if ( present(rcond) ) then
 
       !$acc update host( lhs, rhs )
+!$omp target update from(lhs,rhs)
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -241,6 +246,7 @@ module matrix_solver_wrapper
                                dummy_soln, rcond )      ! Intent(out)
 
       !$acc update device( rcond )
+!$omp target update to(rcond)
 
     end if
 
@@ -248,6 +254,7 @@ module matrix_solver_wrapper
     if ( penta_solve_method == lapack ) then
 
       !$acc update host( lhs, rhs )
+!$omp target update from(lhs,rhs)
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
@@ -256,6 +263,7 @@ module matrix_solver_wrapper
                               soln )                    ! Intent(out)
 
       !$acc update device( soln )
+!$omp target update to(soln)
 
     else if ( penta_solve_method == penta_lu ) then 
 
@@ -442,6 +450,7 @@ module matrix_solver_wrapper
     if ( present(rcond) ) then
 
       !$acc update host( lhs, rhs )
+!$omp target update from(lhs,rhs)
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -453,6 +462,7 @@ module matrix_solver_wrapper
                                   dummy_soln, rcond )             ! Intent(out)
       
       !$acc update device( rcond )
+!$omp target update to(rcond)
 
     end if
 
@@ -460,6 +470,7 @@ module matrix_solver_wrapper
     if ( tridiag_solve_method == lapack ) then
 
       !$acc update host( lhs, rhs )
+!$omp target update from(lhs,rhs)
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, 1, ngrdcol, & ! Intent(in) 
@@ -467,6 +478,7 @@ module matrix_solver_wrapper
                                  soln )                          ! Intent(out)
 
       !$acc update device( soln )
+!$omp target update to(soln)
 
     else if ( tridiag_solve_method == tridiag_lu ) then
 
@@ -550,6 +562,7 @@ module matrix_solver_wrapper
     if ( present(rcond) ) then
 
       !$acc update host( lhs, rhs )
+!$omp target update from(lhs,rhs)
 
       ! Lapack overwrites lhs and rhs, so we'll give it copies of them.
       lhs_copy = lhs
@@ -561,6 +574,7 @@ module matrix_solver_wrapper
                                   dummy_soln, rcond )                 ! Intent(out)
       
       !$acc update device( rcond )
+!$omp target update to(rcond)
 
     end if
 
@@ -568,6 +582,7 @@ module matrix_solver_wrapper
     if ( tridiag_solve_method == lapack ) then
 
       !$acc update host( lhs, rhs )
+!$omp target update from(lhs,rhs)
 
       ! Perform LU decomp and solve system (LAPACK)
       call lapack_tridiag_solve( solve_name, ndim, nrhs, ngrdcol, & ! Intent(in) 
@@ -575,6 +590,7 @@ module matrix_solver_wrapper
                                  soln )                             ! Intent(out)
 
       !$acc update device( soln )
+!$omp target update to(soln)
 
     else if ( tridiag_solve_method == tridiag_lu ) then
 
@@ -599,3 +615,4 @@ module matrix_solver_wrapper
 
 
 end module matrix_solver_wrapper
+

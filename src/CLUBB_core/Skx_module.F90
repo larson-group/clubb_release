@@ -66,6 +66,7 @@ module Skx_module
 
     !$acc data copyin( xp2, xp3 ) &
     !$acc      copyout( Skx )
+!$omp target data map(to:xp2,xp3) map(from:skx)
 
     Skx_denom_tol = Skw_denom_coef * x_tol**2
 
@@ -73,12 +74,14 @@ module Skx_module
     ! Calculation of skewness to help reduce the sensitivity of this value to
     ! small values of xp2.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         Skx(i,k) = xp3(i,k) * sqrt( xp2(i,k) + Skx_denom_tol )**(-3)
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     ! This is no longer needed since clipping is already
     ! imposed on wp2 and wp3 elsewhere in the code
@@ -86,15 +89,18 @@ module Skx_module
     ! I turned clipping on in this local copy since thlp3 and rtp3 are not clipped
     if ( l_clipping_kluge ) then
       !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
       do k = 1, nz
         do i = 1, ngrdcol
           Skx(i,k) = min( max( Skx(i,k), -Skw_max_mag ), Skw_max_mag )
         end do
       end do
       !$acc end parallel loop
+!$omp end target teams loop
     end if
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -157,6 +163,7 @@ module Skx_module
 
     ! Larson and Golaz (2005) eq. 16
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         nrmlzd_corr_wx = &
@@ -172,6 +179,7 @@ module Skx_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     return
 
@@ -232,6 +240,8 @@ module Skx_module
     !$acc data create(Skx_zt) &
     !$acc      copyin( Skw_zt, wpxp_zt, wp2_zt, xp2_zt, sigma_sqd_w_zt ) &
     !$acc     copyout( xp3 )
+!$omp target data map(to:skw_zt,wpxp_zt,wp2_zt,xp2_zt,sigma_sqd_w_zt)&
+!$omp map(from:xp3) map(alloc:skx_zt)
 
     ! Calculate skewness of x using the ansatz of LG05.
     call LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
@@ -243,6 +253,7 @@ module Skx_module
     ! Calculate <x'^3> using the reverse of the special sensitivity reduction
     ! formula in function Skx_func above.
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do k = 1, nz
       do i = 1, ngrdcol
         xp3(i,k) = Skx_zt(i,k) * ( xp2_zt(i,k) + Skx_denom_tol ) &
@@ -250,8 +261,10 @@ module Skx_module
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
     return
 
@@ -260,3 +273,5 @@ module Skx_module
   !-----------------------------------------------------------------------------
 
 end module Skx_module
+
+

@@ -116,8 +116,11 @@ module tridiag_lu_solvers
     !$acc data create( upper, lower_diag_invrs ) &
     !$acc      copyin( rhs, lhs ) &
     !$acc      copyout( soln )
+!$omp target data map(to:rhs,lhs) map(from:soln) map(alloc:upper,&
+!$omp lower_diag_invrs)
     
     !$acc kernels
+!$omp target
     
     lower_diag_invrs(1) = 1.0_core_rknd / lhs(0,1)
     upper(1)            = lower_diag_invrs(1) * lhs(-1,1) 
@@ -140,8 +143,10 @@ module tridiag_lu_solvers
     end do
 
     !$acc end kernels
+!$omp end target
 
     !$acc end data
+!$omp end target data
 
   end subroutine tridiag_lu_solve_single_rhs_lhs
 
@@ -183,15 +188,20 @@ module tridiag_lu_solvers
     !$acc data create( upper, lower_diag_invrs ) &
     !$acc      copyin( rhs, lhs ) &
     !$acc      copyout( soln )
+!$omp target data map(to:rhs,lhs) map(from:soln) map(alloc:upper,&
+!$omp lower_diag_invrs)
     
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper(i,1)            = lower_diag_invrs(i,1) * lhs(-1,i,1) 
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       do k = 2, ndim-1
         lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lhs(1,i,k) * upper(i,k-1)  )
@@ -199,14 +209,18 @@ module tridiag_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) - lhs(1,i,ndim) * upper(i,ndim-1)  )
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol 
 
       soln(i,1)   = lower_diag_invrs(i,1) * rhs(i,1) 
@@ -216,8 +230,10 @@ module tridiag_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol 
       do k = ndim-1, 1, -1
         soln(i,k) = soln(i,k) - upper(i,k) * soln(i,k+1)
@@ -225,8 +241,10 @@ module tridiag_lu_solvers
 
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
   end subroutine tridiag_lu_solve_single_rhs_multiple_lhs
 
@@ -270,15 +288,20 @@ module tridiag_lu_solvers
     !$acc data create( upper, lower_diag_invrs ) &
     !$acc      copyin( rhs, lhs ) &
     !$acc      copyout( soln )
+!$omp target data map(to:rhs,lhs) map(from:soln) map(alloc:upper,&
+!$omp lower_diag_invrs)
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lower_diag_invrs(i,1) = 1.0_core_rknd / lhs(0,i,1)
       upper(i,1)            = lower_diag_invrs(i,1) * lhs(-1,i,1) 
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       do k = 2, ndim-1
         lower_diag_invrs(i,k) = 1.0_core_rknd / ( lhs(0,i,k) - lhs(1,i,k) * upper(i,k-1)  )
@@ -286,14 +309,18 @@ module tridiag_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector default(present)
+!$omp target teams loop
     do i = 1, ngrdcol
       lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) - lhs(1,i,ndim) * upper(i,ndim-1)  )
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do j = 1, nrhs
       do i = 1, ngrdcol 
 
@@ -305,8 +332,10 @@ module tridiag_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
+!$omp target teams loop collapse(2)
     do j = 1, nrhs
       do i = 1, ngrdcol 
         do k = ndim-1, 1, -1
@@ -315,9 +344,13 @@ module tridiag_lu_solvers
       end do
     end do
     !$acc end parallel loop
+!$omp end target teams loop
 
     !$acc end data
+!$omp end target data
 
   end subroutine tridiag_lu_solve_multiple_rhs_lhs
 
 end module tridiag_lu_solvers
+
+

@@ -56,7 +56,18 @@ module stats_type
     type (stat_file) ::  file
 
   end type stats
+!$omp declare mapper (stats::x) map ( &
+!$omp  x%num_output_fields &
+!$omp , x%kk &
+!$omp , x%z &
+!$omp , x%accum_field_values &
+!$omp , x%accum_num_samples &
+!$omp , x%l_in_update &
+!$omp , x%file &
+!$omp )
 
 end module stats_type
+
+
 
 
