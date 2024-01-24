@@ -1587,7 +1587,7 @@ module advance_wp2_wp3_module
                                  lhs_wp3_pr2_term )                             ! intent(out)
 
       do i = 1, ngrdcol
-        do k = 2, nz-1, 1
+        do k = 3, nz-1, 1
 
           km1 = max( k-1, 1 )
           kp1 = min( k+1, nz )
@@ -2765,6 +2765,11 @@ module advance_wp2_wp3_module
           call stat_update_var_pt( stats_metadata%iwp2_pr3, k, rhs_pr3_wp2(i,k), & ! intent(in)
                                    stats_zm(i) )                    ! intent(out)
 
+        end do
+      end do
+
+      do i = 1, ngrdcol
+        do k = 3, nz-1
 
           ! ----------- w'3 -----------
 
