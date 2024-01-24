@@ -1817,7 +1817,7 @@ module mixing_length
     ! Write both bv extra terms to invrs_taus to disk
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( brunt_vaisala_freq_sqd_smth )
+      !$acc update host( brunt_freq_pos, brunt_freq_out_cloud )
 
       do i = 1, ngrdcol
         call stat_update_var(stats_metadata%ibrunt_freq_pos, brunt_freq_pos(i,:), & ! intent(in)

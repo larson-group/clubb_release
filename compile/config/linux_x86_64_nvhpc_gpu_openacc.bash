@@ -42,7 +42,7 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -acc -Minfo=accel"
 #   -DNETCDF enables netCDF output
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
-CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8"
+CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8 -DCLUBB_GPU -DCUDA"
 CPPFLAGS="-I$NETCDF/include"
 
 # == Static library processing ==
