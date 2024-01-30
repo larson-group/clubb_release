@@ -1181,7 +1181,6 @@ module clubb_driver
       if ( l_write_to_file ) close( unit=iunit )
 
       if ( l_write_to_file ) then
-        call execute_command_line( 'git log -n 1' )
         call execute_command_line( 'echo "Branch name:" >> '//case_info_file )
         call execute_command_line( 'git rev-parse --abbrev-ref HEAD >> '//case_info_file )
         call execute_command_line( 'echo "(If no branch name is shown HEAD may be detached)"'// &
