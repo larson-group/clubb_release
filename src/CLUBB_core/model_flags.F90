@@ -115,7 +115,7 @@ module model_flags
   !----------------------------------------------------------------------------- 
 
   ! Use a quintic polynomial in mono_cubic_interp
-  logical, public :: &
+  logical, parameter, public :: &
     l_quintic_poly_interp = .false. 
 
   logical, parameter, public :: &
