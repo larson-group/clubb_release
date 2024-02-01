@@ -15,7 +15,7 @@
 ! [Vertical Coordinate] [Data ...]
 ! ...
 !
-z[m]          'thlm_f[K/s]'  sp_hmdty_f[kg/kg/s]  'um_ref[m/s]' 'vm_ref[m/s]' 'um_f[m/s^2]' 'vm_f[m/s^2]'  omega[Pa/s]  'ug[m/s]' 'vg[ms]'  
+z[m]          'thlm_f[K/s]'  'sp_hmdty_f[kg/kg/s]'  'um_ref[m/s]' 'vm_ref[m/s]' 'um_f[m/s^2]' 'vm_f[m/s^2]'  'omega[Pa/s]'  'ug[m/s]' 'vg[m/s]'  
 43200.0        8                                                                                                                             
 0.0            0.0           0.0                   -999.9        -999.9        0.00          0.00          0.00          -7.80     0.00      
 200.0          -2.50E-005    0.0                   -999.9        -999.9        -999.9        -999.9        -999.9        -999.9    -999.9    

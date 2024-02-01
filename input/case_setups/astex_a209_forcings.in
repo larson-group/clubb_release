@@ -16,7 +16,7 @@
 ! [Vertical Coordinate] [Data ...]
 ! ...
 !
-z[m]       'thlm_f[K/s]' 'rtm_f[kg/kg/s]' 'um_ref[m/s]' 'vm_ref[m/s]' 'um_f[m/s^2]' 'vm_f[m/s^2]' 'w[m/s]'     'ug[m/s]' 'vg[ms]'  
+z[m]       'thlm_f[K/s]' 'rtm_f[kg/kg/s]' 'um_ref[m/s]' 'vm_ref[m/s]' 'um_f[m/s^2]' 'vm_f[m/s^2]' 'w[m/s]'     'ug[m/s]' 'vg[m/s]'  
 0.          34
 0.000       -999.9        -999.9           -2.00     -10.00        -999.9        -999.9        0.00000000   -2.00     -10.00
 312.500     -999.9        -999.9           -2.00     -10.00        -999.9        -999.9        -.00156250   -2.00     -10.00

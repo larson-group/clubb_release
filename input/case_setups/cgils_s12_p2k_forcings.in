@@ -16,7 +16,7 @@
 ! [Vertical Coordinate] [Data ...]
 ! ...
 !
-Press[Pa]   	'T_f[k/s]'      	'rtm_f[kg/kg/s]' 'um_ref[m/s]'  	vm_ref[m/s]   	'um_f[m/s^2]'   	'vm_f[m/s^2]'   	'w[m/s]'   	'ug[m/s]'   	'vg[m/s]'   
+Press[Pa]   	'T_f[K/s]'      	'rtm_f[kg/kg/s]' 'um_ref[m/s]'  	vm_ref[m/s]   	'um_f[m/s^2]'   	'vm_f[m/s^2]'   	'w[m/s]'   	'ug[m/s]'   	'vg[m/s]'   
 0.0         62
 101686.750000 	 -1.279885e-05 	 -8.250319e-09 	 -999.9 	 -999.9 	 -999.9 	 -999.9 	 -999.9 	 -999.9 	 -999.9 
 101395.031250 	 -1.279885e-05 	 -8.250319e-09 	 -999.9 	 -999.9 	 -999.9 	 -999.9 	 -999.9 	 -999.9 	 -999.9 
