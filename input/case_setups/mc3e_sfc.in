@@ -1,5 +1,5 @@
 ! $Id$ .
-Time[s]   "latent_ht[W/m^2]" "sens_ht[W/m^2]"   T_sfc[K]
+Time[s]   'latent_ht[W/m^2]' 'sens_ht[W/m^2]'   T_sfc[K]
 0.         2.233              4.042             299.27
 10800.     -0.547             -1.131            299.27
 21600.     -2.807             -6.120            299.27

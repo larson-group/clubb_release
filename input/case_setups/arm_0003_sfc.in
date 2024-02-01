@@ -3,7 +3,7 @@
 ! Note that T_sfc is included here, but it is not currently used. It is
 ! included here to facilitate a transition to using T_sfc in the future
 ! if needed.
-Time[s]    "latent_ht[W/m^2]" "sens_ht[W/m^2]"  T_sfc[K] 
+Time[s]    'latent_ht[W/m^2]' 'sens_ht[W/m^2]'  T_sfc[K] 
 63003.0     109.811            220.065          286.0  
 73803.0     93.037             195.006          286.0     
 84603.0     43.464             21.428           286.0     
