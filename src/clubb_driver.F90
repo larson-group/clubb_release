@@ -6650,10 +6650,12 @@ module clubb_driver
       setup_parameters_api, &
       advance_clubb_core_api
 
+#ifdef NETCDF
     use netcdf
 
     use output_netcdf, only: &
       format_date
+#endif
 
     use array_index, only: &
       sclr_idx_type
@@ -7630,7 +7632,7 @@ module clubb_driver
     RH_crit = RH_crit_col(1,:,:,:)
 #endif
 
-
+#ifdef NETCDF
     !---------------------------------------------------------------------------
     !           Netcdf output step if we are using multiple columns
     !---------------------------------------------------------------------------
@@ -7816,6 +7818,7 @@ module clubb_driver
       status = nf90_close( ncid = ncid )
 
     end if
+#endif
 
     ! Set l_first_call to false to avoid the setup parts next time
     l_first_call = .false.
