@@ -3,6 +3,6 @@
 ! sens_ht and latent_ht are used when sfctype = 0
 ! T_sfc is used when sfctype = 1
 ! Currently, sfctype is set to 0 for dycoms2_rf01.
-Time[s]        sens_ht[W\m^2]   latent_ht[W\m^2]   T_sfc[K]
+Time[s]       "sens_ht[W/m^2]" "latent_ht[W/m^2]"  T_sfc[K]
 21600.00       15.00000         115.0000           292.5
 1830600.00       15.00000         115.0000           292.5

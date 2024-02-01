@@ -1,6 +1,6 @@
 ! The vertical coordinate is entered in the first column as height (z[m]) or pressure (Press[Pa]).
 ! Temperature can be entered as liquid water potential temperature (thlm_f[K\s]), potential temperature (thm_f[K\s]), or absolute temperature(T_f[K\s]).
-! Prescribed, time-independent vertical velocity can be entered as velocity (w[m\s]) or pressure velocity (omega[Pa\s] or omega[mb\hr])
+! Prescribed, time-independent vertical velocity can be entered as velocity (w[m/s]) or pressure velocity (omega[Pa\s] or omega[mb\hr])
 ! In all cases, missing values are denoted by -999.9
 ! The blanks are filled first vertically and then across time. This means that if you have a column that is completely filled with missing values
 ! it will be replaced with an interpolation of the values before and after.
@@ -15,7 +15,7 @@
 ! [Vertical Coordinate] [Data ...]
 ! ...
 !
-z[m]             thlm_f[K\s]     rtm_f[kg\kg\s]   um_ref[m\s]   vm_ref[m\s]   um_f[m\s^2]   vm_f[m\s^2]   omega[mb\hr]   ug[m\s]       vg[m\s]       
+z[m]            "thlm_f[K/s]"   "rtm_f[kg/kg/s]" "um_ref[m/s]" "vm_ref[m/s]" "um_f[m/s^2]" "vm_f[m/s^2]"  omega[mb\hr]  "ug[m/s]"     "vg[ms]"      
 10800.000000     40                                                                                                                                  
 -122.561803      8.349621E-05    -3.408651E-09    5.392640      -6.815070     -999.900000   -999.900000   -0.728399      -999.900000   -999.900000   
 96.810781        8.409326E-05    -3.408651E-09    5.392640      -6.815070     -999.900000   -999.900000   -0.728399      -999.900000   -999.900000   

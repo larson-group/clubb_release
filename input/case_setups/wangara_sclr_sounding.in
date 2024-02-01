@@ -1,5 +1,5 @@
 ! The levels of the vertical coordinate (z or pressure) are assumed to be the same as those in the corresponding sounding.in file.
-rt[kg\kg]   thm[K]   
+"rt[kg/kg]" thm[K]   
 0.0042      276.85   
 0.0037      276.91   
 0.0035      277.68   
