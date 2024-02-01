@@ -21,9 +21,9 @@ find . -type f -exec sed -i "s: default(present)::g" {} \;
 # Using -async=ignore prevents the script from converting openacc async/wait
 # statements into openmp nowait/taskwait statements. This only affects SILHS
 # but it causes code crashes in SILHS cases without this option.
-$ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore *.F90
-$ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore CLUBB_core/*.F90
-$ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore SILHS/*.F90
+$ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper *.F90
+$ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper CLUBB_core/*.F90
+$ACC_TO_OMP_SCRIPT -overwrite-input -async=ignore -no-declare-mapper SILHS/*.F90
 
 # Remove the extra generated files
 rm -rf *.original *.report *.translated
