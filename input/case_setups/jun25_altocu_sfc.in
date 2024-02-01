@@ -3,6 +3,6 @@
 ! Note that T_sfc is included here, but it is not currently used. It is
 ! included here to facilitate a transition to using T_sfc in the future
 ! if needed.
-Time[s]          T_sfc[K]  'sens_ht[W/m^2]'  latent_ht[W\m^2]
+Time[s]          T_sfc[K]  'sens_ht[W/m^2]'  'latent_ht[W/m^2]'
 35799.100000     271.07     0.0              0.0
 71799.100000     271.07     0.0              0.0

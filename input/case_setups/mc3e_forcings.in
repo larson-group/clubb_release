@@ -1,5 +1,5 @@
 ! $Id$ .
-Press[Pa]       'thlm_f[K/s]'   'rtm_f[kg/kg/s]' 'um_ref[m/s]' 'vm_ref[m/s]' 'um_f[m/s^2]' 'vm_f[m/s^2]'  omega[mb\hr]  'ug[m/s]'      vg[m/s]
+Press[Pa]       'thlm_f[K/s]'   'rtm_f[kg/kg/s]' 'um_ref[m/s]' 'vm_ref[m/s]' 'um_f[m/s^2]' 'vm_f[m/s^2]'  omega[mb/hr]  'ug[m/s]'      'vg[m/s]'
 0.               42
 106500.0         0.59586E-04     0.11275E-06      -4.590        10.888        -999.9        -999.9        -999.9         -999.9        -999.9
 104000.0         0.59586E-04     0.11275E-06      -4.590        10.888        -999.9        -999.9        -999.9         -999.9        -999.9

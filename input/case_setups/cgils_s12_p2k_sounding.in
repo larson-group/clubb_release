@@ -1,10 +1,10 @@
 ! $Id$
 ! The vertical coordinate is entered in the first column as height (z[m]) or pressure (Press[Pa]).
 ! Temperature can be entered as liquid water potential temperature (thlm[K]), potential temperature (thm[K]), or absolute temperature(T[K]).
-! Prescribed, time-independent vertical velocity can be entered as velocity (w[m\s]) or pressure velocity (omega[Pa\s])
+! Prescribed, time-independent vertical velocity can be entered as velocity (w[m/s]) or pressure velocity ('omega[Pa/s]')
 ! If vertical velocity is time dependent, insert missing values throughout column.
 ! In all cases, missing values are denoted by -999.9
-Press[Pa]	T[K]		rt[kg\kg]	u[m\s]		v[m\s]		ug[m\s]		vg[m\s]		omega[Pa\s]
+Press[Pa]	T[K]		'rt[kg/kg]'	'u[m/s]'		'v[m/s]'		'ug[m/s]'		'vg[m/s]'		'omega[Pa/s]'
 101864.6	 291.4600	 0.009220000	 2.119829	 -8.000850	 2.119829	 -8.000850	 0.0
 101686.750000 	 291.348541 	 1.125067e-02 	 2.119829 	 -8.000850 	 2.119829 	 -8.000850 	 0.000815 
 101395.031250 	 291.085968 	 1.110823e-02 	 2.301660 	 -8.746630 	 2.301660 	 -8.746630 	 0.002153 

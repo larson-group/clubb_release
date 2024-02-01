@@ -1,6 +1,6 @@
 !$Id$
 ! The levels of the vertical coordinate (z or pressure) are assumed to be the same as those in the corresponding sounding.in file.
-o3[kg\kg]
+'o3[kg/kg]'
 4.617446e-08
 4.617446e-08
 4.626531e-08

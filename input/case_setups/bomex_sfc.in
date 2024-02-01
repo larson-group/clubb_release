@@ -3,6 +3,6 @@
 ! Note that T_sfc is included here, but it is not currently used. It is
 ! included here to facilitate a transition to using T_sfc in the future
 ! if needed.
-Time[s]        wpqtp_sfc[(kg\kg)m\s]   wpthlp_sfc[mK\s]   T_sfc[K]
+Time[s]        'wpqtp_sfc[(kg/kg)m/s]'   'wpthlp_sfc[mK/s]'   T_sfc[K]
 0.000000       5.200e-5                 8.000e-3          300.375
 21600.000000   5.200e-5                 8.000e-3          300.375

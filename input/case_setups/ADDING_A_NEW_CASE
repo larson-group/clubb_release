@@ -18,10 +18,8 @@ recent years and requires less modification to source code to setup a new case.
 The gabls3 case is an excellent example of a case that specifies the initial
 sounding and forcings in text files rather than having them hardwired in the
 source code.
-Note that we use a \ to denote division in the units of the sounding and forcing
-variables is due to a quirk in how Fortran reads '/' in text files.  The
-clubb hydrostatic code supports 3 different temperature variable as noted in
-sounding.in files.  The convention of CLUBB is to use MKS units for all 
+The clubb hydrostatic code supports 3 different temperature variable as noted
+in sounding.in files.  The convention of CLUBB is to use MKS units for all 
 variables, but code from external contributors may not follow that convention.
 
 2. Will you need any special external code?

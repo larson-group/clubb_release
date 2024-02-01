@@ -3,7 +3,7 @@
 ! Note that T_sfc is included here, but it is not currently used. It is
 ! included here to facilitate a transition to using T_sfc in the future
 ! if needed.
-Time[s]    thlm[K]   rt[kg\kg]    upwp_sfc[(m\s)^2]   vpwp_sfc[(m\s)^2]    T_sfc[K]
+Time[s]    thlm[K]   'rt[kg/kg]'    'upwp_sfc[(m/s)^2]'   'vpwp_sfc[(m/s)^2]'    T_sfc[K]
 86400.     291.28    0.0100       0.0737614           0.00226843           298.09
 90000.     290.34    0.0099       0.0482287           0.000667833          298.09
 93600.     289.45    0.0100       0.0363999           -0.000157663         298.09
