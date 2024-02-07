@@ -50,7 +50,7 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine advance_xm_wpxp( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt, &
                               sigma_sqd_w, wm_zm, wm_zt, wp2, &
-                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
+                              Lscale_zm, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                               invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                               rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
                               thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
@@ -211,7 +211,7 @@ module advance_xm_wpxp_module
       wm_zm,           & ! w wind component on momentum levels      [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
-      Lscale,          & ! Turbulent mixing length                  [m]
+      Lscale_zm,       & ! Turbulent mixing length interp to m levs [m]
       em,              & ! Turbulent Kinetic Energy (TKE)           [m^2/s^2]
       wp3_on_wp2,      & ! Smoothed wp3 / wp2 on momentum levels    [m/s]
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
@@ -630,12 +630,12 @@ module advance_xm_wpxp_module
       ! Damp C6 as a function of Lscale in stably stratified regions
       call damp_coefficient( nz, ngrdcol, gr, C6rt, C6rt_Skw_fnc, &
                              C6rt_Lscale0, altitude_threshold, &
-                             wpxp_L_thresh, Lscale, &
+                             wpxp_L_thresh, Lscale_zm, &
                              C6rt_Skw_fnc )
 
       call damp_coefficient( nz, ngrdcol, gr, C6thl, C6thl_Skw_fnc, &
                              C6thl_Lscale0, altitude_threshold, &
-                             wpxp_L_thresh, Lscale, &
+                             wpxp_L_thresh, Lscale_zm, &
                              C6thl_Skw_fnc )
 
     else ! l_diag_Lscale_from_tau
@@ -691,7 +691,7 @@ module advance_xm_wpxp_module
       ! Damp C7 as a function of Lscale in stably stratified regions
       call damp_coefficient( nz, ngrdcol, gr, C7, C7_Skw_fnc, &
                              C7_Lscale0, altitude_threshold, &
-                             wpxp_L_thresh, Lscale, &
+                             wpxp_L_thresh, Lscale_zm, &
                              C7_Skw_fnc )
 
     end if ! l_use_C7_Richardson
@@ -797,7 +797,7 @@ module advance_xm_wpxp_module
                                  Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                 & ! In
                                  invrs_rho_ds_zm, rho_ds_zt,                       & ! In
                                  rho_ds_zm, l_implemented, em,                     & ! In
-                                 Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
+                                 Lscale_zm, thlm, exner, rtm, rcm, p_in_Pa, thvm,  & ! In
                                  ice_supersat_frac,                                & ! In
                                  clubb_params, nu_vert_res_dep,                    & ! In
                                  saturation_formula,                               & ! In
@@ -929,7 +929,7 @@ module advance_xm_wpxp_module
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
 
-        !$acc update host( sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale, wp3_on_wp2, &
+        !$acc update host( sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale_zm, wp3_on_wp2, &
         !$acc              wp3_on_wp2_zt, Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, &
         !$acc              wp2rtp, rtpthvp, rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
         !$acc              thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, rho_ds_zm, &
@@ -946,7 +946,7 @@ module advance_xm_wpxp_module
         do i = 1, ngrdcol
           call error_prints_xm_wpxp( nz, sclr_dim, gr%zm(i,:), gr%zt(i,:), & ! intent(in) 
                                      dt, sigma_sqd_w(i,:), wm_zm(i,:), wm_zt(i,:), wp2(i,:), & ! intent(in)
-                                     Lscale(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), & ! intent(in)
+                                     Lscale_zm(i,:), wp3_on_wp2(i,:), wp3_on_wp2_zt(i,:), & ! intent(in)
                                      Kh_zt(i,:), Kh_zm(i,:), invrs_tau_C6_zm(i,:), Skw_zm(i,:), & ! intent(in)
                                      wp2rtp(i,:), rtpthvp(i,:), rtm_forcing(i,:), & ! intent(in)
                                      wprtp_forcing(i,:), rtm_ref(i,:), wp2thlp(i,:), & ! intent(in)
@@ -1410,7 +1410,7 @@ module advance_xm_wpxp_module
                                      Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                  & ! In
                                      invrs_rho_ds_zm, rho_ds_zt,                        & ! In
                                      rho_ds_zm, l_implemented, em,                      & ! In
-                                     Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,      & ! In
+                                     Lscale_zm, thlm, exner, rtm, rcm, p_in_Pa, thvm,   & ! In
                                      ice_supersat_frac,                                 & ! In
                                      clubb_params, nu_vert_res_dep,                     & ! In
                                      saturation_formula,                                & ! In
@@ -1473,7 +1473,7 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: & 
       Kh_zm,                  & ! Eddy diffusivity on momentum levels    [m^2/s]
-      Lscale,                 & ! Turbulent mixing length                    [m]
+      Lscale_zm,              & ! Turbulent mixing length interp to m levs   [m]
       em,                     & ! Turbulent Kinetic Energy (TKE)       [m^2/s^2]
       thlm,                   & ! th_l (thermo. levels)                      [K]
       exner,                  & ! Exner function                             [-]
@@ -1595,7 +1595,7 @@ module advance_xm_wpxp_module
         if ( l_stability_correct_Kh_N2_zm ) then
           
           call calc_stability_correction( nz, ngrdcol, gr, &
-                                          thlm, Lscale, em, &
+                                          thlm, Lscale_zm, em, &
                                           exner, rtm, rcm, &
                                           p_in_Pa, thvm, ice_supersat_frac, &
                                           clubb_params(ilambda0_stability_coef), &
@@ -5797,7 +5797,7 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine damp_coefficient( nz, ngrdcol, gr, coefficient, Cx_Skw_fnc, &
                                max_coeff_value, altitude_threshold, &
-                               threshold, Lscale, &
+                               threshold, Lscale_zm, &
                                damped_value )
 
     ! Description:
@@ -5826,7 +5826,7 @@ module advance_xm_wpxp_module
       threshold             ! Value of Lscale below which the damping should occur
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      Lscale,           &   ! Current value of Lscale
+      Lscale_zm,        &   ! Current value of Lscale (interp to momentum levels)
       Cx_Skw_fnc            ! Initial skewness function before damping
 
     ! Return Variable
@@ -5839,10 +5839,10 @@ module advance_xm_wpxp_module
     do k = 1, nz
       do i = 1, ngrdcol
         
-        if ( Lscale(i,k) < threshold .and. gr%zt(i,k) > altitude_threshold ) then
+        if ( Lscale_zm(i,k) < threshold .and. gr%zt(i,k) > altitude_threshold ) then
           damped_value(i,k) = max_coeff_value &
                               + ( ( coefficient - max_coeff_value ) / threshold ) &
-                                * Lscale(i,k)
+                                * Lscale_zm(i,k)
         else
           damped_value(i,k) = Cx_Skw_fnc(i,k)
         end if
@@ -5935,7 +5935,7 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine error_prints_xm_wpxp( nz, sclr_dim, zt, zm, &
                                    dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
-                                   Lscale, wp3_on_wp2, wp3_on_wp2_zt, &
+                                   Lscale_zm, wp3_on_wp2, wp3_on_wp2_zt, &
                                    Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, &
                                    wp2rtp, rtpthvp, rtm_forcing, &
                                    wprtp_forcing, rtm_ref, wp2thlp, &
@@ -5990,7 +5990,7 @@ module advance_xm_wpxp_module
       wm_zm,           & ! w wind component on momentum levels      [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
-      Lscale,          & ! Turbulent mixing length                  [m]
+      Lscale_zm,       & ! Turbulent mixing length interp to m levs [m]
       em,              & ! Turbulent Kinetic Energy (TKE)           [m^2/s^2]
       wp3_on_wp2,      & ! Smoothed wp3 / wp2 on momentum levels    [m/s]
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
@@ -6123,7 +6123,7 @@ module advance_xm_wpxp_module
     write(fstderr,*) "wm_zm = ", wm_zm, new_line('c')
     write(fstderr,*) "wm_zt = ", wm_zt, new_line('c')
     write(fstderr,*) "wp2 = ", wp2, new_line('c')
-    write(fstderr,*) "Lscale = ", Lscale, new_line('c')
+    write(fstderr,*) "Lscale_zm = ", Lscale_zm, new_line('c')
     write(fstderr,*) "wp3_on_wp2 = ", wp3_on_wp2, new_line('c')
     write(fstderr,*) "wp3_on_wp2_zt = ", wp3_on_wp2_zt, new_line('c')
     write(fstderr,*) "Kh_zt = ", Kh_zt, new_line('c')

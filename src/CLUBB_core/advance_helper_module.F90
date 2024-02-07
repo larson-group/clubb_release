@@ -217,7 +217,7 @@ module advance_helper_module
 
   !===============================================================================
   subroutine calc_stability_correction( nz, ngrdcol, gr, &
-                                        thlm, Lscale, em, &
+                                        thlm, Lscale_zm, em, &
                                         exner, rtm, rcm, &
                                         p_in_Pa, thvm, ice_supersat_frac, &
                                         lambda0_stability_coef, &
@@ -238,8 +238,7 @@ module advance_helper_module
         zero, one, three    ! Constant(s)
 
     use grid_class, only:  &
-        grid, & ! Type
-        zt2zm    ! Procedure(s)
+        grid    ! Type
 
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
@@ -254,7 +253,7 @@ module advance_helper_module
     type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
-      Lscale,          & ! Turbulent mixing length                   [m]
+      Lscale_zm,       & ! Turbulent mixing length interp to m levs  [m]
       em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
       thlm,            & ! th_l (thermo. levels)                     [K]
       exner,           & ! Exner function                            [-]
@@ -287,8 +286,7 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry, & !  []
       brunt_vaisala_freq_sqd_moist, &
-      lambda0_stability, &
-      Lscale_zm
+      lambda0_stability
 
     integer :: i, k
 
@@ -296,7 +294,7 @@ module advance_helper_module
 
     !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                    brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                    lambda0_stability, Lscale_zm )
+    !$acc                    lambda0_stability )
 
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
@@ -322,8 +320,6 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    Lscale_zm = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -335,7 +331,7 @@ module advance_helper_module
 
     !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                   lambda0_stability, Lscale_zm )
+    !$acc                   lambda0_stability )
 
     return
 

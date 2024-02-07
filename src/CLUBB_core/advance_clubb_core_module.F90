@@ -1638,7 +1638,7 @@ module advance_clubb_core_module
 
       ! Determine stability correction factor
       call calc_stability_correction( nz, ngrdcol, gr,                               & ! In
-                                      thlm, Lscale, em,                              & ! In
+                                      thlm, Lscale_zm, em,                           & ! In
                                       exner, rtm, rcm,                               & ! In
                                       p_in_Pa, thvm, ice_supersat_frac,              & ! In
                                       clubb_params(ilambda0_stability_coef),         & ! In
@@ -1805,7 +1805,7 @@ module advance_clubb_core_module
       ! advance_xm_wpxp_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_xm_wpxp( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt_advance,      & ! intent(in)  
                             sigma_sqd_w, wm_zm, wm_zt, wp2,                       & ! intent(in)
-                            Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm,      & ! intent(in)
+                            Lscale_zm, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm,   & ! intent(in)
                             invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, & ! intent(in)
                             rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp,         & ! intent(in)
                             thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref,     & ! intent(in)
