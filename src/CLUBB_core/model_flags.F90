@@ -882,7 +882,7 @@ module model_flags
     write(iunit,*) "l_prescribed_avg_deltaz = ", clubb_config_flags%l_prescribed_avg_deltaz
     write(iunit,*) "l_lmm_stepping = ", clubb_config_flags%l_lmm_stepping
     write(iunit,*) "l_e3sm_config = ", clubb_config_flags%l_e3sm_config
-    write(iunit,*) "l_vary_convect_depth", clubb_config_flags%l_vary_convect_depth
+    write(iunit,*) "l_vary_convect_depth = ", clubb_config_flags%l_vary_convect_depth
     write(iunit,*) "l_use_tke_in_wp3_pr_turb_term = ", clubb_config_flags%l_use_tke_in_wp3_pr_turb_term
     write(iunit,*) "l_use_tke_in_wp2_wp3_K_dfsn = ", clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn
     write(iunit,*) "l_use_wp3_lim_with_smth_Heaviside = ", clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside
