@@ -511,7 +511,7 @@ module stats_zt_module
         k = k + 1
       case ('wm_zt')
         stats_metadata%iwm_zt = k
-        call stat_assign( var_index=stats_metadata%iwm_zt, var_name="wm", &
+        call stat_assign( var_index=stats_metadata%iwm_zt, var_name="wm_zt", &
              var_description="w_bar, Grid-mean upward (w) wind", &
              var_units="m/s", l_silhs=.false., &
              grid_kind=stats_zt )
