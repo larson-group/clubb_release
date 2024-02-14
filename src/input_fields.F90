@@ -542,7 +542,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_wm_zt, stat_files(clubb_zt), "wm", gr%nz, timestep, &
+           ( l_input_wm_zt, stat_files(clubb_zt), "wm_zt", gr%nz, timestep, &
              gr%zt(1,:), wm_zt, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
