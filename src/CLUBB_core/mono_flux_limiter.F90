@@ -932,10 +932,11 @@ module mono_flux_limiter
           !Check to ensure the vertical integral is not zero to avoid a divide
           !by zero error
           if ( abs(xm_vert_integral) < eps ) then
+#ifndef CLUBB_GPU
             write(fstderr,*) "Vertical integral of xm is zero;", & 
                              "mfl will remove spike at top of domain,", &
                              "but it will not conserve xm."
-
+#endif
             !Remove the spike at the top of the domain
             xm(i,nz) = xm_enter_mfl(i,nz)      
           else
@@ -943,8 +944,10 @@ module mono_flux_limiter
 
             !xm_adj_coef can not be smaller than -1
             if (xm_adj_coef < -0.99_core_rknd) then
+#ifndef CLUBB_GPU
               write(fstderr,*) "xm_adj_coef in mfl less than -0.99, " &
                                // "mx_adj_coef set to -0.99"
+#endif
               xm_adj_coef = -0.99_core_rknd
             endif
 
@@ -2057,7 +2060,7 @@ module mono_flux_limiter
       mean_w_up_i      ! Mean w (>= w|_ref) from normal distribution [m/s]
 
     !------------------------- Local Variables -------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ) :: &
         erf_cache, & ! erf/cdfnorm values
         exp_cache    ! exp() values
 
@@ -2068,8 +2071,6 @@ module mono_flux_limiter
     integer :: i, k  ! Vertical loop index
 
     !------------------------- Begin Code -------------------------
-
-    !$acc enter data create( erf_cache, exp_cache )
 
     invrs_sqrt_2pi = one / sqrt_2pi
 
@@ -2101,19 +2102,18 @@ module mono_flux_limiter
            mean_w_down_i(i,k) = 0.0_core_rknd
            mean_w_up_i(i,k)   = w_i_zm(i,k)
 
-        else ! The normal has significant values on both sides of w_ref.
+        else 
 
-           ! MKL functions are unavailable, use these scalar calculations instead
+           ! The normal has significant values on both sides of w_ref.
+           exp_cache = exp( -(w_ref-w_i_zm(i,k))**2 / (2.0_core_rknd*sigma_w_i**2) )
 
-           exp_cache(i,k) = exp( -(w_ref-w_i_zm(i,k))**2 / (2.0_core_rknd*sigma_w_i**2) )
+           erf_cache = erf( (w_ref-w_i_zm(i,k)) / (sqrt_2*sigma_w_i ) )
 
-           erf_cache(i,k) = erf( (w_ref-w_i_zm(i,k)) / (sqrt_2*sigma_w_i ) )
+           mean_w_down_i(i,k) = - sigma_w_i * invrs_sqrt_2pi * exp_cache  &
+                                + w_i_zm(i,k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
 
-           mean_w_down_i(i,k) =  - sigma_w_i * invrs_sqrt_2pi * exp_cache(i,k)  &
-                               + w_i_zm(i,k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache(i,k))
-
-           mean_w_up_i(i,k) =  + sigma_w_i * invrs_sqrt_2pi * exp_cache(i,k)  &
-                             + w_i_zm(i,k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache(i,k))
+           mean_w_up_i(i,k) = + sigma_w_i * invrs_sqrt_2pi * exp_cache  &
+                              + w_i_zm(i,k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
                              
         end if
         
@@ -2131,8 +2131,6 @@ module mono_flux_limiter
       mean_w_up_i(i,nz) = 0.0_core_rknd
     end do
     !$acc end parallel loop
-
-    !$acc exit data delete( erf_cache, exp_cache )
 
     return
 

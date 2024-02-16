@@ -107,7 +107,6 @@ module model_flags
     saturation_flatau = 3, & ! Constant for Flatau approximations of saturation
     saturation_lookup = 4    ! Use a lookup table for mixing length
                              ! saturation vapor pressure calculations
-  !$acc declare create(saturation_flatau,saturation_gfdl,saturation_bolton,saturation_lookup)
 
   !-----------------------------------------------------------------------------
   ! Options that can be changed at runtime 

@@ -869,8 +869,11 @@ module advance_clubb_core_module
     !$acc              tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
 
     !$acc enter data if( sclr_dim > 0 ) &
-    !$acc            create( wpedsclrp, sclrprcp, wp2sclrp, &
+    !$acc            create( sclrprcp, wp2sclrp, &
     !$acc                    wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt )
+
+    !$acc enter data if( edsclr_dim > 0 ) &
+    !$acc            create( wpedsclrp )
 
     if ( clubb_config_flags%l_lmm_stepping ) then
       dt_advance = two * dt
@@ -923,9 +926,13 @@ module advance_clubb_core_module
       !$acc              rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
       !$acc              thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
       !$acc              um, upwp, vm, vpwp, up2, vp2, rtm, wprtp, thlm, wpthlp, &
-      !$acc              wp2, wp3, rtp2, thlp2, rtpthlp, wpsclrp_sfc, wpedsclrp_sfc, &
-      !$acc              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
-      !$acc              edsclrm, edsclrm_forcing )
+      !$acc              wp2, wp3, rtp2, thlp2, rtpthlp )
+
+      !$acc update host( wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, &
+      !$acc              sclrp2, sclrprtp, sclrpthlp, sclrm_forcing ) &
+      !$acc if ( sclr_dim > 0 )
+
+      !$acc update host( edsclrm, edsclrm_forcing  ) if ( edsclr_dim > 0 )
 
       do i = 1, ngrdcol
         call parameterization_check( &
@@ -2575,11 +2582,14 @@ module advance_clubb_core_module
       !$acc              rtprcp, rcp2, em, a3_coef, a3_coef_zt, &
       !$acc              wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
       !$acc              w_up_in_cloud, w_down_in_cloud, &
-      !$acc              cloudy_updraft_frac, cloudy_downdraft_frac, &
-      !$acc              sclrm, sclrp2, &
-      !$acc              sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
-      !$acc              wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp, &
-      !$acc              wpsclrpthlp, wpedsclrp, edsclrm, edsclrm_forcing )
+      !$acc              cloudy_updraft_frac, cloudy_downdraft_frac )
+
+      !$acc update host( sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
+      !$acc              sclrpthvp, wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, &
+      !$acc              wpsclrprtp, wpsclrpthlp, wpedsclrp ) &
+      !$acc if ( sclr_dim > 0 )
+
+      !$acc update host( edsclrm, edsclrm_forcing  ) if ( edsclr_dim > 0 )
 
       do i = 1, ngrdcol
 
@@ -2691,16 +2701,18 @@ module advance_clubb_core_module
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-      !$acc update host( thlm_forcing, rtm_forcing, um_forcing, &
-      !$acc              vm_forcing, wm_zm, wm_zt, p_in_Pa, &
-      !$acc              rho_zm, rho, exner, rho_ds_zm, &
-      !$acc              rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
-      !$acc              thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc, &
-      !$acc              vpwp_sfc, um, upwp, vm, vpwp, up2, vp2, &
-      !$acc              rtm, wprtp, thlm, wpthlp, wp2, wp3, &
-      !$acc              rtp2, thlp2, rtpthlp, &
-      !$acc              wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2, &
-      !$acc              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )
+      !$acc update host( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
+      !$acc              wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner, rho_ds_zm, &
+      !$acc              rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
+      !$acc              thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
+      !$acc              um, upwp, vm, vpwp, up2, vp2, rtm, wprtp, thlm, wpthlp, &
+      !$acc              wp2, wp3, rtp2, thlp2, rtpthlp )
+
+      !$acc update host( wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, &
+      !$acc              sclrp2, sclrprtp, sclrpthlp, sclrm_forcing ) &
+      !$acc if ( sclr_dim > 0 )
+
+      !$acc update host( edsclrm, edsclrm_forcing  ) if ( edsclr_dim > 0 )
 
       do i = 1, ngrdcol
         call parameterization_check( &
@@ -2801,8 +2813,11 @@ module advance_clubb_core_module
     end if
 
     !$acc exit data if( sclr_dim > 0 ) &
-    !$acc           delete( wpedsclrp, sclrprcp, wp2sclrp, &
+    !$acc           delete( sclrprcp, wp2sclrp, &
     !$acc                   wpsclrp2, wpsclrprtp, wpsclrpthlp, wpsclrp_zt, sclrp2_zt )
+
+    !$acc exit data if( edsclr_dim > 0 ) &
+    !$acc           delete( wpedsclrp )
 
     !$acc exit data delete( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
     !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, &

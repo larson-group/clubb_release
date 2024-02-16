@@ -1170,8 +1170,8 @@ contains
     !$acc              rtpthlp_forcing_col, wm_zm_col, wm_zt_col, rho_zm_col, rho_col, rho_ds_zm_col, rho_ds_zt_col, &
     !$acc              invrs_rho_ds_zm_col, invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, rfrzm_col, &
     !$acc              radf_col, wpthlp_sfc_col, &
-    !$acc              wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, edsclrm_forcing_col, & 
-    !$acc              wpedsclrp_sfc_col, upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, um_ref_col, &
+    !$acc              wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, & 
+    !$acc              upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, um_ref_col, &
     !$acc              vm_ref_col, ug_col, vg_col, host_dx_col, host_dy_col ) &
     !$acc        copy( um_col, upwp_col, vm_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, rtm_col, wprtp_col, thlm_col, wpthlp_col, rtp2_col, &
     !$acc              rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, wp2_col, wp3_col, &
@@ -1179,7 +1179,6 @@ contains
     !$acc              rtpthvp_col, thlpthvp_col, wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, &
     !$acc              wp4_col, wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, um_pert_col, &
     !$acc              vm_pert_col, upwp_pert_col, vpwp_pert_col, &
-    !$acc              edsclrm_col, &
     !$acc              pdf_params, pdf_params_zm, &
     !$acc              pdf_params%w_1, pdf_params%w_2, &
     !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
@@ -1235,6 +1234,10 @@ contains
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing_col, wpsclrp_sfc_col ) &
     !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, sclrpthvp )
+
+    !$acc data if( edsclr_dim > 0 ) &
+    !$acc      copyin( wpedsclrp_sfc_col, edsclrm_forcing_col ) &
+    !$acc        copy( edsclrm_col )
 
     !$acc data if( hydromet_dim > 0 ) &
     !$acc      copyin( hydromet_col, wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &
@@ -1304,6 +1307,7 @@ contains
       rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &                      ! intent(out)
       err_code_api )                                                              ! intent(out)
     
+    !$acc end data
     !$acc end data
     !$acc end data
     !$acc end data
@@ -1729,8 +1733,8 @@ contains
     !$acc              rtpthlp_forcing, wm_zm, wm_zt, rho_zm, rho, rho_ds_zm, rho_ds_zt, &
     !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, rfrzm, &
     !$acc              radf, wpthlp_sfc, &
-    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, edsclrm_forcing, & 
-    !$acc              wpedsclrp_sfc, upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, thlm_ref, um_ref, &
+    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, & 
+    !$acc              upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, thlm_ref, um_ref, &
     !$acc              vm_ref, ug, vg, host_dx, host_dy ) &
     !$acc        copy( um, upwp, vm, vpwp, up2, vp2, up3, vp3, rtm, wprtp, thlm, wpthlp, rtp2, &
     !$acc              rtp3, thlp2, thlp3, rtpthlp, wp2, wp3, &
@@ -1738,7 +1742,6 @@ contains
     !$acc              rtpthvp, thlpthvp, wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &
     !$acc              wp4, wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, um_pert, &
     !$acc              vm_pert, upwp_pert, vpwp_pert, &
-    !$acc              edsclrm, &
     !$acc              pdf_params, pdf_params_zm, &
     !$acc              pdf_params%w_1, pdf_params%w_2, &
     !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
@@ -1794,6 +1797,10 @@ contains
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing, wpsclrp_sfc ) &
     !$acc        copy( sclrm, wpsclrp, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrpthvp )
+
+    !$acc data if( edsclr_dim > 0 ) &
+    !$acc      copyin( wpedsclrp_sfc, edsclrm_forcing ) &
+    !$acc        copy( edsclrm )
 
     !$acc data if( hydromet_dim > 0 ) &
     !$acc      copyin( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
@@ -1863,6 +1870,7 @@ contains
       rcm_in_layer, cloud_cover, invrs_tau_zm, &              ! intent(out)
       err_code_api )                                          ! intent(out)
 
+    !$acc end data
     !$acc end data
     !$acc end data
     !$acc end data

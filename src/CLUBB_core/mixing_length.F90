@@ -1504,6 +1504,9 @@ module mixing_length
       tmp_calc_max, &
       tmp_calc_min_max
 
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      tmp_calc_ngrdcol
+
     integer :: i, k
 
     !--------------------------------- Begin Code ---------------------------------
@@ -1513,7 +1516,7 @@ module mixing_length
     !$acc                    ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                    brunt_vaisala_freq_clipped, &
     !$acc                    ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                    ddzt_umvm_sqd, tau_zt )
+    !$acc                    ddzt_umvm_sqd, tmp_calc_ngrdcol )
 
     !$acc enter data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
     !$acc            create( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &
@@ -1566,19 +1569,24 @@ module mixing_length
     altitude_threshold = clubb_params(ialtitude_threshold)
     wpxp_Ri_exp = clubb_params(iwpxp_Ri_exp)
 
+
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      tmp_calc_ngrdcol(i) = ( upwp_sfc(i)**2 + vpwp_sfc(i)**2 )**one_fourth
+    end do
+    !$acc end parallel loop
+
     if ( l_smooth_min_max ) then
 
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        ustar(i) = smooth_max( ( upwp_sfc(i)**2 + vpwp_sfc(i)**2 )**one_fourth, ufmin, min_max_smth_mag )
-      end do
-      !$acc end parallel loop
+      ! tmp_calc_ngrdcol used here because openacc has an issue with
+      !  a variable being both input and output of a function
+      ustar = smooth_max( ngrdcol, tmp_calc_ngrdcol, ufmin, min_max_smth_mag )
 
     else 
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        ustar(i) = max( ( upwp_sfc(i)**2 + vpwp_sfc(i)**2 )**one_fourth, ufmin )
+        ustar(i) = max( tmp_calc_ngrdcol(i), ufmin )
       end do
       !$acc end parallel loop
 
@@ -2123,7 +2131,7 @@ module mixing_length
     !$acc                   ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                   brunt_vaisala_freq_clipped, &
     !$acc                   ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                   ddzt_umvm_sqd, tau_zt )
+    !$acc                   ddzt_umvm_sqd, tmp_calc_ngrdcol )
 
     !$acc exit data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
     !$acc           delete( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &

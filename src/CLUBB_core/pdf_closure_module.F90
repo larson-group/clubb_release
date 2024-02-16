@@ -1428,8 +1428,7 @@ module pdf_closure_module
 
       !$acc update host( wp4, wprtp2, wp2rtp, wpthlp2, wp2thlp, cloud_frac, &
       !$acc              rcm, wpthvp, wp2thvp, rtpthvp, thlpthvp, wprcp, wp2rcp, &
-      !$acc              rtprcp, thlprcp, rcp2, wprtpthlp, sclrpthvp, sclrprcp, &
-      !$acc              wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp, &
+      !$acc              rtprcp, thlprcp, rcp2, wprtpthlp, &
       !$acc              pdf_params%w_1, pdf_params%w_2, &
       !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
       !$acc              pdf_params%rt_1, pdf_params%rt_2, &
@@ -1454,6 +1453,9 @@ module pdf_closure_module
       !$acc              pdf_params%mixt_frac, pdf_params%ice_supersat_frac_1, &
       !$acc              pdf_params%ice_supersat_frac_2 )
 
+      !$acc update host( sclrpthvp, sclrprcp, wpsclrp2, wpsclrprtp, wpsclrpthlp, wp2sclrp ) &
+      !$acc if ( sclr_dim > 0 )
+
       do i = 1, ngrdcol
           
         call pdf_closure_check( & 
@@ -1477,8 +1479,9 @@ module pdf_closure_module
       if ( err_code == clubb_fatal_error ) then
 
         !$acc update host( p_in_Pa, exner, thv_ds, wm, wp2, wp3, sigma_sqd_w, &
-        !$acc              rtm, rtp2, wprtp, thlm, thlp2, wpthlp, rtpthlp, sclrm, &
-        !$acc              wpsclrp, sclrp2, sclrprtp, sclrpthlp, ice_supersat_frac )
+        !$acc              rtm, rtp2, wprtp, thlm, thlp2, wpthlp, rtpthlp, ice_supersat_frac )
+
+        !$acc update host( sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp ) if ( sclr_dim > 0 )
 
         write(fstderr,*) "Error in pdf_closure_new"
 

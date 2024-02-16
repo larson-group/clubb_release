@@ -747,8 +747,9 @@ module sfc_varnce_module
     if ( clubb_at_least_debug_level( 2 ) ) then 
 
       !$acc update host( wp2, up2, vp2, thlp2, rtp2, rtpthlp, &
-      !$acc              sclrp2, sclrprtp, sclrpthlp, &
       !$acc              upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc )
+
+      !$acc update host( sclrp2, sclrprtp, sclrpthlp ) if ( sclr_dim > 0 )
 
       do i = 1, ngrdcol
         call sfc_varnce_check( sclr_dim, wp2(i,1), up2(i,1), vp2(i,1),          & ! intent(in)

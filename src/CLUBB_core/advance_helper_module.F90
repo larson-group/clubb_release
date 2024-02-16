@@ -67,6 +67,7 @@ module advance_helper_module
     module procedure smooth_max_sclr_idx
     module procedure smooth_max_array_scalar
     module procedure smooth_max_arrays
+    module procedure smooth_max_array_1D_scalar
     module procedure smooth_max_scalars
 
   end interface
@@ -1373,7 +1374,6 @@ module advance_helper_module
 !===============================================================================
   function smooth_min_scalars( input_var1, input_var2, smth_coef ) &
   result( output_var )
-  !$acc routine
 
   ! Description:
   !   Computes a smoothed version of the min function, using two scalars as inputs.
@@ -1531,6 +1531,63 @@ module advance_helper_module
   end function smooth_max_array_scalar
 
 !===============================================================================
+  function smooth_max_array_1D_scalar( ngrdcol, input_var1, input_var2, smth_coef ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the max function, using one scalar and 
+  !   one 1d array as inputs. For more details, see the interface in this file.
+
+  ! References:
+  !   See clubb:ticket:894, updated version: 965
+  !----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd                     ! Constant(s)
+        
+    use constants_clubb, only: &
+        one_half
+
+    implicit none
+
+    !----------------------------- Input Variables -----------------------------
+    integer, intent(in) :: &
+      ngrdcol
+
+    real ( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      input_var1          ! Units vary
+
+    real ( kind = core_rknd ), intent(in) :: &
+      input_var2, &       ! Units vary
+      smth_coef           ! "intensity" of the smoothing. Should be of a similar magnitude to
+                          ! that of the data structures input_var1 and input_var2
+
+    !----------------------------- Output Variables -----------------------------
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      output_var          ! Same unit as input_var1 and input_var2
+
+    !----------------------------- Local Variables -----------------------------
+    integer :: i
+
+    !----------------------------- Begin Code -----------------------------
+
+    !$acc data copyin( input_var1 ) &
+    !$acc     copyout( output_var )
+
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      output_var(i) = one_half * ( ( input_var1(i) + input_var2 ) + &
+                                sqrt(( input_var1(i) - input_var2 )**2 + smth_coef**2) )
+    end do
+    !$acc end parallel loop
+
+    !$acc end data
+
+    return
+
+  end function smooth_max_array_1D_scalar
+
+!===============================================================================
   function smooth_max_arrays( nz, ngrdcol, input_var1, input_var2, smth_coef ) &
   result( output_var )
 
@@ -1593,7 +1650,6 @@ module advance_helper_module
 !===============================================================================
   function smooth_max_scalars( input_var1, input_var2, smth_coef ) &
   result( output_var )
-  !$acc routine
 
   ! Description:
   !   Computes a smoothed version of the max function, using two scalars as inputs.
