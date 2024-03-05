@@ -20,7 +20,7 @@ module advance_clubb_core_module
 !                   should include this notice.
 !
 !   Portions of this code derived from other sources (Hugh Morrison,
-!   ACM TOMS, Numerical Recipes, et cetera) are the intellectual
+!   ACM TOMS, et cetera) are the intellectual
 !   property of their respective authors as noted and are also subject
 !   to copyright.
 !
