@@ -438,6 +438,10 @@ module mono_flux_limiter
     real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
       xm_mfl
 
+    real( kind = core_rknd ) :: &
+      max_tmp, &
+      min_tmp
+
     !---------------------------- Begin Code ----------------------------
 
     !$acc enter data create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
@@ -607,37 +611,25 @@ module mono_flux_limiter
     ! The values of w'x' at level 1 and at level gr%nz are set values and
     ! are not altered.
 
-    ! Find the smallest value of all relevant level minima for variable x.
+    ! Find the smallest and largest value of all relevant levels for variable x.
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz-1
       do i = 1, ngrdcol
 
-        low_lev  = max( low_lev_effect(i,k), 2 )
+        low_lev  = max( low_lev_effect(i,k), 2)
         high_lev = min( high_lev_effect(i,k), nz )
 
-        min_x_allowable(i,k) = min_x_allowable_lev(i,low_lev)
+        min_tmp = min_x_allowable_lev(i,low_lev)
+        max_tmp = max_x_allowable_lev(i,low_lev)
 
-        do j = low_lev, high_lev
-          min_x_allowable(i,k) = min( min_x_allowable(i,k), min_x_allowable_lev(i,j) )
+        do j = low_lev+1, high_lev
+          min_tmp = min( min_tmp, min_x_allowable_lev(i,j) )
+          max_tmp = max( max_tmp, max_x_allowable_lev(i,j) )
         end do
 
-      end do
-    end do
-    !$acc end parallel loop
+        min_x_allowable(i,k) = min_tmp
+        max_x_allowable(i,k) = max_tmp
 
-    ! Find the largest value of all relevant level maxima for variable x.
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
-      do i = 1, ngrdcol
-
-        low_lev  = max( low_lev_effect(i,k), 2 )
-        high_lev = min( high_lev_effect(i,k), nz )
-
-        max_x_allowable(i,k) = max_x_allowable_lev(i,low_lev)
-
-        do j = low_lev, high_lev
-          max_x_allowable(i,k) = max( max_x_allowable(i,k), max_x_allowable_lev(i,j) )
-        end do
       end do
     end do
     !$acc end parallel loop

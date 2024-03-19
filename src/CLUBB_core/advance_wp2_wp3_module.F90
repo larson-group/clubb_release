@@ -539,7 +539,7 @@ module advance_wp2_wp3_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code)
       do k = 1, nz
         do i = 1, ngrdcol
           ! Assertion check for C11_Skw_fnc
@@ -551,7 +551,7 @@ module advance_wp2_wp3_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code)
       do k = 1, nz
         do i = 1, ngrdcol
           ! Assertion check for C11_Skw_fnc
@@ -683,7 +683,7 @@ module advance_wp2_wp3_module
       do i = 1, ngrdcol
         do b = 1, ndiags5
           wp3_term_ta_lhs_result(b,i,k) = zero
-          wp3_pr3_lhs(b,i,k) = 0.0_core_rknd
+          wp3_pr3_lhs(b,i,k)            = zero
         end do
       end do
     end do
@@ -2124,7 +2124,7 @@ module advance_wp2_wp3_module
       !        the term more numerically stable.
 
       ! Add terms to lhs
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc parallel loop gang vector collapse(3) default(present)
       do k = 2, nz-1
         do i = 1, ngrdcol
           do b = 1, ndiags5

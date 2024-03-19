@@ -4037,7 +4037,7 @@ module advance_clubb_core_module
       l_spur_supersat = .false.
       
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:l_spur_supersat)
       do k = 2, nz
         do i = 1, ngrdcol
           if (rel_humidity(i,k) > 1.0_core_rknd) then
@@ -5161,7 +5161,7 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:err_code)
       do k = 2, nz-1
         do i = 1, ngrdcol
 

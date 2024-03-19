@@ -118,10 +118,10 @@ module fill_holes
     logical :: &
       l_field_below_threshold
 
-    ! --------------------- Begin Code --------------------- 
+    real( kind = core_rknd ) ::  & 
+      rho_k_sum
 
-    !$acc enter data create( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
-    !$acc                    numer_integral_global, field_avg_global, mass_fraction_global )
+    ! --------------------- Begin Code --------------------- 
 
     l_field_below_threshold = .false.
 
@@ -138,10 +138,11 @@ module fill_holes
 
     ! If all field values are above the specified threshold, no hole filling is required
     if ( .not. l_field_below_threshold ) then
-      !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
-      !$acc                   numer_integral_global, field_avg_global, mass_fraction_global )
       return
     end if
+
+    !$acc enter data create( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
+    !$acc                    numer_integral_global, field_avg_global, mass_fraction_global )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -158,9 +159,14 @@ module fill_holes
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do k = 2+num_draw_pts, upper_hf_level-num_draw_pts
-        k_start = k - num_draw_pts
-        k_end   = k + num_draw_pts
-        invrs_denom_integral(i,k) = one / sum( rho_ds_dz(i,k_start:k_end) )
+
+        rho_k_sum = 0.0_core_rknd
+
+        do j = k - num_draw_pts, k + num_draw_pts
+          rho_k_sum = rho_k_sum + rho_ds_dz(i,j)
+        end do
+
+        invrs_denom_integral(i,k) = one / rho_k_sum
       end do  
     end do
     !$acc end parallel loop

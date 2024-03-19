@@ -714,7 +714,7 @@ module advance_xm_wpxp_module
 
     if ( clubb_at_least_debug_level( 0 ) ) then
       ! Assertion check for C7_Skw_fnc
-      !$acc parallel loop gang vector collapse(2) default(present)
+      !$acc parallel loop gang vector collapse(2) default(present)  reduction(.or.:err_code)
       do k = 1, nz
         do i = 1, ngrdcol
           if ( C7_Skw_fnc(i,k) > one .or. C7_Skw_fnc(i,k) < zero ) then
