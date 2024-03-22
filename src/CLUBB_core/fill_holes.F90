@@ -160,6 +160,11 @@ module fill_holes
     do i = 1, ngrdcol
       do k = 2+num_draw_pts, upper_hf_level-num_draw_pts
 
+        ! This loop and division could be written more compactly as
+        !   invrs_denom_integral(i,k) = one / rho_ds_dz(i,k-num_draw_pts:k+num_draw_pts)
+        ! but has been manually written in loop form to improve performance 
+        ! when using OpenMP target offloading
+        ! See: https://github.com/larson-group/clubb/issues/1138#issuecomment-1974918151
         rho_k_sum = 0.0_core_rknd
 
         do j = k - num_draw_pts, k + num_draw_pts
