@@ -1,0 +1,93 @@
+commit 650cd4c0dc90ff1c184e4617092fbc9c1c2a657e
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Sun Mar 24 12:54:53 2024 -0500
+
+    Adding sum part to comment
+
+commit db81035ebff94b1342910180c9042dea956ed746
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Fri Mar 22 14:59:44 2024 -0500
+
+    Adding comment to explain unusual code choice.
+
+commit 6909e9aa343dc087ffc261cee0a9b8a8646bdc1b
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Mon Mar 18 19:06:29 2024 -0500
+
+    OpenMP Optimizations (#1146)
+    
+    * Small changes to improve omp performance.
+    
+    * Some more small changes to help openmp
+    
+    * Adhering to standards a little better by specifying _core_rknd
+
+commit 30fc720efe7da567c76182426718583cd814697a
+Author: Gunther Huebler <guntherhuebler@login01.frontier.olcf.ornl.gov>
+Date:   Tue Mar 12 13:42:53 2024 -0400
+
+    Adding new compile script for frontier+cray
+
+commit fc6fd8cf6ef01fb1f1e151abee424ad5203c4d72
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Tue Mar 5 15:52:12 2024 -0600
+
+    Removes comment about Numerical Recipes
+
+commit 90f3976ec42f513108090135011800a1b9301734
+Author: huebleruwm <37674341+huebleruwm@users.noreply.github.com>
+Date:   Thu Feb 15 20:58:05 2024 -0600
+
+    Small acc tweaks (#1144)
+    
+    * Removing unneccesary acc declare statements.
+    
+    * Removing use of acc routine in favor of new 1D array routine for smooth_max.
+    
+    * The new tmp_calc_ngrdcol should be copied regardless of flag
+    
+    * tmp_calc_ngrdcol also needs to be deleted unconditionally.
+    
+    * Making separate conditional acc copy for edsclrdim variables.
+    
+    * Adding ifdefs around prints inside of openacc kernel
+    
+    * Making erf_cache and exp_cache scalars, there was no need for them to be arrays.
+    
+    * Making update host statements with sclr_dim or edsclr_dim conditional. Without these we get runtime errors with cray+openacc
+    
+    * Removed files
+
+commit 8eb97839237623e96720a0101dc0c40f52275927
+Author: huebler <huebler@uwm.edu>
+Date:   Wed Feb 14 17:21:16 2024 -0600
+
+    Fixing restarts by changing wm to wm_zt, the stats output name was changed in 4b25d3a
+
+commit b7ae0f1b35db3daf7bee3b5a6dd9221bd3c7e50d
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Wed Feb 14 16:02:13 2024 -0600
+
+    Add blank line in order to trigger Jenkins tests for CAM
+    
+    In particular, Brian Griffin's code change from 7 Feb 2024,
+    
+    BIT_CHANGING:595e2c13024c1e913815d56ae724823a82bddc03
+    
+    changes answers when using l_diag_Lscale_from_tau=.false.
+    
+    This code change was brought into the CAM repo in this commit:
+    
+    BIT_CHANGING:d275ac17f3e53d65641c3210df33ce0fad4e5aef
+
+commit a1965f133c3edf1eee0a090a1ee34b7e619f66ff
+Author: huebler <huebler@uwm.edu>
+Date:   Tue Feb 13 18:07:43 2024 -0600
+
+    README change to add BIT_CHANGING:595e2c13024c1e913815d56ae724823a82bddc03 when using l_diag_Lscale_from_tau=.false. and for the CAM repo we have BIT_CHANGING:d275ac17f3e53d65641c3210df33ce0fad4e5aef as the hash
+
+commit 4b25d3a0efe6174e27aca762ff4a26fb0b656047
+Author: bstephens82 <benjamin.andrew.stephens@gmail.com>
+Date:   Wed Feb 7 22:26:37 2024 -0700
+
+    fixing bug, name of wm_zt was left as "wm"
