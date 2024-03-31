@@ -25,10 +25,7 @@ module new_pdf_main
   !=============================================================================
   subroutine new_pdf_driver( nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,  & ! In
                              wprtp, wpthlp, rtpthlp,                    & ! In
-                             slope_coef_spread_DG_means_w,              & ! In
-                             pdf_component_stdev_factor_w,              & ! In
-                             coef_spread_DG_means_rt,                   & ! In
-                             coef_spread_DG_means_thl,                  & ! In
+                             clubb_params,                              & ! In
                              Skrt, Skthl,                               & ! I/O
                              mu_w_1, mu_w_2,                            & ! Out
                              mu_rt_1, mu_rt_2,                          & ! Out
@@ -78,6 +75,13 @@ module new_pdf_main
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+     use parameter_indices, only: &
+        nparams,                       & ! Variable(s)
+        islope_coef_spread_DG_means_w, &
+        ipdf_component_stdev_factor_w, &
+        icoef_spread_DG_means_rt,      &
+        icoef_spread_DG_means_thl
+
     implicit none
 
     integer, intent(in) :: &
@@ -97,15 +101,8 @@ module new_pdf_main
       wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
       rtpthlp    ! Covariance of rt and thl (overall)  [(kg/kg)K]
 
-    real( kind = core_rknd ), intent(in) :: &
-      ! Slope coefficient for the spread between the PDF component means of w.
-      slope_coef_spread_DG_means_w, &
-      ! Parameter to adjust the PDF component standard deviations of w.
-      pdf_component_stdev_factor_w, &
-      ! Coefficient for the spread between the PDF component means of rt.
-      coef_spread_DG_means_rt, &
-      ! Coefficient for the spread between the PDF component means of thl.
-      coef_spread_DG_means_thl
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     ! Input/Output Variables
     ! These variables are input/output because their values may be clipped.
@@ -244,8 +241,8 @@ module new_pdf_main
 
       ! Vertical velocity, w, will always be the setter variable.
       call calc_F_x_zeta_x_setter( nz, Skw(i,:),                      & ! In
-                                   slope_coef_spread_DG_means_w, & ! In
-                                   pdf_component_stdev_factor_w, & ! In
+                                   clubb_params(i,islope_coef_spread_DG_means_w), & ! In
+                                   clubb_params(i,ipdf_component_stdev_factor_w), & ! In
                                    lambda_w,                     & ! In
                                    F_w(i,:), zeta_w,                  & ! Out
                                    min_F_w(i,:), max_F_w(i,:)              ) ! Out
@@ -271,7 +268,7 @@ module new_pdf_main
 
       ! Calculate the PDF parameters for responder variable rt.
       call calc_responder_var( nz, rtm(i,:), rtp2(i,:), sgn_wprtp, mixt_frac(i,:), & ! In
-                               coef_spread_DG_means_rt,         & ! In
+                               clubb_params(i,icoef_spread_DG_means_rt),         & ! In
                                exp_factor_rt,                   & ! In
                                max_Skx2_pos_Skx_sgn_wpxp,       & ! In
                                max_Skx2_neg_Skx_sgn_wpxp,       & ! In
@@ -284,7 +281,7 @@ module new_pdf_main
 
       ! Calculate the PDF parameters for responder variable thl.
       call calc_responder_var( nz, thlm(i,:), thlp2(i,:), sgn_wpthlp, mixt_frac(i,:), & ! In
-                               coef_spread_DG_means_thl,           & ! In
+                               clubb_params(i,icoef_spread_DG_means_thl),           & ! In
                                exp_factor_thl,                     & ! In
                                max_Skx2_pos_Skx_sgn_wpxp,          & ! In
                                max_Skx2_neg_Skx_sgn_wpxp,          & ! In

@@ -248,7 +248,7 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       lhs_splat_wp2  ! LHS coefficient of wp2 splatting term  [1/s]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep), intent(in) :: &
@@ -321,12 +321,7 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ) :: & 
       C2rt,    & ! CLUBB tunable parameter C2rt
       C2thl,   & ! CLUBB tunable parameter C2thl
-      C2rtthl, & ! CLUBB tunable parameter C2rtthl
-      C4,      & ! CLUBB tunable parameter C4
-      C14,     & ! CLUBB tunable parameter C14
-      C_K2,    & ! CLUBB tunable parameter C_K2
-      C_K9,    & ! CLUBB tunable parameter C_K9
-      rtp2_clip_coef
+      C2rtthl    ! CLUBB tunable parameter C2rtthl
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
       C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, &
@@ -415,6 +410,8 @@ module advance_xp2_xpyp_module
 
     ! Loop indices
     integer :: sclr, k, i
+
+    logical :: l_single_solve_possible
     
     !------------------------------ Begin Code ------------------------------
     
@@ -433,31 +430,32 @@ module advance_xp2_xpyp_module
     !$acc              lhs_ta_wpsclrp2, lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
     !$acc              rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
     !$acc              sclrpthlp_chnge ) 
-    
-    ! Unpack CLUBB tunable parameters
-    C2rt    = clubb_params(iC2rt)
-    C2thl   = clubb_params(iC2thl)
-    C2rtthl = clubb_params(iC2rtthl)
-    C4      = clubb_params(iC4)
-    C14     = clubb_params(iC14)
-    C_K2    = clubb_params(ic_K2)
-    C_K9    = clubb_params(ic_K9)
-    rtp2_clip_coef = clubb_params(irtp2_clip_coef)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
-      ! Assertion check for C_uu_shr
-      if ( clubb_params(iC_uu_shr) > one &
-           .or. clubb_params(iC_uu_shr) < zero ) then
-        write(fstderr,*) "The C_uu_shr variable is outside the valid range"
-        err_code = clubb_fatal_error
+    if ( clubb_at_least_debug_level( 1 ) ) then
+
+      !$acc parallel loop gang vector default(present) reduction(.or.:err_code)
+      do i = 1, ngrdcol
+
+        ! Assertion check for C_uu_shr
+        if ( clubb_params(i,iC_uu_shr) > one &
+            .or. clubb_params(i,iC_uu_shr) < zero ) then
+          write(fstderr,*) "The C_uu_shr variable is outside the valid range"
+          err_code = clubb_fatal_error
+        end if
+
+        if ( clubb_params(i,iC_uu_buoy) > one &
+            .or. clubb_params(i,iC_uu_buoy) < zero ) then
+          write(fstderr,*) "The C_uu_buoy variable is outside the valid range"
+          err_code = clubb_fatal_error
+        end if
+        
+      end do
+      !$acc end parallel loop
+
+      if ( err_code == clubb_fatal_error ) then
         return
       end if
-      if ( clubb_params(iC_uu_buoy) > one &
-           .or. clubb_params(iC_uu_buoy) < zero ) then
-        write(fstderr,*) "The C_uu_buoy variable is outside the valid range"
-        err_code = clubb_fatal_error
-        return
-      end if
+
     end if
 
     ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
@@ -465,15 +463,17 @@ module advance_xp2_xpyp_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do i = 1, ngrdcol
+
           if ( cloud_frac(i,k) >= cloud_frac_min ) then
-            C2rt_1d(i,k)    = C2rt * max( min_cloud_frac_mult, cloud_frac(i,k) )
-            C2thl_1d(i,k)   = C2thl * max( min_cloud_frac_mult, cloud_frac(i,k) )
-            C2rtthl_1d(i,k) = C2rtthl* max( min_cloud_frac_mult, cloud_frac(i,k) )
+            C2rt_1d(i,k)    = clubb_params(i,iC2rt)    * max( min_cloud_frac_mult, cloud_frac(i,k) )
+            C2thl_1d(i,k)   = clubb_params(i,iC2thl)   * max( min_cloud_frac_mult, cloud_frac(i,k) )
+            C2rtthl_1d(i,k) = clubb_params(i,iC2rtthl) * max( min_cloud_frac_mult, cloud_frac(i,k) )
           else ! cloud_frac(k) < cloud_frac_min
-            C2rt_1d(i,k)    = C2rt
-            C2thl_1d(i,k)   = C2thl
-            C2rtthl_1d(i,k) = C2rtthl
+            C2rt_1d(i,k)    = clubb_params(i,iC2rt)
+            C2thl_1d(i,k)   = clubb_params(i,iC2thl)
+            C2rtthl_1d(i,k) = clubb_params(i,iC2rtthl)
           end if ! cloud_frac(k) >= cloud_frac_min
+
         end do
       end do ! k = 1, nz, 1
       !$acc end parallel loop
@@ -481,9 +481,9 @@ module advance_xp2_xpyp_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          C2rt_1d(i,k)    = C2rt
-          C2thl_1d(i,k)   = C2thl
-          C2rtthl_1d(i,k) = C2rtthl
+          C2rt_1d(i,k)    = clubb_params(i,iC2rt)
+          C2thl_1d(i,k)   = clubb_params(i,iC2thl)
+          C2rtthl_1d(i,k) = clubb_params(i,iC2rtthl)
         end do
       end do
       !$acc end parallel loop
@@ -492,9 +492,9 @@ module advance_xp2_xpyp_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        C2sclr_1d(i,k) = C2rt  ! Use rt value for now
-        C4_1d(i,k)     = two_thirds * C4
-        C14_1d(i,k)    = one_third  * C14
+        C2sclr_1d(i,k) = clubb_params(i,iC2rt)  ! Use rt value for now
+        C4_1d(i,k)     = two_thirds * clubb_params(i,iC4)
+        C14_1d(i,k)    = one_third  * clubb_params(i,iC14)
       end do
     end do
     !$acc end parallel loop
@@ -515,12 +515,12 @@ module advance_xp2_xpyp_module
         ! passive scalars.  The variances and covariances are located on the
         ! momentum levels.  Kw2 is located on the thermodynamic levels.
         ! Kw2 = c_K2 * Kh_zt
-        Kw2(i,k) = C_K2 * Kh_zt(i,k)
+        Kw2(i,k) = clubb_params(i,ic_K2) * Kh_zt(i,k)
 
         ! Kw9 is used for variances up2 and vp2.  The variances are located on
         ! the momentum levels.  Kw9 is located on the thermodynamic levels.
         ! Kw9 = c_K9 * Kh_zt
-        Kw9(i,k) = C_K9 * Kh_zt(i,k)
+        Kw9(i,k) = clubb_params(i,ic_K9) * Kh_zt(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -574,7 +574,7 @@ module advance_xp2_xpyp_module
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm,              & ! In
                                  wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w,             & ! In
                                  pdf_implicit_coefs_terms, l_scalar_calc,            & ! In
-                                 clubb_params(ibeta), iiPDF_type, l_upwind_xpyp_ta,  & ! In
+                                 clubb_params(:,ibeta), iiPDF_type, l_upwind_xpyp_ta,& ! In
                                  l_godunov_upwind_xpyp_ta,                           & ! In 
                                  stats_metadata,                                     & ! In 
                                  stats_zt,                                           & ! InOut
@@ -595,12 +595,37 @@ module advance_xp2_xpyp_module
     call term_ma_zm_lhs( nz, ngrdcol, wm_zm,              & ! In
                          gr%invrs_dzm, gr%weights_zm2zt,  & ! In
                          lhs_ma )                           ! Out
-                               
-                               
-    if ( ( abs(C2rt - C2thl)   < abs(C2rt + C2thl)   / 2 * eps   .and. &
-           abs(C2rt - C2rtthl) < abs(C2rt + C2rtthl) / 2 * eps ) .and. &
-         ( l_explicit_turbulent_adv_xpyp .or. &
-           .not. l_explicit_turbulent_adv_xpyp .and. iiPDF_type == iiPDF_ADG1 ) ) then
+
+    ! Check if we can use a single LHS to solve
+    if ( l_explicit_turbulent_adv_xpyp .or. &
+         .not. l_explicit_turbulent_adv_xpyp .and. iiPDF_type == iiPDF_ADG1 ) then
+
+        l_single_solve_possible = .true.
+
+        !$acc parallel loop gang vector default(present) reduction(.and.:l_single_solve_possible)
+        do i = 1, ngrdcol
+
+          C2rt    = clubb_params(i,iC2rt)
+          C2thl   = clubb_params(i,iC2thl)
+          C2rtthl = clubb_params(i,iC2rtthl)
+
+          ! Single solve is only possible if C2rt == C2thl == C2rtthl
+          if ( abs(C2rt - C2thl)    > abs(C2rt + C2thl)    / 2 * eps .or. &
+               abs(C2rt - C2rtthl)  > abs(C2rt + C2rtthl)  / 2 * eps  ) then
+            l_single_solve_possible = .false.
+          end if
+
+        end do
+        !$acc end parallel loop
+
+    else 
+
+      l_single_solve_possible = .false.
+
+    end if
+                            
+
+    if ( l_single_solve_possible ) then
            
       ! All left hand side matricies are equal for rtp2, thlp2, rtpthlp, and scalars.
       ! Thus only one solve is neccesary, using combined right hand sides
@@ -695,8 +720,8 @@ module advance_xp2_xpyp_module
                             wp2, wpthvp, & ! In
                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                             um, vm, upwp, vpwp, up2, vp2, & ! In
-                            thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                            clubb_params(iC_uu_buoy), C14, lhs_splat_wp2, & ! In
+                            thv_ds_zm, clubb_params(:,iC4), clubb_params(:,iC_uu_shr), & ! In
+                            clubb_params(:,iC_uu_buoy), clubb_params(:,iC14), lhs_splat_wp2, & ! In
                             lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                             lhs_dp1_C4, lhs_dp1_C14, & ! In
                             stats_metadata, & ! In
@@ -738,8 +763,8 @@ module advance_xp2_xpyp_module
                             wp2, wpthvp, & ! In
                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                             vm, um, vpwp, upwp, vp2, up2, & ! In
-                            thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                            clubb_params(iC_uu_buoy), C14, lhs_splat_wp2, & ! In
+                            thv_ds_zm, clubb_params(:,iC4), clubb_params(:,iC_uu_shr), & ! In
+                            clubb_params(:,iC_uu_buoy), clubb_params(:,iC14), lhs_splat_wp2, & ! In
                             lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
                             lhs_dp1_C4, lhs_dp1_C14, & ! In
                             stats_metadata, & ! In
@@ -785,8 +810,8 @@ module advance_xp2_xpyp_module
                             wp2, wpthvp, & ! In
                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                             um, vm, upwp, vpwp, up2, vp2, & ! In
-                            thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                            clubb_params(iC_uu_buoy), C14, lhs_splat_wp2, & ! In
+                            thv_ds_zm, clubb_params(:,iC4), clubb_params(:,iC_uu_shr), & ! In
+                            clubb_params(:,iC_uu_buoy), clubb_params(:,iC14), lhs_splat_wp2, & ! In
                             lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                             lhs_dp1_C4, lhs_dp1_C14, & ! In
                             stats_metadata, & ! In
@@ -798,8 +823,8 @@ module advance_xp2_xpyp_module
                             wp2, wpthvp, & ! In
                             C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
                             vm, um, vpwp, upwp, vp2, up2, & ! In
-                            thv_ds_zm, C4, clubb_params(iC_uu_shr), & ! In
-                            clubb_params(iC_uu_buoy), C14, lhs_splat_wp2, & ! In
+                            thv_ds_zm, clubb_params(:,iC4), clubb_params(:,iC_uu_shr), & ! In
+                            clubb_params(:,iC_uu_buoy), clubb_params(:,iC14), lhs_splat_wp2, & ! In
                             lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
                             lhs_dp1_C4, lhs_dp1_C14, & ! In
                             stats_metadata, & ! In
@@ -969,7 +994,7 @@ module advance_xp2_xpyp_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          threshold = max( rt_tol**2, rtp2_clip_coef * rtm_zm(i,k)**2 )
+          threshold = max( rt_tol**2, clubb_params(i,irtp2_clip_coef) * rtm_zm(i,k)**2 )
           if ( rtp2(i,k) > threshold ) then
             rtp2(i,k) = threshold
           end if
@@ -3059,7 +3084,7 @@ module advance_xp2_xpyp_module
       lhs_dp1_C4,  & ! LHS dissipation term 1, for up2 vp2 using C14
       lhs_dp1_C14    ! LHS dissipation term 1, for up2 vp2 using C4
 
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C4,        & ! Model parameter C_4                         [-]
       C_uu_shr,  & ! Model parameter C_uu_shr                    [-]
       C_uu_buoy, & ! Model parameter C_uu_buoy                   [-]
@@ -3104,6 +3129,9 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
       rhs_term_tp
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: & 
+      zeros_vector
 
     !----------------------------- Begin Code ----------------------------------
 
@@ -3173,7 +3201,7 @@ module advance_xp2_xpyp_module
 
         ! RHS turbulent production (tp) term.
         ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_pr 
-        rhs(i,k) = rhs(i,k) + ( one - C_uu_shr ) * rhs_term_tp(i,k)
+        rhs(i,k) = rhs(i,k) + ( one - C_uu_shr(i) ) * rhs_term_tp(i,k)
 
         ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
         rhs(i,k) = rhs(i,k) + rhs_pr1(i,k)
@@ -3210,11 +3238,13 @@ module advance_xp2_xpyp_module
       ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
       ! subtracts the value sent in, reverse the sign on term_ta_ADG1_rhs.
 
-      call term_pr1( nz, ngrdcol, C4, zero, xbp2, &
+      zeros_vector = zero
+
+      call term_pr1( nz, ngrdcol, C4, zeros_vector, xbp2, &
                      wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, &
                      stats_pr1 )
 
-      call term_pr1( nz, ngrdcol, zero, C14, xbp2, &
+      call term_pr1( nz, ngrdcol, zeros_vector, C14, xbp2, &
                      wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, &
                      stats_pr2 )
 
@@ -3265,7 +3295,7 @@ module advance_xp2_xpyp_module
 
           ! x'y' term tp is completely explicit; call stat_update_var_pt.
           call stat_update_var_pt( ixapxbp_tp, k,                         & ! Intent(in) 
-                                   ( one - C_uu_shr ) * rhs_term_tp(i,k), & ! intent(in)
+                                   ( one - C_uu_shr(i) ) * rhs_term_tp(i,k), & ! intent(in)
                                    stats_zm(i) )                            ! Intent(inout)
 
           ! Vertical compression of eddies.
@@ -3806,7 +3836,7 @@ module advance_xp2_xpyp_module
     logical, intent(in) :: &
       l_scalar_calc
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       beta    ! CLUBB tunable parameter beta
 
     integer, intent(in) :: &
@@ -4022,8 +4052,8 @@ module advance_xp2_xpyp_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        wp_coef(i,k)    = ( one - one_third * beta ) *    a1(i,k)**2 *    wp3_on_wp2(i,k) /    wp2(i,k)
-        wp_coef_zt(i,k) = ( one - one_third * beta ) * a1_zt(i,k)**2 * wp3_on_wp2_zt(i,k) / wp2_zt(i,k)
+        wp_coef(i,k)    = ( one - one_third * beta(i) ) *    a1(i,k)**2 *    wp3_on_wp2(i,k) /    wp2(i,k)
+        wp_coef_zt(i,k) = ( one - one_third * beta(i) ) * a1_zt(i,k)**2 * wp3_on_wp2_zt(i,k) / wp2_zt(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -4284,8 +4314,8 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nz
             do i = 1, ngrdcol
-              coef_wprtp2_implicit(i,k) = one_third * beta * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
-              coef_wpthlp2_implicit(i,k) = coef_wprtp2_implicit(i,k)
+              coef_wprtp2_implicit(i,k)    = one_third * beta(i) * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
+              coef_wpthlp2_implicit(i,k)   = coef_wprtp2_implicit(i,k)
               coef_wprtpthlp_implicit(i,k) = coef_wprtp2_implicit(i,k)
             end do
           end do
@@ -4298,7 +4328,7 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nz
             do i = 1, ngrdcol
-              coef_wprtp2_implicit_zm(i,k) = one_third * beta * a1(i,k) * wp3_on_wp2(i,k)
+              coef_wprtp2_implicit_zm(i,k) = one_third * beta(i) * a1(i,k) * wp3_on_wp2(i,k)
               sgn_t_vel_rtp2(i,k) = wp3_on_wp2(i,k)
             end do
           end do
@@ -4322,8 +4352,8 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nz
             do i = 1, ngrdcol  
-              coef_wprtp2_implicit(i,k) = one_third * beta * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
-              coef_wpthlp2_implicit(i,k) = coef_wprtp2_implicit(i,k)
+              coef_wprtp2_implicit(i,k)    = one_third * beta(i) * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
+              coef_wpthlp2_implicit(i,k)   = coef_wprtp2_implicit(i,k)
               coef_wprtpthlp_implicit(i,k) = coef_wprtp2_implicit(i,k)
             end do
           end do
@@ -5132,7 +5162,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol              
-            coef_wpup2_implicit_zm(i,k) = one_third * beta * a1(i,k) * wp3_on_wp2(i,k)
+            coef_wpup2_implicit_zm(i,k) = one_third * beta(i) * a1(i,k) * wp3_on_wp2(i,k)
             coef_wpvp2_implicit_zm(i,k) = coef_wpup2_implicit_zm(i,k)
             term_wpup2_explicit_zm(i,k) = wp_coef(i,k) * upwp(i,k)**2
             term_wpvp2_explicit_zm(i,k) = wp_coef(i,k) * vpwp(i,k)**2
@@ -5164,7 +5194,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol        
-            coef_wpup2_implicit(i,k) = one_third * beta * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
+            coef_wpup2_implicit(i,k) = one_third * beta(i) * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
             coef_wpvp2_implicit(i,k) = coef_wpup2_implicit(i,k)
           end do
         end do
@@ -5634,7 +5664,7 @@ module advance_xp2_xpyp_module
       nz, &
       ngrdcol
 
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C4,              & ! Model parameter C_4                                 [-]
       C14                ! Model parameter C_14                                [-]
 
@@ -5654,15 +5684,15 @@ module advance_xp2_xpyp_module
 
     !------------------------- Begin Code -------------------------
 
-    !$acc data copyin( xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm ) &
-    !$acc     copyout( rhs )
+    !$acc data copyin( xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, C4, C14 ) &
+    !$acc      copyout( rhs )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz-1
       do i = 1, ngrdcol
-        rhs(i,k) = + one_third * C4 * ( xbp2(i,k) + wp2(i,k) ) * invrs_tau_C4_zm(i,k)  &
-                   - one_third * C14 * ( xbp2(i,k) + wp2(i,k) ) * invrs_tau_C14_zm(i,k)  &
-                   + C14 * invrs_tau_C14_zm(i,k) * w_tol_sqd
+        rhs(i,k) = + one_third * C4(i) * ( xbp2(i,k) + wp2(i,k) ) * invrs_tau_C4_zm(i,k)  &
+                   - one_third * C14(i) * ( xbp2(i,k) + wp2(i,k) ) * invrs_tau_C14_zm(i,k)  &
+                   + C14(i) * invrs_tau_C14_zm(i,k) * w_tol_sqd
       end do
     end do
     !$acc end parallel loop
@@ -5742,7 +5772,7 @@ module advance_xp2_xpyp_module
 
     type (grid), intent(in) :: gr
       
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C_uu_shr,  & ! Model parameter C_uu_shr                       [-]
       C_uu_buoy    ! Model parameter C_uu_buoy                      [-]
       
@@ -5778,9 +5808,9 @@ module advance_xp2_xpyp_module
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_pr2(i,k) = + two_thirds &
-                       * ( C_uu_buoy &
+                       * ( C_uu_buoy(i) &
                           * ( grav / thv_ds_zm(i,k) ) * wpthvp(i,k) &
-                        + C_uu_shr &
+                        + C_uu_shr(i) &
                           * ( - upwp(i,k) * gr%invrs_dzm(i,k) * ( um(i,k+1) - um(i,k) ) &
                               - vpwp(i,k) * gr%invrs_dzm(i,k) * ( vm(i,k+1) - vm(i,k) ) &
                             ) &

@@ -336,7 +336,7 @@ module spurious_source_test
 
     integer :: iter, k, i  ! Loop indices
 
-    real( kind = core_rknd ), dimension(nparams) :: &
+    real( kind = core_rknd ), dimension(1,nparams) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep) :: &
@@ -535,7 +535,7 @@ module spurious_source_test
                wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace )
 
     ! Read in model parameter values
-    call read_parameters( iunit, namelist_filename, &
+    call read_parameters( 1, iunit, namelist_filename, &
                           C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                           C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
                           C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
@@ -647,8 +647,8 @@ module spurious_source_test
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
     call adj_low_res_nu_api( gr, grid_type, deltaz, &
-                             l_prescribed_avg_deltaz, mult_coef, &
-                             nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &
+                             clubb_params(1,:), &
+                             l_prescribed_avg_deltaz, &
                              nu_vert_res_dep )
 
     dt = 300.0_core_rknd
@@ -1003,7 +1003,7 @@ module spurious_source_test
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef, &
-                             clubb_params, nu_vert_res_dep, &
+                             clubb_params(1,:), nu_vert_res_dep, &
                              iiPDF_type, &
                              penta_solve_method, &
                              tridiag_solve_method, &

@@ -26,14 +26,18 @@ module variables_radiation_module
     Frad_SW,  & ! SW radiative flux [W/m^2]
     Frad_LW     ! LW radiative flux [W/m^2]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(radht_LW, radht_SW, Frad_SW, Frad_LW)
+#endif // defined(OPENMP_CPU)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
     T_in_K,   & ! Temperature        [K]
     rcil,     & ! Ice mixing ratio   [kg/kg]
     o3l         ! Ozone mixing ratio [kg/kg]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(T_in_K, rcil, o3l)
+#endif // defined(OPENMP_CPU)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
     rsm_2d,& ! Two-dimensional copies of the input parameters
@@ -41,20 +45,26 @@ module variables_radiation_module
     cloud_frac_2d, &
     ice_supersat_frac_2d
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(rsm_2d, rcm_in_cloud_2d, cloud_frac_2d, &
 !$omp   ice_supersat_frac_2d)
+#endif // defined(OPENMP_CPU)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
     radht_SW_2d, & ! SW Radiative heating rate  [W/m^2]
     radht_LW_2d    ! LW Radiative heating rate  [W/m^2]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(radht_SW_2d, radht_LW_2d)
+#endif // defined(OPENMP_CPU)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
     p_in_mb, &   ! Pressure in millibars        [mb]
     sp_humidity  ! Specific humidity            [kg/kg]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(p_in_mb, sp_humidity)
+#endif // defined(OPENMP_CPU)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
     Frad_uLW, & ! LW upwelling flux         [W/m^2]
@@ -62,7 +72,9 @@ module variables_radiation_module
     Frad_uSW, & ! SW upwelling flux         [W/m^2]
     Frad_dSW    ! SW downwelling flux       [W/m^2]
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW)
+#endif // defined(OPENMP_CPU)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
      fdswcl, &  !Downward clear-sky SW flux                 (W/m^-2).
@@ -70,7 +82,9 @@ module variables_radiation_module
      fdlwcl, &  !Downward clear-sky LW flux                 (W/m^-2).
      fulwcl     !Upward clear-sky LW flux                   (W/m^-2).
 
+#if defined(OPENMP_CPU)
 !$omp threadprivate(fdswcl, fuswcl, fdlwcl, fulwcl)
+#endif // defined(OPENMP_CPU)
 
   ! Constant parameters
   integer, public, parameter :: &
@@ -220,3 +234,5 @@ module variables_radiation_module
   end subroutine cleanup_radiation_variables
     
 end module variables_radiation_module
+
+

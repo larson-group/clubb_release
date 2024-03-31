@@ -264,7 +264,7 @@ module advance_helper_module
       thvm,            & ! Virtual potential temperature             [K]
       ice_supersat_frac
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       lambda0_stability_coef, &     ! CLUBB tunable parameter lambda0_stability_coef
       bv_efold                      ! Control parameter for inverse e-folding of
                                     ! cloud fraction in the mixed Brunt Vaisala frequency
@@ -313,7 +313,7 @@ module advance_helper_module
     do k = 1, nz
       do i = 1, ngrdcol
         if ( brunt_vaisala_freq_sqd(i,k) > zero  ) then
-          lambda0_stability(i,k) = lambda0_stability_coef
+          lambda0_stability(i,k) = lambda0_stability_coef(i)
         else
           lambda0_stability(i,k) = zero
         end if
@@ -411,7 +411,7 @@ module advance_helper_module
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       bv_efold                      ! Control parameter for inverse e-folding of
                                     ! cloud fraction in the mixed Brunt Vaisala frequency
 
@@ -436,7 +436,7 @@ module advance_helper_module
     !---------------------------- Begin Code ----------------------------
 
     !$acc data copyin( gr, gr%zt, &
-    !$acc              thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac ) &
+    !$acc              thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac, bv_efold ) &
     !$acc      copyout( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc               brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist ) &
     !$acc       create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
@@ -540,7 +540,7 @@ module advance_helper_module
       do i = 1, ngrdcol
          brunt_vaisala_freq_sqd_mixed(i,k) = &
              brunt_vaisala_freq_sqd_moist(i,k) + &
-                 exp( - bv_efold * ice_supersat_frac(i,k) ) * &
+                 exp( - bv_efold(i) * ice_supersat_frac(i,k) ) * &
                  ( brunt_vaisala_freq_sqd_dry(i,k) - brunt_vaisala_freq_sqd_moist(i,k) )
       end do
     end do
@@ -649,7 +649,7 @@ module advance_helper_module
       rho_ds_zm, &  ! Dry static density on momentum levels          [kg/m^3]
       ice_supersat_frac  ! ice cloud fraction
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
@@ -725,18 +725,12 @@ module advance_helper_module
                                       saturation_formula, &             ! intent(in)
                                       l_brunt_vaisala_freq_moist, &     ! intent(in)
                                       l_use_thvm_in_bv_freq, &          ! intent(in)
-                                      clubb_params(ibv_efold), &        ! intent(in)
+                                      clubb_params(:,ibv_efold), &       ! intent(in)
                                       brunt_vaisala_freq_sqd, &         ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, &     ! intent(out)
                                       brunt_vaisala_freq_sqd_moist )    ! intent(out)
 
-    Richardson_num_max = clubb_params(iRichardson_num_max)
-    Richardson_num_min = clubb_params(iRichardson_num_min)
-    Cx_max = clubb_params(iCx_max)
-    Cx_min = clubb_params(iCx_min)
-
-    invrs_min_max_diff = one / ( Richardson_num_max - Richardson_num_min )
     invrs_num_div_thresh = one / Richardson_num_divisor_threshold
 
     Lscale_zm = zt2zm( nz, ngrdcol, gr, Lscale )
@@ -790,7 +784,13 @@ module advance_helper_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          fnc_Richardson(i,k) = ( Ri_zm(i,k) - Richardson_num_min ) * invrs_min_max_diff
+
+          Richardson_num_max = clubb_params(i,iRichardson_num_max)
+          Richardson_num_min = clubb_params(i,iRichardson_num_min)
+
+          invrs_min_max_diff = one / ( Richardson_num_max - Richardson_num_min )
+
+          fnc_Richardson(i,k) = ( Ri_zm(i,k) - clubb_params(i,iRichardson_num_min) ) * invrs_min_max_diff
         end do
       end do
 
@@ -806,6 +806,10 @@ module advance_helper_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
+
+          Cx_max = clubb_params(i,iCx_max)
+          Cx_min = clubb_params(i,iCx_min)
+
           Cx_fnc_interp(i,k) = fnc_Richardson_smooth(i,k) * ( Cx_max - Cx_min ) + Cx_min
         end do
       end do
@@ -816,7 +820,15 @@ module advance_helper_module
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
-        do i = 1, ngrdcol
+        do i = 1, ngrdcol  
+
+          Richardson_num_max = clubb_params(i,iRichardson_num_max)
+          Richardson_num_min = clubb_params(i,iRichardson_num_min)
+          Cx_max = clubb_params(i,iCx_max)
+          Cx_min = clubb_params(i,iCx_min)
+
+          invrs_min_max_diff = one / ( Richardson_num_max - Richardson_num_min )
+
           Cx_fnc_Richardson(i,k) = ( max(min(Richardson_num_max, Ri_zm(i,k)), Richardson_num_min) &
                                      - Richardson_num_min )  &
                                    * invrs_min_max_diff * ( Cx_max - Cx_min ) + Cx_min
@@ -1066,7 +1078,7 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       C_wp2_splat    ! Model parameter C_wp2_splat             [ -]
 
     ! --------------------- Output Variable ---------------------
@@ -1099,7 +1111,7 @@ module advance_helper_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        lhs_splat_wp2(i,k) = + C_wp2_splat * brunt_vaisala_freq_splat_smooth(i,k)
+        lhs_splat_wp2(i,k) = + C_wp2_splat(i) * brunt_vaisala_freq_splat_smooth(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -1146,7 +1158,7 @@ module advance_helper_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       C_wp2_splat    ! Model parameter C_wp2_splat              [-]
 
     ! --------------------- Output Variable ---------------------
@@ -1179,7 +1191,7 @@ module advance_helper_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        lhs_splat_wp3(i,k) = + one_half * three * C_wp2_splat &
+        lhs_splat_wp3(i,k) = + one_half * three * C_wp2_splat(i) &
                                * brunt_vaisala_freq_splat_smooth(i,k)
       end do
     end do

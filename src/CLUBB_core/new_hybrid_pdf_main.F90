@@ -118,7 +118,7 @@ module new_hybrid_pdf_main
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       gamma_Skw_fnc    ! Value of parameter gamma from tunable Skw function  [-]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       ! Slope coefficient for the spread between the PDF component means of w.
       slope_coef_spread_DG_means_w, &
       ! Parameter to adjust the PDF component standard deviations of w.
@@ -202,7 +202,7 @@ module new_hybrid_pdf_main
     real( kind = core_rknd ), dimension(nz) :: &
       zeta_w    ! Parameter for the PDF component variances of w           [-]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       ! Slope coefficient for the spread between the PDF component means of w.
       slope_coef_spread_DG_means_w_in, &
       ! Parameter to adjust the PDF component standard deviations of w.
@@ -328,16 +328,16 @@ module new_hybrid_pdf_main
          enddo ! k = 1, nz, 1
       endif ! sclr_dim > 0
 
-      slope_coef_spread_DG_means_w_in = slope_coef_spread_DG_means_w
-      pdf_component_stdev_factor_w_in = pdf_component_stdev_factor_w
+      slope_coef_spread_DG_means_w_in(i,:) = slope_coef_spread_DG_means_w(i)
+      pdf_component_stdev_factor_w_in(i,:) = pdf_component_stdev_factor_w(i)
 
       ! Calculate the values of PDF tunable parameters F_w and zeta_w.
       ! Vertical velocity, w, will always be the setter variable.
       call calc_F_w_zeta_w( Skw(i,:), wprtp(i,:), wpthlp(i,:), upwp(i,:), vpwp(i,:),  & ! In
                             wp2(i,:), rtp2(i,:), thlp2(i,:), up2(i,:), vp2(i,:),      & ! In
                             gamma_Skw_fnc(i,:),                   & ! In
-                            slope_coef_spread_DG_means_w_in, & ! In
-                            pdf_component_stdev_factor_w_in, & ! In
+                            slope_coef_spread_DG_means_w_in(i,:), & ! In
+                            pdf_component_stdev_factor_w_in(i,:), & ! In
                             max_corr_w_sclr_sqd,             & ! In
                             F_w(i,:), zeta_w, min_F_w(i,:), max_F_w(i,:)    ) ! Out
 

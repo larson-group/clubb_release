@@ -19,7 +19,8 @@ module sfc_varnce_module
                               lhs_splat_wp2, tau_zm, &
                               !wp2_splat_sfc, tau_zm_sfc, &
                               l_vary_convect_depth, &
-                              clubb_params, &
+                              up2_sfc_coef, &
+                              a_const, &
                               stats_metadata, &
                               stats_zm, &
                               wp2, up2, vp2, & 
@@ -58,11 +59,6 @@ module sfc_varnce_module
         max_mag_correlation_flux, &
         fstderr,    &
         wp2_max
-
-    use parameter_indices, only: &
-        nparams, &
-        ia_const, &
-        iup2_sfc_coef
 
     use numerical_check, only: & 
         sfc_varnce_check ! Procedure
@@ -147,8 +143,9 @@ module sfc_varnce_module
     logical, intent(in) :: &
       l_vary_convect_depth
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      up2_sfc_coef,   & ! CLUBB tunable parameter up2_sfc_coef   [-]
+      a_const           ! Coefficient in front of wp2, up2, and vp2
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -195,10 +192,6 @@ module sfc_varnce_module
     real( kind = core_rknd ) :: &
       Lngth    ! Monin-Obukhov length [m]
 
-    real( kind = core_rknd ) :: &
-      up2_sfc_coef,   & ! CLUBB tunable parameter up2_sfc_coef   [-]
-      a_const           ! Coefficient in front of wp2, up2, and vp2
-
     integer :: i, k, sclr ! Loop index
 
     !-------------------------- Begin Code --------------------------
@@ -206,8 +199,6 @@ module sfc_varnce_module
     !$acc enter data create( uf, depth_pos_wpthlp, min_wp2_sfc_val, &
     !$acc                    um_sfc_sqd, vm_sfc_sqd, usp2_sfc, vsp2_sfc, &
     !$acc                    ustar, zeta, wp2_splat_sfc_correction )
-
-    up2_sfc_coef = clubb_params(iup2_sfc_coef)
 
     ! Reflect surface varnce changes in budget
     if ( stats_metadata%l_stats_samp ) then
@@ -263,8 +254,6 @@ module sfc_varnce_module
     !else
     !   a_const = 0.6_core_rknd
     !end if
-
-    a_const = clubb_params(ia_const) 
 
     if ( l_andre_1978 ) then
 
@@ -544,9 +533,9 @@ module sfc_varnce_module
       ! Compute estimate for surface second order moments
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        wp2(i,1) = a_const * uf(i)**2
-        up2(i,1) = up2_sfc_coef * a_const * uf(i)**2  ! From Andre, et al. 1978
-        vp2(i,1) = up2_sfc_coef * a_const * uf(i)**2  ! "  "
+        wp2(i,1) = a_const(i) * uf(i)**2
+        up2(i,1) = up2_sfc_coef(i) * a_const(i) * uf(i)**2  ! From Andre, et al. 1978
+        vp2(i,1) = up2_sfc_coef(i) * a_const(i) * uf(i)**2  ! "  "
       end do
       !$acc end parallel loop
 
@@ -558,17 +547,17 @@ module sfc_varnce_module
       if ( .not. l_vary_convect_depth )  then
         !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
-          thlp2(i,1)   = 0.4_core_rknd * a_const * ( wpthlp(i,1) / uf(i) )**2
-          rtp2(i,1)    = 0.4_core_rknd * a_const * ( wprtp_sfc(i) / uf(i) )**2
-          rtpthlp(i,1) = 0.2_core_rknd * a_const * ( wpthlp(i,1) / uf(i) ) &
-                                                 * ( wprtp_sfc(i) / uf(i) )
+          thlp2(i,1)   = 0.4_core_rknd * a_const(i) * ( wpthlp(i,1) / uf(i) )**2
+          rtp2(i,1)    = 0.4_core_rknd * a_const(i) * ( wprtp_sfc(i) / uf(i) )**2
+          rtpthlp(i,1) = 0.2_core_rknd * a_const(i) * ( wpthlp(i,1) / uf(i) ) &
+                                                    * ( wprtp_sfc(i) / uf(i) )
         end do
         !$acc end parallel loop
       else
         !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
-          thlp2(i,1)   = ( wpthlp(i,1) / uf(i) )**2 / ( max_mag_correlation_flux**2 * a_const )
-          rtp2(i,1)    = ( wprtp_sfc(i) / uf(i) )**2 / ( max_mag_correlation_flux**2 * a_const )
+          thlp2(i,1)   = ( wpthlp(i,1) / uf(i) )**2 / ( max_mag_correlation_flux**2 * a_const(i) )
+          rtp2(i,1)    = ( wprtp_sfc(i) / uf(i) )**2 / ( max_mag_correlation_flux**2 * a_const(i) )
           rtpthlp(i,1) = max_mag_correlation_flux * sqrt( thlp2(i,1) * rtp2(i,1) )
         end do
         !$acc end parallel loop
@@ -641,25 +630,25 @@ module sfc_varnce_module
             if ( sclr == sclr_idx%iisclr_rt ) then
               ! If we are trying to emulate rt with the scalar, then we
               ! use the variance coefficient from above
-              sclrprtp(i,1,sclr) = 0.4_core_rknd * a_const &
+              sclrprtp(i,1,sclr) = 0.4_core_rknd * a_const(i) &
                                 * ( wprtp_sfc(i) / uf(i) ) * ( wpsclrp_sfc(i,sclr) / uf(i) )
             else
-              sclrprtp(i,1,sclr) = 0.2_core_rknd * a_const &
+              sclrprtp(i,1,sclr) = 0.2_core_rknd * a_const(i) &
                                 * ( wprtp_sfc(i) / uf(i) ) * ( wpsclrp_sfc(i,sclr) / uf(i) )
             endif
 
             if ( sclr == sclr_idx%iisclr_thl ) then
               ! As above, but for thetal
-              sclrpthlp(i,1,sclr) = 0.4_core_rknd * a_const &
+              sclrpthlp(i,1,sclr) = 0.4_core_rknd * a_const(i) &
                                  * ( wpthlp(i,1) / uf(i) ) &
                                  * ( wpsclrp_sfc(i,sclr) / uf(i) )
             else
-              sclrpthlp(i,1,sclr) = 0.2_core_rknd * a_const &
+              sclrpthlp(i,1,sclr) = 0.2_core_rknd * a_const(i) &
                                  * ( wpthlp(i,1) / uf(i) ) &
                                  * ( wpsclrp_sfc(i,sclr) / uf(i) )
             endif
 
-            sclrp2(i,1,sclr) = sclr_var_coef * a_const &
+            sclrp2(i,1,sclr) = sclr_var_coef * a_const(i) &
                                * ( wpsclrp_sfc(i,sclr) / uf(i) )**2
 
             ! End Vince Larson's change.

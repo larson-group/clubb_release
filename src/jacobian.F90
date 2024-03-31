@@ -57,7 +57,7 @@ program jacobian
 
     character(len=32), pointer :: name(:)
 
-    real( kind = core_rknd ), pointer :: value(:)
+    real( kind = core_rknd ), pointer :: value(:,:)
 
   end type param_array
   !----------------------------------------------------------------------------
@@ -188,7 +188,7 @@ program jacobian
 
   times(1:10) = 0
 
-  allocate( clubb_params%value( nparams ),  & 
+  allocate( clubb_params%value( 1, nparams ),  & 
             clubb_params%name( nparams ), & 
             stat=alloc_stat )
   if (alloc_stat /= 0 ) error stop "allocate failed"
@@ -202,7 +202,7 @@ program jacobian
   close( unit=10 )
 
   if ( .not. l_use_standard_vars ) then
-    call read_parameters( 10, 'jacobian.in', &
+    call read_parameters( 1, 10, 'jacobian.in', &
                           C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                           C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
                           C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
@@ -230,7 +230,7 @@ program jacobian
                           clubb_params%value )
 
   else
-    call read_parameters( 10, "", &
+    call read_parameters( 1, 10, "", &
                           C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                           C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
                           C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
@@ -266,11 +266,10 @@ program jacobian
 
   do i = 1, clubb_params%entries, 1
     write(unit=*,fmt='(a27,2f12.5)') trim( clubb_params%name(i) ),  & 
-      clubb_params%value(i), clubb_params%value(i) * delta_factor
+      clubb_params%value(1,i), clubb_params%value(1,i) * delta_factor
   end do
 
-  call run_clubb  & 
-       ( clubb_params%value(:), 'jacobian.in', .false. )
+  call run_clubb( 1, clubb_params%value(1,:), 'jacobian.in', .false. )
 
   if ( clubb_at_least_debug_level( 0 ) ) then
     if ( err_code == clubb_fatal_error ) then
@@ -362,11 +361,10 @@ program jacobian
   call getvariables( var1zm, trim( stats_metadata%fname_zm )//".ctl" )
 
   do i = 1, clubb_params%entries
-    tmp_param = clubb_params%value(i)
-    clubb_params%value(i) = clubb_params%value(i) * delta_factor
+    tmp_param = clubb_params%value(1,i)
+    clubb_params%value(1,i) = clubb_params%value(1,i) * delta_factor
 
-    call run_clubb & 
-      ( clubb_params%value(:), 'jacobian.in', .false. )
+    call run_clubb( 1, clubb_params%value(1,:), 'jacobian.in', .false. )
 
     ! Print a period so the user knows something is happening
     write(unit=fstdout, fmt='(a1)', advance='no') "."
@@ -375,7 +373,7 @@ program jacobian
 
       ! Pos. Infinity bit pattern
       jmatrix(i,:) = real(PosInf, kind = core_rknd)
-      clubb_params%value(i) = tmp_param
+      clubb_params%value(1,i) = tmp_param
       cycle
     end if
 
@@ -396,7 +394,7 @@ program jacobian
 
     do j = 1, nvarzt
       jmatrix(i, j) = impact_matrix(i, j)  & 
-                    / ( clubb_params%value(i) - tmp_param )
+                    / ( clubb_params%value(1,i) - tmp_param )
     end do
 
     do j = 1, nvarzm
@@ -412,10 +410,10 @@ program jacobian
     do j = 1, nvarzm
       jmatrix(i, j+nvarzt) =  & 
       impact_matrix(i, j+nvarzt)  & 
-       / (clubb_params%value(i) - tmp_param)
+       / (clubb_params%value(1,i) - tmp_param)
     end do
 
-    clubb_params%value(i) = tmp_param ! Set parameter back
+    clubb_params%value(1,i) = tmp_param ! Set parameter back
 
   end do !i = 1..clubb_params%entries
 

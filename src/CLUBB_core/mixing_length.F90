@@ -962,7 +962,7 @@ module mixing_length
     type (pdf_parameter), intent(in) :: &
       pdf_params    ! PDF Parameters  [units vary]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
@@ -1008,7 +1008,7 @@ module mixing_length
       mu_pert_pos_rt, mu_pert_neg_rt  ! For l_Lscale_plume_centered
 
     real( kind = core_rknd ) :: &
-      Lscale_mu_coef, Lscale_pert_coef
+      Lscale_pert_coef
 
     !Lscale_weight Uncomment this if you need to use this vairable at some
     !point.
@@ -1020,9 +1020,6 @@ module mixing_length
     !$acc                    thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, &
     !$acc                    rtm_pert_neg_rt, &
     !$acc                    mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt )
-
-    Lscale_mu_coef = clubb_params(iLscale_mu_coef)
-    Lscale_pert_coef = clubb_params(iLscale_pert_coef)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
 
@@ -1051,7 +1048,8 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
-          rtm_pert_1(i,k)  = rtm(i,k) + Lscale_pert_coef * sqrt( max( rtp2(i,k), rt_tol**2 ) )
+          rtm_pert_1(i,k)  = rtm(i,k) + clubb_params(i,iLscale_pert_coef) &
+                                        * sqrt( max( rtp2(i,k), rt_tol**2 ) )
         end do
       end do
       !$acc end parallel loop
@@ -1059,7 +1057,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
-          thlm_pert_1(i,k) = thlm(i,k) + sign_rtpthlp(i,k) * Lscale_pert_coef &
+          thlm_pert_1(i,k) = thlm(i,k) + sign_rtpthlp(i,k) * clubb_params(i,iLscale_pert_coef) &
                                          * sqrt( max( thlp2(i,k), thl_tol**2 ) )
         end do
       end do
@@ -1067,7 +1065,7 @@ module mixing_length
 
       !$acc parallel loop gang vector default(present)
       do  i = 1, ngrdcol
-        mu_pert_1(i)   = newmu(i) / Lscale_mu_coef
+        mu_pert_1(i)   = newmu(i) / clubb_params(i,iLscale_mu_coef)
       end do 
       !$acc end parallel loop
 
@@ -1083,7 +1081,8 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
-          rtm_pert_2(i,k)  = rtm(i,k) - Lscale_pert_coef * sqrt( max( rtp2(i,k), rt_tol**2 ) )
+          rtm_pert_2(i,k)  = rtm(i,k) - clubb_params(i,iLscale_pert_coef) &
+                                        * sqrt( max( rtp2(i,k), rt_tol**2 ) )
         end do
       end do
       !$acc end parallel loop
@@ -1091,7 +1090,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
-          thlm_pert_2(i,k) = thlm(i,k) - sign_rtpthlp(i,k) * Lscale_pert_coef &
+          thlm_pert_2(i,k) = thlm(i,k) - sign_rtpthlp(i,k) * clubb_params(i,iLscale_pert_coef) &
                                * sqrt( max( thlp2(i,k), thl_tol**2 ) )
         end do
       end do
@@ -1099,7 +1098,7 @@ module mixing_length
            
       !$acc parallel loop gang vector default(present) 
       do  i = 1, ngrdcol
-        mu_pert_2(i)   = newmu(i) * Lscale_mu_coef
+        mu_pert_2(i)   = newmu(i) * clubb_params(i,iLscale_mu_coef)
       end do 
       !$acc end parallel loop         
 
@@ -1126,6 +1125,8 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
+
+          Lscale_pert_coef = clubb_params(i,iLscale_pert_coef)
 
           if ( pdf_params%rt_1(i,k) > pdf_params%rt_2(i,k) ) then
 
@@ -1167,8 +1168,8 @@ module mixing_length
 
       !$acc parallel loop gang vector default(present) 
       do i = 1, ngrdcol
-        mu_pert_pos_rt(i) = newmu(i) / Lscale_mu_coef
-        mu_pert_neg_rt(i) = newmu(i) * Lscale_mu_coef
+        mu_pert_pos_rt(i) = newmu(i) / clubb_params(i,iLscale_mu_coef)
+        mu_pert_neg_rt(i) = newmu(i) * clubb_params(i,iLscale_mu_coef)
       end do
       !$acc end parallel loop
 
@@ -1394,7 +1395,7 @@ module mixing_length
       sfc_elevation, &
       Lscale_max
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
  
     type (stats_metadata_type), intent(in) :: &
@@ -1462,19 +1463,8 @@ module mixing_length
       ustar
       
     real( kind = core_rknd ) :: &
-      C_invrs_tau_bkgnd,          &
-      C_invrs_tau_shear,          &
-      C_invrs_tau_sfc,            &
       C_invrs_tau_N2,             &
-      C_invrs_tau_N2_wp2 ,        &
-      C_invrs_tau_N2_wpxp,        &
-      C_invrs_tau_N2_xp2,         &
-      C_invrs_tau_wpxp_N2_thresh, &
-      C_invrs_tau_N2_clear_wp3,   &
-      C_invrs_tau_wpxp_Ri,        &
-      altitude_threshold,         &
-      wpxp_Ri_exp,                &
-      z_displace
+      C_invrs_tau_N2_wp2
 
     real( kind = core_rknd ), parameter :: &
       min_max_smth_mag = 1.0e-9_core_rknd, &  ! "base" smoothing magnitude before scaling 
@@ -1523,12 +1513,9 @@ module mixing_length
     !$acc                    tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                    tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
-    ! Unpack z_displace first because it's needed for the error check
-    z_displace = clubb_params(iz_displace)
-
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      if ( gr%zm(i,1) - sfc_elevation(i) + z_displace < eps ) then
+      if ( gr%zm(i,1) - sfc_elevation(i) + clubb_params(i,iz_displace) < eps ) then
         err_code = clubb_fatal_error
       end if
     end do
@@ -1549,26 +1536,11 @@ module mixing_length
                                       saturation_formula, & ! intent(in)
                                       l_brunt_vaisala_freq_moist, & ! intent(in)
                                       l_use_thvm_in_bv_freq, & ! intent(in)
-                                      clubb_params(ibv_efold), & ! intent(in)
+                                      clubb_params(:,ibv_efold), & ! intent(in)
                                       brunt_vaisala_freq_sqd, & ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,& ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, & ! intent(out)
                                       brunt_vaisala_freq_sqd_moist ) ! intent(out)
-
-    ! Unpack tunable parameters
-    C_invrs_tau_bkgnd = clubb_params(iC_invrs_tau_bkgnd)
-    C_invrs_tau_shear = clubb_params(iC_invrs_tau_shear)
-    C_invrs_tau_sfc = clubb_params(iC_invrs_tau_sfc)
-    C_invrs_tau_N2 = clubb_params(iC_invrs_tau_N2)
-    C_invrs_tau_N2_wp2 = clubb_params(iC_invrs_tau_N2_wp2)
-    C_invrs_tau_N2_wpxp = clubb_params(iC_invrs_tau_N2_wpxp)
-    C_invrs_tau_N2_xp2 = clubb_params(iC_invrs_tau_N2_xp2)
-    C_invrs_tau_wpxp_N2_thresh = clubb_params(iC_invrs_tau_wpxp_N2_thresh)
-    C_invrs_tau_N2_clear_wp3 = clubb_params(iC_invrs_tau_N2_clear_wp3)
-    C_invrs_tau_wpxp_Ri = clubb_params(iC_invrs_tau_wpxp_Ri)
-    altitude_threshold = clubb_params(ialtitude_threshold)
-    wpxp_Ri_exp = clubb_params(iwpxp_Ri_exp)
-
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -1595,7 +1567,7 @@ module mixing_length
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        invrs_tau_bkgnd(i,k) = C_invrs_tau_bkgnd / tau_const
+        invrs_tau_bkgnd(i,k) = clubb_params(i,iC_invrs_tau_bkgnd) / tau_const
       end do
     end do
     !$acc end parallel loop
@@ -1617,7 +1589,7 @@ module mixing_length
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        invrs_tau_shear_smooth(i,k) = C_invrs_tau_shear *  smooth_norm_ddzt_umvm(i,k)
+        invrs_tau_shear_smooth(i,k) = clubb_params(i,iC_invrs_tau_shear) *  smooth_norm_ddzt_umvm(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -1629,8 +1601,9 @@ module mixing_length
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        invrs_tau_sfc(i,k) = C_invrs_tau_sfc &
-                             * ( ustar(i) / vonk ) / ( gr%zm(i,k) - sfc_elevation(i) + z_displace )
+        invrs_tau_sfc(i,k) = clubb_params(i,iC_invrs_tau_sfc) &
+                             * ( ustar(i) / vonk ) &
+                               / ( gr%zm(i,k) - sfc_elevation(i) + clubb_params(i,iz_displace) )
          !C_invrs_tau_sfc * ( wp2 / vonk /ustar ) / ( gr%zm(1,:) -sfc_elevation + z_displace )
       end do
     end do
@@ -1815,7 +1788,7 @@ module mixing_length
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        if ( gr%zt(i,k) < altitude_threshold ) then
+        if ( gr%zt(i,k) < clubb_params(i,ialtitude_threshold) ) then
           brunt_freq_out_cloud(i,k) = zero
         end if
       end do
@@ -1841,6 +1814,10 @@ module mixing_length
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
+
+        C_invrs_tau_N2     = clubb_params(i,iC_invrs_tau_N2)
+        C_invrs_tau_N2_wp2 = clubb_params(i,iC_invrs_tau_N2_wp2)
+
         invrs_tau_N2_iso(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_shear(i,k) &
                                 + C_invrs_tau_N2_wp2 * brunt_freq_pos(i,k)
 
@@ -1868,9 +1845,10 @@ module mixing_length
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_xp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) &
-                                  + C_invrs_tau_N2_xp2 * brunt_freq_pos(i,k) & ! 0
-                                  + C_invrs_tau_sfc * two &
-                                  * sqrt(em(i,k)) / ( gr%zm(i,k) - sfc_elevation(i) + z_displace )  ! small
+                                  + clubb_params(i,iC_invrs_tau_N2_xp2) * brunt_freq_pos(i,k) & ! 0
+                                  + clubb_params(i,iC_invrs_tau_sfc) * two &
+                                  * sqrt(em(i,k)) &
+                                  / ( gr%zm(i,k) - sfc_elevation(i) + clubb_params(i,iz_displace) )  ! small
         end do
       end do
       !$acc end parallel loop
@@ -1923,7 +1901,7 @@ module mixing_length
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_wpxp_zm(i,k) = two * invrs_tau_zm(i,k) &
-                                   + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud(i,k)
+                                   + clubb_params(i,iC_invrs_tau_N2_wpxp) * brunt_freq_out_cloud(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -1934,8 +1912,8 @@ module mixing_length
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_xp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
-                                  C_invrs_tau_N2 * brunt_freq_pos(i,k) + &
-                                  C_invrs_tau_N2_xp2 * brunt_freq_out_cloud(i,k)
+                                  clubb_params(i,iC_invrs_tau_N2) * brunt_freq_pos(i,k) + &
+                                  clubb_params(i,iC_invrs_tau_N2_xp2) * brunt_freq_out_cloud(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -1957,8 +1935,8 @@ module mixing_length
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_wpxp_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
-                                   C_invrs_tau_N2 * brunt_freq_pos(i,k) + &
-                                   C_invrs_tau_N2_wpxp * brunt_freq_out_cloud(i,k)
+                                   clubb_params(i,iC_invrs_tau_N2) * brunt_freq_pos(i,k) + &
+                                   clubb_params(i,iC_invrs_tau_N2_wpxp) * brunt_freq_out_cloud(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -1970,7 +1948,8 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          bvf_thresh(i,k) = brunt_vaisala_freq_sqd_smth(i,k) / C_invrs_tau_wpxp_N2_thresh - one
+          bvf_thresh(i,k) = brunt_vaisala_freq_sqd_smth(i,k) &
+                            / clubb_params(i,iC_invrs_tau_wpxp_N2_thresh) - one
           end do
       end do
       !$acc end parallel loop
@@ -1982,7 +1961,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          if ( brunt_vaisala_freq_sqd_smth(i,k) > C_invrs_tau_wpxp_N2_thresh ) then
+          if ( brunt_vaisala_freq_sqd_smth(i,k) > clubb_params(i,iC_invrs_tau_wpxp_N2_thresh) ) then
             H_invrs_tau_wpxp_N2(i,k) = one
           else
             H_invrs_tau_wpxp_N2(i,k) = zero
@@ -1998,14 +1977,22 @@ module mixing_length
       Ri_zm_smooth = smooth_max( nz, ngrdcol, Ri_zm, zero, &
                                   12.0_core_rknd * min_max_smth_mag )
 
-      Ri_zm_smooth = smooth_min( nz, ngrdcol, C_invrs_tau_wpxp_Ri * Ri_zm_smooth**wpxp_Ri_exp, &
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          tmp_calc(i,k) = clubb_params(i,iC_invrs_tau_wpxp_Ri) * Ri_zm_smooth(i,k)**clubb_params(i,iwpxp_Ri_exp) 
+        end do 
+      end do
+      !$acc end parallel loop
+
+      Ri_zm_smooth = smooth_min( nz, ngrdcol, tmp_calc, &
                                  12.0_core_rknd, 12.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
 
-          if ( gr%zt(i,k) > altitude_threshold ) then
+          if ( gr%zt(i,k) > clubb_params(i,ialtitude_threshold) ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one + H_invrs_tau_wpxp_N2(i,k) &
                                           * Ri_zm_smooth(i,k) )
@@ -2020,11 +2007,11 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          if ( gr%zt(i,k) > altitude_threshold ) then
+          if ( gr%zt(i,k) > clubb_params(i,ialtitude_threshold) ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one  + H_invrs_tau_wpxp_N2(i,k) &
-                                      * min( C_invrs_tau_wpxp_Ri &
-                                      * max( Ri_zm(i,k), zero)**wpxp_Ri_exp, 12.0_core_rknd ) )
+                                      * min( clubb_params(i,iC_invrs_tau_wpxp_Ri) &
+                                      * max( Ri_zm(i,k), zero)**clubb_params(i,iwpxp_Ri_exp), 12.0_core_rknd ) )
           end if
         end do
       end do
@@ -2036,7 +2023,7 @@ module mixing_length
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_wp3_zm(i,k) = invrs_tau_wp2_zm(i,k) &
-                                + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud(i,k)
+                                + clubb_params(i,iC_invrs_tau_N2_clear_wp3) * brunt_freq_out_cloud(i,k)
       end do
     end do
     !$acc end parallel loop

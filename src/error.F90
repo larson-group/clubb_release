@@ -147,11 +147,11 @@ module error
     min_err     = -999._core_rknd,  & ! The lowest the minimization algorithm could go
     min_err_old = -999._core_rknd     ! Same as above, used to find min_err_terms
 
-  real( kind = core_rknd ), dimension(nparams), private :: & 
-    params = -999._core_rknd  ! Vector of all CLUBB tunable parameter values
+  real( kind = core_rknd ), dimension(1,nparams), private :: & 
+    clubb_params = -999._core_rknd  ! Vector of all CLUBB tunable parameter values
 
   integer, dimension(nparams), private :: & 
-    params_index = 0  ! Index of the params elements that are used in the simplex
+    params_index = 0  ! Index of the clubb_params elements that are used in the simplex
 
   character(len=28), dimension(nparams), private :: &
     param_constraints  ! Array of parameters meant to be kept equal to each other
@@ -391,7 +391,7 @@ module error
       close(unit=iunit)
 
       ! Read in initial constant values
-      call read_parameters( iunit, filename, &
+      call read_parameters( 1, iunit, filename, &
                             C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                             C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
                             C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
@@ -416,7 +416,7 @@ module error
                             C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                             Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
                             wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
-                            params )
+                            clubb_params )
 
       ! Allocate the arrays for the tuning variables
 
@@ -592,7 +592,7 @@ module error
       end if
 
       ! Copy tunable parameter values into the first row of the simplex
-      param_vals_matrix(1,1:ndim) = params(params_index(1:ndim))
+      param_vals_matrix(1,1:ndim) = clubb_params(1,params_index(1:ndim))
 
       ! Attempt to generate a pseudo-random seed using a file
       ! generated from /dev/random.  File is an ASCII text file
@@ -883,7 +883,7 @@ module error
     ! Copy simplex into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't in the simplex, leave it as is
-      params_local(i) = params(i)
+      params_local(i) = clubb_params(1,i)
       do j=1, ndim, 1
         if ( i == params_index(j) ) then
           ! Copy variable from param_vals_vector argument
@@ -931,12 +931,10 @@ module error
       ! Run the CLUBB model with parameters as input
 
       if ( allocated( model_flags_array ) ) then
-        call run_clubb &
-             ( params_local, run_file(c_run), l_stdout, &
-               model_flags_array(iter,:) )
+        call run_clubb( 1, params_local, run_file(c_run), l_stdout, &
+                        model_flags_array(iter,:) )
       else
-        call run_clubb & 
-             ( params_local, run_file(c_run), l_stdout )
+        call run_clubb( 1, params_local, run_file(c_run), l_stdout )
       end if
 
       run_stat(c_run) = err_code
@@ -1195,7 +1193,7 @@ module error
 
         open(unit=file_unit, file=tuning_filename, action='write', position='append')
         write(file_unit,*) "Iter ", int(iter), "  Cost = ", min_les_clubb_diff, &
-                                                 "  Params = ", param_vals_vector
+                                                 "  clubb_params = ", param_vals_vector
         close(unit=file_unit)
 
     end if
@@ -1236,7 +1234,7 @@ module error
     do i = 1, ndim, 1
       write(unit=iunit,fmt='(A31,2F17.10)')  & 
         params_list(params_index(i))//" = ",  & 
-        params(params_index(i)), param_vals_matrix(1,i)
+        clubb_params(1,params_index(i)), param_vals_matrix(1,i)
     end do
 
     ! Also print the initial and final values of the parameters that were held
@@ -1247,7 +1245,7 @@ module error
           k = params_index(j)
           if ( param_constraints(i) == params_list(k) ) then
             write(unit=iunit,fmt='(A31,2F17.10,5x,A)') &
-              params_list(i)//" = ", params(i), param_vals_matrix(1,j), &
+              params_list(i)//" = ", clubb_params(1,i), param_vals_matrix(1,j), &
                         "( held equal to " // trim(params_list(k)) // " )"
           end if
         end do
@@ -1387,7 +1385,7 @@ module error
     ! Copy simplex into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't in the simplex, leave it as is
-      params_local(i) = params(i)
+      params_local(i) = clubb_params(1,i)
       do j=1, ndim, 1
         if ( i == params_index(j) ) then
           ! Copy variable from param_vals_vector argument
@@ -1485,7 +1483,7 @@ module error
     ! Copy simplex into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't in the simplex, leave it as is
-      params_local(i) = params(i)
+      params_local(i) = clubb_params(1,i)
       do j=1, ndim, 1
         if ( i == params_index(j) ) then
           ! Copy variable from param_vals_vector argument

@@ -913,6 +913,9 @@ contains
       host_dx_col,  & ! East-West horizontal grid spacing     [m]
       host_dy_col     ! North-South horizontal grid spacing   [m]
 
+    real( kind = core_rknd ), dimension(1,nparams) :: &
+      clubb_params_col    ! Array of CLUBB's tunable parameters    [units vary]
+
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), dimension(1,gr%nz) ::  &
       um_col,      & ! u mean wind component (thermodynamic levels)   [m/s]
@@ -1083,6 +1086,8 @@ contains
     
     host_dx_col(1) = host_dx
     host_dy_col(1) = host_dy
+
+    clubb_params_col(1,:) = clubb_params
     
     stats_zt_col(1) = stats_zt
     stats_zm_col(1) = stats_zm
@@ -1164,7 +1169,7 @@ contains
     !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
     !$acc              nu_vert_res_dep%nu6, &
-    !$acc              sclr_idx, &
+    !$acc              sclr_idx, clubb_params_col, &
     !$acc              fcor_col, sfc_elevation_col, thlm_forcing_col, rtm_forcing_col, um_forcing_col, &
     !$acc              vm_forcing_col, wprtp_forcing_col, wpthlp_forcing_col, rtp2_forcing_col, thlp2_forcing_col, &
     !$acc              rtpthlp_forcing_col, wm_zm_col, wm_zt_col, rho_zm_col, rho_col, rho_ds_zm_col, rho_ds_zt_col, &
@@ -1273,7 +1278,7 @@ contains
 #endif
       wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &                 ! intent(in)
       host_dx_col, host_dy_col, &                                             ! intent(in)
-      clubb_params, nu_vert_res_dep, lmin, &                                  ! intent(in)
+      clubb_params_col, nu_vert_res_dep, lmin, &                                  ! intent(in)
       clubb_config_flags, &                                                   ! intent(in)
       stats_metadata, &           ! intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col, &                                ! intent(inout)
@@ -1584,7 +1589,7 @@ contains
       host_dx,  & ! East-West horizontal grid spacing     [m]
       host_dy     ! North-South horizontal grid spacing   [m]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep), intent(in) :: &
@@ -1727,7 +1732,7 @@ contains
     !$acc              nu_vert_res_dep, nu_vert_res_dep%nu2, nu_vert_res_dep%nu9, &
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
     !$acc              nu_vert_res_dep%nu6, &
-    !$acc              sclr_idx, &
+    !$acc              sclr_idx, clubb_params, &
     !$acc              fcor, sfc_elevation, thlm_forcing, rtm_forcing, um_forcing, &
     !$acc              vm_forcing, wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
     !$acc              rtpthlp_forcing, wm_zm, wm_zt, rho_zm, rho, rho_ds_zm, rho_ds_zt, &
@@ -2431,7 +2436,7 @@ contains
   ! read_parameters - Read a namelist containing the model parameters.
   !================================================================================================
 
-  subroutine read_parameters_api( iunit, filename, &
+  subroutine read_parameters_api( ngrdcol, iunit, filename, &
                                   C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                                   C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
                                   C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
@@ -2456,7 +2461,7 @@ contains
                                   C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                                   Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
                                   wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
-                                  params )
+                                  clubb_params )
 
     use parameters_tunable, only : read_parameters
 
@@ -2466,6 +2471,9 @@ contains
     implicit none
 
     ! Input variables
+    integer, intent(in) :: &
+      ngrdcol
+
     integer, intent(in) :: iunit
 
     character(len=*), intent(in) :: filename
@@ -2496,9 +2504,9 @@ contains
       wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
 
     ! Output variables
-    real( kind = core_rknd ), intent(out), dimension(nparams) :: params
+    real( kind = core_rknd ), intent(out), dimension(nparams) :: clubb_params
 
-    call read_parameters( iunit, filename, & ! intent(in)
+    call read_parameters( ngrdcol, iunit, filename, & ! intent(in)
                           C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                           C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
                           C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
@@ -2523,7 +2531,7 @@ contains
                           C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                           Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
                           wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace, &
-                          params ) ! intent(out)
+                          clubb_params ) ! intent(out)
 
   end subroutine read_parameters_api
 
@@ -2531,7 +2539,7 @@ contains
   ! setup_parameters - Sets up model parameters for a single column
   !================================================================================================
   subroutine setup_parameters_api_single_col( &
-             deltaz, params, gr, grid_type, &
+             deltaz, clubb_params, gr, grid_type, &
              l_prescribed_avg_deltaz, &
              lmin, nu_vert_res_dep, err_code_api )
 
@@ -2551,7 +2559,7 @@ contains
       deltaz  ! Change per height level        [m]
 
     real( kind = core_rknd ), intent(in), dimension(nparams) :: &
-      params  ! Tuneable model parameters      [-]
+      clubb_params  ! Tuneable model parameters      [-]
 
     ! Grid definition
     type(grid), target, intent(in) :: &
@@ -2588,7 +2596,7 @@ contains
     deltaz_col(1) = deltaz
 
     call setup_parameters( & 
-              deltaz_col, params, gr, 1, grid_type, &
+              deltaz_col, clubb_params, gr, 1, grid_type, &
               l_prescribed_avg_deltaz, &
               lmin, nu_vert_res_dep, err_code_api )
 
@@ -2599,7 +2607,7 @@ contains
   !================================================================================================
   
   subroutine setup_parameters_api_multi_col( &
-             deltaz, params, gr, ngrdcol, grid_type, &
+             deltaz, clubb_params, gr, ngrdcol, grid_type, &
              l_prescribed_avg_deltaz, &
              lmin, nu_vert_res_dep, err_code_api )
 
@@ -2626,8 +2634,9 @@ contains
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       deltaz  ! Change per height level        [m]
 
-    real( kind = core_rknd ), intent(in), dimension(nparams) :: &
-      params  ! Tuneable model parameters      [-]
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: &
+      clubb_params  ! Tuneable model parameters      [-]
+      
     ! If CLUBB is running on its own, this option determines
     ! if it is using:
     ! 1) an evenly-spaced grid,
@@ -2653,7 +2662,7 @@ contains
       err_code_api ! Error condition 
 
     call setup_parameters( & 
-              deltaz, params, gr, ngrdcol, grid_type, &
+              deltaz, clubb_params, gr, ngrdcol, grid_type, &
               l_prescribed_avg_deltaz, &
               lmin, nu_vert_res_dep, err_code_api )
 
@@ -2663,10 +2672,10 @@ contains
   ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
   !================================================================================================
 
-  subroutine adj_low_res_nu_api_single_col( gr, grid_type, deltaz,  & ! Intent(in)
-                                 l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-                                 nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
-                                 nu_vert_res_dep )  ! Intent(out)
+  subroutine adj_low_res_nu_api_single_col( gr, grid_type, deltaz,    & ! Intent(in)
+                                            clubb_params,             & ! Intent(in)
+                                            l_prescribed_avg_deltaz,  & ! Intent(in)
+                                            nu_vert_res_dep )           ! Intent(out)
 
     use parameters_tunable, only : adj_low_res_nu
 
@@ -2692,18 +2701,11 @@ contains
     real( kind = core_rknd ), intent(in) ::  &
       deltaz  ! Change per height level        [m]
 
+    real( kind = core_rknd ), intent(in), dimension(nparams) :: & 
+      clubb_params  ! Tuneable model parameters      [-]
+
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-
-    real( kind = core_rknd ), intent(in) :: &
-      mult_coef, & ! CLUBB tunable parameter mult_coef
-      nu1,       & ! CLUBB tunable parameter nu1
-      nu2,       & ! CLUBB tunable parameter nu2
-      nu6,       & ! CLUBB tunable parameter nu6
-      nu8,       & ! CLUBB tunable parameter nu8
-      nu9,       & ! CLUBB tunable parameter nu9
-      nu10,      & ! CLUBB tunable parameter nu10
-      nu_hm        ! CLUBB tunable parameter nu_hm
 
     ! Output Variables
     type(nu_vertical_res_dep), intent(out) :: &
@@ -2712,13 +2714,17 @@ contains
     ! Local variables
     real( kind = core_rknd ), dimension(1) ::  &
       deltaz_col  ! Change per height level        [m]
+
+    real( kind = core_rknd ), dimension(1,nparams) :: & 
+      clubb_params_col  ! Tuneable model parameters      [-]
       
     deltaz_col(1) = deltaz
+    clubb_params_col(1,:) = clubb_params
 
-    call adj_low_res_nu( gr, 1, grid_type, deltaz_col, & ! Intent(in)
-                         l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-                         nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
-                         nu_vert_res_dep )  ! Intent(out)
+    call adj_low_res_nu( gr, 1, grid_type, deltaz_col,  & ! Intent(in)
+                         clubb_params,                  & ! Intent(in)
+                         l_prescribed_avg_deltaz,       & ! Intent(in)
+                         nu_vert_res_dep )                ! Intent(out)
 
   end subroutine adj_low_res_nu_api_single_col
   
@@ -2727,9 +2733,9 @@ contains
   !================================================================================================
 
   subroutine adj_low_res_nu_api_multi_col( gr, ngrdcol, grid_type, deltaz,  & ! Intent(in)
-                                 l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-                                 nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
-                                 nu_vert_res_dep )  ! Intent(out)
+                                           clubb_params,                    & ! Intent(in)
+                                           l_prescribed_avg_deltaz,         & ! Intent(in)
+                                           nu_vert_res_dep )                  ! Intent(out)
 
     use parameters_tunable, only : adj_low_res_nu
 
@@ -2758,27 +2764,20 @@ contains
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       deltaz  ! Change per height level        [m]
 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nparams) :: & 
+      clubb_params  ! Tuneable model parameters      [-]
+
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-
-    real( kind = core_rknd ), intent(in) :: &
-      mult_coef, & ! CLUBB tunable parameter mult_coef
-      nu1,       & ! CLUBB tunable parameter nu1
-      nu2,       & ! CLUBB tunable parameter nu2
-      nu6,       & ! CLUBB tunable parameter nu6
-      nu8,       & ! CLUBB tunable parameter nu8
-      nu9,       & ! CLUBB tunable parameter nu9
-      nu10,      & ! CLUBB tunable parameter nu10
-      nu_hm        ! CLUBB tunable parameter nu_hm
 
     ! Output Variables
     type(nu_vertical_res_dep), intent(out) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
 
     call adj_low_res_nu( gr, ngrdcol, grid_type, deltaz, & ! Intent(in)
-                         l_prescribed_avg_deltaz, mult_coef, &  ! Intent(in)
-                         nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, &  ! Intent(in)
-                         nu_vert_res_dep )  ! Intent(out)
+                         clubb_params,                   & ! Intent(in)
+                         l_prescribed_avg_deltaz,        & ! Intent(in)
+                         nu_vert_res_dep )                 ! Intent(out)
 
   end subroutine adj_low_res_nu_api_multi_col
 

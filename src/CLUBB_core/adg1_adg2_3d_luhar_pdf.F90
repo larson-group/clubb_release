@@ -93,8 +93,10 @@ module adg1_adg2_3d_luhar_pdf
       sqrt_wp2,    & ! Square root of variance of w         [m/s]
       sigma_sqd_w    ! Width of individual w plumes         [-]
 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+      beta                    ! CLUBB tunable parameter beta         [-]
+
     real( kind = core_rknd ), intent(in) ::  &
-      beta,                 & ! CLUBB tunable parameter beta         [-]
       mixt_frac_max_mag       ! Maximum allowable mag. of mixt_frac  [-]
 
     real( kind = core_rknd ), dimension(ngrdcol, nz, sclr_dim), intent(in) ::  &
@@ -267,7 +269,7 @@ module adg1_adg2_3d_luhar_pdf
       wpthlp,   & ! Covariance of w and th_l                      [K(m/s)]
       sqrt_wp2    ! Square root of variance of w                  [m/s]
 
-    real ( kind = core_rknd ), intent(in) :: &
+    real ( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       beta       ! CLUBB tunable parameter beta               [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz, sclr_dim), intent(in) ::  &
@@ -1089,8 +1091,10 @@ module adg1_adg2_3d_luhar_pdf
       mixt_frac,   & ! Mixture fraction                       [-]
       sigma_sqd_w    ! Width of individual w plumes           [-]
 
+    real ( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      beta           ! CLUBB tunable parameter beta           [-]
+
     real ( kind = core_rknd ), intent(in) :: &
-      beta,        & ! CLUBB tunable parameter beta           [-]
       x_tol          ! Tolerance value for x                  [units vary]
 
     ! Output Variables
@@ -1136,8 +1140,8 @@ module adg1_adg2_3d_luhar_pdf
 
             alpha_x(i,k) = max( min( alpha_x(i,k), one ), zero_threshold )
 
-            width_factor_1 = two_thirds * beta &
-                             + two * mixt_frac(i,k) * ( one - two_thirds * beta )
+            width_factor_1 = two_thirds * beta(i) &
+                             + two * mixt_frac(i,k) * ( one - two_thirds * beta(i) )
 
             ! Vince Larson multiplied original expressions by width_factor_1,2
             !   to generalize scalar skewnesses.  05 Nov 03

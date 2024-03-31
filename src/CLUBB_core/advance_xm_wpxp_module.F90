@@ -288,7 +288,7 @@ module advance_xm_wpxp_module
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep), intent(in) :: &
@@ -392,15 +392,9 @@ module advance_xm_wpxp_module
       C6thl,              & ! CLUBB tunable parameter C6thl
       C6thlb,             & ! CLUBB tunable parameter C6thlb
       C6thlc,             & ! CLUBB tunable parameter C6thlc
-      C6rt_Lscale0,       & ! CLUBB tunable parameter C6rt_Lscale0
-      C6thl_Lscale0,      & ! CLUBB tunable parameter C6thl_Lscale0
       C7,                 & ! CLUBB tunable parameter C7
       C7b,                & ! CLUBB tunable parameter C7b
-      C7c,                & ! CLUBB tunable parameter C7c
-      C7_Lscale0,         & ! CLUBB tunable parameter C7_Lscale0
-      c_K6,               & ! CLUBB tunable parameter c_K6
-      altitude_threshold, & ! CLUBB tunable parameter altitude_threshold
-      wpxp_L_thresh         ! CLUBB tunable parameter wpxp_L_thresh
+      C7c                   ! CLUBB tunable parameter C7c
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) ::  & 
       C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term
@@ -571,79 +565,67 @@ module advance_xm_wpxp_module
        
     end if ! l_lmm_stepping
 
-    ! Unpack CLUBB tunable parameters
-    C6rt = clubb_params(iC6rt)
-    C6thl = clubb_params(iC6thl)
-    altitude_threshold = clubb_params(ialtitude_threshold)
-    wpxp_L_thresh = clubb_params(iwpxp_L_thresh)
-
     if ( .not. l_diag_Lscale_from_tau ) then
 
-      ! Unpack CLUBB tunable parameters
-      C6rtb = clubb_params(iC6rtb)
-      C6rtc = clubb_params(iC6rtc)
-      C6thlb = clubb_params(iC6thlb)
-      C6thlc = clubb_params(iC6thlc)
-      C6rt_Lscale0 = clubb_params(iC6rt_Lscale0)
-      C6thl_Lscale0 = clubb_params(iC6thl_Lscale0)
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
 
-      ! Compute C6 as a function of Skw
-      ! The if...then is just here to save compute time
-      if ( abs(C6rt-C6rtb) > abs(C6rt+C6rtb)*eps/2 ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
+          C6rt  = clubb_params(i,iC6rt)
+          C6rtb = clubb_params(i,iC6rtb)
+          C6rtc = clubb_params(i,iC6rtc)
+
+          ! Compute C6 as a function of Skw
+          ! The if...then is just here to save compute time
+          if ( abs(C6rt-C6rtb) > abs(C6rt+C6rtb)*eps/2 ) then
             C6rt_Skw_fnc(i,k) = C6rtb + ( C6rt - C6rtb ) & 
                                         * exp( -one_half * (Skw_zm(i,k)/C6rtc)**2 )
-          end do
-        end do
-        !$acc end parallel loop
-      else
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
+          else
             C6rt_Skw_fnc(i,k) = C6rtb
-          end do
-        end do
-        !$acc end parallel loop
-      end if
+          end if
 
-      if ( abs(C6thl-C6thlb) > abs(C6thl+C6thlb)*eps/2 ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
+        end do
+      end do
+      !$acc end parallel loop
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+    
+          C6thl  = clubb_params(i,iC6thl)
+          C6thlb = clubb_params(i,iC6thl)
+          C6thlc = clubb_params(i,iC6thl)
+
+          if ( abs(C6thl-C6thlb) > abs(C6thl+C6thlb)*eps/2 ) then
             C6thl_Skw_fnc(i,k) = C6thlb + ( C6thl - C6thlb ) & 
                                           * exp( -one_half * (Skw_zm(i,k)/C6thlc)**2 )
+          else
+              C6thl_Skw_fnc(i,k) = C6thlb
+          end if
+
           end do
-        end do
-        !$acc end parallel loop
-      else
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            C6thl_Skw_fnc(i,k) = C6thlb
-          end do
-        end do
-        !$acc end parallel loop
-      end if
+      end do
+      !$acc end parallel loop
 
       ! Damp C6 as a function of Lscale in stably stratified regions
-      call damp_coefficient( nz, ngrdcol, gr, C6rt, C6rt_Skw_fnc, &
-                             C6rt_Lscale0, altitude_threshold, &
-                             wpxp_L_thresh, Lscale_zm, &
+      call damp_coefficient( nz, ngrdcol, gr, clubb_params(:,iC6rt), C6rt_Skw_fnc, &
+                             clubb_params(:,iC6rt_Lscale0), &
+                             clubb_params(:,ialtitude_threshold), &
+                             clubb_params(:,iwpxp_L_thresh), Lscale_zm, &
                              C6rt_Skw_fnc )
 
-      call damp_coefficient( nz, ngrdcol, gr, C6thl, C6thl_Skw_fnc, &
-                             C6thl_Lscale0, altitude_threshold, &
-                             wpxp_L_thresh, Lscale_zm, &
+      call damp_coefficient( nz, ngrdcol, gr, clubb_params(:,iC6thl), C6thl_Skw_fnc, &
+                             clubb_params(:,iC6thl_Lscale0), &
+                             clubb_params(:,ialtitude_threshold), &
+                             clubb_params(:,iwpxp_L_thresh), Lscale_zm, &
                              C6thl_Skw_fnc )
 
     else ! l_diag_Lscale_from_tau
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          C6rt_Skw_fnc(i,k) = C6rt
-          C6thl_Skw_fnc(i,k) = C6thl
+          C6rt_Skw_fnc(i,k)  = clubb_params(i,iC6rt)
+          C6thl_Skw_fnc(i,k) = clubb_params(i,iC6thl)
         end do
       end do
       !$acc end parallel loop
@@ -663,35 +645,31 @@ module advance_xm_wpxp_module
 
     else
 
-      ! Unpack CLUBB tunable parameters
-      C7 = clubb_params(iC7)
-      C7b = clubb_params(iC7b)
-      C7c = clubb_params(iC7c)
-      C7_Lscale0 = clubb_params(iC7_Lscale0)
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
 
-      ! Compute C7 as a function of Skw
-      if ( abs(C7-C7b) > abs(C7+C7b)*eps/2 ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            C7_Skw_fnc(i,k) = C7b + ( C7 - C7b ) * exp( -one_half * (Skw_zm(i,k)/C7c)**2 )
-          end do
-        end do
-        !$acc end parallel loop
-      else
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
+          C7  = clubb_params(i,iC7)
+          C7b = clubb_params(i,iC7b)
+          C7c = clubb_params(i,iC7c)
+        
+          ! Compute C7 as a function of Skw
+          if ( abs(C7-C7b) > abs(C7+C7b)*eps/2 ) then
+            C7_Skw_fnc(i,k) = C7b + ( C7 - C7b ) &
+                                    * exp( -one_half * (Skw_zm(i,k)/C7c)**2 )
+          else
             C7_Skw_fnc(i,k) = C7b
-          end do
+          endif
+
         end do
-        !$acc end parallel loop
-      endif
+      end do
+      !$acc end parallel loop
 
       ! Damp C7 as a function of Lscale in stably stratified regions
-      call damp_coefficient( nz, ngrdcol, gr, C7, C7_Skw_fnc, &
-                             C7_Lscale0, altitude_threshold, &
-                             wpxp_L_thresh, Lscale_zm, &
+      call damp_coefficient( nz, ngrdcol, gr, clubb_params(:,iC7), C7_Skw_fnc, &
+                             clubb_params(:,iC7_Lscale0), &
+                             clubb_params(:,ialtitude_threshold), &
+                             clubb_params(:,iwpxp_L_thresh), Lscale_zm, &
                              C7_Skw_fnc )
 
     end if ! l_use_C7_Richardson
@@ -734,11 +712,10 @@ module advance_xm_wpxp_module
     ! Kw6 is used for wpthlp and wprtp, which are located on momentum levels.
     ! Kw6 is located on thermodynamic levels.
     ! Kw6 = c_K6 * Kh_zt
-    c_K6 = clubb_params(ic_K6)
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        Kw6(i,k) = c_K6 * Kh_zt(i,k)
+        Kw6(i,k) = clubb_params(i,ic_K6) * Kh_zt(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -863,7 +840,7 @@ module advance_xm_wpxp_module
                                           rhs_ta_wpvp, rhs_ta_wpsclrp,                     & ! In
                                           lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,    & ! In
                                           lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                 & ! In
-                                          clubb_params(iC_uu_shr),                         & ! In
+                                          clubb_params(:,iC_uu_shr),                         & ! In
                                           penta_solve_method,                              & ! In
                                           tridiag_solve_method,                            & ! In
                                           l_predict_upwp_vpwp,                             & ! In
@@ -1495,7 +1472,7 @@ module advance_xm_wpxp_module
     logical, intent(in) ::  & 
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep), intent(in) :: &
@@ -1598,8 +1575,8 @@ module advance_xm_wpxp_module
                                           thlm, Lscale_zm, em, &
                                           exner, rtm, rcm, &
                                           p_in_Pa, thvm, ice_supersat_frac, &
-                                          clubb_params(ilambda0_stability_coef), &
-                                          clubb_params(ibv_efold), &
+                                          clubb_params(:,ilambda0_stability_coef), &
+                                          clubb_params(:,ibv_efold), &
                                           saturation_formula, &
                                           l_brunt_vaisala_freq_moist, &
                                           l_use_thvm_in_bv_freq,&
@@ -1623,12 +1600,19 @@ module advance_xm_wpxp_module
           !$acc end parallel loop
         end if
 
-        K_zt = zm2zt( nz, ngrdcol, gr, K_zm )
-
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol        
             K_zm(i,k) = Kh_N2_zm(i,k) + constant_nu
+          end do
+        end do
+        !$acc end parallel loop
+
+        K_zt = zm2zt( nz, ngrdcol, gr, K_zm )
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol   
             K_zt(i,k) = max( K_zt(i,k), zero_threshold )
           end do
         end do
@@ -2784,7 +2768,7 @@ module advance_xm_wpxp_module
     integer, intent(in) :: &
       nrhs         ! Number of RHS vectors
 
-    real( kind = core_rknd ), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       C_uu_shr    ! CLUBB tunable parameter C_uu_shr
 
     integer, intent(in) :: &
@@ -3059,8 +3043,8 @@ module advance_xm_wpxp_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          upwp_forcing(i,k) = C_uu_shr * wp2(i,k) * ddzt_um(i,k)
-          vpwp_forcing(i,k) = C_uu_shr * wp2(i,k) * ddzt_vm(i,k)
+          upwp_forcing(i,k) = C_uu_shr(i) * wp2(i,k) * ddzt_um(i,k)
+          vpwp_forcing(i,k) = C_uu_shr(i) * wp2(i,k) * ddzt_vm(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -3073,8 +3057,8 @@ module advance_xm_wpxp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            upwp_forcing_pert(i,k) = C_uu_shr * wp2(i,k) * ddzt_um_pert(i,k)
-            vpwp_forcing_pert(i,k) = C_uu_shr * wp2(i,k) * ddzt_vm_pert(i,k)
+            upwp_forcing_pert(i,k) = C_uu_shr(i) * wp2(i,k) * ddzt_um_pert(i,k)
+            vpwp_forcing_pert(i,k) = C_uu_shr(i) * wp2(i,k) * ddzt_vm_pert(i,k)
           end do
         end do
         !$acc end parallel loop
@@ -3083,12 +3067,12 @@ module advance_xm_wpxp_module
 
       if ( stats_metadata%l_stats_samp ) then
 
-        !$acc update host( wp2, ddzt_um, ddzt_vm )
+        !$acc update host( wp2, ddzt_um, ddzt_vm, C_uu_shr )
 
         do i = 1, ngrdcol
-          call stat_update_var( stats_metadata%iupwp_pr4, C_uu_shr * wp2(i,:) * ddzt_um(i,:), & ! intent(in)
+          call stat_update_var( stats_metadata%iupwp_pr4, C_uu_shr(i) * wp2(i,:) * ddzt_um(i,:), & ! intent(in)
                                 stats_zm(i) )                                    ! intent(inout)
-          call stat_update_var( stats_metadata%ivpwp_pr4, C_uu_shr * wp2(i,:) * ddzt_vm(i,:), & ! intent(in)
+          call stat_update_var( stats_metadata%ivpwp_pr4, C_uu_shr(i) * wp2(i,:) * ddzt_vm(i,:), & ! intent(in)
                                 stats_zm(i) )                                    ! intent(inout)
         end do
       end if ! stats_metadata%l_stats_samp
@@ -5819,7 +5803,7 @@ module advance_xm_wpxp_module
     type (grid), target, intent(in) :: gr
 
     ! Input variables
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       coefficient,        & ! The coefficient to be damped
       max_coeff_value,    & ! Maximum value the damped coefficient should have
       altitude_threshold, & ! Minimum altitude where damping should occur 
@@ -5839,9 +5823,9 @@ module advance_xm_wpxp_module
     do k = 1, nz
       do i = 1, ngrdcol
         
-        if ( Lscale_zm(i,k) < threshold .and. gr%zt(i,k) > altitude_threshold ) then
-          damped_value(i,k) = max_coeff_value &
-                              + ( ( coefficient - max_coeff_value ) / threshold ) &
+        if ( Lscale_zm(i,k) < threshold(i) .and. gr%zt(i,k) > altitude_threshold(i) ) then
+          damped_value(i,k) = max_coeff_value(i) &
+                              + ( ( coefficient(i) - max_coeff_value(i) ) / threshold(i) ) &
                                 * Lscale_zm(i,k)
         else
           damped_value(i,k) = Cx_Skw_fnc(i,k)

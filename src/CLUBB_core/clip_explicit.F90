@@ -1078,10 +1078,8 @@ module clip_explicit
       dt               ! Model timestep; used here for STATS        [s]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      sfc_elevation  ! Elevation of ground level                  [m AMSL]
-      
-    real( kind = core_rknd ), intent(in) ::  &
-      Skw_max_mag      ! Maximum allowable magnitude of Skewness    [-]
+      sfc_elevation,    & ! Elevation of ground level                  [m AMSL]
+      Skw_max_mag         ! Maximum allowable magnitude of Skewness    [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
@@ -1167,10 +1165,8 @@ module clip_explicit
     type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
-      sfc_elevation  ! Elevation of ground level                  [m AMSL]
-      
-    real( kind = core_rknd ), intent(in) ::  &
-      Skw_max_mag      ! Maximum allowable magnitude of Skewness    [-]
+      sfc_elevation,  & ! Elevation of ground level                  [m AMSL]
+      Skw_max_mag       ! Maximum allowable magnitude of Skewness    [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       wp2_zt           ! w'^2 interpolated to thermodyamic levels   [m^2/s^2]
@@ -1245,9 +1241,9 @@ module clip_explicit
       do k = 1, nz
         do i = 1, ngrdcol
           wp3_lim_sqd(i,k) = wp2_zt_cubed(i,k)   &
-                              * ( H_zagl(i,k) * Skw_max_mag**2   &
+                              * ( H_zagl(i,k) * Skw_max_mag(i)**2   &
                                   + (1.0_core_rknd - H_zagl(i,k)) & 
-                                     * 0.0021_core_rknd *Skw_max_mag**2 )
+                                     * 0.0021_core_rknd *Skw_max_mag(i)**2 )
         end do
       end do
      !$acc end parallel loop
@@ -1260,11 +1256,11 @@ module clip_explicit
           if ( gr%zt(i,k) - sfc_elevation(i) <= 100.0_core_rknd ) then ! Clip for 100 m. AGL.
            !wp3_upper_lim(k) =  0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
            !wp3_lower_lim(k) = -0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
-            wp3_lim_sqd(i,k) = 0.0021_core_rknd * Skw_max_mag**2 * wp2_zt_cubed(i,k)
+            wp3_lim_sqd(i,k) = 0.0021_core_rknd * Skw_max_mag(i)**2 * wp2_zt_cubed(i,k)
           else                          ! Clip skewness consistently with a.
            !wp3_upper_lim(k) =  4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
            !wp3_lower_lim(k) = -4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
-            wp3_lim_sqd(i,k) = Skw_max_mag**2 * wp2_zt_cubed(i,k) ! Skw_max_mag = 4.5_core_rknd^2
+            wp3_lim_sqd(i,k) = Skw_max_mag(i)**2 * wp2_zt_cubed(i,k) ! Skw_max_mag = 4.5_core_rknd^2
           endif
         end do
       end do

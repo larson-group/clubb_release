@@ -250,7 +250,7 @@ module advance_wp2_wp3_module
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
  
     type(nu_vertical_res_dep), intent(in) :: &
@@ -394,13 +394,7 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol,2*nz) ::  & 
       rhs  ! RHS of band matrix
 
-    real( kind = core_rknd ) ::  &
-      C4,          & ! CLUBB tunable parameter C4
-      C_uu_shr,    & ! CLUBB tunable parameter C_uu_shr
-      C_uu_buoy,   & ! CLUBB tunable parameter C_uu_buoy
-      C8,          & ! CLUBB tunable parameter C8
-      C8b,         & ! CLUBB tunable parameter C8b
-      C12,         & ! CLUBB tunable parameter C12
+    real( kind = core_rknd ), dimension(ngrdcol) ::  &
       C_wp3_pr_tp    ! CLUBB tunable parameter C_wp3_pr_tp
       
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -409,7 +403,7 @@ module advance_wp2_wp3_module
 
     integer :: k, i, b
 
-    !$acc enter data create( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, &
+    !$acc enter data create( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
     !$acc                    wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
     !$acc                    lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
     !$acc                    lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, &
@@ -464,56 +458,46 @@ module advance_wp2_wp3_module
       !$acc end parallel loop
     else
 
-      ! Unpack CLUBB tunable parameters
-      C11 = clubb_params(iC11)
-      C11b = clubb_params(iC11b)
-      C11c = clubb_params(iC11c)
-
-      ! Calculate C_{1} and C_{11} as functions of skewness of w.
-      ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
-      if ( abs(C11-C11b) > abs(C11+C11b)*eps/2 ) then
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            C11_Skw_fnc(i,k) = C11b + (C11-C11b)*exp( -one_half * (Skw_zt(i,k)/C11c)**2 )
-          end do
-        end do
-        !$acc end parallel loop
-      else
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            C11_Skw_fnc(i,k) = C11b
-          end do
-        end do
-        !$acc end parallel loop
-      end if
-
-    end if ! l_use_C11_Richardson
-
-    ! Unpack CLUBB tunable parameters
-    C1 = clubb_params(iC1)
-    C1b = clubb_params(iC1b)
-    C1c = clubb_params(iC1c)
-
-    ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
-    if ( abs(C1-C1b) > abs(C1+C1b)*eps/2 ) then
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          C1_Skw_fnc(i,k) = C1b + (C1-C1b)*exp( -one_half * (Skw_zm(i,k)/C1c)**2 )
+
+          C11  = clubb_params(i,iC11)
+          C11b = clubb_params(i,iC11b)
+          C11c = clubb_params(i,iC11c)
+
+          ! Calculate C_{1} and C_{11} as functions of skewness of w.
+          ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
+          if ( abs(C11-C11b) > abs(C11+C11b)*eps/2 ) then
+            C11_Skw_fnc(i,k) = C11b + (C11-C11b)*exp( -one_half * (Skw_zt(i,k)/C11c)**2 )
+          else
+            C11_Skw_fnc(i,k) = C11b
+          end if
+
         end do
       end do
       !$acc end parallel loop
-    else
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
+
+    end if ! l_use_C11_Richardson
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+
+        C1  = clubb_params(i,iC1)
+        C1b = clubb_params(i,iC1b)
+        C1c = clubb_params(i,iC1c)
+
+        ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
+        if ( abs(C1-C1b) > abs(C1+C1b)*eps/2 ) then
+          C1_Skw_fnc(i,k) = C1b + (C1-C1b)*exp( -one_half * (Skw_zm(i,k)/C1c)**2 )
+        else
           C1_Skw_fnc(i,k) = C1b
-        end do
+        end if
+
       end do
-      !$acc end parallel loop 
-    end if
+    end do
+    !$acc end parallel loop
 
     if ( l_damp_wp2_using_em ) then
       ! Insert 1/3 here to account for the fact that in the dissipation term, 
@@ -581,10 +565,6 @@ module advance_wp2_wp3_module
       end do
     endif
 
-    ! Unpack CLUBB tunable parameters
-    c_K1 = clubb_params(ic_K1)
-    c_K8 = clubb_params(ic_K8)
-
     ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -593,13 +573,13 @@ module advance_wp2_wp3_module
         ! Kw1 is used for wp2, which is located on momentum levels.
         ! Kw1 is located on thermodynamic levels.
         ! Kw1 = c_K1 * Kh_zt
-        Kw1(i,k) = c_K1 * Kh_zt(i,k)
+        Kw1(i,k) = clubb_params(i,ic_K1) * Kh_zt(i,k)
 
         ! Kw8 is used for wp3, which is located on thermodynamic levels.
         ! Kw8 is located on momentum levels.
         ! Note: Kw8 is usually defined to be 1/2 of Kh_zm.
         ! Kw8 = c_K8 * Kh_zm
-        Kw8(i,k) = c_K8 * Kh_zm(i,k)
+        Kw8(i,k) = clubb_params(i,ic_K8) * Kh_zm(i,k)
       end do
     enddo
     !$acc end parallel loop
@@ -689,14 +669,6 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
     
-    C4 = clubb_params(iC4)
-    C_uu_shr = clubb_params(iC_uu_shr)
-    C_uu_buoy = clubb_params(iC_uu_buoy)
-    C8 = clubb_params(iC8)
-    C8b = clubb_params(iC8b)
-    C12 = clubb_params(iC12)
-    C_wp3_pr_tp = clubb_params(iC_wp3_pr_tp)
-    
     Kw1_zm(:,:) = zt2zm( nz, ngrdcol, gr, Kw1(:,:) )
     Kw8_zt(:,:) = zm2zt( nz, ngrdcol, gr, Kw8(:,:) )
 
@@ -718,7 +690,7 @@ module advance_wp2_wp3_module
     end if
 
     ! Calculate term
-    call wp3_term_pr_turb_rhs( nz, ngrdcol, gr, clubb_params(iC_wp3_pr_turb),   & ! intent(in)
+    call wp3_term_pr_turb_rhs( nz, ngrdcol, gr, clubb_params(:,iC_wp3_pr_turb), & ! intent(in)
                                Kh_zt, wpthvp,                                   & ! intent(in)
                                dum_dz, dvm_dz,                                  & ! intent(in)
                                upwp, vpwp,                                      & ! intent(in)
@@ -728,16 +700,16 @@ module advance_wp2_wp3_module
                                rhs_pr_turb_wp3,                                 & ! intent(out)
                                l_use_tke_in_wp3_pr_turb_term )                    ! intent(in)
 
-    call wp3_term_pr_dfsn_rhs( nz, ngrdcol, gr, clubb_params(iC_wp3_pr_dfsn),   & ! intent(in)
+    call wp3_term_pr_dfsn_rhs( nz, ngrdcol, gr, clubb_params(:,iC_wp3_pr_dfsn), & ! intent(in)
                                rho_ds_zm, invrs_rho_ds_zt,                      & ! intent(in)
                                wp2up2, wp2vp2, wp4,                             & ! intent(in)
                                up2, vp2, wp2,                                   & ! intent(in)
                                rhs_pr_dfsn_wp3 )                                  ! intent(out)
     
-    call wp2_term_pr_dfsn_rhs( nz, ngrdcol, gr, clubb_params(iC_wp2_pr_dfsn), & ! intent(in)
-                               rho_ds_zt, invrs_rho_ds_zm,                    & ! intent(in)
-                               wpup2, wpvp2, wp3,                             & ! intent(in)
-                               rhs_pr_dfsn_wp2 )                                ! intent(out)
+    call wp2_term_pr_dfsn_rhs( nz, ngrdcol, gr, clubb_params(:,iC_wp2_pr_dfsn), & ! intent(in)
+                               rho_ds_zt, invrs_rho_ds_zm,                      & ! intent(in)
+                               wpup2, wpvp2, wp3,                               & ! intent(in)
+                               rhs_pr_dfsn_wp2 )                                  ! intent(out)
     
     ! This part handles the wp2 equation terms.
     call diffusion_zm_lhs( nz, ngrdcol, gr, Kw1, Kw1_zm, nu_vert_res_dep%nu1, & ! intent(in) 
@@ -758,9 +730,9 @@ module advance_wp2_wp3_module
           lhs_diff_zm_crank(2,i,k) = lhs_diff_zm(2,i,k) * one_half
           lhs_diff_zm_crank(3,i,k) = lhs_diff_zm(3,i,k) * one_half
 
-          lhs_diff_zt_crank(1,i,k) = lhs_diff_zt(1,i,k) * C12 * one_half
-          lhs_diff_zt_crank(2,i,k) = lhs_diff_zt(2,i,k) * C12 * one_half
-          lhs_diff_zt_crank(3,i,k) = lhs_diff_zt(3,i,k) * C12 * one_half
+          lhs_diff_zt_crank(1,i,k) = lhs_diff_zt(1,i,k) * clubb_params(i,iC12) * one_half
+          lhs_diff_zt_crank(2,i,k) = lhs_diff_zt(2,i,k) * clubb_params(i,iC12) * one_half
+          lhs_diff_zt_crank(3,i,k) = lhs_diff_zt(3,i,k) * clubb_params(i,iC12) * one_half
         end do
       end do
       !$acc end parallel loop
@@ -768,27 +740,40 @@ module advance_wp2_wp3_module
     
     ! Calculate "over-implicit" pressure terms for w'2 and w'3
     if ( l_tke_aniso ) then
-      call wp2_term_pr1_rhs( nz, ngrdcol, C4,           & ! intent(in)
-                             up2, vp2, invrs_tau_C4_zm, & ! intent(in)
-                             rhs_pr1_wp2 )                ! intent(out)
+      call wp2_term_pr1_rhs( nz, ngrdcol, clubb_params(:,iC4),  & ! intent(in)
+                             up2, vp2, invrs_tau_C4_zm,         & ! intent(in)
+                             rhs_pr1_wp2 )                        ! intent(out)
       
       ! Note:  An "over-implicit" weighted time step is applied to the  term.
       !        A weighting factor of greater than 1 may be used to make the
       !        term more numerically stable (see note below for w'^3 RHS
       !        turbulent advection (ta) term).
-      call wp2_term_pr1_lhs( nz, ngrdcol, C4, invrs_tau_C4_zm,  & ! intent(in)
-                             lhs_pr1_wp2 )                        ! intent(out)
+      call wp2_term_pr1_lhs( nz, ngrdcol,                           & ! intent(in)
+                             clubb_params(:,iC4), invrs_tau_C4_zm,  & ! intent(in)
+                             lhs_pr1_wp2 )                            ! intent(out)
     end if
-                             
+                        
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      C_wp3_pr_tp(i) = one
+    end do
+    !$acc end parallel loop
+
     ! Calculate turbulent production terms of w'^3 
-    call wp3_term_tp_lhs( nz, ngrdcol, gr, one,             & ! intent(in)
+    call wp3_term_tp_lhs( nz, ngrdcol, gr, C_wp3_pr_tp,     & ! intent(in)
                           wp2, rho_ds_zm, invrs_rho_ds_zt,  & ! intent(in)
                           lhs_adv_tp_wp3 )                    ! intent(out)
 
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      C_wp3_pr_tp(i) = -clubb_params(i,iC_wp3_pr_tp)
+    end do
+    !$acc end parallel loop
+
     ! Calculate pressure damping of turbulent production of w'^3
-    call wp3_term_tp_lhs( nz, ngrdcol, gr, -1*C_wp3_pr_tp, & ! intent(in)
-                          wp2, rho_ds_zm, invrs_rho_ds_zt, & ! intent(in)
-                          lhs_pr_tp_wp3 )                    ! intent(out)
+    call wp3_term_tp_lhs( nz, ngrdcol, gr, C_wp3_pr_tp,     & ! intent(in)
+                          wp2, rho_ds_zm, invrs_rho_ds_zt,  & ! intent(in)
+                          lhs_pr_tp_wp3 )                     ! intent(out)
                           
     ! Sum contributions to turbulent production from standard term & damping
     !$acc parallel loop gang vector default(present) collapse(3)
@@ -802,10 +787,11 @@ module advance_wp2_wp3_module
     !$acc end parallel loop
     
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_lhs( nz, ngrdcol, C8, C8b,     & ! intent(in)
-                           invrs_tau_wp3_zt, Skw_zt, & ! intent(in)
-                           l_damp_wp3_Skw_squared,   & ! intent(in)
-                           lhs_pr1_wp3 )               ! intent(out)
+    call wp3_term_pr1_lhs( nz, ngrdcol,                               & ! intent(in)
+                           clubb_params(:,iC8), clubb_params(:,iC8b), & ! intent(in)
+                           invrs_tau_wp3_zt, Skw_zt,                  & ! intent(in)
+                           l_damp_wp3_Skw_squared,                    & ! intent(in)
+                           lhs_pr1_wp3 )                                ! intent(out)
 
     ! Calculate dissipation terms 1 for w'^2
     call wp2_term_dp1_lhs( nz, ngrdcol,                 & ! intent(in)
@@ -813,15 +799,18 @@ module advance_wp2_wp3_module
                            lhs_dp1_wp2 )                  ! intent(out)
 
     ! Calculate buoyancy production of w'^2 and w'^2 pressure term 2
-    call wp2_terms_bp_pr2_rhs( nz, ngrdcol, C_uu_buoy,  & ! intent(in)
-                               thv_ds_zm, wpthvp,       & ! intent(in)
-                               rhs_bp_pr2_wp2 )           ! intent(out)
+    call wp2_terms_bp_pr2_rhs( nz, ngrdcol,                 & ! intent(in)
+                               clubb_params(:,iC_uu_buoy),  & ! intent(in)
+                               thv_ds_zm, wpthvp,           & ! intent(in)
+                               rhs_bp_pr2_wp2 )               ! intent(out)
 
     ! Calculate pressure terms 3 for w'^2
-    call wp2_term_pr3_rhs( nz, ngrdcol, gr, C_uu_shr, C_uu_buoy,  & ! intent(in)
-                           thv_ds_zm, wpthvp, upwp,               & ! intent(in)
-                           um, vpwp, vm,                          & ! intent(in)
-                           rhs_pr3_wp2 )                            ! intent(out)
+    call wp2_term_pr3_rhs( nz, ngrdcol, gr,             & ! intent(in)
+                           clubb_params(:,iC_uu_shr),   & ! intent(in)
+                           clubb_params(:,iC_uu_buoy),  & ! intent(in)
+                           thv_ds_zm, wpthvp, upwp,     & ! intent(in)
+                           um, vpwp, vm,                & ! intent(in)
+                           rhs_pr3_wp2 )                  ! intent(out)
     
     ! Calculate dissipation terms 1 for w'^2
     call wp2_term_dp1_rhs( nz, ngrdcol, C1_Skw_fnc,               & ! intent(in)
@@ -835,10 +824,11 @@ module advance_wp2_wp3_module
                                 rhs_bp1_pr2_wp3 )           ! intent(out)
 
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_rhs( nz, ngrdcol, gr, C8, C8b,      & ! intent(in)
-                           invrs_tau_wp3_zt, Skw_zt, wp3, & ! intent(in)
-                           l_damp_wp3_Skw_squared,        & ! intent(in)
-                           rhs_pr1_wp3 )                    ! intent(out)
+    call wp3_term_pr1_rhs( nz, ngrdcol, gr,                           & ! intent(in)
+                           clubb_params(:,iC8), clubb_params(:,iC8b), & ! intent(in)
+                           invrs_tau_wp3_zt, Skw_zt, wp3,             & ! intent(in)
+                           l_damp_wp3_Skw_squared,                    & ! intent(in)
+                           rhs_pr1_wp3 )                                ! intent(out)
     
     if ( l_explicit_turbulent_adv_wp3 ) then
 
@@ -928,7 +918,7 @@ module advance_wp2_wp3_module
     do k = 1, nz
       do i = 1, ngrdcol
         do b = 1, ndiags3
-          lhs_diff_zt(b,i,k) = lhs_diff_zt(b,i,k) * C12
+          lhs_diff_zt(b,i,k) = lhs_diff_zt(b,i,k) * clubb_params(i,iC12)
         end do
       end do
     end do
@@ -960,7 +950,8 @@ module advance_wp2_wp3_module
                           lhs_ta_wp2 )                  ! intent(out)
     
     ! Calculate accumulation terms of w'^2 and w'^2 pressure term 2
-    call wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr, C_uu_shr, wm_zt, & ! intent(in)
+    call wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr,                  & ! intent(in)
+                               clubb_params(:,iC_uu_shr), wm_zt, & ! intent(in)
                                lhs_ac_pr2_wp2 )                    ! intent(out)
     
     ! Calculate accumulation terms of w'^3 and w'^3 pressure terms 2
@@ -1158,7 +1149,7 @@ module advance_wp2_wp3_module
       end if ! fatal error
     end if
 
-    !$acc exit data delete( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, &
+    !$acc exit data delete( wp2_old, wp3_old, C1_Skw_fnc, C11_Skw_fnc, C16_fnc, C_wp3_pr_tp, &
     !$acc                   wp3_term_ta_lhs_result, wp3_pr3_lhs, lhs_ta_wp2, &
     !$acc                   lhs_tp_wp3, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
     !$acc                   lhs_ta_wp3, lhs_dp1_wp2, rhs_dp1_wp2, lhs_pr1_wp2, &
@@ -1325,7 +1316,7 @@ module advance_wp2_wp3_module
       rtp2,            & ! Variance of rt (overall)                  [kg^2/kg^2]
       thlp2              ! Variance of thl (overall)                 [K^2]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
@@ -1379,6 +1370,9 @@ module advance_wp2_wp3_module
       lhs_wp3_pr2_term, & ! w'^3 term pr2, used for stats
       threshold_array,  & ! Minimum values for wp2 [m^2/s^2]
       zero_vector
+
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      zero_vector_ngrdcol
 
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3, i
@@ -1484,18 +1478,21 @@ module advance_wp2_wp3_module
       !$acc update host( wm_zt, lhs_dp1_wp2, wp2, lhs_diff_zm, lhs_ta_wp2, &
       !$acc              wp3, lhs_ma_zm, lhs_pr1_wp2, lhs_pr1_wp3, lhs_diff_zt, &
       !$acc              wp3_term_ta_lhs_result, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
-      !$acc              wp3_pr3_lhs, lhs_ma_zt, C11_Skw_fnc, wm_zm )
+      !$acc              wp3_pr3_lhs, lhs_ma_zt, C11_Skw_fnc, wm_zm, clubb_params )
       
-      C_uu_shr = clubb_params(iC_uu_shr)
+      zero_vector = zero
+      zero_vector_ngrdcol = zero
       
       ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
       !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
-      call wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr, zero, wm_zt, & ! intent(in)
-                                 lhs_wp2_ac_term  )              ! intent(out)
+      call wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr,            & ! intent(in)
+                                 zero_vector_ngrdcol, wm_zt, & ! intent(in)
+                                 lhs_wp2_ac_term  )            ! intent(out)
       
       ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
       !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
-      call wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr, (one+C_uu_shr), wm_zt, & ! intent(in)
+      call wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr,                        & ! intent(in)
+                                 (one+clubb_params(:,iC_uu_shr)), wm_zt, & ! intent(in)
                                  lhs_wp2_pr2_term )                        ! intent(out)
     
       do i = 1, ngrdcol
@@ -1571,8 +1568,6 @@ module advance_wp2_wp3_module
 
         enddo
       end do
-      
-      zero_vector = zero
 
       ! Finalize implicit contributions for wp3
       
@@ -1803,12 +1798,12 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
     ! Clip w'^3 by limiting skewness.
-    call clip_skewness( nz, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
-                        clubb_params(iSkw_max_mag), wp2_zt, & ! intent(in)
-                        l_use_wp3_lim_with_smth_Heaviside,  & ! intent(in)
-                        stats_metadata,                     & ! intent(in)
-                        stats_zt,                           & ! intent(inout)
-                        wp3 )                                 ! intent(inout)
+    call clip_skewness( nz, ngrdcol, gr, dt, sfc_elevation,   & ! intent(in)
+                        clubb_params(:,iSkw_max_mag), wp2_zt, & ! intent(in)
+                        l_use_wp3_lim_with_smth_Heaviside,    & ! intent(in)
+                        stats_metadata,                       & ! intent(in)
+                        stats_zt,                             & ! intent(inout)
+                        wp3 )                                   ! intent(inout)
 
     ! Compute wp3_zm for output purposes
     wp3_zm(:,:) = zt2zm( nz, ngrdcol, gr, wp3 )
@@ -2303,7 +2298,7 @@ module advance_wp2_wp3_module
       lhs_splat_wp2,     & ! LHS coefficient of wp2 splatting term     [1/s]
       lhs_splat_wp3        ! LHS coefficient of wp3 splatting term     [1/s]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
@@ -2344,6 +2339,9 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       zero_vector    ! Vector of 0s
 
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      zero_vector_ngrdcol    ! Vector of 0s
+
     real( kind = core_rknd ) ::  &
       C_uu_buoy   ! CLUBB tunable parameter C_uu_buoy
 
@@ -2357,13 +2355,11 @@ module advance_wp2_wp3_module
     !$acc              rhs_pr3_wp2, rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, &
     !$acc              rhs_pr_dfsn_wp3, wp2, wp3, wpup2, wpvp2, wpthvp, wp2thvp, &
     !$acc              up2, vp2, C11_Skw_fnc, radf, thv_ds_zm, thv_ds_zt, &
-    !$acc              lhs_splat_wp2, lhs_splat_wp3 ) &
+    !$acc              lhs_splat_wp2, lhs_splat_wp3, C_uu_buoy ) &
     !$acc    copyout( rhs )
 
     ! Calculate invers_dt
     invrs_dt = 1.0_core_rknd / dt
-
-    C_uu_buoy = clubb_params(iC_uu_buoy)
 
     ! Initialize to zero
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -2636,25 +2632,26 @@ module advance_wp2_wp3_module
       !$acc              rhs_ta_wp3, wp3_term_ta_lhs_result, wp3, lhs_ta_wp3, &
       !$acc              lhs_adv_tp_wp3, lhs_pr_tp_wp3, rhs_pr3_wp3, rhs_pr1_wp3, &
       !$acc              lhs_pr1_wp3, lhs_splat_wp3, lhs_diff_zt, wpup2, wpvp2, &
-      !$acc              rhs_pr_turb_wp3, rhs_pr_dfsn_wp3 )
+      !$acc              rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, clubb_params )
 
       zero_vector = zero
+      zero_vector_ngrdcol = zero
 
       ! w'^2 term bp is completely explicit; call stat_update_var_pt.
       ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
       !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-      call wp2_terms_bp_pr2_rhs( nz, ngrdcol, zero, & ! intent(in)
-                                 thv_ds_zm, wpthvp, & ! intent(in)
-                                 rhs_bp_wp2 )         ! intent(out)
+      call wp2_terms_bp_pr2_rhs( nz, ngrdcol, zero_vector_ngrdcol,  & ! intent(in)
+                                 thv_ds_zm, wpthvp,                 & ! intent(in)
+                                 rhs_bp_wp2 )                         ! intent(out)
 
       ! w'^2 term pr2 has both implicit and explicit components; call
       ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
       ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
       ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
       !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-      call wp2_terms_bp_pr2_rhs( nz, ngrdcol, (one+C_uu_buoy),  & ! intent(in)
-                                 thv_ds_zm, wpthvp,             & ! intent(in)
-                                 rhs_pr2_wp2 )                    ! intent(out)
+      call wp2_terms_bp_pr2_rhs( nz, ngrdcol, (one+clubb_params(:,iC_uu_buoy)),  & ! intent(in)
+                                 thv_ds_zm, wpthvp,                              & ! intent(in)
+                                 rhs_pr2_wp2 )                                     ! intent(out)
 
     
       ! w'^3 term bp is completely explicit; call stat_update_var_pt.
@@ -3047,8 +3044,9 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_ta_lhs
 
   !=============================================================================
-  subroutine wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr, C_uu_shr, wm_zt, &
-                                        lhs_ac_pr2_wp2 )
+  subroutine wp2_terms_ac_pr2_lhs( nz, ngrdcol, gr, &
+                                   C_uu_shr, wm_zt, &
+                                   lhs_ac_pr2_wp2 )
 
     ! Description:
     ! Accumulation of w'^2 and w'^2 pressure term 2:  implicit portion of the 
@@ -3126,7 +3124,7 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       wm_zt   ! w wind component at thermodynamic levels    [m/s]
       
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C_uu_shr    ! Model parameter C_uu_shr                       [-]
 
     ! ------------------------ Output Variable ------------------------
@@ -3138,7 +3136,7 @@ module advance_wp2_wp3_module
 
     ! ------------------------ Begin Code ------------------------
 
-    !$acc data copyin( gr, gr%invrs_dzm, wm_zt )  &
+    !$acc data copyin( gr, gr%invrs_dzm, wm_zt, C_uu_shr )  &
     !$acc     copyout( lhs_ac_pr2_wp2 )
 
     ! Set lower boundary to 0
@@ -3155,7 +3153,7 @@ module advance_wp2_wp3_module
     do k = 2, nz-1
       do i = 1, ngrdcol
         ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-        lhs_ac_pr2_wp2(i,k) = + ( one - C_uu_shr ) * two * gr%invrs_dzm(i,k) &
+        lhs_ac_pr2_wp2(i,k) = + ( one - C_uu_shr(i) ) * two * gr%invrs_dzm(i,k) &
                                 * ( wm_zt(i,k+1) - wm_zt(i,k) )
       end do
     end do
@@ -3320,7 +3318,7 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
       invrs_tau_C4_zm    ! Inverse time-scale tau at momentum levels  [1/s]
 
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C4    ! Model parameter C_4                [-]
 
     ! --------------------- Output Variable ---------------------
@@ -3350,7 +3348,7 @@ module advance_wp2_wp3_module
     do k = 2, nz-1
       do i = 1, ngrdcol
         ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-        lhs_pr1_wp2(i,k) = + ( two * C4 * invrs_tau_C4_zm(i,k) ) / three
+        lhs_pr1_wp2(i,k) = + ( two * C4(i) * invrs_tau_C4_zm(i,k) ) / three
       end do 
     end do
     !$acc end parallel loop
@@ -3362,9 +3360,10 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr1_lhs
 
   !=============================================================================
-  subroutine wp2_terms_bp_pr2_rhs( nz, ngrdcol, C_uu_buoy, &
-                                        thv_ds_zm, wpthvp, &
-                                        rhs_bp_pr2_wp2 )
+  subroutine wp2_terms_bp_pr2_rhs( nz, ngrdcol, &
+                                   C_uu_buoy, &
+                                   thv_ds_zm, wpthvp, &
+                                   rhs_bp_pr2_wp2 )
 
     ! Description:
     ! Buoyancy production of w'^2 and w'^2 pressure term 2:  explicit portion of
@@ -3410,7 +3409,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
     
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C_uu_buoy    ! Model parameter C_uu_buoy                         [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
@@ -3426,7 +3425,7 @@ module advance_wp2_wp3_module
 
     ! ------------------ Begin Code ------------------
 
-    !$acc data copyin( thv_ds_zm, wpthvp ) &
+    !$acc data copyin( thv_ds_zm, wpthvp, C_uu_buoy ) &
     !$acc     copyout( rhs_bp_pr2_wp2 )
 
     ! Set lower boundary to 0
@@ -3442,7 +3441,7 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz-1
       do i = 1, ngrdcol
-        rhs_bp_pr2_wp2(i,k) = + ( one - C_uu_buoy ) * two &
+        rhs_bp_pr2_wp2(i,k) = + ( one - C_uu_buoy(i) ) * two &
                               * ( grav / thv_ds_zm(i,k) ) * wpthvp(i,k)
       end do
     end do
@@ -3567,10 +3566,12 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_dp1_rhs
 
   !=============================================================================
-  subroutine wp2_term_pr3_rhs( nz, ngrdcol, gr, C_uu_shr, C_uu_buoy, &
-                                    thv_ds_zm, wpthvp, upwp, &
-                                    um, vpwp, vm, &
-                                    rhs_pr3_wp2 )
+  subroutine wp2_term_pr3_rhs( nz, ngrdcol, gr, &
+                               C_uu_shr, &
+                               C_uu_buoy, &
+                               thv_ds_zm, wpthvp, upwp, &
+                               um, vpwp, vm, &
+                               rhs_pr3_wp2 )
 
     ! Description:
     ! Pressure term 3 for w'^2:  explicit portion of the code.
@@ -3628,7 +3629,7 @@ module advance_wp2_wp3_module
 
     type (grid), target, intent(in) :: gr
     
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C_uu_shr,  & ! Model parameter                            [-]
       C_uu_buoy    ! Model parameter                            [-]
 
@@ -3650,7 +3651,7 @@ module advance_wp2_wp3_module
     ! ---------------------Begin Code ---------------------
 
     !$acc data copyin( gr, gr%invrs_dzm, &
-    !$acc              thv_ds_zm, wpthvp, upwp,  um, vpwp, vm ) &
+    !$acc              thv_ds_zm, wpthvp, upwp,  um, vpwp, vm, C_uu_shr, C_uu_buoy ) &
     !$acc     copyout( rhs_pr3_wp2 )
 
     ! Set lower boundary to 0
@@ -3671,9 +3672,9 @@ module advance_wp2_wp3_module
        ! Use the following code for standard mixing, with c_k=0.548:
        rhs_pr3_wp2(i,k) &
          = + two_thirds * &
-                        ( C_uu_buoy &
+                        ( C_uu_buoy(i) &
                           * ( grav / thv_ds_zm(i,k) ) * wpthvp(i,k) &
-                        + C_uu_shr &
+                        + C_uu_shr(i) &
                           * ( - upwp(i,k) * gr%invrs_dzm(i,k) * ( um(i,k+1) - um(i,k) ) &
                               - vpwp(i,k) * gr%invrs_dzm(i,k) * ( vm(i,k+1) - vm(i,k) ) &
                             ) &
@@ -3706,8 +3707,8 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine wp2_term_pr1_rhs( nz, ngrdcol, C4, &
-                                    up2, vp2, invrs_tau_C4_zm, &
-                                    rhs_pr1_wp2 )
+                               up2, vp2, invrs_tau_C4_zm, &
+                               rhs_pr1_wp2 )
 
     ! Description:
     ! Pressure term 1 for w'^2:  explicit portion of the code.
@@ -3753,7 +3754,7 @@ module advance_wp2_wp3_module
       nz, &
       ngrdcol
     
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C4    ! Model parameter C_4                      [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
@@ -3770,7 +3771,7 @@ module advance_wp2_wp3_module
 
     ! ------------------------ Begin Code ------------------------
 
-    !$acc data copyin( up2, vp2, invrs_tau_C4_zm ) &
+    !$acc data copyin( up2, vp2, invrs_tau_C4_zm, C4 ) &
     !$acc     copyout( rhs_pr1_wp2 )
     
     ! Set lower bounadry to 0
@@ -3786,7 +3787,7 @@ module advance_wp2_wp3_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nz-1
       do i = 1, ngrdcol
-        rhs_pr1_wp2(i,k) = + ( C4 * ( up2(i,k) + vp2(i,k) ) * invrs_tau_C4_zm(i,k) ) / three
+        rhs_pr1_wp2(i,k) = + ( C4(i) * ( up2(i,k) + vp2(i,k) ) * invrs_tau_C4_zm(i,k) ) / three
       end do
     end do
     !$acc end parallel loop
@@ -3799,9 +3800,9 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine wp2_term_pr_dfsn_rhs( nz, ngrdcol, gr, C_wp2_pr_dfsn, &
-                                        rho_ds_zt, invrs_rho_ds_zm, &
-                                        wpup2, wpvp2, wp3, &
-                                        rhs_pr_dfsn_wp2 )
+                                   rho_ds_zt, invrs_rho_ds_zm, &
+                                   wpup2, wpvp2, wp3, &
+                                   rhs_pr_dfsn_wp2 )
 
     ! Description:
     !
@@ -3846,7 +3847,7 @@ module advance_wp2_wp3_module
     type (grid), target, intent(in) :: &
       gr
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       C_wp2_pr_dfsn      ! Model parameter C_wp2_pr_dfsn                [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
@@ -3869,7 +3870,7 @@ module advance_wp2_wp3_module
     ! ---------------------- Begin Code ----------------------
 
     !$acc data copyin( gr, invrs_rho_ds_zm, gr%invrs_dzm, &
-    !$acc              rho_ds_zt, wpup2, wpvp2, wp3 ) &
+    !$acc              rho_ds_zt, wpup2, wpvp2, wp3, C_wp2_pr_dfsn ) &
     !$acc              copyout(rhs_pr_dfsn_wp2 ) &
     !$acc      create( wpuip2 )
 
@@ -3894,7 +3895,7 @@ module advance_wp2_wp3_module
     do k = 2, nz-1
       do i = 1, ngrdcol
         rhs_pr_dfsn_wp2(i,k) &
-         = + C_wp2_pr_dfsn * invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
+         = + C_wp2_pr_dfsn(i) * invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
            * ( rho_ds_zt(i,k+1) * wpuip2(i,k+1) - rho_ds_zt(i,k) * wpuip2(i,k) )
       end do
     end do
@@ -4522,8 +4523,8 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine wp3_term_tp_lhs( nz, ngrdcol, gr, coef_wp3_tp, & 
-                                   wp2, rho_ds_zm, invrs_rho_ds_zt, &
-                                   lhs_tp_wp3 )
+                              wp2, rho_ds_zm, invrs_rho_ds_zt, &
+                              lhs_tp_wp3 )
 
     ! Description:
     ! Turbulent production of w'^3:  implicit portion of the code.
@@ -4614,7 +4615,7 @@ module advance_wp2_wp3_module
     type (grid), target, intent(in) :: &
       gr
     
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       coef_wp3_tp      ! Coefficient for tp pressure scrambling term   [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
@@ -4654,15 +4655,15 @@ module advance_wp2_wp3_module
       do i = 1, ngrdcol
         ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
         lhs_tp_wp3(k_mdiag,i,k) &
-          = - coef_wp3_tp * three * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
+          = - coef_wp3_tp(i) * three * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k) * wp2(i,k) &
-            + coef_wp3_tp * three_halves * gr%invrs_dzt(i,k) * wp2(i,k)
+            + coef_wp3_tp(i) * three_halves * gr%invrs_dzt(i,k) * wp2(i,k)
 
         ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
         lhs_tp_wp3(km1_mdiag,i,k) &
-          = + coef_wp3_tp * three * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
+          = + coef_wp3_tp(i) * three * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k-1) * wp2(i,k-1) &
-            - coef_wp3_tp * three_halves * gr%invrs_dzt(i,k) * wp2(i,k-1)
+            - coef_wp3_tp(i) * three_halves * gr%invrs_dzt(i,k) * wp2(i,k-1)
       end do
     end do
     !$acc end parallel loop
@@ -4795,10 +4796,11 @@ module advance_wp2_wp3_module
   end subroutine wp3_terms_ac_pr2_lhs
 
   !=============================================================================
-  subroutine wp3_term_pr1_lhs( nz, ngrdcol, C8, C8b, &
-                                    invrs_tau_wp3_zt, Skw_zt, &
-                                    l_damp_wp3_Skw_squared, &
-                                    lhs_pr1_wp3 )
+  subroutine wp3_term_pr1_lhs( nz, ngrdcol, & 
+                               C8, C8b, &
+                               invrs_tau_wp3_zt, Skw_zt, &
+                               l_damp_wp3_Skw_squared, &
+                               lhs_pr1_wp3 )
 
     ! Description:
     ! Pressure term 1 for w'^3:  implicit portion of the code.
@@ -4866,7 +4868,7 @@ module advance_wp2_wp3_module
       invrs_tau_wp3_zt,  & ! Inverse time-scale tau at thermodynamic levels  [1/s]
       Skw_zt               ! Skewness of w at thermodynamic levels   [-]
 
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C8,      & ! Model parameter C_8                     [-]
       C8b        ! Model parameter C_8b                    [-]
 
@@ -4882,7 +4884,7 @@ module advance_wp2_wp3_module
 
     ! ---------------------- Begin Code ----------------------
 
-    !$acc data copyin( invrs_tau_wp3_zt, Skw_zt ) &
+    !$acc data copyin( invrs_tau_wp3_zt, Skw_zt, C8, C8b ) &
     !$acc     copyout( lhs_pr1_wp3 )
 
     ! Set lower boundary to 0
@@ -4902,8 +4904,8 @@ module advance_wp2_wp3_module
       do k = 3, nz-1
         do i = 1, ngrdcol
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-          lhs_pr1_wp3(i,k) = + ( C8 * invrs_tau_wp3_zt(i,k) ) &
-                               * ( three * C8b * Skw_zt(i,k)**2 + one )
+          lhs_pr1_wp3(i,k) = + ( C8(i) * invrs_tau_wp3_zt(i,k) ) &
+                               * ( three * C8b(i) * Skw_zt(i,k)**2 + one )
         end do
       end do
       !$acc end parallel loop
@@ -4913,8 +4915,8 @@ module advance_wp2_wp3_module
       do k = 3, nz-1
         do i = 1, ngrdcol
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-          lhs_pr1_wp3(i,k) = + ( C8 * invrs_tau_wp3_zt(i,k) ) &
-                               * ( five * C8b * Skw_zt(i,k)**4 + one )
+          lhs_pr1_wp3(i,k) = + ( C8(i) * invrs_tau_wp3_zt(i,k) ) &
+                               * ( five * C8b(i) * Skw_zt(i,k)**4 + one )
         end do
       end do
       !$acc end parallel loop
@@ -5174,7 +5176,7 @@ module advance_wp2_wp3_module
     type (grid), target, intent(in) :: &
       gr
     
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       C_wp3_pr_turb         ! Model parameter C_wp3_pr_turb                [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
@@ -5224,7 +5226,7 @@ module advance_wp2_wp3_module
       do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr_turb_wp3(i,k) &
-          = - C_wp3_pr_turb * Kh_zt(i,k) * gr%invrs_dzt(i,k) &
+          = - C_wp3_pr_turb(i) * Kh_zt(i,k) * gr%invrs_dzt(i,k) &
               * ( grav / thv_ds_zt(i,k) * ( wpthvp(i,k) - wpthvp(i,k-1) ) &
                   - ( upwp(i,k) * dum_dz(i,k) - upwp(i,k-1) * dum_dz(i,k-1) ) &
                   - ( vpwp(i,k) * dvm_dz(i,k) - vpwp(i,k-1) * dvm_dz(i,k-1) ) )
@@ -5238,7 +5240,7 @@ module advance_wp2_wp3_module
       do k = 3, nz-1
         do i = 1, ngrdcol
           rhs_pr_turb_wp3(i,k) &
-          = - C_wp3_pr_turb * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
+          = - C_wp3_pr_turb(i) * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
               * ( rho_ds_zm(i,k) * wp2(i,k) * em(i,k) - rho_ds_zm(i,k-1) * wp2(i,k-1) * em(i,k-1) )
         end do
       end do 
@@ -5254,10 +5256,10 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine wp3_term_pr_dfsn_rhs( nz, ngrdcol, gr, C_wp3_pr_dfsn, &
-                                        rho_ds_zm, invrs_rho_ds_zt, &
-                                        wp2up2, wp2vp2, wp4, &
-                                        up2, vp2, wp2, &
-                                        rhs_pr_dfsn_wp3 )
+                                   rho_ds_zm, invrs_rho_ds_zt, &
+                                   wp2up2, wp2vp2, wp4, &
+                                   up2, vp2, wp2, &
+                                   rhs_pr_dfsn_wp3 )
 
     ! Description:
     !
@@ -5299,7 +5301,7 @@ module advance_wp2_wp3_module
     
     type (grid), target, intent(in) :: gr
     
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       C_wp3_pr_dfsn      ! Model parameter C_wp3_pr_dfsn              [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
@@ -5354,7 +5356,7 @@ module advance_wp2_wp3_module
     do k = 3, nz-1
       do i = 1, ngrdcol
         rhs_pr_dfsn_wp3(i,k) &
-         = + C_wp3_pr_dfsn * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
+         = + C_wp3_pr_dfsn(i) * invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
            * ( rho_ds_zm(i,k) * ( wp2uip2(i,k) - wp2_uip2(i,k) ) &
              - rho_ds_zm(i,k-1) * ( wp2uip2(i,k-1) - wp2_uip2(i,k-1) ) )
       end do
@@ -5368,10 +5370,11 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr_dfsn_rhs
 
   !=============================================================================
-  subroutine wp3_term_pr1_rhs( nz, ngrdcol, gr, C8, C8b, &
-                                    invrs_tau_wp3_zt, Skw_zt, wp3, &
-                                    l_damp_wp3_Skw_squared, &
-                                    rhs_pr1_wp3 )
+  subroutine wp3_term_pr1_rhs( nz, ngrdcol, gr, &
+                               C8, C8b, &
+                               invrs_tau_wp3_zt, Skw_zt, wp3, &
+                               l_damp_wp3_Skw_squared, &
+                               rhs_pr1_wp3 )
 
     ! Description:
     ! Pressure term 1 for w'^3:  explicit portion of the code.
@@ -5432,7 +5435,7 @@ module advance_wp2_wp3_module
 
     type (grid), target, intent(in) :: gr
     
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C8,  & ! Model parameter C_8                        [-]
       C8b    ! Model parameter C_8b                       [-]
 
@@ -5472,8 +5475,8 @@ module advance_wp2_wp3_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 3, nz-1
         do i = 1, ngrdcol
-          rhs_pr1_wp3(i,k) = + ( C8 * invrs_tau_wp3_zt(i,k) ) &
-                             * ( two * C8b * Skw_zt(i,k)**2 ) * wp3(i,k)
+          rhs_pr1_wp3(i,k) = + ( C8(i) * invrs_tau_wp3_zt(i,k) ) &
+                             * ( two * C8b(i) * Skw_zt(i,k)**2 ) * wp3(i,k)
         end do
       end do 
       !$acc end parallel loop
@@ -5481,8 +5484,8 @@ module advance_wp2_wp3_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 3, nz-1
         do i = 1, ngrdcol
-          rhs_pr1_wp3(i,k) = + ( C8 * invrs_tau_wp3_zt(i,k) ) &
-                             * ( four * C8b * Skw_zt(i,k)**4 ) * wp3(i,k)
+          rhs_pr1_wp3(i,k) = + ( C8(i) * invrs_tau_wp3_zt(i,k) ) &
+                             * ( four * C8b(i) * Skw_zt(i,k)**4 ) * wp3(i,k)
         end do
       end do 
       !$acc end parallel loop

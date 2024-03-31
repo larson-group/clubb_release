@@ -15,7 +15,7 @@ module Skx_module
 
   !-----------------------------------------------------------------------------
   subroutine Skx_func( nz, ngrdcol, xp2, xp3, &
-                       x_tol, Skw_denom_coef, Skw_max_mag, &
+                       x_tol, clubb_params, &
                        Skx )
 
     ! Description:
@@ -27,6 +27,11 @@ module Skx_module
 
     use clubb_precision, only: &
         core_rknd         ! Variable(s)
+
+    use parameter_indices, only: &
+      nparams,                 & ! Variable(s)
+      iSkw_denom_coef,         &
+      iSkw_max_mag
 
     implicit none
     
@@ -48,26 +53,32 @@ module Skx_module
       xp3      ! <x'^3>               [(x units)^3]
 
     real( kind = core_rknd ), intent(in) :: &
-      x_tol,          & ! x tolerance value                       [(x units)]
-      Skw_denom_coef, & ! CLUBB tunable parameter Skw_denom_coef  [-]
-      Skw_max_mag       ! Max magnitude of skewness               [-]
+      x_tol     ! x tolerance value                       [(x units)]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     ! Output Variable
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
       Skx      ! Skewness of x        [-]
 
     ! Local Variable
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       Skx_denom_tol
       
     integer :: i, k
 
     ! ---- Begin Code ----
 
-    !$acc data copyin( xp2, xp3 ) &
+    !$acc data copyin( xp2, xp3, clubb_params ) &
+    !$acc      create( Skx_denom_tol ) &
     !$acc      copyout( Skx )
 
-    Skx_denom_tol = Skw_denom_coef * x_tol**2
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * x_tol**2
+    end do
+    !$acc end parallel loop
 
     !Skx = xp3 / ( max( xp2, x_tol**two ) )**three_halves
     ! Calculation of skewness to help reduce the sensitivity of this value to
@@ -75,7 +86,7 @@ module Skx_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        Skx(i,k) = xp3(i,k) * sqrt( xp2(i,k) + Skx_denom_tol )**(-3)
+        Skx(i,k) = xp3(i,k) * sqrt( xp2(i,k) + Skx_denom_tol(i) )**(-3)
       end do
     end do
     !$acc end parallel loop
@@ -88,7 +99,7 @@ module Skx_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          Skx(i,k) = min( max( Skx(i,k), -Skw_max_mag ), Skw_max_mag )
+          Skx(i,k) = min( max( Skx(i,k), -clubb_params(i,iSkw_max_mag) ), clubb_params(i,iSkw_max_mag) )
         end do
       end do
       !$acc end parallel loop
@@ -136,8 +147,10 @@ module Skx_module
       xp2,         & ! Variance of x                  [(x units)^2]
       sigma_sqd_w    ! Normalized variance of w       [-]
       
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      beta           ! Tunable parameter              [-]
+      
     real( kind = core_rknd ), intent(in) :: &
-      beta,        & ! Tunable parameter              [-]
       x_tol          ! Minimum tolerance of x         [(x units)]
 
     !-------------------------- Output Variable --------------------------
@@ -168,7 +181,7 @@ module Skx_module
 
         ! Larson and Golaz (2005) eq. 33
         Skx(i,k) = nrmlzd_Skw * nrmlzd_corr_wx &
-              * ( beta + ( one - beta ) * nrmlzd_corr_wx**2 )
+              * ( beta(i) + ( one - beta(i) ) * nrmlzd_corr_wx**2 )
       end do
     end do
     !$acc end parallel loop
@@ -180,7 +193,7 @@ module Skx_module
   !-----------------------------------------------------------------------------
   subroutine xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
                                  xp2_zt, sigma_sqd_w_zt, &
-                                 beta, Skw_denom_coef, x_tol, &
+                                 clubb_params, x_tol, &
                                  xp3 )
     ! Description:
     ! Calculate <x'^3> after calculating the skewness of x using the ansatz of
@@ -194,6 +207,11 @@ module Skx_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use parameter_indices, only: &
+      nparams,                 & ! Variable(s)
+      iSkw_denom_coef,         &
+      ibeta
 
     implicit none
     
@@ -209,9 +227,10 @@ module Skx_module
       xp2_zt,         & ! Variance of x (interp. to t-levs.)      [(x units)^2]
       sigma_sqd_w_zt    ! Normalized variance of w (interp. to t-levs.)   [-]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
+      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
+
     real( kind = core_rknd ), intent(in) :: &
-      beta,           & ! CLUBB tunable parameter beta            [-]
-      Skw_denom_coef, & ! CLUBB tunable parameter Skw_denom_coef  [-]
       x_tol             ! Minimum tolerance of x                  [(x units)]
 
     !-------------------------- Return Variable --------------------------
@@ -222,31 +241,35 @@ module Skx_module
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Skx_zt       ! Skewness of x on thermodynamic levels    [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
       Skx_denom_tol
 
     integer :: i, k
 
     !-------------------------- Begin Code --------------------------
 
-    !$acc data create(Skx_zt) &
-    !$acc      copyin( Skw_zt, wpxp_zt, wp2_zt, xp2_zt, sigma_sqd_w_zt ) &
-    !$acc     copyout( xp3 )
+    !$acc data copyin( Skw_zt, wpxp_zt, wp2_zt, xp2_zt, sigma_sqd_w_zt ) &
+    !$acc      create( Skx_zt, Skx_denom_tol ) &
+    !$acc      copyout( xp3 )
 
     ! Calculate skewness of x using the ansatz of LG05.
     call LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
-                         xp2_zt, beta, sigma_sqd_w_zt, x_tol, &
+                         xp2_zt, clubb_params(:,ibeta), sigma_sqd_w_zt, x_tol, &
                          Skx_zt )
 
-    Skx_denom_tol = Skw_denom_coef * x_tol**2
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      Skx_denom_tol(i) = clubb_params(i,iSkw_denom_coef) * x_tol**2
+    end do
+    !$acc end parallel loop
 
     ! Calculate <x'^3> using the reverse of the special sensitivity reduction
     ! formula in function Skx_func above.
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        xp3(i,k) = Skx_zt(i,k) * ( xp2_zt(i,k) + Skx_denom_tol ) &
-                               * sqrt( xp2_zt(i,k) + Skx_denom_tol )
+        xp3(i,k) = Skx_zt(i,k) * ( xp2_zt(i,k) + Skx_denom_tol(i) ) &
+                               * sqrt( xp2_zt(i,k) + Skx_denom_tol(i) )
       end do
     end do
     !$acc end parallel loop

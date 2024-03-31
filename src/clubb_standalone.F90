@@ -71,6 +71,9 @@ program clubb_standalone
     Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
     wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
 
+  integer :: &
+    ngrdcol = 1
+
 !-----------------------------------------------------------------------
 
   ! --- Begin Code ---
@@ -103,7 +106,7 @@ program clubb_standalone
                wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace )
 
   ! Read in model parameter values
-  call read_parameters( iunit, namelist_filename, &
+  call read_parameters( ngrdcol, iunit, namelist_filename, &
                         C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                         C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
                         C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
@@ -134,7 +137,7 @@ program clubb_standalone
   err_code = clubb_no_error
 
   ! Run the model
-  call run_clubb( params, namelist_filename, l_stdout )
+  call run_clubb( ngrdcol, params, namelist_filename, l_stdout )
 
   if ( err_code == clubb_fatal_error ) then
     error stop "Fatal error in clubb, check your parameter values and timestep"

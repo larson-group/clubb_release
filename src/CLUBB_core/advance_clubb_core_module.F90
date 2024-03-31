@@ -226,10 +226,8 @@ module advance_clubb_core_module
         ixp3_coef_base,          &
         ixp3_coef_slope,         &
         ilambda0_stability_coef, &
-        ibeta,                   &
-        iSkw_denom_coef,         &
-        iSkw_max_mag,            &
         iup2_sfc_coef,           &
+        ia_const,                &
         ia3_coef_min,            &
         ibv_efold
 
@@ -480,7 +478,7 @@ module advance_clubb_core_module
       host_dx,  & ! East-west horizontal grid spacing     [m]
       host_dy     ! North-south horizontal grid spacing   [m]
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep), intent(in) :: &
@@ -792,25 +790,16 @@ module advance_clubb_core_module
       tau_max_zm, & ! Max. allowable eddy dissipation time scale on m-levs  [s]
       tau_max_zt    ! Max. allowable eddy dissipation time scale on t-levs  [s]
 
-    real( kind = core_rknd ), dimension(ngrdcol) :: newmu
+    real( kind = core_rknd ) :: &
+      below_grnd_val = 0.01_core_rknd
 
-    real( kind = core_rknd ) :: below_grnd_val = 0.01_core_rknd
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      mu
 
     real( kind = core_rknd ) :: &
-      taumax,         & ! CLUBB tunable parameter taumax
-      c_K,            & ! CLUBB tunable parameter c_K
       gamma_coef,     & ! CLUBB tunable parameter gamma_coef
       gamma_coefb,    & ! CLUBB tunable parameter gamma_coefb
-      gamma_coefc,    & ! CLUBB tunable parameter gamma_coefc
-      xp3_coef_base,  & ! CLUBB tunable parameter xp3_coef_base
-      xp3_coef_slope, & ! CLUBB tunable parameter xp3_coef_slope
-      beta,           & ! CLUBB tunable parameter beta
-      Skw_denom_coef, & ! CLUBB tunable parameter Skw_denom_coef
-      Skw_max_mag,    & ! CLUBB tunable parameter Skw_max_mag
-      mu, &
-      a3_coef_min, &
-      C_K10, &
-      C_K10h
+      gamma_coefc       ! CLUBB tunable parameter gamma_coefc
 
     ! Flag to sample stats in a particular call to subroutine
     ! pdf_closure_driver.
@@ -866,7 +855,7 @@ module advance_clubb_core_module
     !$acc              brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
     !$acc              brunt_vaisala_freq_sqd_splat, &
     !$acc              brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
-    !$acc              tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
+    !$acc              tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 )
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc            create( sclrprcp, wp2sclrp, &
@@ -882,11 +871,6 @@ module advance_clubb_core_module
     end if
 
     err_code_out = clubb_no_error  ! Initialize to no error value
-
-    mu = clubb_params(imu)
-    a3_coef_min = clubb_params(ia3_coef_min)
-    C_K10  = clubb_params(ic_K10)
-    C_K10h = clubb_params(ic_K10h)
 
     ! Determine the maximum allowable value for Lscale (in meters).
     call set_Lscale_max( ngrdcol, l_implemented, host_dx, host_dy, & ! intent(in)
@@ -1100,13 +1084,13 @@ module advance_clubb_core_module
 #ifdef CLUBBND_CAM
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      newmu(i) = varmu(i)
+      mu(i) = varmu(i)
     end do
     !$acc end parallel loop
 #else
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      newmu(i) = mu
+      mu(i) = clubb_params(i,imu)
     end do
     !$acc end parallel loop
 #endif
@@ -1206,47 +1190,51 @@ module advance_clubb_core_module
     end do
     !$acc end parallel loop
 
-    beta = clubb_params(ibeta)
-    Skw_denom_coef = clubb_params(iSkw_denom_coef)
-    Skw_max_mag = clubb_params(iSkw_max_mag)
-
     call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
-                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   w_tol, clubb_params, &
                    Skw_zt )
                    
     call Skx_func( nz, ngrdcol, wp2, wp3_zm, &
-                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   w_tol, clubb_params, &
                    Skw_zm )
    
-    if ( clubb_config_flags%ipdf_call_placement &
-         == ipdf_post_advance_fields ) then
-
-      gamma_coef = clubb_params(igamma_coef)
-      gamma_coefb = clubb_params(igamma_coefb)
-      gamma_coefc = clubb_params(igamma_coefc)
+    if ( clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields ) then
 
       ! Calculate sigma_sqd_w here in order to avoid having to pass it in
       ! and out of subroutine advance_clubb_core.
-      if ( l_gamma_Skw .and. &
-          abs(gamma_coef-gamma_coefb) > abs(gamma_coef+gamma_coefb)*eps/2) then
+      if ( l_gamma_Skw ) then
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            gamma_Skw_fnc(i,k) = gamma_coefb + (gamma_coef-gamma_coefb) &
-                  *exp( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm(i,k)/gamma_coefc)**2 )
+
+            gamma_coef = clubb_params(i,igamma_coef)
+            gamma_coefb = clubb_params(i,igamma_coefb)
+            gamma_coefc = clubb_params(i,igamma_coefc)
+
+            if ( abs(gamma_coef-gamma_coefb) > abs(gamma_coef+gamma_coefb)*eps/2) then
+            
+              gamma_Skw_fnc(i,k) = gamma_coefb + (gamma_coef-gamma_coefb) &
+                    *exp( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm(i,k)/gamma_coefc)**2 )
+            else
+              gamma_Skw_fnc(i,k) = gamma_coef
+            end if
+
           end do
         end do
         !$acc end parallel loop
+
       else
+
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
           do i = 1, ngrdcol
-            gamma_Skw_fnc(i,k) = gamma_coef
+            gamma_Skw_fnc(i,k) = clubb_params(i,igamma_coef)
           end do
         end do
         !$acc end parallel loop
-      endif
+
+      end if
 
       ! Compute sigma_sqd_w (dimensionless PDF width parameter)
       call compute_sigma_sqd_w( nz, ngrdcol, &
@@ -1293,7 +1281,7 @@ module advance_clubb_core_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        a3_coef(i,k) = max( a3_coef(i,k), a3_coef_min )
+        a3_coef(i,k) = max( a3_coef(i,k), clubb_params(i,ia3_coef_min) )
       end do
     end do
     !$acc end parallel loop
@@ -1391,7 +1379,7 @@ module advance_clubb_core_module
       call calc_Lscale_directly ( ngrdcol, nz, gr,                             & ! intent(in)
                                   l_implemented, p_in_Pa,                      & ! intent(in)
                                   exner, rtm, thlm, thvm,                      & ! intent(in)
-                                  newmu, rtp2, thlp2, rtpthlp, pdf_params, em, & ! intent(in)
+                                  mu, rtp2, thlp2, rtpthlp, pdf_params, em,    & ! intent(in)
                                   thv_ds_zt, Lscale_max, lmin,                 & ! intent(in)
                                   clubb_params,                                & ! intent(in)
                                   clubb_config_flags%saturation_formula,       & ! intent(in)
@@ -1410,12 +1398,10 @@ module advance_clubb_core_module
 
       ! Calculate CLUBB's turbulent eddy-turnover time scale as
       !   CLUBB's length scale divided by a velocity scale.
-      taumax = clubb_params(itaumax)
-
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          tau_zt(i,k) = min( Lscale(i,k) / sqrt_em_zt(i,k), taumax )
+          tau_zt(i,k) = min( Lscale(i,k) / sqrt_em_zt(i,k), clubb_params(i,itaumax) )
         end do
       end do
       !$acc end parallel loop
@@ -1426,7 +1412,7 @@ module advance_clubb_core_module
       do k = 1, nz
         do i = 1, ngrdcol
           tau_zm(i,k) = min( ( max( tau_zm(i,k), zero_threshold )  &
-                       / sqrt( max( em_min, em(i,k) ) ) ), taumax )
+                       / sqrt( max( em_min, em(i,k) ) ) ), clubb_params(i,itaumax) )
         end do
       end do
       !$acc end parallel loop
@@ -1442,8 +1428,11 @@ module advance_clubb_core_module
           invrs_tau_wp3_zt(i,k)  = invrs_tau_zt(i,k)
           invrs_tau_wp3_zm(i,k)  = invrs_tau_zm(i,k)
 
-          tau_max_zm(i,k) = taumax
-          tau_max_zt(i,k) = taumax
+          tau_max_zm(i,k) = clubb_params(i,itaumax)
+          tau_max_zt(i,k) = clubb_params(i,itaumax)
+
+          Ri_zm(i,k) = zero 
+
         end do
       end do
       !$acc end parallel loop
@@ -1456,7 +1445,7 @@ module advance_clubb_core_module
                                         clubb_config_flags%saturation_formula,         & ! In
                                         clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
                                         clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
-                                        clubb_params(ibv_efold),                       & ! In
+                                        clubb_params(:,ibv_efold),                       & ! In
                                         brunt_vaisala_freq_sqd,                        & ! Out
                                         brunt_vaisala_freq_sqd_mixed,                  & ! Out
                                         brunt_vaisala_freq_sqd_dry,                    & ! Out
@@ -1514,12 +1503,10 @@ module advance_clubb_core_module
 
     ! Calculate CLUBB's eddy diffusivity as
     !   CLUBB's length scale times a velocity scale.
-    c_K = clubb_params(ic_K)
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        Kh_zt(i,k) = c_K * Lscale(i,k) * sqrt_em_zt(i,k)
+        Kh_zt(i,k) = clubb_params(i,ic_K) * Lscale(i,k) * sqrt_em_zt(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -1529,7 +1516,7 @@ module advance_clubb_core_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        Kh_zm(i,k) = c_K * max( Lscale_zm(i,k), zero_threshold )  &
+        Kh_zm(i,k) = clubb_params(i,ic_K) * max( Lscale_zm(i,k), zero_threshold )  &
                      * sqrt( max( em(i,k), em_min ) )
       end do
     end do
@@ -1542,12 +1529,12 @@ module advance_clubb_core_module
                                         below_grnd_val )
 
     ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
-    call wp2_term_splat_lhs( nz, ngrdcol, gr, clubb_params(iC_wp2_splat),       & ! Intent(in)
+    call wp2_term_splat_lhs( nz, ngrdcol, gr, clubb_params(:,iC_wp2_splat),       & ! Intent(in)
                              brunt_vaisala_freq_sqd_splat,                      & ! Intent(in)
                              lhs_splat_wp2 )                                      ! Intent(out)
 
     ! Vertical compression of eddies also diminishes w'3
-    call wp3_term_splat_lhs( nz, ngrdcol, gr, clubb_params(iC_wp2_splat),       & ! Intent(in)
+    call wp3_term_splat_lhs( nz, ngrdcol, gr, clubb_params(:,iC_wp2_splat),       & ! Intent(in)
                              brunt_vaisala_freq_sqd_splat,                      & ! Intent(in)
                              lhs_splat_wp3 )                                      ! Intent(out)
 
@@ -1567,7 +1554,8 @@ module advance_clubb_core_module
                           lhs_splat_wp2, tau_zm,                          & ! Intent(in)
                           !wp2_splat, tau_zm,                             & ! Intent(in)
                           clubb_config_flags%l_vary_convect_depth,        & ! Intent(in)
-                          clubb_params,                                   & ! Intent(in)
+                          clubb_params(:,iup2_sfc_coef),                  & ! Intent(in)
+                          clubb_params(:,ia_const),                        & ! Intent(in)
                           stats_metadata,                                 & ! Intent(in)
                           stats_zm,                                       & ! Intent(inout)
                           wp2, up2, vp2,                                  & ! Intent(inout)
@@ -1648,8 +1636,8 @@ module advance_clubb_core_module
                                       thlm, Lscale_zm, em,                           & ! In
                                       exner, rtm, rcm,                               & ! In
                                       p_in_Pa, thvm, ice_supersat_frac,              & ! In
-                                      clubb_params(ilambda0_stability_coef),         & ! In
-                                      clubb_params(ibv_efold),                       & ! In
+                                      clubb_params(:,ilambda0_stability_coef),       & ! In
+                                      clubb_params(:,ibv_efold),                     & ! In
                                       clubb_config_flags%saturation_formula,         & ! In
                                       clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
                                       clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
@@ -2116,9 +2104,9 @@ module advance_clubb_core_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          Km_zm(i,k) = Kh_zm(i,k) * C_K10   ! Coefficient for momentum
+          Km_zm(i,k) = Kh_zm(i,k) * clubb_params(i,ic_K10)   ! Coefficient for momentum
 
-          Kmh_zm(i,k) = Kh_zm(i,k) * C_K10h ! Coefficient for thermo
+          Kmh_zm(i,k) = Kh_zm(i,k) * clubb_params(i,ic_K10h) ! Coefficient for thermo
         end do
       end do
       !$acc end parallel loop
@@ -2218,7 +2206,7 @@ module advance_clubb_core_module
       ! Use a modified form of the Larson and Golaz (2005) ansatz for the
       ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
       call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
-                     w_tol, Skw_denom_coef, Skw_max_mag, &
+                     w_tol, clubb_params, &
                      Skw_zt )
 
       upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
@@ -2236,32 +2224,29 @@ module advance_clubb_core_module
       ! When xp3_coef_fnc goes to 0, the value of Skx goes to the smallest
       ! magnitude permitted by the function.  When xp3_coef_fnc goes to 1, the
       ! magnitude of Skx becomes huge.
-      xp3_coef_base = clubb_params(ixp3_coef_base)
-      xp3_coef_slope = clubb_params(ixp3_coef_slope)
-
       do k = 1, nz
         do i = 1, ngrdcol
-          xp3_coef_fnc(i,k) = xp3_coef_base &
-                              + ( one - xp3_coef_base ) &
-                                * ( one - exp( brunt_vaisala_freq_sqd_zt(i,k) / xp3_coef_slope ) )
+          xp3_coef_fnc(i,k) = clubb_params(i,ixp3_coef_base) &
+                              + ( one - clubb_params(i,ixp3_coef_slope) ) &
+                                * ( one - exp( brunt_vaisala_freq_sqd_zt(i,k) / clubb_params(i,ixp3_coef_slope) ) )
         end do
       end do
 
       call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, upwp_zt, wp2_zt, &
                                up2_zt, xp3_coef_fnc, &
-                               beta, Skw_denom_coef, w_tol, &
+                               clubb_params, w_tol, &
                                up3 )
 
       call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, vpwp_zt, wp2_zt, &
                                vp2_zt, xp3_coef_fnc, &
-                               beta, Skw_denom_coef, w_tol, &
+                               clubb_params, w_tol, &
                                vp3 )
 
     else ! .not. l_advance_xp3 .or. clubb_config_flags%iiPDF_type = iiPDF_ADG1
 
       ! The ADG1 PDF must use this option.
       call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
-                     w_tol, Skw_denom_coef, Skw_max_mag, &
+                     w_tol, clubb_params, &
                      Skw_zt )
 
       wpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
@@ -2301,22 +2286,22 @@ module advance_clubb_core_module
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpthlp_zt, wp2_zt, &
                                  thlp2_zt, sigma_sqd_w_zt, &
-                                 beta, Skw_denom_coef, thl_tol, &
+                                 clubb_params, thl_tol, &
                                  thlp3 )
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wprtp_zt, wp2_zt, &
                                  rtp2_zt, sigma_sqd_w_zt, &
-                                 beta, Skw_denom_coef, rt_tol, &
+                                 clubb_params, rt_tol, &
                                  rtp3 )
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, upwp_zt, wp2_zt, &
                                  up2_zt, sigma_sqd_w_zt, &
-                                 beta, Skw_denom_coef, w_tol, &
+                                 clubb_params, w_tol, &
                                  up3 )
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, vpwp_zt, wp2_zt, &
                                  vp2_zt, sigma_sqd_w_zt, &
-                                 beta, Skw_denom_coef, w_tol, &
+                                 clubb_params, w_tol, &
                                  vp3 )
 
         do j = 1, sclr_dim, 1
@@ -2334,7 +2319,7 @@ module advance_clubb_core_module
 
           call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpsclrp_zt, wp2_zt, &
                                    sclrp2_zt, sigma_sqd_w_zt, &
-                                   beta, Skw_denom_coef, sclr_tol(j), &
+                                   clubb_params, sclr_tol(j), &
                                    sclrp3 )
 
         enddo ! i = 1, sclr_dim
@@ -2365,35 +2350,32 @@ module advance_clubb_core_module
         ! higher degree of static stability.  The exp{ } portion of the
         ! xp3_coef_fnc allows the xp3_coef_fnc to become larger in regions
         ! of high static stability, producing larger magnitude values of Skx.
-        xp3_coef_base = clubb_params(ixp3_coef_base)
-        xp3_coef_slope = clubb_params(ixp3_coef_slope)
-
         do k = 1, nz
           do i = 1, ngrdcol
-            xp3_coef_fnc(i,k) = xp3_coef_base &
-              + ( one - xp3_coef_base ) &
-                * ( one - exp( brunt_vaisala_freq_sqd_zt(i,k) / xp3_coef_slope ) )
+            xp3_coef_fnc(i,k) = clubb_params(i,ixp3_coef_base) &
+              + ( one - clubb_params(i,ixp3_coef_slope) ) &
+                * ( one - exp( brunt_vaisala_freq_sqd_zt(i,k) / clubb_params(i,ixp3_coef_slope) ) )
           end do
         end do
         
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpthlp_zt, wp2_zt, &
                                  thlp2_zt, xp3_coef_fnc, &
-                                 beta, Skw_denom_coef, thl_tol, &
+                                 clubb_params, thl_tol, &
                                  thlp3 )
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wprtp_zt, wp2_zt, &
                                  rtp2_zt, xp3_coef_fnc, &
-                                 beta, Skw_denom_coef, rt_tol, &
+                                 clubb_params, rt_tol, &
                                  rtp3 )
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, upwp_zt, wp2_zt, &
                                  up2_zt, xp3_coef_fnc, &
-                                 beta, Skw_denom_coef, w_tol, &
+                                 clubb_params, w_tol, &
                                  up3 )
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, vpwp_zt, wp2_zt, &
                                  vp2_zt, xp3_coef_fnc, &
-                                 beta, Skw_denom_coef, w_tol, &
+                                 clubb_params, w_tol, &
                                  vp3 )
 
         do j = 1, sclr_dim, 1
@@ -2403,7 +2385,7 @@ module advance_clubb_core_module
 
           call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt(:,:), wpsclrp_zt(:,:), wp2_zt(:,:), &
                                    sclrp2_zt(:,:), xp3_coef_fnc(:,:), &
-                                   beta, Skw_denom_coef, sclr_tol(j), &
+                                   clubb_params, sclr_tol(j), &
                                    sclrp3(:,:,j) )
         end do ! i = 1, sclr_dim
 
@@ -2838,7 +2820,7 @@ module advance_clubb_core_module
     !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
     !$acc                   brunt_vaisala_freq_sqd_splat, &
     !$acc                   brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
-    !$acc                   tau_max_zm, tau_max_zt, newmu, lhs_splat_wp2, lhs_splat_wp3 )
+    !$acc                   tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 )
 
     return
 
@@ -3054,7 +3036,7 @@ module advance_clubb_core_module
     logical, intent(in) :: &
       l_samp_stats_in_pdf_call    ! Sample stats in this call to this subroutine
 
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     integer, intent(in) :: &
@@ -3312,9 +3294,7 @@ module advance_clubb_core_module
     real( kind = core_rknd ) :: &
       gamma_coef,     & ! CLUBB tunable parameter gamma_coef
       gamma_coefb,    & ! CLUBB tunable parameter gamma_coefb
-      gamma_coefc,    & ! CLUBB tunable parameter gamma_coefc
-      Skw_denom_coef, & ! CLUBB tunable parameter Skw_denom_coef
-      Skw_max_mag       ! CLUBB tunable parameter Skw_max_mag
+      gamma_coefc       ! CLUBB tunable parameter gamma_coefc
       
     real( kind = core_rknd ), dimension(ngrdcol, nz) :: &
       um_zm, &
@@ -3395,57 +3375,54 @@ module advance_clubb_core_module
 
     end do ! i = 1, sclr_dim, 1
 
-    Skw_denom_coef = clubb_params(iSkw_denom_coef)
-    Skw_max_mag = clubb_params(iSkw_max_mag)
-
     call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
-                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   w_tol, clubb_params, &
                    Skw_zt )
                    
     call Skx_func( nz, ngrdcol, wp2, wp3_zm, &
-                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   w_tol, clubb_params, &
                    Skw_zm )    
                    
     call Skx_func( nz, ngrdcol, thlp2_zt, thlp3, &
-                   thl_tol, Skw_denom_coef, Skw_max_mag, &
+                   thl_tol, clubb_params, &
                    Skthl_zt )  
                    
     call Skx_func( nz, ngrdcol, thlp2, thlp3_zm, &
-                   thl_tol, Skw_denom_coef, Skw_max_mag, &
+                   thl_tol, clubb_params, &
                    Skthl_zm )  
                    
     call Skx_func( nz, ngrdcol, rtp2_zt, rtp3, &
-                   rt_tol, Skw_denom_coef, Skw_max_mag, &
+                   rt_tol, clubb_params, &
                    Skrt_zt )   
                    
     call Skx_func( nz, ngrdcol, rtp2, rtp3_zm, &
-                   rt_tol, Skw_denom_coef, Skw_max_mag, &
+                   rt_tol, clubb_params, &
                    Skrt_zm )   
                    
     call Skx_func( nz, ngrdcol, up2_zt, up3, &
-                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   w_tol, clubb_params, &
                    Sku_zt )   
                                       
     call Skx_func( nz, ngrdcol, up2, up3_zm, &
-                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   w_tol, clubb_params, &
                    Sku_zm )   
                    
     call Skx_func( nz, ngrdcol, vp2_zt, vp3, &
-                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   w_tol, clubb_params, &
                    Skv_zt )   
                    
     call Skx_func( nz, ngrdcol, vp2, vp3_zm, &
-                   w_tol, Skw_denom_coef, Skw_max_mag, &
+                   w_tol, clubb_params, &
                    Skv_zm )      
 
     do j = 1, sclr_dim
       
       call Skx_func( nz, ngrdcol, sclrp2_zt(:,:,j), sclrp3(:,:,j), &
-                     sclr_tol(j), Skw_denom_coef, Skw_max_mag, &
+                     sclr_tol(j), clubb_params, &
                      Sksclr_zt(:,:,j) )   
                      
       call Skx_func( nz, ngrdcol, sclrp2(:,:,j), sclrp3_zm(:,:,j), &
-                     sclr_tol(j), Skw_denom_coef, Skw_max_mag, &
+                     sclr_tol(j), clubb_params, &
                      Sksclr_zm(:,:,j) )  
                       
     end do ! i = 1, sclr_dim, 1
@@ -3470,14 +3447,9 @@ module advance_clubb_core_module
       end do
     end if
 
-    gamma_coef = clubb_params(igamma_coef)
-    gamma_coefb = clubb_params(igamma_coefb)
-    gamma_coefc = clubb_params(igamma_coefc)
-
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent
-    if ( l_gamma_Skw &
-         .and. abs( gamma_coef - gamma_coefb ) > abs( gamma_coef + gamma_coefb ) * eps/2 ) then
+    if ( l_gamma_Skw ) then
 
       !----------------------------------------------------------------
       ! Compute gamma as a function of Skw  - 14 April 06 dschanen
@@ -3485,13 +3457,26 @@ module advance_clubb_core_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-           gamma_Skw_fnc(i,k) = gamma_coefb &
-                                + ( gamma_coef - gamma_coefb ) &
-                                  * exp( -one_half * ( Skw_zm(i,k) / gamma_coefc )**2 )
 
-           gamma_Skw_fnc_zt(i,k) = gamma_coefb &
-                                   + ( gamma_coef - gamma_coefb ) &
-                                     * exp( -one_half * ( Skw_zt(i,k) / gamma_coefc )**2 )
+          gamma_coef  = clubb_params(i,igamma_coef)
+          gamma_coefb = clubb_params(i,igamma_coefb)
+          gamma_coefc = clubb_params(i,igamma_coefc)
+
+          if ( abs( gamma_coef - gamma_coefb ) > abs( gamma_coef + gamma_coefb ) * eps/2 ) then
+            gamma_Skw_fnc(i,k) = gamma_coefb &
+                                 + ( gamma_coef - gamma_coefb ) &
+                                   * exp( -one_half * ( Skw_zm(i,k) / gamma_coefc )**2 )
+
+            gamma_Skw_fnc_zt(i,k) = gamma_coefb &
+                                    + ( gamma_coef - gamma_coefb ) &
+                                      * exp( -one_half * ( Skw_zt(i,k) / gamma_coefc )**2 )
+          else
+
+            gamma_Skw_fnc(i,k)    = gamma_coef
+            gamma_Skw_fnc_zt(i,k) = gamma_coef
+
+          end if
+
         end do
       end do
       !$acc end parallel loop
@@ -3501,8 +3486,8 @@ module advance_clubb_core_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          gamma_Skw_fnc(i,k) = gamma_coef
-          gamma_Skw_fnc_zt(i,k) = gamma_coef
+          gamma_Skw_fnc(i,k)    = clubb_params(i,igamma_coef)
+          gamma_Skw_fnc_zt(i,k) = clubb_params(i,igamma_coef)
         end do
       end do
       !$acc end parallel loop

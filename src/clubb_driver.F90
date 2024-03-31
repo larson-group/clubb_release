@@ -58,9 +58,8 @@ module clubb_driver
   contains
 
   !-----------------------------------------------------------------------
-  subroutine run_clubb & 
-             ( params, runfile, l_stdout, &
-               model_flags_array )
+  subroutine run_clubb ( ngrdcol, clubb_params, runfile, l_stdout, &
+                         model_flags_array )
     ! Description:
     !   Subprogram to integrate the partial differential equations for pdf
     !   closure.
@@ -294,6 +293,12 @@ module clubb_driver
     integer, parameter :: nlon = 1, nlat = 1 ! Number of points in the X/Y [-]
 
     ! Input Variables
+    integer, intent(in) :: &
+      ngrdcol
+
+    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) ::  & 
+      clubb_params  ! Model parameters, C1, nu2, etc.
+
     logical, intent(in) ::  & 
       l_stdout   ! Whether to print output per timestep
 
@@ -638,9 +643,6 @@ module clubb_driver
 
     integer :: k ! Loop iterator(s)
 
-    real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
-      params  ! Model parameters, C1, nu2, etc.
-
     real( kind = core_rknd ) :: &
       lmin    ! Min. value for the length scale    [m]
 
@@ -933,6 +935,9 @@ module clubb_driver
     namelist /configurable_multi_column_nl/ &
       num_standalone_columns
 
+    real( kind = core_rknd ), dimension(ngrdcol) :: &
+      deltaz_col
+
 !-----------------------------------------------------------------------
     ! Begin code
 
@@ -1207,7 +1212,7 @@ module clubb_driver
       call write_text( "Parameter          Value", l_write_to_file, iunit, '(4x,A24)')
       call write_text( "---------          -----", l_write_to_file, iunit, '(4x,A24)')
       do j = 1, nparams, 1
-        call write_text(params_list(j) // " = ", params(j), & 
+        call write_text(params_list(j) // " = ", clubb_params(1,j), & 
           l_write_to_file, iunit, '(A31,F27.20)')
       end do
 
@@ -1463,7 +1468,7 @@ module clubb_driver
     ! Setup microphysical fields
     call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & ! Intent(in)
                          dummy_dx, dummy_dy, &                              ! Intent(in)
-                         params, &                                          ! Intent(in)
+                         clubb_params(1,:), &                                          ! Intent(in)
                          l_diagnose_correlations, &                         ! Intent(in)
                          l_const_Nc_in_cloud, &                             ! Intent(inout)
                          l_fix_w_chi_eta_correlations, &                    ! Intent(inout)
@@ -1580,25 +1585,31 @@ module clubb_driver
     ! setup grid, setup constants, and setup flags
 
     ! Define model constant parameters
-    call setup_parameters_model_api( T0, ts_nudge, params(iSkw_max_mag) )     ! intent(in)
+    do i = 1, ngrdcol
+      call setup_parameters_model_api( T0, ts_nudge, clubb_params(i,iSkw_max_mag) )     ! intent(in)
 
-    call check_clubb_settings_api( nzmax, params,       & ! Intent(in)
-                                   l_implemented,       & ! Intent(in)
-                                   l_input_fields,      & ! Intent(in)
-                                   clubb_config_flags,  & ! intent(in)
-                                   err_code_dummy )       ! Intent(out)
+      call check_clubb_settings_api( nzmax, clubb_params(i,:),       & ! Intent(in)
+                                    l_implemented,       & ! Intent(in)
+                                    l_input_fields,      & ! Intent(in)
+                                    clubb_config_flags,  & ! intent(in)
+                                    err_code_dummy )       ! Intent(out)
+    end do
            
     ! Setup grid
     call setup_grid_api( nzmax, sfc_elevation(1), l_implemented,  & ! intent(in)
                          grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
                          momentum_heights, thermodynamic_heights, & ! intent(in)
                          gr )                                       ! intent(out)
+
+    do i = 1, ngrdcol
+      deltaz_col(i) = deltaz
+    end do
               
     ! Define tunable constant parameters
     call setup_parameters_api( &
-           deltaz, params, gr, grid_type,          & ! intent(in)
-           l_prescribed_avg_deltaz,                & ! intent(in)
-           lmin, nu_vert_res_dep, err_code_dummy )   ! intent(out)  
+           deltaz_col, clubb_params, gr, ngrdcol, grid_type, & ! intent(in)
+           l_prescribed_avg_deltaz,                      & ! intent(in)
+           lmin, nu_vert_res_dep, err_code_dummy )         ! intent(out)  
 
     ! Allocate and initialize variables
 
@@ -2210,7 +2221,7 @@ module clubb_driver
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
                        complete_momentum(2:total_atmos_dim + 1), day, month, year, & ! Intent(in)
                        (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out_in,&!intent(in)
-                       params, &
+                       clubb_params(1,:), &
                        clubb_config_flags%l_uv_nudge, &
                        clubb_config_flags%l_tke_aniso, &
                        clubb_config_flags%l_standard_term_ta, &
@@ -2227,7 +2238,7 @@ module clubb_driver
                        gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
                        (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out_in,&!intent(in)
-                       params, &
+                       clubb_params(1,:), &
                        clubb_config_flags%l_uv_nudge, &
                        clubb_config_flags%l_tke_aniso, &
                        clubb_config_flags%l_standard_term_ta, &
@@ -2255,7 +2266,7 @@ module clubb_driver
              gr%zt, time_initial, lh_num_samples, & ! Intent(in)
              nlon, nlat, (/lon_vals/), (/lat_vals/), &
              hm_metadata, &
-             params, &
+             clubb_params(1,:), &
              sclr_dim, sclr_tol, &
              clubb_config_flags%l_uv_nudge, &
              clubb_config_flags%l_tke_aniso, &
@@ -2377,7 +2388,7 @@ module clubb_driver
         if( l_input_wp3 ) then
           wp2_zt(1,:) = max( zm2zt( gr, wp2 ), w_tol_sqd ) ! Positive definite quantity
           call clip_skewness_core( gr%nz, 1, gr, sfc_elevation(:), &
-                                   params(iSkw_max_mag), wp2_zt(1,:), &
+                                   clubb_params(:,iSkw_max_mag), wp2_zt(1,:), &
                                    clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside, &
                                    wp3(1,:) )
         end if
@@ -2465,7 +2476,7 @@ module clubb_driver
       if ( clubb_config_flags%l_calc_thlp2_rad ) then
 
         call calculate_thlp2_rad( gr%nz, rcm_zm, thlprcp, radht_zm, & ! intent(in)
-                                  params,                           & ! intent(in)
+                                  clubb_params(1,:),                           & ! intent(in)
                                   thlp2_forcing )                     ! intent(inout)
 
       end if
@@ -2498,7 +2509,7 @@ module clubb_driver
                rfrzm, radf, wphydrometp, &                                          ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
-               params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
+               clubb_params(1,:), nu_vert_res_dep, lmin, &                                     ! Intent(in)
                clubb_config_flags, &                                                ! Intent(in)
                stats_metadata, &                                                    ! Intent(in)
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
@@ -2531,7 +2542,6 @@ module clubb_driver
                num_standalone_columns, multicol_nc_file, &                          ! Intent(in)
                nzmax, momentum_heights, thermodynamic_heights, &                    ! Intent(in)
                zm_init, zm_top, deltaz, grid_type, l_prescribed_avg_deltaz, &       ! Intent(in)
-               params, &                                                            ! Intent(in)
                gr, l_implemented, dt_main, fcor, sfc_elevation(1), &                ! intent(in)
                hydromet_dim, &                                                      ! intent(in)
                sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                      ! intent(in)
@@ -2550,7 +2560,7 @@ module clubb_driver
                rfrzm, radf, wphydrometp, &                                          ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
-               params, nu_vert_res_dep, lmin, &                                     ! Intent(in)
+               clubb_params(1,:), nu_vert_res_dep, lmin, &                                     ! Intent(in)
                clubb_config_flags, &                                                ! Intent(in)
                stats_metadata, &                                                    ! Intent(in)
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
@@ -2598,7 +2608,7 @@ module clubb_driver
                         corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
                         hm_metadata,                                             & ! Intent(in)
                         pdf_params,                                                 & ! Intent(in)
-                        params,                                                     & ! Intent(in)
+                        clubb_params(1,:),                                                     & ! Intent(in)
                         clubb_config_flags%iiPDF_type,                              & ! Intent(in)
                         l_use_precip_frac,                                          & ! Intent(in)
                         clubb_config_flags%l_predict_upwp_vpwp,                     & ! Intent(in)
@@ -2681,7 +2691,7 @@ module clubb_driver
         ! Calculate Lscale on momentum levels and then interpolate back to
         ! thermodynamic levels.
         Lscale(1,:) &
-        = max( zm2zt( gr, Kh_zm / ( params(ic_K) * sqrt( max( em, em_min ) ) ) ), &
+        = max( zm2zt( gr, Kh_zm / ( clubb_params(1,ic_K) * sqrt( max( em, em_min ) ) ) ), &
                0.01_core_rknd )
                
         ! Copy grid dzt to variable with column index as 1
@@ -2791,7 +2801,7 @@ module clubb_driver
 
       ! Calculate Skw_zm for use in advance_microphys.
       call Skx_func( gr%nz, 1, wp2, zt2zm( gr, wp3(1,:) ), &
-                     w_tol, params(iSkw_denom_coef), params(iSkw_max_mag), &
+                     w_tol, clubb_params, &
                      Skw_zm )
       
       ! This field is smoothed by interpolating to thermodynamic levels and then
@@ -2808,7 +2818,7 @@ module clubb_driver
                               hydromet_mc, Ncm_mc, Lscale(1,:),           & ! In
                               hydromet_vel_covar_zt_impc,                 & ! In
                               hydromet_vel_covar_zt_expc,                 & ! In
-                              params, nu_vert_res_dep,                    & ! In
+                              clubb_params(1,:), nu_vert_res_dep,                    & ! In
                               clubb_config_flags%tridiag_solve_method,    & ! In
                               clubb_config_flags%l_upwind_xm_ma,          & ! In
                               stats_metadata,                             & ! In
@@ -2889,7 +2899,7 @@ module clubb_driver
                                        stats_metadata )
 
       ! End statistics timestep
-      call stats_end_timestep( params, stats_metadata,        & ! intent(in)
+      call stats_end_timestep( clubb_params(1,:), stats_metadata,        & ! intent(in)
                                stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
                                stats_rad_zt, stats_rad_zm     & ! intent(inout)
@@ -6512,7 +6522,7 @@ module clubb_driver
     ngrdcol, multicol_nc_file, &                            ! intent(in)
     nzmax, momentum_heights, thermodynamic_heights, &       ! intent(in)
     zm_init, zm_top, deltaz, grid_type, &                   ! intent(in)
-    l_prescribed_avg_deltaz, params, &                      ! intent(in)
+    l_prescribed_avg_deltaz, &                              ! intent(in)
     gr, l_implemented, dt, fcor, sfc_elevation, &           ! intent(in)
     hydromet_dim, &                                         ! intent(in)
     sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &         ! intent(in)
@@ -6684,7 +6694,7 @@ module clubb_driver
       deltaz
 
     real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
-      params  ! Model parameters, C1, nu2, etc.
+      clubb_params  ! Model parameters, C1, nu2, etc.
 
     integer, intent(in) :: &
       grid_type
@@ -6790,9 +6800,6 @@ module clubb_driver
     real( kind = core_rknd ), intent(in) :: &
       host_dx,  & ! East-West horizontal grid spacing     [m]
       host_dy     ! North-South horizontal grid spacing   [m]
-
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
@@ -7016,6 +7023,9 @@ module clubb_driver
       host_dx_col,  & ! East-West horizontal grid spacing     [m]
       host_dy_col     ! North-South horizontal grid spacing   [m]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nparams) :: &
+      clubb_params_col    ! Array of CLUBB's tunable parameters    [units vary]
+
     real( kind = core_rknd ), dimension(ngrdcol,gr%nz) ::  &
       p_in_Pa_col, & ! Air pressure (thermodynamic levels)       [Pa]
       exner_col      ! Exner function (thermodynamic levels)     [-]
@@ -7229,10 +7239,14 @@ module clubb_driver
                            momentum_heights_col, thermodynamic_heights_col,  & ! intent(in)
                            gr_col )                                            ! intent(out)
 
+      do i = 1, ngrdcol
+        clubb_params_col(i,:) = clubb_params
+      end do
+
       ! The only reason we need to call this is to setup the multicolumn version 
       ! of nu_vert_res_dep. 
       call setup_parameters_api( &
-             deltaz_col, params, gr_col, ngrdcol, grid_type, & ! intent(in)
+             deltaz_col, clubb_params_col, gr_col, ngrdcol, grid_type, & ! intent(in)
              l_prescribed_avg_deltaz,                        & ! intent(in)
              lmin_col, nu_vert_res_dep_col, err_code_dummy )   ! intent(out)  
 
@@ -7433,6 +7447,8 @@ module clubb_driver
       
       host_dx_col(i) = host_dx
       host_dy_col(i) = host_dy
+
+      clubb_params_col(i,:) = clubb_params
       
       stats_zt_col(i) = stats_zt
       stats_zm_col(i) = stats_zm
@@ -7481,7 +7497,6 @@ module clubb_driver
 
     end do
 
-
    ! Call advance_clubb_core with the 2D arrays
     call advance_clubb_core_api( gr_col, gr%nz, ngrdcol, &
       l_implemented, dt, fcor_col, sfc_elevation_col,                           & ! intent(in)
@@ -7505,7 +7520,7 @@ module clubb_driver
 #endif
       wphydrometp_col, wp2hmp_col, rtphmp_col, thlphmp_col,                     & ! intent(in)
       host_dx_col, host_dy_col,                                                 & ! intent(in)
-      clubb_params, nu_vert_res_dep_col, lmin_col,                              & ! intent(in)
+      clubb_params_col, nu_vert_res_dep_col, lmin_col,                          & ! intent(in)
       clubb_config_flags,                                                       & ! intent(in)
       stats_metadata,                                                           & ! Intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col,                                & ! intent(inout)

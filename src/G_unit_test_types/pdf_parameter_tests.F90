@@ -160,7 +160,8 @@ module pdf_parameter_tests
         l_gamma_Skw
         
     use parameter_indices, only: &
-        nparams    ! Variable(s)
+        nparams, & ! Variable(s)
+        ibeta
 
     use parameters_tunable, only: &
         set_default_parameters, & ! Procedure(s)
@@ -557,6 +558,7 @@ module pdf_parameter_tests
                                       ! eliminates spurious drying tendencies at model top
       l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
                                       ! to avoid double counting.
+      
     real( kind = core_rknd ) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
@@ -566,7 +568,6 @@ module pdf_parameter_tests
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-      slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
       coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
       gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
@@ -580,13 +581,17 @@ module pdf_parameter_tests
       C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
       wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace
+      
+    real( kind = core_rknd ), dimension(1) :: & 
+      slope_coef_spread_DG_means_w, &
+      pdf_component_stdev_factor_w
 
     integer, parameter :: iunit = 10
 
     character(len=13), parameter :: &
       namelist_filename = ""
 
-    real( kind = core_rknd ), dimension(nparams) :: & 
+    real( kind = core_rknd ), dimension(1,nparams) :: & 
       clubb_params  ! Array of the model constants
 
 
@@ -600,7 +605,7 @@ module pdf_parameter_tests
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-               slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
+               slope_coef_spread_DG_means_w(1), pdf_component_stdev_factor_w(1), &
                coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
                gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
                omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
@@ -618,7 +623,7 @@ module pdf_parameter_tests
                wpxp_Ri_exp, a3_coef_min, a_const, bv_efold, z_displace )
 
     ! Read in model parameter values
-    call read_parameters( iunit, namelist_filename, &
+    call read_parameters( 1, iunit, namelist_filename, &
                           C1, C1b, C1c, C2rt, C2thl, C2rtthl, &
                           C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, &
                           C6thl, C6thlb, C6thlc, C7, C7b, C7c, C8, C8b, C10, &
@@ -627,7 +632,7 @@ module pdf_parameter_tests
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                           c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-                          slope_coef_spread_DG_means_w, pdf_component_stdev_factor_w, &
+                          slope_coef_spread_DG_means_w(1), pdf_component_stdev_factor_w(1), &
                           coef_spread_DG_means_rt, coef_spread_DG_means_thl, &
                           gamma_coef, gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
                           omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
@@ -1556,10 +1561,7 @@ module pdf_parameter_tests
 
           call new_pdf_driver( gr%nz, 1, wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), Skw, & ! In
                                wprtp(1,:), wpthlp(1,:), rtpthlp,                   & ! In
-                               slope_coef_spread_DG_means_w,             & ! In
-                               pdf_component_stdev_factor_w,             & ! In
-                               coef_spread_DG_means_rt,                  & ! In
-                               coef_spread_DG_means_thl,                 & ! In
+                               clubb_params,                             & ! In
                                Skrt, Skthl,                              & ! I/O
                                mu_w_1(1,:), mu_w_2(1,:), mu_rt_1, mu_rt_2,         & ! Out
                                mu_thl_1, mu_thl_2, sigma_w_1_sqd(1,:),        & ! Out
@@ -1596,8 +1598,8 @@ module pdf_parameter_tests
                                       Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:),     &! In
                                       sclrm, sclrp2, wpsclrp,             &! In
                                       gamma_Skw_fnc(1,:),                 &! In
-                                      slope_coef_spread_DG_means_w,       &! In
-                                      pdf_component_stdev_factor_w,       &! In
+                                      slope_coef_spread_DG_means_w(1),       &! In
+                                      pdf_component_stdev_factor_w(1),       &! In
                                       Skrt, Skthl, Sku, Skv, Sksclr,      &! I/O
                                       mu_w_1(1,:), mu_w_2(1,:),                     &! Out
                                       mu_rt_1, mu_rt_2,                   &! Out
@@ -1644,7 +1646,7 @@ module pdf_parameter_tests
                                 wm, rtm, thlm, um, vm,                   & ! In 
                                 wp2, rtp2, thlp2, up2, vp2,              & ! In 
                                 Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In 
-                                sigma_sqd_w, beta, mixt_frac_max_mag,    & ! In 
+                                sigma_sqd_w, clubb_params(:,ibeta), mixt_frac_max_mag,    & ! In 
                                 sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In 
                                 mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2,& ! Out
                                 mu_u_1, mu_u_2, mu_v_1, mu_v_2,          & ! Out
