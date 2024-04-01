@@ -593,14 +593,14 @@ module advance_xm_wpxp_module
         do i = 1, ngrdcol
     
           C6thl  = clubb_params(i,iC6thl)
-          C6thlb = clubb_params(i,iC6thl)
-          C6thlc = clubb_params(i,iC6thl)
+          C6thlb = clubb_params(i,iC6thlb)
+          C6thlc = clubb_params(i,iC6thlc)
 
           if ( abs(C6thl-C6thlb) > abs(C6thl+C6thlb)*eps/2 ) then
             C6thl_Skw_fnc(i,k) = C6thlb + ( C6thl - C6thlb ) & 
                                           * exp( -one_half * (Skw_zm(i,k)/C6thlc)**2 )
           else
-              C6thl_Skw_fnc(i,k) = C6thlb
+            C6thl_Skw_fnc(i,k) = C6thlb
           end if
 
           end do
