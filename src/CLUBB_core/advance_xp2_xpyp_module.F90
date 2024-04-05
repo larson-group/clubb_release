@@ -3997,6 +3997,9 @@ module advance_xp2_xpyp_module
       wp_coef, &
       wp_coef_zt
 
+    real ( kind = core_rknd ), dimension(nz) :: &
+      tmp_in
+
     integer :: &
       sclr, i, b, k, l  ! Loop index
 
@@ -5261,17 +5264,30 @@ module advance_xp2_xpyp_module
       !$acc              coef_wpthlp2_implicit, term_wpthlp2_explicit, &
       !$acc              coef_wprtpthlp_implicit, term_wprtpthlp_explicit )
       do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%icoef_wprtp2_implicit, coef_wprtp2_implicit(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = coef_wprtp2_implicit(i,2:nz)
+        !call stat_update_var( stats_metadata%icoef_wprtp2_implicit, coef_wprtp2_implicit(i,:), & ! intent(in)
+        call stat_update_var( stats_metadata%icoef_wprtp2_implicit, tmp_in, & ! intent(in)
                               stats_zt(i) )                                     ! intent(inout)
-        call stat_update_var( stats_metadata%iterm_wprtp2_explicit, term_wprtp2_explicit(i,:), & ! intent(in)
+        tmp_in(2:nz) = term_wprtp2_explicit(i,2:nz)
+        !call stat_update_var( stats_metadata%iterm_wprtp2_explicit, term_wprtp2_explicit(i,:), & ! intent(in)
+        call stat_update_var( stats_metadata%iterm_wprtp2_explicit, tmp_in, & ! intent(in)
                               stats_zt(i) )                                     ! intent(in)
-        call stat_update_var( stats_metadata%icoef_wpthlp2_implicit, coef_wpthlp2_implicit(i,:), & ! intent(in)
+        tmp_in(2:nz) = coef_wpthlp2_implicit(i,2:nz)
+        !call stat_update_var( stats_metadata%icoef_wpthlp2_implicit, coef_wpthlp2_implicit(i,:), & ! intent(in)
+        call stat_update_var( stats_metadata%icoef_wpthlp2_implicit, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%iterm_wpthlp2_explicit, term_wpthlp2_explicit(i,:), & ! intent(in)
+        tmp_in(2:nz) = term_wpthlp2_explicit(i,2:nz)
+        !call stat_update_var( stats_metadata%iterm_wpthlp2_explicit, term_wpthlp2_explicit(i,:), & ! intent(in)
+        call stat_update_var( stats_metadata%iterm_wpthlp2_explicit, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%icoef_wprtpthlp_implicit, coef_wprtpthlp_implicit(i,:), & ! intent(in)
+        tmp_in(2:nz) = coef_wprtpthlp_implicit(i,2:nz)
+        !call stat_update_var( stats_metadata%icoef_wprtpthlp_implicit, coef_wprtpthlp_implicit(i,:), & ! intent(in)
+        call stat_update_var( stats_metadata%icoef_wprtpthlp_implicit, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%iterm_wprtpthlp_explicit, term_wprtpthlp_explicit(i,:), & ! intent(in)
+        tmp_in(2:nz) = term_wprtpthlp_explicit(i,2:nz)
+        !call stat_update_var( stats_metadata%iterm_wprtpthlp_explicit, term_wprtpthlp_explicit(i,:), & ! intent(in)
+        call stat_update_var( stats_metadata%iterm_wprtpthlp_explicit, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
       end do
     end if ! stats_metadata%l_stats_samp
