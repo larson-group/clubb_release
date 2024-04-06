@@ -275,6 +275,9 @@ module advance_windm_edsclrm_module
     ! Whether perturbed winds are being solved.
     logical :: l_perturbed_wind
 
+    real( kind = core_rknd ), dimension(nz) ::  &
+      tmp_in
+
     ! ------------------------ Begin Code ------------------------
 
     !$acc enter data create( um_old, vm_old, um_tndcy, vm_tndcy, &
@@ -603,9 +606,12 @@ module advance_windm_edsclrm_module
           
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_begin_update( nz, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = um(i,2:nz)
+            call stat_begin_update( nz, stats_metadata%ium_sdmp, tmp_in / dt, & ! intent(in)
                                     stats_zt(i) )           ! intent(inout)
-            call stat_begin_update( nz, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+            tmp_in(2:nz) = vm(i,2:nz)
+            call stat_begin_update( nz, stats_metadata%ivm_sdmp, tmp_in / dt, & ! intent(in)
                                     stats_zt(i) )           ! intent(inout)
           end do
         end if
@@ -622,9 +628,12 @@ module advance_windm_edsclrm_module
 
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_end_update( nz, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in) 
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = um(i,2:nz)
+            call stat_end_update( nz, stats_metadata%ium_sdmp, tmp_in / dt, & ! intent(in) 
                                   stats_zt(i) )           ! intent(inout)
-            call stat_end_update( nz, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+            tmp_in(2:nz) = vm(i,2:nz)
+            call stat_end_update( nz, stats_metadata%ivm_sdmp, tmp_in / dt, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
           end do
         end if
@@ -668,9 +677,12 @@ module advance_windm_edsclrm_module
         if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
           do i = 1, ngrdcol
-            call stat_begin_update( nz, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = um(i,2:nz)
+            call stat_begin_update( nz, stats_metadata%ium_ndg, tmp_in / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
-            call stat_begin_update( nz, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
+            tmp_in(2:nz) = vm(i,2:nz)
+            call stat_begin_update( nz, stats_metadata%ivm_ndg, tmp_in / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
           end do
         end if
@@ -687,9 +699,12 @@ module advance_windm_edsclrm_module
         if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
           do i = 1, ngrdcol
-            call stat_end_update( nz, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = um(i,2:nz)
+            call stat_end_update( nz, stats_metadata%ium_ndg, tmp_in / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
-            call stat_end_update( nz, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
+            tmp_in(2:nz) = vm(i,2:nz)
+            call stat_end_update( nz, stats_metadata%ivm_ndg, tmp_in / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
           end do
         end if
@@ -699,9 +714,12 @@ module advance_windm_edsclrm_module
       if ( stats_metadata%l_stats_samp ) then
         !$acc update host( um_ref, vm_ref )
         do i = 1, ngrdcol
-          call stat_update_var( stats_metadata%ium_ref, um_ref(i,:), & ! intent(in)
+          tmp_in(1) = 0.0_core_rknd
+          tmp_in(2:nz) = um_ref(i,2:nz)
+          call stat_update_var( stats_metadata%ium_ref, tmp_in, & ! intent(in)
                                 stats_zt(i) )         ! intent(inout)
-          call stat_update_var( stats_metadata%ivm_ref, vm_ref(i,:), & ! intent(in)
+          tmp_in(2:nz) = vm_ref(i,2:nz)
+          call stat_update_var( stats_metadata%ivm_ref, tmp_in, & ! intent(in)
                                 stats_zt(i) )         ! intent(inout)
         end do
       end if
@@ -1240,7 +1258,7 @@ module advance_windm_edsclrm_module
       ! the variance of edsclr anywhere. -dschanen 7 Oct 2008
 
     endif
-    
+
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
 
@@ -2013,7 +2031,7 @@ module advance_windm_edsclrm_module
 
     do k = 2, nz-1, 1
 
-      km1 = max( k-1, 1 )
+      km1 = max( k-1, 2 )
       kp1 = min( k+1, nz )
 
       ! xm mean advection
@@ -2158,6 +2176,11 @@ module advance_windm_edsclrm_module
 
     !$acc enter data create( xm_gf, xm_cf )
 
+    ! Initialize variables to 0.
+    xm_gf = 0.0_core_rknd
+    xm_cf = 0.0_core_rknd
+    xm_tndcy = 0.0_core_rknd
+
     if ( .not. l_implemented ) then
       ! Only compute the Coriolis term if the model is running on it's own,
       ! and is not part of a larger, host model.
@@ -2171,7 +2194,7 @@ module advance_windm_edsclrm_module
         ixm_f  = stats_metadata%ium_f
         
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 2, nz
           do i = 1, ngrdcol
             xm_gf(i,k) = - fcor(i) * perp_wind_g(i,k)
           end do
@@ -2179,7 +2202,7 @@ module advance_windm_edsclrm_module
         !$acc end parallel loop
         
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 2, nz
           do i = 1, ngrdcol
             xm_cf(i,k) = fcor(i) * perp_wind_m(i,k)
           end do
@@ -2193,7 +2216,7 @@ module advance_windm_edsclrm_module
         ixm_f  = stats_metadata%ivm_f
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 2, nz
           do i = 1, ngrdcol
             xm_gf(i,k) = fcor(i) * perp_wind_g(i,k)
           end do
@@ -2201,7 +2224,7 @@ module advance_windm_edsclrm_module
         !$acc end parallel loop
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 2, nz
           do i = 1, ngrdcol
             xm_cf(i,k) = -fcor(i) * perp_wind_m(i,k)
           end do
@@ -2215,7 +2238,7 @@ module advance_windm_edsclrm_module
         ixm_f = 0
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 2, nz
           do i = 1, ngrdcol
             xm_gf(i,k) = 0._core_rknd
             xm_cf(i,k) = 0._core_rknd
@@ -2226,7 +2249,7 @@ module advance_windm_edsclrm_module
       end select
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 2, nz
         do i = 1, ngrdcol
           xm_tndcy(i,k) = xm_gf(i,k) + xm_cf(i,k) + xm_forcing(i,k)
         end do
@@ -2255,7 +2278,7 @@ module advance_windm_edsclrm_module
     else   ! implemented in a host model.
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 2, nz
         do i = 1, ngrdcol
           xm_tndcy(i,k) = 0.0_core_rknd
         end do
@@ -2516,9 +2539,20 @@ module advance_windm_edsclrm_module
     end do
     !$acc end parallel loop
 
+    ! Lower boundary calculation
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      rhs(i,2) = 0.5_core_rknd  & 
+                 * ( - lhs_diff(2,i,2) * xm(i,2)        &
+                     - lhs_diff(1,i,2) * xm(i,3) )      &
+                 + xm_tndcy(i,2)                        & ! RHS forcings
+                 + invrs_dt * xm(i,2)                     ! RHS time tendency
+    end do
+    !$acc end parallel loop
+
     ! Non-boundary rhs calculation, this is a highly vectorized loop
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
+    do k = 3, nz-1
       do i = 1, ngrdcol
         rhs(i,k) = 0.5_core_rknd  & 
                    * ( - lhs_diff(3,i,k) * xm(i,k-1)      &
@@ -2553,7 +2587,15 @@ module advance_windm_edsclrm_module
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on right-hand side
         ! turbulent advection component.
-        do k = 2, nz-1
+
+        ! Lower boundary
+        call stat_begin_update_pt( ixm_ta, 2, &                         ! intent(in)
+                                   0.5_core_rknd  &
+                                 * ( lhs_diff(2,i,2) * xm(i,2)   &      ! intent(in)
+                                 +   lhs_diff(1,i,2) * xm(i,3) ), &
+                                     stats_zt(i) )                      ! intent(inout)
+
+        do k = 3, nz-1
           
           call stat_begin_update_pt( ixm_ta, k, &                         ! intent(in)
                                      0.5_core_rknd  &
