@@ -56,7 +56,6 @@ l_ignore_forcings = .true. ! Do not read values from _forcings.in file,
 
 time_initial = 41400.0   ! Model start time [seconds since midnight on start date]
 time_final   = 63000.0   ! Model end time [seconds since midnight on start date]
-!time_final   = 41460.0   ! Model end time [seconds since midnight on start date]
 
 
 dt_main    = 60.0   ! Model timestep [s]
