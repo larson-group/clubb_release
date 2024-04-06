@@ -565,19 +565,6 @@ module advance_windm_edsclrm_module
         end do
       end if ! stats_metadata%l_stats_samp
   
-      ! The values of um(1) and vm(1) are located below the model surface and
-      ! do not affect the rest of the model.  The values of um(1) or vm(1) are
-      ! simply set to the values of um(2) and vm(2), respectively, after the
-      ! equation matrices has been solved.  Even though um and vm would sharply
-      ! decrease to a value of 0 at the surface, this is done to avoid
-      ! confusion on plots of the vertical profiles of um and vm.
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        um(i,1) = um(i,2)
-        vm(i,1) = vm(i,2)
-      end do
-      !$acc end parallel loop
-
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz
@@ -802,6 +789,19 @@ module advance_windm_edsclrm_module
                          vpwp, vpwp_chnge )                             ! intent(inout)
       endif ! l_tke_aniso
 
+      ! The values of um(1) and vm(1) are located below the model surface and
+      ! do not affect the rest of the model.  The values of um(1) or vm(1) are
+      ! simply set to the values of um(2) and vm(2), respectively, after the
+      ! equation matrices has been solved.  Even though um and vm would sharply
+      ! decrease to a value of 0 at the surface, this is done to avoid
+      ! confusion on plots of the vertical profiles of um and vm.
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        um(i,1) = um(i,2)
+        vm(i,1) = vm(i,2)
+      end do
+      !$acc end parallel loop
+
     endif ! .not. l_predict_upwp_vpwp
 
     
@@ -943,19 +943,6 @@ module advance_windm_edsclrm_module
       end do
       !$acc end parallel loop
   
-      ! The values of um(1) and vm(1) are located below the model surface and
-      ! do not affect the rest of the model.  The values of um(1) or vm(1) are
-      ! simply set to the values of um(2) and vm(2), respectively, after the
-      ! equation matrices has been solved.  Even though um and vm would sharply
-      ! decrease to a value of 0 at the surface, this is done to avoid
-      ! confusion on plots of the vertical profiles of um and vm.
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        um_pert(i,1) = um_pert(i,2)
-        vm_pert(i,1) = vm_pert(i,2)
-      end do
-      !$acc end parallel loop
-
       ! Second part of momentum (implicit component)
 
       ! Solve for x'w' at all intermediate model levels.
@@ -1049,6 +1036,20 @@ module advance_windm_edsclrm_module
                          vpwp_pert, vpwp_chnge )                        ! intent(inout)
         
       end if ! l_tke_aniso
+
+      ! The values of um(1) and vm(1) are located below the model surface and
+      ! do not affect the rest of the model.  The values of um(1) or vm(1) are
+      ! simply set to the values of um(2) and vm(2), respectively, after the
+      ! equation matrices has been solved.  Even though um and vm would sharply
+      ! decrease to a value of 0 at the surface, this is done to avoid
+      ! confusion on plots of the vertical profiles of um and vm.
+      !$acc parallel loop gang vector default(present)
+      do i = 1, ngrdcol
+        um_pert(i,1) = um_pert(i,2)
+        vm_pert(i,1) = vm_pert(i,2)
+      end do
+      !$acc end parallel loop
+
     end if ! l_perturbed_wind
 
     !----------------------------------------------------------------
@@ -1212,17 +1213,6 @@ module advance_windm_edsclrm_module
       end do
       !$acc end parallel loop
 
-      ! The value of edsclrm(1) is located below the model surface and does not
-      ! effect the rest of the model.  The value of edsclrm(1) is simply set to
-      ! the value of edsclrm(2) after the equation matrix has been solved.
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do edsclr = 1, edsclr_dim
-        do i = 1, ngrdcol
-          edsclrm(i,1,edsclr) = edsclrm(i,2,edsclr)
-        end do
-      end do
-      !$acc end parallel loop
-
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(3) default(present)
         do j = 1, edsclr_dim
@@ -1256,6 +1246,17 @@ module advance_windm_edsclrm_module
 
       ! Note that the w'edsclr' terms are not clipped, since we don't compute
       ! the variance of edsclr anywhere. -dschanen 7 Oct 2008
+
+      ! The value of edsclrm(1) is located below the model surface and does not
+      ! effect the rest of the model.  The value of edsclrm(1) is simply set to
+      ! the value of edsclrm(2) after the equation matrix has been solved.
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do edsclr = 1, edsclr_dim
+        do i = 1, ngrdcol
+          edsclrm(i,1,edsclr) = edsclrm(i,2,edsclr)
+        end do
+      end do
+      !$acc end parallel loop
 
     endif
 
