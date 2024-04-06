@@ -212,19 +212,7 @@ module hydrostatic_module
     ! at sounding level 1 is 0.  The lowest sounding level may or may not be
     ! right at the surface, and therefore an adjustment may be required to find
     ! the actual altitude above ground.
-    ref_z_snd(1) = 0.0_core_rknd
-
-    do k = 2, nlevels
-
-      ! Calculate the value of the reference height at sounding level k, based
-      ! the value of thvm at sounding levels k-1 and k, the value of exner at
-      ! sounding levels k-1 and k, and the reference altitude at sounding level
-      ! k-1.
-      ref_z_snd(k) &
-      = calc_ref_z_linear_thvm( thvm(k-1), thvm(k), &
-                                exner(k-1), exner(k), ref_z_snd(k-1) )
-
-    enddo
+    ref_z_snd = calc_ref_z_linear_thvm( nlevels, thvm, exner )
 
     ! Find the actual (above ground) altitude of the sounding levels from the
     ! reference altitudes.
@@ -326,9 +314,8 @@ module hydrostatic_module
   end subroutine inverse_hydrostatic
 
 !===============================================================================
-  pure function calc_ref_z_linear_thvm( thvm_km1, thvm_k, &
-                                        exner_km1, exner_k, z_km1 ) &
-  result( z_k )
+  pure function calc_ref_z_linear_thvm( nlevels, thvm, exner ) &
+  result( z )
 
     ! Description:
     ! This function solves for z (altitude) at a level, given altitude at
@@ -376,29 +363,41 @@ module hydrostatic_module
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      thvm_km1,  & ! Value of thvm at sounding level k-1      [K]
-      thvm_k,    & ! Value of thvm at sounding level k        [K]
-      exner_km1, & ! Value of exner at sounding level k-1     [-]
-      exner_k,   & ! Value of exner at sounding level k       [-]
-      z_km1        ! Altitude at sounding level k-1           [m]
+    integer, intent(in) :: &
+      nlevels
+
+    real( kind = core_rknd ), dimension(nlevels), intent(in) :: &
+      thvm,  & ! Virtual potential temperature   [K]
+      exner    ! Exner function                  [-]
 
     ! Return Variable
-    real( kind = core_rknd ) :: z_k   ! Altitude at sounding level k     [m]
+    real( kind = core_rknd ), dimension(nlevels) :: &
+      z        ! Height                    [m]
 
-    ! Calculate z at sounding level k.
-    if ( abs( thvm_k - thvm_km1 ) > epsilon( thvm_k ) * thvm_k ) then
+    integer :: k
 
-       z_k &
-       = z_km1 &
-         - ( Cp / grav ) * ( exner_k - exner_km1 ) * ( thvm_k - thvm_km1 ) &
-           / log( thvm_k / thvm_km1 )
+    z(1) = 0.0_core_rknd
 
-    else ! thvm_k = thvm_km1
+    ! Calculate the value of the reference height at sounding level k, based
+    ! the value of thvm at sounding levels k-1 and k, the value of exner at
+    ! sounding levels k-1 and k, and the reference altitude at sounding level
+    ! k-1.
+    do k = 2, nlevels
 
-       z_k = z_km1 - ( Cp / grav ) * ( exner_k - exner_km1 ) * thvm_k
+      if ( abs( thvm(k) - thvm(k-1) ) > epsilon( thvm(k) ) * thvm(k) ) then
 
-    endif
+        z(k) &
+        = z(k-1) &
+          - ( Cp / grav ) * ( exner(k) - exner(k-1) ) * ( thvm(k) - thvm(k-1) ) &
+            / log( thvm(k) / thvm(k-1) )
+
+      else ! thvm(k) = thvm(k-1)
+
+        z(k) = z(k-1) - ( Cp / grav ) * ( exner(k) - exner(k-1) ) * thvm(k)
+
+      endif
+      
+    end do
 
 
     return
