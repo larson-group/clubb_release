@@ -5823,7 +5823,7 @@ module advance_xm_wpxp_module
     do k = 1, nz
       do i = 1, ngrdcol
         
-        if ( Lscale_zm(i,k) < threshold(i) .and. gr%zt(i,k) > altitude_threshold(i) ) then
+        if ( Lscale_zm(i,k) < threshold(i) .and. gr%zm(i,k) > altitude_threshold(i) ) then
           damped_value(i,k) = max_coeff_value(i) &
                               + ( ( coefficient(i) - max_coeff_value(i) ) / threshold(i) ) &
                                 * Lscale_zm(i,k)
