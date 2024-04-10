@@ -5901,12 +5901,21 @@ module advance_xm_wpxp_module
     ddzt_ym = ddzt( nz, ngrdcol, gr, ym )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 2, nz-1
       do i = 1, ngrdcol
         ypxp(i,k) = ( tau_C6_zm(i,k) / C6x_Skw_fnc(i,k) ) &
                     * ( - ypwp(i,k) * ddzt_xm(i,k) - (one - C7_Skw_fnc(i,k) ) &
                       * ( wpxp(i,k) * ddzt_ym(i,k) ) )
       end do
+    end do
+    !$acc end parallel loop
+
+    ! The value of ypxp is irrelevant to the calculations at the upper and
+    ! lower boundaries
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      ypxp(i,1) = 0.0_core_rknd
+      ypxp(i,nz) = 0.0_core_rknd
     end do
     !$acc end parallel loop
 
