@@ -2166,6 +2166,8 @@ module advance_xm_wpxp_module
       
     integer :: i, k, b, sclr
     
+    real( kind = core_rknd ), dimension(nz) :: tmp_in
+
     !------------------- Begin Code -------------------
 
     !$acc enter data create( coef_wp2rtp_implicit, term_wp2rtp_explicit, coef_wp2rtp_implicit_zm, &
@@ -2559,13 +2561,18 @@ module advance_xm_wpxp_module
       !$acc update host( coef_wp2rtp_implicit, term_wp2rtp_explicit, &
       !$acc              coef_wp2thlp_implicit, term_wp2thlp_explicit )
       do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%icoef_wp2rtp_implicit, coef_wp2rtp_implicit(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = coef_wp2rtp_implicit(i,2:nz)
+        call stat_update_var( stats_metadata%icoef_wp2rtp_implicit, tmp_in, & ! intent(in)
                               stats_zt(i) )                                     ! intent(inout)
-        call stat_update_var( stats_metadata%iterm_wp2rtp_explicit, term_wp2rtp_explicit(i,:), & ! intent(in)
+        tmp_in(2:nz) = term_wp2rtp_explicit(i,2:nz)
+        call stat_update_var( stats_metadata%iterm_wp2rtp_explicit, tmp_in, & ! intent(in)
                               stats_zt(i) )                                     ! intent(inout)
-        call stat_update_var( stats_metadata%icoef_wp2thlp_implicit, coef_wp2thlp_implicit(i,:), & ! intent(in)
+        tmp_in(2:nz) = coef_wp2thlp_implicit(i,2:nz)
+        call stat_update_var( stats_metadata%icoef_wp2thlp_implicit, tmp_in, & ! intent(in)
                               stats_zt(i) )                                       ! intent(inout)
-        call stat_update_var( stats_metadata%iterm_wp2thlp_explicit, term_wp2thlp_explicit(i,:), & ! intent(in)
+        tmp_in(2:nz) = term_wp2thlp_explicit(i,2:nz)
+        call stat_update_var( stats_metadata%iterm_wp2thlp_explicit, tmp_in, & ! intent(in)
                               stats_zt(i) )                                       ! intent(inout)
       end do
     endif
