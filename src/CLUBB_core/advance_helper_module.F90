@@ -425,7 +425,7 @@ module advance_helper_module
     !---------------------------- Local Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
-      ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm
+      ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, ice_supersat_frac_zm
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       stat_dry, stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, &
@@ -442,7 +442,7 @@ module advance_helper_module
     !$acc       create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
     !$acc               ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, stat_dry, &
     !$acc               stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, stat_dry_virtual, &
-    !$acc               stat_dry_virtual_zm, ddzt_rtm_zm )
+    !$acc               stat_dry_virtual_zm, ddzt_rtm_zm, ice_supersat_frac_zm )
 
     ddzt_thlm = ddzt( nz, ngrdcol, gr, thlm )
     thvm_zm = zt2zm( nz, ngrdcol, gr, thvm )
@@ -535,12 +535,14 @@ module advance_helper_module
     end do ! k=1, gr%nz
     !$acc end parallel loop
 
+    ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac )
+
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
          brunt_vaisala_freq_sqd_mixed(i,k) = &
              brunt_vaisala_freq_sqd_moist(i,k) + &
-                 exp( - bv_efold(i) * ice_supersat_frac(i,k) ) * &
+                 exp( - bv_efold(i) * ice_supersat_frac_zm(i,k) ) * &
                  ( brunt_vaisala_freq_sqd_dry(i,k) - brunt_vaisala_freq_sqd_moist(i,k) )
       end do
     end do
