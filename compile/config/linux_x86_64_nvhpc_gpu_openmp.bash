@@ -36,7 +36,7 @@ NETCDF="$PGI_NETCDF_FORTRAN"
 # == Linking Flags ==
 LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -mp=gpu -Mcuda"
 
-FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -mp=gpu -Minfo=accel"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Mstandard -Kieee -mp=gpu -noacc -Minfo=accel"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
