@@ -442,6 +442,9 @@ module mono_flux_limiter
       max_tmp, &
       min_tmp
 
+    real( kind = core_rknd ), dimension(nz) ::  &
+      tmp_in
+
     !---------------------------- Begin Code ----------------------------
 
     !$acc enter data create( xp2_zt, xm_enter_mfl, xm_without_ta, wpxp_net_adjust, &
@@ -478,16 +481,22 @@ module mono_flux_limiter
       do i = 1, ngrdcol
         call stat_begin_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
-        call stat_begin_update( nz, ixm_mfl, xm(i,:) / dt, & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = xm(i,2:nz)
+        call stat_begin_update( nz, ixm_mfl, tmp_in / dt, & ! intent(in)
                                 stats_zt(i) ) ! intent(inout)
       end do
     endif
     if ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_thlm ) then
       !$acc update host( xm, xm_old, wpxp )
       do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%ithlm_enter_mfl, xm(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = xm(i,2:nz)
+        call stat_update_var( stats_metadata%ithlm_enter_mfl, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%ithlm_old, xm_old(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = xm_old(i,2:nz)
+        call stat_update_var( stats_metadata%ithlm_old, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
         call stat_update_var( stats_metadata%iwpthlp_enter_mfl, wpxp(i,:), & ! intent(in)
                               stats_zm(i) ) ! intent(inout)
@@ -495,9 +504,13 @@ module mono_flux_limiter
     elseif ( stats_metadata%l_stats_samp .and. solve_type == mono_flux_rtm ) then
       !$acc update host( xm, xm_old, wpxp )
       do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%irtm_enter_mfl, xm(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = xm(i,2:nz)
+        call stat_update_var( stats_metadata%irtm_enter_mfl, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%irtm_old, xm_old(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = xm_old(i,2:nz)
+        call stat_update_var( stats_metadata%irtm_old, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
         call stat_update_var( stats_metadata%iwprtp_enter_mfl, wpxp(i,:), & ! intent(in)
                               stats_zm(i) ) ! intent(inout)
@@ -776,11 +789,17 @@ module mono_flux_limiter
       !$acc update host( xm_without_ta, min_x_allowable, wpxp_mfl_min, &
       !$acc              wpxp_mfl_max, max_x_allowable )
       do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%ithlm_without_ta, xm_without_ta(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = xm_without_ta(i,2:nz)
+        call stat_update_var( stats_metadata%ithlm_without_ta, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%ithlm_mfl_min, min_x_allowable(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = min_x_allowable(i,2:nz)
+        call stat_update_var( stats_metadata%ithlm_mfl_min, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%ithlm_mfl_max, max_x_allowable(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = max_x_allowable(i,2:nz)
+        call stat_update_var( stats_metadata%ithlm_mfl_max, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
         call stat_update_var( stats_metadata%iwpthlp_mfl_min, wpxp_mfl_min(i,:), & ! intent(in)
                               stats_zm(i) ) ! intent(inout)
@@ -791,11 +810,17 @@ module mono_flux_limiter
       !$acc update host( xm_without_ta, min_x_allowable, max_x_allowable,  &
       !$acc              wpxp_mfl_min, wpxp_mfl_max )
       do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%irtm_without_ta, xm_without_ta(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = xm_without_ta(i,2:nz)
+        call stat_update_var( stats_metadata%irtm_without_ta, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%irtm_mfl_min, min_x_allowable(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = min_x_allowable(i,2:nz)
+        call stat_update_var( stats_metadata%irtm_mfl_min, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
-        call stat_update_var( stats_metadata%irtm_mfl_max, max_x_allowable(i,:), & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = max_x_allowable(i,2:nz)
+        call stat_update_var( stats_metadata%irtm_mfl_max, tmp_in, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
         call stat_update_var( stats_metadata%iwprtp_mfl_min, wpxp_mfl_min(i,:), & ! intent(in)
                               stats_zm(i) ) ! intent(inout)
@@ -978,16 +1003,22 @@ module mono_flux_limiter
         call stat_end_update( nz, iwpxp_mfl, wpxp(i,:) / dt, & ! intent(in)
                               stats_zm(i) ) ! intent(inout)
 
-        call stat_end_update( nz, ixm_mfl, xm(i,:) / dt, & ! intent(in)
+        tmp_in(1) = 0.0_core_rknd
+        tmp_in(2:nz) = xm(i,2:nz)
+        call stat_end_update( nz, ixm_mfl, tmp_in / dt, & ! intent(in)
                               stats_zt(i) ) ! intent(inout)
 
         if ( solve_type == mono_flux_thlm ) then
-          call stat_update_var( stats_metadata%ithlm_exit_mfl, xm(i,:), & ! intent(in)
+          tmp_in(1) = 0.0_core_rknd
+          tmp_in(2:nz) = xm(i,2:nz)
+          call stat_update_var( stats_metadata%ithlm_exit_mfl, tmp_in, & ! intent(in)
                                 stats_zt(i) ) ! intent(inout)
           call stat_update_var( stats_metadata%iwpthlp_exit_mfl, wpxp(i,:), & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
         elseif ( solve_type == mono_flux_rtm ) then
-          call stat_update_var( stats_metadata%irtm_exit_mfl, xm(i,:), & ! intent(in)
+          tmp_in(1) = 0.0_core_rknd
+          tmp_in(2:nz) = xm(i,2:nz)
+          call stat_update_var( stats_metadata%irtm_exit_mfl, tmp_in, & ! intent(in)
                                 stats_zt(i) ) ! intent(inout)
           call stat_update_var( stats_metadata%iwprtp_exit_mfl, wpxp(i,:), & ! intent(in)
                                 stats_zm(i) ) ! intent(inout)
