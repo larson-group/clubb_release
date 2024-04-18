@@ -974,7 +974,7 @@ module spurious_source_test
               + ( Lv / ( Cp * exner(1,:) ) - ep2 * 300.0_core_rknd ) * rcm(1,:)
 
        ! Interpolate fields set on thermodynamic levels to momentum levels.
-       thv_ds_zm(1,:) = zt2zm( gr, thvm(1,:) )
+       thv_ds_zm(1,:) = max( zt2zm( gr, thvm(1,:) ), 0.0_core_rknd )
 
        ! Calculate the vertical integrals of rtm and thlm before the call to
        ! advance_xm_wpxp so that spurious source can be calculated.

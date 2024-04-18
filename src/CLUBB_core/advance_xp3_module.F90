@@ -401,7 +401,7 @@ module advance_xp3_module
     term_ac = zero
 
     ! Interpolate <x> to momentum levels.
-    xm_zm = zt2zm( nz, ngrdcol, gr, xm )
+    xm_zm = max( zt2zm( nz, ngrdcol, gr, xm ), 0.0_core_rknd )
 
     ! Interpolate <x'^2> to thermodynamic levels.
     xp2_zt = max( zm2zt( nz, ngrdcol, gr, xp2 ), x_tol**2 )  ! Positive definite quantity

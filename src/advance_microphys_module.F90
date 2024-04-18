@@ -893,7 +893,7 @@ module advance_microphys_module
        ! ratio of <hm'^2> / <hm>^2 (ratio_hmp2_on_hmm2) that was saved before
        ! hydrometeors were updated.  This method is being used because CLUBB
        ! does not currently have a predictive equation for <hm'^2>.
-       hydromet_zm = zt2zm( gr, hydromet(:,i) )
+       hydromet_zm = max( zt2zm( gr, hydromet(:,i) ), 0.0_core_rknd )
 
        do k = 1, gr%nz, 1
           hydrometp2(k,i) = ratio_hmp2_on_hmm2(k,i) * hydromet_zm(k)**2
@@ -3418,7 +3418,7 @@ module advance_microphys_module
              K_gamma(k,h) &
              = one &
                - clubb_params(ic_K_hmb) &
-                 * ( ( zt2zm( gr, Lscale(:), k ) &
+                 * ( ( max( zt2zm( gr, Lscale(:), k ), 0.0_core_rknd ) &
                        / max( zt2zm( gr, hydromet(:,h), k ), hydromet_tol(h) ) ) &
                      * ( gr%invrs_dzm(i,k) &
                          * ( hydromet(kp1,h) - hydromet(k,h) ) ) )

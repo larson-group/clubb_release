@@ -2214,7 +2214,7 @@ module advance_clubb_core_module
       up2_zt(:,:)  = max( zm2zt( nz, ngrdcol, gr, up2(:,:) ), w_tol_sqd ) ! Positive def. quantity
       vp2_zt(:,:)  = max( zm2zt( nz, ngrdcol, gr, vp2(:,:) ), w_tol_sqd ) ! Positive def. quantity
 
-      thvm_zm(:,:) = zt2zm( nz, ngrdcol, gr, thvm(:,:) )
+      thvm_zm(:,:) = max( zt2zm( nz, ngrdcol, gr, thvm(:,:) ), 0.0_core_rknd )
       ddzm_thvm_zm(:,:) = ddzm( nz, ngrdcol, gr, thvm_zm(:,:) )
       brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
 
@@ -2328,7 +2328,7 @@ module advance_clubb_core_module
 
         ! Use a modified form of the Larson and Golaz (2005) ansatz for the
         ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
-        thvm_zm(:,:) = zt2zm( nz, ngrdcol, gr, thvm(:,:) )
+        thvm_zm(:,:) = max( zt2zm( nz, ngrdcol, gr, thvm(:,:) ), 0.0_core_rknd )
         ddzm_thvm_zm(:,:) = ddzm( nz, ngrdcol, gr, thvm_zm(:,:) )
         brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
         

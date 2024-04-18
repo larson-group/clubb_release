@@ -1743,7 +1743,7 @@ module mixing_length
 
     end if
 
-    ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac )
+    ice_supersat_frac_zm = max( zt2zm( nz, ngrdcol, gr, ice_supersat_frac ), 0.0_core_rknd )
 
     if ( l_smooth_min_max ) then
 
@@ -1918,7 +1918,7 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac )
+      ice_supersat_frac_zm = max( zt2zm( nz, ngrdcol, gr, ice_supersat_frac ), 0.0_core_rknd )
 
 !      !$acc parallel loop gang vector collapse(2) default(present)
 !      do k = 1, nz

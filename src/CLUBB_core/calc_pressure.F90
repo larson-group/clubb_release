@@ -110,7 +110,7 @@ module calc_pressure
     exner(1) = exner_zm(1)
 
     ! Interpolate theta_v to momentum levels.
-    thvm_zm = zt2zm( gr, thvm )
+    thvm_zm = max( zt2zm( gr, thvm ), 0.0_core_rknd )
 
     ! Calculate exner at all other thermodynamic and momentum grid levels.
     ! exner2

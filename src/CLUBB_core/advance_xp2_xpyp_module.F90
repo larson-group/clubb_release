@@ -989,7 +989,7 @@ module advance_xp2_xpyp_module
         end do
       endif
       
-      rtm_zm = zt2zm( nz, ngrdcol, gr, rtm )
+      rtm_zm = max( zt2zm( nz, ngrdcol, gr, rtm ), 0.0_core_rknd )
       
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
