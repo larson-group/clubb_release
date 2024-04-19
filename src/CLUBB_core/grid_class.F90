@@ -1487,11 +1487,17 @@ module grid_class
     !$acc data copyin( azt, gr, gr%weights_zt2zm, gr%zt, gr%zm ) &
     !$acc      copyout( linear_interpolated_azm )
 
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      linear_interpolated_azm(i,1) = azt(i,2)
+    end do
+    !$acc end parallel loop
+
     ! Interpolate the value of a thermodynamic-level variable to the central
     ! momentum level, k, between two successive thermodynamic levels using
     ! linear interpolation.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz-1
+    do k = 2, nz-1
       do i = 1, ngrdcol
         linear_interpolated_azm(i,k) = gr%weights_zt2zm(i,k,1) &
                                           * ( azt(i,k+1) - azt(i,k) ) + azt(i,k)
