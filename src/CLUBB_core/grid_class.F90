@@ -2417,20 +2417,21 @@ module grid_class
     !$acc data copyin( gr, gr%invrs_dzm, azt ) &
     !$acc     copyout( gradzt_2D )
 
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      gradzt_2D(i,nz) = ( azt(i,nz) - azt(i,nz-1) ) * gr%invrs_dzm(i,nz-1)
-    end do
-    !$acc end parallel loop
-    
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz-1
+    do k = 2, nz-1
       do i = 1, ngrdcol
         gradzt_2D(i,k) = ( azt(i,k+1) - azt(i,k) ) * gr%invrs_dzm(i,k)
       end do
     end do
     !$acc end parallel loop
 
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      gradzt_2D(i,1) = gradzt_2D(i,2)
+      gradzt_2D(i,nz) = gradzt_2D(i,nz-1)
+    end do
+    !$acc end parallel loop
+    
     !$acc end data
 
     return
