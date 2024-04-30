@@ -4615,13 +4615,6 @@ module advance_xm_wpxp_module
     end do ! k=1..nz
     !$acc end parallel loop
 
-    ! Lower boundary condition on xm
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      xm(i,1) = xm(i,2)
-    end do
-    !$acc end parallel loop
-
 
     if ( stats_metadata%l_stats_samp ) then
     
@@ -4988,6 +4981,13 @@ module advance_xm_wpxp_module
                                   stats_zt,                     & ! intent(inout)
                                   xm )                            ! intent(inout)
     end if 
+
+    ! Lower boundary condition on xm
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      xm(i,1) = xm(i,2)
+    end do
+    !$acc end parallel loop
 
     !$acc exit data delete( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
 
