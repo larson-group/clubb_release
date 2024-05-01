@@ -3294,8 +3294,8 @@ module advance_clubb_core_module
     rtp3_zm(:,:)  = zt2zm( nz, ngrdcol, gr, rtp3(:,:) )
     up2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive definite quantity
     up3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, up3(:,:) )
-    vp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, vp2(:,:) ) ! Positive definite quantity
-    vp3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, vp3(:,:), w_tol_sqd )
+    vp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive definite quantity
+    vp3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, vp3(:,:) )
 
     do j = 1, sclr_dim, 1
       sclrp2_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 ) ! Pos. def. quantity
