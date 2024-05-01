@@ -4808,9 +4808,9 @@ module advance_xm_wpxp_module
       end if
 
       ! upper_hf_level = nz since we are filling the zt levels
-      call fill_holes_vertical( nz, ngrdcol, num_hf_draw_points, xm_threshold, nz,  & ! In
-                                gr%dzt, rho_ds_zt,                                  & ! In
-                                xm )                                                  ! InOut
+      call fill_holes_vertical( nz, ngrdcol, xm_threshold, nz,  & ! In
+                                gr%dzt, rho_ds_zt,              & ! In
+                                xm )                              ! InOut
 
       ! Hole filling does not affect the below ground level, perform a blunt clipping
       ! here on that level to prevent small values of xm(1)

@@ -5922,9 +5922,9 @@ module advance_xp2_xpyp_module
     ! The first pass-through should draw from only two levels on either side
     ! of the hole.
     ! upper_hf_level = nz-1 since we are filling the zm levels
-    call fill_holes_vertical( nz, ngrdcol, num_hf_draw_points, tolerance, nz-1, & ! In
-                              gr%dzm, rho_ds_zm,                                & ! In
-                              xp2_np1 )                                           ! InOut
+    call fill_holes_vertical( nz, ngrdcol, tolerance, nz-1, & ! In
+                              gr%dzm, rho_ds_zm,            & ! In
+                              xp2_np1 )                       ! InOut
 
     if ( stats_metadata%l_stats_samp ) then
 

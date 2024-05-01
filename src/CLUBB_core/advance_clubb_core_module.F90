@@ -2147,9 +2147,9 @@ module advance_clubb_core_module
 #ifdef CLUBB_CAM
       do ixind=1,edsclr_dim
         ! upper_hf_level = nz since we are filling the zt levels
-        call fill_holes_vertical( nz, ngrdcol, num_hf_draw_points, zero_threshold, nz,  & ! In
-                                  gr%dzt, rho_ds_zt,                                    & ! In
-                                  edsclrm(:,:,ixind) )                                    ! InOut
+        call fill_holes_vertical( nz, ngrdcol, zero_threshold, nz,  & ! In
+                                  gr%dzt, rho_ds_zt,                & ! In
+                                  edsclrm(:,:,ixind) )                ! InOut
       enddo
 #endif
 

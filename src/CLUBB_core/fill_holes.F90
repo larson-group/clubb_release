@@ -18,7 +18,7 @@ module fill_holes
   contains
 
   !=============================================================================
-  subroutine fill_holes_vertical( nz, ngrdcol, num_draw_pts, threshold, upper_hf_level, &
+  subroutine fill_holes_vertical( nz, ngrdcol, threshold, upper_hf_level, &
                                   dz, rho_ds, &
                                   field )
 
@@ -56,7 +56,9 @@ module fill_holes
 
     use constants_clubb, only: &
         eps, &
-        one
+        one, &
+        num_hf_draw_points ! The number of points on either side of the hole;
+                           ! Mass is drawn from these points to fill the hole
 
     implicit none
     
@@ -73,8 +75,6 @@ module fill_holes
               ! thermodynamic grid levels
                   
     integer, intent(in) :: & 
-      num_draw_pts, & ! The number of points on either side of the hole;
-                      ! Mass is drawn from these points to fill the hole.  []
       upper_hf_level  ! Upper grid level of global hole-filling range      []
 
     real( kind = core_rknd ), intent(in) :: & 
@@ -158,16 +158,16 @@ module fill_holes
     ! but is parallelizable and reduces the cost of the serial k loop
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do k = 2+num_draw_pts, upper_hf_level-num_draw_pts
+      do k = 2+num_hf_draw_points, upper_hf_level-num_hf_draw_points
 
         ! This loop and division could be written more compactly as
-        !   invrs_denom_integral(i,k) = one / sum(rho_ds_dz(i,k-num_draw_pts:k+num_draw_pts))
+        !   invrs_denom_integral(i,k) = one / sum(rho_ds_dz(i,k-num_hf_draw_points:k+num_hf_draw_points))
         ! but has been manually written in loop form to improve performance 
         ! when using OpenMP target offloading
         ! See: https://github.com/larson-group/clubb/issues/1138#issuecomment-1974918151
         rho_k_sum = 0.0_core_rknd
 
-        do j = k - num_draw_pts, k + num_draw_pts
+        do j = k - num_hf_draw_points, k + num_hf_draw_points
           rho_k_sum = rho_k_sum + rho_ds_dz(i,j)
         end do
 
@@ -186,10 +186,10 @@ module fill_holes
       ! iteration potentially changing. We could in theory expose more parallelism in cases 
       ! where there are large enough gaps between vertical levels which need hole-filling,
       ! but levels which require hole-filling are often close or consecutive.
-      do k = 2+num_draw_pts, upper_hf_level-num_draw_pts
+      do k = 2+num_hf_draw_points, upper_hf_level-num_hf_draw_points
 
-        k_start = k - num_draw_pts
-        k_end   = k + num_draw_pts
+        k_start = k - num_hf_draw_points
+        k_end   = k + num_hf_draw_points
 
         if ( any( field(i,k_start:k_end) < threshold ) ) then
 
@@ -846,9 +846,9 @@ module fill_holes
 
             ! Apply the hole filling algorithm
             ! upper_hf_level = nz since we are filling the zt levels
-            call fill_holes_vertical( gr%nz, 1, num_hf_draw_points, zero_threshold, gr%nz, & ! In
-                                      gr%dzt, rho_ds_zt,                                   & ! In
-                                      hydromet(:,i) )                                      ! InOut
+            call fill_holes_vertical( gr%nz, 1, zero_threshold, gr%nz, & ! In
+                                      gr%dzt, rho_ds_zt,               & ! In
+                                      hydromet(:,i) )                    ! InOut
 
             !$acc end data
 

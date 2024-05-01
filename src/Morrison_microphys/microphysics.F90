@@ -873,7 +873,8 @@ use clubb_api_module, only: &
   clubb_at_least_debug_level_api, &
   fill_holes_vertical_api, &
   core_rknd, &
-  grid
+  grid, &
+  zero_threshold
 use clubbvars, only: wp2, cloud_frac, rho_ds_zt, rho_ds_zm ! are used, but not modified here
 use vars, only: qcl ! Used here and updated in micro_diagnose
 use vars, only: prespot ! exner^-1
@@ -1385,8 +1386,8 @@ do j = 1,ny
         rho_ds_zm_col(1,:) = rho_ds_zm
 
         ! upper_hf_level = nz since we are filling the zt levels
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, nz,  & ! In
-                                      gr%dzt, rho_ds_zt_col,                                  & ! In
+        call fill_holes_vertical_api( gr%nz, 1, zero_threshold, nz,  & ! In
+                                      gr%dzt, rho_ds_zt_col,         & ! In
                                       qv_clip )
         tmpqv = qv_clip(1,2:nz)
       end if
@@ -1401,8 +1402,8 @@ do j = 1,ny
         rho_ds_zm_col(1,:) = rho_ds_zm
         
         ! upper_hf_level = nz since we are filling the zt levels
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, nz,  & ! In
-                                      gr%dzt, rho_ds_zt_col,                                  & ! In
+        call fill_holes_vertical_api( gr%nz, 1, zero_threshold, nz,  & ! In
+                                      gr%dzt, rho_ds_zt_col,         & ! In
                                       qcl_clip )
                                       
         tmpqcl = qcl_clip(1,2:nz)
@@ -1468,8 +1469,8 @@ do j = 1,ny
         rho_ds_zm_col(1,:) = rho_ds_zm
         
         ! upper_hf_level = nz since we are filling the zt levels
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, nz,  & ! In
-                                      gr%dzt, rho_ds_zt_col,                                  & ! In
+        call fill_holes_vertical_api( gr%nz, 1, zero_threshold, nz,  & ! In
+                                      gr%dzt, rho_ds_zt_col,         & ! In
                                       qv_clip )
         tmpqv = qv_clip(1,2:nz)
       end if
@@ -1484,8 +1485,8 @@ do j = 1,ny
         rho_ds_zm_col(1,:) = rho_ds_zm
 
         ! upper_hf_level = nz since we are filling the zt levels
-        call fill_holes_vertical_api( gr%nz, 1, 2, 0._core_rknd, nz,  & ! In
-                                      gr%dzt, rho_ds_zt_col,                                  & ! In
+        call fill_holes_vertical_api( gr%nz, 1, zero_threshold, nz,  & ! In
+                                      gr%dzt, rho_ds_zt_col,         & ! In
                                       qcl_clip )
                                       
         tmpqcl = qcl_clip(1,2:nz)

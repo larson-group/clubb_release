@@ -203,7 +203,8 @@ module clubb_api_module
 
   use fill_holes, only : &
     fill_holes_driver_api => fill_holes_driver, &
-    fill_holes_hydromet_api => fill_holes_hydromet
+    fill_holes_hydromet_api => fill_holes_hydromet, &
+    fill_holes_vertical_api => fill_holes_vertical
 
   use stats_rad_zm_module, only : &
     stats_init_rad_zm_api => stats_init_rad_zm
@@ -2032,54 +2033,6 @@ contains
     clubb_at_least_debug_level_api = clubb_at_least_debug_level( &
       level )
   end function clubb_at_least_debug_level_api
-
-  !================================================================================================
-  ! fill_holes_vertical - clips values of 'field' that are below 'threshold' as much as possible.
-  !================================================================================================
-
-  subroutine fill_holes_vertical_api( nz, ngrdcol, num_draw_pts, threshold, upper_hf_level, &
-                                      dz, rho_ds, &
-                                      field )
-
-    use fill_holes, only : fill_holes_vertical
-
-     ! Type
-
-    implicit none
-    
-    ! --------------------- Input variables ---------------------
-    integer, intent(in) :: &
-      nz, &
-      ngrdcol
-    
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      dz      ! Spacing between thermodynamic grid levels; centered over
-              ! momentum grid levels
-              ! OR
-              ! Spcaing between momentum grid levels; centered over
-              ! thermodynamic grid levels
-                  
-    integer, intent(in) :: & 
-      num_draw_pts, & ! The number of points on either side of the hole;
-                      ! Mass is drawn from these points to fill the hole.  []
-      upper_hf_level  ! Upper grid level of global hole-filling range      []
-
-    real( kind = core_rknd ), intent(in) :: & 
-      threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
-                 ! fall                           [Units vary; same as field]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
-      rho_ds       ! Dry, static density on thermodynamic or momentum levels    [kg/m^3]
-
-    ! --------------------- Input/Output variable ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: & 
-      field  ! The field (e.g. wp2) that contains holes [Units same as threshold]
-
-    call fill_holes_vertical( nz, ngrdcol, num_draw_pts, threshold, upper_hf_level, & ! intent(in)
-                              dz, rho_ds,                                          & ! intent(in)
-                              field )                                                 ! intent(inout)
-      
-  end subroutine fill_holes_vertical_api
 
   !================================================================================================
   ! vertical_integral - Computes the vertical integral.
