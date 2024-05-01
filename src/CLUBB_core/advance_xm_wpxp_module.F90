@@ -148,10 +148,6 @@ module advance_xm_wpxp_module
         grid, & ! Type
         ddzt    ! Procedure(s)
 
-    use grid_class, only: &
-        zm2zt, & ! Procedure(s)
-        zt2zm
-
     use model_flags, only: &
         iiPDF_new,                     & ! Variable(s)
         l_explicit_turbulent_adv_wpxp
@@ -1530,15 +1526,7 @@ module advance_xm_wpxp_module
 
     ! Initializations/precalculations
     constant_nu = 0.1_core_rknd
-    Kw6_zm      = zt2zm( nz, ngrdcol, gr, Kw6 )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        Kw6_zm(i,k) = max( Kw6_zm(i,k), zero_threshold )
-      end do
-    end do
-    !$acc end parallel loop
+    Kw6_zm      = zt2zm( nz, ngrdcol, gr, Kw6, zero_threshold )
 
     ! Calculate turbulent advection terms of xm for all grid levels
     call xm_term_ta_lhs( nz, ngrdcol, gr,            & ! Intent(in)
@@ -1608,15 +1596,7 @@ module advance_xm_wpxp_module
         end do
         !$acc end parallel loop
 
-        K_zt = zm2zt( nz, ngrdcol, gr, K_zm )
-
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol   
-            K_zt(i,k) = max( K_zt(i,k), zero_threshold )
-          end do
-        end do
-        !$acc end parallel loop
+        K_zt = zm2zt( nz, ngrdcol, gr, K_zm, zero_threshold )
 
         !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol        
@@ -2297,16 +2277,7 @@ module advance_xm_wpxp_module
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the <w'x'> turbulent advection (ta) term.
-        a1_zt(:,:) = zm2zt( nz, ngrdcol, gr, a1 )   ! Positive def. quantity
-        
-
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            a1_zt(i,k) = max( a1_zt(i,k), zero_threshold )
-          end do
-        end do
-        !$acc end parallel loop
+        a1_zt(:,:) = zm2zt( nz, ngrdcol, gr, a1, zero_threshold )   ! Positive def. quantity
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nz

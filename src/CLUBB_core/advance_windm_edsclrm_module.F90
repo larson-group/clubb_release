@@ -323,15 +323,7 @@ module advance_windm_edsclrm_module
 
     if ( .not. l_predict_upwp_vpwp ) then
       
-      Km_zt(:,:) = zm2zt( nz, ngrdcol, gr, Km_zm(:,:) )
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
-          Km_zt(i,k) = max( Km_zt(i,k), zero )
-        end do
-      end do
-      !$acc end parallel loop
+      Km_zt(:,:) = zm2zt( nz, ngrdcol, gr, Km_zm(:,:), zero )
 
       ! Calculate diffusion terms
       call diffusion_zt_lhs( nz, ngrdcol, gr, Km_zm, Km_zt, nu_vert_res_dep%nu10, & ! In
@@ -1058,15 +1050,7 @@ module advance_windm_edsclrm_module
 
     if ( edsclr_dim > 0 ) then
       
-      Kmh_zt(:,:) = zm2zt( nz, ngrdcol, gr, Kmh_zm(:,:) )
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
-        do i = 1, ngrdcol
-          Kmh_zt(i,k) = max( Kmh_zt(i,k), zero )
-        end do
-      end do
-      !$acc end parallel loop
+      Kmh_zt(:,:) = zm2zt( nz, ngrdcol, gr, Kmh_zm(:,:), zero )
 
       ! Calculate diffusion terms
       call diffusion_zt_lhs( nz, ngrdcol, gr, Kmh_zm, Kmh_zt, nu_zero,  & ! intent(in)

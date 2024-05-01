@@ -603,7 +603,7 @@ module advance_wp2_wp3_module
         ! discretization diagram is found in the description section of
         ! function wp3_term_ta_new_pdf_lhs below.  These values are always
         ! positive.
-        coef_wp4_implicit(:,:) = max( zt2zm( nz, ngrdcol, gr, coef_wp4_implicit_zt(:,:) ), &
+        coef_wp4_implicit(:,:) = zt2zm( nz, ngrdcol, gr, coef_wp4_implicit_zt(:,:), &
                                       zero_threshold )
 
         ! Set the value of coef_wp4_implicit to 0 at the lower boundary and at
@@ -634,15 +634,7 @@ module advance_wp2_wp3_module
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the w'^3 turbulent advection (ta) term.
-        a1_zt(:,:) = zm2zt( nz, ngrdcol, gr, a1(:,:) ) ! Positive def. quantity
-
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            a1_zt(i,k) = max( a1_zt(i,k), zero_threshold )  ! Positive def. quantity
-          end do
-        end do
-        !$acc end parallel loop
+        a1_zt(:,:) = zm2zt( nz, ngrdcol, gr, a1(:,:), zero_threshold ) ! Positive def. quantity
 
       endif ! iiPDF_type
 
@@ -669,17 +661,8 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
     
-    Kw1_zm(:,:) = zt2zm( nz, ngrdcol, gr, Kw1(:,:) )
-    Kw8_zt(:,:) = zm2zt( nz, ngrdcol, gr, Kw8(:,:) )
-
-    !$acc parallel loop gang vector default(present) collapse(2)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        Kw1_zm(i,k) = max( Kw1_zm(i,k), zero )
-        Kw8_zt(i,k) = max( Kw8_zt(i,k), zero )
-      end do
-    end do
-    !$acc end parallel loop
+    Kw1_zm(:,:) = zt2zm( nz, ngrdcol, gr, Kw1(:,:), zero )
+    Kw8_zt(:,:) = zm2zt( nz, ngrdcol, gr, Kw8(:,:), zero )
     
     ! Experimental term from CLUBB TRAC ticket #411
 
@@ -1788,15 +1771,8 @@ module advance_wp2_wp3_module
     ! Interpolate w'^2 from momentum levels to thermodynamic levels.
     ! This is used for the clipping of w'^3 according to the value
     ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
-    wp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, wp2 )   ! Positive definite quantity
+    wp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, wp2, w_tol_sqd )   ! Positive definite quantity
 
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        wp2_zt(i,k) = max( wp2_zt(i,k), w_tol_sqd )
-      end do
-    end do
-    !$acc end parallel loop
     ! Clip w'^3 by limiting skewness.
     call clip_skewness( nz, ngrdcol, gr, dt, sfc_elevation,   & ! intent(in)
                         clubb_params(:,iSkw_max_mag), wp2_zt, & ! intent(in)

@@ -476,7 +476,7 @@ module setup_clubb_pdf_params
     ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
     ! momentum grid levels.
     do i = 1, hydromet_dim, 1
-      hydrometp2(:,:,i)  = max( zt2zm( nz, ngrdcol, gr, hydrometp2_zt(:,:,i) ), 0.0_core_rknd )
+      hydrometp2(:,:,i)  = zt2zm( nz, ngrdcol, gr, hydrometp2_zt(:,:,i), zero_threshold )
       hydrometp2(:,nz,i) = zero
     end do
 
@@ -821,7 +821,7 @@ module setup_clubb_pdf_params
                                      corr_array_2_n(i,:,hm_metadata%iiPDF_chi,hm_metadata%iiPDF_eta) )
         end do
         
-        rtp2_zm_from_chi = max( zt2zm( nz, ngrdcol, gr, rtp2_zt_from_chi ), 0.0_core_rknd )
+        rtp2_zm_from_chi = zt2zm( nz, ngrdcol, gr, rtp2_zt_from_chi, zero_threshold )
       
         ! Switch back to using stat_update_var once the code is generalized
         ! to pass in the number of vertical levels.

@@ -279,7 +279,8 @@ module advance_xp3_module
     use constants_clubb, only: &
         one,      & ! Variable(s)
         one_half, &
-        zero
+        zero, &
+        zero_threshold
 
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
@@ -401,10 +402,10 @@ module advance_xp3_module
     term_ac = zero
 
     ! Interpolate <x> to momentum levels.
-    xm_zm = max( zt2zm( nz, ngrdcol, gr, xm ), 0.0_core_rknd )
+    xm_zm = zt2zm( nz, ngrdcol, gr, xm, zero_threshold )
 
     ! Interpolate <x'^2> to thermodynamic levels.
-    xp2_zt = max( zm2zt( nz, ngrdcol, gr, xp2 ), x_tol**2 )  ! Positive definite quantity
+    xp2_zt = zm2zt( nz, ngrdcol, gr, xp2, x_tol**2 )  ! Positive definite quantity
 
     do k = 2, nz-1, 1
       do i = 1, ngrdcol

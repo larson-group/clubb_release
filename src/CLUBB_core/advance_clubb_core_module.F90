@@ -1179,16 +1179,8 @@ module advance_clubb_core_module
 
     ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
     ! and then compute Skw for m & t grid.
-    wp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, wp2(:,:) )  ! Positive definite quantity
+    wp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, wp2(:,:), w_tol_sqd )  ! Positive definite quantity
     wp3_zm(:,:) = zt2zm( nz, ngrdcol, gr, wp3(:,:) )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        wp2_zt(i,k) = max( wp2_zt(i,k), w_tol_sqd )
-      end do
-    end do
-    !$acc end parallel loop
 
     call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
                    w_tol, clubb_params, &
@@ -1244,15 +1236,7 @@ module advance_clubb_core_module
                                 sigma_sqd_w_tmp )
 
       ! Smooth in the vertical using interpolation
-      sigma_sqd_w(:,:) = zm2zt2zm( nz, ngrdcol, gr, sigma_sqd_w_tmp(:,:) )
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
-          sigma_sqd_w(i,k) = max( zero_threshold, sigma_sqd_w(i,k) ) ! Pos. def. quantity
-        end do
-      end do
-      !$acc end parallel loop
+      sigma_sqd_w(:,:) = zm2zt2zm( nz, ngrdcol, gr, sigma_sqd_w_tmp(:,:), zero_threshold )
 
     endif ! clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields
 
@@ -1289,18 +1273,9 @@ module advance_clubb_core_module
     a3_coef_zt(:,:) = zm2zt( nz, ngrdcol, gr, a3_coef(:,:) )
 
     ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels.
-    thlp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, thlp2(:,:) )  ! Positive def. quantity
-    rtp2_zt(:,:)    = zm2zt( nz, ngrdcol, gr, rtp2(:,:) )   ! Positive def. quantity
+    thlp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 )  ! Positive def. quantity
+    rtp2_zt(:,:)    = zm2zt( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 )   ! Positive def. quantity
     rtpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, rtpthlp(:,:) )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        thlp2_zt(i,k) = max( thlp2_zt(i,k), thl_tol**2 ) 
-        rtp2_zt(i,k)  = max( rtp2_zt(i,k), rt_tol**2 )
-      end do
-    end do
-    !$acc end parallel loop
 
     ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in the
     ! denominator since it's less likely to create spikes
@@ -1360,12 +1335,12 @@ module advance_clubb_core_module
       !$acc end parallel loop
     end if
 
-    sqrt_em_zt(:,:) = zm2zt( nz, ngrdcol, gr, em(:,:) )
+    sqrt_em_zt(:,:) = zm2zt( nz, ngrdcol, gr, em(:,:), em_min )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        sqrt_em_zt(i,k) = sqrt( max( em_min, sqrt_em_zt(i,k) ) )
+        sqrt_em_zt(i,k) = sqrt( sqrt_em_zt(i,k) )
       end do
     end do
     !$acc end parallel loop
@@ -1406,13 +1381,13 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      tau_zm(:,:) = zt2zm( nz, ngrdcol, gr, Lscale(:,:) )
+      tau_zm(:,:) = zt2zm( nz, ngrdcol, gr, Lscale(:,:), zero_threshold )
           
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          tau_zm(i,k) = min( ( max( tau_zm(i,k), zero_threshold )  &
-                       / sqrt( max( em_min, em(i,k) ) ) ), clubb_params(i,itaumax) )
+          tau_zm(i,k) = min( tau_zm(i,k) / sqrt( max( em_min, em(i,k) ) ),  &
+                             clubb_params(i,itaumax) )
         end do
       end do
       !$acc end parallel loop
@@ -2211,11 +2186,11 @@ module advance_clubb_core_module
 
       upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
       vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
-      up2_zt(:,:)  = max( zm2zt( nz, ngrdcol, gr, up2(:,:) ), w_tol_sqd ) ! Positive def. quantity
-      vp2_zt(:,:)  = max( zm2zt( nz, ngrdcol, gr, vp2(:,:) ), w_tol_sqd ) ! Positive def. quantity
+      up2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive def. quantity
+      vp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive def. quantity
 
-      thvm_zm(:,:) = max( zt2zm( nz, ngrdcol, gr, thvm(:,:) ), 0.0_core_rknd )
-      ddzm_thvm_zm(:,:) = ddzm( nz, ngrdcol, gr, thvm_zm(:,:) )
+      thvm_zm(:,:)                   = zt2zm( nz, ngrdcol, gr, thvm(:,:), zero_threshold )
+      ddzm_thvm_zm(:,:)              = ddzm( nz, ngrdcol, gr, thvm_zm(:,:) )
       brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
 
       ! The xp3_coef_fnc is used in place of sigma_sqd_w_zt when the ADG1 PDF
@@ -2251,38 +2226,19 @@ module advance_clubb_core_module
 
       wpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
       wprtp_zt(:,:)  = zm2zt( nz, ngrdcol, gr, wprtp(:,:) )
-      thlp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, thlp2(:,:) ) ! Positive def. quantity
-      rtp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, rtp2(:,:) )   ! Positive def. quantity
+      thlp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive def. quantity
+      rtp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 )   ! Positive def. quantity
 
       upwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
       vpwp_zt(:,:) = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
-      up2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, up2(:,:) ) ! Positive def. quantity
-      vp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, vp2(:,:) ) ! Positive def. quantity
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
-          thlp2_zt(i,k) = max( thlp2_zt(i,k), thl_tol**2 )
-          rtp2_zt(i,k)  = max( rtp2_zt(i,k), rt_tol**2 ) 
-          up2_zt(i,k)   = max( up2_zt(i,k), w_tol_sqd )
-          vp2_zt(i,k)   = max( vp2_zt(i,k), w_tol_sqd )
-        end do
-      end do
-      !$acc end parallel loop
+      up2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive def. quantity
+      vp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive def. quantity
 
       if ( clubb_config_flags%iiPDF_type == iiPDF_ADG1 ) then
 
         ! Use the Larson and Golaz (2005) ansatz for the ADG1 PDF to
         ! calculate <rt'^3>, <thl'^3>, <u'^3>, <v'^3>, and <sclr'^3>.
-        sigma_sqd_w_zt(:,:) = zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:) )
-
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            sigma_sqd_w_zt(i,k) = max( sigma_sqd_w_zt(i,k), zero_threshold )
-          end do
-        end do
-        !$acc end parallel loop
+        sigma_sqd_w_zt(:,:) = zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:), zero_threshold )
 
         call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpthlp_zt, wp2_zt, &
                                  thlp2_zt, sigma_sqd_w_zt, &
@@ -2306,16 +2262,8 @@ module advance_clubb_core_module
 
         do j = 1, sclr_dim, 1
           
-          wpsclrp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpsclrp(:,:,j) )
-          sclrp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j) )
-
-          !$acc parallel loop gang vector collapse(2) default(present)
-          do k = 1, nz
-            do i = 1, ngrdcol
-              sclrp2_zt(i,k)  = max( sclrp2_zt(i,k), sclr_tol(j)**2 )
-            end do
-          end do
-          !$acc end parallel loop
+          wpsclrp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpsclrp(:,:,j), sclr_tol(j)**2 )
+          sclrp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 )
 
           call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpsclrp_zt, wp2_zt, &
                                    sclrp2_zt, sigma_sqd_w_zt, &
@@ -2328,8 +2276,8 @@ module advance_clubb_core_module
 
         ! Use a modified form of the Larson and Golaz (2005) ansatz for the
         ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
-        thvm_zm(:,:) = max( zt2zm( nz, ngrdcol, gr, thvm(:,:) ), 0.0_core_rknd )
-        ddzm_thvm_zm(:,:) = ddzm( nz, ngrdcol, gr, thvm_zm(:,:) )
+        thvm_zm(:,:)                   = zt2zm( nz, ngrdcol, gr, thvm(:,:), zero_threshold )
+        ddzm_thvm_zm(:,:)              = ddzm( nz, ngrdcol, gr, thvm_zm(:,:) )
         brunt_vaisala_freq_sqd_zt(:,:) = max( ( grav / thvm(:,:) ) * ddzm_thvm_zm(:,:), zero )
         
         
@@ -2381,7 +2329,7 @@ module advance_clubb_core_module
         do j = 1, sclr_dim, 1
           
           wpsclrp_zt(:,:) = zm2zt( nz, ngrdcol, gr, wpsclrp(:,:,j) )
-          sclrp2_zt(:,:)  = max( zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j) ), sclr_tol(j)**2 )
+          sclrp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 )
 
           call xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt(:,:), wpsclrp_zt(:,:), wp2_zt(:,:), &
                                    sclrp2_zt(:,:), xp3_coef_fnc(:,:), &
@@ -2619,11 +2567,11 @@ module advance_clubb_core_module
       end if
 
       if ( stats_metadata%iup2_zt > 0 ) then
-        up2_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, up2(:,:) ), w_tol_sqd )
+        up2_zt(:,:) = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd )
       end if
 
       if (stats_metadata%ivp2_zt > 0 ) then
-        vp2_zt(:,:) = max( zm2zt( nz, ngrdcol, gr, vp2(:,:) ), w_tol_sqd )
+        vp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd )
       end if
 
       if ( stats_metadata%iupwp_zt > 0 ) then
@@ -3338,41 +3286,20 @@ module advance_clubb_core_module
     ! compute Skw, Skrt, Skthl, Sku, Skv, and Sksclr for both the momentum and
     ! thermodynamic grid levels.
     !---------------------------------------------------------------------------
-    wp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, wp2(:,:) ) ! Positive definite quantity
+    wp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, wp2(:,:), w_tol_sqd ) ! Positive definite quantity
     wp3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, wp3(:,:) )
-    thlp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, thlp2(:,:) ) ! Positive definite quantity
+    thlp2_zt(:,:) = zm2zt( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive definite quantity
     thlp3_zm(:,:) = zt2zm( nz, ngrdcol, gr, thlp3(:,:) )
-    rtp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, rtp2(:,:) ) ! Positive definite quantity
+    rtp2_zt(:,:)  = zm2zt( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 ) ! Positive definite quantity
     rtp3_zm(:,:)  = zt2zm( nz, ngrdcol, gr, rtp3(:,:) )
-    up2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, up2(:,:) ) ! Positive definite quantity
+    up2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd ) ! Positive definite quantity
     up3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, up3(:,:) )
     vp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, vp2(:,:) ) ! Positive definite quantity
-    vp3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, vp3(:,:) )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        wp2_zt(i,k)   = max( wp2_zt(i,k), w_tol_sqd )
-        thlp2_zt(i,k) = max( thlp2_zt(i,k), thl_tol**2 )
-        rtp2_zt(i,k)  = max( rtp2_zt(i,k), rt_tol**2 )
-        up2_zt(i,k)   = max( up2_zt(i,k), w_tol_sqd )
-        vp2_zt(i,k)   = max( vp2_zt(i,k), w_tol_sqd )
-      end do
-    end do
-    !$acc end parallel loop
+    vp3_zm(:,:)   = zt2zm( nz, ngrdcol, gr, vp3(:,:), w_tol_sqd )
 
     do j = 1, sclr_dim, 1
-      sclrp2_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j) ) ! Pos. def. quantity
+      sclrp2_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 ) ! Pos. def. quantity
       sclrp3_zm(:,:,j) = zt2zm( nz, ngrdcol, gr, sclrp3(:,:,j) )
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
-          sclrp2_zt(i,k,j)   = max( sclrp2_zt(i,k,j), sclr_tol(j)**2 )
-        end do
-      end do
-      !$acc end parallel loop
-
     end do ! i = 1, sclr_dim, 1
 
     call Skx_func( nz, ngrdcol, wp2_zt, wp3, &
@@ -3510,46 +3437,26 @@ module advance_clubb_core_module
                               sigma_sqd_w_tmp )
 
     ! Smooth in the vertical using interpolation
-    sigma_sqd_w(:,:) = zm2zt2zm( nz, ngrdcol, gr, sigma_sqd_w_tmp(:,:) ) ! Pos. def. quantity
+    sigma_sqd_w(:,:) = zm2zt2zm( nz, ngrdcol, gr, sigma_sqd_w_tmp(:,:), zero_threshold ) ! Pos. def. quantity
 
 
     ! Interpolate the the stats_zt grid
-    sigma_sqd_w_zt(:,:) = zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:) )  ! Pos. def. quantity
-      
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        sigma_sqd_w(i,k)    = max( zero_threshold, sigma_sqd_w(i,k) ) ! Pos. def. quantity
-        sigma_sqd_w_zt(i,k) = max( sigma_sqd_w_zt(i,k), zero_threshold )  ! Pos. def. quantity
-      end do
-    end do
-    !$acc end parallel loop
+    sigma_sqd_w_zt(:,:) = zm2zt( nz, ngrdcol, gr, sigma_sqd_w(:,:), zero_threshold )  ! Pos. def. quantity
 
     !---------------------------------------------------------------------------
     ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels,
     !---------------------------------------------------------------------------
 
     ! Interpolate variances to the stats_zt grid (statistics and closure)
-    rtp2_zt(:,:)    = zm2zt( nz, ngrdcol, gr, rtp2(:,:) )   ! Positive def. quantity
-    thlp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, thlp2(:,:) ) ! Positive def. quantity
-    up2_zt(:,:)     = zm2zt( nz, ngrdcol, gr, up2(:,:) )    ! Positive def. quantity
-    vp2_zt(:,:)     = zm2zt( nz, ngrdcol, gr, vp2(:,:) )    ! Positive def. quantity
+    rtp2_zt(:,:)    = zm2zt( nz, ngrdcol, gr, rtp2(:,:), rt_tol**2 )   ! Positive def. quantity
+    thlp2_zt(:,:)   = zm2zt( nz, ngrdcol, gr, thlp2(:,:), thl_tol**2 ) ! Positive def. quantity
+    up2_zt(:,:)     = zm2zt( nz, ngrdcol, gr, up2(:,:), w_tol_sqd )    ! Positive def. quantity
+    vp2_zt(:,:)     = zm2zt( nz, ngrdcol, gr, vp2(:,:), w_tol_sqd )    ! Positive def. quantity
     wprtp_zt(:,:)   = zm2zt( nz, ngrdcol, gr, wprtp(:,:) )
     wpthlp_zt(:,:)  = zm2zt( nz, ngrdcol, gr, wpthlp(:,:) )
     rtpthlp_zt(:,:) = zm2zt( nz, ngrdcol, gr, rtpthlp(:,:) )
     upwp_zt(:,:)    = zm2zt( nz, ngrdcol, gr, upwp(:,:) )
     vpwp_zt(:,:)    = zm2zt( nz, ngrdcol, gr, vpwp(:,:) )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        rtp2_zt(i,k)    = max( rtp2_zt(i,k), rt_tol**2 )   ! Positive def. quantity
-        thlp2_zt(i,k)   = max( thlp2_zt(i,k), thl_tol**2 ) ! Positive def. quantity
-        up2_zt(i,k)     = max( up2_zt(i,k), w_tol_sqd )    ! Positive def. quantity
-        vp2_zt(i,k)     = max( vp2_zt(i,k), w_tol_sqd )    ! Positive def. quantity
-      end do
-    end do
-    !$acc end parallel loop
 
     ! Compute skewness velocity for stats output purposes
     if ( stats_metadata%iSkw_velocity > 0 ) then
@@ -3570,18 +3477,9 @@ module advance_clubb_core_module
     ! Put passive scalar input on the t grid for the PDF
     do j = 1, sclr_dim
       wpsclrp_zt(:,:,j)   = zm2zt( nz, ngrdcol, gr, wpsclrp(:,:,j) )
-      sclrp2_zt(:,:,j)    = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j) ) ! Pos. def. quantity
+      sclrp2_zt(:,:,j)    = zm2zt( nz, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 ) ! Pos. def. quantity
       sclrprtp_zt(:,:,j)  = zm2zt( nz, ngrdcol, gr, sclrprtp(:,:,j) )
       sclrpthlp_zt(:,:,j) = zm2zt( nz, ngrdcol, gr, sclrpthlp(:,:,j) )
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
-          sclrp2_zt(i,k,j) = max( sclrp2_zt(i,k,j), sclr_tol(j)**2 ) ! Pos. def. quantity
-        end do
-      end do
-      !$acc end parallel loop
-
     end do ! i = 1, sclr_dim, 1
 
     ! Interpolate hydrometeor mixed moments to momentum levels.
@@ -3688,16 +3586,8 @@ module advance_clubb_core_module
       ! Interpolate sclrm to the momentum level for use in
       ! the second call to pdf_closure
       do j = 1, sclr_dim
-        sclrm_zm(:,:,j) = zt2zm( nz, ngrdcol, gr, sclrm(:,:,j) )
-
         ! Clip if extrap. causes sclrm_zm to be less than sclr_tol
-
-        !$acc parallel loop gang vector default(present)
-        do i = 1, ngrdcol
-          sclrm_zm(i,nz,j) = max( sclrm_zm(i,nz,j), sclr_tol(j) )
-        end do
-        !$acc end parallel loop
-
+        sclrm_zm(:,:,j) = zt2zm( nz, ngrdcol, gr, sclrm(:,:,j), sclr_tol(j) )
       end do ! i = 1, sclr_dim
 
       ! Interpolate pressure, p_in_Pa, to momentum levels.
@@ -3725,18 +3615,11 @@ module advance_clubb_core_module
       end do
       !$acc end parallel loop
 
-      rtm_zm(:,:) = zt2zm( nz, ngrdcol, gr, rtm(:,:) )
-      thlm_zm(:,:) = zt2zm( nz, ngrdcol, gr, thlm(:,:) )
-
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        ! Clip if extrapolation at the top level causes rtm_zm to be < rt_tol
-        rtm_zm(i,nz) = max( rtm_zm(i,nz), rt_tol )
+      ! Clip if extrapolation at the top level causes rtm_zm to be < rt_tol
+      rtm_zm(:,:) = zt2zm( nz, ngrdcol, gr, rtm(:,:), rt_tol )
 
         ! Clip if extrapolation at the top level causes thlm_zm to be < thl_tol
-        thlm_zm(i,nz) = max( thlm_zm(i,nz), thl_tol )
-      end do
-      !$acc end parallel loop
+      thlm_zm(:,:) = zt2zm( nz, ngrdcol, gr, thlm(:,:), thl_tol )
 
       ! Interpolate hydrometeor mixed moments to momentum levels.
       do j = 1, hydromet_dim
@@ -3812,15 +3695,7 @@ module advance_clubb_core_module
       
       ! Interpolate momentum variables output from the first call to
       ! pdf_closure back to momentum grid.
-      wp4(:,:) = zt2zm( nz, ngrdcol, gr, wp4_zt(:,:) )  ! Pos. def. quantity
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
-          wp4(i,k) = max( wp4(i,k), zero_threshold )  ! Pos. def. quantity
-        end do
-      end do
-      !$acc end parallel loop
+      wp4(:,:) = zt2zm( nz, ngrdcol, gr, wp4_zt(:,:), zero_threshold )  ! Pos. def. quantity
 
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
@@ -3839,15 +3714,7 @@ module advance_clubb_core_module
       ! CAM-CLUBB needs cloud water variance thus always compute this
       if ( stats_metadata%ircp2 > 0 ) then
 #endif
-        rcp2(:,:) = zt2zm( nz, ngrdcol, gr, rcp2_zt(:,:) )  ! Pos. def. quantity
-        
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            rcp2(i,k) = max( rcp2(i,k), zero_threshold )
-          end do
-        end do
-        !$acc end parallel loop
+        rcp2(:,:) = zt2zm( nz, ngrdcol, gr, rcp2_zt(:,:), zero_threshold )  ! Pos. def. quantity
 #ifndef CLUBB_CAM
         !$acc parallel loop gang vector default(present) 
         do i = 1, ngrdcol

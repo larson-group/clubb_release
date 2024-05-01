@@ -65,7 +65,8 @@ module calc_pressure
         Cp,    & ! Specific heat of dry air                    [J/(kg K)]
         kappa, & ! Rd/Cp                                       [-]
         p0,    & ! Reference pressure of 100000 Pa             [Pa]
-        grav     ! Acceleration of gravity (9.81 m/s^2)        [m/s^2]
+        grav,  & ! Acceleration of gravity (9.81 m/s^2)        [m/s^2]
+        zero_threshold
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -110,7 +111,7 @@ module calc_pressure
     exner(1) = exner_zm(1)
 
     ! Interpolate theta_v to momentum levels.
-    thvm_zm = max( zt2zm( gr, thvm ), 0.0_core_rknd )
+    thvm_zm = zt2zm( gr, thvm, zero_threshold )
 
     ! Calculate exner at all other thermodynamic and momentum grid levels.
     ! exner2

@@ -108,7 +108,8 @@ module advance_xp2_xpyp_module
         one_third, &
         zero,   &
         eps, &
-        gamma_over_implicit_ts
+        gamma_over_implicit_ts, &
+        zero_threshold
 
     use model_flags, only: & 
         iiPDF_ADG1,       & ! integer constants
@@ -525,17 +526,8 @@ module advance_xp2_xpyp_module
     end do
     !$acc end parallel loop
 
-    Kw2_zm = zt2zm( nz, ngrdcol, gr, Kw2 )
-    Kw9_zm = zt2zm( nz, ngrdcol, gr, Kw9 )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        Kw2_zm(i,k) = max( Kw2_zm(i,k), zero )
-        Kw9_zm(i,k) = max( Kw9_zm(i,k), zero )
-      end do
-    end do
-    !$acc end parallel loop
+    Kw2_zm = zt2zm( nz, ngrdcol, gr, Kw2, zero )
+    Kw9_zm = zt2zm( nz, ngrdcol, gr, Kw9, zero )
 
     if ( l_lmm_stepping ) then
 
@@ -989,7 +981,7 @@ module advance_xp2_xpyp_module
         end do
       endif
       
-      rtm_zm = max( zt2zm( nz, ngrdcol, gr, rtm ), 0.0_core_rknd )
+      rtm_zm = zt2zm( nz, ngrdcol, gr, rtm, zero_threshold )
       
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
@@ -4042,15 +4034,7 @@ module advance_xp2_xpyp_module
 
     ! Interpolate a_1 from the momentum levels to the thermodynamic levels.
     ! Positive definite quantity
-    a1_zt(:,:) = zm2zt( nz, ngrdcol, gr, a1(:,:) )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        a1_zt(i,k) = max( a1_zt(i,k), zero_threshold ) 
-      end do
-    end do
-    !$acc end parallel loop
+    a1_zt(:,:) = zm2zt( nz, ngrdcol, gr, a1(:,:), zero_threshold )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -6126,6 +6110,7 @@ module advance_xp2_xpyp_module
     wprtp_mc    = zt2zm( nz, ngrdcol, gr, wprtp_mc_zt )
     wpthlp_mc   = zt2zm( nz, ngrdcol, gr, wpthlp_mc_zt )
     rtpthlp_mc  = zt2zm( nz, ngrdcol, gr, rtpthlp_mc_zt )
+    
   end subroutine update_xp2_mc
 
 !===============================================================================
