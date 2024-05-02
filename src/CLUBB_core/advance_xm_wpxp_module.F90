@@ -1117,6 +1117,27 @@ module advance_xm_wpxp_module
 
     end if ! l_predict_upwp_vpwp
 
+    ! Lower boundary condition on xm
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      rtm(i,1) = rtm(i,2)
+      thlm(i,1) = thlm(i,2)
+      if ( sclr_dim > 0 ) then
+        do j = 1, sclr_dim, 1
+          sclrm(i,1,j) = sclrm(i,2,j)
+        enddo
+      endif
+      if ( l_predict_upwp_vpwp ) then
+        um(i,1) = um(i,2)
+        vm(i,1) = vm(i,2)
+        if ( l_perturbed_wind ) then
+          um_pert(i,1) = um_pert(i,2)
+          vm_pert(i,1) = vm_pert(i,2)
+        endif ! l_perturbed_wind
+      endif ! l_predict_upwp_vpwp
+    enddo
+    !$acc end parallel loop
+
     !$acc exit data delete( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, &
     !$acc                   low_lev_effect, high_lev_effect, rtm_old, wprtp_old, thlm_old, &
     !$acc                   wpthlp_old, um_old, upwp_old, vm_old, &
@@ -4999,9 +5020,9 @@ module advance_xm_wpxp_module
 
     ! Lower boundary condition on xm
     !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      xm(i,1) = xm(i,2)
-    end do
+    !do i = 1, ngrdcol
+    !  xm(i,1) = xm(i,2)
+    !end do
     !$acc end parallel loop
 
     !$acc exit data delete( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
