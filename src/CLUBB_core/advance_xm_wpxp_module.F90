@@ -474,6 +474,8 @@ module advance_xm_wpxp_module
     ! Whether preturbed winds are being solved.
     logical :: l_perturbed_wind
 
+    real( kind = core_rknd ), dimension(nz) :: tmp_in
+
     ! -------------------- Begin Code --------------------
 
     !$acc enter data create( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term, Kw6, &
@@ -953,7 +955,9 @@ module advance_xm_wpxp_module
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
-          call stat_begin_update( nz, stats_metadata%irtm_sdmp, rtm(i,:) / dt, & ! intent(in)
+          tmp_in(1) = 0.0_core_rknd
+          tmp_in(2:nz) = rtm(i,2:nz)
+          call stat_begin_update( nz, stats_metadata%irtm_sdmp, tmp_in / dt, & ! intent(in)
                                   stats_zt(i) )             ! intent(inout)
         end do
       end if
@@ -965,7 +969,9 @@ module advance_xm_wpxp_module
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
-          call stat_end_update( nz, stats_metadata%irtm_sdmp, rtm(i,:) / dt, & ! intent(in)
+          tmp_in(1) = 0.0_core_rknd
+          tmp_in(2:nz) = rtm(i,2:nz)
+          call stat_end_update( nz, stats_metadata%irtm_sdmp, tmp_in / dt, & ! intent(in)
                                 stats_zt(i) )             ! intent(inout)
         end do
       end if
@@ -980,7 +986,9 @@ module advance_xm_wpxp_module
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
-          call stat_begin_update( nz, stats_metadata%ithlm_sdmp, thlm(i,:) / dt, & ! intent(in)
+          tmp_in(1) = 0.0_core_rknd
+          tmp_in(2:nz) = thlm(i,2:nz)
+          call stat_begin_update( nz, stats_metadata%ithlm_sdmp, tmp_in / dt, & ! intent(in)
                                   stats_zt(i) )               ! intent(inout)
         end do
       end if
@@ -992,7 +1000,9 @@ module advance_xm_wpxp_module
 
       if ( stats_metadata%l_stats_samp ) then
         do i = 1, ngrdcol
-          call stat_end_update( nz, stats_metadata%ithlm_sdmp, thlm(i,:) / dt, & ! intent(in)
+          tmp_in(1) = 0.0_core_rknd
+          tmp_in(2:nz) = thlm(i,2:nz)
+          call stat_end_update( nz, stats_metadata%ithlm_sdmp, tmp_in / dt, & ! intent(in)
                                 stats_zt(i) )               ! intent(inout)
         end do
       end if
@@ -1009,9 +1019,13 @@ module advance_xm_wpxp_module
 
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
-             call stat_begin_update( nz, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in)
+             tmp_in(1) = 0.0_core_rknd
+             tmp_in(2:nz) = um(i,2:nz)
+             call stat_begin_update( nz, stats_metadata%ium_sdmp, tmp_in / dt, & ! intent(in)
                                      stats_zt(i) )           ! intent(inout)
-             call stat_begin_update( nz, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+             tmp_in(1) = 0.0_core_rknd
+             tmp_in(2:nz) = vm(i,2:nz)
+             call stat_begin_update( nz, stats_metadata%ivm_sdmp, tmp_in / dt, & ! intent(in)
                                      stats_zt(i) )           ! intent(inout)
           end do
         end if
@@ -1028,9 +1042,13 @@ module advance_xm_wpxp_module
 
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_end_update( nz, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = um(i,2:nz)
+            call stat_end_update( nz, stats_metadata%ium_sdmp, tmp_in / dt, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
-            call stat_end_update( nz, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = vm(i,2:nz)
+            call stat_end_update( nz, stats_metadata%ivm_sdmp, tmp_in / dt, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
           end do
         end if
@@ -1046,9 +1064,13 @@ module advance_xm_wpxp_module
         if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
           do i = 1, ngrdcol
-            call stat_begin_update( nz, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = um(i,2:nz)
+            call stat_begin_update( nz, stats_metadata%ium_ndg, tmp_in / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
-            call stat_begin_update( nz, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = vm(i,2:nz)
+            call stat_begin_update( nz, stats_metadata%ivm_ndg, tmp_in / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
           end do
         end if
@@ -1066,9 +1088,13 @@ module advance_xm_wpxp_module
         if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
           do i = 1, ngrdcol
-            call stat_end_update( nz, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = um(i,2:nz)
+            call stat_end_update( nz, stats_metadata%ium_ndg, tmp_in / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
-            call stat_end_update( nz, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = vm(i,2:nz)
+            call stat_end_update( nz, stats_metadata%ivm_ndg, tmp_in / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
           end do
         end if
@@ -1078,9 +1104,13 @@ module advance_xm_wpxp_module
       if ( stats_metadata%l_stats_samp ) then
         !$acc update host( um_ref, vm_ref )
         do i = 1, ngrdcol
-          call stat_update_var( stats_metadata%ium_ref, um_ref(i,:), & ! intent(in)
+          tmp_in(1) = 0.0_core_rknd
+          tmp_in(2:nz) = um_ref(i,2:nz)
+          call stat_update_var( stats_metadata%ium_ref, tmp_in, & ! intent(in)
                                 stats_zt(i) )         ! intent(inout)
-          call stat_update_var( stats_metadata%ivm_ref, vm_ref(i,:), & ! intent(in)
+          tmp_in(1) = 0.0_core_rknd
+          tmp_in(2:nz) = vm_ref(i,2:nz)
+          call stat_update_var( stats_metadata%ivm_ref, tmp_in, & ! intent(in)
                                 stats_zt(i) )         ! intent(inout)
         end do
       end if
@@ -2871,6 +2901,8 @@ module advance_xm_wpxp_module
       
     integer :: i, k, j, n
     
+    real( kind = core_rknd ), dimension(nz) :: tmp_in
+
     ! ------------------- Begin Code -------------------
 
     !$acc enter data create( lhs, um_tndcy, vm_tndcy, upwp_forcing, &
@@ -2982,21 +3014,33 @@ module advance_xm_wpxp_module
 
           do i = 1, ngrdcol
             ! um or vm term gf is completely explicit; call stat_update_var.
-            call stat_update_var( stats_metadata%ium_gf, - fcor(i) * vg(i,:), & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = - fcor(i) * vg(i,2:nz)
+            call stat_update_var( stats_metadata%ium_gf, tmp_in, & ! intent(in)
                                   stats_zt(i) )             ! intent(inout)
-            call stat_update_var( stats_metadata%ivm_gf, fcor(i) * ug(i,:), & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = fcor(i) * ug(i,2:nz)
+            call stat_update_var( stats_metadata%ivm_gf, tmp_in, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
 
             ! um or vm term cf is completely explicit; call stat_update_var.
-            call stat_update_var( stats_metadata%ium_cf, fcor(i) * vm(i,:), & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = fcor(i) * vm(i,2:nz)
+            call stat_update_var( stats_metadata%ium_cf, tmp_in, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
-            call stat_update_var( stats_metadata%ivm_cf, - fcor(i) * um(i,:), & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = -fcor(i) * um(i,2:nz)
+            call stat_update_var( stats_metadata%ivm_cf, tmp_in, & ! intent(in)
                                   stats_zt(i) )             ! intent(inout)
 
             ! um or vm forcing term
-            call stat_update_var( stats_metadata%ium_f, um_forcing(i,:), & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = um_forcing(i,2:nz)
+            call stat_update_var( stats_metadata%ium_f, tmp_in, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
-            call stat_update_var( stats_metadata%ivm_f, vm_forcing(i,:), & ! intent(in)
+            tmp_in(1) = 0.0_core_rknd
+            tmp_in(2:nz) = vm_forcing(i,2:nz)
+            call stat_update_var( stats_metadata%ivm_f, tmp_in, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
           end do
         endif ! stats_metadata%l_stats_samp
