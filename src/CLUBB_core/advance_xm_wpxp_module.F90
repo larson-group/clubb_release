@@ -5019,11 +5019,11 @@ module advance_xm_wpxp_module
     end if 
 
     ! Lower boundary condition on xm
-    !$acc parallel loop gang vector default(present)
+    !!$acc parallel loop gang vector default(present)
     !do i = 1, ngrdcol
     !  xm(i,1) = xm(i,2)
     !end do
-    !$acc end parallel loop
+    !!$acc end parallel loop
 
     !$acc exit data delete( xm_old, wpxp_pd, xm_pd, wpxp_chnge, xp2_relaxed )
 
