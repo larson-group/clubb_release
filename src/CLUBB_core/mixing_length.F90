@@ -877,7 +877,7 @@ module mixing_length
 !===============================================================================
   subroutine calc_Lscale_directly ( ngrdcol, nz, gr, &
                                     l_implemented, p_in_Pa, exner, rtm,    &
-                                    thlm, thvm, newmu, rtp2, thlp2, rtpthlp, &
+                                    thlm, thvm, newmu, rtp2_zt, thlp2_zt, rtpthlp_zt, &
                                     pdf_params, em, thv_ds_zt, Lscale_max, lmin, &
                                     clubb_params, &
                                     saturation_formula, &
@@ -941,9 +941,9 @@ module mixing_length
                     !   rather than a standalone single-column model.
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
-      rtp2,      &
-      thlp2,     &
-      rtpthlp,   &
+      rtp2_zt,      &
+      thlp2_zt,     &
+      rtpthlp_zt,   &
       thlm,      &
       thvm,      &
       rtm,       &
@@ -996,7 +996,7 @@ module mixing_length
                               ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      sign_rtpthlp,         & ! Sign of the covariance rtpthlp       [-]
+      sign_rtpthlp_zt,          & ! Sign of the covariance rtpthlp       [-]
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
       rtm_pert_1, rtm_pert_2,   &     ! For avg. calculation of Lscale  [kg/kg]
@@ -1015,7 +1015,7 @@ module mixing_length
 
     !--------------------------------- Begin Code ---------------------------------
 
-    !$acc enter data create( sign_rtpthlp, Lscale_pert_1, Lscale_pert_2, &
+    !$acc enter data create( sign_rtpthlp_zt, Lscale_pert_1, Lscale_pert_2, &
     !$acc                    thlm_pert_1, thlm_pert_2, rtm_pert_1, rtm_pert_2, &
     !$acc                    thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, &
     !$acc                    rtm_pert_neg_rt, &
@@ -1040,7 +1040,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
-          sign_rtpthlp(i,k) = sign( one, rtpthlp(i,k) )
+          sign_rtpthlp_zt(i,k) = sign( one, rtpthlp_zt(i,k) )
         end do
       end do
       !$acc end parallel loop
@@ -1049,7 +1049,7 @@ module mixing_length
       do k = 1, nz, 1
         do  i = 1, ngrdcol
           rtm_pert_1(i,k)  = rtm(i,k) + clubb_params(i,iLscale_pert_coef) &
-                                        * sqrt( max( rtp2(i,k), rt_tol**2 ) )
+                                        * sqrt( max( rtp2_zt(i,k), rt_tol**2 ) )
         end do
       end do
       !$acc end parallel loop
@@ -1057,8 +1057,8 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
-          thlm_pert_1(i,k) = thlm(i,k) + sign_rtpthlp(i,k) * clubb_params(i,iLscale_pert_coef) &
-                                         * sqrt( max( thlp2(i,k), thl_tol**2 ) )
+          thlm_pert_1(i,k) = thlm(i,k) + sign_rtpthlp_zt(i,k) * clubb_params(i,iLscale_pert_coef) &
+                                         * sqrt( max( thlp2_zt(i,k), thl_tol**2 ) )
         end do
       end do
       !$acc end parallel loop
@@ -1082,7 +1082,7 @@ module mixing_length
       do k = 1, nz, 1
         do  i = 1, ngrdcol
           rtm_pert_2(i,k)  = rtm(i,k) - clubb_params(i,iLscale_pert_coef) &
-                                        * sqrt( max( rtp2(i,k), rt_tol**2 ) )
+                                        * sqrt( max( rtp2_zt(i,k), rt_tol**2 ) )
         end do
       end do
       !$acc end parallel loop
@@ -1090,8 +1090,8 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do  i = 1, ngrdcol
-          thlm_pert_2(i,k) = thlm(i,k) - sign_rtpthlp(i,k) * clubb_params(i,iLscale_pert_coef) &
-                               * sqrt( max( thlp2(i,k), thl_tol**2 ) )
+          thlm_pert_2(i,k) = thlm(i,k) - sign_rtpthlp_zt(i,k) * clubb_params(i,iLscale_pert_coef) &
+                               * sqrt( max( thlp2_zt(i,k), thl_tol**2 ) )
         end do
       end do
       !$acc end parallel loop
@@ -1117,7 +1117,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          sign_rtpthlp(i,k) = sign( one, rtpthlp(i,k) )
+          sign_rtpthlp_zt(i,k) = sign( one, rtpthlp_zt(i,k) )
         end do
       end do
       !$acc end parallel loop
@@ -1133,10 +1133,10 @@ module mixing_length
             rtm_pert_pos_rt(i,k) = pdf_params%rt_1(i,k) &
                        + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1(i,k), rt_tol**2 ) )
 
-            thlm_pert_pos_rt(i,k) = pdf_params%thl_1(i,k) + ( sign_rtpthlp(i,k) * Lscale_pert_coef &
+            thlm_pert_pos_rt(i,k) = pdf_params%thl_1(i,k) + ( sign_rtpthlp_zt(i,k) * Lscale_pert_coef &
                        * sqrt( max( pdf_params%varnce_thl_1(i,k), thl_tol**2 ) ) )
 
-            thlm_pert_neg_rt(i,k) = pdf_params%thl_2(i,k) - ( sign_rtpthlp(i,k) * Lscale_pert_coef &
+            thlm_pert_neg_rt(i,k) = pdf_params%thl_2(i,k) - ( sign_rtpthlp_zt(i,k) * Lscale_pert_coef &
                        * sqrt( max( pdf_params%varnce_thl_2(i,k), thl_tol**2 ) ) )
 
             rtm_pert_neg_rt(i,k) = pdf_params%rt_2(i,k) &
@@ -1149,10 +1149,10 @@ module mixing_length
             rtm_pert_pos_rt(i,k) = pdf_params%rt_2(i,k) &
                        + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2(i,k), rt_tol**2 ) )
 
-            thlm_pert_pos_rt(i,k) = pdf_params%thl_2(i,k) + ( sign_rtpthlp(i,k) * Lscale_pert_coef &
+            thlm_pert_pos_rt(i,k) = pdf_params%thl_2(i,k) + ( sign_rtpthlp_zt(i,k) * Lscale_pert_coef &
                        * sqrt( max( pdf_params%varnce_thl_2(i,k), thl_tol**2 ) ) )
 
-            thlm_pert_neg_rt(i,k) = pdf_params%thl_1(i,k) - ( sign_rtpthlp(i,k) * Lscale_pert_coef &
+            thlm_pert_neg_rt(i,k) = pdf_params%thl_1(i,k) - ( sign_rtpthlp_zt(i,k) * Lscale_pert_coef &
                        * sqrt( max( pdf_params%varnce_thl_1(i,k), thl_tol**2 ) ) )
 
             rtm_pert_neg_rt(i,k) = pdf_params%rt_1(i,k) &
@@ -1256,7 +1256,7 @@ module mixing_length
       end if
     end if
 
-    !$acc exit data delete( sign_rtpthlp, Lscale_pert_1, Lscale_pert_2, &
+    !$acc exit data delete( sign_rtpthlp_zt, Lscale_pert_1, Lscale_pert_2, &
     !$acc                   thlm_pert_1, thlm_pert_2, rtm_pert_1, rtm_pert_2, &
     !$acc                   thlm_pert_pos_rt, thlm_pert_neg_rt, rtm_pert_pos_rt, &
     !$acc                   rtm_pert_neg_rt, &

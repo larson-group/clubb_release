@@ -1354,7 +1354,7 @@ module advance_clubb_core_module
       call calc_Lscale_directly ( ngrdcol, nz, gr,                             & ! intent(in)
                                   l_implemented, p_in_Pa,                      & ! intent(in)
                                   exner, rtm, thlm, thvm,                      & ! intent(in)
-                                  mu, rtp2, thlp2, rtpthlp, pdf_params, em,    & ! intent(in)
+                                  mu, rtp2_zt, thlp2_zt, rtpthlp_zt, pdf_params, em,    & ! intent(in)
                                   thv_ds_zt, Lscale_max, lmin,                 & ! intent(in)
                                   clubb_params,                                & ! intent(in)
                                   clubb_config_flags%saturation_formula,       & ! intent(in)
