@@ -1788,7 +1788,7 @@ module mixing_length
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        if ( gr%zt(i,k) < clubb_params(i,ialtitude_threshold) ) then
+        if ( gr%zm(i,k) < clubb_params(i,ialtitude_threshold) ) then
           brunt_freq_out_cloud(i,k) = zero
         end if
       end do
@@ -1992,7 +1992,7 @@ module mixing_length
       do k = 1, nz
         do i = 1, ngrdcol
 
-          if ( gr%zt(i,k) > clubb_params(i,ialtitude_threshold) ) then
+          if ( gr%zm(i,k) > clubb_params(i,ialtitude_threshold) ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one + H_invrs_tau_wpxp_N2(i,k) &
                                           * Ri_zm_smooth(i,k) )
@@ -2007,7 +2007,7 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          if ( gr%zt(i,k) > clubb_params(i,ialtitude_threshold) ) then
+          if ( gr%zm(i,k) > clubb_params(i,ialtitude_threshold) ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
                                       * ( one  + H_invrs_tau_wpxp_N2(i,k) &
                                       * min( clubb_params(i,iC_invrs_tau_wpxp_Ri) &
