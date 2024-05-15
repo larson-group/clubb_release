@@ -1239,7 +1239,7 @@ contains
 
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing_col, wpsclrp_sfc_col ) &
-    !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, sclrpthvp )
+    !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, sclrpthvp_col )
 
     !$acc data if( edsclr_dim > 0 ) &
     !$acc      copyin( wpedsclrp_sfc_col, edsclrm_forcing_col ) &
