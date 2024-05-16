@@ -1500,7 +1500,7 @@ module advance_clubb_core_module
     ! calculate Brunt-Vaisala frequency used for splatting
     brunt_vaisala_freq_sqd_splat  &
                = Lscale_width_vert_avg( nz, ngrdcol, gr, smth_type, &
-                                        brunt_vaisala_freq_sqd_mixed, Lscale, rho_ds_zm, &
+                                        brunt_vaisala_freq_sqd_mixed, Lscale_zm, rho_ds_zm, &
                                         below_grnd_val )
 
     ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
