@@ -543,7 +543,7 @@ contains
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
-    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &          ! intent(inout)
+    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
     wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
     um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
@@ -759,7 +759,7 @@ contains
       wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
       uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
-      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
       wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
@@ -968,7 +968,7 @@ contains
       wp2thlp_col,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
       uprcp_col,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp_col,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
-      rc_coef_col,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      rc_coef_zm_col,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4_col,               & ! w'^4 (momentum levels)               [m^4/s^4]
       wpup2_col,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
       wpvp2_col,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
@@ -1136,7 +1136,7 @@ contains
     wp2thlp_col(1,:) = wp2thlp
     uprcp_col(1,:) = uprcp
     vprcp_col(1,:) = vprcp
-    rc_coef_col(1,:) = rc_coef
+    rc_coef_zm_col(1,:) = rc_coef_zm
     wp4_col(1,:) = wp4
     wpup2_col(1,:) = wpup2
     wpvp2_col(1,:) = wpvp2
@@ -1182,7 +1182,7 @@ contains
     !$acc        copy( um_col, upwp_col, vm_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, rtm_col, wprtp_col, thlm_col, wpthlp_col, rtp2_col, &
     !$acc              rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, wp2_col, wp3_col, &
     !$acc              p_in_Pa_col, exner_col, rcm_col, cloud_frac_col, wpthvp_col, wp2thvp_col, &
-    !$acc              rtpthvp_col, thlpthvp_col, wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, &
+    !$acc              rtpthvp_col, thlpthvp_col, wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_zm_col, &
     !$acc              wp4_col, wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, um_pert_col, &
     !$acc              vm_pert_col, upwp_pert_col, vpwp_pert_col, &
     !$acc              pdf_params, pdf_params_zm, &
@@ -1295,7 +1295,7 @@ contains
       rcm_col, cloud_frac_col, &                                                  ! intent(inout)
       wpthvp_col, wp2thvp_col, rtpthvp_col, thlpthvp_col, &                       ! intent(inout)
       sclrpthvp_col, &                                                            ! intent(inout)
-      wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, wp4_col, &      ! intent(inout)
+      wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_zm_col, wp4_col, &   ! intent(inout)
       wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, &      ! intent(inout)
       um_pert_col, vm_pert_col, upwp_pert_col, vpwp_pert_col, &                   ! intent(inout)
       pdf_params, pdf_params_zm, &                                                ! intent(inout)
@@ -1382,7 +1382,7 @@ contains
     wp2thlp = wp2thlp_col(1,:)
     uprcp = uprcp_col(1,:)
     vprcp = vprcp_col(1,:)
-    rc_coef = rc_coef_col(1,:)
+    rc_coef_zm = rc_coef_zm_col(1,:)
     wp4 = wp4_col(1,:)
     wpup2 = wpup2_col(1,:)
     wpvp2 = wpvp2_col(1,:)
@@ -1451,7 +1451,7 @@ contains
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
-    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &          ! intent(inout)
+    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
     wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
     um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
@@ -1662,7 +1662,7 @@ contains
       wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
       uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
-      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
       wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
@@ -1745,7 +1745,7 @@ contains
     !$acc        copy( um, upwp, vm, vpwp, up2, vp2, up3, vp3, rtm, wprtp, thlm, wpthlp, rtp2, &
     !$acc              rtp3, thlp2, thlp3, rtpthlp, wp2, wp3, &
     !$acc              p_in_Pa, exner, rcm, cloud_frac, wpthvp, wp2thvp, &
-    !$acc              rtpthvp, thlpthvp, wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, &
+    !$acc              rtpthvp, thlpthvp, wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, &
     !$acc              wp4, wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, um_pert, &
     !$acc              vm_pert, upwp_pert, vpwp_pert, &
     !$acc              pdf_params, pdf_params_zm, &
@@ -1858,7 +1858,7 @@ contains
       rcm, cloud_frac, &                                      ! intent(inout)
       wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
       sclrpthvp, &                                            ! intent(inout)
-      wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &          ! intent(inout)
+      wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
       wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
       um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
       pdf_params, pdf_params_zm, &                            ! intent(inout)

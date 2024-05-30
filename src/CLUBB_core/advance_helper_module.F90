@@ -1139,7 +1139,7 @@ module advance_helper_module
 
     use grid_class, only:  &
         grid, & ! Type
-        zm2zt2zm
+        zm2zt
 
     use constants_clubb, only: &
         zero, &
@@ -1189,8 +1189,8 @@ module advance_helper_module
     end do
     !$acc end parallel loop
     
-    brunt_vaisala_freq_splat_smooth = zm2zt2zm( nz, ngrdcol, gr, &
-                                                brunt_vaisala_freq_splat_clipped )
+    brunt_vaisala_freq_splat_smooth = zm2zt( nz, ngrdcol, gr, &
+                                             brunt_vaisala_freq_splat_clipped )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz

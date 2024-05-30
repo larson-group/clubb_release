@@ -64,7 +64,7 @@ module advance_xm_wpxp_module
                               pdf_implicit_coefs_terms, &
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
-                              uprcp, vprcp, rc_coef, &
+                              uprcp, vprcp, rc_coef_zm, &
                               clubb_params, nu_vert_res_dep, &
                               iiPDF_type, &
                               penta_solve_method, &
@@ -271,9 +271,9 @@ module advance_xm_wpxp_module
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
-      uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
-      vprcp,              & ! < v' r_c' >              [(m kg)/(s kg)]
-      rc_coef               ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
+      uprcp,        & ! < u' r_c' >                               [(m kg)/(s kg)]
+      vprcp,        & ! < v' r_c' >                               [(m kg)/(s kg)]
+      rc_coef_zm      ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
      real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       fcor          ! Coriolis parameter                           [s^-1]
@@ -828,7 +828,7 @@ module advance_xm_wpxp_module
                                           rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,     & ! In
                                           thv_ds_zm, rtp2, thlp2, l_implemented,           & ! In
                                           sclrpthvp, sclrm_forcing, sclrp2, um_forcing,    & ! In
-                                          vm_forcing, ug, vg, uprcp, vprcp, rc_coef, fcor, & ! In
+                                          vm_forcing, ug, vg, uprcp, vprcp, rc_coef_zm, fcor, & ! In
                                           up2, vp2,                                        & ! In
                                           low_lev_effect, high_lev_effect,                 & ! In
                                           C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,         & ! In
@@ -913,7 +913,7 @@ module advance_xm_wpxp_module
         !$acc              mixt_frac_zm, em, wp2sclrp, sclrpthvp, &
         !$acc              sclrm_forcing, sclrp2, exner, rcm, p_in_Pa, thvm, &
         !$acc              Cx_fnc_Richardson, um_forcing, vm_forcing, ug, vg, &
-        !$acc              wpthvp, fcor, um_ref, vm_ref, up2, vp2, uprcp, vprcp, rc_coef, &
+        !$acc              wpthvp, fcor, um_ref, vm_ref, up2, vp2, uprcp, vprcp, rc_coef_zm, &
         !$acc              rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, um, upwp, vm, vpwp, &
         !$acc              rtm_old,wprtp_old, thlm_old, wpthlp_old, sclrm_old, wpsclrp_old, &
         !$acc              um_old, upwp_old, vm_old, vpwp_old )
@@ -938,7 +938,7 @@ module advance_xm_wpxp_module
                                      pdf_implicit_coefs_terms, & ! intent(in)
                                      um_forcing(i,:), vm_forcing(i,:), ug(i,:), vg(i,:), & ! intent(in)
                                      wpthvp(i,:), fcor(i), um_ref(i,:), vm_ref(i,:), up2(i,:), & ! intent(in)
-                                     vp2(i,:), uprcp(i,:), vprcp(i,:), rc_coef(i,:), rtm(i,:), & ! intent(in)
+                                     vp2(i,:), uprcp(i,:), vprcp(i,:), rc_coef_zm(i,:), rtm(i,:), & ! intent(in)
                                      wprtp(i,:), thlm(i,:), wpthlp(i,:), sclrm(i,:,:), wpsclrp(i,:,:), & ! intent(in)
                                      um(i,:), upwp(i,:), vm(i,:), vpwp(i,:), rtm_old(i,:), & ! intent(in)
                                      wprtp_old(i,:), thlm_old(i,:), wpthlp_old(i,:), & ! intent(in)
@@ -2629,7 +2629,7 @@ module advance_xm_wpxp_module
                                             rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
                                             thv_ds_zm, rtp2, thlp2, l_implemented, &
                                             sclrpthvp, sclrm_forcing, sclrp2, um_forcing, &
-                                            vm_forcing, ug, vg, uprcp, vprcp, rc_coef, fcor, &
+                                            vm_forcing, ug, vg, uprcp, vprcp, rc_coef_zm, fcor, &
                                             up2, vp2, &
                                             low_lev_effect, high_lev_effect, &
                                             C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
@@ -2754,9 +2754,9 @@ module advance_xm_wpxp_module
       vg            ! <v> geostrophic wind (thermodynamic levels)  [m/s]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
-      uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
-      vprcp,              & ! < v' r_c' >              [(m kg)/(s kg)]
-      rc_coef               ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
+      uprcp,       & ! < u' r_c' >                               [(m kg)/(s kg)]
+      vprcp,       & ! < v' r_c' >                               [(m kg)/(s kg)]
+      rc_coef_zm     ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       fcor          ! Coriolis parameter                           [s^-1]
@@ -3187,10 +3187,10 @@ module advance_xm_wpxp_module
       do k = 1, nz
         do i = 1, ngrdcol
           upthvp(i,k) = upthlp(i,k) + ep1 * thv_ds_zm(i,k) * uprtp(i,k) &
-                        + rc_coef(i,k) * uprcp(i,k)
+                        + rc_coef_zm(i,k) * uprcp(i,k)
 
           vpthvp(i,k) = vpthlp(i,k) + ep1 * thv_ds_zm(i,k) * vprtp(i,k) &
-                        + rc_coef(i,k) * vprcp(i,k)
+                        + rc_coef_zm(i,k) * vprcp(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -3202,10 +3202,10 @@ module advance_xm_wpxp_module
           do i = 1, ngrdcol
             upthvp_pert(i,k) = upthlp_pert(i,k) &
                                + ep1 * thv_ds_zm(i,k) * uprtp_pert(i,k) &
-                               + rc_coef(i,k) * uprcp(i,k)
+                               + rc_coef_zm(i,k) * uprcp(i,k)
             vpthvp_pert(i,k) = vpthlp_pert(i,k) &
                                + ep1 * thv_ds_zm(i,k) * vprtp_pert(i,k) &
-                               + rc_coef(i,k) * vprcp(i,k)
+                               + rc_coef_zm(i,k) * vprcp(i,k)
           end do
         end do
         !$acc end parallel loop
@@ -5998,7 +5998,7 @@ module advance_xm_wpxp_module
                                    pdf_implicit_coefs_terms, um_forcing, &
                                    vm_forcing, ug, vg, wpthvp, fcor, &
                                    um_ref, vm_ref, up2, vp2, uprcp, vprcp, &
-                                   rc_coef, rtm, wprtp, thlm, wpthlp, &
+                                   rc_coef_zm, rtm, wprtp, thlm, wpthlp, &
                                    sclrm, wpsclrp, um, upwp, vm, vpwp, &
                                    rtm_old, wprtp_old, thlm_old, &
                                    wpthlp_old, sclrm_old, wpsclrp_old, &
@@ -6099,9 +6099,9 @@ module advance_xm_wpxp_module
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
     real( kind = core_rknd ), dimension(nz), intent(in) ::  &
-      uprcp,   & ! < u' r_c' >                                  [(m kg)/(s kg)]
-      vprcp,   & ! < v' r_c' >                                  [(m kg)/(s kg)]
-      rc_coef    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
+      uprcp,      & ! < u' r_c' >                                  [(m kg)/(s kg)]
+      vprcp,      & ! < v' r_c' >                                  [(m kg)/(s kg)]
+      rc_coef_zm    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
 
      real( kind = core_rknd ), intent(in) ::  &
       fcor          ! Coriolis parameter                           [s^-1]
@@ -6245,7 +6245,7 @@ module advance_xm_wpxp_module
        write(fstderr,*) "vp2 = ", vp2, new_line('c')
        write(fstderr,*) "uprcp = ", uprcp, new_line('c')
        write(fstderr,*) "vprcp = ", vprcp, new_line('c')
-       write(fstderr,*) "rc_coef = ",  rc_coef, new_line('c')
+       write(fstderr,*) "rc_coef_zm = ",  rc_coef_zm, new_line('c')
        write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2up_implicit = ", &
                         pdf_implicit_coefs_terms%coef_wp2up_implicit, &
                         new_line('c')

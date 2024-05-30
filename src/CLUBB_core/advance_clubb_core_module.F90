@@ -164,7 +164,7 @@ module advance_clubb_core_module
                rcm, cloud_frac, &                                   ! intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
                sclrpthvp, &                                         ! intent(inout)
-               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &       ! intent(inout)
+               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &    ! intent(inout)
                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &   ! intent(inout)
                um_pert, vm_pert, upwp_pert, vpwp_pert, &            ! intent(inout)
                pdf_params, pdf_params_zm, &                         ! intent(inout)
@@ -550,7 +550,7 @@ module advance_clubb_core_module
       wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
       uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
-      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
       wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
@@ -690,7 +690,7 @@ module advance_clubb_core_module
 
     ! Eric Raut declared this variable solely for output to disk
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      rc_coef_zm    ! Coefficient of X'r_c' in Eq. (34) on m-levs.  [K/(kg/kg)]
+      rc_coef    ! Coefficient of X'r_c' in Eq. (34) on t-levs.  [K/(kg/kg)]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Km_zm, & ! Eddy diffusivity for momentum on zm grid levels [m^2/s]
@@ -842,7 +842,7 @@ module advance_clubb_core_module
     !$acc              wp2_zt, thlp2_zt, wpthlp_zt, &
     !$acc              wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
     !$acc              Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, &
-    !$acc              rc_coef_zm, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, sigma_sqd_w_zt, &
+    !$acc              rc_coef, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, sigma_sqd_w_zt, &
     !$acc              sqrt_em_zt, xp3_coef_fnc, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
     !$acc              mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
     !$acc              thlm_zm, rcm_zm, thlm1000, thlm700, &
@@ -1789,7 +1789,7 @@ module advance_clubb_core_module
                             pdf_implicit_coefs_terms,                             & ! intent(in)
                             um_forcing, vm_forcing, ug, vg, wpthvp,               & ! intent(in)
                             fcor, um_ref, vm_ref, up2, vp2,                       & ! intent(in)
-                            uprcp, vprcp, rc_coef,                                & ! intent(in)
+                            uprcp, vprcp, rc_coef_zm,                             & ! intent(in)
                             clubb_params, nu_vert_res_dep,                        & ! intent(in)
                             clubb_config_flags%iiPDF_type,                        & ! intent(in)
                             clubb_config_flags%penta_solve_method,                & ! intent(in)
@@ -2498,7 +2498,7 @@ module advance_clubb_core_module
       !$acc              wpthvp, wp2thvp, rtpthvp, thlpthvp, &
       !$acc              p_in_Pa, exner, rho, rho_zm, &
       !$acc              rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt, &
-      !$acc              wm_zt, wm_zm, rcm, wprcp, rc_coef, rc_coef_zm, &
+      !$acc              wm_zt, wm_zm, rcm, wprcp, rc_coef_zm, rc_coef, &
       !$acc              rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac, &
       !$acc              cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
       !$acc              cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
@@ -2755,7 +2755,7 @@ module advance_clubb_core_module
     !$acc                   wp2_zt, thlp2_zt, wpthlp_zt, &
     !$acc                   wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
     !$acc                   Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, &
-    !$acc                   rc_coef_zm, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, &
+    !$acc                   rc_coef, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, &
     !$acc                   sqrt_em_zt, xp3_coef_fnc, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
     !$acc                   mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
     !$acc                   thlm_zm, rcm_zm, thlm1000, thlm700, &

@@ -456,7 +456,7 @@ module clubb_driver
       wp2thlp,    & ! w'^2 thl' (thermodynamic levels)            [m^2/s^2 K]
       uprcp,      & ! < u' r_c' > (momentum levels)               [(m/s)(kg/kg)]
       vprcp,      & ! < v' r_c' > (momentum levels)               [(m/s)(kg/kg)]
-      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      rc_coef_zm, & ! Coefficient of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4,        & ! w'^4 (momentum levels)                      [m^4/s^4]
       wpup2,      & ! w'u'^2 (thermodynamic levels)               [m^3/s^3]
       wpvp2,      & ! w'v'^2 (thermodynamic levels)               [m^3/s^3]
@@ -1726,7 +1726,7 @@ module clubb_driver
     allocate( wp2thlp(1:gr%nz) ) ! w'^2 thl'
     allocate( uprcp(1:gr%nz) )   ! u'rc'
     allocate( vprcp(1:gr%nz) )   ! v'rc'
-    allocate( rc_coef(1:gr%nz) ) ! Coefficient of X'r_c' in Eq. (34)
+    allocate( rc_coef_zm(1:gr%nz) ) ! Coefficient of X'r_c' in Eq. (34)
     allocate( wp4(1:gr%nz) )     ! w'^4
     allocate( wpup2(1:gr%nz) )   ! w'u'^2
     allocate( wpvp2(1:gr%nz) )   ! w'v'^2
@@ -1860,7 +1860,7 @@ module clubb_driver
     wp2thlp = zero ! w'^2 thl'
     uprcp   = zero ! u'rc'
     vprcp   = zero ! v'rc'
-    rc_coef = zero ! Coefficient of X'r_c' in Eq. (34)
+    rc_coef_zm = zero ! Coefficient of X'r_c' in Eq. (34)
     wp4     = zero ! w'^4
     wpup2   = zero ! w'u'^2
     wpvp2   = zero ! w'v'^2
@@ -2158,7 +2158,7 @@ module clubb_driver
              p_in_Pa, exner(1,:), rcm(1,:), cloud_frac,         & ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp,                & ! Intent(inout)
              wp2rtp, wp2thlp, uprcp, vprcp,                     & ! Intent(inout)
-             rc_coef, wp4, wpup2, wpvp2, wp2up2,                & ! Intent(inout)
+             rc_coef_zm, wp4, wpup2, wpvp2, wp2up2,             & ! Intent(inout)
              wp2vp2, ice_supersat_frac,                         & ! Intent(inout)
              wm_zt, rho, rho_zm, rho_ds_zm,                     & ! Intent(inout)
              rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt(1,:),         & ! Intent(inout)
@@ -2369,7 +2369,7 @@ module clubb_driver
                                  p_in_Pa, exner(1,:), rcm(1,:), cloud_frac, & ! Inout
                                  wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
                                  wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
-                                 rc_coef, wp4, wpup2, wpvp2, wp2up2, & ! Inout
+                                 rc_coef_zm, wp4, wpup2, wpvp2, wp2up2, & ! Inout
                                  wp2vp2, ice_supersat_frac, & ! Inout
                                  wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
                                  rho_ds_zt(1,:), thv_ds_zm, thv_ds_zt(1,:), & ! Inout
@@ -2521,7 +2521,7 @@ module clubb_driver
                rcm(1,:), cloud_frac, &                                              ! Intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
                sclrpthvp, &                                                         ! Intent(inout)
-               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &                       ! intent(inout)
+               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &                    ! intent(inout)
                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &                   ! intent(inout)
                um_pert, vm_pert, upwp_pert, vpwp_pert, &                            ! intent(inout)
                pdf_params, pdf_params_zm, &                                         ! Intent(inout)
@@ -2572,7 +2572,7 @@ module clubb_driver
                rcm(1,:), cloud_frac, &                                              ! Intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                                ! Intent(inout)
                sclrpthvp, &                                                         ! Intent(inout)
-               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &                       ! intent(inout)
+               wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &                    ! intent(inout)
                wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &                   ! intent(inout)
                um_pert, vm_pert, upwp_pert, vpwp_pert, &                            ! intent(inout)
                pdf_params, pdf_params_zm, &                                         ! Intent(inout)
@@ -3093,7 +3093,7 @@ module clubb_driver
     deallocate( wp2thlp ) ! w'^2 thl'
     deallocate( uprcp )   ! u'rc'
     deallocate( vprcp )   ! v'rc'
-    deallocate( rc_coef ) ! Coefficient of X'r_c' in Eq. (34)
+    deallocate( rc_coef_zm ) ! Coefficient of X'r_c' in Eq. (34)
     deallocate( wp4 )     ! w'^4
     deallocate( wpup2 )   ! w'u'^2
     deallocate( wpvp2 )   ! w'v'^2
@@ -4494,7 +4494,7 @@ module clubb_driver
                p_in_Pa, exner, rcm, cloud_frac, & ! Inout
                wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
                wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
-               rc_coef, wp4, wpup2, wpvp2, wp2up2, & ! Inout
+               rc_coef_zm, wp4, wpup2, wpvp2, wp2up2, & ! Inout
                wp2vp2, ice_supersat_frac, & ! Inout
                wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
                rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! Inout
@@ -4531,7 +4531,7 @@ module clubb_driver
         l_input_Kh_zt, l_input_Kh_zm, l_input_tau_zm, l_input_tau_zt, & 
         l_input_wpthvp, l_input_wp2thvp, l_input_rtpthvp, l_input_thlpthvp, &
         l_input_wp2rtp, l_input_wp2thlp, l_input_uprcp, l_input_vprcp, &
-        l_input_rc_coef, l_input_wp4, l_input_wpup2, l_input_wpvp2, &
+        l_input_rc_coef_zm, l_input_wp4, l_input_wpup2, l_input_wpvp2, &
         l_input_wp2up2, l_input_wp2vp2, l_input_iss_frac, &
         l_input_radht, &
         l_input_w_1, l_input_w_2, l_input_varnce_w_1, l_input_varnce_w_2, &
@@ -4636,7 +4636,7 @@ module clubb_driver
       wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
       uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
-      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
       wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
@@ -4755,7 +4755,7 @@ module clubb_driver
     l_input_wp2thlp = .true.
     l_input_uprcp = .true.
     l_input_vprcp = .true.
-    l_input_rc_coef = .true.
+    l_input_rc_coef_zm = .true.
     l_input_wp4 = .true.
     l_input_wpup2 = .true.
     l_input_wpvp2 = .true.
@@ -4908,7 +4908,7 @@ module clubb_driver
                              p_in_Pa, exner, rcm, cloud_frac, & ! Inout
                              wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
                              wp2rtp, wp2thlp, uprcp, vprcp, & ! Inout
-                             rc_coef, wp4, wpup2, wpvp2, wp2up2, & ! Inout
+                             rc_coef_zm, wp4, wpup2, wpvp2, wp2up2, & ! Inout
                              wp2vp2, ice_supersat_frac, & ! Inout
                              wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
                              rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! Inout
@@ -6560,7 +6560,7 @@ module clubb_driver
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
-    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef, wp4, &          ! intent(inout)
+    wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, wp4, &       ! intent(inout)
     wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, &      ! intent(inout)
     um_pert, vm_pert, upwp_pert, vpwp_pert, &               ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
@@ -6870,7 +6870,7 @@ module clubb_driver
       wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
       uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
-      rc_coef,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
       wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
@@ -7150,7 +7150,7 @@ module clubb_driver
       wp2thlp_col,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
       uprcp_col,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp_col,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
-      rc_coef_col,           & ! Coef of X'r_c' in Eq. (34) (t-levs.) [K/(kg/kg)]
+      rc_coef_zm_col,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4_col,               & ! w'^4 (momentum levels)               [m^4/s^4]
       wpup2_col,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
       wpvp2_col,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
@@ -7158,7 +7158,7 @@ module clubb_driver
       wp2vp2_col,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
       ice_supersat_frac_col    ! ice cloud fraction (thermo. levels)  [-]
 
-!$omp threadprivate( wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, wp4_col )
+!$omp threadprivate( wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_zm_col, wp4_col )
 !$omp threadprivate( wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col )
 
     ! Variables used to track perturbed version of winds.
@@ -7291,7 +7291,7 @@ module clubb_driver
       allocate(wp2thlp_col(ngrdcol,gr_col%nz))
       allocate(uprcp_col(ngrdcol,gr_col%nz))
       allocate(vprcp_col(ngrdcol,gr_col%nz))
-      allocate(rc_coef_col(ngrdcol,gr_col%nz))
+      allocate(rc_coef_zm_col(ngrdcol,gr_col%nz))
       allocate(wp4_col(ngrdcol,gr_col%nz))
       allocate(wpup2_col(ngrdcol,gr_col%nz))
       allocate(wpvp2_col(ngrdcol,gr_col%nz))
@@ -7366,7 +7366,7 @@ module clubb_driver
       wp2thlp_col(i,:) = wp2thlp
       uprcp_col(i,:) = uprcp
       vprcp_col(i,:) = vprcp
-      rc_coef_col(i,:) = rc_coef
+      rc_coef_zm_col(i,:) = rc_coef_zm
       wp4_col(i,:) = wp4
       wpup2_col(i,:) = wpup2
       wpvp2_col(i,:) = wpvp2
@@ -7536,7 +7536,7 @@ module clubb_driver
       rcm_col, cloud_frac_col,                                                  & ! intent(inout)
       wpthvp_col, wp2thvp_col, rtpthvp_col, thlpthvp_col,                       & ! intent(inout)
       sclrpthvp_col,                                                            & ! intent(inout)
-      wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_col, wp4_col,      & ! intent(inout)
+      wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_zm_col, wp4_col,   & ! intent(inout)
       wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col,      & ! intent(inout)
       um_pert_col, vm_pert_col, upwp_pert_col, vpwp_pert_col,                   & ! intent(inout)
       pdf_params_col, pdf_params_zm_col,                                        & ! intent(inout)
@@ -7618,7 +7618,7 @@ module clubb_driver
     wp2thlp = wp2thlp_col(1,:)
     uprcp = uprcp_col(1,:)
     vprcp = vprcp_col(1,:)
-    rc_coef = rc_coef_col(1,:)
+    rc_coef_zm = rc_coef_zm_col(1,:)
     wp4 = wp4_col(1,:)
     wpup2 = wpup2_col(1,:)
     wpvp2 = wpvp2_col(1,:)
