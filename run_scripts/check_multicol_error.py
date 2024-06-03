@@ -20,9 +20,10 @@
 #
 #           ./check_multicolumn_error.py save_case_multicol.nc ../output/case_multicol.nc
 #
-#        It's assumed that for arm/bomex the total of all absolute differences of all fields 
-#        should be below 1.0e-5. If the differences of any field exceed this, then you will be 
-#        given the option to print the max absolute difference by timestep. 
+#        It's assumed that the largest single difference of any field, over any timestep/level/column,
+#        will be less than 1.0e-7. For more stable cases like arm and bomex the largest difference is 
+#        usually much smaller than 1e-7, but the tolerance has been relaxed for mpace_b, which is noiser,
+#        but seems to be the least noisey case where ice develops.
 #
 # Author: Gunther Huebler
 # Reference: https://github.com/larson-group/clubb/issues/1033
@@ -38,7 +39,7 @@ import sys
 field_threshold = 1.0e-7
 
 # Threshold used to determine if the ncfiles are close enough
-total_abs_error_threshold = 1.0e-5
+abs_error_threshold = 1.0e-7
 
 # Var to set if we find that the files differ significantly
 files_differ = False
@@ -81,17 +82,20 @@ for var in dset0.variables:
         # Calculate the percent difference, 100 * (a-b) / ((a+b)/2)
         percent_diff = 200.0 * ( field_1_clipped-field_2_clipped ) \
                                / ( field_1_clipped+field_2_clipped )
+
+        # Save max abs diff since it is reused a few times
+        max_abs_diff = np.max(abs_diff)
                      
         # Append the table array with the values we want to print   
         table.append( [ var, 
-                        np.max(abs_diff), 
+                        max_abs_diff, 
                         np.max(percent_diff), 
                         np.sum(abs_diff), 
                         np.average(abs_diff), 
-                        np.where(abs_diff == np.max(abs_diff)) ] )
+                        np.where(abs_diff == max_abs_diff) ] )
 
-        # If the total absolute difference excedes the threshold, then we consider the files different
-        if np.sum(abs_diff) > total_abs_error_threshold:
+        # If the largest absolute difference excedes the threshold, then we consider the files different
+        if max_abs_diff > abs_error_threshold:
             files_differ = True
 
 # Print a very pretty table of the values
@@ -100,13 +104,13 @@ print("\n",tabulate.tabulate(table, headers='firstrow'))
 
 
 if not files_differ:
-    print("\nPASSED: Sum of all absolute differences does not excede",total_abs_error_threshold,"for any field.")
+    print("\nPASSED: The maximum absolute difference does not excede",abs_error_threshold,"for any field.")
     sys.exit(0)
 else:
     print("\n###############################################################################################")
-    print("WARNING: Sum of all absolute differences excedes",total_abs_error_threshold," for some fields!")
+    print("WARNING: The maximum absolute difference excedes",abs_error_threshold," for some field(s)!")
     print("         It's possible that no error has been introduced, but if the case being compared")
-    print("         is arm or bomex, this is not a good sign.")
+    print("         is arm/bomex/cobra then there is very likely an error.")
     print("###############################################################################################\n")
 
     #print("Print max absolute difference by timestep?")
