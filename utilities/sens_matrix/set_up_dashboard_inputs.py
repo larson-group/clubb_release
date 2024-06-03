@@ -119,6 +119,8 @@ def setUpInputs():
     metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
     metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
 
+
+
     # Parameters are tunable model parameters, e.g. clubb_C8.
     # The float listed below after the parameter name is a factor that is used below for scaling plots.
     #   It is not a weight and doesn't affect optimized values; it just makes the plots more readable.
@@ -126,38 +128,38 @@ def setUpInputs():
     #    up and in the other, it is perturbed down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
-    folder_name = 'Regional_files/20240409updated/thresp26_'  # folder where regional netcdf files are stored.
-    #folder_name = 'Regional_files/stephens_20240131/btune_regional_files/btune_'  # folder where regional netcdf files are stored.
+    #folder_name = 'Regional_files/20240409updated/thresp26_'  # folder where regional netcdf files are stored.
+    folder_name = 'Regional_files/stephens_20240131/btune_regional_files/btune_'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/20230910/'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/20221120_2yr/'  # folder where regional netcdf files are stored.
     paramsNamesScalesAndFilenames = [ \
                     #['clubb_c11', 1.0, \
                     #  folder_name + 'clubb_c11m_Regional.nc',  \
                     #  folder_name + 'clubb_c11p_Regional.nc'], \
-                    #['clubb_c1', 1.0, \
-                    #  folder_name + 'clubb_c1m_Regional.nc',  \
-                    #  folder_name + 'clubb_c1p_Regional.nc'], \
+                    ['clubb_c1', 1.0, \
+                      folder_name + 'clubb_c1m_Regional.nc',  \
+                      folder_name + 'clubb_c1p_Regional.nc'], \
                     #['clubb_gamma_coef', 1.0, \
                     # folder_name + 'clubb_gamma_coefm_Regional.nc',  \
                     # folder_name + 'clubb_gamma_coefp_Regional.nc'], \
                     ['clubb_c8', 1.0, \
-                     folder_name + 'c8p3_Regional.nc',  \
-                     folder_name + 'c8p7_Regional.nc'], \
+                     folder_name + 'clubb_c8m_Regional.nc',  \
+                     folder_name + 'clubb_c8p_Regional.nc'], \
                     #['clubb_c4', 1.0, \
                     # folder_name + 'clubb_c4m_Regional.nc',  \
                     # folder_name + 'clubb_c4p_Regional.nc'], \
                     #['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
                     # folder_name + 'clubb_c_invrs_tau_wpxp_n2_threshm_Regional.nc', \
                     # folder_name + 'clubb_c_invrs_tau_wpxp_n2_threshp_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2', 1.0, \
-                     folder_name + 'n2p55_Regional.nc', \
-                     folder_name + 'n2p75_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2', 1.0, \
+#                     folder_name + 'n2p55_Regional.nc', \
+#                     folder_name + 'n2p75_Regional.nc'], \
                     #['clubb_c_invrs_tau_n2_xp2', 1.0, \
                     # folder_name + 'clubb_c_invrs_tau_n2_xp2m_Regional.nc', \
                     # folder_name + 'clubb_c_invrs_tau_n2_xp2p_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
-                     folder_name + 'wp20_Regional.nc', \
-                     folder_name + 'wp24_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
+#                     folder_name + 'clubb_c_invrs_tau_n2_wp2m_Regional.nc', \
+#                     folder_name + 'clubb_c_invrs_tau_n2_wp2p_Regional.nc'], \
                     #['clubb_c_invrs_tau_wpxp_ri', 1.0, \
                     # folder_name + 'clubb_c_invrs_tau_wpxp_rim_Regional.nc', \
                     # folder_name + 'clubb_c_invrs_tau_wpxp_rip_Regional.nc'], \
@@ -167,27 +169,27 @@ def setUpInputs():
                     #['clubb_c_invrs_tau_n2_clear_wp3', 1.0, \
                     # folder_name + 'clubb_c_invrs_tau_n2_clear_wp3m_Regional.nc', \
                     # folder_name + 'clubb_c_invrs_tau_n2_clear_wp3p_Regional.nc'], \
-                    ['clubb_c_k10', 1.0, \
-                     folder_name + 'ck10p3_Regional.nc', \
-                     folder_name + 'ck10p7_Regional.nc'], \
+#                    ['clubb_c_k10', 1.0, \
+#                     folder_name + 'ck10p3_Regional.nc', \
+#                     folder_name + 'ck10p7_Regional.nc'], \
                     #['clubb_bv_efold', 1.0, \
                     # folder_name + 'clubb_bv_efoldm_Regional.nc', \
                     # folder_name + 'clubb_bv_efoldp_Regional.nc'], \
                     #['clubb_c_uu_shr', 1.0, \
                     # folder_name + 'clubb_c_uu_shrm_Regional.nc', \
                     # folder_name + 'clubb_c_uu_shrp_Regional.nc'], \
-                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-                     folder_name + 'bkg1_Regional.nc',
-                     folder_name + 'bkg2_Regional.nc'], \
-                    ['clubb_c_invrs_tau_sfc', 1.0, \
-                     folder_name + 'sfc0_Regional.nc',
-                     folder_name + 'sfcp3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_shear', 1.0, \
-                      folder_name + 'shr0_Regional.nc', \
-                      folder_name + 'shrp3_Regional.nc'], \
-                    ['clubb_altitude_threshold', 1.0, \
-                      folder_name + 'alt50_Regional.nc', \
-                      folder_name + 'alt150_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
+#                     folder_name + 'bkg1_Regional.nc',
+#                     folder_name + 'bkg2_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_sfc', 1.0, \
+#                     folder_name + 'sfc0_Regional.nc',
+#                     folder_name + 'sfcp3_Regional.nc'], \
+#                    ['clubb_c_invrs_tau_shear', 1.0, \
+#                      folder_name + 'shr0_Regional.nc', \
+#                      folder_name + 'shrp3_Regional.nc'], \
+#                    ['clubb_altitude_threshold', 1.0, \
+#                      folder_name + 'alt50_Regional.nc', \
+#                      folder_name + 'alt150_Regional.nc'], \
                     #['cldfrc_dp1', 1.0, \
                     # folder_name + 'cldfrc_dp1m_Regional.nc', \
                     # folder_name + 'cldfrc_dp1p_Regional.nc'], \
@@ -310,8 +312,8 @@ def setUpInputs():
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
-        'Regional_files/20240409updated/thresp26_Regional.nc'
-    #    'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
+        'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
+    #    'Regional_files/20240409updated/thresp26_Regional.nc'
     #    'Regional_files/stephens_20230920/117.f2c.taus_new_base_latest_mods6e_Regional.nc'
     #defaultNcFilename = \
     #    folder_name + 'sens0707_1_Regional.nc'
@@ -320,8 +322,8 @@ def setUpInputs():
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-        'Regional_files/20240409updated/thresp26_Regional.nc'
-        #'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
+        'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
+    #    'Regional_files/20240409updated/thresp26_Regional.nc'
     # 'Regional_files/stephens_20230920/117.f2c.taus_new_base_latest_mods6e_Regional.nc'
     #linSolnNcFilename = \
     #       folder_name + 'sens0707_25_Regional.nc'
@@ -378,10 +380,10 @@ def setUpInputs():
     metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
     metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
     metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
-    obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231211_20x20regs/" + "OBS.nc")
+    #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231211_20x20regs/" + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231208runs_30x30/" + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
-    #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/stephens_20240131/btune_regional_files/b1850.075plus_Regional.nc")
+    obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/stephens_20240131/btune_regional_files/b1850.075plus_Regional.nc")
 
     return (metricsNames, metricsWeights, metricsNorms, \
             obsMetricValsDict, \
