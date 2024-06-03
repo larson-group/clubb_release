@@ -448,7 +448,9 @@ module enhanced_simann
             seed = clock + 37 * (/ (i - 1, i = 1, n) /)
         end if
 
-        write (fstdout,*) "Enhanced Simann random seed = ", seed
+        if ( l_esa_debug_statements ) then
+          write (fstdout,*) "Enhanced Simann random seed = ", seed
+        end if
 
         call random_seed(PUT = seed)
 
