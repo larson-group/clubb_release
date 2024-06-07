@@ -228,10 +228,25 @@ def createFigs(metricsNames,
     createParamsCorrArrayFig(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol,
                                  paramsNames)
 
+    maskMetricsNames = np.logical_or(metricsNames[:] == 'PRECT_GLB', metricsNames[:] == 'LWCF_GLB')
+#    #maskMetricsNames = np.logical_not(maskMetricsNames)  # get rid of named elements
+    # Apply mask
+    metricsNamesMasked = np.ma.masked_array(metricsNames, maskMetricsNames).compressed()
+#    normMetricValsColMasked = np.ma.masked_array(normMetricValsCol, maskMetricsNames).compressed()
+#    normMetricValsColMasked = normMetricValsColMasked[np.newaxis].T # turn into column array
+#    defaultBiasesColMasked = np.ma.masked_array(defaultBiasesCol, maskMetricsNames).compressed()
+#    defaultBiasesColMasked = defaultBiasesColMasked[np.newaxis].T
+    normMetricValsColMasked = normMetricValsCol[~maskMetricsNames]
+    defaultBiasesColMasked = defaultBiasesCol[~maskMetricsNames]
+    normlzdSensMatrixPolyMasked = normlzdSensMatrixPoly[~maskMetricsNames]
+
+#    dpMin2PtFig = \
+#    createDpMin2PtFig( normlzdSensMatrixPoly, defaultBiasesCol,
+#                          normMetricValsCol, metricsNames )
 
     dpMin2PtFig = \
-    createDpMin2PtFig( normlzdSensMatrixPoly, defaultBiasesCol,
-                          normMetricValsCol, metricsNames )
+    createDpMin2PtFig( normlzdSensMatrixPolyMasked, defaultBiasesColMasked,
+                          normMetricValsColMasked, metricsNamesMasked )
 
     # Create scatterplot to look at outliers
     #createPcaBiplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol, normMetricValsCol, metricsNames, paramsNames)
