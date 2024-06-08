@@ -223,7 +223,7 @@ module microphys_driver
     intent(in) :: &
       X_nl_all_levs ! Normally and lognormally distributed hydrometeors and other variables
 
-    integer, dimension(gr%nz,lh_num_samples), intent(in) :: &
+    integer, dimension(lh_num_samples,gr%nz), intent(in) :: &
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
     real( kind = core_rknd ), dimension(lh_num_samples,gr%nz), intent(in) :: &
@@ -240,7 +240,7 @@ module microphys_driver
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
       
-    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,gr%nz), intent(in) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
       lh_rc_clipped,  & ! rc generated from silhs sample points
