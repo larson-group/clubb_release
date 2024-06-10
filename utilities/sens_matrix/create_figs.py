@@ -46,6 +46,45 @@ def createFigs(metricsNames,
 
     print("Creating plots . . .")
 
+    # Remove selected metrics from plots
+    maskMetricsNames =   (metricsNames == 'PRECT_GLB') | (metricsNames == 'LWCF_GLB') \
+                       | (metricsNames == 'SWCF_LBA')  | (metricsNames == 'SWCF_EP') \
+                       | (metricsNames == 'SWCF_WP')   | (metricsNames == 'SWCF_NP') \
+                       | (metricsNames == 'SWCF_VOCAL') | (metricsNames == 'SWCF_HAWAII') \
+                       | (metricsNames == 'SWCF_SP') | (metricsNames == 'SWCF_GLB')
+
+    maskParamsNames =    (paramsNames == 'clubb_c_k10') | (paramsNames == 'clubb_altitude_threshold') \
+                       | (paramsNames == 'clubb_c_invrs_tau_shear') | (paramsNames == 'clubb_c_invrs_tau_bkgnd') \
+                       | (paramsNames == 'clubb_c_invrs_tau_n2_wp2') | (paramsNames == 'clubb_c_invrs_tau_n2_wp2') \
+                       | (paramsNames == 'clubb_c_invrs_tau_n2')
+
+    maskMetricsParamsNames = np.outer(maskMetricsNames,maskParamsNames)
+
+    #    #maskMetricsNames = np.logical_not(maskMetricsNames)  # get rid of named elements
+    # Apply mask
+    metricsNamesMasked = np.ma.masked_array(metricsNames, maskMetricsNames).compressed()
+    paramsNamesMasked = np.ma.masked_array(paramsNames, maskParamsNames).compressed()
+    #    normMetricValsColMasked = np.ma.masked_array(normMetricValsCol, maskMetricsNames).compressed()
+    #    normMetricValsColMasked = normMetricValsColMasked[np.newaxis].T # turn into column array
+    #    defaultBiasesColMasked = np.ma.masked_array(defaultBiasesCol, maskMetricsNames).compressed()
+    #    defaultBiasesColMasked = defaultBiasesColMasked[np.newaxis].T
+    normMetricValsColMasked = normMetricValsCol[~maskMetricsNames]
+    defaultBiasesColMasked = defaultBiasesCol[~maskMetricsNames]
+    normlzdSensMatrixPolyMasked = normlzdSensMatrixPoly[~maskMetricsNames].T[~maskParamsNames].T
+    normlzdLinplusSensMatrixPolyMasked = normlzdLinplusSensMatrixPoly[~maskMetricsNames].T[~maskParamsNames].T
+
+    metricsWeightsMasked = metricsWeights[~maskMetricsNames]
+
+    obsMetricValsColMasked = obsMetricValsCol[~maskMetricsNames]
+    normlzdCurvMatrixMasked = normlzdCurvMatrix[~maskMetricsNames].T[~maskParamsNames].T
+    normlzdConstMatrixMasked = normlzdConstMatrix[~maskMetricsNames].T[~maskParamsNames].T
+    normlzdOrdDparamsMinMasked = normlzdOrdDparamsMin[~maskMetricsNames].T[~maskParamsNames].T
+    normlzdOrdDparamsMaxMasked = normlzdOrdDparamsMax[~maskMetricsNames].T[~maskParamsNames].T
+
+    magParamValsRowMasked = magParamValsRow.T[~maskParamsNames].T
+
+    sensNcFilenamesMasked = np.ma.masked_array(sensNcFilenames, maskParamsNames).compressed()
+    sensNcFilenamesExtMasked = np.ma.masked_array(sensNcFilenamesExt, maskParamsNames).compressed()
 
     # Calculate symmetric error bars on fitted parameter values,
     #    based on difference in sensitivity matrix, i.e., based on size of nonlinear terms.
@@ -56,12 +95,19 @@ def createFigs(metricsNames,
                      magParamValsRow,
                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
+#    threeDotFig = \
+#        createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
+#                          metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
+#                          normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
+#                          normlzdOrdDparamsMin, normlzdOrdDparamsMax,
+#                          sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+
     threeDotFig = \
-        createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
-                               metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
-                               normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
-                               normlzdOrdDparamsMin, normlzdOrdDparamsMax,
-                               sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+        createThreeDotFig(metricsNamesMasked, paramsNamesMasked, transformedParamsNames,
+                          metricsWeightsMasked, obsMetricValsColMasked, normMetricValsColMasked, magParamValsRowMasked,
+                          normlzdCurvMatrixMasked, normlzdSensMatrixPolyMasked, normlzdConstMatrixMasked,
+                          normlzdOrdDparamsMinMasked, normlzdOrdDparamsMaxMasked,
+                          sensNcFilenamesMasked, sensNcFilenamesExtMasked, defaultNcFilename)
 
     # Create plot showing how well the regional biases are actually removed
     metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1) # measure of sensitivity of each metric
@@ -228,24 +274,15 @@ def createFigs(metricsNames,
     createParamsCorrArrayFig(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol,
                                  paramsNames)
 
-    maskMetricsNames = np.logical_or(metricsNames[:] == 'PRECT_GLB', metricsNames[:] == 'LWCF_GLB')
-#    #maskMetricsNames = np.logical_not(maskMetricsNames)  # get rid of named elements
-    # Apply mask
-    metricsNamesMasked = np.ma.masked_array(metricsNames, maskMetricsNames).compressed()
-#    normMetricValsColMasked = np.ma.masked_array(normMetricValsCol, maskMetricsNames).compressed()
-#    normMetricValsColMasked = normMetricValsColMasked[np.newaxis].T # turn into column array
-#    defaultBiasesColMasked = np.ma.masked_array(defaultBiasesCol, maskMetricsNames).compressed()
-#    defaultBiasesColMasked = defaultBiasesColMasked[np.newaxis].T
-    normMetricValsColMasked = normMetricValsCol[~maskMetricsNames]
-    defaultBiasesColMasked = defaultBiasesCol[~maskMetricsNames]
-    normlzdSensMatrixPolyMasked = normlzdSensMatrixPoly[~maskMetricsNames]
+
+
 
 #    dpMin2PtFig = \
 #    createDpMin2PtFig( normlzdSensMatrixPoly, defaultBiasesCol,
 #                          normMetricValsCol, metricsNames )
 
     dpMin2PtFig = \
-    createDpMin2PtFig( normlzdSensMatrixPolyMasked, defaultBiasesColMasked,
+    createDpMin2PtFig( normlzdLinplusSensMatrixPolyMasked, defaultBiasesColMasked,
                           normMetricValsColMasked, metricsNamesMasked )
 
     # Create scatterplot to look at outliers
@@ -480,10 +517,10 @@ def createBarChart( matrix, index, columns,
     return barChart
 
 def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
-                               metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
-                               normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
-                               normlzdOrdDparamsMin, normlzdOrdDparamsMax,
-                               sens1NcFilenames, sens2NcFilenames, defaultNcFilename):
+                      metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
+                      normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
+                      normlzdOrdDparamsMin, normlzdOrdDparamsMax,
+                      sens1NcFilenames, sens2NcFilenames, defaultNcFilename):
 
     """
     For nonlinear 2nd-order term of Taylor series: 0.5*dp^2*d2m/dp2+...,
@@ -505,9 +542,9 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
                                         setupDefaultMetricValsCol
     from scipy.interpolate import UnivariateSpline
 
-    if ( len(paramsNames) != len(sens1NcFilenames)   ):
-        print("Number of parameters must equal number of netcdf files.")
-        quit()
+#    if ( len(paramsNames) != len(sens1NcFilenames)   ):
+#        print("Number of parameters must equal number of netcdf files.")
+#        quit()
 
     # Number of tunable parameters
     numParams = len(paramsNames)
@@ -564,7 +601,7 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
             threeDotFig.add_trace(
                 go.Scatter(x=paramVals, y=metricVals, 
                                mode='markers',
-                               marker=dict(color='black', size=5)),
+                               marker=dict(color='black', size=16)),
                            row=arrayRow+1, 
                            col=arrayCol+1
                                   )
@@ -585,7 +622,7 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
             threeDotFig.add_trace(
                         go.Scatter(x=paramPts, y=metricPts,
                                mode='lines',
-                               line=dict(color='blue', width=2)),
+                               line=dict(color='blue', width=4)),
                         row=arrayRow+1,
                         col=arrayCol+1
                                   )
@@ -598,7 +635,7 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
             threeDotFig.add_trace(
                 go.Scatter(x=paramVals, y=threeObsMetricVals, 
                                mode='lines',
-                               line=dict(color='red', width=2)),
+                               line=dict(color='red', width=4)),
                            row=arrayRow+1,
                            col=arrayCol+1
                                   )
@@ -608,7 +645,8 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
                 threeDotFig.update_xaxes(title_text=paramsNames[arrayCol]\
                                          .replace('clubb_','').replace('c_invrs_tau_','')\
                                          .replace('wpxp_n2','n2').replace('threshold','thresh'),
-                                         #title_font_size=8,
+                                         title_font_size=36,
+                                         #font=dict(size=50),
                                          tickangle=45,
                                          row=arrayRow+1, col=arrayCol+1
                                          )
@@ -617,10 +655,12 @@ def createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
                                          .replace('clubb_','').replace('c_invrs_tau_','')\
                                          .replace('wpxp_n2','n2').replace('threshold','thresh'),
                                          row=arrayRow+1, col=arrayCol+1,
+                                         title_font_size=36
                                          #side="top", title_standoff=100
                                          )
             if (arrayCol == 0): # Insert metrics label only along left edge of plot
-                threeDotFig.update_yaxes(title_text=metricsNames[arrayRow], row=arrayRow+1, col=arrayCol+1)
+                threeDotFig.update_yaxes(title_text=metricsNames[arrayRow], row=arrayRow+1, col=arrayCol+1,
+                                         title_font_size=36)
             threeDotFig.update_layout(showlegend=False,
                     title_text="Simulated metric values vs. parameter values",
                     height=2500)
@@ -992,7 +1032,7 @@ def createDpMin2PtFig( normlzdSensMatrixPoly, defaultBiasesCol,
                    )
     dpMin2PtFig.update_xaxes(side="bottom")
     dpMin2PtFig.update_layout(
-    title_text='dpMin between 2 metrics (i.e., rows of sens matrix)',
+    title_text='Minimum size of parameter perturbation between 2 metrics',
     title_x=0.5,
     width=800,
     height=700,
