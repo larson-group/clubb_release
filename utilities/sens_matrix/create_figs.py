@@ -46,6 +46,13 @@ def createFigs(metricsNames,
 
     print("Creating plots . . .")
 
+    # Create plot showing how well the regional biases are actually removed
+    metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1) # measure of sensitivity of each metric
+    # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
+    metricsSensOrdered = metricsSens.argsort()
+    metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
+
+
     # Remove selected metrics from plots
     maskMetricsNames =   (metricsNames == 'PRECT_GLB') | (metricsNames == 'LWCF_GLB') \
                        | (metricsNames == 'SWCF_LBA')  | (metricsNames == 'SWCF_EP') \
@@ -70,8 +77,10 @@ def createFigs(metricsNames,
     #    defaultBiasesColMasked = defaultBiasesColMasked[np.newaxis].T
     normMetricValsColMasked = normMetricValsCol[~maskMetricsNames]
     defaultBiasesColMasked = defaultBiasesCol[~maskMetricsNames]
+    defaultBiasesApproxNonlinMasked = defaultBiasesApproxNonlin[~maskMetricsNames]
     normlzdSensMatrixPolyMasked = normlzdSensMatrixPoly[~maskMetricsNames].T[~maskParamsNames].T
-    normlzdLinplusSensMatrixPolyMasked = normlzdLinplusSensMatrixPoly[~maskMetricsNames].T[~maskParamsNames].T
+    normlzdLinplusSensMatrixPolyMetricsMasked = normlzdLinplusSensMatrixPoly[~maskMetricsNames]
+    normlzdLinplusSensMatrixPolyParamsMetricsMasked = normlzdLinplusSensMatrixPolyMetricsMasked.T[~maskParamsNames].T
 
     metricsWeightsMasked = metricsWeights[~maskMetricsNames]
 
@@ -85,6 +94,12 @@ def createFigs(metricsNames,
 
     sensNcFilenamesMasked = np.ma.masked_array(sensNcFilenames, maskParamsNames).compressed()
     sensNcFilenamesExtMasked = np.ma.masked_array(sensNcFilenamesExt, maskParamsNames).compressed()
+
+    metricsSensMasked = metricsSens[~maskMetricsNames]
+    metricsSensMaskedOrdered = metricsSensMasked.argsort()
+
+#    metricsSensOrderedMasked = metricsSensOrdered[~maskMetricsNames]
+
 
     # Calculate symmetric error bars on fitted parameter values,
     #    based on difference in sensitivity matrix, i.e., based on size of nonlinear terms.
@@ -109,11 +124,11 @@ def createFigs(metricsNames,
                           normlzdOrdDparamsMinMasked, normlzdOrdDparamsMaxMasked,
                           sensNcFilenamesMasked, sensNcFilenamesExtMasked, defaultNcFilename)
 
-    # Create plot showing how well the regional biases are actually removed
-    metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1) # measure of sensitivity of each metric
-    # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
-    metricsSensOrdered = metricsSens.argsort()
-    metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
+#    # Create plot showing how well the regional biases are actually removed
+#    metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1) # measure of sensitivity of each metric
+#    # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
+#    metricsSensOrdered = metricsSens.argsort()
+#    metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
 
 
     biasesOrderedArrowFig = \
@@ -165,14 +180,17 @@ def createFigs(metricsNames,
     metricsCorrArrayFig = createCorrArrayFig( normlzdLinplusSensMatrixPoly, metricsNames,
                           title='cos(angle) among metrics (i.e., rows of sens matrix)' )
 
-    minusNormlzdDefaultBiasesCol = \
-             -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
-    residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered,0] \
-                       / np.abs(normMetricValsCol[metricsSensOrdered,0])
-    metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrdered],paramsNames,
-                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixOrdered,
+#    minusNormlzdDefaultBiasesCol = \
+#             -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
+#    residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered,0] \
+#                       / np.abs(normMetricValsCol[metricsSensOrdered,0])
+#    metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrdered],paramsNames,
+#                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixOrdered,
+#                                            title='Removal of biases in each metric by each parameter')
+    metricsBarChart = createMetricsBarChart(metricsSensMaskedOrdered, metricsNamesMasked, paramsNames,
+                                            defaultBiasesColMasked, defaultBiasesApproxNonlinMasked, normMetricValsColMasked,
+                                            minusNonlinMatrixOrdered[~maskMetricsNames[metricsSensOrdered]],
                                             title='Removal of biases in each metric by each parameter')
-
 
     biasLinNlIndivContrbBarFig = \
     createBiasLinNlIndivContrbBarFig( normlzdSensParamsMatrixOrdered, curvParamsMatrixOrdered,
@@ -278,11 +296,11 @@ def createFigs(metricsNames,
 
 
 #    dpMin2PtFig = \
-#    createDpMin2PtFig( normlzdSensMatrixPoly, defaultBiasesCol,
+#    createDpMin2PtFig( normlzdLinplusSensMatrixPoly, defaultBiasesCol,
 #                          normMetricValsCol, metricsNames )
 
     dpMin2PtFig = \
-    createDpMin2PtFig( normlzdLinplusSensMatrixPolyMasked, defaultBiasesColMasked,
+    createDpMin2PtFig( normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
                           normMetricValsColMasked, metricsNamesMasked )
 
     # Create scatterplot to look at outliers
@@ -424,12 +442,22 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
     return ( matrixPlusColFig )
 
 
-def createMetricsBarChart( metricsNames, paramsNames, biases, residBias, sensMatrix, title ):
-
+#def createMetricsBarChart( metricsNames, paramsNames, biases, residBias, sensMatrix, title ):
+def createMetricsBarChart( metricsSensOrdered, metricsNames, paramsNames,
+                           defaultBiasesCol, defaultBiasesApproxNonlin, normMetricValsCol,
+                           sensMatrix,
+                           title ):
 
     import plotly.graph_objects as go
     import numpy as np
     import pdb
+
+    metricsNames = metricsNames[metricsSensOrdered]
+
+    biases = \
+             -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
+    residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered,0] \
+                       / np.abs(normMetricValsCol[metricsSensOrdered,0])
 
     biases = np.reshape(biases, (-1,1))
     barBase = np.copy(biases)  # np.copy prevents biases variable from changing
