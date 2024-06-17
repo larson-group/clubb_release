@@ -147,25 +147,27 @@ def createFigs(metricsNames,
 
     # Create plot showing lumped linear+nonlinear contributions to each metric
     # Form matrix of parameter perturbations, for later multiplication into the sensitivity matrix
-    dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
+    #dnormlzdParamsSolnNonlinMatrix = np.ones((len(metricsNames),1)) @ dnormlzdParamsSolnNonlin.T
     curvParamsMatrixOrdered = 0.5 * normlzdCurvMatrix[metricsSensOrdered,:] * dnormlzdParamsSolnNonlinMatrix**2
     #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
-    minusNonlinMatrixOrdered = -1*curvParamsMatrixOrdered + -1*normlzdSensParamsMatrixOrdered
+    minusNonlinMatrixDparamsOrdered = -1*curvParamsMatrixOrdered + -1*normlzdSensParamsMatrixOrdered
 
 
     biasTotContrbBarFig = \
-          createBarChart( minusNonlinMatrixOrdered, index=metricsNamesOrdered, columns=paramsNames,
+          createBarChart( minusNonlinMatrixDparamsOrdered, index=metricsNamesOrdered, columns=paramsNames,
            #               barBase = np.zeros(numMetrics),
                           #barBase = -defaultBiasesCol[metricsSensOrdered]/np.abs(normMetricValsCol[metricsSensOrdered]) @ np.ones((1,len(paramsNames))),
                           orientation = 'v',
-                          title="""Linear + nonlinear contributions of parameters to actual removal of regional biases""",
+                          title="""Linear + nonlinear contributions to removal of biases <br>
+                                   (dMetrics=sensMatrix*dParams)""",
                           xlabel="Regional metric", ylabel="Contribution to bias removal",
                           width=800, height=500 )
 
     paramsTotContrbBarFig = \
-          createBarChart( minusNonlinMatrixOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
+          createBarChart( minusNonlinMatrixDparamsOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
                           orientation = 'v',
-                          title="""Linear + nonlinear contributions of regional metrics to columns of sens matrix""",
+                          title="""Linear + nonlinear contributions to removal of biases <br>
+                                   (dMetrics=sensMatrix*dParams)""",
                           xlabel="Parameter", ylabel="Contribution to bias removal",
                           width=800, height=500 )
 
@@ -173,8 +175,8 @@ def createFigs(metricsNames,
           createBarChart( normlzdLinplusSensMatrixPoly[metricsSensOrdered,:].T, index=paramsNames, columns=metricsNamesOrdered,
           #                barBase = np.zeros_like(paramsScales),
                           orientation = 'v',
-                          title="""Linplus contributions of parameters to actual removal of regional biases""",
-                          xlabel="Parameter", ylabel="Contribution to bias removal",
+                          title="""Contributions to columns of linplus sensitivity matrix""",
+                          xlabel="Parameter", ylabel="Contribution to column",
                           width=800, height=500 )
 
     metricsCorrArrayFig = createCorrArrayFig( normlzdLinplusSensMatrixPoly, metricsNames,
@@ -185,11 +187,11 @@ def createFigs(metricsNames,
 #    residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered,0] \
 #                       / np.abs(normMetricValsCol[metricsSensOrdered,0])
 #    metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrdered],paramsNames,
-#                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixOrdered,
+#                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixDparamsOrdered,
 #                                            title='Removal of biases in each metric by each parameter')
     metricsBarChart = createMetricsBarChart(metricsSensMaskedOrdered, metricsNamesMasked, paramsNames,
                                             defaultBiasesColMasked, defaultBiasesApproxNonlinMasked, normMetricValsColMasked,
-                                            minusNonlinMatrixOrdered[~maskMetricsNames[metricsSensOrdered]],
+                                            minusNonlinMatrixDparamsOrdered[~maskMetricsNames[metricsSensOrdered]],
                                             title='Removal of biases in each metric by each parameter')
 
     biasLinNlIndivContrbBarFig = \
@@ -214,10 +216,13 @@ def createFigs(metricsNames,
     maxSensMetricsFig = \
     createMaxSensMetricsFig(normlzdSensMatrixPoly, metricsNames)
 
-    biasesVsSensMagScatterplot = \
-    createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol,
-                                         normMetricValsCol, metricsNames)
+#    biasesVsSensMagScatterplot = \
+#    createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol,
+#                                         normMetricValsCol, metricsNames)
 
+    biasesVsSensMagScatterplot = \
+    createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
+                                         normMetricValsColMasked, metricsNamesMasked)
 
     biasesVsSensArrowFig = \
     createBiasesVsSensArrowFig(normlzdWeightedSensMatrixPoly, defaultBiasesCol,
@@ -318,7 +323,7 @@ def createFigs(metricsNames,
         dcc.Graph( id='paramsErrorBarsFig', figure=paramsErrorBarsFig ),
         dcc.Graph( id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig ),
         dcc.Graph( id='metricsBarChart', figure=metricsBarChart ),
-        dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
+        ##redundant dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
         dcc.Graph( id='paramsTotContrbBarFig', figure=paramsTotContrbBarFig ),
         dcc.Graph( id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig ),
         dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ),
@@ -1315,8 +1320,9 @@ def createBiasLinNlIndivContrbBarFig( normlzdSensParamsMatrixOrdered, curvParams
         #    biasLinNlIndivContrbBarFig.layout[axis].title.text = 'Contribution to bias removal'
         if type(biasLinNlIndivContrbBarFig.layout[axis]) == go.layout.XAxis:
             biasLinNlIndivContrbBarFig.layout[axis].title.text = ''
-    #biasLinNlIndivContrbBarFig.layout.title.text = ''
+    biasLinNlIndivContrbBarFig.layout.title.text = "Linear and nonlinear contributions to removal of biases <br> (dMetrics=sensMatrix*dParams) <br><br><br>"
     #biasLinNlIndivContrbBarFig.update_yaxes(visible=True,zeroline=True,zerolinewidth=1,zerolinecolor='gray') # Plot x axis
+    biasLinNlIndivContrbBarFig.update_layout( title_y = 0.95  )
     biasLinNlIndivContrbBarFig.update_layout( width=1000, height=450  )
     #print("curvParams =", -1*curvParamsMatrixOrdered)
     #print("normlzdSens =", -1*normlzdSensParamsMatrixOrdered)
