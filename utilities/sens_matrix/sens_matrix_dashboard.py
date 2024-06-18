@@ -31,6 +31,8 @@ def main():
 
     #print("New run --------------------------------------")
 
+    print("Set up inputs . . .")
+
     # The user should input all tuning data into file set_up_dashboard_inputs.py
     metricsNames, metricsWeights, metricsNorms, \
     obsMetricValsDict, \
@@ -50,6 +52,8 @@ def main():
 
     # Number of metrics
     numMetrics = len(metricsNames)
+
+    print("Set up preliminaries . . .")
 
     obsMetricValsCol, normMetricValsCol, \
     defaultBiasesCol, \
@@ -242,9 +246,8 @@ def main():
 
 
     #print("Creating plots . . .")
-    paramsLowValsPCBound, paramsHiValsPCBound, \
-    threeDotFig = \
-        createFigs(metricsNames, 
+
+    createFigs(metricsNames,
                paramsNames, transformedParamsNames, paramsScales,
                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
                defaultBiasesCol, defaultBiasesApproxNonlin, defaultBiasesApproxElastic, 

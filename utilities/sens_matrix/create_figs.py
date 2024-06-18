@@ -46,6 +46,13 @@ def createFigs(metricsNames,
 
     print("Creating plots . . .")
 
+    # Decide whether or not to create specific plots
+    plot_paramsErrorBarsFig = True
+    plot_threeDotFig = True
+    plot_metricsBarChart = True
+    plot_biasesVsSensMagScatterplot = True
+    plot_dpMin2PtFig = True
+
     # Create plot showing how well the regional biases are actually removed
     metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1) # measure of sensitivity of each metric
     # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
@@ -54,11 +61,22 @@ def createFigs(metricsNames,
 
 
     # Remove selected metrics from plots
-    maskMetricsNames =   (metricsNames == 'PRECT_GLB') | (metricsNames == 'LWCF_GLB') \
-                       | (metricsNames == 'SWCF_LBA')  | (metricsNames == 'SWCF_EP') \
-                       | (metricsNames == 'SWCF_WP')   | (metricsNames == 'SWCF_NP') \
-                       | (metricsNames == 'SWCF_VOCAL') | (metricsNames == 'SWCF_HAWAII') \
-                       | (metricsNames == 'SWCF_SP') | (metricsNames == 'SWCF_GLB')
+#    maskMetricsNames =   (metricsNames == 'PRECT_GLB') | (metricsNames == 'LWCF_GLB') \
+#                       | (metricsNames == 'SWCF_LBA')  | (metricsNames == 'SWCF_EP') \
+#                       | (metricsNames == 'SWCF_WP')   | (metricsNames == 'SWCF_NP') \
+#                       | (metricsNames == 'SWCF_VOCAL') | (metricsNames == 'SWCF_HAWAII') \
+#                       | (metricsNames == 'SWCF_SP') | (metricsNames == 'SWCF_GLB')
+
+#    maskMetricsNames =   (metricsNames != 'SWCF_Namibia') & (metricsNames != 'SWCF_Namibia_near') \
+#                       & (metricsNames != 'SWCF_DYCOMS')  & (metricsNames != 'SWCF_VOCAL_near') \
+#                       & (metricsNames != 'SWCF_CAF')
+
+    maskMetricsNames =   (metricsNames != 'SWCF_4_1') & (metricsNames != 'SWCF_4_2') \
+                         & (metricsNames != 'SWCF_4_3') & (metricsNames != 'SWCF_4_4')
+
+    maskMetricsNames = np.logical_not(maskMetricsNames)
+
+#    maskMetricsNames = np.logical_not(np.frompyfunc(lambda x: '_4_' in x, 1, 1)(metricsNames))
 
     maskParamsNames =    (paramsNames == 'clubb_c_k10') | (paramsNames == 'clubb_altitude_threshold') \
                        | (paramsNames == 'clubb_c_invrs_tau_shear') | (paramsNames == 'clubb_c_invrs_tau_bkgnd') \
@@ -69,55 +87,66 @@ def createFigs(metricsNames,
 
     #    #maskMetricsNames = np.logical_not(maskMetricsNames)  # get rid of named elements
     # Apply mask
-    metricsNamesMasked = np.ma.masked_array(metricsNames, maskMetricsNames).compressed()
+    metricsNamesMasked = np.ma.masked_array(metricsNames, np.logical_not(maskMetricsNames)).compressed()
     paramsNamesMasked = np.ma.masked_array(paramsNames, maskParamsNames).compressed()
     #    normMetricValsColMasked = np.ma.masked_array(normMetricValsCol, maskMetricsNames).compressed()
     #    normMetricValsColMasked = normMetricValsColMasked[np.newaxis].T # turn into column array
     #    defaultBiasesColMasked = np.ma.masked_array(defaultBiasesCol, maskMetricsNames).compressed()
     #    defaultBiasesColMasked = defaultBiasesColMasked[np.newaxis].T
-    normMetricValsColMasked = normMetricValsCol[~maskMetricsNames]
-    defaultBiasesColMasked = defaultBiasesCol[~maskMetricsNames]
-    defaultBiasesApproxNonlinMasked = defaultBiasesApproxNonlin[~maskMetricsNames]
-    normlzdSensMatrixPolyMasked = normlzdSensMatrixPoly[~maskMetricsNames].T[~maskParamsNames].T
-    normlzdLinplusSensMatrixPolyMetricsMasked = normlzdLinplusSensMatrixPoly[~maskMetricsNames]
+    normMetricValsColMasked = normMetricValsCol[maskMetricsNames]
+    defaultBiasesColMasked = defaultBiasesCol[maskMetricsNames]
+    defaultBiasesApproxNonlinMasked = defaultBiasesApproxNonlin[maskMetricsNames]
+    normlzdSensMatrixPolyMasked = normlzdSensMatrixPoly[maskMetricsNames].T[~maskParamsNames].T
+    normlzdLinplusSensMatrixPolyMetricsMasked = normlzdLinplusSensMatrixPoly[maskMetricsNames]
     normlzdLinplusSensMatrixPolyParamsMetricsMasked = normlzdLinplusSensMatrixPolyMetricsMasked.T[~maskParamsNames].T
 
-    metricsWeightsMasked = metricsWeights[~maskMetricsNames]
+    metricsWeightsMasked = metricsWeights[maskMetricsNames]
 
-    obsMetricValsColMasked = obsMetricValsCol[~maskMetricsNames]
-    normlzdCurvMatrixMasked = normlzdCurvMatrix[~maskMetricsNames].T[~maskParamsNames].T
-    normlzdConstMatrixMasked = normlzdConstMatrix[~maskMetricsNames].T[~maskParamsNames].T
-    normlzdOrdDparamsMinMasked = normlzdOrdDparamsMin[~maskMetricsNames].T[~maskParamsNames].T
-    normlzdOrdDparamsMaxMasked = normlzdOrdDparamsMax[~maskMetricsNames].T[~maskParamsNames].T
+    obsMetricValsColMasked = obsMetricValsCol[maskMetricsNames]
+    normlzdCurvMatrixMasked = normlzdCurvMatrix[maskMetricsNames].T[~maskParamsNames].T
+    normlzdConstMatrixMasked = normlzdConstMatrix[maskMetricsNames].T[~maskParamsNames].T
+    normlzdOrdDparamsMinMasked = normlzdOrdDparamsMin[maskMetricsNames].T[~maskParamsNames].T
+    normlzdOrdDparamsMaxMasked = normlzdOrdDparamsMax[maskMetricsNames].T[~maskParamsNames].T
 
     magParamValsRowMasked = magParamValsRow.T[~maskParamsNames].T
 
     sensNcFilenamesMasked = np.ma.masked_array(sensNcFilenames, maskParamsNames).compressed()
     sensNcFilenamesExtMasked = np.ma.masked_array(sensNcFilenamesExt, maskParamsNames).compressed()
 
-    metricsSensMasked = metricsSens[~maskMetricsNames]
+    metricsSensMasked = metricsSens[maskMetricsNames]
     metricsSensMaskedOrdered = metricsSensMasked.argsort()
 
-#    metricsSensOrderedMasked = metricsSensOrdered[~maskMetricsNames]
+#    metricsSensOrderedMasked = metricsSensOrdered[maskMetricsNames]
 
-
-    # Calculate symmetric error bars on fitted parameter values,
-    #    based on difference in sensitivity matrix, i.e., based on size of nonlinear terms.
-    #    For use in figures such as paramsErrorBarsFig.
-    paramsLowValsPCBound, paramsHiValsPCBound = \
+    if plot_paramsErrorBarsFig:
+        print("Creating paramsErrorBarsFig . . .")
+        # Calculate symmetric error bars on fitted parameter values,
+        #    based on difference in sensitivity matrix, i.e., based on size of nonlinear terms.
+        #    For use in figures such as paramsErrorBarsFig.
+        paramsLowValsPCBound, paramsHiValsPCBound = \
         calcParamsBounds(metricsNames, paramsNames, transformedParamsNames,
                      metricsWeights, obsMetricValsCol, normMetricValsCol,
                      magParamValsRow,
                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+        paramsErrorBarsFig = \
+        createParamsErrorBarsFig(paramsNames, defaultParamValsOrigRow, paramsScales,
+                             paramsLowValsPCBound, paramsHiValsPCBound,
+                             paramsSolnLin, dnormlzdParamsSolnLin,
+                             paramsSolnNonlin, dnormlzdParamsSolnNonlin,
+                             paramsSolnElastic, dnormlzdParamsSolnElastic)
 
-#    threeDotFig = \
-#        createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
-#                          metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
-#                          normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
-#                          normlzdOrdDparamsMin, normlzdOrdDparamsMax,
-#                          sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
 
-    threeDotFig = \
+
+
+    if plot_threeDotFig:
+        print("Creating threeDotFig . . .")
+        #    threeDotFig = \
+        #        createThreeDotFig(metricsNames, paramsNames, transformedParamsNames,
+        #                          metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
+        #                          normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix,
+        #                          normlzdOrdDparamsMin, normlzdOrdDparamsMax,
+        #                          sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
+        threeDotFig = \
         createThreeDotFig(metricsNamesMasked, paramsNamesMasked, transformedParamsNames,
                           metricsWeightsMasked, obsMetricValsColMasked, normMetricValsColMasked, magParamValsRowMasked,
                           normlzdCurvMatrixMasked, normlzdSensMatrixPolyMasked, normlzdConstMatrixMasked,
@@ -130,8 +159,8 @@ def createFigs(metricsNames,
 #    metricsSensOrdered = metricsSens.argsort()
 #    metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
 
-
-    biasesOrderedArrowFig = \
+    if False:
+        biasesOrderedArrowFig = \
         createBiasesOrderedArrowFig(metricsSensOrdered, metricsNamesOrdered,
                                     defaultBiasesCol, normMetricValsCol, 
                                     defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv,
@@ -152,107 +181,106 @@ def createFigs(metricsNames,
     #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
     minusNonlinMatrixDparamsOrdered = -1*curvParamsMatrixOrdered + -1*normlzdSensParamsMatrixOrdered
 
+    # The following plot is redundant:
+    #biasTotContrbBarFig = \
+    #      createBarChart( minusNonlinMatrixDparamsOrdered, index=metricsNamesOrdered, columns=paramsNames,
+    #       #               barBase = np.zeros(numMetrics),
+    #                      #barBase = -defaultBiasesCol[metricsSensOrdered]/np.abs(normMetricValsCol[metricsSensOrdered]) @ np.ones((1,len(paramsNames))),
+    #                      orientation = 'v',
+    #                      title="""Linear + nonlinear contributions to removal of biases <br>
+    #                               (dMetrics=sensMatrix*dParams)""",
+    #                      xlabel="Regional metric", ylabel="Contribution to bias removal",
+    #                      width=800, height=500 )
 
-    biasTotContrbBarFig = \
-          createBarChart( minusNonlinMatrixDparamsOrdered, index=metricsNamesOrdered, columns=paramsNames,
-           #               barBase = np.zeros(numMetrics),
-                          #barBase = -defaultBiasesCol[metricsSensOrdered]/np.abs(normMetricValsCol[metricsSensOrdered]) @ np.ones((1,len(paramsNames))),
-                          orientation = 'v',
-                          title="""Linear + nonlinear contributions to removal of biases <br>
-                                   (dMetrics=sensMatrix*dParams)""",
-                          xlabel="Regional metric", ylabel="Contribution to bias removal",
-                          width=800, height=500 )
-
-    paramsTotContrbBarFig = \
-          createBarChart( minusNonlinMatrixDparamsOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
+    if False:
+        paramsTotContrbBarFig = \
+        createBarChart( minusNonlinMatrixDparamsOrdered.T, index=paramsNames, columns=metricsNamesOrdered,
                           orientation = 'v',
                           title="""Linear + nonlinear contributions to removal of biases <br>
                                    (dMetrics=sensMatrix*dParams)""",
                           xlabel="Parameter", ylabel="Contribution to bias removal",
                           width=800, height=500 )
 
-    linplusSensMatrixBarFig = \
-          createBarChart( normlzdLinplusSensMatrixPoly[metricsSensOrdered,:].T, index=paramsNames, columns=metricsNamesOrdered,
+    if False:
+        linplusSensMatrixBarFig = \
+        createBarChart( normlzdLinplusSensMatrixPoly[metricsSensOrdered,:].T, index=paramsNames, columns=metricsNamesOrdered,
           #                barBase = np.zeros_like(paramsScales),
                           orientation = 'v',
                           title="""Contributions to columns of linplus sensitivity matrix""",
                           xlabel="Parameter", ylabel="Contribution to column",
                           width=800, height=500 )
 
-    metricsCorrArrayFig = createCorrArrayFig( normlzdLinplusSensMatrixPoly, metricsNames,
+    if False:
+        metricsCorrArrayFig = createCorrArrayFig( normlzdLinplusSensMatrixPoly, metricsNames,
                           title='cos(angle) among metrics (i.e., rows of sens matrix)' )
 
-#    minusNormlzdDefaultBiasesCol = \
-#             -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
-#    residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered,0] \
-#                       / np.abs(normMetricValsCol[metricsSensOrdered,0])
-#    metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrdered],paramsNames,
-#                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixDparamsOrdered,
-#                                            title='Removal of biases in each metric by each parameter')
-    metricsBarChart = createMetricsBarChart(metricsSensMaskedOrdered, metricsNamesMasked, paramsNames,
+    if plot_metricsBarChart:
+        print("Creating metricsBarChart . . .")
+        #    minusNormlzdDefaultBiasesCol = \
+        #             -defaultBiasesCol[metricsSensOrdered,0]/np.abs(normMetricValsCol[metricsSensOrdered,0])
+        #    residBias = (-defaultBiasesApproxNonlin-defaultBiasesCol)[metricsSensOrdered,0] \
+        #                       / np.abs(normMetricValsCol[metricsSensOrdered,0])
+        #    metricsBarChart = createMetricsBarChart(metricsNames[metricsSensOrdered],paramsNames,
+        #                                            minusNormlzdDefaultBiasesCol, residBias, minusNonlinMatrixDparamsOrdered,
+        #                                            title='Removal of biases in each metric by each parameter')
+        metricsBarChart = createMetricsBarChart(metricsSensMaskedOrdered, metricsNamesMasked, paramsNames,
                                             defaultBiasesColMasked, defaultBiasesApproxNonlinMasked, normMetricValsColMasked,
-                                            minusNonlinMatrixDparamsOrdered[~maskMetricsNames[metricsSensOrdered]],
+                                            minusNonlinMatrixDparamsOrdered[maskMetricsNames[metricsSensOrdered]],
                                             title='Removal of biases in each metric by each parameter')
 
-    biasLinNlIndivContrbBarFig = \
-    createBiasLinNlIndivContrbBarFig( normlzdSensParamsMatrixOrdered, curvParamsMatrixOrdered,
+    if False:
+        biasLinNlIndivContrbBarFig = \
+        createBiasLinNlIndivContrbBarFig( normlzdSensParamsMatrixOrdered, curvParamsMatrixOrdered,
                                           metricsNamesOrdered, paramsNames )
 
-
-    biasVsBiasApproxScatterplot = \
-    createBiasVsBiasApproxScatterplot(defaultBiasesApproxNonlin, defaultBiasesCol,
+    if False:
+        biasVsBiasApproxScatterplot = \
+        createBiasVsBiasApproxScatterplot(defaultBiasesApproxNonlin, defaultBiasesCol,
                                           normMetricValsCol,
                                           metricsNames )
 
-
-    biasSensMatrixScatterFig = \
-    createBiasSensMatrixScatterFig(defaultBiasesCol, defaultBiasesApproxElastic,
+    if False:
+        biasSensMatrixScatterFig = \
+        createBiasSensMatrixScatterFig(defaultBiasesCol, defaultBiasesApproxElastic,
                                        normMetricValsCol, metricsNames)
 
-    dpMinMatrixScatterFig = \
-    createDpMinMatrixScatterFig(defaultBiasesCol, normlzdSensMatrixPoly,
+    if False:
+        dpMinMatrixScatterFig = \
+        createDpMinMatrixScatterFig(defaultBiasesCol, normlzdSensMatrixPoly,
                                     normMetricValsCol, metricsNames)
 
-    maxSensMetricsFig = \
-    createMaxSensMetricsFig(normlzdSensMatrixPoly, metricsNames)
+    if False:
+        maxSensMetricsFig = \
+        createMaxSensMetricsFig(normlzdSensMatrixPoly, metricsNames)
 
-#    biasesVsSensMagScatterplot = \
-#    createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol,
-#                                         normMetricValsCol, metricsNames)
-
-    biasesVsSensMagScatterplot = \
-    createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
+    if plot_biasesVsSensMagScatterplot:
+        print("Creating biasesVsSensMagScatterplot . . .")
+        #    biasesVsSensMagScatterplot = \
+        #    createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol,
+        #                                         normMetricValsCol, metricsNames)
+        biasesVsSensMagScatterplot = \
+        createBiasesVsSensMagScatterplot(normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
                                          normMetricValsColMasked, metricsNamesMasked)
 
-    biasesVsSensArrowFig = \
-    createBiasesVsSensArrowFig(normlzdWeightedSensMatrixPoly, defaultBiasesCol,
+    if False:
+        biasesVsSensArrowFig = \
+        createBiasesVsSensArrowFig(normlzdWeightedSensMatrixPoly, defaultBiasesCol,
                                defaultBiasesApproxNonlin,
                                normMetricValsCol, metricsNames)
 
-
-    normlzdSensMatrixColsFig = \
-    createNormlzdSensMatrixColsFig( defaultBiasesCol, normlzdSensMatrixPoly,
+    if False:
+        normlzdSensMatrixColsFig = \
+        createNormlzdSensMatrixColsFig( defaultBiasesCol, normlzdSensMatrixPoly,
                                        normMetricValsCol, metricsNames, paramsNames )
 
-
-    normlzdSensMatrixRowsFig = \
-    createNormlzdSensMatrixRowsFig( normlzdSensMatrixPoly,
+    if False:
+        normlzdSensMatrixRowsFig = \
+        createNormlzdSensMatrixRowsFig( normlzdSensMatrixPoly,
                                     metricsNames, paramsNames )
 
-
-
-    paramsErrorBarsFig = \
-    createParamsErrorBarsFig(paramsNames, defaultParamValsOrigRow, paramsScales,
-                             paramsLowValsPCBound, paramsHiValsPCBound,
-                             paramsSolnLin, dnormlzdParamsSolnLin,
-                             paramsSolnNonlin, dnormlzdParamsSolnNonlin,
-                             paramsSolnElastic, dnormlzdParamsSolnElastic)
-
-
-    #pdb.set_trace()
-
-    # Create figure that shows the sensitivity matrix and bias column, both color coded.
-    sensMatrixBiasFig = createMatrixPlusColFig( matrix = normlzdLinplusSensMatrixPoly,
+    if False:
+        # Create figure that shows the sensitivity matrix and bias column, both color coded.
+        sensMatrixAndBiasVecFig = createMatrixPlusColFig( matrix = normlzdLinplusSensMatrixPoly,
                          matIndexLabel = metricsNames,
                          matColLabel = paramsNames,
                          colVector = -np.around(defaultBiasesCol/np.abs(normMetricValsCol), decimals=2),
@@ -262,15 +290,18 @@ def createFigs(metricsNames,
                          reversedYAxis = 'reversed' )
 
 
-    # Create figure that plots color-coded parameter correlation matrix plus parameter-bias correlation column.
+    # Needed for several plots:
     XT_dot_X_Linplus = normlzdLinplusSensMatrixPoly.T @ normlzdLinplusSensMatrixPoly
     #XT_dot_X_Linplus = normlzdSensMatrixPoly.T @ normlzdSensMatrixPoly
     #XT_dot_X_Linplus = normlzdWeightedLinplusSensMatrixPoly.T @ normlzdWeightedLinplusSensMatrixPoly
-    (XT_dot_X_Linplus_corr, stdMatrixInv ) = covMatrix2corrMatrix( XT_dot_X_Linplus, returnStd=True )
-    normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdLinplusSensMatrixPoly.T @ normlzdDefaultBiasesCol
-    #normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdSensMatrixPoly.T @ normlzdDefaultBiasesCol
-    #normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdWeightedLinplusSensMatrixPoly.T @ normlzdWeightedDefaultBiasesCol
-    paramsCorrArrayBiasFig = createMatrixPlusColFig( matrix = XT_dot_X_Linplus_corr,
+
+    if False:
+        # Create figure that plots color-coded parameter correlation matrix plus parameter-bias correlation column.
+        (XT_dot_X_Linplus_corr, stdMatrixInv ) = covMatrix2corrMatrix( XT_dot_X_Linplus, returnStd=True )
+        normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdLinplusSensMatrixPoly.T @ normlzdDefaultBiasesCol
+        #normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdSensMatrixPoly.T @ normlzdDefaultBiasesCol
+        #normlzdStdDefaultBiasesCol = stdMatrixInv @ normlzdWeightedLinplusSensMatrixPoly.T @ normlzdWeightedDefaultBiasesCol
+        paramsCorrArrayBiasFig = createMatrixPlusColFig( matrix = XT_dot_X_Linplus_corr,
                          matIndexLabel = paramsNames,
                          matColLabel = paramsNames,
                          colVector = -np.around(normlzdStdDefaultBiasesCol, decimals=2),
@@ -279,11 +310,12 @@ def createFigs(metricsNames,
                          plotTitle='Cosines of angles between columns of sensitivity matrix',
                          reversedYAxis = 'reversed' )
 
-    # Create figure that plots color-coded projection matrix plus bias column.
-    XT_dot_X_Linplus_inv = np.linalg.inv( XT_dot_X_Linplus )
-    projMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
-    #print("projMatrix rows=", np.linalg.norm( projMatrix, axis=1))
-    projectionMatrixFig = createMatrixPlusColFig( matrix = projMatrix,
+    if False:
+        # Create figure that plots color-coded projection matrix plus bias column.
+        XT_dot_X_Linplus_inv = np.linalg.inv( XT_dot_X_Linplus )
+        projMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
+        #print("projMatrix rows=", np.linalg.norm( projMatrix, axis=1))
+        projectionMatrixFig = createMatrixPlusColFig( matrix = projMatrix,
                          matIndexLabel = metricsNames,
                          matColLabel = metricsNames,
                          colVector = -np.around(normlzdDefaultBiasesCol, decimals=2),
@@ -292,20 +324,18 @@ def createFigs(metricsNames,
                          plotTitle='Projection matrix',
                          reversedYAxis = 'reversed' )
 
-
-    paramsCorrArrayFig = \
-    createParamsCorrArrayFig(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol,
+    if False:
+        paramsCorrArrayFig = \
+        createParamsCorrArrayFig(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol,
                                  paramsNames)
 
-
-
-
-#    dpMin2PtFig = \
-#    createDpMin2PtFig( normlzdLinplusSensMatrixPoly, defaultBiasesCol,
-#                          normMetricValsCol, metricsNames )
-
-    dpMin2PtFig = \
-    createDpMin2PtFig( normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
+    if plot_dpMin2PtFig:
+        print("Creating dpMin2PtFig . . .")
+        #    dpMin2PtFig = \
+        #    createDpMin2PtFig( normlzdLinplusSensMatrixPoly, defaultBiasesCol,
+        #                          normMetricValsCol, metricsNames )
+        dpMin2PtFig = \
+        createDpMin2PtFig( normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
                           normMetricValsColMasked, metricsNamesMasked )
 
     # Create scatterplot to look at outliers
@@ -315,42 +345,63 @@ def createFigs(metricsNames,
 
     sensMatrixDashboard = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-    sensMatrixDashboard.layout = html.Div(children=[
+    dashboardChildren = [
         html.H1(children='Sensitivity matrix diagnostics'),
 
-        html.Div(children=''' '''),
+        html.Div(children=''' ''')]
 
-        dcc.Graph( id='paramsErrorBarsFig', figure=paramsErrorBarsFig ),
-        dcc.Graph( id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig ),
-        dcc.Graph( id='metricsBarChart', figure=metricsBarChart ),
-        ##redundant dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
-        dcc.Graph( id='paramsTotContrbBarFig', figure=paramsTotContrbBarFig ),
-        dcc.Graph( id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig ),
-        dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ),
-        dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ),
-        dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ),
+    if plot_paramsErrorBarsFig:
+        dashboardChildren.append(dcc.Graph( id='paramsErrorBarsFig', figure=paramsErrorBarsFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig ))
+    if plot_metricsBarChart:
+        dashboardChildren.append(dcc.Graph( id='metricsBarChart', figure=metricsBarChart ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='paramsTotContrbBarFig', figure=paramsTotContrbBarFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='linplusSensMatrixBarFig', figure=linplusSensMatrixBarFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ))
+    if plot_biasesVsSensMagScatterplot:
+        dashboardChildren.append(dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ))
        #config= { 'toImageButtonOptions': { 'scale': 6 } }
-        dcc.Graph( id='sensMatrixBiasFig', figure=sensMatrixBiasFig ),
-        dcc.Graph( id='paramsCorrArrayBiasFig', figure=paramsCorrArrayBiasFig ),
-        dcc.Graph( id='paramsCorrArrayFig', figure=paramsCorrArrayFig ),
-        dcc.Graph( id='metricsCorrArrayFig', figure=metricsCorrArrayFig ),
-        dcc.Graph( id='projectionMatrixFig', figure=projectionMatrixFig ),
-        dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ),
-        dcc.Graph( id='threeDotFig', figure=threeDotFig ),
-        dcc.Graph( id='biasSensScatterFig', figure=biasSensMatrixScatterFig ),
-        dcc.Graph( id='dpMinMatrixScatterFig', figure=dpMinMatrixScatterFig ),
-        dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ),
-        dcc.Graph( id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig ),
-        dcc.Graph( id='normlzdSensMatrixRowsFig', figure=normlzdSensMatrixRowsFig ),
+    if False:
+        dashboardChildren.append(dcc.Graph( id='sensMatrixAndBiasVecFig', figure=sensMatrixAndBiasVecFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='paramsCorrArrayBiasFig', figure=paramsCorrArrayBiasFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='paramsCorrArrayFig', figure=paramsCorrArrayFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='metricsCorrArrayFig', figure=metricsCorrArrayFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='projectionMatrixFig', figure=projectionMatrixFig ))
+    if plot_dpMin2PtFig:
+        dashboardChildren.append(dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ))
+    if plot_threeDotFig:
+        dashboardChildren.append(dcc.Graph( id='threeDotFig', figure=threeDotFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='biasSensScatterFig', figure=biasSensMatrixScatterFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='dpMinMatrixScatterFig', figure=dpMinMatrixScatterFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='normlzdSensMatrixRowsFig', figure=normlzdSensMatrixRowsFig ))
+    if False:
+        dashboardChildren.append(dcc.Graph( id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig ))
 
-        #dcc.Graph( id='biasesVsSensArrowFig', figure=biasesVsSensArrowFig ),
+    ##redundant dcc.Graph( id='biasTotContrbBarFig', figure=biasTotContrbBarFig ),
 
-    ])
+    sensMatrixDashboard.layout = html.Div(children=dashboardChildren)
 
     sensMatrixDashboard.run_server(debug=True)
 
 
-    return ( paramsLowValsPCBound, paramsHiValsPCBound, threeDotFig )
+    return
 
 def covMatrix2corrMatrix( covMatrix, returnStd=False ):
 
@@ -512,7 +563,7 @@ def createMetricsBarChart( metricsSensOrdered, metricsNames, paramsNames,
     metricsBarChart.update_layout(title = title)
     metricsBarChart.update_layout(barmode='stack')
     metricsBarChart.update_xaxes(visible=True,zeroline=True,zerolinewidth=4,zerolinecolor='gray') # Plot y axis
-    metricsBarChart.update_layout( width=800, height=50*len(metricsNames)  )
+    metricsBarChart.update_layout( width=800, height=100+50*len(metricsNames)  )
     metricsBarChart.update_xaxes(title="-Normalized biases")
 
     #pdb.set_trace()
