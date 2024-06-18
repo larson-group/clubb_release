@@ -23,25 +23,47 @@ pipeline {
         sh '''mv output cpu_output; mkdir output'''
       }
     }
-    stage('Compile GPU') {
+    stage('Compile GPU_ACC') {
       steps {
         sh '''compile/clean_all.bash'''
         sh '''compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openacc.bash'''
       }
     }
-    stage('Run GPU') {
+    stage('Run GPU_ACC') {
       steps {
         sh '''run_scripts/run_scm.bash arm'''
         sh '''run_scripts/run_scm.bash cobra'''
         sh '''run_scripts/run_scm.bash mpace_b'''
-        sh '''mv output gpu_output; mkdir output'''
+        sh '''mv output acc_output; mkdir output'''
+      }
+    }ge('Compile GPU_OMP') {
+      steps {
+        sh '''cd compile'''
+        sh '''compile/clean_all.bash'''
+        sh '''compile/convert_acc_to_omp.bash'''
+        sh '''compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openmp.bash'''
       }
     }
-    stage('Compare Output') {
+    stage('Run GPU_OMP') {
       steps {
-        sh '''run_scripts/check_multicol_error.py cpu_output/arm_multicol.nc gpu_output/arm_multicol.nc'''
-        sh '''run_scripts/check_multicol_error.py cpu_output/cobra_multicol.nc gpu_output/cobra_multicol.nc'''
-        sh '''run_scripts/check_multicol_error.py cpu_output/mpace_b_multicol.nc gpu_output/mpace_b_multicol.nc'''
+        sh '''run_scripts/run_scm.bash arm'''
+        sh '''run_scripts/run_scm.bash cobra'''
+        sh '''run_scripts/run_scm.bash mpace_b'''
+        sh '''mv output omp_output; mkdir output'''
+      }
+    }
+    stage('Compare CPU vs ACC') {
+      steps {
+        sh '''run_scripts/check_multicol_error.py cpu_output/arm_multicol.nc acc_output/arm_multicol.nc'''
+        sh '''run_scripts/check_multicol_error.py cpu_output/cobra_multicol.nc acc_output/cobra_multicol.nc'''
+        sh '''run_scripts/check_multicol_error.py cpu_output/mpace_b_multicol.nc acc_output/mpace_b_multicol.nc'''
+      }
+    }
+    stage('Compare CPU vs OMP') {
+      steps {
+        sh '''run_scripts/check_multicol_error.py cpu_output/arm_multicol.nc omp_output/arm_multicol.nc'''
+        sh '''run_scripts/check_multicol_error.py cpu_output/cobra_multicol.nc omp_output/cobra_multicol.nc'''
+        sh '''run_scripts/check_multicol_error.py cpu_output/mpace_b_multicol.nc omp_output/mpace_b_multicol.nc'''
       }
     }
   }
@@ -52,13 +74,13 @@ pipeline {
       // This cleans out the test workspace so the next run has a fresh start
       // However this only occurs when the test is named clubb_gfortran_build
       // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
-      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_acc_vs_cpu_diffness" )
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_diffness" )
       	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
       }
     }
     failure {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_acc_vs_cpu_diffness" )
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_diffness" )
         // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
       	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }
