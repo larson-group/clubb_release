@@ -36,7 +36,8 @@ pipeline {
         sh '''run_scripts/run_scm.bash mpace_b'''
         sh '''mv output acc_output; mkdir output'''
       }
-    }ge('Compile GPU_OMP') {
+    }
+    stage('Compile GPU_OMP') {
       steps {
         sh '''cd compile'''
         sh '''compile/clean_all.bash'''
