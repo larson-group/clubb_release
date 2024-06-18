@@ -7,6 +7,9 @@
 # For further information about this script, see
 #    https://github.com/larson-group/clubb/issues/1138
 
+# Move to script directory
+cd "$(dirname "$0")"
+
 if [ ! -d $PWD/intel-application-migration-tool-for-openacc-to-openmp/ ]; then
 	git clone https://github.com/intel/intel-application-migration-tool-for-openacc-to-openmp
 fi
