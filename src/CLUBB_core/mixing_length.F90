@@ -1286,9 +1286,9 @@ module mixing_length
                         l_use_thvm_in_bv_freq, &! intent in
                         l_smooth_Heaviside_tau_wpxp, & ! intent in
                         l_modify_limiters_for_cnvg_test, & ! intent in
+                        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent in
+                        brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent in
                         stats_zm, & ! intent inout
-                        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
-                        brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
                         Ri_zm, & ! intent out
                         invrs_tau_zt, invrs_tau_zm, & ! intent out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
@@ -1304,7 +1304,6 @@ module mixing_length
 !--------------------------------------------------------------------------------------------------
 
     use advance_helper_module, only: &
-        calc_brunt_vaisala_freq_sqd, &
         smooth_heaviside_peskin, &
         smooth_min, smooth_max
 
@@ -1373,19 +1372,23 @@ module mixing_length
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       upwp_sfc,      &
       vpwp_sfc
-    
+
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      um,                &
-      vm,                &
-      exner,             &
-      p_in_Pa,           &
-      rtm,               &
-      thlm,              &
-      thvm,              &
-      rcm,               &
-      ice_supersat_frac, &
-      em,                &
-      sqrt_em_zt
+      um,                           &
+      vm,                           &
+      exner,                        &
+      p_in_Pa,                      &
+      rtm,                          &
+      thlm,                         &
+      thvm,                         &
+      rcm,                          &
+      ice_supersat_frac,            &
+      em,                           &
+      sqrt_em_zt,                   &
+      brunt_vaisala_freq_sqd,       &
+      brunt_vaisala_freq_sqd_mixed, &
+      brunt_vaisala_freq_sqd_dry,   &
+      brunt_vaisala_freq_sqd_moist
 
     real(kind = core_rknd), intent(in) :: &
       ufmin,         &
@@ -1425,10 +1428,6 @@ module mixing_length
 
     !--------------------------------- Output Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      brunt_vaisala_freq_sqd,       &
-      brunt_vaisala_freq_sqd_mixed, &
-      brunt_vaisala_freq_sqd_dry,   &
-      brunt_vaisala_freq_sqd_moist, &
       Ri_zm,                        &
       invrs_tau_zt,                 &
       invrs_tau_zm,                 &
