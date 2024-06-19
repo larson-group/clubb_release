@@ -1353,6 +1353,19 @@ module advance_clubb_core_module
     ! Compute mixing length and dissipation time
     !----------------------------------------------------------------
 
+
+    call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm,                         & ! In
+                                      exner, rtm, rcm, p_in_Pa, thvm,                & ! In
+                                      ice_supersat_frac,                             & ! In
+                                      clubb_config_flags%saturation_formula,         & ! In
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
+                                      clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
+                                      clubb_params(:,ibv_efold),                       & ! In
+                                      brunt_vaisala_freq_sqd,                        & ! Out
+                                      brunt_vaisala_freq_sqd_mixed,                  & ! Out
+                                      brunt_vaisala_freq_sqd_dry,                    & ! Out
+                                      brunt_vaisala_freq_sqd_moist )                   ! Out
+
     if ( .not. clubb_config_flags%l_diag_Lscale_from_tau ) then ! compute Lscale 1st, using
                                                                 ! buoyant parcel calc
       call calc_Lscale_directly ( ngrdcol, nz, gr,                             & ! intent(in)
@@ -1417,18 +1430,6 @@ module advance_clubb_core_module
       !$acc end parallel loop
 
       ! End Vince Larson's replacement.
-
-      call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm,                         & ! In
-                                        exner, rtm, rcm, p_in_Pa, thvm,                & ! In
-                                        ice_supersat_frac,                             & ! In
-                                        clubb_config_flags%saturation_formula,         & ! In
-                                        clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
-                                        clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
-                                        clubb_params(:,ibv_efold),                       & ! In
-                                        brunt_vaisala_freq_sqd,                        & ! Out
-                                        brunt_vaisala_freq_sqd_mixed,                  & ! Out
-                                        brunt_vaisala_freq_sqd_dry,                    & ! Out
-                                        brunt_vaisala_freq_sqd_moist )                   ! Out
 
     else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 

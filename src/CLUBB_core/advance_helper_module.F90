@@ -561,6 +561,7 @@ module advance_helper_module
   end subroutine calc_brunt_vaisala_freq_sqd
 
 !===============================================================================
+
   subroutine compute_Cx_fnc_Richardson( nz, ngrdcol, gr, &
                                         thlm, um, vm, em, Lscale, exner, rtm, &
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &

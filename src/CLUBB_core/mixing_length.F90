@@ -1455,7 +1455,6 @@ module mixing_length
       brunt_freq_pos,               &
       brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
       brunt_freq_out_cloud,         &
-      smooth_thlm,                  & 
       bvf_thresh,                   & ! temporatory array  
       H_invrs_tau_wpxp_N2             ! Heaviside function for clippings of invrs_tau_wpxp_N2
 
@@ -1502,7 +1501,7 @@ module mixing_length
     !--------------------------------- Begin Code ---------------------------------
 
     !$acc enter data create( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
-    !$acc                    smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
+    !$acc                    bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
     !$acc                    ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                    brunt_vaisala_freq_clipped, &
     !$acc                    ice_supersat_frac_zm, invrs_tau_shear_smooth, &
@@ -1526,21 +1525,6 @@ module mixing_length
         error stop  "Lowest zm grid level is below ground in CLUBB."
       end if
     end if
-
-    ! Smooth thlm by interpolating to zm then back to zt
-    smooth_thlm = zt2zm2zt( nz, ngrdcol, gr, thlm )
-
-    call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, smooth_thlm, & ! intent(in)
-                                      exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
-                                      ice_supersat_frac, & ! intent(in)
-                                      saturation_formula, & ! intent(in)
-                                      l_brunt_vaisala_freq_moist, & ! intent(in)
-                                      l_use_thvm_in_bv_freq, & ! intent(in)
-                                      clubb_params(:,ibv_efold), & ! intent(in)
-                                      brunt_vaisala_freq_sqd, & ! intent(out)
-                                      brunt_vaisala_freq_sqd_mixed,& ! intent(out)
-                                      brunt_vaisala_freq_sqd_dry, & ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist ) ! intent(out)
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -2114,7 +2098,7 @@ module mixing_length
     !$acc end parallel loop
 
     !$acc exit data delete( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
-    !$acc                   smooth_thlm, bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
+    !$acc                   bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
     !$acc                   ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                   brunt_vaisala_freq_clipped, &
     !$acc                   ice_supersat_frac_zm, invrs_tau_shear_smooth, &
