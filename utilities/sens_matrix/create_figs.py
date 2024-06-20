@@ -46,72 +46,72 @@ def createFigs(metricsNames,
 
     print("Creating plots . . .")
 
-    # Decide whether or not to create specific plots
+    # Use these flags to determine whether or not to create specific plots
     plot_paramsErrorBarsFig = True
     plot_threeDotFig = True
     plot_metricsBarChart = True
     plot_biasesVsSensMagScatterplot = True
     plot_dpMin2PtFig = True
+    plot_dpMinMatrixScatterFig = False
+    plot_projectionMatrixFig = True
+    plot_paramsCorrArrayFig = True
 
-    # Create plot showing how well the regional biases are actually removed
+    # Create a way to order the metrics by sensitivity, for later use in plots
     metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1) # measure of sensitivity of each metric
     # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
     metricsSensOrdered = metricsSens.argsort()
     metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
 
+    # These are the metrics that we want to include in the plots (whitelisted variables).
+    # I.e., set maskMetricsNames=T for variables that we want to plot.
+    maskMetricsNames =   (metricsNames == 'SWCF_4_1') | (metricsNames == 'SWCF_4_2') \
+                         | (metricsNames == 'SWCF_4_3') | (metricsNames == 'SWCF_4_4')
 
-    # Remove selected metrics from plots
-#    maskMetricsNames =   (metricsNames == 'PRECT_GLB') | (metricsNames == 'LWCF_GLB') \
-#                       | (metricsNames == 'SWCF_LBA')  | (metricsNames == 'SWCF_EP') \
-#                       | (metricsNames == 'SWCF_WP')   | (metricsNames == 'SWCF_NP') \
-#                       | (metricsNames == 'SWCF_VOCAL') | (metricsNames == 'SWCF_HAWAII') \
-#                       | (metricsNames == 'SWCF_SP') | (metricsNames == 'SWCF_GLB')
+    # Use this line if you want to exclude (blacklist) some variables:
+    #maskMetricsNames = (metricsNames != 'SWCF_4_1') & (metricsNames != 'SWCF_4_2')
 
-#    maskMetricsNames =   (metricsNames != 'SWCF_Namibia') & (metricsNames != 'SWCF_Namibia_near') \
-#                       & (metricsNames != 'SWCF_DYCOMS')  & (metricsNames != 'SWCF_VOCAL_near') \
-#                       & (metricsNames != 'SWCF_CAF')
+    # Use this line if you want to include all metrics:
+    #maskMetricsNames = (metricsNames != 'noRealMetricWouldHaveThisName')
 
-    maskMetricsNames =   (metricsNames != 'SWCF_4_1') & (metricsNames != 'SWCF_4_2') \
-                         & (metricsNames != 'SWCF_4_3') & (metricsNames != 'SWCF_4_4')
+    # These are the params that we want to include in the plots (whitelisted variables).
+    # I.e., set maskParamsNames=T for variables that we want to plot.
+    #maskParamsNames = (paramsNames == 'clubb_c_k10') | (paramsNames == 'clubb_altitude_threshold') \
+    #                  | (paramsNames == 'clubb_c_invrs_tau_shear') | (paramsNames == 'clubb_c_invrs_tau_bkgnd') \
+    #                  | (paramsNames == 'clubb_c_invrs_tau_n2_wp2') | (paramsNames == 'clubb_c_invrs_tau_n2_wp2') \
+    #                  | (paramsNames == 'clubb_c_invrs_tau_n2')
 
-    maskMetricsNames = np.logical_not(maskMetricsNames)
+    # Use this line if you want to exclude (blacklist) some variables:
+    #maskParamsNames = (paramsNames != 'clubb_c_invrs_tau_n2') & (paramsNames != 'clubb_c_k10')
 
-#    maskMetricsNames = np.logical_not(np.frompyfunc(lambda x: '_4_' in x, 1, 1)(metricsNames))
+    # Use this line if you want to include all params:
+    maskParamsNames = (paramsNames != 'noRealParamWouldHaveThisName')
 
-    maskParamsNames =    (paramsNames == 'clubb_c_k10') | (paramsNames == 'clubb_altitude_threshold') \
-                       | (paramsNames == 'clubb_c_invrs_tau_shear') | (paramsNames == 'clubb_c_invrs_tau_bkgnd') \
-                       | (paramsNames == 'clubb_c_invrs_tau_n2_wp2') | (paramsNames == 'clubb_c_invrs_tau_n2_wp2') \
-                       | (paramsNames == 'clubb_c_invrs_tau_n2')
 
-    maskMetricsParamsNames = np.outer(maskMetricsNames,maskParamsNames)
 
     #    #maskMetricsNames = np.logical_not(maskMetricsNames)  # get rid of named elements
     # Apply mask
     metricsNamesMasked = np.ma.masked_array(metricsNames, np.logical_not(maskMetricsNames)).compressed()
-    paramsNamesMasked = np.ma.masked_array(paramsNames, maskParamsNames).compressed()
-    #    normMetricValsColMasked = np.ma.masked_array(normMetricValsCol, maskMetricsNames).compressed()
-    #    normMetricValsColMasked = normMetricValsColMasked[np.newaxis].T # turn into column array
-    #    defaultBiasesColMasked = np.ma.masked_array(defaultBiasesCol, maskMetricsNames).compressed()
-    #    defaultBiasesColMasked = defaultBiasesColMasked[np.newaxis].T
+    paramsNamesMasked = np.ma.masked_array(paramsNames, np.logical_not(maskParamsNames)).compressed()
     normMetricValsColMasked = normMetricValsCol[maskMetricsNames]
     defaultBiasesColMasked = defaultBiasesCol[maskMetricsNames]
+    normlzdDefaultBiasesColMasked = normlzdDefaultBiasesCol[maskMetricsNames]
     defaultBiasesApproxNonlinMasked = defaultBiasesApproxNonlin[maskMetricsNames]
-    normlzdSensMatrixPolyMasked = normlzdSensMatrixPoly[maskMetricsNames].T[~maskParamsNames].T
+    normlzdSensMatrixPolyMasked = normlzdSensMatrixPoly[maskMetricsNames].T[maskParamsNames].T
     normlzdLinplusSensMatrixPolyMetricsMasked = normlzdLinplusSensMatrixPoly[maskMetricsNames]
-    normlzdLinplusSensMatrixPolyParamsMetricsMasked = normlzdLinplusSensMatrixPolyMetricsMasked.T[~maskParamsNames].T
+    normlzdLinplusSensMatrixPolyParamsMetricsMasked = normlzdLinplusSensMatrixPolyMetricsMasked.T[maskParamsNames].T
 
     metricsWeightsMasked = metricsWeights[maskMetricsNames]
 
     obsMetricValsColMasked = obsMetricValsCol[maskMetricsNames]
-    normlzdCurvMatrixMasked = normlzdCurvMatrix[maskMetricsNames].T[~maskParamsNames].T
-    normlzdConstMatrixMasked = normlzdConstMatrix[maskMetricsNames].T[~maskParamsNames].T
-    normlzdOrdDparamsMinMasked = normlzdOrdDparamsMin[maskMetricsNames].T[~maskParamsNames].T
-    normlzdOrdDparamsMaxMasked = normlzdOrdDparamsMax[maskMetricsNames].T[~maskParamsNames].T
+    normlzdCurvMatrixMasked = normlzdCurvMatrix[maskMetricsNames].T[maskParamsNames].T
+    normlzdConstMatrixMasked = normlzdConstMatrix[maskMetricsNames].T[maskParamsNames].T
+    normlzdOrdDparamsMinMasked = normlzdOrdDparamsMin[maskMetricsNames].T[maskParamsNames].T
+    normlzdOrdDparamsMaxMasked = normlzdOrdDparamsMax[maskMetricsNames].T[maskParamsNames].T
 
-    magParamValsRowMasked = magParamValsRow.T[~maskParamsNames].T
+    magParamValsRowMasked = magParamValsRow.T[maskParamsNames].T
 
-    sensNcFilenamesMasked = np.ma.masked_array(sensNcFilenames, maskParamsNames).compressed()
-    sensNcFilenamesExtMasked = np.ma.masked_array(sensNcFilenamesExt, maskParamsNames).compressed()
+    sensNcFilenamesMasked = np.ma.masked_array(sensNcFilenames, np.logical_not(maskParamsNames)).compressed()
+    sensNcFilenamesExtMasked = np.ma.masked_array(sensNcFilenamesExt, np.logical_not(maskParamsNames)).compressed()
 
     metricsSensMasked = metricsSens[maskMetricsNames]
     metricsSensMaskedOrdered = metricsSensMasked.argsort()
@@ -153,12 +153,6 @@ def createFigs(metricsNames,
                           normlzdOrdDparamsMinMasked, normlzdOrdDparamsMaxMasked,
                           sensNcFilenamesMasked, sensNcFilenamesExtMasked, defaultNcFilename)
 
-#    # Create plot showing how well the regional biases are actually removed
-#    metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1) # measure of sensitivity of each metric
-#    # metricsSensOrdered = (rankdata(metricsSens) - 1).astype(int)  # this ordering doesn't work as an index
-#    metricsSensOrdered = metricsSens.argsort()
-#    metricsNamesOrdered = metricsNames[metricsSensOrdered]  # list of metrics names, ordered from least to most sensitive
-
     if False:
         biasesOrderedArrowFig = \
         createBiasesOrderedArrowFig(metricsSensOrdered, metricsNamesOrdered,
@@ -181,16 +175,6 @@ def createFigs(metricsNames,
     #print("Sum rows=", np.sum(-normlzdSensParamsMatrixOrdered-curvParamsMatrixOrdered, axis=1))
     minusNonlinMatrixDparamsOrdered = -1*curvParamsMatrixOrdered + -1*normlzdSensParamsMatrixOrdered
 
-    # The following plot is redundant:
-    #biasTotContrbBarFig = \
-    #      createBarChart( minusNonlinMatrixDparamsOrdered, index=metricsNamesOrdered, columns=paramsNames,
-    #       #               barBase = np.zeros(numMetrics),
-    #                      #barBase = -defaultBiasesCol[metricsSensOrdered]/np.abs(normMetricValsCol[metricsSensOrdered]) @ np.ones((1,len(paramsNames))),
-    #                      orientation = 'v',
-    #                      title="""Linear + nonlinear contributions to removal of biases <br>
-    #                               (dMetrics=sensMatrix*dParams)""",
-    #                      xlabel="Regional metric", ylabel="Contribution to bias removal",
-    #                      width=800, height=500 )
 
     if False:
         paramsTotContrbBarFig = \
@@ -244,7 +228,7 @@ def createFigs(metricsNames,
         createBiasSensMatrixScatterFig(defaultBiasesCol, defaultBiasesApproxElastic,
                                        normMetricValsCol, metricsNames)
 
-    if False:
+    if plot_dpMinMatrixScatterFig:
         dpMinMatrixScatterFig = \
         createDpMinMatrixScatterFig(defaultBiasesCol, normlzdSensMatrixPoly,
                                     normMetricValsCol, metricsNames)
@@ -310,21 +294,32 @@ def createFigs(metricsNames,
                          plotTitle='Cosines of angles between columns of sensitivity matrix',
                          reversedYAxis = 'reversed' )
 
-    if False:
+    if plot_projectionMatrixFig:
         # Create figure that plots color-coded projection matrix plus bias column.
         XT_dot_X_Linplus_inv = np.linalg.inv( XT_dot_X_Linplus )
-        projMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
-        #print("projMatrix rows=", np.linalg.norm( projMatrix, axis=1))
-        projectionMatrixFig = createMatrixPlusColFig( matrix = projMatrix,
-                         matIndexLabel = metricsNames,
-                         matColLabel = metricsNames,
-                         colVector = -np.around(normlzdDefaultBiasesCol, decimals=2),
-                         colVectIndexLabel = metricsNames,
+        #projectionMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
+        #print("Sum of leverages = ", projectionMatrix.trace())
+        #print("Number of parameters =", len(paramsNames))
+        #projectionMatrixFig = createMatrixPlusColFig( matrix = projectionMatrix,
+        #                 matIndexLabel = metricsNames,
+        #                 matColLabel = metricsNames,
+        #                 colVector = -np.around(normlzdDefaultBiasesCol, decimals=2),
+        #                 colVectIndexLabel = metricsNames,
+        #                 colVectColLabel = ['-Normalized Biases'],
+        #                 plotTitle='Projection matrix',
+        #                 reversedYAxis = 'reversed' )
+        projectionMatrixMasked = normlzdLinplusSensMatrixPolyMetricsMasked @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPolyMetricsMasked.T
+        #print("projectionMatrix rows=", np.linalg.norm( projectionMatrix, axis=1))
+        projectionMatrixFig = createMatrixPlusColFig( matrix = projectionMatrixMasked,
+                         matIndexLabel = metricsNamesMasked,
+                         matColLabel = metricsNamesMasked,
+                         colVector = -np.around(normlzdDefaultBiasesColMasked, decimals=2),
+                         colVectIndexLabel = metricsNamesMasked,
                          colVectColLabel = ['-Normalized Biases'],
-                         plotTitle='Projection matrix',
+                         plotTitle='Excerpt of projection matrix',
                          reversedYAxis = 'reversed' )
 
-    if False:
+    if plot_paramsCorrArrayFig:
         paramsCorrArrayFig = \
         createParamsCorrArrayFig(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol,
                                  paramsNames)
@@ -337,6 +332,18 @@ def createFigs(metricsNames,
         dpMin2PtFig = \
         createDpMin2PtFig( normlzdLinplusSensMatrixPolyMetricsMasked, defaultBiasesColMasked,
                           normMetricValsColMasked, metricsNamesMasked )
+
+    # The following plot is redundant:
+    #biasTotContrbBarFig = \
+    #      createBarChart( minusNonlinMatrixDparamsOrdered, index=metricsNamesOrdered, columns=paramsNames,
+    #       #               barBase = np.zeros(numMetrics),
+    #                      #barBase = -defaultBiasesCol[metricsSensOrdered]/np.abs(normMetricValsCol[metricsSensOrdered]) @ np.ones((1,len(paramsNames))),
+    #                      orientation = 'v',
+    #                      title="""Linear + nonlinear contributions to removal of biases <br>
+    #                               (dMetrics=sensMatrix*dParams)""",
+    #                      xlabel="Regional metric", ylabel="Contribution to bias removal",
+    #                      width=800, height=500 )
+
 
     # Create scatterplot to look at outliers
     #createPcaBiplot(normlzdLinplusSensMatrixPoly, defaultBiasesCol, normMetricValsCol, metricsNames, paramsNames)
@@ -364,6 +371,8 @@ def createFigs(metricsNames,
         dashboardChildren.append(dcc.Graph( id='biasLinNlIndivContrbBarFig', figure=biasLinNlIndivContrbBarFig ))
     if plot_biasesVsSensMagScatterplot:
         dashboardChildren.append(dcc.Graph( id='biasesVsSensMagScatterplot', figure=biasesVsSensMagScatterplot ))
+    if plot_dpMin2PtFig:
+        dashboardChildren.append(dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ))
     if False:
         dashboardChildren.append(dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ))
        #config= { 'toImageButtonOptions': { 'scale': 6 } }
@@ -371,19 +380,17 @@ def createFigs(metricsNames,
         dashboardChildren.append(dcc.Graph( id='sensMatrixAndBiasVecFig', figure=sensMatrixAndBiasVecFig ))
     if False:
         dashboardChildren.append(dcc.Graph( id='paramsCorrArrayBiasFig', figure=paramsCorrArrayBiasFig ))
-    if False:
+    if plot_paramsCorrArrayFig:
         dashboardChildren.append(dcc.Graph( id='paramsCorrArrayFig', figure=paramsCorrArrayFig ))
     if False:
         dashboardChildren.append(dcc.Graph( id='metricsCorrArrayFig', figure=metricsCorrArrayFig ))
-    if False:
+    if plot_projectionMatrixFig:
         dashboardChildren.append(dcc.Graph( id='projectionMatrixFig', figure=projectionMatrixFig ))
-    if plot_dpMin2PtFig:
-        dashboardChildren.append(dcc.Graph( id='dpMin2PtFig', figure=dpMin2PtFig ))
     if plot_threeDotFig:
         dashboardChildren.append(dcc.Graph( id='threeDotFig', figure=threeDotFig ))
     if False:
         dashboardChildren.append(dcc.Graph( id='biasSensScatterFig', figure=biasSensMatrixScatterFig ))
-    if False:
+    if plot_dpMinMatrixScatterFig:
         dashboardChildren.append(dcc.Graph( id='dpMinMatrixScatterFig', figure=dpMinMatrixScatterFig ))
     if False:
         dashboardChildren.append(dcc.Graph( id='maxSensMetricsFig', figure=maxSensMetricsFig ))
