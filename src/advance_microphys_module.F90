@@ -2524,7 +2524,29 @@ module advance_microphys_module
        lhs(km1_tdiag) = zero
 
 
-    elseif ( level > 1 .and. level < gr%nz ) then
+    elseif ( level == 2 ) then
+
+       ! Special discretization where the value of the hydrometeor at the lower
+       ! boundary or surface (momentum level 1) is implicitly set equal to the
+       ! value of the hydrometeor at thermodynamic level 2.
+
+       ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+       lhs(kp1_tdiag)  & 
+       = + invrs_rho_ds_zt * invrs_dzt &
+           * rho_ds_zm * V_hm * gr%weights_zt2zm(i,mk,t_above)
+
+       ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+       lhs(k_tdiag)  & 
+       = + invrs_rho_ds_zt &
+           * invrs_dzt &
+           * ( rho_ds_zm * V_hm * gr%weights_zt2zm(i,mk,t_below) & 
+               - rho_ds_zmm1 * V_hmm1 )
+
+       ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+       lhs(km1_tdiag) = zero
+
+
+    elseif ( level > 2 .and. level < gr%nz ) then
 
        ! Most of the interior model; normal conditions.
 
@@ -2549,15 +2571,23 @@ module advance_microphys_module
     elseif ( level == gr%nz ) then
 
        ! k = gr%nz (top level); upper boundary level; no flux.
+       ! Special discretization where the value of the hydrometeor at the upper
+       ! boundary (momentum level gr%nz) is implicitly set equal to 0. The
+       ! process of sedimentation can only decrease the value of the hydrometeor
+       ! at level gr%nz.
 
        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
        lhs(kp1_tdiag) = zero
 
        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-       lhs(k_tdiag)   = zero
+       lhs(k_tdiag)  &
+       = - invrs_rho_ds_zt * invrs_dzt &
+           * rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(i,mkm1,t_above)
 
        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-       lhs(km1_tdiag) = zero
+       lhs(km1_tdiag)  & 
+       = - invrs_rho_ds_zt * invrs_dzt &
+           * rho_ds_zmm1 * V_hmm1 * gr%weights_zt2zm(i,mkm1,t_below)
 
 
     endif
@@ -2736,12 +2766,16 @@ module advance_microphys_module
     if ( level == gr%nz ) then
 
        ! k = gr%nz (top level); upper boundary level; no flux.
+       ! Special discretization where the value of the hydrometeor above the
+       ! upper boundary is implicitly set equal to 0. The process of
+       ! sedimentation can only decrease the value of the hydrometeor
+       ! at level gr%nz.
 
        ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
        lhs(kp1_tdiag) = zero
 
        ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-       lhs(k_tdiag)   = zero
+       lhs(k_tdiag)   = - invrs_rho_ds_zt * invrs_dzm * rho_ds_zt * V_hmt
 
        ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
        lhs(km1_tdiag) = zero
