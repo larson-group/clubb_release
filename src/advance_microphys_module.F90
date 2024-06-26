@@ -3019,7 +3019,27 @@ module advance_microphys_module
           lhs(km1_tdiag) = zero
 
 
-       elseif ( level > 1 .and. level < gr%nz ) then
+       elseif ( level == 2 ) then
+
+          ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
+          lhs(kp1_tdiag)  & 
+          = + invrs_rho_ds_zt &
+              * invrs_dzt &
+              * rho_ds_zm * Vhmphmp_impcm * gr%weights_zt2zm(i,mk,t_above)
+
+          ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
+          lhs(k_tdiag)  & 
+          = + invrs_rho_ds_zt &
+              * invrs_dzt &
+              * ( rho_ds_zm * Vhmphmp_impcm &
+                            * gr%weights_zt2zm(i,mk,t_below) & 
+                  - rho_ds_zmm1 * Vhmphmp_impcm1 )
+
+          ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
+          lhs(km1_tdiag) = zero
+
+
+       elseif ( level > 2 .and. level < gr%nz ) then
 
           ! Most of the interior model; normal conditions.
 
@@ -3039,7 +3059,7 @@ module advance_microphys_module
                                 * gr%weights_zt2zm(i,mkm1,t_above)  )
 
           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-          lhs(km1_tdiag)  & 
+          lhs(km1_tdiag)  &
           = - invrs_rho_ds_zt &
               * invrs_dzt &
               * rho_ds_zmm1 * Vhmphmp_impcm1 * gr%weights_zt2zm(i,mkm1,t_below)
@@ -3053,10 +3073,16 @@ module advance_microphys_module
           lhs(kp1_tdiag) = zero
 
           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-          lhs(k_tdiag)   = zero
+          lhs(k_tdiag)  &
+          = - invrs_rho_ds_zt &
+              * invrs_dzt &
+              * rho_ds_zmm1 * Vhmphmp_impcm1 * gr%weights_zt2zm(i,mkm1,t_above)
 
           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-          lhs(km1_tdiag) = zero
+          lhs(km1_tdiag)  &
+          = - invrs_rho_ds_zt &
+              * invrs_dzt &
+              * rho_ds_zmm1 * Vhmphmp_impcm1 * gr%weights_zt2zm(i,mkm1,t_below)
 
 
        endif  ! level
@@ -3105,7 +3131,9 @@ module advance_microphys_module
           lhs(kp1_tdiag) = zero
 
           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-          lhs(k_tdiag)   = zero
+          lhs(k_tdiag) &
+          = - invrs_rho_ds_zt &
+              * invrs_dzm * rho_ds_zt * Vhmphmp_zt_impc
 
           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
           lhs(km1_tdiag) = zero
@@ -3304,7 +3332,7 @@ module advance_microphys_module
        elseif ( level == gr%nz ) then
 
           ! k = gr%nz (top level); upper boundary level; no flux.
-          rhs = zero
+          rhs = + invrs_rho_ds_zt * invrs_dzt * rho_ds_zmm1 * Vhmphmp_expcm1
 
 
        endif
@@ -3331,7 +3359,7 @@ module advance_microphys_module
        elseif ( level == gr%nz ) then
 
           ! k = gr%nz (top level); upper boundary level; no flux.
-          rhs = zero
+          rhs = + invrs_rho_ds_zt * invrs_dzm * rho_ds_zt * Vhmphmp_zt_expc
 
 
        endif
