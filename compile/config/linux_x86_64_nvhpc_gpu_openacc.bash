@@ -31,7 +31,7 @@ OPTIMIZE="-O2"
 
 # == NetCDF Location ==
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
-NETCDF="$PGI_NETCDF_FORTRAN"
+NETCDF="$(nf-config --prefix)"
 
 # == Linking Flags ==
 LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK -acc -Mcuda"

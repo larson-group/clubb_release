@@ -1,13 +1,14 @@
 pipeline {
   agent any
   stages {
-    stage('Modify Config Flags') {
+    stage('Modify Config Flags/Load Modules') {
       steps {
         sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:num_standalone_columns.*:num_standalone_columns = 32:g" input/tunable_parameters/configurable_model_flags.in'''
         sh '''sed -i "s:time_final.*:time_final = 87600:g" input/case_setups/mpace_b_model.in'''
         sh '''sed -i "s:time_final.*:time_final = 76200:g" input/case_setups/cobra_model.in'''
+        sh '''module load nvhpc netcdf-fortran'''
       }
     }
     stage('Compile CPU') {
