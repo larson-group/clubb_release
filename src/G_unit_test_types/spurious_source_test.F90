@@ -1027,6 +1027,7 @@ module spurious_source_test
                              l_mono_flux_lim_um, &
                              l_mono_flux_lim_vm, &
                              l_mono_flux_lim_spikefix, &
+                             l_modify_limiters_for_cnvg_test, &
                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                              stats_metadata, &
                              stats_zt, stats_zm, stats_sfc, &

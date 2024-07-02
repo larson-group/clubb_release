@@ -1288,6 +1288,7 @@ module mixing_length
                         l_modify_limiters_for_cnvg_test, & ! intent in
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent in
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent in
+                        brunt_vaisala_freq_sqd_smth,  & ! intent in
                         stats_zm, & ! intent inout
                         Ri_zm, & ! intent out
                         invrs_tau_zt, invrs_tau_zm, & ! intent out
@@ -1388,7 +1389,8 @@ module mixing_length
       brunt_vaisala_freq_sqd,       &
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry,   &
-      brunt_vaisala_freq_sqd_moist
+      brunt_vaisala_freq_sqd_moist, &
+      brunt_vaisala_freq_sqd_smth       ! smoothed Buoyancy frequency squared, N^2     [s^-2]
 
     real(kind = core_rknd), intent(in) :: &
       ufmin,         &
@@ -1452,9 +1454,8 @@ module mixing_length
     !--------------------------------- Local Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       brunt_freq_pos,               &
-      brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
       brunt_freq_out_cloud,         &
-      bvf_thresh,                   & ! temporatory array  
+      bvf_thresh,                   & ! temporatory array
       H_invrs_tau_wpxp_N2             ! Heaviside function for clippings of invrs_tau_wpxp_N2
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
@@ -1470,7 +1471,7 @@ module mixing_length
                                               ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
                                               ! for a plot on how output behaves with varying min_max_smth_mag
       heaviside_smth_range = 1.0e-0_core_rknd ! range where Heaviside function is smoothed
-   
+
     logical, parameter :: l_smooth_min_max = .false.  ! whether to apply smooth min and max functions
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
@@ -1499,7 +1500,7 @@ module mixing_length
 
     !--------------------------------- Begin Code ---------------------------------
 
-    !$acc enter data create( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
+    !$acc enter data create( brunt_freq_pos, brunt_freq_out_cloud, &
     !$acc                    bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
     !$acc                    ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                    brunt_vaisala_freq_clipped, &
@@ -1599,60 +1600,6 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
-
-    !The min function below smooths the slope discontinuity in brunt freq
-    !  and thereby allows tau to remain large in Sc layers in which thlm may
-    !  be slightly stably stratified.
-    if ( l_modify_limiters_for_cnvg_test ) then 
-
-      !Remove the limiters to improve the solution convergence
-      brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz,ngrdcol,gr, brunt_vaisala_freq_sqd_mixed )
-
-    else  ! default method  
-
-      if ( l_smooth_min_max ) then
-
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            tmp_calc(i,k) = 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3
-          end do
-        end do
-        !$acc end parallel loop
-
-        brunt_vaisala_freq_clipped = smooth_min( nz, ngrdcol, &
-                                                 brunt_vaisala_freq_sqd_mixed, &
-                                                 tmp_calc, &
-                                                 1.0e-4_core_rknd * min_max_smth_mag)
-
-        brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz, ngrdcol, gr, brunt_vaisala_freq_clipped )
-
-      else
-
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            brunt_vaisala_freq_clipped(i,k) = min( brunt_vaisala_freq_sqd_mixed(i,k), &
-                                                   1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3)
-          end do
-        end do
-        !$acc end parallel loop
-
-        brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz, ngrdcol, gr, brunt_vaisala_freq_clipped )
-
-      end if
-
-    end if
-
-    if ( stats_metadata%l_stats_samp ) then
-
-      !$acc update host( brunt_vaisala_freq_sqd_smth )
-
-      do i = 1, ngrdcol
-        call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_smth, brunt_vaisala_freq_sqd_smth(i,:), & ! intent(in)
-                             stats_zm(i))                                          ! intent(inout)
-      end do
-    end if
 
     if ( l_modify_limiters_for_cnvg_test ) then
 
@@ -2096,7 +2043,7 @@ module mixing_length
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_freq_pos, brunt_vaisala_freq_sqd_smth, brunt_freq_out_cloud, &
+    !$acc exit data delete( brunt_freq_pos, brunt_freq_out_cloud, &
     !$acc                   bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
     !$acc                   ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                   brunt_vaisala_freq_clipped, &

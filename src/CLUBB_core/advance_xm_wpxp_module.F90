@@ -89,6 +89,7 @@ module advance_xm_wpxp_module
                               l_mono_flux_lim_um, &
                               l_mono_flux_lim_vm, &
                               l_mono_flux_lim_spikefix, &
+                              l_modify_limiters_for_cnvg_test, &
                               order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                               stats_metadata, &
                               stats_zt, stats_zm, stats_sfc, &
@@ -334,8 +335,9 @@ module advance_xm_wpxp_module
       l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
       l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
-      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
+      l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
+      l_modify_limiters_for_cnvg_test ! Flag to activate modifications on limiters for convergence test
 
     integer, intent(in) :: &
       order_xm_wpxp, &
@@ -781,6 +783,7 @@ module advance_xm_wpxp_module
                                  l_upwind_xm_ma,                                   & ! In
                                  l_brunt_vaisala_freq_moist,                       & ! In
                                  l_use_thvm_in_bv_freq,                            & ! In
+                                 l_modify_limiters_for_cnvg_test,                  & ! In
                                  lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,   & ! Out
                                  lhs_tp, lhs_ta_xm, lhs_ac_pr2 ) ! Out
 
@@ -1454,6 +1457,7 @@ module advance_xm_wpxp_module
                                      l_upwind_xm_ma,                                    & ! In
                                      l_brunt_vaisala_freq_moist,                        & ! In
                                      l_use_thvm_in_bv_freq,                             & ! In
+                                     l_modify_limiters_for_cnvg_test,                   & ! In
                                      lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,    & ! Out
                                      lhs_tp, lhs_ta_xm, lhs_ac_pr2 )                      ! Out
     ! Description:
@@ -1550,10 +1554,11 @@ module advance_xm_wpxp_module
                                       ! It affects rtm, thlm, sclrm, um and vm.
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq           ! Use thvm in the calculation of Brunt-Vaisala frequency
-      
+      l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_modify_limiters_for_cnvg_test ! Flag to activate modifications on limiters for convergence test
+
     !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: &
       lhs_diff_zm,  & ! Diffusion term for w'x'
       lhs_diff_zt,  & ! Diffusion term for xm
       lhs_ma_zt,    & ! Mean advection contributions to lhs
@@ -1629,7 +1634,8 @@ module advance_xm_wpxp_module
                                           clubb_params(:,ibv_efold), &
                                           saturation_formula, &
                                           l_brunt_vaisala_freq_moist, &
-                                          l_use_thvm_in_bv_freq,&
+                                          l_use_thvm_in_bv_freq, &
+                                          l_modify_limiters_for_cnvg_test, &
                                           Kh_N2_zm )
 
           !$acc parallel loop gang vector collapse(2) default(present)

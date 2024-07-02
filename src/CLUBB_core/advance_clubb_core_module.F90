@@ -776,6 +776,8 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2               [s^-2]
        brunt_vaisala_freq_sqd_dry,   & ! dry N^2                                      [s^-2]
        brunt_vaisala_freq_sqd_moist, & ! moist N^2                                    [s^-2]
+       brunt_vaisala_freq_sqd_smth,  & ! Mix between dry and moist N^2 that is
+                                       ! smoothed in the vertical                     [s^-2]
        brunt_vaisala_freq_sqd_splat, & !                                              [s^-2]
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
        Ri_zm                           ! Richardson number                            [-]
@@ -854,7 +856,7 @@ module advance_clubb_core_module
     !$acc              invrs_tau_sfc, invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
     !$acc              brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc              brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc              brunt_vaisala_freq_sqd_splat, &
+    !$acc              brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_smth, &
     !$acc              brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
     !$acc              tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 )
 
@@ -1355,17 +1357,19 @@ module advance_clubb_core_module
     !----------------------------------------------------------------
 
 
-    call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm,                         & ! In
-                                      exner, rtm, rcm, p_in_Pa, thvm,                & ! In
-                                      ice_supersat_frac,                             & ! In
-                                      clubb_config_flags%saturation_formula,         & ! In
-                                      clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
-                                      clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
-                                      clubb_params(:,ibv_efold),                       & ! In
-                                      brunt_vaisala_freq_sqd,                        & ! Out
-                                      brunt_vaisala_freq_sqd_mixed,                  & ! Out
-                                      brunt_vaisala_freq_sqd_dry,                    & ! Out
-                                      brunt_vaisala_freq_sqd_moist )                   ! Out
+    call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm,                                & ! In
+                                      exner, rtm, rcm, p_in_Pa, thvm,                       & ! In
+                                      ice_supersat_frac,                                    & ! In
+                                      clubb_config_flags%saturation_formula,                & ! In
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist,        & ! In
+                                      clubb_config_flags%l_use_thvm_in_bv_freq,             & ! In
+                                      clubb_config_flags%l_modify_limiters_for_cnvg_test,   & ! In
+                                      clubb_params(:,ibv_efold),                            & ! In
+                                      brunt_vaisala_freq_sqd,                               & ! Out
+                                      brunt_vaisala_freq_sqd_mixed,                         & ! Out
+                                      brunt_vaisala_freq_sqd_dry,                           & ! Out
+                                      brunt_vaisala_freq_sqd_moist,                         & ! Out
+                                      brunt_vaisala_freq_sqd_smth )                           ! Out
 
     if ( .not. clubb_config_flags%l_diag_Lscale_from_tau ) then ! compute Lscale 1st, using
                                                                 ! buoyant parcel calc
@@ -1452,6 +1456,7 @@ module advance_clubb_core_module
                         clubb_config_flags%l_modify_limiters_for_cnvg_test,       & ! In
                         brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,     & ! In
                         brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! In
+                        brunt_vaisala_freq_sqd_smth,                              & ! In
                         stats_zm,                                                 & ! Inout
                         Ri_zm,                                                    & ! Out
                         invrs_tau_zt, invrs_tau_zm,                               & ! Out
@@ -1613,16 +1618,17 @@ module advance_clubb_core_module
     if ( clubb_config_flags%l_stability_correct_tau_zm ) then
 
       ! Determine stability correction factor
-      call calc_stability_correction( nz, ngrdcol, gr,                               & ! In
-                                      thlm, Lscale_zm, em,                           & ! In
-                                      exner, rtm, rcm,                               & ! In
-                                      p_in_Pa, thvm, ice_supersat_frac,              & ! In
-                                      clubb_params(:,ilambda0_stability_coef),       & ! In
-                                      clubb_params(:,ibv_efold),                     & ! In
-                                      clubb_config_flags%saturation_formula,         & ! In
-                                      clubb_config_flags%l_brunt_vaisala_freq_moist, & ! In
-                                      clubb_config_flags%l_use_thvm_in_bv_freq,      & ! In
-                                      stability_correction )                           ! Out
+      call calc_stability_correction( nz, ngrdcol, gr,                                      & ! In
+                                      thlm, Lscale_zm, em,                                  & ! In
+                                      exner, rtm, rcm,                                      & ! In
+                                      p_in_Pa, thvm, ice_supersat_frac,                     & ! In
+                                      clubb_params(:,ilambda0_stability_coef),              & ! In
+                                      clubb_params(:,ibv_efold),                            & ! In
+                                      clubb_config_flags%saturation_formula,                & ! In
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist,        & ! In
+                                      clubb_config_flags%l_use_thvm_in_bv_freq,             & ! In
+                                      clubb_config_flags%l_modify_limiters_for_cnvg_test,   & ! In
+                                      stability_correction )                                  ! Out
 
       if ( stats_metadata%l_stats_samp ) then
         !$acc update host( stability_correction )
@@ -1698,10 +1704,11 @@ module advance_clubb_core_module
       !$acc              Ri_zm, invrs_tau_wp3_zm, invrs_tau_no_N2_zm, invrs_tau_bkgnd, &
       !$acc              invrs_tau_sfc, invrs_tau_shear, brunt_vaisala_freq_sqd, &
       !$acc              brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_mixed, &
-      !$acc              brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry )
+      !$acc              brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
+      !$acc              brunt_vaisala_freq_sqd_smth )
 
       do i = 1, ngrdcol
-    
+
         call stat_update_var(stats_metadata%iinvrs_tau_zm, invrs_tau_zm(i,:), & ! intent(in)
                              stats_zm(i))                      ! intent(inout)
         call stat_update_var(stats_metadata%iinvrs_tau_xp2_zm, invrs_tau_xp2_zm(i,:), & ! intent(in)
@@ -1735,6 +1742,9 @@ module advance_clubb_core_module
                              stats_zm(i))                                          ! intent(inout)
         call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_dry(i,:), & ! intent(in)
                              stats_zm(i))                                          ! intent(inout)
+        call stat_update_var(stats_metadata%ibrunt_vaisala_freq_sqd_smth, brunt_vaisala_freq_sqd_smth(i,:), & ! intent(in)
+                             stats_zm(i))                                          ! intent(inout)
+
       end do
     end if
 
@@ -1820,6 +1830,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_mono_flux_lim_um,                & ! intent(in)
                             clubb_config_flags%l_mono_flux_lim_vm,                & ! intent(in)
                             clubb_config_flags%l_mono_flux_lim_spikefix,          & ! intent(in)
+                            clubb_config_flags%l_modify_limiters_for_cnvg_test,   & ! intent(in)
                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,         & ! intent(in)
                             stats_metadata,                                       & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                        & ! intent(i/o)
@@ -2772,7 +2783,7 @@ module advance_clubb_core_module
     !$acc                   invrs_tau_sfc, invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
     !$acc                   brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                   brunt_vaisala_freq_sqd_splat, &
+    !$acc                   brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_smth, &
     !$acc                   brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
     !$acc                   tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 )
 

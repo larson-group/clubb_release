@@ -226,6 +226,7 @@ module advance_helper_module
                                         saturation_formula, &
                                         l_brunt_vaisala_freq_moist, &
                                         l_use_thvm_in_bv_freq, &
+                                        l_modify_limiters_for_cnvg_test, &
                                         stability_correction )
   !
   ! Description:
@@ -277,6 +278,13 @@ module advance_helper_module
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
+    ! Flag to activate modifications on limiters for convergence test
+    ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
+    ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
+    ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
+    logical, intent(in) :: &
+      l_modify_limiters_for_cnvg_test
+
     ! ---------------- Output Variables ----------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
       stability_correction
@@ -287,6 +295,7 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry, & !  []
       brunt_vaisala_freq_sqd_moist, &
+      brunt_vaisala_freq_sqd_smth, &
       lambda0_stability
 
     integer :: i, k
@@ -295,7 +304,7 @@ module advance_helper_module
 
     !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                    brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                    lambda0_stability )
+    !$acc                    brunt_vaisala_freq_sqd_smth, lambda0_stability )
 
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
@@ -303,11 +312,13 @@ module advance_helper_module
                                       saturation_formula, &             ! intent(in)
                                       l_brunt_vaisala_freq_moist, &     ! intent(in)
                                       l_use_thvm_in_bv_freq, &          ! intent(in)
+                                      l_modify_limiters_for_cnvg_test, &! intent(in)
                                       bv_efold, &                       ! intent(in)
                                       brunt_vaisala_freq_sqd, &         ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, &     ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist )    ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist, &   ! intent(out)
+                                      brunt_vaisala_freq_sqd_smth )    ! intent(out)
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -332,7 +343,7 @@ module advance_helper_module
 
     !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
-    !$acc                   lambda0_stability )
+    !$acc                   brunt_vaisala_freq_sqd_smth, lambda0_stability )
 
     return
 
@@ -345,11 +356,13 @@ module advance_helper_module
                                            saturation_formula, &
                                            l_brunt_vaisala_freq_moist, &
                                            l_use_thvm_in_bv_freq, &
+                                           l_modify_limiters_for_cnvg_test, &
                                            bv_efold, &
                                            brunt_vaisala_freq_sqd, &
                                            brunt_vaisala_freq_sqd_mixed,&
                                            brunt_vaisala_freq_sqd_dry, &
-                                           brunt_vaisala_freq_sqd_moist )
+                                           brunt_vaisala_freq_sqd_moist, &
+                                           brunt_vaisala_freq_sqd_smth )
 
   ! Description:
   !   Calculate the Brunt-Vaisala frequency squared, N^2.
@@ -371,13 +384,14 @@ module advance_helper_module
         one_half, &
         zero_threshold
 
-    use parameters_model, only: & 
-        T0 ! Variable! 
+    use parameters_model, only: &
+        T0 ! Variable!
 
     use grid_class, only: &
-        grid, & ! Type
-        ddzt,   &  ! Procedure(s)
-        zt2zm
+        grid, &     ! Type
+        ddzt, &     ! Procedure(s)
+        zt2zm, &
+        zm2zt2zm
 
     use T_in_K_module, only: &
         thlm2T_in_K ! Procedure
@@ -411,25 +425,42 @@ module advance_helper_module
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
+    ! Flag to activate modifications on limiters for convergence test
+    ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
+    ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
+    ! (reduce threshold on limiters for Ri_zm in mixing_length.F90)
+    logical, intent(in) :: &
+      l_modify_limiters_for_cnvg_test
+
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       bv_efold                      ! Control parameter for inverse e-folding of
                                     ! cloud fraction in the mixed Brunt Vaisala frequency
 
     !---------------------------- Output Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
+      brunt_vaisala_freq_sqd,       & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
       brunt_vaisala_freq_sqd_mixed, &
-      brunt_vaisala_freq_sqd_dry,&
-      brunt_vaisala_freq_sqd_moist
+      brunt_vaisala_freq_sqd_dry,   &
+      brunt_vaisala_freq_sqd_moist, &
+      brunt_vaisala_freq_sqd_smth
 
     !---------------------------- Local Variables ----------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
+      T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, tmp_calc, &
       ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, ice_supersat_frac_zm
+
+    logical, parameter :: l_smooth_min_max = .false.  ! whether to apply smooth min and max functions
+
+    real( kind = core_rknd ), parameter :: &
+      min_max_smth_mag = 1.0e-9_core_rknd     ! "base" smoothing magnitude before scaling
+                                              ! for the respective data structure. See
+                                              ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
+                                              ! for a plot on how output behaves with varying min_max_smth_mag
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       stat_dry, stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, &
-      stat_dry_virtual, stat_dry_virtual_zm,  ddzt_rtm_zm
+      stat_dry_virtual, stat_dry_virtual_zm,  ddzt_rtm_zm, &
+      brunt_vaisala_freq_clipped
 
     integer :: i, k
 
@@ -438,11 +469,16 @@ module advance_helper_module
     !$acc data copyin( gr, gr%zt, &
     !$acc              thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac, bv_efold ) &
     !$acc      copyout( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc               brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist ) &
+    !$acc               brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
+    !$acc               brunt_vaisala_freq_sqd_smth ) &
     !$acc       create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
     !$acc               ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, stat_dry, &
     !$acc               stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, stat_dry_virtual, &
-    !$acc               stat_dry_virtual_zm, ddzt_rtm_zm, ice_supersat_frac_zm )
+    !$acc               stat_dry_virtual_zm, ddzt_rtm_zm, ice_supersat_frac_zm, &
+    !$acc               brunt_vaisala_freq_clipped )
+
+    !$acc enter data if( l_smooth_min_max ) &
+    !$acc            create( tmp_calc )
 
     ddzt_thlm = ddzt( nz, ngrdcol, gr, thlm )
     thvm_zm   = zt2zm( nz, ngrdcol, gr, thvm, zero_threshold )
@@ -548,11 +584,58 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
+    !The min function below smooths the slope discontinuity in brunt freq
+    !  and thereby allows tau to remain large in Sc layers in which thlm may
+    !  be slightly stably stratified.
+    if ( l_modify_limiters_for_cnvg_test ) then
+
+      !Remove the limiters to improve the solution convergence
+      brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz,ngrdcol,gr, brunt_vaisala_freq_sqd_mixed )
+
+    else  ! default method
+
+      if ( l_smooth_min_max ) then
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            tmp_calc(i,k) = 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3
+          end do
+        end do
+        !$acc end parallel loop
+
+        brunt_vaisala_freq_clipped = smooth_min( nz, ngrdcol, &
+                                                 brunt_vaisala_freq_sqd_mixed, &
+                                                 tmp_calc, &
+                                                 1.0e-4_core_rknd * min_max_smth_mag)
+
+        brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz, ngrdcol, gr, brunt_vaisala_freq_clipped )
+
+      else  ! l_smooth_min_max
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            brunt_vaisala_freq_clipped(i,k) = min( brunt_vaisala_freq_sqd_mixed(i,k), &
+                                                   1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3)
+          end do
+        end do
+        !$acc end parallel loop
+
+        brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz, ngrdcol, gr, brunt_vaisala_freq_clipped )
+
+      end if
+
+    end if
+
     if ( l_brunt_vaisala_freq_moist ) then
 
       brunt_vaisala_freq_sqd = brunt_vaisala_freq_sqd_moist
 
     end if
+
+    !$acc exit data if( l_smooth_min_max ) &
+    !$acc            delete( tmp_calc )
 
     !$acc end data
 
@@ -666,7 +749,7 @@ module advance_helper_module
       l_use_thvm_in_bv_freq,      & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_use_shear_Richardson        ! Use shear in the calculation of Richardson number
 
-    ! Flag to activate modifications on limiters for convergence test 
+    ! Flag to activate modifications on limiters for convergence test
     ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
     ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
     ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
@@ -690,6 +773,7 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_mixed,&
       brunt_vaisala_freq_sqd_dry, &
       brunt_vaisala_freq_sqd_moist, &
+      brunt_vaisala_freq_sqd_smth, &
       fnc_Richardson, &
       fnc_Richardson_clipped, &
       fnc_Richardson_smooth, &
@@ -719,7 +803,7 @@ module advance_helper_module
 
     !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                    brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                    Cx_fnc_interp, &
+    !$acc                    brunt_vaisala_freq_sqd_smth, Cx_fnc_interp, &
     !$acc                    Ri_zm, ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, &
     !$acc                    Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                    fnc_Richardson_clipped, fnc_Richardson_smooth )
@@ -730,11 +814,13 @@ module advance_helper_module
                                       saturation_formula, &             ! intent(in)
                                       l_brunt_vaisala_freq_moist, &     ! intent(in)
                                       l_use_thvm_in_bv_freq, &          ! intent(in)
-                                      clubb_params(:,ibv_efold), &       ! intent(in)
+                                      l_modify_limiters_for_cnvg_test, &! intent(in)
+                                      clubb_params(:,ibv_efold), &      ! intent(in)
                                       brunt_vaisala_freq_sqd, &         ! intent(out)
                                       brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
                                       brunt_vaisala_freq_sqd_dry, &     ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist )    ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist, &   ! intent(out)
+                                      brunt_vaisala_freq_sqd_smth )     ! intent(out)
 
     invrs_num_div_thresh = one / Richardson_num_divisor_threshold
 
@@ -869,7 +955,7 @@ module advance_helper_module
 
     !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                   Cx_fnc_interp, Ri_zm, &
+    !$acc                   brunt_vaisala_freq_sqd_smth, Cx_fnc_interp, Ri_zm, &
     !$acc                   ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, &
     !$acc                   Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                   fnc_Richardson_clipped, fnc_Richardson_smooth )
