@@ -1,0 +1,84 @@
+commit c26a54de4f25c01f48a95e30d806400e7772c2bc
+Author: vlarson <vlarson@uwm.edu>
+Date:   Mon Jul 1 20:01:01 2024 -0500
+
+    QuadTune: Feeds in 20degree_CAM_TAUS_2020404, take 2.
+    
+    For #910.
+
+commit 5341e1136aef41c3a2687944a2a42e68ac9dc66f
+Author: vlarson <vlarson@uwm.edu>
+Date:   Mon Jul 1 19:57:20 2024 -0500
+
+    QuadTune: Feeds in 20degree_CAM_TAUS_202404 runs.
+    
+    For #910.
+
+commit 7edd25befa70a598ca8960114ea76a171e27cc19
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Jun 26 12:40:50 2024 -0500
+
+    Updated the turbulent sedimentation code to account for ghost point
+    removal and also for improved boundary-level handling.
+    
+    This commit is BIT_CHANGING for all cases that use KK upscaled
+    turbulent sedimentation.
+
+commit 56ddf19ef3d99d2f774df7bb03268d1e708a9c0a
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Jun 25 14:32:02 2024 -0500
+
+    This commit fixes 2 issues in regards to hydrometeor sedimentation:
+    
+    1) The code was taking into consideration the value of the hydrometeor
+       at the ghost point within the center-differenced option.
+    2) If a hydrometeor was present (value > 0) at the highest thermodynamic grid level, the code was potentially not conservative.
+    
+    Both these issues are fixed with this commit. The results are
+    BIT_CHANGING.
+
+commit 02b137307477a140ce3b25a28dca20ef9b52570d
+Author: vlarson <vlarson@uwm.edu>
+Date:   Thu Jun 20 11:36:06 2024 -0500
+
+    QuadTune: Adds more flags to toggle plots.
+    
+    For #910.
+
+commit ea1f30ac69032feb7dc61b13dcbdeec32f66e0f5
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Thu Jun 20 06:49:41 2024 -0500
+
+    Adds blank line so that I can note BIT_CHANGING:5df5fcb3d6c51d6af2e8017d270336eefa75ad3e
+
+commit 7ec7a22933275dc519ecf12d9a607458c9bfe49e
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed Jun 19 16:56:17 2024 -0500
+
+    Ri_zm calc (Part 1.5) - Adjusted signature of diagnose_Lscale_from_tau #1145 (#1155)
+    
+    Ri_zm calc (Part 1.5) - Adjusted signature of diagnose_Lscale_from_tau #1145
+
+commit 5df5fcb3d6c51d6af2e8017d270336eefa75ad3e
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Wed Jun 19 16:36:12 2024 -0500
+
+    Ri zm calc (Part 1) - Combine and move call to  calc_brunt_vaisala_freq_sqd (#1154)
+    
+    #1145 Combined call to `calc_brunt_vaisala_freq_sqd` in `advance_clubb_core` for both Lscale and taus code - BITCHANGING
+    
+    Call for taus code was moved out and in front of `diagnose_Lscale_from_tau` call and `zm2zt2zm` smoothing of `thlm` was removed.
+    
+    BITCHANGING for taus code due to removed smoothing.
+
+commit 6a881c89ed27787eb3c5eecd4210ecadffecd485
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Jun 18 15:15:44 2024 -0500
+
+    Fixing bug in jenkinsfiles.
+
+commit c1a22d2f11fc8344f0186049669463f3d4e404b1
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Tue Jun 18 15:14:16 2024 -0500
+
+    This allows the conversion script to be called anywhere.
