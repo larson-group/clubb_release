@@ -2,8 +2,10 @@ pipeline {
   agent any
   stages {
     stage('Set Up Environment') {
+      steps {
         sh '''source /etc/profile.d/larson-group.sh'''
         sh '''module load nvhpc netcdf-fortran'''
+      }
     }
     stage('Modify Config Flags') {
       steps {
