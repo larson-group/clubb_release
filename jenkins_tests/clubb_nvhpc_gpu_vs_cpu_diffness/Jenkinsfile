@@ -1,12 +1,7 @@
 pipeline {
   agent any
+  
   stages {
-    stage('Set Up Environment') {
-      steps {
-        sh '''source /etc/profile.d/larson-group.sh'''
-        sh '''module load nvhpc netcdf-fortran'''
-      }
-    }
     stage('Modify Config Flags') {
       steps {
         sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
@@ -18,45 +13,56 @@ pipeline {
     }
     stage('Compile CPU') {
       steps {
-        sh '''compile/compile.bash -c config/linux_x86_64_nvhpc.bash'''
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              compile/compile.bash -c config/linux_x86_64_nvhpc.bash'''
       }
     }
     stage('Run CPU') {
       steps {
-        sh '''run_scripts/run_scm.bash arm'''
-        sh '''run_scripts/run_scm.bash cobra'''
-        sh '''run_scripts/run_scm.bash mpace_b'''
-        sh '''mv output cpu_output; mkdir output'''
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              run_scripts/run_scm.bash arm
+              run_scripts/run_scm.bash cobra
+              run_scripts/run_scm.bash mpace_b
+              mv output cpu_output; mkdir output'''
       }
     }
     stage('Compile GPU_ACC') {
       steps {
-        sh '''compile/clean_all.bash'''
-        sh '''compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openacc.bash'''
+        sh '''compile/clean_all.bash
+              source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openacc.bash'''
       }
     }
     stage('Run GPU_ACC') {
       steps {
-        sh '''run_scripts/run_scm.bash arm'''
-        sh '''run_scripts/run_scm.bash cobra'''
-        sh '''run_scripts/run_scm.bash mpace_b'''
-        sh '''mv output acc_output; mkdir output'''
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              run_scripts/run_scm.bash arm
+              run_scripts/run_scm.bash cobra
+              run_scripts/run_scm.bash mpace_b
+              mv output acc_output; mkdir output'''
       }
     }
     stage('Compile GPU_OMP') {
       steps {
-        sh '''cd compile'''
-        sh '''compile/clean_all.bash'''
-        sh '''compile/convert_acc_to_omp.bash'''
-        sh '''compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openmp.bash'''
+        sh '''compile/clean_all.bash
+              compile/convert_acc_to_omp.bash
+              source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openmp.bash'''
       }
     }
     stage('Run GPU_OMP') {
       steps {
-        sh '''run_scripts/run_scm.bash arm'''
-        sh '''run_scripts/run_scm.bash cobra'''
-        sh '''run_scripts/run_scm.bash mpace_b'''
-        sh '''mv output omp_output; mkdir output'''
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              run_scripts/run_scm.bash arm
+              run_scripts/run_scm.bash cobra
+              run_scripts/run_scm.bash mpace_b
+              mv output omp_output; mkdir output'''
       }
     }
     stage('Compare CPU vs ACC') {

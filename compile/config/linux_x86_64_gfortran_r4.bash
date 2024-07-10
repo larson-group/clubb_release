@@ -45,7 +45,7 @@ OPTIMIZE="-O2"
 # == NetCDF Location ==
 #NETCDF="/usr" # Ubuntu / Fedora
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
-NETCDF="$GFORTRAN_NETCDF_FORTRAN" # RHEL5
+NETCDF="$(nf-config --prefix)"
 
 # == LAPACK libraries ==
 #LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS

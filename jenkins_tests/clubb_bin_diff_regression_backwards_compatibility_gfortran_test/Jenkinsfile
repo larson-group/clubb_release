@@ -11,7 +11,9 @@ pipeline {
     stage('Run Python Test') {
       steps {
         // Here we run the run_test.py script with the correct config, both are found in the sys_admin repo
-        sh '''python3 /home/jenkins/clubb_bin_diff_regression_backwards_compatibility_gfortran_test_workspace/sys_admin/python_nightly_test_suite/run_test.py -c /home/jenkins/clubb_bin_diff_regression_backwards_compatibility_gfortran_test_workspace/bit_diff_clubb_bc_r8092_config'''
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              python3 /home/jenkins/clubb_bin_diff_regression_backwards_compatibility_gfortran_test_workspace/sys_admin/python_nightly_test_suite/run_test.py -c /home/jenkins/clubb_bin_diff_regression_backwards_compatibility_gfortran_test_workspace/bit_diff_clubb_bc_r8092_config'''
       }
     }
   }

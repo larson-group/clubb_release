@@ -3,12 +3,16 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
-        sh '''compile/compile.bash -c config/linux_x86_64_gfortran.bash'''
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              compile/compile.bash -c config/linux_x86_64_gfortran.bash'''
       }
     }
     stage('Run Timesteps Test') {
       steps {
-        sh '''run_scripts/run_timestep_tests.bash'''
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              run_scripts/run_timestep_tests.bash'''
       }
     }
   }

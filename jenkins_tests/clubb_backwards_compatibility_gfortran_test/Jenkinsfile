@@ -3,7 +3,10 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
-        sh 'compile/compile.bash '
+        sh '''source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
+              compile/compile.bash'''
+
       }
     }
     stage('Configure Clubb') {
@@ -19,6 +22,8 @@ pipeline {
         // In this case it only runs bomex and dycoms2_rf01
         sh '''bash -c "echo bomex > run_scripts/RUN_CASES"
               bash -c "echo dycoms2_rf01 >> run_scripts/RUN_CASES"
+              source /etc/profile.d/larson-group.sh
+              module load gcc netcdf-fortran
               run_scripts/run_scm_all.bash'''
       }
     }

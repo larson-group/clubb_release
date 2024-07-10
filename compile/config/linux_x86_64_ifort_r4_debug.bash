@@ -23,6 +23,7 @@ WARNINGS="-warn -warn notruncated_source"
 
 # == Machine specific options ==
 ARCH="-xHost" # This should work on most modern AMD/Intel computers
+
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-real-size 64"
 
@@ -33,14 +34,14 @@ OPTIMIZE="-O0 -fp-model strict"
 
 # == NetCDF Location ==
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
-NETCDF="$IFORT_NETCDF_FORTRAN"
+NETCDF="$(nf-config --prefix)"
 
 # == LAPACK libraries ==
 # AMD Core Math Library
 #ACML="/opt/acml5.1.0/ifort64/lib"
 #LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
-# Intel MKL
-LAPACK="-mkl=sequential"
+# Intel MKL (requires loading intel-oneapi-intel-oneapi-mkl on larson-group computers)
+LAPACK="-qmkl=sequential"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
@@ -58,7 +59,7 @@ FFLAGS="$ARCH $OPTIMIZE $DEBUG"
 # Need location of include and *.mod files for the netcdf library
 
 CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=4"
-CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
+CPPFLAGS="-I$NETCDF/include"
 
 # == Static library processing ==
 AR=ar

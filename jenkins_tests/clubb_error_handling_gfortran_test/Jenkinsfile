@@ -5,7 +5,9 @@ pipeline {
       steps {
         // This dir{} block is used to run the enclosed commands in a specific directory, in this case run_scripts
         dir('run_scripts') {
-          sh './test_fatal_error_handling.bash'
+          sh '''source /etc/profile.d/larson-group.sh
+                module load gcc netcdf-fortran
+                ./test_fatal_error_handling.bash'''
         }
       }
     }
