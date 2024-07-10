@@ -495,13 +495,13 @@ module clubb_driver
       upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
 
-    type(pdf_parameter), allocatable :: &
+    type(pdf_parameter) :: &
       pdf_params ! PDF parameters (thermodynamic levels)    [units vary]
       
-    type(pdf_parameter), allocatable :: &
+    type(pdf_parameter) :: &
       pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
 
-    type(implicit_coefs_terms), allocatable :: &
+    type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
@@ -1756,13 +1756,10 @@ module clubb_driver
     allocate( sclrpthvp(1:gr%nz, 1:sclr_dim) )
 
     ! Variables for PDF closure scheme
-    allocate( pdf_params )
     call init_pdf_params( gr%nz, 1, pdf_params )
-    allocate( pdf_params_zm )
     call init_pdf_params( gr%nz, 1, pdf_params_zm )
 
-    allocate( pdf_implicit_coefs_terms )
-    call init_pdf_implicit_coefs_terms( gr%nz, 1, sclr_dim, &   ! Intent(in)
+    call init_pdf_implicit_coefs_terms( gr%nz, 1, sclr_dim, &      ! Intent(in)
                                         pdf_implicit_coefs_terms ) ! Intent(out)
 
     um(1:gr%nz)      = zero          ! u wind
@@ -3121,11 +3118,6 @@ module clubb_driver
 
     ! High-order passive scalars
     deallocate( sclrpthvp )
-
-    ! Variables for PDF closure scheme
-    deallocate( pdf_params )
-    deallocate( pdf_params_zm )
-    deallocate( pdf_implicit_coefs_terms )
 
     deallocate( thlm_mc, rvm_mc, rcm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, &
                 thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
