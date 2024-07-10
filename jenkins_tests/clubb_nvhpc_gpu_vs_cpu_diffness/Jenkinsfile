@@ -1,5 +1,7 @@
 pipeline {
-  agent any
+
+  // OpenMP GPU offloading needs compute capability > 70, which currently only carson has
+  agent { label 'carson' }
   
   stages {
     stage('Modify Config Flags') {
