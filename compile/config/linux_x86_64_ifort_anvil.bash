@@ -54,7 +54,6 @@ OPTIMIZE="-O3"
 #ACML="/opt/acml5.1.0/ifort64/lib"
 #LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
 # Intel MKL
-LAPACK="-qmkl=sequential"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 

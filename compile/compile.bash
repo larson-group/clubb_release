@@ -96,6 +96,9 @@ while true ; do
 			shift 2 ;;
 		-m|--mkl_lapack) # Specifiy lapack version
 
+
+			# Ensure that you're using the intel compiler and that
+			# intel-oneapi-mkl is loaded for this to work
 			l_use_mkl_lapack=true
 
 			shift;;
@@ -108,7 +111,7 @@ while true ; do
 
 			echo -e "Usage: compile.bash [-c FILE] [-m] [-h]"
 			echo -e "\t-c FILE, --config FILE\t  Path to config flags file"
-			echo -e "\t-m, --mkl_lapack\t  Flag to use MKL Lapack routines"
+			echo -e "\t-m, --mkl_lapack\t  Flag to use MKL Lapack routines. Requires intel compiler and intel-oneapi-mkl"
 			echo -e "\t-t, --tuner\t\t  Compile for tuning run"
 			echo -e "\t-h, --help\t\t  Prints this help message"
 
@@ -124,6 +127,11 @@ if [ -e $CONFIG ]; then
 else
 	echo "Cannot find " $CONFIG
 	exit -1
+fi
+
+# If we want mkl_lapack, we add -qmkl=sequential to the LDFLAGS here
+if "$l_use_mkl_lapack"; then
+	LDFLAGS="${LDFLAGS} -qmkl=sequential"
 fi
 
 # ------------------------------------------------------------------------------

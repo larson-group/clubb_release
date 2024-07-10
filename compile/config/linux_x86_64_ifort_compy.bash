@@ -42,8 +42,6 @@ NETCDF="/share/apps/netcdf/4.6.3/intel/19.0.3" # RHEL5
 # AMD Core Math Library
 #ACML="/opt/acml5.1.0/ifort64/lib"
 #LAPACK="-L$ACML -Wl,-rpath,$ACML -lacml"
-# Intel MKL (requires loading intel-oneapi-intel-oneapi-mkl on larson-group computers)
-LAPACK="-qmkl=sequential"
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
