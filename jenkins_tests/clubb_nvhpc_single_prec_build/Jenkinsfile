@@ -1,0 +1,43 @@
+pipeline {
+  agent any
+  stages {
+    stage('Edit Compiler Config') {
+      steps {
+        sh '''sed -i "s:DCLUBB_REAL_TYPE=8:DCLUBB_REAL_TYPE=4:g" compile/config/linux_x86_64_nvhpc.bash'''
+      }
+    }
+    stage('Compile') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              compile/compile.bash -c config/linux_x86_64_nvhpc.bash'''
+      }
+    }
+    stage('Run') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              run_scripts/run_scm_all.bash'''
+      }
+    }
+  }
+  post {
+    always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
+      script {
+      // This cleans out the test workspace so the next run has a fresh start
+      // However this only occurs when the test is named clubb_nvhpc_single_prec_build
+      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_single_prec_build" )
+      	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_single_prec_build" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

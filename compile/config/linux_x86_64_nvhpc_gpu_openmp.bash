@@ -20,7 +20,7 @@ DEBUG=""
 #DEBUG="-traceback -g -C -Kieee -Ktrap=fp"
 
 # == Machine specific options ==
-# The PGI Fortran compiler will select the native processor type by default
+# The NVHPC Fortran compiler will select the native processor type by default
 ARCH="-Mcache_align" # -Mcache_align is included for the use of the ACML
 
 # == Used to promote all real's to double precision ==

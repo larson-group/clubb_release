@@ -14,10 +14,8 @@ libdir="$dir/../lib"  # dir for *.a library files
 srcdir="$dir/../src"  # dir where the source files reside
 
 # == Debugging ==
-# No Debug flags
-DEBUG=""
 # Debugging information and floating-point trapping
-#DEBUG="-traceback -g -C -Kieee -Ktrap=fp"
+DEBUG="-traceback -g -C -Kieee -Ktrap=fp -⁠Minfo"
 
 # == Machine specific options ==
 # The NVHPC Fortran compiler will select the native processor type by default
@@ -27,7 +25,7 @@ ARCH="-Mcache_align" # -Mcache_align is included for the use of the ACML
 DOUBLE_PRECISION="-r8"
 
 # == Optimization ==
-OPTIMIZE="-O2"
+OPTIMIZE="-O0"
 
 # == NetCDF Location ==
 #Variable defined in larson-group.sh, see here (https://github.com/larson-group/sys_admin/blob/master/set_larson-group_paths/larson-group.sh)
