@@ -1,5 +1,8 @@
 pipeline {
-  agent any
+
+  // Carson is the only computer where the config file to run this test exists
+  agent { label 'carson' }
+
   stages {
     stage('Clone SysAdmin to tmp') {
       steps {
