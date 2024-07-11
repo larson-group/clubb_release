@@ -15,7 +15,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 
 # == Debugging ==
 # Debugging information and floating-point trapping
-DEBUG="-traceback -g -C -Kieee -Ktrap=fp -⁠Minfo"
+DEBUG="-traceback -g -C -Kieee -Ktrap=fp"
 
 # == Machine specific options ==
 # The NVHPC Fortran compiler will select the native processor type by default
