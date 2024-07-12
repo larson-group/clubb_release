@@ -873,8 +873,8 @@ module parameters_tunable
 
           ! Find the average deltaz over the stretched grid based on
           ! thermodynamic level inputs.
-          avg_deltaz = ( gr%zt(i,gr%nz) - gr%zt(i,1) ) &
-                       / real( gr%nz - 1, kind = core_rknd )
+          avg_deltaz = ( gr%zt(i,gr%nz) - gr%zt(i,2) ) &
+                       / real( gr%nz - 2, kind = core_rknd )
 
         else
 
