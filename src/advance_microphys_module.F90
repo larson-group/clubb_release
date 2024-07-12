@@ -799,6 +799,7 @@ module advance_microphys_module
 
        ! A zero-flux boundary condition at the top of the model is used for
        ! hydrometeors.
+       wphydrometp(1,i) = zero
        wphydrometp(gr%nz,i) = zero
 
        ! Add implicit terms to the LHS matrix
@@ -912,6 +913,7 @@ module advance_microphys_module
        
        ! A zero-flux boundary condition at the top of the model is used for
        ! hydrometeors.
+       wphydrometp(1,i) = zero
        wphydrometp(gr%nz,i) = zero
 
        !!! Calculate the covariance of hydrometeor sedimentation velocity and
