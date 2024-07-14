@@ -558,7 +558,7 @@ module latin_hypercube_driver_module
     end if
     
     !$acc host_data use_device(rand_pool) 
-    r_status = curandGenerate(cu_gen, rand_pool, ngrdcol*num_samples*nz*(pdf_dim+d_uniform_extra))
+    r_status = curandGenerate(cu_gen, rand_pool(:,:,2:nz,:), ngrdcol*num_samples*(nz-1)*(pdf_dim+d_uniform_extra))
     !$acc end host_data
     !$acc wait
     
@@ -573,7 +573,7 @@ module latin_hypercube_driver_module
 
     ! Populate rand_pool with a generator designed for a CPU
     do p=1, pdf_dim+d_uniform_extra
-      do k = 1, nz
+      do k = 2, nz
         do sample=1, num_samples
           do i = 1, ngrdcol
             rand_pool(i,sample,k,p) = rand_uniform_real()
@@ -588,6 +588,7 @@ module latin_hypercube_driver_module
 #endif
 
 #endif
+  rand_pool(:,:,1,:) = 0.5_core_rknd ! ghost level value (not used)
     
   end subroutine generate_random_pool
 
@@ -915,7 +916,8 @@ module latin_hypercube_driver_module
       core_rknd      ! Constant
 
     use constants_clubb, only: &
-      cloud_frac_min ! Constant
+      cloud_frac_min, & ! Constants
+      zero
 
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
@@ -965,11 +967,23 @@ module latin_hypercube_driver_module
         cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1(i,:), &
                                                 pdf_params%cloud_frac_2(i,:), &
                                                 pdf_params%mixt_frac(i,:) )
-        k_lh_start_rcm_in_cloud = maxloc( rcm_pdf(i,:) / max( cloud_frac_pdf, cloud_frac_min ), 1 )
+        if ( any( rcm_pdf(i,:) > zero ) ) then
+           k_lh_start_rcm_in_cloud = maxloc( rcm_pdf(i,:) / max( cloud_frac_pdf, cloud_frac_min ), 1 )
+        else
+           ! When clouds aren't found at any level, set k_lh_start_rcm_in_cloud
+           ! to the middle of the vertical domain.
+           k_lh_start_rcm_in_cloud = ( nz - 1 ) / 2 + 1
+        endif
       end if
 
       if ( .not. l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-        k_lh_start_rcm    = maxloc( rcm_pdf(i,:), 1 )
+        if ( any( rcm_pdf(i,:) > zero ) ) then
+           k_lh_start_rcm = maxloc( rcm_pdf(i,:), 1 )
+        else
+           ! When clouds aren't found at any level, set k_lh_start_rcm to the
+           ! middle of the vertical domain.
+           k_lh_start_rcm = ( nz - 1 ) / 2 + 1
+        endif
       end if
 
       if ( l_random_k_lh_start ) then
@@ -990,13 +1004,6 @@ module latin_hypercube_driver_module
         k_lh_start(i) = k_lh_start_rcm
       end if
 
-      ! If there's no cloud k_lh_start appears to end up being 1. Check if
-      ! k_lh_start is 1 or nz and set it to the middle of the domain in that
-      ! case.
-      if ( k_lh_start(i) == nz .or. k_lh_start(i) == 1 ) then
-        k_lh_start(i) = nz / 2
-      end if
-      
     end do
 
     return
