@@ -821,12 +821,12 @@ module coamps_microphys_driver_module
         falln_flip(:,:,kcomp(k)) = falln_in_cloud(:,:,k)
       end do
 
-      falli(:,:,kk:1:-1) = falli_flip(:,:,1:kk)
-      falls(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
-      fallg(:,:,kk:1:-1) = fallg_flip(:,:,1:kk)
-      fallr(:,:,kk:1:-1) = fallr_flip(:,:,1:kk)
-      falln(:,:,kk:1:-1) = falln_flip(:,:,1:kk)
-      snowv(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
+      falli(:,:,kk+1:2:-1) = falli_flip(:,:,1:kk)
+      falls(:,:,kk+1:2:-1) = falls_flip(:,:,1:kk)
+      fallg(:,:,kk+1:2:-1) = fallg_flip(:,:,1:kk)
+      fallr(:,:,kk+1:2:-1) = fallr_flip(:,:,1:kk)
+      falln(:,:,kk+1:2:-1) = falln_flip(:,:,1:kk)
+      snowv(:,:,kk+1:2:-1) = falls_flip(:,:,1:kk)
 
 ! Assure positive definiteness in nc3/nr3/ncn3 fields
 
@@ -884,11 +884,11 @@ module coamps_microphys_driver_module
       fallg(1,1,1) = .5 * ( fallg(1,1,2) + fallg(1,1,3) )
       falls(1,1,1) = .5 * ( falls(1,1,2) + falls(1,1,3) )
 
-      Vrr      = zt2zm( gr, real(fallr(1,1,:), kind = core_rknd) )
-      VNr      = zt2zm( gr, real(falln(1,1,:), kind = core_rknd) )
-      Vrs    = zt2zm( gr, real(snowv(1,1,:), kind = core_rknd) )
-      Vri     = zt2zm( gr, real(falli(1,1,:), kind = core_rknd) )
-      Vrg = zt2zm( gr, real(fallg(1,1,:), kind = core_rknd) )
+      Vrr = real( fallr(1,1,:), kind = core_rknd )
+      VNr = real( falln(1,1,:), kind = core_rknd )
+      Vrs = real( snowv(1,1,:), kind = core_rknd )
+      Vri = real( falli(1,1,:), kind = core_rknd )
+      Vrg = real( fallg(1,1,:), kind = core_rknd )
 
 ! Compute tendencies
       do k=1, kk, 1
