@@ -48,9 +48,11 @@ def createFigs(metricsNames,
 
     # Use these flags to determine whether or not to create specific plots
     plot_paramsErrorBarsFig = True
+    plot_biasesOrderedArrowFig = True
     plot_threeDotFig = True
     plot_metricsBarChart = True
     plot_biasesVsSensMagScatterplot = True
+    plot_biasVsDiagnosticScatterplot = True
     plot_dpMin2PtFig = True
     plot_dpMinMatrixScatterFig = False
     plot_projectionMatrixFig = True
@@ -64,8 +66,13 @@ def createFigs(metricsNames,
 
     # These are the metrics that we want to include in the plots (whitelisted variables).
     # I.e., set maskMetricsNames=T for variables that we want to plot.
-    maskMetricsNames =   (metricsNames == 'SWCF_4_1') | (metricsNames == 'SWCF_4_2') \
-                         | (metricsNames == 'SWCF_4_3') | (metricsNames == 'SWCF_4_4')
+    maskMetricsNames =   (metricsNames == 'SWCF_4_12') \
+                         | (metricsNames == 'SWCF_4_11') \
+                         | (metricsNames == 'SWCF_6_14') \
+                         | (metricsNames == 'SWCF_2_10') \
+                         | (metricsNames == 'SWCF_8_3') \
+                         | (metricsNames == 'SWCF_5_7') \
+                         | (metricsNames == 'SWCF_5_16')
 
     # Use this line if you want to exclude (blacklist) some variables:
     #maskMetricsNames = (metricsNames != 'SWCF_4_1') & (metricsNames != 'SWCF_4_2')
@@ -100,6 +107,11 @@ def createFigs(metricsNames,
     normlzdLinplusSensMatrixPolyMetricsMasked = normlzdLinplusSensMatrixPoly[maskMetricsNames]
     normlzdLinplusSensMatrixPolyParamsMetricsMasked = normlzdLinplusSensMatrixPolyMetricsMasked.T[maskParamsNames].T
 
+    defaultBiasesApproxNonlinNoCurvMasked = defaultBiasesApproxNonlinNoCurv[maskMetricsNames]
+    defaultBiasesApproxNonlin2xCurvMasked = defaultBiasesApproxNonlin2xCurv[maskMetricsNames]
+
+    linSolnBiasesColMasked = linSolnBiasesCol[maskMetricsNames]
+
     metricsWeightsMasked = metricsWeights[maskMetricsNames]
 
     obsMetricValsColMasked = obsMetricValsCol[maskMetricsNames]
@@ -115,6 +127,8 @@ def createFigs(metricsNames,
 
     metricsSensMasked = metricsSens[maskMetricsNames]
     metricsSensMaskedOrdered = metricsSensMasked.argsort()
+
+    metricsNamesMaskedOrdered = metricsNamesMasked[metricsSensMaskedOrdered]
 
 #    metricsSensOrderedMasked = metricsSensOrdered[maskMetricsNames]
 
@@ -153,13 +167,19 @@ def createFigs(metricsNames,
                           normlzdOrdDparamsMinMasked, normlzdOrdDparamsMaxMasked,
                           sensNcFilenamesMasked, sensNcFilenamesExtMasked, defaultNcFilename)
 
-    if False:
+    if plot_biasesOrderedArrowFig:
+        print("Creating biasesOrderedArrowFig . . .")
         biasesOrderedArrowFig = \
-        createBiasesOrderedArrowFig(metricsSensOrdered, metricsNamesOrdered,
-                                    defaultBiasesCol, normMetricValsCol, 
-                                    defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv,
-                                    defaultBiasesApproxNonlin,
-                                    linSolnBiasesCol)
+        createBiasesOrderedArrowFig(metricsSensMaskedOrdered, metricsNamesMaskedOrdered,
+                                    defaultBiasesColMasked, normMetricValsColMasked,
+                                    defaultBiasesApproxNonlinNoCurvMasked, defaultBiasesApproxNonlin2xCurvMasked,
+                                    defaultBiasesApproxNonlinMasked,
+                                    linSolnBiasesColMasked)
+        #createBiasesOrderedArrowFig(metricsSensOrdered, metricsNamesOrdered,
+        #                            defaultBiasesCol, normMetricValsCol,
+        #                            defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv,
+        #                            defaultBiasesApproxNonlin,
+        #                            linSolnBiasesCol)
 
 
     normlzdSensMatrixOrdered = normlzdSensMatrixPoly[metricsSensOrdered,:]
@@ -222,6 +242,13 @@ def createFigs(metricsNames,
         createBiasVsBiasApproxScatterplot(defaultBiasesApproxNonlin, defaultBiasesCol,
                                           normMetricValsCol,
                                           metricsNames )
+
+    if plot_biasVsDiagnosticScatterplot:
+        diagnosticPrefix = "U10"
+        biasVsDiagnosticScatterplot = \
+        createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
+                                          normMetricValsCol,
+                                          defaultNcFilename)
 
     if False:
         biasSensMatrixScatterFig = \
@@ -359,7 +386,7 @@ def createFigs(metricsNames,
 
     if plot_paramsErrorBarsFig:
         dashboardChildren.append(dcc.Graph( id='paramsErrorBarsFig', figure=paramsErrorBarsFig ))
-    if False:
+    if plot_biasesOrderedArrowFig:
         dashboardChildren.append(dcc.Graph( id='biasesOrderedArrowFig', figure=biasesOrderedArrowFig ))
     if plot_metricsBarChart:
         dashboardChildren.append(dcc.Graph( id='metricsBarChart', figure=metricsBarChart ))
@@ -376,6 +403,8 @@ def createFigs(metricsNames,
     if False:
         dashboardChildren.append(dcc.Graph( id='biasVsBiasApproxScatterplot', figure=biasVsBiasApproxScatterplot ))
        #config= { 'toImageButtonOptions': { 'scale': 6 } }
+    if plot_biasVsDiagnosticScatterplot:
+        dashboardChildren.append(dcc.Graph(id='biasVsDiagnosticScatterplot', figure=biasVsDiagnosticScatterplot ))
     if False:
         dashboardChildren.append(dcc.Graph( id='sensMatrixAndBiasVecFig', figure=sensMatrixAndBiasVecFig ))
     if False:
@@ -1419,6 +1448,51 @@ def createBiasVsBiasApproxScatterplot(defaultBiasesApproxNonlin, defaultBiasesCo
     biasVsBiasApproxScatterplot.update_layout(title="Bias approx vs bias")
 
     return biasVsBiasApproxScatterplot
+
+def createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
+                                      normMetricValsCol,
+                                      defaultNcFilename):
+
+    from set_up_dashboard_inputs import setUp_x_MetricsList, \
+                                        setupDefaultMetricValsCol
+
+    diagnosticNamesWeightsAndNorms = setUp_x_MetricsList(diagnosticPrefix, defaultNcFilename)
+    # Split up the list above into metric names and the corresponding weights.
+    dfdiagnosticNamesWeightsAndNorms = \
+        pd.DataFrame(diagnosticNamesWeightsAndNorms, columns=['diagnosticNames', 'diagnosticWeights', 'diagnosticNorms'])
+    diagnosticNames = dfdiagnosticNamesWeightsAndNorms[['diagnosticNames']].to_numpy().astype(str)[:, 0]
+
+    # Set up a column vector of metric values from the default simulation
+    diagnosticValsCol = \
+        setupDefaultMetricValsCol(diagnosticNames, defaultNcFilename)
+
+    # Plot a scatterplot of default-simulation bias and SVD approximation of that bias.
+    # Each column tells us how all metrics vary with a single parameter.
+    biasDiagnosticMatrix = np.concatenate((diagnosticValsCol,
+                                       (-defaultBiasesCol/np.abs(normMetricValsCol))), axis=1)
+    biasAndDiagnosticNames = [diagnosticPrefix, "bias"]
+    #biasAndParamsNames = np.append(["bias", "bias_approx_pc"], paramsNames)
+    df = pd.DataFrame(biasDiagnosticMatrix,
+                  index=diagnosticNames,
+                  columns=biasAndDiagnosticNames)
+    biasVsDiagnosticScatterplot = px.scatter(df, x=diagnosticPrefix, y="bias",
+                                          text=diagnosticNames, title="Bias vs diagnostic" )
+    #biasSensDirMatrixOneOneLine = px.line(df, x="bias", y="bias")
+    #biasSensDirMatrixOneMOneLine = px.line(df, x="bias", y=-df.loc[:,"bias"])
+    #biasVsDiagnosticScatterplot = go.Figure(data=biasSensDirMatrixScatter.data
+    #                                          + biasSensDirMatrixOneOneLine.data)
+    #biasRange = (max(df.loc[:,"bias"]), min(df.loc[:,"bias"]))
+    #biasVsDiagnosticScatterplot.add_trace(go.Scatter(x=biasRange, y=biasRange, fill='tozeroy',
+    #                           name='Region of improvement', mode='none',
+    #                           fillcolor='rgba(253,253,150,0.7)'))
+    biasVsDiagnosticScatterplot.update_xaxes(title="diagnostic")
+    biasVsDiagnosticScatterplot.update_yaxes(title="-defaultBiasesCol/obs")
+    biasVsDiagnosticScatterplot.update_traces(textposition='top center')
+    biasVsDiagnosticScatterplot.update_yaxes(visible=True,zeroline=True,zerolinewidth=2,zerolinecolor='lightblue') # Plot x axis
+    biasVsDiagnosticScatterplot.update_layout( width=800, height=500  )
+    biasVsDiagnosticScatterplot.update_layout(title="Bias vs diagnostic")
+
+    return biasVsDiagnosticScatterplot
 
 def createBiasSensMatrixScatterFig(defaultBiasesCol, defaultBiasesApproxElastic,
                                    normMetricValsCol, metricsNames):

@@ -156,9 +156,9 @@ def setUpInputs():
                     ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
                      folder_name + 'thresp24_Regional.nc', \
                      folder_name + 'thresp28_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2', 1.0, \
-                     folder_name + 'n2p55_Regional.nc', \
-                     folder_name + 'n2p75_Regional.nc'], \
+                    #['clubb_c_invrs_tau_n2', 1.0, \
+                    # folder_name + 'n2p55_Regional.nc', \
+                    # folder_name + 'n2p75_Regional.nc'], \
                     #['clubb_c_invrs_tau_n2_xp2', 1.0, \
                     # folder_name + 'clubb_c_invrs_tau_n2_xp2m_Regional.nc', \
                     # folder_name + 'clubb_c_invrs_tau_n2_xp2p_Regional.nc'], \
@@ -183,18 +183,18 @@ def setUpInputs():
                     #['clubb_c_uu_shr', 1.0, \
                     # folder_name + 'clubb_c_uu_shrm_Regional.nc', \
                     # folder_name + 'clubb_c_uu_shrp_Regional.nc'], \
-                    ['clubb_c_invrs_tau_bkgnd', 1.0, \
-                     folder_name + 'bkg1_Regional.nc',
-                     folder_name + 'bkg2_Regional.nc'], \
-                    ['clubb_c_invrs_tau_sfc', 1.0, \
-                     folder_name + 'sfc0_Regional.nc',
-                     folder_name + 'sfcp3_Regional.nc'], \
-                    ['clubb_c_invrs_tau_shear', 1.0, \
-                      folder_name + 'shr0_Regional.nc', \
-                      folder_name + 'shrp3_Regional.nc'], \
-                    ['clubb_altitude_threshold', 0.01, \
-                      folder_name + 'alt50_Regional.nc', \
-                      folder_name + 'alt150_Regional.nc'], \
+                    #['clubb_c_invrs_tau_bkgnd', 1.0, \
+                    # folder_name + 'bkg1_Regional.nc',
+                    # folder_name + 'bkg2_Regional.nc'], \
+                    #['clubb_c_invrs_tau_sfc', 1.0, \
+                    # folder_name + 'sfc0_Regional.nc',
+                    # folder_name + 'sfcp3_Regional.nc'], \
+                    #['clubb_c_invrs_tau_shear', 1.0, \
+                    #  folder_name + 'shr0_Regional.nc', \
+                    #  folder_name + 'shrp3_Regional.nc'], \
+                    #['clubb_altitude_threshold', 0.01, \
+                    #  folder_name + 'alt50_Regional.nc', \
+                    #  folder_name + 'alt150_Regional.nc'], \
                     ['clubb_z_displace', 0.01, \
                       folder_name + 'zd10_Regional.nc', \
                       folder_name + 'zd100_Regional.nc'], \
@@ -333,7 +333,8 @@ def setUpInputs():
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-        defaultNcFilename
+        'Regional_files/20degree_CAM_TAUS_202404/20.0Tuner_20240702_20d_Regional.nc'
+        #defaultNcFilename
     #    'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
     #    'Regional_files/20240409updated/thresp26_Regional.nc'
     # 'Regional_files/stephens_20230920/117.f2c.taus_new_base_latest_mods6e_Regional.nc'
@@ -385,7 +386,7 @@ def setUpInputs():
 
 
     # Comment out if not using 20x20reg files
-    metricsNamesWeightsAndNorms = setUp_x_MetricsList(defaultNcFilename)
+    metricsNamesWeightsAndNorms = setUp_x_MetricsList("SWCF", defaultNcFilename)
     # Split up the list above into metric names and the corresponding weights.
     dfMetricsNamesWeightsAndNorms =  \
         pd.DataFrame( metricsNamesWeightsAndNorms, columns = ['metricsNames', 'metricsWeights', 'metricsNorms'] )
@@ -569,7 +570,7 @@ def setUp_x_ObsMetricValsDict(obsPathAndFilename):
     return obsMetricValsDict
 
 
-def setUp_x_MetricsList(defPathAndFilename):
+def setUp_x_MetricsList(varPrefix, defPathAndFilename):
     """
     This is intended for the case in which 20x20deg fields are used.
     Input: Filename of default run.
@@ -589,8 +590,8 @@ def setUp_x_MetricsList(defPathAndFilename):
         if re.match("^numb_[0-9]+_[0-9]+",varName):
             areaWeightEntry = f_def[varName]
             areaWeightVal = areaWeightEntry[:].data[:][0]
-            SWCF_string = varName.replace("numb", "SWCF")
-            metricsNamesWeightsAndNorms.append([SWCF_string,  areaWeightVal, -999])
+            varFullString = varName.replace("numb", varPrefix)
+            metricsNamesWeightsAndNorms.append([varFullString,  areaWeightVal, -999])
             #print((SWCF_string, areaWeightVal))
 
     f_def.close()
