@@ -3413,7 +3413,8 @@ module advance_microphys_module
         iK_hm_min_coef
 
     use constants_clubb, only: & 
-        one, & ! Constant(s)
+        one,  & ! Constant(s)
+        zero, &
         eps
 
     use clubb_precision, only:  & 
@@ -3468,7 +3469,7 @@ module advance_microphys_module
     do h = 1, hydromet_dim, 1
 
        ! Loop over all vertical levels for each hydrometeor.
-       do k = 1, gr%nz, 1
+       do k = 2, gr%nz-1, 1
 
           kp1 = min( k+1, gr%nz )
 
@@ -3505,6 +3506,10 @@ module advance_microphys_module
           endif ! | d<hm>/dz | > 0
 
        enddo ! k = 1, gr%nz, 1
+
+       ! Set K_hm at the lower and upper boundaries (not used in calculations).
+       K_hm(1,h) = zero
+       K_hm(gr%nz,h) = zero
 
     enddo ! i = 1, hydromet_dim, 1
 
