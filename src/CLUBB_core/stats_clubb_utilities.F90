@@ -2494,10 +2494,17 @@ module stats_clubb_utilities
           k = k + 1
         enddo
 
-        if ( k > 1 .and. k < nz) then
+        if ( k == 2 ) then
+
+          ! Set the cloud base to the height of the lowest thermodynamic 
+          ! grid level above the surface.
+          call stat_update_var_pt( stats_metadata%iz_cloud_base, grid_level, zt(2), & ! intent(in)
+                                   stats_sfc ) ! intent(inout)
+
+        elseif ( k > 2 .and. k < nz) then
 
           ! Use linear interpolation to find the exact height of the
-          ! rc_tol kg/kg level.  Brian.
+          ! rc_tol kg/kg level.
           call stat_update_var_pt( stats_metadata%iz_cloud_base, grid_level, & ! intent(in)
                                    lin_interpolate_two_points( rc_tol, rcm(k), & ! intent(in)
                                    rcm(k-1), zt(k), zt(k-1) ), & ! intent(in)
@@ -2510,7 +2517,7 @@ module stats_clubb_utilities
           call stat_update_var_pt( stats_metadata%iz_cloud_base, grid_level, -10.0_core_rknd , & ! intent(in)
                                    stats_sfc ) ! intent(inout)
  
-        end if ! k > 1 and k < nz
+        end if
 
       end if ! stats_metadata%iz_cloud_base > 0
 

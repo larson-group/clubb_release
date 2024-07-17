@@ -5017,7 +5017,7 @@ module advance_clubb_core_module
         vert_cloud_frac_lower, & ! Fraction of cloud in bottom half of grid box
         vert_cloud_frac          ! Fraction of cloud filling the grid box in the vertical
 
-      integer :: i, k
+      integer :: i, k, kp1, km1
 
       !------------------------ Begin code ------------------------
 
@@ -5038,19 +5038,22 @@ module advance_clubb_core_module
       do k = 2, nz-1
         do i = 1, ngrdcol
 
+          km1 = max( k-1, 2 )
+          kp1 = min( k+1, nz )
+
           if ( rcm(i,k) < rc_tol ) then ! No cloud at this level
 
             cloud_cover(i,k)  = cloud_frac(i,k)
             rcm_in_layer(i,k) = rcm(i,k)
 
-          else if ( ( rcm(i,k+1) >= rc_tol ) .and. ( rcm(i,k-1) >= rc_tol ) ) then
+          else if ( ( rcm(i,kp1) >= rc_tol ) .and. ( rcm(i,km1) >= rc_tol ) ) then
             ! There is cloud above and below,
             !   so assume cloud fills grid box from top to bottom
 
             cloud_cover(i,k) = cloud_frac(i,k)
             rcm_in_layer(i,k) = rcm(i,k)
 
-          else if ( ( rcm(i,k+1) < rc_tol ) .or. ( rcm(i,k-1) < rc_tol) ) then
+          else if ( ( rcm(i,kp1) < rc_tol ) .or. ( rcm(i,km1) < rc_tol) ) then
             ! Cloud may fail to reach gridbox top or base or both
 
             ! First let the cloud fill the entire grid box, then overwrite
@@ -5059,18 +5062,18 @@ module advance_clubb_core_module
             vert_cloud_frac_upper(i,k) = 0.5_core_rknd
             vert_cloud_frac_lower(i,k) = 0.5_core_rknd
 
-            if ( rcm(i,k+1) < rc_tol ) then ! Cloud top
+            if ( rcm(i,kp1) < rc_tol ) then ! Cloud top
 
               vert_cloud_frac_upper(i,k) = &
                        ( ( 0.5_core_rknd / gr%invrs_dzm(i,k) ) / ( gr%zm(i,k) - gr%zt(i,k) ) ) &
-                       * ( rcm(i,k) / ( rcm(i,k) + abs( chi_mean(i,k+1) ) ) )
+                       * ( rcm(i,k) / ( rcm(i,k) + abs( chi_mean(i,kp1) ) ) )
 
               vert_cloud_frac_upper(i,k) = min( 0.5_core_rknd, vert_cloud_frac_upper(i,k) )
 
               ! Make the transition in cloudiness more gradual than using
               ! the above min statement alone.
               vert_cloud_frac_upper(i,k) = vert_cloud_frac_upper(i,k) + &
-                ( ( rcm(i,k+1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_upper(i,k) ) )
+                ( ( rcm(i,kp1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_upper(i,k) ) )
 
             else
 
@@ -5078,18 +5081,18 @@ module advance_clubb_core_module
 
             end if
 
-            if ( rcm(i,k-1) < rc_tol ) then ! Cloud base
+            if ( rcm(i,km1) < rc_tol ) then ! Cloud base
 
               vert_cloud_frac_lower(i,k) = &
-                       ( ( 0.5_core_rknd / gr%invrs_dzm(i,k-1) ) / ( gr%zt(i,k) - gr%zm(i,k-1) ) ) &
-                       * ( rcm(i,k) / ( rcm(i,k) + abs( chi_mean(i,k-1) ) ) )
+                       ( ( 0.5_core_rknd / gr%invrs_dzm(i,km1) ) / ( gr%zt(i,k) - gr%zm(i,km1) ) ) &
+                       * ( rcm(i,k) / ( rcm(i,k) + abs( chi_mean(i,km1) ) ) )
 
               vert_cloud_frac_lower(i,k) = min( 0.5_core_rknd, vert_cloud_frac_lower(i,k) )
 
               ! Make the transition in cloudiness more gradual than using
               ! the above min statement alone.
               vert_cloud_frac_lower(i,k) = vert_cloud_frac_lower(i,k) + &
-                ( ( rcm(i,k-1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_lower(i,k) ) )
+                ( ( rcm(i,km1)/rc_tol )*( 0.5_core_rknd -vert_cloud_frac_lower(i,k) ) )
 
             else
 
