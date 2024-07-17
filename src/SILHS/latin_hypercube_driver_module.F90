@@ -967,8 +967,8 @@ module latin_hypercube_driver_module
         cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1(i,:), &
                                                 pdf_params%cloud_frac_2(i,:), &
                                                 pdf_params%mixt_frac(i,:) )
-        if ( any( rcm_pdf(i,:) > zero ) ) then
-           k_lh_start_rcm_in_cloud = maxloc( rcm_pdf(i,:) / max( cloud_frac_pdf, cloud_frac_min ), 1 )
+        if ( any( rcm_pdf(i,2:nz) > zero ) ) then
+           k_lh_start_rcm_in_cloud = maxloc( rcm_pdf(i,2:nz) / max( cloud_frac_pdf(2:nz), cloud_frac_min ), 1 )
         else
            ! When clouds aren't found at any level, set k_lh_start_rcm_in_cloud
            ! to the middle of the vertical domain.
@@ -977,8 +977,8 @@ module latin_hypercube_driver_module
       end if
 
       if ( .not. l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-        if ( any( rcm_pdf(i,:) > zero ) ) then
-           k_lh_start_rcm = maxloc( rcm_pdf(i,:), 1 )
+        if ( any( rcm_pdf(i,2:nz) > zero ) ) then
+           k_lh_start_rcm = maxloc( rcm_pdf(i,2:nz), 1 )
         else
            ! When clouds aren't found at any level, set k_lh_start_rcm to the
            ! middle of the vertical domain.
