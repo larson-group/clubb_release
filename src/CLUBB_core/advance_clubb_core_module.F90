@@ -337,7 +337,8 @@ module advance_clubb_core_module
         wp2_term_splat_lhs, &
         wp3_term_splat_lhs, &
         vertical_integral, &
-        Lscale_width_vert_avg
+        Lscale_width_vert_avg, &
+        smooth_max
 
     use interpolation, only: &
         pvertinterp
@@ -772,6 +773,11 @@ module advance_clubb_core_module
        invrs_tau_zt,                 & ! Inverse time-scale tau on thermodynamics levels [1/s]
        invrs_tau_wp3_zt,             & ! Inverse tau wp3 at zt levels
        Cx_fnc_Richardson,            & ! Cx_fnc computed from Richardson_num          [-]
+       ddzt_um,                      & ! Vertical derivative of um                    [s^-1]
+       ddzt_vm,                      & ! Vertical derivative of vm                    [s^-1]
+       ddzt_umvm_sqd,                & ! Squared vertical norm of derivative of
+                                       ! mean horizontal wind speed                   [s^-2]
+       ddzt_umvm_sqd_clipped,        & ! Smooth_maxed version of ddzt_umvm_sqd        [s^-2]
        brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
        brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2               [s^-2]
        brunt_vaisala_freq_sqd_dry,   & ! dry N^2                                      [s^-2]
@@ -780,6 +786,7 @@ module advance_clubb_core_module
                                        ! smoothed in the vertical                     [s^-2]
        brunt_vaisala_freq_sqd_splat, & !                                              [s^-2]
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
+       brunt_vaisala_freq_clipped,   & ! N^2 clipped via smooth_max function          [s^-2]
        Ri_zm                           ! Richardson number                            [-]
 
 
@@ -814,6 +821,14 @@ module advance_clubb_core_module
     ! l_diag_Lscale_from_tau is also true
     logical, parameter :: l_use_invrs_tau_N2_iso = .false.
 
+    logical, parameter :: l_smooth_min_max = .false.  ! whether to apply smooth min and max functions
+
+    ! "base" smoothing magnitude before scaling for the respective data structure.
+    ! See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
+    ! for a plot on how output behaves with varying min_max_smth_mag
+    real( kind = core_rknd ), parameter :: &
+      min_max_smth_mag = 1.0e-9_core_rknd
+
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
        lhs_splat_wp2, & ! LHS coefficient of wp2 splatting term  [1/s]
        lhs_splat_wp3    ! LHS coefficient of wp3 splatting term  [1/s]
@@ -840,12 +855,12 @@ module advance_clubb_core_module
     !----- Begin Code -----
 
     !$acc enter data create( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
+    !$acc              ddzt_um, ddzt_vm, ddzt_umvm_sqd, ddzt_umvm_sqd_clipped, &
     !$acc              wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, Lscale_zm, &
-    !$acc              Lscale_down, em, tau_zm, tau_zt, &
-    !$acc              wp2_zt, thlp2_zt, wpthlp_zt, &
+    !$acc              Lscale_down, em, tau_zm, tau_zt, wp2_zt, thlp2_zt, wpthlp_zt, &
     !$acc              wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
-    !$acc              Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, &
-    !$acc              rc_coef, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, sigma_sqd_w_zt, &
+    !$acc              Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, rc_coef, &
+    !$acc              Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, sigma_sqd_w_zt, &
     !$acc              sqrt_em_zt, xp3_coef_fnc, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
     !$acc              mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
     !$acc              thlm_zm, rcm_zm, thlm1000, thlm700, &
@@ -857,7 +872,7 @@ module advance_clubb_core_module
     !$acc              brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc              brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
     !$acc              brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_smth, &
-    !$acc              brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
+    !$acc              brunt_vaisala_freq_sqd_zt, brunt_vaisala_freq_clipped, Ri_zm, Lscale_max, &
     !$acc              tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 )
 
     !$acc enter data if( sclr_dim > 0 ) &
@@ -1356,7 +1371,6 @@ module advance_clubb_core_module
     ! Compute mixing length and dissipation time
     !----------------------------------------------------------------
 
-
     call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm,                                & ! In
                                       exner, rtm, rcm, p_in_Pa, thvm,                       & ! In
                                       ice_supersat_frac,                                    & ! In
@@ -1370,6 +1384,66 @@ module advance_clubb_core_module
                                       brunt_vaisala_freq_sqd_dry,                           & ! Out
                                       brunt_vaisala_freq_sqd_moist,                         & ! Out
                                       brunt_vaisala_freq_sqd_smth )                           ! Out
+
+    ! Calculate the norm of the vertical derivative of the mean horizontal wind speed
+    ! To feed into the calculation of the Richardson number Ri_zm
+    ddzt_um = ddzt( nz, ngrdcol, gr, um )
+    ddzt_vm = ddzt( nz, ngrdcol, gr, vm )
+
+    !$acc parallel loop gang vector collapse(2) default(present)
+    do k = 1, nz
+      do i = 1, ngrdcol
+        ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
+      end do
+    end do
+    !$acc end parallel loop
+
+    ! Calculate Richardson number Ri_zm
+    if ( clubb_config_flags%l_modify_limiters_for_cnvg_test ) then
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nz
+        do i = 1, ngrdcol
+          Ri_zm(i,k) = max( 0.0_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
+                          / max( ddzt_umvm_sqd(i,k), 1.0e-12_core_rknd )
+        end do
+      end do
+      !$acc end parallel loop
+
+      Ri_zm = zm2zt2zm( nz, ngrdcol, gr, Ri_zm )
+
+    else ! default method
+
+      if ( l_smooth_min_max ) then
+
+        brunt_vaisala_freq_clipped = smooth_max( nz, ngrdcol, 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth, &
+                                                 1.0e-4_core_rknd * min_max_smth_mag )
+
+        ddzt_umvm_sqd_clipped = smooth_max( nz, ngrdcol, ddzt_umvm_sqd, 1.0e-7_core_rknd, &
+                                        1.0e-6_core_rknd * min_max_smth_mag )
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            Ri_zm(i,k) = brunt_vaisala_freq_clipped(i,k) / ddzt_umvm_sqd_clipped(i,k)
+          end do
+        end do
+        !$acc end parallel loop
+
+      else
+
+        !$acc parallel loop gang vector collapse(2) default(present)
+        do k = 1, nz
+          do i = 1, ngrdcol
+            Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
+                            / max( ddzt_umvm_sqd(i,k), 1.0e-7_core_rknd )
+          end do
+        end do
+        !$acc end parallel loop
+
+      end if
+
+    end if
 
     if ( .not. clubb_config_flags%l_diag_Lscale_from_tau ) then ! compute Lscale 1st, using
                                                                 ! buoyant parcel calc
@@ -1428,8 +1502,6 @@ module advance_clubb_core_module
           tau_max_zm(i,k) = clubb_params(i,itaumax)
           tau_max_zt(i,k) = clubb_params(i,itaumax)
 
-          Ri_zm(i,k) = zero 
-
         end do
       end do
       !$acc end parallel loop
@@ -1439,26 +1511,17 @@ module advance_clubb_core_module
     else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
       call diagnose_Lscale_from_tau( nz, ngrdcol, gr,                             & ! In
-                        upwp_sfc, vpwp_sfc, um, vm,                               & ! In
-                        exner, p_in_Pa,                                           & ! In
-                        rtm, thlm, thvm,                                          & ! In
-                        rcm, ice_supersat_frac,                                   & ! In
+                        upwp_sfc, vpwp_sfc, ddzt_umvm_sqd,                        & ! In
+                        ice_supersat_frac,                                        & ! In
                         em, sqrt_em_zt,                                           & ! In
                         ufmin, tau_const,                                         & ! In
                         sfc_elevation, Lscale_max,                                & ! In
                         clubb_params,                                             & ! In
                         stats_metadata,                                           & ! In
-                        clubb_config_flags%saturation_formula,                    & ! In
                         clubb_config_flags%l_e3sm_config,                         & ! In
-                        clubb_config_flags%l_brunt_vaisala_freq_moist,            & ! In
-                        clubb_config_flags%l_use_thvm_in_bv_freq,                 & ! In
                         clubb_config_flags%l_smooth_Heaviside_tau_wpxp,           & ! In
-                        clubb_config_flags%l_modify_limiters_for_cnvg_test,       & ! In
-                        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed,     & ! In
-                        brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! In
-                        brunt_vaisala_freq_sqd_smth,                              & ! In
+                        brunt_vaisala_freq_sqd_smth, Ri_zm,                       & ! In
                         stats_zm,                                                 & ! Inout
-                        Ri_zm,                                                    & ! Out
                         invrs_tau_zt, invrs_tau_zm,                               & ! Out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd,       & ! Out
                         invrs_tau_shear, invrs_tau_N2_iso,                        & ! Out
@@ -1754,7 +1817,7 @@ module advance_clubb_core_module
          clubb_config_flags%l_use_C11_Richardson ) then
 
       call compute_Cx_fnc_Richardson( nz, ngrdcol, gr,                               & ! intent(in)
-                                      thlm, um, vm, em, Lscale, exner, rtm,          & ! intent(in)
+                                      thlm, um, vm, Lscale, exner, rtm,              & ! intent(in)
                                       rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
                                       ice_supersat_frac,                             & ! intent(in)
                                       clubb_params,                                  & ! intent(in)
@@ -2769,8 +2832,9 @@ module advance_clubb_core_module
     !$acc exit data delete( Skw_zm, Skw_zt, thvm, thvm_zm, ddzm_thvm_zm, rtprcp, rcp2, &
     !$acc                   wpthlp2, wprtp2, wprtpthlp, wp2rcp, wp3_zm, Lscale, Lscale_up, &
     !$acc                   Lscale_zm, Lscale_down, em, tau_zm, tau_zt, sigma_sqd_w_zt, &
-    !$acc                   wp2_zt, thlp2_zt, wpthlp_zt, &
-    !$acc                   wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
+    !$acc                   ddzt_um, ddzt_vm, ddzt_umvm_sqd, ddzt_umvm_sqd_clipped, &
+    !$acc                   wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt, &
+    !$acc                   rtp2_zt, rtpthlp_zt, up2_zt, vp2_zt, upwp_zt, vpwp_zt, &
     !$acc                   Skw_velocity, a3_coef, a3_coef_zt, wp3_on_wp2, wp3_on_wp2_zt, &
     !$acc                   rc_coef, Km_zm, Kmh_zm, gamma_Skw_fnc, sigma_sqd_w, sigma_sqd_w_tmp, &
     !$acc                   sqrt_em_zt, xp3_coef_fnc, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
@@ -2784,8 +2848,8 @@ module advance_clubb_core_module
     !$acc                   brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
     !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
     !$acc                   brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_smth, &
-    !$acc                   brunt_vaisala_freq_sqd_zt, Ri_zm, Lscale_max, &
-    !$acc                   tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 )
+    !$acc                   brunt_vaisala_freq_sqd_zt, brunt_vaisala_freq_clipped, Ri_zm, &
+    !$acc                   Lscale_max, tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 )
 
 #ifdef CLUBB_CAM
     !$acc exit data delete( qclvar )

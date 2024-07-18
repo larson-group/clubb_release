@@ -381,7 +381,6 @@ module advance_helper_module
         Rd, &
         ep, &
         one, &
-        one_half, &
         zero_threshold
 
     use parameters_model, only: &
@@ -449,13 +448,13 @@ module advance_helper_module
       T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, tmp_calc, &
       ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, ice_supersat_frac_zm
 
-    logical, parameter :: l_smooth_min_max = .false.  ! whether to apply smooth min and max functions
+    logical, parameter :: l_smooth_min_max = .false. ! whether to apply smooth min and max function
 
+    ! "base" smoothing magnitude before scaling for the respective data structure.
+    ! See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
+    ! for a plot on how output behaves with varying min_max_smth_mag
     real( kind = core_rknd ), parameter :: &
-      min_max_smth_mag = 1.0e-9_core_rknd     ! "base" smoothing magnitude before scaling
-                                              ! for the respective data structure. See
-                                              ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
-                                              ! for a plot on how output behaves with varying min_max_smth_mag
+      min_max_smth_mag = 1.0e-9_core_rknd
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       stat_dry, stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, &
@@ -617,7 +616,7 @@ module advance_helper_module
         do k = 1, nz
           do i = 1, ngrdcol
             brunt_vaisala_freq_clipped(i,k) = min( brunt_vaisala_freq_sqd_mixed(i,k), &
-                                                   1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3)
+                                       1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3)
           end do
         end do
         !$acc end parallel loop
@@ -646,7 +645,7 @@ module advance_helper_module
 !===============================================================================
 
   subroutine compute_Cx_fnc_Richardson( nz, ngrdcol, gr, &
-                                        thlm, um, vm, em, Lscale, exner, rtm, &
+                                        thlm, um, vm, Lscale, exner, rtm, &
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
                                         ice_supersat_frac, &
                                         clubb_params, &
@@ -710,11 +709,11 @@ module advance_helper_module
       l_Cx_fnc_Richardson_vert_avg = .false.    ! Vertically average Cx_fnc_Richardson over a
                                                 !  distance of Lscale
 
+    ! "base" smoothing magnitude before scaling for the respective data structure.
+    ! See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
+    ! for a plot on how output behaves with varying min_max_smth_mag
     real( kind = core_rknd ), parameter :: &
-      min_max_smth_mag = 1.0e-9_core_rknd ! "base" smoothing magnitude before scaling 
-                                          ! for the respective data structure. See
-                                          ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
-                                          ! for a plot on how output behaves with varying min_max_smth_mag
+      min_max_smth_mag = 1.0e-9_core_rknd
 
     !------------------------------ Input Variables ------------------------------
     integer, intent(in) :: &
@@ -727,7 +726,6 @@ module advance_helper_module
       thlm,      & ! th_l (liquid water potential temperature)      [K]
       um,        & ! u mean wind component (thermodynamic levels)   [m/s]
       vm,        & ! v mean wind component (thermodynamic levels)   [m/s]
-      em,        & ! Turbulent Kinetic Energy (TKE)                 [m^2/s^2]
       Lscale,    & ! Turbulent mixing length                        [m]
       exner,     & ! Exner function                                 [-]
       rtm,       & ! total water mixing ratio, r_t                  [kg/kg]
@@ -881,7 +879,8 @@ module advance_helper_module
 
           invrs_min_max_diff = one / ( Richardson_num_max - Richardson_num_min )
 
-          fnc_Richardson(i,k) = ( Ri_zm(i,k) - clubb_params(i,iRichardson_num_min) ) * invrs_min_max_diff
+          fnc_Richardson(i,k) = ( Ri_zm(i,k) - clubb_params(i,iRichardson_num_min) ) &
+                                * invrs_min_max_diff
         end do
       end do
 

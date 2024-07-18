@@ -372,7 +372,8 @@ module mixing_length
         rc_par_1(i,j) = max( s_par_1(i,j), zero_threshold )
 
         ! theta_v of entraining parcel at grid level j
-        thv_par_1(i,j) = thl_par_1(i,j) + ep1 * thv_ds(i,j) * rt_par_1(i,j) + Lv_coef(i,j) * rc_par_1(i,j)
+        thv_par_1(i,j) = thl_par_1(i,j) + ep1 * thv_ds(i,j) * rt_par_1(i,j) + Lv_coef(i,j) &
+                         * rc_par_1(i,j)
 
 
         ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
@@ -620,7 +621,8 @@ module mixing_length
         rc_par_1(i,j) = max( s_par_1(i,j), zero_threshold )
 
         ! theta_v of entraining parcel at grid level j
-        thv_par_1(i,j) = thl_par_1(i,j) + ep1 * thv_ds(i,j) * rt_par_1(i,j) + Lv_coef(i,j) * rc_par_1(i,j)
+        thv_par_1(i,j) = thl_par_1(i,j) + ep1 * thv_ds(i,j) * rt_par_1(i,j) + Lv_coef(i,j) &
+                         * rc_par_1(i,j)
 
         ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
         dCAPE_dz_1(i,j) = grav_on_thvm(i,j) * ( thv_par_1(i,j) - thvm(i,j) )
@@ -892,7 +894,6 @@ module mixing_length
         one_half,     &
         one_third,    &
         one,          &
-        three,        &
         unused_var
 
     use parameter_indices, only: &
@@ -989,8 +990,8 @@ module mixing_length
 
     logical, parameter :: &
       l_avg_Lscale = .false.  ! Lscale is calculated in subroutine compute_mixing_length
-                              ! if l_avg_Lscale is true, compute_mixing_length is called two additional
-                              ! times with
+                              ! if l_avg_Lscale is true, compute_mixing_length is called
+                              ! two additional times with
                               ! perturbed values of rtm and thlm.  An average value of Lscale
                               ! from the three calls to compute_mixing_length is then calculated.
                               ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
@@ -1133,11 +1134,11 @@ module mixing_length
             rtm_pert_pos_rt(i,k) = pdf_params%rt_1(i,k) &
                        + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1(i,k), rt_tol**2 ) )
 
-            thlm_pert_pos_rt(i,k) = pdf_params%thl_1(i,k) + ( sign_rtpthlp_zt(i,k) * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_1(i,k), thl_tol**2 ) ) )
+            thlm_pert_pos_rt(i,k) = pdf_params%thl_1(i,k) + ( sign_rtpthlp_zt(i,k) &
+                     * Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl_1(i,k), thl_tol**2 ) ) )
 
-            thlm_pert_neg_rt(i,k) = pdf_params%thl_2(i,k) - ( sign_rtpthlp_zt(i,k) * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_2(i,k), thl_tol**2 ) ) )
+            thlm_pert_neg_rt(i,k) = pdf_params%thl_2(i,k) - ( sign_rtpthlp_zt(i,k) &
+                     * Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl_2(i,k), thl_tol**2 ) ) )
 
             rtm_pert_neg_rt(i,k) = pdf_params%rt_2(i,k) &
                        - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2(i,k), rt_tol**2 ) )
@@ -1149,11 +1150,11 @@ module mixing_length
             rtm_pert_pos_rt(i,k) = pdf_params%rt_2(i,k) &
                        + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2(i,k), rt_tol**2 ) )
 
-            thlm_pert_pos_rt(i,k) = pdf_params%thl_2(i,k) + ( sign_rtpthlp_zt(i,k) * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_2(i,k), thl_tol**2 ) ) )
+            thlm_pert_pos_rt(i,k) = pdf_params%thl_2(i,k) + ( sign_rtpthlp_zt(i,k) &
+                     * Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl_2(i,k), thl_tol**2 ) ) )
 
-            thlm_pert_neg_rt(i,k) = pdf_params%thl_1(i,k) - ( sign_rtpthlp_zt(i,k) * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_1(i,k), thl_tol**2 ) ) )
+            thlm_pert_neg_rt(i,k) = pdf_params%thl_1(i,k) - ( sign_rtpthlp_zt(i,k) &
+                     * Lscale_pert_coef * sqrt( max( pdf_params%varnce_thl_1(i,k), thl_tol**2 ) ) )
 
             rtm_pert_neg_rt(i,k) = pdf_params%rt_1(i,k) &
                        - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1(i,k), rt_tol**2 ) )
@@ -1263,34 +1264,25 @@ module mixing_length
     !$acc                   mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt )
 
    return
-   
- end subroutine  calc_Lscale_directly
+
+ end subroutine calc_Lscale_directly
 
 
 
 !===============================================================================
 
  subroutine diagnose_Lscale_from_tau( nz, ngrdcol, gr, &
-                        upwp_sfc, vpwp_sfc, um, vm, & !intent in
-                        exner, p_in_Pa, & !intent in
-                        rtm, thlm, thvm, & !intent in
-                        rcm, ice_supersat_frac, &! intent in
+                        upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, & !intent in
+                        ice_supersat_frac, &! intent in
                         em, sqrt_em_zt, & ! intent in
                         ufmin, tau_const, & ! intent in
                         sfc_elevation, Lscale_max, & ! intent in
                         clubb_params, & ! intent in
                         stats_metadata, & ! intent in
-                        saturation_formula, & ! intent in
                         l_e3sm_config, & ! intent in
-                        l_brunt_vaisala_freq_moist, & !intent in
-                        l_use_thvm_in_bv_freq, &! intent in
                         l_smooth_Heaviside_tau_wpxp, & ! intent in
-                        l_modify_limiters_for_cnvg_test, & ! intent in
-                        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent in
-                        brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent in
-                        brunt_vaisala_freq_sqd_smth,  & ! intent in
+                        brunt_vaisala_freq_sqd_smth, Ri_zm, & ! intent in
                         stats_zm, & ! intent inout
-                        Ri_zm, & ! intent out
                         invrs_tau_zt, invrs_tau_zm, & ! intent out
                         invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
                         invrs_tau_shear, invrs_tau_N2_iso, & ! intent out
@@ -1346,7 +1338,6 @@ module mixing_length
         iC_invrs_tau_N2_clear_wp3,   &
         iC_invrs_tau_wpxp_Ri,        &
         ialtitude_threshold,         &
-        ibv_efold,                   &
         iwpxp_Ri_exp,                &
         iz_displace
 
@@ -1375,22 +1366,12 @@ module mixing_length
       vpwp_sfc
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      um,                           &
-      vm,                           &
-      exner,                        &
-      p_in_Pa,                      &
-      rtm,                          &
-      thlm,                         &
-      thvm,                         &
-      rcm,                          &
       ice_supersat_frac,            &
       em,                           &
       sqrt_em_zt,                   &
-      brunt_vaisala_freq_sqd,       &
-      brunt_vaisala_freq_sqd_mixed, &
-      brunt_vaisala_freq_sqd_dry,   &
-      brunt_vaisala_freq_sqd_moist, &
-      brunt_vaisala_freq_sqd_smth       ! smoothed Buoyancy frequency squared, N^2     [s^-2]
+      ddzt_umvm_sqd,                &
+      brunt_vaisala_freq_sqd_smth,  &     ! smoothed Buoyancy frequency squared, N^2     [s^-2]
+      Ri_zm                               ! Richardson number
 
     real(kind = core_rknd), intent(in) :: &
       ufmin,         &
@@ -1406,23 +1387,10 @@ module mixing_length
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    integer, intent(in) :: &
-      saturation_formula ! Integer that stores the saturation formula to be used
-
     logical, intent(in) :: &
       l_e3sm_config,              &
-      l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
-                                    ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq, &      ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_smooth_Heaviside_tau_wpxp   ! Use the smoothed Heaviside 'Peskin' function
                                     ! to compute invrs_tau_wpxp_zm
-
-    ! Flag to activate modifications on limiters for convergence test 
-    ! (smoothed max and min for Cx_fnc_Richardson in advance_helper_module.F90)
-    ! (remove the clippings on brunt_vaisala_freq_sqd_smth in mixing_length.F90)
-    ! (reduce threshold on limiters for Ri_zm in mixing_length.F90)
-    logical, intent(in) :: &
-      l_modify_limiters_for_cnvg_test
 
     !--------------------------- Input/Output Variables ---------------------------
     type (stats), target, intent(inout), dimension(ngrdcol) :: &
@@ -1430,7 +1398,6 @@ module mixing_length
 
     !--------------------------------- Output Variables ---------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      Ri_zm,                        &
       invrs_tau_zt,                 &
       invrs_tau_zm,                 &
       invrs_tau_sfc,                &
@@ -1465,29 +1432,26 @@ module mixing_length
       C_invrs_tau_N2,             &
       C_invrs_tau_N2_wp2
 
+    ! "base" smoothing magnitude before scaling for the respective data structure.
+    ! See https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
+    ! for a plot on how output behaves with varying min_max_smth_mag
     real( kind = core_rknd ), parameter :: &
-      min_max_smth_mag = 1.0e-9_core_rknd, &  ! "base" smoothing magnitude before scaling 
-                                              ! for the respective data structure. See
-                                              ! https://github.com/larson-group/clubb/issues/965#issuecomment-1119816722
-                                              ! for a plot on how output behaves with varying min_max_smth_mag
+      min_max_smth_mag = 1.0e-9_core_rknd
+
+    real( kind = core_rknd ), parameter :: &
       heaviside_smth_range = 1.0e-0_core_rknd ! range where Heaviside function is smoothed
 
-    logical, parameter :: l_smooth_min_max = .false.  ! whether to apply smooth min and max functions
+    logical, parameter :: l_smooth_min_max = .false. ! whether to apply smooth min and max function
 
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      ddzt_um, &
-      ddzt_vm, &
-      ddzt_umvm_sqd, &
-      ddzt_umvm_sqd_clipped, &
       norm_ddzt_umvm, &
       smooth_norm_ddzt_umvm, &
       brunt_vaisala_freq_clipped, &
       ice_supersat_frac_zm, &
       invrs_tau_shear_smooth, &
-      Ri_zm_clipped, &
       Ri_zm_smooth, &
       em_clipped, &
-      tau_zm_unclipped, & 
+      tau_zm_unclipped, &
       tau_zt_unclipped, &
       tmp_calc, &
       tmp_calc_max, &
@@ -1502,14 +1466,13 @@ module mixing_length
 
     !$acc enter data create( brunt_freq_pos, brunt_freq_out_cloud, &
     !$acc                    bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
-    !$acc                    ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
+    !$acc                    norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                    brunt_vaisala_freq_clipped, &
     !$acc                    ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                    ddzt_umvm_sqd, tmp_calc_ngrdcol )
+    !$acc                    tmp_calc_ngrdcol )
 
-    !$acc enter data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
-    !$acc            create( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &
-    !$acc                    tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
+    !$acc enter data if( l_smooth_min_max ) &
+    !$acc            create( tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                    tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
     !$acc parallel loop gang vector default(present)
@@ -1556,13 +1519,9 @@ module mixing_length
     end do
     !$acc end parallel loop
 
-    ddzt_um = ddzt( nz, ngrdcol, gr, um )
-    ddzt_vm = ddzt( nz, ngrdcol, gr, vm )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        ddzt_umvm_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
         norm_ddzt_umvm(i,k) = sqrt( ddzt_umvm_sqd(i,k) )
       end do
     end do
@@ -1573,7 +1532,8 @@ module mixing_length
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
-        invrs_tau_shear_smooth(i,k) = clubb_params(i,iC_invrs_tau_shear) *  smooth_norm_ddzt_umvm(i,k)
+        invrs_tau_shear_smooth(i,k) = clubb_params(i,iC_invrs_tau_shear) &
+                                      * smooth_norm_ddzt_umvm(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -1600,52 +1560,6 @@ module mixing_length
       end do
     end do
     !$acc end parallel loop
-
-    if ( l_modify_limiters_for_cnvg_test ) then
-
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
-        do i = 1, ngrdcol
-          Ri_zm_clipped(i,k) = max( 0.0_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
-                                  / max( ddzt_umvm_sqd(i,k), 1.0e-12_core_rknd )
-        end do
-      end do
-      !$acc end parallel loop
-
-      Ri_zm = zm2zt2zm( nz, ngrdcol, gr, Ri_zm_clipped )
-
-    else ! default method 
-
-      if ( l_smooth_min_max ) then
-
-        brunt_vaisala_freq_clipped = smooth_max( nz, ngrdcol, 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth, &
-                                                 1.0e-4_core_rknd * min_max_smth_mag )
-
-        ddzt_umvm_sqd_clipped = smooth_max( nz, ngrdcol, ddzt_umvm_sqd, 1.0e-7_core_rknd, &
-                                        1.0e-6_core_rknd * min_max_smth_mag )
-
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            Ri_zm(i,k) = brunt_vaisala_freq_clipped(i,k) / ddzt_umvm_sqd_clipped(i,k)
-          end do
-        end do
-        !$acc end parallel loop
-
-      else
-
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
-          do i = 1, ngrdcol
-            Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
-                            / max( ddzt_umvm_sqd(i,k), 1.0e-7_core_rknd )
-          end do
-        end do
-        !$acc end parallel loop
-
-      end if
-
-    end if
 
     if ( l_smooth_min_max ) then
 
@@ -1732,9 +1646,10 @@ module mixing_length
 
       do i = 1, ngrdcol
         call stat_update_var(stats_metadata%ibrunt_freq_pos, brunt_freq_pos(i,:), & ! intent(in)
-                             stats_zm(i))                                          ! intent(inout)
-        call stat_update_var(stats_metadata%ibrunt_freq_out_cloud, brunt_freq_out_cloud(i,:), & ! intent(in)
-                             stats_zm(i))                                          ! intent(inout)
+                             stats_zm(i))                                           ! intent(inout)
+        call stat_update_var(stats_metadata%ibrunt_freq_out_cloud, &                ! intent(in)
+                             brunt_freq_out_cloud(i,:), &                           ! intent(in)
+                             stats_zm(i))                                           ! intent(inout)
       end do
     end if
 
@@ -1778,7 +1693,7 @@ module mixing_length
                                   + clubb_params(i,iC_invrs_tau_N2_xp2) * brunt_freq_pos(i,k) & ! 0
                                   + clubb_params(i,iC_invrs_tau_sfc) * two &
                                   * sqrt(em(i,k)) &
-                                  / ( gr%zm(i,k) - sfc_elevation(i) + clubb_params(i,iz_displace) )  ! small
+                                  / ( gr%zm(i,k) - sfc_elevation(i) + clubb_params(i,iz_displace) ) ! small
         end do
       end do
       !$acc end parallel loop
@@ -1831,7 +1746,8 @@ module mixing_length
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_wpxp_zm(i,k) = two * invrs_tau_zm(i,k) &
-                                   + clubb_params(i,iC_invrs_tau_N2_wpxp) * brunt_freq_out_cloud(i,k)
+                                   + clubb_params(i,iC_invrs_tau_N2_wpxp) &
+                                   * brunt_freq_out_cloud(i,k)
         end do
       end do
       !$acc end parallel loop
@@ -1910,8 +1826,9 @@ module mixing_length
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          tmp_calc(i,k) = clubb_params(i,iC_invrs_tau_wpxp_Ri) * Ri_zm_smooth(i,k)**clubb_params(i,iwpxp_Ri_exp) 
-        end do 
+          tmp_calc(i,k) = clubb_params(i,iC_invrs_tau_wpxp_Ri) * &
+                          Ri_zm_smooth(i,k)**clubb_params(i,iwpxp_Ri_exp)
+        end do
       end do
       !$acc end parallel loop
 
@@ -1939,9 +1856,9 @@ module mixing_length
         do i = 1, ngrdcol
           if ( gr%zm(i,k) > clubb_params(i,ialtitude_threshold) ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
-                                      * ( one  + H_invrs_tau_wpxp_N2(i,k) &
-                                      * min( clubb_params(i,iC_invrs_tau_wpxp_Ri) &
-                                      * max( Ri_zm(i,k), zero)**clubb_params(i,iwpxp_Ri_exp), 12.0_core_rknd ) )
+                         * ( one  + H_invrs_tau_wpxp_N2(i,k) &
+                         * min( clubb_params(i,iC_invrs_tau_wpxp_Ri) &
+                         * max( Ri_zm(i,k), zero)**clubb_params(i,iwpxp_Ri_exp), 12.0_core_rknd ) )
           end if
         end do
       end do
@@ -1953,7 +1870,8 @@ module mixing_length
     do k = 1, nz
       do i = 1, ngrdcol
         invrs_tau_wp3_zm(i,k) = invrs_tau_wp2_zm(i,k) &
-                                + clubb_params(i,iC_invrs_tau_N2_clear_wp3) * brunt_freq_out_cloud(i,k)
+                                + clubb_params(i,iC_invrs_tau_N2_clear_wp3) &
+                                * brunt_freq_out_cloud(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -2045,14 +1963,13 @@ module mixing_length
 
     !$acc exit data delete( brunt_freq_pos, brunt_freq_out_cloud, &
     !$acc                   bvf_thresh, H_invrs_tau_wpxp_N2, ustar, &
-    !$acc                   ddzt_um, ddzt_vm, norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
+    !$acc                   norm_ddzt_umvm, smooth_norm_ddzt_umvm, &
     !$acc                   brunt_vaisala_freq_clipped, &
     !$acc                   ice_supersat_frac_zm, invrs_tau_shear_smooth, &
-    !$acc                   ddzt_umvm_sqd, tmp_calc_ngrdcol )
+    !$acc                   tmp_calc_ngrdcol )
 
-    !$acc exit data if( l_smooth_min_max .or. l_modify_limiters_for_cnvg_test ) &
-    !$acc           delete( Ri_zm_clipped, ddzt_umvm_sqd_clipped, &
-    !$acc                   tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
+    !$acc exit data if( l_smooth_min_max ) &
+    !$acc           delete( tau_zm_unclipped, tau_zt_unclipped, Ri_zm_smooth, em_clipped, &
     !$acc                   tmp_calc, tmp_calc_max, tmp_calc_min_max )
 
     return
