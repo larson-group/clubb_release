@@ -2483,13 +2483,13 @@ module stats_clubb_utilities
       ! stats_sfc variables
 
       ! Cloud cover
-      call stat_update_var_pt( stats_metadata%icc, grid_level, maxval( cloud_frac(1:nz) ), & ! intent(in)
+      call stat_update_var_pt( stats_metadata%icc, grid_level, maxval( cloud_frac(2:nz) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Cloud base
       if ( stats_metadata%iz_cloud_base > 0 ) then
 
-        k = 1
+        k = 2
         do while ( rcm(k) < rc_tol .and. k < nz )
           k = k + 1
         enddo

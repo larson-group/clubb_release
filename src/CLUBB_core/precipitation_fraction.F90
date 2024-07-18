@@ -143,13 +143,13 @@ module precipitation_fraction
       do j = 1, ngrdcol
         precip_frac_tol(j) &
         = max( precip_frac_tol_coef &
-               * max( maxval( cloud_frac(j,:) ), maxval( ice_supersat_frac(j,:) ) ), &
+               * max( maxval( cloud_frac(j,2:nz) ), maxval( ice_supersat_frac(j,2:nz) ) ), &
                cloud_frac_min )
       end do
     else
       ! Warm microphysics.
       do j = 1, ngrdcol
-        precip_frac_tol(j) = max( precip_frac_tol_coef * maxval( cloud_frac(j,:) ), &
+        precip_frac_tol(j) = max( precip_frac_tol_coef * maxval( cloud_frac(j,2:nz) ), &
                                 cloud_frac_min )
       end do
     endif
