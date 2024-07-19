@@ -500,22 +500,19 @@ module pdf_closure_module
     end if
 
     ! Initialize to 0 to prevent a runtime error
-    if ( iiPDF_type /= iiPDF_new .and. iiPDF_type /= iiPDF_new_hybrid ) then
-      ! Stats only variables, setting to zero
-      do k = 1, nz
-        do i = 1, ngrdcol
-          F_w(i,k) = zero
-          F_rt(i,k) = zero
-          F_thl(i,k) = zero
-          min_F_w(i,k) = zero
-          max_F_w(i,k) = zero
-          min_F_rt(i,k) = zero
-          max_F_rt(i,k) = zero
-          min_F_thl(i,k) = zero
-          max_F_thl(i,k) = zero
-        end do
+    do k = 1, nz
+      do i = 1, ngrdcol
+        F_w(i,k) = zero
+        F_rt(i,k) = zero
+        F_thl(i,k) = zero
+        min_F_w(i,k) = zero
+        max_F_w(i,k) = zero
+        min_F_rt(i,k) = zero
+        max_F_rt(i,k) = zero
+        min_F_thl(i,k) = zero
+        max_F_thl(i,k) = zero
       end do
-    end if
+    end do
 
     ! To avoid recomputing
     !$acc parallel loop gang vector collapse(2) default(present)
