@@ -407,7 +407,7 @@ module advance_xp2_xpyp_module
       lhs_dp1_C4     ! LHS dissipation term 1, for up2 vp2 using C4
       
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      rtm_zm, test
+      rtm_zm, cloud_frac_zm, test
 
     ! Loop indices
     integer :: sclr, k, i
@@ -461,14 +461,18 @@ module advance_xp2_xpyp_module
 
     ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
     if ( l_C2_cloud_frac ) then
+
+      ! Interpolate cloud_frac to momentum levels.
+      cloud_frac_zm = zt2zm( nz, ngrdcol, gr, cloud_frac )
+
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz, 1
         do i = 1, ngrdcol
 
-          if ( cloud_frac(i,k) >= cloud_frac_min ) then
-            C2rt_1d(i,k)    = clubb_params(i,iC2rt)    * max( min_cloud_frac_mult, cloud_frac(i,k) )
-            C2thl_1d(i,k)   = clubb_params(i,iC2thl)   * max( min_cloud_frac_mult, cloud_frac(i,k) )
-            C2rtthl_1d(i,k) = clubb_params(i,iC2rtthl) * max( min_cloud_frac_mult, cloud_frac(i,k) )
+          if ( cloud_frac_zm(i,k) >= cloud_frac_min ) then
+            C2rt_1d(i,k)    = clubb_params(i,iC2rt)    * max( min_cloud_frac_mult, cloud_frac_zm(i,k) )
+            C2thl_1d(i,k)   = clubb_params(i,iC2thl)   * max( min_cloud_frac_mult, cloud_frac_zm(i,k) )
+            C2rtthl_1d(i,k) = clubb_params(i,iC2rtthl) * max( min_cloud_frac_mult, cloud_frac_zm(i,k) )
           else ! cloud_frac(k) < cloud_frac_min
             C2rt_1d(i,k)    = clubb_params(i,iC2rt)
             C2thl_1d(i,k)   = clubb_params(i,iC2thl)
