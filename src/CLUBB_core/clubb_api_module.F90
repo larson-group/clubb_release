@@ -1249,8 +1249,12 @@ contains
     !$acc      copyin( hydromet_col, wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &
     !$acc              l_mix_rat_hm )
 
+#ifdef CLUBB_CAM
+    !$acc data copyout( qclvar_col )
+#endif
+
 #ifdef CLUBBND_CAM
-    !$acc data copyin( varmu ) copyout( qclvar )
+    !$acc data copyin( varmu_col )
 #endif
 
 #ifdef GFDL
@@ -1317,6 +1321,10 @@ contains
     !$acc end data
     !$acc end data
     !$acc end data
+      
+#ifdef CLUBB_CAM
+    !$acc end data
+#endif
 
 #ifdef CLUBBND_CAM
     !$acc end data
@@ -1812,8 +1820,12 @@ contains
     !$acc      copyin( hydromet, wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &
     !$acc              l_mix_rat_hm )
 
+#ifdef CLUBB_CAM
+    !$acc data copyout( qclvar )
+#endif
+
 #ifdef CLUBBND_CAM
-    !$acc data copyin( varmu ) copyout( qclvar )
+    !$acc data copyin( varmu )
 #endif
 
 #ifdef GFDL
@@ -1880,6 +1892,10 @@ contains
     !$acc end data
     !$acc end data
     !$acc end data
+
+#ifdef CLUBB_CAM
+    !$acc end data
+#endif
 
 #ifdef CLUBBND_CAM
     !$acc end data

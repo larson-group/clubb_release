@@ -882,10 +882,6 @@ module advance_clubb_core_module
     !$acc enter data if( edsclr_dim > 0 ) &
     !$acc            create( wpedsclrp )
 
-#ifdef CLUBB_CAM
-    !$acc enter data create( qclvar )
-#endif
-
     if ( clubb_config_flags%l_lmm_stepping ) then
       dt_advance = two * dt
     else
@@ -2850,11 +2846,7 @@ module advance_clubb_core_module
     !$acc                   brunt_vaisala_freq_sqd_splat, brunt_vaisala_freq_sqd_smth, &
     !$acc                   brunt_vaisala_freq_sqd_zt, brunt_vaisala_freq_clipped, Ri_zm, &
     !$acc                   Lscale_max, tau_max_zm, tau_max_zt, mu, lhs_splat_wp2, lhs_splat_wp3 )
-
-#ifdef CLUBB_CAM
-    !$acc exit data delete( qclvar )
-#endif
-
+    
     return
 
   end subroutine advance_clubb_core
