@@ -1134,10 +1134,6 @@ module clubb_driver
       l_trapezoidal_rule_zt    = .true.
       l_trapezoidal_rule_zm    = .true.
       l_call_pdf_closure_twice = .true.
-    else
-      l_trapezoidal_rule_zt    = .false.
-      l_trapezoidal_rule_zm    = .false.
-      l_call_pdf_closure_twice = .false.
     end if
 
     case_info_file = &
@@ -1964,10 +1960,6 @@ module clubb_driver
         clubb_config_flags%l_trapezoidal_rule_zt    = .true.
         clubb_config_flags%l_trapezoidal_rule_zm    = .true.
         clubb_config_flags%l_call_pdf_closure_twice = .true.
-      else
-        clubb_config_flags%l_trapezoidal_rule_zt    = .false.
-        clubb_config_flags%l_trapezoidal_rule_zm    = .false.
-        clubb_config_flags%l_call_pdf_closure_twice = .false.
       end if
     end if
 
