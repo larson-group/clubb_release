@@ -1079,7 +1079,7 @@ module advance_clubb_core_module
       ! Set fluxes for passive scalars (if enabled)
       if ( sclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
-        do j = 1, edsclr_dim
+        do j = 1, sclr_dim
           do i = 1, ngrdcol
             wpsclrp(i,1,j) = 0.0_core_rknd
           end do

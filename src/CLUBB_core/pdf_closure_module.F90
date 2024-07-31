@@ -1358,6 +1358,8 @@ module pdf_closure_module
         do i = 1, ngrdcol
           w_up_in_cloud(i,k) = zero
           w_down_in_cloud(i,k) = zero
+          cloudy_updraft_frac(i,k) = zero
+          cloudy_downdraft_frac(i,k) = zero
         end do
       end do
     end if
