@@ -647,9 +647,9 @@ module mono_flux_limiter
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1, 1
-      do i = 1, ngrdcol
+    !$acc parallel loop gang vector default(present)
+    do i = 1, ngrdcol
+      do k = 2, nz-1
  
         ! Find the upper limit for w'x' for a monotonic turbulent flux.
         ! The following "if" statement ensures there are no "spikes" at the top of the column,
