@@ -1178,14 +1178,14 @@ contains
     !$acc              radf_col, wpthlp_sfc_col, &
     !$acc              wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, & 
     !$acc              upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, um_ref_col, &
-    !$acc              vm_ref_col, ug_col, vg_col, host_dx_col, host_dy_col ) &
+    !$acc              vm_ref_col, ug_col, vg_col, host_dx_col, host_dy_col, &
+    !$acc              pdf_params, pdf_params_zm ) &
     !$acc        copy( um_col, upwp_col, vm_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, rtm_col, wprtp_col, thlm_col, wpthlp_col, rtp2_col, &
     !$acc              rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, wp2_col, wp3_col, &
     !$acc              p_in_Pa_col, exner_col, rcm_col, cloud_frac_col, wpthvp_col, wp2thvp_col, &
     !$acc              rtpthvp_col, thlpthvp_col, wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_zm_col, &
     !$acc              wp4_col, wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, um_pert_col, &
     !$acc              vm_pert_col, upwp_pert_col, vpwp_pert_col, &
-    !$acc              pdf_params, pdf_params_zm, &
     !$acc              pdf_params%w_1, pdf_params%w_2, &
     !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
     !$acc              pdf_params%rt_1, pdf_params%rt_2, &
@@ -1749,14 +1749,14 @@ contains
     !$acc              radf, wpthlp_sfc, &
     !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, & 
     !$acc              upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, thlm_ref, um_ref, &
-    !$acc              vm_ref, ug, vg, host_dx, host_dy ) &
+    !$acc              vm_ref, ug, vg, host_dx, host_dy, &
+    !$acc              pdf_params, pdf_params_zm ) &
     !$acc        copy( um, upwp, vm, vpwp, up2, vp2, up3, vp3, rtm, wprtp, thlm, wpthlp, rtp2, &
     !$acc              rtp3, thlp2, thlp3, rtpthlp, wp2, wp3, &
     !$acc              p_in_Pa, exner, rcm, cloud_frac, wpthvp, wp2thvp, &
     !$acc              rtpthvp, thlpthvp, wp2rtp, wp2thlp, uprcp, vprcp, rc_coef_zm, &
     !$acc              wp4, wpup2, wpvp2, wp2up2, wp2vp2, ice_supersat_frac, um_pert, &
     !$acc              vm_pert, upwp_pert, vpwp_pert, &
-    !$acc              pdf_params, pdf_params_zm, &
     !$acc              pdf_params%w_1, pdf_params%w_2, &
     !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
     !$acc              pdf_params%rt_1, pdf_params%rt_2, &
