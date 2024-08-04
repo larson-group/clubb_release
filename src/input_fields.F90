@@ -405,7 +405,8 @@ module inputfields
     real( kind = core_rknd), dimension(gr%nz), target :: &
       temp_Nrm, temp_Ncm, temp_rgm, temp_rim, temp_Ngm, temp_Nsm, &
       temp_rrm, temp_rsm, temp_tke, temp_wpup_sgs, temp_wpvp_sgs, &
-      temp_Nim, temp_rrp2, temp_Nrp2, temp_wprrp, temp_wpNrp ! temp. variables
+      temp_Nim, temp_rrp2, temp_Nrp2, temp_wprrp, temp_wpNrp, & ! temp. variables
+      up2_zt, vp2_zt
 
     type (input_field), dimension(:), allocatable :: &
       SAM_variables, & ! A list of SAM variables to read in.
@@ -2380,9 +2381,9 @@ module inputfields
       ! on the momentum grid in CLUBB. This will have to be interpolated.
       SAM_variables(k)%l_input_var = l_input_up2
       SAM_variables(k)%input_name = "U2"
-      SAM_variables(k)%clubb_var => up2
+      SAM_variables(k)%clubb_var => up2_zt
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
@@ -2391,9 +2392,9 @@ module inputfields
       ! on the momentum grid in CLUBB. This will have to be interpolated.
       SAM_variables(k)%l_input_var = l_input_vp2
       SAM_variables(k)%input_name = "V2"
-      SAM_variables(k)%clubb_var => vp2
+      SAM_variables(k)%clubb_var => vp2_zt
       SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
@@ -2507,28 +2508,15 @@ module inputfields
         
         ! Use linear interpolation to convert up2 and vp2 from the thermodynamic
         ! grid to the momentum grid. See CLUBB Equations 170 and 171.
-        if( k < gr%nz) then
-          if(l_input_up2) then
-            up2(k) = ( (up2(k+1) - up2(k))/(gr%zt(1,k+1) - gr%zt(1,k)) ) &
-                     * (gr%zm(1,k) - gr%zt(1,k)) + up2(k)
-          end if
+        if (l_input_up2) then
+           up2(k) = zt2zm( gr, up2_zt, k )
+        endif
 
-          if(l_input_vp2) then
-            vp2(k) = ( (vp2(k+1) - vp2(k))/(gr%zt(1,k+1) - gr%zt(1,k)) ) &
-                     * (gr%zm(1,k) - gr%zt(1,k)) + vp2(k)
-          end if
-        else ! k = gr%nz
-          if(l_input_up2) then
-            up2(k) = ( (up2(k) - up2(k-1))/(gr%zt(1,k) - gr%zt(1,k-1)) ) &
-                     * (gr%zm(1,k) - gr%zt(1,k)) + up2(k)
-          end if
+        if(l_input_vp2) then
+           vp2(k) = zt2zm( gr, vp2_zt, k )
+        endif
 
-          if(l_input_vp2) then
-            vp2(k) = ( (vp2(k) - vp2(k-1))/(gr%zt(1,k) - gr%zt(1,k-1)) ) &
-                     * (gr%zm(1,k) - gr%zt(1,k)) + vp2(k)
-          end if
-        end if
-      end do
+      enddo
        
       ! Add hydrometeor variables.
       if( l_input_Nrm .and. iiNr > 0) then
