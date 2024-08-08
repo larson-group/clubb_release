@@ -11,7 +11,7 @@
 cd "$(dirname "$0")"
 
 if [ ! -d $PWD/intel-application-migration-tool-for-openacc-to-openmp/ ]; then
-	git clone https://github.com/intel/intel-application-migration-tool-for-openacc-to-openmp
+	git clone https://github.com/huebleruwm/intel-application-migration-tool-for-openacc-to-openmp
 fi
 ACC_TO_OMP_SCRIPT=$PWD/intel-application-migration-tool-for-openacc-to-openmp/src/intel-application-migration-tool-for-openacc-to-openmp
 
