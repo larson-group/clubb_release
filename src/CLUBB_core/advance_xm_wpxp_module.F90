@@ -2670,11 +2670,13 @@ module advance_xm_wpxp_module
     !              The LHS matrices being equivalent allows for only a single solve, rather
     !              than a seperate solve for each field. 
     !----------------------------------------------------------------------------------------
-    
+
     use grid_class, only: & 
         grid, & ! Type
-        ddzt    ! Procedure(s)
-      
+        ddzt, &    ! Procedure(s)
+        zm2zt2zm, &
+        zt2zm2zt
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
@@ -2929,16 +2931,20 @@ module advance_xm_wpxp_module
     ! Constant parameters as a function of Skw.
 
     real( kind = core_rknd ), dimension(ngrdcol) :: rcond
-      
+
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       zeros_vector, &
       ddzt_um, &
       ddzt_vm, &
       ddzt_um_pert, &
-      ddzt_vm_pert
-      
+      ddzt_vm_pert, &
+      upthvp_tmp, &
+      vpthvp_tmp, &
+      um_smth, &
+      vm_smth
+
     integer :: i, k, j, n
-    
+
     real( kind = core_rknd ), dimension(nz) :: tmp_in
 
     ! ------------------- Begin Code -------------------
@@ -2948,10 +2954,11 @@ module advance_xm_wpxp_module
     !$acc                 tau_C6_zm, upwp_forcing_pert, vpwp_forcing_pert, upthvp_pert, &
     !$acc                 vpthvp_pert, upthlp_pert, vpthlp_pert, uprtp_pert, vprtp_pert, &
     !$acc                 rhs, rhs_save, solution, old_solution, rcond, zeros_vector, &
-    !$acc                 ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert )
+    !$acc                 ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert, upthvp_tmp, vpthvp_tmp, &
+    !$acc                 um_smth, vm_smth )
 
     !$acc enter data if( sclr_dim > 0 ) create( wpsclrp_forcing )
-    
+
     ! This is initialized solely for the purpose of avoiding a compiler
     ! warning about uninitialized variables.
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -3146,21 +3153,24 @@ module advance_xm_wpxp_module
       end do
       !$acc end parallel loop
 
-      call diagnose_upxp( nz, ngrdcol, gr, upwp, thlm, wpthlp, um,  & ! Intent(in)
-                          C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc,     & ! Intent(in)
-                          upthlp )                                    ! Intent(out)
+      um_smth = zt2zm2zt( nz, ngrdcol, gr, um)
+      vm_smth = zt2zm2zt( nz, ngrdcol, gr, vm)
 
-      call diagnose_upxp( nz, ngrdcol, gr, upwp, rtm, wprtp, um,  & ! Intent(in)
-                          C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc,    & ! Intent(in)
-                          uprtp )                                   ! Intent(out)
+      call diagnose_upxp( nz, ngrdcol, gr, upwp, thlm, wpthlp, um_smth, & ! Intent(in)
+                          C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc,         & ! Intent(in)
+                          upthlp )                                        ! Intent(out)
 
-      call diagnose_upxp( nz, ngrdcol, gr, vpwp, thlm, wpthlp, vm,  & ! Intent(in)
-                          C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc,     & ! Intent(in)
-                          vpthlp )                                    ! Intent(out)
+      call diagnose_upxp( nz, ngrdcol, gr, upwp, rtm, wprtp, um_smth, & ! Intent(in)
+                          C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc,        & ! Intent(in)
+                          uprtp )                                       ! Intent(out)
 
-      call diagnose_upxp( nz, ngrdcol, gr, vpwp, rtm, wprtp, vm,  & ! Intent(in)
-                          C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc,    & ! Intent(in)
-                          vprtp )                                   ! Intent(out)
+      call diagnose_upxp( nz, ngrdcol, gr, vpwp, thlm, wpthlp, vm_smth, & ! Intent(in)
+                          C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc,         & ! Intent(in)
+                          vpthlp )                                        ! Intent(out)
+
+      call diagnose_upxp( nz, ngrdcol, gr, vpwp, rtm, wprtp, vm_smth, & ! Intent(in)
+                          C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc,        & ! Intent(in)
+                          vprtp )                                       ! Intent(out)
 
       if ( l_perturbed_wind ) then
 
@@ -3192,14 +3202,17 @@ module advance_xm_wpxp_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          upthvp(i,k) = upthlp(i,k) + ep1 * thv_ds_zm(i,k) * uprtp(i,k) &
+          upthvp_tmp(i,k) = upthlp(i,k) + ep1 * thv_ds_zm(i,k) * uprtp(i,k) &
                         + rc_coef_zm(i,k) * uprcp(i,k)
 
-          vpthvp(i,k) = vpthlp(i,k) + ep1 * thv_ds_zm(i,k) * vprtp(i,k) &
+          vpthvp_tmp(i,k) = vpthlp(i,k) + ep1 * thv_ds_zm(i,k) * vprtp(i,k) &
                         + rc_coef_zm(i,k) * vprcp(i,k)
         end do
       end do
       !$acc end parallel loop
+
+      upthvp = zm2zt2zm( nz, ngrdcol, gr, upthvp_tmp )
+      vpthvp = zm2zt2zm( nz, ngrdcol, gr, vpthvp_tmp )
 
       if ( l_perturbed_wind ) then
 
@@ -3652,12 +3665,13 @@ module advance_xm_wpxp_module
     !$acc                 tau_C6_zm, upwp_forcing_pert, vpwp_forcing_pert, upthvp_pert, &
     !$acc                 vpthvp_pert, upthlp_pert, vpthlp_pert, uprtp_pert, vprtp_pert, &
     !$acc                 rhs, rhs_save, solution, old_solution, rcond, zeros_vector, &
-    !$acc                 ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert )
+    !$acc                 ddzt_um, ddzt_vm, ddzt_um_pert, ddzt_vm_pert, upthvp_tmp, vpthvp_tmp, &
+    !$acc                 um_smth, vm_smth )
 
     !$acc exit data if( sclr_dim > 0 ) delete( wpsclrp_forcing )
-    
+
   end subroutine solve_xm_wpxp_with_single_lhs
-  
+
   !==========================================================================================
 
   subroutine solve_xm_wpxp_with_multiple_lhs( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt, &

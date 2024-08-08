@@ -106,7 +106,8 @@ module advance_wp2_wp3_module
         grid, & ! Type
         ddzt, & ! Procedure
         zt2zm,  & ! Procedure(s)
-        zm2zt
+        zm2zt, &
+        zm2zt2zm
 
     use parameter_indices, only: &
         nparams, & ! Variable(s)
@@ -313,7 +314,9 @@ module advance_wp2_wp3_module
     ! --------------------------- Local Variables ---------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
       wp2_old, & ! w'^2 (momentum levels)                 [m^2/s^2]
-      wp3_old    ! w'^3 (thermodynamic levels)            [m^3/s^3] 
+      wp3_old, & ! w'^3 (thermodynamic levels)            [m^3/s^3]
+      wp2_smth, &
+      em_smth
 
     ! Eddy Diffusion for w'^2 and w'^3.
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
@@ -413,7 +416,8 @@ module advance_wp2_wp3_module
     !$acc                    lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
     !$acc                    lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
     !$acc                    coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
-    !$acc                    dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt )
+    !$acc                    dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt, &
+    !$acc                    wp2_smth, em_smth )
 
     !-----------------------------------------------------------------------
 
@@ -672,6 +676,10 @@ module advance_wp2_wp3_module
       dvm_dz(:,:) = ddzt( nz, ngrdcol, gr, vm(:,:) )
     end if
 
+    em_smth = zm2zt2zm( nz, ngrdcol, gr, em )
+    wp2_smth = zm2zt2zm( nz, ngrdcol, gr, wp2 )
+
+
     ! Calculate term
     call wp3_term_pr_turb_rhs( nz, ngrdcol, gr, clubb_params(:,iC_wp3_pr_turb), & ! intent(in)
                                Kh_zt, wpthvp,                                   & ! intent(in)
@@ -679,7 +687,7 @@ module advance_wp2_wp3_module
                                upwp, vpwp,                                      & ! intent(in)
                                thv_ds_zt,                                       & ! intent(in)
                                rho_ds_zm, invrs_rho_ds_zt,                      & ! intent(in)
-                               em, wp2,                                         & ! intent(in)
+                               em_smth, wp2_smth,                               & ! intent(in)
                                rhs_pr_turb_wp3,                                 & ! intent(out)
                                l_use_tke_in_wp3_pr_turb_term )                    ! intent(in)
 
@@ -1142,7 +1150,8 @@ module advance_wp2_wp3_module
     !$acc                   lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
     !$acc                   lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
     !$acc                   coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
-    !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt )
+    !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt, &
+    !$acc                   wp2_smth, em_smth )
 
     return
 
