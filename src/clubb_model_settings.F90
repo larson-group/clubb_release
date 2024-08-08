@@ -98,6 +98,12 @@ module clubb_model_settings
     dt_rad      ! Closure model timestep                 [s]
 !$omp threadprivate(dt_main, dt_rad)
 
+  integer, parameter :: &
+    sp = selected_real_kind(6)  ! 32-bit floating point number
+
+  real( kind = sp ), public :: &
+    PosInf = transfer( 2139095040, 1.0_sp ) ! 2139095040 is a magic number
+
   contains
 
 !-------------------------------------------------------------------------------

@@ -24,7 +24,7 @@ module stat_file_utils
 
     use constants_clubb, only: fstderr, eps ! Variable(s)
 
-    use parameters_model, only: PosInf ! Variable(s)
+    use clubb_model_settings, only: PosInf ! Variable(s)
 
     use stat_file_module, only: stat_file ! Type(s)
 
