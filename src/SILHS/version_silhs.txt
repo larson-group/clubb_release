@@ -1,0 +1,81 @@
+commit 46fe460263003ad92fd5f942a2c99d006bcbf0fa
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Aug 8 17:15:45 2024 -0500
+
+    Changing openacc to openmp migration repo to a fork with a change to switch the order of copyins and copies. This is to allow us to only copyin the pdf_params structure, but copy the internal arrays. When the copying of the internal arrays happens first, followed by the copyin of the structure, we overwrite the pointers to the internal arrays on the GPU version of the structure. Hence why we want the copyins to precede the copy statements.
+
+commit 1f96b03b404757544a6954e41ebea65a4771d333
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Aug 8 14:29:11 2024 -0500
+
+    Moving PosInf to clubb_model_settings.F90
+
+commit a5e586ca398dcd4733c05082addacaa66e24b2f6
+Author: domkesteffen <42725900+domkesteffen@users.noreply.github.com>
+Date:   Thu Aug 8 14:29:04 2024 -0500
+
+    Added zt2zm2zt-smoothing to remove noise in MPACE_B winds (#1161)
+    
+    BIT_CHANGING
+    
+    In order to remove noise in the wind fields in MPACE_B, we added some smoothing.
+    
+    * Added `zt2zm2zt`-smoothing to `diagnose_upxp` calls in `advance_xm_wpxp`
+    * Added `zm2zt2zm`-smoothing to `wp2` and `em` vars fed into `wp3_term_pr_turb_rhs` in `advance_wp2_wp3`
+    * Changed C_wp2_splat to 0.00 in default tunable_parameters.in
+
+commit b66569c42c4c6ba4c301c1ab41cfc5cbc9554fcf
+Merge: 47c5a7c9f 3f865924b
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Sun Aug 4 12:29:00 2024 -0500
+
+    Merge branch 'master' of github.com:larson-group/clubb
+
+commit 47c5a7c9fede199a6ce4400f50474c7a9e49aaad
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Sun Aug 4 12:27:36 2024 -0500
+
+    Updating input fields so that the zt2zm function is used for
+    interpolation from thermodynamic to momentum grids in the case
+    of reading in UP2 and Vp2 from SAM LES output.
+
+commit 3f865924bdcf798fa45acaa67b57c44f40c32d89
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Jul 31 17:30:51 2024 -0500
+
+    Moving pdf_params copying to copyin. This is the data structure that contains pointers, and these pointers will be different on the host and device, so it is bad in theory to copy the structure back to the CPU as it might overwrite cpu memory pointers with gpu memory pointers. In practice though I've seen no problems caused by this, I'm just making this commit preemptively, and it has already been tested with the ECT test.
+
+commit e7c07d8527cafa4ab3ee16b1b90ce1abe24941f3
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Jul 31 14:53:49 2024 -0500
+
+    Fixing bugs that are only caught when not outputting w_[up/down]_in_cloud stats or if l_host_applies_sfc_fluxes=.true. The l_host_applies_sfc_fluxes=.true. isn't testable (at least not in clubb_standalone), and I just caught that visually. The cloudy_updraft_frac and cloudy_downdraft_frac fields not being set were only noticable in cam, because we always run with iw_up_in_cloud>0 and iw_down_in_cloud>0 to output stats.
+
+commit 7e50946517204cc06f78f8d12c3bca5b283d83f0
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Wed Jul 31 13:57:28 2024 -0500
+
+    Fixing GPU bug. There is a vertical dependency with wpxp. This is what was breaking the ECT test, see larson-group/cam#175
+
+commit 88e63b7dc56295efbebde1b090107c748daef541
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Jul 22 17:59:07 2024 -0500
+
+    When l_vert_avg_closure is enabled, the flags l_call_pdf_closure_twice,
+    l_trapezoidal_rule_zt, and l_trapezoidal_rule_zm should all be enabled.
+    
+    That is not changed by this commit.
+    
+    However, when l_vert_avg_closure is disabled, then the setting of those
+    other 3 flags should be left to whatever setting they have in the
+    configurable flags file. They should **not** be automatically
+    overwritten to false.
+    
+    Since all 4 of those flags are all turned off by default anyway in
+    CLUBB, this commit will have no effect on the default results.
+
+commit a67d637da217289ec8a0ddd2ea464d782b9ca79c
+Author: huebleruwm <huebler@uwm.edu>
+Date:   Fri Jul 19 15:33:33 2024 -0600
+
+    Fixing bug. qclvar copying is handled by the api, but we were deleting it with an unstructured data statement. I added this due as a fix before thinking qclvar was a local variable, which happened because I mixed up the CLUBB_CAM and CLUBBND_CAM flags. https://github.com/larson-group/cam/issues/175
