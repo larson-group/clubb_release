@@ -38,4 +38,4 @@ def clean_title(string):
     :param string: Title of a plot which is used to generate a file name
     :return: A cleaned version of the input string
     """
-    return re.sub('\$[^$]*\$','',string)
+    return re.sub("\$[^$]*\$",'',string)

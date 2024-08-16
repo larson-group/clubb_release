@@ -1,0 +1,93 @@
+pipeline {
+
+  // The GPU tests shouldn't run at the same time as it can cause them to slowdown significantly
+  // the other needs to run on carson, so we will simply reqire that this one doesn't run on carson.
+  agent { label '!carson' }
+  
+  environment {
+    commit = "${GIT_COMMIT.substring(0, 7)}"
+    branch = "${GIT_BRANCH.split('/').last()}"
+  }
+
+  stages {
+    stage('Modify Config Flags') {
+      steps {
+        sh '''sed -i "s:penta_solve_method.*:penta_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:tridiag_solve_method.*:tridiag_solve_method = 2:g" input/tunable_parameters/configurable_model_flags.in'''
+        sh '''sed -i "s:lh_straight_mc.*:lh_straight_mc = true:g" input/tunable_parameters/configurable_model_flags.in'''
+      }
+    }
+    stage('Compile CPU') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              compile/compile.bash -c config/linux_x86_64_nvhpc.bash'''
+      }
+    }
+    stage('Run CPU') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              run_scripts/run_scm_all.bash -i
+              mv output cpu_${commit}; mkdir output'''
+      }
+    }
+    stage('Compile GPU_ACC') {
+      steps {
+        sh '''compile/clean_all.bash
+              source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              compile/compile.bash -c config/linux_x86_64_nvhpc_gpu_openacc.bash'''
+      }
+    }
+    stage('Run GPU_ACC') {
+      steps {
+        sh '''source /etc/profile.d/larson-group.sh
+              module load nvhpc netcdf-fortran
+              run_scripts/run_scm_all.bash -i
+              mv output gpu_${commit}; mkdir output'''
+      }
+    }
+    stage('Plot') {
+      steps {
+        sh 'scp -r carson:/home/pub/clubb_nvhpc_gpu_plots/master/cur_out .'
+        sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c cpu_* gpu_* cur_out/cpu_* cur_out/gpu_* -o ${commit}_vs_master_$(cat cur_out/commit)'
+        sh "ssh carson 'mkdir -p /home/pub/clubb_nvhpc_gpu_plots/${branch}'"
+        sh "scp -r *_vs_* carson:/home/pub/clubb_nvhpc_gpu_plots/${branch}"
+        sh "ssh carson '/home/pub/create_plot_list.py /home/pub/clubb_nvhpc_gpu_plots/'"
+      }
+    }
+    stage('Update Master Output') {
+      when {
+        branch 'master'
+      }
+      steps {
+        sh 'rm -rf cur_out'
+        sh 'mkdir cur_out'
+        sh 'mv cpu_* gpu_* cur_out'
+        sh 'echo ${commit} > cur_out/commit'
+        sh "ssh carson 'rm -rf /home/pub/clubb_nvhpc_gpu_plots/master/cur_out'"
+        sh 'scp -r cur_out carson:/home/pub/clubb_nvhpc_gpu_plots/master/'
+      }
+    }
+  }
+  post {
+    always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
+      script {
+      // This cleans out the test workspace so the next run has a fresh start
+      // However this only occurs when the test is named clubb_gfortran_build
+      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_plot" )
+      	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" == "clubb_nvhpc_gpu_vs_cpu_plot" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

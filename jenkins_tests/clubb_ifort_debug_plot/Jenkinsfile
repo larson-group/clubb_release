@@ -1,5 +1,12 @@
 pipeline {
+  
   agent any
+  
+  environment {
+    commit = "${GIT_COMMIT.substring(0, 7)}"
+    branch = "${GIT_BRANCH.split('/').last()}"
+  }
+
   stages {
     stage('Compile') {
       steps {
@@ -14,7 +21,30 @@ pipeline {
         // The source step is done to bring in all the needed intel path variables to run the rest of the commands
         sh '''source /etc/profile.d/larson-group.sh
               module load intel netcdf-fortran
-              run_scripts/run_scm_all.bash'''
+              run_scripts/run_scm_all.bash
+              mv output cpu_${commit}; mkdir output'''
+      }
+    }
+    stage('Plot') {
+      steps {
+        sh 'scp -r carson:/home/pub/clubb_ifort_plots/master/cur_out .'
+        sh 'python postprocessing/pyplotgen/pyplotgen.py -l -c cpu_* cur_out/cpu_* -o ${commit}_vs_master_$(cat cur_out/commit)'
+        sh "ssh carson 'mkdir -p /home/pub/clubb_ifort_plots/${branch}'"
+        sh "scp -r *_vs_* carson:/home/pub/clubb_ifort_plots/${branch}"
+        sh "ssh carson '/home/pub/create_plot_list.py /home/pub/clubb_ifort_plots/'"
+      }
+    }
+    stage('Update Master Output') {
+      when {
+        branch 'master'
+      }
+      steps {
+        sh 'rm -rf cur_out'
+        sh 'mkdir cur_out'
+        sh 'mv cpu_* cur_out'
+        sh 'echo ${commit} > cur_out/commit'
+        sh "ssh carson 'rm -rf /home/pub/clubb_ifort_plots/master/cur_out'"
+        sh 'scp -r cur_out carson:/home/pub/clubb_ifort_plots/master/'
       }
     }
   }
@@ -25,13 +55,13 @@ pipeline {
       // This cleans out the test workspace so the next run has a fresh start
       // However this only occurs when the test is named clubb_ifort_build
       // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
-      if ( "${env.JOB_NAME}" == "clubb_ifort_debug_run" )
+      if ( "${env.JOB_NAME}" == "clubb_ifort_debug_plot" )
       	cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
       }
     }
     failure {
       script {
-      if ( "${env.JOB_NAME}" == "clubb_ifort_debug_run" )
+      if ( "${env.JOB_NAME}" == "clubb_ifort_debug_plot" )
         // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
 	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
       }

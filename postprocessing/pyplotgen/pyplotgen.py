@@ -132,6 +132,7 @@ class PyPlotGen:
         self.pdf_filesize_limit = pdf_filesize_limit
         self.image_extension = image_extension
 
+        # Append date to output folder name
         if os.path.isdir(self.output_folder) and self.replace_images is False:
             current_date_time = datetime.now()
             rounded_down_datetime = current_date_time.replace(microsecond=0)

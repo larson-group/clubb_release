@@ -54,10 +54,10 @@ def RandomThumb(page,file_extension=".png"):
         glob.glob(os.path.join(page.split('/')[0], '*_thumb'+file_extension)))
 
 
-def OrganizeRoot(output_dir,file_extension=".png"):
+def OrganizeRoot(output_folder,file_extension=".png"):
     """Creates directories for images in root directory."""
 
-    static_varbles.root = output_dir
+    static_varbles.root = output_folder
     try:
         os.chdir(static_varbles.root)
     except OSError:
@@ -165,10 +165,11 @@ def WriteGalleryPage(page,file_extension=".png"):
         # plots_file.write(static_varbles.footer)
 
 
-def WriteGalleryPages(multithreaded=False,file_extension=".png"):
+def WriteGalleryPages(output_folder,multithreaded=False,file_extension=".png"):
     """Write gallery pages for directories in root path."""
     with open(static_varbles.plots_filename, 'w') as index_file:
-        index_file.write(static_varbles.header)
+        output_name = str(output_folder).split('/')[-1]
+        index_file.write(static_varbles.header.replace("PyPlotgen Output",str(output_name)))
 
     all_pages = sorted(ListDirs(static_varbles.root))
 
@@ -218,10 +219,10 @@ def WriteIndex():
 
     logToFile("Wrote index.html")
 
-def main(output_dir, multithreaded=False, file_extension=".png"):
+def main(output_folder, multithreaded=False, file_extension=".png"):
     """Main function."""
-    OrganizeRoot(output_dir,file_extension)
-    WriteGalleryPages(multithreaded=multithreaded,file_extension=file_extension)
+    OrganizeRoot(output_folder,file_extension)
+    WriteGalleryPages(output_folder,multithreaded=multithreaded,file_extension=file_extension)
     WriteNavigation()
     WriteIndex()
 

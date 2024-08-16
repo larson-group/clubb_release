@@ -558,7 +558,7 @@ module latin_hypercube_driver_module
     end if
     
     !$acc host_data use_device(rand_pool) 
-    r_status = curandGenerate(cu_gen, rand_pool(:,:,2:nz,:), ngrdcol*num_samples*(nz-1)*(pdf_dim+d_uniform_extra))
+    r_status = curandGenerate(cu_gen, rand_pool(:,:,:,:), ngrdcol*num_samples*nz*(pdf_dim+d_uniform_extra))
     !$acc end host_data
     !$acc wait
     

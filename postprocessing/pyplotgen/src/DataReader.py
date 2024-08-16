@@ -456,7 +456,7 @@ class DataReader():
             else:
                 shape = len(independent_values)
             dependent_values = np.zeros(shape) #create an array of the same shape
-            dependent_values[:] = np.NaN # fill this array with nans since 0's imply the variable was 0 when instead it doesn't exist
+            dependent_values[:] = np.nan # fill this array with nans since 0's imply the variable was 0 when instead it doesn't exist
 
         # If dependent_data is more than 1-dimensional, average over avg_axis if needed
         if dependent_values.ndim > 1 and avg_axis in [0,1]:  # not ncdf_variable.one_dimensional:
