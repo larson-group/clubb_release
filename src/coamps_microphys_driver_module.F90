@@ -55,7 +55,6 @@ module coamps_microphys_driver_module
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
     use grid_class, only: zt2zm ! Procedure(s)
 
-
     use grid_class, only: grid ! Type
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
@@ -173,23 +172,25 @@ module coamps_microphys_driver_module
     real( kind= core_rknd ), intent(in) :: &
       deltf_in         ! Timestep (i.e. dt_main in CLUBB)      [s]
 
-    real(kind = core_rknd), dimension(gr%nz), intent(in) :: & 
+    real(kind = core_rknd), dimension(gr%nzt), intent(in) :: & 
       rtm,     & ! Total water mixing ratio                        [kg/kg]
       rcm,     & ! Cloud water mixing ratio                        [kg/kg]
-      wm_zm,   & ! Vertical wind                                   [m/s]
       p_in_Pa, & ! Pressure                                        [Pa]
       exner,   & ! Mean exner function                             [-]
       rho,     & ! Mean density                                    [kg/m^3]
       thlm       ! Liquid potential temperature                    [K]
 
-    real(kind = core_rknd), dimension(gr%nz), intent(in) :: & 
-      rim,      & ! Ice water mixing ratio     [kg/kg]
-      rrm,     & ! Rain water mixing ratio    [kg/kg]
-      rgm,  & ! Graupel water mixing ratio [kg/kg]
-      rsm,     & ! Snow water mixing ratio    [kg/kg]
-      Nrm,        & ! Number of rain drops       [count/kg]
-      Ncm,        & ! Number of cloud droplets   [count/kg]
-      Nim           ! Number of ice crystals     [count/kg]
+    real(kind = core_rknd), dimension(gr%nzm), intent(in) :: & 
+      wm_zm      ! Vertical wind                                   [m/s]
+
+    real(kind = core_rknd), dimension(gr%nzt), intent(in) :: & 
+      rim, & ! Ice water mixing ratio     [kg/kg]
+      rrm, & ! Rain water mixing ratio    [kg/kg]
+      rgm, & ! Graupel water mixing ratio [kg/kg]
+      rsm, & ! Snow water mixing ratio    [kg/kg]
+      Nrm, & ! Number of rain drops       [count/kg]
+      Ncm, & ! Number of cloud droplets   [count/kg]
+      Nim    ! Number of ice crystals     [count/kg]
 
     integer, intent(in) :: &
       saturation_formula ! Integer that stores the saturation formula to be used
@@ -200,14 +201,14 @@ module coamps_microphys_driver_module
     type(stats), target, intent(inout) :: &
       stats_zt 
 
-    real(kind = core_rknd), dimension(gr%nz), intent(inout) :: & 
+    real(kind = core_rknd), dimension(gr%nzt), intent(inout) :: & 
       Nccnm         ! Number of cloud nuclei     [count/kg]
 
-    real(kind = core_rknd), dimension(1,1,gr%nz-1), intent(inout) :: &
+    real(kind = core_rknd), dimension(1,1,gr%nzt), intent(inout) :: &
       cond ! condensation/evaporation of liquid water
 
 ! Output Variables
-    real(kind = core_rknd), dimension(gr%nz), intent(out) :: & 
+    real(kind = core_rknd), dimension(gr%nzt), intent(out) :: & 
       ritend,     & ! d(ri)/dt                   [kg/kg/s]
       rrtend,     & ! d(rr)/dt                   [kg/kg/s]
       rgtend,     & ! d(rg)/dt                   [kg/kg/s]
@@ -219,25 +220,27 @@ module coamps_microphys_driver_module
       ncmtend,    & ! d(Ncm)/dt                  [count/kg/s]
       nimtend       ! d(Nim)/dt                  [count/kg/s]
 
-    real(kind = core_rknd), dimension(gr%nz), intent(out) :: & 
-      Vrr,       & ! Rain mixing ratio fall speed        [m/s]
-      VNr,       & ! Rain conc. fall speed               [m/s]
-      Vrs,    & ! Snow mixing ratio fall speed        [m/s]
+    ! All hydrometeor sedimentation velocities are output on thermodynamic
+    ! grid levels.
+    real(kind = core_rknd), dimension(gr%nzt), intent(out) :: & 
+      Vrr, & ! Rain mixing ratio fall speed        [m/s]
+      VNr, & ! Rain conc. fall speed               [m/s]
+      Vrs, & ! Snow mixing ratio fall speed        [m/s]
       Vrg, & ! Graupel fall speed                  [m/s]
-      Vri      ! Pristine ice mixing ratio fall speed  [m/s]
+      Vri    ! Pristine ice mixing ratio fall speed  [m/s]
 
 ! Local Variables
 
-    real, dimension(gr%nz) :: &
+    real, dimension(gr%nzt) :: &
       T_in_K     ! Temperature                                     [K]
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration
-    real, dimension(gr%nz) :: Nsm ! [count/kg]
+    real, dimension(gr%nzt) :: Nsm ! [count/kg]
 ! End of ajsmith4's addition
 
 ! Variables on the w grid
-    real, dimension(1,1,gr%nz) :: & 
+    real, dimension(1,1,gr%nzm) :: & 
       w3,       & ! Vertical wind on the w grid          [m/s]
       pr3d,     & ! Pressure on w grid                   [Pa]
       qsatv3d,  & ! Saturation mr array?                 [kg/kg]
@@ -245,7 +248,7 @@ module coamps_microphys_driver_module
       qsati3d,  & ! Saturation mr over ice array?        [kg/kg]
       th2t3d,   & ! Mean exner function on w grid        [-]
 ! Michael Falk, 13 Jul 2007, added these.  They are flipped versions of these variables;
-! that is to say, in the following versions k=1 is the top of the domain and k=kk+1 is the
+! that is to say, in the following versions k=1 is the top of the domain and k=k/+1 is the
 ! sub-ground ghost point.
       w3_flip, & 
       pr3d_flip, & 
@@ -256,7 +259,7 @@ module coamps_microphys_driver_module
 ! eMFc
 
 ! Variables on the m grid
-    real, dimension(1,1,gr%nz-1) :: & 
+    real, dimension(1,1,gr%nzt) :: & 
       qi3,    & ! Pristine ice mixing ratio               [kg/kg]
       qr3,    & ! Rain water mixing ratio                 [kg/kg]
       qg3,    & ! Graupel mixing ratio                    [kg/kg]
@@ -305,11 +308,11 @@ module coamps_microphys_driver_module
       eic, & 
       sat
 
-    real, dimension(gr%nz) :: & 
+    real, dimension(gr%nzt) :: & 
       thm, & 
       rvm
 
-    real, dimension(1,1,gr%nz-1) :: & 
+    real, dimension(1,1,gr%nzt) :: & 
       qt3,         & ! Total water mixing ratio
       qv3,         & ! Water vapor mixing ratio
       qc3,         & ! Cloud water mixing ratio
@@ -344,7 +347,7 @@ module coamps_microphys_driver_module
       pmltge,      & ! ???
       pgmlt          ! ???
 
-    real, dimension(1,1,gr%nz-1) :: & 
+    real, dimension(1,1,gr%nzt) :: & 
       psmlt,       & ! melting of snow
       pgacrm,      & ! ???
       pgacwm,      & ! ???
@@ -368,7 +371,7 @@ module coamps_microphys_driver_module
       rbm_flip
 ! eMFc
 
-    real, dimension(1,1,gr%nz) :: & 
+    real, dimension(1,1,gr%nzt) :: & 
       fallr,   & ! Fall speed for rain mixing ratio              [m/s]
       falln,   & ! Fall speed for rain drop number conc.         [m/s]
       falli,   & ! Fall speed for pristine ice mixing ratio      [m/s]
@@ -394,11 +397,11 @@ module coamps_microphys_driver_module
       fallg_in_cloud
 ! eMFc
 
-    real, dimension(1,1,gr%nz-1) :: & 
+    real, dimension(1,1,gr%nzt) :: & 
       rvc,      & ! Cloud droplet radius         [cm]
       rvr      ! Rain droplet radius          [cm]
 
-    real, dimension(1,gr%nz-1,1) :: & 
+    real, dimension(1,gr%nzt,1) :: & 
       ary1d        ! 1d graphics parameters
 
     integer :: & 
@@ -414,7 +417,7 @@ module coamps_microphys_driver_module
     integer, dimension(1) :: & 
       nkpts
 
-    integer, dimension(gr%nz-1) :: & 
+    integer, dimension(gr%nzt) :: & 
       icomp,          & !
       kcomp          !
 
@@ -427,15 +430,15 @@ module coamps_microphys_driver_module
       deltf    ! Timestep (i.e. dt_main in CLUBB)        [s]
 
     integer :: & 
-      kk,     & ! Number of COAMPS m gridpoints in the vertical (gr%nz-1)
+      kk,     & ! Number of COAMPS m gridpoints in the vertical (gr%nzt)
       kmax  ! Maximum array size (kk + ??)
 
 !----------------------------------------------------------------------
 
 ! Begin coamps_microphys_driver code
 
-    kk = gr%nz-1
-    kmax = gr%nz
+    kk = gr%nzt
+    kmax = gr%nzm
 
 ! Comment by Adam Smith, 25 March 2008
 ! These variables activate rain/drizzle in the COAMPS
@@ -542,11 +545,11 @@ module coamps_microphys_driver_module
 
     end if
 
-      thm(1:kk+1) = real(thlm(1:kk+1) & 
-                  + ( Lv /( Cp * exner(1:kk+1) )* rcm(1:kk+1) ))
+      thm(1:kk) = real(thlm(1:kk) & 
+                  + ( Lv /( Cp * exner(1:kk) )* rcm(1:kk) ))
 
       ! Determine absolute temperature
-      T_in_K = real(thlm2T_in_K( gr%nz, thlm, exner, rcm ))
+      T_in_K = real(thlm2T_in_K( gr%nzt, thlm, exner, rcm ))
 
       ! Setup COAMPS verical velocity / mass grid variables
       w3(1,1,1:kk+1) = real(wm_zm(1:kk+1))
@@ -566,16 +569,12 @@ module coamps_microphys_driver_module
 ! within COAMPS.
 ! Since values 1 to kk are the only ones used, they are the only
 ! ones that are assigned.
-! When setting up COAMPS variables, we remove the sub-ground ghost
-! point (at k=1) from the CLUBB variables.  Since in CLUBB k=2 is the
-! first above-ground gridpoint and in COAMPS k=1 is the first
-! above-ground gridpoint, we assign the variables accordingly.
 ! Comments by Michael Falk, David Schanen, and Vince Larson
 
 ! The top point is undefined and unreferenced in these '3d' arrays
-      pr3d(1,1,1:kk)   = real(p_in_Pa(2:kk+1))
-      th2t3d(1,1,1:kk) = real(exner(2:kk+1))
-      temp3d(1,1,1:kk) = T_in_K(2:kk+1)
+      pr3d(1,1,1:kk)   = real(p_in_Pa(1:kk))
+      th2t3d(1,1,1:kk) = real(exner(1:kk))
+      temp3d(1,1,1:kk) = T_in_K(1:kk)
 
       do k=1, kk, 1
         qsatv3d(1,1,k) = real(sat_mixrat_liq( &
@@ -587,16 +586,16 @@ module coamps_microphys_driver_module
       end do
 
 ! Setup COAMPS m (mass) grid variables
-      qt3(1,1,1:kk)  = real(rtm(2:kk+1))
-      qc3(1,1,1:kk)  = real(rcm(2:kk+1))
-      qr3(1,1,1:kk)  = real(rrm(2:kk+1))
-      qg3(1,1,1:kk)  = real(rgm(2:kk+1))
-      qs3(1,1,1:kk)  = real(rsm(2:kk+1))
-      qi3(1,1,1:kk)  = real(rim(2:kk+1))
-      exbm(1,1,1:kk) = real(exner(2:kk+1))
-      rbm(1,1,1:kk)  = real(rho(2:kk+1))
-      th3(1,1,1:kk)  = thm(2:kk+1)
-      qv3(1,1,1:kk)  = rvm(2:kk+1)
+      qt3(1,1,1:kk)  = real(rtm(1:kk))
+      qc3(1,1,1:kk)  = real(rcm(1:kk))
+      qr3(1,1,1:kk)  = real(rrm(1:kk))
+      qg3(1,1,1:kk)  = real(rgm(1:kk))
+      qs3(1,1,1:kk)  = real(rsm(1:kk))
+      qi3(1,1,1:kk)  = real(rim(1:kk))
+      exbm(1,1,1:kk) = real(exner(1:kk))
+      rbm(1,1,1:kk)  = real(rho(1:kk))
+      th3(1,1,1:kk)  = thm(1:kk)
+      qv3(1,1,1:kk)  = rvm(1:kk)
 
       do k=1,kk
         p3(1,1,k)   = 0.0
@@ -605,12 +604,12 @@ module coamps_microphys_driver_module
         ! Nrm, Ncm, Nccnm are in kg^-1, and need to coverted to
         ! (m^3/cm^3)*kg^-1.  They will be converted to #/cc within adjtq if
         ! ldrizzle is true, or ignored if ldrizzle is false.
-        nc3(1,1,k)  = real(Ncm(k+1) / cm3_per_m3)
-        nr3(1,1,k)  = real(Nrm(k+1) / cm3_per_m3)
-        ncn3(1,1,k) = real(Nccnm(k+1) / cm3_per_m3)
+        nc3(1,1,k)  = real(Ncm(k) / cm3_per_m3)
+        nr3(1,1,k)  = real(Nrm(k) / cm3_per_m3)
+        ncn3(1,1,k) = real(Nccnm(k) / cm3_per_m3)
 
         ! Nim is in #/m^3 within adjtq (See conice.F).
-        ni3(1,1,k)  = real(Nim(k+1) * rho(k+1))
+        ni3(1,1,k)  = real(Nim(k) * rho(k))
 
       end do
 
@@ -718,7 +717,7 @@ module coamps_microphys_driver_module
       slopeg = real(pi * rhogrp * gnzero * 1.0e-8)
 
 ! Michael Falk, 17 Jul 2007, is initializing fallspeed arrays
-      do k=1,kk+1
+      do k=1,kk
         falli(1,1,k) = 0.
         falls(1,1,k) = 0.
         fallg(1,1,k) = 0.
@@ -821,12 +820,12 @@ module coamps_microphys_driver_module
         falln_flip(:,:,kcomp(k)) = falln_in_cloud(:,:,k)
       end do
 
-      falli(:,:,kk+1:2:-1) = falli_flip(:,:,1:kk)
-      falls(:,:,kk+1:2:-1) = falls_flip(:,:,1:kk)
-      fallg(:,:,kk+1:2:-1) = fallg_flip(:,:,1:kk)
-      fallr(:,:,kk+1:2:-1) = fallr_flip(:,:,1:kk)
-      falln(:,:,kk+1:2:-1) = falln_flip(:,:,1:kk)
-      snowv(:,:,kk+1:2:-1) = falls_flip(:,:,1:kk)
+      falli(:,:,kk:1:-1) = falli_flip(:,:,1:kk)
+      falls(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
+      fallg(:,:,kk:1:-1) = fallg_flip(:,:,1:kk)
+      fallr(:,:,kk:1:-1) = fallr_flip(:,:,1:kk)
+      falln(:,:,kk:1:-1) = falln_flip(:,:,1:kk)
+      snowv(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
 
 ! Assure positive definiteness in nc3/nr3/ncn3 fields
 
@@ -851,8 +850,8 @@ module coamps_microphys_driver_module
       do k=1, kk, 1
         ! Convert to MKS as needed
         ! ncn3 is in (m^3/cm^3)*kg^-1, and needs to be converted to kg^-1.
-        Nccnm(k+1) = real(ncn3(1,1,k), kind = core_rknd) * cm3_per_m3
-      end do ! k=1..kk+1
+        Nccnm(k) = real(ncn3(1,1,k), kind = core_rknd) * cm3_per_m3
+      end do ! k=1..kk
 
 !-------------------------------------------------
 ! Addition by Adam Smith, 24 April 2008
@@ -864,25 +863,17 @@ module coamps_microphys_driver_module
       do k = 1, kk, 1
         if (snowslope(1,1,k) < 2.0) then
           snowslope(1,1,k) = 0.
-          Nsm(k+1) = 0.0
+          Nsm(k) = 0.0
         else
-          Nsm(k+1) = snzero / snowslope(1,1,k)
+          Nsm(k) = snzero / snowslope(1,1,k)
         end if
         ! Convert to #/kg for comparison to Morrison -dschanen 12 Nov 2009
-        Nsm(k+1) = Nsm(k+1) / real(rho(k+1))
+        Nsm(k) = Nsm(k) / real(rho(k))
       end do
 
 !-------------------------------------------------
 ! End of ajsmith4's addition
 !-------------------------------------------------
-
-! Linear extrapolation for the ghost point of fall speeds
-      fallr(1,1,1) = .5 * ( fallr(1,1,2) + fallr(1,1,3) )
-      falln(1,1,1) = .5 * ( falln(1,1,2) + falln(1,1,3) )
-      snowv(1,1,1) = .5 * ( snowv(1,1,2) + snowv(1,1,3) )
-      falli(1,1,1) = .5 * ( falli(1,1,2) + falli(1,1,3) )
-      fallg(1,1,1) = .5 * ( fallg(1,1,2) + fallg(1,1,3) )
-      falls(1,1,1) = .5 * ( falls(1,1,2) + falls(1,1,3) )
 
       Vrr = real( fallr(1,1,:), kind = core_rknd )
       VNr = real( falln(1,1,:), kind = core_rknd )
@@ -892,63 +883,52 @@ module coamps_microphys_driver_module
 
 ! Compute tendencies
       do k=1, kk, 1
-        rrtend(k+1)    = ( real(qr3(1,1,k), kind = core_rknd) - rrm(k+1) ) &
-                           / real(deltf, kind = core_rknd)
-        rgtend(k+1)    = ( real(qg3(1,1,k), kind = core_rknd) - rgm(k+1) )&
-                           / real(deltf, kind = core_rknd)
-        ritend(k+1)    = ( real(qi3(1,1,k), kind = core_rknd) - rim(k+1) ) &
-                           / real(deltf, kind = core_rknd)
-        nrmtend(k+1)   = ( (real(nr3(1,1,k), kind = core_rknd)*cm3_per_m3) - Nrm(k+1) ) &
-                           / real(deltf, kind = core_rknd) ! Conversion factor
-        rstend(k+1) = ( real(qs3(1,1,k), kind = core_rknd) - rsm(k+1) ) &
-                           / real(deltf, kind = core_rknd)
+        rrtend(k)    = ( real(qr3(1,1,k), kind = core_rknd) - rrm(k) ) &
+                         / real(deltf, kind = core_rknd)
+        rgtend(k)    = ( real(qg3(1,1,k), kind = core_rknd) - rgm(k) )&
+                         / real(deltf, kind = core_rknd)
+        ritend(k)    = ( real(qi3(1,1,k), kind = core_rknd) - rim(k) ) &
+                         / real(deltf, kind = core_rknd)
+        nrmtend(k)   = ( (real(nr3(1,1,k), kind = core_rknd)*cm3_per_m3) - Nrm(k) ) &
+                         / real(deltf, kind = core_rknd) ! Conversion factor
+        rstend(k)    = ( real(qs3(1,1,k), kind = core_rknd) - rsm(k) ) &
+                         / real(deltf, kind = core_rknd)
         ! nc3 is in (m^3/cm^3)*kg^-1, and needs to be converted to kg^-1.
-        ncmtend(k+1)   = ( ( real( nc3(1,1,k), kind = core_rknd ) * cm3_per_m3 ) &
-                             - Ncm(k+1) ) &
-                           / real( deltf, kind = core_rknd )
+        ncmtend(k)   = ( ( real( nc3(1,1,k), kind = core_rknd ) * cm3_per_m3 ) &
+                           - Ncm(k) ) &
+                         / real( deltf, kind = core_rknd )
         ! Convert ice number concentration to #/kg
-        nimtend(k+1)   = ( ( real( ni3(1,1,k), kind = core_rknd ) / rho(k+1) ) &
-                             - Nim(k+1) ) &
-                           / real( deltf, kind = core_rknd )
-        rvm_mc(k+1)    = real(((qv3(1,1,k) - rvm(k+1)) / deltf), kind = core_rknd)
-        rcm_mc(k+1)    = (real(qc3(1,1,k), kind = core_rknd) - rcm(k+1)) &
-                           / real(deltf, kind = core_rknd)
-        thlm_mc(k+1)  & 
+        nimtend(k)   = ( ( real( ni3(1,1,k), kind = core_rknd ) / rho(k) ) &
+                           - Nim(k) ) &
+                         / real( deltf, kind = core_rknd )
+        rvm_mc(k)    = real(((qv3(1,1,k) - rvm(k)) / deltf), kind = core_rknd)
+        rcm_mc(k)    = (real(qc3(1,1,k), kind = core_rknd) - rcm(k)) &
+                         / real(deltf, kind = core_rknd)
+        thlm_mc(k)  & 
         = real(( ( th3(1,1,k) - (real(Lv) / (real(Cp) * exbm(1,1,k)) * qc3(1,1,k) ) ) & 
-            - real(thlm(k+1)) ) / deltf, kind = core_rknd)
+          - real(thlm(k)) ) / deltf, kind = core_rknd)
       end do ! k=1..kk
-
-      rrtend(1)    = 0.0_core_rknd
-      rgtend(1)    = 0.0_core_rknd
-      ritend(1)    = 0.0_core_rknd
-      nrmtend(1)   = 0.0_core_rknd
-      rstend(1) = 0.0_core_rknd
-      ncmtend(1)   = 0.0_core_rknd
-      nimtend(1)   = 0.0_core_rknd
-      rcm_mc(1)    = 0.0_core_rknd
-      rvm_mc(1)    = 0.0_core_rknd
-      thlm_mc(1)   = 0.0_core_rknd
 
       if ( stats_metadata%l_stats_samp ) then
         ! Mean volume radius of rain and cloud droplets
-        do k=2,kk+1
+        do k=1,kk
           call stat_update_var_pt( stats_metadata%im_vol_rad_rain, k, &
-               real(rvr(1,1,k-1) / 100.0, kind = core_rknd), stats_zt )
+               real(rvr(1,1,k) / 100.0, kind = core_rknd), stats_zt )
           call stat_update_var_pt( stats_metadata%im_vol_rad_cloud, k, &
-               real(rvc(1,1,k-1) / 100.0, kind = core_rknd), stats_zt )
+               real(rvc(1,1,k) / 100.0, kind = core_rknd), stats_zt )
         end do
 
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding calculation for snow particle number concentration
         do k = 1,kk,1
-          call stat_update_var_pt( stats_metadata%isnowslope, k+1, real(snowslope(1,1,k), &
+          call stat_update_var_pt( stats_metadata%isnowslope, k, real(snowslope(1,1,k), &
             kind = core_rknd), stats_zt)
         end do
 
 ! Addition by Adam Smith, 25 April 2008
 ! Adding calculation for snow particle number concentration
-        do k=2, kk+1
+        do k=1, kk
           call stat_update_var_pt( stats_metadata%iNsm, k, real(Nsm(k), kind = core_rknd) ,stats_zt )
         end do
 

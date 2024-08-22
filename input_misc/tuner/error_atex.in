@@ -32,8 +32,8 @@ prescribed_rand_seed        = 1
 hoc_stats_file_nl(1)    = "../output/atex_zt.nc" 
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/atex_coamps_sm.nc" 
 run_file_nl(1)          = "atex_hoc.in"
-z_i_nl(1)               = 2
-z_f_nl(1)               = 149
+z_i_nl(1)               = 1
+z_f_nl(1)               = 148
 timestep_intvls_nl(1,:) = 360, 480
 weight_case_nl(1)       = 1.0
 /

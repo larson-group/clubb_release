@@ -99,7 +99,7 @@ module gfdl_activation
     !=======================================================================
     Tym = size(aeromass_clubb, 2)
 
-    do iz_clubb = 2, gr%nz
+    do iz_clubb = 1, gr%nzt
 
       if( pdf_params%varnce_w_1(1,iz_clubb) > wp2_eps) then
         P1_updraft = 0.5_core_rknd + 0.5_core_rknd &

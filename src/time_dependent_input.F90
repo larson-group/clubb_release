@@ -562,9 +562,11 @@ module time_dependent_input
       um_f,   & ! um tendency                       [m/s/s]
       vm_f,   & ! vm tendency                       [m/s/s]
       wm_zt,  & ! subsidence on zt grid             [m/s]
-      wm_zm,  & ! subsidense on zm grid             [m/s]
       ug,     & ! u geostrophic wind                [m/s]
       vg        ! v geostrophic wind                [m/s]
+
+    real( kind = core_rknd ), dimension(grid_size+1), intent(inout) :: &
+      wm_zm     ! subsidense on zm grid             [m/s]
 
     real( kind = core_rknd ), dimension(grid_size, sclr_dim), intent(inout) :: &
       sclrm_forcing ! Scalar forcing [-]
@@ -662,22 +664,19 @@ module time_dependent_input
 
           case(omega_name)
 
-            do j=2,grid_size
+            do j=1,grid_size
               wm_zt(j) = - temp_array(j) / (grav * rho(j))
             end do
-            wm_zt(1) = 0.0_core_rknd
 
           case(omega_mb_hr_name)
 
-            do j=2,grid_size
+            do j=1,grid_size
 
               temp_array(j) = temp_array(j) * pascal_per_mb / sec_per_hr
 
               wm_zt(j) = - temp_array(j) / (grav * rho(j))
 
             end do
-
-            wm_zt(1) = 0.0_core_rknd
 
           end select
 
@@ -686,12 +685,10 @@ module time_dependent_input
         case(ug_name)
 
           ug = temp_array
-          ug(1) = ug(2)
 
         case(vg_name)
 
           vg = temp_array
-          vg(1) = vg(2)
 
         case default
 

@@ -32,7 +32,7 @@ module stats_type
     integer :: &
       ii, & ! Horizontal extent of the variables (Usually 1 for the single-column model)
       jj, & ! Horizontal extent of the variables (Usually 1 for the single-column model)
-      kk    ! Vertical extent of the variables (Usually gr%nz from grid_class)
+      kk    ! Vertical extent of the variables (Usually gr%nzm from grid_class)
 
     ! Vertical levels
     real( kind = core_rknd ), allocatable, dimension(:) :: z ! altitude [m]

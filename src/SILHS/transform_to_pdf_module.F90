@@ -13,7 +13,7 @@ module transform_to_pdf_module
 
 !-------------------------------------------------------------------------------
   subroutine transform_uniform_samples_to_pdf( &
-               nz, ngrdcol, num_samples, pdf_dim, d_uniform_extra, & ! In
+               nzt, ngrdcol, num_samples, pdf_dim, d_uniform_extra, & ! In
                hm_metadata, & ! In
                Sigma_Cholesky1, Sigma_Cholesky2, & ! In
                mu1, mu2, X_mixt_comp_all_levs, & ! In
@@ -48,7 +48,7 @@ module transform_to_pdf_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz, & ! Number of vertical grid levels
+      nzt, & ! Number of vertical grid levels
       ngrdcol, & ! Number of grid columns
       num_samples,  & ! Number of subcolumn samples
       pdf_dim, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
@@ -57,29 +57,29 @@ module transform_to_pdf_module
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
       
-    real( kind = core_rknd ), dimension(pdf_dim,ngrdcol,nz,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,ngrdcol,nzt,pdf_dim), intent(in) :: &
       Sigma_Cholesky1, & ! Correlations Cholesky matrix, 1st component [-]
       Sigma_Cholesky2    ! Correlations Cholesky matrix, 2nd component [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim), intent(in) :: &
       mu1, & ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 1st component [units vary]
       mu2    ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 2nd component [units vary]
 
-    real( kind = core_rknd ),intent(in),dimension(ngrdcol,num_samples,nz,pdf_dim+d_uniform_extra)::&
+    real( kind = core_rknd ),intent(in),dimension(ngrdcol,num_samples,nzt,pdf_dim+d_uniform_extra)::&
       X_u_all_levs ! Sample drawn from uniform distribution from a particular grid level
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nzt) :: &
       cloud_frac   ! Cloud fraction [-]
       
-    logical, intent(in), dimension(ngrdcol,num_samples,nz) :: &
+    logical, intent(in), dimension(ngrdcol,num_samples,nzt) :: &
       l_in_precip_all_levs ! Whether we are in precipitation (T/F)
       
-    integer, dimension(ngrdcol,num_samples,nz), intent(in) :: &
+    integer, dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
       
     ! Output Variable
 
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nz,pdf_dim) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nzt,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     ! Local Variables
@@ -89,7 +89,7 @@ module transform_to_pdf_module
 
     integer :: i, k, sample, p
     
-    real( kind = core_rknd ), dimension(pdf_dim,ngrdcol,nz,num_samples) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,ngrdcol,nzt,num_samples) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
     ! Flag to clip sample point values of chi in extreme situations.
@@ -110,11 +110,11 @@ module transform_to_pdf_module
     !$acc data create(std_normal) async(1)
               
     ! From Latin hypercube sample, generate standard normal sample
-    call cdfnorminv( pdf_dim, nz, ngrdcol, num_samples, X_u_all_levs, &  ! In
+    call cdfnorminv( pdf_dim, nzt, ngrdcol, num_samples, X_u_all_levs, &  ! In
                      std_normal )                                        ! Out   
     
     ! Computes the nonstd_normal from the Cholesky factorization of Sigma, std_normal, and mu.
-    call multiply_Cholesky( nz, ngrdcol, num_samples, pdf_dim, std_normal, & ! In
+    call multiply_Cholesky( nzt, ngrdcol, num_samples, pdf_dim, std_normal, & ! In
                             Sigma_Cholesky1, Sigma_Cholesky2,              & ! In
                             mu1, mu2, X_mixt_comp_all_levs,                & ! In
                             X_nl_all_levs )                                  ! Out
@@ -123,7 +123,7 @@ module transform_to_pdf_module
     
     !$acc parallel loop collapse(4) default(present) async(1)
     do p = max( hm_metadata%iiPDF_chi, hm_metadata%iiPDF_eta, hm_metadata%iiPDF_w )+1, pdf_dim
-      do k = 1, nz
+      do k = 1, nzt
         do sample = 1, num_samples
           do i = 1, ngrdcol
             ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
@@ -135,7 +135,7 @@ module transform_to_pdf_module
     
     !$acc parallel loop collapse(4) default(present) async(1)
     do p = hm_metadata%iiPDF_Ncn+1, pdf_dim
-      do k = 1, nz 
+      do k = 1, nzt 
         do sample = 1, num_samples
           do i = 1, ngrdcol
             
@@ -159,7 +159,7 @@ module transform_to_pdf_module
     if ( l_clip_extreme_chi_sample_pts ) then
       
       !$acc parallel loop collapse(3) default(present) async(1)
-      do k = 1, nz 
+      do k = 1, nzt 
         do sample = 1, num_samples
           do i = 1, ngrdcol
 
@@ -191,7 +191,7 @@ module transform_to_pdf_module
   end subroutine transform_uniform_samples_to_pdf
 
 !-----------------------------------------------------------------------
-  subroutine cdfnorminv( pdf_dim, nz, ngrdcol, num_samples, X_u_all_levs, &
+  subroutine cdfnorminv( pdf_dim, nzt, ngrdcol, num_samples, X_u_all_levs, &
                          std_normal )
 ! Description:
 !     This function computes the inverse of the cumulative normal distribution function.
@@ -222,16 +222,16 @@ module transform_to_pdf_module
     ! ---------------- Input Variable(s) ----------------
 
     integer, intent(in) :: &
-      nz,           & ! Number of vertical grid levels
+      nzt,           & ! Number of vertical grid levels
       ngrdcol,           & ! Number of grid columns
       num_samples,  & ! Number of subcolumn samples
       pdf_dim         ! `d' Number of variates (normally 3 + microphysics specific variables)
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nz,pdf_dim) :: X_u_all_levs
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nzt,pdf_dim) :: X_u_all_levs
 
     ! ---------------- Return Variable ----------------
 
-    real( kind = core_rknd ), intent(out), dimension(pdf_dim,ngrdcol,nz,num_samples) :: std_normal
+    real( kind = core_rknd ), intent(out), dimension(pdf_dim,ngrdcol,nzt,num_samples) :: std_normal
 
     ! ---------------- Local Variable(s) ----------------
     
@@ -254,7 +254,7 @@ module transform_to_pdf_module
     
     !$acc parallel loop collapse(4) async(1)
     do sample = 1, num_samples
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           do p = 1, pdf_dim
     
@@ -486,7 +486,7 @@ module transform_to_pdf_module
   end function ltqnorm
 
 !-------------------------------------------------------------------------------
-  subroutine multiply_Cholesky( nz, ngrdcol, num_samples, pdf_dim, std_normal, &
+  subroutine multiply_Cholesky( nzt, ngrdcol, num_samples, pdf_dim, std_normal, &
                                 Sigma_Cholesky1, Sigma_Cholesky2, &
                                 mu1, mu2, X_mixt_comp_all_levs, &
                                 X_nl_all_levs )
@@ -506,30 +506,30 @@ module transform_to_pdf_module
     
     ! Input Variables
     integer, intent(in) :: &
-      nz,           & ! Number of vertical grid levels
+      nzt,           & ! Number of vertical grid levels
       ngrdcol,           & ! Number of grid columns
       num_samples,  & ! Number of samples
       pdf_dim         ! Number of variates (normally=5)
 
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,ngrdcol,nz,num_samples) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim,ngrdcol,nzt,num_samples) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,pdf_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,pdf_dim) :: &
       mu1, & ! d-dimensional column vector of means of Gaussian, 1st component [units vary]
       mu2    ! d-dimensional column vector of means of Gaussian, 2nd component [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,ngrdcol,nz,pdf_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim,ngrdcol,nzt,pdf_dim) :: &
       Sigma_Cholesky1, & ! Cholesky factorization of the Sigma matrix, 1st component [units vary]
       Sigma_Cholesky2    ! Cholesky factorization of the Sigma matrix, 2nd component [units vary]
       
-    integer, dimension(ngrdcol,num_samples,nz), intent(in) :: &
+    integer, dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
 
     ! Output Variables
 
     ! nxd matrix of n samples from d-variate normal distribution
     !   with mean mu and covariance structure Sigma
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nz,pdf_dim) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nzt,pdf_dim) :: &
       X_nl_all_levs
       
     ! Local Variables
@@ -547,7 +547,7 @@ module transform_to_pdf_module
     !$acc parallel loop collapse(4) default(present) async(1) wait(2)
     do  p = 1, pdf_dim
       do sample = 1, num_samples
-        do k = 1, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             
             l_first_comp = (X_mixt_comp_all_levs(i,sample,k) == 1)
@@ -581,7 +581,7 @@ module transform_to_pdf_module
     return
   end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
-  subroutine chi_eta_2_rtthl( nz, ngrdcol, num_samples, &
+  subroutine chi_eta_2_rtthl( nzt, ngrdcol, num_samples, &
                               rt_1, thl_1, &
                               rt_2, thl_2, &
                               crt_1, cthl_1, &
@@ -615,11 +615,11 @@ module transform_to_pdf_module
     ! ------------------- Input Variables -------------------
     
     integer, intent(in) :: &
-      nz, &         ! Vertical grid levels
+      nzt, &         ! Vertical grid levels
       ngrdcol, &         ! Columns
       num_samples   ! Number of subcolumn samples
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       rt_1, rt_2,         & ! n dimensional column vector of rt         [kg/kg]
       thl_1, thl_2,       & ! n dimensional column vector of thetal     [K]
       crt_1, crt_2,       & ! Constants from plumes 1 & 2 of rt
@@ -627,16 +627,16 @@ module transform_to_pdf_module
       mu_chi_1, mu_chi_2    ! Mean for chi_1 and chi_2         [kg/kg]
 
     ! n-dimensional column vector of Mellor's chi(s) and eta(t), including mean and perturbation
-    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       chi, &  ! [kg/kg]
       eta     ! [-]
 
-    integer, dimension(ngrdcol,num_samples,nz), intent(in) :: &
+    integer, dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
 
     ! ------------------- Output variables -------------------
 
-    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nzt), intent(out) :: &
       lh_rt, lh_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
     ! ------------------- Local Variables -------------------
@@ -653,7 +653,7 @@ module transform_to_pdf_module
     
     !$acc parallel loop collapse(3) default(present) async(1) wait(2)
     do sample = 1, num_samples
-      do k = 2, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
 
           if ( X_mixt_comp_all_levs(i,sample,k) == 1 ) then

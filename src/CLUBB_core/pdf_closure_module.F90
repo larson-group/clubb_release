@@ -99,9 +99,6 @@ module pdf_closure_module
     !   JAS, Vol. 59, pp. 3540--3551.
     !----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &  ! Constants
         three,          & ! 3
         one,            & ! 1
@@ -2366,9 +2363,6 @@ module pdf_closure_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         one    ! Variable(s)
 
@@ -3107,9 +3101,6 @@ module pdf_closure_module
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        grid ! Type
 
     use constants_clubb, only: &
         sqrt_2pi,       & ! Variable(s)

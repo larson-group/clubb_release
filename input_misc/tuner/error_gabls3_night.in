@@ -32,8 +32,8 @@ prescribed_rand_seed        = 1
 hoc_stats_file_nl(1)    = "../output/gabls3_night_zm.nc"
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/gabls3_night.nc"
 run_file_nl(1)          = "gabls3_night_hoc.in"
-z_i_nl(1)               = 2
-z_f_nl(1)               = 128
+z_i_nl(1)               = 1
+z_f_nl(1)               = 127
 timestep_intvls_nl(1,:) = 420, 480, 480, 540
 weight_case_nl(1)       = 1.0
 /

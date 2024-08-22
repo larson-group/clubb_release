@@ -33,7 +33,7 @@ module microphys_driver
                                 thlm, p_in_Pa, exner, rho, rho_zm, rtm, & ! In
                                 rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &  ! In
                                 hydromet, Nc_in_cloud, &                  ! In
-                                hm_metadata, &                         ! In
+                                hm_metadata, &                            ! In
                                 pdf_params, hydromet_pdf_params, &        ! In
                                 precip_fracs, &                           ! In
                                 X_nl_all_levs, X_mixt_comp_all_levs, &    ! In
@@ -75,9 +75,7 @@ module microphys_driver
     use grid_class, only: & 
         zt2zm    ! Procedure(s)
 
-
     use grid_class, only: grid ! Type
-
 
     use constants_clubb, only: & 
         one,            & ! Constant(s)
@@ -188,23 +186,25 @@ module microphys_driver
     character(len=*), intent(in) :: & 
       runtype ! Name of the run, for case specific effects.
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
       thlm,       & ! Liquid potential temp.                    [K]
       p_in_Pa,    & ! Pressure                                  [Pa]
       exner,      & ! Exner function                            [-]
       rho,        & ! Density on thermodynamic levels           [kg/m^3]
-      rho_zm,     & ! Density on momentum levels                [kg/m^3]
       rtm,        & ! Total water mixing ratio                  [kg/kg]
       rcm,        & ! Liquid water mixing ratio                 [kg/kg]
       cloud_frac, & ! Cloud fraction                            [-]
       wm_zt,      & ! w wind component on thermodynamic levels  [m/s]
-      wm_zm,      & ! w wind component on momentum levels       [m/s]
       wp2_zt        ! w'^2 on the thermo. grid                  [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: & 
+      rho_zm,     & ! Density on momentum levels                [kg/m^3]
+      wm_zm         ! w wind component on momentum levels       [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
       hydromet       ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
     type (hm_metadata_type), intent(in) :: &
@@ -213,34 +213,34 @@ module microphys_driver
     type(pdf_parameter), intent(in) :: & 
       pdf_params     ! PDF parameters
 
-    type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
+    type(hydromet_pdf_parameter), dimension(gr%nzt), intent(in) :: &
       hydromet_pdf_params     ! PDF parameters
       
     type(precipitation_fractions), intent(in) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    real( kind = core_rknd ), dimension(lh_num_samples,gr%nz,pdf_dim), &
+    real( kind = core_rknd ), dimension(lh_num_samples,gr%nzt,pdf_dim), &
     intent(in) :: &
       X_nl_all_levs ! Normally and lognormally distributed hydrometeors and other variables
 
-    integer, dimension(lh_num_samples,gr%nz), intent(in) :: &
+    integer, dimension(lh_num_samples,gr%nzt), intent(in) :: &
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
-    real( kind = core_rknd ), dimension(lh_num_samples,gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,gr%nzt), intent(in) :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
-    real( kind = core_rknd ), dimension(gr%nz,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzt,pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(gr%nz, pdf_dim, pdf_dim), &
+    real( kind = core_rknd ), dimension(gr%nzt, pdf_dim, pdf_dim), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
       
-    real( kind = core_rknd ), dimension(lh_num_samples,gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,gr%nzt), intent(in) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
       lh_rc_clipped,  & ! rc generated from silhs sample points
@@ -267,29 +267,29 @@ module microphys_driver
     ! Note:
     ! For COAMPS Nccnm is initialized and Nim & Ncm are computed within
     ! subroutine adjtg.
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: & 
       Nccnm    ! Cloud condensation nuclei concentration (COAMPS)  [num/kg]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: & 
+    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(out) :: & 
       hydromet_mc     ! Change in hydrometeors due to microphysics  [units/s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: & 
       Ncm_mc     ! Change in Ncm due to microphysics  [num/kg/s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: & 
       rcm_mc,  & ! Microphysics contributions to liquid water          [kg/kg/s]
       rvm_mc,  & ! Microphysics contributions to vapor water           [kg/kg/s]
       thlm_mc    ! Microphysics contributions to theta-l               [K/s]
 
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(out) :: &
       hydromet_vel_zt   ! Mean hydrometeor sed. velocity on thermo. levs. [m/s]
 
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(out) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_xx'x_x'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_xx'x_x'> t-levs [units(m/s)]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
       wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
       wpthlp_mc,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
       rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
@@ -297,38 +297,38 @@ module microphys_driver
       rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nzt) :: &
       delta_zt  ! Difference in thermo. height levels     [m]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nzt) :: &
       T_in_K,        & ! Temperature                                [K]
       rvm,           & ! Vapor water mixing ratio                   [kg/kg]
       thlm_morr,     & ! Thlm fed into morrison microphysics        [K]
       Ncm_microphys    ! Mean cloud droplet concentration, <N_c>    [num/kg]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), dimension(gr%nzt) :: & 
       rrm_evap    ! Evaporation rate for rrm         [kg/kg/s]
 
-    real( kind = core_rknd ), dimension(1,1,gr%nz) :: & 
+    real( kind = core_rknd ), dimension(1,1,gr%nzt) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nzt) :: &
       wtmp,    & ! Standard dev. of w                   [m/s]
       chi   ! The variable 's' in Mellor (1977)    [kg/kg]
 
     integer :: k    ! Loop index
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nzt) :: &
       Ndrop_max  ! GFDL droplet activation concentration [#/kg]
 
     !Input aerosol mass concentration: the unit is 10^12 ug/m3.
     !For example, aeromass=2.25e-12 means that the aerosol mass
     !concentration is 2.25 ug/m3.
     !This value of aeromass was recommended by Huan Guo
-    real( kind = core_rknd ), dimension(gr%nz, 4) :: &
+    real( kind = core_rknd ), dimension(gr%nzt, 4) :: &
       aeromass ! ug/m^3
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nzt) :: &
       lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
       AKm,        & ! Exact Kessler ac                    [kg/kg/s]
       AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]
@@ -416,11 +416,18 @@ module microphys_driver
     ! Compute standard deviation of vertical velocity in the grid column
     wtmp(:) = sqrt( wp2_zt(:) )
 
-    ! Compute difference in thermodynamic height levels
-    delta_zt(1:gr%nz) = one / gr%invrs_dzm(1,1:gr%nz)
+    ! Compute difference in thermodynamic height levels.
+    ! The variable delta_zt is on the Morrison Microphysics grid, which
+    ! identifies delta_zt at level k as being the difference between zt(k+1) and
+    ! zt(k). On CLUBB's grid, the difference between zt(k+1) and zt(k) is
+    ! identified as gr%dzm at level k+1 (since momentum level k+1 is between
+    ! thermodynamic levels k and k+1).
+    do k = 2, gr%nzm
+       delta_zt(k-1) = gr%dzm(1,k)
+    enddo
 
     ! Calculate T_in_K
-    T_in_K = thlm2T_in_K( gr%nz, thlm, exner, rcm )
+    T_in_K = thlm2T_in_K( gr%nzt, thlm, exner, rcm )
 
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
@@ -481,11 +488,11 @@ module microphys_driver
       if ( lh_microphys_type /= lh_microphys_disabled ) then
 #ifdef SILHS
         call lh_microphys_driver( &
-               gr, dt, gr%nz, lh_num_samples, & ! In
+               gr, dt, gr%nzt, gr%nzm, lh_num_samples, & ! In
                pdf_dim, hydromet_dim, hm_metadata, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, precip_fracs, p_in_Pa, exner, rho, & ! In
-               rcm, delta_zt, cloud_frac, & ! In
+               rcm, delta_zt(1:gr%nzt), cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & ! In
                lh_rt_clipped, lh_thl_clipped, & ! In
                lh_rc_clipped, lh_rv_clipped, & ! In
@@ -546,7 +553,7 @@ module microphys_driver
         endif
 
         call morrison_microphys_driver( &
-               gr, dt, gr%nz, &
+               gr, dt, gr%nzt, &
                hydromet_dim, hm_metadata, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, wtmp, &
@@ -561,7 +568,8 @@ module microphys_driver
 
           rrm_evap = microphys_get_var( stats_metadata%irrm_evap, microphys_stats_zt )
 
-          call update_xp2_mc_api( gr, gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
+          call update_xp2_mc_api( gr, gr%nzm, gr%nzt, dt, &
+                                  cloud_frac, rcm, rvm, thlm_morr,            & ! Intent(in)  
                                   wm_zt, exner, rrm_evap, pdf_params,         & ! Intent(in)
                                   rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,     & ! Intent(out)
                                   rtpthlp_mc )                                  ! Intent(out)
@@ -590,24 +598,25 @@ module microphys_driver
 
 #ifdef SILHS
         call lh_microphys_driver( &
-               gr, dt, gr%nz, lh_num_samples, & ! In
+               gr, dt, gr%nzt, gr%nzm, lh_num_samples, & ! In
                pdf_dim, hydromet_dim, hm_metadata, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, precip_fracs, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
-               hydromet, X_mixt_comp_all_levs,  & !In
+               hydromet, X_mixt_comp_all_levs,  & ! In
                lh_rt_clipped, lh_thl_clipped, & ! In
                lh_rc_clipped, lh_rv_clipped, & ! In
                lh_Nc_clipped, & ! In
                l_lh_importance_sampling, & ! In
                l_lh_instant_var_covar_src, & ! In
                saturation_formula, & ! In
-               stats_metadata, &
-               stats_zt, stats_zm, stats_sfc, stats_lh_zt, & ! intent(inout)
+               stats_metadata, & ! In
+               stats_zt, stats_zm, & ! InOut
+               stats_sfc, stats_lh_zt, & ! InOut
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
-               wpthlp_mc, rtpthlp_mc, & ! Out               
+               wpthlp_mc, rtpthlp_mc, & ! Out
                lh_AKm, AKm, AKstd, AKstd_cld, &
                lh_rcm_avg, AKm_rcm, AKm_rcc, &
                KK_local_microphys ) ! Procedure
@@ -642,8 +651,8 @@ module microphys_driver
 
         if ( l_local_kk ) then
 
-          call KK_local_microphys( gr, dt, gr%nz,                          & ! In
-                                   hydromet_dim, hm_metadata,           & ! In
+          call KK_local_microphys( gr, dt, gr%nzt,                         & ! In
+                                   hydromet_dim, hm_metadata,              & ! In
                                    l_latin_hypercube_input,                & ! In
                                    thlm, wm_zt, p_in_Pa, exner, rho,       & ! In
                                    cloud_frac, wtmp, delta_zt, rcm,        & ! In
@@ -657,8 +666,8 @@ module microphys_driver
 
         else
 
-          call KK_upscaled_microphys( gr, dt, gr%nz,                          & ! In
-                                      pdf_dim, hydromet_dim, hm_metadata,  & ! In
+          call KK_upscaled_microphys( gr, dt, gr%nzt, gr%nzm,                 & ! In
+                                      pdf_dim, hydromet_dim, hm_metadata,     & ! In
                                       wm_zt, rtm, thlm, p_in_Pa,              & ! In
                                       exner, rho, rcm,                        & ! In
                                       pdf_params, hydromet_pdf_params,        & ! In
@@ -722,12 +731,12 @@ module microphys_driver
 
         ! Save the initial Ncm mc value for the Ncm_act term
         if ( stats_metadata%l_stats_samp ) then
-          call stat_begin_update( gr%nz, stats_metadata%iNcm_act, Ncm_mc, stats_zt )
+          call stat_begin_update( gr%nzt, stats_metadata%iNcm_act, Ncm_mc, stats_zt )
         endif
 
         call aer_act_clubb_quadrature_Gauss( gr, pdf_params, p_in_Pa, &
                                              aeromass, T_in_K, &
-                                             Ndrop_max )
+                                             Ndrop_max)
 
         ! Convert to #/kg
         Ndrop_max = Ndrop_max * cm3_per_m3 / rho
@@ -737,7 +746,7 @@ module microphys_driver
         endif
 
         ! Clip Ncm values that are outside of cloud by CLUBB standards
-        do k = 1, gr%nz
+        do k = 1, gr%nzt
 
 ! ---> h1g, 2011-04-20,   no liquid drop nucleation if T < -40 C
           if ( T_in_K(k) <= 233.15_core_rknd )  Ndrop_max(k) = &
@@ -761,7 +770,7 @@ module microphys_driver
 
         ! Update the Ncm_act term
         if( stats_metadata%l_stats_samp ) then
-          call stat_end_update( gr%nz, stats_metadata%iNcm_act, Ncm_mc, stats_zt )
+          call stat_end_update( gr%nzt, stats_metadata%iNcm_act, Ncm_mc, stats_zt )
         endif
 
       else

@@ -30,13 +30,13 @@ module turbulent_adv_pdf
   contains
 
   !=============================================================================
-  subroutine xpyp_term_ta_pdf_lhs( nz, ngrdcol, gr, coef_wpxpyp_implicit, & ! In
-                                        rho_ds_zt, rho_ds_zm,            & ! In
-                                        invrs_rho_ds_zm,                 & ! In
-                                        l_upwind_xpyp_turbulent_adv,     & ! In
-                                        sgn_turbulent_vel,               & ! In
-                                        coef_wpxpyp_implicit_zm,         & ! In
-                                        lhs_ta                           ) ! Out
+  subroutine xpyp_term_ta_pdf_lhs( nzm, nzt, ngrdcol, gr, coef_wpxpyp_implicit, & ! In
+                                   rho_ds_zt, rho_ds_zm,            & ! In
+                                   invrs_rho_ds_zm,                 & ! In
+                                   l_upwind_xpyp_turbulent_adv,     & ! In
+                                   sgn_turbulent_vel,               & ! In
+                                   coef_wpxpyp_implicit_zm,         & ! In
+                                   lhs_ta                           ) ! Out
 
     ! Description:
     ! Turbulent advection of <w'x'>, <x'^2>, and <x'y'>:  implicit portion of
@@ -246,20 +246,20 @@ module turbulent_adv_pdf
     !
     ! =xpyp============================================================== m(k+1)
     !
-    ! -xpyp_zt(interp)-------coef_wpxpyp_implicit---------rho_ds_zt------ t(k+1)
+    ! -xpyp_zt(interp)-------coef_wpxpyp_implicit---------rho_ds_zt------ t(k)
     !
     ! =xpyp=d(rho_ds_zt*coef_wpxpyp_implicit*xpyp_zt)/dz=invrs_rho_ds_zm= m(k)
     !
-    ! -xpyp_zt(interp)-------coef_wpxpyp_implicit---------rho_ds_zt------ t(k)
+    ! -xpyp_zt(interp)-------coef_wpxpyp_implicit---------rho_ds_zt------ t(k-1)
     !
     ! =xpyp============================================================== m(k-1)
     !
-    ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond
-    ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.
+    ! The vertical indices m(k+1), t(k), m(k), t(k-1), and m(k-1) correspond
+    ! with altitudes zm(k+1), zt(k), zm(k), zt(k-1), and zm(k-1), respectively.
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
-    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
     !
     ! 2) "Upwind" Discretization.
     !
@@ -292,27 +292,27 @@ module turbulent_adv_pdf
     ! for, y = x, and sgn( <x'^2> ) is always 1.  The sign of the turbulent
     ! velocity reduces to simply sgn( <w'x'^2> ).
     !
-    ! ---------coef_wpxpyp_implicit-------------------------------------- t(k+2)
+    ! ---------coef_wpxpyp_implicit-------------------------------------- t(k+1)
     !
     ! =xpyp=======coef_wpxpyp_implicit_zm(interp.)=======rho_ds_zm======= m(k+1)
     !
-    ! ---------coef_wpxpyp_implicit-------------------------------------- t(k+1)
+    ! ---------coef_wpxpyp_implicit-------------------------------------- t(k)
     !
     ! =xpyp===coef_wpxpyp_implicit_zm(interp.)=rho_ds_zm=invrs_rho_ds_zm= m(k)
     !
-    ! ---------coef_wpxpyp_implicit-------------------------------------- t(k)
+    ! ---------coef_wpxpyp_implicit-------------------------------------- t(k-1)
     !
     ! =xpyp=======coef_wpxpyp_implicit_zm(interp.)=======rho_ds_zm======= m(k-1)
     !
-    ! ---------coef_wpxpyp_implicit-------------------------------------- t(k-1)
+    ! ---------coef_wpxpyp_implicit-------------------------------------- t(k-2)
     !
-    ! The vertical indices t(k+2), m(k+1), t(k+1), m(k), t(k), m(k-1), and
-    ! t(k-1) correspond with altitudes zt(k+2), zm(k+1), zt(k+1), zm(k), zt(k),
-    ! zm(k-1), and zt(k-1), respectively.  The letter "t" is used for
+    ! The vertical indices t(k+1), m(k+1), t(k), m(k), t(k-1), m(k-1), and
+    ! t(k-2) correspond with altitudes zt(k+1), zm(k+1), zt(k), zm(k), zt(k-1),
+    ! zm(k-1), and zt(k-2), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! invrs_dzt(k+1) = 1 / ( zm(k+1) - zm(k) ); and
-    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) ).
+    ! invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) ); and
+    ! invrs_dzt(k-1) = 1 / ( zm(k) - zm(k-1) ).
 
     ! References:
     !-----------------------------------------------------------------------
@@ -340,26 +340,27 @@ module turbulent_adv_pdf
 
     ! ------------------------------ Input Variables ------------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
     
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       coef_wpxpyp_implicit,   & ! Coef. of <x'y'> in <w'x'y'>; t-levs  [m/s]
-      rho_ds_zt,              & ! Dry, static density at t-levels      [kg/m^3]
-      invrs_rho_ds_zm           ! Inv dry, static density at m-levels  [m^3/kg]
+      rho_ds_zt                 ! Dry, static density at t-levels      [kg/m^3]
 
     logical, intent(in) :: &
       l_upwind_xpyp_turbulent_adv    ! Flag to use "upwind" discretization
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       sgn_turbulent_vel,       & ! Sign of the turbulent velocity      [-]
       coef_wpxpyp_implicit_zm, & ! coef_wpxpyp_implicit interp m-levs  [m/s]
-      rho_ds_zm                  ! Dry, static density at m-levs       [kg/m^3]
+      rho_ds_zm,               & ! Dry, static density at m-levs       [kg/m^3]
+      invrs_rho_ds_zm            ! Inv dry, static density at m-levels  [m^3/kg]
 
     ! ------------------------------ Return Variable ------------------------------
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(out) :: &
       lhs_ta    ! LHS coefficient of xpyp turbulent advection  [1/s]
 
     ! ------------------------------ Local Variables ------------------------------
@@ -386,28 +387,28 @@ module turbulent_adv_pdf
 
       ! Centered discretization.
       !$acc parallel loop gang vector collapse(2) default(present) 
-      do k = 2, nz-1, 1
+      do k = 2, nzm-1, 1
         do i = 1, ngrdcol
           
           ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
           lhs_ta(kp1_mdiag,i,k) &
           = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
-            * rho_ds_zt(i,k+1) * coef_wpxpyp_implicit(i,k+1) &
-            * gr%weights_zm2zt(i,k+1,m_above)
+            * rho_ds_zt(i,k) * coef_wpxpyp_implicit(i,k) &
+            * gr%weights_zm2zt(i,k,m_above)
 
           ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
           lhs_ta(k_mdiag,i,k) &
           = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
-            * ( rho_ds_zt(i,k+1) * coef_wpxpyp_implicit(i,k+1) &
-                * gr%weights_zm2zt(i,k+1,m_below) &
-                - rho_ds_zt(i,k) * coef_wpxpyp_implicit(i,k) &
-                  * gr%weights_zm2zt(i,k,m_above) )
+            * ( rho_ds_zt(i,k) * coef_wpxpyp_implicit(i,k) &
+                * gr%weights_zm2zt(i,k,m_below) &
+                - rho_ds_zt(i,k-1) * coef_wpxpyp_implicit(i,k-1) &
+                  * gr%weights_zm2zt(i,k-1,m_above) )
 
           ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
           lhs_ta(km1_mdiag,i,k) &
           = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
-              * rho_ds_zt(i,k) * coef_wpxpyp_implicit(i,k) &
-              * gr%weights_zm2zt(i,k,m_below)
+              * rho_ds_zt(i,k-1) * coef_wpxpyp_implicit(i,k-1) &
+              * gr%weights_zm2zt(i,k-1,m_below)
 
         end do
       end do
@@ -417,7 +418,7 @@ module turbulent_adv_pdf
 
       ! "Upwind" discretization
       !$acc parallel loop gang vector collapse(2) default(present) 
-      do k = 2, nz-1, 1
+      do k = 2, nzm-1, 1
         do i = 1, ngrdcol
         
           if ( sgn_turbulent_vel(i,k) > zero ) then
@@ -429,12 +430,12 @@ module turbulent_adv_pdf
 
             ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
             lhs_ta(k_mdiag,i,k) &
-             = invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k) &
+             = invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k-1) &
                * rho_ds_zm(i,k) * coef_wpxpyp_implicit_zm(i,k)
 
             ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
             lhs_ta(km1_mdiag,i,k) &
-             = - invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k) &
+             = - invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k-1) &
                  * rho_ds_zm(i,k-1) * coef_wpxpyp_implicit_zm(i,k-1)
 
           else ! sgn_turbulent_vel < 0
@@ -443,12 +444,12 @@ module turbulent_adv_pdf
 
             ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
             lhs_ta(kp1_mdiag,i,k) &
-             = invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k+1) &
+             = invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k) &
                * rho_ds_zm(i,k+1) * coef_wpxpyp_implicit_zm(i,k+1)
 
             ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
             lhs_ta(k_mdiag,i,k) &
-             = - invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k+1) &
+             = - invrs_rho_ds_zm(i,k) * gr%invrs_dzt(i,k) &
                  * rho_ds_zm(i,k) * coef_wpxpyp_implicit_zm(i,k)
 
             ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
@@ -466,7 +467,7 @@ module turbulent_adv_pdf
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do b = 1, ndiags3
-        lhs_ta(b,i,nz) = zero
+        lhs_ta(b,i,nzm) = zero
       end do
     end do
     !$acc end parallel loop
@@ -478,10 +479,10 @@ module turbulent_adv_pdf
   end subroutine xpyp_term_ta_pdf_lhs
 
   !=============================================================================================
-  subroutine xpyp_term_ta_pdf_lhs_godunov( nz, ngrdcol, gr, & ! Intent(in)
-                                                coef_wpxpyp_implicit, & ! Intent(in)
-                                                invrs_rho_ds_zm, rho_ds_zm,  & ! Intent(in)
-                                                lhs_ta )
+  subroutine xpyp_term_ta_pdf_lhs_godunov( nzm, nzt, ngrdcol, gr, & ! Intent(in)
+                                           coef_wpxpyp_implicit, & ! Intent(in)
+                                           invrs_rho_ds_zm, rho_ds_zm,  & ! Intent(in)
+                                           lhs_ta )
   ! Intent(out)
   ! Description:
   !   This subroutine is a revised version of xpyp_term_ta_pdf_lhs_all. The
@@ -494,7 +495,7 @@ module turbulent_adv_pdf
   ! Optional Arguements:
   !   The optional arguements can be used to override the default indices. 
   !   from_level - low index, default 2
-  !   to level   - high index, default gr%nz-1
+  !   to level   - high index, default gr%nzm-1
   ! 
   ! Notes:
   !   This subroutine exists for testing of Godunov-like upwind scheme. 
@@ -502,7 +503,7 @@ module turbulent_adv_pdf
   !---------------------------------------------------------------------------------------------
 
     use grid_class, only:  & ! for gr%weights_zm2zt
-    grid ! Type
+        grid ! Type
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -516,18 +517,21 @@ module turbulent_adv_pdf
 
     !------------------- Input Variables -------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-        coef_wpxpyp_implicit,     & ! Coef. of <x'y'> in <w'x'y'>; t-lev [m/s]
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+        coef_wpxpyp_implicit        ! Coef. of <x'y'> in <w'x'y'>; t-lev [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
         invrs_rho_ds_zm,          & ! Inv dry, static density @ m-level [m^3/kg]
         rho_ds_zm                   ! Dry, static density at m-lev [kg/m^3]
 
     !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzm), intent(out) :: &
         lhs_ta
 
     !---------------- Local Variables -------------------
@@ -551,24 +555,24 @@ module turbulent_adv_pdf
 
     ! Godunov-like upwind discretization
     !$acc parallel loop gang vector collapse(2) default(present) 
-    do k = 2, nz-1
+    do k = 2, nzm-1
       do i = 1, ngrdcol
         
         ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
         lhs_ta(kp1_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                                 * rho_ds_zm(i,k+1) &
-                                * min(0.0_core_rknd,coef_wpxpyp_implicit(i,k+1))
+                                * min(0.0_core_rknd,coef_wpxpyp_implicit(i,k))
 
         ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
         lhs_ta(k_mdiag,i,k) = invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                               * rho_ds_zm(i,k) &
-                              * ( max(0.0_core_rknd,coef_wpxpyp_implicit(i,k+1)) - &
-                                  min(0.0_core_rknd,coef_wpxpyp_implicit(i,k)) )
+                              * ( max(0.0_core_rknd,coef_wpxpyp_implicit(i,k)) - &
+                                  min(0.0_core_rknd,coef_wpxpyp_implicit(i,k-1)) )
 
         ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
         lhs_ta(km1_mdiag,i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
                                   * rho_ds_zm(i,k-1) &
-                                  * max(0.0_core_rknd,coef_wpxpyp_implicit(i,k) )
+                                  * max(0.0_core_rknd,coef_wpxpyp_implicit(i,k-1) )
       end do
     end do
     !$acc end parallel loop
@@ -577,7 +581,7 @@ module turbulent_adv_pdf
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
       do b = 1, ndiags3
-        lhs_ta(b,i,nz) = 0.0_core_rknd
+        lhs_ta(b,i,nzm) = 0.0_core_rknd
       end do
     end do
     !$acc end parallel loop
@@ -589,13 +593,13 @@ module turbulent_adv_pdf
   end subroutine xpyp_term_ta_pdf_lhs_godunov
 
   !=============================================================================
-  subroutine xpyp_term_ta_pdf_rhs( nz, ngrdcol, gr, term_wpxpyp_explicit,  & ! In
-                                        rho_ds_zt, rho_ds_zm,                   & ! In
-                                        invrs_rho_ds_zm,                        & ! In
-                                        l_upwind_xpyp_turbulent_adv,            & ! In
-                                        sgn_turbulent_vel,                      & ! In
-                                        term_wpxpyp_explicit_zm,                & ! In
-                                        rhs_ta )                                  ! Out
+  subroutine xpyp_term_ta_pdf_rhs( nzm, nzt, ngrdcol, gr, term_wpxpyp_explicit, & ! In
+                                   rho_ds_zt, rho_ds_zm,                        & ! In
+                                   invrs_rho_ds_zm,                             & ! In
+                                   l_upwind_xpyp_turbulent_adv,                 & ! In
+                                   sgn_turbulent_vel,                           & ! In
+                                   term_wpxpyp_explicit_zm,                     & ! In
+                                   rhs_ta )                                       ! Out
 
     ! Description:
     ! Turbulent advection of <w'x'>, <x'^2>, and <x'y'>:  explicit portion of
@@ -777,17 +781,17 @@ module turbulent_adv_pdf
     ! momentum level, where it is multiplied by -invrs_rho_ds_zm.  This yields
     ! the desired result.
     !
-    ! ---------term_wpxpyp_explicitp1-------rho_ds_ztp1------------------ t(k+1)
+    ! ---------term_wpxpyp_explicitp1-------rho_ds_ztp1------------------ t(k)
     !
     ! ==xpyp==d( rho_ds_zt * term_wpxpyp_explicit )/dz==invrs_rho_ds_zm== m(k)
     !
-    ! ---------term_wpxpyp_explicit---------rho_ds_zt-------------------- t(k)
+    ! ---------term_wpxpyp_explicit---------rho_ds_zt-------------------- t(k-1)
     !
-    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
-    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
+    ! The vertical indices t(k), m(k), and t(k-1) correspond with altitudes
+    ! zt(k), zm(k), and zt(k-1), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k) = 1 / ( zt(k) - zt(k-1) )
     !
     ! 2) "Upwind" Discretization.
     !
@@ -820,27 +824,27 @@ module turbulent_adv_pdf
     ! for, y = x, and sgn( <x'^2> ) is always 1.  The sign of the turbulent
     ! velocity reduces to simply sgn( <w'x'^2> ).
     !
-    ! ---------term_wpxpyp_explicit-------------------------------------- t(k+2)
+    ! ---------term_wpxpyp_explicit-------------------------------------- t(k+1)
     !
     ! ========term_wpxpyp_explicit_zm(interp.)=======rho_ds_zm=========== m(k+1)
     !
-    ! ---------term_wpxpyp_explicit-------------------------------------- t(k+1)
+    ! ---------term_wpxpyp_explicit-------------------------------------- t(k)
     !
     ! =xpyp===term_wpxpyp_explicit_zm(interp.)=rho_ds_zm=invrs_rho_ds_zm= m(k)
     !
-    ! ---------term_wpxpyp_explicit-------------------------------------- t(k)
+    ! ---------term_wpxpyp_explicit-------------------------------------- t(k-1)
     !
     ! ========term_wpxpyp_explicit_zm(interp.)=======rho_ds_zm=========== m(k-1)
     !
-    ! ---------term_wpxpyp_explicit-------------------------------------- t(k-1)
+    ! ---------term_wpxpyp_explicit-------------------------------------- t(k-2)
     !
-    ! The vertical indices t(k+2), m(k+1), t(k+1), m(k), t(k), m(k-1), and
-    ! t(k-1) correspond with altitudes zt(k+2), zm(k+1), zt(k+1), zm(k), zt(k),
-    ! zm(k-1), and zt(k-1), respectively.  The letter "t" is used for
+    ! The vertical indices t(k+1), m(k+1), t(k), m(k), t(k-1), m(k-1), and
+    ! t(k-2) correspond with altitudes zt(k+1), zm(k+1), zt(k), zm(k), zt(k-1),
+    ! zm(k-1), and zt(k-2), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! invrs_dzt(k+1) = 1 / ( zm(k+1) - zm(k) ); and
-    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) ).
+    ! invrs_dzt(k) = 1 / ( zm(k+1) - zm(k) ); and
+    ! invrs_dzt(k-1) = 1 / ( zm(k) - zm(k-1) ).
 
     ! References:
     !-----------------------------------------------------------------------
@@ -858,26 +862,27 @@ module turbulent_adv_pdf
 
     ! ----------------------------- Input Variables -----------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
     
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       term_wpxpyp_explicit, & ! RHS: <w'x'y'> eq; t-levs      [m/s(x un)(y un)]
-      rho_ds_zt,            & ! Dry, static density at t-levs          [kg/m^3]
-      invrs_rho_ds_zm         ! Inv dry, static density at m-levs      [m^3/kg]
+      rho_ds_zt               ! Dry, static density at t-levs          [kg/m^3]
 
     logical, intent(in) :: &
       l_upwind_xpyp_turbulent_adv    ! Flag to use "upwind" discretization
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       sgn_turbulent_vel,       & ! Sign of the turbulent velocity           [-]
       term_wpxpyp_explicit_zm, & ! term_wpxpyp_expl. zm       [m/s(x un)(y un)]
-      rho_ds_zm                  ! Dry, static density at m-levs       [kg/m^3]
+      rho_ds_zm,               & ! Dry, static density at m-levs       [kg/m^3]
+      invrs_rho_ds_zm            ! Inv dry, static density at m-levs   [m^3/kg]
 
     ! ----------------------------- Return Variable -----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       rhs_ta    ! RHS portion of xpyp turbulent advection      [(x un)(y un)/s]
 
     ! ----------------------------- Local Variables -----------------------------
@@ -902,22 +907,23 @@ module turbulent_adv_pdf
 
       ! Centered discretization.
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1, 1
+      do k = 2, nzm-1, 1
         do i = 1, ngrdcol
           
           rhs_ta(i,k) &
           = - invrs_rho_ds_zm(i,k) &
-              * gr%invrs_dzm(i,k) * ( rho_ds_zt(i,k+1) * term_wpxpyp_explicit(i,k+1) &
-                                 - rho_ds_zt(i,k) * term_wpxpyp_explicit(i,k) )
+              * gr%invrs_dzm(i,k) * ( rho_ds_zt(i,k) * term_wpxpyp_explicit(i,k) &
+                                      - rho_ds_zt(i,k-1) * term_wpxpyp_explicit(i,k-1) )
+
         end do
-      end do ! k = 2, nz-1, 1
+      end do ! k = 2, nzm-1, 1
       !$acc end parallel loop
 
     else ! l_upwind_xpyp_turbulent_adv
 
       ! "Upwind" discretization
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1, 1
+      do k = 2, nzm-1, 1
         do i = 1, ngrdcol
 
           if ( sgn_turbulent_vel(i,k) > zero ) then
@@ -925,7 +931,7 @@ module turbulent_adv_pdf
              ! The "wind" is blowing upward.
              rhs_ta(i,k) &
              = - invrs_rho_ds_zm(i,k) &
-                 * gr%invrs_dzt(i,k) &
+                 * gr%invrs_dzt(i,k-1) &
                  * ( rho_ds_zm(i,k) * term_wpxpyp_explicit_zm(i,k) &
                      - rho_ds_zm(i,k-1) * term_wpxpyp_explicit_zm(i,k-1) )
 
@@ -934,14 +940,14 @@ module turbulent_adv_pdf
              ! The "wind" is blowing downward.
              rhs_ta(i,k) &
              = - invrs_rho_ds_zm(i,k) &
-                 * gr%invrs_dzt(i,k+1) &
+                 * gr%invrs_dzt(i,k) &
                  * ( rho_ds_zm(i,k+1) * term_wpxpyp_explicit_zm(i,k+1) &
                      - rho_ds_zm(i,k) * term_wpxpyp_explicit_zm(i,k) )
 
           endif ! sgn_turbulent_vel
           
         end do
-      end do ! k = 2, nz-1, 1
+      end do ! k = 2, nzm-1, 1
       !$acc end parallel loop
       
     end if
@@ -949,7 +955,7 @@ module turbulent_adv_pdf
     ! Set upper boundary value to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      rhs_ta(i,nz) = zero
+      rhs_ta(i,nzm) = zero
     end do
     !$acc end parallel loop
 
@@ -960,12 +966,13 @@ module turbulent_adv_pdf
   end subroutine xpyp_term_ta_pdf_rhs
 
   !=============================================================================
-  subroutine xpyp_term_ta_pdf_rhs_godunov( nz, ngrdcol, gr, & ! Intent(in)
-                                                term_wpxpyp_explicit_zm, & ! Intent(in)
-                                                invrs_rho_ds_zm, & ! Intent(in)
-                                                sgn_turbulent_vel, & ! Intent(in)
-                                                rho_ds_zm, & ! Intent(in)
-                                                rhs_ta ) ! Intent(out)
+  subroutine xpyp_term_ta_pdf_rhs_godunov( nzm, nzt, ngrdcol, gr, & ! Intent(in)
+                                           term_wpxpyp_explicit_zm, & ! Intent(in)
+                                           invrs_rho_ds_zm, & ! Intent(in)
+                                           sgn_turbulent_vel, & ! Intent(in)
+                                           rho_ds_zm, & ! Intent(in)
+                                           rhs_ta ) ! Intent(out)
+
     ! Description:
     !   This subroutine intends to add godunov upwind difference scheme based
     !   on xpyp_term_ta_pdf_rhs.  The revisions are maded to use the Godunov-like 
@@ -975,35 +982,39 @@ module turbulent_adv_pdf
     ! Optional Arguements:
     !   The optional arguements can be used to override the default indices. 
     !   from_level - low index, default 2
-    !   to level - high index, default gr%nz-1
+    !   to level - high index, default gr%nzm-1
     ! 
     ! Notes:
     !   This subroutine exists for testing of Godunov-like upwind scheme. 
     !   THIS SUBROUTINE DOES NOT HANDLE BOUNDARY CONDITIONS AND SETS THEM TO 0
     !--------------------------------------------------------------------------------------------
+
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use grid_class, only: &
-      grid ! Type
+        grid ! Type
 
     implicit none
 
     !------------------- Input Variables -------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
     
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       term_wpxpyp_explicit_zm,      & ! RHS: <w'x'y'> eq; m-lev(k)   [m/s(x un)(y un)]
       invrs_rho_ds_zm,              & ! Inv dry, static density at m-lev (k) [m^3/kg]
-      sgn_turbulent_vel,            & ! Sign of the turbulent velocity [-]
       rho_ds_zm                       ! Dry, static density at m-lev (k) [kg/m^3]
 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      sgn_turbulent_vel               ! Sign of the turbulent velocity [-]
+
     !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       rhs_ta
 
     !---------------- Local Variables -------------------
@@ -1025,16 +1036,16 @@ module turbulent_adv_pdf
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
+    do k = 2, nzm-1
       do i = 1, ngrdcol 
         rhs_ta(i,k) = - invrs_rho_ds_zm(i,k) * gr%invrs_dzm(i,k) &
-                    * ( min(0.0_core_rknd, sgn_turbulent_vel(i,k+1)) &
+                    * ( min(0.0_core_rknd, sgn_turbulent_vel(i,k)) &
                           * rho_ds_zm(i,k+1) * term_wpxpyp_explicit_zm(i,k+1) &
-                      + max(0.0_core_rknd, sgn_turbulent_vel(i,k+1)) &   
+                      + max(0.0_core_rknd, sgn_turbulent_vel(i,k)) &   
                           * rho_ds_zm(i,k)   * term_wpxpyp_explicit_zm(i,k) &
-                      - min(0.0_core_rknd, sgn_turbulent_vel(i,k))&
+                      - min(0.0_core_rknd, sgn_turbulent_vel(i,k-1))&
                           * rho_ds_zm(i,k)   * term_wpxpyp_explicit_zm(i,k) &
-                      - max(0.0_core_rknd, sgn_turbulent_vel(i,k)) &
+                      - max(0.0_core_rknd, sgn_turbulent_vel(i,k-1)) &
                           * rho_ds_zm(i,k-1) * term_wpxpyp_explicit_zm(i,k-1) &
                       )
       end do
@@ -1044,7 +1055,7 @@ module turbulent_adv_pdf
     ! Set upper boundary value to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      rhs_ta(i,nz) = 0.0_core_rknd
+      rhs_ta(i,nzm) = 0.0_core_rknd
     end do
     !$acc end parallel loop
 

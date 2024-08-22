@@ -53,16 +53,18 @@ module astex_a209
     type (grid), target, intent(in) :: gr
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
       wm_zt,         & ! w wind on the thermodynamic grid        [m/s]
-      wm_zm,         & ! w wind on the momentum grid             [m/s]
       thlm_forcing,  & ! Liquid potential temperature tendency   [K/s]
       rtm_forcing      ! Total water mixing ratio tendency       [kg/kg/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  & 
+      wm_zm            ! w wind on the momentum grid             [m/s]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) ::  & 
       sclrm_forcing ! Passive scalar forcing  [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) ::  & 
       edsclrm_forcing ! Passive scalar forcing  [units/s]
 
     !--------------------- Local Variables ---------------------
@@ -73,21 +75,18 @@ module astex_a209
 
     ! Compute large-scale subsidence
 
-    do i=2,gr%nz
+    do i=1,gr%nzt
 
       wm_zt(i) = - 5.e-6_core_rknd * gr%zt(1,i)
 
     end do
-
-    ! Lower Boundary condition on zt
-    wm_zt(1) = 0.0_core_rknd        ! Below surface
 
     ! Interpolate to momentum levels
     wm_zm = zt2zm( gr, wm_zt )
 
     ! Boundary conditions on zm
     wm_zm(1) = 0.0_core_rknd        ! At surface
-    wm_zm(gr%nz) = 0.0_core_rknd  ! Model top
+    wm_zm(gr%nzm) = 0.0_core_rknd  ! Model top
 
     ! Radiative theta-l tendency
 

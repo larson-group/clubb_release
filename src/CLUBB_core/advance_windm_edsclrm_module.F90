@@ -28,7 +28,7 @@ module advance_windm_edsclrm_module
   contains
 
   !=============================================================================
-  subroutine advance_windm_edsclrm( nz, ngrdcol, edsclr_dim, gr, dt, &
+  subroutine advance_windm_edsclrm( nzm, nzt, ngrdcol, edsclr_dim, gr, dt, &
                                     wm_zt, Km_zm, Kmh_zm, &
                                     ug, vg, um_ref, vm_ref, &
                                     wp2, up2, vp2, um_forcing, vm_forcing, &
@@ -123,7 +123,8 @@ module advance_windm_edsclrm_module
 
     ! ------------------------ Input Variables ------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol, &
       edsclr_dim
 
@@ -133,23 +134,25 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), intent(in) ::  &
       dt                 ! Model timestep                             [s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
       wm_zt,           & ! w wind component on thermodynamic levels    [m/s]
-      Km_zm,           & ! Eddy diffusivity of winds on momentum levs. [m^2/s]
-      Kmh_zm,          & ! Eddy diffusivity of themo on momentum levs. [m^s/s]
       ug,              & ! u (west-to-east) geostrophic wind comp.     [m/s]
       vg,              & ! v (south-to-north) geostrophic wind comp.   [m/s]
       um_ref,          & ! Reference u wind component for nudging      [m/s]
       vm_ref,          & ! Reference v wind component for nudging      [m/s]
+      um_forcing,      & ! u forcing                                   [m/s/s]
+      vm_forcing,      & ! v forcing                                   [m/s/s]
+      invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels  [m^3/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
+      Km_zm,           & ! Eddy diffusivity of winds on momentum levs. [m^2/s]
+      Kmh_zm,          & ! Eddy diffusivity of themo on momentum levs. [m^s/s]
       wp2,             & ! w'^2 (momentum levels)                      [m^2/s^2]
       up2,             & ! u'^2 (momentum levels)                      [m^2/s^2]
       vp2,             & ! v'^2 (momentum levels)                      [m^2/s^2]
-      um_forcing,      & ! u forcing                                   [m/s/s]
-      vm_forcing,      & ! v forcing                                   [m/s/s]
-      rho_ds_zm,       & ! Dry, static density on momentum levels      [kg/m^3]
-      invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels  [m^3/kg]
+      rho_ds_zm          ! Dry, static density on momentum levels      [kg/m^3]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,edsclr_dim), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim), intent(in) ::  &
       edsclrm_forcing  ! Eddy scalar large-scale forcing        [{units vary}/s]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
@@ -193,51 +196,55 @@ module advance_windm_edsclrm_module
       stats_zm, &
       stats_sfc
       
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) ::  &
       um,   & ! Mean u (west-to-east) wind component         [m/s]
-      vm,   & ! Mean v (south-to-north) wind component       [m/s]
+      vm      ! Mean v (south-to-north) wind component       [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) ::  &
       upwp, & ! <u'w'> (momentum levels)                     [m^2/s^2]
       vpwp    ! <v'w'> (momentum levels)                     [m^2/s^2]
 
     ! Input/Output Variable for eddy-scalars
-    real( kind = core_rknd ), dimension(ngrdcol,nz,edsclr_dim), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim), intent(inout) ::  &
       edsclrm        ! Mean eddy scalar quantity             [units vary]
 
     ! Output Variable for eddy-scalars
-    real( kind = core_rknd ), dimension(ngrdcol,nz,edsclr_dim), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,edsclr_dim), intent(inout) ::  &
       wpedsclrp      ! w'edsclr' (momentum levels)           [m/s {units vary}]
 
     ! Variables used to track perturbed version of winds.
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
       um_pert,   & ! perturbed <u>    [m/s]
-      vm_pert,   & ! perturbed <v>    [m/s]
+      vm_pert      ! perturbed <v>    [m/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       upwp_pert, & ! perturbed <u'w'> [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
 
     ! ------------------------ Local Variables ------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
       um_old, & ! Saved value of mean u (west-to-east) wind component    [m/s]
       vm_old    ! Saved value of Mean v (south-to-north) wind component  [m/s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,edsclr_dim) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,edsclr_dim) ::  &
       edsclrm_old    ! Saved value of mean eddy scalar quantity   [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
       um_tndcy,    & ! u wind component tendency                    [m/s^2]
       vm_tndcy       ! v wind component tendency                    [m/s^2]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  &
       upwp_chnge,  & ! Net change of u'w' due to clipping           [m^2/s^2]
       vpwp_chnge     ! Net change of v'w' due to clipping           [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(3,ngrdcol,nzt) :: &
       lhs ! The implicit part of the tridiagonal matrix             [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,max(2,edsclr_dim)) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,max(2,edsclr_dim)) :: &
       rhs,     &! The explicit part of the tridiagonal matrix       [units vary]
       solution  ! The solution to the tridiagonal matrix            [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       wind_speed,      & ! wind speed; sqrt(u^2 + v^2)              [m/s]
       wind_speed_pert    ! perturbed wind speed; sprt(u^2 + v^2)    [m/s]
 
@@ -257,13 +264,15 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       nu_zero
       
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(3,ngrdcol,nzt) :: &
       lhs_diff, & ! LHS diffustion terms
       lhs_ma_zt   ! LHS mean advection terms
         
-    real( kind = core_rknd ), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  &
       Km_zt,          & ! Eddy diffusivity of winds on momentum levs. [m^2/s]
-      Kmh_zt,         & ! Eddy diffusivity of themo on momentum levs. [m^s/s]
+      Kmh_zt            ! Eddy diffusivity of themo on momentum levs. [m^s/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  &
       Km_zm_p_nu10,   & ! Km_zm plus nu_vert_res_dep%nu10
       xpwp              ! x'w' for arbitrary x
       
@@ -274,9 +283,6 @@ module advance_windm_edsclrm_module
 
     ! Whether perturbed winds are being solved.
     logical :: l_perturbed_wind
-
-    real( kind = core_rknd ), dimension(nz) ::  &
-      tmp_in
 
     ! ------------------------ Begin Code ------------------------
 
@@ -295,7 +301,7 @@ module advance_windm_edsclrm_module
     !$acc end parallel loop
     
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         Km_zm_p_nu10(i,k) = Km_zm(i,k) + nu_vert_res_dep%nu10(i)
       end do
@@ -305,13 +311,13 @@ module advance_windm_edsclrm_module
     l_perturbed_wind = ( .not. l_predict_upwp_vpwp ) .and. l_linearize_pbl_winds
     
     if ( .not. l_implemented ) then
-      call term_ma_zt_lhs( nz, ngrdcol, wm_zt, gr%weights_zt2zm, & ! intent(in)
-                           gr%invrs_dzt, gr%invrs_dzm,    & ! intent(in)
-                           l_upwind_xm_ma,                          & ! intent(in)
-                           lhs_ma_zt )                         ! intent(out)
+      call term_ma_zt_lhs( nzm, nzt, ngrdcol, wm_zt, gr%weights_zt2zm, & ! intent(in)
+                           gr%invrs_dzt, gr%invrs_dzm,                 & ! intent(in)
+                           l_upwind_xm_ma,                             & ! intent(in)
+                           lhs_ma_zt )                                   ! intent(out)
     else
       !$acc parallel loop gang vector collapse(3) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           do j = 1, 3
             lhs_ma_zt(j,i,k) = zero
@@ -323,53 +329,16 @@ module advance_windm_edsclrm_module
 
     if ( .not. l_predict_upwp_vpwp ) then
       
-      Km_zt(:,:) = zm2zt( nz, ngrdcol, gr, Km_zm(:,:), zero )
+      Km_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, Km_zm(:,:), zero )
 
       ! Calculate diffusion terms
-      call diffusion_zt_lhs( nz, ngrdcol, gr, Km_zm, Km_zt, nu_vert_res_dep%nu10, & ! In
-                             invrs_rho_ds_zt, rho_ds_zm,                          & ! In
-                             lhs_diff )                                             ! Out
-      
-      ! The lower boundary condition needs to be applied here at level 2.
-      if ( .not. l_upwind_Kh_dp_term ) then 
-        !$acc parallel loop gang vector default(present)
-        do i = 1, ngrdcol
-          ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-          lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
-                                    * ( Km_zm(i,2) + nu_vert_res_dep%nu10(i) ) &
-                                      * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
-
-          ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-          lhs_diff(k_tdiag,i,2) = + gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
-                                  * ( Km_zm(i,2) + nu_vert_res_dep%nu10(i) ) &
-                                    * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
-
-          ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-          lhs_diff(km1_tdiag,i,2) = zero
-        end do
-        !$acc end parallel loop
-      else
-        !$acc parallel loop gang vector default(present)
-        do i = 1, ngrdcol
-          ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-          lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) &
-                                      * ( Km_zt(i,2) + nu_vert_res_dep%nu10(i) ) &
-                                        * gr%invrs_dzm(i,2)
-
-          ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-          lhs_diff(k_tdiag,i,2) = + gr%invrs_dzt(i,2) &
-                                    * ( Km_zt(i,2) + nu_vert_res_dep%nu10(i) ) &
-                                      * gr%invrs_dzm(i,2)
-
-          ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-          lhs_diff(km1_tdiag,i,2) = zero
-        end do
-        !$acc end parallel loop
-      end if
+      call diffusion_zt_lhs( nzm, nzt, ngrdcol, gr, Km_zm, Km_zt, nu_vert_res_dep%nu10, & ! In
+                             invrs_rho_ds_zt, rho_ds_zm,                                & ! In
+                             lhs_diff )                                                   ! Out
 
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             um_old(i,k) = um(i,k)
             vm_old(i,k) = vm(i,k)
@@ -383,20 +352,20 @@ module advance_windm_edsclrm_module
       !----------------------------------------------------------------
 
       ! Compute Coriolis, geostrophic, and other prescribed wind forcings for um.
-      call compute_uv_tndcy( nz, ngrdcol, windm_edsclrm_um, & ! intent(in)
-                             fcor, vm, vg,                  & ! intent(in)
-                             um_forcing, l_implemented,     & ! intent(in)
-                             stats_metadata,                & ! intent(in)
-                             stats_zt,                      & ! intent(inout)
-                             um_tndcy )                       ! intent(out)
+      call compute_uv_tndcy( nzt, ngrdcol, windm_edsclrm_um, & ! intent(in)
+                             fcor, vm, vg,                   & ! intent(in)
+                             um_forcing, l_implemented,      & ! intent(in)
+                             stats_metadata,                 & ! intent(in)
+                             stats_zt,                       & ! intent(inout)
+                             um_tndcy )                        ! intent(out)
 
       ! Compute Coriolis, geostrophic, and other prescribed wind forcings for vm.
-      call compute_uv_tndcy( nz, ngrdcol, windm_edsclrm_vm, & ! intent(in)
-                             fcor, um, ug,                  & ! intent(in)
-                             vm_forcing, l_implemented,     & ! intent(in)
-                             stats_metadata,                & ! intent(in)
-                             stats_zt,                      & ! intent(inout) 
-                             vm_tndcy )                       ! intent(out)
+      call compute_uv_tndcy( nzt, ngrdcol, windm_edsclrm_vm, & ! intent(in)
+                             fcor, um, ug,                   & ! intent(in)
+                             vm_forcing, l_implemented,      & ! intent(in)
+                             stats_metadata,                 & ! intent(in)
+                             stats_zt,                       & ! intent(inout) 
+                             vm_tndcy )                        ! intent(out)
 
       ! Momentum surface fluxes, u'w'|_sfc and v'w'|_sfc, are applied through
       ! an implicit method, such that:
@@ -406,7 +375,7 @@ module advance_windm_edsclrm_module
       ! Compute wind speed (use threshold "eps" to prevent divide-by-zero
       ! error).
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           wind_speed(i,k) = max( sqrt( um(i,k)**2 + vm(i,k)**2 ), eps )
         end do
@@ -422,23 +391,23 @@ module advance_windm_edsclrm_module
 
       ! Compute the explicit portion of the um equation.
       ! Build the right-hand side vector.
-      call windm_edsclrm_rhs( nz, ngrdcol, gr, windm_edsclrm_um, dt,  & ! intent(in)
-                              lhs_diff, um, um_tndcy,                 & ! intent(in)
-                              rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
-                              l_imp_sfc_momentum_flux, upwp(:,1),     & ! intent(in)
-                              stats_metadata,                         & ! intent(in)
-                              stats_zt,                               & ! intent(inout)
-                              rhs(:,:,windm_edsclrm_um) )               ! intent(out)
+      call windm_edsclrm_rhs( nzm, nzt, ngrdcol, gr, windm_edsclrm_um, dt, & ! intent(in)
+                              lhs_diff, um, um_tndcy,                      & ! intent(in)
+                              rho_ds_zm, invrs_rho_ds_zt,                  & ! intent(in)
+                              l_imp_sfc_momentum_flux, upwp(:,1),          & ! intent(in)
+                              stats_metadata,                              & ! intent(in)
+                              stats_zt,                                    & ! intent(inout)
+                              rhs(:,:,windm_edsclrm_um) )                    ! intent(out)
 
       ! Compute the explicit portion of the vm equation.
       ! Build the right-hand side vector.
-      call windm_edsclrm_rhs( nz, ngrdcol, gr, windm_edsclrm_vm, dt,  & ! intent(in)
-                              lhs_diff, vm, vm_tndcy,                 & ! intent(in)
-                              rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
-                              l_imp_sfc_momentum_flux, vpwp(:,1),     & ! intent(in)
-                              stats_metadata,                         & ! intent(in)
-                              stats_zt,                               & ! intent(inout)
-                              rhs(:,:,windm_edsclrm_vm) )               ! intent(out)
+      call windm_edsclrm_rhs( nzm, nzt, ngrdcol, gr, windm_edsclrm_vm, dt, & ! intent(in)
+                              lhs_diff, vm, vm_tndcy,                      & ! intent(in)
+                              rho_ds_zm, invrs_rho_ds_zt,                  & ! intent(in)
+                              l_imp_sfc_momentum_flux, vpwp(:,1),          & ! intent(in)
+                              stats_metadata,                              & ! intent(in)
+                              stats_zt,                                    & ! intent(inout)
+                              rhs(:,:,windm_edsclrm_vm) )                    ! intent(out)
 
       ! Store momentum flux (explicit component)
 
@@ -446,26 +415,26 @@ module advance_windm_edsclrm_module
       ! upwp(1) = upwp_sfc
       ! vpwp(1) = vpwp_sfc
       
-      call calc_xpwp( nz, ngrdcol, gr, &
+      call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Km_zm_p_nu10, um, &
                       xpwp )
 
       ! Solve for x'w' at all intermediate model levels.
       ! A Crank-Nicholson timestep is used.
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 2, nzm-1
         do i = 1, ngrdcol
           upwp(i,k) = -one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
       
-      call calc_xpwp( nz, ngrdcol, gr, &
+      call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Km_zm_p_nu10, vm, &
                       xpwp )
       
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 2, nzm-1
         do i = 1, ngrdcol
           vpwp(i,k) = -one_half * xpwp(i,k)
         end do
@@ -477,14 +446,14 @@ module advance_windm_edsclrm_module
       ! since x'w' = - K_zm * d(xm)/dz.
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        upwp(i,nz) = zero
-        vpwp(i,nz) = zero
+        upwp(i,nzm) = zero
+        vpwp(i,nzm) = zero
       end do
       !$acc end parallel loop
       
       ! Compute the implicit portion of the um and vm equations.
       ! Build the left-hand side matrix.
-      call windm_edsclrm_lhs( nz, ngrdcol, gr, dt,                    & ! intent(in)
+      call windm_edsclrm_lhs( nzm, nzt, ngrdcol, gr, dt,              & ! intent(in)
                               lhs_ma_zt, lhs_diff,                    & ! intent(in)
                               wind_speed, u_star_sqd,                 & ! intent(in)
                               rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
@@ -493,7 +462,7 @@ module advance_windm_edsclrm_module
 
       ! Decompose and back substitute for um and vm
       nrhs = 2
-      call windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, stats_metadata%iwindm_matrix_condt_num, & ! intent(in)
+      call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs, stats_metadata%iwindm_matrix_condt_num, & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
                                 stats_sfc, &                                      ! intent(inout)
@@ -512,7 +481,7 @@ module advance_windm_edsclrm_module
       ! Update zonal (west-to-east) component of mean wind, um
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           um(i,k) = solution(i,k,windm_edsclrm_um)
         end do
@@ -523,7 +492,7 @@ module advance_windm_edsclrm_module
       ! Update meridional (south-to-north) component of mean wind, vm
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           vm(i,k) = solution(i,k,windm_edsclrm_vm)
         end do
@@ -537,7 +506,7 @@ module advance_windm_edsclrm_module
 
         do i = 1, ngrdcol
           ! Implicit contributions to um and vm
-          call windm_edsclrm_implicit_stats( nz, windm_edsclrm_um, um(i,:),       & ! intent(in)
+          call windm_edsclrm_implicit_stats( nzm, nzt, windm_edsclrm_um, um(i,:), & ! intent(in)
                                              gr%invrs_dzt(i,:),                   & ! intent(in)
                                              lhs_diff(:,i,:), lhs_ma_zt(:,i,:),   & ! intent(in)
                                              invrs_rho_ds_zt(i,:), u_star_sqd(i), & ! intent(in)
@@ -546,7 +515,7 @@ module advance_windm_edsclrm_module
                                              stats_metadata,                      & ! intent(in)
                                              stats_zt(i) )                          ! intent(inout)
 
-          call windm_edsclrm_implicit_stats( nz, windm_edsclrm_vm, vm(i,:),       & ! intent(in)
+          call windm_edsclrm_implicit_stats( nzm, nzt, windm_edsclrm_vm, vm(i,:), & ! intent(in)
                                              gr%invrs_dzt(i,:),                   & ! intent(in)
                                              lhs_diff(:,i,:), lhs_ma_zt(:,i,:),   & ! intent(in)
                                              invrs_rho_ds_zt(i,:), u_star_sqd(i), & ! intent(in)
@@ -559,7 +528,7 @@ module advance_windm_edsclrm_module
   
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             um(i,k) = one_half * ( um_old(i,k) + um(i,k) )
             vm(i,k) = one_half * ( vm_old(i,k) + vm(i,k) )
@@ -585,34 +554,28 @@ module advance_windm_edsclrm_module
           
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
-            tmp_in(1) = 0.0_core_rknd
-            tmp_in(2:nz) = um(i,2:nz)
-            call stat_begin_update( nz, stats_metadata%ium_sdmp, tmp_in / dt, & ! intent(in)
+            call stat_begin_update( nzt, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )           ! intent(inout)
-            tmp_in(2:nz) = vm(i,2:nz)
-            call stat_begin_update( nz, stats_metadata%ivm_sdmp, tmp_in / dt, & ! intent(in)
+            call stat_begin_update( nzt, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )           ! intent(inout)
           end do
         end if
 
         do i = 1, ngrdcol
-          um(i,1:nz) = sponge_damp_xm( nz, dt, gr%zt(i,:), gr%zm(i,:), &
-                                       um_ref(i,1:nz), um(i,1:nz), uv_sponge_damp_profile )
+          um(i,1:nzt) = sponge_damp_xm( nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), &
+                                        um_ref(i,1:nzt), um(i,1:nzt), uv_sponge_damp_profile )
         end do
 
         do i = 1, ngrdcol
-          vm(i,1:nz) = sponge_damp_xm( nz, dt, gr%zt(i,:), gr%zm(i,:), &
-                                       vm_ref(i,1:nz), vm(i,1:nz), uv_sponge_damp_profile )
+          vm(i,1:nzt) = sponge_damp_xm( nzm, nzt, dt, gr%zt(i,:), gr%zm(i,:), &
+                                        vm_ref(i,1:nzt), vm(i,1:nzt), uv_sponge_damp_profile )
         end do
 
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
-            tmp_in(1) = 0.0_core_rknd
-            tmp_in(2:nz) = um(i,2:nz)
-            call stat_end_update( nz, stats_metadata%ium_sdmp, tmp_in / dt, & ! intent(in) 
+            call stat_end_update( nzt, stats_metadata%ium_sdmp, um(i,:) / dt, & ! intent(in) 
                                   stats_zt(i) )           ! intent(inout)
-            tmp_in(2:nz) = vm(i,2:nz)
-            call stat_end_update( nz, stats_metadata%ivm_sdmp, tmp_in / dt, & ! intent(in)
+            call stat_end_update( nzt, stats_metadata%ivm_sdmp, vm(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )           ! intent(inout)
           end do
         end if
@@ -625,24 +588,24 @@ module advance_windm_edsclrm_module
 
       ! Solve for x'w' at all intermediate model levels.
       ! A Crank-Nicholson timestep is used.
-      call calc_xpwp( nz, ngrdcol, gr, &
+      call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Km_zm_p_nu10, um, &
                       xpwp )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 2, nzm-1
         do i = 1, ngrdcol
           upwp(i,k) = upwp(i,k) - one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
                                                       
-      call calc_xpwp( nz, ngrdcol, gr, &
+      call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Km_zm_p_nu10, vm, &
                       xpwp )
                       
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 2, nzm-1
         do i = 1, ngrdcol
           vpwp(i,k) = vpwp(i,k) - one_half * xpwp(i,k)
         end do
@@ -656,18 +619,15 @@ module advance_windm_edsclrm_module
         if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
           do i = 1, ngrdcol
-            tmp_in(1) = 0.0_core_rknd
-            tmp_in(2:nz) = um(i,2:nz)
-            call stat_begin_update( nz, stats_metadata%ium_ndg, tmp_in / dt, & ! intent(in)
+            call stat_begin_update( nzt, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
-            tmp_in(2:nz) = vm(i,2:nz)
-            call stat_begin_update( nz, stats_metadata%ivm_ndg, tmp_in / dt, & ! intent(in)
+            call stat_begin_update( nzt, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
                                     stats_zt(i) )          ! intent(inout)
           end do
         end if
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             um(i,k) = um(i,k) - ( ( um(i,k) - um_ref(i,k) ) * (dt/ts_nudge) )
             vm(i,k) = vm(i,k) - ( ( vm(i,k) - vm_ref(i,k) ) * (dt/ts_nudge) )
@@ -678,12 +638,9 @@ module advance_windm_edsclrm_module
         if ( stats_metadata%l_stats_samp ) then
           !$acc update host( um, vm )
           do i = 1, ngrdcol
-            tmp_in(1) = 0.0_core_rknd
-            tmp_in(2:nz) = um(i,2:nz)
-            call stat_end_update( nz, stats_metadata%ium_ndg, tmp_in / dt, & ! intent(in)
+            call stat_end_update( nzt, stats_metadata%ium_ndg, um(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
-            tmp_in(2:nz) = vm(i,2:nz)
-            call stat_end_update( nz, stats_metadata%ivm_ndg, tmp_in / dt, & ! intent(in)
+            call stat_end_update( nzt, stats_metadata%ivm_ndg, vm(i,:) / dt, & ! intent(in)
                                   stats_zt(i) )          ! intent(inout)
           end do
         end if
@@ -693,12 +650,9 @@ module advance_windm_edsclrm_module
       if ( stats_metadata%l_stats_samp ) then
         !$acc update host( um_ref, vm_ref )
         do i = 1, ngrdcol
-          tmp_in(1) = 0.0_core_rknd
-          tmp_in(2:nz) = um_ref(i,2:nz)
-          call stat_update_var( stats_metadata%ium_ref, tmp_in, & ! intent(in)
+          call stat_update_var( stats_metadata%ium_ref, um_ref(i,:), & ! intent(in)
                                 stats_zt(i) )         ! intent(inout)
-          tmp_in(2:nz) = vm_ref(i,2:nz)
-          call stat_update_var( stats_metadata%ivm_ref, tmp_in, & ! intent(in)
+          call stat_update_var( stats_metadata%ivm_ref, vm_ref(i,:), & ! intent(in)
                                 stats_zt(i) )         ! intent(inout)
         end do
       end if
@@ -732,12 +686,12 @@ module advance_windm_edsclrm_module
         ! This is the third instance of u'w' clipping.
         !l_first_clip_ts = .false.
         !l_last_clip_ts = .true.
-        call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, up2,                & ! intent(in)
-                         l_predict_upwp_vpwp,                         & ! intent(in)
-                         stats_metadata,                              & ! intent(in)
-                         stats_zm,                                    & ! intent(inout)
-                         upwp, upwp_chnge )                             ! intent(inout)
+        call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, up2,             & ! intent(in)
+                         l_predict_upwp_vpwp,                      & ! intent(in)
+                         stats_metadata,                           & ! intent(in)
+                         stats_zm,                                 & ! intent(inout)
+                         upwp, upwp_chnge )                          ! intent(inout)
 
         ! Clipping for v'w'
         !
@@ -753,12 +707,12 @@ module advance_windm_edsclrm_module
         ! This is the third instance of v'w' clipping.
         !l_first_clip_ts = .false.
         !l_last_clip_ts = .true.
-        call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, vp2,                & ! intent(in)
-                         l_predict_upwp_vpwp,                         & ! intent(in)
-                         stats_metadata,                              & ! intent(in)
-                         stats_zm,                                    & ! intent(inout)
-                         vpwp, vpwp_chnge )                             ! intent(inout)
+        call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, vp2,             & ! intent(in)
+                         l_predict_upwp_vpwp,                      & ! intent(in)
+                         stats_metadata,                           & ! intent(in)
+                         stats_zm,                                 & ! intent(inout)
+                         vpwp, vpwp_chnge )                          ! intent(inout)
       else
 
         ! intent(in) this case, it is assumed that
@@ -766,33 +720,20 @@ module advance_windm_edsclrm_module
         ! interact with any other variables.
         !l_first_clip_ts = .false.
         !l_last_clip_ts = .true.
-        call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
-                         l_predict_upwp_vpwp,                         & ! intent(in)
-                         stats_metadata,                              & ! intent(in)
-                         stats_zm,                                    & ! intent(inout)
-                         upwp, upwp_chnge )                             ! intent(inout)
+        call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
+                         l_predict_upwp_vpwp,                      & ! intent(in)
+                         stats_metadata,                           & ! intent(in)
+                         stats_zm,                                 & ! intent(inout)
+                         upwp, upwp_chnge )                          ! intent(inout)
 
-        call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
-                         l_predict_upwp_vpwp,                         & ! intent(in)
-                         stats_metadata,                              & ! intent(in)
-                         stats_zm,                                    & ! intent(inout)
-                         vpwp, vpwp_chnge )                             ! intent(inout)
+        call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
+                         l_predict_upwp_vpwp,                      & ! intent(in)
+                         stats_metadata,                           & ! intent(in)
+                         stats_zm,                                 & ! intent(inout)
+                         vpwp, vpwp_chnge )                          ! intent(inout)
       endif ! l_tke_aniso
-
-      ! The values of um(1) and vm(1) are located below the model surface and
-      ! do not affect the rest of the model.  The values of um(1) or vm(1) are
-      ! simply set to the values of um(2) and vm(2), respectively, after the
-      ! equation matrices has been solved.  Even though um and vm would sharply
-      ! decrease to a value of 0 at the surface, this is done to avoid
-      ! confusion on plots of the vertical profiles of um and vm.
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        um(i,1) = um(i,2)
-        vm(i,1) = vm(i,2)
-      end do
-      !$acc end parallel loop
 
     endif ! .not. l_predict_upwp_vpwp
 
@@ -811,7 +752,7 @@ module advance_windm_edsclrm_module
       ! Compute wind speed (use threshold "eps" to prevent divide-by-zero
       ! error).
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           wind_speed_pert(i,k) = max( sqrt( (um_pert(i,k))**2 + (vm_pert(i,k))**2 ), eps )
         end do
@@ -827,23 +768,23 @@ module advance_windm_edsclrm_module
 
       ! Compute the explicit portion of the um equation.
       ! Build the right-hand side vector.
-      call windm_edsclrm_rhs( nz, ngrdcol, gr, windm_edsclrm_um, dt,    & ! intent(in)
-                              lhs_diff, um_pert, um_tndcy,              & ! intent(in)
-                              rho_ds_zm, invrs_rho_ds_zt,               & ! intent(in)
-                              l_imp_sfc_momentum_flux, upwp_pert(:,1),  & ! intent(in)
-                              stats_metadata,                           & ! intent(in)
-                              stats_zt,                                 & ! intent(inout)
-                              rhs(:,:,windm_edsclrm_um) )                 ! intent(out)
+      call windm_edsclrm_rhs( nzm, nzt, ngrdcol, gr, windm_edsclrm_um, dt, & ! intent(in)
+                              lhs_diff, um_pert, um_tndcy,                 & ! intent(in)
+                              rho_ds_zm, invrs_rho_ds_zt,                  & ! intent(in)
+                              l_imp_sfc_momentum_flux, upwp_pert(:,1),     & ! intent(in)
+                              stats_metadata,                              & ! intent(in)
+                              stats_zt,                                    & ! intent(inout)
+                              rhs(:,:,windm_edsclrm_um) )                    ! intent(out)
       
       ! Compute the explicit portion of the vm equation.
       ! Build the right-hand side vector.
-      call windm_edsclrm_rhs( nz, ngrdcol, gr, windm_edsclrm_vm, dt,    & ! intent(in)
-                              lhs_diff, vm_pert, vm_tndcy,              & ! intent(in)
-                              rho_ds_zm, invrs_rho_ds_zt,               & ! intent(in)
-                              l_imp_sfc_momentum_flux, vpwp_pert(:,1),  & ! intent(in)
-                              stats_metadata,                           & ! intent(in)
-                              stats_zt,                                 & ! intent(inout)
-                              rhs(:,:,windm_edsclrm_vm) )                 ! intent(out)
+      call windm_edsclrm_rhs( nzm, nzt, ngrdcol, gr, windm_edsclrm_vm, dt, & ! intent(in)
+                              lhs_diff, vm_pert, vm_tndcy,                 & ! intent(in)
+                              rho_ds_zm, invrs_rho_ds_zt,                  & ! intent(in)
+                              l_imp_sfc_momentum_flux, vpwp_pert(:,1),     & ! intent(in)
+                              stats_metadata,                              & ! intent(in)
+                              stats_zt,                                    & ! intent(inout)
+                              rhs(:,:,windm_edsclrm_vm) )                    ! intent(out)
 
       ! Store momentum flux (explicit component)
 
@@ -853,24 +794,24 @@ module advance_windm_edsclrm_module
 
       ! Solve for x'w' at all intermediate model levels.
       ! A Crank-Nicholson timestep is used.
-      call calc_xpwp( nz, ngrdcol, gr, &
+      call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Km_zm_p_nu10, um_pert, &
                       xpwp )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 2, nzm-1
         do i = 1, ngrdcol
           upwp_pert(i,k) = -one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
                                                   
-      call calc_xpwp( nz, ngrdcol, gr, &
+      call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Km_zm_p_nu10, vm_pert, &
                       xpwp )
       
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 2, nzm-1
         do i = 1, ngrdcol
           vpwp_pert(i,k) = -one_half * xpwp(i,k)
         end do
@@ -882,14 +823,14 @@ module advance_windm_edsclrm_module
       ! since x'w' = - K_zm * d(xm)/dz.
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        upwp_pert(i,nz) = zero
-        vpwp_pert(i,nz) = zero
+        upwp_pert(i,nzm) = zero
+        vpwp_pert(i,nzm) = zero
       end do
       !$acc end parallel loop
 
       ! Compute the implicit portion of the um and vm equations.
       ! Build the left-hand side matrix.
-      call windm_edsclrm_lhs( nz, ngrdcol, gr, dt,                        & ! intent(in)
+      call windm_edsclrm_lhs( nzm, nzt, ngrdcol, gr, dt,                  & ! intent(in)
                               lhs_ma_zt, lhs_diff,                        & ! intent(in)
                               wind_speed_pert, u_star_sqd_pert,           & ! intent(in)
                               rho_ds_zm, invrs_rho_ds_zt,                 & ! intent(in)
@@ -898,7 +839,7 @@ module advance_windm_edsclrm_module
       
       ! Decompose and back substitute for um and vm
       nrhs = 2
-      call windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, stats_metadata%iwindm_matrix_condt_num, & ! intent(in)
+      call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs, stats_metadata%iwindm_matrix_condt_num, & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
                                 stats_sfc, &                                      ! intent(in)
@@ -917,7 +858,7 @@ module advance_windm_edsclrm_module
       ! Update zonal (west-to-east) component of mean wind, um
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           um_pert(i,k) = solution(i,k,windm_edsclrm_um)
         end do
@@ -928,7 +869,7 @@ module advance_windm_edsclrm_module
       ! Update meridional (south-to-north) component of mean wind, vm
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           vm_pert(i,k) = solution(i,k,windm_edsclrm_vm)
         end do
@@ -939,24 +880,24 @@ module advance_windm_edsclrm_module
 
       ! Solve for x'w' at all intermediate model levels.
       ! A Crank-Nicholson timestep is used.
-      call calc_xpwp( nz, ngrdcol, gr, &
+      call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Km_zm_p_nu10, um_pert, &
                       xpwp )
       
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 2, nzm-1
         do i = 1, ngrdcol
           upwp_pert(i,k) = upwp_pert(i,k) - one_half * xpwp(i,k)
         end do
       end do
       !$acc end parallel loop
       
-      call calc_xpwp( nz, ngrdcol, gr, &
+      call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                       Km_zm_p_nu10, vm_pert, &
                       xpwp )
       
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 2, nzm-1
         do i = 1, ngrdcol
           vpwp_pert(i,k) = vpwp_pert(i,k) - one_half * xpwp(i,k)
         end do
@@ -979,12 +920,12 @@ module advance_windm_edsclrm_module
         ! This is the third instance of u'w' clipping.
         l_first_clip_ts = .false.
         l_last_clip_ts = .true.
-        call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, up2,                & ! intent(in)
-                         l_predict_upwp_vpwp,                         & ! intent(in)
-                         stats_metadata,                              & ! intent(in)
-                         stats_zm,                                    & ! intent(inout)
-                         upwp_pert, upwp_chnge )                        ! intent(inout)
+        call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, up2,             & ! intent(in)
+                         l_predict_upwp_vpwp,                      & ! intent(in)
+                         stats_metadata,                           & ! intent(in)
+                         stats_zm,                                 & ! intent(inout)
+                         upwp_pert, upwp_chnge )                     ! intent(inout)
         
         ! Clipping for v'w'
         !
@@ -1000,12 +941,12 @@ module advance_windm_edsclrm_module
         ! This is the third instance of v'w' clipping.
         l_first_clip_ts = .false.
         l_last_clip_ts = .true.
-        call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, vp2,                & ! intent(in)
-                         l_predict_upwp_vpwp,                         & ! intent(in)
-                         stats_metadata,                              & ! intent(in)
-                         stats_zm,                                    & ! intent(inout)
-                         vpwp_pert, vpwp_chnge )                        ! intent(inout)
+        call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, vp2,             & ! intent(in)
+                         l_predict_upwp_vpwp,                      & ! intent(in)
+                         stats_metadata,                           & ! intent(in)
+                         stats_zm,                                 & ! intent(inout)
+                         vpwp_pert, vpwp_chnge )                     ! intent(inout)
       else
 
         ! intent(in) this case, it is assumed that
@@ -1013,35 +954,21 @@ module advance_windm_edsclrm_module
         ! interact with any other variables.
         l_first_clip_ts = .false.
         l_last_clip_ts = .true.
-        call clip_covar( nz, ngrdcol, gr, clip_upwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
-                         l_predict_upwp_vpwp,                         & ! intent(in)
-                         stats_metadata,                              & ! intent(in)
-                         stats_zm,                                    & ! intent(inout)
-                         upwp_pert, upwp_chnge )                        ! intent(inout)
+        call clip_covar( nzm, ngrdcol, clip_upwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
+                         l_predict_upwp_vpwp,                      & ! intent(in)
+                         stats_metadata,                           & ! intent(in)
+                         stats_zm,                                 & ! intent(inout)
+                         upwp_pert, upwp_chnge )                     ! intent(inout)
 
-        call clip_covar( nz, ngrdcol, gr, clip_vpwp, l_first_clip_ts, & ! intent(in)
-                         l_last_clip_ts, dt, wp2, wp2,                & ! intent(in)
-                         l_predict_upwp_vpwp,                         & ! intent(in)
-                         stats_metadata,                              & ! intent(in)
-                         stats_zm,                                    & ! intent(inout)
-                         vpwp_pert, vpwp_chnge )                        ! intent(inout)
+        call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
+                         l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
+                         l_predict_upwp_vpwp,                      & ! intent(in)
+                         stats_metadata,                           & ! intent(in)
+                         stats_zm,                                 & ! intent(inout)
+                         vpwp_pert, vpwp_chnge )                     ! intent(inout)
         
       end if ! l_tke_aniso
-
-      ! The values of um(1) and vm(1) are located below the model surface and
-      ! do not affect the rest of the model.  The values of um(1) or vm(1) are
-      ! simply set to the values of um(2) and vm(2), respectively, after the
-      ! equation matrices has been solved.  Even though um and vm would sharply
-      ! decrease to a value of 0 at the surface, this is done to avoid
-      ! confusion on plots of the vertical profiles of um and vm.
-      !$acc parallel loop gang vector default(present)
-      do i = 1, ngrdcol
-        um_pert(i,1) = um_pert(i,2)
-        vm_pert(i,1) = vm_pert(i,2)
-      end do
-      !$acc end parallel loop
-
     end if ! l_perturbed_wind
 
     !----------------------------------------------------------------
@@ -1050,56 +977,17 @@ module advance_windm_edsclrm_module
 
     if ( edsclr_dim > 0 ) then
       
-      Kmh_zt(:,:) = zm2zt( nz, ngrdcol, gr, Kmh_zm(:,:), zero )
+      Kmh_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, Kmh_zm(:,:), zero )
 
       ! Calculate diffusion terms
-      call diffusion_zt_lhs( nz, ngrdcol, gr, Kmh_zm, Kmh_zt, nu_zero,  & ! intent(in)
-                             invrs_rho_ds_zt, rho_ds_zm,                & ! intent(in)
-                             lhs_diff )                                   ! intent(out)
+      call diffusion_zt_lhs( nzm, nzt, ngrdcol, gr, Kmh_zm, Kmh_zt, nu_zero,  & ! intent(in)
+                             invrs_rho_ds_zt, rho_ds_zm,                      & ! intent(in)
+                             lhs_diff )                                         ! intent(out)
       
-      ! The lower boundary condition needs to be applied here at level 2.
-      if ( .not. l_upwind_Kh_dp_term ) then 
-
-        !$acc parallel loop gang vector default(present)
-        do i = 1, ngrdcol
-          ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-          lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
-                                    * ( Kmh_zm(i,2) + nu_zero(i) ) &
-                                    * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
-
-          ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-          lhs_diff(k_tdiag,i,2) = + gr%invrs_dzt(i,2) * invrs_rho_ds_zt(i,2) &
-                                  * ( Kmh_zm(i,2) + nu_zero(i) ) &
-                                  * rho_ds_zm(i,2) * gr%invrs_dzm(i,2)
-
-          ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-          lhs_diff(km1_tdiag,i,2) = zero
-        end do
-        !$acc end parallel loop
-
-      else
-
-        !$acc parallel loop gang vector default(present)
-        do i = 1, ngrdcol
-          ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-          lhs_diff(kp1_tdiag,i,2) = - gr%invrs_dzt(i,2) &
-                                      * ( Kmh_zt(i,2) + nu_zero(i) ) * gr%invrs_dzm(i,2)
-
-          ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
-          lhs_diff(k_tdiag,i,2) = + gr%invrs_dzt(i,2) &
-                                    * ( Kmh_zt(i,2) + nu_zero(i) ) * gr%invrs_dzm(i,2)
-
-          ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-          lhs_diff(km1_tdiag,i,2) = zero
-        end do
-        !$acc end parallel loop
-
-      end if
-
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(3) default(present)
         do j = 1, edsclr_dim
-          do k = 1, nz
+          do k = 1, nzt
             do i = 1, ngrdcol
               edsclrm_old(i,k,j) = edsclrm(i,k,j)
             end do
@@ -1117,14 +1005,14 @@ module advance_windm_edsclrm_module
       ! Because of statistics, we have to use a DO rather than a FORALL here
       ! -dschanen 7 Oct 2008
       do edsclr = 1, edsclr_dim
-        call windm_edsclrm_rhs( nz, ngrdcol, gr, windm_edsclrm_scalar, dt,      & ! intent(in)
-                                lhs_diff, edsclrm(:,:,edsclr),                  & ! intent(in)
-                                edsclrm_forcing(:,:,edsclr),                    & ! intent(in)
-                                rho_ds_zm, invrs_rho_ds_zt,                     & ! intent(in)
-                                l_imp_sfc_momentum_flux, wpedsclrp(:,1,edsclr), & ! intent(in)
-                                stats_metadata,                                 & ! intent(in)
-                                stats_zt,                                       & ! intent(inout)
-                                rhs(:,:,edsclr) )                                 ! intent(out)
+        call windm_edsclrm_rhs( nzm, nzt, ngrdcol, gr, windm_edsclrm_scalar, dt, & ! intent(in)
+                                lhs_diff, edsclrm(:,:,edsclr),                   & ! intent(in)
+                                edsclrm_forcing(:,:,edsclr),                     & ! intent(in)
+                                rho_ds_zm, invrs_rho_ds_zt,                      & ! intent(in)
+                                l_imp_sfc_momentum_flux, wpedsclrp(:,1,edsclr),  & ! intent(in)
+                                stats_metadata,                                  & ! intent(in)
+                                stats_zt,                                        & ! intent(inout)
+                                rhs(:,:,edsclr) )                                  ! intent(out)
       enddo
 
 
@@ -1137,12 +1025,12 @@ module advance_windm_edsclrm_module
       ! A Crank-Nicholson timestep is used
       do edsclr = 1, edsclr_dim
         
-        call calc_xpwp( nz, ngrdcol, gr, &
+        call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                         Km_zm_p_nu10, edsclrm(:,:,edsclr), &
                         xpwp )
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 2, nz-1
+        do k = 2, nzm-1
           do i = 1, ngrdcol
             wpedsclrp(i,k,edsclr) = -one_half * xpwp(i,k)
           end do
@@ -1156,14 +1044,14 @@ module advance_windm_edsclrm_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do j = 1, edsclr_dim
         do i = 1, ngrdcol
-          wpedsclrp(i,nz,j) = zero
+          wpedsclrp(i,nzm,j) = zero
         end do
       end do
       !$acc end parallel loop
 
       ! Compute the implicit portion of the xm (eddy-scalar) equations.
       ! Build the left-hand side matrix.
-      call windm_edsclrm_lhs( nz, ngrdcol, gr, dt,                    & ! intent(in)
+      call windm_edsclrm_lhs( nzm, nzt, ngrdcol, gr, dt,              & ! intent(in)
                               lhs_ma_zt, lhs_diff,                    & ! intent(in)
                               wind_speed, u_star_sqd,                 & ! intent(in)
                               rho_ds_zm, invrs_rho_ds_zt,             & ! intent(in)
@@ -1171,12 +1059,12 @@ module advance_windm_edsclrm_module
                               lhs )                                     ! intent(out)
                                     
       ! Decompose and back substitute for all eddy-scalar variables
-      call windm_edsclrm_solve( nz, ngrdcol, gr, edsclr_dim, 0, & ! intent(in)
-                                tridiag_solve_method,           & ! intent(in)
-                                stats_metadata,                 & ! intent(in)
-                                stats_sfc,                      & ! intent(inout)
-                                lhs, rhs,                       & ! intent(inout)
-                                solution )                        ! intent(out)
+      call windm_edsclrm_solve( nzt, ngrdcol, gr, edsclr_dim, 0, & ! intent(in)
+                                tridiag_solve_method,            & ! intent(in)
+                                stats_metadata,                  & ! intent(in)
+                                stats_sfc,                       & ! intent(inout)
+                                lhs, rhs,                        & ! intent(inout)
+                                solution )                         ! intent(out)
       
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -1189,7 +1077,7 @@ module advance_windm_edsclrm_module
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(3) default(present)
       do j = 1, edsclr_dim
-        do k = 1, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             edsclrm(i,k,j) = solution(i,k,j)
           end do
@@ -1200,7 +1088,7 @@ module advance_windm_edsclrm_module
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(3) default(present)
         do j = 1, edsclr_dim
-          do k = 1, nz
+          do k = 1, nzt
             do i = 1, ngrdcol
               edsclrm(i,k,j) = one_half * ( edsclrm_old(i,k,j) + edsclrm(i,k,j) )
             end do
@@ -1215,12 +1103,12 @@ module advance_windm_edsclrm_module
       ! A Crank-Nicholson timestep is used.
       do edsclr = 1, edsclr_dim
         
-        call calc_xpwp( nz, ngrdcol, gr, &
+        call calc_xpwp( nzm, nzt, ngrdcol, gr, &
                         Kmh_zm, edsclrm(:,:,edsclr), &
                         xpwp )
         
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 2, nz-1
+        do k = 2, nzm-1
           do i = 1, ngrdcol
             wpedsclrp(i,k,edsclr) = -one_half * xpwp(i,k)
           end do
@@ -1230,17 +1118,6 @@ module advance_windm_edsclrm_module
 
       ! Note that the w'edsclr' terms are not clipped, since we don't compute
       ! the variance of edsclr anywhere. -dschanen 7 Oct 2008
-
-      ! The value of edsclrm(1) is located below the model surface and does not
-      ! effect the rest of the model.  The value of edsclrm(1) is simply set to
-      ! the value of edsclrm(2) after the equation matrix has been solved.
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do edsclr = 1, edsclr_dim
-        do i = 1, ngrdcol
-          edsclrm(i,1,edsclr) = edsclrm(i,2,edsclr)
-        end do
-      end do
-      !$acc end parallel loop
 
     endif
 
@@ -1308,17 +1185,11 @@ module advance_windm_edsclrm_module
   end subroutine advance_windm_edsclrm
 
   !=============================================================================
-  subroutine windm_edsclrm_solve( nz, ngrdcol, gr, nrhs, ixm_matrix_condt_num, &
+  subroutine windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs, ixm_matrix_condt_num, &
                                   tridiag_solve_method, &
                                   stats_metadata, &
                                   stats_sfc, & 
                                   lhs, rhs, solution )
-
-    ! Note:  In the "Description" section of this subroutine, the variable
-    !        "invrs_dzm" will be written as simply "dzm", and the variable
-    !        "invrs_dzt" will be written as simply "dzt".  This is being done as
-    !        as device to save space and to make some parts of the description
-    !        more readable.  This change does not pertain to the actual code.
 
     ! Description:
     ! Solves the horizontal wind or eddy-scalar time-tendency equation, and
@@ -1366,30 +1237,32 @@ module advance_windm_edsclrm_module
     !
     ! ---xm(kp1)----------------------------------------------------- t(k+1)
     !
-    ! ===========d(xm)/dz===K_zm(k)=====rho_ds_zm(k)================= m(k)
+    ! ===========d(xm)/dz===K_zm(k+1)===rho_ds_zm(k+1)=============== m(k+1)
     !
     ! ---xm(k)---invrs_rho_ds_zt---d[rho_ds_zm*K_zm*d(xm)/dz]/dz----- t(k)
     !
-    ! ===========d(xm)/dz===K_zm(km1)===rho_ds_zm(km1)=============== m(k-1)
+    ! ===========d(xm)/dz===K_zm(k)=====rho_ds_zm(k)================= m(k)
     !
     ! ---xm(km1)----------------------------------------------------- t(k-1)
     !
-    ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
-    ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.
+    ! The vertical indices t(k+1), m(k+1), t(k), m(k), and t(k-1) correspond
+    ! with altitudes zt(k+1), zm(k+1), zt(k), zm(k), and zt(k-1), respectively.
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
-    ! dzt(k)   = 1 / ( zm(k) - zm(k-1) )
-    ! dzm(k)   = 1 / ( zt(k+1) - zt(k) )
-    ! dzm(k-1) = 1 / ( zt(k) - zt(k-1) )
+    ! invrs_dzt(k)   = 1 / ( zm(k+1) - zm(k) )
+    ! invrs_dzm(k+1) = 1 / ( zt(k+1) - zt(k) )
+    ! invrs_dzm(k)   = 1 / ( zt(k) - zt(k-1) )
     !
     ! The vertically discretized form of the turbulent advection term (treated
     ! as an eddy diffusion term) is written out as:
     !
     ! + invrs_rho_ds_zt(k)
-    !   * dzt(k)
-    !     * [   rho_ds_zm(k) * K_zm(k) * dzm(k) * ( xm(k+1) - xm(k) )
-    !         - rho_ds_zm(k-1) * K_zm(k-1) * dzm(k-1) * ( xm(k) - xm(k-1) ) ].
+    !   * invrs_dzt(k)
+    !     * [   rho_ds_zm(k+1) * K_zm(k+1)
+    !           * invrs_dzm(k+1) * ( xm(k+1) - xm(k) )
+    !         - rho_ds_zm(k) * K_zm(k)
+    !           * invrs_dzm(k) * ( xm(k) - xm(k-1) ) ].
     !
     ! For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme is
     ! used to solve the (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz
@@ -1397,11 +1270,11 @@ module advance_windm_edsclrm_module
     ! written out as:
     !
     ! + (1/2) * invrs_rho_ds_zt(k)
-    !   * dzt(k)
-    !     * [   rho_ds_zm(k) * K_zm(k)
-    !           * dzm(k) * ( xm(k+1,<t+1>) - xm(k,<t+1>) )
-    !         - rho_ds_zm(k-1) * K_zm(k-1)
-    !           * dzm(k-1) * ( xm(k,<t+1>) - xm(k-1,<t+1>) ) ].
+    !   * invrs_dzt(k)
+    !     * [   rho_ds_zm(k+1) * K_zm(k+1)
+    !           * invrs_dzm(k+1) * ( xm(k+1,<t+1>) - xm(k,<t+1>) )
+    !         - rho_ds_zm(k) * K_zm(k)
+    !           * invrs_dzm(k) * ( xm(k,<t+1>) - xm(k-1,<t+1>) ) ].
     !
     ! Note:  When the implicit term is brought over to the left-hand side,
     !        the sign is reversed and the leading "+" in front of the term
@@ -1410,11 +1283,11 @@ module advance_windm_edsclrm_module
     ! The discretized explicit portion of the term is written out as:
     !
     ! + (1/2) * invrs_rho_ds_zt(k)
-    !   * dzt(k)
-    !     * [   rho_ds_zm(k) * K_zm(k)
-    !           * dzm(k) * ( xm(k+1,<t>) - xm(k,<t>) )
-    !         - rho_ds_zm(k-1) * K_zm(k-1)
-    !           * dzm(k-1) * ( xm(k,<t>) - xm(k-1,<t>) ) ].
+    !   * invrs_dzt(k)
+    !     * [   rho_ds_zm(k+1) * K_zm(k+1)
+    !           * invrs_dzm(k+1) * ( xm(k+1,<t>) - xm(k,<t>) )
+    !         - rho_ds_zm(k) * K_zm(k)
+    !           * invrs_dzm(k) * ( xm(k,<t>) - xm(k-1,<t>) ) ].
     !
     ! Timestep index (t) stands for the index of the current timestep, while
     ! timestep index (t+1) stands for the index of the next timestep, which is
@@ -1451,17 +1324,15 @@ module advance_windm_edsclrm_module
     !    elsewhere in the model code.
     !
     !    The lower boundary condition, which in this case needs to be applied to
-    !    the d(xm)/dt equation at level 2, is discretized as follows:
+    !    the d(xm)/dt equation at level 1, is discretized as follows:
     !
-    !    --xm(3)------------------------------------------------------- t(3)
+    !    --xm(2)------------------------------------------------------- t(2)
     !
     !    ========[x'w'(2) = -K_zm(2)*d(xm)/dz]===rho_ds_zm(2)========== m(2)
     !
-    !    --xm(2)---invrs_rho_ds_zt(2)---d[rho_ds_zm*K_zm*d(xm)/dz]/dz-- t(2)
+    !    --xm(1)---invrs_rho_ds_zt(1)---d[rho_ds_zm*K_zm*d(xm)/dz]/dz-- t(1)
     !
     !    ========[x'w'|_sfc]=====================rho_ds_zm(1)========== m(1) sfc
-    !
-    !    --xm(1)-------(below surface; not applicable)----------------- t(1)
     !
     !    where "sfc" is the level of the model surface or lower boundary.
     !
@@ -1469,23 +1340,24 @@ module advance_windm_edsclrm_module
     !    (treated as an eddy diffusion term), with the explicit surface flux,
     !    x'w'|_sfc, in place, is written out as:
     !
-    !    - invrs_rho_ds_zt(2)
-    !      * dzt(2) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
+    !    - invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
     !
-    !    which can be re-written as:
+    !    and after substituting x'w'(2) = -K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) ),
+    !    this expression can be re-written as:
     !
-    !    + invrs_rho_ds_zt(2)
-    !      * dzt(2)
-    !        * [   rho_ds_zm(2) * K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
+    !    + invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
+    !        * [   rho_ds_zm(2) * K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) )
     !            + rho_ds_zm(1) * x'w'|_sfc ];
     !
     !    which can be re-written again as:
     !
-    !    + invrs_rho_ds_zt(2)
-    !      * dzt(2)
-    !        * rho_ds_zm(2) * K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
-    !    + invrs_rho_ds_zt(2)
-    !      * dzt(2)
+    !    + invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
+    !        * rho_ds_zm(2) * K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) )
+    !    + invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
     !        * rho_ds_zm(1) * x'w'|_sfc.
     !
     !    For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
@@ -1493,10 +1365,10 @@ module advance_windm_edsclrm_module
     !    eddy-diffusion term.  The discretized implicit portion of the term is
     !    written out as:
     !
-    !    + (1/2) * invrs_rho_ds_zt(2)
-    !      * dzt(2)
+    !    + (1/2) * invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
     !        * [ rho_ds_zm(2) * K_zm(2)
-    !            * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ].
+    !            * invrs_dzm(2) * ( xm(2,<t+1>) - xm(1,<t+1>) ) ].
     !
     !    Note:  When the implicit term is brought over to the left-hand side,
     !           the sign is reversed and the leading "+" in front of the term
@@ -1504,12 +1376,12 @@ module advance_windm_edsclrm_module
     !
     !    The discretized explicit portion of the term is written out as:
     !
-    !    + (1/2) * invrs_rho_ds_zt(2)
-    !      * dzt(2)
+    !    + (1/2) * invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
     !        * [ rho_ds_zm(2) * K_zm(2)
-    !            * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ]
-    !    + invrs_rho_ds_zt(2)
-    !      * dzt(2)
+    !            * invrs_dzm(2) * ( xm(2,<t>) - xm(1,<t>) ) ]
+    !    + invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
     !        * rho_ds_zm(1) * x'w'|_sfc.
     !
     !    Note:  The x'w'|_sfc portion of the term written above has been pulled
@@ -1541,8 +1413,8 @@ module advance_windm_edsclrm_module
     !
     !    where x'w'|_sfc and xm are either u'w'|_sfc and um, respectively, or
     !    v'w'|_sfc and vm, respectively (um and vm are located at the first
-    !    thermodynamic level above the surface, which is thermodynamic level 2),
-    !    sqrt( um^2 + vm^2 ) is the wind speed (also at thermodynamic level 2),
+    !    thermodynamic level above the surface, which is thermodynamic level 1),
+    !    sqrt( um^2 + vm^2 ) is the wind speed (also at thermodynamic level 1),
     !    and u_star is defined as:
     !
     !    u_star = ( u'w'|_sfc^2 + v'w'|_sfc^2 )^(1/4);
@@ -1565,17 +1437,15 @@ module advance_windm_edsclrm_module
     !
     !    The equation listed above is substituted for x'w'|_sfc.  The lower
     !    boundary condition, which in this case needs to be applied to the
-    !    d(xm)/dt equation at level 2, is discretized as follows:
+    !    d(xm)/dt equation at level 1, is discretized as follows:
     !
-    !    --xm(3)------------------------------------------------------- t(3)
+    !    --xm(2)------------------------------------------------------- t(2)
     !
     !    ===[x'w'(2) = -K_zm(2)*d(xm)/dz]=================rho_ds_zm(2)= m(2)
     !
-    !    --xm(2)---invrs_rho_ds_zt(2)---d[rho_ds_zm*K_zm*d(xm)/dz]/dz-- t(2)
+    !    --xm(1)---invrs_rho_ds_zt(1)---d[rho_ds_zm*K_zm*d(xm)/dz]/dz-- t(1)
     !
     !    ===[x'w'|_sfc = -[u_star^2/sqrt(um^2+vm^2)]*xm]==rho_ds_zm(1)= m(1) sfc
-    !
-    !    --xm(1)-------(below surface; not applicable)----------------- t(1)
     !
     !    where "sfc" is the level of the model surface or lower boundary.
     !
@@ -1583,40 +1453,40 @@ module advance_windm_edsclrm_module
     !    (treated as an eddy diffusion term), with the implicit surface momentum
     !    flux in place, is written out as:
     !
-    !    - invrs_rho_ds_zt(2)
-    !      * dzt(2) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
+    !    - invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1) * [ rho_ds_zm(2) * x'w'(2) - rho_ds_zm(1) * x'w'|_sfc ];
     !
     !    which can be re-written as:
     !
-    !    - invrs_rho_ds_zt(2)
-    !      * dzt(2)
+    !    - invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
     !        * [   rho_ds_zm(2)
-    !              * { - K_zm(2) * dzm(2) * ( xm(3) - xm(2) ) }
+    !              * { - K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) ) }
     !            - rho_ds_zm(1)
-    !              * { - [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2) } ];
+    !              * { - [ u_star^2 / sqrt( um(1)^2 + vm(1)^2 ) ] * xm(1) } ];
     !
     !    which can be re-written as:
     !
-    !    + invrs_rho_ds_zt(2)
-    !      * dzt(2)
-    !        * rho_ds_zm(2) * K_zm(2) * dzm(2) * ( xm(3) - xm(2) )
-    !    - invrs_rho_ds_zt(2)
-    !      * dzt(2)
-    !        * rho_ds_zm(1) * [ u_star^2 / sqrt( um(2)^2 + vm(2)^2 ) ] * xm(2).
+    !    + invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
+    !        * rho_ds_zm(2) * K_zm(2) * invrs_dzm(2) * ( xm(2) - xm(1) )
+    !    - invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
+    !        * rho_ds_zm(1) * [ u_star^2 / sqrt( um(1)^2 + vm(1)^2 ) ] * xm(1).
     !
     !    For this equation, a Crank-Nicholson (semi-implicit) diffusion scheme
     !    is used to solve the (1/rho_ds) * d [ rho_ds * K_zm * d(xm)/dz ] / dz
     !    eddy-diffusion term.  The discretized implicit portion of the term is
     !    written out as:
     !
-    !    + (1/2) * invrs_rho_ds_zt(2)
-    !      * dzt(2)
+    !    + (1/2) * invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
     !        * [ rho_ds_zm(2) * K_zm(2)
-    !            * dzm(2) * ( xm(3,<t+1>) - xm(2,<t+1>) ) ]
-    !    - invrs_rho_ds_zt(2)
-    !      * dzt(2)
+    !            * invrs_dzm(2) * ( xm(2,<t+1>) - xm(1,<t+1>) ) ]
+    !    - invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
     !        * rho_ds_zm(1) 
-    !        * [u_star^2/sqrt( um(2,<t>)^2 + vm(2,<t>)^2 )] * xm(2,<t+1>).
+    !        * [u_star^2/sqrt( um(1,<t>)^2 + vm(1,<t>)^2 )] * xm(1,<t+1>).
     !
     !    Note:  When the implicit term is brought over to the left-hand side,
     !           the signs are reversed and the leading "+" in front of the first
@@ -1631,10 +1501,10 @@ module advance_windm_edsclrm_module
     !
     !    The discretized explicit portion of the term is written out as:
     !
-    !    + (1/2) * invrs_rho_ds_zt(2)
-    !      * dzt(2)
+    !    + (1/2) * invrs_rho_ds_zt(1)
+    !      * invrs_dzt(1)
     !        * [ rho_ds_zm(2) * K_zm(2)
-    !            * dzm(2) * ( xm(3,<t>) - xm(2,<t>) ) ].
+    !            * invrs_dzm(2) * ( xm(2,<t>) - xm(1,<t>) ) ].
     !
     !    Timestep index (t) stands for the index of the current timestep, while
     !    timestep index (t+1) stands for the index of the next timestep, which
@@ -1650,18 +1520,7 @@ module advance_windm_edsclrm_module
     ! function has been called from subroutine windm_edsclrm_rhs, or the
     ! implicit momentum surface flux needs to be added onto the implicit term
     ! after the diffusion function has been called from subroutine
-    ! windm_edsclrm_lhs.  However, all other equations in this model that use
-    ! zero-flux diffusion have level 1 as the level to which the lower boundary
-    ! condition needs to be applied.  Thus, an adjuster will have to be used at
-    ! level 2 to call diffusion_zt_lhs with level 1 as the input level (the last
-    ! variable being passed in during the function call).  However, the other
-    ! variables passed in (rho_ds_zm*K_zm, gr%dzt(1,:), and gr%dzm(1,:) variables) will
-    ! have to be passed in as solving for level 2.
-    !
-    ! The value of xm(1) is located below the model surface and does not effect
-    ! the rest of the model.  Since xm can be either a horizontal wind component
-    ! or a generic eddy scalar quantity, the value of xm(1) is simply set to the
-    ! value of xm(2) after the equation matrix has been solved.
+    ! windm_edsclrm_lhs.
     !
     !
     ! Conservation Properties:
@@ -1689,58 +1548,56 @@ module advance_windm_edsclrm_module
     ! for the matrix column and "j" stands for the matrix row):
     !
     !  0 = Sum_j Sum_i
-    !       (rho_ds_zt)_i ( 1/dzt )_i
-    !       ( 0.5_core_rknd * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij (xm<t+1>)_j.
+    !       (rho_ds_zt)_i ( dzt )_i
+    !       ( 0.5 * (1/rho_ds_zt) * (1/dzt) * (rho_ds_zm*K_zm*(1/dzm)) )_ij (xm<t+1>)_j.
     !
     ! The left-hand side matrix,
-    ! ( 0.5_core_rknd * (1/rho_ds_zt) * dzt * (rho_ds_zm*K_zm*dzm) )_ij, is partially
-    ! written below.  The sum over i in the above equation removes (1/rho_ds_zt)
-    ! and dzt everywhere from the matrix below.  The sum over j leaves the
-    ! column totals that are desired, which are 0.
+    ! ( 0.5 * (1/rho_ds_zt) * (1/dzt) * (rho_ds_zm*K_zm*(1/dzm)) )_ij, is
+    ! partially written below.  The sum over i in the above equation removes
+    ! (1/rho_ds_zt) and (1/dzt) everywhere from the matrix below.  The sum
+    ! over j leaves the column totals that are desired, which are 0.
     !
     ! Left-hand side matrix contributions from the turbulent advection term
     ! (treated as an eddy-diffusion term using a Crank-Nicholson timestep);
-    ! first five vertical levels:
+    ! first four vertical levels:
     !
-    !     ------------------------------------------------------------------------------->
-    !k=1 |  0             0                        0                          0
+    !     -------------------------------------------------------------------------------->
+    !k=1 |  +0.5*                    -0.5*                                0
+    !    |    (1/rho_ds_zt(k))*        (1/rho_ds_zt(k))*
+    !    |    (1/dzt(k))*              (1/dzt(k))*
+    !    |    rho_ds_zm(k+1)*          rho_ds_zm(k+1)*
+    !    |    K_zm(k+1)*(1/dzm(k+1))   K_zm(k+1)*(1/dzm(k+1))
     !    |
-    !k=2 |  0   +0.5*                  -0.5*                                  0
-    !    |        (1/rho_ds_zt(k))*      (1/rho_ds_zt(k))*
-    !    |        dzt(k)*                dzt(k)*
-    !    |        rho_ds_zm(k)*          rho_ds_zm(k)*
-    !    |        K_zm(k)*dzm(k)         K_zm(k)*dzm(k)
+    !k=2 |  -0.5*                    +0.5*                      -0.5*
+    !    |    (1/rho_ds_zt(k))*        (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
+    !    |    (1/dzt(k))*              (1/dzt(k))*                (1/dzt(k))*
+    !    |    rho_ds_zm(k)*            [ rho_ds_zm(k+1)*          rho_ds_zm(k+1)*
+    !    |    K_zm(k)*(1/dzm(k))         K_zm(k+1)*(1/dzm(k+1))   K_zm(k+1)*(1/dzm(k+1))
+    !    |                              +rho_ds_zm(k)*
+    !    |                               K_zm(k)*(1/dzm(k)) ]
     !    |
-    !k=3 |  0   -0.5*                  +0.5*                      -0.5*
-    !    |        (1/rho_ds_zt(k))*      (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
-    !    |        dzt(k)*                dzt(k)*                    dzt(k)*
-    !    |        rho_ds_zm(k-1)*        [ rho_ds_zm(k)*            rho_ds_zm(k)*
-    !    |        K_zm(k-1)*dzm(k-1)       K_zm(k)*dzm(k)           K_zm(k)*dzm(k)
-    !    |                                +rho_ds_zm(k-1)*
-    !    |                                 K_zm(k-1)*dzm(k-1) ]
+    !k=3 |            0              -0.5*                      +0.5*
+    !    |                             (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
+    !    |                             (1/dzt(k))*                (1/dzt(k))*
+    !    |                             rho_ds_zm(k)*              [ rho_ds_zm(k+1)*
+    !    |                             K_zm(k)*(1/dzm(k))           K_zm(k+1)*(1/dzm(k+1))
+    !    |                                                         +rho_ds_zm(k)*
+    !    |                                                          K_zm(k)*(1/dzm(k)) ]
     !    |
-    !k=4 |  0             0            -0.5*                      +0.5*
-    !    |                               (1/rho_ds_zt(k))*          (1/rho_ds_zt(k))*
-    !    |                               dzt(k)*                    dzt(k)*
-    !    |                               rho_ds_zm(k-1)*            [ rho_ds_zm(k)*
-    !    |                               K_zm(k-1)*dzm(k-1)           K_zm(k)*dzm(k)
-    !    |                                                           +rho_ds_zm(k-1)*
-    !    |                                                            K_zm(k-1)*dzm(k-1) ]
-    !    |
-    !k=5 |  0             0                        0              -0.5*
-    !    |                                                          (1/rho_ds_zt(k))*
-    !    |                                                          dzt(k)*
-    !    |                                                          rho_ds_zm(k-1)*
-    !    |                                                          K_zm(k-1)*dzm(k-1)
+    !k=4 |            0                        0                -0.5*
+    !    |                                                        (1/rho_ds_zt(k))*
+    !    |                                                        (1/dzt(k))*
+    !    |                                                        rho_ds_zm(k)*
+    !    |                                                        K_zm(k)*(1/dzm(k))
     !   \ /
     !
-    ! Note:  The superdiagonal term from level 4 and both the main diagonal and
-    !        superdiagonal terms from level 5 are not shown on this diagram.
+    ! Note:  The superdiagonal term from level 3 and both the main diagonal and
+    !        superdiagonal terms from level 4 are not shown on this diagram.
     !
     ! Note:  If an implicit momentum surface flux is used, an additional term,
-    !        + (1/rho_ds_zt(2)) * dzt(2) * rho_ds_zm(1)
-    !          * [ u_star^2 / sqrt( um(2,<t>)^2 + vm(2,<t>)^2 ) ], is added to
-    !        row 2 (k=2), column 2.
+    !        + (1/rho_ds_zt(1)) * (1/dzt(1)) * rho_ds_zm(1)
+    !          * [ u_star^2 / sqrt( um(1,<t>)^2 + vm(1,<t>)^2 ) ], is added to
+    !        row 1 (k=1), column 1.
     !
     ! To see that the above conservation law is satisfied by the right-hand side
     ! vector, compute the turbulent advection (treated as eddy diffusion) of xm,
@@ -1748,51 +1605,48 @@ module advance_windm_edsclrm_module
     ! and integrate vertically.  In discretized matrix notation (where "i"
     ! stands for the matrix column and "j" stands for the matrix row):
     !
-    !  0 = Sum_j Sum_i (rho_ds_zt)_i ( 1/dzt )_i ( rhs_vector )_j.
+    !  0 = Sum_j Sum_i (rho_ds_zt)_i ( dzt )_i ( rhs_vector )_j.
     !
     ! The right-hand side vector, ( rhs_vector )_j, is partially written below.
-    ! The sum over i in the above equation removes (1/rho_ds_zt) and dzt
+    ! The sum over i in the above equation removes (1/rho_ds_zt) and (1/dzt)
     ! everywhere from the vector below.  The sum over j leaves the column total
     ! that is desired, which is 0.
     !
     ! Right-hand side vector contributions from the turbulent advection term
     ! (treated as an eddy-diffusion term using a Crank-Nicholson timestep);
-    ! first five vertical levels:
+    ! first four vertical levels:
     !
-    !     --------------------------------------------
-    !k=1 |                      0                     |
-    !    |                                            |
-    !    |                                            |
-    !k=2 | +0.5*(1/rho_ds_zt(k))*                     |
-    !    |      dzt(k)*                               |
-    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
-    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>)) ]   |
-    !    |                                            |
-    !k=3 | +0.5*(1/rho_ds_zt(k))*                     |
-    !    |      dzt(k)*                               |
-    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
-    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
-    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*          |
-    !    |         dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
-    !    |                                            |
-    !k=4 | +0.5*(1/rho_ds_zt(k))*                     |
-    !    |      dzt(k)*                               |
-    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
-    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
-    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*          |
-    !    |         dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
-    !    |                                            |
-    !k=5 | +0.5*(1/rho_ds_zt(k))*                     |
-    !    |      dzt(k)*                               |
-    !    |       [ rho_ds_zm(k)*K_zm(k)*              |
-    !    |         dzm(k)*(xm(k+1,<t>)-xm(k,<t>))     |
-    !    |        -rho_ds_zm(k-1)*K_zm(k-1)*          |
-    !    |         dzm(k-1)*(xm(k,<t>)-xm(k-1,<t>)) ] |
-    !   \ /                                          \ /
+    !     --------------------------------------------------
+    !k=1 | +0.5*(1/rho_ds_zt(k))*                           |
+    !    |      (1/dzt(k))*                                 |
+    !    |       [ rho_ds_zm(k+1)*K_zm(k+1)*                |
+    !    |         (1/dzm(k+1))*(xm(k+1,<t>)-xm(k,<t>)) ]   |
+    !    |                                                  |
+    !k=2 | +0.5*(1/rho_ds_zt(k))*                           |
+    !    |      (1/dzt(k))*                                 |
+    !    |       [ rho_ds_zm(k+1)*K_zm(k+1)*                |
+    !    |         (1/dzm(k+1))*(xm(k+1,<t>)-xm(k,<t>))     |
+    !    |        -rho_ds_zm(k)*K_zm(k)*                    |
+    !    |         (1/dzm(k))*(xm(k,<t>)-xm(k-1,<t>)) ]     |
+    !    |                                                  |
+    !k=3 | +0.5*(1/rho_ds_zt(k))*                           |
+    !    |      (1/dzt(k))*                                 |
+    !    |       [ rho_ds_zm(k+1)*K_zm(k+1)*                |
+    !    |         (1/dzm(k+1))*(xm(k+1,<t>)-xm(k,<t>))     |
+    !    |        -rho_ds_zm(k)*K_zm(k)*                    |
+    !    |         (1/dzm(k))*(xm(k,<t>)-xm(k-1,<t>)) ]     |
+    !    |                                                  |
+    !k=4 | +0.5*(1/rho_ds_zt(k))*                           |
+    !    |      (1/dzt(k))*                                 |
+    !    |       [ rho_ds_zm(k+1)*K_zm(k+1)*                |
+    !    |         (1/dzm(k+1))*(xm(k+1,<t>)-xm(k,<t>))     |
+    !    |        -rho_ds_zm(k)*K_zm(k)*                    |
+    !    |         (1/dzm(k))*(xm(k,<t>)-xm(k-1,<t>)) ]     |
+    !   \ /                                                \ /
     !
     ! Note:  If a generalized explicit surface flux is used, an additional term,
-    !        + (1/rho_ds_zt(2)) * dzt(2) * rho_ds_zm(1) * x'w'|_sfc, is added to
-    !        row 2 (k=2).
+    !        + (1/rho_ds_zt(1)) * (1/dzt(1)) * rho_ds_zm(1) * x'w'|_sfc, is
+    !        added to row 1 (k=1).
     !
     ! Note:  Only the contributions by the turbulent advection term are shown
     !        for both the left-hand side matrix and the right-hand side vector.
@@ -1837,7 +1691,7 @@ module advance_windm_edsclrm_module
 
     ! ------------------------ Input Variables ------------------------
     integer, intent(in) :: &
-      nz, &
+      nzt, &
       ngrdcol
     
     type (grid), target, intent(in) :: &
@@ -1859,14 +1713,14 @@ module advance_windm_edsclrm_module
     type (stats), target, dimension(ngrdcol), intent(inout) :: &
       stats_sfc
       
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(inout) :: &
       lhs    ! Implicit contributions to um, vm, and eddy scalars  [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,nrhs), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs), intent(inout) :: &
       rhs    ! Right-hand side (explicit) contributions.
 
     ! ------------------------ Output variables ------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz,nrhs), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,nrhs), intent(out) :: &
       solution ! Solution to the system of equations    [units vary]
 
     ! ------------------------ Local variables ------------------------
@@ -1881,7 +1735,7 @@ module advance_windm_edsclrm_module
     if ( stats_metadata%l_stats_samp .and. ixm_matrix_condt_num > 0 ) then
 
       call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in) 
-                          ngrdcol, nz, nrhs,                      & ! Intent(in) 
+                          ngrdcol, nzt, nrhs,                      & ! Intent(in) 
                           lhs, rhs,                               & ! Intent(inout)
                           solution, rcond )                         ! Intent(out)
 
@@ -1893,7 +1747,7 @@ module advance_windm_edsclrm_module
     else
 
       call tridiag_solve( "windm_edsclrm", tridiag_solve_method,  & ! Intent(in) 
-                          ngrdcol, nz, nrhs,                      & ! Intent(in) 
+                          ngrdcol, nzt, nrhs,                     & ! Intent(in) 
                           lhs, rhs,                               & ! Intent(inout)
                           solution )                                ! Intent(out)
     end if
@@ -1902,7 +1756,7 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_solve
 
   !=============================================================================
-  subroutine windm_edsclrm_implicit_stats( nz, solve_type, xm, &
+  subroutine windm_edsclrm_implicit_stats( nzm, nzt, solve_type, xm, &
                                            invrs_dzt, & 
                                            lhs_diff, lhs_ma_zt, & 
                                            invrs_rho_ds_zt, u_star_sqd,&
@@ -1938,24 +1792,27 @@ module advance_windm_edsclrm_module
 
     !---------------------- Input Variables ----------------------
     integer, intent(in) :: &
-      nz
+      nzm, &
+      nzt
     
     integer, intent(in) :: & 
       solve_type     ! Desc. of what is being solved for
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       xm,         & !  Computed value um or vm at <t+1>    [m/s]
       invrs_dzt     ! The inverse spacing between momentum grid levels;
                     ! centered over thermodynamic grid levels.
       
-    real( kind = core_rknd ), dimension(3,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(3,nzt), intent(in) :: &
       lhs_diff, & ! LHS diffustion terms
       lhs_ma_zt   ! LHS mean advection terms
       
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nzt), intent(in) ::  &
       wind_speed,      & ! wind speed; sqrt(u^2 + v^2)              [m/s]
-      rho_ds_zm,       & ! Dry, static density on momentum levels      [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels  [m^3/kg]
+
+    real( kind = core_rknd ), dimension(nzm), intent(in) ::  &
+      rho_ds_zm          ! Dry, static density on momentum levels      [kg/m^3]
       
     real( kind = core_rknd ), intent(in) :: &
       u_star_sqd   ! Surface friction velocity, u_star, squared      [m/s]
@@ -1973,7 +1830,7 @@ module advance_windm_edsclrm_module
     !---------------------- Local variables ----------------------
     integer :: k, kp1, km1 ! Array indices
     
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       imp_sfc_flux
 
     ! Budget indices
@@ -2006,18 +1863,18 @@ module advance_windm_edsclrm_module
       ! surface flux.  In this case, this effects the implicit portion of
       ! the term, which handles the main diagonal for the turbulent advection term 
       if ( stats_metadata%ium_ta + stats_metadata%ivm_ta > 0 ) then
-        imp_sfc_flux(2) =  - invrs_rho_ds_zt(2) * invrs_dzt(2) &
-                             * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
+        imp_sfc_flux(1) =  - invrs_rho_ds_zt(1) * invrs_dzt(1) &
+                             * rho_ds_zm(1) * ( u_star_sqd / wind_speed(1) )
       endif
 
     endif ! l_imp_sfc_momentum_flux
 
     ! Finalize implicit contributions for xm
 
-    do k = 2, nz-1, 1
+    do k = 1, nzt-1, 1
 
-      km1 = max( k-1, 2 )
-      kp1 = min( k+1, nz )
+      km1 = max( k-1, 1 )
+      kp1 = min( k+1, nzt )
 
       ! xm mean advection
       ! xm term ma is completely implicit; call stat_update_var_pt.
@@ -2041,7 +1898,7 @@ module advance_windm_edsclrm_module
 
 
     ! Upper boundary conditions
-    k   = nz
+    k   = nzt
     km1 = max( k-1, 1 )
 
     ! xm mean advection
@@ -2065,7 +1922,7 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_implicit_stats
 
   !=============================================================================
-  subroutine compute_uv_tndcy( nz, ngrdcol, solve_type, &
+  subroutine compute_uv_tndcy( nzt, ngrdcol, solve_type, &
                                fcor, perp_wind_m, perp_wind_g, &
                                xm_forcing, l_implemented, &
                                stats_metadata, & 
@@ -2099,9 +1956,6 @@ module advance_windm_edsclrm_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: & 
-        grid ! Type
-
     use stats_type_utilities, only: & 
         stat_update_var
 
@@ -2117,7 +1971,7 @@ module advance_windm_edsclrm_module
 
     ! -------------------------- Input Variables --------------------------
     integer, intent(in) :: &
-      nz, &
+      nzt, &
       ngrdcol
     
     integer, intent(in) ::  &
@@ -2126,7 +1980,7 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  & 
       fcor            ! Coriolis parameter     [s^-1]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: & 
       perp_wind_m,  & ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
       perp_wind_g,  & ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
       xm_forcing      ! Prescribed wind forcing                                          [m/s/s]
@@ -2142,7 +1996,7 @@ module advance_windm_edsclrm_module
       stats_zt
 
     ! -------------------------- Output Variables --------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
       xm_tndcy        ! xm tendency            [m/s^2]
 
     ! -------------------------- Local Variables --------------------------
@@ -2151,7 +2005,7 @@ module advance_windm_edsclrm_module
       ixm_cf, &
       ixm_f
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: & 
       xm_gf, & 
       xm_cf
       
@@ -2160,11 +2014,6 @@ module advance_windm_edsclrm_module
     ! -------------------------- Begin Code --------------------------
 
     !$acc enter data create( xm_gf, xm_cf )
-
-    ! Initialize variables to 0.
-    xm_gf = 0.0_core_rknd
-    xm_cf = 0.0_core_rknd
-    xm_tndcy = 0.0_core_rknd
 
     if ( .not. l_implemented ) then
       ! Only compute the Coriolis term if the model is running on it's own,
@@ -2179,7 +2028,7 @@ module advance_windm_edsclrm_module
         ixm_f  = stats_metadata%ium_f
         
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 2, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             xm_gf(i,k) = - fcor(i) * perp_wind_g(i,k)
           end do
@@ -2187,7 +2036,7 @@ module advance_windm_edsclrm_module
         !$acc end parallel loop
         
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 2, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             xm_cf(i,k) = fcor(i) * perp_wind_m(i,k)
           end do
@@ -2201,7 +2050,7 @@ module advance_windm_edsclrm_module
         ixm_f  = stats_metadata%ivm_f
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 2, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             xm_gf(i,k) = fcor(i) * perp_wind_g(i,k)
           end do
@@ -2209,7 +2058,7 @@ module advance_windm_edsclrm_module
         !$acc end parallel loop
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 2, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             xm_cf(i,k) = -fcor(i) * perp_wind_m(i,k)
           end do
@@ -2223,7 +2072,7 @@ module advance_windm_edsclrm_module
         ixm_f = 0
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 2, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             xm_gf(i,k) = 0._core_rknd
             xm_cf(i,k) = 0._core_rknd
@@ -2234,7 +2083,7 @@ module advance_windm_edsclrm_module
       end select
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           xm_tndcy(i,k) = xm_gf(i,k) + xm_cf(i,k) + xm_forcing(i,k)
         end do
@@ -2263,7 +2112,7 @@ module advance_windm_edsclrm_module
     else   ! implemented in a host model.
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           xm_tndcy(i,k) = 0.0_core_rknd
         end do
@@ -2279,7 +2128,7 @@ module advance_windm_edsclrm_module
   end subroutine compute_uv_tndcy
 
   !======================================================================================
-  subroutine windm_edsclrm_lhs( nz, ngrdcol, gr, dt, &
+  subroutine windm_edsclrm_lhs( nzm, nzt, ngrdcol, gr, dt, &
                                 lhs_ma_zt, lhs_diff, &
                                 wind_speed, u_star_sqd,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
@@ -2290,15 +2139,6 @@ module advance_windm_edsclrm_module
     ! time-tendency equation.  See the description in subroutine
     ! windm_edsclrm_solve for more details.
     ! 
-    ! Notes: 
-    !   Lower Boundary:
-    !       The lower boundary condition is a fixed-flux boundary condition, which
-    !       gets added into the time-tendency equation at level 2.
-    !       The value of xm(1) is located below the model surface and does not effect
-    !       the rest of the model.  Since xm can be either a horizontal wind component
-    !       or a generic eddy scalar quantity, the value of xm(1) is simply set to the
-    !       value of xm(2) after the equation matrix has been solved.
-    !
     !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
     !   Simple changes to this procedure may adversely affect computational speed
     !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
@@ -2314,7 +2154,8 @@ module advance_windm_edsclrm_module
 
     ! ----------------------- Input Variables -----------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
@@ -2322,14 +2163,16 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), intent(in) :: & 
       dt                 ! Model timestep                             [s]
       
-    real( kind = core_rknd ), intent(in), dimension(3,ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(3,ngrdcol,nzt) :: &
       lhs_diff, & ! LHS diffustion terms
       lhs_ma_zt   ! LHS mean advection terms
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       wind_speed,      & ! wind speed; sqrt( u^2 + v^2 )              [m/s]
-      rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels [m^3/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      rho_ds_zm          ! Dry, static density on momentum levels     [kg/m^3]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       u_star_sqd    ! Surface friction velocity, u_*, squared  [m/s]
@@ -2339,7 +2182,7 @@ module advance_windm_edsclrm_module
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
     ! ----------------------- Output Variable -----------------------
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(out) :: &
       lhs           ! Implicit contributions to xm (tridiagonal matrix)
 
     ! ----------------------- Local Variables -----------------------
@@ -2353,18 +2196,9 @@ module advance_windm_edsclrm_module
     ! Calculate coefs of eddy diffusivity and inverse of dt
     invrs_dt = 1.0_core_rknd / dt
 
-    ! Set lower boundary, see notes
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      lhs(1,i,1) = 0.0_core_rknd
-      lhs(2,i,1) = 1.0_core_rknd
-      lhs(3,i,1) = 0.0_core_rknd
-    end do
-    !$acc end parallel loop
-
     ! Add terms to lhs
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz
+    do k = 1, nzt
       do i = 1, ngrdcol
         lhs(1,i,k) = 0.5_core_rknd * lhs_diff(1,i,k)
 
@@ -2381,7 +2215,7 @@ module advance_windm_edsclrm_module
     ! LHS mean advection term.
     if ( .not. l_implemented ) then
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 2, nz-1
+      do k = 1, nzt-1
         do i = 1, ngrdcol
           lhs(1:3,i,k) = lhs(1:3,i,k) + lhs_ma_zt(:,i,k)
         end do
@@ -2395,8 +2229,8 @@ module advance_windm_edsclrm_module
       ! LHS momentum surface flux.
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        lhs(2,i,2) = lhs(2,i,2) + invrs_rho_ds_zt(i,2) * gr%invrs_dzt(i,2) &
-                                  * rho_ds_zm(i,1) * ( u_star_sqd(i) / wind_speed(i,2) )
+        lhs(2,i,1) = lhs(2,i,1) + invrs_rho_ds_zt(i,1) * gr%invrs_dzt(i,1) &
+                                  * rho_ds_zm(i,1) * ( u_star_sqd(i) / wind_speed(i,1) )
       end do
       !$acc end parallel loop
     end if ! l_imp_sfc_momentum_flux
@@ -2406,7 +2240,7 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_lhs
 
   !=============================================================================
-  subroutine windm_edsclrm_rhs( nz, ngrdcol, gr, solve_type, dt, &
+  subroutine windm_edsclrm_rhs( nzm, nzt, ngrdcol, gr, solve_type, dt, &
                                 lhs_diff, xm, xm_tndcy,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_imp_sfc_momentum_flux, xpwp_sfc, &
@@ -2420,17 +2254,6 @@ module advance_windm_edsclrm_module
     ! 
     ! References:
     !   None
-    ! 
-    ! Notes:
-    !   The lower boundary condition needs to be applied here at level 2.
-    !   The lower boundary condition is a "fixed flux" boundary condition.
-    !   The coding is the same as for a zero-flux boundary condition, but with
-    !   an extra term added on the right-hand side at the boundary level.  For
-    !   the rest of the model code, a zero-flux boundary condition is applied
-    !   at level 1, and thus subroutine diffusion_zt_lhs is set-up to do that.
-    !   In order to apply the same boundary condition code here at level 2, an
-    !   adjuster needs to be used to tell diffusion_zt_lhs to use the code at
-    !   level 2 that it normally uses at level 1.
     ! 
     !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
     !   Simple changes to this procedure may adversely affect computational speed
@@ -2459,7 +2282,8 @@ module advance_windm_edsclrm_module
 
     !------------------- Input Variables -------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
     
     type (grid), target, intent(in) :: &
@@ -2471,14 +2295,16 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), intent(in) :: & 
       dt                 ! Model timestep                             [s]
       
-    real( kind = core_rknd ), dimension(3,ngrdcol,nz), intent(in) :: &
-      lhs_diff   ! LHS diffustion terms
+    real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(in) :: &
+      lhs_diff   ! LHS diffusion terms
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       xm,              & ! Eddy-scalar variable, xm (thermo. levels)  [units vary]
       xm_tndcy,        & ! The explicit time-tendency acting on xm    [units vary]
-      rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density at thermo. levels [m^3/kg]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      rho_ds_zm          ! Dry, static density on momentum levels     [kg/m^3]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       xpwp_sfc     ! x'w' at the surface                              [units vary]
@@ -2494,7 +2320,7 @@ module advance_windm_edsclrm_module
       stats_zt
 
     !------------------- Output Variable -------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       rhs          ! Right-hand side (explicit) contributions.
 
     !------------------- Local Variables -------------------
@@ -2517,27 +2343,20 @@ module advance_windm_edsclrm_module
         ixm_ta = 0
     end select
 
-    ! For purposes of the matrix equation, rhs(1) is simply set to 0.
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      rhs(i,1) = 0.0_core_rknd
-    end do
-    !$acc end parallel loop
-
     ! Lower boundary calculation
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      rhs(i,2) = 0.5_core_rknd  & 
-                 * ( - lhs_diff(2,i,2) * xm(i,2)        &
-                     - lhs_diff(1,i,2) * xm(i,3) )      &
-                 + xm_tndcy(i,2)                        & ! RHS forcings
-                 + invrs_dt * xm(i,2)                     ! RHS time tendency
+      rhs(i,1) = 0.5_core_rknd  & 
+                 * ( - lhs_diff(2,i,1) * xm(i,1)   &
+                     - lhs_diff(1,i,1) * xm(i,2) ) &
+                 + xm_tndcy(i,1)                   & ! RHS forcings
+                 + invrs_dt * xm(i,1)                ! RHS time tendency
     end do
     !$acc end parallel loop
 
     ! Non-boundary rhs calculation, this is a highly vectorized loop
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 3, nz-1
+    do k = 2, nzt-1
       do i = 1, ngrdcol
         rhs(i,k) = 0.5_core_rknd  & 
                    * ( - lhs_diff(3,i,k) * xm(i,k-1)      &
@@ -2552,11 +2371,11 @@ module advance_windm_edsclrm_module
     ! Upper boundary calculation
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      rhs(i,nz) = 0.5_core_rknd  & 
-                  * ( - lhs_diff(3,i,nz) * xm(i,nz-1)  &
-                      - lhs_diff(2,i,nz) * xm(i,nz) )  &
-                  + xm_tndcy(i,nz)                     & ! RHS forcings
-                  + invrs_dt * xm(i,nz)                  ! RHS time tendency
+      rhs(i,nzt) = 0.5_core_rknd  & 
+                   * ( - lhs_diff(3,i,nzt) * xm(i,nzt-1) &
+                       - lhs_diff(2,i,nzt) * xm(i,nzt) ) &
+                   + xm_tndcy(i,nzt)                     & ! RHS forcings
+                   + invrs_dt * xm(i,nzt)                  ! RHS time tendency
     end do
     !$acc end parallel loop
 
@@ -2574,13 +2393,13 @@ module advance_windm_edsclrm_module
         ! turbulent advection component.
 
         ! Lower boundary
-        call stat_begin_update_pt( ixm_ta, 2, &                         ! intent(in)
-                                   0.5_core_rknd  &
-                                 * ( lhs_diff(2,i,2) * xm(i,2)   &      ! intent(in)
-                                 +   lhs_diff(1,i,2) * xm(i,3) ), &
-                                     stats_zt(i) )                      ! intent(inout)
+        call stat_begin_update_pt( ixm_ta, 1, &
+                                   0.5_core_rknd  &                   ! intent(in)
+                                 * ( lhs_diff(2,i,1) * xm(i,1) &
+                                 +   lhs_diff(1,i,1) * xm(i,2) ), &   ! intent(in)
+                                     stats_zt(i) )                    ! intent(inout)
 
-        do k = 3, nz-1
+        do k = 2, nzt-1
           
           call stat_begin_update_pt( ixm_ta, k, &                         ! intent(in)
                                      0.5_core_rknd  &
@@ -2591,10 +2410,10 @@ module advance_windm_edsclrm_module
         end do
 
         ! Upper boundary
-        call stat_begin_update_pt( ixm_ta, nz, &
+        call stat_begin_update_pt( ixm_ta, nzt, &
                                    0.5_core_rknd  &                       ! intent(in)
-                                 * ( lhs_diff(3,i,nz) * xm(i,nz-1) &
-                                 +   lhs_diff(2,i,nz) * xm(i,nz) ), &     ! intent(in)
+                                 * ( lhs_diff(3,i,nzt) * xm(i,nzt-1) &
+                                 +   lhs_diff(2,i,nzt) * xm(i,nzt) ), &   ! intent(in)
                                      stats_zt(i) )                        ! intent(inout)
       end do
     endif
@@ -2604,8 +2423,8 @@ module advance_windm_edsclrm_module
       ! RHS generalized surface flux.
       !$acc parallel loop gang vector default(present)
       do i = 1, ngrdcol
-        rhs(i,2) = rhs(i,2) + invrs_rho_ds_zt(i,2)  &
-                              * gr%invrs_dzt(i,2)  &
+        rhs(i,1) = rhs(i,1) + invrs_rho_ds_zt(i,1)  &
+                              * gr%invrs_dzt(i,1)  &
                               * rho_ds_zm(i,1) * xpwp_sfc(i)
       end do
       !$acc end parallel loop
@@ -2615,9 +2434,9 @@ module advance_windm_edsclrm_module
         !$acc update host( invrs_rho_ds_zt, rho_ds_zm, xpwp_sfc )
       
         do i = 1, ngrdcol
-          call stat_modify_pt( ixm_ta, 2,  &                    ! intent(in)  
-                             + invrs_rho_ds_zt(i,2)  &  
-                             * gr%invrs_dzt(i,2)  &
+          call stat_modify_pt( ixm_ta, 1,  &                    ! intent(in)  
+                             + invrs_rho_ds_zt(i,1)  &  
+                             * gr%invrs_dzt(i,1)  &
                              * rho_ds_zm(i,1) * xpwp_sfc(i),  & ! intent(in)
                                stats_zt(i) )                    ! intent(inout)
         end do

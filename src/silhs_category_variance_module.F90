@@ -13,7 +13,7 @@ module silhs_category_variance_module
 
   !-----------------------------------------------------------------------
   subroutine silhs_category_variance_driver( &
-               nz, num_samples, pdf_dim, hydromet_dim, hm_metadata, &
+               nzt, num_samples, pdf_dim, hydromet_dim, hm_metadata, &
                X_nl_all_levs, &
                X_mixt_comp_all_levs, microphys_stats_vars_all, &
                lh_hydromet_mc_all, lh_sample_point_weights, pdf_params, &
@@ -56,27 +56,27 @@ module silhs_category_variance_module
 
     !--------------------------- Input Variables ---------------------------
     integer, intent(in) :: &
-      nz,              &      ! Number of height levels
+      nzt,             &      ! Number of height levels
       num_samples,     &      ! Number of SILHS sample points
-      pdf_dim,     &      ! Number of variates in X_nl
+      pdf_dim,         &      ! Number of variates in X_nl
       hydromet_dim            ! Number of elements of hydromet array
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt,pdf_dim), intent(in) :: &
       X_nl_all_levs           ! SILHS samples at all height levels
 
-    integer, dimension(nz,num_samples), intent(in) :: &
+    integer, dimension(nzt,num_samples), intent(in) :: &
       X_mixt_comp_all_levs    ! Mixture component (1 or 2) of each sample point
 
     type(microphys_stats_vars_type), dimension(num_samples), intent(in) :: &
       microphys_stats_vars_all! The statistics objects to sample from, for each sample point
 
-    real( kind = core_rknd ), dimension(num_samples,nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt,hydromet_dim), intent(in) :: &
       lh_hydromet_mc_all      ! Tendencies of hydometeors at all sample points
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
       lh_sample_point_weights ! Weight of SILHS sample points
 
     type(pdf_parameter), intent(in) :: &
@@ -93,7 +93,7 @@ module silhs_category_variance_module
       stats_lh_zt
 
     !--------------------------- Local Variables ---------------------------
-    real( kind = core_rknd ), dimension(num_samples,nz) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt) :: &
       samples_all
 
     integer :: structure_index, isample
@@ -136,7 +136,7 @@ module silhs_category_variance_module
     end if ! .false.
 
     call silhs_sample_category_variance( &
-           nz, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
+           nzt, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
            samples_all, lh_sample_point_weights, pdf_params, precip_fracs, &
            hm_metadata, stats_metadata, &
            stats_lh_zt )
@@ -147,7 +147,7 @@ module silhs_category_variance_module
 
   !-----------------------------------------------------------------------
   subroutine silhs_sample_category_variance( &
-               nz, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
+               nzt, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
                samples_all, lh_sample_point_weights, pdf_params, precip_fracs, &
                hm_metadata, stats_metadata, &
                stats_lh_zt )
@@ -196,20 +196,20 @@ module silhs_category_variance_module
 
     !---------------------- Input Variables ----------------------
     integer, intent(in) :: &
-      nz,              & ! Number of height levels
+      nzt,             & ! Number of height levels
       num_samples,     & ! Number of SILHS sample points
       pdf_dim            ! Number of variates in X_nl
 
-    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt,pdf_dim), intent(in) :: &
       X_nl_all_levs           ! SILHS samples at all height levels
 
-    integer, dimension(num_samples,nz), intent(in) :: &
+    integer, dimension(num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs    ! Mixture component (1 or 2) of each sample point
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
       samples_all             ! Sample points of variable to compute variance of
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
       lh_sample_point_weights ! Weight of SILHS sample points
 
     type(pdf_parameter), intent(in) :: &
@@ -238,7 +238,7 @@ module silhs_category_variance_module
     real( kind = core_rknd ), dimension(num_importance_categories) :: &
       category_real_probs     ! PDF probability of each category
 
-    real( kind = core_rknd ), dimension(num_importance_categories,nz) :: &
+    real( kind = core_rknd ), dimension(num_importance_categories,nzt) :: &
       root_weight_mean_sq_cat
 
     integer :: isample, icat, k
@@ -252,8 +252,7 @@ module silhs_category_variance_module
     ! define_importance_categories function.
     importance_categories   = define_importance_categories( )
 
-
-    do k=2, nz
+    do k = 1, nzt
 
       int_sample_category = determine_sample_categories( &
                               num_samples, pdf_dim, hm_metadata, &
@@ -286,10 +285,7 @@ module silhs_category_variance_module
         root_weight_mean_sq_cat(:,k) = -999._core_rknd
       end where
 
-    end do ! k=2, nz
-
-    ! Microphysics is not run on the lowest thermodynamic grid level.
-    root_weight_mean_sq_cat(:,1) = zero
+    end do ! k = 1, nzt
 
     if ( stats_metadata%l_stats_samp ) then
       do icat=1, num_importance_categories

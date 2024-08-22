@@ -44,6 +44,7 @@ def main():
                         "\n4. 'replace': If a diff log file for a case already exists the old file will be replaced with a new log file.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print to console a table of numerical differences found in common variables.")
     parser.add_argument("-t", "--threshold", dest="threshold", type=float, action="store", help="(float) Define the maximum absolute difference for an individual variable to be treated as different.")
+    parser.add_argument("-g", "--ghostbuster", action="store_true", help="Perform a comparison that omits the 'ghost' level in '_zt.nc' output files.")
     parser.add_argument("dirs", nargs=2, help="Need 2 clubb output directories containing netCDF files with the same name to diff. Usage: python run_bindiff_all.py dir_path1 dir_path2")
     args = parser.parse_args()
 
@@ -73,7 +74,7 @@ def main():
             if not os.path.exists(outFilePath):
                 os.makedirs(outFilePath)
 
-        linux_diff, diff_in_files, file_skipped = find_diffs_in_all_files(args.dirs[0], args.dirs[1], args.fileout, args.verbose, tot_abs_diff_thresh)
+        linux_diff, diff_in_files, file_skipped = find_diffs_in_all_files(args.dirs[0], args.dirs[1], args.fileout, args.verbose, tot_abs_diff_thresh, args.ghostbuster)
 
         if DEBUG:
             print(linux_diff, diff_in_files, file_skipped)
@@ -213,7 +214,7 @@ def get_cases(dir1, dir2, l_verbose):
 def find_comparable_files(l1, l2):
     return any([p1 and p2 for (p1,p2) in zip(l1,l2)])
 
-def find_diffs_in_all_files(dir1, dir2, save_to_file, l_verbose, thresh):
+def find_diffs_in_all_files(dir1, dir2, save_to_file, l_verbose, thresh, l_ghostbuster):
     # For each case with existing netCDF files in the diff folders:
     # 1. Create an output file if those are requested
     # 2. Loop through the netCDF files and call `find_diffs_in_common_vars` on each pair
@@ -273,7 +274,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, l_verbose, thresh):
                 if save_to_file:
                     content += ">The linux diff detected differences in " + ncfname + "<\n"
                 # Update diff_in_all_files: if either it or the output of find_diffs_in_common_vars is true, we conclude that there is a difference. The printed messages will elaborate on the specific differences.
-                diff_in_case, new_content = find_diffs_in_common_vars(ncfname, dir1, dir2, save_to_file, l_verbose, thresh) or diff_in_case
+                diff_in_case, new_content = find_diffs_in_common_vars(ncfname, dir1, dir2, save_to_file, l_verbose, thresh, l_ghostbuster, postfix) or diff_in_case
                 if l_verbose:
                     print('')
                 if save_to_file:
@@ -318,7 +319,7 @@ def find_diffs_in_all_files(dir1, dir2, save_to_file, l_verbose, thresh):
 
     return (linux_diff, diff_in_all_files, file_skipped)
 
-def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, l_verbose, tot_abs_diff_thresh ):
+def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, l_verbose, tot_abs_diff_thresh, l_ghostbuster, postfix ):
     # This is the integral function of this script!
     # Compare content of one specific pair of files with the same name in each folder:
     # 1. Find the variables that are present in only one of the files
@@ -383,7 +384,18 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, l_verbose, t
         # for futureproofing, we will just check all variables with more than 1 dimension.
         if( dset1[var].ndim > 1 and dset2[var].ndim > 1 ):
 
-            abs_diff = abs( dset1[var][:,:,:] - dset2[var][:,:,:] )
+            if l_ghostbuster and postfix=="_zt.nc":
+              z_levs_1=dset1[var].shape[1]
+              z_levs_2=dset2[var].shape[1]
+              if z_levs_1 == z_levs_2:
+                abs_diff = abs( dset1[var][:,1:z_levs_1-1,:] - dset2[var][:,1:z_levs_2-1,:] )
+              else:
+                if z_levs_1 > z_levs_2:
+                  abs_diff = abs( dset1[var][:,1:z_levs_1-1,:] - dset2[var][:,0:z_levs_2-1,:] )
+                else:
+                  abs_diff = abs( dset1[var][:,0:z_levs_1-1,:] - dset2[var][:,1:z_levs_2-1,:] )
+            else:
+              abs_diff = abs( dset1[var][:,:,:] - dset2[var][:,:,:] )
 
             # If the sum of all absolute differences is less than the threshold, then ignore this var
             if ( np.sum(abs_diff) <= tot_abs_diff_thresh ):
@@ -392,8 +404,21 @@ def find_diffs_in_common_vars( test_file, dir1, dir2, save_to_file, l_verbose, t
               diff_in_common_vars = True
 
             # Clip fields to ignore tiny values for the % diff
-            field_1_clipped = np.clip( dset1[var][:,:,:], a_min = field_threshold, a_max = 9999999.0  )
-            field_2_clipped = np.clip( dset2[var][:,:,:], a_min = field_threshold, a_max = 9999999.0 )
+            if l_ghostbuster and postfix=="_zt.nc":
+              if z_levs_1 == z_levs_2:
+                field_1_clipped = np.clip( dset1[var][:,1:z_levs_1-1,:], a_min = field_threshold, a_max = 9999999.0  )
+#yippee confetti field_2_clipped = np.clip( dset2[var][:,1:z_levs_2-1,:], a_min = field_threshold, a_max = 9999999.0 )
+                field_2_clipped = np.clip( dset2[var][:,1:z_levs_2-1,:], a_min = field_threshold, a_max = 9999999.0 )
+              else:
+                if z_levs_1 > z_levs_2:
+                  field_1_clipped = np.clip( dset1[var][:,1:z_levs_1-1,:], a_min = field_threshold, a_max = 9999999.0  )
+                  field_2_clipped = np.clip( dset2[var][:,0:z_levs_2-1,:], a_min = field_threshold, a_max = 9999999.0 )
+                else:
+                  field_1_clipped = np.clip( dset1[var][:,0:z_levs_1-1,:], a_min = field_threshold, a_max = 9999999.0  )
+                  field_2_clipped = np.clip( dset2[var][:,1:z_levs_2-1,:], a_min = field_threshold, a_max = 9999999.0 )
+            else:
+              field_1_clipped = np.clip( dset1[var][:,:,:], a_min = field_threshold, a_max = 9999999.0  )
+              field_2_clipped = np.clip( dset2[var][:,:,:], a_min = field_threshold, a_max = 9999999.0 )
 
             # Calculate the percent difference, 100 * (a-b) / ((a+b)/2)
             percent_diff = 200.0 * ( field_1_clipped-field_2_clipped ) \

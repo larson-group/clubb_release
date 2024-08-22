@@ -57,27 +57,29 @@ module dycoms2_rf02
       gr
 
     !--------------------- InOut Variables ---------------------
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      wm_zt, & ! W wind component at thermodynamic levels   [m/s]
+    real( kind = core_rknd ), dimension(gr%nzt), intent(inout) :: &
+      wm_zt    ! W wind component at thermodynamic levels   [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nzm), intent(inout) :: &
       wm_zm    ! W wind component at momentum levels        [m/s]
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
       thlm_forcing, & ! theta_l forcing                [K/s]
       rtm_forcing     ! r_t forcing                    [(kg/kg)/s] 
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
       sclrm_forcing    ! Passive scalar tendency        [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
       edsclrm_forcing  ! Eddy-passive scalar tendency   [units/s]
 
     !--------------------- Begin Code ---------------------
 
     ! Enter the final thlm and rtm tendency
 
-    thlm_forcing(1:gr%nz) = 0.0_core_rknd
-    rtm_forcing(1:gr%nz) = 0.0_core_rknd
+    thlm_forcing(1:gr%nzt) = 0.0_core_rknd
+    rtm_forcing(1:gr%nzt) = 0.0_core_rknd
 
     ! Imposed large-scale subsidence at the uppermost level.
     ! CLUBB used a "one-sided" derivative method to compute mean advection at
@@ -85,8 +87,8 @@ module dycoms2_rf02
     ! amounts of various quantities from above the top of the domain, set wm_zt
     ! to 0 at level gr%nz.  To stay consistent, set wm_zm to 0 at level
     ! gr%nz.
-    wm_zt(gr%nz) = 0.0_core_rknd
-    wm_zm(gr%nz) = 0.0_core_rknd
+    wm_zt(gr%nzt) = 0.0_core_rknd
+    wm_zm(gr%nzm) = 0.0_core_rknd
 
     ! Test scalars with thetal and rt if desired
     if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing

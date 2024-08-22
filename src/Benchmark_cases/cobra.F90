@@ -79,9 +79,9 @@ module cobra
     time      ! Current time                [s]
 
   real( kind = core_rknd ), intent(in) :: & 
-    z,         & ! Elevation at zt=2           [m]
+    z,         & ! Elevation at zt=1           [m]
     rho_sfc,       & ! Air density at surface      [kg/m^3]
-    thlm_sfc,  & ! Theta_l at zt(2)            [K]
+    thlm_sfc,  & ! Theta_l at zt(1)            [K]
     ubar         ! mean sfc wind speed         [m/s]
 
   !--------------------- Output Variables ---------------------

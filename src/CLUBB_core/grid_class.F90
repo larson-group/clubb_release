@@ -7,18 +7,18 @@ module grid_class
   !
   ! Definition of a grid class and associated functions
   !
-  ! The grid specification is as follows:
+  ! The grid specification is as follows for an ASCENDING grid:
   !
-  !     +                ================== zm(nz) =========GP=========
+  !     +                ================== zm(nzm) =================== top
   !     |
   !     |
-  ! 1/dzt(nz) +          ------------------ zt(nz) ---------GP---------
+  ! 1/dzt(nzt)   +       ------------------ zt(nzt) -------------------
   !     |        |
   !     |        |
-  !     + 1/dzm(nz-1)    ================== zm(nz-1) ==================
+  !     +  1/dzm(nzm-1)  ================== zm(nzm-1) =================
   !              |
   !              |
-  !              +       ------------------ zt(nz-1) ------------------
+  !              +       ------------------ zt(nzt-1) -----------------
   !
   !                                           .
   !                                           .
@@ -28,35 +28,42 @@ module grid_class
   !                      ================== zm(k+1) ===================
   !
   !
-  !              +       ------------------ zt(k+1) -------------------
-  !              |
-  !              |
-  !     +    1/dzm(k)    ================== zm(k) =====================
-  !     |        |
-  !     |        |
+  !                      ------------------ zt(k+1) -------------------
+  !
+  !
+  !     +                ================== zm(k+1) ===================
+  !     |
+  !     |
   ! 1/dzt(k)     +       ------------------ zt(k) ---------------------
-  !     |
-  !     |
-  !     +                ================== zm(k-1) ===================
-  !
-  !
-  !                      ------------------ zt(k-1) -------------------
-  !
-  !                                           .
-  !                                           .
-  !                                           .
-  !                                           .
-  !
-  !     +                ================== zm(2) =====================
-  !     |
-  !     |
-  ! 1/dzt(2)     +       ------------------ zt(2) ---------------------
   !     |        |
   !     |        |
-  !     +    1/dzm(1)    ================== zm(1) ============GP=======  zm_init
-  !              |       //////////////////////////////////////////////  surface
+  !     +    1/dzm(k)    ================== zm(k) =====================
   !              |
-  !              +       ------------------ zt(1) ------------GP-------
+  !              |
+  !              +       ------------------ zt(k-1) -------------------
+  !      
+  !      
+  !                      ================== zm(k-1) ===================
+  !
+  !
+  !                      ------------------ zt(k-2) -------------------
+  !
+  !                                           .
+  !                                           .
+  !                                           .
+  !                                           .
+  !
+  !              +       ------------------ zt(2) ---------------------
+  !              |
+  !              |
+  !     +    1/dzm(2)    ================== zm(2) =====================
+  !     |        |
+  !     |        |
+  ! 1/dzt(1)     +       ------------------ zt(1) ---------------------
+  !     |         
+  !     |         
+  !     +                ================== zm(1) =====================  zm_init
+  !                      //////////////////////////////////////////////  surface
   !
   !
   ! The variable zm(k) stands for the momentum level altitude at momentum
@@ -66,9 +73,9 @@ module grid_class
   ! variable invrs_dzm(k) is the inverse distance between thermodynamic levels
   ! (over a central momentum level k).  Please note that in the above diagram,
   ! "invrs_dzt" is denoted "dzt", and "invrs_dzm" is denoted "dzm", such that
-  ! 1/dzt is the distance between successive momentum levels k-1 and k (over a
+  ! 1/dzt is the distance between successive momentum levels k and k+1 (over a
   ! central thermodynamic level k), and 1/dzm is the distance between successive
-  ! thermodynamic levels k and k+1 (over a central momentum level k).
+  ! thermodynamic levels k-1 and k (over a central momentum level k).
   !
   ! The grid setup is compatible with a stretched (unevely-spaced) grid.  Thus,
   ! the distance between successive grid levels may not always be constant.
@@ -82,13 +89,13 @@ module grid_class
   !
   !
   !
-  !        --------------- zt(k+1) ---------------
+  !        ---------------  zt(k)  ---------------
   !
   !
   !
   !        ===============  zm(k)  ===============
   !
-  !        ---------------  zt(k)  ---------------
+  !        --------------- zt(k-1) ---------------
   !
   !        =============== zm(k-1) ===============
   !
@@ -101,13 +108,13 @@ module grid_class
   !
   !
   !
-  !        ===============  zm(k)  ===============
+  !        =============== zm(k+1) ===============
   !
   !
   !
   !        ---------------  zt(k)  ---------------
   !
-  !        =============== zm(k-1) ===============
+  !        ===============  zm(k)  ===============
   !
   !        --------------- zt(k-1) ---------------
   !
@@ -115,23 +122,22 @@ module grid_class
   !        use interpolation formulas consistent with a stretched grid.  The
   !        simplest way to do so is to call the appropriate interpolation
   !        function from this module.  Interpolations should *not* be handled in
-  !        the form of:  ( var_zm(k) + var_zm(k-1) ) / 2; *nor* in the form of:
-  !        0.5_core_rknd*( var_zt(k+1) + var_zt(k) ).  Rather, all explicit interpolations
+  !        the form of:  ( var_zm(k+1) + var_zm(k) ) / 2; *nor* in the form of:
+  !        0.5*( var_zt(k) + var_zt(k-1) ).  Rather, all explicit interpolations
   !        should call zt2zm or zm2zt; while interpolations for a variable being
   !        solved for implicitly in the code should use gr%weights_zt2zm (which
   !        refers to interp_weights_zt2zm_imp), or gr%weights_zm2zt (which
   !        refers to interp_weights_zm2zt_imp).
   !
-  ! Momentum level 1 is placed at altitude zm_init, which is usually at the
-  ! surface.  However, in general, zm_init can be at any altitude defined by the
-  ! user.
-  !
-  ! GP indicates ghost points. Variables located at those levels are not
-  ! prognosed, but only used for boundary conditions.
+  ! For an ascending grid, momentum level 1 is placed at altitude zm_init, which
+  ! is usually at the surface.  However, in general, zm_init can be at any
+  ! altitude defined by the user.
   !
   ! Chris Golaz, 7/17/99
   ! modified 9/10/99
   ! schemena, modified 6/11/2014 - Restructered code to add cubic/linear flag
+  ! Brian Griffin, modified July 2023 for removal of the thermodynamic
+  ! "ghost level" that was below the model lower boundary or surface.
 
   !  References:
   !
@@ -166,7 +172,8 @@ module grid_class
   
   type grid
 
-    integer :: nz ! Number of points in the grid
+    integer :: nzm, & ! Number of momentum levels in the grid
+               nzt    ! Number of thermodynamic levels in the grid
     !   Note: Fortran 90/95 prevents an allocatable array from appearing
     !   within a derived type.  However, Fortran 2003 does not!!!!!!!!
     real( kind = core_rknd ), allocatable, dimension(:,:) :: &
@@ -239,11 +246,15 @@ module grid_class
   end interface
 
   ! Vertical derivative functions
+  ! ddzm takes the derivative of a momentum-level variable across the
+  ! thermodynamic levels (results are output on thermodynamic levels).
   interface ddzm
     module procedure gradzm_1D    ! Works over all vertical levels 
     module procedure gradzm_2D    ! Works over all vertical levels and columns
   end interface
 
+  ! ddzt takes the derivative of a thermodynamic-level variable across the
+  ! momentum levels (results are output on momentum levels).
   interface ddzt
     module procedure gradzt_1D    ! Works over all vertical levels 
     module procedure gradzt_2D    ! Works over all vertical levels and columns
@@ -325,13 +336,17 @@ module grid_class
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) ::  & 
-      momentum_heights,   & ! Momentum level altitudes (input)      [m]
+      momentum_heights    ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) ::  & 
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
     ! Local Variables
     integer :: &
-      begin_height, &  ! Lower bound for *_heights arrays [-]
-      end_height       ! Upper bound for *_heights arrays [-]
+      begin_height_idx_zm, & ! Lower bound for momentum_heights arrays [-]
+      end_height_idx_zm,   & ! Upper bound for momentum_heights arrays [-]
+      begin_height_idx_zt, & ! Lower bound for thermodynamic_heights arrays [-]
+      end_height_idx_zt      ! Upper bound for thermodynamic_heights arrays [-]
 
     integer :: ierr, & ! Allocation stat
                i, k    ! Loop index
@@ -347,11 +362,14 @@ module grid_class
       write(fstderr,*) "This may take a lot of CPU time and memory."
     end if
 
-    gr%nz = nzmax
+    gr%nzm = nzmax
+    gr%nzt = nzmax-1
 
     ! Default bounds
-    begin_height = 1
-    end_height   = gr%nz
+    begin_height_idx_zm = 1
+    end_height_idx_zm   = gr%nzm
+    begin_height_idx_zt = 1
+    end_height_idx_zt   = gr%nzt
 
     !---------------------------------------------------
     if ( .not. l_implemented ) then
@@ -365,14 +383,18 @@ module grid_class
 
       if ( grid_type == 1 ) then
 
-        ! Determine the number of grid points given the spacing
-        ! to fit within the bounds without going over.
-        gr%nz = floor( ( zm_top(1) - zm_init(1) + deltaz(1) ) / deltaz(1) )
+        ! Calculate the number of momentum grid levels given the spacing
+        ! to fit within the altitude bounds without going over.
+        gr%nzm = floor( ( zm_top(1) - zm_init(1) + deltaz(1) ) / deltaz(1) )
 
-      else if( grid_type == 2 ) then! Thermo
+        ! Regardless of grid type, the number of thermodynamic grid levels will
+        ! always be 1 less than the number of momentum grid levels.
+        gr%nzt = gr%nzm - 1
 
-        ! Find begin_height (lower bound)
-        k = gr%nz
+      else if ( grid_type == 2 ) then! Thermo
+
+        ! Find begin_height_idx_zt (lower bound)
+        k = gr%nzt
 
         do while( thermodynamic_heights(1,k) >= zm_init(1) .and. k > 1 )
 
@@ -380,7 +402,7 @@ module grid_class
 
         end do
 
-        if( thermodynamic_heights(1,k) >= zm_init(1) ) then
+        if( thermodynamic_heights(1,k) <= zm_init(1) ) then
 
           write(fstderr,*) err_header, "Stretched zt grid cannot fulfill zm_init requirement"
           err_code = clubb_fatal_error
@@ -388,12 +410,12 @@ module grid_class
 
         else
 
-          begin_height = k
+          begin_height_idx_zt = k
 
         end if
 
-        ! Find end_height (upper bound)
-        k = gr%nz
+        ! Find end_height_idx_zt (upper bound)
+        k = gr%nzt
 
         do while( thermodynamic_heights(1,k) > zm_top(1) .and. k > 1 )
 
@@ -409,18 +431,29 @@ module grid_class
 
         else
 
-          end_height = k
+          end_height_idx_zt = k
 
-          gr%nz = size( thermodynamic_heights(1,begin_height:end_height ) )
+          ! Calculate the number of thermodynamic grid levels.
+          gr%nzt = size( thermodynamic_heights(1,begin_height_idx_zt:end_height_idx_zt ) )
+
+          ! Regardless of grid type, the number of thermodynamic grid levels will
+          ! always be 1 less than the number of momentum grid levels.
+          gr%nzm = gr%nzt + 1
+
+          ! Set begin_height_idx_zm and end_height_idx_zm
+          ! This is purely for consistency, as momentum_heights is irrelevant
+          ! in this scenario.
+          begin_height_idx_zm = begin_height_idx_zt
+          end_height_idx_zm = end_height_idx_zt + 1
 
         end if
 
-      else if( grid_type == 3 ) then ! Momentum
+      else if ( grid_type == 3 ) then ! Momentum
 
-        ! Find begin_height (lower bound)
+        ! Find begin_height_idx_zm (lower bound)
         k = 1
 
-        do while( momentum_heights(1,k) < zm_init(1) .and. k < gr%nz )
+        do while( momentum_heights(1,k) < zm_init(1) .and. k < gr%nzm )
 
           k = k + 1
 
@@ -434,12 +467,12 @@ module grid_class
 
         else
 
-          begin_height = k
+          begin_height_idx_zm = k
 
         end if
 
-        ! Find end_height (lower bound)
-        k = gr%nz
+        ! Find end_height_idx_zm (lower bound)
+        k = gr%nzm
 
         do while( momentum_heights(1,k) > zm_top(1) .and. k > 1 )
 
@@ -455,9 +488,20 @@ module grid_class
 
         else
 
-          end_height = k
+          end_height_idx_zm = k
 
-          gr%nz = size( momentum_heights(1,begin_height:end_height ) )
+          ! Calculate the number of momentum grid levels.
+          gr%nzm = size( momentum_heights(1,begin_height_idx_zm:end_height_idx_zm ) )
+
+          ! Regardless of grid type, the number of thermodynamic grid levels will
+          ! always be 1 less than the number of momentum grid levels.
+          gr%nzt = gr%nzm - 1
+
+          ! Set begin_height_idx_zt and end_height_idx_zt
+          ! This is purely for consistency, as thermodynamic_heights is irrelevant
+          ! in this scenario.
+          begin_height_idx_zt = begin_height_idx_zm
+          end_height_idx_zt = end_height_idx_zm - 1
 
         end if
 
@@ -468,11 +512,11 @@ module grid_class
     !---------------------------------------------------
 
     ! Allocate memory for the grid levels
-    allocate( gr%zm(ngrdcol,gr%nz), gr%zt(ngrdcol,gr%nz), & 
-              gr%dzm(ngrdcol,gr%nz), gr%dzt(ngrdcol,gr%nz), &
-              gr%invrs_dzm(ngrdcol,gr%nz), gr%invrs_dzt(ngrdcol,gr%nz),  & 
-              gr%weights_zm2zt(ngrdcol,gr%nz,m_above:m_below), & 
-              gr%weights_zt2zm(ngrdcol,gr%nz,t_above:t_below), & 
+    allocate( gr%zm(ngrdcol,gr%nzm), gr%zt(ngrdcol,gr%nzt), & 
+              gr%dzm(ngrdcol,gr%nzm), gr%dzt(ngrdcol,gr%nzt), &
+              gr%invrs_dzm(ngrdcol,gr%nzm), gr%invrs_dzt(ngrdcol,gr%nzt),  & 
+              gr%weights_zm2zt(ngrdcol,gr%nzt,m_above:m_below), & 
+              gr%weights_zt2zm(ngrdcol,gr%nzm,t_above:t_below), & 
               stat=ierr )
 
     if ( ierr /= 0 ) then
@@ -484,11 +528,11 @@ module grid_class
     ! Set the values for the derived types used for heights, derivatives, and
     ! interpolation from the momentum/thermodynamic grid
     call setup_grid_heights( &
-                  gr%nz, ngrdcol, & ! intent(in)
+                  gr%nzm, gr%nzt, ngrdcol, & ! intent(in)
                   l_implemented, grid_type,  & ! intent(in)
                   deltaz, zm_init,  & ! intent(in)
-                  momentum_heights(:,begin_height:end_height),  & ! intent(in) 
-                  thermodynamic_heights(:,begin_height:end_height), & ! intent(in)
+                  momentum_heights(:,begin_height_idx_zm:end_height_idx_zm),  & ! intent(in) 
+                  thermodynamic_heights(:,begin_height_idx_zt:end_height_idx_zt), & ! intent(in)
                   gr ) ! intent(inout)
 
     do i = 1, ngrdcol
@@ -546,7 +590,7 @@ module grid_class
   end subroutine cleanup_grid
 
   !=============================================================================
-  subroutine setup_grid_heights( nz, ngrdcol, &
+  subroutine setup_grid_heights( nzm, nzt, ngrdcol, &
                                  l_implemented, grid_type,  & 
                                  deltaz, zm_init, momentum_heights,  & 
                                  thermodynamic_heights, &
@@ -561,7 +605,8 @@ module grid_class
     !------------------------------------------------------------------------------
 
     use constants_clubb, only: &
-        fstderr  ! Constant(s)
+        one,     & ! Constant(s)
+        fstderr
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -575,7 +620,8 @@ module grid_class
 
     ! Input Variables
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(inout) :: gr
@@ -610,8 +656,10 @@ module grid_class
     ! If the CLUBB model is running by itself, but is using a stretched grid
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  & 
-      momentum_heights,   & ! Momentum level altitudes (input)      [m]
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  & 
+      momentum_heights    ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  & 
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
     integer :: k, i
@@ -626,11 +674,11 @@ module grid_class
         ! Evenly-spaced grid.
         ! Momentum level altitudes are defined based on the grid starting
         ! altitude, zm_init, the constant grid-spacing, deltaz, and the number
-        ! of grid levels, gr%nz.
+        ! of grid levels, gr%nzm.
 
         ! Define momentum level altitudes. The first momentum level is at
         ! altitude zm_init.
-        do k = 1, nz, 1
+        do k = 1, nzm, 1
           do i = 1, ngrdcol
             gr%zm(i,k) = zm_init(i) + real( k-1, kind = core_rknd ) * deltaz(i)
           end do
@@ -638,17 +686,10 @@ module grid_class
 
         ! Define thermodynamic level altitudes.  Thermodynamic level altitudes
         ! are located at the central altitude levels, exactly halfway between
-        ! momentum level altitudes.  The lowermost thermodynamic level is
-        ! found by taking 1/2 the altitude difference between the bottom two
-        ! momentum levels and subtracting that value from the bottom momentum
-        ! level.  The first thermodynamic level is below zm_init.
-        do i = 1, ngrdcol
-          gr%zt(i,1) = zm_init(i) - ( 0.5_core_rknd * deltaz(i) )
-        end do
-        
-        do k = 2, nz, 1
+        ! momentum level altitudes.
+        do k = 1, nzt, 1
           do i = 1, ngrdcol
-            gr%zt(i,k) = 0.5_core_rknd * ( gr%zm(i,k) + gr%zm(i,k-1) )
+            gr%zt(i,k) = 0.5_core_rknd * ( gr%zm(i,k+1) + gr%zm(i,k) )
           end do
         enddo
 
@@ -661,7 +702,7 @@ module grid_class
         ! SAM-style stretched grid.
 
         ! Define thermodynamic level altitudes.
-        do k = 1, nz, 1
+        do k = 1, nzt, 1
           do i = 1, ngrdcol
             gr%zt(i,k) = thermodynamic_heights(i,k)
           end do
@@ -672,16 +713,21 @@ module grid_class
         ! thermodynamic level altitudes.  The uppermost momentum level
         ! altitude is found by taking 1/2 the altitude difference between the
         ! top two thermodynamic levels and adding that value to the top
-        ! thermodynamic level.
-        do k = 1, nz-1, 1
+        ! thermodynamic level.  The lowermost momentum level altitude is
+        ! found by taking 1/2 the altitude difference between the
+        ! bottom two thermodynamic levels and subtracting that value from the
+        ! bottom thermodynamic level.
+        do k = 2, nzm-1, 1
           do i = 1, ngrdcol
-            gr%zm(i,k) = 0.5_core_rknd * ( gr%zt(i,k+1) + gr%zt(i,k) )
+            gr%zm(i,k) = 0.5_core_rknd * ( gr%zt(i,k) + gr%zt(i,k-1) )
           end do
         enddo
         
         do i = 1, ngrdcol
-          gr%zm(i,nz) = gr%zt(i,nz) +  & 
-               0.5_core_rknd * ( gr%zt(i,nz) - gr%zt(i,nz-1) )
+          ! The lowest momentum level is at the model lower boundary
+          gr%zm(i,1) = zm_init(i)
+          gr%zm(i,nzm) &
+          = gr%zt(i,nzt) + 0.5_core_rknd * ( gr%zt(i,nzt) - gr%zt(i,nzt-1) )
         end do
 
       elseif ( grid_type == 3 ) then
@@ -692,7 +738,7 @@ module grid_class
         ! WRF-style stretched grid.
 
         ! Define momentum level altitudes.
-        do k = 1, nz, 1
+        do k = 1, nzm, 1
           do i = 1, ngrdcol
             gr%zm(i,k) = momentum_heights(i,k)
           end do
@@ -700,17 +746,10 @@ module grid_class
 
         ! Define thermodynamic level altitudes.  Thermodynamic level altitudes
         ! are located at the central altitude levels, exactly halfway between
-        ! momentum level altitudes.  The lowermost thermodynamic level
-        ! altitude is found by taking 1/2 the altitude difference between the
-        ! bottom two momentum levels and subtracting that value from the
-        ! bottom momentum level.
-        do i = 1, ngrdcol
-          gr%zt(i,1) = gr%zm(i,1) - 0.5_core_rknd * ( gr%zm(i,2) - gr%zm(i,1) )
-        end do
-        
-        do k = 2, nz, 1
+        ! momentum level altitudes.
+        do k = 1, nzt, 1
           do i = 1, ngrdcol
-            gr%zt(i,k) = 0.5_core_rknd * ( gr%zm(i,k) + gr%zm(i,k-1) )
+            gr%zt(i,k) = 0.5_core_rknd * ( gr%zm(i,k+1) + gr%zm(i,k) )
           end do
         enddo
 
@@ -734,7 +773,7 @@ module grid_class
       ! altitudes to set up the CLUBB grid.
 
       ! Momentum level altitudes from host model.
-      do k = 1, nz, 1
+      do k = 1, nzm, 1
         do i = 1, ngrdcol
           gr%zm(i,k) = momentum_heights(i,k)
         end do
@@ -742,7 +781,7 @@ module grid_class
 
       ! Thermodynamic level altitudes from host model after possible grid-index
       ! adjustment for CLUBB interface.
-      do k = 1, nz, 1
+      do k = 1, nzt, 1
         do i = 1, ngrdcol
           gr%zt(i,k) = thermodynamic_heights(i,k)
         end do
@@ -754,52 +793,44 @@ module grid_class
 
     ! Define dzm, the spacing between thermodynamic grid levels; centered over
     ! momentum grid levels
-    do k=1,nz-1
+    do k = 2, nzm-1
       do i = 1, ngrdcol
-        gr%dzm(i,k) = gr%zt(i,k+1) - gr%zt(i,k)
+        gr%dzm(i,k) = gr%zt(i,k) - gr%zt(i,k-1)
       end do
     enddo
     
     do i = 1, ngrdcol
-      gr%dzm(i,nz) = gr%dzm(i,nz-1)
+      ! The grid spacing over the model lower boundary, where zm(i,1) is
+      ! considered to be the "central" level, will be defined to be twice the
+      ! distance between the lowest thermodynamic level and the lowest momentum
+      ! level.
+      gr%dzm(i,1) = 2.0_core_rknd * ( gr%zt(i,1) - gr%zm(i,1) )
+      gr%dzm(i,nzm) = gr%dzm(i,nzm-1)
     end do
 
     ! Define dzt, the spacing between momentum grid levels; centered over
     ! thermodynamic grid levels
-    do k=2,nz
+    do k = 1, nzt
       do i = 1, ngrdcol
-        gr%dzt(i,k) = gr%zm(i,k) - gr%zm(i,k-1)
+        gr%dzt(i,k) = gr%zm(i,k+1) - gr%zm(i,k)
       end do
     enddo
     
-    do i = 1, ngrdcol
-      gr%dzt(i,1) = gr%dzt(i,2)
-    end do
-
     ! Define invrs_dzm, which is the inverse spacing between thermodynamic grid
     ! levels; centered over momentum grid levels.
-    do k=1,nz-1
+    do k = 1, nzm
       do i = 1, ngrdcol
-        gr%invrs_dzm(i,k) = 1._core_rknd / ( gr%zt(i,k+1) - gr%zt(i,k) )
+        gr%invrs_dzm(i,k) = one / gr%dzm(i,k)
       end do
     enddo
-    
-    do i = 1, ngrdcol
-      gr%invrs_dzm(i,nz) = gr%invrs_dzm(i,nz-1)
-    end do
-
 
     ! Define invrs_dzt, which is the inverse spacing between momentum grid
     ! levels; centered over thermodynamic grid levels.
-    do k=2,nz
+    do k = 1, nzt
       do i = 1, ngrdcol
-        gr%invrs_dzt(i,k) = 1._core_rknd / ( gr%zm(i,k) - gr%zm(i,k-1) )
+        gr%invrs_dzt(i,k) = one / gr%dzt(i,k)
       end do
     enddo
-    
-    do i = 1, ngrdcol
-      gr%invrs_dzt(i,1) = gr%invrs_dzt(i,2)
-    end do
 
 
     ! Interpolation Weights: zm grid to zt grid.
@@ -813,7 +844,7 @@ module grid_class
     ! above and below the central momentum level) to the intermediate
     ! thermodynamic grid levels that sandwich the central momentum level.
     ! For more information, see the comments in function interpolated_aztk_imp.
-    call calc_zm2zt_weights( nz, ngrdcol, & ! In
+    call calc_zm2zt_weights( nzt, ngrdcol, & ! In
                              gr )           ! InOut
 
 
@@ -829,7 +860,7 @@ module grid_class
     ! the intermediate momentum grid levels that sandwich the central
     ! thermodynamic level.
     ! For more information, see the comments in function interpolated_azmk_imp.
-    call calc_zt2zm_weights( nz, ngrdcol, & ! In
+    call calc_zt2zm_weights( nzm, ngrdcol, & ! In
                              gr )           ! InOut
 
     return
@@ -869,7 +900,7 @@ module grid_class
 
     ! Input Variables.
 
-    ! Declared number of vertical levels.
+    ! Declared number of momentum vertical levels.
     integer, intent(in) :: & 
       nzmax
 
@@ -899,7 +930,9 @@ module grid_class
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
     real( kind = core_rknd ), dimension(nzmax), intent(out) :: & 
-      momentum_heights,   & ! Momentum level altitudes (file input)      [m]
+      momentum_heights    ! Momentum level altitudes (file input)      [m]
+
+    real( kind = core_rknd ), dimension(nzmax-1), intent(out) :: &
       thermodynamic_heights ! Thermodynamic level altitudes (file input) [m]
 
     ! Local Variables.
@@ -924,7 +957,7 @@ module grid_class
     ! Declare the momentum level altitude array and the thermodynamic level
     ! altitude array to be 0 until overwritten.
     momentum_heights(1:nzmax) = 0.0_core_rknd
-    thermodynamic_heights(1:nzmax) = 0.0_core_rknd
+    thermodynamic_heights(1:nzmax-1) = 0.0_core_rknd
 
     ! Avoid uninitialized memory
     generic_input_item = 0.0_core_rknd
@@ -1002,7 +1035,7 @@ module grid_class
 
       ! Check that the number of thermodynamic grid altitudes in the input file
       ! matches the declared number of CLUBB grid levels (nzmax).
-      if ( zt_level_count /= nzmax ) then
+      if ( zt_level_count /= nzmax-1 ) then
         write(fstderr,*)  & 
            "The number of thermodynamic grid altitudes " & 
            // "listed in file " // trim(zt_grid_fname)  & 
@@ -1012,32 +1045,32 @@ module grid_class
            "Number of thermodynamic grid altitudes listed:  ", & 
            zt_level_count
         write(fstderr,*) & 
-           "Number of CLUBB grid levels specified:  ", nzmax
+           "Number of CLUBB thermo grid levels specified (nzmax-1):  ", nzmax-1
         err_code = clubb_fatal_error
         return
       endif
 
       ! Read the thermodynamic level altitudes from zt_grid_fname.
-      call file_read_1d( file_unit, zt_grid_fname, nzmax, 1,  & ! intent(in)
+      call file_read_1d( file_unit, zt_grid_fname, nzmax-1, 1,  & ! intent(in)
                          thermodynamic_heights ) ! intent(out)
 
       ! Check that each thermodynamic level altitude increases
       ! in height as the thermodynamic level grid index increases.
-      do k = 2, nzmax, 1
-        if ( thermodynamic_heights(k)  & 
-             <= thermodynamic_heights(k-1) ) then
+      do k = 1, nzmax-2, 1
+        if ( thermodynamic_heights(k+1)  & 
+             <= thermodynamic_heights(k) ) then
           write(fstderr,*)  & 
              "The declared thermodynamic level grid " & 
              // "altitudes are not increasing in height " & 
              // "as grid level index increases."
           write(fstderr,*) & 
-             "Grid index:  ", k-1, ";", & 
-             "  Thermodynamic level altitude:  ", & 
-             thermodynamic_heights(k-1)
-          write(fstderr,*) & 
              "Grid index:  ", k, ";", & 
              "  Thermodynamic level altitude:  ", & 
              thermodynamic_heights(k)
+          write(fstderr,*) & 
+             "Grid index:  ", k+1, ";", & 
+             "  Thermodynamic level altitude:  ", & 
+             thermodynamic_heights(k+1)
           err_code = clubb_fatal_error
           return
         endif
@@ -1149,25 +1182,20 @@ module grid_class
   function redirect_interpolated_azm_k( gr, azt, k, zm_min )
 
     ! Description:
+    ! Used in interpolated variables located on thermodynamic grid levels to
+    ! momentum grid levels.
     ! Calls the appropriate corresponding function based on l_cubic_temp
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use model_flags, only: &
-        l_cubic_interp, & ! Variable(s)
-        l_quintic_poly_interp
-
-    use constants_clubb, only: &
-        fstdout ! Variable
-
     implicit none
 
     !---------------------------- Input Variables ----------------------------
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
       
     integer, intent(in) :: &
@@ -1182,12 +1210,12 @@ module grid_class
       zm_min
 
     !---------------------------- Local Variables ----------------------------
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
       redirect_interpolated_azm_col    ! Variable when interp. to momentum levels
       
     !---------------------------- Begin Code ----------------------------
 
-    redirect_interpolated_azm_col = redirect_interpolated_azm_2D( gr%nz, 1, gr, azt, zm_min )
+    redirect_interpolated_azm_col = redirect_interpolated_azm_2D( gr%nzm, gr%nzt, 1, gr, azt, zm_min )
 
     redirect_interpolated_azm_k = redirect_interpolated_azm_col(1,k)
 
@@ -1199,29 +1227,24 @@ module grid_class
   function redirect_interpolated_azm_1D( gr, azt, zm_min )
 
     ! Description:
+    ! Used in interpolated variables located on thermodynamic grid levels to
+    ! momentum grid levels.
     ! Calls the appropriate corresponding function based on l_cubic_temp
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use model_flags, only: &
-        l_cubic_interp, & ! Variable(s)
-        l_quintic_poly_interp
-
-    use constants_clubb, only: &
-        fstdout ! Variable
-
     implicit none
 
     !---------------------------- Input Variables ----------------------------
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
     !---------------------------- Return Variable ----------------------------
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nzm) :: &
       redirect_interpolated_azm_1D    ! Variable when interp. to momentum levels
 
     !---------------------------- Optional Input Variable ----------------------------
@@ -1229,17 +1252,17 @@ module grid_class
       zm_min
 
     !---------------------------- Local Variables ----------------------------
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
       azt_col    ! Variable on thermodynamic grid levels    [units vary]
 
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
       redirect_interpolated_azm_col    ! Variable when interp. to momentum levels
 
     !---------------------------- Begin Code ----------------------------
 
     azt_col(1,:) = azt
 
-    redirect_interpolated_azm_col = redirect_interpolated_azm_2D( gr%nz, 1, gr, azt_col, zm_min )
+    redirect_interpolated_azm_col = redirect_interpolated_azm_2D( gr%nzm, gr%nzt, 1, gr, azt_col, zm_min )
 
     redirect_interpolated_azm_1D = redirect_interpolated_azm_col(1,:)
 
@@ -1248,9 +1271,11 @@ module grid_class
 
   !=============================================================================
   ! Wrapped in interface zt2zm
-  function redirect_interpolated_azm_2D( nz, ngrdcol, gr, azt, zm_min )
+  function redirect_interpolated_azm_2D( nzm, nzt, ngrdcol, gr, azt, zm_min )
 
     ! Description:
+    ! Used in interpolated variables located on thermodynamic grid levels to
+    ! momentum grid levels.
     ! Calls the appropriate corresponding function based on l_cubic_temp
     !-----------------------------------------------------------------------
 
@@ -1268,16 +1293,17 @@ module grid_class
     
     !---------------------------- Input Variables ----------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
     !---------------------------- Return Variable ----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       redirect_interpolated_azm_2D    ! Variable when interp. to momentum levels
       
     !---------------------------- Optional Input Variable ----------------------------
@@ -1296,10 +1322,10 @@ module grid_class
     end if
 
     ! Redirect
-    if ( l_cubic_interp .and. nz >= 3 ) then
-      redirect_interpolated_azm_2D = cubic_interpolated_azm_2D( nz, ngrdcol, gr, azt )
+    if ( l_cubic_interp .and. nzm >= 4 ) then
+      redirect_interpolated_azm_2D = cubic_interpolated_azm_2D( nzm, nzt, ngrdcol, gr, azt )
     else
-      call linear_interpolated_azm_2D( nz, ngrdcol, gr, azt, &
+      call linear_interpolated_azm_2D( nzm, nzt, ngrdcol, gr, azt, &
                                        redirect_interpolated_azm_2D, &
                                        zm_min )
     end if
@@ -1312,25 +1338,20 @@ module grid_class
   function redirect_interpolated_azt_k( gr, azm, k, zt_min )
 
     ! Description:
+    ! Used in interpolated variables located on momentum grid levels to
+    ! thermodynamic grid levels.
     ! Calls the appropriate corresponding function based on l_cubic_temp
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use model_flags, only: &
-        l_cubic_interp, & ! Variable(s)
-        l_quintic_poly_interp
-
-    use constants_clubb, only: &
-        fstdout ! Variable
-
     implicit none
 
     type (grid), target, intent(in) :: gr
 
     !---------------------------- Input Variables ----------------------------
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
       
     integer, intent(in) :: &
@@ -1338,7 +1359,7 @@ module grid_class
 
     !---------------------------- Return Variable ----------------------------
     real( kind = core_rknd ) :: &
-      redirect_interpolated_azt_k    ! Variable when interp. to momentum levels
+      redirect_interpolated_azt_k    ! Variable when interp. to thermo. levels
 
     !---------------------------- Optional Input Variable ----------------------------
     real( kind = core_rknd ), optional, intent(in) :: &
@@ -1346,12 +1367,12 @@ module grid_class
 
     !---------------------------- Local Variables ----------------------------
 
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      redirect_interpolated_azt_col    ! Variable when interp. to momentum levels
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
+      redirect_interpolated_azt_col    ! Variable when interp. to thermo. levels
     
     !---------------------------- Begin Code ----------------------------
 
-    redirect_interpolated_azt_col = redirect_interpolated_azt_2D( gr%nz, 1, gr, azm, zt_min )
+    redirect_interpolated_azt_col = redirect_interpolated_azt_2D( gr%nzm, gr%nzt, 1, gr, azm, zt_min )
 
     redirect_interpolated_azt_k = redirect_interpolated_azt_col(1,k)
 
@@ -1364,47 +1385,42 @@ module grid_class
   function redirect_interpolated_azt_1D( gr, azm, zt_min )
 
     ! Description:
+    ! Used in interpolated variables located on momentum grid levels to
+    ! thermodynamic grid levels.
     ! Calls the appropriate corresponding function based on l_cubic_temp
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use model_flags, only: &
-        l_cubic_interp, & ! Variable(s)
-        l_quintic_poly_interp
-
-    use constants_clubb, only: &
-        fstdout ! Variable
-
     implicit none
 
     type (grid), target, intent(in) :: gr
 
     !---------------------------- Input Variables ----------------------------
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
 
     !---------------------------- Return Variable ----------------------------
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      redirect_interpolated_azt_1D    ! Variable when interp. to momentum levels
+    real( kind = core_rknd ), dimension(gr%nzt) :: &
+      redirect_interpolated_azt_1D    ! Variable when interp. to thermo. levels
 
     !---------------------------- Optional Input Variable ----------------------------
     real( kind = core_rknd ), optional, intent(in) :: &
       zt_min
 
     !---------------------------- Local Variables ----------------------------
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      azm_col    ! Variable on thermodynamic grid levels    [units vary]
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
+      azm_col    ! Variable on momentum grid levels    [units vary]
 
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      redirect_interpolated_azt_col    ! Variable when interp. to momentum levels
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
+      redirect_interpolated_azt_col    ! Variable when interp. to thermo. levels
     
     !---------------------------- Begin Code ----------------------------
 
     azm_col(1,:) = azm
 
-    redirect_interpolated_azt_col = redirect_interpolated_azt_2D( gr%nz, 1, gr, azm_col, zt_min )
+    redirect_interpolated_azt_col = redirect_interpolated_azt_2D(gr%nzm, gr%nzt, 1, gr, azm_col, zt_min )
 
     redirect_interpolated_azt_1D = redirect_interpolated_azt_col(1,:)
 
@@ -1413,9 +1429,11 @@ module grid_class
 
   !=============================================================================
   ! Wrapped in interface zm2zt
-  function redirect_interpolated_azt_2D( nz, ngrdcol, gr, azm, zt_min )
+  function redirect_interpolated_azt_2D( nzm, nzt, ngrdcol, gr, azm, zt_min )
 
     ! Description:
+    ! Used in interpolated variables located on momentum grid levels to
+    ! thermodynamic grid levels.
     ! Calls the appropriate corresponding function based on l_cubic_temp
     !-----------------------------------------------------------------------
 
@@ -1433,16 +1451,17 @@ module grid_class
     
     !---------------------------- Input Variables ----------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
 
     !---------------------------- Return Variable----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       redirect_interpolated_azt_2D    ! Variable when interp. to momentum levels
 
     !---------------------------- Optional Input Variable ----------------------------
@@ -1461,10 +1480,10 @@ module grid_class
     end if
 
     ! Redirect
-    if (l_cubic_interp .and. nz >= 3 ) then
-      redirect_interpolated_azt_2D = cubic_interpolated_azt_2D( nz, ngrdcol, gr, azm )
+    if (l_cubic_interp .and. nzm >= 2 ) then
+      redirect_interpolated_azt_2D = cubic_interpolated_azt_2D( nzm, nzt, ngrdcol, gr, azm )
     else
-      call linear_interpolated_azt_2D( nz, ngrdcol, gr, azm, &
+      call linear_interpolated_azt_2D( nzm, nzt, ngrdcol, gr, azm, &
                                        redirect_interpolated_azt_2D, &
                                        zt_min )
     end if
@@ -1473,7 +1492,7 @@ module grid_class
   end function redirect_interpolated_azt_2D
   
   !=============================================================================
-  subroutine linear_interpolated_azm_2D( nz, ngrdcol, gr, azt, &
+  subroutine linear_interpolated_azm_2D( nzm, nzt, ngrdcol, gr, azt, &
                                          linear_interpolated_azm, &
                                          zm_min )
 
@@ -1493,17 +1512,18 @@ module grid_class
     implicit none
     
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
     ! ------------------------------ Input Variable ------------------------------
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
     ! ------------------------------ Return Variable ------------------------------
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzm) :: &
       linear_interpolated_azm    ! Variable when interp. to momentum levels
 
     !---------------------------- Optional Input Variable ----------------------------
@@ -1520,7 +1540,7 @@ module grid_class
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      linear_interpolated_azm(i,1) = azt(i,2)
+      linear_interpolated_azm(i,1) = azt(i,1)
     end do
     !$acc end parallel loop
 
@@ -1528,31 +1548,42 @@ module grid_class
     ! momentum level, k, between two successive thermodynamic levels using
     ! linear interpolation.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
+    do k = 2, nzm-1
       do i = 1, ngrdcol
         linear_interpolated_azm(i,k) = gr%weights_zt2zm(i,k,1) &
-                                          * ( azt(i,k+1) - azt(i,k) ) + azt(i,k)
+                                       * ( azt(i,k) - azt(i,k-1) ) + azt(i,k-1)
       end do
     end do
     !$acc end parallel loop
 
-    ! Set the value of the thermodynamic-level variable, azt, at the uppermost
-    ! level of the model, which is a momentum level.  The name of the variable
-    ! when interpolated/extended to momentum levels is azm.
-    ! Use a linear extension based on the values of azt at levels gr%nz and
-    ! gr%nz-1 to find the value of azm at level gr%nz (the uppermost level
-    ! in the model).
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      linear_interpolated_azm(i,nz) &
-        = ( ( azt(i,nz) - azt(i,nz-1) ) / ( gr%zt(i,nz) - gr%zt(i,nz-1) ) ) & 
-          * ( gr%zm(i,nz) - gr%zt(i,nz) ) + azt(i,nz)
+
+      ! Set the value of the thermodynamic-level variable, azt, at the lowermost
+      ! level of the model, which is a momentum level.  The name of the variable
+      ! when interpolated/extended to momentum levels is azm.
+      ! Use a linear extension based on the values of azt at levels 1 and 2 to
+      ! find the value of azm at level 1 (the lowermost level in the model).
+      !linear_interpolated_azm(i,1) &
+      !  = ( ( azt(i,2) - azt(i,1) ) / ( gr%zt(i,2) - gr%zt(i,1) ) ) & 
+      !    * ( gr%zm(i,1) - gr%zt(i,1) ) + azt(i,1)
+
+      ! Set the value of the thermodynamic-level variable, azt, at the uppermost
+      ! level of the model, which is a momentum level.  The name of the variable
+      ! when interpolated/extended to momentum levels is azm.
+      ! Use a linear extension based on the values of azt at levels gr%nzt and
+      ! gr%nzt-1 to find the value of azm at level gr%nzm (the uppermost level
+      ! in the model).
+      linear_interpolated_azm(i,nzm) &
+        = ( ( azt(i,nzt) - azt(i,nzt-1) ) / ( gr%zt(i,nzt) - gr%zt(i,nzt-1) ) ) & 
+          * ( gr%zm(i,nzm) - gr%zt(i,nzt) ) + azt(i,nzt)
+
     end do
     !$acc end parallel loop
 
     if ( present(zm_min) ) then
       !$acc parallel loop gang vector collapse(2) default(present) copyin(zm_min)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           linear_interpolated_azm(i,k) = max( linear_interpolated_azm(i,k), zm_min )
         end do
@@ -1567,7 +1598,7 @@ module grid_class
   end subroutine linear_interpolated_azm_2D
 
   !=============================================================================
-  function zt2zm2zt( nz, ngrdcol, gr, azt, zt_min )
+  function zt2zm2zt( nzm, nzt, ngrdcol, gr, azt, zt_min )
 
     ! Description:
     !    Function to interpolate a variable located on the thermodynamic grid
@@ -1585,25 +1616,26 @@ module grid_class
     
     ! ------------------------------ Input Variable ------------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
     ! ------------------------------ Return Variable ------------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      zt2zm2zt    ! Variable when interp. to momentum levels
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      zt2zm2zt    ! Variable when smoothed and back on thermodynamic levels
 
     !---------------------------- Optional Input Variable ----------------------------
     real( kind = core_rknd ), optional, intent(in) :: &
       zt_min
 
     ! ------------------------------ Local Variable ------------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      azt_zm
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      azt_zm    ! Variable when interpolated to momentum levels.
 
     ! ------------------------------ Begin Code ------------------------------
 
@@ -1612,10 +1644,10 @@ module grid_class
     !$acc      create( azt_zm )
 
     ! Interpolate azt to momentum levels 
-    azt_zm = zt2zm( nz, ngrdcol, gr, azt )
+    azt_zm = zt2zm( nzm, nzt, ngrdcol, gr, azt )
 
-    ! Interpolate back to termodynamic levels
-    zt2zm2zt = zm2zt( nz, ngrdcol, gr, azt_zm, zt_min )
+    ! Interpolate back to thermodynamic levels
+    zt2zm2zt = zm2zt( nzm, nzt, ngrdcol, gr, azt_zm, zt_min )
 
     !$acc end data
 
@@ -1624,7 +1656,7 @@ module grid_class
   end function zt2zm2zt
   
   !=============================================================================
-  function zm2zt2zm( nz, ngrdcol, gr, azm, zm_min )
+  function zm2zt2zm( nzm, nzt, ngrdcol, gr, azm, zm_min )
 
     ! Description:
     !    Function to interpolate a variable located on the momentum grid 
@@ -1642,25 +1674,26 @@ module grid_class
     
     ! ------------------------------ Input Variable ------------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
 
     ! ------------------------------ Return Variable ------------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      zm2zt2zm    ! Variable when interp. to momentum levels
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      zm2zt2zm    ! Variable when smoothed and back on momentum levels
 
     !---------------------------- Optional Input Variable ----------------------------
     real( kind = core_rknd ), optional, intent(in) :: &
       zm_min
 
     ! ------------------------------ Local Variable ------------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      azm_zt
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      azm_zt   ! Variable when interpolated to thermodynamic levels
 
     ! ------------------------------ Begin Code ------------------------------
 
@@ -1669,10 +1702,10 @@ module grid_class
     !$acc      create( azm_zt )
 
     ! Interpolate azt to termodynamic levels 
-    azm_zt = zm2zt( nz, ngrdcol, gr, azm )
+    azm_zt = zm2zt( nzm, nzt, ngrdcol, gr, azm )
 
     ! Interpolate back to momentum levels
-    zm2zt2zm = zt2zm( nz, ngrdcol, gr, azm_zt, zm_min )
+    zm2zt2zm = zt2zm( nzm, nzt, ngrdcol, gr, azm_zt, zm_min )
 
     !$acc end data
 
@@ -1681,12 +1714,12 @@ module grid_class
   end function zm2zt2zm
 
   !=============================================================================
-  function cubic_interpolated_azm_2D( nz, ngrdcol, gr, azt )
+  function cubic_interpolated_azm_2D( nzm, nzt, ngrdcol, gr, azt )
 
     ! Description:
-    !   Function to interpolate a variable located on the momentum grid
-    !   levels (azt) to the thermodynamic grid levels (azm).  This function outputs the
-    !   value of azt at a all grid levels using Steffen's monotonic cubic
+    !   Function to interpolate a variable located on the thermodynamic grid
+    !   levels (azt) to the momentum grid levels (azm).  This function outputs
+    !   the value of azm at a all grid levels using Steffen's monotonic cubic
     !   interpolation implemented by Tak Yamaguchi.
     ! 
     ! References:
@@ -1703,16 +1736,17 @@ module grid_class
 
     ! Input Variables
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
     
     type (grid), target, intent(in) :: gr
     
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       azt
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       cubic_interpolated_azm_2D
 
     ! Local Variable(s)
@@ -1723,30 +1757,35 @@ module grid_class
 
     ! ---- Begin Code ----
 
-    do k = 1, nz 
+    do k = 1, nzm
       do i = 1, ngrdcol
 
         ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
-        if ( k == nz-1 ) then
-          km1 = nz-2
-          kp1 = nz
-          kp2 = nz
-          k00 = nz-1
-        else if ( k == nz ) then ! Extrapolation
-          km1 = nz
-          kp1 = nz
-          kp2 = nz
-          k00 = nz-1
-        else if ( k == 1 ) then
-          km1 = 1
+        if ( k == nzm-1 ) then
+          km1 = nzt-2
+          kp1 = nzt
+          kp2 = nzt
+          k00 = nzt-1
+        else if ( k == nzm ) then ! Linear extension to level k = nzm
+          km1 = nzt
+          kp1 = nzt
+          kp2 = nzt
+          k00 = nzt-1
+        else if ( k == 1 ) then ! Linear extension to level k = 1
+          km1 = 2
+          kp1 = 2
+          kp2 = 2
+          k00 = 1
+        else if ( k == 2 ) then
           kp1 = 2
           kp2 = 3
           k00 = 1
+          km1 = 1
         else
-          km1 = k-1
-          kp1 = k+1
-          kp2 = k+2
-          k00 = k
+          km1 = k-2
+          kp1 = k
+          kp2 = k+1
+          k00 = k-1
         end if
         
         ! Do the actual interpolation.
@@ -1763,53 +1802,56 @@ module grid_class
   end function cubic_interpolated_azm_2D
 
   !=============================================================================
-  subroutine calc_zt2zm_weights( nz, ngrdcol, &
-                                      gr ) 
+  subroutine calc_zt2zm_weights( nzm, ngrdcol, &
+                                 gr ) 
 
     ! Description:
     ! Function used to help in an interpolation of a variable (var_zt) located
     ! on the thermodynamic grid levels (azt) to the momentum grid levels (azm).
     ! This function computes a weighting factor for both the upper thermodynamic
-    ! level (k+1) and the lower thermodynamic level (k) applied to the central
-    ! momentum level (k).  For the uppermost momentum grid level (k=gr%nz), a
-    ! weighting factor for both the thermodynamic level at gr%nz and the
-    ! thermodynamic level at gr%nz-1 are calculated based on the use of a
+    ! level (k) and the lower thermodynamic level (k-1) applied to the central
+    ! momentum level (k).  For the lowermost momentum grid level (k=1), a
+    ! weighting factor for both the thermodynamic level at k=1 and the
+    ! thermodynamic level at k=2 are calculated based on the use of a linear
+    ! extension. Likewise, for the uppermost momentum grid level (k=gr%nzm), a
+    ! weighting factor for both the thermodynamic level at k=gr%nzt and the
+    ! thermodynamic level at k=gr%nzt-1 are calculated based on the use of a
     ! linear extension.  This function outputs the weighting factors at a single
     ! momentum grid level (k).  The formulation used is compatible with a
     ! stretched (unevenly-spaced) grid.  The weights are defined as follows:
     !
-    ! ---var_zt(k+1)------------------------------------------- t(k+1)
+    ! ---var_zt(k)--------------------------------------------- t(k)
     !                       azt_weight(t_above) = factor
     ! ===========var_zt(interp)================================ m(k)
     !                       azt_weight(t_below) = 1 - factor
-    ! ---var_zt(k)--------------------------------------------- t(k)
+    ! ---var_zt(k-1)------------------------------------------- t(k-1)
     !
-    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
-    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
+    ! The vertical indices t(k), m(k), and t(k-1) correspond with altitudes
+    ! zt(k), zm(k), and zt(k-1), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
-    ! For all levels k < gr%nz:
+    ! For all momentum levels 1 < k < gr%nzm:
     !
     ! The formula for a linear interpolation is given by:
     !
     ! var_zt( interp to zm(k) )
-    ! = [ ( var_zt(k+1) - var_zt(k) ) / ( zt(k+1) - zt(k) ) ]
-    !     * ( zm(k) - zt(k) ) + var_zt(k);
+    ! = [ ( var_zt(k) - var_zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
+    !     * ( zm(k) - zt(k-1) ) + var_zt(k-1);
     !
     ! which can be rewritten as:
     !
     ! var_zt( interp to zm(k) )
-    ! = [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
-    !     * ( var_zt(k+1) - var_zt(k) ) + var_zt(k).
+    ! = [ ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
+    !     * ( var_zt(k) - var_zt(k-1) ) + var_zt(k-1).
     !
     ! Furthermore, the formula can be rewritten as:
     !
     ! var_zt( interp to zm(k) )
-    ! = factor * var_zt(k+1) + ( 1 - factor ) * var_zt(k);
+    ! = factor * var_zt(k) + ( 1 - factor ) * var_zt(k-1);
     !
     ! where:
     !
-    ! factor = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ).
+    ! factor = ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) ).
     !
     ! One of the important uses of this function is in situations where the
     ! variable to be interpolated is being treated IMPLICITLY in an equation.
@@ -1821,107 +1863,143 @@ module grid_class
     !
     ! ---var_zt(k+1)------------------------------------------- t(k+1)
     !                                       A(k)
-    ! ===========var_zt(interp)================================ m(k)
+    ! ===========var_zt(interp)================================ m(k+1)
     !                                       B(k) = 1 - A(k)
     ! ---var_zt(k)-----------d(var_zt)/dz---------------------- t(k)
     !                                       C(k)
-    ! ===========var_zt(interp)================================ m(k-1)
+    ! ===========var_zt(interp)================================ m(k)
     !                                       D(k) = 1 - C(k)
     ! ---var_zt(k-1)------------------------------------------- t(k-1)
     !
-    ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
-    ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.
+    ! The vertical indices t(k+1), m(k+1), t(k), m(k), and t(k-1) correspond
+    ! with altitudes zt(k+1), zm(k+1), zt(k), zm(k), and zt(k-1), respectively.
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
     ! The grid weights, indexed around the central thermodynamic level (k), are
     ! defined as follows:
     !
-    ! A(k) = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) );
+    ! A(k) = ( zm(k+1) - zt(k) ) / ( zt(k+1) - zt(k) );
     !
     ! which is the same as "factor" for the interpolation to momentum
-    ! level (k).  In the code, this interpolation is referenced as
-    ! gr%weights_zt2zm(t_above,mk), which can be read as "grid weight in a zt2zm
-    ! interpolation of the thermodynamic level above momentum level (k) (applied
-    ! to momentum level (k))".
+    ! level (k+1).  In the code, this interpolation is referenced as
+    ! gr%weights_zt2zm(t_above,mkp1), which can be read as "grid weight in a
+    ! zt2zm interpolation of the thermodynamic level above momentum level (k+1)
+    ! (applied to momentum level (k+1))".
     !
-    ! B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
+    ! B(k) = 1 - [ ( zm(k+1) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
     !      = 1 - A(k);
     !
     ! which is the same as "1 - factor" for the interpolation to momentum
-    ! level (k).  In the code, this interpolation is referenced as
-    ! gr%weights_zt2zm(t_below,mk), which can be read as "grid weight in a zt2zm
-    ! interpolation of the thermodynamic level below momentum level (k) (applied
-    ! to momentum level (k))".
+    ! level (k+1).  In the code, this interpolation is referenced as
+    ! gr%weights_zt2zm(t_below,mkp1), which can be read as "grid weight in a
+    ! zt2zm interpolation of the thermodynamic level below momentum level (k+1)
+    ! (applied to momentum level (k+1))".
     !
-    ! C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) );
+    ! C(k) = ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) );
     !
     ! which is the same as "factor" for the interpolation to momentum
-    ! level (k-1).  In the code, this interpolation is referenced as
-    ! gr%weights_zt2zm(t_above,mkm1), which can be read as "grid weight in a
-    ! zt2zm interpolation of the thermodynamic level above momentum level (k-1)
-    ! (applied to momentum level (k-1))".
+    ! level (k).  In the code, this interpolation is referenced as
+    ! gr%weights_zt2zm(t_above,mk), which can be read as "grid weight in a
+    ! zt2zm interpolation of the thermodynamic level above momentum level (k)
+    ! (applied to momentum level (k))".
     !
-    ! D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
+    ! D(k) = 1 - [ ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
     !      = 1 - C(k);
     !
     ! which is the same as "1 - factor" for the interpolation to momentum
-    ! level (k-1).  In the code, this interpolation is referenced as
-    ! gr%weights_zt2zm(t_below,mkm1), which can be read as "grid weight in a
-    ! zt2zm interpolation of the thermodynamic level below momentum level (k-1)
-    ! (applied to momentum level (k-1))".
+    ! level (k).  In the code, this interpolation is referenced as
+    ! gr%weights_zt2zm(t_below,mk), which can be read as "grid weight in a
+    ! zt2zm interpolation of the thermodynamic level below momentum level (k)
+    ! (applied to momentum level (k))".
     !
     ! Additionally, as long as the central thermodynamic level (k) in the above
     ! scenario is not the uppermost thermodynamic level or the lowermost
-    ! thermodynamic level (k /= gr%nz and k /= 1), the four weighting factors
+    ! thermodynamic level (k /= gr%nz-1 and k /= 1), the four weighting factors
     ! have the following relationships:  A(k) = C(k+1) and B(k) = D(k+1).
     !
     !
-    ! Special condition for uppermost grid level, k = gr%nz:
+    ! Special condition for lowermost grid level, k = 1:
     !
-    ! The uppermost momentum grid level is above the uppermost thermodynamic
+    ! The lowermost momentum grid level is below the lowermost thermodynamic
     ! grid level.  Thus, a linear extension is used at this level.
     !
-    ! For level k = gr%nz:
-    !
-    ! The formula for a linear extension is given by:
+    ! The formula for a linear extension to momentum level k = 1 is given by:
     !
     ! var_zt( extend to zm(k) )
-    ! = [ ( var_zt(k) - var_zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
-    !     * ( zm(k) - zt(k-1) ) + var_zt(k-1);
+    ! = [ ( var_zt(k+1) - var_zt(k) ) / ( zt(k+1) - zt(k) ) ]
+    !     * ( zm(k) - zt(k) ) + var_zt(k);
     !
     ! which can be rewritten as:
     !
     ! var_zt( extend to zm(k) )
-    ! = [ ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
-    !     * ( var_zt(k) - var_zt(k-1) ) + var_zt(k-1).
+    ! = [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
+    !     * ( var_zt(k+1) - var_zt(k) ) + var_zt(k).
     !
     ! Furthermore, the formula can be rewritten as:
     !
     ! var_zt( extend to zm(k) )
-    ! = factor * var_zt(k) + ( 1 - factor ) * var_zt(k-1);
+    ! = factor * var_zt(k+1) + ( 1 - factor ) * var_zt(k);
     !
     ! where:
     !
-    ! factor = ( zm(k) - zt(k-1) ) / ( zt(k) - zt(k-1) ).
+    ! factor = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ).
     !
     ! Due to the fact that a linear extension is being used, the value of factor
-    ! will be greater than 1.  The weight of thermodynamic level k = gr%nz on
-    ! momentum level k = gr%nz equals the value of factor.  The weight of
-    ! thermodynamic level k = gr%nz-1 on momentum level k = gr%nz equals
+    ! will be less than 0.  The weight of the upper thermodynamic level, which
+    ! is thermodynamic level k = 2, on momentum level k = 1 equals the value of
+    ! factor.  The weight of the lower thermodynamic level, which is
+    ! thermodynamic level k = 1, on momentum level k = 1 equals 1 - factor,
+    ! which is greater than 1.  However, the sum of the weights equals 1.
+    !
+    !
+    ! Special condition for uppermost grid level, k = gr%nzm:
+    !
+    ! The uppermost momentum grid level is above the uppermost thermodynamic
+    ! grid level.  Thus, a linear extension is used at this level.
+    !
+    ! The formula for a linear extension to momentum level k = gr%nzm
+    ! is given by:
+    !
+    ! var_zt( extend to zm(k) )
+    ! = [ ( var_zt(k-1) - var_zt(k-2) ) / ( zt(k-1) - zt(k-2) ) ]
+    !     * ( zm(k) - zt(k-2) ) + var_zt(k-2);
+    !
+    ! which can be rewritten as:
+    !
+    ! var_zt( extend to zm(k) )
+    ! = [ ( zm(k) - zt(k-2) ) / ( zt(k-1) - zt(k-2) ) ]
+    !     * ( var_zt(k-1) - var_zt(k-2) ) + var_zt(k-2).
+    !
+    ! Furthermore, the formula can be rewritten as:
+    !
+    ! var_zt( extend to zm(k) )
+    ! = factor * var_zt(k-1) + ( 1 - factor ) * var_zt(k-2);
+    !
+    ! where:
+    !
+    ! factor = ( zm(k) - zt(k-2) ) / ( zt(k-1) - zt(k-2) ).
+    !
+    ! Finally, since here k = gr%nzm and gr%nzt = gr%nzm - 1:
+    !
+    ! factor = ( zm(gr%nzm) - zt(gr%nzt-1) ) / ( zt(gr%nzt) - zt(gr%nzt-1) ).
+    !
+    ! Due to the fact that a linear extension is being used, the value of factor
+    ! will be greater than 1.  The weight of thermodynamic level k = gr%nzt on
+    ! momentum level k = gr%nzm equals the value of factor.  The weight of
+    ! thermodynamic level k = gr%nzt-1 on momentum level k = gr%nzm equals
     ! 1 - factor, which is less than 0.  However, the sum of the two weights
     ! equals 1.
     !
     !
     ! Brian Griffin; September 12, 2008.
+    ! Updated for removal of "ghost" thermodynamic level that was below the
+    ! surface; July 17, 2023.
     !
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
         one  ! Constant(s)
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
 
     implicit none
 
@@ -1932,48 +2010,63 @@ module grid_class
 
     ! Input Variable
     integer, intent(in) :: &
-      nz, &
+      nzm, &
       ngrdcol
     
     ! Input/Output Variable
     type (grid), target, intent(inout) :: gr
 
-    ! Local Variables
-    real( kind = core_rknd ) :: factor
-
     integer :: i, k
 
-    do k = 1, nz-1
+
+    ! At most levels, the momentum level is found in-between two
+    ! thermodynamic levels.  Linear interpolation is used.
+    do k = 2, nzm-1
       do i = 1, ngrdcol
         
-        ! The top model level (gr%nz) is formulated differently because the top
-        ! momentum level is above the top thermodynamic level.  A linear
-        ! extension is required, rather than linear interpolation.
-        ! Note:  Variable "factor" will be greater than 1 in this situation.
-        gr%weights_zt2zm(i,k,t_above) = ( gr%zm(i,k) - gr%zt(i,k) ) &
-                                          / ( gr%zt(i,k+1) - gr%zt(i,k) )
+        ! Weight of upper thermodynamic level on momentum level.
+        gr%weights_zt2zm(i,k,t_above) = ( gr%zm(i,k) - gr%zt(i,k-1) ) &
+                                        / ( gr%zt(i,k) - gr%zt(i,k-1) )
 
         ! Weight of lower thermodynamic level on momentum level.
         gr%weights_zt2zm(i,k,t_below) = one - gr%weights_zt2zm(i,k,t_above)
         
       end do
     end do
-    
-    ! At most levels, the momentum level is found in-between two
-    ! thermodynamic levels.  Linear interpolation is used.
+ 
+    ! The bottom model level (1) is formulated differently because the bottom
+    ! momentum level is below the bottom thermodynamic level.  A linear
+    ! extension is required, rather than linear interpolation.
+    ! Note:  Variable "factor" will be less than 0 in this situation.
     do i = 1, ngrdcol
-      gr%weights_zt2zm(i,nz,t_above) = ( gr%zm(i,nz) - gr%zt(i,nz-1) ) &
-                                        / ( gr%zt(i,nz) - gr%zt(i,nz-1) )
+
+      gr%weights_zt2zm(i,1,t_above) = ( gr%zm(i,1) - gr%zt(i,1) ) &
+                                       / ( gr%zt(i,2) - gr%zt(i,1) )
                                         
-      gr%weights_zt2zm(i,nz,t_below) = one - gr%weights_zt2zm(i,nz,t_above)
+      gr%weights_zt2zm(i,1,t_below) = one - gr%weights_zt2zm(i,1,t_above)
+
     end do
+
+    ! The top model level (gr%nzm) is formulated differently because the top
+    ! momentum level is above the top thermodynamic level.  A linear
+    ! extension is required, rather than linear interpolation.
+    ! Note:  Variable "factor" will be greater than 1 in this situation.
+    do i = 1, ngrdcol
+
+      gr%weights_zt2zm(i,nzm,t_above) = ( gr%zm(i,nzm) - gr%zt(i,nzm-2) ) &
+                                        / ( gr%zt(i,nzm-1) - gr%zt(i,nzm-2) )
+                                        
+      gr%weights_zt2zm(i,nzm,t_below) = one - gr%weights_zt2zm(i,nzm,t_above)
+
+    end do
+
 
     return
 
   end subroutine calc_zt2zm_weights
   
   !=============================================================================
-  subroutine linear_interpolated_azt_2D( nz, ngrdcol, gr, azm, &
+  subroutine linear_interpolated_azt_2D( nzm, nzt, ngrdcol, gr, azm, &
                                          linear_interpolated_azt, &
                                          zt_min )
 
@@ -1993,17 +2086,18 @@ module grid_class
     implicit none
     
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
     ! ------------------------------ Input Variable ------------------------------
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
 
     ! ------------------------------ Output Variable ------------------------------
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzt) :: &
       linear_interpolated_azt    ! Variable when interp. to thermodynamic levels
 
     !---------------------------- Optional Input Variable ----------------------------
@@ -2018,35 +2112,21 @@ module grid_class
     !$acc data copyin( azm, gr, gr%weights_zm2zt, gr%zt, gr%zm ) &
     !$acc      copyout( linear_interpolated_azt )
 
-    ! Set the value of the momentum-level variable, azm, at the lowermost level
-    ! of the model (below the model lower boundary), which is a thermodynamic
-    ! level.  The name of the variable when interpolated/extended to
-    ! thermodynamic levels is azt.
-    ! Use a linear extension based on the values of azm at levels 1 and 2 to
-    ! find the value of azt at level 1 (the lowermost level in the model).
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      linear_interpolated_azt(i,1) &
-        = ( ( azm(i,2) - azm(i,1) ) / ( gr%zm(i,2) - gr%zm(i,1) ) ) & 
-          * ( gr%zt(i,1) - gr%zm(i,1) ) + azm(i,1)
-    end do
-    !$acc end parallel loop
-
     ! Interpolate the value of a momentum-level variable to the central
     ! thermodynamic level, k, between two successive momentum levels using
     ! linear interpolation.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz
+    do k = 1, nzt
       do i = 1, ngrdcol
         linear_interpolated_azt(i,k) = gr%weights_zm2zt(i,k,1) &
-                                       * ( azm(i,k) - azm(i,k-1) ) + azm(i,k-1)
+                                       * ( azm(i,k+1) - azm(i,k) ) + azm(i,k)
       end do
     end do
     !$acc end parallel loop
 
     if ( present(zt_min) ) then
       !$acc parallel loop gang vector collapse(2) default(present) copyin(zt_min)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           linear_interpolated_azt(i,k) = max( linear_interpolated_azt(i,k), zt_min )
         end do
@@ -2061,7 +2141,7 @@ module grid_class
   end subroutine linear_interpolated_azt_2D
   
   !=============================================================================
-  function cubic_interpolated_azt_2D( nz, ngrdcol, gr, azm )
+  function cubic_interpolated_azt_2D( nzm, nzt, ngrdcol, gr, azm )
 
     ! Description:
     !   Function to interpolate a variable located on the momentum grid
@@ -2083,16 +2163,17 @@ module grid_class
 
     ! Input Variables
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
     
     type (grid), target, intent(in) :: gr
     
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       azm
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       cubic_interpolated_azt_2D
 
     ! Local Variable(s)
@@ -2103,30 +2184,25 @@ module grid_class
 
     ! ---- Begin Code ----
 
-    do k = 1, nz 
+    do k = 1, nzt
       do i = 1, ngrdcol
 
         ! k levels are based on Tak's find_indices subroutine -dschanen 24 Oct 2011
-        if ( k == nz ) then
-          km1 = nz-2
-          kp1 = nz
-          kp2 = nz
-          k00 = nz-1
-        else if ( k == 2 ) then
+        if ( k == nzt ) then
+          km1 = nzm-2
+          kp1 = nzm
+          kp2 = nzm
+          k00 = nzm-1
+        else if ( k == 1 ) then
           km1 = 1
           kp1 = 2
           kp2 = 3
           k00 = 1
-        else if ( k == 1 ) then ! Extrapolation for the ghost point
-          km1 = nz
-          k00 = 1
-          kp1 = 2
-          kp2 = 3
         else
-          km1 = k-2
-          kp1 = k
-          kp2 = k+1
-          k00 = k-1
+          km1 = k-1
+          kp1 = k+1
+          kp2 = k+2
+          k00 = k
         end if
         
         ! Do the actual interpolation.
@@ -2143,53 +2219,49 @@ module grid_class
   end function cubic_interpolated_azt_2D
 
   !=============================================================================
-  subroutine calc_zm2zt_weights( nz, ngrdcol, &
-                                      gr )
+  subroutine calc_zm2zt_weights( nzt, ngrdcol, &
+                                 gr )
 
     ! Description:
     ! Function used to help in an interpolation of a variable (var_zm) located
     ! on the momentum grid levels (azm) to the thermodynamic grid levels (azt).
     ! This function computes a weighting factor for both the upper momentum
-    ! level (k) and the lower momentum level (k-1) applied to the central
-    ! thermodynamic level (k).  For the lowermost thermodynamic grid
-    ! level (k=1), a weighting factor for both the momentum level at 1 and the
-    ! momentum level at 2 are calculated based on the use of a linear extension.
-    ! This function outputs the weighting factors at a single thermodynamic grid
-    ! level (k).   The formulation used is compatible with a stretched
-    ! (unevenly-spaced) grid.  The weights are defined as follows:
+    ! level (k+1) and the lower momentum level (k) applied to the central
+    ! thermodynamic level (k).  This function outputs the weighting factors at
+    ! a single thermodynamic grid level (k).   The formulation used is
+    ! compatible with a stretched (unevenly-spaced) grid.  The weights are 
+    ! defined as follows:
     !
-    ! ===var_zm(k)============================================= m(k)
+    ! ===var_zm(k+1)=========================================== m(k+1)
     !                       azm_weight(m_above) = factor
     ! -----------var_zm(interp)-------------------------------- t(k)
     !                       azm_weight(m_below) = 1 - factor
-    ! ===var_zm(k-1)=========================================== m(k-1)
+    ! ===var_zm(k)============================================= m(k)
     !
-    ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes
-    ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
+    ! The vertical indices m(k+1), t(k), and m(k) correspond with altitudes
+    ! zm(k+1), zt(k), and zm(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
-    !
-    ! For all levels k > 1:
     !
     ! The formula for a linear interpolation is given by:
     !
     ! var_zm( interp to zt(k) )
-    ! = [ ( var_zm(k) - var_zm(k-1) ) / ( zm(k) - zm(k-1) ) ]
-    !     * ( zt(k) - zm(k-1) ) + var_zm(k-1);
+    ! = [ ( var_zm(k+1) - var_zm(k) ) / ( zm(k+1) - zm(k) ) ]
+    !     * ( zt(k) - zm(k) ) + var_zm(k);
     !
     ! which can be rewritten as:
     !
     ! var_zm( interp to zt(k) )
-    ! = [ ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) ) ]
-    !     * ( var_zm(k) - var_zm(k-1) ) + var_zm(k-1).
+    ! = [ ( zt(k) - zm(k) ) / ( zm(k+1) - zm(k) ) ]
+    !     * ( var_zm(k+1) - var_zm(k) ) + var_zm(k).
     !
     ! Furthermore, the formula can be rewritten as:
     !
     ! var_zm( interp to zt(k) )
-    ! = factor * var_zm(k) + ( 1 - factor ) * var_zm(k-1);
+    ! = factor * var_zm(k+1) + ( 1 - factor ) * var_zm(k);
     !
     ! where:
     !
-    ! factor = ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) ).
+    ! factor = ( zt(k) - zm(k) ) / ( zm(k+1) - zm(k) ).
     !
     ! One of the important uses of this function is in situations where the
     ! variable to be interpolated is being treated IMPLICITLY in an equation.
@@ -2201,55 +2273,55 @@ module grid_class
     !
     ! ===var_zm(k+1)=========================================== m(k+1)
     !                                       A(k)
-    ! -----------var_zm(interp)-------------------------------- t(k+1)
+    ! -----------var_zm(interp)-------------------------------- t(k)
     !                                       B(k) = 1 - A(k)
     ! ===var_zm(k)===========d(var_zm)/dz====================== m(k)
     !                                       C(k)
-    ! -----------var_zm(interp)-------------------------------- t(k)
+    ! -----------var_zm(interp)-------------------------------- t(k-1)
     !                                       D(k) = 1 - C(k)
     ! ===var_zm(k-1)=========================================== m(k-1)
     !
-    ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond
-    ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.
+    ! The vertical indices m(k+1), t(k), m(k), t(k-1), and m(k-1) correspond
+    ! with altitudes zm(k+1), zt(k), zm(k), zt(k-1), and zm(k-1), respectively.
     ! The letter "t" is used for thermodynamic levels and the letter "m" is used
     ! for momentum levels.
     !
     ! The grid weights, indexed around the central momentum level (k), are
     ! defined as follows:
     !
-    ! A(k) = ( zt(k+1) - zm(k) ) / ( zm(k+1) - zm(k) );
+    ! A(k) = ( zt(k) - zm(k) ) / ( zm(k+1) - zm(k) );
     !
     ! which is the same as "factor" for the interpolation to thermodynamic
-    ! level (k+1).  In the code, this interpolation is referenced as
-    ! gr%weights_zm2zt(m_above,tkp1), which can be read as "grid weight in a
+    ! level (k).  In the code, this interpolation is referenced as
+    ! gr%weights_zm2zt(m_above,tk), which can be read as "grid weight in a
     ! zm2zt interpolation of the momentum level above thermodynamic
-    ! level (k+1) (applied to thermodynamic level (k+1))".
+    ! level (k) (applied to thermodynamic level (k))".
     !
-    ! B(k) = 1 - [ ( zt(k+1) - zm(k) ) / ( zm(k+1) - zm(k) ) ]
+    ! B(k) = 1 - [ ( zt(k) - zm(k) ) / ( zm(k+1) - zm(k) ) ]
     !      = 1 - A(k);
     !
     ! which is the same as "1 - factor" for the interpolation to thermodynamic
-    ! level (k+1).  In the code, this interpolation is referenced as
-    ! gr%weights_zm2zt(m_below,tkp1), which can be read as "grid weight in a
+    ! level (k).  In the code, this interpolation is referenced as
+    ! gr%weights_zm2zt(m_below,tk), which can be read as "grid weight in a
     ! zm2zt interpolation of the momentum level below thermodynamic
-    ! level (k+1) (applied to thermodynamic level (k+1))".
+    ! level (k) (applied to thermodynamic level (k))".
     !
-    ! C(k) = ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) );
+    ! C(k) = ( zt(k-1) - zm(k-1) ) / ( zm(k) - zm(k-1) );
     !
     ! which is the same as "factor" for the interpolation to thermodynamic
-    ! level (k).  In the code, this interpolation is referenced as
-    ! gr%weights_zm2zt(m_above,tk), which can be read as "grid weight in a zm2zt
-    ! interpolation of the momentum level above thermodynamic level (k) (applied
-    ! to thermodynamic level (k))".
+    ! level (k-1).  In the code, this interpolation is referenced as
+    ! gr%weights_zm2zt(m_above,tkm1), which can be read as "grid weight in a
+    ! zm2zt interpolation of the momentum level above thermodynamic level (k-1)
+    ! (applied to thermodynamic level (k-1))".
     !
-    ! D(k) = 1 - [ ( zt(k) - zm(k-1) ) / ( zm(k) - zm(k-1) ) ]
+    ! D(k) = 1 - [ ( zt(k-1) - zm(k-1) ) / ( zm(k) - zm(k-1) ) ]
     !      = 1 - C(k);
     !
     ! which is the same as "1 - factor" for the interpolation to thermodynamic
-    ! level (k).  In the code, this interpolation is referenced as
-    ! gr%weights_zm2zt(m_below,tk), which can be read as "grid weight in a zm2zt
-    ! interpolation of the momentum level below thermodynamic level (k) (applied
-    ! to thermodynamic level (k))".
+    ! level (k-1).  In the code, this interpolation is referenced as
+    ! gr%weights_zm2zt(m_below,tkm1), which can be read as "grid weight in a
+    ! zm2zt interpolation of the momentum level below thermodynamic level (k-1)
+    ! (applied to thermodynamic level (k-1))".
     !
     ! Additionally, as long as the central momentum level (k) in the above
     ! scenario is not the lowermost momentum level or the uppermost momentum
@@ -2257,55 +2329,14 @@ module grid_class
     ! following relationships:  A(k) = C(k+1) and B(k) = D(k+1).
     !
     !
-    ! Special condition for lowermost grid level, k = 1:
-    !
-    ! The lowermost thermodynamic grid level is below the lowermost momentum
-    ! grid level.  Thus, a linear extension is used at this level.  It should
-    ! be noted that the thermodynamic level k = 1 is considered to be below the
-    ! model lower boundary, which is defined to be at momentum level k = 1.
-    ! Thus, the values of most variables at thermodynamic level k = 1 are not
-    ! often needed or referenced.
-    !
-    ! For level k = 1:
-    !
-    ! The formula for a linear extension is given by:
-    !
-    ! var_zm( extend to zt(k) )
-    ! = [ ( var_zm(k+1) - var_zm(k) ) / ( zm(k+1) - zm(k) ) ]
-    !     * ( zt(k) - zm(k) ) + var_zm(k);
-    !
-    ! which can be rewritten as:
-    !
-    ! var_zm( extend to zt(k) )
-    ! = [ ( zt(k) - zm(k) ) / ( zm(k+1) - zm(k) ) ]
-    !     * ( var_zm(k+1) - var_zm(k) ) + var_zm(k).
-    !
-    ! Furthermore, the formula can be rewritten as:
-    !
-    ! var_zm( extend to zt(k) )
-    ! = factor * var_zm(k+1) + ( 1 - factor ) * var_zm(k);
-    !
-    ! where:
-    !
-    ! factor = ( zt(k) - zm(k) ) / ( zm(k+1) - zm(k) ).
-    !
-    ! Due to the fact that a linear extension is being used, the value of factor
-    ! will be less than 0.  The weight of the upper momentum level, which is
-    ! momentum level k = 2, on thermodynamic level k = 1 equals the value of
-    ! factor.  The weight of the lower momentum level, which is momentum level
-    ! k = 1, on thermodynamic level k = 1 equals 1 - factor, which is greater
-    ! than 1.  However, the sum of the weights equals 1.
-    !
-    !
     ! Brian Griffin; September 12, 2008.
+    ! Updated for removal of "ghost" thermodynamic level that was below the
+    ! surface; July 18, 2023.
     !
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
         one  ! Constant(s)
-
-    use clubb_precision, only: &
-        core_rknd  ! Variable(s)
 
     implicit none
 
@@ -2316,7 +2347,7 @@ module grid_class
 
     ! Input Variable
     integer, intent(in) :: &
-      nz, &
+      nzt, &
       ngrdcol
     
     ! Input/Output Variable
@@ -2324,42 +2355,37 @@ module grid_class
 
     integer :: i, k
 
-    
-    ! At most levels, the momentum level is found in-between two
-    ! thermodynamic levels.  Linear interpolation is used.
-    do i = 1, ngrdcol
-      gr%weights_zm2zt(i,1,m_above) = ( gr%zt(i,1) - gr%zm(i,1) ) &
-                                        / ( gr%zm(i,2) - gr%zm(i,1) )
-                                        
-      gr%weights_zm2zt(i,1,m_below) = one - gr%weights_zm2zt(i,1,m_above)
-    end do
 
-    do k = 2, nz
+    ! The thermodynamic levels are always found in-between two momentum levels.
+    ! Linear interpolation is used.
+    do k = 1, nzt
       do i = 1, ngrdcol
         
-        ! The top model level (gr%nz) is formulated differently because the top
-        ! momentum level is above the top thermodynamic level.  A linear
-        ! extension is required, rather than linear interpolation.
-        ! Note:  Variable "factor" will be greater than 1 in this situation.
-        gr%weights_zm2zt(i,k,m_above) = ( gr%zt(i,k) - gr%zm(i,k-1) ) &
-                                         / ( gr%zm(i,k) - gr%zm(i,k-1) )
+        ! Weight of upper momentum level on thermodynamic level.
+        gr%weights_zm2zt(i,k,m_above) = ( gr%zt(i,k) - gr%zm(i,k) ) &
+                                        / ( gr%zm(i,k+1) - gr%zm(i,k) )
 
-        ! Weight of lower thermodynamic level on momentum level.
+        ! Weight of lower momentum level on thermodynamic level.
         gr%weights_zm2zt(i,k,m_below) = one - gr%weights_zm2zt(i,k,m_above)
         
       end do
     end do
-    
+
+
     return
 
   end subroutine calc_zm2zt_weights
   
   !=============================================================================
   ! Wrapped in interface ddzm
-  function gradzm_2D( nz, ngrdcol, gr, azm )
+  function gradzm_2D( nzm, nzt, ngrdcol, gr, azm )
 
     ! Description:
     !  2D version of gradzm
+    !
+    ! Takes the derivative of variables that are located on momentum grid levels
+    ! across the thermodynamic grid levels. Output is located on thermodynamic
+    ! levels.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -2368,18 +2394,19 @@ module grid_class
     implicit none
     
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
     ! Input Variable
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      gradzm_2D    ! Vertical derivative of azm    [units vary / m]
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      gradzm_2D    ! Vertical derivative of azm (thermo. levs.) [units vary / m]
 
     ! Local Variable
     integer :: i, k  ! Grid level loop index
@@ -2387,16 +2414,11 @@ module grid_class
     !$acc data copyin( gr, gr%invrs_dzt, azm ) &
     !$acc     copyout( gradzm_2D )
 
-    !$acc parallel loop gang vector default(present)
-    do i = 1, ngrdcol
-      gradzm_2D(i,1) = ( azm(i,2) - azm(i,1) ) * gr%invrs_dzt(i,2)
-    end do
-    !$acc end parallel loop
-
+    ! Loop over all thermodynamic grid levels.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz
+    do k = 1, nzt
       do i = 1, ngrdcol
-        gradzm_2D(i,k) = ( azm(i,k) - azm(i,k-1) ) * gr%invrs_dzt(i,k)
+        gradzm_2D(i,k) = ( azm(i,k+1) - azm(i,k) ) * gr%invrs_dzt(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -2413,6 +2435,10 @@ module grid_class
 
     ! Description:
     !  2D version of gradzm
+    !
+    ! Takes the derivative of variables that are located on momentum grid levels
+    ! across the thermodynamic grid levels. Output is located on thermodynamic
+    ! levels.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -2423,24 +2449,24 @@ module grid_class
     type (grid), target, intent(in) :: gr
 
     ! Input Variable
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      gradzm_1D    ! Vertical derivative of azm    [units vary / m]
+    real( kind = core_rknd ), dimension(gr%nzt) :: &
+      gradzm_1D    ! Vertical derivative of azm (thermo. levs.) [units vary / m]
       
     ! Local Variables
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
       azm_col    ! Variable on momentum grid levels    [units vary]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      gradzm_1D_col    ! Vertical derivative of azm    [units vary / m]
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
+      gradzm_1D_col    ! Vertical derivative of azm (t-levs.)   [units vary / m]
 
     azm_col(1,:) = azm
     
-    gradzm_1D_col = gradzm_2D(gr%nz, 1, gr, azm_col)
+    gradzm_1D_col = gradzm_2D(gr%nzm, gr%nzt, 1, gr, azm_col)
       
     gradzm_1D = gradzm_1D_col(1,:)
 
@@ -2450,10 +2476,14 @@ module grid_class
   
   !=============================================================================
   ! Wrapped in interface ddzt
-  function gradzt_2D( nz, ngrdcol, gr, azt )
+  function gradzt_2D( nzm, nzt, ngrdcol, gr, azt )
 
     ! Description:
     !  2D version of gradzt
+    !
+    ! Takes the derivative of variables that are located on thermodynamic
+    ! grid levels across the momentum grid levels. Output is located on
+    ! momentum levels.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -2462,18 +2492,19 @@ module grid_class
     implicit none
     
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
     ! Input Variable
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      gradzt_2D    ! Vertical derivative of azt    [units vary / m]
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      gradzt_2D    ! Vertical derivative of azt (mom.levs.) [units vary / m]
 
     ! Local Variable
     integer :: i, k  ! Grid level loop index
@@ -2481,21 +2512,28 @@ module grid_class
     !$acc data copyin( gr, gr%invrs_dzm, azt ) &
     !$acc     copyout( gradzt_2D )
 
+    ! Loop over all interior momentum levels.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 2, nz-1
+    do k = 2, nzm-1
       do i = 1, ngrdcol
-        gradzt_2D(i,k) = ( azt(i,k+1) - azt(i,k) ) * gr%invrs_dzm(i,k)
+        gradzt_2D(i,k) = ( azt(i,k) - azt(i,k-1) ) * gr%invrs_dzm(i,k)
       end do
     end do
     !$acc end parallel loop
 
+    ! Since linear extensions are used for going from thermodynamic to momentum
+    ! levels at both the top and bottom of the model, follow suit here for
+    ! consistency by declaring the derivative at the top of the model to be the
+    ! same as the derivative at the 2nd highest momentum level, and likewise
+    ! declaring the derivative at the bottom of the model to be the same as the
+    ! derivative at the 2nd lowest momentum level.
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       gradzt_2D(i,1) = gradzt_2D(i,2)
-      gradzt_2D(i,nz) = gradzt_2D(i,nz-1)
+      gradzt_2D(i,nzm) = gradzt_2D(i,nzm-1)
     end do
     !$acc end parallel loop
-    
+
     !$acc end data
 
     return
@@ -2508,6 +2546,10 @@ module grid_class
 
     ! Description:
     !  2D version of gradzt
+    !
+    ! Takes the derivative of variables that are located on thermodynamic
+    ! grid levels across the momentum grid levels. Output is located on
+    ! momentum levels.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -2518,25 +2560,23 @@ module grid_class
     type (grid), target, intent(in) :: gr
 
     ! Input Variable
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      gradzt_1D    ! Vertical derivative of azt    [units vary / m]
+    real( kind = core_rknd ), dimension(gr%nzm) :: &
+      gradzt_1D    ! Vertical derivative of azt (mom. levs.) [units vary / m]
 
     ! Local Variables
-
-    ! Input Variable
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
       azt_col    ! Variable on thermodynamic grid levels    [units vary]
 
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      gradzt_1D_col    ! Vertical derivative of azt    [units vary / m]
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
+      gradzt_1D_col  ! Vertical derivative of azt (mom. levs.) [units vary / m]
 
     azt_col(1,:) = azt
     
-    gradzt_1D_col = gradzt_2D(gr%nz, 1, gr, azt_col)
+    gradzt_1D_col = gradzt_2D(gr%nzm, gr%nzt, 1, gr, azt_col)
     
     gradzt_1D = gradzt_1D_col(1,:)
 

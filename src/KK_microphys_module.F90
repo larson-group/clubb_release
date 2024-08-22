@@ -40,8 +40,8 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_local_microphys( gr, dt, nz,                            & ! In
-                                 hydromet_dim, hm_metadata,          & ! In
+  subroutine KK_local_microphys( gr, dt, nzt,                           & ! In
+                                 hydromet_dim, hm_metadata,             & ! In
                                  l_latin_hypercube,                     & ! In
                                  thlm, wm_zt, p_in_Pa, exner, rho,      & ! In
                                  cloud_frac, w_std_dev, dzq, rcm,       & ! In
@@ -117,7 +117,7 @@ module KK_microphys_module
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
-      nz, &          ! Number of model vertical grid levels
+      nzt, &          ! Number of model vertical grid levels
       hydromet_dim  
 
     type (hm_metadata_type), intent(in) :: &
@@ -126,7 +126,7 @@ module KK_microphys_module
     logical, intent(in) :: &
       l_latin_hypercube    ! Flag to use Latin Hypercube interface
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       thlm,       & ! Mean liquid water potential temperature         [K]
       wm_zt,      & ! Mean vertical velocity on thermodynamic levels  [m/s]
       p_in_Pa,    & ! Pressure                                        [Pa]
@@ -137,12 +137,12 @@ module KK_microphys_module
       Ncm,        & ! Mean cloud droplet conc., < N_c >               [num/kg]
       chi           ! Mean extended liquid water mixing ratio         [kg/kg]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       w_std_dev, & ! Standard deviation of w (for LH interface)          [m/s]
       dzq,       & ! Thickness between thermo. levels (for LH interface) [m]
       rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
 
     integer, intent(in) :: &
@@ -152,12 +152,12 @@ module KK_microphys_module
       stats_metadata
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       Ncm_mc,  & ! Time tendency of cloud droplet concentration  [num/kg/s]
       rcm_mc,  & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
@@ -168,14 +168,14 @@ module KK_microphys_module
       microphys_stats_sfc   ! Variables output for statistical sampling (sfc grid)
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       KK_auto_tndcy,     & ! Mean KK (dr_r/dt) due to autoconversion   [(kg/kg)/s]
       KK_accr_tndcy,     & ! Mean KK (dr_r/dt) due to accretion        [(kg/kg)/s]
       KK_evap_tndcy,     & ! Mean KK (dr_r/dt) due to evaporation      [(kg/kg)/s]
       KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation      [(num/kg)/s]
       KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.        [(num/kg)/s]
 
-    real( kind = core_rknd ), dimension(nz) ::  &
+    real( kind = core_rknd ), dimension(nzt) ::  &
       rrm,    & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
       Nrm,    & ! Mean rain drop concentration, < N_r >    [num/kg]
       Vrr,    & ! Mean sedimentation velocity of < r_r >   [m/s]
@@ -183,7 +183,7 @@ module KK_microphys_module
       rrm_mc, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
       Nrm_mc    ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       KK_mean_vol_rad    ! Mean KK rain drop mean volume radius     [m]
 
     real( kind = core_rknd ) :: &
@@ -192,7 +192,7 @@ module KK_microphys_module
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
-    type(KK_microphys_adj_terms_type), dimension(nz) :: &
+    type(KK_microphys_adj_terms_type), dimension(nzt) :: &
       adj_terms    ! Adjustments to microphysics terms
 
     logical :: &
@@ -217,11 +217,11 @@ module KK_microphys_module
       KK_mean_vol_rad = cloud_frac
     end if
     ! Initialize microphys_stats_vars for statistics sampling
-    call microphys_stats_alloc( nz, num_stats_zt, microphys_stats_zt )
+    call microphys_stats_alloc( nzt, num_stats_zt, microphys_stats_zt )
     call microphys_stats_alloc( 1, num_stats_sfc, microphys_stats_sfc )
 
     !!! Initialize microphysics fields.
-    call KK_microphys_init( nz, hydromet_dim, hydromet, hm_metadata, &
+    call KK_microphys_init( nzt, hydromet_dim, hydromet, hm_metadata, &
                             hydromet_mc, hydromet_vel, rrm, Nrm, &
                             KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
@@ -246,7 +246,7 @@ module KK_microphys_module
 
     !!! Microphysics tendency loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
-    do k = 2, nz, 1
+    do k = 1, nzt, 1
 
        !!! Calculate the coefficients for the KK microphysics tendencies.
        call KK_tendency_coefs( thlm(k), exner(k), p_in_Pa(k), rho(k), &
@@ -335,43 +335,30 @@ module KK_microphys_module
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k), &
                                  adj_terms(k) )
 
-    enddo  ! Microphysics tendency loop: k = 2, nz, 1
+    enddo  ! Microphysics tendency loop: k = 1, nzt, 1
 
 
     !!! Boundary conditions for microphysics tendencies.
-
-    ! Explicit contributions to rrm and Nrm from microphysics are not set at
-    ! thermodynamic level k = 1 because it is below the model lower boundary.
-    rrm_mc(1) = zero
-    Nrm_mc(1) = zero
-
-    rrm_mc(nz) = zero
-    Nrm_mc(nz) = zero
+    rrm_mc(nzt) = zero
+    Nrm_mc(nzt) = zero
 
     ! Boundary conditions
-    KK_mean_vol_rad(1)  = zero
-    KK_mean_vol_rad(nz) = zero
-
-    rvm_mc(1)  = zero
-    rvm_mc(nz) = zero
-
-    rcm_mc(1)  = zero
-    rcm_mc(nz) = zero
-
-    thlm_mc(1)  = zero
-    thlm_mc(nz) = zero
+    KK_mean_vol_rad(nzt) = zero
+    rvm_mc(nzt) = zero
+    rcm_mc(nzt) = zero
+    thlm_mc(nzt) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet, &
+    cloud_top_level = get_cloud_top_level( nzt, rcm, hydromet, &
                                            hydromet_dim, hm_metadata%iiri )
 
     !!! Microphysics sedimentation velocities.
-    call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
+    call KK_sedimentation( nzt, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
                            l_clip_positive_sed )
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_microphys_output( nz, hydromet_dim, hm_metadata, &
+    call KK_microphys_output( nzt, hydromet_dim, hm_metadata, &
                               Vrr, VNr, rrm_mc, Nrm_mc, &
                               hydromet_mc, hydromet_vel )
 
@@ -398,8 +385,8 @@ module KK_microphys_module
   end subroutine KK_local_microphys
 
   !=============================================================================
-  subroutine KK_upscaled_microphys( gr, dt, nz,                           & ! In
-                                    pdf_dim, hydromet_dim, hm_metadata,& ! In
+  subroutine KK_upscaled_microphys( gr, dt, nzt, nzm,                     & ! In
+                                    pdf_dim, hydromet_dim, hm_metadata,   & ! In
                                     wm_zt, rtm, thlm, p_in_Pa,            & ! In
                                     exner, rho, rcm,                      & ! In
                                     pdf_params, hydromet_pdf_params,      & ! In
@@ -496,7 +483,7 @@ module KK_microphys_module
         stats_metadata_type
 
     use corr_varnce_module, only: &
-      hm_metadata_type
+        hm_metadata_type
 
     implicit none
 
@@ -512,14 +499,15 @@ module KK_microphys_module
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
-      nz,         & ! Number of model vertical grid levels
+      nzt,        & ! Number of model thermodynamic vertical grid levels
+      nzm,        & ! Number of model momentum vertical grid levels
       pdf_dim,    & ! Number of variables in the correlation arrays
       hydromet_dim
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       wm_zt,   & ! Mean vertical velocity on thermodynamic levels  [m/s]
       rtm,     & ! Mean total water mixing ratio                   [kg/kg]
       thlm,    & ! Mean liquid water potential temperature         [K]
@@ -531,22 +519,22 @@ module KK_microphys_module
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                         [units vary]
 
-    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+    type(hydromet_pdf_parameter), dimension(nzt), intent(in) :: &
       hydromet_pdf_params
        
     type(precipitation_fractions), intent(in) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet       ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
 
-    real( kind = core_rknd ), dimension(nz,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,pdf_dim,pdf_dim), intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
@@ -562,20 +550,20 @@ module KK_microphys_module
       stats_zm
 
     !-------------------------- Output Variables --------------------------
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       rcm_mc,  & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzm), intent(out) :: &
       wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
       wpthlp_mc,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
       rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
@@ -583,7 +571,7 @@ module KK_microphys_module
       rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     !-------------------------- Local Variables --------------------------
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       rrm,    & ! Mean rain water mixing ratio, < r_r > [kg/kg]
       Nrm,    & ! Mean rain drop concentration, < N_r > [num/kg]
       Vrr,    & ! Mean sedimentation velocity of r_r    [m/s]
@@ -591,13 +579,13 @@ module KK_microphys_module
       rrm_mc, & ! Mean (dr_r/dt) due to microphysics    [(kg/kg)/s]
       Nrm_mc    ! Mean (dN_r/dt) due to microphysics    [(num/kg)/s]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       KK_evap_tndcy,   & ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
       KK_auto_tndcy,   & ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
       KK_accr_tndcy,   & ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
       KK_mean_vol_rad    ! Mean KK rain drop mean volume radius     [m]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation  [(num/kg)/s]
       KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.    [(num/kg)/s]
 
@@ -607,7 +595,7 @@ module KK_microphys_module
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
-     real( kind = core_rknd ), dimension(nz) :: &
+     real( kind = core_rknd ), dimension(nzt) :: &
       mixt_frac   ! Mixture fraction                                [-]
 
     real( kind = core_rknd ) :: &
@@ -707,20 +695,20 @@ module KK_microphys_module
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       Vrrprrp_zt_impc, & ! Imp. comp. of <V_rr'r_r'>: <r_r> eq.  [(m/s)]
       Vrrprrp_zt_expc, & ! Exp. comp. of <V_rr'r_r'>: <r_r> eq.  [(m/s)(kg/kg)]
       VNrpNrp_zt_impc, & ! Imp. comp. of <V_Nr'N_r'>: <N_r> eq.  [(m/s)]
       VNrpNrp_zt_expc    ! Exp. comp. of <V_Nr'N_r'>: <N_r> eq.  [(m/s)(num/kg)]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       wprtp_mc_zt,   & ! Micro. tend. for <w'rt'>; t-lev   [m*(kg/kg)/s^2]
       wpthlp_mc_zt,  & ! Micro. tend. for <w'thl'>; t-lev  [m*K/s^2]
       rtp2_mc_zt,    & ! Micro. tend. for <rt'^2>; t-lev   [(kg/kg)^2/s]
       thlp2_mc_zt,   & ! Micro. tend. for <thl'^2>; t-lev  [K^2/s]
       rtpthlp_mc_zt    ! Micro. tend. for <rt'thl'>; t-lev [K*(kg/kg)/s]
 
-    type(KK_microphys_adj_terms_type), dimension(nz) :: &
+    type(KK_microphys_adj_terms_type), dimension(nzt) :: &
       adj_terms           ! Adjustments to microphysics terms
 
     logical :: &
@@ -734,7 +722,7 @@ module KK_microphys_module
     !-------------------------- Begin Code --------------------------
 
     !!! Initialize microphysics fields.
-    call KK_microphys_init( nz, hydromet_dim, hydromet, hm_metadata, &
+    call KK_microphys_init( nzt, hydromet_dim, hydromet, hm_metadata, &
                             hydromet_mc, hydromet_vel, rrm, Nrm, &
                             KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
@@ -746,7 +734,7 @@ module KK_microphys_module
 
     !!! Microphysics tendency loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
-    do k = 2, nz, 1
+    do k = 1, nzt, 1
 
        !!! Calculate the coefficients for the KK microphysics tendencies.
        call KK_tendency_coefs( thlm(k), exner(k), p_in_Pa(k), rho(k), &
@@ -932,25 +920,10 @@ module KK_microphys_module
                              stats_zt )
 
 
-    enddo  ! Microphysics tendency loop: k = 2, nz, 1
+    enddo  ! Microphysics tendency loop: k = 1, nzt, 1
 
 
     if ( l_var_covar_src ) then
-
-       ! Set values of wprtp_mc_zt, wpthlp_mc_zt, rtp2_mc_zt, thlp2_mc_zt, and
-       ! rtpthlp_mc_zt to 0 at the lowest thermodynamic grid level
-       ! (thermodynamic level 1), which is below the model lower boundary.  This
-       ! will prevent an unset value of these variables (from thermodynamic
-       ! level 1, which is not part of the above microphysics tendency loop)
-       ! from being used in the interpolation of these variables to momentum
-       ! levels (in this case, the model lower boundary at momentum level 1).
-       ! The interpolated value of these variables at momentum level 1 is not
-       ! used in the model code.
-       wprtp_mc_zt(1)   = zero
-       wpthlp_mc_zt(1)  = zero
-       rtp2_mc_zt(1)    = zero
-       thlp2_mc_zt(1)   = zero
-       rtpthlp_mc_zt(1) = zero
 
        ! Output microphysics tendency terms for
        ! model variances and covariances on momentum levels.
@@ -967,11 +940,11 @@ module KK_microphys_module
        thlp2_mc(1)   = zero
        rtpthlp_mc(1) = zero
        ! Set values of microphysics tendency terms to 0 at model upper boundary.
-       wprtp_mc(nz)   = zero
-       wpthlp_mc(nz)  = zero
-       rtp2_mc(nz)    = zero
-       thlp2_mc(nz)   = zero
-       rtpthlp_mc(nz) = zero
+       wprtp_mc(nzm)   = zero
+       wpthlp_mc(nzm)  = zero
+       rtp2_mc(nzm)    = zero
+       thlp2_mc(nzm)   = zero
+       rtpthlp_mc(nzm) = zero
 
     else
 
@@ -986,65 +959,44 @@ module KK_microphys_module
     endif
 
     !!! Boundary conditions for microphysics tendencies.
-
-    ! Explicit contributions to rrm and Nrm from microphysics are not set at
-    ! thermodynamic level k = 1 because it is below the model lower boundary.
-    rrm_mc(1) = zero
-    Nrm_mc(1) = zero
-
-    rrm_mc(nz) = zero
-    Nrm_mc(nz) = zero
+    rrm_mc(nzt) = zero
+    Nrm_mc(nzt) = zero
 
     ! Boundary conditions
-    KK_mean_vol_rad(1)  = zero
-    KK_mean_vol_rad(nz) = zero
-
-    rvm_mc(1)  = zero
-    rvm_mc(nz) = zero
-
-    rcm_mc(1)  = zero
-    rcm_mc(nz) = zero
-
-    thlm_mc(1)  = zero
-    thlm_mc(nz) = zero
+    KK_mean_vol_rad(nzt) = zero
+    rvm_mc(nzt) = zero
+    rcm_mc(nzt) = zero
+    thlm_mc(nzt) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet, &
+    cloud_top_level = get_cloud_top_level( nzt, rcm, hydromet, &
                                            hydromet_dim, hm_metadata%iiri )
 
     !!! Microphysics sedimentation velocities.
-    call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
+    call KK_sedimentation( nzt, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
                            l_clip_positive_sed )
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_microphys_output( nz, hydromet_dim, hm_metadata, &
+    call KK_microphys_output( nzt, hydromet_dim, hm_metadata, &
                               Vrr, VNr, rrm_mc, Nrm_mc, &
                               hydromet_mc, hydromet_vel )
 
     !!! Turbulent sedimentation above cloud top should have a value of 0.
     if ( cloud_top_level > 1 ) then
-       Vrrprrp_zt_impc(cloud_top_level+1:nz-1) = zero
-       Vrrprrp_zt_expc(cloud_top_level+1:nz-1) = zero
-       VNrpNrp_zt_impc(cloud_top_level+1:nz-1) = zero
-       VNrpNrp_zt_expc(cloud_top_level+1:nz-1) = zero
+       Vrrprrp_zt_impc(cloud_top_level+1:nzt-1) = zero
+       Vrrprrp_zt_expc(cloud_top_level+1:nzt-1) = zero
+       VNrpNrp_zt_impc(cloud_top_level+1:nzt-1) = zero
+       VNrpNrp_zt_expc(cloud_top_level+1:nzt-1) = zero
     endif
-
-    !!! Boundary conditions (lower) for the covariances of hydrometeor
-    !!! sedimentation velocities and their associated hydrometeors
-    !!! (<V_rr'r_r'> and <V_Nr'N_r'>).
-    Vrrprrp_zt_impc(1) = Vrrprrp_zt_impc(2)
-    Vrrprrp_zt_expc(1) = Vrrprrp_zt_expc(2)
-    VNrpNrp_zt_impc(1) = VNrpNrp_zt_impc(2)
-    VNrpNrp_zt_expc(1) = VNrpNrp_zt_expc(2)
 
     !!! Boundary conditions (upper) for the covariances of hydrometeor
     !!! sedimentation velocities and their associated hydrometeors
     !!! (<V_rr'r_r'> and <V_Nr'N_r'>).
-    Vrrprrp_zt_impc(nz) = zero
-    Vrrprrp_zt_expc(nz) = zero
-    VNrpNrp_zt_impc(nz) = zero
-    VNrpNrp_zt_expc(nz) = zero
+    Vrrprrp_zt_impc(nzt) = zero
+    Vrrprrp_zt_expc(nzt) = zero
+    VNrpNrp_zt_impc(nzt) = zero
+    VNrpNrp_zt_expc(nzt) = zero
 
     ! The implicit and explicit components used to calculate the covariances of
     ! hydrometeor sedimentation velocities and their associated hydrometeors
@@ -1111,7 +1063,7 @@ module KK_microphys_module
   end subroutine KK_upscaled_microphys
 
   !=============================================================================
-  subroutine KK_microphys_init( nz, hydromet_dim, hydromet, hm_metadata, &
+  subroutine KK_microphys_init( nzt, hydromet_dim, hydromet, hm_metadata, &
                                 hydromet_mc, hydromet_vel, rrm, Nrm, &
                                 KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                                 KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
@@ -1136,25 +1088,25 @@ module KK_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz, &           ! Number of model vertical grid levels
+      nzt, &           ! Number of model vertical grid levels
       hydromet_dim
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(nzt), intent(out) ::  &
       rrm, & ! Mean rain water mixing ratio (overall), < r_r >    [kg/kg]
       Nrm    ! Mean rain drop concentration (overall), < N_r >    [num/kg]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       KK_evap_tndcy,     & ! Mean KK (dr_r/dt) due to evaporation    [(kg/kg)/s]
       KK_auto_tndcy,     & ! Mean KK (dr_r/dt) due to autoconversion [(kg/kg)/s]
       KK_accr_tndcy,     & ! Mean KK (dr_r/dt) due to accretion      [(kg/kg)/s]
@@ -1700,7 +1652,7 @@ module KK_microphys_module
   end subroutine KK_stats_output
 
   !=============================================================================
-  subroutine KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
+  subroutine KK_sedimentation( nzt, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
                                l_clip_positive_sed )
 
     ! Description:
@@ -1724,17 +1676,17 @@ module KK_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,              &  ! Number of model vertical grid levels
+      nzt,             &  ! Number of model thermodynamic vertical grid levels
       cloud_top_level     ! Vertical level index of cloud top
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       KK_mean_vol_rad     ! KK rain drop mean volume radius       [m]
 
     logical, intent(in) :: &
       l_clip_positive_sed ! Clip positive values of Vrr and VNr   [T/F]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(:), intent(inout) ::  &
+    real( kind = core_rknd ), dimension(nzt), intent(inout) ::  &
       Vrr, & ! Mean sedimentation velocity of < r_r >             [m/s]
       VNr    ! Mean sedimentation velocity of < N_r >             [m/s]
 
@@ -1743,7 +1695,7 @@ module KK_microphys_module
 
 
     !!! Mean sedimentation velocities
-    do k = 1, nz-1, 1
+    do k = 1, nzt-1, 1
 
        ! Mean sedimentation velocity of rain water mixing ratio.
        Vrr(k) = - ( 0.012_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) ) &
@@ -1770,13 +1722,13 @@ module KK_microphys_module
 
        end if
 
-    enddo ! Sedimentation velocity loop: k = 1, nz-1, 1
+    enddo ! Sedimentation velocity loop: k = 1, nzt-1, 1
 
     if ( l_clip_positive_sed ) then
       !!! Mean sedimentation above cloud top should have a value of 0.
       if ( cloud_top_level > 1 ) then
-         Vrr(cloud_top_level+1:nz-1) = zero
-         VNr(cloud_top_level+1:nz-1) = zero
+         Vrr(cloud_top_level+1:nzt-1) = zero
+         VNr(cloud_top_level+1:nzt-1) = zero
       endif
     end if
 
@@ -1784,8 +1736,8 @@ module KK_microphys_module
 
     ! The flux of rain water through the model top is 0.
     ! Vrr and VNr are set to 0 at the highest model level.
-    Vrr(nz) = zero
-    VNr(nz) = zero
+    Vrr(nzt) = zero
+    VNr(nzt) = zero
 
 
     return
@@ -1793,7 +1745,7 @@ module KK_microphys_module
   end subroutine KK_sedimentation
 
   !=============================================================================
-  subroutine KK_microphys_output( nz, hydromet_dim, hm_metadata, &
+  subroutine KK_microphys_output( nzt, hydromet_dim, hm_metadata, &
                                   Vrr, VNr, rrm_mc, Nrm_mc, &
                                   hydromet_mc, hydromet_vel )
 
@@ -1812,20 +1764,20 @@ module KK_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz, &           ! Number of model vertical grid levels
+      nzt, &          ! Number of model thermodynamic vertical grid levels
       hydromet_dim
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nzt), intent(in) ::  &
       Vrr,    & ! Mean sedimentation velocity of < r_r >   [m/s]
       VNr,    & ! Mean sedimentation velocity of < N_r >   [m/s]
       rrm_mc, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
       Nrm_mc    ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 

@@ -73,7 +73,7 @@ module sounding
       core_rknd ! Variable(s)
 
     use grid_class, only: &
-      grid
+        grid
 
     implicit none
 
@@ -113,7 +113,7 @@ module sounding
       l_modify_ic_with_cubic_int
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
       thlm,  & ! Liquid water potential temperature    [K]
       rtm,   & ! Total water mixing ratio              [kg/kg]
       um,    & ! u wind component                      [m/s]
@@ -132,10 +132,10 @@ module sounding
       alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz, sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt, sclr_dim) ::  & 
       sclrm   ! Passive scalar output      [units vary]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz, edsclr_dim) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt, edsclr_dim) ::  & 
       edsclrm ! Eddy Passive scalar output [units vary]
 
     !--------------------- Local Variables ---------------------
@@ -251,14 +251,14 @@ module sounding
     end if
 
     ! Error check: if lowest above-model-surface themodynamic grid height
-    ! (gr%zt(1,2)) is lower than the lowest value from the input sounding,
+    ! (gr%zt(1,1)) is lower than the lowest value from the input sounding,
     ! then the linear interpolation scheme will fail.
 
-    if ( gr%zt(1,2) < z(1) ) then
+    if ( gr%zt(1,1) < z(1) ) then
       write(fstderr,*) "Lowest level of input sounding, z(1), must be",  &
-      " below the first above-model-surface thermodynamic level, gr%zt(1,2)"
+      " below the first above-model-surface thermodynamic level, gr%zt(1,1)"
       write(fstderr,*) " First sounding level z(1) = ", z(1)
-      write(fstderr,*) " First thermodynamic level gr%zt(1,2) = ", gr%zt(1,2)
+      write(fstderr,*) " First thermodynamic level gr%zt(1,1) = ", gr%zt(1,1)
       error stop 'STOP in read_sounding'
     endif
 
@@ -317,13 +317,7 @@ module sounding
     ! Use linear interpolation from two nearest prescribed grid points
     ! (one above and one below) to initialize mean quantities in the model
     ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
-    do i=1, gr%nz
-      if ( i == 1 .and. gr%zt(1,i) < z(1) ) then
-         ! Thermodynamic level 1 is below the model lower boundary.
-         ! If it's below the lowest sounding level, just skip setting it,
-         ! since it is already initialized above.
-         cycle
-      endif
+    do i=1, gr%nzt
       k=1
       do while ( z(k) < gr%zt(1,i) )
         k=k+1
@@ -333,7 +327,7 @@ module sounding
               write(fstderr,'(a,f7.1,/a,f7.1)') &
                '  highest sounding level', z(nlevels),&
                '  should be higher than highest thermodynamic point',&
-               gr%zt(1,gr%nz)
+               gr%zt(1,gr%nzt)
               error stop 'STOP in sounding'
           exit
         end if  ! k > nlevels
@@ -343,7 +337,7 @@ module sounding
           !use Steffen's monotone cubic interpolation method to obtain
           !smoothing initial condition profile for convergence test 
           !note: vertical levels in sounding file need to be not too coarse
-          if ( k == 1 ) then ! Extrapolation for the ghost point
+          if ( k == 1 ) then
             km1 = k
             k00 = 1
             kp1 = 2
@@ -505,11 +499,11 @@ module sounding
 
       end do ! do while ( z(k) < gr%zt(1,i) )
 
-    end do   ! i=1, gr%nz
+    end do   ! i=1, gr%nzt
 
 
     ! The sounding will be initialized to thermodynamic grid levels successfully
-    ! as long as the thermodynamic level 2 (at altitude gr%zt(1,2)) is at or above
+    ! as long as the thermodynamic level 1 (at altitude gr%zt(1,1)) is at or above
     ! the lowest sounding level (z(1)).  However, it is advantageous to know the
     ! initial surface values of a few variables, as long as the sounding extends
     ! to the surface, which is found at momentum level 1 (at altitude gr%zm(1,1)).
@@ -872,7 +866,7 @@ module sounding
     character(len=*), intent(in) :: fname
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: x
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: x
 
     ! Local variables
 
@@ -903,14 +897,14 @@ module sounding
     endif
 
     ! Error check: if lowest above-model-surface themodynamic grid height
-    ! (gr%zt(1,2)) is lower than the lowest value from the input sounding,
+    ! (gr%zt(1,1)) is lower than the lowest value from the input sounding,
     ! then the linear interpolation scheme will fail.
 
-    if ( gr%zt(1,2) < z(1) ) then
+    if ( gr%zt(1,1) < z(1) ) then
       write(fstderr,*) "Lowest level of input sounding, z(1), must be",  &
-      " below the first above-model-surface thermodynamic level, gr%zt(1,2)"
+      " below the first above-model-surface thermodynamic level, gr%zt(1,1)"
       write(fstderr,*) " First sounding level z(1) = ", z(1)
-      write(fstderr,*) " First thermodynamic level gr%zt(1,2) = ", gr%zt(1,2)
+      write(fstderr,*) " First thermodynamic level gr%zt(1,1) = ", gr%zt(1,1)
       error stop 'STOP in read_profile (sounding.F90)'
     endif
 
@@ -918,7 +912,7 @@ module sounding
     ! (one above and one below) to initialize mean quantities in the model
     ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
 
-    do i = 2, gr%nz
+    do i = 1, gr%nzt
       k = 1
       do while ( z(k) < gr%zt(1,i) )
         k = k + 1
@@ -928,13 +922,13 @@ module sounding
           write(fstderr,'(a,f7.1,/a,f7.1)') ' Highest sounding level',  &
                z(nlevels),  &
                'should be higher than highest thermodynamic point',  &
-               gr%zt(1,gr%nz)
+               gr%zt(1,gr%nzt)
           write(*,*) ' Filename: ', fname
           error stop 'STOP in read_profile (sounding.F90)'
         endif
         x(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), var(k), var(k-1) )
       enddo ! while
-    enddo ! i=2, gr%nzzp
+    enddo ! i = 1, gr%nzt
 
     return
   end subroutine read_profile

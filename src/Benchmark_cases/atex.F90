@@ -68,21 +68,22 @@ module atex
     time,         & ! Current time     [s]
     time_initial ! Initial time     [s]
 
-  real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+  real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: & 
     rtm      ! Total water mixing ratio        [kg/kg]
 
   !--------------------- Output Variables ---------------------
-  real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nzt) :: & 
     wm_zt,        & ! w wind on thermodynamic grid                [m/s]
-    wm_zm,        & ! w wind on momentum grid                     [m/s]
     thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
     rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
+  real( kind = core_rknd ), intent(out), dimension(gr%nzm) :: & 
+    wm_zm           ! w wind on momentum grid                     [m/s]
 
-  real( kind = core_rknd ), intent(out), dimension(gr%nz, sclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nzt, sclr_dim) :: & 
     sclrm_forcing   ! Passive scalar tendency         [units/s]
 
-  real( kind = core_rknd ), intent(out), dimension(gr%nz, edsclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nzt, edsclr_dim) :: & 
     edsclrm_forcing ! Eddy-passive scalar tendency    [units/s]
 
   ! Internal variables
@@ -104,11 +105,11 @@ module atex
 
   !  Identify height of 6.5 g/kg moisture level
 
-     i = 2
-     do while ( i <= gr%nz .and. rtm(i) > 6.5e-3_core_rknd )
+     i = 1
+     do while ( i <= gr%nzt .and. rtm(i) > 6.5e-3_core_rknd )
         i = i + 1
      end do
-     if ( i == gr%nz+1 .or. i == 2 ) then
+     if ( i == gr%nzt+1 .or. i == 1 ) then
        write(fstderr,*) "Identification of 6.5 g/kg level failed"
        write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
        write(fstderr,*) "i = ", i
@@ -120,7 +121,7 @@ module atex
 
   !          Large scale subsidence
 
-     do i = 2, gr%nz
+     do i = 1, gr%nzt
 
         if ( gr%zt(1,i) > 0._core_rknd .and. gr%zt(1,i) <= z_inversion ) then
            wm_zt(i)  & 
@@ -138,13 +139,12 @@ module atex
      wm_zm = zt2zm( gr, wm_zt )
 
      ! Boundary conditions.
-     wm_zt(1) = 0.0_core_rknd        ! Below surface
      wm_zm(1) = 0.0_core_rknd        ! At surface
-     wm_zm(gr%nz) = 0.0_core_rknd  ! Model top
+     wm_zm(gr%nzm) = 0.0_core_rknd  ! Model top
 
      ! Theta-l tendency
 
-     do i = 2, gr%nz
+     do i = 1, gr%nzt
 
         if ( gr%zt(1,i) > 0._core_rknd .and. gr%zt(1,i) < z_inversion ) then
            thlm_forcing(i) = -1.1575e-5_core_rknd * ( 3._core_rknd - &
@@ -159,7 +159,7 @@ module atex
      end do
 
      ! Moisture tendency
-     do i = 2, gr%nz
+     do i = 1, gr%nzt
 
         if ( gr%zt(1,i) > 0._core_rknd .and. gr%zt(1,i) < z_inversion ) then
            rtm_forcing(i) = -1.58e-8_core_rknd * ( 1._core_rknd - &
@@ -169,10 +169,6 @@ module atex
         end if
 
      end do
-
-     ! Boundary conditions
-     thlm_forcing(1) = 0.0_core_rknd  ! Below surface
-     rtm_forcing(1)  = 0.0_core_rknd  ! Below surface
 
   end if ! time >= time_initial + 5400.0_core_rknd
 

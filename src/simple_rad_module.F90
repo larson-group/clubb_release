@@ -44,11 +44,11 @@ module simple_rad_module
 !
 !  k= 1   (m) ----------    <MODEL TOP>    ---------- k=kk+1      (m)
 !
-!  k= 1   (t) ----------                   ---------- k=kk+1      (t)
+!  k= 1   (t) ----------                   ---------- k=kk        (t)
 !
 !  k= 2   (m) ----------                   ---------- k=kk        (m)
 !
-!  k= 2   (t) ----------                   ---------- k=kk        (t)
+!  k= 2   (t) ----------                   ---------- k=kk-1      (t)
 !
 !            .                  .                     .
 !            .                  .                     .
@@ -56,24 +56,15 @@ module simple_rad_module
 !
 !  k=kk-1 (m) ----------  m = momentum     ---------- k=3         (m)
 !                                  levels
-!  k=kk-1 (t) ----------  t = thermo       ---------- k=3         (t)
+!  k=kk-1 (t) ----------  t = thermo       ---------- k=2         (t)
 !                                  levels
 !  k=kk   (m) ----------                   ---------- k=2         (m)
 !
-!  k=kk   (t) ----------  kk = number of   ---------- k=2         (t)
+!  k=kk   (t) ----------  kk = number of   ---------- k=1         (t)
 !                              vertical
 !  k=kk+1 (m) ----------       heights     ---------- k=1         (m)
 !
 ! //////////////////////// MODEL SURFACE /////////////////////////////
-!                                          ---------- k=1         (t)
-!
-!
-! The major difference in the grids is that CLUBB uses an additional
-! thermodynamic level below the model "surface".  This means that all
-! CLUBB thermodynamic heights are shifted down one vertical level, and
-! CLUBB also has one fewer momentum level than COAMPS.  Therefore, we
-! use one additional vertical level in CLUBB, to make sure that the
-! vertical domain matches in both models.
 !
 ! ADDITIONAL NOTE: In order to reconcile the COAMPS and CLUBB grids,
 !                  the uppermost level of the COAMPS grid is ignored,
@@ -190,7 +181,7 @@ module simple_rad_module
 
     use grid_class, only: zt2zm, grid ! Procedure(s)
 
-    use constants_clubb, only: fstderr, Cp, eps ! Variable(s)
+    use constants_clubb, only: fstderr, one, Cp, eps ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
@@ -228,12 +219,14 @@ module simple_rad_module
     ! Input Variables
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: & 
       rho,    & ! Density on thermodynamic grid  [kg/m^3] 
-      rho_zm, & ! Density on momentum grid       [kg/m^3]
       rtm,    & ! Total water mixing ratio       [kg/kg]
       rcm,    & ! Cloud water mixing ratio       [kg/kg]
       exner     ! Exner function.                [-]
+
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: & 
+      rho_zm    ! Density on momentum grid       [kg/m^3]
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -242,12 +235,14 @@ module simple_rad_module
       stats_sfc
     
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
-      Frad_LW,         & ! Radiative flux                 [W/m^2]
+    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  & 
+      Frad_LW            ! Radiative flux                 [W/m^2]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
       radht_LW           ! Radiative heating rate         [K/s]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzm) ::  & 
       LWP,      & ! Liquid water path
       Heaviside
 
@@ -257,15 +252,17 @@ module simple_rad_module
 
     ! ---- Begin Code ----
 
-    LWP(1:gr%nz) = liq_water_path( gr%nz, rho, rcm, gr%invrs_dzt(1,:) )
+    LWP(1:gr%nzm) = liq_water_path( gr%nzm, gr%nzt, rho, rcm, gr%invrs_dzt(1,:) )
 
-    do k = 1, gr%nz, 1
+    do k = 1, gr%nzm, 1
 
       if ( F1 > eps ) then
+
         Frad_LW(k) = F0 * exp( -kappa * LWP(k) ) & 
-                + F1 * exp( -kappa * (LWP(1) - LWP(k)) )
+                     + F1 * exp( -kappa * ( LWP(1) - LWP(k) ) )
 
       else ! Mathematically equivalent to the above, but computationally cheaper
+
         Frad_LW(k) = F0 * exp( -kappa * LWP(k) )
 
       end if ! F1 /= 0
@@ -273,15 +270,16 @@ module simple_rad_module
     end do 
 
     if ( l_rad_above_cloud ) then
+
       ! Find the height of the isotherm rtm = 8.0 g/kg.
 
-      k = 2
-      do while ( k <= gr%nz .and. rtm(k) > 8.0e-3_core_rknd )
+      k = 1
+      do while ( k <= gr%nzt .and. rtm(k) > 8.0e-3_core_rknd )
         k = k + 1
       end do
     
-    if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( k == gr%nz+1 .or. k == 2 ) then
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( k == gr%nzt+1 .or. k == 1 ) then
             write(fstderr,*) "Identification of 8.0 g/kg level failed"
             write(fstderr,*) "Subroutine: simple_rad. " & 
               // "File: simple_rad_module.F90"
@@ -289,32 +287,32 @@ module simple_rad_module
             write(fstderr,*) "rtm(k) = ", rtm(k)
             err_code = clubb_fatal_error
             return
-        end if
-    end if
+         end if
+      end if
 
       z_i = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(k), rtm(k-1), gr%zt(1,k), gr%zt(1,k-1) )
 
       ! Compute the Heaviside step function for z - z_i.
-      do k = 1, gr%nz, 1
-        !if gr%zm(1,k) > z_i
+      do k = 1, gr%nzm, 1
+        ! if gr%zm(1,k) > z_i
         if ( gr%zm(1,k)-z_i < -eps ) then
           Heaviside(k) = 0.0_core_rknd
-        !if gr%zm(1,k) < z_i
+        ! if gr%zm(1,k) < z_i
         else if ( gr%zm(1,k)-z_i > eps) then
           Heaviside(k) = 1.0_core_rknd
-        else !gr%zm(1,k) and z_i are equal within eps
+        else ! gr%zm(1,k) and z_i are equal within eps
           Heaviside(k) = 0.5_core_rknd
         end if       
       end do
 
-      do k = 1, gr%nz, 1
+      do k = 1, gr%nzm, 1
         if ( Heaviside(k) > 0.0_core_rknd ) then
           Frad_LW(k) = Frad_LW(k) & 
                   + rho_zm(k) * Cp * ls_div * Heaviside(k) & 
                     * ( 0.25_core_rknd * ((gr%zm(1,k)-z_i)**(4.0_core_rknd/3.0_core_rknd)) & 
                   + z_i * ((gr%zm(1,k)-z_i)**(1.0_core_rknd/3.0_core_rknd)) )
         end if
-      end do ! k=1..gr%nz
+      end do ! k=1..gr%nzm
 
       ! Update surface statistics
       if ( stats_metadata%l_stats_samp ) then
@@ -328,11 +326,11 @@ module simple_rad_module
     ! Compute the radiative heating rate.
     ! The radiative heating rate is defined on thermodynamic levels.
 
-    do k = 2, gr%nz, 1
-      radht_LW(k) = ( 1.0_core_rknd / exner(k) ) * ( -1.0_core_rknd/(Cp*rho(k)) ) & 
-               * ( Frad_LW(k) - Frad_LW(k-1) ) * gr%invrs_dzt(1,k)
+    do k = 1, gr%nzt, 1
+      radht_LW(k) = ( one / exner(k) ) * ( -one / (Cp*rho(k)) ) & 
+                    * ( Frad_LW(k+1) - Frad_LW(k) ) * gr%invrs_dzt(1,k)
     end do
-    radht_LW(1) = radht_LW(2)
+
 
     return
   end subroutine simple_rad
@@ -355,7 +353,7 @@ module simple_rad_module
     type (grid), target, intent(in) :: gr
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) :: & 
       radht  ! Radiative heating rate [K/s]
 
     ! Local Variables
@@ -364,7 +362,7 @@ module simple_rad_module
     ! ---- Begin Code ----
 
     ! Radiative theta-l tendency
-    do k = 2, gr%nz
+    do k = 1, gr%nzt
 
       if ( gr%zt(1,k) >= 0._core_rknd .and. gr%zt(1,k) < 1500._core_rknd ) then
         radht(k) = -2.315e-5_core_rknd
@@ -379,10 +377,8 @@ module simple_rad_module
         radht(k) = 0._core_rknd
       end if
 
-    end do ! k=2..gr%nz
+    end do ! k=1..gr%nzt
 
-    ! Boundary condition
-    radht(1) = 0.0_core_rknd
 
     return
   end subroutine simple_rad_bomex
@@ -412,8 +408,9 @@ module simple_rad_module
     real(kind=time_precision), intent(in) :: &
       time_current, & ! Current time of model run   [s]
       time_initial    ! Start time of model run     [s]
+
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: radht
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: radht
 
     ! Local Variables
     real( kind = core_rknd ), dimension(lba_nzrad) :: radhtz
@@ -446,7 +443,7 @@ module simple_rad_module
     end if ! time <= times(1)
 
     ! Radiative theta-l tendency
-    radht = zlinterp_fnc( gr%nz, lba_nzrad, gr%zt(1,:), lba_zrad, radhtz )
+    radht = zlinterp_fnc( gr%nzt, lba_nzrad, gr%zt(1,:), lba_zrad, radhtz )
 
     return
   end subroutine simple_rad_lba
@@ -485,7 +482,7 @@ module simple_rad_module
   end subroutine simple_rad_lba_init
 
 !-------------------------------------------------------------------------------
-  pure function liq_water_path( nz, rho, rcm, invrs_dzt )
+  pure function liq_water_path( nzm, nzt, rho, rcm, invrs_dzt )
 
 ! Description:
 !   Compute liquid water path
@@ -499,28 +496,30 @@ module simple_rad_module
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: nz ! Number of vertical levels in the model
+    integer, intent(in) :: &
+      nzm, & ! Number of momentum vertical levels in the model
+      nzt    ! Number of thermodynamic vertical levels in the model
 
-    real( kind = core_rknd ), intent(in), dimension(nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(nzt) :: &
       rho, &       ! Air Density                      [kg/m^3]
       rcm, &       ! Cloud water mixing ratio         [kg/kg]
       invrs_dzt    ! Inverse of distance per level    [1/m]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzm) :: &
       liq_water_path ! Liquid water path
 
     integer :: k
 
     ! ---- Begin Code ----
 
-    liq_water_path(nz) = 0.0_core_rknd
+    liq_water_path(nzm) = 0.0_core_rknd
 
     ! Liquid water path is defined on the intermediate model levels between the
     ! rcm and rho levels (i.e. the momentum levels in CLUBB).
-    do k = nz-1, 1, -1
-       liq_water_path(k) = liq_water_path(k+1) + rcm(k+1)*rho(k+1) / invrs_dzt(k+1)
-    end do ! k = nz..1
+    do k = nzm-1, 1, -1
+       liq_water_path(k) = liq_water_path(k+1) + rcm(k)*rho(k) / invrs_dzt(k)
+    end do ! k = nzm..1
 
     return
   end function liq_water_path
@@ -534,8 +533,6 @@ module simple_rad_module
 ! References:
 !  See subroutine sunray_sw
 !-------------------------------------------------------------------------------
-
-
 
     use grid_class, only: grid ! Type
 
@@ -571,22 +568,24 @@ module simple_rad_module
       Fs0, & ! [W/m^2]
       amu0   ! Cosine of the solar zenith angle [-]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: & 
       rho,    & ! Density on thermodynamic grid  [kg/m^3] 
       rcm       ! Cloud water mixing ratio       [kg/kg]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
-      Frad_SW,  & ! SW Radiative flux                 [W/m^2]
+    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  & 
+      Frad_SW     ! SW Radiative flux                 [W/m^2]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
       radht_SW    ! SW Radiative heating rate         [K/s]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz-1) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzt) ::  & 
       rcm_flipped, &
       rho_flipped, &
       dzt_flipped   
 
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzm) ::  & 
       zt_flipped, &
       zm_flipped, &
       Frad_SW_flipped
@@ -595,32 +594,37 @@ module simple_rad_module
 
     ! ---- Begin Code ----
 
-    ! Certain arrays in sunray_sw lack a ghost point and are therefore
-    ! dimension nz-1
-    do k = 1, gr%nz-1
-      kflip = gr%nz+1-k
+    do k = 1, gr%nzt
+      kflip = gr%nzt+1-k
       rcm_flipped(k) = rcm(kflip)
       rho_flipped(k) = rho(kflip)
       dzt_flipped(k) = 1.0_core_rknd / gr%invrs_dzt(1,kflip)
     end do
 
-    ! The zt array does have a ghost point, but it looks like it's not
-    ! referenced within the sunray_sw code.  We set it anyway just in case.
-    do k = 1, gr%nz
-      kflip = gr%nz+1-k
-      zt_flipped(k) = gr%zt(1,kflip)
+    do k = 1, gr%nzm
+      kflip = gr%nzm+1-k
       zm_flipped(k) = gr%zm(1,kflip)
     end do
+    ! The zt array in sunray_sw has a ghost point, but it looks like it's not
+    ! referenced within the sunray_sw code.  We set it anyway just in case.
+    do k = 1, gr%nzt
+      kflip = gr%nzt+1-k
+      zt_flipped(k) = gr%zt(1,kflip)
+    end do
+    ! The sunray_sw function uses a descending (with altitude) grid, so the
+    ! highest grid index is at the bottom on the grid.
+    zt_flipped(gr%nzt+1) = zt_flipped(gr%nzt) &
+                           - ( zt_flipped(gr%nzt-1) - zt_flipped(gr%nzt) )
 
     ! Call the old sunray_sw code
-    call sunray_sw( rcm_flipped, rho_flipped, amu0, dzt_flipped, gr%nz-1, &
+    call sunray_sw( rcm_flipped, rho_flipped, amu0, dzt_flipped, gr%nzt, &
                     zm_flipped, zt_flipped, &
                     eff_drop_radius, real( alvdr, kind = core_rknd ), gc, Fs0, omega, l_center, &
                     Frad_SW_flipped )
 
     ! Return the radiation flux to the CLUBB grid
-    do k = 1, gr%nz
-      Frad_SW(k) = Frad_SW_flipped(gr%nz+1-k)
+    do k = 1, gr%nzm
+      Frad_SW(k) = Frad_SW_flipped(gr%nzm+1-k)
     end do
 
     ! Take the derivative of the flux to compute radht_SW (see comment above)

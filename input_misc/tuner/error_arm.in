@@ -32,8 +32,8 @@ prescribed_rand_seed        = 1
 hoc_stats_file_nl(1)    = "../output/arm_zt.nc"
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc"
 run_file_nl(1)          = "arm_hoc.in"
-z_i_nl(1)               = 2
-z_f_nl(1)               = 109
+z_i_nl(1)               = 1
+z_f_nl(1)               = 108
 timestep_intvls_nl(1,:) = 450, 510
 weight_case_nl(1)       = 1.0
 /

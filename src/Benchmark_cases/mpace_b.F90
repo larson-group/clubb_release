@@ -65,21 +65,23 @@ module mpace_b
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: & 
       p_in_Pa, & ! Pressure                               [Pa]
       thvm       ! Virtual potential temperature          [K]
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) ::  & 
       wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
-      wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
       thlm_forcing, & ! Large-scale thlm tendency               [K/s]
       rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) ::  & 
+      wm_zm           ! Large-scale vertical motion on m grid   [m/s]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar LS tendency     [units/s]
 
     !--------------------- Local Variables ---------------------
@@ -101,24 +103,21 @@ module mpace_b
     !--------------------- Begin Code ---------------------
 
     ! Compute vertical motion
-    do k=2,gr%nz
+    do k=1,gr%nzt
       velocity_omega = min( D*(p_sfc-p_in_Pa(k)), D*(p_sfc-pinv) )
       wm_zt(k) = -velocity_omega * Rd * thvm(k) / p_in_Pa(k) / grav
     end do
-
-    ! Boundary condition
-    wm_zt(1) = 0.0_core_rknd        ! Below surface
 
     ! Interpolate
     wm_zm = zt2zm( gr, wm_zt )
 
     ! Boundary conditions
     wm_zm(1) = 0.0_core_rknd        ! At surface
-    wm_zm(gr%nz) = 0.0_core_rknd  ! Model top
+    wm_zm(gr%nzm) = 0.0_core_rknd  ! Model top
 
 
     ! Compute large-scale tendencies
-    do k=1,gr%nz
+    do k=1,gr%nzt
      t_tendency = min( -4._core_rknd,-15._core_rknd* &
        (1._core_rknd-((p_sfc-p_in_Pa(k))/21818._core_rknd)) ) ! K/day - known magic number
      thlm_forcing(k) = (t_tendency * ((p_sfc/p_in_Pa(k)) ** (Rd/Cp)))  & 

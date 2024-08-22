@@ -32,8 +32,8 @@ prescribed_rand_seed        = 1
 hoc_stats_file_nl(1)      = "../output/arm_zt.nc"
 les_stats_file_nl(1)      = "/home/pub/les_and_clubb_benchmark_runs/les_runs/arm_coamps_sm.nc"
 run_file_nl(1)            = "arm_hoc.in"
-z_i_nl(1)                 = 2
-z_f_nl(1)                 = 109
+z_i_nl(1)                 = 1
+z_f_nl(1)                 = 108
 timestep_intvls_nl(1,:)   = 481, 541
 weight_case_nl(1)         = 1.0
 
@@ -41,8 +41,8 @@ weight_case_nl(1)         = 1.0
 hoc_stats_file_nl(2)    = "../output/rico_zt.nc"
 les_stats_file_nl(2)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/rico_coamps_sm.nc"
 run_file_nl(2)          = "rico_hoc.in"
-z_i_nl(2)               = 2
-z_f_nl(2)               = 33
+z_i_nl(2)               = 1
+z_f_nl(2)               = 32
 timestep_intvls_nl(2,:) = 4201, 4320
 weight_case_nl(2)       = 1.0
 
@@ -50,8 +50,8 @@ weight_case_nl(2)       = 1.0
 hoc_stats_file_nl(3)    = "../output/dycoms2_rf02_nd_zt.nc"
 les_stats_file_nl(3)    = "/home/pub/les_and_clubb_benchmark_runs/les_runs/dycoms2_rf02_nd_coamps_sm.nc"
 run_file_nl(3)          = "dycoms2_rf02_nd_hoc.in"
-z_i_nl(3)               = 2
-z_f_nl(3)               = 37
+z_i_nl(3)               = 1
+z_f_nl(3)               = 36
 timestep_intvls_nl(3,:) = 301, 360
 weight_case_nl(3)       = 1.0                                                  
 /

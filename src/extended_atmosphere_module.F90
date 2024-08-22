@@ -272,10 +272,12 @@ module extended_atmosphere_module
     ! Input Variable(s)
     integer, intent(in) :: grid_size ! Size of the model grid  [-]
 
-    real( kind = core_rknd ), dimension(grid_size), intent(in) :: &
+    real( kind = core_rknd ), dimension(grid_size-1), intent(in) :: &
       zt_grid,         & ! Thermodynamic grid        [m]
+      zm_grid_spacing    ! Change per zm grid levels [m]
+
+    real( kind = core_rknd ), dimension(grid_size), intent(in) :: &
       zm_grid,         & ! Momentum grid             [m]
-      zm_grid_spacing, & ! Change per zm grid levels [m]
       p_in_Pa_zm         ! Pressure                  [Pa]
 
     real( kind = core_rknd ), intent(in) :: radiation_top ! Maximum height to extended to [m]
@@ -375,7 +377,7 @@ module extended_atmosphere_module
     ! Determine the spacing of the lin_int_buffer, it should have no more than
     ! 10 levels.
     dz10 = (extended_bottom - zm_grid_top) / 10._core_rknd
-    dz_model = zm_grid_spacing(grid_size)
+    dz_model = zm_grid_spacing(grid_size-1)
     dz = max( dz10, dz_model )
     ! Calculate the size of the lin_int_buffer
     buffer_size = (extended_bottom - zm_grid_top) / dz
@@ -424,13 +426,13 @@ module extended_atmosphere_module
     allocate( complete_alt(total_atmos_dim) )
 
     ! Build the total atmosphere grid for the zt levels
-    forall ( j=1:grid_size )
+    forall ( j=1:grid_size-1 )
       complete_alt(j) = zt_grid(j)
     end forall
 
-    forall ( j=grid_size+1:total_atmos_dim )
-      ! Use a linear extension above the zt_grid so the points are between the momentum levels
-      complete_alt(j) = (complete_momentum(j-1) + complete_momentum(j)) / 2._core_rknd
+    forall ( j=grid_size:total_atmos_dim )
+      ! Use a linear interpolation above the zt_grid so the points are between the momentum levels
+      complete_alt(j) = (complete_momentum(j+1) + complete_momentum(j)) / 2._core_rknd
     end forall
 
     return

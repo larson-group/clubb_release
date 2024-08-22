@@ -127,8 +127,11 @@ module stats_clubb_utilities
       nlat, & ! Number of points in the Y direction [-]
       nzmax   ! Grid points in the vertical         [-]
 
+    real( kind = core_rknd ), intent(in), dimension(nzmax-1) ::  & 
+      gzt       ! Thermodynamic levels           [m]
+
     real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
-      gzt, gzm  ! Thermodynamic and momentum levels           [m]
+      gzm       ! Momentum levels                [m]
 
     integer, intent(in) :: &
       nnrad_zt,     & ! Grid points in the radiation grid [count]
@@ -687,7 +690,7 @@ module stats_clubb_utilities
     end if
 
     stats_zt%num_output_fields = ntot
-    stats_zt%kk = nzmax
+    stats_zt%kk = nzmax - 1
     stats_zt%ii = nlon
     stats_zt%jj = nlat
 
@@ -793,7 +796,7 @@ module stats_clubb_utilities
       end if
 
       stats_lh_zt%num_output_fields = ntot
-      stats_lh_zt%kk = nzmax
+      stats_lh_zt%kk = nzmax - 1
       stats_lh_zt%ii = nlon
       stats_lh_zt%jj = nlat
 
@@ -1820,7 +1823,7 @@ module stats_clubb_utilities
 
   !----------------------------------------------------------------------
   subroutine stats_accumulate( &
-                     nz, sclr_dim, edsclr_dim, &
+                     nzm, nzt, sclr_dim, edsclr_dim, &
                      invrs_dzm, zt, dzm, dzt, dt, &
                      um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
@@ -1869,9 +1872,6 @@ module stats_clubb_utilities
     use stats_variables, only: & 
         stats_metadata_type
 
-    use grid_class, only: & 
-        zt2zm ! Procedure(s)
-
     use pdf_parameter_module, only: & 
         pdf_parameter ! Type
 
@@ -1904,95 +1904,104 @@ module stats_clubb_utilities
 
     ! Input Variable(s)
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       sclr_dim, &
       edsclr_dim
     
-    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nzm) :: & 
       invrs_dzm, & ! The inverse spacing between thermodynamic grid
                    ! levels; centered over momentum grid levels.
-      zt,        & ! Thermo grid
-      dzm,       & ! Spacing between thermodynamic grid levels; centered over
+      dzm          ! Spacing between thermodynamic grid levels; centered over
                    ! momentum grid levels
+
+    real( kind = core_rknd ), intent(in), dimension(nzt) :: & 
+      zt,        & ! Thermo grid
       dzt          ! Spcaing between momentum grid levels; centered over
                    ! thermodynamic grid levels
 
     real( kind = core_rknd ), intent(in) ::  &
       dt           ! Model timestep                        [s]
 
-    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nzt) :: & 
       um,       & ! u wind (thermodynamic levels)          [m/s]
       vm,       & ! v wind (thermodynamic levels)          [m/s]
+      thlm,     & ! liquid potential temperature (t levs.) [K]
+      rtm,      & ! total water mixing ratio (t levs.)     [kg/kg]
+      wp3,      & ! < w'^3 > (thermodynamic levels)        [m^3/s^3]
+      rtp3,     & ! < r_t'^3 > (thermodynamic levels)      [(kg/kg)^3]
+      thlp3,    & ! < th_l'^3 > (thermodynamic levels)     [K^3]
+      wp2thvp     ! < w'^2 th_v' > (thermodynamic levels)  [m^2/s^2 K]
+
+    real( kind = core_rknd ), intent(in), dimension(nzm) :: & 
       upwp,     & ! vertical u momentum flux (m levs.)     [m^2/s^2]
       vpwp,     & ! vertical v momentum flux (m levs.)     [m^2/s^2]
       up2,      & ! < u'^2 > (momentum levels)             [m^2/s^2]
       vp2,      & ! < v'^2 > (momentum levels)             [m^2/s^2]
-      thlm,     & ! liquid potential temperature (t levs.) [K]
-      rtm,      & ! total water mixing ratio (t levs.)     [kg/kg]
       wprtp,    & ! < w' r_t' > (momentum levels)          [m/s kg/kg]
       wpthlp,   & ! < w' th_l' > (momentum levels)         [m/s K]
       wp2,      & ! < w'^2 > (momentum levels)             [m^2/s^2]
-      wp3,      & ! < w'^3 > (thermodynamic levels)        [m^3/s^3]
       rtp2,     & ! < r_t'^2 > (momentum levels)           [(kg/kg)^2]
-      rtp3,     & ! < r_t'^3 > (thermodynamic levels)      [(kg/kg)^3]
       thlp2,    & ! < th_l'^2 > (momentum levels)          [K^2]
-      thlp3,    & ! < th_l'^3 > (thermodynamic levels)     [K^3]
       rtpthlp,  & ! < r_t' th_l' > (momentum levels)       [kg/kg K]
       wpthvp,   & ! < w' th_v' > (momentum levels)         [kg/kg K]
-      wp2thvp,  & ! < w'^2 th_v' > (thermodynamic levels)  [m^2/s^2 K]
       rtpthvp,  & ! < r_t' th_v' > (momentum levels)       [kg/kg K]
       thlpthvp    ! < th_l' th_v' > (momentum levels)      [K^2]
 
-    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nzt) :: & 
       p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
       exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
       rho,          & ! Density (thermodynamic levels)           [kg/m^3]
+      rho_ds_zt,    & ! Dry, static density (thermo. levs.)      [kg/m^3]
+      thv_ds_zt,    & ! Dry, base-state theta_v (thermo. levs.)  [K]
+      wm_zt           ! w on thermodynamic levels                [m/s]
+
+    real( kind = core_rknd ), intent(in), dimension(nzm) :: & 
       rho_zm,       & ! Density on momentum levels               [kg/m^3]
       rho_ds_zm,    & ! Dry, static density (momentum levels)    [kg/m^3]
-      rho_ds_zt,    & ! Dry, static density (thermo. levs.)      [kg/m^3]
       thv_ds_zm,    & ! Dry, base-state theta_v (momentum levs.) [K]
-      thv_ds_zt,    & ! Dry, base-state theta_v (thermo. levs.)  [K]
-      wm_zt,        & ! w on thermodynamic levels                [m/s]
       wm_zm           ! w on momentum levels                     [m/s]
 
-    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
-      rcm_zm,               & ! Cloud water mixing ratio on m levs.      [kg/kg]
-      rtm_zm,               & ! Total water mixing ratio on m levs.      [kg/kg]
-      thlm_zm,              & ! Liquid potential temperature on m levs.  [K]
+    real( kind = core_rknd ), intent(in), dimension(nzt) :: & 
       rcm,                  & ! Cloud water mixing ratio (t levs.)       [kg/kg]
-      wprcp,                & ! < w' r_c' > (momentum levels)            [m/s kg/kg]
       rc_coef,              & ! Coefficient of X'r_c' (t-levs.)      [K/(kg/kg)]
-      rc_coef_zm,           & ! Coefficient of X'r_c' on m-levs.     [K/(kg/kg)]
       cloud_frac,           & ! Cloud fraction (thermodynamic levels)    [-]
       ice_supersat_frac,    & ! Ice cloud fracion (thermodynamic levels) [-]
-      cloud_frac_zm,        & ! Cloud fraction on zm levels              [-]
-      ice_supersat_frac_zm, & ! Ice cloud fraction on zm levels          [-]
       rcm_in_layer,         & ! Cloud water mixing ratio in cloud layer  [kg/kg]
       cloud_cover,          & ! Cloud cover                              [-]
       rcm_supersat_adj        ! rcm adjustment due to supersaturation    [kg/kg]
 
-    real( kind = core_rknd ), intent(in), dimension(nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(nzm) :: & 
+      rcm_zm,               & ! Cloud water mixing ratio on m levs.      [kg/kg]
+      rtm_zm,               & ! Total water mixing ratio on m levs.      [kg/kg]
+      thlm_zm,              & ! Liquid potential temperature on m levs.  [K]
+      wprcp,                & ! < w' r_c' > (momentum levels)            [m/s kg/kg]
+      rc_coef_zm,           & ! Coefficient of X'r_c' on m-levs.     [K/(kg/kg)]
+      cloud_frac_zm,        & ! Cloud fraction on zm levels              [-]
+      ice_supersat_frac_zm    ! Ice cloud fraction on zm levels          [-]
+
+    real( kind = core_rknd ), intent(in), dimension(nzm) :: &
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
 
-    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
-        thvm,           & ! Virtual potential temperature        [K]
-        ug,             & ! u geostrophic wind                   [m/s]
-        vg,             & ! v geostrophic wind                   [m/s]
-        Lscale,         & ! Length scale                         [m]
-        wpthlp2,        & ! w'thl'^2                             [m K^2/s]
-        wp2thlp,        & ! w'^2 thl'                            [m^2 K/s^2]
-        wprtp2,         & ! w'rt'^2                              [m/s kg^2/kg^2]
-        wp2rtp,         & ! w'^2rt'                              [m^2/s^2 kg/kg]
-        Lscale_up,      & ! Length scale (upwards component)     [m]
-        Lscale_down,    & ! Length scale (downwards component)   [m]
-        tau_zt,         & ! Eddy diss. time scale; thermo. levs. [s]
-        Kh_zt,          & ! Eddy diff. coef. on thermo. levels   [m^2/s]
-        wp2rcp,         & ! w'^2 rc'                             [m^2/s^2 kg/kg]
-        wprtpthlp,      & ! w'rt'thl'                            [m/s kg/kg K]
-        sigma_sqd_w_zt, & ! PDF width parameter (thermo. levels) [-]
-        rsat              ! Saturation mixing ratio              [kg/kg]
+    real( kind = core_rknd ), intent(in), dimension(nzt) :: & 
+      thvm,           & ! Virtual potential temperature        [K]
+      ug,             & ! u geostrophic wind                   [m/s]
+      vg,             & ! v geostrophic wind                   [m/s]
+      Lscale,         & ! Length scale                         [m]
+      wpthlp2,        & ! w'thl'^2                             [m K^2/s]
+      wp2thlp,        & ! w'^2 thl'                            [m^2 K/s^2]
+      wprtp2,         & ! w'rt'^2                              [m/s kg^2/kg^2]
+      wp2rtp,         & ! w'^2rt'                              [m^2/s^2 kg/kg]
+      Lscale_up,      & ! Length scale (upwards component)     [m]
+      Lscale_down,    & ! Length scale (downwards component)   [m]
+      tau_zt,         & ! Eddy diss. time scale; thermo. levs. [s]
+      Kh_zt,          & ! Eddy diff. coef. on thermo. levels   [m^2/s]
+      wp2rcp,         & ! w'^2 rc'                             [m^2/s^2 kg/kg]
+      wprtpthlp,      & ! w'rt'thl'                            [m/s kg/kg K]
+      sigma_sqd_w_zt, & ! PDF width parameter (thermo. levels) [-]
+      rsat              ! Saturation mixing ratio              [kg/kg]
 
-    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nzt) :: & 
       wp2_zt,                & ! w'^2 on thermo. grid                  [m^2/s^2]
       thlp2_zt,              & ! thl'^2 on thermo. grid                [K^2]
       wpthlp_zt,             & ! w'thl' on thermo. grid                [m K/s]
@@ -2005,6 +2014,14 @@ module stats_clubb_utilities
       vpwp_zt,               & ! v'w' on thermo. grid                  [m^2/s^2]
       wpup2,                 & ! w'u'^2 (thermodynamic levels)         [m^3/s^3]
       wpvp2,                 & ! w'v'^2 (thermodynamic levels)         [m^3/s^3]
+      a3_coef_zt,            & ! The a3 coef. interp. to the zt grid   [-]
+      wp3_on_wp2_zt,         & ! w'^3 / w'^2 on the zt grid            [m/s]
+      w_up_in_cloud,         & ! Mean cloudy updraft speed             [m/s]
+      w_down_in_cloud,       & ! Mean cloudy downdraft speed           [m/s]
+      cloudy_updraft_frac,   & ! Cloudy updraft fraction               [-]
+      cloudy_downdraft_frac    ! Cloudy downdraft fraction             [-]
+
+    real( kind = core_rknd ), intent(in), dimension(nzm) :: & 
       wp2up2,                & ! < w'^2u'^2 > (momentum levels)        [m^4/s^4]
       wp2vp2,                & ! < w'^2v'^2 > (momentum levels)        [m^4/s^4]
       wp4,                   & ! < w'^4 > (momentum levels)            [m^4/s^4]
@@ -2015,40 +2032,36 @@ module stats_clubb_utilities
       rcp2,                  & ! rc'^2                                 [kg^2/kg^2]
       em,                    & ! Turbulent Kinetic Energy (TKE)        [m^2/s^2]
       a3_coef,               & ! The a3 coefficient from CLUBB eqns    [-]
-      a3_coef_zt,            & ! The a3 coef. interp. to the zt grid   [-]
       wp3_zm,                & ! w'^3 interpolated to momentum levels  [m^3/s^3]
       wp3_on_wp2,            & ! w'^3 / w'^2 on the zm grid            [m/s]
-      wp3_on_wp2_zt,         & ! w'^3 / w'^2 on the zt grid            [m/s]
-      Skw_velocity,          & ! Skewness velocity                     [m/s]
-      w_up_in_cloud,         & ! Mean cloudy updraft speed             [m/s]
-      w_down_in_cloud,       & ! Mean cloudy downdraft speed           [m/s]
-      cloudy_updraft_frac,   & ! Cloudy updraft fraction               [-]
-      cloudy_downdraft_frac    ! Cloudy downdraft fraction             [-]
+      Skw_velocity             ! Skewness velocity                     [m/s]
 
     type(pdf_parameter), intent(in) :: & 
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
       pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(nz,sclr_dim) :: & 
-      sclrm,           & ! High-order passive scalar            [units vary]
-      sclrp2,          & ! High-order passive scalar variance   [units^2]
-      sclrprtp,        & ! High-order passive scalar covariance [units kg/kg]
-      sclrpthlp,       & ! High-order passive scalar covariance [units K]
-      sclrm_forcing,   & ! Large-scale forcing of scalar        [units/s]
-      sclrpthvp,       & ! High-order passive scalar covariance [units K]
-      wpsclrp            ! w'sclr'                              [units m/s]
+    real( kind = core_rknd ), intent(in), dimension(nzt,sclr_dim) :: & 
+      sclrm,         & ! High-order passive scalar            [units vary]
+      sclrm_forcing, & ! Large-scale forcing of scalar        [units/s]
+      wp2sclrp,      & ! w'^2 sclr'                           [units vary]
+      wpsclrp2,      & ! w'sclr'^2                            [units vary]
+      wpsclrprtp,    & ! w'sclr'rt'                           [units vary]
+      wpsclrpthlp      ! w'sclr'thl'      [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(nz,sclr_dim) :: & 
-      sclrprcp,    & ! sclr'rc'     [units vary]
-      wp2sclrp,    & ! w'^2 sclr'   [units vary]
-      wpsclrp2,    & ! w'sclr'^2    [units vary]
-      wpsclrprtp,  & ! w'sclr'rt'   [units vary]
-      wpsclrpthlp    ! w'sclr'thl'  [units vary]
+    real( kind = core_rknd ), intent(in), dimension(nzm,sclr_dim) :: & 
+      sclrprcp,  & ! sclr'rc'                                [units vary]
+      sclrp2,    & ! High-order passive scalar variance      [units^2]
+      sclrprtp,  & ! High-order passive scalar covariance    [units kg/kg]
+      sclrpthlp, & ! High-order passive scalar covariance    [units K]
+      sclrpthvp, & ! High-order passive scalar covariance    [units K]
+      wpsclrp      ! w'sclr'                                 [units m/s]
 
-    real( kind = core_rknd ), intent(in), dimension(nz,edsclr_dim) :: & 
-      wpedsclrp,       & ! w'edsclr'                        [units vary]
+    real( kind = core_rknd ), intent(in), dimension(nzt,edsclr_dim) :: & 
       edsclrm,         & ! Eddy-diff passive scalar         [units vary] 
       edsclrm_forcing    ! Large-scale forcing of edscalar  [units vary]
+
+    real( kind = core_rknd ), intent(in), dimension(nzm,edsclr_dim) :: & 
+      wpedsclrp          ! w'edsclr'                        [units vary]
 
     integer, intent(in) :: &
       saturation_formula
@@ -2066,13 +2079,15 @@ module stats_clubb_utilities
     integer :: isclr, k
     integer :: grid_level = 1  ! grid level for stats where there is only one sensible level (eg timeseries)
 
-    real( kind = core_rknd ), dimension(nz) :: &
-      T_in_K,      &  ! Absolute temperature         [K]
-      rsati,       &  ! Saturation w.r.t ice         [kg/kg]
-      shear,       &  ! Wind shear production term   [m^2/s^3]
-      chi,         &  ! Mellor's 's'                 [kg/kg]
+    real( kind = core_rknd ), dimension(nzt) :: &
+      T_in_K,        &  ! Absolute temperature         [K]
+      rsati,         &  ! Saturation w.r.t ice         [kg/kg]
+      chi,           &  ! Mellor's 's'                 [kg/kg]
       chip2,         &  ! Variance of Mellor's 's'     [kg/kg]
-      rcm_in_cloud    ! rcm in cloud                 [kg/kg]
+      rcm_in_cloud      ! rcm in cloud                 [kg/kg]
+
+    real( kind = core_rknd ), dimension(nzm) :: &
+      shear       ! Wind shear production term   [m^2/s^3]
 
     real( kind = core_rknd ) :: xtmp
 
@@ -2086,7 +2101,7 @@ module stats_clubb_utilities
 
 
       if ( stats_metadata%iT_in_K > 0 .or. stats_metadata%irsati > 0 ) then
-        T_in_K = thlm2T_in_K( nz, thlm, exner, rcm )
+        T_in_K = thlm2T_in_K( nzt, thlm, exner, rcm )
       else
         T_in_K = -999._core_rknd
       end if
@@ -2179,7 +2194,7 @@ module stats_clubb_utilities
       call stat_update_var( stats_metadata%irsat, rsat, & ! intent(in)
                             stats_zt ) ! intent(inout)
       if ( stats_metadata%irsati > 0 ) then
-        do k = 1, nz
+        do k = 1, nzt
           rsati(k) = sat_mixrat_ice( p_in_Pa(k), T_in_K(k), saturation_formula )
         end do
         call stat_update_var( stats_metadata%irsati, rsati, & ! intent(in)
@@ -2471,11 +2486,12 @@ module stats_clubb_utilities
 
       ! Calculate shear production
       if ( stats_metadata%ishear > 0 ) then
-        do k = 1, nz-1, 1
-          shear(k) = - upwp(k) * ( um(k+1) - um(k) ) * invrs_dzm(k)  &
-                     - vpwp(k) * ( vm(k+1) - vm(k) ) * invrs_dzm(k)
+        do k = 2, nzm-1, 1
+          shear(k) = - upwp(k) * ( um(k) - um(k-1) ) * invrs_dzm(k)  &
+                     - vpwp(k) * ( vm(k) - vm(k-1) ) * invrs_dzm(k)
         enddo
-        shear(nz) = 0.0_core_rknd
+        shear(1)   = 0.0_core_rknd
+        shear(nzm) = 0.0_core_rknd
       end if
       call stat_update_var( stats_metadata%ishear, shear, & ! intent(in)
                             stats_zm ) ! intent(inout)
@@ -2483,25 +2499,25 @@ module stats_clubb_utilities
       ! stats_sfc variables
 
       ! Cloud cover
-      call stat_update_var_pt( stats_metadata%icc, grid_level, maxval( cloud_frac(2:nz) ), & ! intent(in)
+      call stat_update_var_pt( stats_metadata%icc, grid_level, maxval( cloud_frac(1:nzt) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Cloud base
       if ( stats_metadata%iz_cloud_base > 0 ) then
 
-        k = 2
-        do while ( rcm(k) < rc_tol .and. k < nz )
+        k = 1
+        do while ( rcm(k) < rc_tol .and. k < nzt )
           k = k + 1
         enddo
 
-        if ( k == 2 ) then
+        if ( k == 1 ) then
 
           ! Set the cloud base to the height of the lowest thermodynamic 
           ! grid level above the surface.
-          call stat_update_var_pt( stats_metadata%iz_cloud_base, grid_level, zt(2), & ! intent(in)
+          call stat_update_var_pt( stats_metadata%iz_cloud_base, grid_level, zt(1), & ! intent(in)
                                    stats_sfc ) ! intent(inout)
 
-        elseif ( k > 2 .and. k < nz) then
+        elseif ( k > 1 .and. k < nzt ) then
 
           ! Use linear interpolation to find the exact height of the
           ! rc_tol kg/kg level.
@@ -2526,8 +2542,8 @@ module stats_clubb_utilities
 
         xtmp &
         = vertical_integral &
-               ( (nz - 2 + 1), rho_ds_zt(2:nz), &
-                 rcm(2:nz), dzt(2:nz) )
+               ( nzt, rho_ds_zt(1:nzt), &
+                 rcm(1:nzt), dzt(1:nzt) )
 
         call stat_update_var_pt( stats_metadata%ilwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2539,8 +2555,8 @@ module stats_clubb_utilities
 
         xtmp &
         = vertical_integral &
-               ( (nz - 2 + 1), rho_ds_zt(2:nz), &
-                 ( rtm(2:nz) - rcm(2:nz) ), dzt(2:nz) )
+               ( nzt, rho_ds_zt(1:nzt), &
+                 ( rtm(1:nzt) - rcm(1:nzt) ), dzt(1:nzt) )
 
         call stat_update_var_pt( stats_metadata%ivwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2550,33 +2566,32 @@ module stats_clubb_utilities
 
       ! Vertical average of thermodynamic level variables.
 
-      ! Find the vertical average of thermodynamic level variables, averaged from
-      ! level 2 (the first thermodynamic level above model surface) through
-      ! level nz (the top of the model).  Use the vertical averaging function
-      ! found in advance_helper_module.F90.
+      ! Find the vertical average of thermodynamic level variables, averaged
+      ! from level 1 through level nzt (the top of the model).  Use the vertical
+      ! averaging function found in advance_helper_module.F90.
 
       ! Vertical average of thlm.
       call stat_update_var_pt( stats_metadata%ithlm_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (nz-2+1), rho_ds_zt(2:nz), & ! intent(in)
-                         thlm(2:nz), dzt(2:nz) ), & ! intent(in)
+           vertical_avg( nzt, rho_ds_zt(1:nzt), & ! intent(in)
+                         thlm(1:nzt), dzt(1:nzt) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of rtm.
       call stat_update_var_pt( stats_metadata%irtm_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (nz-2+1), rho_ds_zt(2:nz), & ! intent(in)
-                         rtm(2:nz), dzt(2:nz) ), & ! intent(in)
+           vertical_avg( nzt, rho_ds_zt(1:nzt), & ! intent(in)
+                         rtm(1:nzt), dzt(1:nzt) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of um.
       call stat_update_var_pt( stats_metadata%ium_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (nz-2+1), rho_ds_zt(2:nz), & ! intent(in)
-                         um(2:nz), dzt(2:nz) ), & ! intent(in)
+           vertical_avg( nzt, rho_ds_zt(1:nzt), & ! intent(in)
+                         um(1:nzt), dzt(1:nzt) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of vm.
       call stat_update_var_pt( stats_metadata%ivm_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (nz-2+1), rho_ds_zt(2:nz), & ! intent(in)
-                         vm(2:nz), dzt(2:nz) ), & ! intent(in)
+           vertical_avg( nzt, rho_ds_zt(1:nzt), & ! intent(in)
+                         vm(1:nzt), dzt(1:nzt) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of momentum level variables.
@@ -2587,42 +2602,42 @@ module stats_clubb_utilities
 
       ! Vertical average of wp2.
       call stat_update_var_pt( stats_metadata%iwp2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
-                         wp2(1:nz), dzm(1:nz) ), & ! intent(in)
+           vertical_avg( nzm, rho_ds_zm(1:nzm), & ! intent(in)
+                         wp2(1:nzm), dzm(1:nzm) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of up2.
       call stat_update_var_pt( stats_metadata%iup2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
-                         up2(1:nz), dzm(1:nz) ), & ! intent(in)
+           vertical_avg( nzm, rho_ds_zm(1:nzm), & ! intent(in)
+                         up2(1:nzm), dzm(1:nzm) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of vp2.
       call stat_update_var_pt( stats_metadata%ivp2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
-                         vp2(1:nz), dzm(1:nz) ), & ! intent(in)
+           vertical_avg( nzm, rho_ds_zm(1:nzm), & ! intent(in)
+                         vp2(1:nzm), dzm(1:nzm) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of rtp2.
       call stat_update_var_pt( stats_metadata%irtp2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
-                         rtp2(1:nz), dzm(1:nz) ), & ! intent(in)
+           vertical_avg( nzm, rho_ds_zm(1:nzm), & ! intent(in)
+                         rtp2(1:nzm), dzm(1:nzm) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
 
       ! Vertical average of thlp2.
       call stat_update_var_pt( stats_metadata%ithlp2_vert_avg, grid_level,  & ! intent(in)
-           vertical_avg( (nz-1+1), rho_ds_zm(1:nz), & ! intent(in)
-                         thlp2(1:nz), dzm(1:nz) ), & ! intent(in)
+           vertical_avg( nzm, rho_ds_zm(1:nzm), & ! intent(in)
+                         thlp2(1:nzm), dzm(1:nzm) ), & ! intent(in)
                                stats_sfc ) ! intent(inout)
       
       
       if (stats_metadata%itot_vartn_normlzd_rtm > 0) then
-        if (abs(rtm(nz) - rtm(1)) < eps) then
+        if (abs(rtm(nzt) - rtm(1)) < eps) then
           write(fstderr, *) "Warning: tot_vartn_normlzd_rtm tried to divide by zero denominator ", &
                             "(surface level value was equal to top level value)"
           xtmp = -999_core_rknd  ! workaround to signify zero denominator 
         else
-          xtmp = sum(abs(rtm(2 : nz) - rtm(1 : nz-1)) / abs(rtm(nz) - rtm(1)))
+          xtmp = sum(abs(rtm(2 : nzt) - rtm(1 : nzt-1)) / abs(rtm(nzt) - rtm(1)))
         end if
         
         call stat_update_var_pt( stats_metadata%itot_vartn_normlzd_rtm, grid_level, xtmp, & ! intent(in)
@@ -2630,12 +2645,12 @@ module stats_clubb_utilities
       end if
      
       if (stats_metadata%itot_vartn_normlzd_thlm > 0) then
-        if (abs(thlm(nz) - thlm(1)) < eps) then
+        if (abs(thlm(nzt) - thlm(1)) < eps) then
           write(fstderr, *) "Warning: tot_vartn_normlzd_thlm tried to divide by zero denominator ", &
                             "(surface level value was equal to top level value)"
           xtmp = -999_core_rknd  ! workaround to signify zero denominator 
         else
-          xtmp = sum(abs(thlm(2 : nz) - thlm(1 : nz-1)) / abs(thlm(nz) - thlm(1)))
+          xtmp = sum(abs(thlm(2 : nzt) - thlm(1 : nzt-1)) / abs(thlm(nzt) - thlm(1)))
         end if
         
         call stat_update_var_pt( stats_metadata%itot_vartn_normlzd_thlm, grid_level, xtmp, & ! intent(in)
@@ -2643,12 +2658,12 @@ module stats_clubb_utilities
       end if
      
       if (stats_metadata%itot_vartn_normlzd_wprtp > 0) then
-        if (abs(wprtp(nz) - wprtp(1)) < eps) then
+        if (abs(wprtp(nzm) - wprtp(1)) < eps) then
           write(fstderr, *) "Warning: tot_vartn_normlzd_wprtp tried to divide by zero denominator ", &
                             "(surface level value was equal to top level value)"
           xtmp = -999_core_rknd  ! workaround to signify zero denominator 
         else
-          xtmp = sum(abs(wprtp(2 : nz) - wprtp(1 : nz-1)) / abs(wprtp(nz) - wprtp(1)))
+          xtmp = sum(abs(wprtp(2 : nzm) - wprtp(1 : nzm-1)) / abs(wprtp(nzm) - wprtp(1)))
         end if
         
         call stat_update_var_pt( stats_metadata%itot_vartn_normlzd_wprtp, grid_level, xtmp, & ! intent(in)
@@ -2661,9 +2676,9 @@ module stats_clubb_utilities
   end subroutine stats_accumulate
 !------------------------------------------------------------------------------
   subroutine stats_accumulate_hydromet( gr, hydromet_dim, hm_metadata, & ! intent(in)
-                                        hydromet, rho_ds_zt,              & ! intent(in)
-                                        stats_metadata,                   & ! intent(in)
-                                        stats_zt, stats_sfc )               ! intent(inout)
+                                        hydromet, rho_ds_zt,           & ! intent(in)
+                                        stats_metadata,                & ! intent(in)
+                                        stats_zt, stats_sfc )            ! intent(inout)
 ! Description:
 !   Compute stats related the hydrometeors
 
@@ -2712,10 +2727,10 @@ module stats_clubb_utilities
       stats_sfc
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
       hydromet ! All hydrometeors except for rcm        [units vary]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
       rho_ds_zt ! Dry, static density (thermo. levs.)      [kg/m^3]
 
     ! Local Variables
@@ -2774,8 +2789,8 @@ module stats_clubb_utilities
         ! Calculate snow water path
         xtmp &
         = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,hm_metadata%iirs), gr%dzt(1,2:gr%nz) )
+               ( gr%nzt, rho_ds_zt, &
+                 hydromet(:,hm_metadata%iirs), gr%dzt(1,:) )
 
         call stat_update_var_pt( stats_metadata%iswp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2787,8 +2802,8 @@ module stats_clubb_utilities
 
         xtmp &
         = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,hm_metadata%iiri), gr%dzt(1,2:gr%nz) )
+               ( gr%nzt, rho_ds_zt, &
+                 hydromet(:,hm_metadata%iiri), gr%dzt(1,:) )
 
         call stat_update_var_pt( stats_metadata%iiwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2800,8 +2815,8 @@ module stats_clubb_utilities
 
         xtmp &
         = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,hm_metadata%iirr), gr%dzt(1,2:gr%nz) )
+               ( gr%nzt, rho_ds_zt, &
+                 hydromet(:,hm_metadata%iirr), gr%dzt(1,:) )
 
         call stat_update_var_pt( stats_metadata%irwp, grid_level, xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
@@ -2840,10 +2855,10 @@ module stats_clubb_utilities
         core_rknd ! Variable(s)
 
     use corr_varnce_module, only: &
-      hm_metadata_type
+        hm_metadata_type
 
     use stats_type, only: &
-      stats ! Type
+        stats ! Type
 
     implicit none
 
@@ -2857,16 +2872,16 @@ module stats_clubb_utilities
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
       lh_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
       lh_Ncm_mc,  & ! Tendency of cloud droplet concentration  [num/kg/s]
       lh_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
       lh_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
       lh_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
       lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
       AKm,        & ! Exact Kessler ac                    [kg/kg/s]
       AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]

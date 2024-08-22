@@ -13,7 +13,7 @@ module mixing_length
   contains
 
   !=============================================================================
-  subroutine compute_mixing_length( nz, ngrdcol, gr, thvm, thlm, &
+  subroutine compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, &
                                     rtm, em, Lscale_max, p_in_Pa, &
                                     exner, thv_ds, mu, lmin, &
                                     saturation_formula, &
@@ -152,21 +152,24 @@ module mixing_length
 
     !--------------------------------- Input Variables ---------------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol  
 
     type (grid), target, intent(in) :: &
       gr
     
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
       thlm,    & ! Liquid potential temp. on themodynamic level   [K]
       rtm,     & ! Total water mixing ratio on themodynamic level [kg/kg]
-      em,      & ! em = 3/2 * w'^2; on momentum level             [m^2/s^2]
       exner,   & ! Exner function on thermodynamic level          [-]
       p_in_Pa, & ! Pressure on thermodynamic level                [Pa]
       thv_ds     ! Dry, base-state theta_v on thermodynamic level [K]
     ! Note:  thv_ds used as a reference theta_l here
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
+      em         ! em = 3/2 * w'^2; on momentum level             [m^2/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       Lscale_max ! Maximum allowable value for Lscale             [m]
@@ -183,7 +186,7 @@ module mixing_length
     logical, intent(in) :: &
       l_implemented ! Flag for CLUBB being implemented in a larger model
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
       Lscale,    & ! Mixing length      [m]
       Lscale_up, & ! Mixing length up   [m]
       Lscale_down  ! Mixing length down [m]
@@ -200,12 +203,9 @@ module mixing_length
     real( kind = core_rknd ) :: dCAPE_dz_j, dCAPE_dz_j_minus_1, dCAPE_dz_j_plus_1
 
     ! Temporary 2D arrays to store calculations to speed runtime
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-        exp_mu_dzm, &
-        invrs_dzm_on_mu, &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
         grav_on_thvm, &
         Lv_coef, &
-        entrain_coef, &
         thl_par_j_precalc, &
         rt_par_j_precalc, &
         tl_par_1, &
@@ -218,7 +218,12 @@ module mixing_length
         CAPE_incr_1, &
         thv_par_1
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+        exp_mu_dzm, &
+        invrs_dzm_on_mu, &
+        entrain_coef
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
         tke_i
 
     ! Minimum value for Lscale that will taper off with height
@@ -262,34 +267,35 @@ module mixing_length
     end if
 
     ! Calculate initial turbulent kinetic energy for each grid level
-    tke_i = zm2zt( nz, ngrdcol, gr, em )
+    tke_i = zm2zt( nzm, nzt, ngrdcol, gr, em )
  
     ! Initialize arrays and precalculate values for computational efficiency
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do k = 1, nz
+      do k = 1, nzt
 
         ! Initialize up and down arrays
         Lscale_up(i,k) = zlmin
         Lscale_down(i,k) = zlmin
 
         ! Precalculate values to avoid unnecessary calculations later
-        exp_mu_dzm(i,k) = exp( -mu(i) * gr%dzm(i,k) )
-        invrs_dzm_on_mu(i,k) = ( gr%invrs_dzm(i,k) ) / mu(i)
         grav_on_thvm(i,k) = grav / thvm(i,k)
         Lv_coef(i,k) = Lv / ( exner(i,k) * cp ) - ep2 * thv_ds(i,k)
-        entrain_coef(i,k) = ( one - exp_mu_dzm(i,k) ) * invrs_dzm_on_mu(i,k)
 
       end do
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector default(present)
+    !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
+      do k = 1, nzm
 
-      ! Avoid uninitialized memory (these values are not used in Lscale)
-      Lscale_up(i,1)   = zero
-      Lscale_down(i,1) = zero
+        ! Precalculate values to avoid unnecessary calculations later
+        exp_mu_dzm(i,k) = exp( -mu(i) * gr%dzm(i,k) )
+        invrs_dzm_on_mu(i,k) = ( gr%invrs_dzm(i,k) ) / mu(i)
+        entrain_coef(i,k) = ( one - exp_mu_dzm(i,k) ) * invrs_dzm_on_mu(i,k)
+
+      end do
     end do
     !$acc end parallel loop
 
@@ -306,13 +312,14 @@ module mixing_length
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol  
-      do j = 2, nz-1
+      do j = 2, nzt-1
 
-        thl_par_j_precalc(i,j) = thlm(i,j) - thlm(i,j-1) * exp_mu_dzm(i,j-1)  &
-                               - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(i,j-1)
+        thl_par_j_precalc(i,j) = thlm(i,j) - thlm(i,j-1) * exp_mu_dzm(i,j)  &
+                                 - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(i,j)
 
-        rt_par_j_precalc(i,j) = rtm(i,j) - rtm(i,j-1) * exp_mu_dzm(i,j-1)  &
-                              - ( rtm(i,j) - rtm(i,j-1) ) * entrain_coef(i,j-1)
+        rt_par_j_precalc(i,j) = rtm(i,j) - rtm(i,j-1) * exp_mu_dzm(i,j)  &
+                                - ( rtm(i,j) - rtm(i,j-1) ) * entrain_coef(i,j)
+
       end do
     end do
     !$acc end parallel loop
@@ -328,13 +335,13 @@ module mixing_length
     ! Calculate initial thl, tl, and rt for parcels at each grid level
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-     do j = 3, nz
+     do j = 2, nzt
 
-        thl_par_1(i,j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(i,j-1)
+        thl_par_1(i,j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j-1) ) * entrain_coef(i,j)
 
         tl_par_1(i,j) = thl_par_1(i,j) * exner(i,j)
 
-        rt_par_1(i,j) = rtm(i,j) - ( rtm(i,j) - rtm(i,j-1) ) * entrain_coef(i,j-1)
+        rt_par_1(i,j) = rtm(i,j) - ( rtm(i,j) - rtm(i,j-1) ) * entrain_coef(i,j)
 
       end do
     end do
@@ -349,13 +356,13 @@ module mixing_length
     ! subarray issues with OpenACC.
     ! rsatl_par_1(i,3:) = sat_mixrat_liq_acc( nz-2, ngrdcol, p_in_Pa(i,3:), tl_par_1(i,3:) )
     ! since subarray 3:, the start_index is 3 and it is an optional argument
-    start_index = 3
-    rsatl_par_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, start_index )
+    start_index = 2
+    rsatl_par_1 = sat_mixrat_liq( nzt, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, start_index )
     
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      do j = 3, nz
+      do j = 2, nzt
 
         tl_par_j_sqd = tl_par_1(i,j)**2
 
@@ -381,7 +388,7 @@ module mixing_length
 
         ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
         ! Trapezoidal estimate between grid levels, dCAPE at z_0 = 0 for this initial calculation
-        CAPE_incr_1(i,j) = one_half * dCAPE_dz_1(i,j) * gr%dzm(i,j-1)
+        CAPE_incr_1(i,j) = one_half * dCAPE_dz_1(i,j) * gr%dzm(i,j)
 
       end do
 
@@ -391,7 +398,7 @@ module mixing_length
       ! grid level at a time until the TKE is exhausted.
 
       Lscale_up_max_alt = zero    ! Set initial max value for Lscale_up to 0
-      do k = 2, nz-2
+      do k = 1, nzt-2
 
         ! If the initial turbulent kinetic energy (tke) has not been exhausted for this grid level
         if ( tke_i(i,k) + CAPE_incr_1(i,k+1) > zero ) then
@@ -413,7 +420,7 @@ module mixing_length
           ! level has been reached. j is the next grid level above the level that can
           ! be reached for a parcel starting at level k. If TKE is exhausted in this loop
           ! that means the parcel starting at k cannot reach level j, but has reached j-1
-          do while ( j < nz )
+          do while ( j < nzt )
 
             ! thl, rt of parcel are conserved except for entrainment
             !
@@ -424,14 +431,14 @@ module mixing_length
             ! at grid level j
             !
             ! d(thl_par)/dz = - mu * ( thl_par - thl_env )
-            thl_par_j = thl_par_j_precalc(i,j) + thl_par_j * exp_mu_dzm(i,j-1)
+            thl_par_j = thl_par_j_precalc(i,j) + thl_par_j * exp_mu_dzm(i,j)
 
 
             ! r_t of the parcel starting at grid level k, and currenly
             ! at grid level j
             !
             ! d(rt_par)/dz = - mu * ( rt_par - rt_env )
-            rt_par_j = rt_par_j_precalc(i,j) + rt_par_j * exp_mu_dzm(i,j-1)
+            rt_par_j = rt_par_j_precalc(i,j) + rt_par_j * exp_mu_dzm(i,j)
 
 
             ! Include effects of latent heating on Lscale_up 6/12/00
@@ -465,7 +472,7 @@ module mixing_length
 
             ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
             ! Trapezoidal estimate between grid levels j and j-1
-            CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) * gr%dzm(i,j-1)
+            CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) * gr%dzm(i,j)
 
             ! Exit loop early if tke has been exhaused between level j and j+1
             if ( tke + CAPE_incr <= zero ) then
@@ -487,7 +494,7 @@ module mixing_length
           Lscale_up(i,k) = Lscale_up(i,k) + gr%zt(i,j-1) - gr%zt(i,k)
 
 
-          if ( j < nz ) then
+          if ( j < nzt ) then
 
             ! Loop terminated early, meaning TKE was completely exhaused at grid level j.
             ! Add the thickness z - z_0 (where z_0 < z <= z_1) to Lscale_up.
@@ -510,11 +517,11 @@ module mixing_length
               invrs_dCAPE_diff = one / ( dCAPE_dz_j - dCAPE_dz_j_minus_1 )
 
               Lscale_up(i,k) = Lscale_up(i,k) &
-                             - dCAPE_dz_j_minus_1 * invrs_dCAPE_diff * gr%dzm(i,j-1)  &
+                             - dCAPE_dz_j_minus_1 * invrs_dCAPE_diff * gr%dzm(i,j)  &
                              - sqrt( dCAPE_dz_j_minus_1**2 &
-                                      - two * tke * gr%invrs_dzm(i,j-1) &
+                                      - two * tke * gr%invrs_dzm(i,j) &
                                         * ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) ) &
-                               * invrs_dCAPE_diff  * gr%dzm(i,j-1)
+                               * invrs_dCAPE_diff  * gr%dzm(i,j)
             endif
 
           end if
@@ -525,7 +532,7 @@ module mixing_length
           ! remaining TKE (tke_i), using the quadratic formula. Simplified
           ! since dCAPE_dz_j_minus_1 = 0.0
           Lscale_up(i,k) = Lscale_up(i,k) - sqrt( - two * tke_i(i,k) &
-                                                * gr%dzm(i,k) * dCAPE_dz_1(i,k+1) ) &
+                                                * gr%dzm(i,k+1) * dCAPE_dz_1(i,k+1) ) &
                                         / dCAPE_dz_1(i,k+1)
         endif
 
@@ -556,13 +563,13 @@ module mixing_length
     ! recursively for a parcel as it descends
     !$acc parallel loop gang vector collapse(2) default(present)    
     do i = 1, ngrdcol
-      do j = 2, nz-1
+      do j = 1, nzt-1
 
-        thl_par_j_precalc(i,j) = thlm(i,j) - thlm(i,j+1) * exp_mu_dzm(i,j)  &
-                               - ( thlm(i,j) - thlm(i,j+1) ) * entrain_coef(i,j)
+        thl_par_j_precalc(i,j) = thlm(i,j) - thlm(i,j+1) * exp_mu_dzm(i,j+1)  &
+                               - ( thlm(i,j) - thlm(i,j+1) ) * entrain_coef(i,j+1)
 
-        rt_par_j_precalc(i,j) = rtm(i,j) - rtm(i,j+1) * exp_mu_dzm(i,j)  &
-                              - ( rtm(i,j) - rtm(i,j+1) ) * entrain_coef(i,j)
+        rt_par_j_precalc(i,j) = rtm(i,j) - rtm(i,j+1) * exp_mu_dzm(i,j+1)  &
+                              - ( rtm(i,j) - rtm(i,j+1) ) * entrain_coef(i,j+1)
       end do
     end do
     !$acc end parallel loop
@@ -578,13 +585,13 @@ module mixing_length
     ! Calculate initial thl, tl, and rt for parcels at each grid level
     !$acc parallel loop gang vector collapse(2) default(present)    
     do i = 1, ngrdcol
-      do j = 2, nz-1
+      do j = 1, nzt-1
 
-        thl_par_1(i,j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j+1) )  * entrain_coef(i,j)
+        thl_par_1(i,j) = thlm(i,j) - ( thlm(i,j) - thlm(i,j+1) )  * entrain_coef(i,j+1)
 
         tl_par_1(i,j) = thl_par_1(i,j) * exner(i,j)
 
-        rt_par_1(i,j) = rtm(i,j) - ( rtm(i,j) - rtm(i,j+1) ) * entrain_coef(i,j)
+        rt_par_1(i,j) = rtm(i,j) - ( rtm(i,j) - rtm(i,j+1) ) * entrain_coef(i,j+1)
 
       end do
     end do
@@ -598,13 +605,13 @@ module mixing_length
     ! subarray issues with OpenACC.
     ! rsatl_par_1(i,2:) = sat_mixrat_liq_acc( nz-1, p_in_Pa(i,2:), tl_par_1(i,2:) )
     ! since subarray 2:, the start_index is 2 and it is an optional argument
-    start_index = 2
-    rsatl_par_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, start_index )
+    start_index = 1
+    rsatl_par_1 = sat_mixrat_liq( nzt, ngrdcol, p_in_Pa, tl_par_1, saturation_formula, start_index )
 
     ! Calculate initial dCAPE_dz and CAPE_incr for parcels at each grid level
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      do j = 2, nz-1
+      do j = 1, nzt-1
 
         tl_par_j_sqd = tl_par_1(i,j)**2
 
@@ -629,7 +636,7 @@ module mixing_length
 
         ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
         ! Trapezoidal estimate between grid levels, dCAPE at z_0 = 0 for this initial calculation
-        CAPE_incr_1(i,j) = one_half * dCAPE_dz_1(i,j) * gr%dzm(i,j)
+        CAPE_incr_1(i,j) = one_half * dCAPE_dz_1(i,j) * gr%dzm(i,j+1)
 
       end do
 
@@ -638,8 +645,8 @@ module mixing_length
       ! exhausted by the initial change then continue the exhaustion calculations here for a single
       ! grid level at a time until the TKE is exhausted.
 
-      Lscale_down_min_alt = gr%zt(i,nz)  ! Set initial min value for Lscale_down to max zt
-      do k = nz, 3, -1
+      Lscale_down_min_alt = gr%zt(i,nzt)  ! Set initial min value for Lscale_down to max zt
+      do k = nzt, 2, -1
 
         ! If the initial turbulent kinetic energy (tke) has not been exhausted for this grid level
         if ( tke_i(i,k) - CAPE_incr_1(i,k-1) > zero ) then
@@ -661,7 +668,7 @@ module mixing_length
           ! level has been reached. j is the next grid level below the level that can
           ! be reached for a parcel starting at level k. If TKE is exhausted in this loop
           ! that means the parcel starting at k cannot sink to level j, but can sink to j+1
-          do while ( j >= 2 )
+          do while ( j >= 1 )
 
             ! thl, rt of parcel are conserved except for entrainment
             !
@@ -672,14 +679,14 @@ module mixing_length
             ! at grid level j
             !
             ! d(thl_par)/dz = - mu * ( thl_par - thl_env )
-            thl_par_j = thl_par_j_precalc(i,j) + thl_par_j * exp_mu_dzm(i,j)
+            thl_par_j = thl_par_j_precalc(i,j) + thl_par_j * exp_mu_dzm(i,j+1)
 
 
             ! r_t of the parcel starting at grid level k, and currenly
             ! at grid level j
             !
             ! d(rt_par)/dz = - mu * ( rt_par - rt_env )
-            rt_par_j = rt_par_j_precalc(i,j) + rt_par_j * exp_mu_dzm(i,j)
+            rt_par_j = rt_par_j_precalc(i,j) + rt_par_j * exp_mu_dzm(i,j+1)
 
 
             ! Include effects of latent heating on Lscale_up 6/12/00
@@ -712,7 +719,7 @@ module mixing_length
 
             ! CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
             ! Trapezoidal estimate between grid levels j+1 and j
-            CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) * gr%dzm(i,j)
+            CAPE_incr = one_half * ( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) * gr%dzm(i,j+1)
 
             ! Exit loop early if tke has been exhaused between level j+1 and j
             if ( tke - CAPE_incr <= zero ) then
@@ -733,7 +740,7 @@ module mixing_length
           Lscale_down(i,k) = Lscale_down(i,k) + gr%zt(i,k) - gr%zt(i,j+1)
 
 
-          if ( j >= 2 ) then
+          if ( j >= 1 ) then
 
             ! Loop terminated early, meaning TKE was completely exhaused at grid level j.
             ! Add the thickness z - z_0 (where z_0 < z <= z_1) to Lscale_up.
@@ -759,11 +766,11 @@ module mixing_length
               invrs_dCAPE_diff = one / ( dCAPE_dz_j - dCAPE_dz_j_plus_1 )
 
               Lscale_down(i,k) = Lscale_down(i,k) &
-                               - dCAPE_dz_j_plus_1 * invrs_dCAPE_diff * gr%dzm(i,j)  &
+                               - dCAPE_dz_j_plus_1 * invrs_dCAPE_diff * gr%dzm(i,j+1)  &
                                + sqrt( dCAPE_dz_j_plus_1**2 &
-                                       + two * tke * gr%invrs_dzm(i,j)  &
+                                       + two * tke * gr%invrs_dzm(i,j+1)  &
                                          * ( dCAPE_dz_j - dCAPE_dz_j_plus_1 ) )  &
-                                 * invrs_dCAPE_diff * gr%dzm(i,j)
+                                 * invrs_dCAPE_diff * gr%dzm(i,j+1)
             endif
 
           end if
@@ -774,7 +781,7 @@ module mixing_length
           ! remaining TKE (tke_i), using the quadratic formula. Simplified
           ! since dCAPE_dz_j_plus_1 = 0.0
           Lscale_down(i,k) = Lscale_down(i,k) + sqrt( two * tke_i(i,k) &
-                                                  * gr%dzm(i,k-1) * dCAPE_dz_1(i,k-1) ) &
+                                                  * gr%dzm(i,k) * dCAPE_dz_1(i,k-1) ) &
                                             / dCAPE_dz_1(i,k-1)
         endif
 
@@ -795,7 +802,7 @@ module mixing_length
 
     !$acc parallel loop gang vector default(present) 
     do i = 1, ngrdcol
-      do k = 2, nz, 1
+      do k = 1, nzt, 1
 
         ! Make lminh a linear function starting at value lmin at the bottom
         ! and going to zero at 500 meters in altitude.
@@ -823,8 +830,7 @@ module mixing_length
       enddo
 
       ! Set the value of Lscale at the upper and lower boundaries.
-      Lscale(i,1) = Lscale(i,2)
-      Lscale(i,nz) = Lscale(i,nz-1)
+      Lscale(i,nzt) = Lscale(i,nzt-1)
 
       ! Vince Larson limited Lscale to allow host
       ! model to take over deep convection.  13 Feb 2008.
@@ -840,7 +846,7 @@ module mixing_length
       !$acc              thvm, thlm, rtm, em, exner, p_in_Pa, thv_ds )
 
       do i = 1, ngrdcol
-        call length_check( nz, Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:) ) ! intent(in)
+        call length_check( nzt, Lscale(i,:), Lscale_up(i,:), Lscale_down(i,:) ) ! intent(in)
       end do
 
       if ( err_code == clubb_fatal_error ) then
@@ -877,7 +883,7 @@ module mixing_length
   end subroutine compute_mixing_length
 
 !===============================================================================
-  subroutine calc_Lscale_directly ( ngrdcol, nz, gr, &
+  subroutine calc_Lscale_directly ( ngrdcol, nzm, nzt, gr, &
                                     l_implemented, p_in_Pa, exner, rtm,    &
                                     thlm, thvm, newmu, rtp2_zt, thlp2_zt, rtpthlp_zt, &
                                     pdf_params, em, thv_ds_zt, Lscale_max, lmin, &
@@ -931,7 +937,8 @@ module mixing_length
 
     !--------------------------------- Input Variables ---------------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: &
@@ -941,17 +948,19 @@ module mixing_length
       l_implemented ! True if CLUBB is being run within a large-scale hostmodel,
                     !   rather than a standalone single-column model.
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
-      rtp2_zt,      &
-      thlp2_zt,     &
-      rtpthlp_zt,   &
-      thlm,      &
-      thvm,      &
-      rtm,       &
-      em,        &
-      p_in_Pa,   & ! Air pressure (thermodynamic levels)       [Pa]
-      exner,     &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
+      rtp2_zt,    &
+      thlp2_zt,   &
+      rtpthlp_zt, &
+      thlm,       &
+      thvm,       &
+      rtm,        &
+      p_in_Pa,    & ! Air pressure (thermodynamic levels)       [Pa]
+      exner,      &
       thv_ds_zt
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
+      em
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       newmu, &
@@ -980,7 +989,7 @@ module mixing_length
       stats_zt
 
     !--------------------------------- Output Variables ---------------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) ::  &
       Lscale,    & ! Mixing length      [m]
       Lscale_up, & ! Mixing length up   [m]
       Lscale_down  ! Mixing length down [m]
@@ -996,13 +1005,13 @@ module mixing_length
                               ! from the three calls to compute_mixing_length is then calculated.
                               ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      sign_rtpthlp_zt,          & ! Sign of the covariance rtpthlp       [-]
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      sign_rtpthlp_zt,              & ! Sign of the covariance rtpthlp       [-]
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
-      thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
-      rtm_pert_1, rtm_pert_2,   &     ! For avg. calculation of Lscale  [kg/kg]
-      thlm_pert_pos_rt, thlm_pert_neg_rt, &     ! For avg. calculation of Lscale [K]
-      rtm_pert_pos_rt, rtm_pert_neg_rt     ! For avg. calculation of Lscale [kg/kg]
+      thlm_pert_1, thlm_pert_2,     & ! For avg. calculation of Lscale  [K]
+      rtm_pert_1, rtm_pert_2,       & ! For avg. calculation of Lscale  [kg/kg]
+      thlm_pert_pos_rt, thlm_pert_neg_rt, & ! For avg. calculation of Lscale [K]
+      rtm_pert_pos_rt, rtm_pert_neg_rt      ! For avg. calculation of Lscale [kg/kg]
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       mu_pert_1, mu_pert_2, &
@@ -1039,7 +1048,7 @@ module mixing_length
       ! of rtm and thlm so that an average value of Lscale may be calculated.
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz, 1
+      do k = 1, nzt, 1
         do  i = 1, ngrdcol
           sign_rtpthlp_zt(i,k) = sign( one, rtpthlp_zt(i,k) )
         end do
@@ -1047,7 +1056,7 @@ module mixing_length
       !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz, 1
+      do k = 1, nzt, 1
         do  i = 1, ngrdcol
           rtm_pert_1(i,k)  = rtm(i,k) + clubb_params(i,iLscale_pert_coef) &
                                         * sqrt( max( rtp2_zt(i,k), rt_tol**2 ) )
@@ -1056,7 +1065,7 @@ module mixing_length
       !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz, 1
+      do k = 1, nzt, 1
         do  i = 1, ngrdcol
           thlm_pert_1(i,k) = thlm(i,k) + sign_rtpthlp_zt(i,k) * clubb_params(i,iLscale_pert_coef) &
                                          * sqrt( max( thlp2_zt(i,k), thl_tol**2 ) )
@@ -1070,17 +1079,16 @@ module mixing_length
       end do 
       !$acc end parallel loop
 
-      call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_1,  & ! In
-                    rtm_pert_1, em, Lscale_max, p_in_Pa,               & ! In
-                    exner, thv_ds_zt, mu_pert_1, lmin,                 & ! In 
-                    saturation_formula,                                & ! In
-                    l_implemented,                                     & ! In
-                    stats_metadata,                                    & ! In
-                    Lscale_pert_1, Lscale_up, Lscale_down )              ! Out
-
+      call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_1, & ! In
+                                  rtm_pert_1, em, Lscale_max, p_in_Pa,      & ! In
+                                  exner, thv_ds_zt, mu_pert_1, lmin,        & ! In 
+                                  saturation_formula,                       & ! In
+                                  l_implemented,                            & ! In
+                                  stats_metadata,                           & ! In
+                                  Lscale_pert_1, Lscale_up, Lscale_down )     ! Out
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz, 1
+      do k = 1, nzt, 1
         do  i = 1, ngrdcol
           rtm_pert_2(i,k)  = rtm(i,k) - clubb_params(i,iLscale_pert_coef) &
                                         * sqrt( max( rtp2_zt(i,k), rt_tol**2 ) )
@@ -1089,7 +1097,7 @@ module mixing_length
       !$acc end parallel loop
       
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz, 1
+      do k = 1, nzt, 1
         do  i = 1, ngrdcol
           thlm_pert_2(i,k) = thlm(i,k) - sign_rtpthlp_zt(i,k) * clubb_params(i,iLscale_pert_coef) &
                                * sqrt( max( thlp2_zt(i,k), thl_tol**2 ) )
@@ -1103,20 +1111,20 @@ module mixing_length
       end do 
       !$acc end parallel loop         
 
-      call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_2, & ! In
-                    rtm_pert_2, em, Lscale_max, p_in_Pa,              & ! In
-                    exner, thv_ds_zt, mu_pert_2, lmin,                & ! In 
-                    saturation_formula,                               & ! In
-                    l_implemented,                                    & ! In
-                    stats_metadata,                                   & ! In
-                    Lscale_pert_2, Lscale_up, Lscale_down )             ! Out
+      call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_2, & ! In
+                                  rtm_pert_2, em, Lscale_max, p_in_Pa,      & ! In
+                                  exner, thv_ds_zt, mu_pert_2, lmin,        & ! In 
+                                  saturation_formula,                       & ! In
+                                  l_implemented,                            & ! In
+                                  stats_metadata,                           & ! In
+                                  Lscale_pert_2, Lscale_up, Lscale_down )     ! Out
 
     else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
 
       ! Take the values of thl and rt based one 1st or 2nd plume
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           sign_rtpthlp_zt(i,k) = sign( one, rtpthlp_zt(i,k) )
         end do
@@ -1124,7 +1132,7 @@ module mixing_length
       !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
 
           Lscale_pert_coef = clubb_params(i,iLscale_pert_coef)
@@ -1175,30 +1183,33 @@ module mixing_length
       !$acc end parallel loop
 
       ! Call length with perturbed values of thl and rt
-      call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_pos_rt,  & ! In
-                rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,                   & ! In
-                exner, thv_ds_zt, mu_pert_pos_rt, lmin,                     & ! In 
-                saturation_formula,                                         & ! In
-                l_implemented,                                              & ! In
-                stats_metadata,                                             & ! In
-                Lscale_pert_1, Lscale_up, Lscale_down )                       ! Out
+      call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_pos_rt, & ! In
+                                  rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,      & ! In
+                                  exner, thv_ds_zt, mu_pert_pos_rt, lmin,        & ! In 
+                                  saturation_formula,                            & ! In
+                                  l_implemented,                                 & ! In
+                                  stats_metadata,                                & ! In
+                                  Lscale_pert_1, Lscale_up, Lscale_down )          ! Out
 
-      call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm_pert_neg_rt,  & ! In
-                rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,                   & ! In
-                exner, thv_ds_zt, mu_pert_neg_rt, lmin,                     & ! In 
-                saturation_formula,                                         & ! In
-                l_implemented,                                              & ! In
-                stats_metadata,                                             & ! In
-                Lscale_pert_2, Lscale_up, Lscale_down )                       ! Out
+      call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_neg_rt, & ! In
+                                  rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,      & ! In
+                                  exner, thv_ds_zt, mu_pert_neg_rt, lmin,        & ! In 
+                                  saturation_formula,                            & ! In
+                                  l_implemented,                                 & ! In
+                                  stats_metadata,                                & ! In
+                                  Lscale_pert_2, Lscale_up, Lscale_down )          ! Out
+
     else
+
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           Lscale_pert_1(i,k) = unused_var ! Undefined
           Lscale_pert_2(i,k) = unused_var ! Undefined
         end do
       end do
       !$acc end parallel loop
+
     end if ! l_avg_Lscale
 
     if ( stats_metadata%l_stats_samp ) then
@@ -1220,13 +1231,13 @@ module mixing_length
     ! rather than the mean length scale.
 
     ! Diagnose CLUBB's turbulent mixing length scale.
-    call compute_mixing_length( nz, ngrdcol, gr, thvm, thlm,            & ! In
-                          rtm, em, Lscale_max, p_in_Pa,                 & ! In
-                          exner, thv_ds_zt, newmu, lmin,                & ! In 
-                          saturation_formula,                           & ! In
-                          l_implemented,                                & ! In
-                          stats_metadata,                               & ! In
-                          Lscale, Lscale_up, Lscale_down )                ! Out
+    call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm, & ! In
+                                rtm, em, Lscale_max, p_in_Pa,      & ! In
+                                exner, thv_ds_zt, newmu, lmin,     & ! In 
+                                saturation_formula,                & ! In
+                                l_implemented,                     & ! In
+                                stats_metadata,                    & ! In
+                                Lscale, Lscale_up, Lscale_down )     ! Out
 
     if ( l_avg_Lscale ) then
       if ( l_Lscale_plume_centered ) then
@@ -1240,7 +1251,7 @@ module mixing_length
 
         ! Un-weighted average of just the perturbed values
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             Lscale(i,k) = one_half *( Lscale_pert_1(i,k) + Lscale_pert_2(i,k) )
           end do
@@ -1248,7 +1259,7 @@ module mixing_length
         !$acc end parallel loop
       else
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzt
           do i = 1, ngrdcol
             Lscale(i,k) = one_third * ( Lscale(i,k) + Lscale_pert_1(i,k) + Lscale_pert_2(i,k) )
           end do
@@ -1267,11 +1278,9 @@ module mixing_length
 
  end subroutine calc_Lscale_directly
 
-
-
 !===============================================================================
 
- subroutine diagnose_Lscale_from_tau( nz, ngrdcol, gr, &
+ subroutine diagnose_Lscale_from_tau( nzm, nzt, ngrdcol, gr, & ! intent in
                         upwp_sfc, vpwp_sfc, ddzt_umvm_sqd, & !intent in
                         ice_supersat_frac, &! intent in
                         em, sqrt_em_zt, & ! intent in
@@ -1290,6 +1299,7 @@ module mixing_length
                         invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm, & ! intent out
                         tau_max_zm, tau_max_zt, tau_zm, tau_zt, & !intent out
                         Lscale, Lscale_up, Lscale_down)! intent out
+
 ! Description:
 !     Diagnose inverse damping time scales (invrs_tau_...) and turbulent mixing length (Lscale)
 ! References:
@@ -1355,7 +1365,8 @@ module mixing_length
 
     !--------------------------------- Input Variables ---------------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: &
@@ -1364,11 +1375,13 @@ module mixing_length
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       upwp_sfc,      &
       vpwp_sfc
+    
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      ice_supersat_frac, &
+      sqrt_em_zt
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      ice_supersat_frac,            &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       em,                           &
-      sqrt_em_zt,                   &
       ddzt_umvm_sqd,                &
       brunt_vaisala_freq_sqd_smth,  &     ! smoothed Buoyancy frequency squared, N^2     [s^-2]
       Ri_zm                               ! Richardson number
@@ -1397,8 +1410,7 @@ module mixing_length
       stats_zm
 
     !--------------------------------- Output Variables ---------------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      invrs_tau_zt,                 &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       invrs_tau_zm,                 &
       invrs_tau_sfc,                &
       invrs_tau_no_N2_zm,           &
@@ -1408,22 +1420,28 @@ module mixing_length
       invrs_tau_wp2_zm,             &
       invrs_tau_xp2_zm,             &
       invrs_tau_wp3_zm,             &
-      invrs_tau_wp3_zt,             &
       invrs_tau_wpxp_zm,            &
       tau_max_zm,                   &
+      tau_zm
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+      invrs_tau_zt,                 &
+      invrs_tau_wp3_zt,             &
       tau_max_zt,                   &
-      tau_zm,                       &
       tau_zt,                       &
       Lscale,                       &
       Lscale_up,                    &
       Lscale_down
 
     !--------------------------------- Local Variables ---------------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       brunt_freq_pos,               &
       brunt_freq_out_cloud,         &
       bvf_thresh,                   & ! temporatory array
       H_invrs_tau_wpxp_N2             ! Heaviside function for clippings of invrs_tau_wpxp_N2
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      smooth_thlm 
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       ustar
@@ -1443,7 +1461,7 @@ module mixing_length
 
     logical, parameter :: l_smooth_min_max = .false. ! whether to apply smooth min and max function
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       norm_ddzt_umvm, &
       smooth_norm_ddzt_umvm, &
       brunt_vaisala_freq_clipped, &
@@ -1451,11 +1469,13 @@ module mixing_length
       invrs_tau_shear_smooth, &
       Ri_zm_smooth, &
       em_clipped, &
-      tau_zm_unclipped, &
-      tau_zt_unclipped, &
+      tau_zm_unclipped, & 
       tmp_calc, &
       tmp_calc_max, &
       tmp_calc_min_max
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      tau_zt_unclipped
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       tmp_calc_ngrdcol
@@ -1512,7 +1532,7 @@ module mixing_length
     end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         invrs_tau_bkgnd(i,k) = clubb_params(i,iC_invrs_tau_bkgnd) / tau_const
       end do
@@ -1520,17 +1540,17 @@ module mixing_length
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         norm_ddzt_umvm(i,k) = sqrt( ddzt_umvm_sqd(i,k) )
       end do
     end do
     !$acc end parallel loop
 
-    smooth_norm_ddzt_umvm = zm2zt2zm( nz, ngrdcol, gr, norm_ddzt_umvm )
+    smooth_norm_ddzt_umvm = zm2zt2zm( nzm, nzt, ngrdcol, gr, norm_ddzt_umvm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         invrs_tau_shear_smooth(i,k) = clubb_params(i,iC_invrs_tau_shear) &
                                       * smooth_norm_ddzt_umvm(i,k)
@@ -1539,11 +1559,11 @@ module mixing_length
     !$acc end parallel loop
 
     ! Enforce that invrs_tau_shear is positive
-    invrs_tau_shear = smooth_max( nz, ngrdcol, invrs_tau_shear_smooth, &
+    invrs_tau_shear = smooth_max( nzm, ngrdcol, invrs_tau_shear_smooth, &
                                   zero_threshold, min_max_smth_mag )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         invrs_tau_sfc(i,k) = clubb_params(i,iC_invrs_tau_sfc) &
                              * ( ustar(i) / vonk ) &
@@ -1554,7 +1574,7 @@ module mixing_length
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         invrs_tau_no_N2_zm(i,k) = invrs_tau_bkgnd(i,k) + invrs_tau_sfc(i,k) + invrs_tau_shear(i,k)
       end do
@@ -1563,12 +1583,12 @@ module mixing_length
 
     if ( l_smooth_min_max ) then
 
-      brunt_vaisala_freq_clipped = smooth_max( nz, ngrdcol, zero_threshold, &
+      brunt_vaisala_freq_clipped = smooth_max( nzm, ngrdcol, zero_threshold, &
                                                brunt_vaisala_freq_sqd_smth, &
                                                1.0e-4_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           brunt_freq_pos(i,k) = sqrt( brunt_vaisala_freq_clipped(i,k) )
         end do
@@ -1578,7 +1598,7 @@ module mixing_length
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           brunt_freq_pos(i,k) = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth(i,k) ) )
         end do
@@ -1587,27 +1607,27 @@ module mixing_length
 
     end if
 
-    ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac, zero_threshold )
+    ice_supersat_frac_zm = zt2zm( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
 
     if ( l_smooth_min_max ) then
 
       ! roll this back as well once checks have passed
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           tmp_calc(i,k) = one - ice_supersat_frac_zm(i,k) / 0.001_core_rknd
         end do
       end do
       !$acc end parallel loop
 
-      tmp_calc_max = smooth_max( nz, ngrdcol, zero_threshold, tmp_calc, &
+      tmp_calc_max = smooth_max( nzm, ngrdcol, zero_threshold, tmp_calc, &
                                  min_max_smth_mag)
 
-      tmp_calc_min_max = smooth_min( nz, ngrdcol, one, tmp_calc_max, &
+      tmp_calc_min_max = smooth_min( nzm, ngrdcol, one, tmp_calc_max, &
                                      min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           brunt_freq_out_cloud(i,k) =  brunt_freq_pos(i,k) * tmp_calc_min_max(i,k)
         end do
@@ -1617,7 +1637,7 @@ module mixing_length
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           brunt_freq_out_cloud(i,k) &
             = brunt_freq_pos(i,k) &
@@ -1630,7 +1650,7 @@ module mixing_length
     end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         if ( gr%zm(i,k) < clubb_params(i,ialtitude_threshold) ) then
           brunt_freq_out_cloud(i,k) = zero
@@ -1657,7 +1677,7 @@ module mixing_length
     ! omits invrs_tau_sfc based on the rationale that the isotropization
     ! rate shouldn't be enhanced near the ground.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
 
         C_invrs_tau_N2     = clubb_params(i,iC_invrs_tau_N2)
@@ -1671,6 +1691,7 @@ module mixing_length
                                 C_invrs_tau_N2_wp2 * brunt_freq_out_cloud(i,k)
 
         invrs_tau_zm(i,k) = invrs_tau_no_N2_zm(i,k) + C_invrs_tau_N2 * brunt_freq_pos(i,k)
+
       end do
     end do
     !$acc end parallel loop
@@ -1679,7 +1700,7 @@ module mixing_length
     if ( l_e3sm_config ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           invrs_tau_zm(i,k) = one_half * invrs_tau_zm(i,k)
         end do
@@ -1687,7 +1708,7 @@ module mixing_length
       !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           invrs_tau_xp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) &
                                   + clubb_params(i,iC_invrs_tau_N2_xp2) * brunt_freq_pos(i,k) & ! 0
@@ -1700,26 +1721,26 @@ module mixing_length
 
       if ( l_smooth_min_max ) then
 
-        brunt_vaisala_freq_clipped = smooth_max( nz, ngrdcol, 1.0e-7_core_rknd, &
+        brunt_vaisala_freq_clipped = smooth_max( nzm, ngrdcol, 1.0e-7_core_rknd, &
                                                  brunt_vaisala_freq_sqd_smth, &
                                                  1.0e-4_core_rknd * min_max_smth_mag )
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzm
           do i = 1, ngrdcol
             tmp_calc(i,k) = sqrt( ddzt_umvm_sqd(i,k) / brunt_vaisala_freq_clipped(i,k) )
           end do
         end do
         !$acc end parallel loop
 
-        tmp_calc_max = smooth_max( nz, ngrdcol, tmp_calc, &
+        tmp_calc_max = smooth_max( nzm, ngrdcol, tmp_calc, &
                                    0.3_core_rknd, 0.3_core_rknd * min_max_smth_mag )
 
-        tmp_calc_min_max = smooth_min( nz, ngrdcol, tmp_calc_max, &
+        tmp_calc_min_max = smooth_min( nzm, ngrdcol, tmp_calc_max, &
                                        one, min_max_smth_mag )
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzm
           do i = 1, ngrdcol
             invrs_tau_xp2_zm(i,k) =  tmp_calc_min_max(i,k) * invrs_tau_xp2_zm(i,k)
           end do
@@ -1729,7 +1750,7 @@ module mixing_length
       else
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzm
           do i = 1, ngrdcol
             invrs_tau_xp2_zm(i,k) &
               = min( max( sqrt( ddzt_umvm_sqd(i,k) &
@@ -1743,7 +1764,7 @@ module mixing_length
       end if
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           invrs_tau_wpxp_zm(i,k) = two * invrs_tau_zm(i,k) &
                                    + clubb_params(i,iC_invrs_tau_N2_wpxp) &
@@ -1755,7 +1776,7 @@ module mixing_length
     else ! l_e3sm_config = false
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           invrs_tau_xp2_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
                                   clubb_params(i,iC_invrs_tau_N2) * brunt_freq_pos(i,k) + &
@@ -1764,10 +1785,10 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac, zero_threshold )
+      ice_supersat_frac_zm = zt2zm( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
 
 !      !$acc parallel loop gang vector collapse(2) default(present)
-!      do k = 1, nz
+!      do k = 1, nzm
 !        do i = 1, ngrdcol
 !          if ( ice_supersat_frac_zm(i,k) <= 0.01_core_rknd &
 !               .and. invrs_tau_xp2_zm(i,k)  >= 0.003_core_rknd ) then
@@ -1778,7 +1799,7 @@ module mixing_length
 !      !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           invrs_tau_wpxp_zm(i,k) = invrs_tau_no_N2_zm(i,k) + &
                                    clubb_params(i,iC_invrs_tau_N2) * brunt_freq_pos(i,k) + &
@@ -1792,7 +1813,7 @@ module mixing_length
     if ( l_smooth_Heaviside_tau_wpxp ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           bvf_thresh(i,k) = brunt_vaisala_freq_sqd_smth(i,k) &
                             / clubb_params(i,iC_invrs_tau_wpxp_N2_thresh) - one
@@ -1800,12 +1821,12 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      H_invrs_tau_wpxp_N2 = smooth_heaviside_peskin( nz, ngrdcol, bvf_thresh, heaviside_smth_range )
+      H_invrs_tau_wpxp_N2 = smooth_heaviside_peskin( nzm, ngrdcol, bvf_thresh, heaviside_smth_range )
 
     else ! l_smooth_Heaviside_tau_wpxp = .false.
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           if ( brunt_vaisala_freq_sqd_smth(i,k) > clubb_params(i,iC_invrs_tau_wpxp_N2_thresh) ) then
             H_invrs_tau_wpxp_N2(i,k) = one
@@ -1820,11 +1841,11 @@ module mixing_length
 
     if ( l_smooth_min_max ) then
 
-      Ri_zm_smooth = smooth_max( nz, ngrdcol, Ri_zm, zero, &
-                                  12.0_core_rknd * min_max_smth_mag )
+      Ri_zm_smooth = smooth_max( nzm, ngrdcol, Ri_zm, zero, &
+                                 12.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           tmp_calc(i,k) = clubb_params(i,iC_invrs_tau_wpxp_Ri) * &
                           Ri_zm_smooth(i,k)**clubb_params(i,iwpxp_Ri_exp)
@@ -1832,11 +1853,11 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      Ri_zm_smooth = smooth_min( nz, ngrdcol, tmp_calc, &
+      Ri_zm_smooth = smooth_min( nzm, ngrdcol, tmp_calc, &
                                  12.0_core_rknd, 12.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
 
           if ( gr%zm(i,k) > clubb_params(i,ialtitude_threshold) ) then
@@ -1852,7 +1873,7 @@ module mixing_length
     else ! l_smooth_min_max
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           if ( gr%zm(i,k) > clubb_params(i,ialtitude_threshold) ) then
              invrs_tau_wpxp_zm(i,k) = invrs_tau_wpxp_zm(i,k) &
@@ -1867,7 +1888,7 @@ module mixing_length
     end if
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         invrs_tau_wp3_zm(i,k) = invrs_tau_wp2_zm(i,k) &
                                 + clubb_params(i,iC_invrs_tau_N2_clear_wp3) &
@@ -1880,12 +1901,19 @@ module mixing_length
     ! which depends of the value of Lscale_max.
     if ( l_smooth_min_max ) then
 
-      em_clipped = smooth_max( nz, ngrdcol, em, em_min, min_max_smth_mag )
+      em_clipped = smooth_max( nzm, ngrdcol, em, em_min, min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           tau_max_zt(i,k) = Lscale_max(i) / sqrt_em_zt(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
           tau_max_zm(i,k) = Lscale_max(i) / sqrt( em_clipped(i,k) )
         end do
       end do
@@ -1894,9 +1922,16 @@ module mixing_length
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           tau_max_zt(i,k) = Lscale_max(i) / sqrt_em_zt(i,k)
+        end do
+      end do
+      !$acc end parallel loop
+
+      !$acc parallel loop gang vector collapse(2) default(present)
+      do k = 1, nzm
+        do i = 1, ngrdcol
           tau_max_zm(i,k) = Lscale_max(i) / sqrt( max( em(i,k), em_min ) )
         end do
       end do
@@ -1907,34 +1942,34 @@ module mixing_length
     if ( l_smooth_min_max ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           tau_zm_unclipped(i,k) = one / invrs_tau_zm(i,k)
         end do
       end do
       !$acc end parallel loop
 
-      tau_zm = smooth_min( nz, ngrdcol, tau_zm_unclipped, &
+      tau_zm = smooth_min( nzm, ngrdcol, tau_zm_unclipped, &
                            tau_max_zm, 1.0e3_core_rknd * min_max_smth_mag )
 
-      tau_zt_unclipped = zm2zt( nz, ngrdcol, gr, tau_zm )
+      tau_zt_unclipped = zm2zt( nzm, nzt, ngrdcol, gr, tau_zm )
 
-      tau_zt = smooth_min( nz, ngrdcol, tau_zt_unclipped, tau_max_zt, 1.0e3_core_rknd * min_max_smth_mag )
+      tau_zt = smooth_min( nzt, ngrdcol, tau_zt_unclipped, tau_max_zt, 1.0e3_core_rknd * min_max_smth_mag )
 
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           tau_zm(i,k) = min( one / invrs_tau_zm(i,k), tau_max_zm(i,k) )
         end do
       end do
       !$acc end parallel loop
 
-      tau_zt = zm2zt( nz, ngrdcol, gr, tau_zm )
+      tau_zt = zm2zt( nzm, nzt, ngrdcol, gr, tau_zm )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzt
         do i = 1, ngrdcol
           tau_zt(i,k) = min( tau_zt(i,k), tau_max_zt(i,k) )
         end do
@@ -1943,11 +1978,11 @@ module mixing_length
 
     end if
 
-    invrs_tau_zt     = zm2zt( nz, ngrdcol, gr, invrs_tau_zm )
-    invrs_tau_wp3_zt = zm2zt( nz, ngrdcol, gr, invrs_tau_wp3_zm )
+    invrs_tau_zt     = zm2zt( nzm, nzt, ngrdcol, gr, invrs_tau_zm )
+    invrs_tau_wp3_zt = zm2zt( nzm, nzt, ngrdcol, gr, invrs_tau_wp3_zm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzt
       do i = 1, ngrdcol
 
         Lscale(i,k) = tau_zt(i,k) * sqrt_em_zt(i,k)

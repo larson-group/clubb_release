@@ -12,7 +12,7 @@ module sigma_sqd_w_module
   contains
 
   !=============================================================================
-  subroutine compute_sigma_sqd_w( nz, ngrdcol, &
+  subroutine compute_sigma_sqd_w( nzm, ngrdcol, &
                                   gamma_Skw_fnc, wp2, thlp2, rtp2, &
                                   up2, vp2, wpthlp, wprtp, upwp, vpwp, &
                                   l_predict_upwp_vpwp, &
@@ -60,10 +60,10 @@ module sigma_sqd_w_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz, &
+      nzm, &
       ngrdcol
     
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       gamma_Skw_fnc, & ! Gamma as a function of skewness             [-]
       wp2,           & ! Variance of vertical velocity               [m^2/s^2]
       thlp2,         & ! Variance of liquid water potential temp.    [K^2]
@@ -83,11 +83,11 @@ module sigma_sqd_w_module
                           ! subroutine advance_windm_edsclrm.
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       sigma_sqd_w ! PDF width parameter      [-]
 
     ! Local Variable
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       max_corr_w_x_sqd    ! Max. val. of wpxp^2/(wp2*xp2) for all vars. x  [-]
 
     integer :: i, k
@@ -106,7 +106,7 @@ module sigma_sqd_w_module
     ! also calculated as part of the PDF, and they are included as well.
     ! Additionally, when sclr_dim > 0, passive scalars (sclr) are also included.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         max_corr_w_x_sqd(i,k) = max( ( wpthlp(i,k) / ( sqrt( wp2(i,k) * thlp2(i,k) ) &
                                        + one_hundred * w_tol * thl_tol ) )**2, &
@@ -118,7 +118,7 @@ module sigma_sqd_w_module
 
     if ( l_predict_upwp_vpwp ) then
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           max_corr_w_x_sqd(i,k) = max( max_corr_w_x_sqd(i,k), &
                                        ( upwp(i,k) / ( sqrt( up2(i,k) * wp2(i,k) ) &
@@ -132,7 +132,7 @@ module sigma_sqd_w_module
 
     ! Calculate the value of sigma_sqd_w
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         sigma_sqd_w(i,k) = gamma_Skw_fnc(i,k) * ( one - min( max_corr_w_x_sqd(i,k), one ) )
       end do

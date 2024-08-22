@@ -61,16 +61,18 @@ module gabls2
       time_initial   ! Current length of timestep      [s]
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: & 
       wm_zt,        & ! Large-scale vertical motion on t grid   [m/s]
-      wm_zm,        & ! Large-scale vertical motion on m grid   [m/s]
       thlm_forcing, & ! Large-scale thlm tendency               [K/s]
       rtm_forcing     ! Large-scale rtm tendency                [kg/kg/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: & 
+      wm_zm           ! Large-scale vertical motion on m grid   [m/s]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar forcing         [units vary/s]
 
     !--------------------- Local Variables ---------------------
@@ -83,7 +85,7 @@ module gabls2
     ! 93600 seconds = 26 hours of simulation time;
     if ( time > (time_initial + 93600._time_precision ) ) then 
       ! per GABLS2 specification
-      do k=1,gr%nz
+      do k=1,gr%nzt
         if ( gr%zt(1,k) <= 1000._core_rknd ) then
           wm_zt(k) = -0.005_core_rknd * (gr%zt(1,k) / 1000._core_rknd ) ! Known magic number
         else
@@ -91,7 +93,7 @@ module gabls2
         end if
       end do
     else
-      do k=1,gr%nz
+      do k=1,gr%nzt
         wm_zt(k) = 0._core_rknd
       end do
     end if
@@ -99,19 +101,18 @@ module gabls2
     wm_zm = zt2zm( gr, wm_zt )
 
     ! Boundary conditions on vertical motion.
-    wm_zt(1) = 0.0_core_rknd        ! Below surface
     wm_zm(1) = 0.0_core_rknd        ! At surface
-    wm_zm(gr%nz) = 0.0_core_rknd  ! Model top
+    wm_zm(gr%nzm) = 0.0_core_rknd  ! Model top
 
 
     ! Compute large-scale horizontal temperature advection
-    do k=1,gr%nz
+    do k=1,gr%nzt
       thlm_forcing(k) = 0._core_rknd
     end do
 
 
     ! Compute large-scale horizontal moisture advection [g/kg/s]
-    do k=1,gr%nz
+    do k=1,gr%nzt
       rtm_forcing(k) = 0._core_rknd
     end do
 

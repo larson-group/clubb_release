@@ -76,16 +76,14 @@ module hydrostatic_module
     ! The resulting value of exner is used to calculate pressure.  Then, the
     ! values of pressure, exner, and theta_v can be used to calculate density.
 
-
-    use grid_class, only: grid ! Type
-
     ! References:
     !
     !------------------------------------------------------------------------
 
+    use grid_class, only: grid ! Type
+
     use grid_class, only: & 
         zt2zm
-
 
     use constants_clubb, only: & 
         Rd    ! Gas Constant for Dry Air  [J/(kg K)]
@@ -104,20 +102,22 @@ module hydrostatic_module
     real( kind = core_rknd ), intent(in) :: &
       p_sfc    ! Pressure at the surface                     [Pa]
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) ::  & 
       thvm    ! Virtual potential temperature               [K]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  & 
       p_in_Pa,    & ! Pressure (thermodynamic levels)         [Pa]
-      p_in_Pa_zm, & ! Pressure on momentum levels             [Pa]
       exner,      & ! Exner function (thermodynamic levels)   [-]
+      rho           ! Density (thermodynamic levels)          [kg/m^3]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  & 
+      p_in_Pa_zm, & ! Pressure on momentum levels             [Pa]
       exner_zm,   & ! Exner function on momentum levels       [-]
-      rho,        & ! Density (thermodynamic levels)          [kg/m^3]
       rho_zm        ! Density on momentum levels              [kg/m^3]
 
     !  Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
+    real( kind = core_rknd ), dimension(gr%nzm) ::  &
       thvm_zm       ! Theta_v interpolated to momentum levels  [K]
 
     integer :: k
@@ -134,8 +134,10 @@ module hydrostatic_module
     thvm_zm = zt2zm( gr, thvm )
 
     ! Calculate density based on pressure, exner, and thvm.
-    do k = 1, gr%nz
+    do k = 1, gr%nzt
       rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
+    enddo
+    do k = 1, gr%nzm
       rho_zm(k) = p_in_Pa_zm(k) / ( Rd * thvm_zm(k) * exner_zm(k) )
     enddo
 
@@ -499,7 +501,7 @@ module hydrostatic_module
 
     else ! thvm_k = thvm_km1
 
-       ref_z_sfc = z_km1 - ( Cp / grav ) * ( exner_sfc - exner_km1 ) * thvm_k;
+       ref_z_sfc = z_km1 - ( Cp / grav ) * ( exner_sfc - exner_km1 ) * thvm_k
 
     endif
 

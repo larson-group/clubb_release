@@ -13,7 +13,7 @@ module estimate_scm_microphys_module
 
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy( &
-               gr, dt, nz, num_samples, &
+               gr, dt, nzt, nzm, num_samples, &
                pdf_dim, hydromet_dim, hm_metadata, &
                X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
                pdf_params, precip_fracs, p_in_Pa, exner, rho, &
@@ -113,7 +113,8 @@ module estimate_scm_microphys_module
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
-      nz,            & ! Number of vertical levels
+      nzt,           & ! Number of thermodynamic vertical levels
+      nzm,           & ! Number of momentum vertical levels
       num_samples,   & ! Number of calls to microphysics
       pdf_dim,       & ! Number of variates
       hydromet_dim
@@ -121,13 +122,13 @@ module estimate_scm_microphys_module
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt,pdf_dim), intent(in) :: &
       X_nl_all_levs    ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, dimension(num_samples,nz), intent(in) :: &
+    integer, dimension(num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs    ! Mixture component of each sample
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     type(pdf_parameter), intent(in) :: &
@@ -136,17 +137,17 @@ module estimate_scm_microphys_module
     type(precipitation_fractions), intent(in) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho,        & ! Density on thermo. grid  [kg/m^3]
       dzq,        & ! Difference in height per gridbox   [m]
       rcm           ! Mean liquid water mixing ratio     [kg/kg]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
       lh_rc_clipped,  & ! rc generated from silhs sample points
@@ -171,15 +172,17 @@ module estimate_scm_microphys_module
 
     ! Output Variables
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       lh_Ncm_mc,     & ! LH estimate of time tndcy. of cloud droplet conc.     [num/kg/s]
       lh_rcm_mc,     & ! LH estimate of time tndcy. of liq. water mixing ratio [kg/kg/s]
       lh_rvm_mc,     & ! LH estimate of time tndcy. of vapor water mix. ratio  [kg/kg/s]
-      lh_thlm_mc,    & ! LH estimate of time tndcy. of liquid potential temp.  [K/s]
+      lh_thlm_mc       ! LH estimate of time tndcy. of liquid potential temp.  [K/s]
+
+    real( kind = core_rknd ), dimension(nzm), intent(out) :: &
       lh_rtp2_mc,    & ! LH microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
       lh_thlp2_mc,   & ! LH microphysics tendency for <thl'^2>                 [K^2/s]
       lh_wprtp_mc,   & ! LH microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
@@ -188,25 +191,25 @@ module estimate_scm_microphys_module
 
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(num_samples,nz,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt,hydromet_dim) :: &
       lh_hydromet_mc_all, & ! LH est of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel_all   ! LH est of hydrometeor sedimentation velocity [m/s]
 
-    real( kind = core_rknd ), dimension(num_samples,nz) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt) :: &
       lh_Ncm_mc_all,       & ! LH est of time tendency of cloud droplet concentration  [#/kg/s]
       lh_rcm_mc_all,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc_all,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_all         ! LH est of time tendency of liquid potential temperature     [K/s]
 
-    real( kind = core_rknd ), dimension(num_samples,nz,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species                    [units vary]
 
-    real( kind = core_rknd ), dimension(num_samples,nz) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt) :: &
       Ncn_all_points, &    ! Cloud Nuclei conc. (simplified); Nc=Ncn*H(chi) [#/kg]
       chi_all_points, &    ! 's' (Mellor 1977)                              [kg/kg]
       w_all_points         ! Vertical velocity                              [m/s]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       lh_rtp2_mc_zt,    & ! LH microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
       lh_thlp2_mc_zt,   & ! LH microphysics tendency for <thl'^2>                 [K^2/s]
       lh_wprtp_mc_zt,   & ! LH microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
@@ -215,7 +218,7 @@ module estimate_scm_microphys_module
 
     ! These parameters are not used by the microphysics scheme when SILHS is
     ! turned on.
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       cloud_frac_unused, &
       w_std_dev_unused
 
@@ -247,7 +250,7 @@ module estimate_scm_microphys_module
     chi_all_points = real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd )
 
     call copy_X_nl_into_hydromet_all_pts &
-         ( nz, pdf_dim, num_samples, & ! Intent(in)
+         ( nzt, pdf_dim, num_samples, & ! Intent(in)
            X_nl_all_levs,                & ! Intent(in)
            hydromet_dim, hm_metadata, & ! Intent(in)
            hydromet,                     & ! Intent(in)
@@ -260,7 +263,7 @@ module estimate_scm_microphys_module
       w_std_dev_unused  = unused_var
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub( &
-             gr, dt, nz, & ! In
+             gr, dt, nzt, & ! In
              hydromet_dim, hm_metadata, & ! In
              l_latin_hypercube, lh_thl_clipped(sample,:), w_all_points(sample,:), p_in_Pa, & ! In
              exner, rho, cloud_frac_unused, w_std_dev_unused, & ! In
@@ -280,7 +283,7 @@ module estimate_scm_microphys_module
     if ( l_var_covar_src ) then
 
       call lh_microphys_var_covar_driver &
-           ( nz, num_samples, dt, lh_sample_point_weights,  &  ! Intent(in)
+           ( nzt, num_samples, dt, lh_sample_point_weights,  &  ! Intent(in)
              pdf_params, lh_rt_clipped, lh_thl_clipped, w_all_points,  &  ! Intent(in)
              lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all,  &  ! Intent(in)
              l_lh_instant_var_covar_src, &                     ! Intent(in)
@@ -317,19 +320,19 @@ module estimate_scm_microphys_module
     forall( ivar = 1:hydromet_dim )
 
       lh_hydromet_vel(:,ivar) &
-        = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
+        = compute_sample_mean( nzt, num_samples, lh_sample_point_weights, &
                                lh_hydromet_vel_all(:,:,ivar) )
 
       lh_hydromet_mc(:,ivar) &
-        = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
+        = compute_sample_mean( nzt, num_samples, lh_sample_point_weights, &
                                lh_hydromet_mc_all(:,:,ivar) )
 
     end forall
 
-    lh_Ncm_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_Ncm_mc_all(:,:) )
-    lh_rcm_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_rcm_mc_all(:,:) )
-    lh_rvm_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_rvm_mc_all(:,:) )
-    lh_thlm_mc= compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_thlm_mc_all(:,:))
+    lh_Ncm_mc = compute_sample_mean( nzt, num_samples, lh_sample_point_weights, lh_Ncm_mc_all(:,:) )
+    lh_rcm_mc = compute_sample_mean( nzt, num_samples, lh_sample_point_weights, lh_rcm_mc_all(:,:) )
+    lh_rvm_mc = compute_sample_mean( nzt, num_samples, lh_sample_point_weights, lh_rvm_mc_all(:,:) )
+    lh_thlm_mc= compute_sample_mean( nzt, num_samples, lh_sample_point_weights, lh_thlm_mc_all(:,:))
 
     ! Sample variables from microphys_stats_vars objects for statistics
     microphys_stats_zt_avg =  silhs_microphys_stats_avg( num_samples, microphys_stats_zt_all, &
@@ -348,9 +351,9 @@ module estimate_scm_microphys_module
 
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
-      call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirr),           & ! intent(in)
+      call adjust_KK_src_means( dt, nzt, exner, rcm, hydromet(:,iirr),          & ! intent(in)
                                 hydromet(:,iiNr), hydromet,                     & ! intent(in)
-                                hydromet_dim, hm_metadata%iiri,              & ! intent(in)
+                                hydromet_dim, hm_metadata%iiri,                 & ! intent(in)
                                 microphys_stats_zt_avg,                         & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
                                 stats_lh_zt,                                    & ! intent(inout)
@@ -368,7 +371,7 @@ module estimate_scm_microphys_module
 
         if( stats_metadata%isilhs_variance_category(1) > 0 ) then
           call silhs_category_variance_driver( &
-                 nz, num_samples, pdf_dim, hydromet_dim, hm_metadata,    & ! Intent(in)
+                 nzt, num_samples, pdf_dim, hydromet_dim, hm_metadata,      & ! Intent(in)
                  X_nl_all_levs,                                             & ! Intent(in)
                  X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
                  lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
@@ -560,13 +563,13 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------------
-  subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrm, Nrm, hydromet, &
-                                  hydromet_dim, iiri,                     &
-                                  microphys_stats_zt,                     &
-                                  stats_metadata,                         &
-                                  stats_lh_zt,                            &
-                                  lh_Vrr, lh_VNr,                         &
-                                  rrm_mc, Nrm_mc,                         &
+  subroutine adjust_KK_src_means( dt, nzt, exner, rcm, rrm, Nrm, hydromet, &
+                                  hydromet_dim, iiri,                      &
+                                  microphys_stats_zt,                      &
+                                  stats_metadata,                          &
+                                  stats_lh_zt,                             &
+                                  lh_Vrr, lh_VNr,                          &
+                                  rrm_mc, Nrm_mc,                          &
                                   rvm_mc, rcm_mc, thlm_mc )
 
   ! Description:
@@ -624,17 +627,17 @@ module estimate_scm_microphys_module
       dt   ! Model timestep
 
     integer, intent(in) :: &
-      nz, &   ! Number of vertical grid levels
+      nzt, &   ! Number of thermodynamic vertical grid levels
       hydromet_dim, &
       iiri
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       exner, & ! Exner function                            [-]
       rcm,   & ! Mean liquid water mixing ratio            [kg/kg]
       rrm,   & ! Rain water mixing ration                  [kg/kg]
       Nrm      ! Rain drop concentration                   [num/kg]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean value of hydrometeor              [units vary]
 
     type(microphys_stats_vars_type), intent(in) :: &
@@ -644,12 +647,12 @@ module estimate_scm_microphys_module
       stats_metadata
 
     !-------------------------- InOut Variables --------------------------
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(inout) :: &
       lh_Vrr, &         ! Mean sedimentation velocity of < r_r > [m/s]
       lh_VNr            ! Mean sedimentation velocity of < N_r > [m/s]
 
     !-------------------------- Output variables --------------------------
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       rrm_mc, & ! Mean change in rain due to microphysics [(kg/kg)/s] 
       Nrm_mc,    & ! Mean change in Nrm due to microphysics  [(kg/kg)/s]
       rvm_mc,    & ! Time tendency of rvm                    [(kg/kg)/s]
@@ -657,14 +660,14 @@ module estimate_scm_microphys_module
       thlm_mc      ! Time tendency of thlm                   [(kg/kg)/s]
 
     !-------------------------- Local Variables --------------------------
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       rrm_evap, & ! Mean change in rain due to evap           [(kg/kg)/s]
       rrm_auto, & ! Mean change in rain due to autoconversion [(kg/kg)/s]
       rrm_accr, & ! Mean change in rain due to accretion      [(kg/kg)/s]
       Nrm_auto,    & ! Mean change in Nrm due to autoconversion  [(num/kg)/s]
       Nrm_evap       ! Mean change in Nrm due to evaporation     [(num/kg)/s]
 
-    type(KK_microphys_adj_terms_type), dimension(nz) :: &
+    type(KK_microphys_adj_terms_type), dimension(nzt) :: &
       adj_terms    ! Adjustment terms returned from the adjustment routine
 
     integer :: k, cloud_top_level
@@ -686,7 +689,7 @@ module estimate_scm_microphys_module
     Nrm_evap    = microphys_get_var( stats_metadata%iNrm_evap,    microphys_stats_zt )
 
     ! Loop over each vertical level above the lower boundary
-    do k = 2, nz, 1
+    do k = 1, nzt, 1
 
       ! We call KK_microphys_adjust to adjust the means of the mc terms
       call KK_microphys_adjust( dt, exner(k), rcm(k), rrm(k), Nrm(k),      & !intent(in)
@@ -697,10 +700,10 @@ module estimate_scm_microphys_module
                                 rrm_mc(k), Nrm_mc(k),                      & !intent(out)
                                 rvm_mc(k), rcm_mc(k), thlm_mc(k),          & !intent(out)
                                 adj_terms(k) )                               !intent(out)
-    end do ! k = 2, nz, 1
+    end do ! k = 1, nzt, 1
 
     ! Clip positive values of Vrr and VNr
-    do k = 1, nz-1, 1
+    do k = 1, nzt-1, 1
 
       if ( lh_Vrr(k) > zero ) then
         lh_Vrr(k) = zero
@@ -712,30 +715,21 @@ module estimate_scm_microphys_module
 
     end do
 
-    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet, &
+    cloud_top_level = get_cloud_top_level( nzt, rcm, hydromet, &
                                            hydromet_dim, iiri )
 
     !!! Mean sedimentation above cloud top should have a value of 0.
     if ( cloud_top_level > 1 ) then
-       lh_Vrr(cloud_top_level+1:nz-1) = zero
-       lh_VNr(cloud_top_level+1:nz-1) = zero
+       lh_Vrr(cloud_top_level+1:nzt-1) = zero
+       lh_VNr(cloud_top_level+1:nzt-1) = zero
     endif
 
     ! Set boundary conditions
-    rrm_mc(1) = zero
-    rrm_mc(nz) = zero
-
-    Nrm_mc(1) = zero
-    Nrm_mc(nz) = zero
-
-    rvm_mc(1) = zero
-    rvm_mc(nz) = zero
-
-    rcm_mc(1) = zero
-    rcm_mc(nz) = zero
-
-    thlm_mc(1) = zero
-    thlm_mc(nz) = zero
+    rrm_mc(nzt) = zero
+    Nrm_mc(nzt) = zero
+    rvm_mc(nzt) = zero
+    rcm_mc(nzt) = zero
+    thlm_mc(nzt) = zero
 
     ! Statistical sampling
     if ( stats_metadata%l_stats_samp ) then

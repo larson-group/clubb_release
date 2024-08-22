@@ -110,7 +110,7 @@ contains
   end subroutine init_hydromet_pdf_params
   
   !=============================================================================
-  subroutine init_precip_fracs( nz, ngrdcol, &
+  subroutine init_precip_fracs( nzt, ngrdcol, &
                                 precip_fracs )
 
     ! Description:
@@ -126,7 +126,7 @@ contains
     
     ! Input Variable(s)
     integer, intent(in) :: &
-      nz,     & ! Number of vertical grid levels    [-]
+      nzt,    & ! Number of vertical grid levels    [-]
       ngrdcol   ! Number of grid columns            [-]
 
     ! Output Variable
@@ -134,9 +134,9 @@ contains
       precip_fracs    ! Hydrometeor PDF parameters      [units vary]
 
     ! Allocate precip frac arrays
-    allocate( precip_fracs%precip_frac(ngrdcol,nz), &
-              precip_fracs%precip_frac_1(ngrdcol,nz), &
-              precip_fracs%precip_frac_2(ngrdcol,nz)  )
+    allocate( precip_fracs%precip_frac(ngrdcol,nzt), &
+              precip_fracs%precip_frac_1(ngrdcol,nzt), &
+              precip_fracs%precip_frac_2(ngrdcol,nzt)  )
 
     ! Initialize precip_fracs.
     precip_fracs%precip_frac   = zero

@@ -17,7 +17,7 @@ module est_kessler_microphys_module
 !------------------------------------------------------------------------
 
   subroutine est_kessler_microphys &
-             ( nz, num_samples, pdf_dim, &
+             ( nzt, num_samples, pdf_dim, &
                X_nl_all_levs, pdf_params, rcm, cloud_frac, &
                X_mixt_comp_all_levs, lh_sample_point_weights, &
                l_lh_importance_sampling, &
@@ -50,32 +50,32 @@ module est_kessler_microphys_module
     ! Input Variables
 
     integer, intent(in) :: &
-      nz, &          ! Number of vertical levels
+      nzt, &          ! Number of vertical levels
       num_samples, & ! Number of sample points
       pdf_dim   ! Number of variates
 
-    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt,pdf_dim), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       cloud_frac    ! Cloud fraction           [-]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       rcm          ! Liquid water mixing ratio                [kg/kg]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
-    integer, dimension(num_samples,nz), intent(in) :: &
+    integer, dimension(num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     logical, intent(in) :: &
       l_lh_importance_sampling ! Do importance sampling (SILHS) [-]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
       AKm,       & ! Exact Kessler autoconversion, AKm,             [kg/kg/s]
       AKstd,     & ! Exact standard deviation of gba Kessler        [kg/kg/s]
@@ -84,7 +84,7 @@ module est_kessler_microphys_module
       AKm_rcc      ! Exact local gba Kessler based on w/in cloud rc [kg/kg/s]
 
     ! For comparison, estimate kth liquid water using Monte Carlo
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       lh_rcm_avg ! LH estimate of grid box avg liquid water [kg/kg]
 
     ! Local Variables
@@ -126,16 +126,7 @@ module est_kessler_microphys_module
 
     ! ---- Begin Code ----
 
-    ! Boundary condition
-    lh_AKm(1)     = 0.0_core_rknd
-    AKm(1)        = 0.0_core_rknd
-    AKm_rcm(1)    = 0.0_core_rknd
-    AKm_rcc(1)    = 0.0_core_rknd
-    lh_rcm_avg(1) = 0.0_core_rknd
-    AKstd(1)      = 0.0_core_rknd
-    AKstd_cld(1)  = 0.0_core_rknd
-
-    do level = 2, nz, 1
+    do level = 1, nzt, 1
       ! Extract PDF parameters
 
       !w1         = pdf_params(level)%w1
@@ -266,7 +257,7 @@ module est_kessler_microphys_module
         AKm_rcc(level) = zero_threshold
       end if
 
-    end do ! level = 2, nz
+    end do ! level = 1, nzt
 
     return
   end subroutine est_kessler_microphys

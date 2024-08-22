@@ -23,7 +23,7 @@ module precipitation_fraction
   contains
 
   !=============================================================================
-  subroutine precip_fraction( nz, ngrdcol, hydromet_dim, &
+  subroutine precip_fraction( nzt, ngrdcol, hydromet_dim, &
                               hydromet, cloud_frac, cloud_frac_1, &
                               l_mix_rat_hm, l_frozen_hm, hydromet_tol, &
                               cloud_frac_2, ice_supersat_frac, &
@@ -75,11 +75,11 @@ module precipitation_fraction
 
     !------------------------- Input Variables -------------------------
     integer, intent(in) :: &
-      nz,           & ! Number of model vertical grid levels
+      nzt,          & ! Number of model thermodynamic vertical grid levels
       ngrdcol,      & ! Number of grid columns
       hydromet_dim    ! Number of hydrometeor species
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
 
     logical, dimension(hydromet_dim), intent(in) :: &
@@ -89,7 +89,7 @@ module precipitation_fraction
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       cloud_frac,          & ! Cloud fraction (overall)                      [-]
       cloud_frac_1,        & ! Cloud fraction (1st PDF component)            [-]
       cloud_frac_2,        & ! Cloud fraction (2nd PDF component)            [-]
@@ -109,7 +109,7 @@ module precipitation_fraction
       stats_sfc
 
     !------------------------- Output Variables -------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       precip_frac,   & ! Precipitation fraction (overall)               [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
@@ -143,13 +143,13 @@ module precipitation_fraction
       do j = 1, ngrdcol
         precip_frac_tol(j) &
         = max( precip_frac_tol_coef &
-               * max( maxval( cloud_frac(j,2:nz) ), maxval( ice_supersat_frac(j,2:nz) ) ), &
+               * max( maxval( cloud_frac(j,:) ), maxval( ice_supersat_frac(j,:) ) ), &
                cloud_frac_min )
       end do
     else
       ! Warm microphysics.
       do j = 1, ngrdcol
-        precip_frac_tol(j) = max( precip_frac_tol_coef * maxval( cloud_frac(j,2:nz) ), &
+        precip_frac_tol(j) = max( precip_frac_tol_coef * maxval( cloud_frac(j,:) ), &
                                 cloud_frac_min )
       end do
     endif
@@ -160,9 +160,9 @@ module precipitation_fraction
     if ( any( l_frozen_hm ) ) then
       
       ! Ice microphysics included.
-      precip_frac(:,nz) = max( cloud_frac(:,nz), ice_supersat_frac(:,nz) )
+      precip_frac(:,nzt) = max( cloud_frac(:,nzt), ice_supersat_frac(:,nzt) )
       
-      do k = nz-1, 1, -1
+      do k = nzt-1, 1, -1
         precip_frac(:,k) = max( precip_frac(:,k+1), cloud_frac(:,k), &
                                 ice_supersat_frac(:,k) )
       end do
@@ -170,16 +170,16 @@ module precipitation_fraction
     else
       
       ! Warm microphysics.
-      precip_frac(:,nz) = cloud_frac(:,nz)
+      precip_frac(:,nzt) = cloud_frac(:,nzt)
       
-      do k = nz-1, 1, -1
+      do k = nzt-1, 1, -1
         precip_frac(:,k) = max( precip_frac(:,k+1), cloud_frac(:,k) )
       end do
       
     end if
 
     !!! Special checks for overall precipitation fraction
-    do k = 1, nz, 1
+    do k = 1, nzt, 1
       do j = 1, ngrdcol
 
         if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) &
@@ -202,7 +202,7 @@ module precipitation_fraction
         endif
         
       end do
-    enddo ! Special checks for overall precipitation fraction loop: k = 1, nz, 1
+    enddo ! Special checks for overall precipitation fraction loop: k = 1, nzt, 1
 
 
     !!! Find precipitation fraction within each PDF component.
@@ -221,7 +221,7 @@ module precipitation_fraction
 
       ! Calculatate precip_frac_1 and precip_frac_2 based on the greatest
       ! weighted cloud_frac_1 at or above a grid level.
-      call component_precip_frac_weighted( nz, ngrdcol, hydromet_dim, & ! intent(in)
+      call component_precip_frac_weighted( nzt, ngrdcol, hydromet_dim, & ! intent(in)
                                            l_frozen_hm, hydromet_tol, & ! intent(in)
                                            hydromet(:,:,:), precip_frac(:,:), & ! intent(in)
                                            cloud_frac_1(:,:), cloud_frac_2(:,:), & ! intent(in)
@@ -233,7 +233,7 @@ module precipitation_fraction
     elseif ( precip_frac_calc_type == 2 ) then
 
       ! Specified method.
-      call component_precip_frac_specify( nz, ngrdcol, hydromet_dim, hydromet_tol, & ! intent(in)
+      call component_precip_frac_specify( nzt, ngrdcol, hydromet_dim, hydromet_tol, & ! intent(in)
                                           clubb_params(iupsilon_precip_frac_rat), & ! intent(in)
                                           hydromet(:,:,:), precip_frac(:,:), & ! intent(in)
                                           mixt_frac(:,:), precip_frac_tol(:), & ! intent(in)
@@ -321,7 +321,7 @@ module precipitation_fraction
 
    do ivar = 1, hydromet_dim
       if ( l_mix_rat_hm(ivar) ) then
-        do k = 1, nz
+        do k = 1, nzt
           do j = 1, ngrdcol
 
             ! The hydrometeor is a mixing ratio.
@@ -357,7 +357,7 @@ module precipitation_fraction
             endif ! <hm>/((1-mixt_frac)*precip_frac_2) > max_hm_ip_comp_mean
 
           end do
-        end do ! k = 1, nz
+        end do ! k = 1, nzt
       end if ! l_mix_rat_hm(ivar)
     end do ! ivar = 1, hydromet_dim
 
@@ -369,13 +369,13 @@ module precipitation_fraction
     ! are found at a grid level.
     ! PLEASE DO NOT ALTER precip_frac, precip_frac_1, or precip_frac_2 anymore
     ! after this point in the code.
-    do k = 1, nz, 1
+    do k = 1, nzt, 1
       do j = 1, ngrdcol
         if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) ) then
           precip_frac(j,k) = min( max( precip_frac(j,k), precip_frac_tol(j) ), one )
         end if ! any( hydromet(k,:) >= hydromet_tol(:) )
       end do
-    end do ! k = 1, nz, 1
+    end do ! k = 1, nzt, 1
 
 
     ! Statistics
@@ -392,7 +392,7 @@ module precipitation_fraction
     ! Assertion check for precip_frac, precip_frac_1, and precip_frac_2.
     if ( clubb_at_least_debug_level( 2 ) ) then
       do j = 1, ngrdcol
-        call precip_frac_assert_check( nz, hydromet_dim, hydromet_tol,                    & ! intent(in)
+        call precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol,                   & ! intent(in)
                                        hydromet(j,:,:), mixt_frac(j,:), precip_frac(j,:), & ! in
                                        precip_frac_1(j,:), precip_frac_2(j,:),            & ! intent(in)
                                        precip_frac_tol(j) )                                 ! intent(in)
@@ -404,7 +404,7 @@ module precipitation_fraction
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine component_precip_frac_weighted( nz, ngrdcol, hydromet_dim, &
+  subroutine component_precip_frac_weighted( nzt, ngrdcol, hydromet_dim, &
                                              l_frozen_hm, hydromet_tol, &
                                              hydromet, precip_frac, &
                                              cloud_frac_1, cloud_frac_2, &
@@ -442,7 +442,7 @@ module precipitation_fraction
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,           & ! Number of model vertical grid levels
+      nzt,          & ! Number of model thermodynamic vertical grid levels
       ngrdcol,      & ! Number of grid columns
       hydromet_dim    ! Number of hydrometeor species
 
@@ -452,10 +452,10 @@ module precipitation_fraction
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       precip_frac,         & ! Precipitation fraction (overall)              [-]
       cloud_frac_1,        & ! Cloud fraction (1st PDF component)            [-]
       cloud_frac_2,        & ! Cloud fraction (2nd PDF component)            [-]
@@ -467,12 +467,12 @@ module precipitation_fraction
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       weighted_pfrac_1, & ! Product of mixt_frac and cloud_frac_1           [-]
       weighted_pfrac_2    ! Product of ( 1 - mixt_frac ) and cloud_frac_2   [-]
 
@@ -497,16 +497,16 @@ module precipitation_fraction
       ! Ice microphysics included.
 
       ! Weighted precipitation fraction in PDF component 1.
-      weighted_pfrac_1(:,nz) &
-      = max( mixt_frac(:,nz) * cloud_frac_1(:,nz), &
-             mixt_frac(:,nz) * ice_supersat_frac_1(:,nz) )
+      weighted_pfrac_1(:,nzt) &
+      = max( mixt_frac(:,nzt) * cloud_frac_1(:,nzt), &
+             mixt_frac(:,nzt) * ice_supersat_frac_1(:,nzt) )
 
       ! Weighted precipitation fraction in PDF component 2.
-      weighted_pfrac_2(:,nz) &
-      = max( ( one - mixt_frac(:,nz) ) * cloud_frac_2(:,nz), &
-             ( one - mixt_frac(:,nz) ) * ice_supersat_frac_2(:,nz) )
+      weighted_pfrac_2(:,nzt) &
+      = max( ( one - mixt_frac(:,nzt) ) * cloud_frac_2(:,nzt), &
+             ( one - mixt_frac(:,nzt) ) * ice_supersat_frac_2(:,nzt) )
              
-      do k = nz, 1, -1
+      do k = nzt, 1, -1
         do j = 1, ngrdcol
           ! Weighted precipitation fraction in PDF component 1.
           weighted_pfrac_1(j,k) &
@@ -528,12 +528,12 @@ module precipitation_fraction
        ! Warm microphysics.
 
        ! Weighted precipitation fraction in PDF component 1.
-       weighted_pfrac_1(:,nz) = mixt_frac(:,nz) * cloud_frac_1(:,nz)
+       weighted_pfrac_1(:,nzt) = mixt_frac(:,nzt) * cloud_frac_1(:,nzt)
 
        ! Weighted precipitation fraction in PDF component 2.
-       weighted_pfrac_2(:,nz) = ( one - mixt_frac(:,nz) ) * cloud_frac_2(:,nz)
+       weighted_pfrac_2(:,nzt) = ( one - mixt_frac(:,nzt) ) * cloud_frac_2(:,nzt)
        
-      do k = nz, 1, -1
+      do k = nzt, 1, -1
         do j = 1, ngrdcol
           ! Weighted precipitation fraction in PDF component 1.
           weighted_pfrac_1(j,k) &
@@ -551,7 +551,7 @@ module precipitation_fraction
     
 
     ! Calculate precip_frac_1 and special cases for precip_frac_1.
-    do k = 1, nz, 1
+    do k = 1, nzt, 1
       do j = 1, ngrdcol
         ! Calculate precipitation fraction in the 1st PDF component.
         if ( weighted_pfrac_1(j,k) + weighted_pfrac_2(j,k) > zero ) then
@@ -581,7 +581,7 @@ module precipitation_fraction
       end do
     end do
       
-    do k = 1, nz, 1
+    do k = 1, nzt, 1
       do j = 1, ngrdcol
         ! Special cases for precip_frac_1.
         if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) &
@@ -636,7 +636,7 @@ module precipitation_fraction
     ! precipitation fraction within PDF component 1, f_p(1) (calculated above),
     ! and mixture fraction, a.  Any leftover precipitation fraction from
     ! precip_frac_1 will be included in this calculation of precip_frac_2.
-    do k = 1, nz, 1
+    do k = 1, nzt, 1
       do j = 1, ngrdcol
 
         if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) ) then
@@ -740,7 +740,7 @@ module precipitation_fraction
   end subroutine component_precip_frac_weighted
 
   !=============================================================================
-  subroutine component_precip_frac_specify( nz, ngrdcol, hydromet_dim, hydromet_tol, &
+  subroutine component_precip_frac_specify( nzt, ngrdcol, hydromet_dim, hydromet_tol, &
                                             upsilon_precip_frac_rat, &
                                             hydromet, precip_frac, &
                                             mixt_frac, precip_frac_tol, &
@@ -794,7 +794,7 @@ module precipitation_fraction
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,           & ! Number of model vertical grid levels
+      nzt,          & ! Number of model thermodynamic vertical grid levels
       ngrdcol,      & ! Number of grid columns
       hydromet_dim    ! Number of hydrometeor species
 
@@ -804,10 +804,10 @@ module precipitation_fraction
     real( kind = core_rknd ), intent(in) :: &
       upsilon_precip_frac_rat    ! ratio mixt_frac*precip_frac_1/precip_frac [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       precip_frac, & ! Precipitation fraction (overall)                      [-]
       mixt_frac      ! Mixture fraction                                      [-]
 
@@ -815,7 +815,7 @@ module precipitation_fraction
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
 
@@ -828,7 +828,7 @@ module precipitation_fraction
 
 
       ! Loop over all vertical levels.
-      do k = 1, nz, 1
+      do k = 1, nzt, 1
         do j = 1, ngrdcol
 
           if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) ) then
@@ -899,7 +899,7 @@ module precipitation_fraction
     elseif ( abs(upsilon_precip_frac_rat - zero) < &
           abs(upsilon_precip_frac_rat + zero) / 2 * eps ) then
 
-      do k = 1, nz, 1
+      do k = 1, nzt, 1
         do j = 1, ngrdcol
 
           if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) ) then
@@ -967,7 +967,7 @@ module precipitation_fraction
 
     else  ! 0 < upsilon_precip_frac_rat < 1
 
-      do k = 1, nz, 1
+      do k = 1, nzt, 1
         do j = 1, ngrdcol
 
           if ( any( hydromet(j,k,:) >= hydromet_tol(:) ) ) then
@@ -1067,7 +1067,7 @@ module precipitation_fraction
   end subroutine component_precip_frac_specify
 
   !=============================================================================
-  subroutine precip_frac_assert_check( nz, hydromet_dim, hydromet_tol, &
+  subroutine precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol, &
                                        hydromet, mixt_frac, precip_frac, &
                                        precip_frac_1, precip_frac_2, &
                                        precip_frac_tol )
@@ -1095,16 +1095,16 @@ module precipitation_fraction
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,           & ! Number of model vertical grid levels
+      nzt,          & ! Number of model thermodynamic vertical grid levels
       hydromet_dim    ! Number of hydrometeor species
 
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       mixt_frac,     & ! Mixture fraction                               [-]
       precip_frac,   & ! Precipitation fraction (overall)               [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
@@ -1118,7 +1118,7 @@ module precipitation_fraction
 
 
     ! Loop over all vertical levels.
-    do k = 1, nz, 1
+    do k = 1, nzt, 1
 
        if ( any( hydromet(k,:) >= hydromet_tol(:) ) ) then
 
@@ -1274,7 +1274,7 @@ module precipitation_fraction
           return
        endif
 
-    enddo  ! k = 1, nz, 1
+    enddo  ! k = 1, nzt, 1
 
 
     return

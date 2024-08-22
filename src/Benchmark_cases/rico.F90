@@ -32,9 +32,6 @@ module rico
   use grid_class, only: &
     grid
 
-  use grid_class, only: &
-    zt2zm ! Procedure(s)
-
   use array_index, only: &
     sclr_idx_type
 
@@ -61,19 +58,19 @@ module rico
   type (grid), target, intent(in) :: &
     gr
 
-  real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+  real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
     rtm,   & ! Mean total water mixing ratio    [kg/kg]
     exner    ! Exner function                   [-]
 
   !--------------------- Output Variables ---------------------
-  real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
+  real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: & 
     thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
     rtm_forcing     ! Large-scale rtm tendency                [kg kg^-1 s^-1]
 
-  real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
     sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
-  real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
+  real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
     edsclrm_forcing ! Passive eddy-scalar LS tendency     [units/s]
 
   !--------------------- Local Variables ---------------------
@@ -88,7 +85,7 @@ module rico
   ! Compute large-scale horizontal temperature advection
   ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
   ! Equations located in 1D models > Set up short composite run on reference site
-  do k=1,gr%nz
+  do k=1,gr%nzt
     if (gr%zt(1,k) < 4000._core_rknd ) then
       t_tendency = -2.51_core_rknd / 86400._core_rknd + & 
         (-2.18_core_rknd + 2.51_core_rknd) / (86400._core_rknd*4000._core_rknd) &
@@ -108,7 +105,7 @@ module rico
 
   ! Compute large-scale horizontal moisture advection [g kg^-1 s^-1]
   ! Equations located in 1D models > Set up short composite run on reference site
-  do k=1,gr%nz
+  do k=1,gr%nzt
     if (gr%zt(1,k) < 3000._core_rknd) then
       qtm_forcing = - 1.0_core_rknd / 86400._core_rknd + & 
         (0.345_core_rknd+1.0_core_rknd) / (86400._core_rknd * 3000._core_rknd) &

@@ -97,11 +97,9 @@ contains
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
+        grid,  & ! Type
         zt2zm, & ! Procedure(s)
         ddzm
-
-    use grid_class, only: &
-        grid ! Type
 
     use constants_clubb, only: &
         five,       & ! Constant(s)
@@ -135,12 +133,14 @@ contains
     type (grid), target, intent(in) :: &
       gr
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: & 
       rcm,    & ! Mean cloud water mixing ratio        [kg/kg]
       Ncm,    & ! Mean cloud droplet concentration     [num/kg]
-      rho_zm, & ! Density on momentum levels           [kg/m^3]
       rho,    & ! Density on thermodynamic levels      [kg/m^3]
       exner     ! Exner function                       [-]
+
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: & 
+      rho_zm    ! Density on momentum levels           [kg/m^3]
 
     real( kind = core_rknd ), intent(in) :: &
       sigma_g   ! Geometric standard deviation of cloud droplets   [-]
@@ -153,22 +153,24 @@ contains
       stats_zt, &
       stats_zm
 
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  & 
       rcm_mc,  & ! r_c tendency due to microphysics     [kg/kg)/s] 
       thlm_mc    ! thlm tendency due to microphysics    [K/s] 
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
-      Fcsed,   & ! Cloud water sedimentation flux         [kg/(m^2 s)]
+    real( kind = core_rknd ), dimension(gr%nzm) ::  & 
+      Fcsed      ! Cloud water sedimentation flux         [kg/(m^2 s)]
+
+    real( kind = core_rknd ), dimension(gr%nzt) ::  & 
       sed_rcm    ! d(rcm)/dt due to cloud sedimentation   [kg/(m^2 s)]
 
     integer :: k  ! Loop index
 
 
     ! Define cloud water sedimentation flux on momentum levels.
-    do k = 2, gr%nz-1, 1
+    do k = 2, gr%nzm-1, 1
 
-       if ( zt2zm( gr, rcm, k)  > zero .AND. zt2zm( gr, Ncm, k ) > zero ) then
+       if ( zt2zm( gr, rcm, k )  > zero .AND. zt2zm( gr, Ncm, k ) > zero ) then
 
           Fcsed(k) &
           = 1.19E8_core_rknd & 
@@ -183,11 +185,11 @@ contains
 
        endif
 
-    enddo ! k = 2, gr%nz-1, 1
+    enddo ! k = 2, gr%nzm-1, 1
 
     ! Boundary conditions.
     Fcsed(1)     = zero
-    Fcsed(gr%nz) = zero
+    Fcsed(gr%nzm) = zero
 
     ! Find drc/dt due to cloud water sedimentation flux.
     ! This value is defined on thermodynamic levels.

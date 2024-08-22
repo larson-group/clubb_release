@@ -19,7 +19,7 @@ module mixed_moment_PDF_integrals
   contains
 
   !=============================================================================
-  subroutine hydrometeor_mixed_moments( gr, nz, pdf_dim, hydromet_dim, &
+  subroutine hydrometeor_mixed_moments( gr, nzt, pdf_dim, hydromet_dim, &
                                         hydromet, hm_metadata, &
                                         mu_x_1_n, mu_x_2_n, &
                                         sigma_x_1_n, sigma_x_2_n, &
@@ -84,23 +84,23 @@ module mixed_moment_PDF_integrals
     type (grid), target, intent(in) :: gr
 
     integer, intent(in) :: &
-      nz,          & ! Number of model vertical grid levels
+      nzt,         & ! Number of model thermodynamic vertical grid levels
       pdf_dim,     & ! Number of variables in the correlation array
       hydromet_dim
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor, hm (overall) (t-levels)    [units vary]
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real( kind = core_rknd ), dimension(nz,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), &
+    real( kind = core_rknd ), dimension(nzt,pdf_dim,pdf_dim), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -108,7 +108,7 @@ module mixed_moment_PDF_integrals
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
 
-    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+    type(hydromet_pdf_parameter), dimension(nzt), intent(in) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters           [units vary]
       
     type(precipitation_fractions), intent(in) :: &
@@ -123,7 +123,7 @@ module mixed_moment_PDF_integrals
       stats_zm 
 
     !------------------------ Output Variables ------------------------
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       wp2hmp,     & ! Higher-order mixed moment:  < w'^2 hm' > [(m/s)^2<hm un.>]
       rtphmp_zt,  & ! Covariance of rt and hm (on t-levs.)     [(kg/kg)<hm un.>]
       thlphmp_zt    ! Covariance of thl and hm (on t-levs.)    [K<hm units>]
@@ -191,7 +191,7 @@ module mixed_moment_PDF_integrals
       rtm,           & ! Mean of rt (overall)                            [kg/kg]
       thlm             ! Mean of thl (overall)                               [K]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim,hydromet_dim) :: &
       hmxphmyp_zt    ! Covariance (overall) of two hydrometeors  [hmx*hmy units]
 
     integer :: &
@@ -204,8 +204,8 @@ module mixed_moment_PDF_integrals
 
 
     ! Loop over all thermodynamic levels between the model lower and upper
-    ! boundaries (thermodynamic levels 2 to gr%nz).
-    do k = 2, nz, 1
+    ! boundaries (thermodynamic levels 1 to gr%nzt).
+    do k = 1, nzt, 1
 
        ! Unpack the means of w, rt, and thl in each PDF component.
        mu_w_1   = mu_x_1_n(k,hm_metadata%iiPDF_w)
@@ -390,15 +390,7 @@ module mixed_moment_PDF_integrals
 
        enddo ! hm_idx = 1, hydromet_dim, 1
 
-    enddo ! k = 2, nz, 1
-
-    ! Lower boundary
-    ! The k = 1 thermodynamic is below the model lower boundary.
-    ! Set all moments to 0.
-    rtphmp_zt(1,:)     = zero
-    thlphmp_zt(1,:)    = zero
-    wp2hmp(1,:)        = zero
-    hmxphmyp_zt(1,:,:) = zero
+    enddo ! k = 1, nzt, 1
 
 
     ! Statistics

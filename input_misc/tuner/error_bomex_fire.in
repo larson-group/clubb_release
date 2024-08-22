@@ -32,8 +32,8 @@ prescribed_rand_seed        = 1
 hoc_stats_file_nl(1)    = "../output/bomex_zt.nc",
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
 run_file_nl(1)          = "bomex_hoc.in",
-z_i_nl(1)               = 2,
-z_f_nl(1)               = 75,
+z_i_nl(1)               = 1,
+z_f_nl(1)               = 74,
 timestep_intvls_nl(1,:) = 180, 360
 weight_case_nl(1)       = 1.0
 /

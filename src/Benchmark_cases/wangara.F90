@@ -48,16 +48,18 @@ module wangara
       sclr_idx
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) :: & 
       wm_zt,        & ! w wind on thermodynamic grid                [m/s]
-      wm_zm,        & ! w wind on momentum grid                     [m/s]
       thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
       rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzm) :: &
+      wm_zm           ! w wind on momentum grid                     [m/s]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar tendency [units/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar tendency [units/s]
 
     ! No large-scale subsidence for now

@@ -20,7 +20,7 @@ module output_2D_samples_module
 
   contains
 !-------------------------------------------------------------------------------
-  subroutine open_2D_samples_file( nz, num_samples, n_2D_variables, &
+  subroutine open_2D_samples_file( nzt, num_samples, n_2D_variables, &
                                    fname_prefix, fdir, &
                                    time, dtwrite, zgrid, variable_names, &
                                    variable_descriptions, variable_units, &
@@ -58,7 +58,7 @@ module output_2D_samples_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,          & ! Number of vertical levels
+      nzt,          & ! Number of vertical levels
       num_samples, & ! Number of samples per variable
       n_2D_variables ! Number variables to output
 
@@ -77,7 +77,7 @@ module output_2D_samples_module
     real(kind=core_rknd), intent(in) :: &
       dtwrite   ! Interval for writing to disk    [s] 
 
-    real( kind = core_rknd ), intent(in), dimension(nz) :: & 
+    real( kind = core_rknd ), intent(in), dimension(nzt) :: & 
       zgrid ! Vertical grid levels [m]
 
     ! Input/Output Variables
@@ -121,7 +121,7 @@ module output_2D_samples_module
     i = 1  ! This assignment prevents a g 95 compiler warning
 
     allocate( sample_file%samples_of_var(n_2D_variables) )
-    allocate( sample_file%z(nz) )
+    allocate( sample_file%z(nzt) )
 
     do i=1, n_2D_variables
       sample_file%samples_of_var(i)%name = trim( variable_names(i) )
@@ -130,7 +130,7 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, nz, zgrid, &
+    call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, nzt, zgrid, &
                       day, month, year, lat_vals, lon_vals, &
                       time, dtwrite, n_2D_variables, sample_file, num_samples )
 
@@ -148,7 +148,7 @@ module output_2D_samples_module
   end subroutine open_2D_samples_file
 
 !-------------------------------------------------------------------------------
-  subroutine output_2D_lognormal_dist_file ( nz, num_samples, pdf_dim, &
+  subroutine output_2D_lognormal_dist_file ( nzt, num_samples, pdf_dim, &
                                              X_nl_all_levs, &
                                              stats_metadata )
 ! Description:
@@ -175,11 +175,11 @@ module output_2D_samples_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,          & ! Number of vertical levels
+      nzt,          & ! Number of vertical levels
       num_samples, & ! Number of samples per variable
       pdf_dim   ! Number variates being sampled
 
-    real(kind=stat_rknd), intent(in), dimension(num_samples,nz,pdf_dim) :: &
+    real(kind=stat_rknd), intent(in), dimension(num_samples,nzt,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
       
     type (stats_metadata_type), intent(in) :: &
@@ -192,12 +192,12 @@ module output_2D_samples_module
     if ( .not. stats_metadata%l_stats_last ) return
 
     do j = 1, pdf_dim
-      allocate( lognormal_sample_file%samples_of_var(j)%ptr(num_samples,1,1,nz) )
+      allocate( lognormal_sample_file%samples_of_var(j)%ptr(num_samples,1,1,nzt) )
     end do
 
     do sample = 1, num_samples
       do j = 1, pdf_dim
-        lognormal_sample_file%samples_of_var(j)%ptr(sample,1,1,1:nz) = X_nl_all_levs(sample,1:nz,j)
+        lognormal_sample_file%samples_of_var(j)%ptr(sample,1,1,1:nzt) = X_nl_all_levs(sample,1:nzt,j)
       end do
     end do
 
@@ -215,7 +215,7 @@ module output_2D_samples_module
   end subroutine output_2D_lognormal_dist_file
 
 !-------------------------------------------------------------------------------
-  subroutine output_2D_uniform_dist_file( nz, num_samples, dp2, &
+  subroutine output_2D_uniform_dist_file( nzt, num_samples, dp2, &
                                           X_u_all_levs, &
                                           X_mixt_comp_all_levs, &
                                           lh_sample_point_weights, &
@@ -242,17 +242,17 @@ module output_2D_samples_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,          & ! Number of vertical levels
+      nzt,          & ! Number of vertical levels
       num_samples, & ! Number of samples per variable
       dp2            ! Number of variates being sampled + 2
 
-    real(kind=core_rknd), intent(in), dimension(num_samples,nz,dp2) :: &
+    real(kind=core_rknd), intent(in), dimension(num_samples,nzt,dp2) :: &
       X_u_all_levs ! Uniformly distributed numbers between (0,1)
 
-    integer, intent(in), dimension(num_samples,nz) :: &
+    integer, intent(in), dimension(num_samples,nzt) :: &
       X_mixt_comp_all_levs ! Either 1 or 2
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
       lh_sample_point_weights ! Weight of each sample
 
     type (stats_metadata_type), intent(in) :: &
@@ -265,17 +265,17 @@ module output_2D_samples_module
     if ( .not. stats_metadata%l_stats_last ) return
 
     do j = 1, dp2+2
-      allocate( uniform_sample_file%samples_of_var(j)%ptr(num_samples,1,1,nz) )
+      allocate( uniform_sample_file%samples_of_var(j)%ptr(num_samples,1,1,nzt) )
     end do
 
     do sample = 1, num_samples
       do j = 1, dp2
-        uniform_sample_file%samples_of_var(j)%ptr(sample,1,1,1:nz) = &
-          real( X_u_all_levs(sample,1:nz,j), kind = stat_rknd )
+        uniform_sample_file%samples_of_var(j)%ptr(sample,1,1,1:nzt) = &
+          real( X_u_all_levs(sample,1:nzt,j), kind = stat_rknd )
       end do
-      uniform_sample_file%samples_of_var(dp2+1)%ptr(sample,1,1,1:nz) = &
-        real( X_mixt_comp_all_levs(sample,1:nz), kind=stat_rknd )
-      do k = 1, nz 
+      uniform_sample_file%samples_of_var(dp2+1)%ptr(sample,1,1,1:nzt) = &
+        real( X_mixt_comp_all_levs(sample,1:nzt), kind=stat_rknd )
+      do k = 1, nzt 
         uniform_sample_file%samples_of_var(dp2+2)%ptr(sample,1,1,k) = &
           real( lh_sample_point_weights(sample,k), kind=stat_rknd )
       end do

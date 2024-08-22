@@ -62,7 +62,7 @@ module nov11
       dt              ! Timestep              [s]
 
     ! Input/Output variables
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) :: & 
       rtm     ! Total water mixing ratio      [kg/kg]
 
     ! Local variables
@@ -84,7 +84,7 @@ module nov11
     if ( time >= time_initial + 3600.0_time_precision  .and. & 
          time <  time_initial + 3600.0_time_precision + real(dt,kind=time_precision) ) then
 
-      do k = 1, gr%nz, 1
+      do k = 1, gr%nzt, 1
         if ( gr%zt(1,k) > ( 2900.0_core_rknd + gr%zm(1,1) ) ) then
           rtm(k) = 0.89_core_rknd * rtm(k) ! Known magic number
         end if

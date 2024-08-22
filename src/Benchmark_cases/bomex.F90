@@ -56,22 +56,22 @@ module bomex
     type (grid), target, intent(in) :: &
       gr
 
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
       rtm    ! Total water mixing ratio (thermodynamic levels)        [kg/kg]
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) :: & 
       thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing      ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar forcing        [units vary/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
       edsclrm_forcing ! Eddy-passive scalar forcing [units vary/s]
 
     !--------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nzt) :: &
       qtm_forcing  ! Specified total water spec. humidity tendency    [kg/kg/s]
 
     integer :: k
@@ -84,7 +84,7 @@ module bomex
     ! Large scale advective moisture tendency
     ! The BOMEX specifications give large-scale advective moisture tendency in
     ! terms of total water specific humidity.
-    do k = 2, gr%nz
+    do k = 1, gr%nzt
 
       if ( gr%zt(1,k) >= 0._core_rknd .and. gr%zt(1,k) < 300._core_rknd ) then
         qtm_forcing(k) = -1.2e-8_core_rknd
@@ -102,11 +102,6 @@ module bomex
       call force_spec_hum_to_mixing_ratio( rtm(k), qtm_forcing(k), rtm_forcing(k) )
 
     end do
-
-
-    ! Boundary conditions
-    thlm_forcing(1) = 0.0_core_rknd  ! Below surface
-    rtm_forcing(1)  = 0.0_core_rknd  ! Below surface
 
     ! Test scalars with thetal and rt if desired
     if ( sclr_idx%iisclr_thl > 0 ) sclrm_forcing(:,sclr_idx%iisclr_thl) = thlm_forcing

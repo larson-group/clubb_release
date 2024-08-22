@@ -725,14 +725,14 @@ module parameters_tunable
         core_rknd ! Variable(s)
 
     use parameter_indices, only: & 
-      imult_coef, &
-      inu1, &
-      inu2, &
-      inu6, &
-      inu8, &
-      inu9, &
-      inu10, &
-      inu_hm
+        imult_coef, &
+        inu1, &
+        inu2, &
+        inu6, &
+        inu8, &
+        inu9, &
+        inu10, &
+        inu_hm
 
     implicit none
 
@@ -857,8 +857,8 @@ module parameters_tunable
 
           ! Find the average deltaz over the grid based on momentum level
           ! inputs.
-          avg_deltaz = ( gr%zm(i,gr%nz) - gr%zm(i,1) )  &
-                       / real( gr%nz - 1, kind = core_rknd )
+          avg_deltaz = ( gr%zm(i,gr%nzm) - gr%zm(i,1) )  &
+                       / real( gr%nzm - 1, kind = core_rknd )
 
         else if ( grid_type == 1 ) then
 
@@ -873,8 +873,8 @@ module parameters_tunable
 
           ! Find the average deltaz over the stretched grid based on
           ! thermodynamic level inputs.
-          avg_deltaz = ( gr%zt(i,gr%nz) - gr%zt(i,2) ) &
-                       / real( gr%nz - 2, kind = core_rknd )
+          avg_deltaz = ( gr%zt(i,gr%nzt) - gr%zt(i,1) ) &
+                       / real( gr%nzt - 1, kind = core_rknd )
 
         else
 

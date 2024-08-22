@@ -40,7 +40,7 @@ module numerical_check
 
   contains
 !---------------------------------------------------------------------------------
-  subroutine length_check( nz, Lscale, Lscale_up, Lscale_down )
+  subroutine length_check( nzt, Lscale, Lscale_up, Lscale_down )
 !
 !        Description: This subroutine determines if any of the output
 !        variables for the length_new subroutine carry values that
@@ -55,13 +55,13 @@ module numerical_check
     implicit none
 
     integer, intent(in) :: &
-      nz
+      nzt
 
     ! Constant Parameters
     character(*), parameter :: proc_name = "compute_mixing_length"
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(nzt), intent(in) ::  & 
       Lscale,     & ! Mixing length                 [m]
       Lscale_up,  & ! Upward mixing length          [m]
       Lscale_down   ! Downward mixing length        [m]
@@ -276,13 +276,13 @@ module numerical_check
 
 !-------------------------------------------------------------------------------
   subroutine parameterization_check(                                        & 
-               nz, sclr_dim, edsclr_dim,                                    & ! intent(in)
+               nzm, nzt, sclr_dim, edsclr_dim,                              & ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing,                       & ! intent(in)
                vm_forcing, wm_zm, wm_zt, p_in_Pa,                           & ! intent(in)
                rho_zm, rho, exner, rho_ds_zm,                               & ! intent(in)
                rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! intent(in)
                thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc,       & ! intent(in)
-               vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
+               vpwp_sfc, p_sfc, um, upwp, vm, vpwp, up2, vp2,               & ! intent(in)
                rtm, wprtp, thlm, wpthlp, wp2, wp3,                          & ! intent(in)
                rtp2, thlp2, rtpthlp,                                        & ! intent(in)
 !              rcm,                                                         &
@@ -296,9 +296,6 @@ module numerical_check
 !   In addition it checks to see if rho_zm, rho, exner, up2, vp2, rtm, thlm,
 !   wp2, rtp2, thlp2, or tau_zm have negative values.
 !-------------------------------------------------------------------------------
-
-    use grid_class, only: & 
-        grid ! Type
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -318,7 +315,8 @@ module numerical_check
     implicit none
 
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       sclr_dim, &
       edsclr_dim
 
@@ -328,48 +326,53 @@ module numerical_check
       proc_name = "advance_clubb_core"
 
     ! Input variables
-    real( kind = core_rknd ), intent(in), dimension(nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(nzt) ::  & 
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
       um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
       vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
-      wm_zm,           & ! w mean wind component on momentum levels  [m/s]
       wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
       p_in_Pa,         & ! Air pressure (thermodynamic levels)       [Pa]
-      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
       rho,             & ! Air density on thermodynamic levels       [kg/m^3]
       exner,           & ! Exner function (thermodynamic levels)     [-]
-      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
-      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt!,      & ! Dry, base-state theta_v on thermo. levs.  [K]
 !     rcm                ! Cloud water mixing ratio  [kg/kg] - Unused
+
+    real( kind = core_rknd ), intent(in), dimension(nzm) ::  & 
+      wm_zm,           & ! w mean wind component on momentum levels  [m/s]
+      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+      thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
 
     real( kind = core_rknd ), intent(in) ::  & 
       wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
       wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
       upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
-      vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
+      vpwp_sfc,     & ! v'w' at surface.          [m^2/s^2]
+      p_sfc           ! pressure at surface       [Pa]
 
     ! These are prognostic or are planned to be in the future
-    real( kind = core_rknd ), intent(in), dimension(nz) ::  & 
+    real( kind = core_rknd ), intent(in), dimension(nzt) ::  & 
       um,      & ! u mean wind component (thermodynamic levels)   [m/s]
-      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
       vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+    real( kind = core_rknd ), intent(in), dimension(nzm) ::  & 
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
       vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
       up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
       vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
-      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
       wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
-      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
       wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
       rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
       thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
       rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
-      wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
-      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+      wp2        ! w'^2 (momentum levels)                         [m^2/s^2]
 
     character(len=*), intent(in) :: prefix ! Location where subroutine is called
 
@@ -379,15 +382,17 @@ module numerical_check
     real( kind = core_rknd ), intent(in), dimension(edsclr_dim) :: & 
       wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
 
-    real( kind = core_rknd ), intent(in),dimension(nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in),dimension(nzt,sclr_dim) :: & 
       sclrm,         & ! Passive scalar mean      [units vary]
+      sclrm_forcing    ! Passive scalar forcing   [units / s]
+
+    real( kind = core_rknd ), intent(in),dimension(nzm,sclr_dim) :: & 
       wpsclrp,       & ! w'sclr'                  [units vary]
       sclrp2,        & ! sclr'^2                  [units vary]
       sclrprtp,      & ! sclr'rt'                 [units vary]
-      sclrpthlp,     & ! sclr'thl'                [units vary]
-      sclrm_forcing    ! Passive scalar forcing   [units / s]
+      sclrpthlp        ! sclr'thl'                [units vary]
 
-    real( kind = core_rknd ), intent(in),dimension(nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(in),dimension(nzt,edsclr_dim) :: & 
       edsclrm,         & ! Eddy passive scalar mean    [units vary]
       edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
 
@@ -435,16 +440,17 @@ module numerical_check
     call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name ) ! intent(in)
     call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name ) ! intent(in)
     call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name ) ! intent(in)
+    call check_nan( p_sfc, "p_sfc", prefix//proc_name ) ! intent(in)
 
     do i = 1, sclr_dim
 
-      call check_nan( sclrm_forcing(2:,i),"sclrm_forcing",  & ! intent(in)
+      call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & ! intent(in)
                       prefix//proc_name ) ! intent(in)
 
       call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & ! intent(in)
                       prefix//proc_name ) ! intent(in)
 
-      call check_nan( sclrm(2:,i),"sclrm", prefix//proc_name ) ! intent(in)
+      call check_nan( sclrm(:,i),"sclrm", prefix//proc_name ) ! intent(in)
       call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name ) ! intent(in)
       call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name ) ! intent(in)
       call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name ) ! intent(in)
@@ -455,12 +461,12 @@ module numerical_check
 
     do i = 1, edsclr_dim
 
-      call check_nan( edsclrm_forcing(2:,i),"edsclrm_forcing", prefix//proc_name ) ! intent(in)
+      call check_nan( edsclrm_forcing(:,i),"edsclrm_forcing", prefix//proc_name ) ! intent(in)
 
       call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & ! intent(in)
                       prefix//proc_name ) ! intent(in)
 
-      call check_nan( edsclrm(2:,i),"edsclrm", prefix//proc_name ) ! intent(in)
+      call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name ) ! intent(in)
 
     enddo
 
@@ -472,25 +478,25 @@ module numerical_check
         end if
     end if
 
-    call check_negative( rtm, 2, nz, "rtm", prefix//proc_name ) ! intent(in)
-    call check_negative( p_in_Pa, 2, nz, "p_in_Pa", prefix//proc_name ) ! intent(in)
-    call check_negative( rho, 2, nz, "rho", prefix//proc_name ) ! intent(in)
-    call check_negative( rho_zm, 1, nz, "rho_zm", prefix//proc_name ) ! intent(in)
-    call check_negative( exner, 2, nz, "exner", prefix//proc_name ) ! intent(in)
-    call check_negative( rho_ds_zm, 1, nz, "rho_ds_zm", prefix//proc_name ) ! intent(in)
-    call check_negative( rho_ds_zt, 2, nz, "rho_ds_zt", prefix//proc_name ) ! intent(in)
-    call check_negative( invrs_rho_ds_zm, 1, nz, "invrs_rho_ds_zm", & ! intent(in)
+    call check_negative( rtm, 1, nzt, "rtm", prefix//proc_name ) ! intent(in)
+    call check_negative( p_in_Pa, 1, nzt, "p_in_Pa", prefix//proc_name ) ! intent(in)
+    call check_negative( rho, 1, nzt, "rho", prefix//proc_name ) ! intent(in)
+    call check_negative( rho_zm, 1, nzm, "rho_zm", prefix//proc_name ) ! intent(in)
+    call check_negative( exner, 1, nzt, "exner", prefix//proc_name ) ! intent(in)
+    call check_negative( rho_ds_zm, 1, nzm, "rho_ds_zm", prefix//proc_name ) ! intent(in)
+    call check_negative( rho_ds_zt, 1, nzt, "rho_ds_zt", prefix//proc_name ) ! intent(in)
+    call check_negative( invrs_rho_ds_zm, 1, nzm, "invrs_rho_ds_zm", & ! intent(in)
                          prefix//proc_name )!intent(in)
-    call check_negative( invrs_rho_ds_zt, 2, nz, "invrs_rho_ds_zt", & ! intent(in)
+    call check_negative( invrs_rho_ds_zt, 1, nzt, "invrs_rho_ds_zt", & ! intent(in)
                          prefix//proc_name ) ! intent(in)
-    call check_negative( thv_ds_zm, 1, nz, "thv_ds_zm", prefix//proc_name ) ! intent(in)
-    call check_negative( thv_ds_zt, 2, nz, "thv_ds_zt", prefix//proc_name ) ! intent(in)
-    call check_negative( up2, 1, nz, "up2", prefix//proc_name ) ! intent(in)
-    call check_negative( vp2, 1, nz, "vp2", prefix//proc_name ) ! intent(in)
-    call check_negative( wp2, 1, nz, "wp2", prefix//proc_name ) ! intent(in)
-    call check_negative( thlm, 2, nz, "thlm", prefix//proc_name ) ! intent(in)
-    call check_negative( rtp2, 1, nz, "rtp2", prefix//proc_name ) ! intent(in)
-    call check_negative( thlp2, 1, nz, "thlp2", prefix//proc_name ) ! intent(in)
+    call check_negative( thv_ds_zm, 1, nzm, "thv_ds_zm", prefix//proc_name ) ! intent(in)
+    call check_negative( thv_ds_zt, 1, nzt, "thv_ds_zt", prefix//proc_name ) ! intent(in)
+    call check_negative( up2, 1, nzm, "up2", prefix//proc_name ) ! intent(in)
+    call check_negative( vp2, 1, nzm, "vp2", prefix//proc_name ) ! intent(in)
+    call check_negative( wp2, 1, nzm, "wp2", prefix//proc_name ) ! intent(in)
+    call check_negative( thlm, 1, nzt, "thlm", prefix//proc_name ) ! intent(in)
+    call check_negative( rtp2, 1, nzm, "rtp2", prefix//proc_name ) ! intent(in)
+    call check_negative( thlp2, 1, nzm, "thlp2", prefix//proc_name ) ! intent(in)
 
     if ( err_code == clubb_fatal_error .and. prefix == "beginning of " ) then
         err_code = clubb_no_error   ! Negative value generated by host model, hence ignore error
@@ -576,7 +582,7 @@ module numerical_check
   end subroutine sfc_varnce_check
 
 !-----------------------------------------------------------------------
-  subroutine rad_check( nz, thlm, rcm, rtm, rim,  & 
+  subroutine rad_check( nzm, nzt, thlm, rcm, rtm, rim,  & 
                         cloud_frac, p_in_Pa, exner, rho_zm )
 ! Description:
 !   Checks radiation input variables. If they are < 0 it reports
@@ -589,46 +595,49 @@ module numerical_check
     implicit none
 
     integer, intent(in) :: &
-      nz
+      nzm, &
+      nzt
 
     ! Constant Parameters
     character(len=*), parameter ::  & 
       proc_name = "Before BUGSrad."
 
     ! Input/Output variables
-    real( kind = core_rknd ), dimension(nz), intent(in) :: & 
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: & 
       thlm,           & ! Liquid Water Potential Temperature   [K/s]
       rcm,            & ! Liquid Water Mixing Ratio            [kg/kg]
       rtm,            & ! Total Water Mixing Ratio             [kg/kg]
-      rim,          & ! Ice Water Mixing Ratio               [kg/kg]
+      rim,            & ! Ice Water Mixing Ratio               [kg/kg]
       cloud_frac,     & ! Cloud Fraction                       [-]
       p_in_Pa,        & ! Pressure                             [Pa]
-      exner,          & ! Exner Function                       [-]
+      exner             ! Exner Function                       [-]
+
+    real( kind = core_rknd ), dimension(nzm), intent(in) :: & 
       rho_zm            ! Air Density                          [kg/m^3]
 
     ! Local variables
-    real( kind = core_rknd ),dimension(nz) :: rvm
+    real( kind = core_rknd ), dimension(nzt) :: rvm
 
 !-------------------------------------------------------------------------
 
     rvm = rtm - rcm
 
-    call check_negative( thlm, 1, nz, "thlm", proc_name ) ! intent(in)
-    call check_negative( rcm, 1, nz, "rcm", proc_name ) ! intent(in)
-    call check_negative( rtm, 1, nz, "rtm", proc_name ) ! intent(in)
-    call check_negative( rvm, 1, nz, "rvm", proc_name ) ! intent(in)
-    call check_negative( rim, 1, nz, "rim", proc_name ) ! intent(in)
-    call check_negative( cloud_frac, 1, nz,"cloud_frac", proc_name ) ! intent(in)
-    call check_negative( p_in_Pa, 1, nz, "p_in_Pa", proc_name ) ! intent(in)
-    call check_negative( exner, 1, nz, "exner", proc_name ) ! intent(in) 
-    call check_negative( rho_zm, 1, nz, "rho_zm", proc_name ) ! intent(in)
+    call check_negative( thlm, 1, nzt, "thlm", proc_name ) ! intent(in)
+    call check_negative( rcm, 1, nzt, "rcm", proc_name ) ! intent(in)
+    call check_negative( rtm, 1, nzt, "rtm", proc_name ) ! intent(in)
+    call check_negative( rvm, 1, nzt, "rvm", proc_name ) ! intent(in)
+    call check_negative( rim, 1, nzt, "rim", proc_name ) ! intent(in)
+    call check_negative( cloud_frac, 1, nzt,"cloud_frac", proc_name ) ! intent(in)
+    call check_negative( p_in_Pa, 1, nzt, "p_in_Pa", proc_name ) ! intent(in)
+    call check_negative( exner, 1, nzt, "exner", proc_name ) ! intent(in) 
+    call check_negative( rho_zm, 1, nzm, "rho_zm", proc_name ) ! intent(in)
 
     return
 
   end subroutine rad_check
 
 !-----------------------------------------------------------------------
-  logical function invalid_model_arrays( nz, hydromet_dim, hydromet_list, &
+  logical function invalid_model_arrays( nzm, nzt, hydromet_dim, hydromet_list, &
                                          sclr_dim, edsclr_dim, &
                                          um, vm, rtm, wprtp, thlm, wpthlp, &
                                          rtp2, thlp2, rtpthlp, wp2, wp3, &
@@ -651,7 +660,8 @@ module numerical_check
     implicit none
     
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       hydromet_dim, &
       sclr_dim, &
       edsclr_dim
@@ -659,29 +669,31 @@ module numerical_check
     character(len=10), dimension(hydromet_dim), intent(in) :: & 
       hydromet_list
 
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(nzt), intent(in) ::  &
       um,       & ! eastward grid-mean wind comp. (thermo. levs.)  [m/s]
       vm,       & ! northward grid-mean wind comp. (thermo. levs.) [m/s]
       rtm,      & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
-      wprtp,    & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
       thlm,     & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+      wp2thvp     ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+
+    real( kind = core_rknd ), dimension(nzm), intent(in) ::  &
+      wprtp,    & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
       wpthlp,   & ! w'th_l' (momentum levels)                      [(m/s) K]
       rtp2,     & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
       thlp2,    & ! th_l'^2 (momentum levels)                      [K^2]
       rtpthlp,  & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
       wp2,      & ! w'^2 (momentum levels)                         [m^2/s^2]
-      wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
-      wp2thvp,  & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
       rtpthvp,  & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
       thlpthvp    ! < th_l' th_v' > (momentum levels)              [K^2]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Array of hydrometeors                          [units vary]
 
-    real( kind = core_rknd ), dimension(nz,sclr_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,sclr_dim), intent(in) :: &
       sclrm    ! Passive scalar mean (thermo. levels)              [units vary]
 
-    real( kind = core_rknd ), dimension(nz,edsclr_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,edsclr_dim), intent(in) :: &
       edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
 
     ! Local Variables

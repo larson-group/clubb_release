@@ -13,7 +13,7 @@ module lh_microphys_var_covar_module
 
   !-----------------------------------------------------------------------
   subroutine lh_microphys_var_covar_driver &
-             ( nz, num_samples, dt, lh_sample_point_weights, &
+             ( nzt, num_samples, dt, lh_sample_point_weights, &
                pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &
                lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
                l_lh_instant_var_covar_src, &
@@ -57,23 +57,20 @@ module lh_microphys_var_covar_module
     use pdf_parameter_module, only: &
       pdf_parameter
       
-    use grid_class, only: &
-      zt2zm
-      
     implicit none
 
     ! Input Variables!
     integer, intent(in) :: &
-      nz,           &                  ! Number of vertical levels
+      nzt,           &                  ! Number of vertical levels
       num_samples                      ! Number of SILHS sample points
 
     real( kind = core_rknd ), intent(in) :: &
       dt                               ! Model time step                             [s]
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
       lh_sample_point_weights          ! Weight of SILHS sample points
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt), intent(in) :: &
       lh_rt_all, &                     ! SILHS samples of total water                [kg/kg]
       lh_thl_all, &                    ! SILHS samples of potential temperature      [K]
       lh_w_all, &                      ! SILHS samples of vertical velocity          [m/s]
@@ -85,7 +82,7 @@ module lh_microphys_var_covar_module
       l_lh_instant_var_covar_src       ! Produce instantaneous var/covar tendencies  [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       lh_rtp2_mc_zt,   &               ! SILHS microphys. est. tendency of <rt'^2>   [(kg/kg)^2/s]
       lh_thlp2_mc_zt,  &               ! SILHS microphys. est. tendency of <thl'^2>  [K^2/s]
       lh_wprtp_mc_zt,  &               ! SILHS microphys. est. tendency of <w'rt'>   [m*(kg/kg)/s^2]
@@ -93,10 +90,10 @@ module lh_microphys_var_covar_module
       lh_rtpthlp_mc_zt                 ! SILHS microphys. est. tendency of <rt'thl'> [K*(kg/kg)/s]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(num_samples,nz) :: &
+    real( kind = core_rknd ), dimension(num_samples,nzt) :: &
       lh_rt_mc_all
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       mean_rt,         &
       mean_rt_mc,      &
       covar_rt_rt_mc,   &
@@ -110,7 +107,7 @@ module lh_microphys_var_covar_module
       covar_rt_thl_mc
 
     ! For timestep-dependent terms
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       var_rt_mc, &
       var_thl_mc, &
       covar_rt_mc_thl_mc
@@ -126,32 +123,29 @@ module lh_microphys_var_covar_module
     ! Calculate means, variances, and covariances needed for the tendency terms
     mean_rt = pdf_params%mixt_frac(1,:) * pdf_params%rt_1(1,:) &
       + (one - pdf_params%mixt_frac(1,:)) * pdf_params%rt_2(1,:)
-    mean_rt(1) = zero
     
     mean_thl = pdf_params%mixt_frac(1,:) * pdf_params%thl_1(1,:) &
       + (one - pdf_params%mixt_frac(1,:)) * pdf_params%thl_2(1,:)
-    mean_thl(1) = zero
     
     mean_w = pdf_params%mixt_frac(1,:) * pdf_params%w_1(1,:) &
       + (one - pdf_params%mixt_frac(1,:)) * pdf_params%w_2(1,:)
-    mean_w(1) = zero
     
     ! Calculate means, variances, and covariances needed for the tendency terms
-    mean_rt_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_rt_mc_all )
-    covar_rt_rt_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    mean_rt_mc = compute_sample_mean( nzt, num_samples, lh_sample_point_weights, lh_rt_mc_all )
+    covar_rt_rt_mc = compute_sample_covariance( nzt, num_samples, lh_sample_point_weights, &
                                                lh_rt_all, mean_rt, lh_rt_mc_all, mean_rt_mc )
                                          
-    mean_thl_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_thlm_mc_all )
-    covar_thl_thl_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    mean_thl_mc = compute_sample_mean( nzt, num_samples, lh_sample_point_weights, lh_thlm_mc_all )
+    covar_thl_thl_mc = compute_sample_covariance( nzt, num_samples, lh_sample_point_weights, &
                                                  lh_thl_all, mean_thl, lh_thlm_mc_all, mean_thl_mc )
                                                  
-    covar_w_rt_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_w_rt_mc = compute_sample_covariance( nzt, num_samples, lh_sample_point_weights, &
                                               lh_w_all, mean_w, lh_rt_mc_all, mean_rt_mc )
-    covar_w_thl_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_w_thl_mc = compute_sample_covariance( nzt, num_samples, lh_sample_point_weights, &
                                               lh_w_all, mean_w, lh_thlm_mc_all, mean_thl_mc )
-    covar_thl_rt_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_thl_rt_mc = compute_sample_covariance( nzt, num_samples, lh_sample_point_weights, &
                                                 lh_thl_all, mean_thl, lh_rt_mc_all, mean_rt_mc )
-    covar_rt_thl_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_rt_thl_mc = compute_sample_covariance( nzt, num_samples, lh_sample_point_weights, &
                                                 lh_rt_all, mean_rt, lh_thlm_mc_all, mean_thl_mc )
 
     ! Variances and covariances for timestep-dependent terms
@@ -163,13 +157,13 @@ module lh_microphys_var_covar_module
       ! upscaled.
 
       var_rt_mc  = compute_sample_variance &
-                                ( nz, num_samples, lh_rt_mc_all, lh_sample_point_weights, &
+                                ( nzt, num_samples, lh_rt_mc_all, lh_sample_point_weights, &
                                   mean_rt_mc  )
       var_thl_mc = compute_sample_variance &
-                                ( nz, num_samples, lh_thlm_mc_all, lh_sample_point_weights, &
+                                ( nzt, num_samples, lh_thlm_mc_all, lh_sample_point_weights, &
                                   mean_thl_mc )
       covar_rt_mc_thl_mc = compute_sample_covariance &
-                                ( nz, num_samples, lh_sample_point_weights, &
+                                ( nzt, num_samples, lh_sample_point_weights, &
                                   lh_rt_mc_all, mean_rt_mc, lh_thlm_mc_all, mean_thl_mc )
 
     end if ! .not. l_lh_instant_var_covar_src

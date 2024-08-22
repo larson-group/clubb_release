@@ -102,7 +102,7 @@ module ice_dfsn_module
     real( kind = core_rknd ), intent(in)::  & 
       dt      ! Model timestep                                     [s]
 
-    real(kind = core_rknd), dimension(gr%nz), intent(in)::  & 
+    real(kind = core_rknd), dimension(gr%nzt), intent(in)::  & 
       thlm,    & ! Liquid potential temperature         [K]
       rcm,     & ! Cloud water mixing ratio             [kg kg^{-1}]
       exner,   & ! Exner function                       [-]
@@ -120,12 +120,12 @@ module ice_dfsn_module
       stats_zt
 
     !---------------------- Output variables ----------------------
-    real(kind = core_rknd), dimension(gr%nz), intent(out)::  & 
+    real(kind = core_rknd), dimension(gr%nzt), intent(out)::  & 
       rcm_icedfsn, & ! Time tendency of rcm due to ice diffusional growth  [kg kg^{-1} s^{-1}]
       thlm_icedfsn   ! Time tendency of thlm due to ice diffusional growth [K/s]
 
     ! Local variables
-    real(kind = core_rknd), dimension(gr%nz)::  & 
+    real(kind = core_rknd), dimension(gr%nzt)::  & 
       T_in_K,           & ! Absolute temperature                        [K]
       mass_ice_cryst,   & ! Mass of a single ice crystal                [kg]
       r_s,              & ! Saturation mixing ratio over vapor          [kg kg^{-1}] 
@@ -149,7 +149,7 @@ module ice_dfsn_module
     !---------------------- Begin Code ----------------------
 
     ! Determine absolute temperature
-    T_in_K = thlm2T_in_K( gr%nz, thlm, exner, rcm )
+    T_in_K = thlm2T_in_K( gr%nzt, thlm, exner, rcm )
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !                                                                     !
@@ -203,11 +203,11 @@ module ice_dfsn_module
     !                                                                     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do k = 1, gr%nz, 1
+    do k = 1, gr%nzt, 1
       mass_ice_cryst(k) = 1.0e-11_core_rknd
     end do
 
-    do k = gr%nz, 2, -1
+    do k = gr%nzt, 1, -1
 
       ! Check whether we're in cloud and below freezing.
       ! Note:  A value of 1.0E-5 kg/kg is used as a threshold value
@@ -290,18 +290,8 @@ module ice_dfsn_module
 
       end if
 
-    end do ! k = gr%nz, 2, -1
+    end do ! k = gr%nzt, 1, -1
 
-    ! Michael Falk added boundary condx, 31 July 2006
-
-    mass_ice_cryst(1) = mass_ice_cryst(2)
-    rcm_icedfsn(1)    = rcm_icedfsn(2)
-    diam(1)           = diam(2)
-    u_T_cm(1)         = u_T_cm(2)
-
-    ! eMFc
-
-!
     if ( stats_metadata%l_stats_samp ) then
 
 !       diam(:) ! Icedfs diameter; Michael Falk, 1 Nov 2006
@@ -319,7 +309,7 @@ module ice_dfsn_module
     end if
 
     ! Determine time tendency of liquid potential temperature
-    thlm_icedfsn(1:gr%nz) = - ( Lv/(Cp*exner(1:gr%nz)) ) * rcm_icedfsn(1:gr%nz)
+    thlm_icedfsn(1:gr%nzt) = - ( Lv/(Cp*exner(1:gr%nzt)) ) * rcm_icedfsn(1:gr%nzt)
 
     return
   end subroutine ice_dfsn

@@ -217,7 +217,7 @@ module advance_helper_module
   end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
-  subroutine calc_stability_correction( nz, ngrdcol, gr, &
+  subroutine calc_stability_correction( nzm, nzt, ngrdcol, gr, &
                                         thlm, Lscale_zm, em, &
                                         exner, rtm, rcm, &
                                         p_in_Pa, thvm, ice_supersat_frac, &
@@ -249,21 +249,24 @@ module advance_helper_module
 
     ! ---------------- Input Variables ----------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
     
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) :: &
-      Lscale_zm,       & ! Turbulent mixing length interp to m levs  [m]
-      em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
-      thlm,            & ! th_l (thermo. levels)                     [K]
-      exner,           & ! Exner function                            [-]
-      rtm,             & ! total water mixing ratio, r_t             [kg/kg]
-      rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
-      p_in_Pa,         & ! Air pressure                              [Pa]
-      thvm,            & ! Virtual potential temperature             [K]
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
+      thlm,              & ! th_l (thermo. levels)                     [K]
+      exner,             & ! Exner function                            [-]
+      rtm,               & ! total water mixing ratio, r_t             [kg/kg]
+      rcm,               & ! cloud water mixing ratio, r_c             [kg/kg]
+      p_in_Pa,           & ! Air pressure                              [Pa]
+      thvm,              & ! Virtual potential temperature             [K]
       ice_supersat_frac
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+      Lscale_zm, & ! Turbulent mixing length interp to m levs  [m]
+      em           ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       lambda0_stability_coef, &     ! CLUBB tunable parameter lambda0_stability_coef
@@ -286,11 +289,11 @@ module advance_helper_module
       l_modify_limiters_for_cnvg_test
 
     ! ---------------- Output Variables ----------------
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzm) :: &
       stability_correction
       
     ! ---------------- Local Variables ----------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       brunt_vaisala_freq_sqd, & !  []
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry, & !  []
@@ -306,7 +309,7 @@ module advance_helper_module
     !$acc                    brunt_vaisala_freq_sqd_moist, brunt_vaisala_freq_sqd_dry, &
     !$acc                    brunt_vaisala_freq_sqd_smth, lambda0_stability )
 
-    call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
+    call calc_brunt_vaisala_freq_sqd( nzm, nzt, ngrdcol, gr, thlm, &    ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &              ! intent(in)
                                       saturation_formula, &             ! intent(in)
@@ -321,7 +324,7 @@ module advance_helper_module
                                       brunt_vaisala_freq_sqd_smth )    ! intent(out)
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         if ( brunt_vaisala_freq_sqd(i,k) > zero  ) then
           lambda0_stability(i,k) = lambda0_stability_coef(i)
@@ -333,7 +336,7 @@ module advance_helper_module
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         stability_correction(i,k) = one + min( lambda0_stability(i,k) * brunt_vaisala_freq_sqd(i,k) &
                                                * Lscale_zm(i,k)**2 / em(i,k), three )
@@ -350,7 +353,7 @@ module advance_helper_module
   end subroutine calc_stability_correction
 
   !===============================================================================
-  subroutine calc_brunt_vaisala_freq_sqd(  nz, ngrdcol, gr, thlm, &
+  subroutine calc_brunt_vaisala_freq_sqd(  nzm, nzt, ngrdcol, gr, thlm, &
                                            exner, rtm, rcm, p_in_Pa, thvm, &
                                            ice_supersat_frac, &
                                            saturation_formula, &
@@ -387,9 +390,9 @@ module advance_helper_module
         T0 ! Variable!
 
     use grid_class, only: &
-        grid, &     ! Type
-        ddzt, &     ! Procedure(s)
-        zt2zm, &
+        grid,     & ! Type
+        ddzt,     & ! Procedure(s)
+        zt2zm,    &
         zm2zt2zm
 
     use T_in_K_module, only: &
@@ -402,18 +405,19 @@ module advance_helper_module
 
     !---------------------------- Input Variables ----------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      thlm,    &  ! th_l (thermo. levels)              [K]
-      exner,   &  ! Exner function                     [-]
-      rtm,     &  ! total water mixing ratio, r_t      [kg/kg]
-      rcm,     &  ! cloud water mixing ratio, r_c      [kg/kg]
-      p_in_Pa, &  ! Air pressure                       [Pa]
-      thvm,    &  ! Virtual potential temperature      [K]
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      thlm,              &  ! th_l (thermo. levels)              [K]
+      exner,             &  ! Exner function                     [-]
+      rtm,               &  ! total water mixing ratio, r_t      [kg/kg]
+      rcm,               &  ! cloud water mixing ratio, r_c      [kg/kg]
+      p_in_Pa,           &  ! Air pressure                       [Pa]
+      thvm,              &  ! Virtual potential temperature      [K]
       ice_supersat_frac
 
     integer, intent(in) :: &
@@ -436,17 +440,21 @@ module advance_helper_module
                                     ! cloud fraction in the mixed Brunt Vaisala frequency
 
     !---------------------------- Output Variables ----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      brunt_vaisala_freq_sqd,       & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
+      brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
       brunt_vaisala_freq_sqd_mixed, &
       brunt_vaisala_freq_sqd_dry,   &
       brunt_vaisala_freq_sqd_moist, &
       brunt_vaisala_freq_sqd_smth
 
     !---------------------------- Local Variables ----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, tmp_calc, &
-      ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, ice_supersat_frac_zm
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      T_in_K, rsat, thm
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      T_in_K_zm, rsat_zm, thm_zm, thvm_zm, ice_supersat_frac_zm, &
+      ddzt_thlm, tmp_calc, ddzt_thm, ddzt_rsat, ddzt_rtm, ddzt_thvm, &
+      brunt_vaisala_freq_clipped
 
     logical, parameter :: l_smooth_min_max = .false. ! whether to apply smooth min and max function
 
@@ -455,11 +463,6 @@ module advance_helper_module
     ! for a plot on how output behaves with varying min_max_smth_mag
     real( kind = core_rknd ), parameter :: &
       min_max_smth_mag = 1.0e-9_core_rknd
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      stat_dry, stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, &
-      stat_dry_virtual, stat_dry_virtual_zm,  ddzt_rtm_zm, &
-      brunt_vaisala_freq_clipped
 
     integer :: i, k
 
@@ -471,23 +474,21 @@ module advance_helper_module
     !$acc               brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
     !$acc               brunt_vaisala_freq_sqd_smth ) &
     !$acc       create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
-    !$acc               ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, stat_dry, &
-    !$acc               stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, stat_dry_virtual, &
-    !$acc               stat_dry_virtual_zm, ddzt_rtm_zm, ice_supersat_frac_zm, &
+    !$acc               ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, ice_supersat_frac_zm, &
     !$acc               brunt_vaisala_freq_clipped )
 
     !$acc enter data if( l_smooth_min_max ) &
     !$acc            create( tmp_calc )
 
-    ddzt_thlm = ddzt( nz, ngrdcol, gr, thlm )
-    thvm_zm   = zt2zm( nz, ngrdcol, gr, thvm, zero_threshold )
-    ddzt_thvm = ddzt( nz, ngrdcol, gr, thvm )
+    ddzt_thlm = ddzt( nzm, nzt, ngrdcol, gr, thlm )
+    thvm_zm = zt2zm( nzm, nzt, ngrdcol, gr, thvm, zero_threshold )
+    ddzt_thvm = ddzt( nzm, nzt, ngrdcol, gr, thvm )
 
     ! Dry Brunt-Vaisala frequency
     if ( l_use_thvm_in_bv_freq ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           brunt_vaisala_freq_sqd(i,k) = ( grav / thvm_zm(i,k) ) * ddzt_thvm(i,k)
         end do
@@ -497,7 +498,7 @@ module advance_helper_module
     else
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           brunt_vaisala_freq_sqd(i,k) = ( grav / T0 ) * ddzt_thlm(i,k)
         end do
@@ -506,50 +507,26 @@ module advance_helper_module
 
     end if
 
-    T_in_K    = thlm2T_in_K( nz, ngrdcol, thlm, exner, rcm )
-    T_in_K_zm = zt2zm( nz, ngrdcol, gr, T_in_K, zero_threshold )
-    rsat      = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, T_in_K, saturation_formula )
-    rsat_zm   = zt2zm( nz, ngrdcol, gr, rsat, zero_threshold )
-    ddzt_rsat = ddzt( nz, ngrdcol, gr, rsat )
+    T_in_K = thlm2T_in_K( nzt, ngrdcol, thlm, exner, rcm )
+    T_in_K_zm = zt2zm( nzm, nzt, ngrdcol, gr, T_in_K, zero_threshold )
+    rsat = sat_mixrat_liq( nzt, ngrdcol, p_in_Pa, T_in_K, saturation_formula )
+    rsat_zm = zt2zm( nzm, nzt, ngrdcol, gr, rsat, zero_threshold )
+    ddzt_rsat = ddzt( nzm, nzt, ngrdcol, gr, rsat )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzt
       do i = 1, ngrdcol
         thm(i,k) = thlm(i,k) + Lv/(Cp*exner(i,k)) * rcm(i,k)
       end do
     end do
     !$acc end parallel loop
 
-    thm_zm   = zt2zm( nz, ngrdcol, gr, thm, zero_threshold )
-    ddzt_thm = ddzt( nz, ngrdcol, gr, thm )
-    ddzt_rtm = ddzt( nz, ngrdcol, gr, rtm )
+    thm_zm = zt2zm( nzm, nzt, ngrdcol, gr, thm, zero_threshold )
+    ddzt_thm = ddzt( nzm, nzt, ngrdcol, gr, thm )
+    ddzt_rtm = ddzt( nzm, nzt, ngrdcol, gr, rtm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        stat_dry(i,k)  =  Cp * T_in_K(i,k) + grav * gr%zt(i,k)
-        stat_liq(i,k)  =  stat_dry(i,k) - Lv * rcm(i,k)
-      end do
-    end do
-    !$acc end parallel loop
-
-    ddzt_stat_liq    = ddzt( nz, ngrdcol, gr, stat_liq )
-    ddzt_stat_liq_zm = zt2zm( nz, ngrdcol, gr, ddzt_stat_liq)
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
-      do i = 1, ngrdcol
-        stat_dry_virtual(i,k) = stat_dry(i,k) + Cp * T_in_K(i,k) &
-                                                *( 0.608 * ( rtm(i,k) - rcm(i,k) )- rcm(i,k) )
-      end do
-    end do
-    !$acc end parallel loop
-
-    stat_dry_virtual_zm = zt2zm( nz, ngrdcol, gr, stat_dry_virtual, zero_threshold )
-    ddzt_rtm_zm         = zt2zm( nz, ngrdcol, gr, ddzt_rtm )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         brunt_vaisala_freq_sqd_dry(i,k) = ( grav / thm_zm(i,k) )* ddzt_thm(i,k)
       end do
@@ -557,7 +534,7 @@ module advance_helper_module
     !$acc end parallel loop
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
         ! Klemp (1982)
@@ -567,13 +544,13 @@ module advance_helper_module
           ( (one/thm_zm(i,k) * ddzt_thm(i,k)) + (Lv/(Cp*T_in_K_zm(i,k)))*ddzt_rsat(i,k)) - &
           ddzt_rtm(i,k) )
       end do
-    end do ! k=1, gr%nz
+    end do ! k=1, nzm
     !$acc end parallel loop
 
-    ice_supersat_frac_zm = zt2zm( nz, ngrdcol, gr, ice_supersat_frac, zero_threshold )
+    ice_supersat_frac_zm = zt2zm( nzm, nzt, ngrdcol, gr, ice_supersat_frac, zero_threshold )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
          brunt_vaisala_freq_sqd_mixed(i,k) = &
              brunt_vaisala_freq_sqd_moist(i,k) + &
@@ -589,31 +566,31 @@ module advance_helper_module
     if ( l_modify_limiters_for_cnvg_test ) then
 
       !Remove the limiters to improve the solution convergence
-      brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz,ngrdcol,gr, brunt_vaisala_freq_sqd_mixed )
+      brunt_vaisala_freq_sqd_smth = zm2zt2zm( nzm, nzt, ngrdcol, gr, brunt_vaisala_freq_sqd_mixed )
 
     else  ! default method
 
       if ( l_smooth_min_max ) then
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzm
           do i = 1, ngrdcol
             tmp_calc(i,k) = 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3
           end do
         end do
         !$acc end parallel loop
 
-        brunt_vaisala_freq_clipped = smooth_min( nz, ngrdcol, &
+        brunt_vaisala_freq_clipped = smooth_min( nzm, ngrdcol, &
                                                  brunt_vaisala_freq_sqd_mixed, &
                                                  tmp_calc, &
                                                  1.0e-4_core_rknd * min_max_smth_mag)
 
-        brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz, ngrdcol, gr, brunt_vaisala_freq_clipped )
+        brunt_vaisala_freq_sqd_smth = zm2zt2zm( nzm, nzt, ngrdcol, gr, brunt_vaisala_freq_clipped )
 
       else  ! l_smooth_min_max
 
         !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nz
+        do k = 1, nzm
           do i = 1, ngrdcol
             brunt_vaisala_freq_clipped(i,k) = min( brunt_vaisala_freq_sqd_mixed(i,k), &
                                        1.e8_core_rknd * abs(brunt_vaisala_freq_sqd_mixed(i,k))**3)
@@ -621,7 +598,7 @@ module advance_helper_module
         end do
         !$acc end parallel loop
 
-        brunt_vaisala_freq_sqd_smth = zm2zt2zm( nz, ngrdcol, gr, brunt_vaisala_freq_clipped )
+        brunt_vaisala_freq_sqd_smth = zm2zt2zm( nzm, nzt, ngrdcol, gr, brunt_vaisala_freq_clipped )
 
       end if
 
@@ -643,8 +620,7 @@ module advance_helper_module
   end subroutine calc_brunt_vaisala_freq_sqd
 
 !===============================================================================
-
-  subroutine compute_Cx_fnc_Richardson( nz, ngrdcol, gr, &
+  subroutine compute_Cx_fnc_Richardson( nzm, nzt, ngrdcol, gr, &
                                         thlm, um, vm, Lscale, exner, rtm, &
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
                                         ice_supersat_frac, &
@@ -717,12 +693,13 @@ module advance_helper_module
 
     !------------------------------ Input Variables ------------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       thlm,      & ! th_l (liquid water potential temperature)      [K]
       um,        & ! u mean wind component (thermodynamic levels)   [m/s]
       vm,        & ! v mean wind component (thermodynamic levels)   [m/s]
@@ -732,8 +709,10 @@ module advance_helper_module
       rcm,       & ! cloud water mixing ratio, r_c                  [kg/kg]
       p_in_Pa,   & ! Air pressure                                   [Pa]
       thvm,      & ! Virtual potential temperature                  [K]
-      rho_ds_zm, &  ! Dry static density on momentum levels          [kg/m^3]
       ice_supersat_frac  ! ice cloud fraction
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      rho_ds_zm    ! Dry static density on momentum levels          [kg/m^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -762,11 +741,11 @@ module advance_helper_module
       stats_zm
 
     !------------------------------ Output Variable ------------------------------
-    real( kind = core_rknd), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd), dimension(ngrdcol,nzm), intent(out) :: &
       Cx_fnc_Richardson
 
     !------------------------------ Local Variables ------------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       brunt_vaisala_freq_sqd, &
       brunt_vaisala_freq_sqd_mixed,&
       brunt_vaisala_freq_sqd_dry, &
@@ -806,7 +785,7 @@ module advance_helper_module
     !$acc                    Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                    fnc_Richardson_clipped, fnc_Richardson_smooth )
 
-    call calc_brunt_vaisala_freq_sqd( nz, ngrdcol, gr, thlm, &          ! intent(in)
+    call calc_brunt_vaisala_freq_sqd( nzm, nzt, ngrdcol, gr, thlm, &    ! intent(in)
                                       exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &              ! intent(in)
                                       saturation_formula, &             ! intent(in)
@@ -822,14 +801,14 @@ module advance_helper_module
 
     invrs_num_div_thresh = one / Richardson_num_divisor_threshold
 
-    Lscale_zm = zt2zm( nz, ngrdcol, gr, Lscale, zero_threshold )
+    Lscale_zm = zt2zm( nzm, nzt, ngrdcol, gr, Lscale, zero_threshold )
 
     ! Calculate shear_sqd
-    ddzt_um = ddzt( nz, ngrdcol, gr, um )
-    ddzt_vm = ddzt( nz, ngrdcol, gr, vm )
+    ddzt_um = ddzt( nzm, nzt, ngrdcol, gr, um )
+    ddzt_vm = ddzt( nzm, nzt, ngrdcol, gr, vm )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         shear_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
       end do
@@ -847,7 +826,7 @@ module advance_helper_module
     if ( l_use_shear_Richardson ) then
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed(i,k) ) &
                        / max( shear_sqd(i,k), 1.0e-7_core_rknd )
@@ -857,7 +836,7 @@ module advance_helper_module
 
     else
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           Ri_zm(i,k) = brunt_vaisala_freq_sqd(i,k) * invrs_num_div_thresh
         end do
@@ -871,7 +850,7 @@ module advance_helper_module
     if ( l_modify_limiters_for_cnvg_test ) then 
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
 
           Richardson_num_max = clubb_params(i,iRichardson_num_max)
@@ -884,17 +863,17 @@ module advance_helper_module
         end do
       end do
 
-      fnc_Richardson_clipped = smooth_min( nz, ngrdcol, one, &
+      fnc_Richardson_clipped = smooth_min( nzm, ngrdcol, one, &
                                            fnc_Richardson, &
                                            min_max_smth_mag )
 
-      fnc_Richardson_smooth = smooth_max( nz, ngrdcol, zero, &
+      fnc_Richardson_smooth = smooth_max( nzm, ngrdcol, zero, &
                                           fnc_Richardson_clipped, &
                                           min_max_smth_mag )
 
       ! use smoothed max amd min to achive smoothed profile and avoid discontinuities 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
 
           Cx_max = clubb_params(i,iCx_max)
@@ -904,12 +883,12 @@ module advance_helper_module
         end do
       end do
 
-      Cx_fnc_Richardson = zm2zt2zm( nz, ngrdcol, gr, Cx_fnc_interp )
+      Cx_fnc_Richardson = zm2zt2zm( nzm, nzt, ngrdcol, gr, Cx_fnc_interp )
 
     else ! default method 
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol  
 
           Richardson_num_max = clubb_params(i,iRichardson_num_max)
@@ -929,12 +908,12 @@ module advance_helper_module
     end if 
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
-      Cx_fnc_Richardson = Lscale_width_vert_avg( nz, ngrdcol, gr, smth_type, &
+      Cx_fnc_Richardson = Lscale_width_vert_avg( nzm, ngrdcol, gr, smth_type, &
                                                  Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
                                                  Cx_fnc_Richardson_below_ground_value )
 
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           Cx_fnc_Richardson(i,k) = Cx_fnc_Richardson_avg(i,k)
         end do
@@ -945,7 +924,7 @@ module advance_helper_module
     ! On some compilers, roundoff error can result in Cx_fnc_Richardson being
     ! slightly outside the range [0,1]. Thus, it is clipped here.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         Cx_fnc_Richardson(i,k) = max( zero, min( one, Cx_fnc_Richardson(i,k) ) )
       end do
@@ -965,7 +944,7 @@ module advance_helper_module
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------
-  function Lscale_width_vert_avg( nz, ngrdcol, gr, smth_type, &
+  function Lscale_width_vert_avg( nzm, ngrdcol, gr, smth_type, &
                                   var_profile, Lscale_zm, rho_ds_zm, &
                                   var_below_ground_value )&
   result (Lscale_width_vert_avg_output)
@@ -989,13 +968,13 @@ module advance_helper_module
 
     !-------------------------- Input Variables --------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
       ngrdcol, &
       smth_type
       
     type (grid), target, intent(in) :: gr
     
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       var_profile, &      ! Profile on momentum levels
       Lscale_zm, &        ! Lscale on momentum levels
       rho_ds_zm           ! Dry static energy on momentum levels!
@@ -1004,7 +983,7 @@ module advance_helper_module
       var_below_ground_value ! Value to use below ground
 
     !-------------------------- Result Variable --------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       Lscale_width_vert_avg_output ! Vertically averaged profile (on momentum levels)
 
     !-------------------------- Local Variables --------------------------
@@ -1014,7 +993,7 @@ module advance_helper_module
         k_avg_upper, &
         k_avg
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       one_half_avg_width, &
       numer_terms, &
       denom_terms
@@ -1032,14 +1011,14 @@ module advance_helper_module
 
     if ( smth_type == 1 ) then
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           one_half_avg_width(i,k) = max( Lscale_zm(i,k), 500.0_core_rknd )
         end do
       end do
     else if (smth_type == 2 ) then
       !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nz
+      do k = 1, nzm
         do i = 1, ngrdcol
           one_half_avg_width(i,k) = 60.0_core_rknd
         end do
@@ -1048,7 +1027,7 @@ module advance_helper_module
 
     ! Pre calculate numerator and denominator terms
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         numer_terms(i,k) = rho_ds_zm(i,k) * gr%dzm(i,k) * var_profile(i,k)
         denom_terms(i,k) = rho_ds_zm(i,k) * gr%dzm(i,k)
@@ -1057,7 +1036,7 @@ module advance_helper_module
 
     ! For every grid level
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
 
         !-----------------------------------------------------------------------
@@ -1077,7 +1056,7 @@ module advance_helper_module
         !-----------------------------------------------------------------------
 
         ! Determine if k_avg_upper needs to increment
-        do k_avg_upper = k, nz-1
+        do k_avg_upper = k, nzm-1
           if ( gr%zm(i,k_avg_upper+1) - gr%zm(i,k) > one_half_avg_width(i,k) ) then
             exit
           end if
@@ -1135,7 +1114,7 @@ module advance_helper_module
   end function Lscale_width_vert_avg
 
  !=============================================================================
-  subroutine wp2_term_splat_lhs( nz, ngrdcol, gr, C_wp2_splat, &
+  subroutine wp2_term_splat_lhs( nzm, nzt, ngrdcol, gr, C_wp2_splat, &
                                  brunt_vaisala_freq_sqd_splat, &
                                  lhs_splat_wp2 )
 
@@ -1159,24 +1138,25 @@ module advance_helper_module
 
     ! --------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: &
       gr
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       C_wp2_splat    ! Model parameter C_wp2_splat             [ -]
 
     ! --------------------- Output Variable ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       lhs_splat_wp2    ! LHS coefficient of wp2 splatting term  [1/s]
 
     ! --------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       brunt_vaisala_freq_splat_clipped, &
       brunt_vaisala_freq_splat_smooth
 
@@ -1187,7 +1167,7 @@ module advance_helper_module
     !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         brunt_vaisala_freq_splat_clipped(i,k) &
                 = sqrt( max( zero, brunt_vaisala_freq_sqd_splat(i,k) ) )
@@ -1195,11 +1175,11 @@ module advance_helper_module
     end do
     !$acc end parallel loop
     
-    brunt_vaisala_freq_splat_smooth = zm2zt2zm( nz, ngrdcol, gr, &
+    brunt_vaisala_freq_splat_smooth = zm2zt2zm( nzm, nzt, ngrdcol, gr, &
                                                 brunt_vaisala_freq_splat_clipped )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         lhs_splat_wp2(i,k) = + C_wp2_splat(i) * brunt_vaisala_freq_splat_smooth(i,k)
       end do
@@ -1213,7 +1193,7 @@ module advance_helper_module
   end subroutine wp2_term_splat_lhs
 
  !=============================================================================
-  subroutine wp3_term_splat_lhs( nz, ngrdcol, gr, C_wp2_splat, &
+  subroutine wp3_term_splat_lhs( nzm, nzt, ngrdcol, gr, C_wp2_splat, &
                                  brunt_vaisala_freq_sqd_splat, &
                                  lhs_splat_wp3 )
 
@@ -1239,26 +1219,29 @@ module advance_helper_module
 
     ! --------------------- Input Variables ---------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(in) :: &
       gr
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       brunt_vaisala_freq_sqd_splat  ! Inverse time-scale tau at momentum levels  [1/s^2]
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       C_wp2_splat    ! Model parameter C_wp2_splat              [-]
 
     ! --------------------- Output Variable ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       lhs_splat_wp3    ! LHS coefficient of wp3 splatting term [1/s]
 
     ! --------------------- Local Variables ---------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
-      brunt_vaisala_freq_splat_clipped, &
-      brunt_vaisala_freq_splat_smooth
+    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
+      brunt_vaisala_freq_splat_clipped
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
+      brunt_vaisala_freq_splat_clipped_zt
 
     integer :: i, k
 
@@ -1267,7 +1250,7 @@ module advance_helper_module
     !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzm
       do i = 1, ngrdcol
         brunt_vaisala_freq_splat_clipped(i,k) &
                 = sqrt( max( zero, brunt_vaisala_freq_sqd_splat(i,k) ) )
@@ -1275,14 +1258,14 @@ module advance_helper_module
     end do
     !$acc end parallel loop
     
-    brunt_vaisala_freq_splat_smooth = zm2zt( nz, ngrdcol, gr, &
-                                             brunt_vaisala_freq_splat_clipped )
+    brunt_vaisala_freq_splat_clipped_zt = zm2zt( nzm, nzt, ngrdcol, gr, &
+                                                 brunt_vaisala_freq_splat_clipped )
 
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzt
       do i = 1, ngrdcol
         lhs_splat_wp3(i,k) = + one_half * three * C_wp2_splat(i) &
-                               * brunt_vaisala_freq_splat_smooth(i,k)
+                               * brunt_vaisala_freq_splat_clipped_zt(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -1842,7 +1825,7 @@ module advance_helper_module
       do i = 1, ngrdcol
 
         if ( input(i,k) < -smth_range ) then 
-          smth_output(i,k) = zero
+           smth_output(i,k) = zero
         elseif ( input(i,k) > smth_range ) then
            smth_output(i,k) = one
         else 
@@ -1869,7 +1852,7 @@ module advance_helper_module
                            xpwp )
 
     ! Description:
-    ! Compute x'w' from x<k>, x<k+1>, Kh and invrs_dzm
+    ! Compute x'w' from x<k>, x<k-1>, Km_zm and invrs_dzm
 
     ! References:
     ! None
@@ -1879,37 +1862,39 @@ module advance_helper_module
         core_rknd ! Variable(s)
         
     use grid_class, only: &
-      grid
+        grid
 
     implicit none
 
     ! ----------------------- Input variables -----------------------
     type (grid), target, intent(in) :: gr
       
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      Km_zm,     & ! Eddy diff. (k momentum level)                 [m^2/s]
-      xm           ! x (k thermo level)                            [units vary]
+    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
+      Km_zm    ! Eddy diff. (k momentum level)                 [m^2/s]
+
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+      xm       ! x (k thermo level)                            [units vary]
       
     ! ----------------------- Output variable -----------------------
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      xpwp ! x'w'   [(units vary)(m/s)]
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
+      xpwp     ! x'w'   [(units vary)(m/s)]
       
     integer :: k
 
     ! ----------------------- Begin Code -----------------------
 
     ! Solve for x'w' at all intermediate model levels.
-    do k = 1, gr%nz-1
-      xpwp(k) = Km_zm(k) * gr%invrs_dzm(1,k) * ( xm(k+1) - xm(k) )
+    do k = 2, gr%nzm-1
+       xpwp(k) = Km_zm(k) * gr%invrs_dzm(1,k) * ( xm(k) - xm(k-1) )
     end do
 
     return
   end subroutine calc_xpwp_1D
   
   !===============================================================================
-  subroutine calc_xpwp_2D( nz, ngrdcol, gr, &
-                        Km_zm, xm, &
-                        xpwp )
+  subroutine calc_xpwp_2D( nzm, nzt, ngrdcol, gr, &
+                           Km_zm, xm, &
+                           xpwp )
 
     ! Description:
     ! Compute x'w' from x<k>, x<k+1>, Kh and invrs_dzm
@@ -1922,23 +1907,26 @@ module advance_helper_module
         core_rknd ! Variable(s)
         
     use grid_class, only: &
-      grid
+        grid
 
     implicit none
 
     ! ----------------------- Input variables -----------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
       
     type (grid), target, intent(in) :: gr
       
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      Km_zm,     & ! Eddy diff. (k momentum level)                 [m^2/s]
-      xm           ! x (k thermo level)                            [units vary]
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      Km_zm    ! Eddy diff. (k momentum level)                 [m^2/s]
+
+      real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+      xm       ! x (k thermo level)                            [units vary]
       
     ! ----------------------- Output variable -----------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       xpwp ! x'w'   [(units vary)(m/s)]
       
     integer :: i, k
@@ -1950,10 +1938,10 @@ module advance_helper_module
 
     ! Solve for x'w' at all intermediate model levels.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz-1
-      do i = 1, ngrdcol
-        xpwp(i,k) = Km_zm(i,k) * gr%invrs_dzm(i,k) * ( xm(i,k+1) - xm(i,k) )
-      end do
+    do k = 2, nzm-1
+       do i = 1, ngrdcol
+          xpwp(i,k) = Km_zm(i,k) * gr%invrs_dzm(i,k) * ( xm(i,k) - xm(i,k-1) )
+       end do
     end do
     !$acc end parallel loop
 

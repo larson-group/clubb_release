@@ -191,7 +191,7 @@ module Skx_module
   end subroutine LG_2005_ansatz
 
   !-----------------------------------------------------------------------------
-  subroutine xp3_LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
+  subroutine xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
                                  xp2_zt, sigma_sqd_w_zt, &
                                  clubb_params, x_tol, &
                                  xp3 )
@@ -202,25 +202,22 @@ module Skx_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
     use parameter_indices, only: &
-      nparams,                 & ! Variable(s)
-      iSkw_denom_coef,         &
-      ibeta
+        nparams,                 & ! Variable(s)
+        iSkw_denom_coef,         &
+        ibeta
 
     implicit none
     
     !-------------------------- Input Variables--------------------------
     integer, intent(in) :: &
-      nz, &
+      nzt, &
       ngrdcol
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       Skw_zt,         & ! Skewness of w on thermodynamic levels   [-]
       wpxp_zt,        & ! Flux of x  (interp. to t-levs.)         [m/s(x units)]
       wp2_zt,         & ! Variance of w (interp. to t-levs.)      [m^2/s^2]
@@ -234,11 +231,11 @@ module Skx_module
       x_tol             ! Minimum tolerance of x                  [(x units)]
 
     !-------------------------- Return Variable --------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       xp3    ! <x'^3> (thermodynamic levels)    [(x units)^3]
 
     !-------------------------- Local Variable --------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       Skx_zt       ! Skewness of x on thermodynamic levels    [-]
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
@@ -253,7 +250,7 @@ module Skx_module
     !$acc      copyout( xp3 )
 
     ! Calculate skewness of x using the ansatz of LG05.
-    call LG_2005_ansatz( nz, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
+    call LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wpxp_zt, wp2_zt, &
                          xp2_zt, clubb_params(:,ibeta), sigma_sqd_w_zt, x_tol, &
                          Skx_zt )
 
@@ -266,7 +263,7 @@ module Skx_module
     ! Calculate <x'^3> using the reverse of the special sensitivity reduction
     ! formula in function Skx_func above.
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzt
       do i = 1, ngrdcol
         xp3(i,k) = Skx_zt(i,k) * ( xp2_zt(i,k) + Skx_denom_tol(i) ) &
                                * sqrt( xp2_zt(i,k) + Skx_denom_tol(i) )

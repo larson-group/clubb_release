@@ -234,9 +234,6 @@ module adg1_adg2_3d_luhar_pdf
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        grid ! Type
-
     use constants_clubb, only: &
         one,       & ! Constant(s)
         w_tol_sqd, &

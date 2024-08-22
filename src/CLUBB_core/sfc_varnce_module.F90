@@ -12,7 +12,7 @@ module sfc_varnce_module
   contains
 
   !=============================================================================
-  subroutine calc_sfc_varnce( nz, ngrdcol, sclr_dim, sclr_idx, &
+  subroutine calc_sfc_varnce( nzm, nzt, ngrdcol, sclr_dim, sclr_idx, &
                               gr, dt, sfc_elevation, & 
                               upwp_sfc, vpwp_sfc, wpthlp, wprtp_sfc, & 
                               um, vm, Lscale_up, wpsclrp_sfc, & 
@@ -38,7 +38,7 @@ module sfc_varnce_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-      grid
+        grid
 
     use parameters_model, only:  & 
         T0 ! Variable(s)
@@ -108,7 +108,8 @@ module sfc_varnce_module
 
     !-------------------------- Input Variables --------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol, &
       sclr_dim
 
@@ -127,15 +128,16 @@ module sfc_varnce_module
       vpwp_sfc,         & ! Surface v momentum flux, <v'w'>|_sfc   [m^2/s^2]
       wprtp_sfc           ! Surface moisture flux, <w'rt'>|_sfc    [kg/kg m/s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  & 
       wpthlp,        & ! Surface thetal flux, <w'thl'>|_sfc     [K m/s]
-      um,            & ! Surface u wind component, <u>          [m/s]
-      vm,            & ! Surface v wind component, <v>          [m/s]
-      Lscale_up,     & ! Upward component of Lscale at surface  [m]
       lhs_splat_wp2, & 
       !wp2_splat,    & ! Tendency of <w'^2> due to splatting of eddies at zm(1) [m^2/s^3]
       tau_zm           ! Turbulent dissipation time at level zm(1)  [s]
-      
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  & 
+      um,            & ! Surface u wind component, <u>          [m/s]
+      vm,            & ! Surface v wind component, <v>          [m/s]
+      Lscale_up        ! Upward component of Lscale at surface  [m]
 
     real( kind = core_rknd ), dimension(ngrdcol,sclr_dim), intent(in) ::  & 
       wpsclrp_sfc    ! Passive scalar flux, <w'sclr'>|_sfc   [units m/s]
@@ -155,7 +157,7 @@ module sfc_varnce_module
       stats_zm
 
     !-------------------------- Output Variables --------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) ::  & 
       wp2,     & ! Surface variance of w, <w'^2>|_sfc            [m^2/s^2]
       up2,     & ! Surface variance of u, <u'^2>|_sfc            [m^2/s^2]
       vp2,     & ! Surface variance of v, <v'^2>|_sfc            [m^2/s^2]
@@ -163,7 +165,7 @@ module sfc_varnce_module
       rtp2,    & ! Surface variance of rt, <rt'^2>|_sfc          [(kg/kg)^2]
       rtpthlp    ! Surface covariance of rt and theta-l          [kg K/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,sclr_dim), intent(inout) ::  & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim), intent(inout) ::  & 
       sclrp2,    & ! Surface variance of passive scalar            [units^2]
       sclrprtp,  & ! Surface covariance of pssv scalar and rt  [units kg/kg]
       sclrpthlp    ! Surface covariance of pssv scalar and theta-l [units K]

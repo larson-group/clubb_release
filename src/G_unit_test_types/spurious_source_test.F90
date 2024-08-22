@@ -16,7 +16,7 @@ module spurious_source_test
     !
     ! This function checks CLUBB's predictive equations for <rt> and <thl> for
     ! spurious sources and sinks.  The CLUBB code solves <rt> and <w'rt'>
-    ! together, as well as <thl> and <w'thl'> together,10 in subroutine
+    ! together, as well as <thl> and <w'thl'> together, in subroutine
     ! advance_xm_wpxp.  This function initializes profiles for a number of
     ! variables that are needed as input to that function.  It then calculates
     ! the vertical integrals of both <rt> and <thl> before the call to
@@ -48,6 +48,8 @@ module spurious_source_test
 
     use grid_class, only: grid ! Type
 
+    use grid_class, only: &
+         setup_grid
 
     use constants_clubb, only: &
         one,       & ! Variable(s)
@@ -120,11 +122,12 @@ module spurious_source_test
       sclr_tol = 0.0_core_rknd
 
     integer, parameter :: &
-      nz = 76 ! Number of vertical grid levels
-              ! Note:  this needs to match the number of grid levels calculated
-              !        in the call to setup_grid, as determined by zm_init,
-              !        zm_top, and deltaz.  Otherwise, a runtime error will
-              !        cause this test to fail.
+      nzm = 76, & ! Number of momentum vertical grid levels
+                  ! Note:  this needs to match the number of grid levels calculated
+                  !        in the call to setup_grid, as determined by zm_init,
+                  !        zm_top, and deltaz.  Otherwise, a runtime error will
+                  !        cause this test to fail.
+      nzt = nzm-1 ! Number of thermodynamic vertical grid levels
 
     real( kind = core_rknd ), parameter :: &
       sfc_elevation = zero  ! Elevation of ground level    [m AMSL]
@@ -161,41 +164,31 @@ module spurious_source_test
     ! If the CLUBB model is running by itself, but is using a stretched grid
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
-    real( kind = core_rknd ), dimension(nz) ::  & 
-      momentum_heights,      & ! Momentum level altitudes (input)      [m]
+    real( kind = core_rknd ), dimension(nzm) ::  & 
+      momentum_heights         ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), dimension(nzt) ::  & 
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
     real( kind = core_rknd ) ::  & 
       dt                 ! Timestep                                 [s]
 
-    real( kind = core_rknd ), dimension(1,nz) :: & 
+    real( kind = core_rknd ), dimension(1,nzm) :: & 
       sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
       wm_zm,           & ! w wind component on momentum levels      [m/s]
-      wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
-      Lscale,          & ! Turbulent mixing length                  [m]
       em,              & ! Turbulent Kinetic Energy (TKE)           [m^2/s^2]
       wp3_on_wp2,      & ! Smoothed wp3 / wp2 on momentum levels    [m/s]
-      wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
-      Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
       Kh_zm,           & ! Eddy diffusivity on momentum levels      [m^s/s]
       invrs_tau_C6_zm, & ! Time-scale tau on m-levs applied to C6 term  [s]
       tau_max_zm,      & ! Max. allowable eddy dissipation time scale on m-levs [s]
       Skw_zm,          & ! Skewness of w on momentum levels         [-]
-      wp2rtp,          & ! <w'^2 r_t'> (thermodynamic levels)    [m^2/s^2 kg/kg]
       rtpthvp,         & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
-      rtm_forcing,     & ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
       wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)      [(kg/kg)/s^2]
-      rtm_ref,         & ! rtm for nudging                          [kg/kg]
-      wp2thlp,         & ! <w'^2 th_l'> (thermodynamic levels)      [m^2/s^2 K]
       thlpthvp,        & ! th_l'th_v' (momentum levels)             [K^2]
-      thlm_forcing,    & ! th_l forcing (thermodynamic levels)      [K/s]
       wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)      [K/s^2]
-      thlm_ref,        & ! thlm for nudging                         [K]
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs. [m^3/kg]
-      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs. [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on moment. levs. [K]
       ! Added for clipping by Vince Larson 29 Sep 2007
       rtp2,            & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
@@ -207,74 +200,104 @@ module spurious_source_test
       varnce_w_2_zm,   & ! Variance of w (2nd PDF component)        [m^2/s^2]
       mixt_frac_zm       ! Weight of 1st PDF component (Sk_w dependent) [-]
 
+    real( kind = core_rknd ), dimension(1,nzt) :: & 
+      wm_zt,           & ! w wind component on thermodynamic levels [m/s]
+      Lscale,          & ! Turbulent mixing length                  [m]
+      wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
+      Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
+      wp2rtp,          & ! <w'^2 r_t'> (thermodynamic levels)    [m^2/s^2 kg/kg]
+      rtm_forcing,     & ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
+      rtm_ref,         & ! rtm for nudging                          [kg/kg]
+      wp2thlp,         & ! <w'^2 th_l'> (thermodynamic levels)      [m^2/s^2 K]
+      thlm_forcing,    & ! th_l forcing (thermodynamic levels)      [K/s]
+      thlm_ref,        & ! thlm for nudging                         [K]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
+
     ! Additional variables for passive scalars
-    real( kind = core_rknd ), dimension(1,nz,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(1,nzt,sclr_dim) :: & 
       wp2sclrp,      & ! <w'^2 sclr'> (thermodynamic levels)   [Units vary]
+      sclrm_forcing    ! sclrm forcing (thermodynamic levels)  [Units vary]
+
+    real( kind = core_rknd ), dimension(1,nzm,sclr_dim) :: & 
       sclrpthvp,     & ! <sclr' th_v'> (momentum levels)       [Units vary]
-      sclrm_forcing, & ! sclrm forcing (thermodynamic levels)  [Units vary]
       sclrp2           ! For clipping Vince Larson             [Units vary]
 
-    real( kind = core_rknd ), dimension(1,nz) ::  &
+    real( kind = core_rknd ), dimension(1,nzt) ::  &
       exner,             & ! Exner function                            [-]
       rcm,               & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,           & ! Air pressure                              [Pa]
       thvm,              & ! Virutal potential temperature             [K]
-      Cx_fnc_Richardson, & ! Cx_fnc computed from Richardson_num       [-]
-      ice_supersat_frac      
+      ice_supersat_frac
 
+    real( kind = core_rknd ), dimension(1,nzm) ::  &
+      Cx_fnc_Richardson    ! Cx_fnc computed from Richardson_num       [-]
 
     type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(1,nz) :: & 
+    real( kind = core_rknd ), dimension(1,nzt) :: & 
       um_forcing, & ! <u> forcing term (thermodynamic levels)      [m/s^2]
       vm_forcing, & ! <v> forcing term (thermodynamic levels)      [m/s^2]
       ug,         & ! <u> geostrophic wind (thermodynamic levels)  [m/s]
-      vg,         & ! <v> geostrophic wind (thermodynamic levels)  [m/s]
+      vg            ! <v> geostrophic wind (thermodynamic levels)  [m/s]
+
+    real( kind = core_rknd ), dimension(1,nzm) :: & 
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
      real( kind = core_rknd ), dimension(1) ::  &
       fcor          ! Coriolis parameter                           [s^-1]
 
-    real( kind = core_rknd ), dimension(1,nz) :: & 
+    real( kind = core_rknd ), dimension(1,nzt) :: & 
       um_ref, & ! Reference u wind component for nudging       [m/s]
-      vm_ref, & ! Reference v wind component for nudging       [m/s]
+      vm_ref    ! Reference v wind component for nudging       [m/s]
+
+    real( kind = core_rknd ), dimension(1,nzm) :: & 
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(1,nz) ::  & 
+    real( kind = core_rknd ), dimension(1,nzt) ::  & 
       rtm,    & ! r_t  (total water mixing ratio)           [kg/kg]
+      thlm      ! th_l (liquid water potential temperature) [K]
+
+    real( kind = core_rknd ), dimension(1,nzm) ::  & 
       wprtp,  & ! w'r_t'                                    [(kg/kg) m/s]
-      thlm,   & ! th_l (liquid water potential temperature) [K]
       wpthlp    ! w'th_l'                                   [K m/s]
 
     type (stats_metadata_type) :: &
       stats_metadata
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(1,nz,sclr_dim) ::  & 
-      sclrm, wpsclrp !                                     [Units vary]
+    real( kind = core_rknd ), dimension(1,nzt,sclr_dim) ::  & 
+      sclrm   !                                     [Units vary]
+
+    real( kind = core_rknd ), dimension(1,nzm,sclr_dim) ::  & 
+      wpsclrp !                                     [Units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(1,nz) ::  & 
-      um,    & ! <u>:  mean west-east horiz. velocity (thermo. levs.)   [m/s]
-      upwp,  & ! <u'w'>:  momentum flux (momentum levels)               [m^2/s^2]
-      vm,    & ! <v>:  mean south-north horiz. velocity (thermo. levs.) [m/s]
-      vpwp,  & ! <v'w'>:  momentum flux (momentum levels)               [m^2/s^2]
-      uprcp, & ! < u' r_c' >              [(m kg)/(s kg)]
-      vprcp, & ! < v' r_c' >              [(m kg)/(s kg)]
-      rc_coef    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
+    real( kind = core_rknd ), dimension(1,nzt) ::  & 
+      um,         & ! <u>:  mean west-east horiz. velocity (thermo. levs.)   [m/s]
+      vm            ! <v>:  mean south-north horiz. velocity (thermo. levs.) [m/s]
+
+    real( kind = core_rknd ), dimension(1,nzm) ::  & 
+      upwp,       & ! <u'w'>:  momentum flux (momentum levels)               [m^2/s^2]
+      vpwp,       & ! <v'w'>:  momentum flux (momentum levels)               [m^2/s^2]
+      uprcp,      & ! < u' r_c' >                                            [(m kg)/(s kg)]
+      vprcp,      & ! < v' r_c' >                                            [(m kg)/(s kg)]
+      rc_coef_zm    ! Coefficient on X'r_c' in X'th_v' equation              [K/(kg/kg)]
 
     ! Variables used to track perturbed version of winds.
-    real( kind = core_rknd ), dimension(1,nz) :: &
+    real( kind = core_rknd ), dimension(1,nzt) :: &
       um_pert,   & ! perturbed <u>       [m/s]
-      vm_pert,   & ! perturbed <v>       [m/s]
+      vm_pert      ! perturbed <v>       [m/s]
+
+    real( kind = core_rknd ), dimension(1,nzm) :: &
       upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(1,nz) :: &
+    real( kind = core_rknd ), dimension(1,nzm) :: &
       w_1_n_zm, &
       w_2_n_zm
 
@@ -624,7 +647,7 @@ module spurious_source_test
                                          l_host_applies_sfc_fluxes )
                                          
     ! Initialize pdf_implicit_coefs_terms
-    call init_pdf_implicit_coefs_terms( nz, 1, sclr_dim, &
+    call init_pdf_implicit_coefs_terms( nzt, 1, sclr_dim, &
                                         pdf_implicit_coefs_terms )
 
     write(*,*)
@@ -640,7 +663,7 @@ module spurious_source_test
     thermodynamic_heights = zero
 
     ! Set up the vertical grid.
-    call setup_grid_api( nz, sfc_elevation, l_implemented,        &
+    call setup_grid_api( nzm, sfc_elevation, l_implemented,  &
                          grid_type, deltaz, zm_init, zm_top,      &
                          momentum_heights, thermodynamic_heights, &
                          gr )
@@ -737,7 +760,7 @@ module spurious_source_test
        
 
        ! Loop over all momentum levels.
-       do k = 1, gr%nz, 1
+       do k = 1, gr%nzm, 1
 
           i = 1
 
@@ -826,7 +849,7 @@ module spurious_source_test
        enddo ! k = 1, gr%nz, 1
 
        ! Loop over all thermodynamic levels.
-       do k = 2, gr%nz, 1
+       do k = 1, gr%nzt, 1
 
           i = 1
 
@@ -876,26 +899,16 @@ module spurious_source_test
 
        enddo ! k = 1, gr%nz, 1
 
-       ! Set the values of thermodynamic level variables below the model
-       ! surface (thermodynamic level k = 1).
-       Lscale(1,1) = Lscale(1,2)
-       wp2rtp(1,1) = wp2rtp(1,2)
-       wp2thlp(1,1) = wp2thlp(1,2)
-       rcm(1,1) = rcm(1,2)
-       p_in_Pa(1,1) = p_in_Pa(1,2)
-       rtm(1,1) = rtm(1,2)
-       thlm(1,1) = thlm(1,2)
-
        ! The upper boundary conditions on <w'x'> must be set to 0 to match what
        ! is found in advance_xm_wpxp.
-       wprtp(1,gr%nz) = zero
-       wpthlp(1,gr%nz) = zero
+       wprtp(1,gr%nzm) = zero
+       wpthlp(1,gr%nzm) = zero
 
        ! Boundary conditions on wm.
        wm_zm(1,1) = zero
        wm_zm(1,2) = zero
-       wm_zm(1,gr%nz-1) = zero
-       wm_zm(1,gr%nz) = zero
+       wm_zm(1,gr%nzm-1) = zero
+       wm_zm(1,gr%nzm) = zero
 
        ! Overwriting the vertical profile of wm_zm to have a value of 0
        ! everywhere.  This is being done because the mean advection term does
@@ -907,9 +920,7 @@ module spurious_source_test
 
        ! Interpolate fields set on momentum levels to thermodynamic levels.
        wm_zt(1,:) = zm2zt( gr, wm_zm(1,:) )
-       wm_zt(1,1) = zero
        wp3_on_wp2_zt(1,:) = zm2zt( gr, wp3_on_wp2(1,:) )
-       wp3_on_wp2_zt(1,1) = zero
        Kh_zt(1,:) = zm2zt( gr, Kh_zm(1,:) )
        rho_ds_zt(1,:) = zm2zt( gr, rho_ds_zm(1,:) )
 
@@ -954,14 +965,14 @@ module spurious_source_test
        ! Below I assume that the buoy term in the upwp eqn doesn't matter:
        uprcp(1,:) = zero
        vprcp(1,:) = zero
-       rc_coef(1,:) = one
+       rc_coef_zm(1,:) = one
 
        ! Calculate the value of em.
        em(1,:) = one_half * ( wp2(1,:) + up2(1,:) + vp2(1,:) )
 
        ! Calculate the PDF parameters on momentum levels (w_1_zm, w_2_zm,
        ! varnce_w_1_zm, varnce_w_2_zm, and mixt_frac).
-       call ADG1_w_closure( gr%nz, 1, wm_zm, wp2, Skw_zm, sigma_sqd_w,  & ! In
+       call ADG1_w_closure( gr%nzm, 1, wm_zm, wp2, Skw_zm, sigma_sqd_w,  & ! In
                             sqrt( wp2 ), 0.999_core_rknd,               & ! In
                             w_1_zm, w_2_zm, w_1_n_zm, w_2_n_zm,         & ! Out
                             varnce_w_1_zm, varnce_w_2_zm, mixt_frac_zm )  ! Out
@@ -979,14 +990,12 @@ module spurious_source_test
        ! Calculate the vertical integrals of rtm and thlm before the call to
        ! advance_xm_wpxp so that spurious source can be calculated.
        rtm_integral_before &
-       = vertical_integral( gr%nz-1, rho_ds_zt(1,2:gr%nz), &
-                            rtm(1,2:gr%nz), gr%dzt(1,2:gr%nz) )
+       = vertical_integral( gr%nzt, rho_ds_zt, rtm, gr%dzt )
 
        thlm_integral_before &
-       = vertical_integral( gr%nz-1, rho_ds_zt(1,2:gr%nz), &
-                            thlm(1,2:gr%nz), gr%dzt(1,2:gr%nz) )
+       = vertical_integral( gr%nzt, rho_ds_zt, thlm, gr%dzt )
        
-       call advance_xm_wpxp( nz, 1, sclr_dim, sclr_tol, gr, dt, &
+       call advance_xm_wpxp( nzm, nzt, 1, sclr_dim, sclr_tol, gr, dt, &
                              sigma_sqd_w, wm_zm, wm_zt, wp2, &
                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                              invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
@@ -1002,7 +1011,7 @@ module spurious_source_test
                              pdf_implicit_coefs_terms, &
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
-                             uprcp, vprcp, rc_coef, &
+                             uprcp, vprcp, rc_coef_zm, &
                              clubb_params(1,:), nu_vert_res_dep, &
                              iiPDF_type, &
                              penta_solve_method, &
@@ -1036,17 +1045,15 @@ module spurious_source_test
                              um_pert, vm_pert, upwp_pert, vpwp_pert )
        
        ! Calculate the spurious source for rtm
-       rtm_flux_top = rho_ds_zm(1,gr%nz) * wprtp(1,gr%nz)
+       rtm_flux_top = rho_ds_zm(1,gr%nzm) * wprtp(1,gr%nzm)
 
        rtm_flux_sfc = rho_ds_zm(1,1) * wprtp(1,1)
 
        rtm_integral_after &
-       = vertical_integral( gr%nz-1, rho_ds_zt(1,2:gr%nz), &
-                            rtm(1,2:gr%nz), gr%dzt(1,2:gr%nz) )
+       = vertical_integral( gr%nzt, rho_ds_zt, rtm, gr%dzt )
 
        rtm_integral_forcing &
-       = vertical_integral( gr%nz-1, rho_ds_zt(1,2:gr%nz), &
-                            rtm_forcing(1,2:gr%nz), gr%dzt(1,2:gr%nz) )
+       = vertical_integral( gr%nzt, rho_ds_zt, rtm_forcing, gr%dzt )
 
        rtm_spur_src &
        = calculate_spurious_source( rtm_integral_after, &
@@ -1066,7 +1073,7 @@ module spurious_source_test
        write(*,*) ""
 
        ! Check if the calculated spurious source is within acceptable limits.
-       density_weighted_height = sum( rho_ds_zt(1,2:gr%nz) * gr%dzt(1,2:gr%nz) )
+       density_weighted_height = sum( rho_ds_zt * gr%dzt )
 
        if ( abs( rtm_spur_src ) &
             <= tol * ( rtm_integral_before / density_weighted_height ) ) then
@@ -1082,17 +1089,15 @@ module spurious_source_test
        write(*,*) ""
        
        ! Calculate the spurious source for thlm
-       thlm_flux_top = rho_ds_zm(1,gr%nz) * wpthlp(1,gr%nz)
+       thlm_flux_top = rho_ds_zm(1,gr%nzm) * wpthlp(1,gr%nzm)
 
        thlm_flux_sfc = rho_ds_zm(1,1) * wpthlp(1,1)
 
        thlm_integral_after &
-       = vertical_integral( gr%nz-1, rho_ds_zt(1,2:gr%nz), &
-                            thlm(1,2:gr%nz), gr%dzt(1,2:gr%nz) )
+       = vertical_integral( gr%nzt, rho_ds_zt, thlm, gr%dzt )
 
        thlm_integral_forcing &
-       = vertical_integral( gr%nz-1, rho_ds_zt(1,2:gr%nz), &
-                            thlm_forcing(1,2:gr%nz), gr%dzt(1,2:gr%nz) )
+       = vertical_integral( gr%nzt, rho_ds_zt, thlm_forcing, gr%dzt )
 
        thlm_spur_src &
        = calculate_spurious_source( thlm_integral_after, &

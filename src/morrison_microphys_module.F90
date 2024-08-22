@@ -12,7 +12,7 @@ module morrison_microphys_module
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_microphys_driver( &
-               gr, dt, nz, &
+               gr, dt, nzt, &
                hydromet_dim, hm_metadata, &
                l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, w_std_dev, &
@@ -99,7 +99,7 @@ module morrison_microphys_module
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
     integer, intent(in) :: &
-      nz, &         ! Points in the Vertical        [-]
+      nzt, &         ! Points in the Vertical        [-]
       hydromet_dim
 
     type (hm_metadata_type), intent(in) :: &
@@ -108,25 +108,25 @@ module morrison_microphys_module
     logical, intent(in) :: &
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
       rho,        & ! Density on thermo. grid            [kg/m^3]
       cloud_frac    ! Cloud fraction                     [-]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       wm_zt, &     ! Mean vertical velocity on the thermo grid     [m/s]
       w_std_dev, & ! Standard deviation of vertical vel. [m/s]
       dzq          ! Change in altitude                  [m]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       rcm,          & ! Cloud water mixing ratio                  [kg/kg]
       Ncm,          & ! Grid mean value for cloud droplet conc.    [#/kg]
-      chi,     & ! The variable 's' from Mellor              [kg/kg]
+      chi,          & ! The variable 's' from Mellor              [kg/kg]
       rvm             ! Vapor water mixing ratio                  [kg/kg]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     integer, intent(in) :: &
@@ -136,14 +136,14 @@ module morrison_microphys_module
       stats_metadata
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel_zt ! Hydrometeor sedimentation velocity [m/s]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       Ncm_mc    ! Cloud droplet concentration time tendency    [num/kg/s]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
@@ -154,15 +154,15 @@ module morrison_microphys_module
 
     ! Local Variables
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       rrm_auto,     &  ! Autoconversion rate                 [kg/kg/s]
       rrm_accr,     &  ! Accretion rate                      [kg/kg/s]
       rrm_evap         ! Rain evaporation rate               [kg/kg/s]
 
-    real, dimension(nz) :: & 
+    real, dimension(nzt) :: & 
       effc, effi, effg, effs, effr ! Effective droplet radii [μ]
 
-    real, dimension(nz) :: & 
+    real, dimension(nzt) :: & 
       T_in_K,           & ! Temperature                                      [K]
       T_in_K_mc,        & ! Temperature tendency                           [K/s]
       rcm_r4,           & ! Temporary array for cloud water mixing ratio [kg/kg]
@@ -180,7 +180,7 @@ module morrison_microphys_module
     ! In the comments below, by "adds to" we mean that if the quantity is
     ! positive, it adds positively to the prognostic variable, but if the
     ! quantity is negative, it subtracts from the prognostic variable.
-    real, dimension(nz) :: &
+    real, dimension(nzt) :: &
       PSMLT,  & ! Freezing of rain to form snow.
                 !    Adds to rsm, subtracts from rrm [kg/kg/s]
       EVPMS,  & ! Evaporation of melted snow.
@@ -244,7 +244,7 @@ module morrison_microphys_module
       EPRDG     ! Negative of sublimation of graupel.
                 !    Adds to rgm, subtracts from rvm [kg/kg/s]
 
-    real, dimension(nz) :: &
+    real, dimension(nzt) :: &
       NGSTEN, & ! Graupel sedimentation tendency [#/kg/s]
       NRSTEN, & ! Rain sedimentation tendency [#/kg/s]
       NISTEN, & ! Cloud ice sedimentation tendency [#/kg/s]
@@ -278,7 +278,7 @@ module morrison_microphys_module
       PRC,   &  ! Autoconversion. Adds to rrm, subtracts from rcm [kg/kg/s]
       PRE       ! Rain evaporation. Subtracts from rrm [kg/kg/s]              
           
-    real, dimension(nz) :: &
+    real, dimension(nzt) :: &
       PCC, &    ! Saturation adjustment 
                 !    Adds to rcm, substracts from rvm [kg/kg/s]
       NNUCCC, & ! Contact freezing of cloud drops
@@ -320,7 +320,7 @@ module morrison_microphys_module
       NS_INST, & ! Change in snow number concentration due to instantaneous processes
       NG_INST    ! Change in graupel number concentration due to instantaneous processes
 
-    real( kind = core_rknd ), dimension(nz) :: & ! Temporary variables 
+    real( kind = core_rknd ), dimension(nzt) :: & ! Temporary variables 
       rrm,    & ! Mean rain water mixing ratio            [kg/kg]
       rim,     & ! Mean ice mixing ratio                   [kg/kg]
       rsm,    & ! Mean snow mixing ratio                  [kg/kg]
@@ -328,11 +328,11 @@ module morrison_microphys_module
 
     real :: Morr_snow_rate, Morr_precip_rate
 
-    real, dimension(nz,hydromet_dim) :: &
+    real, dimension(nzt,hydromet_dim) :: &
       hydromet_r4,    & ! Temporary variable
       hydromet_mc_r4
 
-    real, dimension(nz) :: & ! Temporary variables
+    real, dimension(nzt) :: & ! Temporary variables
       rrm_r4,       & ! Mean rain water mixing ratio            [kg/kg]
       Nrm_r4,          & ! Mean rain drop concentration            [num/kg]
       rim_r4,        & ! Mean ice mixing ratio                   [kg/kg]
@@ -350,7 +350,7 @@ module morrison_microphys_module
       rgm_mc_r4, & ! Mean graupel mixing ratio tendency      [kg/kg/s]
       Ngm_mc_r4    ! Mean graupel concentration tendency     [num/kg/s]
 
-    real, dimension(nz) :: &
+    real, dimension(nzt) :: &
       rcm_mc_r4,    &
       rvm_mc_r4,    &
       P_in_pa_r4,   &
@@ -361,14 +361,14 @@ module morrison_microphys_module
 
     integer :: i, k
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       Nrm_auto, & ! Change in Nrm due to autoconversion               [num/kg/s]
       Nrm_evap    ! Change in Nrm due to evaporation                  [num/kg/s]
 
     ! Local Variables
     real( kind = core_rknd ) :: rsm_sd_morr_int
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nzt) :: &
       hl_before, &
       qto_before, &
       hl_after, &
@@ -403,23 +403,23 @@ module morrison_microphys_module
        print *, "chi = ", chi
     endif
 
-    call microphys_stats_alloc( nz, num_output_zt, microphys_stats_zt )
+    call microphys_stats_alloc( nzt, num_output_zt, microphys_stats_zt )
     call microphys_stats_alloc( 1, num_output_sfc, microphys_stats_sfc )
 
 
     ! Determine temperature
-    T_in_K = real( thlm2T_in_K( nz, thlm, exner, rcm ) )
+    T_in_K = real( thlm2T_in_K( nzt, thlm, exner, rcm ) )
 
     if ( l_latin_hypercube ) then
       ! Don't use sgs cloud fraction to weight the tendencies
-      cloud_frac_in(1:nz) = 0.0
+      cloud_frac_in(1:nzt) = 0.0
 
       wm_zt_r4 = real( max( wm_zt, w_thresh ) ) ! Impose a minimum value on w
       w_std_dev_r4 = 0. ! Don't add in a standard deviation for aerosol activation
 
     else 
       ! Use sgs cloud fraction to weight tendencies
-      cloud_frac_in(1:nz) = real( cloud_frac(1:nz) )
+      cloud_frac_in(1:nzt) = real( cloud_frac(1:nzt) )
 
       wm_zt_r4 = real( wm_zt ) ! Use the mean value without a threshold
       w_std_dev_r4 = real( w_std_dev ) ! Add in a standard deviation
@@ -436,7 +436,7 @@ module morrison_microphys_module
     i = 1
 
     forall ( i = 1:hydromet_dim )
-      hydromet_r4(1:nz,i) = real( hydromet(1:nz,i) )
+      hydromet_r4(1:nzt,i) = real( hydromet(1:nzt,i) )
     end forall
 
     if ( l_evaporate_cold_rcm ) then
@@ -449,16 +449,16 @@ module morrison_microphys_module
     end if
     
     ! Initialize tendencies to zero
-    T_in_K_mc(1:nz) = 0.0
-    rcm_mc(1:nz) = 0.0_core_rknd
-    rvm_mc(1:nz) = 0.0_core_rknd
-    hydromet_mc(1:nz,:) = 0.0_core_rknd
-    Ncm_mc(1:nz) = 0.0_core_rknd
+    T_in_K_mc(1:nzt) = 0.0
+    rcm_mc(1:nzt) = 0.0_core_rknd
+    rvm_mc(1:nzt) = 0.0_core_rknd
+    hydromet_mc(1:nzt,:) = 0.0_core_rknd
+    Ncm_mc(1:nzt) = 0.0_core_rknd
     rcm_sten = 0.0
-    rrm_sten(1:nz) = 0.0
-    rim_sten(1:nz) = 0.0
-    rsm_sten(1:nz) = 0.0
-    rgm_sten(1:nz) = 0.0
+    rrm_sten(1:nzt) = 0.0
+    rim_sten(1:nzt) = 0.0
+    rsm_sten(1:nzt) = 0.0
+    rgm_sten(1:nzt) = 0.0
 
     ! Initialize effective radius to zero
     effc = 0.0
@@ -659,7 +659,7 @@ module morrison_microphys_module
            T_in_K_mc, rvm_mc_r4, T_in_K, rvm_r4, P_in_pa_r4, rho_r4, dzq_r4, &
            wm_zt_r4, w_std_dev_r4, morr_rain_vel_r4, &
            Morr_precip_rate, Morr_snow_rate, effc, effi, effs, effr, real( dt ), &
-           1,1, 1,1, 1,nz, 1,1, 1,1, 2,nz, &
+           1,1, 1,1, 1,nzt, 1,1, 1,1, 1,nzt, &
            rgm_mc_r4, Ngm_mc_r4, &
            rgm_r4, Ngm_r4, effg, &
            rgm_sten, rrm_sten, &
@@ -686,7 +686,7 @@ module morrison_microphys_module
            NC_INST, NR_INST, NI_INST, NS_INST, NG_INST )
 
     if ( clubb_at_least_debug_level( 2 ) ) then
-       call print_morr_error_output( nz, gr, hydromet_dim, hm_metadata, &
+       call print_morr_error_output( nzt, gr, hydromet_dim, hm_metadata, &
                                      rcm_mc_r4, rim_mc_r4, rsm_mc_r4, &
                                      rrm_mc_r4, rgm_mc_r4, Ncm_mc_r4, &
                                      Nim_mc_r4, Nsm_mc_r4, Nrm_mc_r4, &
@@ -795,16 +795,11 @@ module morrison_microphys_module
     ! This done because the hydromet_mc arrays that are produced by
     ! M2005MICRO_GRAUPEL don't include the clipping term.
     do i = 1, hydromet_dim, 1
-       hydromet_mc(2:,i) = ( real( hydromet_r4(2:,i), kind = core_rknd ) - &
-                             hydromet(2:,i) ) / dt
+       hydromet_mc(:,i) = ( real( hydromet_r4(:,i), kind = core_rknd ) - &
+                            hydromet(:,i) ) / dt
     end do
 
-    hydromet_mc(1,:) = 0.0_core_rknd ! Boundary condition
-
-    Ncm_mc(2:) = ( real( Ncm_r4(2:), kind = core_rknd ) - Ncm(2:) ) &
-                 / dt
-
-    Ncm_mc(1) = 0.0_core_rknd ! Boundary condition
+    Ncm_mc = ( real( Ncm_r4, kind = core_rknd ) - Ncm ) / dt
 
     ! Update thetal based on absolute temperature
     thlm_mc = ( T_in_K2thlm( real( T_in_K, kind = core_rknd ), exner, &
@@ -816,19 +811,19 @@ module morrison_microphys_module
     ! Output rain sedimentation velocity
     ! Multiply by -1 so that negative is associated with falling precip
     morr_rain_vel_r4(:) = morr_rain_vel_r4(:) * (-1.0)
-    do k = 1, nz, 1
+    do k = 1, nzt, 1
       hydromet_vel_zt(k,iirr) = real( morr_rain_vel_r4(k), kind = core_rknd )
     end do
     
 
-    rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho(2:nz), &
-                            real( rsm_sten(2:nz), kind=core_rknd ), &
-                            gr%dzt(1,2:nz) )
+    rsm_sd_morr_int = vertical_integral( nzt, rho(1:nzt), &
+                            real( rsm_sten(1:nzt), kind=core_rknd ), &
+                            gr%dzt(1,1:nzt) )
 
     call microphys_put_var( stats_metadata%irsm_sd_morr_int, (/rsm_sd_morr_int/), microphys_stats_sfc )
 
     if ( clubb_at_least_debug_level( 1 ) ) then
-        if ( rsm_sd_morr_int > maxval( real( rsm_sten(2:nz), &
+        if ( rsm_sd_morr_int > maxval( real( rsm_sten(1:nzt), &
                                                kind=core_rknd ) ) ) then
             print *, "Warning: rsm_sd_morr was not conservative!" // &
                    " rsm_sd_morr_verical_integr = ", rsm_sd_morr_int
@@ -976,7 +971,7 @@ module morrison_microphys_module
   end subroutine morrison_microphys_driver
 
   !=============================================================================
-  subroutine print_morr_error_output( nz, gr, hydromet_dim, hm_metadata, &
+  subroutine print_morr_error_output( nzt, gr, hydromet_dim, hm_metadata, &
                                       rcm_mc_r4, rim_mc_r4, rsm_mc_r4, &
                                       rrm_mc_r4, rgm_mc_r4, Ncm_mc_r4, &
                                       Nim_mc_r4, Nsm_mc_r4, Nrm_mc_r4, &
@@ -1036,7 +1031,7 @@ module morrison_microphys_module
 
     ! Input variables
     integer, intent(in) :: &
-      nz ! Points in the Vertical        [-]
+      nzt ! Points in the Vertical        [-]
 
     type(grid), target, intent(in) :: &
       gr
@@ -1047,7 +1042,7 @@ module morrison_microphys_module
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    real, dimension(nz), intent(in) :: &
+    real, dimension(nzt), intent(in) :: &
       rcm_mc_r4, & ! Mean cloud water mixing ratio tendency  [kg/kg/s]
       rim_mc_r4, & ! Mean ice mixing ratio tendency          [kg/kg/s]
       rsm_mc_r4, & ! Mean snow mixing ratio tendency         [kg/kg/s]
@@ -1061,16 +1056,16 @@ module morrison_microphys_module
       rvm_mc_r4, & ! Mean water vapor mixing ratio tendency  [kg/kg/s]
       T_in_K_mc    ! Temperature tendency                    [K/s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       thlm, & ! Liquid potential temperature              [K]
       rvm,  & ! Vapor water mixing ratio                  [kg/kg]
       rcm,  & ! Cloud water mixing ratio                  [kg/kg]
       Ncm     ! Grid mean value for cloud droplet conc.   [num/kg]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor species                   [units vary]
 
-    real, dimension(nz), intent(in) :: &
+    real, dimension(nzt), intent(in) :: &
       rcm_sten, & ! Mean rc sedimentation tendency             [kg/kg/s]
       rrm_sten, & ! Mean rr sedimentation tendency             [kg/kg/s]
       rim_sten, & ! Mean ri sedimentation tendency             [kg/kg/s]
@@ -1082,13 +1077,13 @@ module morrison_microphys_module
       NSSTEN,   & ! Snow sedimentation tendency                [#/kg/s]
       NCSTEN      ! Cloud water sedimentation tendency         [#/kg/s]
 
-    real, dimension(nz), intent(in) :: &
+    real, dimension(nzt), intent(in) :: &
       cloud_frac_in    ! Cloud frac used as input for the Morrison scheme [-]
 
     ! In the comments below, by "adds to" we mean that if the quantity is
     ! positive, it adds positively to the prognostic variable, but if the
     ! quantity is negative, it subtracts from the prognostic variable.
-    real, dimension(nz), intent(in) :: &
+    real, dimension(nzt), intent(in) :: &
       PSMLT,  & ! Freezing of rain to form snow.
                 !    Adds to rsm, subtracts from rrm [kg/kg/s]
       EVPMS,  & ! Evaporation of melted snow.
@@ -1152,7 +1147,7 @@ module morrison_microphys_module
       EPRDG     ! Negative of sublimation of graupel.
                 !    Adds to rgm, subtracts from rvm [kg/kg/s]
 
-    real, dimension(nz), intent(in) :: &
+    real, dimension(nzt), intent(in) :: &
       NPRC1,  & ! Change in Nrm due to autoconversion of droplets. Adds to Nrm [#/kg/s]
       NRAGG,  & ! Change in Nrm due to self-collection of raindrops. Adds to Nrm [#/kg/s]
       NPRACG, & ! Collection of rainwater by graupel. Subtracts from Nrm [#/kg/s]
@@ -1181,7 +1176,7 @@ module morrison_microphys_module
       PRC,   &  ! Autoconversion. Adds to rrm, subtracts from rcm [kg/kg/s]
       PRE       ! Rain evaporation. Subtracts from rrm [kg/kg/s]              
           
-    real, dimension(nz), intent(in) :: &
+    real, dimension(nzt), intent(in) :: &
       PCC, &    ! Saturation adjustment 
                 !    Adds to rcm, substracts from rvm [kg/kg/s]
       NNUCCC, & ! Contact freezing of cloud drops
@@ -1244,7 +1239,7 @@ module morrison_microphys_module
          .or. is_nan_2d( real( rvm_mc_r4, kind=core_rknd ) ) &
          .or. is_nan_2d( real( T_in_K_mc, kind=core_rknd ) ) ) then
        write(fstderr,*) "NaN detected in a Morrison microphysics tendency"
-       do k = 1, nz, 1
+       do k = 1, nzt, 1
           nan_at_lev = .false.
           if ( is_nan_sclr( real( rcm_mc_r4(k), kind=core_rknd ) ) ) then
              write(fstderr,*) "NaN detected in rcm_mc_r4 at k = ", k, &
@@ -1421,7 +1416,7 @@ module morrison_microphys_module
              write(fstderr,*) "NG_INST = ", NG_INST(k)
              write(fstderr,*) "---------------------------------------------"
           endif ! nan_at_lev
-       enddo ! k = 1, nz, 1
+       enddo ! k = 1, nzt, 1
     endif
 
 

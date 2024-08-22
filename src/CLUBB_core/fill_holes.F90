@@ -18,7 +18,8 @@ module fill_holes
   contains
 
   !=============================================================================
-  subroutine fill_holes_vertical( nz, ngrdcol, threshold, upper_hf_level, &
+  subroutine fill_holes_vertical( nz, ngrdcol, threshold, &
+                                  lower_hf_level, upper_hf_level, &
                                   dz, rho_ds, &
                                   field )
 
@@ -48,9 +49,6 @@ module fill_holes
     !     Dynamics'', Durran (1999), p. 292.
     !-----------------------------------------------------------------------
 
-    use grid_class, only: & 
-        grid ! Type
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -75,7 +73,8 @@ module fill_holes
               ! thermodynamic grid levels
                   
     integer, intent(in) :: & 
-      upper_hf_level  ! Upper grid level of global hole-filling range      []
+      lower_hf_level, & ! Lower grid level of global hole-filling range      []
+      upper_hf_level    ! Upper grid level of global hole-filling range      []
 
     real( kind = core_rknd ), intent(in) :: & 
       threshold  ! A threshold (e.g. w_tol*w_tol) below which field must not
@@ -152,13 +151,12 @@ module fill_holes
     end do
     !$acc end parallel loop
     
-
     ! denom_integral does not change throughout the hole filling algorithm
     ! so we can calculate it before hand. This results in unneccesary computations,
     ! but is parallelizable and reduces the cost of the serial k loop
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
-      do k = 2+num_hf_draw_points, upper_hf_level-num_hf_draw_points
+      do k = lower_hf_level+num_hf_draw_points, upper_hf_level-num_hf_draw_points
 
         ! This loop and division could be written more compactly as
         !   invrs_denom_integral(i,k) = one / sum(rho_ds_dz(i,k-num_hf_draw_points:k+num_hf_draw_points))
@@ -186,7 +184,7 @@ module fill_holes
       ! iteration potentially changing. We could in theory expose more parallelism in cases 
       ! where there are large enough gaps between vertical levels which need hole-filling,
       ! but levels which require hole-filling are often close or consecutive.
-      do k = 2+num_hf_draw_points, upper_hf_level-num_hf_draw_points
+      do k = lower_hf_level+num_hf_draw_points, upper_hf_level-num_hf_draw_points
 
         k_start = k - num_hf_draw_points
         k_end   = k + num_hf_draw_points
@@ -268,7 +266,7 @@ module fill_holes
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      do k = 2, upper_hf_level
+      do k = lower_hf_level, upper_hf_level
         numer_integral_global(i) = numer_integral_global(i) + rho_ds_dz(i,k) * field(i,k)
 
         denom_integral_global(i) = denom_integral_global(i) + rho_ds_dz(i,k)
@@ -287,11 +285,13 @@ module fill_holes
       ! Clip small or negative values from field.
       if ( field_avg_global(i) >= threshold ) then
         ! We know we can fill in holes completely
-        field_clipped(i,2:upper_hf_level) = max( threshold, field(i,2:upper_hf_level) )
+        field_clipped(i,lower_hf_level:upper_hf_level) &
+        = max( threshold, field(i,lower_hf_level:upper_hf_level) )
       else
         ! We can only fill in holes partly;
         ! to do so, we remove all mass above threshold.
-        field_clipped(i,2:upper_hf_level) = min( threshold, field(i,2:upper_hf_level) )
+        field_clipped(i,lower_hf_level:upper_hf_level) &
+        = min( threshold, field(i,lower_hf_level:upper_hf_level) )
       endif
 
     end do
@@ -301,7 +301,7 @@ module fill_holes
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       numer_integral_global(i) = 0.0_core_rknd
-      do k = 2, upper_hf_level
+      do k = lower_hf_level, upper_hf_level
         numer_integral_global(i) = numer_integral_global(i) + rho_ds_dz(i,k) * field_clipped(i,k)
       end do  
     end do
@@ -312,7 +312,7 @@ module fill_holes
 
       ! Do not complete calculations or update field values for this 
       ! column if there are no holes that need filling
-      if ( any( field(i,2:upper_hf_level) < threshold ) ) then
+      if ( any( field(i,lower_hf_level:upper_hf_level) < threshold ) ) then
 
         ! Compute the clipped field's vertical integral,
         ! see description of the vertical_avg function in advance_helper_module
@@ -327,9 +327,9 @@ module fill_holes
                                     / ( field_clipped_avg - threshold )
 
           ! Calculate normalized, filled field
-          field(i,2:upper_hf_level) = threshold + mass_fraction_global(i) &
-                                                  * ( field_clipped(i,2:upper_hf_level) &
-                                                      - threshold )
+          field(i,lower_hf_level:upper_hf_level) &
+          = threshold + mass_fraction_global(i) &
+                        * ( field_clipped(i,lower_hf_level:upper_hf_level) - threshold )
         end if
       end if
 
@@ -345,7 +345,7 @@ module fill_holes
 
   !===============================================================================
   subroutine hole_filling_hm_one_lev( num_hm_fill, hm_one_lev, & ! Intent(in)
-                                   hm_one_lev_filled ) ! Intent(out)
+                                      hm_one_lev_filled ) ! Intent(out)
 
   ! Description:
   ! Fills holes between same-phase (i.e. either liquid or frozen) hydrometeors for
@@ -472,7 +472,7 @@ module fill_holes
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_hydromet( nz, hydromet_dim, hydromet, & ! Intent(in)
+  subroutine fill_holes_hydromet( nzt, hydromet_dim, hydromet, & ! Intent(in)
                                   l_frozen_hm, l_mix_rat_hm, & ! Intent(in)
                                   hydromet_filled ) ! Intent(out)
 
@@ -499,9 +499,9 @@ module fill_holes
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: hydromet_dim, nz
+    integer, intent(in) :: hydromet_dim, nzt
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet
 
     logical, dimension(hydromet_dim), intent(in) :: &
@@ -509,7 +509,7 @@ module fill_holes
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_filled
 
     ! Local Variables
@@ -534,8 +534,8 @@ module fill_holes
     enddo
 
     ! Allocation
-    allocate( hydromet_frozen(nz,num_frozen_hm) )
-    allocate( hydromet_frozen_filled(nz,num_frozen_hm) )
+    allocate( hydromet_frozen(nzt,num_frozen_hm) )
+    allocate( hydromet_frozen_filled(nzt,num_frozen_hm) )
 
     ! Determine frozen hydrometeor mixing ratios
     j = 1
@@ -547,10 +547,10 @@ module fill_holes
     enddo
 
     ! Fill holes for the frozen hydrometeors
-    do i=1,nz
+    do i=1,nzt
        if ( any( hydromet_frozen(i,:) < zero ) ) then
           call hole_filling_hm_one_lev( num_frozen_hm, hydromet_frozen(i,:), & ! Intent(in)
-                                     hydromet_frozen_filled(i,:) ) ! Intent(out)
+                                        hydromet_frozen_filled(i,:) ) ! Intent(out)
        else
           hydromet_frozen_filled(i,:) = hydromet_frozen(i,:)
        endif
@@ -574,7 +574,7 @@ module fill_holes
   !-----------------------------------------------------------------------
 
     !-----------------------------------------------------------------------
-  subroutine fill_holes_wv( nz, dt, exner, hydromet_name, & ! Intent(in)
+  subroutine fill_holes_wv( nzt, dt, exner, hydromet_name, & ! Intent(in)
                             rvm_mc, thlm_mc, hydromet )! Intent(inout)
 
   ! Description:
@@ -597,18 +597,18 @@ module fill_holes
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: nz
+    integer, intent(in) :: nzt
 
     real( kind = core_rknd ), intent(in) ::  &
       dt           ! Timestep         [s]
 
     character(len=10), intent(in) :: hydromet_name
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       exner        ! Exner function                            [-]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(inout) :: &
       hydromet, &  ! Hydrometeor array                         [units vary]
       rvm_mc, &
       thlm_mc
@@ -621,7 +621,7 @@ module fill_holes
 
     !----- Begin Code -----
 
-    do k = 2, nz, 1
+    do k = 1, nzt, 1
 
        if ( hydromet(k) < zero_threshold ) then
 
@@ -648,19 +648,19 @@ module fill_holes
 
        endif ! hydromet(k,i) < 0
 
-    enddo ! k = 2..gr%nz
+    enddo ! k = 1..gr%nzt
 
     return
   end subroutine fill_holes_wv
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine fill_holes_driver( gr, nz, dt, hydromet_dim, hm_metadata,   & ! Intent(in)
-                                l_fill_holes_hm,                            & ! Intent(in)
-                                rho_ds_zm, rho_ds_zt, exner,                & ! Intent(in)
-                                stats_metadata,                             & ! Intent(in)
-                                stats_zt,                                   & ! intent(inout)
-                                thlm_mc, rvm_mc, hydromet )                   ! Intent(inout)
+  subroutine fill_holes_driver( gr, nzt, nzm, dt, hydromet_dim, hm_metadata, & ! Intent(in)
+                                l_fill_holes_hm,                             & ! Intent(in)
+                                rho_ds_zm, rho_ds_zt, exner,                 & ! Intent(in)
+                                stats_metadata,                              & ! Intent(in)
+                                stats_zt,                                    & ! intent(inout)
+                                thlm_mc, rvm_mc, hydromet )                    ! Intent(inout)
 
   ! Description:
   ! Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
@@ -715,7 +715,8 @@ module fill_holes
 
     integer, intent(in) :: &
       hydromet_dim, &
-      nz
+      nzt, &
+      nzm
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
@@ -726,12 +727,12 @@ module fill_holes
     real( kind = core_rknd ), intent(in) ::  &
       dt           ! Timestep         [s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rho_ds_zm, & ! Dry, static density on momentum levels   [kg/m^3]
-      rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
+    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+      rho_ds_zm    ! Dry, static density on momentum levels   [kg/m^3]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      exner  ! Exner function                                       [-]
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
+      rho_ds_zt, & ! Dry, static density on thermo. levels    [kg/m^3]
+      exner        ! Exner function                           [-]
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -740,17 +741,17 @@ module fill_holes
     type (stats), target, intent(inout) :: &
       stats_zt
 
-    real( kind = core_rknd ), dimension(nz, hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(inout) :: &
       hydromet    ! Mean of hydrometeor fields    [units vary]
 
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(inout) :: &
       rvm_mc,  & ! Microphysics contributions to vapor water           [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp [K/s]
 
     !----------------------- Local Variables -----------------------
     integer :: i, k ! Loop iterators
 
-    real( kind = core_rknd ), dimension(nz, hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim) :: &
       hydromet_filled,  & ! Frozen hydrometeor mixing ratios after hole filling
       hydromet_clipped    ! Clipped mean of hydrometeor fields    [units vary]
 
@@ -774,12 +775,12 @@ module fill_holes
 
           ! Set up the stats indices for hydrometeor at index i
           call setup_stats_indices( i, stats_metadata, hydromet_dim,  & ! Intent(in)
-                                    hm_metadata%hydromet_list,     & ! Intent(in)
+                                    hm_metadata%hydromet_list,        & ! Intent(in)
                                     ixrm_bt, ixrm_hf, ixrm_wvhf,      & ! Intent(inout)
                                     ixrm_cl, ixrm_mc,                 & ! Intent(inout)
                                     max_velocity )                      ! Intent(inout)
 
-          call stat_begin_update( gr%nz, ixrm_hf, hydromet(:,i) / dt, & ! intent(in)
+          call stat_begin_update( gr%nzt, ixrm_hf, hydromet(:,i) / dt, & ! intent(in)
                                   stats_zt ) ! intent(inout)
 
        enddo ! i = 1, hydromet_dim
@@ -791,7 +792,7 @@ module fill_holes
     ! level.
     if ( any( hydromet < zero_threshold ) .and. l_fill_holes_hm ) then
 
-       call fill_holes_hydromet( nz, hydromet_dim, hydromet, & ! Intent(in)
+       call fill_holes_hydromet( nzt, hydromet_dim, hydromet, & ! Intent(in)
                                  hm_metadata%l_frozen_hm, hm_metadata%l_mix_rat_hm, & ! Intent(in)
                                  hydromet_filled ) ! Intent(out)
 
@@ -816,13 +817,13 @@ module fill_holes
       if ( clubb_at_least_debug_level( 1 ) ) then
          if ( any( hydromet(:,i) < zero_threshold ) ) then
 
-            do k = 1, nz
+            do k = 1, nzt
                if ( hydromet(k,i) < zero_threshold ) then
                   write(fstderr,*) trim( hydromet_name ) //" < ", &
                                    zero_threshold, &
                                    " in fill_holes_driver at k= ", k
                endif ! hydromet(k,i) < 0
-            enddo ! k = 1, nz
+            enddo ! k = 1, nzt
 
          endif ! hydromet(:,i) < 0       
       endif ! clubb_at_least_debug_level( 1 )
@@ -845,10 +846,11 @@ module fill_holes
             !$acc        copy( hydromet(:,i) )
 
             ! Apply the hole filling algorithm
-            ! upper_hf_level = nz since we are filling the zt levels
-            call fill_holes_vertical( gr%nz, 1, zero_threshold, gr%nz, & ! In
-                                      gr%dzt, rho_ds_zt,               & ! In
-                                      hydromet(:,i) )                    ! InOut
+            ! upper_hf_level = nzt since we are filling the zt levels
+            call fill_holes_vertical( gr%nzt, 1, zero_threshold, & ! In
+                                      1, gr%nzt,                 & ! In
+                                      gr%dzt, rho_ds_zt,         & ! In
+                                      hydromet(:,i) )             ! InOut
 
             !$acc end data
 
@@ -859,14 +861,14 @@ module fill_holes
       ! Enter the new value of the hydrometeor for the effect of the
       ! hole-filling scheme.
       if ( stats_metadata%l_stats_samp ) then
-         call stat_end_update( gr%nz, ixrm_hf, hydromet(:,i) / dt, & ! intent(in)
+         call stat_end_update( gr%nzt, ixrm_hf, hydromet(:,i) / dt, & ! intent(in)
                                stats_zt ) ! intent(inout)
       endif
 
       ! Store the previous value of the hydrometeor for the effect of the water
       ! vapor hole-filling scheme.
       if ( stats_metadata%l_stats_samp ) then
-         call stat_begin_update( gr%nz, ixrm_wvhf, hydromet(:,i) / dt, & ! intent(in)
+         call stat_begin_update( gr%nzt, ixrm_wvhf, hydromet(:,i) / dt, & ! intent(in)
                                  stats_zt ) ! intent(inout)
       endif
 
@@ -878,7 +880,7 @@ module fill_holes
             ! the missing mass with water vapor mixing ratio.
             ! We noticed this is needed for ASEX A209, particularly if Latin
             ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
-            call fill_holes_wv( nz, dt, exner, hydromet_name, & ! Intent(in)
+            call fill_holes_wv( nzt, dt, exner, hydromet_name, & ! Intent(in)
                                 rvm_mc, thlm_mc, hydromet(:,i) )   ! Intent(out)
 
          endif ! Variable is a mixing ratio and l_hole_fill is true
@@ -888,7 +890,7 @@ module fill_holes
       ! Enter the new value of the hydrometeor for the effect of the water vapor
       ! hole-filling scheme.
       if ( stats_metadata%l_stats_samp ) then
-         call stat_end_update( gr%nz, ixrm_wvhf, hydromet(:,i) / dt, & ! intent(in)
+         call stat_end_update( gr%nzt, ixrm_wvhf, hydromet(:,i) / dt, & ! intent(in)
                                stats_zt ) ! intent(inout)
       endif
 
@@ -898,7 +900,7 @@ module fill_holes
          ! Store the previous value of the hydrometeor for the effect of
          ! clipping.
          if ( stats_metadata%l_stats_samp ) then
-            call stat_begin_update( gr%nz, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
+            call stat_begin_update( gr%nzt, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
                                     stats_zt ) ! intent(inout)
          endif
 
@@ -914,7 +916,7 @@ module fill_holes
 
          ! Eliminate very small values of mean precipitating hydrometeor mixing
          ! ratios by setting them to 0.
-         do k = 2, gr%nz, 1
+         do k = 1, gr%nzt, 1
 
             if ( hydromet(k,i) <= hm_metadata%hydromet_tol(i) ) then
 
@@ -944,12 +946,12 @@ module fill_holes
 
             endif ! hydromet(k,i) <= hydromet_tol(i)
 
-         enddo ! k = 2, gr%nz, 1
+         enddo ! k = 1, gr%nzt, 1
 
 
          ! Enter the new value of the hydrometeor for the effect of clipping.
          if ( stats_metadata%l_stats_samp ) then
-            call stat_end_update( gr%nz, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
+            call stat_end_update( gr%nzt, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
                                   stats_zt ) ! intent(inout)
          endif
 
@@ -958,9 +960,9 @@ module fill_holes
     enddo ! i = 1, hydromet_dim, 1
 
     ! Calculate clipping for hydrometeor concentrations.
-    call clip_hydromet_conc_mvr( gr%nz, hydromet_dim, hm_metadata, & ! Intent(in)
-                                 hydromet,                            & ! Intent(in)
-                                 hydromet_clipped )                     ! Intent(out)
+    call clip_hydromet_conc_mvr( gr%nzt, hydromet_dim, hm_metadata, & ! Intent(in)
+                                 hydromet,                          & ! Intent(in)
+                                 hydromet_clipped )                   ! Intent(out)
 
     ! Clip hydrometeor concentrations and output stats.
     do i = 1, hydromet_dim
@@ -978,7 +980,7 @@ module fill_holes
 
              ! Store the previous value of the hydrometeor for the effect of
              ! clipping.
-             call stat_begin_update( gr%nz, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
+             call stat_begin_update( gr%nzt, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
                                      stats_zt ) ! intent(inout)
 
           endif ! stats_metadata%l_stats_samp
@@ -988,7 +990,7 @@ module fill_holes
 
           ! Enter the new value of the hydrometeor for the effect of clipping.
           if ( stats_metadata%l_stats_samp ) then
-             call stat_end_update( gr%nz, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
+             call stat_end_update( gr%nzt, ixrm_cl, hydromet(:,i) / dt, & ! intent(in)
                                    stats_zt ) ! intent(inout)
           endif
 
@@ -1002,9 +1004,9 @@ module fill_holes
   end subroutine fill_holes_driver
 
   !=============================================================================
-  subroutine clip_hydromet_conc_mvr( nz, hydromet_dim, hm_metadata,  & ! Intent(in) 
-                                     hydromet,                          & ! Intent(in)
-                                     hydromet_clipped )                   ! Intent(out)
+  subroutine clip_hydromet_conc_mvr( nzt, hydromet_dim, hm_metadata,  & ! Intent(in) 
+                                     hydromet,                        & ! Intent(in)
+                                     hydromet_clipped )                 ! Intent(out)
 
     ! Description:
     ! Increases the value of a hydrometeor concentration when it is too small,
@@ -1040,7 +1042,7 @@ module fill_holes
 
     ! Input Variables
     integer, intent(in) :: &
-      nz
+      nzt
     
     integer, intent(in) :: &
       hydromet_dim    ! Number of hydrometeor fields
@@ -1048,11 +1050,11 @@ module fill_holes
     type (hm_metadata_type), intent(in) :: &
           hm_metadata
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor fields    [units vary]
 
     ! Output Variable
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(out) :: &
       hydromet_clipped    ! Clipped mean of hydrometeor fields    [units vary]
 
     ! Local Variables
@@ -1118,7 +1120,7 @@ module fill_holes
 
           ! Loop over vertical levels and increase hydrometeor concentrations
           ! when necessary.
-          do k = 2, nz, 1
+          do k = 1, nzt, 1
 
              if ( hydromet(k,Nx2rx_hm_idx(idx,hm_metadata)) > zero ) then
 
@@ -1133,10 +1135,7 @@ module fill_holes
 
              endif ! hydromet(k,Nx2rx_hm_idx(idx)) > 0
 
-          enddo ! k = 2, nz, 1
-
-          ! The lowest thermodynamic level is below the model's lower boundary.
-          hydromet_clipped(1,idx) = hydromet(1,idx)
+          enddo ! k = 1, nzt, 1
 
        else ! l_mix_rat_hm(idx)
 

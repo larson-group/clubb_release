@@ -49,14 +49,14 @@ module lba
     type(grid), target, intent(in) :: gr
 
     !--------------------- Output Variables ---------------------
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) :: & 
       thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
       rtm_forcing     ! Total water mixing ratio tendency            [kg/kg/s]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,sclr_dim) :: & 
       sclrm_forcing ! Passive scalar forcing [units vary]
 
-    real( kind = core_rknd ), intent(out), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt,edsclr_dim) :: & 
       edsclrm_forcing ! Passive eddy-scalar forcing [units vary]
 
     !--------------------- Begin Code ---------------------

@@ -32,8 +32,8 @@ prescribed_rand_seed        = 1
 hoc_stats_file_nl(1)    = "../output/rico_zt.nc"
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc"
 run_file_nl(1)          = "rico_hoc.in"
-z_i_nl(1)               = 2
-z_f_nl(1)               = 33
+z_i_nl(1)               = 1
+z_f_nl(1)               = 32
 timestep_intvls_nl(1,:) = 4201, 4320
 weight_case_nl(1)       = 1.0
 /

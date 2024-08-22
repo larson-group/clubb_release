@@ -32,8 +32,8 @@ prescribed_rand_seed        = 1
 hoc_stats_file_nl(1)    = "../output/dycoms2_rf02_do_zt.nc"
 les_stats_file_nl(1)    = "/home/pub/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_dr_nosed/DYCOMS_RF02_128x128x96_dr_nosed.nc"
 run_file_nl(1)          = "dycoms2_rf02_do_hoc.in"
-z_i_nl(1)               = 2
-z_f_nl(1)               = 147
+z_i_nl(1)               = 1
+z_f_nl(1)               = 146
 timestep_intvls_nl(1,:) = 120, 360
 weight_case_nl(1)       = 1.0
 /

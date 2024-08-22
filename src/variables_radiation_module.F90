@@ -111,8 +111,8 @@ module variables_radiation_module
 
     ! --- Allocation ---
 
-    allocate( radht_SW(1:nzmax) )
-    allocate( radht_LW(1:nzmax) )
+    allocate( radht_SW(1:nzmax-1) )
+    allocate( radht_LW(1:nzmax-1) )
     allocate( Frad_SW(1:nzmax) )
     allocate( Frad_LW(1:nzmax) )
 

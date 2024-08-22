@@ -76,21 +76,23 @@ module calc_pressure
     type (grid), target, intent(in) :: gr
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
       thvm    ! Mean theta_v (thermodynamic levels)                [K]
 
     real( kind = core_rknd ), intent(in) :: &
       p_sfc    ! Surface pressure                                   [Pa]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
       p_in_Pa,    & ! Pressure (thermodynamic levels)        [Pa]
-      exner,      & ! Exner function (thermodynamic levels)  [-]
+      exner         ! Exner function (thermodynamic levels)  [-]
+
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
       p_in_Pa_zm, & ! Pressure on momentum levels            [Pa]
       exner_zm      ! Exner function on momentum levels      [-]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nzm) :: &
       thvm_zm    ! Mean theta_v interpolated to momentum grid levels  [K]
 
     real( kind = core_rknd ), parameter :: &
@@ -104,12 +106,6 @@ module calc_pressure
     p_in_Pa_zm(1) = p_sfc
     exner_zm(1) = ( p_sfc / p0 )**kappa
 
-    ! Set the pressure (and exner) at the lowest thermodynamic level, which is
-    ! below the model lower boundary, to their values at the model lower
-    ! boundary or surface.
-    p_in_Pa(1) = p_in_Pa_zm(1)
-    exner(1) = exner_zm(1)
-
     ! Interpolate theta_v to momentum levels.
     thvm_zm = zt2zm( gr, thvm, zero_threshold )
 
@@ -122,26 +118,26 @@ module calc_pressure
     !     |
     !     | ( grav / Cp ) * ( z2 - z1 ) / thvm; where thvm2 = thvm1 (= thvm).
 
-    ! Calculate exner at thermodynamic level 2 (first thermodynamic grid level
+    ! Calculate exner at thermodynamic level 1 (first thermodynamic grid level
     ! that is above the lower boundary).
-    if ( abs( thvm(2) - thvm_zm(1) ) > epsilon( thvm ) * thvm(2) ) then
+    if ( abs( thvm(1) - thvm_zm(1) ) > epsilon( thvm ) * thvm(1) ) then
 
-       exner(2) &
+       exner(1) &
        = exner_zm(1) &
-         - g_ov_Cp * ( gr%zt(1,2) - gr%zm(1,1) ) / ( thvm(2) - thvm_zm(1) ) &
-           * log( thvm(2) / thvm_zm(1) )
+         - g_ov_Cp * ( gr%zt(1,1) - gr%zm(1,1) ) / ( thvm(1) - thvm_zm(1) ) &
+           * log( thvm(1) / thvm_zm(1) )
 
-    else ! thvm(2) = thvm_zm(1)
+    else ! thvm(1) = thvm_zm(1)
 
-       exner(2) = exner_zm(1) - g_ov_Cp * ( gr%zt(1,2) - gr%zm(1,1) ) / thvm(2)
+       exner(1) = exner_zm(1) - g_ov_Cp * ( gr%zt(1,1) - gr%zm(1,1) ) / thvm(1)
 
     endif
 
     ! Calculate pressure on thermodynamic levels.
-    p_in_Pa(2) = p0 * exner(2)**(one/kappa)
+    p_in_Pa(1) = p0 * exner(1)**(one/kappa)
 
     ! Loop over all other thermodynamic vertical grid levels.
-    do k = 3, gr%nz, 1
+    do k = 2, gr%nzt, 1
 
        ! Calculate exner on thermodynamic levels.
        if ( abs( thvm(k) - thvm(k-1) ) > epsilon( thvm ) * thvm(k) ) then
@@ -160,30 +156,30 @@ module calc_pressure
        ! Calculate pressure on thermodynamic levels.
        p_in_Pa(k) = p0 * exner(k)**(one/kappa)
 
-    enddo ! k = 2, gr%nz, 1
+    enddo ! k = 2, gr%nzt, 1
 
     ! Loop over all momentum grid levels.
-    do k = 2, gr%nz, 1
+    do k = 2, gr%nzm, 1
 
        ! Calculate exner on momentum levels.
-       if ( abs( thvm(k) - thvm_zm(k) ) > epsilon( thvm ) * thvm(k) ) then
+       if ( abs( thvm(k-1) - thvm_zm(k) ) > epsilon( thvm ) * thvm(k-1) ) then
 
           exner_zm(k) &
-          = exner(k) &
-            - g_ov_Cp * ( gr%zm(1,k) - gr%zt(1,k) ) / ( thvm_zm(k) - thvm(k) ) &
-              * log( thvm_zm(k) / thvm(k) )
+          = exner(k-1) &
+            - g_ov_Cp * ( gr%zm(1,k) - gr%zt(1,k-1) ) / ( thvm_zm(k) - thvm(k-1) ) &
+              * log( thvm_zm(k) / thvm(k-1) )
 
        else ! thvm(k) = thvm_zm(k)
 
           exner_zm(k) &
-          = exner(k) - g_ov_Cp * ( gr%zm(1,k) - gr%zt(1,k) ) / thvm_zm(k)
+          = exner(k-1) - g_ov_Cp * ( gr%zm(1,k) - gr%zt(1,k-1) ) / thvm_zm(k)
 
        endif
 
        ! Calculate pressure on momentum levels.
        p_in_Pa_zm(k) = p0 * exner_zm(k)**(one/kappa)
 
-    enddo ! k = 2, gr%nz, 1
+    enddo ! k = 2, gr%nzm, 1
 
 
     return
@@ -191,7 +187,7 @@ module calc_pressure
   end subroutine init_pressure
 
   !=============================================================================
-  subroutine calculate_thvm( nz, ngrdcol, &
+  subroutine calculate_thvm( nzt, ngrdcol, &
                              thlm, rtm, rcm, exner, thv_ds_zt, &
                              thvm) 
   ! Description:
@@ -214,10 +210,10 @@ module calc_pressure
 
     ! ---------------------------- Input Variables ----------------------------
     integer, intent(in) :: &
-      nz, &
+      nzt, &
       ngrdcol
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       thlm,      & ! Mean theta_l (thermodynamic levels)          [K]
       rtm,       & ! Mean total water (thermodynamic levels)      [kg/kg]
       rcm,       & ! Mean cloud water (thermodynamic levels)      [kg/kg]
@@ -225,7 +221,7 @@ module calc_pressure
       thv_ds_zt    ! Reference theta_v on thermodynamic levels    [K]
 
     ! ---------------------------- Return Variable ----------------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
       thvm    ! Mean theta_v (thermodynamic levels)    [K]
 
     ! ---------------------------- Local Variables ----------------------------
@@ -238,7 +234,7 @@ module calc_pressure
 
     ! Calculate mean theta_v
     !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nz
+    do k = 1, nzt
       do i = 1, ngrdcol
         thvm(i,k) = thlm(i,k) + ep1 * thv_ds_zt(i,k) * rtm(i,k) &
                + ( Lv / ( Cp * exner(i,k) ) - ep2 * thv_ds_zt(i,k) ) * rcm(i,k)

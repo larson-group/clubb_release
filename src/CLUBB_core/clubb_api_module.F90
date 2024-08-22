@@ -513,7 +513,7 @@ contains
     sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
     wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
     rtpthlp_forcing, wm_zm, wm_zt, &                        ! intent(in)
-    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &            ! intent(in)
+    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &     ! intent(in)
     wpsclrp_sfc, wpedsclrp_sfc, &                           ! intent(in)
     upwp_sfc_pert, vpwp_sfc_pert, &                         ! intent(in)
     rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(in)
@@ -582,18 +582,19 @@ contains
 
     implicit none
 
-    !------------------------- Input Variables -------------------------
-    type(grid), target, intent(in) :: gr
+    !--------------------------- Input Variables ---------------------------
+    type (grid), target, intent(in) :: gr
 
     logical, intent(in) ::  &
-      l_implemented ! Is this part of a larger host model (T/F) ?
+      l_implemented    ! True if CLUBB is being run within a large-scale host model,
+                       !   rather than a standalone single-column model.
 
     real( kind = core_rknd ), intent(in) ::  &
       dt  ! Current timestep duration    [s]
 
     real( kind = core_rknd ), intent(in) ::  &
       fcor,  &          ! Coriolis forcing             [s^-1]
-      sfc_elevation     ! Elevation of ground level    [m AMSL]
+      sfc_elevation     ! Elevation of ground level    [m above MSL]
 
     integer, intent(in) :: &
       hydromet_dim,   & ! Total number of hydrometeor species       [#]
@@ -606,75 +607,79 @@ contains
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    ! Input Variables
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  &
-      thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
-      rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
-      um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
-      vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
-      wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
-      wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
-      rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
-      thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
-      rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
-      wm_zm,           & ! w mean wind component on momentum levels  [m/s]
-      wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
-      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) ::  &
+      thlm_forcing,    & ! liquid potential temp. forcing (thermodynamic levels)    [K/s]
+      rtm_forcing,     & ! total water forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing,      & ! eastward wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing,      & ! northward wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zt,           & ! vertical mean wind component on thermo. levels   [m/s]
       rho,             & ! Air density on thermodynamic levels       [kg/m^3]
-      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
-      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
-      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      invrs_rho_ds_zt, & ! Inverse dry, static density on thermo levs.  [m^3/kg]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo levs.  [K]
       rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
 
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
-      hydromet           ! Collection of hydrometeors                [units vary]
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) ::  &
+      wprtp_forcing,   & ! total water turbulent flux forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing,  & ! liq pot temp turb flux forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing,    & ! total water variance forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing,   & ! liq pot temp variance forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing, & ! <r_t'th_l'> covariance forcing (momentum levels) [K*(kg/kg)/s]
+      wm_zm,           & ! vertical mean wind component on momentum levels  [m/s]
+      rho_zm,          & ! Air density on momentum levels            [kg/m^3]
+      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
+      invrs_rho_ds_zm, & ! Inverse dry, static density on momentum levs. [m^3/kg]
+      thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
+
+    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
+      hydromet           ! Array of hydrometeors                [units vary]
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
+    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
+      radf          ! Buoyancy production at cloud top due to longwave radiative cooling [m^2/s^3]
 
-#ifdef CLUBBND_CAM 
-    real( kind = core_rknd ), intent(in) :: & 
-      varmu 
-#endif 
+#ifdef CLUBBND_CAM
+    real( kind = core_rknd ), intent(in) :: &
+      varmu
+#endif
 
-    real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
-      wphydrometp, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
-      wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
-      rtphmp_zt,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
-      thlphmp_zt     ! Covariance of thl and a hydrometeor [K <hm units>]
+    real( kind = core_rknd ), dimension(gr%nzm,hydromet_dim), intent(in) :: &
+      wphydrometp    ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(gr%nzt,hydromet_dim), intent(in) :: &
+      wp2hmp,      & ! Third-order moment:  < w'^2 hm' > (hm = hydrometeor) [(m/s)^2 <hm units>]
+      rtphmp_zt,   & ! Covariance of rt and hm (on thermo levs.) [(kg/kg) <hm units>]
+      thlphmp_zt     ! Covariance of thl and hm (on thermo levs.)      [K <hm units>]
 
     real( kind = core_rknd ), intent(in) ::  &
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
       wprtp_sfc,    & ! w' r_t' at surface       [(kg m)/( kg s)]
       upwp_sfc,     & ! u'w' at surface          [m^2/s^2]
-      vpwp_sfc        ! v'w' at surface          [m^2/s^2]
+      vpwp_sfc,     & ! v'w' at surface          [m^2/s^2]
+      p_sfc           ! Pressure at surface      [Pa]
 
     ! Passive scalar variables
-    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt,sclr_dim) :: &
       sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
 
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  &
-      wpsclrp_sfc      ! Scalar flux at surface         [{units vary} m/s]
+      wpsclrp_sfc      ! Passive scalar flux at surface         [{units vary} m/s]
+
+    ! Eddy passive scalar variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt,edsclr_dim) :: &
+      edsclrm_forcing  ! Eddy-diffusion passive scalar forcing    [{units vary}/s]
+
+    real( kind = core_rknd ), intent(in), dimension(edsclr_dim) ::  &
+      wpedsclrp_sfc    ! Eddy-diffusion passive scalar flux at surface    [{units vary} m/s
 
     real( kind = core_rknd ), intent(in) :: &
       upwp_sfc_pert, & ! pertubed u'w' at surface    [m^2/s^2]
       vpwp_sfc_pert    ! pertubed v'w' at surface    [m^2/s^2]
 
-    ! Eddy passive scalar variables
-    real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: &
-      edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
-
-    real( kind = core_rknd ), intent(in), dimension(edsclr_dim) ::  &
-      wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
-
     ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(gr%nzt), intent(in) ::  &
       rtm_ref,  & ! Initial total water mixing ratio             [kg/kg]
       thlm_ref, & ! Initial liquid water potential temperature   [K]
       um_ref,   & ! Initial u wind; Michael Falk                 [m/s]
@@ -684,8 +689,8 @@ contains
 
     ! Host model horizontal grid spacing, if part of host model.
     real( kind = core_rknd ), intent(in) :: &
-      host_dx,  & ! East-West horizontal grid spacing     [m]
-      host_dy     ! North-South horizontal grid spacing   [m]
+      host_dx,  & ! East-west horizontal grid spacing     [m]
+      host_dy     ! North-south horizontal grid spacing   [m]
 
     real( kind = core_rknd ), dimension(nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -702,117 +707,134 @@ contains
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    !------------------------- Input/Output Variables -------------------------
-    type(stats), target, intent(inout) :: &
+    !--------------------------- Input/Output Variables ---------------------------
+    type (stats), target, intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
 
     ! These are prognostic or are planned to be in the future
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
-      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
-      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
-      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
-      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
-      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
-      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
+      um,      & ! eastward grid-mean wind component (thermodynamic levels)   [m/s]
+      vm,      & ! northward grid-mean wind component (thermodynamic levels)   [m/s]
       up3,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
       vp3,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
       rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
-      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
       thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
-      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
-      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
       rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
-      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
       thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
-      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
-      wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm) ::  &
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      wpthlp,  & ! w'th_l' (momentum levels)                      [(m/s) K]
+      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp, & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+      wp2        ! w'^2 (momentum levels)                         [m^2/s^2]
+
     ! Passive scalar variables
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt,sclr_dim) :: &
       sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
+      sclrp3       ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm,sclr_dim) :: &
       wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
       sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
-      sclrp3,    & ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
       sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
 
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
       p_in_Pa, & ! Air pressure (thermodynamic levels)       [Pa]
       exner      ! Exner function (thermodynamic levels)     [-]
 
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
-      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
       rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
       thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
 
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm,sclr_dim) :: &
       sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
 
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) ::  &
       wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
       wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm) ::  &
       uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
-      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
-      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
       wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
-      wp2vp2,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
-      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
+      wp2vp2               ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
 
     ! Variables used to track perturbed version of winds.
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: &
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt) :: &
       um_pert,   & ! perturbed <u>       [m/s]
-      vm_pert,   & ! perturbed <v>       [m/s]
+      vm_pert      ! perturbed <v>       [m/s]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzm) :: &
       upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
-      vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
+      vpwp_pert    ! perturbed <v'w'>    [m^2/s^2] 
 
     type(pdf_parameter), intent(inout) :: &
-      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
-      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
+      pdf_params,    & ! Fortran structure of PDF parameters on thermodynamic levels    [units vary]
+      pdf_params_zm    ! Fortran structure of PDF parameters on momentum levels        [units vary]
 
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
 #ifdef GFDL
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt,sclr_dim) :: &  ! h1g, 2010-06-16
       sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
 #endif
 
-      real( kind = core_rknd ), intent(inout), dimension(gr%nz,edsclr_dim) :: &
-      edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
+    ! Eddy passive scalar variable
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt,edsclr_dim) :: &
+      edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
 
-    !------------------------- Output Variables -------------------------
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
+    ! Variables that need to be output for use in other parts of the CLUBB
+    ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
+    ! BUGSrad (cloud_cover).
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  &
+      rcm_in_layer, & ! rcm within cloud layer                          [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
     ! Variables that need to be output for use in host models
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+    real( kind = core_rknd ), intent(out), dimension(gr%nzt) ::  &
       w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
       w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
       cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
-      cloudy_downdraft_frac, & ! cloudy downdraft fraction             [-]
+      cloudy_downdraft_frac    ! cloudy downdraft fraction             [-]
+
+    real( kind = core_rknd ), intent(out), dimension(gr%nzm) ::  &
+      wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
       invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+    real( kind = core_rknd ), dimension(gr%nzt), intent(out) :: &
+      Kh_zt    ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
       Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
 
 #ifdef CLUBB_CAM
-    real( kind = core_rknd), intent(out), dimension(gr%nz) :: &
+    real( kind = core_rknd), intent(out), dimension(gr%nzt) :: &
       qclvar        ! cloud water variance
 #endif
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nzm), intent(out) :: &
       thlprcp    ! thl'rc'              [K kg/kg]
 
     !!! Output Variable 
@@ -820,11 +842,12 @@ contains
 
 #ifdef GFDL
     ! hlg, 2010-06-16
-    real( kind = core_rknd ), intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: &
+    real( kind = core_rknd ), intent(inout), dimension(gr%nzt, min(1,sclr_dim) , 2) :: &
       RH_crit  ! critical relative humidity for droplet and ice nucleation
+! ---> h1g, 2012-06-14
     logical, intent(in)                 ::  do_liquid_only_in_clubb
+! <--- h1g, 2012-06-14
 #endif
-
 
     !------------------------- Local Variables -------------------------
     type(stats), dimension(1) :: &
@@ -837,60 +860,65 @@ contains
       sfc_elevation_col     ! Elevation of ground level    [m AMSL]
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
-      thlm_forcing_col,    & ! theta_l forcing (thermodynamic levels)    [K/s]
-      rtm_forcing_col,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
-      um_forcing_col,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
-      vm_forcing_col,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
-      wprtp_forcing_col,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
-      wpthlp_forcing_col,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
-      rtp2_forcing_col,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
-      thlp2_forcing_col,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
-      rtpthlp_forcing_col, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
-      wm_zm_col,           & ! w mean wind component on momentum levels  [m/s]
-      wm_zt_col,           & ! w mean wind component on thermo. levels   [m/s]
-      rho_zm_col,          & ! Air density on momentum levels            [kg/m^3]
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      thlm_forcing_col,    & ! liquid potential temp. forcing (thermodynamic levels)    [K/s]
+      rtm_forcing_col,     & ! total water forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing_col,      & ! eastward wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing_col,      & ! northward wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zt_col,           & ! vertical mean wind component on thermo. levels   [m/s]
       rho_col,             & ! Air density on thermodynamic levels       [kg/m^3]
-      rho_ds_zm_col,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt_col,       & ! Dry, static density on thermo. levels     [kg/m^3]
-      invrs_rho_ds_zm_col, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
-      invrs_rho_ds_zt_col, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
-      thv_ds_zm_col,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt_col,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      invrs_rho_ds_zt_col, & ! Inverse dry, static density on thermo levs.  [m^3/kg]
+      thv_ds_zt_col,       & ! Dry, base-state theta_v on thermo levs.  [K]
       rfrzm_col              ! Total ice-phase water mixing ratio        [kg/kg]
 
-    real( kind = core_rknd ), dimension(1,gr%nz,hydromet_dim) :: &
-      hydromet_col           ! Collection of hydrometeors                [units vary]
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      wprtp_forcing_col,   & ! total water turbulent flux forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing_col,  & ! liq pot temp turb flux forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing_col,    & ! total water variance forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing_col,   & ! liq pot temp variance forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing_col, & ! <r_t'th_l'> covariance forcing (momentum levels) [K*(kg/kg)/s]
+      wm_zm_col,           & ! vertical mean wind component on momentum levels  [m/s]
+      rho_zm_col,          & ! Air density on momentum levels            [kg/m^3]
+      rho_ds_zm_col,       & ! Dry, static density on momentum levels    [kg/m^3]
+      invrs_rho_ds_zm_col, & ! Inverse dry, static density on momentum levs. [m^3/kg]
+      thv_ds_zm_col          ! Dry, base-state theta_v on momentum levs. [K]
 
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      radf_col          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
+    real( kind = core_rknd ), dimension(1,gr%nzt,hydromet_dim) :: &
+      hydromet_col           ! Array of hydrometeors                [units vary]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
+      radf_col          ! Buoyancy production at cloud top due to longwave radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM 
     real( kind = core_rknd ), dimension(1) :: & 
       varmu_col 
 #endif 
 
-    real( kind = core_rknd ), dimension(1,gr%nz, hydromet_dim) :: &
-      wphydrometp_col, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
-      wp2hmp_col,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
-      rtphmp_zt_col,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
-      thlphmp_zt_col     ! Covariance of thl and a hydrometeor [K <hm units>]
+    real( kind = core_rknd ), dimension(1,gr%nzm,hydromet_dim) :: &
+      wphydrometp_col    ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(1,gr%nzt,hydromet_dim) :: &
+      wp2hmp_col,      & ! Third-order moment:  < w'^2 hm' > (hm = hydrometeor) [(m/s)^2 <hm units>]
+      rtphmp_zt_col,   & ! Covariance of rt and hm (on thermo levs.) [(kg/kg) <hm units>]
+      thlphmp_zt_col     ! Covariance of thl and hm (on thermo levs.)      [K <hm units>]
 
     real( kind = core_rknd ), dimension(1) ::  &
       wpthlp_sfc_col,   & ! w' theta_l' at surface   [(m K)/s]
       wprtp_sfc_col,    & ! w' r_t' at surface       [(kg m)/( kg s)]
       upwp_sfc_col,     & ! u'w' at surface          [m^2/s^2]
-      vpwp_sfc_col        ! v'w' at surface          [m^2/s^2]
+      vpwp_sfc_col,     & ! v'w' at surface          [m^2/s^2]
+      p_sfc_col           ! Pressure at surface      [Pa]
 
     ! Passive scalar variables
-    real( kind = core_rknd ), dimension(1,gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzt,sclr_dim) :: &
       sclrm_forcing_col    ! Passive scalar forcing         [{units vary}/s]
 
     real( kind = core_rknd ), dimension(1,sclr_dim) ::  &
       wpsclrp_sfc_col      ! Scalar flux at surface         [{units vary} m/s]
 
     ! Eddy passive scalar variables
-    real( kind = core_rknd ), dimension(1,gr%nz,edsclr_dim) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzt,edsclr_dim) :: &
       edsclrm_forcing_col  ! Eddy passive scalar forcing    [{units vary}/s]
 
     real( kind = core_rknd ), dimension(1) :: &
@@ -901,7 +929,7 @@ contains
       wpedsclrp_sfc_col    ! Eddy-Scalar flux at surface    [{units vary} m/s]
 
     ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
-    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       rtm_ref_col,  & ! Initial total water mixing ratio             [kg/kg]
       thlm_ref_col, & ! Initial liquid water potential temperature   [K]
       um_ref_col,   & ! Initial u wind; Michael Falk                 [m/s]
@@ -918,107 +946,121 @@ contains
       clubb_params_col    ! Array of CLUBB's tunable parameters    [units vary]
 
     ! These are prognostic or are planned to be in the future
-    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
-      um_col,      & ! u mean wind component (thermodynamic levels)   [m/s]
-      upwp_col,    & ! u'w' (momentum levels)                         [m^2/s^2]
-      vm_col,      & ! v mean wind component (thermodynamic levels)   [m/s]
-      vpwp_col,    & ! v'w' (momentum levels)                         [m^2/s^2]
-      up2_col,     & ! u'^2 (momentum levels)                         [m^2/s^2]
-      vp2_col,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
+      um_col,      & ! eastward grid-mean wind component (thermodynamic levels)   [m/s]
+      vm_col,      & ! northward grid-mean wind component (thermodynamic levels)   [m/s]
       up3_col,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
       vp3_col,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
       rtm_col,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
-      wprtp_col,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
       thlm_col,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
-      wpthlp_col,  & ! w' th_l' (momentum levels)                     [(m/s) K]
-      rtp2_col,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
       rtp3_col,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
-      thlp2_col,   & ! th_l'^2 (momentum levels)                      [K^2]
       thlp3_col,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
-      rtpthlp_col, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
-      wp2_col,     & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3_col        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      upwp_col,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vpwp_col,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2_col,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2_col,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      wprtp_col,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      wpthlp_col,  & ! w'th_l' (momentum levels)                      [(m/s) K]
+      rtp2_col,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2_col,   & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp_col, & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+      wp2_col        ! w'^2 (momentum levels)                         [m^2/s^2]
+
     ! Passive scalar variables
-    real( kind = core_rknd ), dimension(1,gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzt,sclr_dim) :: &
       sclrm_col,     & ! Passive scalar mean (thermo. levels) [units vary]
+      sclrp3_col       ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm,sclr_dim) :: &
       wpsclrp_col,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
       sclrp2_col,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
-      sclrp3_col,    & ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
       sclrprtp_col,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp_col    ! sclr'thl' (momentum levels)          [{units vary} K]
 
-    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       p_in_Pa_col, & ! Air pressure (thermodynamic levels)       [Pa]
       exner_col      ! Exner function (thermodynamic levels)     [-]
 
-    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       rcm_col,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac_col, & ! cloud fraction (thermodynamic levels)          [-]
+      wp2thvp_col       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
       wpthvp_col,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
-      wp2thvp_col,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
       rtpthvp_col,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
       thlpthvp_col      ! < th_l' th_v' > (momentum levels)              [K^2]
 
-    real( kind = core_rknd ), dimension(1,gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzm,sclr_dim) :: &
       sclrpthvp_col     ! < sclr' th_v' > (momentum levels)   [units vary]
 
-    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       wp2rtp_col,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
       wp2thlp_col,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      wpup2_col,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2_col,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      ice_supersat_frac_col    ! ice cloud fraction (thermo. levels)  [-]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
       uprcp_col,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp_col,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       rc_coef_zm_col,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4_col,               & ! w'^4 (momentum levels)               [m^4/s^4]
-      wpup2_col,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
-      wpvp2_col,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
       wp2up2_col,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
-      wp2vp2_col,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
-      ice_supersat_frac_col    ! ice cloud fraction (thermo. levels)  [-]
+      wp2vp2_col               ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
 
     ! Variables used to track perturbed version of winds.
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
       um_pert_col,   & ! perturbed <u>       [m/s]
-      vm_pert_col,   & ! perturbed <v>       [m/s]
+      vm_pert_col      ! perturbed <v>       [m/s]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
       upwp_pert_col, & ! perturbed <u'w'>    [m^2/s^2]
       vpwp_pert_col    ! perturbed <v'w'>    [m^2/s^2]
 
 #ifdef GFDL
-    real( kind = core_rknd ), dimension(1,gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
+    real( kind = core_rknd ), dimension(1,gr%nzt,sclr_dim) :: &  ! h1g, 2010-06-16
       sclrm_trsport_only_col  ! Passive scalar concentration due to pure transport [{units vary}/s]
 #endif
 
-      real( kind = core_rknd ), dimension(1,gr%nz,edsclr_dim) :: &
+      real( kind = core_rknd ), dimension(1,gr%nzt,edsclr_dim) :: &
       edsclrm_col   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
-    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       rcm_in_layer_col, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover_col     ! cloud cover                                     [-]
 
     ! Variables that need to be output for use in host models
-    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
-      wprcp_col,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       w_up_in_cloud_col,         & ! Average cloudy updraft velocity       [m/s]
       w_down_in_cloud_col,       & ! Average cloudy downdraft velocity     [m/s]
       cloudy_updraft_frac_col,   & ! cloudy updraft fraction               [-]
-      cloudy_downdraft_frac_col, & ! cloudy downdraft fraction             [-]
+      cloudy_downdraft_frac_col    ! cloudy downdraft fraction             [-]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      wprcp_col,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
       invrs_tau_zm_col             ! One divided by tau on zm levels       [1/s]
 
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
-      Kh_zt_col, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+    real( kind = core_rknd ), dimension(1,gr%nzt) :: &
+      Kh_zt_col    ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
       Kh_zm_col    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
 
 #ifdef CLUBB_CAM
-    real( kind = core_rknd), dimension(1,gr%nz) :: &
+    real( kind = core_rknd), dimension(1,gr%nzt) :: &
       qclvar_col        ! cloud water variance
 #endif
 
-    real( kind = core_rknd ), dimension(1,gr%nz) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
       thlprcp_col    ! thl'rc'              [K kg/kg]
       
 #ifdef GFDL
     ! hlg, 2010-06-16
-    real( kind = core_rknd ), dimension(1,gr%nz, min(1,sclr_dim) , 2) :: &
+    real( kind = core_rknd ), dimension(1,gr%nzt, min(1,sclr_dim) , 2) :: &
       RH_crit_col  ! critical relative humidity for droplet and ice nucleation
     logical, intent(in)                 ::  do_liquid_only_in_clubb
 #endif
@@ -1048,6 +1090,7 @@ contains
     wprtp_sfc_col(1) = wprtp_sfc
     upwp_sfc_col(1) = upwp_sfc
     vpwp_sfc_col(1) = vpwp_sfc
+    p_sfc_col(1) = p_sfc
     
     wpsclrp_sfc_col(1,:) = wpsclrp_sfc
     wpedsclrp_sfc_col(1,:) = wpedsclrp_sfc
@@ -1176,7 +1219,7 @@ contains
     !$acc              rtpthlp_forcing_col, wm_zm_col, wm_zt_col, rho_zm_col, rho_col, rho_ds_zm_col, rho_ds_zt_col, &
     !$acc              invrs_rho_ds_zm_col, invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, rfrzm_col, &
     !$acc              radf_col, wpthlp_sfc_col, &
-    !$acc              wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, & 
+    !$acc              wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, p_sfc_col, & 
     !$acc              upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, um_ref_col, &
     !$acc              vm_ref_col, ug_col, vg_col, host_dx_col, host_dy_col, &
     !$acc              pdf_params, pdf_params_zm ) &
@@ -1261,7 +1304,7 @@ contains
     !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
 #endif
 
-    call advance_clubb_core( gr, gr%nz, 1,              &
+    call advance_clubb_core( gr, gr%nzm, gr%nzt, 1,             &             ! intent(in)
       l_implemented, dt, fcor_col, sfc_elevation_col,            &            ! intent(in)
       hydromet_dim, &                                                         ! intent(in)
       sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                         ! intent(in)
@@ -1269,7 +1312,7 @@ contains
       sclrm_forcing_col, edsclrm_forcing_col, wprtp_forcing_col, &            ! intent(in)
       wpthlp_forcing_col, rtp2_forcing_col, thlp2_forcing_col, &              ! intent(in)
       rtpthlp_forcing_col, wm_zm_col, wm_zt_col, &                            ! intent(in)
-      wpthlp_sfc_col, wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, &            ! intent(in)
+      wpthlp_sfc_col, wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, p_sfc_col, & ! intent(in)
       wpsclrp_sfc_col, wpedsclrp_sfc_col, &                                   ! intent(in)
       upwp_sfc_pert_col, vpwp_sfc_pert_col, &                                 ! intent(in)
       rtm_ref_col, thlm_ref_col, um_ref_col, vm_ref_col, ug_col, vg_col, &    ! Intent(in)
@@ -1421,7 +1464,7 @@ contains
 
   end subroutine advance_clubb_core_api_single_col
   
-  subroutine advance_clubb_core_api_multi_col( gr, nz, ngrdcol, &
+  subroutine advance_clubb_core_api_multi_col( gr, nzm, nzt, ngrdcol, &  ! intent(in)
     l_implemented, dt, fcor, sfc_elevation,            &    ! intent(in)
     hydromet_dim, &                                         ! intent(in)
     sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &         ! intent(in)
@@ -1429,7 +1472,7 @@ contains
     sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
     wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
     rtpthlp_forcing, wm_zm, wm_zt, &                        ! intent(in)
-    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &            ! intent(in)
+    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &     ! intent(in)
     wpsclrp_sfc, wpedsclrp_sfc, &                           ! intent(in)
     upwp_sfc_pert, vpwp_sfc_pert, &                         ! intent(in)
     rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(in)
@@ -1491,12 +1534,14 @@ contains
 
     !------------------------ Input Variables ------------------------
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol   ! Number of grid columns
 
     type(grid), target, intent(in) :: &
       gr
 
+      !!! Input Variables
     logical, intent(in) ::  &
       l_implemented ! Is this part of a larger host model (T/F) ?
 
@@ -1518,35 +1563,37 @@ contains
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
       um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
       vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
+      wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
+      rho,             & ! Air density on thermodynamic levels       [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
       wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
       wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
       rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
       thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
       rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
       wm_zm,           & ! w mean wind component on momentum levels  [m/s]
-      wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
       rho_zm,          & ! Air density on momentum levels            [kg/m^3]
-      rho,             & ! Air density on thermodynamic levels       [kg/m^3]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
-      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
-      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
-      rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
+      thv_ds_zm          ! Dry, base-state theta_v on momentum levs. [K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
       hydromet           ! Collection of hydrometeors                [units vary]
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM 
@@ -1554,8 +1601,10 @@ contains
       varmu 
 #endif 
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz, hydromet_dim), intent(in) :: &
-      wphydrometp, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
+    real( kind = core_rknd ), dimension(ngrdcol,nzm, hydromet_dim), intent(in) :: &
+      wphydrometp    ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt, hydromet_dim), intent(in) :: &
       wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
       rtphmp_zt,   & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
       thlphmp_zt     ! Covariance of thl and a hydrometeor [K <hm units>]
@@ -1564,10 +1613,11 @@ contains
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
       wprtp_sfc,    & ! w' r_t' at surface       [(kg m)/( kg s)]
       upwp_sfc,     & ! u'w' at surface          [m^2/s^2]
-      vpwp_sfc        ! v'w' at surface          [m^2/s^2]
+      vpwp_sfc,     & ! v'w' at surface          [m^2/s^2]
+      p_sfc           ! Pressure at surface      [Pa]
 
     ! Passive scalar variables
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,sclr_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
       sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,sclr_dim) ::  &
@@ -1578,14 +1628,14 @@ contains
       vpwp_sfc_pert    ! pertubed v'w' at surface    [m^2/s^2]
 
     ! Eddy passive scalar variables
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,edsclr_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,edsclr_dim) :: &
       edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,edsclr_dim) ::  &
       wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
 
     ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
       rtm_ref,  & ! Initial total water mixing ratio             [kg/kg]
       thlm_ref, & ! Initial liquid water potential temperature   [K]
       um_ref,   & ! Initial u wind; Michael Falk                 [m/s]
@@ -1620,68 +1670,78 @@ contains
       stats_sfc
 
     ! These are prognostic or are planned to be in the future
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       um,      & ! u mean wind component (thermodynamic levels)   [m/s]
-      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
       vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
-      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
-      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
-      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
       up3,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
       vp3,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
       rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
-      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
       thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
-      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
-      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
       rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
-      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
       thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
-      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
-      wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+      wp2        ! w'^2 (momentum levels)                         [m^2/s^2]
+
     ! Passive scalar variables
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,sclr_dim) :: &
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,sclr_dim) :: &
       sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
+      sclrp3       ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) :: &
       wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
       sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
-      sclrp3,    & ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
       sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
 
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       p_in_Pa, & ! Air pressure (thermodynamic levels)       [Pa]
       exner      ! Exner function (thermodynamic levels)     [-]
 
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wp2thvp       ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
-      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
       rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
       thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
 
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,sclr_dim) :: &
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm,sclr_dim) :: &
       sclrpthvp     ! < sclr' th_v' > (momentum levels)   [units vary]
 
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) ::  &
       wp2rtp,            & ! w'^2 rt' (thermodynamic levels)      [m^2/s^2 kg/kg]
       wp2thlp,           & ! w'^2 thl' (thermodynamic levels)     [m^2/s^2 K]
+      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
+      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
+      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  &
       uprcp,             & ! < u' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       vprcp,             & ! < v' r_c' > (momentum levels)        [(m/s)(kg/kg)]
       rc_coef_zm,        & ! Coef of X'r_c' in Eq. (34) (m-levs.) [K/(kg/kg)]
       wp4,               & ! w'^4 (momentum levels)               [m^4/s^4]
-      wpup2,             & ! w'u'^2 (thermodynamic levels)        [m^3/s^3]
-      wpvp2,             & ! w'v'^2 (thermodynamic levels)        [m^3/s^3]
       wp2up2,            & ! w'^2 u'^2 (momentum levels)          [m^4/s^4]
-      wp2vp2,            & ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
-      ice_supersat_frac    ! ice cloud fraction (thermo. levels)  [-]
+      wp2vp2               ! w'^2 v'^2 (momentum levels)          [m^4/s^4]
 
     ! Variables used to track perturbed version of winds.
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt) :: &
       um_pert,   & ! perturbed <u>       [m/s]
-      vm_pert,   & ! perturbed <v>       [m/s]
+      vm_pert      ! perturbed <v>       [m/s]
+
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) :: &
       upwp_pert, & ! perturbed <u'w'>    [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'>    [m^2/s^2]
 
@@ -1693,45 +1753,49 @@ contains
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
 #ifdef GFDL
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,sclr_dim) :: &  ! h1g, 2010-06-16
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,sclr_dim) :: &  ! h1g, 2010-06-16
       sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
 #endif
 
-    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nz,edsclr_dim) :: &
+    real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzt,edsclr_dim) :: &
     edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
 
     !------------------------ Output Variables ------------------------
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzt) ::  &
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
     ! Variables that need to be output for use in host models
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz) ::  &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzm) ::  &
       wprcp,                 & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
+
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nzt) ::  &
       w_up_in_cloud,         & ! Average cloudy updraft velocity       [m/s]
       w_down_in_cloud,       & ! Average cloudy downdraft velocity     [m/s]
       cloudy_updraft_frac,   & ! cloudy updraft fraction               [-]
-      cloudy_downdraft_frac, & ! cloudy downdraft fraction             [-]
-      invrs_tau_zm             ! One divided by tau on zm levels       [1/s]
+      cloudy_downdraft_frac    ! cloudy downdraft fraction             [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(out) :: &
+      Kh_zt    ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
 
 #ifdef CLUBB_CAM
-    real( kind = core_rknd), intent(out), dimension(ngrdcol,nz) :: &
+    real( kind = core_rknd), intent(out), dimension(ngrdcol,nzt) :: &
       qclvar        ! cloud water variance
 #endif
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       thlprcp    ! thl'rc'              [K kg/kg]
 
     integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
 
 #ifdef GFDL
     ! hlg, 2010-06-16
-    real( kind = core_rknd ), intent(inOUT), dimension(ngrdcol,nz, min(1,sclr_dim) , 2) :: &
+    real( kind = core_rknd ), intent(inOUT), dimension(ngrdcol,nzt, min(1,sclr_dim) , 2) :: &
       RH_crit  ! critical relative humidity for droplet and ice nucleation
     logical, intent(in)                 ::  do_liquid_only_in_clubb
 #endif
@@ -1747,7 +1811,7 @@ contains
     !$acc              rtpthlp_forcing, wm_zm, wm_zt, rho_zm, rho, rho_ds_zm, rho_ds_zt, &
     !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, rfrzm, &
     !$acc              radf, wpthlp_sfc, &
-    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, & 
+    !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, & 
     !$acc              upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, thlm_ref, um_ref, &
     !$acc              vm_ref, ug, vg, host_dx, host_dy, &
     !$acc              pdf_params, pdf_params_zm ) &
@@ -1832,7 +1896,7 @@ contains
     !$acc data if( sclr_dim > 0 ) copy( sclrm_trsport_only )
 #endif
 
-    call advance_clubb_core( gr, nz, ngrdcol, &
+    call advance_clubb_core( gr, nzm, nzt, ngrdcol, &         ! intent(in)
       l_implemented, dt, fcor, sfc_elevation,            &    ! intent(in)
       hydromet_dim, &                                         ! intent(in)
       sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &             ! intent(in)
@@ -1840,7 +1904,7 @@ contains
       sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
       wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
       rtpthlp_forcing, wm_zm, wm_zt, &                        ! intent(in)
-      wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &            ! intent(in)
+      wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, &     ! intent(in)
       wpsclrp_sfc, wpedsclrp_sfc, &                           ! intent(in)
       upwp_sfc_pert, vpwp_sfc_pert, &                         ! intent(in)
       rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(in)
@@ -1915,8 +1979,6 @@ contains
   subroutine cleanup_clubb_core_api( gr )
 
     use advance_clubb_core_module, only : cleanup_clubb_core
-
-    
 
     implicit none
 
@@ -2134,8 +2196,10 @@ contains
     ! If the CLUBB model is running by itself, but is using a stretched grid
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  &
-      momentum_heights,   & ! Momentum level altitudes (input)      [m]
+    real( kind = core_rknd ), intent(in), dimension(gr%nzm) ::  &
+      momentum_heights      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), intent(in), dimension(gr%nzt) ::  &
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
       
     ! ------------------- Local Variables -------------------
@@ -2144,8 +2208,10 @@ contains
       deltaz_col,   & ! Vertical grid spacing                  [m]
       zm_init_col     ! Initial grid altitude (momentum level) [m]
       
-    real( kind = core_rknd ), dimension(1,gr%nz) ::  &
-      momentum_heights_col,   & ! Momentum level altitudes (input)      [m]
+    real( kind = core_rknd ), dimension(1,gr%nzm) ::  &
+      momentum_heights_col      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), dimension(1,gr%nzt) ::  &
       thermodynamic_heights_col ! Thermodynamic level altitudes (input) [m]
       
     deltaz_col(1) = deltaz
@@ -2154,7 +2220,7 @@ contains
     thermodynamic_heights_col(1,:) = thermodynamic_heights
 
     call setup_grid_heights( &
-      gr%nz, 1, & ! intent(in)
+      gr%nzm, gr%nzt, 1, & ! intent(in)
       l_implemented, grid_type,  & ! intent(in)
       deltaz_col, zm_init_col, momentum_heights_col,  & ! intent(in)
       thermodynamic_heights_col, & ! intent(in)
@@ -2169,7 +2235,7 @@ contains
   !================================================================================================
 
   subroutine setup_grid_heights_api_multi_col( &
-      nz, ngrdcol, &
+      nzm, nzt, ngrdcol, &
       l_implemented, grid_type,  &
       deltaz, zm_init, momentum_heights,  &
       gr, thermodynamic_heights )
@@ -2185,7 +2251,8 @@ contains
 
     ! Input Variables
     integer, intent(in) :: &
-      nz, &
+      nzm, &
+      nzt, &
       ngrdcol
 
     type (grid), target, intent(inout) :: gr
@@ -2220,12 +2287,14 @@ contains
     ! If the CLUBB model is running by itself, but is using a stretched grid
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz) ::  &
-      momentum_heights,   & ! Momentum level altitudes (input)      [m]
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
+      momentum_heights      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
     call setup_grid_heights( &
-      nz, ngrdcol, & ! intent(in)
+      nzm, nzt, ngrdcol, & ! intent(in)
       l_implemented, grid_type,  & ! intent(in)
       deltaz, zm_init, momentum_heights,  & ! intent(in)
       thermodynamic_heights, & ! intent(in)
@@ -2268,7 +2337,9 @@ contains
       zm_top      ! Maximum grid altitude (momentum level) [m]
       
     real( kind = core_rknd ), intent(in), dimension(nzmax) ::  & 
-      momentum_heights,   & ! Momentum level altitudes (input)      [m]
+      momentum_heights      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), intent(in), dimension(nzmax-1) ::  & 
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
     real( kind = core_rknd ), dimension(1) ::  &
@@ -2280,7 +2351,9 @@ contains
       zm_top_col      ! Maximum grid altitude (momentum level) [m]
       
     real( kind = core_rknd ), dimension(1,nzmax) ::  & 
-      momentum_heights_col,   & ! Momentum level altitudes (input)      [m]
+      momentum_heights_col      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), dimension(1,nzmax-1) ::  & 
       thermodynamic_heights_col ! Thermodynamic level altitudes (input) [m]
 
     sfc_elevation_col(1)            = sfc_elevation
@@ -2331,7 +2404,9 @@ contains
       zm_top      ! Maximum grid altitude (momentum level) [m]
       
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax) ::  & 
-      momentum_heights,   & ! Momentum level altitudes (input)      [m]
+      momentum_heights      ! Momentum level altitudes (input)      [m]
+
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzmax-1) ::  & 
       thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
 
@@ -2512,9 +2587,6 @@ contains
              l_prescribed_avg_deltaz, &
              lmin, nu_vert_res_dep, err_code_api )
 
-    use grid_class, only: &
-        grid    ! Type(s)
-
     use parameters_tunable, only: &
         setup_parameters
 
@@ -2579,9 +2651,6 @@ contains
              deltaz, clubb_params, gr, ngrdcol, grid_type, &
              l_prescribed_avg_deltaz, &
              lmin, nu_vert_res_dep, err_code_api )
-
-    use grid_class, only: &
-        grid
 
     use parameters_tunable, only: &
         setup_parameters
@@ -3053,7 +3122,7 @@ contains
   !================================================================================================
 
   subroutine setup_pdf_parameters_api_single_col( gr, & ! intent(in)
-    nz, pdf_dim, hydromet_dim, dt, &            ! Intent(in)
+    nzm, nzt, pdf_dim, hydromet_dim, dt, &      ! Intent(in)
     Nc_in_cloud, cloud_frac, Kh_zm, &           ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -3093,21 +3162,26 @@ contains
     type(grid), target, intent(in) :: gr
 
     integer, intent(in) :: &
-      nz,           & ! Number of model vertical grid levels
+      nzm,          & ! Number of model momentum vertical grid levels
+      nzt,          & ! Number of model thermodynamic vertical grid levels
       pdf_dim,      & ! Number of variables in the correlation array
       hydromet_dim    ! Number of hydrometeor species
 
     real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       cloud_frac,        & ! Cloud fraction                            [-]
-      Kh_zm,             & ! Eddy diffusivity coef. on momentum levels [m^2/s]
       ice_supersat_frac    ! Ice supersaturation fraction              [-]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet,    & ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
+    real( kind = core_rknd ), dimension(nzm), intent(in) :: &
+      Kh_zm                ! Eddy diffusivity coef. on momentum levels [m^2/s]
+
+    real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(in) :: &
+      hydromet       ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
+
+    real( kind = core_rknd ), dimension(nzm,hydromet_dim), intent(in) :: &
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
 
     real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), &
@@ -3154,22 +3228,22 @@ contains
       stats_zm, &
       stats_sfc
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nzm,hydromet_dim), intent(inout) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     !----------------------- Output Variables -----------------------
-    real( kind = core_rknd ), dimension(nz,pdf_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nzt,pdf_dim), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), &
+    real( kind = core_rknd ), dimension(nzt,pdf_dim,pdf_dim), &
       intent(out) :: &
       corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
       corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
-    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), &
+    real( kind = core_rknd ), dimension(nzt,pdf_dim,pdf_dim), &
       intent(out) :: &
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
@@ -3178,40 +3252,44 @@ contains
     type(precipitation_fractions), intent(inout) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    type(hydromet_pdf_parameter), dimension(nz), optional, intent(out) :: &
+    type(hydromet_pdf_parameter), dimension(nzt), optional, intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
       
     !----------------------- Local Variables -----------------------
-    real( kind = core_rknd ), dimension(1,nz) :: &
+    real( kind = core_rknd ), dimension(1,nzt) :: &
       Nc_in_cloud_col,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       cloud_frac_col,        & ! Cloud fraction                            [-]
-      Kh_zm_col,             & ! Eddy diffusivity coef. on momentum levels [m^2/s]
       ice_supersat_frac_col    ! Ice supersaturation fraction              [-]
 
-    real( kind = core_rknd ), dimension(1,nz,hydromet_dim) :: &
-      hydromet_col,    & ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
+    real( kind = core_rknd ), dimension(1,nzm) :: &
+      Kh_zm_col                ! Eddy diffusivity coef. on momentum levels [m^2/s]
+
+    real( kind = core_rknd ), dimension(1,nzt,hydromet_dim) :: &
+      hydromet_col       ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
+
+    real( kind = core_rknd ), dimension(1,nzm,hydromet_dim) :: &
       wphydrometp_col    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
       
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(1,nz,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(1,nzm,hydromet_dim) :: &
       hydrometp2_col    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(1,nz,pdf_dim) :: &
+    real( kind = core_rknd ), dimension(1,nzt,pdf_dim) :: &
       mu_x_1_n_col,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n_col,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n_col, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n_col    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(1,nz,pdf_dim,pdf_dim) :: &
+    real( kind = core_rknd ), dimension(1,nzt,pdf_dim,pdf_dim) :: &
       corr_array_1_n_col, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
       corr_array_2_n_col    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
-    real( kind = core_rknd ), dimension(1,nz,pdf_dim,pdf_dim) :: &
+    real( kind = core_rknd ), dimension(1,nzt,pdf_dim,pdf_dim) :: &
       corr_cholesky_mtx_1_col, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2_col    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
-    type(hydromet_pdf_parameter), dimension(1,nz) :: &
+    type(hydromet_pdf_parameter), dimension(1,nzt) :: &
       hydromet_pdf_params_col    ! Hydrometeor PDF parameters        [units vary]
       
     type(stats), dimension(1) :: &
@@ -3234,11 +3312,11 @@ contains
     stats_sfc_col(1) = stats_sfc
 
     call setup_pdf_parameters( gr, &                          ! intent(in)
-      nz, 1, pdf_dim, hydromet_dim, dt, &                     ! Intent(in)
+      nzm, nzt, 1, pdf_dim, hydromet_dim, dt, &               ! Intent(in)
       Nc_in_cloud_col, cloud_frac_col, Kh_zm_col, &           ! Intent(in)
       ice_supersat_frac_col, hydromet_col, wphydrometp_col, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &               ! Intent(in)
-      hm_metadata, &                                       ! Intent(in)
+      hm_metadata, &                                          ! Intent(in)
       pdf_params, &                                           ! Intent(in)
       clubb_params, &                                         ! Intent(in)
       iiPDF_type, &                                           ! Intent(in)
@@ -3293,11 +3371,11 @@ contains
   end subroutine setup_pdf_parameters_api_single_col
 !===========================================================================! 
   subroutine setup_pdf_parameters_api_multi_col( gr, &
-    nz, ngrdcol, pdf_dim, hydromet_dim, dt, &    ! Intent(in)
+    nzm, nzt, ngrdcol, pdf_dim, hydromet_dim, dt, & ! Intent(in)
     Nc_in_cloud, cloud_frac, Kh_zm, &           ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
-    hm_metadata, &                           ! Intent(in)
+    hm_metadata, &                              ! Intent(in)
     pdf_params, &                               ! Intent(in)
     clubb_params, &                             ! Intent(in)
     iiPDF_type, &                               ! Intent(in)
@@ -3330,7 +3408,8 @@ contains
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,           & ! Number of model vertical grid levels
+      nzm,          & ! Number of model momentum vertical grid levels
+      nzt,          & ! Number of model thermodynamic vertical grid levels
       pdf_dim,      & ! Number of variables in the correlation array
       ngrdcol,      & ! Number of grid columns
       hydromet_dim    ! Number of hydrometeor species
@@ -3340,14 +3419,18 @@ contains
     real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       cloud_frac,        & ! Cloud fraction                            [-]
-      Kh_zm,             & ! Eddy diffusivity coef. on momentum levels [m^2/s]
       ice_supersat_frac    ! Ice supersaturation fraction              [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
-      hydromet,    & ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
+      Kh_zm                ! Eddy diffusivity coef. on momentum levels [m^2/s]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,hydromet_dim), intent(in) :: &
+      hydromet       ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(in) :: &
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
 
     real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), &
@@ -3389,7 +3472,7 @@ contains
       stats_metadata
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(inout) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     type(stats), target, dimension(ngrdcol), intent(inout) :: &
@@ -3398,53 +3481,53 @@ contains
       stats_sfc
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim,pdf_dim), &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim,pdf_dim), &
       intent(out) :: &
       corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
       corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim,pdf_dim), &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt,pdf_dim,pdf_dim), &
       intent(out) :: &
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
-    type(hydromet_pdf_parameter), dimension(ngrdcol,nz), optional, intent(out) :: &
+    type(hydromet_pdf_parameter), dimension(ngrdcol,nzt), optional, intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
       
     ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
     type(precipitation_fractions), intent(inout) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
-    call setup_pdf_parameters( gr, &              ! intent(in)
-      nz, ngrdcol, pdf_dim, hydromet_dim, dt, &   ! Intent(in)
-      Nc_in_cloud, cloud_frac, Kh_zm, &           ! Intent(in)
-      ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
-      corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
-      hm_metadata, &                           ! Intent(in)
-      pdf_params, &                               ! Intent(in)
-      clubb_params, &                             ! Intent(in)
-      iiPDF_type, &                               ! Intent(in)
-      l_use_precip_frac, &                        ! Intent(in)
-      l_predict_upwp_vpwp, &                      ! Intent(in)
-      l_diagnose_correlations, &                  ! Intent(in)
-      l_calc_w_corr, &                            ! Intent(in)
-      l_const_Nc_in_cloud, &                      ! Intent(in)
-      l_fix_w_chi_eta_correlations, &             ! Intent(in)
-      stats_metadata, &                           ! Intent(in)
-      stats_zt, stats_zm, stats_sfc, &            ! intent(inout)
-      hydrometp2, &                               ! Intent(inout)
-      mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
-      sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
-      corr_array_1_n, corr_array_2_n, &           ! Intent(out)
-      corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
-      precip_fracs, &                             ! Intent(inout)
-      hydromet_pdf_params )                       ! Optional(out)
+    call setup_pdf_parameters( gr, &                  ! intent(in)
+      nzm, nzt, ngrdcol, pdf_dim, hydromet_dim, dt, & ! Intent(in)
+      Nc_in_cloud, cloud_frac, Kh_zm, &               ! Intent(in)
+      ice_supersat_frac, hydromet, wphydrometp, &     ! Intent(in)
+      corr_array_n_cloud, corr_array_n_below, &       ! Intent(in)
+      hm_metadata, &                                  ! Intent(in)
+      pdf_params, &                                   ! Intent(in)
+      clubb_params, &                                 ! Intent(in)
+      iiPDF_type, &                                   ! Intent(in)
+      l_use_precip_frac, &                            ! Intent(in)
+      l_predict_upwp_vpwp, &                          ! Intent(in)
+      l_diagnose_correlations, &                      ! Intent(in)
+      l_calc_w_corr, &                                ! Intent(in)
+      l_const_Nc_in_cloud, &                          ! Intent(in)
+      l_fix_w_chi_eta_correlations, &                 ! Intent(in)
+      stats_metadata, &                               ! Intent(in)
+      stats_zt, stats_zm, stats_sfc, &                ! intent(inout)
+      hydrometp2, &                                   ! Intent(inout)
+      mu_x_1_n, mu_x_2_n, &                           ! Intent(out)
+      sigma_x_1_n, sigma_x_2_n, &                     ! Intent(out)
+      corr_array_1_n, corr_array_2_n, &               ! Intent(out)
+      corr_cholesky_mtx_1, corr_cholesky_mtx_2, &     ! Intent(out)
+      precip_fracs, &                                 ! Intent(inout)
+      hydromet_pdf_params )                           ! Optional(out)
 
     if ( err_code == clubb_fatal_error ) error stop
 
@@ -3624,7 +3707,7 @@ contains
   !================================================================================================
   ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2
   !================================================================================================
-  subroutine update_xp2_mc_api_multi_col( gr, nz, ngrdcol, dt, cloud_frac, rcm, rvm, thlm, &
+  subroutine update_xp2_mc_api_multi_col( gr, nzm, nzt, ngrdcol, dt, cloud_frac, rcm, rvm, thlm, &
                                           wm, exner, rrm_evap, pdf_params,        &
                                           rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
                                           rtpthlp_mc )
@@ -3638,14 +3721,15 @@ contains
 
     ! -------------------- Input Variables --------------------
     integer, intent(in) :: &
-      nz, & ! Points in the Vertical        [-]
+      nzm,     & ! Momentum points in the Vertical        [-]
+      nzt,     & ! Thermodynamic points in the Vertical        [-]
       ngrdcol
 
     type(grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       cloud_frac, &       !Cloud fraction                        [-]
       rcm, &              !Cloud water mixing ratio              [kg/kg]
       rvm, &              !Vapor water mixing ratio              [kg/kg]
@@ -3660,14 +3744,14 @@ contains
       pdf_params ! PDF parameters
 
     ! -------------------- Input/Output Variables --------------------
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
       rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
       thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
       wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
       wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
       rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
       
-    call update_xp2_mc( gr, nz, ngrdcol, dt, cloud_frac, rcm, rvm, thlm,        & ! intent(in)
+    call update_xp2_mc( gr, nzm, nzt, ngrdcol, dt, cloud_frac, rcm, rvm, thlm,        & ! intent(in)
                         wm, exner, rrm_evap, pdf_params,        & ! intent(in)
                         rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    & ! intent(inout)
                         rtpthlp_mc ) ! intent(inout)
@@ -3677,7 +3761,7 @@ contains
   !================================================================================================
   ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2
   !================================================================================================
-  subroutine update_xp2_mc_api_single_col( gr, nz, dt, cloud_frac, rcm, rvm, thlm, &
+  subroutine update_xp2_mc_api_single_col( gr, nzm, nzt, dt, cloud_frac, rcm, rvm, thlm, &
                                            wm, exner, rrm_evap, pdf_params,        &
                                            rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
                                            rtpthlp_mc )
@@ -3691,13 +3775,14 @@ contains
 
     ! -------------------- Input Variables --------------------
     integer, intent(in) :: &
-      nz ! Points in the Vertical        [-]
+      nzm, & ! Momentum points in the Vertical        [-]
+      nzt    ! Thermodynamic points in the Vertical
 
     type(grid), target, intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nzt), intent(in) :: &
       cloud_frac, &       !Cloud fraction                        [-]
       rcm, &              !Cloud water mixing ratio              [kg/kg]
       rvm, &              !Vapor water mixing ratio              [kg/kg]
@@ -3712,7 +3797,7 @@ contains
       pdf_params ! PDF parameters
 
     ! -------------------- Input/Output Variables --------------------
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nzm), intent(inout) :: &
       rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
       thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
       wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
@@ -3720,7 +3805,7 @@ contains
       rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
       
     ! -------------------- Local Variables --------------------
-    real( kind = core_rknd ), dimension(1,nz) :: &
+    real( kind = core_rknd ), dimension(1,nzt) :: &
       cloud_frac_col, &       !Cloud fraction                        [-]
       rcm_col, &              !Cloud water mixing ratio              [kg/kg]
       rvm_col, &              !Vapor water mixing ratio              [kg/kg]
@@ -3731,7 +3816,7 @@ contains
                           !It is expected that this variable is negative, as
                           !that is the convention in Morrison microphysics
                           
-    real( kind = core_rknd ), dimension(1,nz) :: &
+    real( kind = core_rknd ), dimension(1,nzm) :: &
       rtp2_mc_col, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
       thlp2_mc_col, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
       wprtp_mc_col, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
@@ -3751,7 +3836,7 @@ contains
     wpthlp_mc_col(1,:) = wpthlp_mc
     rtpthlp_mc_col(1,:) = rtpthlp_mc
       
-    call update_xp2_mc( gr, nz, 1, dt, cloud_frac_col, rcm_col, rvm_col, thlm_col, & ! intent(in)
+    call update_xp2_mc( gr, nzm, nzt, 1, dt, cloud_frac_col, rcm_col, rvm_col, thlm_col, & ! intent(in)
                         wm_col, exner_col, rrm_evap_col, pdf_params,        & ! intent(in)
                         rtp2_mc_col, thlp2_mc_col, wprtp_mc_col, wpthlp_mc_col,    & ! intent(inout)
                         rtpthlp_mc_col ) ! intent(inout)
@@ -3881,7 +3966,7 @@ contains
   !================================================================================================
   ! initialize_tau_sponge_damp
   !================================================================================================
-  subroutine initialize_tau_sponge_damp_api( gr, dt, z, settings, damping_profile )
+  subroutine initialize_tau_sponge_damp_api( gr, nz, dt, z, settings, damping_profile )
 
     use sponge_layer_damping, only: &
         sponge_damp_settings,       & ! Variable(s)
@@ -3895,10 +3980,13 @@ contains
     type(grid), target, intent(in) :: gr
 
     ! Input Variable(s)
+    integer, intent(in) :: &
+      nz
+
     real( kind = core_rknd ), intent(in) :: &
       dt    ! Model Timestep    [s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       z    ! Height of model grid levels    [m]
 
     type(sponge_damp_settings), intent(in) :: &
@@ -3908,7 +3996,7 @@ contains
     type(sponge_damp_profile), intent(out) :: &
       damping_profile
 
-    call initialize_tau_sponge_damp( gr, dt, z, settings, & ! intent(in)
+    call initialize_tau_sponge_damp( gr, nz, dt, z, settings, & ! intent(in)
                                      damping_profile ) ! intent(inout)
 
   end subroutine initialize_tau_sponge_damp_api
