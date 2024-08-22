@@ -1364,7 +1364,8 @@ microphys = microphysics        E.G., instead of microphys or microphysics
 -------------------------------------------------------------------------
 
 gr         = <grid>    = Main grid class reference for CLUBB            [-]
-gr%nz      = Number of vertical levels in grid                          [-]
+gr%nzm     = Number of momentum vertical levels in grid                 [-]
+gr%nzt     = Number of thermodynamic vertical levels in grid            [-]
 gr%zm      = Grid altitudes of "momentum" variables (wp2, etc.)         [m]
 gr%zt      = Grid altitudes of "thermodynamic" variables (rtm, etc.)    [m]
 thlm       = <θ_l>       = Mean liquid water potential temperature, θ_l [K]
@@ -1386,6 +1387,19 @@ vpwp       = <v'w'>      = Covariance of v and w                        [m^2/s^2
 up2        = <u'^2>      = Variance of u                                [m^2/s^2]
 vp2        = <v'^2>      = Variance of v                                [m^2/s^2]
 rrm        = <r_r>       = Mean rain water mixing ratio, r_r            [kg/kg]
+Nrm        = <N_r>       = Mean rain water concentration, N_r           [num/kg]
+
+Note: The variable nz is used locally within some subroutines and functions to
+      denote a generic number of vertical grid levels. This notation is used in
+      subroutines and functions that could potentially be called on either
+      thermodynamic or momentum grid levels, and where all the inputs and outputs
+      to that subroutine or function, as well as all local variables, are
+      located on the same grid level type. A prominant example of subroutines and
+      functions that could be called on either grid level type is CLUBB's PDF.
+      Other examples include subroutines and functions that calculate
+      quantities such as saturation mixing ratio or skewness, or handle
+      conversions between absolute temperature and liquid water potential
+      temperature.
 
 Information on and a description of CLUBB's vertical grid can be found in the 
 source file ../src/CLUBB_core/grid_class.F90 and doc/CLUBBeqns.pdf.
