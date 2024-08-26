@@ -1593,7 +1593,7 @@ contains
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM 

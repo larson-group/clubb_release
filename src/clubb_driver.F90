@@ -1923,10 +1923,10 @@ module clubb_driver
     end do
 
     ! Allocate a correctly-sized array for radf and zero it
-    allocate( radf(gr%nzt) )
+    allocate( radf(gr%nzm) )
 
     ! Zero all elements of radf
-    radf(1:gr%nzt) = 0.0_core_rknd
+    radf(1:gr%nzm) = 0.0_core_rknd
 
     allocate( wp2hmp(gr%nzt,hydromet_dim), rtphmp_zt(gr%nzt,hydromet_dim), &
               thlphmp_zt(gr%nzt,hydromet_dim) )
@@ -6774,7 +6774,7 @@ module clubb_driver
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
-    real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM 
@@ -7007,7 +7007,7 @@ module clubb_driver
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim) :: &
       hydromet_col           ! Collection of hydrometeors                [units vary]
 
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzt) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
       radf_col          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM 
