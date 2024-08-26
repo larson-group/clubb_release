@@ -86,7 +86,9 @@
 
       real (kind=dbl_kind), intent(in), dimension(nlen)::
      &  ts         !Surface temperature                             (K).
-     &, amu0       !Cosine of solar zenith angle                    (-).
+
+      real (kind=dbl_kind), intent(in)::
+     &  amu0       !Cosine of solar zenith angle                    (-).
      &, slr        !Fraction of daylight                            (-).
      &, alvdr      !Visible direct surface albedo                   (-).
      &, alndr      !Near-IR direct surface albedo                   (-).
@@ -431,12 +433,12 @@
 !---- 1.2 initialization of local arrays
 
       ts_loc(:)          = ts(1:len)
-      amu0_loc(:)        = amu0(1:len)
-      slr_loc(:)         = slr(1:len)
-      alvdr_loc(:)       = alvdr(1:len)
-      alndr_loc(:)       = alndr(1:len)
-      alvdf_loc(:)       = alvdf(1:len)
-      alndf_loc(:)       = alndf(1:len)
+      amu0_loc(:)        = amu0
+      slr_loc(:)         = slr
+      alvdr_loc(:)       = alvdr
+      alndr_loc(:)       = alndr
+      alvdf_loc(:)       = alvdf
+      alndf_loc(:)       = alndf
 
 #ifndef radoffline
       nnp = nlm+1

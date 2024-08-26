@@ -19,7 +19,7 @@ module parameters_radiation
   character(len=20), public :: & 
     rad_scheme  ! Either BUGSrad, simplified, or simplied_bomex
 
-  real( kind = dp ), dimension(1), public :: &
+  real( kind = dp ), public :: &
     sol_const ! Solar constant
 
   real( kind = core_rknd ), public :: &
