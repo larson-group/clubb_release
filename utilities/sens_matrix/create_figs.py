@@ -16,7 +16,7 @@ from dash import dcc
 #import dash_core_components as dcc
 from dash import html
 #import dash_html_components as html
-import fnmatch
+#import fnmatch
 
 
 
@@ -1125,9 +1125,11 @@ def createDpMin2PtFig( normlzdSensMatrixPoly, defaultBiasesCol,
     cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixPoly )
     invrsCosFactorMinusMatrix = np.power( np.maximum( np.finfo(float).eps, 2. * ( 1. - cosAnglesMatrix ) ) , -0.5 )
     invrsCosFactorPlusMatrix = np.power( np.maximum( np.finfo(float).eps, 2. * ( 1. + cosAnglesMatrix ) ), -0.5 )
+    # dbOnAbsSensVector = column vector = dbias / magnitude_of_each_row_of_sensitivity_matrix
     dbOnAbsSensVector = \
         -defaultBiasesCol/np.abs(normMetricValsCol) \
             / np.linalg.norm(normlzdSensMatrixPoly, axis=1).reshape(-1, 1)
+    # Create matrix whose (i,l) element = cosine_factor_il * ( (dbias/mag_sens)_i - (dbias/mag_sens)_l )
     dbOnAbsSensMatrix1 = np.ones((len(metricsNames),1)) @ dbOnAbsSensVector.T
     dbOnAbsSensMatrix2 = dbOnAbsSensVector @ np.ones((1,len(metricsNames)) )
     dpMin2PtMinusMatrix = invrsCosFactorMinusMatrix * \
@@ -1136,7 +1138,7 @@ def createDpMin2PtFig( normlzdSensMatrixPoly, defaultBiasesCol,
         np.abs( dbOnAbsSensMatrix2 + dbOnAbsSensMatrix1 )
     dpMin2PtMatrix = np.maximum( dpMin2PtMinusMatrix, dpMin2PtPlusMatrix )
     roundedDpMin2PtMatrix = np.around(dpMin2PtMatrix, decimals=2)
-    dpMin2PtMatrix = np.fill_diagonal(roundedDpMin2PtMatrix, np.nan)
+    #dpMin2PtMatrix = np.fill_diagonal(roundedDpMin2PtMatrix, np.nan)
     df = pd.DataFrame(roundedDpMin2PtMatrix,
                   index=metricsNames,
                   columns=metricsNames)

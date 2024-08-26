@@ -128,7 +128,7 @@ def setUpInputs():
     #    up and in the other, it is perturbed down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
-    folder_name = 'Regional_files/20degree_CAM_TAUS_202404/20.0thresp26_'
+    folder_name = 'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0thresp26_'
     #folder_name = 'Regional_files/30degree_CAM_TAUS_202404/30.0thresp26_'
     #folder_name = 'Regional_files/RG_20240402_sens/thresp26_'
     #folder_name = 'Regional_files/20240614_e3sm_20x20regs/thresp26_'
@@ -333,7 +333,7 @@ def setUpInputs():
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-        'Regional_files/20degree_CAM_TAUS_202404/20.0Tuner_20240702_20d_Regional.nc'
+        'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0Tuner_20240702_20d_DJF_Regional.nc'
         #defaultNcFilename
     #    'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
     #    'Regional_files/20240409updated/thresp26_Regional.nc'

@@ -8,23 +8,18 @@
 def main():
 
     import dash
-    from dash import dcc
     #import dash_core_components as dcc
-    from dash import html
     #import dash_html_components as html
     import plotly.express as px
-    import plotly.graph_objects as go
     import pandas as pd
 
     import numpy as np
     import pdb
     import sklearn
     import plotly.figure_factory as ff
-    from plotly.subplots import make_subplots
     #from plotly.figure_factory import create_quiver
-    from itertools import chain
+    #from itertools import chain
 
-    from test_analyzeSensMatrix import write_test_netcdf_files
     from set_up_dashboard_inputs import setUpInputs, setUpPreliminaries, \
                                         setupDefaultMetricValsCol
     from  create_figs import createFigs
@@ -295,7 +290,6 @@ def objFnc(dnormlzdParams, normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWe
            normlzdCurvMatrix, reglrCoef, numMetrics):
 
     import numpy as np
-    import pdb
 
     dnormlzdParams = np.atleast_2d(dnormlzdParams).T # convert from 1d row array to 2d column array
     chisqd = np.linalg.norm( (-normlzdDefaultBiasesCol \
@@ -343,7 +337,6 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
     dparamsSolnNonlin = dnormlzdParamsSolnNonlin * np.transpose(magParamValsRow)
     paramsSolnNonlin = np.transpose(defaultParamValsOrigRow) + dparamsSolnNonlin
     if beVerbose:
-        print("paramsSoln.T=", paramsSoln.T)
         print("paramsSolnNonlin.T=", paramsSolnNonlin.T)
         print("normlzdSensMatrix@dnPS.x.T=", normlzdSensMatrix @ dnormlzdParamsSolnNonlin)
         print("normlzdDefaultBiasesCol.T=", normlzdDefaultBiasesCol.T)
@@ -391,6 +384,100 @@ def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
             defaultBiasesApproxNonlin2x, \
             defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv \
            )
+
+def minDp2pt(metricsNames, paramsNames, transformedParamsNames,
+                     metricsWeights, normMetricValsCol, magParamValsRow,
+                     sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
+                     defaultParamValsOrigRow,
+                     normlzdSensMatrix, defaultBiasesCol,
+                     normlzdCurvMatrix,
+                     reglrCoef,
+                     beVerbose):
+
+    import numpy as np
+    import pdb
+    from scipy.optimize import minimize
+    from scipy.optimize import Bounds
+
+    numMetrics = len(metricsNames)
+
+    #pdb.set_trace()
+
+    # Don't let parameter values go negative
+    lowerBoundsCol =  -defaultParamValsOrigRow[0]/magParamValsRow[0]
+
+    # Perform nonlinear optimization
+    normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
+    #dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.ones_like(np.transpose(defaultParamValsOrigRow)), \
+    dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
+    #dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
+                               args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
+                               normlzdCurvMatrix, reglrCoef, numMetrics),\
+                               method='Powell', tol=1e-12,
+                               bounds=Bounds(lb=lowerBoundsCol) )
+    dnormlzdParamsSolnNonlin = np.atleast_2d(dnormlzdParamsSolnNonlin.x).T
+
+
+    dparamsSolnNonlin = dnormlzdParamsSolnNonlin * np.transpose(magParamValsRow)
+    paramsSolnNonlin = np.transpose(defaultParamValsOrigRow) + dparamsSolnNonlin
+    if beVerbose:
+        print("paramsSolnNonlin.T=", paramsSolnNonlin.T)
+        print("normlzdSensMatrix@dnPS.x.T=", normlzdSensMatrix @ dnormlzdParamsSolnNonlin)
+        print("normlzdDefaultBiasesCol.T=", normlzdDefaultBiasesCol.T)
+        print("normlzdSensMatrix=", normlzdSensMatrix)
+
+    normlzdWeightedDefaultBiasesApproxNonlin = \
+             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, normlzdCurvMatrix, numMetrics) \
+             * metricsWeights
+
+    scale = 2
+    normlzdWeightedDefaultBiasesApproxNonlin2x = \
+             fwdFnc(scale*dnormlzdParamsSolnNonlin, normlzdSensMatrix, 1*normlzdCurvMatrix, numMetrics) \
+             * metricsWeights
+
+    # defaultBiasesApprox = (forward model soln - default soln)
+    defaultBiasesApproxNonlin = normlzdWeightedDefaultBiasesApproxNonlin \
+                                * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
+
+    defaultBiasesApproxNonlin2x = normlzdWeightedDefaultBiasesApproxNonlin2x \
+                                * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
+
+    # To provide error bars, calculate solution with no nonlinear term and double the nonlinear term
+    defaultBiasesApproxNonlinNoCurv = \
+             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 0*normlzdCurvMatrix, numMetrics) \
+             * np.abs(normMetricValsCol)
+
+    defaultBiasesApproxNonlin2xCurv = \
+             fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 2*normlzdCurvMatrix, numMetrics) \
+             * np.abs(normMetricValsCol)
+
+    def dpSqdFnc(dnormlzdParamsRow):
+        return ( 0.5 * np.dot(dnormlzdParamsRow, dnormlzdParamsRow.T) )
+
+    def dpSqdJac(dnormlzdParamsRow):
+        return ( dnormlzdParamsRow )
+
+    normlzdSensRowEqns = {'type': 'eq',
+            'fun': lambda x: normlzdDefaultBiasesCol - np.dot(normlzdSensMatrix2Rows, x),
+            'jac': lambda x: -normlzdSensMatrix2Rows}
+
+    dnormlzdParamsMin2pt = minimize(dparamsSqdFnc,
+                            x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
+                            jac=dpSqdJac,
+                            constraints=normlzdSensRowEqns,
+                            method='SLSQP')
+    dnormlzdParamsSolnLin = np.atleast_2d(dnormlzdParamsSolnLin.x).T
+    dparamsSolnLin = dnormlzdParamsSolnLin * np.transpose(magParamValsRow)
+    paramsSolnLin = np.transpose(defaultParamValsOrigRow) + dparamsSolnLin
+
+
+    return (defaultBiasesApproxNonlin, \
+            dnormlzdParamsSolnNonlin, paramsSolnNonlin, \
+            dnormlzdParamsSolnLin, paramsSolnLin, \
+            defaultBiasesApproxNonlin2x, \
+            defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv \
+           )
+
 
 def constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames,
                                metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow,
@@ -595,8 +682,6 @@ def calcNormlzdRadiusCurv(metricsNames, paramsNames, transformedParamsNames, par
     simulation.
     """
     import numpy as np
-    import sys
-    import netCDF4
     import matplotlib.pyplot as plt
     import pdb
 
@@ -771,7 +856,6 @@ def findParamsUsingElastic(normlzdSensMatrix, normlzdWeightedSensMatrix, \
                  beVerbose):
 
     import numpy as np
-    from sklearn.linear_model import ElasticNet, ElasticNetCV
     from sklearn.linear_model import Lasso, LassoCV
     import pdb
 
