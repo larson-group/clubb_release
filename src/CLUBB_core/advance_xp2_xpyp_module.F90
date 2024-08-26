@@ -3485,10 +3485,11 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: & 
       stats_tp1, &
-      stats_tp2
+      stats_tp2, &
+      wpxp_zeros
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: & 
-      zeros_vector
+      xm_zeros
 
     !------------------------------ Begin Code ---------------------------------
 
@@ -3620,18 +3621,19 @@ module advance_xp2_xpyp_module
       !$acc update host( rhs_ta, lhs_ta, xapxbp, Cn, invrs_tau_zm, xam, rhs_term_tp, &
       !$acc              xbm, wpxbp, wpxap, xpyp_forcing, rhs_term_dp1, lhs_term_dp1 )
 
-      zeros_vector = zero
+      xm_zeros = zero
+      wpxp_zeros = zero
 
       ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
       !        the xam inputs and the wpxbp input to function term_tp.
-      call term_tp_rhs( nzm, nzt, ngrdcol, zeros_vector, xbm,  & 
-                        zeros_vector, wpxap, gr%invrs_dzm, &
+      call term_tp_rhs( nzm, nzt, ngrdcol, xm_zeros, xbm,  & 
+                        wpxp_zeros, wpxap, gr%invrs_dzm, &
                         stats_tp1 )
 
       ! Note:  To find the contribution of x'y' term tp2, substitute 0 for all
       !        the xbm inputs and the wpxap input to function term_tp.
-      call term_tp_rhs( nzm, nzt, ngrdcol, xam, zeros_vector,  & 
-                        wpxbp, zeros_vector, gr%invrs_dzm, &
+      call term_tp_rhs( nzm, nzt, ngrdcol, xam, xm_zeros,  & 
+                        wpxbp, wpxp_zeros, gr%invrs_dzm, &
                         stats_tp2 )
 
       do k = 2, nzm-1
