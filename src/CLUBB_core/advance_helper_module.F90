@@ -1247,7 +1247,7 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+    !$acc enter data create( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_clipped_zt )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
@@ -1270,7 +1270,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_smooth )
+    !$acc exit data delete( brunt_vaisala_freq_splat_clipped, brunt_vaisala_freq_splat_clipped_zt )
 
     return
 
