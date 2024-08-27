@@ -6,7 +6,7 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 
 To plot clubb output located in `/home/USERNAME/clubb_issue_834/output/default_run` 
 and save the generated plots in `/home/USERNAME/clubb/output/pyplots_default_run`, 
-run this command:
+go to the directory where pyplotgen reside (usually postprocessing/pyplotgen), and run this command:
 
 `python3 ./pyplotgen.py -c /home/USERNAME/clubb_issue_834/output/default_run -o /home/USERNAME/clubb/output/pyplots_default_run`
 
