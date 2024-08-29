@@ -13,6 +13,7 @@ module advance_helper_module
     calc_stability_correction,   &
     calc_brunt_vaisala_freq_sqd, &
     compute_Cx_fnc_Richardson, &
+    calc_Ri_zm, &
     wp2_term_splat_lhs, &
     wp3_term_splat_lhs, &
     smooth_min, smooth_max, &
@@ -763,7 +764,7 @@ module advance_helper_module
       Cx_fnc_Richardson_avg
 
     real ( kind = core_rknd ) :: &
-      invrs_min_max_diff, &
+      invrs_min_max_diff,   &
       invrs_num_div_thresh
 
     real( kind = core_rknd ) :: &
@@ -825,16 +826,14 @@ module advance_helper_module
 
     if ( l_use_shear_Richardson ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzm
-        do i = 1, ngrdcol
-          Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed(i,k) ) &
-                       / max( shear_sqd(i,k), 1.0e-7_core_rknd )
-        end do
-      end do
-      !$acc end parallel loop
+      call calc_Ri_zm(nzm, ngrdcol, brunt_vaisala_freq_sqd_mixed, shear_sqd, &
+                      1.0e-7_core_rknd, 1.0e-7_core_rknd, Ri_zm )
 
     else
+      ! Note1: We kind of want this calculation to be done in calc_Ri_zm, as well.
+      ! But multiplying by the inverse and dividing are not numerically equal.
+      ! So to preserve BFBness, we decided to keep this as is, for now.
+      ! Note2: Keep in mind, that this Brunt Vaisala variable can contain negative values.
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
@@ -842,6 +841,7 @@ module advance_helper_module
         end do
       end do
       !$acc end parallel loop
+
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
@@ -941,9 +941,54 @@ module advance_helper_module
     return
 
   end subroutine compute_Cx_fnc_Richardson
-  !----------------------------------------------------------------------
 
-  !----------------------------------------------------------------------
+ !===============================================================================
+  subroutine calc_Ri_zm( nzm, ngrdcol, bv_freq_sqd, shear, lim_bv, lim_shear, & ! intent(in)
+                         Ri_zm )                                               ! intent(out)
+  ! Description:
+  !     Calculate the Richardson number as a quotient of a clipped Brunt-Vaisala frequency
+  !     and a clipped shear
+  ! References:
+  !     ?
+
+    use clubb_precision, only: &
+        core_rknd ! Precision
+
+    implicit none
+
+    !-------------------------- Input Variables --------------------------
+    integer, intent(in) :: &
+        nzm, &
+        ngrdcol
+
+    real ( kind = core_rknd ), dimension(ngrdcol, nzm), intent(in) :: &
+        bv_freq_sqd, &      ! Square of Brunt Vaisala frequency
+        shear               ! Shear variable, usually norm squared of horizontal wind speeds
+
+    real ( kind = core_rknd ), intent(in) :: &
+        lim_bv, &           ! Clipping value in numerator
+        lim_shear           ! Clipping value in denominator
+
+    !-------------------------- Result Variable --------------------------
+    real (kind = core_rknd ), dimension(ngrdcol, nzm), intent(out) :: &
+        Ri_zm               ! Richardson number
+
+    !-------------------------- Local Variables --------------------------
+    integer :: &
+        k, i                ! Loop variable
+
+    !-------------------------- Begin Code --------------------------
+
+    do k = 1, nzm
+      do i = 1, ngrdcol
+        Ri_zm(i,k) = max(bv_freq_sqd(i,k), lim_bv) / max(shear(i,k), lim_shear)
+      end do
+    end do
+    !$acc end parallel loop
+
+  end subroutine calc_Ri_zm
+
+ !===============================================================================
   function Lscale_width_vert_avg( nzm, ngrdcol, gr, smth_type, &
                                   var_profile, Lscale_zm, rho_ds_zm, &
                                   var_below_ground_value )&
@@ -1113,7 +1158,8 @@ module advance_helper_module
 
   end function Lscale_width_vert_avg
 
- !=============================================================================
+ !===============================================================================
+
   subroutine wp2_term_splat_lhs( nzm, nzt, ngrdcol, gr, C_wp2_splat, &
                                  brunt_vaisala_freq_sqd_splat, &
                                  lhs_splat_wp2 )
@@ -1192,7 +1238,7 @@ module advance_helper_module
 
   end subroutine wp2_term_splat_lhs
 
- !=============================================================================
+ !===============================================================================
   subroutine wp3_term_splat_lhs( nzm, nzt, ngrdcol, gr, C_wp2_splat, &
                                  brunt_vaisala_freq_sqd_splat, &
                                  lhs_splat_wp3 )
@@ -1951,7 +1997,7 @@ module advance_helper_module
 
   end subroutine calc_xpwp_2D
 
-  !=============================================================================
+  !===============================================================================
   function vertical_avg( total_idx, rho_ds, field, dz )
 
     ! Description:
@@ -2102,7 +2148,7 @@ module advance_helper_module
     return
   end function vertical_avg
 
-  !=============================================================================
+  !===============================================================================
   function vertical_integral( total_idx, rho_ds, &
                                        field, dz )
 

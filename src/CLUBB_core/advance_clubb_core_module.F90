@@ -338,7 +338,8 @@ module advance_clubb_core_module
         wp3_term_splat_lhs, &
         vertical_integral, &
         Lscale_width_vert_avg, &
-        smooth_max
+        smooth_max, &
+        calc_Ri_zm
 
     use interpolation, only: &
         pvertinterp
@@ -1434,14 +1435,8 @@ module advance_clubb_core_module
     ! Calculate Richardson number Ri_zm
     if ( clubb_config_flags%l_modify_limiters_for_cnvg_test ) then
 
-      !$acc parallel loop gang vector collapse(2) default(present)
-      do k = 1, nzm
-        do i = 1, ngrdcol
-          Ri_zm(i,k) = max( 0.0_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
-                          / max( ddzt_umvm_sqd(i,k), 1.0e-12_core_rknd )
-        end do
-      end do
-      !$acc end parallel loop
+      call calc_Ri_zm(nzm, ngrdcol, brunt_vaisala_freq_sqd_smth, ddzt_umvm_sqd, &
+                      0.0_core_rknd, 1.0e-12_core_rknd, Ri_zm )
 
       Ri_zm = zm2zt2zm( nzm, nzt, ngrdcol, gr, Ri_zm )
 
@@ -1455,24 +1450,13 @@ module advance_clubb_core_module
         ddzt_umvm_sqd_clipped = smooth_max( nzm, ngrdcol, ddzt_umvm_sqd, 1.0e-7_core_rknd, &
                                         1.0e-6_core_rknd * min_max_smth_mag )
 
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nzm
-          do i = 1, ngrdcol
-            Ri_zm(i,k) = brunt_vaisala_freq_clipped(i,k) / ddzt_umvm_sqd_clipped(i,k)
-          end do
-        end do
-        !$acc end parallel loop
+        call calc_Ri_zm(nzm, ngrdcol, brunt_vaisala_freq_clipped, ddzt_umvm_sqd_clipped, &
+                        0.0_core_rknd, 0.0_core_rknd, Ri_zm )
 
       else
 
-        !$acc parallel loop gang vector collapse(2) default(present)
-        do k = 1, nzm
-          do i = 1, ngrdcol
-            Ri_zm(i,k) = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth(i,k) ) &
-                            / max( ddzt_umvm_sqd(i,k), 1.0e-7_core_rknd )
-          end do
-        end do
-        !$acc end parallel loop
+        call calc_Ri_zm(nzm, ngrdcol, brunt_vaisala_freq_sqd_smth, ddzt_umvm_sqd, &
+                        1.0e-7_core_rknd, 1.0e-7_core_rknd, Ri_zm )
 
       end if
 
