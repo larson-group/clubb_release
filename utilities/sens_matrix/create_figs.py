@@ -1119,6 +1119,102 @@ def createParamsCorrArrayFig(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesC
 
     return paramsCorrArrayFig
 
+def minimize2ptDp(metricsNames, normMetricValsCol,
+                  normlzdSensMatrix, defaultBiasesCol):
+
+
+    # normlzdCurvMatrix,
+    # reglrCoef,
+    # beVerbose):
+
+    import numpy as np
+    # import pdb
+    from scipy.optimize import minimize
+
+    # from scipy.optimize import Bounds
+
+    numMetrics = len(metricsNames)
+
+    # pdb.set_trace()
+
+    # Don't let parameter values go negative
+    # lowerBoundsCol =  -defaultParamValsOrigRow[0]/magParamValsRow[0]
+
+    # Perform nonlinear optimization
+    normlzdDefaultBiasesCol = defaultBiasesCol / np.abs(normMetricValsCol)
+
+
+# dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.ones_like(np.transpose(defaultParamValsOrigRow)), \
+# dnormlzdParamsSolnNonlin = minimize(objFnc,x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])), \
+# dnormlzdParamsSolnNonlin = minimize(objFnc,dnormlzdParamsSoln, \
+#                           args=(normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWeights,
+#                           normlzdCurvMatrix, reglrCoef, numMetrics),\
+#                           method='Powell', tol=1e-12,
+#                           bounds=Bounds(lb=lowerBoundsCol) )
+# dnormlzdParamsSolnNonlin = np.atleast_2d(dnormlzdParamsSolnNonlin.x).T
+
+# dparamsSolnNonlin = dnormlzdParamsSolnNonlin * np.transpose(magParamValsRow)
+# paramsSolnNonlin = np.transpose(defaultParamValsOrigRow) + dparamsSolnNonlin
+# if beVerbose:
+#    print("paramsSolnNonlin.T=", paramsSolnNonlin.T)
+#    print("normlzdSensMatrix@dnPS.x.T=", normlzdSensMatrix @ dnormlzdParamsSolnNonlin)
+#    print("normlzdDefaultBiasesCol.T=", normlzdDefaultBiasesCol.T)
+#    print("normlzdSensMatrix=", normlzdSensMatrix)
+
+# normlzdWeightedDefaultBiasesApproxNonlin = \
+#         fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, normlzdCurvMatrix, numMetrics) \
+#         * metricsWeights
+
+# defaultBiasesApprox = (forward model soln - default soln)
+# defaultBiasesApproxNonlin = normlzdWeightedDefaultBiasesApproxNonlin \
+#                            * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
+
+# To provide error bars, calculate solution with no nonlinear term and double the nonlinear term
+# defaultBiasesApproxNonlinNoCurv = \
+#         fwdFnc(dnormlzdParamsSolnNonlin, normlzdSensMatrix, 0*normlzdCurvMatrix, numMetrics) \
+#         * np.abs(normMetricValsCol)
+
+    def dparamsSqdFnc(dnormlzdParamsRow):
+        return (np.dot(dnormlzdParamsRow, dnormlzdParamsRow.T))
+
+    def dpSqdJac(dnormlzdParamsRow):
+        return (2. * dnormlzdParamsRow)
+
+
+# Two = 2
+# RowIdxs = slice(0, Two) # RowIdxs means "[0:Two]"
+
+# idx1 = 0
+# idx2 = 1
+
+    dpMagMin2Row = np.zeros((numMetrics, numMetrics))
+
+    for idx1 in np.arange(numMetrics - 1):  # each row in correlation matrix
+        for idx2 in np.arange(idx1 + 1, numMetrics):  # each col in correlation matrix
+            rowIdxs = [idx1, idx2]
+            normlzdSensMatrix2Rows = normlzdSensMatrix[rowIdxs, :]
+            normlzdDefaultBiases2Rows = normlzdDefaultBiasesCol[rowIdxs].flatten()
+
+        #    normlzdSensRowEqns = {'type': 'eq',
+        #            'fun': lambda x: -normlzdDefaultBiasesCol[0:2] - np.dot(normlzdSensMatrix2Rows, x.T),
+        #            'jac': lambda x: -normlzdSensMatrix2Rows}
+
+            normlzdSensRowEqns = {'type': 'eq',
+                              'fun': lambda x: -normlzdDefaultBiases2Rows - np.dot(normlzdSensMatrix2Rows, x)
+                              }
+
+            dnormlzdParamsMin2pt = minimize(dparamsSqdFnc,
+                                        # x0=np.zeros_like(np.transpose(defaultParamValsOrigRow[0])),
+                                        x0=np.zeros(normlzdSensMatrix.shape[1]),
+                                        jac=dpSqdJac,
+                                        constraints=normlzdSensRowEqns,
+                                        method='SLSQP')
+
+            dpMagMin2Row[idx2, idx1] = np.sqrt(dnormlzdParamsMin2pt.fun)
+            # print("dpMagMin2Row=", idx2, idx1, dpMagMin2Row[idx2,idx1])
+
+    return (dpMagMin2Row)
+
 def createDpMin2PtFig( normlzdSensMatrixPoly, defaultBiasesCol,
                       normMetricValsCol, metricsNames ):
 
@@ -1137,6 +1233,11 @@ def createDpMin2PtFig( normlzdSensMatrixPoly, defaultBiasesCol,
     dpMin2PtPlusMatrix = invrsCosFactorPlusMatrix * \
         np.abs( dbOnAbsSensMatrix2 + dbOnAbsSensMatrix1 )
     dpMin2PtMatrix = np.maximum( dpMin2PtMinusMatrix, dpMin2PtPlusMatrix )
+
+    # Should this be based on the nonlinear matrix??
+    dpMin2PtMatrix = minimize2ptDp(metricsNames, normMetricValsCol,
+                                   normlzdSensMatrixPoly, defaultBiasesCol)
+
     roundedDpMin2PtMatrix = np.around(dpMin2PtMatrix, decimals=2)
     #dpMin2PtMatrix = np.fill_diagonal(roundedDpMin2PtMatrix, np.nan)
     df = pd.DataFrame(roundedDpMin2PtMatrix,
@@ -1487,7 +1588,7 @@ def createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
     #biasVsDiagnosticScatterplot.add_trace(go.Scatter(x=biasRange, y=biasRange, fill='tozeroy',
     #                           name='Region of improvement', mode='none',
     #                           fillcolor='rgba(253,253,150,0.7)'))
-    biasVsDiagnosticScatterplot.update_xaxes(title="diagnostic")
+    biasVsDiagnosticScatterplot.update_xaxes(title=diagnosticPrefix)
     biasVsDiagnosticScatterplot.update_yaxes(title="-defaultBiasesCol/obs")
     biasVsDiagnosticScatterplot.update_traces(textposition='top center')
     biasVsDiagnosticScatterplot.update_yaxes(visible=True,zeroline=True,zerolinewidth=2,zerolinecolor='lightblue') # Plot x axis
