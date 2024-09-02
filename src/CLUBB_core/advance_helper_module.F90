@@ -979,6 +979,7 @@ module advance_helper_module
 
     !-------------------------- Begin Code --------------------------
 
+    !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
         Ri_zm(i,k) = max(bv_freq_sqd(i,k), lim_bv) / max(shear(i,k), lim_shear)
