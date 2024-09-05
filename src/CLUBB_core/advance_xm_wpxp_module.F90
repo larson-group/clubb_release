@@ -1269,9 +1269,6 @@ module advance_xm_wpxp_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
-    use clip_semi_implicit, only: & 
-        clip_semi_imp_lhs ! Procedure(s)
-
     use stats_variables, only: &
         stats_metadata_type
 
@@ -1329,8 +1326,6 @@ module advance_xm_wpxp_module
     ! Indices
     integer :: k
     integer :: k_xm, k_wpxp
-
-    logical :: l_upper_thresh, l_lower_thresh ! flags for clip_semi_imp_lhs
 
     logical, intent(in) :: &
       l_diffuse_rtm_and_thlm ! This flag determines whether or not we want CLUBB to do diffusion
@@ -1764,9 +1759,6 @@ module advance_xm_wpxp_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
-    use clip_semi_implicit, only: & 
-        clip_semi_imp_rhs ! Procedure(s)
-
     use stats_type_utilities, only: & 
         stat_update_var,      & ! Procedure(s)
         stat_update_var_pt,   & 
@@ -1853,7 +1845,6 @@ module advance_xm_wpxp_module
       iwpxp_bp, & 
       iwpxp_pr3, &
       iwpxp_f, &
-      iwpxp_sicl, &
       iwpxp_ta, &
       iwpxp_pr1
       
@@ -1944,7 +1935,6 @@ module advance_xm_wpxp_module
             iwpxp_bp   = stats_metadata%iwprtp_bp
             iwpxp_pr3  = stats_metadata%iwprtp_pr3
             iwpxp_f    = stats_metadata%iwprtp_forcing
-            iwpxp_sicl = stats_metadata%iwprtp_sicl
             iwpxp_ta   = stats_metadata%iwprtp_ta
             iwpxp_pr1  = stats_metadata%iwprtp_pr1
           case ( xm_wpxp_thlm ) ! thlm/wpthlp budget terms
@@ -1952,7 +1942,6 @@ module advance_xm_wpxp_module
             iwpxp_bp   = stats_metadata%iwpthlp_bp
             iwpxp_pr3  = stats_metadata%iwpthlp_pr3
             iwpxp_f    = stats_metadata%iwpthlp_forcing
-            iwpxp_sicl = stats_metadata%iwpthlp_sicl
             iwpxp_ta   = stats_metadata%iwpthlp_ta
             iwpxp_pr1  = stats_metadata%iwpthlp_pr1
           case ( xm_wpxp_um )  ! um/upwp budget terms
@@ -1960,7 +1949,6 @@ module advance_xm_wpxp_module
             iwpxp_bp   = stats_metadata%iupwp_bp
             iwpxp_pr3  = stats_metadata%iupwp_pr3
             iwpxp_f    = 0
-            iwpxp_sicl = 0
             iwpxp_ta   = stats_metadata%iupwp_ta
             iwpxp_pr1  = stats_metadata%iupwp_pr1
           case ( xm_wpxp_vm )  ! vm/vpwp budget terms
@@ -1968,7 +1956,6 @@ module advance_xm_wpxp_module
             iwpxp_bp   = stats_metadata%ivpwp_bp
             iwpxp_pr3  = stats_metadata%ivpwp_pr3
             iwpxp_f    = 0
-            iwpxp_sicl = 0
             iwpxp_ta   = stats_metadata%ivpwp_ta
             iwpxp_pr1  = stats_metadata%ivpwp_pr1
           case default    ! this includes the sclrm case
@@ -1976,7 +1963,6 @@ module advance_xm_wpxp_module
             iwpxp_bp   = 0
             iwpxp_pr3  = 0
             iwpxp_f    = 0
-            iwpxp_sicl = 0
             iwpxp_ta   = 0
             iwpxp_pr1  = 0
       end select
@@ -4685,8 +4671,7 @@ module advance_xm_wpxp_module
       iwpxp_pr1, & 
       iwpxp_pr2, & 
       iwpxp_dp1, & 
-      iwpxp_pd, & 
-      iwpxp_sicl
+      iwpxp_pd 
 
     ! --------------------------- Begin code ---------------------------
 
@@ -4707,7 +4692,6 @@ module advance_xm_wpxp_module
       iwpxp_pr2  = stats_metadata%iwprtp_pr2
       iwpxp_dp1  = stats_metadata%iwprtp_dp1
       iwpxp_pd   = stats_metadata%iwprtp_pd
-      iwpxp_sicl = stats_metadata%iwprtp_sicl
 
       ! This is a diagnostic from inverting the matrix, not a budget
       ixm_matrix_condt_num = stats_metadata%irtm_matrix_condt_num
@@ -4725,7 +4709,6 @@ module advance_xm_wpxp_module
       iwpxp_pr2  = stats_metadata%iwpthlp_pr2
       iwpxp_dp1  = stats_metadata%iwpthlp_dp1
       iwpxp_pd   = 0
-      iwpxp_sicl = stats_metadata%iwpthlp_sicl
 
       ! This is a diagnostic from inverting the matrix, not a budget
       ixm_matrix_condt_num = stats_metadata%ithlm_matrix_condt_num
@@ -4743,7 +4726,6 @@ module advance_xm_wpxp_module
       iwpxp_pr2  = stats_metadata%iupwp_pr2
       iwpxp_dp1  = stats_metadata%iupwp_dp1
       iwpxp_pd   = 0
-      iwpxp_sicl = 0
 
       ! This is a diagnostic from inverting the matrix, not a budget
       ixm_matrix_condt_num = 0
@@ -4761,7 +4743,6 @@ module advance_xm_wpxp_module
       iwpxp_pr2  = stats_metadata%ivpwp_pr2
       iwpxp_dp1  = stats_metadata%ivpwp_dp1
       iwpxp_pd   = 0
-      iwpxp_sicl = 0
 
       ! This is a diagnostic from inverting the matrix, not a budget
       ixm_matrix_condt_num = 0
@@ -4779,7 +4760,6 @@ module advance_xm_wpxp_module
       iwpxp_pr2  = 0
       iwpxp_dp1  = 0
       iwpxp_pd   = 0
-      iwpxp_sicl = 0
 
       ixm_matrix_condt_num = 0
 

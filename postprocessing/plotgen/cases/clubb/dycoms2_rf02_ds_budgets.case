@@ -50,9 +50,8 @@
           {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wpthlp\_dp1', 'expression' => 'wpthlp_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wpthlp\_mfl', 'expression' => 'wpthlp_mfl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wpthlp\_cl', 'expression' => 'wpthlp_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wpthlp\_sicl', 'expression' => 'wpthlp_sicl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wpthlp\_forcing', 'expression' => 'wpthlp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wpthlp\_residual', 'expression' => 'wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wpthlp\_residual', 'expression' => 'wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'wprtp budgets', 'axisLabel' => '[(m kg)/(s^2 kg)]', 'type' => 'profile', 'lines' =>
@@ -69,10 +68,9 @@
           {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_dp1', 'expression' => 'wprtp_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_mfl', 'expression' => 'wprtp_mfl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_cl', 'expression' => 'wprtp_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_sicl', 'expression' => 'wprtp_sicl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_pd', 'expression' => 'wprtp_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_forcing', 'expression' => 'wprtp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_residual', 'expression' => 'wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd + wprtp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_residual', 'expression' => 'wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_pd + wprtp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'wp2 budgets', 'axisLabel' => '[m^2/s^3]', 'type' => 'profile', 'lines' =>

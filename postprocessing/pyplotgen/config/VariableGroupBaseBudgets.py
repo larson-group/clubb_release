@@ -69,7 +69,6 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wpthlp_dp1'], 'legend_label': 'wpthlp_dp1'},
             {'var_names': ['wpthlp_mfl'], 'legend_label': 'wpthlp_mfl'},
             {'var_names': ['wpthlp_cl'], 'legend_label': 'wpthlp_cl'},
-            {'var_names': ['wpthlp_sicl'], 'legend_label': 'wpthlp_sicl'},
             {'var_names': ['wpthlp_forcing'], 'legend_label': 'wpthlp_forcing'},
             {'var_names': ['wpthlp_residual', self.getWpthlpResidual], 'legend_label': 'wpthlp_residual',
              },
@@ -89,7 +88,6 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wprtp_dp1'], 'legend_label': 'wprtp_dp1'},
             {'var_names': ['wprtp_mfl'], 'legend_label': 'wprtp_mfl'},
             {'var_names': ['wprtp_cl'], 'legend_label': 'wprtp_cl'},
-            {'var_names': ['wprtp_sicl'], 'legend_label': 'wprtp_sicl'},
             {'var_names': ['wprtp_pd'], 'legend_label': 'wprtp_pd'},
             {'var_names': ['wprtp_forcing'], 'legend_label': 'wprtp_forcing'},
             {'var_names': ['wprtp_residual', self.getWprtpResidual], 'legend_label': 'wprtp_residual',
@@ -764,7 +762,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             :linenos:
 
             wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 +
-            wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
+            wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_forcing)
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -781,7 +779,6 @@ class VariableGroupBaseBudgets(VariableGroup):
         wpthlp_pr3, indep, dataset = self.getVarForCalculations('wpthlp_pr3', dataset)
         wpthlp_pr2, indep, dataset = self.getVarForCalculations('wpthlp_pr2', dataset)
         wpthlp_dp1, indep, dataset = self.getVarForCalculations('wpthlp_dp1', dataset)
-        wpthlp_sicl, indep, dataset = self.getVarForCalculations('wpthlp_sicl', dataset)
         wpthlp_bt, indep, dataset = self.getVarForCalculations('wpthlp_bt', dataset)
         wpthlp_ta, indep, dataset = self.getVarForCalculations('wpthlp_ta', dataset)
         wpthlp_forcing, indep, dataset = self.getVarForCalculations('wpthlp_forcing', dataset)
@@ -790,7 +787,7 @@ class VariableGroupBaseBudgets(VariableGroup):
 
         output_data = wpthlp_bt - (
                 wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 +
-                wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
+                wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_forcing)
 
         return output_data, indep
 
@@ -814,7 +811,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             :linenos:
 
             wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 +
-            wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_forcing)
+            wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_forcing)
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -831,7 +828,6 @@ class VariableGroupBaseBudgets(VariableGroup):
         wprtp_pr3, indep, dataset = self.getVarForCalculations('wprtp_pr3', dataset)
         wprtp_pr2, indep, dataset = self.getVarForCalculations('wprtp_pr2', dataset)
         wprtp_dp1, indep, dataset = self.getVarForCalculations('wprtp_dp1', dataset)
-        wprtp_sicl, indep, dataset = self.getVarForCalculations('wprtp_sicl', dataset)
         wprtp_bt, indep, dataset = self.getVarForCalculations('wprtp_bt', dataset)
         wprtp_ta, indep, dataset = self.getVarForCalculations('wprtp_ta', dataset)
         wprtp_forcing, indep, dataset = self.getVarForCalculations('wprtp_forcing', dataset)
@@ -841,7 +837,7 @@ class VariableGroupBaseBudgets(VariableGroup):
 
         output_data = wprtp_bt - (
                 wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 +
-                wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd + wprtp_forcing)
+                wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_pd + wprtp_forcing)
 
         return output_data, indep
 
@@ -865,7 +861,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             :linenos:
 
             wp2_bt - (wp2_ma + wp2_ta + wp2_tp + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 +
-            wp2_mfl + wp2_cl + wp2_sicl + wp2_forcing)
+            wp2_mfl + wp2_cl + wp2_forcing)
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.

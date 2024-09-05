@@ -200,7 +200,6 @@
     \underbrace{ + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
                           \ptlder{}{z} \overline{w'r'_t} 
                    \right] }_{dp1}
-    + \left. \ptlder{\overline{w'r'_t}}{t} \right|_{\rm{sicl}}
     + \left. \ptlder{\overline{w'r'_t}}{t} \right|_{\rm{cl}}
     + \left. \ptlder{\overline{w'r'_t}}{t} \right|_{\rm{mfl}}
 \end{split}
@@ -221,7 +220,6 @@
     \underbrace{ + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
                           \ptlder{}{z} \overline{w'\theta'_l} 
                    \right] }_{dp1}
-    + \left. \ptlder{\overline{w'\theta'_l}}{t} \right|_{\rm{sicl}}
     + \left. \ptlder{\overline{w'\theta'_l}}{t} \right|_{\rm{cl}}
     + \left. \ptlder{\overline{w'\theta'_l}}{t} \right|_{\rm{mfl}}
 \end{split}
@@ -269,10 +267,9 @@ $\overline{w^{'2}}$;  $\left. r_t \right|_{\rm{tol}}^{2}$ is the minimum
 threshold value for $\overline{r_t^{'2}}$; and 
 $\left. \theta_l \right|_{\rm{tol}}^{2}$ is the minimum threshold value for
 $\overline{\theta_l^{'2}}$.  The subscript $\left.\right|_{\rm{pd}}$ stands for
-the rate of change due to the positive-definite hole-filling scheme, the
-subscript $\left.\right|_{\rm{sicl}}$ stands for the rate of change due to the
-semi-implicit clipping scheme, the subscript $\left.\right|_{\rm{cl}}$
-stands for the rate of change due to completely explicit clipping,  the subscript 
+the rate of change due to the positive-definite hole-filling scheme,
+the subscript $\left.\right|_{\rm{cl}}$ stands for the rate of
+change due to completely explicit clipping,  the subscript 
 $\left.\right|_{\rm{mfl}}$ denotes adjustments from the monotonic flux limiter, the subscript
 the $\left.\right|_{\rm{tacl}}$  denotes turbulent advection clipping, and finally the subscript
 $\left.\right|_{\rm{sdmp}}$ denotes sponge layer damping.
@@ -1439,7 +1436,7 @@ Separating out the contributions:
 $\bar{r}_t$ and $\overline{w'r_t'}$ can be solved simultaneously and
 implicitly.
 Start with eqs (\ref{eq_rtm}), (\ref{eq_wprtp}) (for simplicity, neglect the 
-$\left.\right|_{\rm{sicl}}$ and $\left.\right|_{\rm{cl}}$ terms), and substitute
+$\left.\right|_{\rm{cl}}$ term), and substitute
 expression for the transport term (\ref{eq_wp2rtp}):
 %
 \begin{equation}

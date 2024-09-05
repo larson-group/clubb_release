@@ -1260,14 +1260,6 @@ module stats_zm_module
              var_units="(m kg)/(s^2 kg)", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
-      case ('wprtp_sicl')
-        stats_metadata%iwprtp_sicl = k
-
-        call stat_assign( var_index=stats_metadata%iwprtp_sicl, var_name="wprtp_sicl", &
-             var_description="w'rt'_sicl, wprtp budget: wprtp semi-implicit clipping term", &
-             var_units="(m kg)/(s^2 kg)", l_silhs=.false., grid_kind=stats_zm )
-        k = k + 1
-
       case ('wprtp_pd')
         stats_metadata%iwprtp_pd = k
 
@@ -1381,13 +1373,6 @@ module stats_zm_module
         stats_metadata%iwpthlp_cl = k
         call stat_assign( var_index=stats_metadata%iwpthlp_cl, var_name="wpthlp_cl", &
              var_description="w'thl'_cl, wpthlp budget: wpthlp clipping term", &
-             var_units="(m K)/s^2", l_silhs=.false., grid_kind=stats_zm )
-        k = k + 1
-
-      case ('wpthlp_sicl')
-        stats_metadata%iwpthlp_sicl = k
-        call stat_assign( var_index=stats_metadata%iwpthlp_sicl, var_name="wpthlp_sicl", &
-             var_description="w'thl'_sicl, wpthlp budget: wpthlp semi-implicit clipping term", &
              var_units="(m K)/s^2", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

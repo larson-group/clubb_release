@@ -26,7 +26,6 @@
           {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_dp1', 'expression' => 'wprtp_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_mfl', 'expression' => 'wprtp_mfl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_cl', 'expression' => 'wprtp_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_sicl', 'expression' => 'wprtp_sicl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'case_name_zm.ctl', 'type' => 'auto', 'name' => 'wprtp\_pd', 'expression' => 'wprtp_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],

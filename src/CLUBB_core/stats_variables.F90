@@ -984,7 +984,6 @@ module stats_variables
        iwprtp_dp1 = 0,     &
        iwprtp_mfl = 0,     &
        iwprtp_cl = 0,      & 
-       iwprtp_sicl = 0,    & 
        iwprtp_pd = 0,      &
        iwprtp_forcing = 0, &
        iwprtp_mc = 0
@@ -1003,7 +1002,6 @@ module stats_variables
        iwpthlp_dp1 = 0,     &
        iwpthlp_mfl = 0,     &
        iwpthlp_cl = 0,      & 
-       iwpthlp_sicl = 0,    &
        iwpthlp_forcing = 0, &
        iwpthlp_mc = 0
 
