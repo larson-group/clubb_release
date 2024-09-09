@@ -56,7 +56,7 @@ module advance_wp2_wp3_module
   !=============================================================================
   subroutine advance_wp2_wp3( nzm, nzt, ngrdcol, gr, dt,                     & ! intent(in)
                               sfc_elevation, sigma_sqd_w, wm_zm,             & ! intent(in)
-                              wm_zt, a3, a3_zt, wp3_on_wp2,                  & ! intent(in)
+                              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2,        & ! intent(in)
                               wpup2, wpvp2, wp2up2, wp2vp2, wp4,             & ! intent(in)
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! intent(in)
                               up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm,   & ! intent(in)
@@ -208,7 +208,7 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  & 
       sigma_sqd_w,       & ! sigma_sqd_w (momentum levels)             [-]
       wm_zm,             & ! w wind component on momentum levels       [m/s]
-      a3,                & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
+      a3_coef,           & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
       wp3_on_wp2,        & ! Smoothed version of wp3 / wp2             [m/s]
       wp2up2,            & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
       wp2vp2,            & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
@@ -236,7 +236,7 @@ module advance_wp2_wp3_module
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  & 
       wm_zt,             & ! w wind component on thermodynamic levels  [m/s]
-      a3_zt,             & ! a_3 interpolated to thermodynamic levels  [-]
+      a3_coef_zt,        & ! a_3 interpolated to thermodynamic levels  [-]
       wpup2,             & ! w'u'^2 (thermodynamic levels)             [m^3/s^3]
       wpvp2,             & ! w'v'^2 (thermodynamic levels)             [m^3/s^3]
       wp2thvp,           & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
@@ -388,10 +388,10 @@ module advance_wp2_wp3_module
       coef_wp4_implicit       ! <w'^4> = coef_wp4_implicit * <w'^2>^2        [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  & 
-      a1      ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
+      a1_coef      ! a_1 (momentum levels); See eqn. 23 in `Equations for CLUBB' [-]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) ::  & 
-      a1_zt   ! a_1 interpolated to thermodynamic levels                    [-]
+      a1_coef_zt   ! a_1 interpolated to thermodynamic levels                    [-]
     
     real( kind = core_rknd ) ::  &
       C1,   & ! CLUBB tunable parameter C1
@@ -432,7 +432,7 @@ module advance_wp2_wp3_module
     !$acc                    rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
     !$acc                    lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
     !$acc                    lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
-    !$acc                    coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
+    !$acc                    coef_wp4_implicit_zt, coef_wp4_implicit, a1_coef, a1_coef_zt, &
     !$acc                    dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt, &
     !$acc                    wp2_smth, em_smth )
 
@@ -656,14 +656,15 @@ module advance_wp2_wp3_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol
-            a1(i,k) = one / ( one - sigma_sqd_w(i,k) )
+            a1_coef(i,k) = one / ( one - sigma_sqd_w(i,k) )
           end do
         end do
         !$acc end parallel loop
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the w'^3 turbulent advection (ta) term.
-        a1_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, a1(:,:), zero_threshold ) ! Positive def. quantity
+        a1_coef_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, &
+                                 a1_coef(:,:), zero_threshold ) ! Positive def. quantity
 
       endif ! iiPDF_type
 
@@ -875,7 +876,8 @@ module advance_wp2_wp3_module
 
         ! The ADG1 PDF is used.
         call wp3_term_ta_ADG1_lhs( nzm, nzt, ngrdcol, gr,       & ! intent(in)
-                                   wp2, a1, a1_zt, a3, a3_zt,   & ! intent(in)
+                                   wp2, a1_coef, a1_coef_zt,    & ! intent(in)
+                                   a3_coef, a3_coef_zt,         & ! intent(in)
                                    wp3_on_wp2, rho_ds_zm,       & ! intent(in)
                                    rho_ds_zt, invrs_rho_ds_zt,  & ! intent(in)
                                    l_standard_term_ta,          & ! intent(in)
@@ -1114,8 +1116,8 @@ module advance_wp2_wp3_module
         !$acc              sigma_sqd_w, wm_zm, wm_zt, wpup2, wpvp2, wp2up2, &
         !$acc              wp2vp2, wp4, wpthvp, wp2thvp, um, vm, upwp, vpwp, &
         !$acc              up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm, &
-        !$acc              invrs_tau_wp3_zt, Skw_zm, Skw_zt, mixt_frac, a3, &
-        !$acc              a3_zt, wp3_on_wp2, invrs_tau_C1_zm, rho_ds_zm, rho_ds_zt, &
+        !$acc              invrs_tau_wp3_zt, Skw_zm, Skw_zt, mixt_frac, a3_coef, &
+        !$acc              a3_coef_zt, wp3_on_wp2, invrs_tau_C1_zm, rho_ds_zm, rho_ds_zt, &
         !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &
         !$acc              Cx_fnc_Richardson, lhs_splat_wp2, lhs_splat_wp3, wprtp, &
         !$acc              wpthlp, rtp2, thlp2, wp2_zt, wp3_zm, wp2_old, wp2, &
@@ -1152,8 +1154,8 @@ module advance_wp2_wp3_module
         write(fstderr,*) "Skw_zm = ", Skw_zm, new_line('c')
         write(fstderr,*) "Skw_zt = ", Skw_zt, new_line('c')
         write(fstderr,*) "mixt_frac = ", mixt_frac, new_line('c')
-        write(fstderr,*) "a3 = ", a3, new_line('c')
-        write(fstderr,*) "a3_zt = ", a3_zt, new_line('c')
+        write(fstderr,*) "a3_coef = ", a3_coef, new_line('c')
+        write(fstderr,*) "a3_coef_zt = ", a3_coef_zt, new_line('c')
         write(fstderr,*) "wp3_on_wp2 = ", wp3_on_wp2, new_line('c')
         write(fstderr,*) "invrs_tau_C1_zm = ", invrs_tau_C1_zm, new_line('c')
         write(fstderr,*) "rho_ds_zm = ", rho_ds_zm, new_line('c')
@@ -1197,7 +1199,7 @@ module advance_wp2_wp3_module
     !$acc                   rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
     !$acc                   lhs_diff_zm, lhs_diff_zt, lhs_diff_zm_crank, lhs_diff_zt_crank, &
     !$acc                   lhs_ma_zm, lhs_ma_zt, lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, &
-    !$acc                   coef_wp4_implicit_zt, coef_wp4_implicit, a1, a1_zt, &
+    !$acc                   coef_wp4_implicit_zt, coef_wp4_implicit, a1_coef, a1_coef_zt, &
     !$acc                   dum_dz, dvm_dz, lhs, rhs, Kw1, Kw8, Kw1_zm, Kw8_zt, &
     !$acc                   wp2_smth, em_smth )
 
@@ -4143,7 +4145,8 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine wp3_term_ta_ADG1_lhs( nzm, nzt, ngrdcol, gr, &
-                                   wp2, a1, a1_zt, a3, a3_zt, &
+                                   wp2, a1_coef, a1_coef_zt, &
+                                   a3_coef, a3_coef_zt, &
                                    wp3_on_wp2, rho_ds_zm, &
                                    rho_ds_zt, invrs_rho_ds_zt, &
                                    l_standard_term_ta, &
@@ -4270,14 +4273,14 @@ module advance_wp2_wp3_module
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  & 
       wp2,             & ! w'^2                                     [m^2/s^2]
-      a1,              & ! a_1                                      [-]
-      a3,              & ! a_3                                      [-]
+      a1_coef,         & ! a_1                                      [-]
+      a3_coef,         & ! a_3                                      [-]
       wp3_on_wp2,      & ! w'^3 / w'^2 at momentum levels           [m/s]
       rho_ds_zm          ! Dry, static density at momentum levels   [kg/m^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  & 
-      a1_zt,           & ! a_1 interpolated to thermodynamic levels [-]
-      a3_zt,           & ! a_3 interpolated to thermodynamic levels [-]
+      a1_coef_zt,      & ! a_1 interpolated to thermodynamic levels [-]
+      a3_coef_zt,      & ! a_3 interpolated to thermodynamic levels [-]
       rho_ds_zt,       & ! Dry, static density at thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv dry, static density at thermo levels [m^3/kg]
 
@@ -4303,7 +4306,8 @@ module advance_wp2_wp3_module
     ! ---------------------- Begin Code ----------------------
 
     !$acc data copyin( gr, gr%invrs_dzt, gr%weights_zt2zm, wp2, &
-    !$acc              a1, a1_zt, a3, a3_zt, wp3_on_wp2, rho_ds_zm, rho_ds_zt, &
+    !$acc              a1_coef, a1_coef_zt, a3_coef, a3_coef_zt, &
+    !$acc              wp3_on_wp2, rho_ds_zm, rho_ds_zt, &
     !$acc              invrs_rho_ds_zt ) &
     !$acc     copyout( lhs_ta_wp3 )
 
@@ -4339,33 +4343,33 @@ module advance_wp2_wp3_module
             lhs_ta_wp3(kp1_tdiag,i,k) &
             = + invrs_rho_ds_zt(i,k) &
                 * gr%invrs_dzt(i,k) &
-                  * rho_ds_zm(i,k+1) * a1(i,k+1) * wp3_on_wp2(i,k+1) &
+                  * rho_ds_zm(i,k+1) * a1_coef(i,k+1) * wp3_on_wp2(i,k+1) &
                   * gr%weights_zt2zm(i,k+1,t_above)
 
            ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
            lhs_ta_wp3(k_mdiag,i,k) &
            = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-               * rho_ds_zm(i,k+1) * a3(i,k+1) * wp2(i,k+1)
+               * rho_ds_zm(i,k+1) * a3_coef(i,k+1) * wp2(i,k+1)
 
            ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
            lhs_ta_wp3(k_tdiag,i,k) &
            = + invrs_rho_ds_zt(i,k) &
                * gr%invrs_dzt(i,k) &
-                 * ( rho_ds_zm(i,k+1) * a1(i,k+1) * wp3_on_wp2(i,k+1) &
+                 * ( rho_ds_zm(i,k+1) * a1_coef(i,k+1) * wp3_on_wp2(i,k+1) &
                      * gr%weights_zt2zm(i,k+1,t_below) &
-                     - rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
+                     - rho_ds_zm(i,k) * a1_coef(i,k) * wp3_on_wp2(i,k) &
                        * gr%weights_zt2zm(i,k,t_above) )
 
            ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
            lhs_ta_wp3(km1_mdiag,i,k) &
            = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-               * rho_ds_zm(i,k) * a3(i,k) * wp2(i,k)
+               * rho_ds_zm(i,k) * a3_coef(i,k) * wp2(i,k)
 
            ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
            lhs_ta_wp3(km1_tdiag,i,k) &
            = - invrs_rho_ds_zt(i,k) &
                * gr%invrs_dzt(i,k) &
-                 * rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
+                 * rho_ds_zm(i,k) * a1_coef(i,k) * wp3_on_wp2(i,k) &
                  * gr%weights_zt2zm(i,k,t_below)
 
           enddo
@@ -4385,25 +4389,25 @@ module advance_wp2_wp3_module
           ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
           lhs_ta_wp3(k_mdiag,i,k) &
           = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k+1) * a3(i,k+1) * wp2(i,k+1)
+              * rho_ds_zm(i,k+1) * a3_coef(i,k+1) * wp2(i,k+1)
 
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_ta_wp3(k_tdiag,i,k) &
           = - invrs_rho_ds_zt(i,k) &
               * gr%invrs_dzt(i,k) &
-                * rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
+                * rho_ds_zm(i,k) * a1_coef(i,k) * wp3_on_wp2(i,k) &
                 * gr%weights_zt2zm(i,k,t_above)
 
           ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
           lhs_ta_wp3(km1_mdiag,i,k) &
           = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k) * a3(i,k) * wp2(i,k)
+              * rho_ds_zm(i,k) * a3_coef(i,k) * wp2(i,k)
 
           ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
           lhs_ta_wp3(km1_tdiag,i,k) &
           = - invrs_rho_ds_zt(i,k) &
               * gr%invrs_dzt(i,k) &
-                * rho_ds_zm(i,k) * a1(i,k) * wp3_on_wp2(i,k) &
+                * rho_ds_zm(i,k) * a1_coef(i,k) * wp3_on_wp2(i,k) &
                 * gr%weights_zt2zm(i,k,t_below)
 
         enddo
@@ -4426,30 +4430,30 @@ module advance_wp2_wp3_module
             lhs_ta_wp3(kp1_tdiag,i,k) &
             = + invrs_rho_ds_zt(i,k) &
                 * gr%invrs_dzt(i,k) * rho_ds_zt(i,k+1) &
-                * min( a1(i,k+1) * wp3_on_wp2(i,k+1), zero )
+                * min( a1_coef(i,k+1) * wp3_on_wp2(i,k+1), zero )
 
             ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
             lhs_ta_wp3(k_mdiag,i,k) &
             = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-                * rho_ds_zm(i,k+1) * a3(i,k+1) * wp2(i,k+1)
+                * rho_ds_zm(i,k+1) * a3_coef(i,k+1) * wp2(i,k+1)
 
             ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
             lhs_ta_wp3(k_tdiag,i,k) &
             = + invrs_rho_ds_zt(i,k) &
                 * gr%invrs_dzt(i,k) * rho_ds_zt(i,k) &
-                * ( max( a1(i,k+1) * wp3_on_wp2(i,k+1), zero ) &
-                    - min( a1(i,k) * wp3_on_wp2(i,k), zero ) )
+                * ( max( a1_coef(i,k+1) * wp3_on_wp2(i,k+1), zero ) &
+                    - min( a1_coef(i,k) * wp3_on_wp2(i,k), zero ) )
 
             ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
             lhs_ta_wp3(km1_mdiag,i,k) &
             = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-                * rho_ds_zm(i,k) * a3(i,k) * wp2(i,k)
+                * rho_ds_zm(i,k) * a3_coef(i,k) * wp2(i,k)
 
             ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
             lhs_ta_wp3(km1_tdiag,i,k) &
             = - invrs_rho_ds_zt(i,k) &
                 * gr%invrs_dzt(i,k) * rho_ds_zt(i,k-1) &
-                * max( a1(i,k) * wp3_on_wp2(i,k), zero )
+                * max( a1_coef(i,k) * wp3_on_wp2(i,k), zero )
 
           enddo
         enddo
@@ -4468,24 +4472,24 @@ module advance_wp2_wp3_module
           ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
           lhs_ta_wp3(k_mdiag,i,k) &
           = + invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k+1) * a3(i,k+1) * wp2(i,k+1)
+              * rho_ds_zm(i,k+1) * a3_coef(i,k+1) * wp2(i,k+1)
 
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_ta_wp3(k_tdiag,i,k) &
           = - invrs_rho_ds_zt(i,k) &
               * gr%invrs_dzt(i,k) * rho_ds_zt(i,k) &
-              * min( a1(i,k) * wp3_on_wp2(i,k), zero )
+              * min( a1_coef(i,k) * wp3_on_wp2(i,k), zero )
 
           ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
           lhs_ta_wp3(km1_mdiag,i,k) &
           = - invrs_rho_ds_zt(i,k) * gr%invrs_dzt(i,k) &
-              * rho_ds_zm(i,k) * a3(i,k) * wp2(i,k)
+              * rho_ds_zm(i,k) * a3_coef(i,k) * wp2(i,k)
 
           ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
           lhs_ta_wp3(km1_tdiag,i,k) &
           = - invrs_rho_ds_zt(i,k) &
               * gr%invrs_dzt(i,k) * rho_ds_zt(i,k-1) &
-              * max( a1(i,k) * wp3_on_wp2(i,k), zero )
+              * max( a1_coef(i,k) * wp3_on_wp2(i,k), zero )
 
         enddo
         !$acc end parallel loop
@@ -4516,19 +4520,19 @@ module advance_wp2_wp3_module
           ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
           lhs_ta_wp3(kp1_tdiag,i,k) &
           = + invrs_rho_ds_zt(i,k) &
-              * a1_zt(i,k) * gr%invrs_dzt(i,k) &
+              * a1_coef_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k+1) * wp3_on_wp2(i,k+1) &
               * gr%weights_zt2zm(i,k+1,t_above)
 
           ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
           lhs_ta_wp3(k_mdiag,i,k) &
-          = + invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr%invrs_dzt(i,k) &
+          = + invrs_rho_ds_zt(i,k) * a3_coef_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k+1) * wp2(i,k+1)
 
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_ta_wp3(k_tdiag,i,k) &
           = + invrs_rho_ds_zt(i,k) &
-              * a1_zt(i,k) * gr%invrs_dzt(i,k) &
+              * a1_coef_zt(i,k) * gr%invrs_dzt(i,k) &
                 * ( rho_ds_zm(i,k+1) * wp3_on_wp2(i,k+1) &
                     * gr%weights_zt2zm(i,k+1,t_below) &
                     - rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
@@ -4536,13 +4540,13 @@ module advance_wp2_wp3_module
 
           ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
           lhs_ta_wp3(km1_mdiag,i,k) &
-          = - invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr%invrs_dzt(i,k) &
+          = - invrs_rho_ds_zt(i,k) * a3_coef_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k) * wp2(i,k)
 
           ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
           lhs_ta_wp3(km1_tdiag,i,k) &
           = - invrs_rho_ds_zt(i,k) &
-              * a1_zt(i,k) * gr%invrs_dzt(i,k) &
+              * a1_coef_zt(i,k) * gr%invrs_dzt(i,k) &
               * rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
               * gr%weights_zt2zm(i,k,t_below)
 
@@ -4562,25 +4566,25 @@ module advance_wp2_wp3_module
 
         ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
         lhs_ta_wp3(k_mdiag,i,k) &
-        = + invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr%invrs_dzt(i,k) &
+        = + invrs_rho_ds_zt(i,k) * a3_coef_zt(i,k) * gr%invrs_dzt(i,k) &
             * rho_ds_zm(i,k+1) * wp2(i,k+1)
 
         ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
         lhs_ta_wp3(k_tdiag,i,k) &
         = - invrs_rho_ds_zt(i,k) &
-            * a1_zt(i,k) * gr%invrs_dzt(i,k) &
+            * a1_coef_zt(i,k) * gr%invrs_dzt(i,k) &
             * rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
             * gr%weights_zt2zm(i,k,t_above)
 
         ! Momentum subdiagonal: [ x wp2(k,<t+1>) ]
         lhs_ta_wp3(km1_mdiag,i,k) &
-        = - invrs_rho_ds_zt(i,k) * a3_zt(i,k) * gr%invrs_dzt(i,k) &
+        = - invrs_rho_ds_zt(i,k) * a3_coef_zt(i,k) * gr%invrs_dzt(i,k) &
             * rho_ds_zm(i,k) * wp2(i,k)
 
         ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
         lhs_ta_wp3(km1_tdiag,i,k) &
         = - invrs_rho_ds_zt(i,k) &
-            * a1_zt(i,k) * gr%invrs_dzt(i,k) &
+            * a1_coef_zt(i,k) * gr%invrs_dzt(i,k) &
             * rho_ds_zm(i,k) * wp3_on_wp2(i,k) &
             * gr%weights_zt2zm(i,k,t_below)
 

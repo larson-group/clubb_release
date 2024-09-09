@@ -4019,11 +4019,11 @@ module advance_xp2_xpyp_module
       wpsclrp_zt  ! <w'sclr'> interp. to thermo. levels  [m/s {sclrm units}]
       
     real ( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      a1,       & ! a_1 (momentum levels); See eqn. 24 in `Equations for CLUBB' [-]
+      a1_coef,       & ! a_1 (momentum levels); See eqn. 24 in `Equations for CLUBB' [-]
       wp_coef
 
     real ( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      a1_zt,      & ! a_1 interpolated to thermodynamic levels      [-]
+      a1_coef_zt, & ! a_1 interpolated to thermodynamic levels      [-]
       upwp_zt,    & ! <u'w'> interpolated to thermodynamic levels    [m^2/s^2]
       vpwp_zt,    & ! <v'w'> interpolated to thermodynamic levels    [m^2/s^2]
       wprtp_zt,   & ! w'r_t' interpolated to thermodynamic levels   [(kg/kg) m/s]
@@ -4047,7 +4047,8 @@ module advance_xp2_xpyp_module
     !$acc                 term_wpvp2_explicit, coef_wpup2_implicit_zm, term_wpup2_explicit_zm, &
     !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
     !$acc                 sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
-    !$acc                 a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, wp_coef_zt )
+    !$acc                 a1_coef, a1_coef_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, &
+    !$acc                 wp_coef_zt )
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc         create( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &
@@ -4067,18 +4068,18 @@ module advance_xp2_xpyp_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
-        a1(i,k) = one / ( one - sigma_sqd_w(i,k) )
+        a1_coef(i,k) = one / ( one - sigma_sqd_w(i,k) )
       end do
     end do
     !$acc end parallel loop
 
     ! Interpolate a_1 from the momentum levels to the thermodynamic levels.
-    a1_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, a1(:,:), zero_threshold )
+    a1_coef_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, a1_coef(:,:), zero_threshold )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
-        wp_coef(i,k)    = ( one - one_third * beta(i) ) *    a1(i,k)**2 *    wp3_on_wp2(i,k) /    wp2(i,k)
+        wp_coef(i,k)    = ( one - one_third * beta(i) ) *    a1_coef(i,k)**2 *    wp3_on_wp2(i,k) /    wp2(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -4086,7 +4087,7 @@ module advance_xp2_xpyp_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
       do i = 1, ngrdcol
-        wp_coef_zt(i,k) = ( one - one_third * beta(i) ) * a1_zt(i,k)**2 * wp3_on_wp2_zt(i,k) / wp2_zt(i,k)
+        wp_coef_zt(i,k) = ( one - one_third * beta(i) ) * a1_coef_zt(i,k)**2 * wp3_on_wp2_zt(i,k) / wp2_zt(i,k)
       end do
     end do
     !$acc end parallel loop
@@ -4347,7 +4348,8 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol
-              coef_wprtp2_implicit(i,k)    = one_third * beta(i) * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
+              coef_wprtp2_implicit(i,k)    = one_third * beta(i) * &
+                                             a1_coef_zt(i,k) * wp3_on_wp2_zt(i,k)
               coef_wpthlp2_implicit(i,k)   = coef_wprtp2_implicit(i,k)
               coef_wprtpthlp_implicit(i,k) = coef_wprtp2_implicit(i,k)
             end do
@@ -4361,7 +4363,7 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzm
             do i = 1, ngrdcol
-              coef_wprtp2_implicit_zm(i,k) = one_third * beta(i) * a1(i,k) * wp3_on_wp2(i,k)
+              coef_wprtp2_implicit_zm(i,k) = one_third * beta(i) * a1_coef(i,k) * wp3_on_wp2(i,k)
               sgn_t_vel_rtp2(i,k) = wp3_on_wp2(i,k)
             end do
           end do
@@ -4385,7 +4387,8 @@ module advance_xp2_xpyp_module
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzt
             do i = 1, ngrdcol  
-              coef_wprtp2_implicit(i,k)    = one_third * beta(i) * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
+              coef_wprtp2_implicit(i,k)    = one_third * beta(i) * &
+                                             a1_coef_zt(i,k) * wp3_on_wp2_zt(i,k)
               coef_wpthlp2_implicit(i,k)   = coef_wprtp2_implicit(i,k)
               coef_wprtpthlp_implicit(i,k) = coef_wprtp2_implicit(i,k)
             end do
@@ -4476,7 +4479,7 @@ module advance_xp2_xpyp_module
 
           ! Using the godunov upwind scheme for the calculation of RHS turbulent
           ! advection term for <w'rt'^2>. Here, we define the "wind" for godunov
-          ! scheme as ( one - one_third * beta ) * a1_zt**2 * wp3_on_wp2_zt / wp2_zt,
+          ! scheme as ( one - one_third * beta ) * a1_coef_zt**2 * wp3_on_wp2_zt / wp2_zt,
           ! and define the xpyp_term_ta_pdf_rhs_godunov subroutine in
           ! turbulent_adv_pdf.F90 to process the calculation using godunov scheme
           !$acc parallel loop gang vector collapse(2) default(present)
@@ -5237,7 +5240,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol              
-            coef_wpup2_implicit_zm(i,k) = one_third * beta(i) * a1(i,k) * wp3_on_wp2(i,k)
+            coef_wpup2_implicit_zm(i,k) = one_third * beta(i) * a1_coef(i,k) * wp3_on_wp2(i,k)
             coef_wpvp2_implicit_zm(i,k) = coef_wpup2_implicit_zm(i,k)
             term_wpup2_explicit_zm(i,k) = wp_coef(i,k) * upwp(i,k)**2
             term_wpvp2_explicit_zm(i,k) = wp_coef(i,k) * vpwp(i,k)**2
@@ -5269,7 +5272,7 @@ module advance_xp2_xpyp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzt
           do i = 1, ngrdcol        
-            coef_wpup2_implicit(i,k) = one_third * beta(i) * a1_zt(i,k) * wp3_on_wp2_zt(i,k)
+            coef_wpup2_implicit(i,k) = one_third * beta(i) * a1_coef_zt(i,k) * wp3_on_wp2_zt(i,k)
             coef_wpvp2_implicit(i,k) = coef_wpup2_implicit(i,k)
           end do
         end do
@@ -5361,7 +5364,8 @@ module advance_xp2_xpyp_module
     !$acc                 term_wpvp2_explicit, coef_wpup2_implicit_zm, term_wpup2_explicit_zm, &
     !$acc                 term_wpvp2_explicit_zm, sgn_t_vel_rtp2, &
     !$acc                 sgn_t_vel_thlp2, sgn_t_vel_rtpthlp, sgn_t_vel_up2, sgn_t_vel_vp2, & 
-    !$acc                 a1, a1_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, wp_coef_zt )
+    !$acc                 a1_coef, a1_coef_zt, upwp_zt, vpwp_zt, wprtp_zt, wpthlp_zt, wp_coef, &
+    !$acc                 wp_coef_zt )
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc         delete( coef_wpsclrp2_implicit, term_wpsclrp2_explicit, &

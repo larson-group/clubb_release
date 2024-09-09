@@ -2229,10 +2229,10 @@ module advance_xm_wpxp_module
       sgn_t_vel_wpsclrp    ! Sign of the turbulent velocity for <w'sclr'>    [-]
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      a1
+      a1_coef
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      a1_zt
+      a1_coef_zt
       
     integer :: i, k, b, sclr
 
@@ -2242,7 +2242,7 @@ module advance_xm_wpxp_module
     !$acc                 term_wp2rtp_explicit_zm, coef_wp2thlp_implicit, term_wp2thlp_explicit, &
     !$acc                 coef_wp2thlp_implicit_zm, term_wp2thlp_explicit_zm, &
     !$acc                 sgn_t_vel_wprtp, sgn_t_vel_wpthlp, &
-    !$acc                 a1, a1_zt )
+    !$acc                 a1_coef, a1_coef_zt )
 
     !$acc enter data if( sclr_dim > 0 ) &
     !$acc            create( term_wp2sclrp_explicit, term_wp2sclrp_explicit_zm, sgn_t_vel_wpsclrp )
@@ -2358,19 +2358,20 @@ module advance_xm_wpxp_module
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzm
           do i = 1, ngrdcol
-            a1(i,k) = one / ( one - sigma_sqd_w(i,k) )
+            a1_coef(i,k) = one / ( one - sigma_sqd_w(i,k) )
           end do
         end do
         !$acc end parallel loop
 
         ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
         ! will be used for the <w'x'> turbulent advection (ta) term.
-        a1_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, a1, zero_threshold )   ! Positive def. quantity
+        a1_coef_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, a1_coef, &
+                                 zero_threshold )   ! Positive def. quantity
 
         !$acc parallel loop gang vector collapse(2) default(present)
         do k = 1, nzt
           do i = 1, ngrdcol
-            coef_wp2rtp_implicit(i,k) = a1_zt(i,k) * wp3_on_wp2_zt(i,k)
+            coef_wp2rtp_implicit(i,k) = a1_coef_zt(i,k) * wp3_on_wp2_zt(i,k)
             coef_wp2thlp_implicit(i,k) = coef_wp2rtp_implicit(i,k)
           end do
         end do
@@ -2393,7 +2394,7 @@ module advance_xm_wpxp_module
           !$acc parallel loop gang vector default(present) collapse(2)
           do k = 1, nzt
             do i = 1, ngrdcol
-              coef_wp2rtp_implicit(i,k) = a1_zt(i,k) * wp3_on_wp2_zt(i,k)
+              coef_wp2rtp_implicit(i,k) = a1_coef_zt(i,k) * wp3_on_wp2_zt(i,k)
               coef_wp2thlp_implicit(i,k) = coef_wp2rtp_implicit(i,k)
             end do
           end do
@@ -2635,7 +2636,7 @@ module advance_xm_wpxp_module
     !$acc                 term_wp2rtp_explicit_zm, coef_wp2thlp_implicit, term_wp2thlp_explicit, &
     !$acc                 coef_wp2thlp_implicit_zm, term_wp2thlp_explicit_zm, &
     !$acc                 sgn_t_vel_wprtp, sgn_t_vel_wpthlp, &
-    !$acc                 a1, a1_zt )
+    !$acc                 a1_coef, a1_coef_zt )
 
     !$acc exit data if( sclr_dim > 0 ) &
     !$acc            delete( term_wp2sclrp_explicit, term_wp2sclrp_explicit_zm, sgn_t_vel_wpsclrp )
