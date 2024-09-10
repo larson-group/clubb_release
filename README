@@ -1,6 +1,6 @@
 ********************************************************************************
 *                           Copyright Notice
-*                       This code is (C) 2006-2022
+*                       This code is (C) 2006-2024
 *                 Vincent E. Larson and Brian M. Griffin
 *
 *         The distribution of this code and derived works thereof 
@@ -66,7 +66,8 @@ For more information about the tuner, see section 3.3 below and in input_misc/tu
 ***********************************************************************
 CLUBB is a single-column atmospheric model written in ISO Fortran 2003, and
 executed using scripts written in the GNU Bash scripting language.
-Some utilities for CLUBB have been implemented in MATLAB, Python, or Perl.
+A script to plot CLUBB output, pyplotgen, has been implemented in Python,
+and a script to compile CLUBB, mkmf, has been implemented in Perl.
 
 
 This quick start guide has instructions for checking CLUBB out from the UWM
@@ -77,8 +78,7 @@ benchmark test cases, and creating plots.
 - STEP 1: OBTAINING THE CODE FROM THE REPOSITORY
 -------------------------------------------------------
 Checking CLUBB out requires the user to be a collaborator on the clubb_release github repository.
-Sign up can be done at https://carson.math.uwm.edu/larson-group/clubb_site/signup and will
-require a github username.
+Sign up will require a github username.
 
 After entering the required information in the registration page, an invitation e-mail
 will be sent to the email associated with the github account entered.
@@ -104,8 +104,8 @@ your password will be entered.
 - STEP 2: COMPILING THE CLUBB SOURCE CODE
 -------------------------------------------------------
 Before CLUBB can be run, the source code must first be compiled. CLUBB is known
-to compile properly with various Fortran compilers, including g95 and
-gfortran, which are both free.  The CLUBB code relies on a script called mkmf 
+to compile properly with various Fortran compilers, including gfortran, 
+which is free.  The CLUBB code relies on a script called mkmf 
 which requires your system to have Perl installed.
 
 To compile, change directories to the CLUBB directory (e.g. "clubb"),
@@ -190,9 +190,6 @@ plots output directory. pyplotgen.py can be called from the postprocessing/pyplo
 directory inside the CLUBB checkout.  For detailed instructions and options,
 please read postprocessing/pyplotgen/README.md in your CLUBB checkout.
 
-Quickstart for Mac users in room W434 at UWM: At the terminal, type in the following command:
-user@computer$ pip3 install -r requirements.txt
-
 Then modify the ALL_CASES variable in pyplotgen/config/Case_definitions.py to
 include the CLUBB case(s) that you'd to plot (and only those cases).
 
@@ -226,9 +223,6 @@ Alternatively, one can use the command "pwd" in order to find the directory path
 to the index.html file.  Then go to a web browser URL bar, type "file://" then the path,
 and then "/index.html".
 
-MAC Users in W434 use the following command
-user@computer$ /Applications/Firefox.app/Contents/MacOS/firefox-bin ~/plots/index.html
-assuming that the index.html file is in the plots directory.
 
 -------------------------------------------------------
 - SUMMARY FOR LINUX
@@ -754,13 +748,12 @@ To open a GrADS session, type "grads" at a Linux prompt.
 - (2.4) Determining whether two CLUBB simulations produce different output:
 --------------------------------------------------------------------------
 
-There are 3 major ways to determine if output files are different, each will 
+There are 2 major ways to determine if output files are different, each will 
 be covered briefly in this section.
-1) run_bindiff_all.bash script: tests for bit-by-bit equivalence
-2) find_grads_differences.m script: tests for differences up to round-off
-3) plotting the outputs using pyplotgen: tests for visual agreement
+1) run_bindiff_all.py script: tests for bit-by-bit equivalence
+2) plotting the outputs using pyplotgen: tests for visual agreement
 
-- Comparison using run_bindiff_all.bash
+- Comparison using run_bindiff_all.py
 This script takes two output directories as arguments and will compare the
 contents of those directories to determine if the binary outputs differ.  
 Note that
@@ -771,31 +764,11 @@ differences between two output directories.
 
 This script can be found in "clubb/run_scripts".
 
-Usage: ./run_bindiff_all.bash output_directory output_directory_to_compare
-
-- Comparison using find_grads_differences.m
-This method also requires Matlab and must be run in Matlab.  This script 
-does not check for an exact binary match; instead it compares outputs 
-up to a specified tolerance.  It is useful for finding which output variable
-differs between two files.  The strings 'begin' and 'end' can be used
-as the time for the lower and upper time bounds which the script will determine
-from the files.  A higher number for the tolerance corresponds to a finer tolerance.
-
-This script can be found in "clubb/postprocessing/run_comparisons".
-
-Usage: find_grads_differences( 'casename_to_check.ctl', 
-                          lower_time_bound(or 'begin'),
-                          upper_time_bound(or 'end'), digits_of_precision)
-
-Note that this script must be run in Matlab while in the directory where the
-file resides.  Also, the path1, path2 and path3 variables will likely need to
-be set to directories corresponding to the local path(s) of the files being compared.
+Usage: ./run_bindiff_all.py output_directory output_directory_to_compare
 
 - Comparison using pyplotgen
 This method requires python as the plots are generated through python.
-The basic usage below will plot 1 or more (as many as desired) specified
-output directories against other data for comparison.  For more detailed
-information on pyplotgen, including detailed usage and options see:
+For information on pyplotgen, including detailed usage and options see:
 postprocessing/pyplotgen/README.md in your CLUBB checkout.
 
 
