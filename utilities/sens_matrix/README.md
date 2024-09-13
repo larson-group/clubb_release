@@ -1,4 +1,4 @@
-## sens_matrix_dashboard.py:
+## QuadTune:
 ### A tool for analyzing sensitivities of a global atmospheric model to changes in parameter values.
 
 Suppose that a numerical model is well tuned.  Then, if a new structural model change is introduced,
@@ -9,7 +9,7 @@ here we provide a set of scripts that
 
 #### Software requirements:
 
-RegTune requires python and dash.  To install dash, run
+QuadTune requires python and dash.  To install dash, run
 
 `pip install dash`
 
@@ -29,21 +29,16 @@ and user-chosen settings, run `$> python3 sens_matrix_dashboard.py`.
 with the recommended parameter values.
 
 The scripts are written entirely in python.  The results may be plotted on a web-based
-dashboard created using python dash.  Unit tests may be performed by running pytest.
+dashboard created using python dash.
 
 #### This folder contains several files:
+
+*sens_matrix_dashboard.py* is a driver script that creates a plotly dashboard of diagnostic plots 
+that can be viewed on a web browser.
 
 *set_up_dashboard_inputs.py* allows the user to state which regional metrics to match,
 how strongly to weight each metric, what parameters to tune, and what observed values
 to match for each region.
 
-*sens_matrix_dashboard.py* is a driver script that creates a plotly dashboard of diagnostic plots 
-that can be viewed on a web browser.
+*create_figs.py* creates a number of figures that aim to diagnose model structural error.
 
-*analyze_sensitivity_matrix.py* contains the main workhorse function, analyzeSensMatrix,
-plus some sample input (that won't work out of the box).
-
-*test_analyzeSensMatrix.py* contains some unit tests that call analyzeSensMatrix 
-and are intended to work out of the box.
-
-*pytest.ini* is an initialization file for the pytest unit testing framework.
