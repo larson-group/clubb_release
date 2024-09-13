@@ -101,8 +101,10 @@ module error
     l_save_tuning_run = .true.  ! If true, writes the results of the tuning run to a file
 
   character(len=50), public :: &
-    tuning_filename = '' ! File where results of tuning run are
-                         ! written if l_save_tuning_run = .true.
+    tuning_filename = '' ! File where tuning run results are written if l_save_tuning_run = .true.
+                         ! NOTE the filename is only declared here. It is defined with a 
+                         ! timestamp in clubb_tuner.F90, so it should not be named here.
+                               
 
   integer, parameter, public :: &
     file_unit = 15  ! File unit number connected with tuning_filename
@@ -833,6 +835,15 @@ module error
       l_file_error ! Determines if reading the .netCDF file fails when checking that
                    ! The models start at the same time
 
+    logical ::  &
+      l_save_all_nc_files = .false. ! This will save all netcdf files from a tuner run,
+                                    ! labeled by iteration number.
+                                    ! Be aware of how much memory this will use up.
+
+    character(50) :: case_name ! Used when l_save_all_nc_files = .true.
+
+    integer :: underscore_idx ! Used when l_save_all_nc_files = .true.
+
     integer, dimension(c_total) ::  & 
       run_stat ! isValid over each model case
 
@@ -938,11 +949,22 @@ module error
       end if
 
       run_stat(c_run) = err_code
-
+ 
       ! Reset error code for next iteration
       err_code = clubb_no_error
     end do ! 1..c_run
 !$omp end parallel do
+
+    if ( l_save_all_nc_files ) then
+      do c_run = 1, c_total, 1
+        ! first determine case name 
+        underscore_idx = index( trim(run_file(c_run)) , "_" , .true. )
+        read( run_file(c_run)(1:underscore_idx-1), * ) case_name
+        ! now copy the file with iteration number
+        call execute_command_line( 'cp ../output/'//trim(case_name)//'_zt.nc ../output/' &
+                           //trim(case_name)//'_zt_iter'//trim(str(iter))//'.nc' )
+      end do
+    end if
 
     !-----------------------------------------------------------------------
 
@@ -1691,6 +1713,15 @@ module error
   end subroutine read_random_seed
 
 !-----------------------------------------------------------------------
+
+  character(len=20) function str(k)
+    ! Convert an integer to string padded with zeros
+    ! (goes from 0001 to 9999)
+    integer, intent(in) :: k
+    write (str,'(I0.4)') k
+    str = adjustl(str)
+  end function str
+
 
 end module error
 !-----------------------------------------------------------------------
