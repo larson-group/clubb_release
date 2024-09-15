@@ -57,6 +57,10 @@ def createFigs(metricsNames,
     plot_dpMinMatrixScatterFig = False
     plot_projectionMatrixFig = True
     plot_paramsCorrArrayFig = True
+    plot_sensMatrixAndBiasVecFig = True
+
+    # Remove prefixes from CLUBB variable names in order to shorten them
+    paramsAbbrv = abbreviateClubbParamsNames(paramsNames)
 
     # Create a way to order the metrics by sensitivity, for later use in plots
     metricsSens = np.linalg.norm(normlzdWeightedSensMatrixPoly, axis=1) # measure of sensitivity of each metric
@@ -143,7 +147,7 @@ def createFigs(metricsNames,
                      magParamValsRow,
                      sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
         paramsErrorBarsFig = \
-        createParamsErrorBarsFig(paramsNames, defaultParamValsOrigRow, paramsScales,
+        createParamsErrorBarsFig(paramsAbbrv, defaultParamValsOrigRow, paramsScales,
                              paramsLowValsPCBound, paramsHiValsPCBound,
                              paramsSolnLin, dnormlzdParamsSolnLin,
                              paramsSolnNonlin, dnormlzdParamsSolnNonlin,
@@ -289,16 +293,23 @@ def createFigs(metricsNames,
         createNormlzdSensMatrixRowsFig( normlzdSensMatrixPoly,
                                     metricsNames, paramsNames )
 
-    if False:
+    if plot_sensMatrixAndBiasVecFig:
+
+        print("Creating sensMatrixAndBiasVecFig . . .")
         # Create figure that shows the sensitivity matrix and bias column, both color coded.
-        sensMatrixAndBiasVecFig = createMatrixPlusColFig( matrix = normlzdLinplusSensMatrixPoly,
+        matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
+        matrixDict={matrixDictKeyString:normlzdLinplusSensMatrixPoly}
+        sensMatrixAndBiasVecFig = createMatrixPlusColFig( matrix = matrixDict[matrixDictKeyString],
                          matIndexLabel = metricsNames,
-                         matColLabel = paramsNames,
+                         matColLabel = paramsAbbrv,
                          colVector = -np.around(defaultBiasesCol/np.abs(normMetricValsCol), decimals=2),
                          colVectIndexLabel = metricsNames,
                          colVectColLabel = ['-Normalized Biases'],
-                         plotTitle='Color-coded normalized sensitivity matrix',
-                         reversedYAxis = 'reversed' )
+                         plotHeight=1400, plotWidth=1000, #plotHeight=2800 displays all 20x20 regions
+                         cellText=False,
+                         plotTitle='Color-coded normalized sensitivity matrix, '+matrixDictKeyString,
+                         reversedYAxis = 'reversed',
+                         eqnAdd = True)
 
 
     # Needed for several plots:
@@ -318,8 +329,11 @@ def createFigs(metricsNames,
                          colVector = -np.around(normlzdStdDefaultBiasesCol, decimals=2),
                          colVectIndexLabel = paramsNames,
                          colVectColLabel = ['Projection onto -biases'],
+                         plotHeight=700, plotWidth=1000,
+                         cellText=True,
                          plotTitle='Cosines of angles between columns of sensitivity matrix',
-                         reversedYAxis = 'reversed' )
+                         reversedYAxis = 'reversed',
+                         eqnAdd = False)
 
     if plot_projectionMatrixFig:
         # Create figure that plots color-coded projection matrix plus bias column.
@@ -333,8 +347,10 @@ def createFigs(metricsNames,
         #                 colVector = -np.around(normlzdDefaultBiasesCol, decimals=2),
         #                 colVectIndexLabel = metricsNames,
         #                 colVectColLabel = ['-Normalized Biases'],
+        #                 plotHeight=700, plotWidth=1000,
         #                 plotTitle='Projection matrix',
-        #                 reversedYAxis = 'reversed' )
+        #                 reversedYAxis = 'reversed',
+        #                 eqnAdd = False)
         projectionMatrixMasked = normlzdLinplusSensMatrixPolyMetricsMasked @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPolyMetricsMasked.T
         #print("projectionMatrix rows=", np.linalg.norm( projectionMatrix, axis=1))
         projectionMatrixFig = createMatrixPlusColFig( matrix = projectionMatrixMasked,
@@ -343,8 +359,11 @@ def createFigs(metricsNames,
                          colVector = -np.around(normlzdDefaultBiasesColMasked, decimals=2),
                          colVectIndexLabel = metricsNamesMasked,
                          colVectColLabel = ['-Normalized Biases'],
+                         plotHeight=700, plotWidth=1000,
+                         cellText=True,
                          plotTitle='Excerpt of projection matrix',
-                         reversedYAxis = 'reversed' )
+                         reversedYAxis = 'reversed',
+                         eqnAdd = False)
 
     if plot_paramsCorrArrayFig:
         paramsCorrArrayFig = \
@@ -405,7 +424,7 @@ def createFigs(metricsNames,
        #config= { 'toImageButtonOptions': { 'scale': 6 } }
     if plot_biasVsDiagnosticScatterplot:
         dashboardChildren.append(dcc.Graph(id='biasVsDiagnosticScatterplot', figure=biasVsDiagnosticScatterplot ))
-    if False:
+    if plot_sensMatrixAndBiasVecFig:
         dashboardChildren.append(dcc.Graph( id='sensMatrixAndBiasVecFig', figure=sensMatrixAndBiasVecFig ))
     if False:
         dashboardChildren.append(dcc.Graph( id='paramsCorrArrayBiasFig', figure=paramsCorrArrayBiasFig ))
@@ -457,7 +476,10 @@ def covMatrix2corrMatrix( covMatrix, returnStd=False ):
 
 def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
                             colVector, colVectIndexLabel, colVectColLabel,
-                            plotTitle, reversedYAxis=None ):
+                            plotHeight, plotWidth,
+                            cellText,
+                            plotTitle, reversedYAxis=None,
+                            eqnAdd=False):
     '''Creates a figure that displays a color-coded matrix and an accompanying column vector.'''
 
     import numpy as np
@@ -477,7 +499,7 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
                    df_sensmat.to_numpy(),
                    x=df_sensmat.columns.tolist(),
                    y=df_sensmat.index.tolist(),
-                   text_auto=True
+                   text_auto=cellText
                    )
     matSubfig.update_xaxes(side="bottom")
     matSubfig.update_layout(
@@ -491,7 +513,7 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
     yaxis_zeroline=False,
     )
 
-    # Now create a sub-figure showing a color-coded column matrix
+    # Now create a sub-figure showing a color-coded column vector
     df_biasArray = pd.DataFrame( colVector,
                    index=colVectIndexLabel,
                    columns= colVectColLabel)
@@ -499,7 +521,7 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
                    df_biasArray.to_numpy(),
                    x=df_biasArray.columns.tolist(),
                    y=df_biasArray.index.tolist(),
-                   text_auto=True
+                   text_auto=cellText
                    )
     colVectSubfig.update_layout(
     title_text='', 
@@ -512,6 +534,7 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
     yaxis_zeroline=False,
     )
 
+
     # Now combine the matrix and column sub-figures into one figure
     matrixPlusColFig = make_subplots(
     rows=1, cols=2,
@@ -522,12 +545,61 @@ def createMatrixPlusColFig( matrix, matIndexLabel, matColLabel,
     matrixPlusColFig.add_trace(colVectSubfig.data[0], row=1, col=2)
     matrixPlusColFig.update_layout(
         title_text=plotTitle,
-        height=700,
-        width= 1000,
+        height=plotHeight,
+        width= plotWidth,
         template='plotly_white')
-    matrixPlusColFig.update_layout(coloraxis=dict(colorscale='RdBu_r',cmin=-matMaxAbs,cmax=matMaxAbs), showlegend=False)
+    matrixPlusColFig.update_layout(coloraxis=dict(colorscale='RdBu_r',cmin=-matMaxAbs,cmax=matMaxAbs),
+                                             showlegend=False)
     matrixPlusColFig.update_yaxes( autorange=reversedYAxis, row=1, col=2 ) 
-    matrixPlusColFig.update_yaxes( autorange=reversedYAxis, row=1, col=1 ) 
+    matrixPlusColFig.update_yaxes( autorange=reversedYAxis, row=1, col=1 )
+
+    if eqnAdd == True:
+
+        matrixPlusColFig.add_annotation(dict(font=dict(color="black", size=36),
+                                      # x=x_loc,
+                                      x=0.82,
+                                      y=0.5,
+                                      showarrow=False,
+                                      text='<b>=</b>',
+                                      textangle=0,
+                                      xref="paper",
+                                      yref="paper"
+                                      ))
+
+        #matrixPlusColFig.add_vline(x=-0.78,col=2)
+        left=0.67
+        right=0.76
+        top=0.67
+        bottom=0.35
+        delta=0.015
+        matrixPlusColFig.add_shape(type='line', x0=right, y0=bottom, x1=right, y1=top,
+                               xref="paper", yref="paper")
+        matrixPlusColFig.add_shape(type='line', x0=right, y0=top, x1=right-delta, y1=top,
+                               xref="paper", yref="paper")
+        matrixPlusColFig.add_shape(type='line', x0=left, y0=top, x1=left+delta, y1=top,
+                               xref="paper", yref="paper")
+
+        matrixPlusColFig.add_shape(type='line', x0=left, y0=bottom, x1=left, y1=top,
+                               xref="paper", yref="paper")
+        matrixPlusColFig.add_shape(type='line', x0=right, y0=bottom, x1=right-delta, y1=bottom,
+                               xref="paper", yref="paper")
+        matrixPlusColFig.add_shape(type='line', x0=left, y0=bottom, x1=left+delta, y1=bottom,
+                               xref="paper", yref="paper")
+
+        # print column vector of parameter names from y=0.38 to 0.62
+        labelSpacing = 0.3/len(matColLabel)
+        for counter, colLabel in enumerate(reversed(matColLabel)):
+            matrixPlusColFig.add_annotation(dict(font=dict(color="black", size=12),
+                                             x=0.75,
+                                             y=0.38+labelSpacing*counter,
+                                             showarrow=False,
+                                             text=colLabel,
+                                             textangle=0,
+                                             xref="paper",
+                                             yref="paper"
+                                             ))
+
+
 
     #pdb.set_trace()
 
@@ -1021,8 +1093,17 @@ def calcParamsBoundsHelper(metricsNames, paramsNames, transformedParamsNames,
 
     return ( defaultBiasesCol, sensMatrix, normlzdWeightedSensMatrix )
 
+def abbreviateClubbParamsNames(paramsNames):
+    paramsAbbrv = np.char.replace( paramsNames, 'clubb_', '' )
+    paramsAbbrv = np.char.replace( paramsAbbrv, 'c_invrs_tau_', '' )
+    paramsAbbrv = np.char.replace( paramsAbbrv, 'wpxp_n2', 'n2' )
+    paramsAbbrv = np.char.replace( paramsAbbrv, 'altitude', 'alt')
+    paramsAbbrv = np.char.replace( paramsAbbrv, 'threshold', 'thres' )
+    paramsAbbrv = np.char.replace( paramsAbbrv, 'thresh', 'thres' )
 
-def createParamsErrorBarsFig(paramsNames, defaultParamValsOrigRow, paramsScales,
+    return paramsAbbrv
+
+def createParamsErrorBarsFig(paramsAbbrv, defaultParamValsOrigRow, paramsScales,
                              paramsLowValsPCBound, paramsHiValsPCBound,
                              paramsSolnLin, dnormlzdParamsSolnLin,
                              paramsSolnNonlin, dnormlzdParamsSolnNonlin,
@@ -1030,11 +1111,6 @@ def createParamsErrorBarsFig(paramsNames, defaultParamValsOrigRow, paramsScales,
 
     # Plot box and whiskers plot of optimal parameter values.
     # Multiply in the user-designated scale factors before plotting.
-    paramsAbbrv = np.char.replace( paramsNames, 'clubb_', '' )
-    paramsAbbrv = np.char.replace( paramsAbbrv, 'c_invrs_tau_', '' )
-    paramsAbbrv = np.char.replace( paramsAbbrv, 'wpxp_n2', 'n2' )
-    paramsAbbrv = np.char.replace( paramsAbbrv, 'wpxp_n2', 'n2' )
-    paramsAbbrv = np.char.replace( paramsAbbrv, 'threshold', 'thresh' )
     df = pd.DataFrame( np.hstack( defaultParamValsOrigRow[0,:]*paramsScales ),
                   index=paramsAbbrv, columns=["Default plus error bars"] )
     df["err_minus"] = ( defaultParamValsOrigRow[0,:] -  paramsLowValsPCBound[:,0] ) * paramsScales

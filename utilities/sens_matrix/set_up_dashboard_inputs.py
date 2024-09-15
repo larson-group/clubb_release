@@ -128,17 +128,44 @@ def setUpInputs():
     #    up and in the other, it is perturbed down.
     #    The output from each sensitivity simulation is expected to be stored in its own netcdf file.
     #    Each netcdf file contains metric values and parameter values for a single simulation.
-    folder_name = 'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0thresp26_'
+    #folder_name = 'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0thresp26_'
     #folder_name = 'Regional_files/30degree_CAM_TAUS_202404/30.0thresp26_'
     #folder_name = 'Regional_files/RG_20240402_sens/thresp26_'
     #folder_name = 'Regional_files/20240614_e3sm_20x20regs/thresp26_'
-    #folder_name = 'Regional_files/20231211_20x20regs/sens0707_'
+    folder_name = 'Regional_files/20231211_20x20regs/sens0707_'
     #folder_name = 'Regional_files/20240409updated/thresp26_'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/stephens_20240131/btune_regional_files/btune_'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/20230910/'  # folder where regional netcdf files are stored.
     #folder_name = 'Regional_files/20221120_2yr/'  # folder where regional netcdf files are stored.
     paramsNamesScalesAndFilenames = [ \
-                    #['clubb_c11', 1.0, \
+        ['clubb_c8', 1.0, \
+         folder_name + '14_Regional.nc', \
+         folder_name + '15_Regional.nc'], \
+        ['clubb_c_k10', 1.0, \
+         folder_name + '12_Regional.nc', \
+         folder_name + '13_Regional.nc'], \
+        ['clubb_c_invrs_tau_n2', 1.0, \
+         folder_name + '10_Regional.nc',
+         folder_name + '11_Regional.nc'], \
+        ['clubb_altitude_threshold', 0.001, \
+         folder_name + '20_Regional.nc',
+         folder_name + '21_Regional.nc'], \
+        #['clubb_c_invrs_tau_sfc', 1.0, \
+        # folder_name + '6_Regional.nc',
+        # folder_name + '7_Regional.nc'], \
+        ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
+         folder_name + '8_Regional.nc', \
+         folder_name + '9_Regional.nc'], \
+        ['clubb_c_invrs_tau_n2_wp2', 1.0, \
+         folder_name + '4_Regional.nc',
+         folder_name + '5_Regional.nc'], \
+        ['clubb_c_invrs_tau_shear', 1.0, \
+         folder_name + '2_Regional.nc', \
+         folder_name + '3_Regional.nc'], \
+        ['clubb_c_invrs_tau_bkgnd', 1.0, \
+         folder_name + '16_Regional.nc',
+         folder_name + '17_Regional.nc'], \
+        #['clubb_c11', 1.0, \
                     #  folder_name + 'clubb_c11m_Regional.nc',  \
                     #  folder_name + 'clubb_c11p_Regional.nc'], \
                     #['clubb_c1', 1.0, \
@@ -147,24 +174,24 @@ def setUpInputs():
                     #['clubb_gamma_coef', 1.0, \
                     # folder_name + 'clubb_gamma_coefm_Regional.nc',  \
                     # folder_name + 'clubb_gamma_coefp_Regional.nc'], \
-                    ['clubb_c8', 1.0, \
-                     folder_name + 'c8p3_Regional.nc',  \
-                     folder_name + 'c8p7_Regional.nc'], \
+                    #['clubb_c8', 1.0, \
+                    # folder_name + 'c8p3_Regional.nc',  \
+                    # folder_name + 'c8p7_Regional.nc'], \
                     #['clubb_c4', 1.0, \
                     # folder_name + 'clubb_c4m_Regional.nc',  \
                     # folder_name + 'clubb_c4p_Regional.nc'], \
-                    ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
-                     folder_name + 'thresp24_Regional.nc', \
-                     folder_name + 'thresp28_Regional.nc'], \
+                    #['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
+                    # folder_name + 'thresp24_Regional.nc', \
+                    # folder_name + 'thresp28_Regional.nc'], \
                     #['clubb_c_invrs_tau_n2', 1.0, \
                     # folder_name + 'n2p55_Regional.nc', \
                     # folder_name + 'n2p75_Regional.nc'], \
                     #['clubb_c_invrs_tau_n2_xp2', 1.0, \
                     # folder_name + 'clubb_c_invrs_tau_n2_xp2m_Regional.nc', \
                     # folder_name + 'clubb_c_invrs_tau_n2_xp2p_Regional.nc'], \
-                    ['clubb_c_invrs_tau_n2_wp2', 1.0, \
-                     folder_name + 'wp20_Regional.nc', \
-                     folder_name + 'wp24_Regional.nc'], \
+                    #['clubb_c_invrs_tau_n2_wp2', 1.0, \
+                    # folder_name + 'wp20_Regional.nc', \
+                    # folder_name + 'wp24_Regional.nc'], \
                     #['clubb_c_invrs_tau_wpxp_ri', 1.0, \
                     # folder_name + 'clubb_c_invrs_tau_wpxp_rim_Regional.nc', \
                     # folder_name + 'clubb_c_invrs_tau_wpxp_rip_Regional.nc'], \
@@ -174,9 +201,9 @@ def setUpInputs():
                     #['clubb_c_invrs_tau_n2_clear_wp3', 1.0, \
                     # folder_name + 'clubb_c_invrs_tau_n2_clear_wp3m_Regional.nc', \
                     # folder_name + 'clubb_c_invrs_tau_n2_clear_wp3p_Regional.nc'], \
-                    ['clubb_c_k10', 1.0, \
-                     folder_name + 'ck10p3_Regional.nc', \
-                     folder_name + 'ck10p7_Regional.nc'], \
+                    #['clubb_c_k10', 1.0, \
+                    # folder_name + 'ck10p3_Regional.nc', \
+                    # folder_name + 'ck10p7_Regional.nc'], \
                     #['clubb_bv_efold', 1.0, \
                     # folder_name + 'clubb_bv_efoldm_Regional.nc', \
                     # folder_name + 'clubb_bv_efoldp_Regional.nc'], \
@@ -195,21 +222,21 @@ def setUpInputs():
                     #['clubb_altitude_threshold', 0.01, \
                     #  folder_name + 'alt50_Regional.nc', \
                     #  folder_name + 'alt150_Regional.nc'], \
-                    ['clubb_z_displace', 0.01, \
-                      folder_name + 'zd10_Regional.nc', \
-                      folder_name + 'zd100_Regional.nc'], \
+                    #['clubb_z_displace', 0.01, \
+                    #  folder_name + 'zd10_Regional.nc', \
+                    #  folder_name + 'zd100_Regional.nc'], \
         #['cldfrc_dp1', 1.0, \
                     # folder_name + 'cldfrc_dp1m_Regional.nc', \
                     # folder_name + 'cldfrc_dp1p_Regional.nc'], \
                     #['cldfrc_dp2', 1e-3, \
                     # folder_name + 'cldfrc_dp2m_Regional.nc', \
                     # folder_name + 'cldfrc_dp2p_Regional.nc'], \
-                    ['micro_mg_autocon_lwp_exp', 1., \
-                     folder_name + 'auto2p3_Regional.nc', \
-                     folder_name + 'auto2p6_Regional.nc'], \
-                    ['micro_mg_dcs', 1000., \
-                     folder_name + 'dcs4h_Regional.nc', \
-                     folder_name + 'dcs6h_Regional.nc'], \
+                    #['micro_mg_autocon_lwp_exp', 1., \
+                    # folder_name + 'auto2p3_Regional.nc', \
+                    # folder_name + 'auto2p6_Regional.nc'], \
+                    #['micro_mg_dcs', 1000., \
+                    # folder_name + 'dcs4h_Regional.nc', \
+                    # folder_name + 'dcs6h_Regional.nc'], \
                     #['micro_mg_vtrmi_factor', 1.0, \
                     #  folder_name + 'micro_mg_vtrmi_factorm_Regional.nc',
                     #  folder_name + 'micro_mg_vtrmi_factorp_Regional.nc'], \
@@ -321,20 +348,20 @@ def setUpInputs():
 
 
     # Netcdf file containing metric and parameter values from the default simulation
-    defaultNcFilename = \
-        folder_name + 'Regional.nc'
+    #defaultNcFilename = \
+    #    folder_name + 'Regional.nc'
     #    'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
     #    'Regional_files/20240409updated/thresp26_Regional.nc'
     #    'Regional_files/stephens_20230920/117.f2c.taus_new_base_latest_mods6e_Regional.nc'
-    #defaultNcFilename = \
-    #    folder_name + 'sens0707_1_Regional.nc'
+    defaultNcFilename = \
+        folder_name + '1_Regional.nc'
 #        folder_name + 'chrysalis.bmg20220630.sens1107_1.ne30pg2_r05_oECv3_Regional.nc'
 #        '20220903/anvil.bmg20220630.sens723_1.ne30pg2_r05_oECv3_Regional.nc'
 
     # Metrics from the global simulation that use the tuner-recommended parameter values
     linSolnNcFilename = \
-        'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0Tuner_20240702_20d_DJF_Regional.nc'
-        #defaultNcFilename
+         defaultNcFilename
+    #    'Regional_files/20degree_CAM_TAUS_202404_DJF/20.0Tuner_20240702_20d_DJF_Regional.nc'
     #    'Regional_files/stephens_20240131/btune_regional_files/b1850.076base.n2th1b_Regional.nc'
     #    'Regional_files/20240409updated/thresp26_Regional.nc'
     # 'Regional_files/stephens_20230920/117.f2c.taus_new_base_latest_mods6e_Regional.nc'
