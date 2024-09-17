@@ -500,7 +500,7 @@ module advance_xm_wpxp_module
     logical :: &
       l_scalar_calc   ! True if sclr_dim > 0
       
-    integer :: i, j, k
+    integer :: i, sclr, k
 
     ! Whether preturbed winds are being solved.
     logical :: l_perturbed_wind
@@ -573,20 +573,20 @@ module advance_xm_wpxp_module
           
       if ( sclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(3) default(present)
-        do j = 1, sclr_dim
+        do sclr = 1, sclr_dim
           do k = 1, nzt
             do i = 1, ngrdcol
-              sclrm_old(i,k,j) = sclrm(i,k,j)
+              sclrm_old(i,k,sclr) = sclrm(i,k,sclr)
             end do
           end do
         end do
         !$acc end parallel loop
 
         !$acc parallel loop gang vector collapse(3) default(present)
-        do j = 1, sclr_dim
+        do sclr = 1, sclr_dim
           do k = 1, nzm
             do i = 1, ngrdcol
-              wpsclrp_old(i,k,j) = wpsclrp(i,k,j)
+              wpsclrp_old(i,k,sclr) = wpsclrp(i,k,sclr)
             end do
           end do
         end do
@@ -934,20 +934,20 @@ module advance_xm_wpxp_module
       
       if ( sclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(3) default(present)
-        do j = 1, sclr_dim
+        do sclr = 1, sclr_dim
           do k = 1, nzt
             do i = 1, ngrdcol
-              sclrm(i,k,j) = one_half * ( sclrm_old(i,k,j) + sclrm(i,k,j) )
+              sclrm(i,k,sclr) = one_half * ( sclrm_old(i,k,sclr) + sclrm(i,k,sclr) )
             end do
           end do
         end do
         !$acc end parallel loop
  
         !$acc parallel loop gang vector collapse(3) default(present)
-        do j = 1, sclr_dim
+        do sclr = 1, sclr_dim
           do k = 1, nzm
             do i = 1, ngrdcol
-              wpsclrp(i,k,j) = one_half * ( wpsclrp_old(i,k,j) + wpsclrp(i,k,j) )
+              wpsclrp(i,k,sclr) = one_half * ( wpsclrp_old(i,k,sclr) + wpsclrp(i,k,sclr) )
             end do
           end do
         end do
@@ -2338,7 +2338,7 @@ module advance_xm_wpxp_module
                                    term_wp2sclrp_explicit_zm,               & ! Intent(in)
                                    lhs_ta_wpsclrp(:,:,:,sclr) )                  ! Intent(out)  
 
-      end do ! i = 1, sclr_dim, 1
+      end do ! sclr = 1, sclr_dim, 1
 
     else ! .not. l_explicit_turbulent_adv_xpyp
 
@@ -2981,7 +2981,7 @@ module advance_xm_wpxp_module
       um_smth, &
       vm_smth
 
-    integer :: i, k, j, n
+    integer :: i, k, j, n, sclr
     
     ! ------------------- Begin Code -------------------
 
@@ -3042,9 +3042,9 @@ module advance_xm_wpxp_module
 ! scalar transport, e.g, droplet and ice number concentration
 ! are handled in  " advance_sclrm_Nd_module.F90 "
 #ifdef GFDL
-    do j = 1, 0, 1
+    do sclr = 1, 0, 1
 #else
-    do j = 1, sclr_dim, 1
+    do sclr = 1, sclr_dim, 1
 #endif
 ! <--- h1g, 2010-06-15
 
@@ -3053,19 +3053,19 @@ module advance_xm_wpxp_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
-          wpsclrp_forcing(i,k,j) = zero
+          wpsclrp_forcing(i,k,sclr) = zero
         end do
       end do
       !$acc end parallel loop
       
-      call xm_wpxp_rhs( nzm, nzt, ngrdcol, xm_wpxp_scalar, l_iter, dt, sclrm(:,:,j), wpsclrp(:,:,j), & ! In
-                        sclrm_forcing(:,:,j),                                             & ! In
-                        wpsclrp_forcing(:,:,j), C7_Skw_fnc,                               & ! In
-                        sclrpthvp(:,:,j), rhs_ta_wpsclrp(:,:,j), thv_ds_zm,               & ! In
+      call xm_wpxp_rhs( nzm, nzt, ngrdcol, xm_wpxp_scalar, l_iter, dt, sclrm(:,:,sclr), wpsclrp(:,:,sclr), & ! In
+                        sclrm_forcing(:,:,sclr),                                          & ! In
+                        wpsclrp_forcing(:,:,sclr), C7_Skw_fnc,                            & ! In
+                        sclrpthvp(:,:,sclr), rhs_ta_wpsclrp(:,:,sclr), thv_ds_zm,         & ! In
                         lhs_pr1_wpsclrp, lhs_ta_wpxp,                                     & ! In
                         stats_metadata,                                                   & ! In
                         stats_zt, stats_zm,                                               & ! Inout
-                        rhs(:,:,2+j) )                                                      ! Out
+                        rhs(:,:,2+sclr) )                                                   ! Out
 
     end do
 
@@ -3348,20 +3348,20 @@ module advance_xm_wpxp_module
       !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(3) default(present)
-      do j = 1, sclr_dim
+      do sclr = 1, sclr_dim
         do k = 1, nzt
           do i = 1, ngrdcol
-            old_solution(i,2*k,2+j) = sclrm(i,k,j)
+            old_solution(i,2*k,2+sclr) = sclrm(i,k,sclr)
           end do
         end do
       end do
       !$acc end parallel loop
 
       !$acc parallel loop gang vector collapse(3) default(present)
-      do j = 1, sclr_dim
+      do sclr = 1, sclr_dim
         do k = 1, nzm
           do i = 1, ngrdcol
-            old_solution(i,2*k-1,2+j) = wpsclrp(i,k,j)
+            old_solution(i,2*k-1,2+sclr) = wpsclrp(i,k,sclr)
           end do
         end do
       end do
@@ -3537,41 +3537,41 @@ module advance_xm_wpxp_module
 ! scalar transport, e.g, droplet and ice number concentration
 ! are handled in  " advance_sclrm_Nd_module.F90 "
 #ifdef GFDL
-    do j = 1, 0, 1
+    do sclr = 1, 0, 1
 #else
-    do j = 1, sclr_dim, 1
+    do sclr = 1, sclr_dim, 1
 #endif
 ! <--- h1g, 2010-06-15
-      call xm_wpxp_clipping_and_stats( nzm, nzt, ngrdcol, &       ! Intent(in)
-             gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,:,j), wm_zt, & ! Intent(in)
-             sclrm_forcing(:,:,j), &                              ! Intent(in)
-             rho_ds_zm, rho_ds_zt, &                              ! Intent(in)
-             invrs_rho_ds_zm, invrs_rho_ds_zt, &                  ! Intent(in)
-             sclr_tol(j)**2, sclr_tol(j), rcond, &                ! Intent(in)
-             low_lev_effect, high_lev_effect, &                   ! Intent(in)
-             lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &                 ! Intent(in)
-             lhs_diff_zm, C7_Skw_fnc, &                           ! Intent(in)
-             lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &                  ! Intent(in)
-             l_implemented, solution(:,:,2+j),  &                 ! Intent(in)
-             tridiag_solve_method, &                              ! Intent(in)
-             l_predict_upwp_vpwp, &                               ! Intent(in)
-             l_upwind_xm_ma, &                                    ! Intent(in)
-             l_tke_aniso, &                                       ! Intent(in)
-             l_enable_relaxed_clipping, &                         ! Intent(in)
-             l_mono_flux_lim_thlm, &                              ! Intent(in)
-             l_mono_flux_lim_rtm, &                               ! Intent(in)
-             l_mono_flux_lim_um, &                                ! Intent(in)
-             l_mono_flux_lim_vm, &                                ! Intent(in)
-             l_mono_flux_lim_spikefix, &                          ! Intent(in)
-             order_xm_wpxp, order_xp2_xpyp, &                     ! Intent(in)
-             order_wp2_wp3, &                                     ! Intent(in)
-             stats_metadata, &                                    ! Intent(in)
-             stats_zt, stats_zm, stats_sfc, &                     ! Intent(inout)
-             sclrm(:,:,j), sclr_tol(j), wpsclrp(:,:,j) )          ! Intent(inout)
+      call xm_wpxp_clipping_and_stats( nzm, nzt, ngrdcol, &          ! Intent(in)
+             gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,:,sclr), wm_zt, & ! Intent(in)
+             sclrm_forcing(:,:,sclr), &                              ! Intent(in)
+             rho_ds_zm, rho_ds_zt, &                                 ! Intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, &                     ! Intent(in)
+             sclr_tol(sclr)**2, sclr_tol(sclr), rcond, &             ! Intent(in)
+             low_lev_effect, high_lev_effect, &                      ! Intent(in)
+             lhs_ma_zt, lhs_ma_zm, lhs_ta_wpxp, &                    ! Intent(in)
+             lhs_diff_zm, C7_Skw_fnc, &                              ! Intent(in)
+             lhs_tp, lhs_ta_xm, lhs_pr1_wprtp, &                     ! Intent(in)
+             l_implemented, solution(:,:,2+sclr),  &                 ! Intent(in)
+             tridiag_solve_method, &                                 ! Intent(in)
+             l_predict_upwp_vpwp, &                                  ! Intent(in)
+             l_upwind_xm_ma, &                                       ! Intent(in)
+             l_tke_aniso, &                                          ! Intent(in)
+             l_enable_relaxed_clipping, &                            ! Intent(in)
+             l_mono_flux_lim_thlm, &                                 ! Intent(in)
+             l_mono_flux_lim_rtm, &                                  ! Intent(in)
+             l_mono_flux_lim_um, &                                   ! Intent(in)
+             l_mono_flux_lim_vm, &                                   ! Intent(in)
+             l_mono_flux_lim_spikefix, &                             ! Intent(in)
+             order_xm_wpxp, order_xp2_xpyp, &                        ! Intent(in)
+             order_wp2_wp3, &                                        ! Intent(in)
+             stats_metadata, &                                       ! Intent(in)
+             stats_zt, stats_zm, stats_sfc, &                        ! Intent(inout)
+             sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr) )    ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
          if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridiag failed"
+            write(fstderr,*) "sclrm # ", sclr, "monotonic flux limiter: tridiag failed"
             return
          end if
       end if
@@ -3986,7 +3986,7 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), dimension(ngrdcol) :: rcond
       
-    integer :: i, j, k
+    integer :: i, sclr, k
       
     ! ------------------- Begin Code -------------------
 
@@ -4220,34 +4220,34 @@ module advance_xm_wpxp_module
 ! scalar transport, e.g, droplet and ice number concentration
 ! are handled in  " advance_sclrm_Nd_module.F90 "
 #ifdef GFDL
-    do j = 1, 0, 1
+    do sclr = 1, 0, 1
 #else
-    do j = 1, sclr_dim, 1
+    do sclr = 1, sclr_dim, 1
 #endif
 ! <--- h1g, 2010-06-15
 
       ! Set <w'sclr'> forcing to 0 unless unless testing the wpsclrp code
       ! using wprtp or wpthlp (then use wprtp_forcing or wpthlp_forcing).
-      wpsclrp_forcing(:,:,j) = zero
+      wpsclrp_forcing(:,:,sclr) = zero
       
       ! Compute the implicit portion of the sclr and w'sclr' equations.
       ! Build the left-hand side matrix.
-      call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt, wpsclrp(:,:,j), wm_zt, C7_Skw_fnc, & ! In
-                        wpxp_upper_lim, wpxp_lower_lim,                                   & ! In
-                        l_implemented, lhs_diff_zm, lhs_diff_zt,                          & ! In
-                        lhs_ma_zm, lhs_ma_zt, lhs_ta_wpsclrp(:,:,:,j), lhs_ta_xm,         & ! In
-                        lhs_tp, lhs_pr1_wpsclrp, lhs_ac_pr2,                              & ! In
-                        l_diffuse_rtm_and_thlm,                                           & ! In
-                        stats_metadata,                                                   & ! In
-                        lhs )                                                               ! Out
+      call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt, wpsclrp(:,:,sclr), wm_zt, C7_Skw_fnc, & ! In
+                        wpxp_upper_lim, wpxp_lower_lim,                                      & ! In
+                        l_implemented, lhs_diff_zm, lhs_diff_zt,                             & ! In
+                        lhs_ma_zm, lhs_ma_zt, lhs_ta_wpsclrp(:,:,:,sclr), lhs_ta_xm,         & ! In
+                        lhs_tp, lhs_pr1_wpsclrp, lhs_ac_pr2,                                 & ! In
+                        l_diffuse_rtm_and_thlm,                                              & ! In
+                        stats_metadata,                                                      & ! In
+                        lhs )                                                                  ! Out
 
       ! Compute the explicit portion of the sclrm and w'sclr' equations.
       ! Build the right-hand side vector.
-      call xm_wpxp_rhs( nzm, nzt, ngrdcol, xm_wpxp_scalar, l_iter, dt, sclrm(:,:,j), wpsclrp(:,:,j), & ! In
-                        sclrm_forcing(:,:,j),                                             & ! In
-                        wpsclrp_forcing(:,:,j), C7_Skw_fnc,                               & ! In
-                        sclrpthvp(:,:,j), rhs_ta_wpsclrp(:,:,j), thv_ds_zm,               & ! In
-                        lhs_pr1_wpsclrp, lhs_ta_wpsclrp(:,:,:,j),                         & ! In
+      call xm_wpxp_rhs( nzm, nzt, ngrdcol, xm_wpxp_scalar, l_iter, dt, sclrm(:,:,sclr), wpsclrp(:,:,sclr), & ! In
+                        sclrm_forcing(:,:,sclr),                                          & ! In
+                        wpsclrp_forcing(:,:,sclr), C7_Skw_fnc,                            & ! In
+                        sclrpthvp(:,:,sclr), rhs_ta_wpsclrp(:,:,sclr), thv_ds_zm,         & ! In
+                        lhs_pr1_wpsclrp, lhs_ta_wpsclrp(:,:,:,sclr),                      & ! In
                         stats_metadata,                                                   & ! In
                         stats_zt, stats_zm,                                               & ! Inout
                         rhs(:,:,1) )                                                        ! Out
@@ -4259,10 +4259,10 @@ module advance_xm_wpxp_module
       ! Use the previous solution as an initial guess for the bicgstab method
       if ( penta_solve_method == penta_bicgstab ) then
         do k = 1, nzt
-          old_solution(:,2*k,1) = sclrm(:,k,j)
+          old_solution(:,2*k,1) = sclrm(:,k,sclr)
         end do
         do k = 1, nzm
-          old_solution(:,2*k-1,1) = wpsclrp(:,k,j)
+          old_solution(:,2*k-1,1) = wpsclrp(:,k,sclr)
         end do
       end if
 
@@ -4276,7 +4276,7 @@ module advance_xm_wpxp_module
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then   
           do i = 1, ngrdcol
-            write(fstderr,*) "Passive scalar # ", j, " LU decomp. failed."
+            write(fstderr,*) "Passive scalar # ", sclr, " LU decomp. failed."
             write(fstderr,*) "sclrm and wpsclrp LHS"
             do k = 1, nzm-1
                write(fstderr,*) "grid col = ", i, "zm level = ", k, "height [m] = ", gr%zm(i,k), &
@@ -4302,36 +4302,36 @@ module advance_xm_wpxp_module
         end if
       end if
       
-      call xm_wpxp_clipping_and_stats( nzm, nzt, ngrdcol, &       ! Intent(in)
-             gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,:,j), wm_zt, & ! Intent(in)
-             sclrm_forcing(:,:,j),  &                             ! Intent(in)
-             rho_ds_zm, rho_ds_zt, &                              ! Intent(in)
-             invrs_rho_ds_zm, invrs_rho_ds_zt, &                  ! Intent(in)
-             sclr_tol(j)**2, sclr_tol(j), rcond, &                ! Intent(in)
-             low_lev_effect, high_lev_effect, &                   ! Intent(in)
-             lhs_ma_zt, lhs_ma_zm, lhs_ta_wpsclrp(:,:,:,j), &     ! Intent(in)
-             lhs_diff_zm, C7_Skw_fnc, &                           ! Intent(in)
-             lhs_tp, lhs_ta_xm, lhs_pr1_wpsclrp, &                ! Intent(in)
-             l_implemented, solution(:,:,1),  &                   ! Intent(in)
-             tridiag_solve_method, &                              ! Intent(in)
-             l_predict_upwp_vpwp, &                               ! Intent(in)
-             l_upwind_xm_ma, &                                    ! Intent(in)
-             l_tke_aniso, &                                       ! Intent(in)
-             l_enable_relaxed_clipping, &                         ! Intent(in)
-             l_mono_flux_lim_thlm, &                              ! Intent(in)
-             l_mono_flux_lim_rtm, &                               ! Intent(in)
-             l_mono_flux_lim_um, &                                ! Intent(in)
-             l_mono_flux_lim_vm, &                                ! Intent(in)
-             l_mono_flux_lim_spikefix, &                          ! Intent(in)
-             order_xm_wpxp, order_xp2_xpyp, &                     ! Intent(in)
-             order_wp2_wp3, &                                     ! Intent(in)
-             stats_metadata, &                                    ! Intent(in)
-             stats_zt, stats_zm, stats_sfc, &                     ! intent(inout)
-             sclrm(:,:,j), sclr_tol(j), wpsclrp(:,:,j) )          ! Intent(inout)
+      call xm_wpxp_clipping_and_stats( nzm, nzt, ngrdcol, &          ! Intent(in)
+             gr, xm_wpxp_scalar, dt, wp2, sclrp2(:,:,sclr), wm_zt, & ! Intent(in)
+             sclrm_forcing(:,:,sclr),  &                             ! Intent(in)
+             rho_ds_zm, rho_ds_zt, &                                 ! Intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, &                     ! Intent(in)
+             sclr_tol(sclr)**2, sclr_tol(sclr), rcond, &             ! Intent(in)
+             low_lev_effect, high_lev_effect, &                      ! Intent(in)
+             lhs_ma_zt, lhs_ma_zm, lhs_ta_wpsclrp(:,:,:,sclr), &     ! Intent(in)
+             lhs_diff_zm, C7_Skw_fnc, &                              ! Intent(in)
+             lhs_tp, lhs_ta_xm, lhs_pr1_wpsclrp, &                   ! Intent(in)
+             l_implemented, solution(:,:,1),  &                      ! Intent(in)
+             tridiag_solve_method, &                                 ! Intent(in)
+             l_predict_upwp_vpwp, &                                  ! Intent(in)
+             l_upwind_xm_ma, &                                       ! Intent(in)
+             l_tke_aniso, &                                          ! Intent(in)
+             l_enable_relaxed_clipping, &                            ! Intent(in)
+             l_mono_flux_lim_thlm, &                                 ! Intent(in)
+             l_mono_flux_lim_rtm, &                                  ! Intent(in)
+             l_mono_flux_lim_um, &                                   ! Intent(in)
+             l_mono_flux_lim_vm, &                                   ! Intent(in)
+             l_mono_flux_lim_spikefix, &                             ! Intent(in)
+             order_xm_wpxp, order_xp2_xpyp, &                        ! Intent(in)
+             order_wp2_wp3, &                                        ! Intent(in)
+             stats_metadata, &                                       ! Intent(in)
+             stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
+             sclrm(:,:,sclr), sclr_tol(sclr), wpsclrp(:,:,sclr) )    ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
-          write(fstderr,*) "sclrm # ", j, "monotonic flux limiter: tridiag failed"
+          write(fstderr,*) "sclrm # ", sclr, "monotonic flux limiter: tridiag failed"
           return
         end if
       end if

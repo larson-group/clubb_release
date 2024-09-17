@@ -77,7 +77,7 @@ module stats_zt_module
     !--------------------- Local Varables ---------------------
     integer :: tot_zt_loops
 
-    integer :: i, j, k
+    integer :: i, sclr, edsclr, k
 
     integer :: hm_idx, hmx_idx, hmy_idx
 
@@ -4962,44 +4962,44 @@ module stats_zt_module
         k = k + 1
 
       case ( 'sclrm' )
-        do j = 1, sclr_dim, 1
-          write(sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write(sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-        stats_metadata%isclrm(j) = k
-          call stat_assign( var_index=stats_metadata%isclrm(j), var_name="sclr"//trim(sclr_idx)//"m", &
+        stats_metadata%isclrm(sclr) = k
+          call stat_assign( var_index=stats_metadata%isclrm(sclr), var_name="sclr"//trim(sclr_idx)//"m", &
             var_description="passive scalar "//trim(sclr_idx), var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zt )
           k = k + 1
         end do
 
       case ( 'sclrm_f' )
-        do j = 1, sclr_dim, 1
-          write(sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write(sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-        stats_metadata%isclrm_f(j) = k
-          call stat_assign( var_index=stats_metadata%isclrm_f(j), var_name="sclr"//trim(sclr_idx)//"m_f", &
+        stats_metadata%isclrm_f(sclr) = k
+          call stat_assign( var_index=stats_metadata%isclrm_f(sclr), var_name="sclr"//trim(sclr_idx)//"m_f", &
             var_description="passive scalar forcing "//trim(sclr_idx), var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zt )
           k = k + 1
         end do
 
       case ( 'edsclrm' )
-        do j = 1, edsclr_dim, 1
-          write(sclr_idx, * ) j
+        do edsclr = 1, edsclr_dim, 1
+          write(sclr_idx, * ) edsclr
           sclr_idx = adjustl(sclr_idx)
-        stats_metadata%iedsclrm(j) = k
-          call stat_assign( var_index=stats_metadata%iedsclrm(j), var_name="edsclr"//trim(sclr_idx)//"m", &
+        stats_metadata%iedsclrm(edsclr) = k
+          call stat_assign( var_index=stats_metadata%iedsclrm(edsclr), var_name="edsclr"//trim(sclr_idx)//"m", &
             var_description="passive scalar "//trim(sclr_idx), var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zt )
           k = k + 1
         end do
 
       case ( 'edsclrm_f' )
-        do j = 1, edsclr_dim, 1
-          write(sclr_idx, * ) j
+        do edsclr = 1, edsclr_dim, 1
+          write(sclr_idx, * ) edsclr
           sclr_idx = adjustl(sclr_idx)
-        stats_metadata%iedsclrm_f(j) = k
-          call stat_assign( var_index=stats_metadata%iedsclrm_f(j), var_name="edsclr"//trim(sclr_idx)//"m_f", &
+        stats_metadata%iedsclrm_f(edsclr) = k
+          call stat_assign( var_index=stats_metadata%iedsclrm_f(edsclr), var_name="edsclr"//trim(sclr_idx)//"m_f", &
             var_description="passive scalar forcing "//trim(sclr_idx), var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zt )
           k = k + 1

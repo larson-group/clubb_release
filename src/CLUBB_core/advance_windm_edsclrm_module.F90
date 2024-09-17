@@ -986,10 +986,10 @@ module advance_windm_edsclrm_module
       
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(3) default(present)
-        do j = 1, edsclr_dim
+        do edsclr = 1, edsclr_dim
           do k = 1, nzt
             do i = 1, ngrdcol
-              edsclrm_old(i,k,j) = edsclrm(i,k,j)
+              edsclrm_old(i,k,edsclr) = edsclrm(i,k,edsclr)
             end do
           end do
         end do
@@ -1042,9 +1042,9 @@ module advance_windm_edsclrm_module
       ! means that x'w' at the top model level is 0,
       ! since x'w' = - K_zm * d(xm)/dz.
       !$acc parallel loop gang vector collapse(2) default(present)
-      do j = 1, edsclr_dim
+      do edsclr = 1, edsclr_dim
         do i = 1, ngrdcol
-          wpedsclrp(i,nzm,j) = zero
+          wpedsclrp(i,nzm,edsclr) = zero
         end do
       end do
       !$acc end parallel loop
@@ -1076,10 +1076,10 @@ module advance_windm_edsclrm_module
       ! Update Eddy-diff. Passive Scalars
       !----------------------------------------------------------------
       !$acc parallel loop gang vector collapse(3) default(present)
-      do j = 1, edsclr_dim
+      do edsclr = 1, edsclr_dim
         do k = 1, nzt
           do i = 1, ngrdcol
-            edsclrm(i,k,j) = solution(i,k,j)
+            edsclrm(i,k,edsclr) = solution(i,k,edsclr)
           end do
         end do
       end do
@@ -1087,10 +1087,10 @@ module advance_windm_edsclrm_module
 
       if ( l_lmm_stepping ) then
         !$acc parallel loop gang vector collapse(3) default(present)
-        do j = 1, edsclr_dim
+        do edsclr = 1, edsclr_dim
           do k = 1, nzt
             do i = 1, ngrdcol
-              edsclrm(i,k,j) = one_half * ( edsclrm_old(i,k,j) + edsclrm(i,k,j) )
+              edsclrm(i,k,edsclr) = one_half * ( edsclrm_old(i,k,edsclr) + edsclrm(i,k,edsclr) )
             end do
           end do
         end do

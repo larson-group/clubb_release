@@ -307,7 +307,7 @@ module new_hybrid_pdf_main
     real( kind = core_rknd ), dimension(nz,sclr_dim) :: &
       zero_array    ! Array of 0s (size nz x sclr_dim)    [-]
 
-    integer :: i, k, j  ! Loop indices
+    integer :: i, k, sclr  ! Loop indices
     
     do i = 1, ngrdcol
 
@@ -318,13 +318,13 @@ module new_hybrid_pdf_main
       max_corr_w_sclr_sqd = zero
       if ( sclr_dim > 0 ) then
          do k = 1, nz, 1
-            do j = 1, sclr_dim, 1
-               if ( wp2(i,k) * sclrp2(i,k,j) > zero ) then
-                  max_corr_w_sclr_sqd(k) = max( wpsclrp(i,k,j)**2 &
-                                                / ( wp2(i,k) * sclrp2(i,k,j) ), &
+            do sclr = 1, sclr_dim, 1
+               if ( wp2(i,k) * sclrp2(i,k,sclr) > zero ) then
+                  max_corr_w_sclr_sqd(k) = max( wpsclrp(i,k,sclr)**2 &
+                                                / ( wp2(i,k) * sclrp2(i,k,sclr) ), &
                                                 max_corr_w_sclr_sqd(k) )
-               endif ! wp2(k) * sclrp2(k,j) > 0
-            enddo ! j = 1, sclr_dim, 1
+               endif ! wp2(k) * sclrp2(k,sclr) > 0
+            enddo ! sclr = 1, sclr_dim, 1
          enddo ! k = 1, nz, 1
       endif ! sclr_dim > 0
 
@@ -402,13 +402,13 @@ module new_hybrid_pdf_main
       ! Calculate the PDF parameters for responder variable sclr.
       if ( sclr_dim > 0 ) then
 
-         do j = 1, sclr_dim, 1
+         do sclr = 1, sclr_dim, 1
 
             do k = 1, nz, 1
-               sclrjm(k) = sclrm(i,k,j)
-               sclrjp2(k) = sclrp2(i,k,j)
-               wpsclrjp(k) = wpsclrp(i,k,j)
-               Sksclrj(k) = Sksclr(i,k,j)
+               sclrjm(k) = sclrm(i,k,sclr)
+               sclrjp2(k) = sclrp2(i,k,sclr)
+               wpsclrjp(k) = wpsclrp(i,k,sclr)
+               Sksclrj(k) = Sksclr(i,k,sclr)
             enddo ! k = 1, nz, 1
 
             call calc_responder_driver( sclrjm, sclrjp2, wpsclrjp, wp2(i,:), & ! In
@@ -421,16 +421,16 @@ module new_hybrid_pdf_main
                                         coef_sigma_sclrj_2_sqd          ) ! Out
 
             do k = 1, nz, 1
-               Sksclr(i,k,j) = Sksclrj(k)
-               mu_sclr_1(i,k,j) = mu_sclrj_1(k)
-               mu_sclr_2(i,k,j) = mu_sclrj_2(k)
-               sigma_sclr_1_sqd(i,k,j) = sigma_sclrj_1_sqd(k)
-               sigma_sclr_2_sqd(i,k,j) = sigma_sclrj_2_sqd(k)
-               coef_sigma_sclr_1_sqd(k,j) = coef_sigma_sclrj_1_sqd(k)
-               coef_sigma_sclr_2_sqd(k,j) = coef_sigma_sclrj_2_sqd(k)
+               Sksclr(i,k,sclr) = Sksclrj(k)
+               mu_sclr_1(i,k,sclr) = mu_sclrj_1(k)
+               mu_sclr_2(i,k,sclr) = mu_sclrj_2(k)
+               sigma_sclr_1_sqd(i,k,sclr) = sigma_sclrj_1_sqd(k)
+               sigma_sclr_2_sqd(i,k,sclr) = sigma_sclrj_2_sqd(k)
+               coef_sigma_sclr_1_sqd(k,sclr) = coef_sigma_sclrj_1_sqd(k)
+               coef_sigma_sclr_2_sqd(k,sclr) = coef_sigma_sclrj_2_sqd(k)
             enddo ! k = 1, nz, 1
 
-         enddo ! j = 1, sclr_dim, 1
+         enddo ! sclr = 1, sclr_dim, 1
 
       endif ! sclr_dim > 0
 
@@ -474,9 +474,9 @@ module new_hybrid_pdf_main
          ! where each coef_wp2xp_implicit is the same as coef_wp2rtp_implicit.
          if ( sclr_dim > 0 ) then
             do k = 1, nz, 1
-               do j = 1, sclr_dim, 1
-                  coef_wp2sclrp_implicit(k,j) = coef_wp2rtp_implicit(k)
-               enddo ! j = 1, sclr_dim, 1
+               do sclr = 1, sclr_dim, 1
+                  coef_wp2sclrp_implicit(k,sclr) = coef_wp2rtp_implicit(k)
+               enddo ! sclr = 1, sclr_dim, 1
             enddo ! k = 1, nz, 1
          endif ! sclr_dim > 0
 
@@ -545,12 +545,12 @@ module new_hybrid_pdf_main
 
          if ( sclr_dim > 0 ) then
 
-           do j = 1, sclr_dim, 1
+           do sclr = 1, sclr_dim, 1
 
               do k = 1, nz, 1
-                 wpsclrjp(k) = wpsclrp(i,k,j)
-                 coef_sigma_sclrj_1_sqd(k) = coef_sigma_sclr_1_sqd(k,j)
-                 coef_sigma_sclrj_2_sqd(k) = coef_sigma_sclr_2_sqd(k,j)
+                 wpsclrjp(k) = wpsclrp(i,k,sclr)
+                 coef_sigma_sclrj_1_sqd(k) = coef_sigma_sclr_1_sqd(k,sclr)
+                 coef_sigma_sclrj_2_sqd(k) = coef_sigma_sclr_2_sqd(k,sclr)
               enddo ! k = 1, nz, 1
 
               ! <w'sclr'^2> = coef_wpsclrp2_implicit * <sclr'^2>
@@ -585,15 +585,15 @@ module new_hybrid_pdf_main
                                                term_wpthlpsclrjp_explicit  ) ! Out
 
               do k = 1, nz, 1
-                 coef_wpsclrp2_implicit(k,j) = coef_wpsclrjp2_implicit(k)
-                 term_wpsclrp2_explicit(k,j) = term_wpsclrjp2_explicit(k)
-                 coef_wprtpsclrp_implicit(k,j) = coef_wprtpsclrjp_implicit(k)
-                 term_wprtpsclrp_explicit(k,j) = term_wprtpsclrjp_explicit(k)
-                 coef_wpthlpsclrp_implicit(k,j) = coef_wpthlpsclrjp_implicit(k)
-                 term_wpthlpsclrp_explicit(k,j) = term_wpthlpsclrjp_explicit(k)
+                 coef_wpsclrp2_implicit(k,sclr) = coef_wpsclrjp2_implicit(k)
+                 term_wpsclrp2_explicit(k,sclr) = term_wpsclrjp2_explicit(k)
+                 coef_wprtpsclrp_implicit(k,sclr) = coef_wprtpsclrjp_implicit(k)
+                 term_wprtpsclrp_explicit(k,sclr) = term_wprtpsclrjp_explicit(k)
+                 coef_wpthlpsclrp_implicit(k,sclr) = coef_wpthlpsclrjp_implicit(k)
+                 term_wpthlpsclrp_explicit(k,sclr) = term_wpthlpsclrjp_explicit(k)
               enddo ! k = 1, nz, 1
 
-           enddo ! j = 1, sclr_dim, 1
+           enddo ! sclr = 1, sclr_dim, 1
 
          endif ! sclr_dim > 0
 

@@ -642,10 +642,10 @@ module advance_clubb_core_module
 #endif
 
     !--------------------------- Local Variables ---------------------------
-    integer :: i, k, j
+    integer :: i, k, edsclr, sclr
 
 #ifdef CLUBB_CAM
-    integer ::  ixind
+    integer ::  edsclr
 #endif
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
@@ -1085,9 +1085,9 @@ module advance_clubb_core_module
       ! Set fluxes for passive scalars (if enabled)
       if ( sclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
-        do j = 1, sclr_dim
+        do sclr = 1, sclr_dim
           do i = 1, ngrdcol
-            wpsclrp(i,1,j)   = wpsclrp_sfc(i,j)
+            wpsclrp(i,1,sclr)   = wpsclrp_sfc(i,sclr)
           end do
         end do
         !$acc end parallel loop
@@ -1095,9 +1095,9 @@ module advance_clubb_core_module
 
       if ( edsclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
-        do j = 1, edsclr_dim
+        do edsclr = 1, edsclr_dim
           do i = 1, ngrdcol
-            wpedsclrp(i,1,j) = wpedsclrp_sfc(i,j)
+            wpedsclrp(i,1,edsclr) = wpedsclrp_sfc(i,edsclr)
           end do
         end do
         !$acc end parallel loop
@@ -1117,9 +1117,9 @@ module advance_clubb_core_module
       ! Set fluxes for passive scalars (if enabled)
       if ( sclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
-        do j = 1, sclr_dim
+        do sclr = 1, sclr_dim
           do i = 1, ngrdcol
-            wpsclrp(i,1,j) = 0.0_core_rknd
+            wpsclrp(i,1,sclr) = 0.0_core_rknd
           end do
         end do
         !$acc end parallel loop
@@ -1127,9 +1127,9 @@ module advance_clubb_core_module
 
       if ( edsclr_dim > 0 ) then
         !$acc parallel loop gang vector collapse(2) default(present)
-        do j = 1, edsclr_dim
+        do edsclr = 1, edsclr_dim
           do i = 1, ngrdcol
-            wpedsclrp(i,1,j) = 0.0_core_rknd
+            wpedsclrp(i,1,edsclr) = 0.0_core_rknd
           end do
         end do
         !$acc end parallel loop
@@ -2249,11 +2249,11 @@ module advance_clubb_core_module
       ! Eric Raut: this seems dangerous to call without any attached flag.
       ! Hence the preprocessor.
 #ifdef CLUBB_CAM
-      do ixind=1,edsclr_dim
+      do edsclr=1,edsclr_dim
         ! upper_hf_level = nzt since we are filling the zt levels
         call fill_holes_vertical( nzt, ngrdcol, zero_threshold, 1, nzt, & ! In
                                   gr%dzt, rho_ds_zt,                    & ! In
-                                  edsclrm(:,:,ixind) )                    ! InOut
+                                  edsclrm(:,:,edsclr) )                    ! InOut
       enddo
 #endif
 
@@ -2364,17 +2364,17 @@ module advance_clubb_core_module
                                  clubb_params, w_tol, &
                                  vp3 )
 
-        do j = 1, sclr_dim, 1
+        do sclr = 1, sclr_dim, 1
           
-          wpsclrp_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,j), sclr_tol(j)**2 )
-          sclrp2_zt(:,:)  = zm2zt( nzm, nzt, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 )
+          wpsclrp_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr), sclr_tol(sclr)**2 )
+          sclrp2_zt(:,:)  = zm2zt( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), sclr_tol(sclr)**2 )
 
           call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt, wpsclrp_zt, wp2_zt, &
                                    sclrp2_zt, sigma_sqd_w_zt, &
-                                   clubb_params, sclr_tol(j), &
+                                   clubb_params, sclr_tol(sclr), &
                                    sclrp3 )
 
-        enddo ! i = 1, sclr_dim
+        enddo ! sclr = 1, sclr_dim
 
       else ! clubb_config_flags%iiPDF_type /= iiPDF_ADG1
 
@@ -2430,16 +2430,16 @@ module advance_clubb_core_module
                                  clubb_params, w_tol, &
                                  vp3 )
 
-        do j = 1, sclr_dim, 1
+        do sclr = 1, sclr_dim, 1
           
-          wpsclrp_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,j) )
-          sclrp2_zt(:,:)  = zm2zt( nzm, nzt, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 )
+          wpsclrp_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr) )
+          sclrp2_zt(:,:)  = zm2zt( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), sclr_tol(sclr)**2 )
 
           call xp3_LG_2005_ansatz( nzt, ngrdcol, Skw_zt(:,:), wpsclrp_zt(:,:), wp2_zt(:,:), &
                                    sclrp2_zt(:,:), xp3_coef_fnc(:,:), &
-                                   clubb_params, sclr_tol(j), &
-                                   sclrp3(:,:,j) )
-        end do ! i = 1, sclr_dim
+                                   clubb_params, sclr_tol(sclr), &
+                                   sclrp3(:,:,sclr) )
+        end do ! sclr = 1, sclr_dim
 
       end if ! clubb_config_flags%iiPDF_type == iiPDF_ADG1
 
@@ -3389,7 +3389,7 @@ module advance_clubb_core_module
 
     logical :: l_spur_supersat   ! Spurious supersaturation?
 
-    integer :: i, k, j
+    integer :: i, k, j, sclr
 
     !-------------------------------------- Begin Code --------------------------------------
 
@@ -3434,10 +3434,10 @@ module advance_clubb_core_module
     vp2_zt(:,:)   = zm2zt( nzm, nzt, ngrdcol, gr, vp2(:,:), w_tol_sqd ) ! Positive definite quantity
     vp3_zm(:,:)   = zt2zm( nzm, nzt, ngrdcol, gr, vp3(:,:) )
 
-    do j = 1, sclr_dim, 1
-      sclrp2_zt(:,:,j) = zm2zt( nzm, nzt, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 ) ! Pos. def. quantity
-      sclrp3_zm(:,:,j) = zt2zm( nzm, nzt, ngrdcol, gr, sclrp3(:,:,j) )
-    end do ! i = 1, sclr_dim, 1
+    do sclr = 1, sclr_dim, 1
+      sclrp2_zt(:,:,sclr) = zm2zt( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), sclr_tol(sclr)**2 ) ! Pos. def. quantity
+      sclrp3_zm(:,:,sclr) = zt2zm( nzm, nzt, ngrdcol, gr, sclrp3(:,:,sclr) )
+    end do ! sclr = 1, sclr_dim, 1
 
     call Skx_func( nzt, ngrdcol, wp2_zt, wp3, &
                    w_tol, clubb_params, &
@@ -3479,17 +3479,17 @@ module advance_clubb_core_module
                    w_tol, clubb_params, &
                    Skv_zm )      
 
-    do j = 1, sclr_dim
+    do sclr = 1, sclr_dim
       
-      call Skx_func( nzt, ngrdcol, sclrp2_zt(:,:,j), sclrp3(:,:,j), &
-                     sclr_tol(j), clubb_params, &
-                     Sksclr_zt(:,:,j) )   
+      call Skx_func( nzt, ngrdcol, sclrp2_zt(:,:,sclr), sclrp3(:,:,sclr), &
+                     sclr_tol(sclr), clubb_params, &
+                     Sksclr_zt(:,:,sclr) )   
                      
-      call Skx_func( nzm, ngrdcol, sclrp2(:,:,j), sclrp3_zm(:,:,j), &
-                     sclr_tol(j), clubb_params, &
-                     Sksclr_zm(:,:,j) )  
+      call Skx_func( nzm, ngrdcol, sclrp2(:,:,sclr), sclrp3_zm(:,:,sclr), &
+                     sclr_tol(sclr), clubb_params, &
+                     Sksclr_zm(:,:,sclr) )  
                       
-    end do ! i = 1, sclr_dim, 1
+    end do ! sclr = 1, sclr_dim, 1
 
     if ( stats_metadata%l_stats_samp .and. l_samp_stats_in_pdf_call ) then
 
@@ -3640,12 +3640,12 @@ module advance_clubb_core_module
     !----------------------------------------------------------------
 
     ! Put passive scalar input on the t grid for the PDF
-    do j = 1, sclr_dim
-      wpsclrp_zt(:,:,j)   = zm2zt( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,j) )
-      sclrp2_zt(:,:,j)    = zm2zt( nzm, nzt, ngrdcol, gr, sclrp2(:,:,j), sclr_tol(j)**2 ) ! Pos. def. quantity
-      sclrprtp_zt(:,:,j)  = zm2zt( nzm, nzt, ngrdcol, gr, sclrprtp(:,:,j) )
-      sclrpthlp_zt(:,:,j) = zm2zt( nzm, nzt, ngrdcol, gr, sclrpthlp(:,:,j) )
-    end do ! i = 1, sclr_dim, 1
+    do sclr = 1, sclr_dim
+      wpsclrp_zt(:,:,sclr)   = zm2zt( nzm, nzt, ngrdcol, gr, wpsclrp(:,:,sclr) )
+      sclrp2_zt(:,:,sclr)    = zm2zt( nzm, nzt, ngrdcol, gr, sclrp2(:,:,sclr), sclr_tol(sclr)**2 ) ! Pos. def. quantity
+      sclrprtp_zt(:,:,sclr)  = zm2zt( nzm, nzt, ngrdcol, gr, sclrprtp(:,:,sclr) )
+      sclrpthlp_zt(:,:,sclr) = zm2zt( nzm, nzt, ngrdcol, gr, sclrpthlp(:,:,sclr) )
+    end do ! sclr = 1, sclr_dim, 1
 
     ! Interpolate hydrometeor mixed moments to momentum levels.
     do j = 1, hydromet_dim
@@ -3750,10 +3750,10 @@ module advance_clubb_core_module
 
       ! Interpolate sclrm to the momentum level for use in
       ! the second call to pdf_closure
-      do j = 1, sclr_dim
+      do sclr = 1, sclr_dim
         ! Clip if extrap. causes sclrm_zm to be less than sclr_tol
-        sclrm_zm(:,:,j) = zt2zm( nzm, nzt, ngrdcol, gr, sclrm(:,:,j), sclr_tol(j) )
-      end do ! i = 1, sclr_dim
+        sclrm_zm(:,:,sclr) = zt2zm( nzm, nzt, ngrdcol, gr, sclrm(:,:,sclr), sclr_tol(sclr) )
+      end do ! sclr = 1, sclr_dim
 
       ! Interpolate pressure, p_in_Pa, to momentum levels.
       ! Since the surface (or model lower boundary) is located at momentum level
@@ -3929,18 +3929,18 @@ module advance_clubb_core_module
       !$acc end parallel loop
 
       ! Interpolate passive scalars back onto the m grid
-      do j = 1, sclr_dim
-        sclrpthvp(:,:,j)       = zt2zm( nzm, nzt, ngrdcol, gr, sclrpthvp_zt(:,:,j) )
-        sclrprcp(:,:,j)        = zt2zm( nzm, nzt, ngrdcol, gr, sclrprcp_zt(:,:,j) )
+      do sclr = 1, sclr_dim
+        sclrpthvp(:,:,sclr)       = zt2zm( nzm, nzt, ngrdcol, gr, sclrpthvp_zt(:,:,sclr) )
+        sclrprcp(:,:,sclr)        = zt2zm( nzm, nzt, ngrdcol, gr, sclrprcp_zt(:,:,sclr) )
 
         !$acc parallel loop gang vector default(present)
         do i = 1, ngrdcol
-          sclrpthvp(i,nzm,j) = 0.0_core_rknd
-          sclrprcp(i,nzm,j)  = 0.0_core_rknd
+          sclrpthvp(i,nzm,sclr) = 0.0_core_rknd
+          sclrprcp(i,nzm,sclr)  = 0.0_core_rknd
         end do
         !$acc end parallel loop
 
-      end do ! i=1, sclr_dim
+      end do ! sclr=1, sclr_dim
 
     end if ! l_call_pdf_closure_twice
     
@@ -4837,7 +4837,7 @@ module advance_clubb_core_module
             wpsclrpthlp_zm(i,nzm,sclr) = 0.0_core_rknd
           end do
           !$acc end parallel loop
-        end do ! i = 1, sclr_dim
+        end do ! sclr = 1, sclr_dim
 
       end if ! .not. l_call_pdf_closure_twice
 
@@ -4876,7 +4876,7 @@ module advance_clubb_core_module
                                     wpsclrp2(:,:,sclr) )
           end if
           
-        end do ! i = 1, sclr_dim
+        end do ! sclr = 1, sclr_dim
       end if ! l_stats
 
       call calc_trapezoid_zt( nzm, nzt, ngrdcol, gr, &

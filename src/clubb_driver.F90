@@ -387,8 +387,8 @@ module clubb_driver
     real( kind = core_rknd ) :: dummy_dx, dummy_dy  ! [m]
 
     integer :: &
-      itime, i, j, & ! Local Loop Variables
-      iinit          ! initial iteration
+      itime, i, j, sclr, edsclr, & ! Local Loop Variables
+      iinit                        ! initial iteration
 
     integer ::  & 
       iunit,           & ! File unit used for I/O
@@ -1905,21 +1905,21 @@ module clubb_driver
     vpwp_sfc   = zero
 
     ! Passive scalars
-    do i = 1, sclr_dim, 1
-       wpsclrp_sfc(i)           = zero
-       sclrm(1:gr%nzt,i)         = zero
-       sclrp2(1:gr%nzm,i)        = sclr_tol(i)**2
-       sclrp3(1:gr%nzt,i)        = zero
-       sclrprtp(1:gr%nzm,i)      = zero
-       sclrpthlp(1:gr%nzm,i)     = zero
-       sclrm_forcing(1:gr%nzt,i) = zero
-       wpsclrp(1:gr%nzm,i)       = zero
+    do sclr = 1, sclr_dim, 1
+       wpsclrp_sfc(sclr)           = zero
+       sclrm(1:gr%nzt,sclr)         = zero
+       sclrp2(1:gr%nzm,sclr)        = sclr_tol(sclr)**2
+       sclrp3(1:gr%nzt,sclr)        = zero
+       sclrprtp(1:gr%nzm,sclr)      = zero
+       sclrpthlp(1:gr%nzm,sclr)     = zero
+       sclrm_forcing(1:gr%nzt,sclr) = zero
+       wpsclrp(1:gr%nzm,sclr)       = zero
     enddo
 
-    do i = 1, edsclr_dim, 1
-      wpedsclrp_sfc(i)           = zero
-      edsclrm(1:gr%nzt,i)         = zero
-      edsclrm_forcing(1:gr%nzt,i) = zero
+    do edsclr = 1, edsclr_dim, 1
+      wpedsclrp_sfc(edsclr)           = zero
+      edsclrm(1:gr%nzt,edsclr)         = zero
+      edsclrm_forcing(1:gr%nzt,edsclr) = zero
     end do
 
     ! Allocate a correctly-sized array for radf and zero it

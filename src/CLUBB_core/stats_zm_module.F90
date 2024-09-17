@@ -79,7 +79,7 @@ module stats_zm_module
 
     character(len=10) :: hm_type, hmx_type, hmy_type
 
-    integer :: i, j, k
+    integer :: i, sclr, edsclr, k
 
     character(len=50) :: sclr_idx
 
@@ -2362,110 +2362,110 @@ module stats_zm_module
         k = k + 1
 
       case ( 'sclrprtp' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%isclrprtp(j) = k
-          call stat_assign( var_index=stats_metadata%isclrprtp(j), var_name="sclr"//trim(sclr_idx)//"prtp", &
+          stats_metadata%isclrprtp(sclr) = k
+          call stat_assign( var_index=stats_metadata%isclrprtp(sclr), var_name="sclr"//trim(sclr_idx)//"prtp", &
             var_description="scalar("//trim(sclr_idx)//")'rt'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do
 
       case ( 'sclrp2' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%isclrp2(j) = k
-          call stat_assign( var_index=stats_metadata%isclrp2(j), var_name="sclr"//trim(sclr_idx)//"p2", &
+          stats_metadata%isclrp2(sclr) = k
+          call stat_assign( var_index=stats_metadata%isclrp2(sclr), var_name="sclr"//trim(sclr_idx)//"p2", &
             var_description="scalar("//trim(sclr_idx)//")'^2'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do
 
       case ( 'sclrpthvp' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%isclrpthvp(j) = k
-          call stat_assign( var_index=stats_metadata%isclrpthvp(j), var_name="sclr"//trim(sclr_idx)//"pthvp", &
+          stats_metadata%isclrpthvp(sclr) = k
+          call stat_assign( var_index=stats_metadata%isclrpthvp(sclr), var_name="sclr"//trim(sclr_idx)//"pthvp", &
             var_description="scalar("//trim(sclr_idx)//")'th_v'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do
 
       case ( 'sclrpthlp' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%isclrpthlp(j) = k
-          call stat_assign( var_index=stats_metadata%isclrpthlp(j), var_name="sclr"//trim(sclr_idx)//"pthlp", &
+          stats_metadata%isclrpthlp(sclr) = k
+          call stat_assign( var_index=stats_metadata%isclrpthlp(sclr), var_name="sclr"//trim(sclr_idx)//"pthlp", &
             var_description="scalar("//trim(sclr_idx)//")'th_l'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do
 
       case ( 'sclrprcp' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%isclrprcp(j) = k
-          call stat_assign( var_index=stats_metadata%isclrprcp(j), var_name="sclr"//trim(sclr_idx)//"prcp", &
+          stats_metadata%isclrprcp(sclr) = k
+          call stat_assign( var_index=stats_metadata%isclrprcp(sclr), var_name="sclr"//trim(sclr_idx)//"prcp", &
             var_description="scalar("//trim(sclr_idx)//")'rc'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do
 
       case ( 'wpsclrp' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwpsclrp(j) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrp(j), var_name="wpsclr"//trim(sclr_idx)//"p", &
+          stats_metadata%iwpsclrp(sclr) = k
+          call stat_assign( var_index=stats_metadata%iwpsclrp(sclr), var_name="wpsclr"//trim(sclr_idx)//"p", &
             var_description="'w'scalar("//trim(sclr_idx)//")", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do
 
       case ( 'wpsclrp2' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwpsclrp2(j) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrp2(j), var_name="wpsclr"//trim(sclr_idx)//"p2", &
+          stats_metadata%iwpsclrp2(sclr) = k
+          call stat_assign( var_index=stats_metadata%iwpsclrp2(sclr), var_name="wpsclr"//trim(sclr_idx)//"p2", &
             var_description="'w'scalar("//trim(sclr_idx)//")'^2'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do
 
       case ( 'wp2sclrp' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwp2sclrp(j) = k
-          call stat_assign( var_index=stats_metadata%iwp2sclrp(j), var_name="wp2sclr"//trim(sclr_idx)//"p", &
+          stats_metadata%iwp2sclrp(sclr) = k
+          call stat_assign( var_index=stats_metadata%iwp2sclrp(sclr), var_name="wp2sclr"//trim(sclr_idx)//"p", &
             var_description="'w'^2 scalar("//trim(sclr_idx)//")", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do
 
       case ( 'wpsclrprtp' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwpsclrprtp(j) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrprtp(j), var_name="wpsclr"//trim(sclr_idx)//"prtp", &
+          stats_metadata%iwpsclrprtp(sclr) = k
+          call stat_assign( var_index=stats_metadata%iwpsclrprtp(sclr), var_name="wpsclr"//trim(sclr_idx)//"prtp", &
             var_description="'w' scalar("//trim(sclr_idx)//")'rt'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
         end do
 
       case ( 'wpsclrpthlp' )
-        do j = 1, sclr_dim, 1
-          write( sclr_idx, * ) j
+        do sclr = 1, sclr_dim, 1
+          write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwpsclrpthlp(j) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrpthlp(j), &
+          stats_metadata%iwpsclrpthlp(sclr) = k
+          call stat_assign( var_index=stats_metadata%iwpsclrpthlp(sclr), &
             var_name="wpsclr"//trim(sclr_idx)//"pthlp", &
             var_description="'w' scalar("//trim(sclr_idx)//")'th_l'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
@@ -2473,11 +2473,11 @@ module stats_zm_module
         end do
 
       case ( 'wpedsclrp' )
-        do j = 1, edsclr_dim, 1
-          write( sclr_idx, * ) j
+        do edsclr = 1, edsclr_dim, 1
+          write( sclr_idx, * ) edsclr
           sclr_idx = adjustl(sclr_idx)
-          stats_metadata%iwpedsclrp(j) = k
-          call stat_assign( var_index=stats_metadata%iwpedsclrp(j), var_name="wpedsclr"//trim(sclr_idx)//"p", &
+          stats_metadata%iwpedsclrp(edsclr) = k
+          call stat_assign( var_index=stats_metadata%iwpedsclrp(edsclr), var_name="wpedsclr"//trim(sclr_idx)//"p", &
             var_description="eddy scalar("//trim(sclr_idx)//")'w'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1

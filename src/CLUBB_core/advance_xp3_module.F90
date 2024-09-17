@@ -160,7 +160,7 @@ module advance_xp3_module
                                    stats_metadata,                                       & ! Intent(in)
                                    stats_zt,                                             & ! In/Out
                                    sclrp3(:,:,sclr) )                                      ! In/Out
-    end do ! i = 1, sclr_dim
+    end do ! sclr = 1, sclr_dim
 
     return
 

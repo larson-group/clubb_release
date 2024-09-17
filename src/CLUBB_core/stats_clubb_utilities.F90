@@ -2076,7 +2076,7 @@ module stats_clubb_utilities
 
     ! Local Variables
 
-    integer :: isclr, k
+    integer :: sclr, edsclr, k
     integer :: grid_level = 1  ! grid level for stats where there is only one sensible level (eg timeseries)
 
     real( kind = core_rknd ), dimension(nzt) :: &
@@ -2334,19 +2334,19 @@ module stats_clubb_utilities
       end if
 
       if ( sclr_dim > 0 ) then
-        do isclr=1, sclr_dim
-          call stat_update_var( stats_metadata%isclrm(isclr), sclrm(:,isclr), & ! intent(in)
+        do sclr=1, sclr_dim
+          call stat_update_var( stats_metadata%isclrm(sclr), sclrm(:,sclr), & ! intent(in)
                                 stats_zt ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrm_f(isclr), sclrm_forcing(:,isclr),  & ! intent(in)
+          call stat_update_var( stats_metadata%isclrm_f(sclr), sclrm_forcing(:,sclr),  & ! intent(in)
                                 stats_zt ) ! intent(inout)
         end do
       end if
 
       if ( edsclr_dim > 0 ) then
-        do isclr = 1, edsclr_dim
-          call stat_update_var( stats_metadata%iedsclrm(isclr), edsclrm(:,isclr), & ! intent(in)
+        do edsclr = 1, edsclr_dim
+          call stat_update_var( stats_metadata%iedsclrm(edsclr), edsclrm(:,edsclr), & ! intent(in)
                                 stats_zt ) ! intent(inout)
-          call stat_update_var( stats_metadata%iedsclrm_f(isclr), edsclrm_forcing(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%iedsclrm_f(edsclr), edsclrm_forcing(:,edsclr), & ! intent(in)
                                 stats_zt ) ! intent(inout)
         end do
       end if
@@ -2454,32 +2454,32 @@ module stats_clubb_utilities
                             stats_zm ) ! intent(inout)
 
       if ( sclr_dim > 0 ) then
-        do isclr=1, sclr_dim
-          call stat_update_var( stats_metadata%isclrp2(isclr), sclrp2(:,isclr), & ! intent(in)
+        do sclr=1, sclr_dim
+          call stat_update_var( stats_metadata%isclrp2(sclr), sclrp2(:,sclr), & ! intent(in)
                                 stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrprtp(isclr), sclrprtp(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%isclrprtp(sclr), sclrprtp(:,sclr), & ! intent(in)
                                 stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrpthvp(isclr), sclrpthvp(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%isclrpthvp(sclr), sclrpthvp(:,sclr), & ! intent(in)
                                 stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrpthlp(isclr), sclrpthlp(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%isclrpthlp(sclr), sclrpthlp(:,sclr), & ! intent(in)
                                  stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrprcp(isclr), sclrprcp(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%isclrprcp(sclr), sclrprcp(:,sclr), & ! intent(in)
                                 stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwpsclrp(isclr), wpsclrp(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%iwpsclrp(sclr), wpsclrp(:,sclr), & ! intent(in)
                                stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwp2sclrp(isclr), wp2sclrp(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%iwp2sclrp(sclr), wp2sclrp(:,sclr), & ! intent(in)
                                 stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwpsclrp2(isclr), wpsclrp2(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%iwpsclrp2(sclr), wpsclrp2(:,sclr), & ! intent(in)
                                 stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwpsclrprtp(isclr), wpsclrprtp(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%iwpsclrprtp(sclr), wpsclrprtp(:,sclr), & ! intent(in)
                                 stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwpsclrpthlp(isclr), wpsclrpthlp(:,isclr), & ! intent(in)
+          call stat_update_var( stats_metadata%iwpsclrpthlp(sclr), wpsclrpthlp(:,sclr), & ! intent(in)
                                 stats_zm ) ! intent(inout)
         end do
       end if
       if ( edsclr_dim > 0 ) then
-        do isclr = 1, edsclr_dim
-          call stat_update_var( stats_metadata%iwpedsclrp(isclr), wpedsclrp(:,isclr), & ! intent(in)
+        do edsclr = 1, edsclr_dim
+          call stat_update_var( stats_metadata%iwpedsclrp(edsclr), wpedsclrp(:,edsclr), & ! intent(in)
                                 stats_zm ) ! intent(inout)
         end do
       end if

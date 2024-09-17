@@ -160,15 +160,15 @@ module sounding
       subs       ! Vertical velocity sounding             [m/s or Pa/s]
 
     real( kind = core_rknd ), dimension(:,:), allocatable ::  & 
-      sclr, edsclr ! Passive scalar input sounding    [units vary]
+      sclr_snd, edsclr_snd ! Passive scalar input sounding    [units vary]
 
     type(one_dim_read_var), dimension(n_snd_var) :: &
       sounding_retVars ! Sounding Profile
 
     type(one_dim_read_var), dimension(sclr_dim) :: &
-      sclr_sounding_retVars ! Sclr Sounding Profile
+      sclr_sounding_retVars ! sclr_snd Sounding Profile
 
-    integer :: i, j, k  ! Loop indices
+    integer :: i, sclr, edsclr, k  ! Loop indices
 
     integer :: km1, kp1, kp2, k00 ! For mono cubic interpolation
 
@@ -218,16 +218,16 @@ module sounding
     ! Read in a passive scalar sounding, if enabled
     if ( sclr_dim > 0 .or. edsclr_dim > 0 ) then
       ! Allocate large arrays
-      allocate( sclr(nmaxsnd, sclr_max), edsclr(nmaxsnd, sclr_max) )
+      allocate( sclr_snd(nmaxsnd, sclr_max), edsclr_snd(nmaxsnd, sclr_max) )
       ! Initialize to zero
-      sclr   = 0.0_core_rknd
-      edsclr = 0.0_core_rknd
+      sclr_snd   = 0.0_core_rknd
+      edsclr_snd = 0.0_core_rknd
       ! Read in SAM-Like <runtype>_sclr_sounding.in and
       !                  <runtype>_edsclr_sounding.in
       if( sclr_dim > 0 ) then
         if( l_sclr_sounding_exists ) then
           call read_sclr_sounding_file( sclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
-                                        sclr, &
+                                        sclr_snd, &
                                         sclr_sounding_retVars )
         else
           error stop 'Cannot open <runtype>_sclr_sounding.in file'
@@ -236,7 +236,7 @@ module sounding
       if( edsclr_dim > 0 ) then
         if( l_edsclr_sounding_exists  ) then
           call read_edsclr_sounding_file( edsclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
-                                          edsclr )
+                                          edsclr_snd )
         else
           error stop 'Cannot open <runtype>_edsclr_sounding.in file'
         end if
@@ -281,10 +281,10 @@ module sounding
       press = p_in_Pa(1)
       wm = subs(1)
       if ( sclr_dim > 0 ) then
-        sclrm(1,1:sclr_dim)   = sclr(1,1:sclr_dim)
+        sclrm(1,1:sclr_dim)   = sclr_snd(1,1:sclr_dim)
       end if
       if ( edsclr_dim > 0 ) then
-        edsclrm(1,1:edsclr_dim) = edsclr(1,1:edsclr_dim)
+        edsclrm(1,1:edsclr_dim) = edsclr_snd(1,1:edsclr_dim)
       end if
     end if
 
@@ -302,14 +302,14 @@ module sounding
       write(fstdout,*) "p_in_Pa = ", p_in_Pa(1:nlevels)
       write(fstdout,*) "subs = ", subs(1:nlevels)
 
-      do i = 1, sclr_dim, 1
-        write(fstdout,'(a5,i2,a2)',advance='no') "sclr(", i,") = "
-        write(fstdout,'(8g10.3)') sclr(1:nlevels,i)
+      do sclr = 1, sclr_dim, 1
+        write(fstdout,'(a5,i2,a2)',advance='no') "sclr_snd(", sclr,") = "
+        write(fstdout,'(8g10.3)') sclr_snd(1:nlevels,sclr)
       enddo
 
-      do i = 1, edsclr_dim, 1
-        write(fstdout,'(a7,i2,a2)',advance='no') "edsclr(", i, ") = "
-        write(fstdout,'(8g10.3)') edsclr(1:nlevels,i)
+      do edsclr = 1, edsclr_dim, 1
+        write(fstdout,'(a7,i2,a2)',advance='no') "edsclr_snd(", edsclr, ") = "
+        write(fstdout,'(8g10.3)') edsclr_snd(1:nlevels,edsclr)
       enddo
 
     endif ! clubb_at_least_debug_level( 1 )
@@ -382,19 +382,19 @@ module sounding
           if ( trim( runtype ) /= "dycoms2_rf02" ) then 
             !initial condition for tracers 
             if ( sclr_dim > 0 ) then
-              do j = 1, sclr_dim
-                sclrm(i,j) = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, & 
+              do sclr = 1, sclr_dim
+                sclrm(i,sclr) = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, & 
                                                 z(km1), z(k00), z(kp1), z(kp2), & 
-                                                sclr(km1,j), sclr(k00,j), &
-                                                sclr(kp1,j), sclr(kp2,j) )
+                                                sclr_snd(km1,sclr), sclr_snd(k00,sclr), &
+                                                sclr_snd(kp1,sclr), sclr_snd(kp2,sclr) )
               end do
             end if
             if ( edsclr_dim > 0 ) then
-              do j = 1, edsclr_dim
-                edsclrm(i,j) = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, & 
+              do edsclr = 1, edsclr_dim
+                edsclrm(i,edsclr) = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, & 
                                                   z(km1), z(k00), z(kp1), z(kp2), & 
-                                                  edsclr(km1,j), edsclr(k00,j), &
-                                                  edsclr(kp1,j), edsclr(kp2,j) )
+                                                  edsclr_snd(km1,edsclr), edsclr_snd(k00,edsclr), &
+                                                  edsclr_snd(kp1,edsclr), edsclr_snd(kp2,edsclr) )
               end do
             end if
           else 
@@ -428,15 +428,15 @@ module sounding
             wm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), subs(k), subs(k-1) )
 
             if ( sclr_dim > 0 ) then
-              do j = 1, sclr_dim
-                sclrm(i,j) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1),  & 
-                                      sclr(k,j), sclr(k-1,j) )
+              do sclr = 1, sclr_dim
+                sclrm(i,sclr) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1),  & 
+                                      sclr_snd(k,sclr), sclr_snd(k-1,sclr) )
               end do
             end if
             if ( edsclr_dim > 0 ) then
-              do j = 1, edsclr_dim
-                edsclrm(i,j) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1),  & 
-                                        edsclr(k,j), edsclr(k-1,j) )
+              do edsclr = 1, edsclr_dim
+                edsclrm(i,edsclr) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1),  & 
+                                        edsclr_snd(k,edsclr), edsclr_snd(k-1,edsclr) )
               end do
             end if
 
@@ -554,13 +554,13 @@ module sounding
     call deallocate_one_dim_vars( n_snd_var, sounding_retVars )
     call deallocate_one_dim_vars( sclr_dim, sclr_sounding_retVars )
 
-    ! Deallocate sclr and edsclr arrays, iff allocated
-    if ( allocated(sclr) ) then
-      deallocate( sclr )
+    ! Deallocate sclr_snd and edsclr_snd arrays, iff allocated
+    if ( allocated(sclr_snd) ) then
+      deallocate( sclr_snd )
     end if
 
-    if ( allocated(edsclr) ) then
-      deallocate( edsclr )
+    if ( allocated(edsclr_snd) ) then
+      deallocate( edsclr_snd )
     end if
 
     return
@@ -671,7 +671,7 @@ module sounding
 
   !-------------------------------------------------------------------------------------------------
   subroutine read_sclr_sounding_file( sclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
-                                      sclr, &
+                                      sclr_snd, &
                                       retVars )
     !
     ! Description: This subroutine reads in a <runtype>_sclr_sounding.in file and
@@ -718,36 +718,36 @@ module sounding
 
     !--------------------- InOut Variables ---------------------
     real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: & 
-      sclr        ! Scalar sounding [?]
+      sclr_snd        ! Scalar sounding [?]
 
     !--------------------- Output Variables --------------------
     type(one_dim_read_var), dimension(sclr_dim), intent(out) :: &
       retVars ! Structure containing scalar sounding
 
     !--------------------- Local Variables --------------------
-    integer :: i
+    integer :: sclr
 
     call read_one_dim_file( iunit, sclr_dim, &
       '../input/case_setups/'//trim( runtype )//'_sclr_sounding.in', retVars )
 
 !    call fill_blanks_one_dim_vars( sclr_dim, retVars )
 
-    do i=1, sclr_dim
-      select case ( trim( retVars(i)%name ) )
+    do sclr=1, sclr_dim
+      select case ( trim( retVars(sclr)%name ) )
       case( CO2_name )
-        if( i /= sclr_idx%iisclr_CO2 .and. sclr_idx%iisclr_CO2 > 0) then
+        if( sclr /= sclr_idx%iisclr_CO2 .and. sclr_idx%iisclr_CO2 > 0) then
           error stop "iisclr_CO2 index does not match column."
         end if
       case ( rt_name )
-        if( i /= sclr_idx%iisclr_rt .and. sclr_idx%iisclr_rt > 0) then
+        if( sclr /= sclr_idx%iisclr_rt .and. sclr_idx%iisclr_rt > 0) then
           error stop "iisclr_rt index does not match column."
         end if
       case ( theta_name, thetal_name, temperature_name )
-        if( i /= sclr_idx%iisclr_thl .and. sclr_idx%iisclr_thl > 0) then
+        if( sclr /= sclr_idx%iisclr_thl .and. sclr_idx%iisclr_thl > 0) then
           error stop "iisclr_thl index does not match column."
         end if
       end select
-      sclr(1:size(retVars(i)%values),i) = retVars(i)%values
+      sclr_snd(1:size(retVars(sclr)%values),sclr) = retVars(sclr)%values
     end do
 
     return
@@ -755,7 +755,7 @@ module sounding
 
   !-------------------------------------------------------------------------------------------------
   subroutine read_edsclr_sounding_file( edsclr_dim, sclr_idx, iunit, runtype, nmaxsnd, &
-                                        edsclr )
+                                        edsclr_snd )
     !
     !  Description: This subroutine reads in a <runtype>_edsclr_sounding.in file and
     !  returns the values contained in that file.
@@ -796,12 +796,12 @@ module sounding
 
     !--------------------- Output Variables ---------------------
     real( kind = core_rknd ), intent(inout), dimension(nmaxsnd,sclr_max) :: & 
-    edsclr ! Eddy Scalars [?]
+    edsclr_snd ! Eddy Scalars [?]
 
     !--------------------- Local Variables ---------------------
     type(one_dim_read_var), dimension(edsclr_dim) :: retVars
 
-    integer :: i 
+    integer :: edsclr 
 
     !--------------------- Begin Code ---------------------
 
@@ -810,24 +810,24 @@ module sounding
 
  !   call fill_blanks_one_dim_vars( edsclr_dim, retVars )
 
-    do i=1, edsclr_dim
+    do edsclr=1, edsclr_dim
 
-      select case ( trim( retVars(i)%name ) )
+      select case ( trim( retVars(edsclr)%name ) )
 
       case( CO2_name )
-        if( i /= sclr_idx%iiedsclr_CO2 .and. sclr_idx%iiedsclr_CO2 > 0) then
+        if( edsclr /= sclr_idx%iiedsclr_CO2 .and. sclr_idx%iiedsclr_CO2 > 0) then
           error stop "iisclr_CO2 index does not match column."
         end if
       case( rt_name )
-        if( i /= sclr_idx%iiedsclr_rt .and. sclr_idx%iiedsclr_rt > 0) then
+        if( edsclr /= sclr_idx%iiedsclr_rt .and. sclr_idx%iiedsclr_rt > 0) then
           error stop "iisclr_rt index does not match column."
         end if
       case( theta_name, thetal_name, temperature_name )
-        if( i /= sclr_idx%iiedsclr_thl .and. sclr_idx%iiedsclr_thl > 0) then
+        if( edsclr /= sclr_idx%iiedsclr_thl .and. sclr_idx%iiedsclr_thl > 0) then
           error stop "iisclr_thl index does not match column."
         end if
       end select
-      edsclr(1:size( retVars(i)%values ),i) = retVars(i)%values
+      edsclr_snd(1:size( retVars(edsclr)%values ),edsclr) = retVars(edsclr)%values
     end do
 
     call deallocate_one_dim_vars( edsclr_dim, retVars )

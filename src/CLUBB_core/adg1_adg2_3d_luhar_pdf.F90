@@ -147,7 +147,7 @@ module adg1_adg2_3d_luhar_pdf
       w_1_n, & ! Normalized mean of w (1st PDF component)     [-]
       w_2_n    ! Normalized mean of w (2nd PDF component)     [-]
 
-    integer :: j  ! Loop index
+    integer :: sclr  ! Loop index
 
     !$acc enter data create( w_1_n, w_2_n )
     
@@ -192,18 +192,18 @@ module adg1_adg2_3d_luhar_pdf
 
     ! Calculate the PDF component means and variances of passive scalars.
     if ( l_scalar_calc ) then
-       do j = 1, sclr_dim
+       do sclr = 1, sclr_dim
           call ADG1_ADG2_responder_params( nz, ngrdcol, &
-                                           sclrm(:,:,j), sclrp2(:,:,j), & ! In
-                                           wp2, sqrt_wp2, wpsclrp(:,:,j), & ! In
+                                           sclrm(:,:,sclr), sclrp2(:,:,sclr), & ! In
+                                           wp2, sqrt_wp2, wpsclrp(:,:,sclr), & ! In
                                            w_1_n, w_2_n, mixt_frac,     & ! In
                                            sigma_sqd_w, beta,           & ! In
-                                           sclr_tol(j),                 & ! In
-                                           sclr_1(:,:,j), sclr_2(:,:,j),    & ! Out
-                                           varnce_sclr_1(:,:,j),          & ! Out
-                                           varnce_sclr_2(:,:,j),          & ! Out
-                                           alpha_sclr(:,:,j) )              ! Out
-       enddo ! i=1, sclr_dim
+                                           sclr_tol(sclr),                 & ! In
+                                           sclr_1(:,:,sclr), sclr_2(:,:,sclr),    & ! Out
+                                           varnce_sclr_1(:,:,sclr),          & ! Out
+                                           varnce_sclr_2(:,:,sclr),          & ! Out
+                                           alpha_sclr(:,:,sclr) )              ! Out
+       enddo ! sclr=1, sclr_dim
     endif ! l_scalar_calc
     
     !$acc exit data delete( w_1_n, w_2_n )
@@ -312,7 +312,7 @@ module adg1_adg2_3d_luhar_pdf
       sigma_sqd_w_1, & ! Normalized width parameter of w (1st PDF component) [-]
       sigma_sqd_w_2    ! Normalized width parameter of w (2nd PDF component) [-]
 
-    integer :: j, i  ! Loop index
+    integer :: sclr, i  ! Loop index
 
 
     ! Calculate the mixture fraction and the PDF component means and variances
@@ -354,18 +354,18 @@ module adg1_adg2_3d_luhar_pdf
 
     ! Calculate the PDF component means and variances of passive scalars.
     if ( l_scalar_calc ) then
-       do j = 1, sclr_dim
+       do sclr = 1, sclr_dim
           call ADG1_ADG2_responder_params( nz, ngrdcol,                   & ! In
-                                           sclrm(:,:,j), sclrp2(:,:,j),   & ! In
-                                           wp2, sqrt_wp2, wpsclrp(:,:,j), & ! In
+                                           sclrm(:,:,sclr), sclrp2(:,:,sclr),   & ! In
+                                           wp2, sqrt_wp2, wpsclrp(:,:,sclr), & ! In
                                            w_1_n, w_2_n, mixt_frac,       & ! In
                                            sigma_sqd_w, beta,             & ! In
-                                           sclr_tol(j),                   & ! In
-                                           sclr_1(:,:,j), sclr_2(:,:,j),  & ! Out
-                                           varnce_sclr_1(:,:,j),          & ! Out
-                                           varnce_sclr_2(:,:,j),          & ! Out
-                                           alpha_sclr(:,:,j) )              ! Out
-       enddo ! i=1, sclr_dim
+                                           sclr_tol(sclr),                   & ! In
+                                           sclr_1(:,:,sclr), sclr_2(:,:,sclr),  & ! Out
+                                           varnce_sclr_1(:,:,sclr),          & ! Out
+                                           varnce_sclr_2(:,:,sclr),          & ! Out
+                                           alpha_sclr(:,:,sclr) )              ! Out
+       enddo ! sclr=1, sclr_dim
     endif ! l_scalar_calc
 
     return

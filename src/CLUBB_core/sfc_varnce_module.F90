@@ -497,7 +497,7 @@ module sfc_varnce_module
             endif
 
           end do
-        enddo ! i = 1, sclr_dim
+        enddo ! sclr = 1, sclr_dim
         !$acc end parallel loop
 
       endif

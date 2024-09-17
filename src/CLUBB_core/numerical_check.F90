@@ -149,7 +149,7 @@ module numerical_check
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    integer :: i    ! Scalar loop index
+    integer :: sclr    ! Scalar loop index
 
 !-------------------------------------------------------------------------------
 
@@ -255,20 +255,20 @@ module numerical_check
                     "pdf_params%ice_supersat_frac_2(1,:)", proc_name ) ! intent(in)
 
     if ( sclr_dim > 0 ) then
-       do i = 1, sclr_dim, 1
-          call check_nan( sclrpthvp(:,i),"sclrpthvp", & ! intent(in)
+       do sclr = 1, sclr_dim, 1
+          call check_nan( sclrpthvp(:,sclr),"sclrpthvp", & ! intent(in)
                           proc_name ) ! intent(in)
-          call check_nan( sclrprcp(:,i), "sclrprcp", & ! intent(in)
+          call check_nan( sclrprcp(:,sclr), "sclrprcp", & ! intent(in)
                           proc_name ) ! intent(in)
-          call check_nan( wpsclrprtp(:,i), "wpsclrprtp", & ! intent(in) 
+          call check_nan( wpsclrprtp(:,sclr), "wpsclrprtp", & ! intent(in) 
                           proc_name ) ! intent(in)
-          call check_nan( wpsclrp2(:,i), "wpsclrp2", & ! intent(in) 
+          call check_nan( wpsclrp2(:,sclr), "wpsclrp2", & ! intent(in) 
                           proc_name ) ! intent(in)
-          call check_nan( wpsclrpthlp(:,i), "wpsclrtlp", & ! intent(in) 
+          call check_nan( wpsclrpthlp(:,sclr), "wpsclrtlp", & ! intent(in) 
                           proc_name ) ! intent(in)
-          call check_nan( wp2sclrp(:,i), "wp2sclrp", & ! intent(in) 
+          call check_nan( wp2sclrp(:,sclr), "wp2sclrp", & ! intent(in) 
                           proc_name ) ! intent(in)
-       enddo ! i = 1, sclr_dim, 1
+       enddo ! sclr = 1, sclr_dim, 1
     endif
 
     return
@@ -397,7 +397,7 @@ module numerical_check
       edsclrm_forcing    ! Eddy passive scalar forcing [units / s]
 
     ! Local Variables
-    integer :: i ! Loop iterator for the scalars
+    integer :: sclr, edsclr ! Loop iterator for the scalars
     integer :: k ! Vertical grid level 
 
 !-------- Input Nan Check ----------------------------------------------
@@ -442,31 +442,31 @@ module numerical_check
     call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name ) ! intent(in)
     call check_nan( p_sfc, "p_sfc", prefix//proc_name ) ! intent(in)
 
-    do i = 1, sclr_dim
+    do sclr = 1, sclr_dim
 
-      call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & ! intent(in)
+      call check_nan( sclrm_forcing(:,sclr),"sclrm_forcing",  & ! intent(in)
                       prefix//proc_name ) ! intent(in)
 
-      call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & ! intent(in)
+      call check_nan( wpsclrp_sfc(sclr),"wpsclrp_sfc",  & ! intent(in)
                       prefix//proc_name ) ! intent(in)
 
-      call check_nan( sclrm(:,i),"sclrm", prefix//proc_name ) ! intent(in)
-      call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name ) ! intent(in)
-      call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name ) ! intent(in)
-      call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name ) ! intent(in)
-      call check_nan( sclrpthlp(:,i),"sclrpthlp", prefix//proc_name ) ! intent(in)
+      call check_nan( sclrm(:,sclr),"sclrm", prefix//proc_name ) ! intent(in)
+      call check_nan( wpsclrp(:,sclr),"wpsclrp", prefix//proc_name ) ! intent(in)
+      call check_nan( sclrp2(:,sclr),"sclrp2", prefix//proc_name ) ! intent(in)
+      call check_nan( sclrprtp(:,sclr),"sclrprtp", prefix//proc_name ) ! intent(in)
+      call check_nan( sclrpthlp(:,sclr),"sclrpthlp", prefix//proc_name ) ! intent(in)
 
     end do
 
 
-    do i = 1, edsclr_dim
+    do edsclr = 1, edsclr_dim
 
-      call check_nan( edsclrm_forcing(:,i),"edsclrm_forcing", prefix//proc_name ) ! intent(in)
+      call check_nan( edsclrm_forcing(:,edsclr),"edsclrm_forcing", prefix//proc_name ) ! intent(in)
 
-      call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & ! intent(in)
+      call check_nan( wpedsclrp_sfc(edsclr),"wpedsclrp_sfc",  & ! intent(in)
                       prefix//proc_name ) ! intent(in)
 
-      call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name ) ! intent(in)
+      call check_nan( edsclrm(:,edsclr),"edsclrm", prefix//proc_name ) ! intent(in)
 
     enddo
 
@@ -697,7 +697,7 @@ module numerical_check
       edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
 
     ! Local Variables
-    integer :: i
+    integer :: i, sclr, edsclr
 
     invalid_model_arrays = .false.
 
@@ -819,20 +819,20 @@ module numerical_check
       invalid_model_arrays = .true.
     end if
 
-    do i = 1, sclr_dim, 1
-      if ( is_nan_2d( sclrm(:,i) ) ) then
-        write(fstderr,*) "NaN in sclrm", i, "model array"
-!           write(fstderr,'(a6,i2,a1)') "sclrm(", i, ")"
-!           write(fstderr,*) sclrm(:,i)
+    do sclr = 1, sclr_dim, 1
+      if ( is_nan_2d( sclrm(:,sclr) ) ) then
+        write(fstderr,*) "NaN in sclrm", sclr, "model array"
+!           write(fstderr,'(a6,i2,a1)') "sclrm(", sclr, ")"
+!           write(fstderr,*) sclrm(:,sclr)
         invalid_model_arrays = .true.
       end if
     end do
 
-    do i = 1, edsclr_dim, 1
-      if ( is_nan_2d( edsclrm(:,i) ) ) then
-        write(fstderr,*) "NaN in edsclrm", i, "model array"
-!           write(fstderr,'(a8,i2,a1)') "edsclrm(", i, ")"
-!           write(fstderr,*) edsclrm(:,i)
+    do edsclr = 1, edsclr_dim, 1
+      if ( is_nan_2d( edsclrm(:,edsclr) ) ) then
+        write(fstderr,*) "NaN in edsclrm", edsclr, "model array"
+!           write(fstderr,'(a8,i2,a1)') "edsclrm(", edsclr, ")"
+!           write(fstderr,*) edsclrm(:,edsclr)
         invalid_model_arrays = .true.
       end if
     end do
