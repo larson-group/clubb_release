@@ -918,7 +918,7 @@ module stats_variables
       ibrunt_freq_pos = 0, &
       ibrunt_freq_out_cloud = 0, &
       iRi_zm = 0,          &
-      ishear_sqd = 0,      &
+      iddzt_umvm_sqd = 0,      &
       iC6_term = 0
 
 

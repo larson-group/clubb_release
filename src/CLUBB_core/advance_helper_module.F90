@@ -622,17 +622,12 @@ module advance_helper_module
 
 !===============================================================================
   subroutine compute_Cx_fnc_Richardson( nzm, nzt, ngrdcol, gr, &
-                                        thlm, um, vm, Lscale, exner, rtm, &
-                                        rcm, p_in_Pa, thvm, rho_ds_zm, &
-                                        ice_supersat_frac, &
+                                        Lscale_zm, ddzt_umvm_sqd, rho_ds_zm, &
+                                        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
                                         clubb_params, &
-                                        saturation_formula, &
-                                        l_brunt_vaisala_freq_moist, &
-                                        l_use_thvm_in_bv_freq, &
-                                        l_use_shear_Richardson, &
-                                        l_modify_limiters_for_cnvg_test, & 
+                                        l_use_shear_Richardson, l_modify_limiters_for_cnvg_test, &
                                         stats_metadata, &
-                                        stats_zm, & 
+                                        stats_zm, &
                                         Cx_fnc_Richardson )
 
   ! Description:
@@ -700,31 +695,18 @@ module advance_helper_module
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
-      thlm,      & ! th_l (liquid water potential temperature)      [K]
-      um,        & ! u mean wind component (thermodynamic levels)   [m/s]
-      vm,        & ! v mean wind component (thermodynamic levels)   [m/s]
-      Lscale,    & ! Turbulent mixing length                        [m]
-      exner,     & ! Exner function                                 [-]
-      rtm,       & ! total water mixing ratio, r_t                  [kg/kg]
-      rcm,       & ! cloud water mixing ratio, r_c                  [kg/kg]
-      p_in_Pa,   & ! Air pressure                                   [Pa]
-      thvm,      & ! Virtual potential temperature                  [K]
-      ice_supersat_frac  ! ice cloud fraction
-
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-      rho_ds_zm    ! Dry static density on momentum levels          [kg/m^3]
+      brunt_vaisala_freq_sqd, &         ! Brunt-Vaisala frequency squared, N^2  [1/s^2]
+      brunt_vaisala_freq_sqd_mixed, &   ! A mixture of dry and moist N^2        [s^-2]
+      ddzt_umvm_sqd, &                  ! Squared vertical norm of derivative of
+                                        ! mean horizontal wind speed            [s^-2]
+      Lscale_zm, &                      ! Length scale on momentum levels       [m]
+      rho_ds_zm                         ! Dry static density on momentum levels [kg/m^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
-    integer, intent(in) :: &
-      saturation_formula ! Integer that stores the saturation formula to be used
-
     logical, intent(in) :: &
-      l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
-                                    ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq,      & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_use_shear_Richardson        ! Use shear in the calculation of Richardson number
 
     ! Flag to activate modifications on limiters for convergence test
@@ -747,19 +729,10 @@ module advance_helper_module
 
     !------------------------------ Local Variables ------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      brunt_vaisala_freq_sqd, &
-      brunt_vaisala_freq_sqd_mixed,&
-      brunt_vaisala_freq_sqd_dry, &
-      brunt_vaisala_freq_sqd_moist, &
-      brunt_vaisala_freq_sqd_smth, &
+      Ri_zm, &
       fnc_Richardson, &
       fnc_Richardson_clipped, &
       fnc_Richardson_smooth, &
-      Ri_zm, &
-      ddzt_um, &
-      ddzt_vm, &
-      shear_sqd, &
-      Lscale_zm, &
       Cx_fnc_interp, &
       Cx_fnc_Richardson_avg
 
@@ -779,54 +752,15 @@ module advance_helper_module
 
     !------------------------------ Begin Code ------------------------------
 
-    !$acc enter data create( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc                    brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                    brunt_vaisala_freq_sqd_smth, Cx_fnc_interp, &
-    !$acc                    Ri_zm, ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, &
+    !$acc enter data create( Cx_fnc_interp, Ri_zm, &
     !$acc                    Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                    fnc_Richardson_clipped, fnc_Richardson_smooth )
 
-    call calc_brunt_vaisala_freq_sqd( nzm, nzt, ngrdcol, gr, thlm, &    ! intent(in)
-                                      exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
-                                      ice_supersat_frac, &              ! intent(in)
-                                      saturation_formula, &             ! intent(in)
-                                      l_brunt_vaisala_freq_moist, &     ! intent(in)
-                                      l_use_thvm_in_bv_freq, &          ! intent(in)
-                                      l_modify_limiters_for_cnvg_test, &! intent(in)
-                                      clubb_params(:,ibv_efold), &      ! intent(in)
-                                      brunt_vaisala_freq_sqd, &         ! intent(out)
-                                      brunt_vaisala_freq_sqd_mixed,&    ! intent(out)
-                                      brunt_vaisala_freq_sqd_dry, &     ! intent(out)
-                                      brunt_vaisala_freq_sqd_moist, &   ! intent(out)
-                                      brunt_vaisala_freq_sqd_smth )     ! intent(out)
-
     invrs_num_div_thresh = one / Richardson_num_divisor_threshold
-
-    Lscale_zm = zt2zm( nzm, nzt, ngrdcol, gr, Lscale, zero_threshold )
-
-    ! Calculate shear_sqd
-    ddzt_um = ddzt( nzm, nzt, ngrdcol, gr, um )
-    ddzt_vm = ddzt( nzm, nzt, ngrdcol, gr, vm )
-
-    !$acc parallel loop gang vector collapse(2) default(present)
-    do k = 1, nzm
-      do i = 1, ngrdcol
-        shear_sqd(i,k) = ddzt_um(i,k)**2 + ddzt_vm(i,k)**2
-      end do
-    end do
-    !$acc end parallel loop
-
-    if ( stats_metadata%l_stats_samp ) then
-      !$acc update host(shear_sqd)
-      do i = 1, ngrdcol
-        call stat_update_var( stats_metadata%ishear_sqd, shear_sqd(i,:), & ! intent(in)
-                              stats_zm(i) )               ! intent(inout)
-      end do
-    end if
 
     if ( l_use_shear_Richardson ) then
 
-      call calc_Ri_zm(nzm, ngrdcol, brunt_vaisala_freq_sqd_mixed, shear_sqd, &
+      call calc_Ri_zm(nzm, ngrdcol, brunt_vaisala_freq_sqd_mixed, ddzt_umvm_sqd, &
                       1.0e-7_core_rknd, 1.0e-7_core_rknd, Ri_zm )
 
     else
@@ -931,10 +865,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc                   brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc                   brunt_vaisala_freq_sqd_smth, Cx_fnc_interp, Ri_zm, &
-    !$acc                   ddzt_um, ddzt_vm, shear_sqd, Lscale_zm, &
+    !$acc exit data delete( Cx_fnc_interp, Ri_zm, &
     !$acc                   Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                   fnc_Richardson_clipped, fnc_Richardson_smooth )
 

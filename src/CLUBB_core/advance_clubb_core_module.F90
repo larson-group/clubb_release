@@ -1432,6 +1432,14 @@ module advance_clubb_core_module
     end do
     !$acc end parallel loop
 
+    if ( stats_metadata%l_stats_samp ) then
+      !$acc update host(ddzt_umvm_sqd)
+      do i = 1, ngrdcol
+        call stat_update_var( stats_metadata%iddzt_umvm_sqd, ddzt_umvm_sqd(i,:), & ! intent(in)
+                              stats_zm(i) )               ! intent(inout)
+      end do
+    end if
+
     ! Calculate Richardson number Ri_zm
     if ( clubb_config_flags%l_modify_limiters_for_cnvg_test ) then
 
@@ -1840,19 +1848,15 @@ module advance_clubb_core_module
     if ( clubb_config_flags%l_use_C7_Richardson .or. &
          clubb_config_flags%l_use_C11_Richardson ) then
 
-      call compute_Cx_fnc_Richardson( nzm, nzt, ngrdcol, gr,                              & ! intent(in)
-                                      thlm, um, vm, Lscale, exner, rtm,                   & ! intent(in)
-                                      rcm, p_in_Pa, thvm, rho_ds_zm,                      & ! intent(in)
-                                      ice_supersat_frac,                                  & ! intent(in)
-                                      clubb_params,                                       & ! intent(in)
-                                      clubb_config_flags%saturation_formula,              & ! intent(in)
-                                      clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! intent(in)
-                                      clubb_config_flags%l_use_thvm_in_bv_freq,           & ! intent(in
-                                      clubb_config_flags%l_use_shear_Richardson,          & ! intent(in)
-                                      clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! intent(in)
-                                      stats_metadata,                                     & ! intent(in)
-                                      stats_zm,                                           & ! intent(inout)
-                                      Cx_fnc_Richardson )                                   ! intent(out)
+      call compute_Cx_fnc_Richardson( nzm, nzt, ngrdcol, gr,                                & ! intent(in)
+                                      Lscale_zm, ddzt_umvm_sqd, rho_ds_zm,                  & ! intent(in)
+                                      brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent(in)
+                                      clubb_params,                                         & ! intent(in)
+                                      clubb_config_flags%l_use_shear_Richardson,            & ! intent(in)
+                                      clubb_config_flags%l_modify_limiters_for_cnvg_test,   & ! intent(in)
+                                      stats_metadata,                                       & ! intent(in)
+                                      stats_zm,                                             & ! intent(inout)
+                                      Cx_fnc_Richardson )                                     ! intent(out)
     else
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
