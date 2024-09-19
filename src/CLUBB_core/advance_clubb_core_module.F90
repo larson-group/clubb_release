@@ -644,10 +644,6 @@ module advance_clubb_core_module
     !--------------------------- Local Variables ---------------------------
     integer :: i, k, edsclr, sclr
 
-#ifdef CLUBB_CAM
-    integer ::  edsclr
-#endif
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       Skw_zt,       & ! Skewness of w on thermodynamic levels            [-]
       thvm,         & ! Virtual potential temperature                    [K]
