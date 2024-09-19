@@ -49,8 +49,9 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   subroutine advance_xm_wpxp( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, dt, &
-                              sigma_sqd_w, wm_zm, wm_zt, wp2, &
-                              Lscale_zm, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
+                              sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale_zm, &
+                              wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
+                              stability_correction, &
                               invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                               rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
                               thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
@@ -58,9 +59,7 @@ module advance_xm_wpxp_module
                               invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
                               w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                               mixt_frac_zm, l_implemented, em, wp2sclrp, &
-                              sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
-                              p_in_Pa, thvm, Cx_fnc_Richardson, &
-                              ice_supersat_frac, &
+                              sclrpthvp, sclrm_forcing, sclrp2, Cx_fnc_Richardson, &
                               pdf_implicit_coefs_terms, &
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
@@ -69,7 +68,6 @@ module advance_xm_wpxp_module
                               iiPDF_type, &
                               penta_solve_method, &
                               tridiag_solve_method, &
-                              saturation_formula, &
                               l_predict_upwp_vpwp, &
                               l_diffuse_rtm_and_thlm, &
                               l_stability_correct_Kh_N2_zm, &
@@ -79,8 +77,6 @@ module advance_xm_wpxp_module
                               l_tke_aniso, &
                               l_diag_Lscale_from_tau, &
                               l_use_C7_Richardson, &
-                              l_brunt_vaisala_freq_moist, &
-                              l_use_thvm_in_bv_freq, &
                               l_lmm_stepping, &
                               l_enable_relaxed_clipping, &
                               l_linearize_pbl_winds, &
@@ -89,7 +85,6 @@ module advance_xm_wpxp_module
                               l_mono_flux_lim_um, &
                               l_mono_flux_lim_vm, &
                               l_mono_flux_lim_spikefix, &
-                              l_modify_limiters_for_cnvg_test, &
                               order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                               stats_metadata, &
                               stats_zt, stats_zm, stats_sfc, &
@@ -195,16 +190,16 @@ module advance_xm_wpxp_module
       ngrdcol,  & ! Number of grid columns
       sclr_dim    ! Number of passive scalars
 
-    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
       
     type (grid), target, intent(in) :: &
       gr
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) :: &
       dt                 ! Timestep                                 [s]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
@@ -217,82 +212,76 @@ module advance_xm_wpxp_module
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: & 
-      sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
-      wm_zm,           & ! w wind component on momentum levels      [m/s]
-      wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
-      Lscale_zm,       & ! Turbulent mixing length interp to m levs [m]
-      em,              & ! Turbulent Kinetic Energy (TKE)           [m^2/s^2]
-      wp3_on_wp2,      & ! Smoothed wp3 / wp2 on momentum levels    [m/s]
-      Kh_zm,           & ! Eddy diffusivity on momentum levels
-      invrs_tau_C6_zm, & ! Inverse time-scale on mom. levels applied to C6 term [1/s]
-      tau_max_zm,      & ! Max. allowable eddy dissipation time scale on m-levs  [s]
-      Skw_zm,          & ! Skewness of w on momentum levels         [-]
-      rtpthvp,         & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
-      wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)       [(kg/kg)/s^2]
-      thlpthvp,        & ! th_l'th_v' (momentum levels)             [K^2]
-      wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)      [K/s^2]
-      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. levs. [m^3/kg]
-      thv_ds_zm,       & ! Dry, base-state theta_v on moment. levs. [K]
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+      sigma_sqd_w,          & ! sigma_sqd_w on momentum levels           [-]
+      wm_zm,                & ! w wind component on momentum levels      [m/s]
+      wp2,                  & ! w'^2 (momentum levels)                   [m^2/s^2]
+      Lscale_zm,            & ! Turbulent mixing length interp to m levs [m]
+      em,                   & ! Turbulent Kinetic Energy (TKE)           [m^2/s^2]
+      wp3_on_wp2,           & ! Smoothed wp3 / wp2 on momentum levels    [m/s]
+      Kh_zm,                & ! Eddy diffusivity on momentum levels
+      stability_correction, & ! Stability correction factor
+      invrs_tau_C6_zm,      & ! Inverse time-scale on mom. levels applied to C6 term [1/s]
+      tau_max_zm,           & ! Max. allowable eddy dissipation time scale on m-levs  [s]
+      Skw_zm,               & ! Skewness of w on momentum levels         [-]
+      rtpthvp,              & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
+      wprtp_forcing,        & ! <w'r_t'> forcing (momentum levels)       [(kg/kg)/s^2]
+      thlpthvp,             & ! th_l'th_v' (momentum levels)             [K^2]
+      wpthlp_forcing,       & ! <w'th_l'> forcing (momentum levels)      [K/s^2]
+      rho_ds_zm,            & ! Dry, static density on momentum levels   [kg/m^3]
+      invrs_rho_ds_zm,      & ! Inv. dry, static density @ moment. levs. [m^3/kg]
+      thv_ds_zm,            & ! Dry, base-state theta_v on moment. levs. [K]
       ! Added for clipping by Vince Larson 29 Sep 2007
-      rtp2,            & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
-      thlp2,           & ! th_l'^2 (momentum levels)                [K^2]
+      rtp2,                 & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
+      thlp2,                & ! th_l'^2 (momentum levels)                [K^2]
       ! End of Vince Larson's addition.
-      w_1_zm,          & ! Mean w (1st PDF component)              [m/s]
-      w_2_zm,          & ! Mean w (2nd PDF component)              [m/s]
-      varnce_w_1_zm,   & ! Variance of w (1st PDF component)       [m^2/s^2]
-      varnce_w_2_zm,   & ! Variance of w (2nd PDF component)       [m^2/s^2]
-      mixt_frac_zm       ! Weight of 1st PDF component (Sk_w dependent) [-]
+      w_1_zm,               & ! Mean w (1st PDF component)              [m/s]
+      w_2_zm,               & ! Mean w (2nd PDF component)              [m/s]
+      varnce_w_1_zm,        & ! Variance of w (1st PDF component)       [m^2/s^2]
+      varnce_w_2_zm,        & ! Variance of w (2nd PDF component)       [m^2/s^2]
+      mixt_frac_zm            ! Weight of 1st PDF component (Sk_w dependent) [-]
 
-    logical, intent(in) ::  & 
+    logical, intent(in) :: &
       l_implemented      ! Flag for CLUBB being implemented in a larger model.
 
     ! Additional variables for passive scalars
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt,sclr_dim) :: &
       wp2sclrp,      & ! <w'^2 sclr'> (thermodynamic levels)   [Units vary]
       sclrm_forcing    ! sclrm forcing (thermodynamic levels)  [Units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm,sclr_dim) :: &
       sclrpthvp,     & ! <sclr' th_v'> (momentum levels)       [Units vary]
       sclrp2           ! For clipping Vince Larson             [Units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  &
-      exner,            & ! Exner function                            [-]
-      rcm,              & ! cloud water mixing ratio, r_c             [kg/kg]
-      p_in_Pa,          & ! Air pressure                              [Pa]
-      thvm,             & ! Virutal potential temperature             [K]
-      ice_supersat_frac
-
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) ::  &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       Cx_fnc_Richardson    ! Cx_fnc computed from Richardson_num       [-]
 
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       um_forcing, & ! <u> forcing term (thermodynamic levels)      [m/s^2]
       vm_forcing, & ! <v> forcing term (thermodynamic levels)      [m/s^2]
       ug,         & ! <u> geostrophic wind (thermodynamic levels)  [m/s]
       vg            ! <v> geostrophic wind (thermodynamic levels)  [m/s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       uprcp,        & ! < u' r_c' >                               [(m kg)/(s kg)]
       vprcp,        & ! < v' r_c' >                               [(m kg)/(s kg)]
       rc_coef_zm      ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
-     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
+     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       fcor          ! Coriolis parameter                           [s^-1]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       um_ref, & ! Reference u wind component for nudging       [m/s]
       vm_ref    ! Reference v wind component for nudging       [m/s]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
 
@@ -308,8 +297,7 @@ module advance_xm_wpxp_module
                               ! w, chi, and eta) portion of CLUBB's multivariate,
                               ! two-component PDF.
       penta_solve_method,   & ! Method to solve then penta-diagonal system
-      tridiag_solve_method, & ! Specifier for method to solve tridiagonal systems
-      saturation_formula      ! Integer that stores the saturation formula to be used
+      tridiag_solve_method    ! Specifier for method to solve tridiagonal systems
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -336,9 +324,6 @@ module advance_xm_wpxp_module
       l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
                                       ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
-      l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
-                                      ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_enable_relaxed_clipping,    & ! Flag to relax clipping on wpxp in xm_wpxp_clipping_and_stats
       l_linearize_pbl_winds,        & ! Flag (used by E3SM) to linearize PBL winds
@@ -346,9 +331,8 @@ module advance_xm_wpxp_module
       l_mono_flux_lim_rtm,          & ! Flag to turn on monotonic flux limiter for rtm
       l_mono_flux_lim_um,           & ! Flag to turn on monotonic flux limiter for um
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
-      l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
+      l_mono_flux_lim_spikefix        ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-      l_modify_limiters_for_cnvg_test ! Flag to activate modifications on limiters for convergence test
 
     integer, intent(in) :: &
       order_xm_wpxp, &
@@ -819,21 +803,14 @@ module advance_xm_wpxp_module
                                  rhs_ta_wpvp, rhs_ta_wpsclrp ) ! intent(out)
 
     ! Calculate various terms that are the same between all LHS matricies
-    call calc_xm_wpxp_lhs_terms( nzm, nzt, ngrdcol, gr, Kh_zm, wm_zm, wm_zt, wp2,  & ! In
-                                 Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                 & ! In
-                                 invrs_rho_ds_zm, rho_ds_zt,                       & ! In
-                                 rho_ds_zm, l_implemented, em,                     & ! In
-                                 Lscale_zm, thlm, exner, rtm, rcm, p_in_Pa, thvm,  & ! In
-                                 ice_supersat_frac,                                & ! In
-                                 clubb_params, nu_vert_res_dep,                    & ! In
-                                 saturation_formula,                               & ! In
-                                 l_diffuse_rtm_and_thlm,                           & ! In
-                                 l_stability_correct_Kh_N2_zm,                     & ! In
-                                 l_upwind_xm_ma,                                   & ! In
-                                 l_brunt_vaisala_freq_moist,                       & ! In
-                                 l_use_thvm_in_bv_freq,                            & ! In
-                                 l_modify_limiters_for_cnvg_test,                  & ! In
-                                 lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,   & ! Out
+    call calc_xm_wpxp_lhs_terms( nzm, nzt, ngrdcol, gr, wm_zm, wm_zt, wp2,          & ! In
+                                 Kh_zm, stability_correction, Kw6, C7_Skw_fnc,      & ! In
+                                 invrs_rho_ds_zt, invrs_rho_ds_zm, rho_ds_zt,       & ! In
+                                 rho_ds_zm, l_implemented, nu_vert_res_dep,         & ! In
+                                 l_diffuse_rtm_and_thlm,                            & ! In
+                                 l_stability_correct_Kh_N2_zm,                      & ! In
+                                 l_upwind_xm_ma,                                    & ! In
+                                 lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,    & ! Out
                                  lhs_tp, lhs_ta_xm, lhs_ac_pr2 ) ! Out
 
     ! Setup and decompose matrix for each variable.
@@ -988,7 +965,7 @@ module advance_xm_wpxp_module
         !$acc              rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, rtp2, &
         !$acc              thlp2, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
         !$acc              mixt_frac_zm, em, wp2sclrp, sclrpthvp, &
-        !$acc              sclrm_forcing, sclrp2, exner, rcm, p_in_Pa, thvm, &
+        !$acc              sclrm_forcing, sclrp2, &
         !$acc              Cx_fnc_Richardson, um_forcing, vm_forcing, ug, vg, &
         !$acc              wpthvp, fcor, um_ref, vm_ref, up2, vp2, uprcp, vprcp, rc_coef_zm, &
         !$acc              rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp, um, upwp, vm, vpwp, &
@@ -1010,8 +987,7 @@ module advance_xm_wpxp_module
                                      varnce_w_1_zm(i,:), varnce_w_2_zm(i,:), & ! intent(in)
                                      mixt_frac_zm(i,:), l_implemented, em(i,:), & ! intent(in)
                                      wp2sclrp(i,:,:), sclrpthvp(i,:,:), sclrm_forcing(i,:,:), & ! intent(in) 
-                                     sclrp2(i,:,:), exner(i,:), rcm(i,:), p_in_Pa(i,:), thvm(i,:), & ! intent(in)
-                                     Cx_fnc_Richardson(i,:), & ! intent(in)
+                                     sclrp2(i,:,:), Cx_fnc_Richardson(i,:), & ! intent(in)
                                      pdf_implicit_coefs_terms, & ! intent(in)
                                      um_forcing(i,:), vm_forcing(i,:), ug(i,:), vg(i,:), & ! intent(in)
                                      wpthvp(i,:), fcor(i), um_ref(i,:), vm_ref(i,:), up2(i,:), & ! intent(in)
@@ -1457,20 +1433,13 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_lhs
 
   !=============================================================================================
-  subroutine calc_xm_wpxp_lhs_terms( nzm, nzt, ngrdcol, gr, Kh_zm, wm_zm, wm_zt, wp2,   & ! In
-                                     Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                  & ! In
-                                     invrs_rho_ds_zm, rho_ds_zt,                        & ! In
-                                     rho_ds_zm, l_implemented, em,                      & ! In
-                                     Lscale_zm, thlm, exner, rtm, rcm, p_in_Pa, thvm,   & ! In
-                                     ice_supersat_frac,                                 & ! In
-                                     clubb_params, nu_vert_res_dep,                     & ! In
-                                     saturation_formula,                                & ! In
+  subroutine calc_xm_wpxp_lhs_terms( nzm, nzt, ngrdcol, gr, wm_zm, wm_zt, wp2,          & ! In
+                                     Kh_zm, stability_correction, Kw6, C7_Skw_fnc,      & ! In
+                                     invrs_rho_ds_zt, invrs_rho_ds_zm, rho_ds_zt,       & ! In
+                                     rho_ds_zm, l_implemented, nu_vert_res_dep,         & ! In
                                      l_diffuse_rtm_and_thlm,                            & ! In
                                      l_stability_correct_Kh_N2_zm,                      & ! In
                                      l_upwind_xm_ma,                                    & ! In
-                                     l_brunt_vaisala_freq_moist,                        & ! In
-                                     l_use_thvm_in_bv_freq,                             & ! In
-                                     l_modify_limiters_for_cnvg_test,                   & ! In
                                      lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,    & ! Out
                                      lhs_tp, lhs_ta_xm, lhs_ac_pr2 )                      ! Out
     ! Description:
@@ -1524,57 +1493,39 @@ module advance_xm_wpxp_module
 
     type (grid), target, intent(in) :: gr
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: & 
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
+      stability_correction,   & ! Stability correction factor
       Kh_zm,                  & ! Eddy diffusivity on momentum levels    [m^2/s]
-      Lscale_zm,              & ! Turbulent mixing length interp to m levs   [m]
-      em,                     & ! Turbulent Kinetic Energy (TKE)       [m^2/s^2]
       wm_zm,                  & ! w wind component on momentum levels      [m/s]
       wp2,                    & ! w'^2 (momentum levels)               [m^2/s^2]
       C7_Skw_fnc,             & ! C_7 parameter with Sk_w applied            [-]
       rho_ds_zm,              & ! Dry, static density on momentum levs. [kg/m^3]
       invrs_rho_ds_zm
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: & 
-      thlm,                   & ! th_l (thermo. levels)                      [K]
-      exner,                  & ! Exner function                             [-]
-      rtm,                    & ! total water mixing ratio, r_t              [-]
-      rcm,                    & ! cloud water mixing ratio, r_c          [kg/kg]
-      p_in_Pa,                & ! Air pressure                              [Pa]
-      thvm,                   & ! Virtual potential temperature              [K]
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       wm_zt,                  & ! w wind component on thermo. levels       [m/s]
       Kw6,                    & ! Coef. of eddy diffusivity for w'x'     [m^2/s]
       rho_ds_zt,              &
-      invrs_rho_ds_zt,        &  ! Inv. dry, static density at t-levs.   [m^3/kg]
-      ice_supersat_frac
+      invrs_rho_ds_zt           ! Inv. dry, static density at t-levs.   [m^3/kg]
 
-    logical, intent(in) ::  & 
+    logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
-
-    real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type(nu_vertical_res_dep), intent(in) :: &
       nu_vert_res_dep    ! Vertical resolution dependent nu values
-
-    integer, intent(in) :: &
-      saturation_formula ! Integer that stores the saturation formula to be used
 
     logical, intent(in) :: &
       l_diffuse_rtm_and_thlm,       & ! This flag determines whether or not we want CLUBB to do
                                       ! diffusion on rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! This flag determines whether or not we want CLUBB to apply
                                       ! a stability correction
-      l_upwind_xm_ma,               & ! This flag determines whether we want to use an upwind
+      l_upwind_xm_ma                  ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
                                       ! It affects rtm, thlm, sclrm, um and vm.
-      l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
-                                      ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
-      l_modify_limiters_for_cnvg_test ! Flag to activate modifications on limiters for convergence test
 
     !------------------- Output Variables -------------------
-    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzt), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ndiags3,ngrdcol,nzt), intent(out) :: &
       lhs_diff_zt,  & ! Diffusion term for xm
       lhs_ma_zt       ! Mean advection contributions to lhs
 
@@ -1582,19 +1533,19 @@ module advance_xm_wpxp_module
       lhs_diff_zm,  & ! Diffusion term for w'x'
       lhs_ma_zm       ! Mean advection contributions to lhs
 
-    real( kind = core_rknd ), dimension(ndiags2,ngrdcol,nzm), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ndiags2,ngrdcol,nzm), intent(out) :: &
       lhs_tp        ! Turbulent production terms of w'x'
 
-    real( kind = core_rknd ), dimension(ndiags2,ngrdcol,nzt), intent(out) :: & 
+    real( kind = core_rknd ), dimension(ndiags2,ngrdcol,nzt), intent(out) :: &
       lhs_ta_xm     ! Turbulent advection terms of xm
-      
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: & 
+
+    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(out) :: &
       lhs_ac_pr2    ! Accumulation of w'x' and w'x' pressure term 2
-      
-      
+
+
     !------------------- Local Variables -------------------
     real (kind = core_rknd), dimension(ngrdcol,nzm) :: &
-      Kh_N2_zm, &
+      Kh_N2_zm, &  ! Stability correction factor
       K_zm, &      ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
       Kw6_zm       ! Eddy diffusivity coefficient, momentum levels [m2/s]
 
@@ -1603,10 +1554,10 @@ module advance_xm_wpxp_module
 
     real (kind = core_rknd) :: &
       constant_nu ! controls the magnitude of diffusion
-      
+
     real (kind = core_rknd), dimension(ngrdcol) :: &
       zeros_array
-      
+
     integer :: i, k, b
 
     !------------------- Begin Code -------------------
@@ -1621,7 +1572,7 @@ module advance_xm_wpxp_module
     call xm_term_ta_lhs( nzm, nzt, ngrdcol, gr,      & ! Intent(in)
                          rho_ds_zm, invrs_rho_ds_zt, & ! Intent(in)
                          lhs_ta_xm )                   ! Intent(out)
-                                   
+
     ! Calculate turbulent production terms of w'x' for all grid level
     call wpxp_term_tp_lhs( nzm, ngrdcol, gr, wp2, & ! Intent(in)
                            lhs_tp )                 ! Intent(out)
@@ -1635,34 +1586,22 @@ module advance_xm_wpxp_module
     ! Calculate diffusion terms for all momentum grid level
     call diffusion_zm_lhs( nzm, nzt, ngrdcol, gr, Kw6, Kw6_zm, nu_vert_res_dep%nu6, & ! Intent(in)
                            invrs_rho_ds_zm, rho_ds_zt,                        & ! Intent(in)
-                           lhs_diff_zm )                                        ! Intent(out)    
-                              
+                           lhs_diff_zm )                                        ! Intent(out)
+
     ! Calculate mean advection terms for all momentum grid level
     call term_ma_zm_lhs( nzm, nzt, ngrdcol, wm_zm,       & ! Intent(in)
                          gr%invrs_dzm, gr%weights_zm2zt,  & ! In
-                         lhs_ma_zm )                       ! Intent(out) 
-                               
+                         lhs_ma_zm )                       ! Intent(out)
+
     ! Calculate diffusion terms for all thermodynamic grid level
     if ( l_diffuse_rtm_and_thlm ) then
-        
+
         if ( l_stability_correct_Kh_N2_zm ) then
-          
-          call calc_stability_correction( nzm, nzt, ngrdcol, gr, &
-                                          thlm, Lscale_zm, em, &
-                                          exner, rtm, rcm, &
-                                          p_in_Pa, thvm, ice_supersat_frac, &
-                                          clubb_params(:,ilambda0_stability_coef), &
-                                          clubb_params(:,ibv_efold), &
-                                          saturation_formula, &
-                                          l_brunt_vaisala_freq_moist, &
-                                          l_use_thvm_in_bv_freq, &
-                                          l_modify_limiters_for_cnvg_test, &
-                                          Kh_N2_zm )
 
           !$acc parallel loop gang vector collapse(2) default(present)
           do k = 1, nzm
-            do i = 1, ngrdcol                               
-              Kh_N2_zm(i,k) = Kh_zm(i,k) / Kh_N2_zm(i,k)
+            do i = 1, ngrdcol
+              Kh_N2_zm(i,k) = Kh_zm(i,k) / stability_correction(i,k)
             end do
           end do
           !$acc end parallel loop
@@ -1696,16 +1635,16 @@ module advance_xm_wpxp_module
         call diffusion_zt_lhs( nzm, nzt, ngrdcol, gr, K_zm, K_zt, zeros_array, & ! Intent(in)
                                invrs_rho_ds_zt, rho_ds_zm,                & ! intent(in)
                                lhs_diff_zt )                                ! Intent(out)
-        
-    end if        
-                             
+
+    end if
+
     ! Calculate mean advection terms for all thermodynamic grid level
     if ( .not. l_implemented ) then
       call term_ma_zt_lhs( nzm, nzt, ngrdcol, wm_zt, gr%weights_zt2zm, & ! intent(in)
                            gr%invrs_dzt, gr%invrs_dzm,            & ! intent(in)
                            l_upwind_xm_ma,                        & ! Intent(in)
                            lhs_ma_zt )                              ! Intent(out)
-    end if    
+    end if
 
     !$acc exit data delete( Kh_N2_zm, K_zm, K_zt, Kw6_zm, zeros_array )
 
@@ -6100,8 +6039,7 @@ module advance_xm_wpxp_module
                                    varnce_w_1_zm, varnce_w_2_zm, &
                                    mixt_frac_zm, l_implemented, em, &
                                    wp2sclrp, sclrpthvp, sclrm_forcing, &
-                                   sclrp2, exner, rcm, p_in_Pa, thvm, &
-                                   Cx_fnc_Richardson, &
+                                   sclrp2, Cx_fnc_Richardson, &
                                    pdf_implicit_coefs_terms, um_forcing, &
                                    vm_forcing, ug, vg, wpthvp, fcor, &
                                    um_ref, vm_ref, up2, vp2, uprcp, vprcp, &
@@ -6191,12 +6129,6 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), intent(in), dimension(nzm,sclr_dim) :: & 
       sclrpthvp,     & ! <sclr' th_v'> (momentum levels)       [Units vary]
       sclrp2           ! For clipping Vince Larson             [Units vary]
-
-    real( kind = core_rknd ), intent(in), dimension(nzt) ::  &
-      exner,           & ! Exner function                            [-]
-      rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
-      p_in_Pa,         & ! Air pressure                              [Pa]
-      thvm               ! Virutal potential temperature             [K]
 
     real( kind = core_rknd ), intent(in), dimension(nzm) ::  &
       Cx_fnc_Richardson  ! Cx_fnc computed from Richardson_num       [-]
@@ -6332,10 +6264,6 @@ module advance_xm_wpxp_module
     write(fstderr,*) "mixt_frac_zm = ", mixt_frac_zm, new_line('c')
     write(fstderr,*) "l_implemented = ", l_implemented, new_line('c')
     write(fstderr,*) "em = ", em, new_line('c')
-    write(fstderr,*) "exner = ", exner, new_line('c')
-    write(fstderr,*) "rcm = ", rcm, new_line('c')
-    write(fstderr,*) "p_in_Pa = ", p_in_Pa, new_line('c')
-    write(fstderr,*) "thvm = ", thvm, new_line('c')
     write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
     write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2rtp_implicit = ", &
                      pdf_implicit_coefs_terms%coef_wp2rtp_implicit, &

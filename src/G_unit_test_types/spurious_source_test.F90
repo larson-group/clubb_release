@@ -150,7 +150,7 @@ module spurious_source_test
     ! If the CLUBB model is running by itself, and is using an evenly-spaced
     ! grid (grid_type = 1), it needs the vertical grid spacing and
     ! momentum-level starting altitude as input.
-    real( kind = core_rknd ) ::  & 
+    real( kind = core_rknd ) :: &
       deltaz,  & ! Vertical grid spacing                  [m]
       zm_init, & ! Initial grid altitude (momentum level) [m]
       zm_top     ! Maximum grid altitude (momentum level) [m]
@@ -164,16 +164,16 @@ module spurious_source_test
     ! If the CLUBB model is running by itself, but is using a stretched grid
     ! entered on momentum levels (grid_type = 3), it needs to use the momentum
     ! level altitudes as input.
-    real( kind = core_rknd ), dimension(nzm) ::  & 
+    real( kind = core_rknd ), dimension(nzm) :: &
       momentum_heights         ! Momentum level altitudes (input)      [m]
 
-    real( kind = core_rknd ), dimension(nzt) ::  & 
+    real( kind = core_rknd ), dimension(nzt) :: &
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
-    real( kind = core_rknd ) ::  & 
+    real( kind = core_rknd ) :: &
       dt                 ! Timestep                                 [s]
 
-    real( kind = core_rknd ), dimension(1,nzm) :: & 
+    real( kind = core_rknd ), dimension(1,nzm) :: &
       sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
       wm_zm,           & ! w wind component on momentum levels      [m/s]
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
@@ -200,7 +200,7 @@ module spurious_source_test
       varnce_w_2_zm,   & ! Variance of w (2nd PDF component)        [m^2/s^2]
       mixt_frac_zm       ! Weight of 1st PDF component (Sk_w dependent) [-]
 
-    real( kind = core_rknd ), dimension(1,nzt) :: & 
+    real( kind = core_rknd ), dimension(1,nzt) :: &
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       Lscale,          & ! Turbulent mixing length                  [m]
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
@@ -215,11 +215,11 @@ module spurious_source_test
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
 
     ! Additional variables for passive scalars
-    real( kind = core_rknd ), dimension(1,nzt,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(1,nzt,sclr_dim) :: &
       wp2sclrp,      & ! <w'^2 sclr'> (thermodynamic levels)   [Units vary]
       sclrm_forcing    ! sclrm forcing (thermodynamic levels)  [Units vary]
 
-    real( kind = core_rknd ), dimension(1,nzm,sclr_dim) :: & 
+    real( kind = core_rknd ), dimension(1,nzm,sclr_dim) :: &
       sclrpthvp,     & ! <sclr' th_v'> (momentum levels)       [Units vary]
       sclrp2           ! For clipping Vince Larson             [Units vary]
 
@@ -227,61 +227,63 @@ module spurious_source_test
       exner,             & ! Exner function                            [-]
       rcm,               & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,           & ! Air pressure                              [Pa]
-      thvm,              & ! Virutal potential temperature             [K]
-      ice_supersat_frac
+      thvm                 ! Virutal potential temperature             [K]
 
-    real( kind = core_rknd ), dimension(1,nzm) ::  &
+    real( kind = core_rknd ), dimension(1,nzm) :: &
       Cx_fnc_Richardson    ! Cx_fnc computed from Richardson_num       [-]
 
     type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(1,nzt) :: & 
+    real( kind = core_rknd ), dimension(1,nzt) :: &
       um_forcing, & ! <u> forcing term (thermodynamic levels)      [m/s^2]
       vm_forcing, & ! <v> forcing term (thermodynamic levels)      [m/s^2]
       ug,         & ! <u> geostrophic wind (thermodynamic levels)  [m/s]
       vg            ! <v> geostrophic wind (thermodynamic levels)  [m/s]
 
-    real( kind = core_rknd ), dimension(1,nzm) :: & 
+    real( kind = core_rknd ), dimension(1,nzm) :: &
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
 
-     real( kind = core_rknd ), dimension(1) ::  &
+     real( kind = core_rknd ), dimension(1) :: &
       fcor          ! Coriolis parameter                           [s^-1]
 
-    real( kind = core_rknd ), dimension(1,nzt) :: & 
+    real( kind = core_rknd ), dimension(1,nzt) :: &
       um_ref, & ! Reference u wind component for nudging       [m/s]
       vm_ref    ! Reference v wind component for nudging       [m/s]
 
-    real( kind = core_rknd ), dimension(1,nzm) :: & 
+    real( kind = core_rknd ), dimension(1,nzm) :: &
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(1,nzt) ::  & 
+    real( kind = core_rknd ), dimension(1,nzt) :: &
       rtm,    & ! r_t  (total water mixing ratio)           [kg/kg]
       thlm      ! th_l (liquid water potential temperature) [K]
 
-    real( kind = core_rknd ), dimension(1,nzm) ::  & 
+    real( kind = core_rknd ), dimension(1,nzm) :: &
       wprtp,  & ! w'r_t'                                    [(kg/kg) m/s]
       wpthlp    ! w'th_l'                                   [K m/s]
+
+    real( kind = core_rknd ), dimension(1,nzm) :: &
+      stability_correction  ! Stability correction factor
 
     type (stats_metadata_type) :: &
       stats_metadata
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(1,nzt,sclr_dim) ::  & 
+    real( kind = core_rknd ), dimension(1,nzt,sclr_dim) :: &
       sclrm   !                                     [Units vary]
 
-    real( kind = core_rknd ), dimension(1,nzm,sclr_dim) ::  & 
+    real( kind = core_rknd ), dimension(1,nzm,sclr_dim) :: &
       wpsclrp !                                     [Units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
-    real( kind = core_rknd ), dimension(1,nzt) ::  & 
+    real( kind = core_rknd ), dimension(1,nzt) :: &
       um,         & ! <u>:  mean west-east horiz. velocity (thermo. levs.)   [m/s]
       vm            ! <v>:  mean south-north horiz. velocity (thermo. levs.) [m/s]
 
-    real( kind = core_rknd ), dimension(1,nzm) ::  & 
+    real( kind = core_rknd ), dimension(1,nzm) :: &
       upwp,       & ! <u'w'>:  momentum flux (momentum levels)               [m^2/s^2]
       vpwp,       & ! <v'w'>:  momentum flux (momentum levels)               [m^2/s^2]
       uprcp,      & ! < u' r_c' >                                            [(m kg)/(s kg)]
@@ -315,34 +317,35 @@ module spurious_source_test
       thlm_flux_sfc,         & ! Flux of thlm at surface          [(K kg)/s/m^2]
       thlm_spur_src            ! Spurious source of thlm          [(K kg)/s/m^2]
 
-    real( kind = core_rknd ), dimension(4) ::  & 
-       z_snd,                 &
-       sigma_sqd_w_snd,       &
-       wm_zm_snd,             &
-       wp2_snd,               &
-       wp3_on_wp2_snd,        &
-       Kh_zm_snd,             &
-       invrs_tau_C6_zm_snd,   &
-       tau_max_zm_snd,        &
-       rtpthvp_snd,           &
-       rtm_forcing_snd,       &
-       wprtp_forcing_snd,     &
-       thlpthvp_snd,          &
-       thlm_forcing_snd,      &
-       wpthlp_forcing_snd,    &
-       rho_ds_zm_snd,         &
-       rtp2_snd,              &
-       thlp2_snd,             &
-       Cx_fnc_Richardson_snd, &
-       Lscale_snd,            &
-       wp2rtp_snd,            &
-       wp2thlp_snd,           &
-       rcm_snd,               &
-       p_in_Pa_snd,           &
-       rtm_snd,               &
-       thlm_snd,              &
-       wprtp_snd,             &
-       wpthlp_snd,            &
+    real( kind = core_rknd ), dimension(4) :: &
+       z_snd,                       &
+       sigma_sqd_w_snd,             &
+       wm_zm_snd,                   &
+       wp2_snd,                     &
+       wp3_on_wp2_snd,              &
+       Kh_zm_snd,                   &
+       invrs_tau_C6_zm_snd,         &
+       tau_max_zm_snd,              &
+       rtpthvp_snd,                 &
+       rtm_forcing_snd,             &
+       wprtp_forcing_snd,           &
+       thlpthvp_snd,                &
+       thlm_forcing_snd,            &
+       wpthlp_forcing_snd,          &
+       rho_ds_zm_snd,               &
+       rtp2_snd,                    &
+       thlp2_snd,                   &
+       Cx_fnc_Richardson_snd,       &
+       Lscale_snd,                  &
+       wp2rtp_snd,                  &
+       wp2thlp_snd,                 &
+       rcm_snd,                     &
+       p_in_Pa_snd,                 &
+       rtm_snd,                     &
+       thlm_snd,                    &
+       wprtp_snd,                   &
+       wpthlp_snd,                  &
+       stability_correction_snd,    &
        rand1
 
     real( kind = core_rknd ) :: &
@@ -370,7 +373,7 @@ module spurious_source_test
     character(len=13), parameter :: &
       namelist_filename = ""
 
-    real( kind = core_rknd ) :: & 
+    real( kind = core_rknd ) :: &
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
       C4, C_uu_shr, C_uu_buoy, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
@@ -645,7 +648,7 @@ module spurious_source_test
                                          l_mono_flux_lim_vm, &
                                          l_mono_flux_lim_spikefix, &
                                          l_host_applies_sfc_fluxes )
-                                         
+
     ! Initialize pdf_implicit_coefs_terms
     call init_pdf_implicit_coefs_terms( nzt, 1, sclr_dim, &
                                         pdf_implicit_coefs_terms )
@@ -728,6 +731,8 @@ module spurious_source_test
        wprtp_snd = (/ 5.0e-4_core_rknd, 5.0e-4_core_rknd, 2.5e-4_core_rknd, &
                       zero /)
        wpthlp_snd = (/ 0.01_core_rknd, -0.04_core_rknd, -0.06_core_rknd, zero /)
+       stability_correction_snd = (/ 1.0_core_rknd, 1.12_core_rknd, 1.12_core_rknd, &
+                                     1.1_core_rknd /)
 
        if ( iter > 1 ) then
 
@@ -755,9 +760,10 @@ module spurious_source_test
           thlm_snd = thlm_snd + 10.0_core_rknd * ( rand1 - one_half )
           wprtp_snd = 2.0_core_rknd * rand1 * wprtp_snd
           wpthlp_snd = 2.0_core_rknd * rand1 * wpthlp_snd
+          stability_correction_snd = 2.0_core_rknd * rand1 * stability_correction_snd
 
        endif ! iter > 1
-       
+
 
        ! Loop over all momentum levels.
        do k = 1, gr%nzm, 1
@@ -844,6 +850,9 @@ module spurious_source_test
              = lin_interpolate_two_points( gr%zm(1,k), z_snd(i), z_snd(i-1), &
                                            wpthlp_snd(i), wpthlp_snd(i-1) )
 
+             stability_correction(1,k) &
+             = lin_interpolate_two_points( gr%zm(1,k), z_snd(i), z_snd(i-1), &
+                             stability_correction_snd(i), stability_correction_snd(i-1) )
           enddo ! while ( z_snd(i) < gr%zm(1,k) )
 
        enddo ! k = 1, gr%nz, 1
@@ -994,10 +1003,11 @@ module spurious_source_test
 
        thlm_integral_before &
        = vertical_integral( gr%nzt, rho_ds_zt, thlm, gr%dzt )
-       
+
        call advance_xm_wpxp( nzm, nzt, 1, sclr_dim, sclr_tol, gr, dt, &
-                             sigma_sqd_w, wm_zm, wm_zt, wp2, &
-                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
+                             sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale, &
+                             wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
+                             stability_correction, &
                              invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
                              rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
                              thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
@@ -1005,9 +1015,7 @@ module spurious_source_test
                              invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
                              w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                              mixt_frac_zm, l_implemented, em, wp2sclrp, &
-                             sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
-                             p_in_Pa, thvm, Cx_fnc_Richardson, &
-                             ice_supersat_frac, &
+                             sclrpthvp, sclrm_forcing, sclrp2, Cx_fnc_Richardson, &
                              pdf_implicit_coefs_terms, &
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
@@ -1016,7 +1024,6 @@ module spurious_source_test
                              iiPDF_type, &
                              penta_solve_method, &
                              tridiag_solve_method, &
-                             saturation_formula, &
                              l_predict_upwp_vpwp, &
                              l_diffuse_rtm_and_thlm, &
                              l_stability_correct_Kh_N2_zm, &
@@ -1026,8 +1033,6 @@ module spurious_source_test
                              l_tke_aniso, &
                              l_diag_Lscale_from_tau, &
                              l_use_C7_Richardson, &
-                             l_brunt_vaisala_freq_moist, &
-                             l_use_thvm_in_bv_freq, &
                              l_lmm_stepping, &
                              l_enable_relaxed_clipping, &
                              l_linearize_pbl_winds, &
@@ -1036,14 +1041,13 @@ module spurious_source_test
                              l_mono_flux_lim_um, &
                              l_mono_flux_lim_vm, &
                              l_mono_flux_lim_spikefix, &
-                             l_modify_limiters_for_cnvg_test, &
                              order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3, &
                              stats_metadata, &
                              stats_zt, stats_zm, stats_sfc, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp, &
                              um_pert, vm_pert, upwp_pert, vpwp_pert )
-       
+
        ! Calculate the spurious source for rtm
        rtm_flux_top = rho_ds_zm(1,gr%nzm) * wprtp(1,gr%nzm)
 
@@ -1087,7 +1091,7 @@ module spurious_source_test
        endif
 
        write(*,*) ""
-       
+
        ! Calculate the spurious source for thlm
        thlm_flux_top = rho_ds_zm(1,gr%nzm) * wpthlp(1,gr%nzm)
 
@@ -1129,7 +1133,7 @@ module spurious_source_test
        endif
 
        write(*,*) ""
-       
+
     enddo ! iter = 1, num_iter, 1
 
 
