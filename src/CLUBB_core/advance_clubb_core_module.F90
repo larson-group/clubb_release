@@ -644,10 +644,6 @@ module advance_clubb_core_module
     !--------------------------- Local Variables ---------------------------
     integer :: i, k, edsclr, sclr
 
-#ifdef CLUBB_CAM
-    integer ::  edsclr
-#endif
-
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       Skw_zt,       & ! Skewness of w on thermodynamic levels            [-]
       thvm,         & ! Virtual potential temperature                    [K]
@@ -1432,6 +1428,14 @@ module advance_clubb_core_module
     end do
     !$acc end parallel loop
 
+    if ( stats_metadata%l_stats_samp ) then
+      !$acc update host(ddzt_umvm_sqd)
+      do i = 1, ngrdcol
+        call stat_update_var( stats_metadata%iddzt_umvm_sqd, ddzt_umvm_sqd(i,:), & ! intent(in)
+                              stats_zm(i) )               ! intent(inout)
+      end do
+    end if
+
     ! Calculate Richardson number Ri_zm
     if ( clubb_config_flags%l_modify_limiters_for_cnvg_test ) then
 
@@ -1840,19 +1844,15 @@ module advance_clubb_core_module
     if ( clubb_config_flags%l_use_C7_Richardson .or. &
          clubb_config_flags%l_use_C11_Richardson ) then
 
-      call compute_Cx_fnc_Richardson( nzm, nzt, ngrdcol, gr,                              & ! intent(in)
-                                      thlm, um, vm, Lscale, exner, rtm,                   & ! intent(in)
-                                      rcm, p_in_Pa, thvm, rho_ds_zm,                      & ! intent(in)
-                                      ice_supersat_frac,                                  & ! intent(in)
-                                      clubb_params,                                       & ! intent(in)
-                                      clubb_config_flags%saturation_formula,              & ! intent(in)
-                                      clubb_config_flags%l_brunt_vaisala_freq_moist,      & ! intent(in)
-                                      clubb_config_flags%l_use_thvm_in_bv_freq,           & ! intent(in
-                                      clubb_config_flags%l_use_shear_Richardson,          & ! intent(in)
-                                      clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! intent(in)
-                                      stats_metadata,                                     & ! intent(in)
-                                      stats_zm,                                           & ! intent(inout)
-                                      Cx_fnc_Richardson )                                   ! intent(out)
+      call compute_Cx_fnc_Richardson( nzm, nzt, ngrdcol, gr,                                & ! intent(in)
+                                      Lscale_zm, ddzt_umvm_sqd, rho_ds_zm,                  & ! intent(in)
+                                      brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent(in)
+                                      clubb_params,                                         & ! intent(in)
+                                      clubb_config_flags%l_use_shear_Richardson,            & ! intent(in)
+                                      clubb_config_flags%l_modify_limiters_for_cnvg_test,   & ! intent(in)
+                                      stats_metadata,                                       & ! intent(in)
+                                      stats_zm,                                             & ! intent(inout)
+                                      Cx_fnc_Richardson )                                     ! intent(out)
     else
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -1877,8 +1877,9 @@ module advance_clubb_core_module
       !   by one time step.
       ! advance_xm_wpxp_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_xm_wpxp( nzm, nzt, ngrdcol, sclr_dim, sclr_tol, gr, dt_advance, & ! intent(in)  
-                            sigma_sqd_w, wm_zm, wm_zt, wp2,                        & ! intent(in)
-                            Lscale_zm, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm,    & ! intent(in)
+                            sigma_sqd_w, wm_zm, wm_zt, wp2, Lscale_zm,             & ! intent(in)
+                            wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm,               & ! intent(in)
+                            stability_correction,                                  & ! intent(in)
                             invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp,  & ! intent(in)
                             rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp,          & ! intent(in)
                             thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref,      & ! intent(in)
@@ -1886,9 +1887,7 @@ module advance_clubb_core_module
                             invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,               & ! intent(in)
                             w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm,          & ! intent(in)
                             mixt_frac_zm, l_implemented, em, wp2sclrp,             & ! intent(in)
-                            sclrpthvp, sclrm_forcing, sclrp2, exner, rcm,          & ! intent(in)
-                            p_in_Pa, thvm, Cx_fnc_Richardson,                      & ! intent(in)
-                            ice_supersat_frac,                                     & ! intent(in)
+                            sclrpthvp, sclrm_forcing, sclrp2, Cx_fnc_Richardson,   & ! intent(in)
                             pdf_implicit_coefs_terms,                              & ! intent(in)
                             um_forcing, vm_forcing, ug, vg, wpthvp,                & ! intent(in)
                             fcor, um_ref, vm_ref, up2, vp2,                        & ! intent(in)
@@ -1897,7 +1896,6 @@ module advance_clubb_core_module
                             clubb_config_flags%iiPDF_type,                         & ! intent(in)
                             clubb_config_flags%penta_solve_method,                 & ! intent(in)
                             clubb_config_flags%tridiag_solve_method,               & ! intent(in)
-                            clubb_config_flags%saturation_formula,                 & ! intent(in)
                             clubb_config_flags%l_predict_upwp_vpwp,                & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,             & ! intent(in)
                             clubb_config_flags%l_stability_correct_Kh_N2_zm,       & ! intent(in)
@@ -1907,8 +1905,6 @@ module advance_clubb_core_module
                             clubb_config_flags%l_tke_aniso,                        & ! intent(in)
                             clubb_config_flags%l_diag_Lscale_from_tau,             & ! intent(in)
                             clubb_config_flags%l_use_C7_Richardson,                & ! intent(in)
-                            clubb_config_flags%l_brunt_vaisala_freq_moist,         & ! intent(in)
-                            clubb_config_flags%l_use_thvm_in_bv_freq,              & ! intent(in)
                             clubb_config_flags%l_lmm_stepping,                     & ! intent(in)
                             clubb_config_flags%l_enable_relaxed_clipping,          & ! intent(in)
                             clubb_config_flags%l_linearize_pbl_winds,              & ! intent(in)
@@ -1917,7 +1913,6 @@ module advance_clubb_core_module
                             clubb_config_flags%l_mono_flux_lim_um,                 & ! intent(in)
                             clubb_config_flags%l_mono_flux_lim_vm,                 & ! intent(in)
                             clubb_config_flags%l_mono_flux_lim_spikefix,           & ! intent(in)
-                            clubb_config_flags%l_modify_limiters_for_cnvg_test,    & ! intent(in)
                             order_xm_wpxp, order_xp2_xpyp, order_wp2_wp3,          & ! intent(in)
                             stats_metadata,                                        & ! intent(in)
                             stats_zt, stats_zm, stats_sfc,                         & ! intent(i/o)

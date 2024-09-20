@@ -2261,10 +2261,10 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
-      case ( 'shear_sqd' )
-        stats_metadata%ishear_sqd = k
-        call stat_assign( var_index=stats_metadata%ishear_sqd, var_name="shear_sqd", &
-             var_description="shear_sqd, shear_sqd", var_units="-", &
+      case ( 'ddzt_umvm_sqd' )
+        stats_metadata%iddzt_umvm_sqd = k
+        call stat_assign( var_index=stats_metadata%iddzt_umvm_sqd, var_name="ddzt_umvm_sqd", &
+             var_description="Square sum of horizontal shears, ddzt_umvm_sqd", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
