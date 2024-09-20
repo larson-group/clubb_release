@@ -413,13 +413,26 @@ def setUpInputs():
 
 
     # Comment out if not using 20x20reg files
-    metricsNamesWeightsAndNorms = setUp_x_MetricsList("SWCF", defaultNcFilename)
+    metricsNamesWeightsAndNorms, metricGlobalVal \
+         = setUp_x_MetricsList("SWCF", defaultNcFilename)
     # Split up the list above into metric names and the corresponding weights.
     dfMetricsNamesWeightsAndNorms =  \
         pd.DataFrame( metricsNamesWeightsAndNorms, columns = ['metricsNames', 'metricsWeights', 'metricsNorms'] )
     metricsNames = dfMetricsNamesWeightsAndNorms[['metricsNames']].to_numpy().astype(str)[:,0]
     metricsWeights = dfMetricsNamesWeightsAndNorms[['metricsWeights']].to_numpy().astype(float)
     metricsNorms = dfMetricsNamesWeightsAndNorms[['metricsNorms']].to_numpy().astype(float)
+
+
+    # Set up a column vector of metric values from the default simulation
+    defaultMetricValsCol = \
+        setupDefaultMetricValsCol(metricsNames, defaultNcFilename)
+
+    metricGlobalAvg = np.dot(metricsWeights.T, defaultMetricValsCol)
+
+    #if not np.isclose(metricGlobalVal, metricGlobalAvg):
+    #    print("metricGlobalAvg not equal to metricGlobalVal")
+    print("metricGlobalAvg =", metricGlobalAvg)
+    print("metricGlobalVal =", metricGlobalVal)
 
     obsMetricValsDict = setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231211_20x20regs/" + "OBS.nc")
@@ -621,12 +634,15 @@ def setUp_x_MetricsList(varPrefix, defPathAndFilename):
             metricsNamesWeightsAndNorms.append([varFullString,  areaWeightVal, -999])
             #print((SWCF_string, areaWeightVal))
 
+    metricGlobalName = varPrefix + "_GLB"
+    metricGlobalVal = f_def.variables[metricGlobalName][0]
+
     f_def.close()
 
     #print(obsMetricValsDict)
     #print(metricsNamesWeightsAndNorms)
 
-    return metricsNamesWeightsAndNorms
+    return (metricsNamesWeightsAndNorms, metricGlobalVal)
 
 
 def setUpObsCol(obsMetricValsDict, metricsNames):

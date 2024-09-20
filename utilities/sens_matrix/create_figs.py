@@ -1635,7 +1635,7 @@ def createBiasVsDiagnosticScatterplot(diagnosticPrefix, defaultBiasesCol,
     from set_up_dashboard_inputs import setUp_x_MetricsList, \
                                         setupDefaultMetricValsCol
 
-    diagnosticNamesWeightsAndNorms = setUp_x_MetricsList(diagnosticPrefix, defaultNcFilename)
+    diagnosticNamesWeightsAndNorms, dfdiagnosticMetricGlobalVal  = setUp_x_MetricsList(diagnosticPrefix, defaultNcFilename)
     # Split up the list above into metric names and the corresponding weights.
     dfdiagnosticNamesWeightsAndNorms = \
         pd.DataFrame(diagnosticNamesWeightsAndNorms, columns=['diagnosticNames', 'diagnosticWeights', 'diagnosticNorms'])
