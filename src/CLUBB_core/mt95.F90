@@ -111,10 +111,12 @@ module mt95
   real(kind=wr), private, parameter :: p231d232_1 = p231 / p232_1
   real(kind=wr), private, parameter :: p231_5d232 = ( p231 + 0.5_wr ) / p232
 
-  character(len=*), private, parameter  :: alph = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  character(len=*), private, parameter  :: alph = &
+                "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
   character(len=*), private, parameter  :: sepr = "&"
   integer(kind=wi), private, parameter  :: alps = 62_wi
-  integer(kind=wi), private, parameter  :: clen = ( n + 1_wi ) * 7_wi !n * ( ceiling( fbs * log( 2.0_core_rknd ) / log( alps ) ) + 1 )
+  integer(kind=wi), private, parameter  :: clen = &
+                ( n + 1_wi ) * 7_wi !n * ( ceiling( fbs * log( 2.0_core_rknd ) / log( alps ) ) + 1 )
 
   type, public :: genrand_state
     private

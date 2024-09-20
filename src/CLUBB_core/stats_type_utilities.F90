@@ -138,7 +138,8 @@ module stats_type_utilities
   end subroutine stat_update_var
 
   !=============================================================================
-  subroutine stat_update_var_pt( var_index, grid_level, value, &
+  subroutine stat_update_var_pt( var_index, grid_level, &
+                                 value, &
                                  grid_kind )
 
     ! Description:
@@ -427,7 +428,8 @@ nz
       if ( grid_kind%l_in_update(clubb_i,clubb_j,grid_level,var_index) ) then
 
         call stat_update_var_pt &
-                 ( var_index, grid_level, value, & ! intent(in)
+                 ( var_index, grid_level, & ! intent(in)
+                   value, & ! intent(in)
                    grid_kind ) ! intent(inout)
 
         grid_kind%l_in_update(clubb_i,clubb_j,grid_level,var_index) = .false. ! End Record

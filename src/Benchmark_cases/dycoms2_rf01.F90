@@ -161,7 +161,8 @@ module dycoms2_rf01
   else if ( sfctype == 1 ) then
 
     wpthlp_sfc = compute_wpthlp_sfc( Cd, ubar, thlm_sfc, T_sfc, exner_sfc )
-    wprtp_sfc = compute_wprtp_sfc( Cd, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc, saturation_formula ) )
+    wprtp_sfc = compute_wprtp_sfc( Cd, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, &
+                                                                      T_sfc, saturation_formula ) )
 
   else  ! Undefined value for sfctype
 

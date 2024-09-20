@@ -215,12 +215,8 @@ module output_netcdf
         err_code, &           ! Error Indicator
         clubb_fatal_error     ! Constant
 
-    use parameter_indices, only: &
-        nparams    ! Variable(s)
-
     use clubb_precision, only: &
-        time_precision, & ! Constant(s)
-        core_rknd
+        time_precision ! Constant
 
     implicit none
 

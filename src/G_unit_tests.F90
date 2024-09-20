@@ -170,11 +170,6 @@ program G_unit_tests
 
   implicit none
 
-  type(stats), target, save :: &
-    stats_zt, &
-    stats_zm, &
-    stats_sfc
-
   type(grid), target :: gr
 
   ! Local Constants

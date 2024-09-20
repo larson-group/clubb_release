@@ -162,11 +162,7 @@ module output_2D_samples_module
 #endif
 
     use clubb_precision, only: &
-      stat_rknd, & ! Constant(s)
-      core_rknd 
-
-    use parameter_indices, only: &
-      nparams ! Constant(s)
+      stat_rknd ! Constant
 
     use stats_variables, only: &
       stats_metadata_type
@@ -197,7 +193,8 @@ module output_2D_samples_module
 
     do sample = 1, num_samples
       do j = 1, pdf_dim
-        lognormal_sample_file%samples_of_var(j)%ptr(sample,1,1,1:nzt) = X_nl_all_levs(sample,1:nzt,j)
+        lognormal_sample_file%samples_of_var(j)%ptr(sample,1,1,1:nzt) = &
+                                                                      X_nl_all_levs(sample,1:nzt,j)
       end do
     end do
 
@@ -235,8 +232,6 @@ module output_2D_samples_module
 
     use stats_variables, only: &
       stats_metadata_type
-
-    use parameter_indices, only: nparams
 
     implicit none
 

@@ -469,8 +469,8 @@ module diffusion
 
           ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
           lhs(k_tdiag,i,k) &
-          = + gr%invrs_dzt(i,k) * ( K_zt(i,k) + nu(i) ) * ( gr%invrs_dzm(i,k+1) + gr%invrs_dzm(i,k) ) & 
-            + lhs_upwind(k_tdiag,i,k)  
+          = + gr%invrs_dzt(i,k) * ( K_zt(i,k) + nu(i) ) * ( gr%invrs_dzm(i,k+1) &
+            + gr%invrs_dzm(i,k) ) + lhs_upwind(k_tdiag,i,k)  
 
           ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
           lhs(km1_tdiag,i,k) &
@@ -958,8 +958,8 @@ module diffusion
 
           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
           lhs(k_mdiag,i,k) &
-          = + gr%invrs_dzm(i,k) * ( K_zm(i,k) + nu(i) ) * ( gr%invrs_dzt(i,k) + gr%invrs_dzt(i,k-1) ) &
-            + lhs_upwind(k_mdiag,i,k)
+          = + gr%invrs_dzm(i,k) * ( K_zm(i,k) + nu(i) ) * ( gr%invrs_dzt(i,k) &
+            + gr%invrs_dzt(i,k-1) ) + lhs_upwind(k_mdiag,i,k)
 
           ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
           lhs(km1_mdiag,i,k) &

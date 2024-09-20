@@ -394,14 +394,14 @@ module advance_wp2_wp3_module
       a1_coef_zt   ! a_1 interpolated to thermodynamic levels                    [-]
     
     real( kind = core_rknd ) ::  &
+      !c_K1, & ! CLUBB tunable parameter c_K1
+      !c_K8, & ! CLUBB tunable parameter c_K8
       C1,   & ! CLUBB tunable parameter C1
       C1b,  & ! CLUBB tunable parameter C1b
       C1c,  & ! CLUBB tunable parameter C1c
       C11,  & ! CLUBB tunable parameter C11
       C11b, & ! CLUBB tunable parameter C11b
-      C11c, & ! CLUBB tunable parameter C11c
-      c_K1, & ! CLUBB tunable parameter c_K1 
-      c_K8    ! CLUBB tunable parameter c_K8
+      C11c    ! CLUBB tunable parameter C11c
       
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: & 
       dum_dz, dvm_dz ! Vertical derivatives of um and vm
@@ -594,7 +594,7 @@ module advance_wp2_wp3_module
       do i = 1, ngrdcol
         ! Kw1 is used for wp2, which is located on momentum levels.
         ! Kw1 is located on thermodynamic levels.
-        ! Kw1 = c_K1 * Kh_zt
+        ! Kw1 = c_K1 * Kh_zt ! c_K1 variable is commented out
         Kw1(i,k) = clubb_params(i,ic_K1) * Kh_zt(i,k)
       end do
     enddo
@@ -605,7 +605,7 @@ module advance_wp2_wp3_module
         ! Kw8 is used for wp3, which is located on thermodynamic levels.
         ! Kw8 is located on momentum levels.
         ! Note: Kw8 is usually defined to be 1/2 of Kh_zm.
-        ! Kw8 = c_K8 * Kh_zm
+        ! Kw8 = c_K8 * Kh_zm ! c_K8 variable is commented out
         Kw8(i,k) = clubb_params(i,ic_K8) * Kh_zm(i,k)
       end do
     enddo
@@ -643,8 +643,8 @@ module advance_wp2_wp3_module
 
         if ( stats_metadata%l_stats_samp ) then
           do i = 1, ngrdcol
-            call stat_update_var( stats_metadata%icoef_wp4_implicit, coef_wp4_implicit(i,:), & ! intent(in)
-                                  stats_zm(i) )                                 ! intent(inout)
+            call stat_update_var( stats_metadata%icoef_wp4_implicit, coef_wp4_implicit(i,:), & ! In
+                                  stats_zm(i) )                                 ! In/Out
           end do
         endif ! stats_metadata%l_stats_samp
 
@@ -1247,7 +1247,6 @@ module advance_wp2_wp3_module
         zero,                     &
         fstderr,                  &
         gamma_over_implicit_ts,   &
-        num_hf_draw_points,       &
         wp2_max
 
     use error_code, only: &
@@ -1298,10 +1297,6 @@ module advance_wp2_wp3_module
         penta_bicgstab
 
     implicit none
-
-    ! Parameter Constants
-    integer, parameter :: & 
-      nrhs = 1      ! Number of RHS vectors
 
     ! ----------------------- Input Variables -----------------------
     integer, intent(in) :: &
@@ -1409,9 +1404,6 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol) ::  & 
       rcond  ! Est. of the reciprocal of the condition #
 
-    real( kind = core_rknd ) :: &
-      threshold    ! Minimum value for wp2    [m^2/s^2]
-
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
       lhs_wp2_ac_term,  & ! w'^2 term ac, used for stats
       lhs_wp2_pr2_term, & ! w'^2 term pr2, used for stats
@@ -1427,9 +1419,6 @@ module advance_wp2_wp3_module
 
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3, i
-    
-    real( kind = core_rknd ) ::  &
-      C_uu_shr ! CLUBB tunable parameter C_uu_shr
 
     !------------------------- Begin Code -------------------------
 
@@ -1472,8 +1461,9 @@ module advance_wp2_wp3_module
       ! Est. of the condition number of the w'^2/w^3 LHS matrix
       do i = 1, ngrdcol
         !$acc update host( rcond )
-        call stat_update_var_pt( stats_metadata%iwp23_matrix_condt_num, 1, one / rcond(i), & ! intent(in) 
-                                 stats_sfc(i) )                               ! intent(inout)
+        call stat_update_var_pt( stats_metadata%iwp23_matrix_condt_num, 1, & ! intent(in)
+                                 one / rcond(i), & ! intent(in)
+                                 stats_sfc(i) )    ! intent(inout)
       end do
       
     else
@@ -1580,7 +1570,7 @@ module advance_wp2_wp3_module
           !        A weighting factor of greater than 1 may be used to make the
           !        term more numerically stable (see note below for w'^3 LHS
           !        turbulent advection (ta) term).
-          call stat_end_update_pt( stats_metadata%iwp2_dp1, k,                         & ! intent(in)
+          call stat_end_update_pt( stats_metadata%iwp2_dp1, k,          & ! intent(in)
              (- gamma_over_implicit_ts  * lhs_dp1_wp2(i,k)) * wp2(i,k), & ! intent(in)
              stats_zm(i) )                                                ! intent(inout)
 
@@ -1627,7 +1617,7 @@ module advance_wp2_wp3_module
           !        term more numerically stable (see note below for w'^3 LHS
           !        turbulent advection (ta) term).
           if ( l_tke_aniso ) then
-            call stat_end_update_pt( stats_metadata%iwp2_pr1, k,                       & ! intent(in)
+            call stat_end_update_pt( stats_metadata%iwp2_pr1, k,        & ! intent(in)
                - gamma_over_implicit_ts * lhs_pr1_wp2(i,k) * wp2(i,k),  & ! intent(in)
                stats_zm(i) )                                              ! intent(inout)
           endif
@@ -1664,7 +1654,7 @@ module advance_wp2_wp3_module
           !        A weighting factor of greater than 1 may be used to make the
           !        term more numerically stable (see note above for LHS turbulent
           !        advection (ta) term).
-          call stat_end_update_pt( stats_metadata%iwp3_pr1, k,                       & ! intent(in) 
+          call stat_end_update_pt( stats_metadata%iwp3_pr1, k,        & ! intent(in) 
              - gamma_over_implicit_ts  * lhs_pr1_wp3(i,k) * wp3(i,k), & ! intent(in) 
              stats_zt(i) )                                              ! intent(inout)
 
@@ -2399,9 +2389,6 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       zero_vector_ngrdcol    ! Vector of 0s
 
-    real( kind = core_rknd ) ::  &
-      C_uu_buoy   ! CLUBB tunable parameter C_uu_buoy
-
     ! --------------------- Begin Code ---------------------
 
     !$acc data copyin( wp3_term_ta_lhs_result, lhs_diff_zm, lhs_diff_zt, &
@@ -2412,7 +2399,7 @@ module advance_wp2_wp3_module
     !$acc              rhs_pr3_wp2, rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, &
     !$acc              rhs_pr_dfsn_wp3, wp2, wp3, wpup2, wpvp2, wpthvp, wp2thvp, &
     !$acc              up2, vp2, C11_Skw_fnc, radf, thv_ds_zm, thv_ds_zt, &
-    !$acc              lhs_splat_wp2, lhs_splat_wp3, C_uu_buoy ) &
+    !$acc              lhs_splat_wp2, lhs_splat_wp3 ) &
     !$acc    copyout( rhs )
 
     ! Calculate invers_dt
@@ -2767,17 +2754,20 @@ module advance_wp2_wp3_module
           ! w'^2 term bp is completely explicit; call stat_update_var_pt.
           ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
           !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-          call stat_update_var_pt( stats_metadata%iwp2_bp, k, rhs_bp_wp2(i,k), & ! intent(in)
-                                   stats_zm(i) )                  ! intent(out)
+          call stat_update_var_pt( stats_metadata%iwp2_bp, k, & ! intent(in)
+                                   rhs_bp_wp2(i,k), & ! intent(in)
+                                   stats_zm(i) )      ! intent(out)
 
 
-          call stat_update_var_pt( stats_metadata%iwp2_pr_dfsn, k, rhs_pr_dfsn_wp2(i,k), & ! intent(in)
-                                   stats_zm(i) )                            ! intent(out)
+          call stat_update_var_pt( stats_metadata%iwp2_pr_dfsn, k, & ! intent(in)
+                                   rhs_pr_dfsn_wp2(i,k), &           ! intent(in)
+                                   stats_zm(i) )                     ! intent(out)
 
 
           ! Include effect of vertical compression of eddies in wp2 budget
-          call stat_update_var_pt( stats_metadata%iwp2_splat, k, - lhs_splat_wp2(i,k) * wp2(i,k), & ! intent(in)
-                                   stats_zm(i) )                                     ! intent(out)
+          call stat_update_var_pt( stats_metadata%iwp2_splat, k, &    ! intent(in)
+                                   - lhs_splat_wp2(i,k) * wp2(i,k), & ! intent(in)
+                                   stats_zm(i) )                      ! intent(out)
 
 
           if ( l_tke_aniso ) then
@@ -2785,14 +2775,15 @@ module advance_wp2_wp3_module
             ! w'^2 term pr1 has both implicit and explicit components; call
             ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
             ! subtracts the value sent in, reverse the sign on wp2_term_pr1_rhs.
-            call stat_begin_update_pt( stats_metadata%iwp2_pr1, k, -rhs_pr1_wp2(i,k), & ! intent(in)
-                                       stats_zm(i) )                     ! intent(out)
+            call stat_begin_update_pt( stats_metadata%iwp2_pr1, k, & ! intent(in)
+                                       -rhs_pr1_wp2(i,k), &          ! intent(in)
+                                       stats_zm(i) )                 ! intent(out)
 
             ! Note:  An "over-implicit" weighted time step is applied to this
             !        term.  A weighting factor of greater than 1 may be used to
             !        make the term more numerically stable (see note below for
             !        w'^3 RHS turbulent advection (ta) term).
-            call stat_modify_pt( stats_metadata%iwp2_pr1, k,                       & ! intent(in)       
+            call stat_modify_pt( stats_metadata%iwp2_pr1, k,        & ! intent(in)       
                                + ( one - gamma_over_implicit_ts )   &
                                * ( - lhs_pr1_wp2(i,k) * wp2(i,k) ), & ! intent(in)
                                  stats_zm(i) )                        ! intent(out)
@@ -2823,8 +2814,9 @@ module advance_wp2_wp3_module
                                stats_zm(i) )                          ! intent(out)
 
           ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
-          call stat_update_var_pt( stats_metadata%iwp2_pr3, k, rhs_pr3_wp2(i,k), & ! intent(in)
-                                   stats_zm(i) )                    ! intent(out)
+          call stat_update_var_pt( stats_metadata%iwp2_pr3, k, & ! intent(in)
+                                   rhs_pr3_wp2(i,k), &           ! intent(in)
+                                   stats_zm(i) )                 ! intent(out)
 
         end do
       end do
@@ -2911,8 +2903,9 @@ module advance_wp2_wp3_module
           ! w'^3 term bp is completely explicit; call stat_update_var_pt.
           ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
           !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
-          call stat_update_var_pt( stats_metadata%iwp3_bp1, k, rhs_bp1_wp3(i,k), & ! intent(in)
-                                   stats_zt(i) )                    ! intent(out)
+          call stat_update_var_pt( stats_metadata%iwp3_bp1, k, & ! intent(in)
+                                   rhs_bp1_wp3(i,k), &           ! intent(in)
+                                   stats_zt(i) )                 ! intent(out)
 
 
           ! w'^3 term pr2 has both implicit and explicit components; call
@@ -2940,8 +2933,9 @@ module advance_wp2_wp3_module
                                stats_zt(i) )                          ! intent(out)
 
           ! Include effect of vertical compression of eddies in wp2 budget
-          call stat_update_var_pt( stats_metadata%iwp3_splat, k, - lhs_splat_wp3(i,k) * wp3(i,k), & ! intent(in)
-                                   stats_zt(i) )                    ! intent(out)
+          call stat_update_var_pt( stats_metadata%iwp3_splat, k, &    ! intent(in)
+                                   - lhs_splat_wp3(i,k) * wp3(i,k), & ! intent(in)
+                                   stats_zt(i) )                      ! intent(out)
 
           if ( l_crank_nich_diff ) then
 
@@ -2951,7 +2945,7 @@ module advance_wp2_wp3_module
             ! reverse the sign on right-hand side diffusion component.  If 
             ! Crank-Nicholson diffusion is not selected, the stat_begin_update_pt 
             ! will not be called.
-            call stat_begin_update_pt( stats_metadata%iwp3_dp1, k,                     & ! intent(in)
+            call stat_begin_update_pt( stats_metadata%iwp3_dp1, k,                     & ! In
                                        lhs_diff_zt(3,i,k) * wp3(i,k-1)  & 
                                      + lhs_diff_zt(2,i,k) * wp3(i,k)    & 
                                      + lhs_diff_zt(1,i,k) * wp3(i,k+1), & ! intent(in)
@@ -2970,10 +2964,12 @@ module advance_wp2_wp3_module
           endif
                     
           ! Experimental bouyancy term
-          call stat_update_var_pt( stats_metadata%iwp3_pr_turb, k, rhs_pr_turb_wp3(i,k), & ! intent(in)
-                                   stats_zt(i) )                            ! intent(out)
-          call stat_update_var_pt( stats_metadata%iwp3_pr_dfsn, k, rhs_pr_dfsn_wp3(i,k), & ! intent(in)
-                                   stats_zt(i) )                            ! intent(out)
+          call stat_update_var_pt( stats_metadata%iwp3_pr_turb, k, & ! intent(in)
+                                   rhs_pr_turb_wp3(i,k), &           ! intent(in)
+                                   stats_zt(i) )                     ! intent(out)
+          call stat_update_var_pt( stats_metadata%iwp3_pr_dfsn, k, & ! intent(in)
+                                   rhs_pr_dfsn_wp3(i,k), &           ! intent(in)
+                                   stats_zt(i) )                     ! intent(out)
                                    
         end do
       end do

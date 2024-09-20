@@ -1215,7 +1215,8 @@ module grid_class
       
     !---------------------------- Begin Code ----------------------------
 
-    redirect_interpolated_azm_col = redirect_interpolated_azm_2D( gr%nzm, gr%nzt, 1, gr, azt, zm_min )
+    redirect_interpolated_azm_col = redirect_interpolated_azm_2D( gr%nzm, gr%nzt, 1, gr, &
+                                                                  azt, zm_min )
 
     redirect_interpolated_azm_k = redirect_interpolated_azm_col(1,k)
 
@@ -1262,7 +1263,8 @@ module grid_class
 
     azt_col(1,:) = azt
 
-    redirect_interpolated_azm_col = redirect_interpolated_azm_2D( gr%nzm, gr%nzt, 1, gr, azt_col, zm_min )
+    redirect_interpolated_azm_col = redirect_interpolated_azm_2D( gr%nzm, gr%nzt, 1, gr, &
+                                                                  azt_col, zm_min )
 
     redirect_interpolated_azm_1D = redirect_interpolated_azm_col(1,:)
 
@@ -1271,7 +1273,8 @@ module grid_class
 
   !=============================================================================
   ! Wrapped in interface zt2zm
-  function redirect_interpolated_azm_2D( nzm, nzt, ngrdcol, gr, azt, zm_min )
+  function redirect_interpolated_azm_2D( nzm, nzt, ngrdcol, gr, &
+                                         azt, zm_min )
 
     ! Description:
     ! Used in interpolated variables located on thermodynamic grid levels to
@@ -1372,7 +1375,8 @@ module grid_class
     
     !---------------------------- Begin Code ----------------------------
 
-    redirect_interpolated_azt_col = redirect_interpolated_azt_2D( gr%nzm, gr%nzt, 1, gr, azm, zt_min )
+    redirect_interpolated_azt_col = redirect_interpolated_azt_2D( gr%nzm, gr%nzt, 1, gr, &
+                                                                  azm, zt_min )
 
     redirect_interpolated_azt_k = redirect_interpolated_azt_col(1,k)
 
@@ -1420,7 +1424,8 @@ module grid_class
 
     azm_col(1,:) = azm
 
-    redirect_interpolated_azt_col = redirect_interpolated_azt_2D(gr%nzm, gr%nzt, 1, gr, azm_col, zt_min )
+    redirect_interpolated_azt_col = redirect_interpolated_azt_2D(gr%nzm, gr%nzt, 1, gr, &
+                                                                 azm_col, zt_min )
 
     redirect_interpolated_azt_1D = redirect_interpolated_azt_col(1,:)
 
@@ -1429,7 +1434,8 @@ module grid_class
 
   !=============================================================================
   ! Wrapped in interface zm2zt
-  function redirect_interpolated_azt_2D( nzm, nzt, ngrdcol, gr, azm, zt_min )
+  function redirect_interpolated_azt_2D( nzm, nzt, ngrdcol, gr, &
+                                         azm, zt_min )
 
     ! Description:
     ! Used in interpolated variables located on momentum grid levels to

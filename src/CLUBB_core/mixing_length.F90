@@ -1440,9 +1440,6 @@ module mixing_length
       bvf_thresh,                   & ! temporatory array
       H_invrs_tau_wpxp_N2             ! Heaviside function for clippings of invrs_tau_wpxp_N2
 
-    real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      smooth_thlm 
-
     real( kind = core_rknd ), dimension(ngrdcol) :: &
       ustar
       
@@ -1519,7 +1516,9 @@ module mixing_length
 
       ! tmp_calc_ngrdcol used here because openacc has an issue with
       !  a variable being both input and output of a function
-      ustar = smooth_max( ngrdcol, tmp_calc_ngrdcol, ufmin, min_max_smth_mag )
+      ustar = smooth_max( ngrdcol, tmp_calc_ngrdcol, &
+                          ufmin, &
+                          min_max_smth_mag )
 
     else 
 
@@ -1623,8 +1622,8 @@ module mixing_length
       tmp_calc_max = smooth_max( nzm, ngrdcol, zero_threshold, tmp_calc, &
                                  min_max_smth_mag)
 
-      tmp_calc_min_max = smooth_min( nzm, ngrdcol, one, tmp_calc_max, &
-                                     min_max_smth_mag )
+      tmp_calc_min_max = smooth_min( nzm, ngrdcol, one, &
+                                     tmp_calc_max, min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
@@ -1714,7 +1713,8 @@ module mixing_length
                                   + clubb_params(i,iC_invrs_tau_N2_xp2) * brunt_freq_pos(i,k) & ! 0
                                   + clubb_params(i,iC_invrs_tau_sfc) * two &
                                   * sqrt(em(i,k)) &
-                                  / ( gr%zm(i,k) - sfc_elevation(i) + clubb_params(i,iz_displace) ) ! small
+                                  / ( gr%zm(i,k) - sfc_elevation(i) &
+                                      + clubb_params(i,iz_displace) ) ! small
         end do
       end do
       !$acc end parallel loop
@@ -1821,7 +1821,8 @@ module mixing_length
       end do
       !$acc end parallel loop
 
-      H_invrs_tau_wpxp_N2 = smooth_heaviside_peskin( nzm, ngrdcol, bvf_thresh, heaviside_smth_range )
+      H_invrs_tau_wpxp_N2 = smooth_heaviside_peskin( nzm, ngrdcol, bvf_thresh, &
+                                                     heaviside_smth_range )
 
     else ! l_smooth_Heaviside_tau_wpxp = .false.
 
@@ -1841,7 +1842,8 @@ module mixing_length
 
     if ( l_smooth_min_max ) then
 
-      Ri_zm_smooth = smooth_max( nzm, ngrdcol, Ri_zm, zero, &
+      Ri_zm_smooth = smooth_max( nzm, ngrdcol, &
+                                 Ri_zm, zero, &
                                  12.0_core_rknd * min_max_smth_mag )
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1954,7 +1956,8 @@ module mixing_length
 
       tau_zt_unclipped = zm2zt( nzm, nzt, ngrdcol, gr, tau_zm )
 
-      tau_zt = smooth_min( nzt, ngrdcol, tau_zt_unclipped, tau_max_zt, 1.0e3_core_rknd * min_max_smth_mag )
+      tau_zt = smooth_min( nzt, ngrdcol, tau_zt_unclipped, &
+                           tau_max_zt, 1.0e3_core_rknd * min_max_smth_mag )
 
     else
 

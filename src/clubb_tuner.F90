@@ -669,8 +669,8 @@ subroutine logical_flags_driver( current_date, current_time )
     l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
     l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                     ! eliminates spurious drying tendencies at model top
-    l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
-                                    ! to avoid double counting.
+    l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+                                    ! the surface flux, to avoid double counting.
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, penta_solve_method, tridiag_solve_method, &

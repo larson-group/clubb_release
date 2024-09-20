@@ -256,8 +256,8 @@ module model_flags
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that 
                                       ! eliminates spurious drying tendencies at model top
-      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
-                                      ! to avoid double counting.
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+                                      ! the surface flux, to avoid double counting.
 
   end type clubb_config_flags_type
 
@@ -462,8 +462,8 @@ module model_flags
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
-                                      ! to avoid double counting.
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+                                      ! the surface flux, to avoid double counting.
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -738,8 +738,8 @@ module model_flags
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
-                                      ! to avoid double counting.
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+                                      ! the surface flux, to avoid double counting.
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -865,7 +865,8 @@ module model_flags
     write(iunit,*) "l_diagnose_correlations = ", clubb_config_flags%l_diagnose_correlations
     write(iunit,*) "l_calc_w_corr = ", clubb_config_flags%l_calc_w_corr
     write(iunit,*) "l_const_Nc_in_cloud = ", clubb_config_flags%l_const_Nc_in_cloud
-    write(iunit,*) "l_fix_w_chi_eta_correlations = ", clubb_config_flags%l_fix_w_chi_eta_correlations
+    write(iunit,*) "l_fix_w_chi_eta_correlations = ", &
+                                                clubb_config_flags%l_fix_w_chi_eta_correlations
     write(iunit,*) "l_stability_correct_tau_zm = ", clubb_config_flags%l_stability_correct_tau_zm
     write(iunit,*) "l_damp_wp2_using_em = ", clubb_config_flags%l_damp_wp2_using_em
     write(iunit,*) "l_do_expldiff_rtm_thlm = ", clubb_config_flags%l_do_expldiff_rtm_thlm
@@ -882,11 +883,14 @@ module model_flags
     write(iunit,*) "l_lmm_stepping = ", clubb_config_flags%l_lmm_stepping
     write(iunit,*) "l_e3sm_config = ", clubb_config_flags%l_e3sm_config
     write(iunit,*) "l_vary_convect_depth = ", clubb_config_flags%l_vary_convect_depth
-    write(iunit,*) "l_use_tke_in_wp3_pr_turb_term = ", clubb_config_flags%l_use_tke_in_wp3_pr_turb_term
+    write(iunit,*) "l_use_tke_in_wp3_pr_turb_term = ", &
+                                                clubb_config_flags%l_use_tke_in_wp3_pr_turb_term
     write(iunit,*) "l_use_tke_in_wp2_wp3_K_dfsn = ", clubb_config_flags%l_use_tke_in_wp2_wp3_K_dfsn
-    write(iunit,*) "l_use_wp3_lim_with_smth_Heaviside = ", clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside
+    write(iunit,*) "l_use_wp3_lim_with_smth_Heaviside = ", &
+                                                clubb_config_flags%l_use_wp3_lim_with_smth_Heaviside
     write(iunit,*) "l_smooth_Heaviside_tau_wpxp = ", clubb_config_flags%l_smooth_Heaviside_tau_wpxp
-    write(iunit,*) "l_modify_limiters_for_cnvg_test = ", clubb_config_flags%l_modify_limiters_for_cnvg_test
+    write(iunit,*) "l_modify_limiters_for_cnvg_test = ", &
+                                                clubb_config_flags%l_modify_limiters_for_cnvg_test
     write(iunit,*) "l_enable_relaxed_clipping = ", clubb_config_flags%l_enable_relaxed_clipping
     write(iunit,*) "l_linearize_pbl_winds = ", clubb_config_flags%l_linearize_pbl_winds
     write(iunit,*) "l_mono_flux_lim_thlm = ",clubb_config_flags%l_mono_flux_lim_thlm

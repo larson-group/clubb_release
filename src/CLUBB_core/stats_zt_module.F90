@@ -549,7 +549,8 @@ module stats_zt_module
 
       case ('ice_supersat_frac')
         stats_metadata%iice_supersat_frac = k
-        call stat_assign( var_index=stats_metadata%iice_supersat_frac, var_name="ice_supersat_frac", &
+        call stat_assign( var_index=stats_metadata%iice_supersat_frac, &
+             var_name="ice_supersat_frac", &
              var_description="ice_supersat_frac, Ice cloud fraction (between 0 and 1)", &
              var_units="count", &
              l_silhs=.false., grid_kind=stats_zt )
@@ -781,7 +782,8 @@ module stats_zt_module
       case ('rtp3')
         stats_metadata%irtp3 = k
         call stat_assign( var_index=stats_metadata%irtp3, var_name="rtp3", &
-             var_description="rt'^3, Third-order moment of total water, rt", var_units="(kg/kg)^3", &
+             var_description="rt'^3, Third-order moment of total water, rt", &
+             var_units="(kg/kg)^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -935,7 +937,8 @@ module stats_zt_module
 
       case ('rho')
         stats_metadata%irho = k
-        call stat_assign( var_index=stats_metadata%irho, var_name="rho", var_description="rho, Air density", &
+        call stat_assign( var_index=stats_metadata%irho, var_name="rho", &
+             var_description="rho, Air density", &
              var_units="kg m^{-3}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -2887,7 +2890,8 @@ module stats_zt_module
       case ('w_KK_evap_covar_zt')
         stats_metadata%iw_KK_evap_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%iw_KK_evap_covar_zt, var_name="w_KK_evap_covar_zt", &
+        call stat_assign( var_index=stats_metadata%iw_KK_evap_covar_zt, &
+             var_name="w_KK_evap_covar_zt", &
              var_description="w_KK_evap_covar_zt, Covariance of w and KK evaporation rate", &
              var_units="m*(kg/kg)/s^2", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
@@ -2895,7 +2899,8 @@ module stats_zt_module
       case ('rt_KK_evap_covar_zt')
         stats_metadata%irt_KK_evap_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%irt_KK_evap_covar_zt, var_name="rt_KK_evap_covar_zt", &
+        call stat_assign( var_index=stats_metadata%irt_KK_evap_covar_zt, &
+             var_name="rt_KK_evap_covar_zt", &
              var_description="rt_KK_evap_covar_zt, Covariance of r_t and KK evaporation rate", &
              var_units="(kg/kg)^2/s", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
@@ -2903,7 +2908,8 @@ module stats_zt_module
       case ('thl_KK_evap_covar_zt')
         stats_metadata%ithl_KK_evap_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%ithl_KK_evap_covar_zt, var_name="thl_KK_evap_covar_zt", &
+        call stat_assign( var_index=stats_metadata%ithl_KK_evap_covar_zt, &
+             var_name="thl_KK_evap_covar_zt", &
              var_description="thl_KK_evap_covar_zt, Covariance of theta_l and KK " &
              // "evaporation rate", &
              var_units="K*(kg/kg)/s", l_silhs=.false., grid_kind=stats_zt )
@@ -2912,7 +2918,8 @@ module stats_zt_module
       case ('w_KK_auto_covar_zt')
         stats_metadata%iw_KK_auto_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%iw_KK_auto_covar_zt, var_name="w_KK_auto_covar_zt", &
+        call stat_assign( var_index=stats_metadata%iw_KK_auto_covar_zt, &
+             var_name="w_KK_auto_covar_zt", &
              var_description="w_KK_auto_covar_zt, Covariance of w and KK autoconversion rate", &
              var_units="m*(kg/kg)/s^2", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
@@ -2920,7 +2927,8 @@ module stats_zt_module
       case ('rt_KK_auto_covar_zt')
         stats_metadata%irt_KK_auto_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%irt_KK_auto_covar_zt, var_name="rt_KK_auto_covar_zt", &
+        call stat_assign( var_index=stats_metadata%irt_KK_auto_covar_zt, &
+             var_name="rt_KK_auto_covar_zt", &
              var_description="rt_KK_auto_covar_zt, Covariance of r_t and KK autoconversion rate",&
              var_units="(kg/kg)^2/s", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
@@ -2928,7 +2936,8 @@ module stats_zt_module
       case ('thl_KK_auto_covar_zt')
         stats_metadata%ithl_KK_auto_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%ithl_KK_auto_covar_zt, var_name="thl_KK_auto_covar_zt", &
+        call stat_assign( var_index=stats_metadata%ithl_KK_auto_covar_zt, &
+             var_name="thl_KK_auto_covar_zt", &
              var_description="thl_KK_auto_covar_zt, Covariance of theta_l and " &
              // "KK autoconversion rate", &
              var_units="K*(kg/kg)/s", l_silhs=.false., grid_kind=stats_zt )
@@ -2937,7 +2946,8 @@ module stats_zt_module
       case ('w_KK_accr_covar_zt')
         stats_metadata%iw_KK_accr_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%iw_KK_accr_covar_zt, var_name="w_KK_accr_covar_zt", &
+        call stat_assign( var_index=stats_metadata%iw_KK_accr_covar_zt, &
+             var_name="w_KK_accr_covar_zt", &
              var_description="w_KK_accr_covar_zt, Covariance of w and KK accretion rate", &
              var_units="m*(kg/kg)/s^2", &
              l_silhs=.false., grid_kind=stats_zt )
@@ -2946,7 +2956,8 @@ module stats_zt_module
       case ('rt_KK_accr_covar_zt')
         stats_metadata%irt_KK_accr_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%irt_KK_accr_covar_zt, var_name="rt_KK_accr_covar_zt", &
+        call stat_assign( var_index=stats_metadata%irt_KK_accr_covar_zt, &
+             var_name="rt_KK_accr_covar_zt", &
              var_description="rt_KK_accr_covar_zt, Covariance of r_t and KK accretion rate", &
              var_units="(kg/kg)^2/s", &
              l_silhs=.false., grid_kind=stats_zt )
@@ -2955,7 +2966,8 @@ module stats_zt_module
       case ('thl_KK_accr_covar_zt')
         stats_metadata%ithl_KK_accr_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%ithl_KK_accr_covar_zt, var_name="thl_KK_accr_covar_zt", &
+        call stat_assign( var_index=stats_metadata%ithl_KK_accr_covar_zt, &
+             var_name="thl_KK_accr_covar_zt", &
              var_description="thl_KK_accr_covar_zt, Covariance of theta_l and KK accretion rate",&
              var_units="K*(kg/kg)/s", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
@@ -2963,7 +2975,8 @@ module stats_zt_module
       case ('rr_KK_mvr_covar_zt')
         stats_metadata%irr_KK_mvr_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%irr_KK_mvr_covar_zt, var_name="rr_KK_mvr_covar_zt", &
+        call stat_assign( var_index=stats_metadata%irr_KK_mvr_covar_zt, &
+             var_name="rr_KK_mvr_covar_zt", &
              var_description="rr_KK_mvr_covar_zt, Covariance of r_r and KK rain drop mean " &
              // "volume radius", &
              var_units="(kg/kg)m", l_silhs=.false., grid_kind=stats_zt )
@@ -2972,7 +2985,8 @@ module stats_zt_module
       case ('Nr_KK_mvr_covar_zt')
         stats_metadata%iNr_KK_mvr_covar_zt = k
 
-        call stat_assign( var_index=stats_metadata%iNr_KK_mvr_covar_zt, var_name="Nr_KK_mvr_covar_zt", &
+        call stat_assign( var_index=stats_metadata%iNr_KK_mvr_covar_zt, &
+             var_name="Nr_KK_mvr_covar_zt", &
              var_description="Nr_KK_mvr_covar_zt, Covariance of N_r and KK rain drop mean " &
              // "volume radius", &
              var_units="(num/kg)m", l_silhs=.false., grid_kind=stats_zt )
@@ -2981,7 +2995,8 @@ module stats_zt_module
       case ('KK_mvr_variance_zt')
         stats_metadata%iKK_mvr_variance_zt = k
 
-        call stat_assign( var_index=stats_metadata%iKK_mvr_variance_zt, var_name="KK_mvr_variance_zt", &
+        call stat_assign( var_index=stats_metadata%iKK_mvr_variance_zt, &
+             var_name="KK_mvr_variance_zt", &
              var_description="KK_mvr_variance_zt, Variance of KK rain drop mean volume radius", &
              var_units="m^2", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
@@ -4929,7 +4944,8 @@ module stats_zt_module
 
       case ('cloud_frac_refined')
         stats_metadata%icloud_frac_refined = k
-        call stat_assign( var_index=stats_metadata%icloud_frac_refined, var_name="cloud_frac_refined", &
+        call stat_assign( var_index=stats_metadata%icloud_frac_refined, &
+                          var_name="cloud_frac_refined", &
                           var_description="cloud_frac_refined, Cloud fraction computed on " &
                           // "refined grid", &
                           var_units="-", l_silhs=.false., grid_kind=stats_zt )
@@ -4945,7 +4961,8 @@ module stats_zt_module
 
       case ('hl_on_Cp_residual')
         stats_metadata%ihl_on_Cp_residual = k
-        call stat_assign( var_index=stats_metadata%ihl_on_Cp_residual, var_name="hl_on_Cp_residual", &
+        call stat_assign( var_index=stats_metadata%ihl_on_Cp_residual, &
+                          var_name="hl_on_Cp_residual", &
                           var_description="hl_on_Cp_residual, Residual change in HL/Cp from " &
                           // "Morrison microphysics &
                           &not due to sedimentation", &
@@ -4966,7 +4983,8 @@ module stats_zt_module
           write(sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
         stats_metadata%isclrm(sclr) = k
-          call stat_assign( var_index=stats_metadata%isclrm(sclr), var_name="sclr"//trim(sclr_idx)//"m", &
+          call stat_assign( var_index=stats_metadata%isclrm(sclr), &
+            var_name="sclr"//trim(sclr_idx)//"m", &
             var_description="passive scalar "//trim(sclr_idx), var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zt )
           k = k + 1
@@ -4977,7 +4995,8 @@ module stats_zt_module
           write(sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
         stats_metadata%isclrm_f(sclr) = k
-          call stat_assign( var_index=stats_metadata%isclrm_f(sclr), var_name="sclr"//trim(sclr_idx)//"m_f", &
+          call stat_assign( var_index=stats_metadata%isclrm_f(sclr), &
+            var_name="sclr"//trim(sclr_idx)//"m_f", &
             var_description="passive scalar forcing "//trim(sclr_idx), var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zt )
           k = k + 1
@@ -4988,7 +5007,8 @@ module stats_zt_module
           write(sclr_idx, * ) edsclr
           sclr_idx = adjustl(sclr_idx)
         stats_metadata%iedsclrm(edsclr) = k
-          call stat_assign( var_index=stats_metadata%iedsclrm(edsclr), var_name="edsclr"//trim(sclr_idx)//"m", &
+          call stat_assign( var_index=stats_metadata%iedsclrm(edsclr), &
+            var_name="edsclr"//trim(sclr_idx)//"m", &
             var_description="passive scalar "//trim(sclr_idx), var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zt )
           k = k + 1
@@ -4999,7 +5019,8 @@ module stats_zt_module
           write(sclr_idx, * ) edsclr
           sclr_idx = adjustl(sclr_idx)
         stats_metadata%iedsclrm_f(edsclr) = k
-          call stat_assign( var_index=stats_metadata%iedsclrm_f(edsclr), var_name="edsclr"//trim(sclr_idx)//"m_f", &
+          call stat_assign( var_index=stats_metadata%iedsclrm_f(edsclr), &
+            var_name="edsclr"//trim(sclr_idx)//"m_f", &
             var_description="passive scalar forcing "//trim(sclr_idx), var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zt )
           k = k + 1

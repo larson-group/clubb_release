@@ -375,7 +375,8 @@ module sounding
           rtm(i)   = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
                                         z(kp2), rt(km1), rt(k00), rt(kp1), rt(kp2) )
           press(i) = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
-                                        z(kp2), p_in_Pa(km1), p_in_Pa(k00), p_in_Pa(kp1), p_in_Pa(kp2) )
+                                        z(kp2), p_in_Pa(km1), p_in_Pa(k00), p_in_Pa(kp1), &
+                                        p_in_Pa(kp2) )
           wm(i)    = mono_cubic_interp( gr%zt(1,i), km1, k00, kp1, kp2, z(km1), z(k00), z(kp1), &
                                         z(kp2), subs(km1), subs(k00), subs(kp1), subs(kp2) )
 
@@ -424,7 +425,8 @@ module sounding
             vgm(i)  = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), vg(k), vg(k-1) )
             thlm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), theta(k), theta(k-1) )
             rtm(i)  = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), rt(k), rt(k-1) )
-            press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
+            press(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), p_in_Pa(k), &
+                                                   p_in_Pa(k-1) )
             wm(i) = lin_interpolate_two_points( gr%zt(1,i), z(k), z(k-1), subs(k), subs(k-1) )
 
             if ( sclr_dim > 0 ) then

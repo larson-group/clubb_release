@@ -113,9 +113,6 @@ module advance_windm_edsclrm_module
     use mean_adv, only: & 
         term_ma_zt_lhs    ! Procedures
         
-    use model_flags, only: &
-        l_upwind_Kh_dp_term
-        
     use advance_helper_module, only: &
         calc_xpwp
 
@@ -275,11 +272,6 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm) ::  &
       Km_zm_p_nu10,   & ! Km_zm plus nu_vert_res_dep%nu10
       xpwp              ! x'w' for arbitrary x
-      
-    integer, parameter :: &
-      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
     ! Whether perturbed winds are being solved.
     logical :: l_perturbed_wind
@@ -462,11 +454,12 @@ module advance_windm_edsclrm_module
 
       ! Decompose and back substitute for um and vm
       nrhs = 2
-      call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs, stats_metadata%iwindm_matrix_condt_num, & ! intent(in)
+      call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs,                         & ! intent(in)
+                                stats_metadata%iwindm_matrix_condt_num,         & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
-                                stats_sfc, &                                      ! intent(inout)
-                                lhs, rhs, &                                       ! intent(inout)
+                                stats_sfc,                                      & ! intent(inout)
+                                lhs, rhs,                                       & ! intent(inout)
                                 solution )                                        ! intent(out)
 
       ! Check for singular matrices and bad LAPACK arguments
@@ -839,11 +832,12 @@ module advance_windm_edsclrm_module
       
       ! Decompose and back substitute for um and vm
       nrhs = 2
-      call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs, stats_metadata%iwindm_matrix_condt_num, & ! intent(in)
+      call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs,                         & ! intent(in)
+                                stats_metadata%iwindm_matrix_condt_num,         & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
-                                stats_sfc, &                                      ! intent(in)
-                                lhs, rhs, &                                       ! intent(inout)
+                                stats_sfc,                                      & ! intent(in)
+                                lhs, rhs,                                       & ! intent(inout)
                                 solution )                                        ! intent(out)
       
       ! Check for singular matrices and bad LAPACK arguments
@@ -1059,7 +1053,8 @@ module advance_windm_edsclrm_module
                               lhs )                                     ! intent(out)
                                     
       ! Decompose and back substitute for all eddy-scalar variables
-      call windm_edsclrm_solve( nzt, ngrdcol, gr, edsclr_dim, 0, & ! intent(in)
+      call windm_edsclrm_solve( nzt, ngrdcol, gr, edsclr_dim,    & ! intent(in)
+                                0,                               & ! intent(in)
                                 tridiag_solve_method,            & ! intent(in)
                                 stats_metadata,                  & ! intent(in)
                                 stats_sfc,                       & ! intent(inout)
@@ -1185,11 +1180,13 @@ module advance_windm_edsclrm_module
   end subroutine advance_windm_edsclrm
 
   !=============================================================================
-  subroutine windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs, ixm_matrix_condt_num, &
+  subroutine windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs, &
+                                  ixm_matrix_condt_num, &
                                   tridiag_solve_method, &
                                   stats_metadata, &
                                   stats_sfc, & 
-                                  lhs, rhs, solution )
+                                  lhs, rhs, &
+                                  solution )
 
     ! Description:
     ! Solves the horizontal wind or eddy-scalar time-tendency equation, and
@@ -1682,13 +1679,6 @@ module advance_windm_edsclrm_module
 
     implicit none
 
-    ! Constant parameters
-
-    integer, parameter :: &
-      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
-
     ! ------------------------ Input Variables ------------------------
     integer, intent(in) :: &
       nzt, &
@@ -1741,8 +1731,9 @@ module advance_windm_edsclrm_module
 
       ! Est. of the condition number of the variance LHS matrix
       do i = 1, ngrdcol
-        call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0_core_rknd/rcond(i), &  ! intent(in)
-                                 stats_sfc(i) )                                      ! intent(inout)
+        call stat_update_var_pt( ixm_matrix_condt_num, 1, & ! intent(in)
+                                 1.0_core_rknd/rcond(i),  & ! intent(in)
+                                 stats_sfc(i) )             ! intent(inout)
       end do
     else
 

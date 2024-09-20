@@ -515,7 +515,8 @@ module sfc_varnce_module
           if ( .not. l_vary_convect_depth ) then
              wstar = ( one/T0 * grav * wpthlp(i,1) * z_const )**(one_third)
           else
-             wstar = ( one/T0 * grav * wpthlp(i,1) * 0.2_core_rknd * depth_pos_wpthlp(i) )**(one_third)
+             wstar = ( one/T0 * grav * wpthlp(i,1) * 0.2_core_rknd &
+                       * depth_pos_wpthlp(i) )**(one_third)
           end if
         else
           wstar = zero

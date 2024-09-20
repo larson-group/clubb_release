@@ -525,8 +525,8 @@ module spurious_source_test
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
-                                      ! to avoid double counting.
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+                                      ! the surface flux,to avoid double counting.
     integer, parameter :: &
       order_xm_wpxp = 1, &
       order_xp2_xpyp = 2, &

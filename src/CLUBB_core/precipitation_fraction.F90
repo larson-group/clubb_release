@@ -221,23 +221,23 @@ module precipitation_fraction
 
       ! Calculatate precip_frac_1 and precip_frac_2 based on the greatest
       ! weighted cloud_frac_1 at or above a grid level.
-      call component_precip_frac_weighted( nzt, ngrdcol, hydromet_dim, & ! intent(in)
-                                           l_frozen_hm, hydromet_tol, & ! intent(in)
-                                           hydromet(:,:,:), precip_frac(:,:), & ! intent(in)
-                                           cloud_frac_1(:,:), cloud_frac_2(:,:), & ! intent(in)
-                                           ice_supersat_frac_1(:,:), & ! intent(in)
-                                           ice_supersat_frac_2(:,:), mixt_frac(:,:), & !intent(in)
-                                           precip_frac_tol(:), & ! intent(in)
-                                           precip_frac_1(:,:), precip_frac_2(:,:) ) ! intent(out)
+      call component_precip_frac_weighted( nzt, ngrdcol, hydromet_dim, & ! In
+                                           l_frozen_hm, hydromet_tol, & ! In
+                                           hydromet(:,:,:), precip_frac(:,:), & ! In
+                                           cloud_frac_1(:,:), cloud_frac_2(:,:), & ! In
+                                           ice_supersat_frac_1(:,:), & ! In
+                                           ice_supersat_frac_2(:,:), mixt_frac(:,:), & !In
+                                           precip_frac_tol(:), & ! In
+                                           precip_frac_1(:,:), precip_frac_2(:,:) ) ! Out
                                             
     elseif ( precip_frac_calc_type == 2 ) then
 
       ! Specified method.
-      call component_precip_frac_specify( nzt, ngrdcol, hydromet_dim, hydromet_tol, & ! intent(in)
-                                          clubb_params(iupsilon_precip_frac_rat), & ! intent(in)
-                                          hydromet(:,:,:), precip_frac(:,:), & ! intent(in)
-                                          mixt_frac(:,:), precip_frac_tol(:), & ! intent(in)
-                                          precip_frac_1(:,:), precip_frac_2(:,:) ) ! intent(out)
+      call component_precip_frac_specify( nzt, ngrdcol, hydromet_dim, hydromet_tol, & ! In
+                                          clubb_params(iupsilon_precip_frac_rat), & ! In
+                                          hydromet(:,:,:), precip_frac(:,:), & ! In
+                                          mixt_frac(:,:), precip_frac_tol(:), & ! In
+                                          precip_frac_1(:,:), precip_frac_2(:,:) ) ! Out
 
     else ! Invalid option selected.
 
@@ -382,8 +382,9 @@ module precipitation_fraction
     if ( stats_metadata%l_stats_samp ) then
       if ( stats_metadata%iprecip_frac_tol > 0 ) then
         do j = 1, ngrdcol
-          call stat_update_var_pt( stats_metadata%iprecip_frac_tol, 1, precip_frac_tol(j), & ! intent(in)
-                                   stats_sfc(j) ) ! intent(inout)
+          call stat_update_var_pt( stats_metadata%iprecip_frac_tol, 1, & ! In
+                                   precip_frac_tol(j), & ! In
+                                   stats_sfc(j) ) ! In/Out
         end do
       end if ! stats_metadata%iprecip_frac_tol
     end if ! stats_metadata%l_stats_samp
@@ -392,10 +393,10 @@ module precipitation_fraction
     ! Assertion check for precip_frac, precip_frac_1, and precip_frac_2.
     if ( clubb_at_least_debug_level( 2 ) ) then
       do j = 1, ngrdcol
-        call precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol,                   & ! intent(in)
-                                       hydromet(j,:,:), mixt_frac(j,:), precip_frac(j,:), & ! in
-                                       precip_frac_1(j,:), precip_frac_2(j,:),            & ! intent(in)
-                                       precip_frac_tol(j) )                                 ! intent(in)
+        call precip_frac_assert_check( nzt, hydromet_dim, hydromet_tol,                   & ! In
+                                       hydromet(j,:,:), mixt_frac(j,:), precip_frac(j,:), & ! In
+                                       precip_frac_1(j,:), precip_frac_2(j,:),            & ! In
+                                       precip_frac_tol(j) )                                 ! In
       end do
     endif
 

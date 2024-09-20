@@ -556,8 +556,8 @@ module pdf_parameter_tests
       l_mono_flux_lim_vm,           & ! Flag to turn on monotonic flux limiter for vm
       l_mono_flux_lim_spikefix,     & ! Flag to implement monotonic flux limiter code that
                                       ! eliminates spurious drying tendencies at model top
-      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied the surface flux,
-                                      ! to avoid double counting.
+      l_host_applies_sfc_fluxes       ! Use to determine whether a host model has already applied
+                                      ! the surface flux, to avoid double counting.
       
     real( kind = core_rknd ) :: & 
       C1, C1b, C1c, C2rt, C2thl, C2rtthl, & 
@@ -1559,7 +1559,8 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          call new_pdf_driver( gr%nzt, 1, wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), Skw, & ! In
+          call new_pdf_driver( gr%nzt, 1, wm, rtm, thlm, wp2(1,:), rtp2(1,:), thlp2(1,:), & ! In
+                               Skw, & ! In
                                wprtp(1,:), wpthlp(1,:), rtpthlp,                   & ! In
                                clubb_params,                             & ! In
                                Skrt, Skthl,                              & ! I/O
@@ -1594,8 +1595,8 @@ module pdf_parameter_tests
 
           call new_hybrid_pdf_driver( gr%nzt, 1, sclr_dim,                 & ! In
                                       wm, rtm, thlm, um, vm,          &! In
-                                      wp2(1,:), rtp2(1,:), thlp2(1,:), up2(1,:), vp2(1,:),         &! In
-                                      Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:),     &! In
+                                      wp2(1,:), rtp2(1,:), thlp2(1,:), up2(1,:), vp2(1,:),  &! In
+                                      Skw, wprtp(1,:), wpthlp(1,:), upwp(1,:), vpwp(1,:),   &! In
                                       sclrm, sclrp2, wpsclrp,             &! In
                                       gamma_Skw_fnc(1,:),                 &! In
                                       slope_coef_spread_DG_means_w(1),       &! In

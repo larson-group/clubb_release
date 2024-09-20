@@ -23,7 +23,8 @@ module new_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_pdf_driver( nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, Skw,  & ! In
+  subroutine new_pdf_driver( nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
+                             Skw,                                       & ! In
                              wprtp, wpthlp, rtpthlp,                    & ! In
                              clubb_params,                              & ! In
                              Skrt, Skthl,                               & ! I/O
@@ -336,17 +337,17 @@ module new_pdf_main
 
          ! <w'rt'thl'> = coef_wprtpthlp_implicit * <rt'thl'>
          !               + term_wprtpthlp_explicit
-         call calc_coefs_wpxpyp_semiimpl( nz, wp2(i,:), rtp2(i,:), thlp2(i,:), wprtp(i,:),       & ! In
-                                          wpthlp(i,:), sgn_wprtp, sgn_wpthlp, & ! In
-                                          mixt_frac(i,:), F_w(i,:), F_rt(i,:), F_thl(i,:),   & ! In
-                                          coef_sigma_w_1_sqd  ,          & ! In
-                                          coef_sigma_w_2_sqd,            & ! In
-                                          coef_sigma_rt_1_sqd,           & ! In
-                                          coef_sigma_rt_2_sqd,           & ! In
-                                          coef_sigma_thl_1_sqd,          & ! In
-                                          coef_sigma_thl_2_sqd,          & ! In
-                                          coef_wprtpthlp_implicit,       & ! Out
-                                          term_wprtpthlp_explicit        ) ! Out
+         call calc_coefs_wpxpyp_semiimpl( nz, wp2(i,:), rtp2(i,:), thlp2(i,:), wprtp(i,:), & ! In
+                                          wpthlp(i,:), sgn_wprtp, sgn_wpthlp,              & ! In
+                                          mixt_frac(i,:), F_w(i,:), F_rt(i,:), F_thl(i,:), & ! In
+                                          coef_sigma_w_1_sqd  ,                            & ! In
+                                          coef_sigma_w_2_sqd,                              & ! In
+                                          coef_sigma_rt_1_sqd,                             & ! In
+                                          coef_sigma_rt_2_sqd,                             & ! In
+                                          coef_sigma_thl_1_sqd,                            & ! In
+                                          coef_sigma_thl_2_sqd,                            & ! In
+                                          coef_wprtpthlp_implicit,                         & ! Out
+                                          term_wprtpthlp_explicit        )                   ! Out
 
       else ! l_explicit_turbulent_adv_xpyp
 

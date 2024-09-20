@@ -235,9 +235,6 @@ module lapack_wrap
       soln ! solution
 
     ! ----------------------- Local Variables -----------------------
-    real( kind = core_rknd ), dimension(ndim) ::  & 
-      subd, diag, supd
-
     integer :: &
       info, & ! Diagnostic output
       i       ! Loop var
@@ -476,8 +473,10 @@ module lapack_wrap
 
       do n = 1, nrhs
         do i = 1, ngrdcol
-          write(fstderr,*) "grdcol #", i, "rhs # ", n, "band_solvex forward error est. =", ferr(i,n)
-          write(fstderr,*) "grdcol #", i, "rhs # ", n, "band_solvex backward error est. =", berr(i,n)
+          write(fstderr,*) "grdcol #", i, "rhs # ", n, "band_solvex forward error est. =", &
+                           ferr(i,n)
+          write(fstderr,*) "grdcol #", i, "rhs # ", n, "band_solvex backward error est. =", &
+                           berr(i,n)
         end do
       end do
 

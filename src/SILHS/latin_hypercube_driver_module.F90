@@ -77,9 +77,6 @@ module latin_hypercube_driver_module
     use parameters_silhs, only: &
       silhs_config_flags_type ! Type(s)
 
-    use parameter_indices, only: &
-      nparams    ! Constant(s)
-
     use error_code, only: &
       clubb_at_least_debug_level  ! Procedure
       
@@ -444,7 +441,8 @@ module latin_hypercube_driver_module
           l_error = l_error .or. l_error_in_sub
 
           ! Check for correct transformation in normal space
-          call assert_correct_cloud_normal( num_samples, X_u_all_levs(i,:,k,hm_metadata%iiPDF_chi), & ! In
+          call assert_correct_cloud_normal( num_samples, & ! In
+                                            X_u_all_levs(i,:,k,hm_metadata%iiPDF_chi), & ! In
                                             X_nl_all_levs(i,:,k,hm_metadata%iiPDF_chi), & ! In
                                             X_mixt_comp_all_levs(i,:,k), & ! In
                                             pdf_params%cloud_frac_1(i,k), & ! In
@@ -967,7 +965,8 @@ module latin_hypercube_driver_module
                                                 pdf_params%cloud_frac_2(i,:), &
                                                 pdf_params%mixt_frac(i,:) )
         if ( any( rcm_pdf(i,:) > zero ) ) then
-           k_lh_start_rcm_in_cloud = maxloc( rcm_pdf(i,:) / max( cloud_frac_pdf(:), cloud_frac_min ), 1 )
+           k_lh_start_rcm_in_cloud = maxloc( rcm_pdf(i,:) &
+                                             / max( cloud_frac_pdf(:), cloud_frac_min ), 1 )
         else
            ! When clouds aren't found at any level, set k_lh_start_rcm_in_cloud
            ! to the middle of the vertical domain.
@@ -1400,8 +1399,12 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine assert_correct_cloud_normal( num_samples, X_u_chi, X_nl_chi, X_mixt_comp, &
-                                          cloud_frac_1, cloud_frac_2, &
+  subroutine assert_correct_cloud_normal( num_samples, &
+                                          X_u_chi, &
+                                          X_nl_chi, &
+                                          X_mixt_comp, &
+                                          cloud_frac_1, &
+                                          cloud_frac_2, &
                                           l_error )
 
   ! Description:
@@ -2264,7 +2267,7 @@ module latin_hypercube_driver_module
         end do
         lh_cloud_frac(:) = lh_cloud_frac(:) / real( num_samples, kind = core_rknd )
 
-!        call stat_update_var( stats_metadata%ilh_cloud_frac_unweighted, lh_cloud_frac, stats_lh_zt )
+!        call stat_update_var( stats_metadata%ilh_cloud_frac_unweighted, lh_cloud_frac, stats_lh_zt)
         do k = 1, nzt
            call stat_update_var_pt( stats_metadata%ilh_cloud_frac_unweighted, k, &
                                     lh_cloud_frac(k), stats_lh_zt )
@@ -2608,7 +2611,7 @@ module latin_hypercube_driver_module
         one_weights = one
         lh_precip_frac(:) = compute_sample_mean( nzt, num_samples, one_weights, &
                                                  int_in_precip )
-  !      call stat_update_var( stats_metadata%ilh_precip_frac_unweighted, lh_precip_frac, stats_lh_zt )
+  !      call stat_update_var(stats_metadata%ilh_precip_frac_unweighted,lh_precip_frac,stats_lh_zt)
         do k = 1, nzt
            call stat_update_var_pt( stats_metadata%ilh_precip_frac_unweighted, k, &
                                     lh_precip_frac(k), stats_lh_zt )
@@ -2651,7 +2654,8 @@ module latin_hypercube_driver_module
       ! k_lh_start is an integer, so it would be more appropriate to sample it
       ! as an integer, but as far as I can tell our current sampling
       ! infrastructure mainly supports sampling real numbers.
-      call stat_update_var_pt( stats_metadata%ik_lh_start, 1, real( k_lh_start(i), kind=core_rknd ), stats_lh_sfc )
+      call stat_update_var_pt( stats_metadata%ik_lh_start, 1, &
+                               real( k_lh_start(i), kind=core_rknd ), stats_lh_sfc )
 
       if ( allocated( stats_metadata%ilh_samp_frac_category ) ) then
         if ( stats_metadata%ilh_samp_frac_category(1) > 0 ) then
@@ -2698,8 +2702,8 @@ module latin_hypercube_driver_module
           lh_samp_frac(1,:) = zero
 
           do icategory=1, num_importance_categories
-  !          call stat_update_var( stats_metadata%ilh_samp_frac_category(icategory), lh_samp_frac(:,icategory), &
-  !                                stats_lh_zt )
+  !          call stat_update_var( stats_metadata%ilh_samp_frac_category(icategory), &
+  !                                lh_samp_frac(:,icategory), stats_lh_zt )
             do k = 1, nzt
                call stat_update_var_pt( stats_metadata%ilh_samp_frac_category(icategory), k, &
                                         lh_samp_frac(k,icategory), stats_lh_zt )

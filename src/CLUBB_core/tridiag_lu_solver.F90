@@ -40,7 +40,8 @@ module tridiag_lu_solvers
   !   allowing us to write the general step
   !     
   !     lower(k)*1 = lhs(1,k)                         =>  lower(k)    = lhs( 1,k)
-  !     lower(k)*upper(k-1)+l_diag(k)*1  = lhs( 0,k)  =>  l_diag(k) = lhs( 0,k) - lower(k)*upper(k-1)
+  !     lower(k)*upper(k-1)+l_diag(k)*1  = lhs( 0,k)  =>  l_diag(k) = lhs( 0,k) 
+  !                                                                   - lower(k)*upper(k-1)
   !     l_diag(k)*upper(k)               = lhs(-1,k)  =>  upper(k)  = lhs(-1,k) / l_diag(k)
   !
   !   This general step is done for k from 2 to ndim-1 (do k = 2, ndim-), and the last 
@@ -202,7 +203,8 @@ module tridiag_lu_solvers
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) - lhs(1,i,ndim) * upper(i,ndim-1)  )
+      lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) &
+                                                   - lhs(1,i,ndim) * upper(i,ndim-1)  )
     end do
     !$acc end parallel loop
 
@@ -289,7 +291,8 @@ module tridiag_lu_solvers
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
-      lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) - lhs(1,i,ndim) * upper(i,ndim-1)  )
+      lower_diag_invrs(i,ndim) = 1.0_core_rknd / ( lhs(0,i,ndim) &
+                                                   - lhs(1,i,ndim) * upper(i,ndim-1)  )
     end do
     !$acc end parallel loop
 

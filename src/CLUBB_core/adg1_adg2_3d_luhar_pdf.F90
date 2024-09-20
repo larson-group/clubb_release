@@ -679,7 +679,8 @@ module adg1_adg2_3d_luhar_pdf
              else
                 mixt_frac(i,k) &
                  = one_half &
-                     * ( one - Skw(i,k) / sqrt( four * ( one - sigma_sqd_w(i,k) )**3 + Skw(i,k)**2 ) )
+                     * ( one - Skw(i,k) / sqrt( four * ( one - sigma_sqd_w(i,k) )**3 &
+                                              + Skw(i,k)**2 ) )
              endif
 
              ! Clip mixt_frac, and 1 - mixt_frac, to avoid dividing by a small number.

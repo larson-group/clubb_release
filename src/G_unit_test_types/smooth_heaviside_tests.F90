@@ -93,9 +93,6 @@ contains
     
     real( kind = core_rknd ) :: &
       heaviside_smth_range
-      
-    integer :: &
-      i
     
     !=========== Code ==================
     

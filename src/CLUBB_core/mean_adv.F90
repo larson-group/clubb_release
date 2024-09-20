@@ -184,7 +184,7 @@ module mean_adv
 
     ! -------------------------- Local Variables --------------------------
 
-    integer :: i, k, b    ! Vertical level index
+    integer :: i, k    ! Vertical level index
 
     !-------------------------- Begin Code --------------------------
 

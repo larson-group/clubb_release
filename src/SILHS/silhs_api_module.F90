@@ -167,9 +167,6 @@ contains
     use parameters_silhs, only: &
       silhs_config_flags_type ! Type
 
-    use parameter_indices, only: &
-      nparams
-
     use clubb_precision, only: &
       core_rknd
       
@@ -343,9 +340,6 @@ contains
 
     use parameters_silhs, only: &
       silhs_config_flags_type ! Type
-
-    use parameter_indices, only: &
-      nparams
 
     use clubb_precision, only: &
       core_rknd

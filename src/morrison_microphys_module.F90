@@ -820,7 +820,8 @@ module morrison_microphys_module
                             real( rsm_sten(1:nzt), kind=core_rknd ), &
                             gr%dzt(1,1:nzt) )
 
-    call microphys_put_var( stats_metadata%irsm_sd_morr_int, (/rsm_sd_morr_int/), microphys_stats_sfc )
+    call microphys_put_var( stats_metadata%irsm_sd_morr_int, (/rsm_sd_morr_int/), &
+                            microphys_stats_sfc )
 
     if ( clubb_at_least_debug_level( 1 ) ) then
         if ( rsm_sd_morr_int > maxval( real( rsm_sten(1:nzt), &
@@ -830,133 +831,239 @@ module morrison_microphys_module
         endif
     endif
     
-    call microphys_put_var( stats_metadata%irrm_auto, rrm_auto, microphys_stats_zt )
-    call microphys_put_var( stats_metadata%irrm_accr, rrm_accr, microphys_stats_zt )
-    call microphys_put_var( stats_metadata%irrm_evap, rrm_evap, microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_auto, rrm_auto, &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_accr, rrm_accr, &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_evap, rrm_evap, &
+                            microphys_stats_zt )
 
-    call microphys_put_var( stats_metadata%iNrm_auto,    Nrm_auto,    microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNrm_evap,    Nrm_evap,    microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNrm_auto,    Nrm_auto,    &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNrm_evap,    Nrm_evap,    &
+                            microphys_stats_zt )
 
     ! Update Morrison budgets
-    call microphys_put_var( stats_metadata%ihl_on_Cp_residual, hl_on_Cp_residual, microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iqto_residual, qto_residual, microphys_stats_zt )
-    call microphys_put_var( stats_metadata%irgm_sd_morr, &
-              real( rgm_sten, kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%irrm_sd_morr, &
-              real( rrm_sten, kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%irsm_sd_morr, &
-              real( rsm_sten, kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%irim_sd_mg_morr, &
-              real( rim_sten, kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%ircm_sd_mg_morr, &
-              real( rcm_sten, kind = core_rknd), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRC,real(PRC,kind=core_rknd),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRA,real(PRA,kind=core_rknd),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRE,real(PRE,kind=core_rknd),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPSMLT, real( PSMLT, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iEVPMS, real( EVPMS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRACS, real( PRACS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iEVPMG, real( EVPMG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRACG, real( PRACG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPGMLT, real( PGMLT, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iMNUCCC, real( MNUCCC, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPSACWS, real( PSACWS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPSACWI, real( PSACWI, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iQMULTS, real( QMULTS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iQMULTG, real( QMULTG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPSACWG, real( PSACWG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPGSACW, real( PGSACW, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRD, real( PRD, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRCI, real( PRCI, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRAI, real( PRAI, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iQMULTR, real( QMULTR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iQMULTRG, real( QMULTRG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iMNUCCD, real( MNUCCD, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRACI, real( PRACI, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRACIS, real( PRACIS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iEPRD, real( EPRD, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iMNUCCR, real( MNUCCR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPIACR, real( PIACR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPIACRS, real( PIACRS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPGRACS, real( PGRACS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRDS, real( PRDS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iEPRDS, real( EPRDS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPSACR, real( PSACR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iPRDG, real( PRDG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iEPRDG, real( EPRDG, kind=core_rknd ), microphys_stats_zt )
+    call microphys_put_var( stats_metadata%ihl_on_Cp_residual, hl_on_Cp_residual, &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iqto_residual, qto_residual, &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irgm_sd_morr, real( rgm_sten, kind = core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_sd_morr, real( rrm_sten, kind = core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irsm_sd_morr, real( rsm_sten, kind = core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irim_sd_mg_morr, real( rim_sten, kind = core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%ircm_sd_mg_morr, real( rcm_sten, kind = core_rknd), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRC,real(PRC,kind=core_rknd), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRA,real(PRA,kind=core_rknd), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRE,real(PRE,kind=core_rknd), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPSMLT, real( PSMLT, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iEVPMS, real( EVPMS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRACS, real( PRACS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iEVPMG, real( EVPMG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRACG, real( PRACG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPGMLT, real( PGMLT, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iMNUCCC, real( MNUCCC, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPSACWS, real( PSACWS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPSACWI, real( PSACWI, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iQMULTS, real( QMULTS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iQMULTG, real( QMULTG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPSACWG, real( PSACWG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPGSACW, real( PGSACW, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRD, real( PRD, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRCI, real( PRCI, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRAI, real( PRAI, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iQMULTR, real( QMULTR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iQMULTRG, real( QMULTRG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iMNUCCD, real( MNUCCD, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRACI, real( PRACI, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRACIS, real( PRACIS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iEPRD, real( EPRD, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iMNUCCR, real( MNUCCR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPIACR, real( PIACR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPIACRS, real( PIACRS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPGRACS, real( PGRACS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRDS, real( PRDS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iEPRDS, real( EPRDS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPSACR, real( PSACR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPRDG, real( PRDG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iEPRDG, real( EPRDG, kind=core_rknd ), &
+                            microphys_stats_zt )
       
     ! Update more Morrison budgets
-    call microphys_put_var( stats_metadata%iNGSTEN, real( NGSTEN, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNRSTEN, real( NRSTEN, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNISTEN, real( NISTEN, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNSSTEN, real( NSSTEN, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNCSTEN, real( NCSTEN, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPRC1, real( NPRC1, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNRAGG, real( NRAGG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPRACG, real( NPRACG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNSUBR, real( NSUBR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNSMLTR, real( NSMLTR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNGMLTR, real( NGMLTR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPRACS, real( NPRACS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNNUCCR, real( NNUCCR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNIACR, real( NIACR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNIACRS, real( NIACRS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNGRACS, real( NGRACS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNSMLTS, real( NSMLTS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNSAGG, real( NSAGG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPRCI, real( NPRCI, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNSCNG, real( NSCNG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNSUBS, real( NSUBS, kind=core_rknd ), microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNGSTEN, real( NGSTEN, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNRSTEN, real( NRSTEN, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNISTEN, real( NISTEN, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNSSTEN, real( NSSTEN, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNCSTEN, real( NCSTEN, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPRC1, real( NPRC1, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNRAGG, real( NRAGG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPRACG, real( NPRACG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNSUBR, real( NSUBR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNSMLTR, real( NSMLTR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNGMLTR, real( NGMLTR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPRACS, real( NPRACS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNNUCCR, real( NNUCCR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNIACR, real( NIACR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNIACRS, real( NIACRS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNGRACS, real( NGRACS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNSMLTS, real( NSMLTS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNSAGG, real( NSAGG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPRCI, real( NPRCI, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNSCNG, real( NSCNG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNSUBS, real( NSUBS, kind=core_rknd ), &
+                            microphys_stats_zt )
 
-    call microphys_put_var( stats_metadata%iPCC, real( PCC, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNNUCCC, real( NNUCCC, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPSACWS, real( NPSACWS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPRA, real( NPRA, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPRC, real( NPRC, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPSACWI, real( NPSACWI, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPSACWG, real( NPSACWG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNPRAI, real( NPRAI, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNMULTS, real( NMULTS, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNMULTG, real( NMULTG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNMULTR, real( NMULTR, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNMULTRG, real( NMULTRG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNNUCCD, real( NNUCCD, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNSUBI, real( NSUBI, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNGMLTG, real( NGMLTG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNSUBG, real( NSUBG, kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNACT, real( NACT,kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iSIZEFIX_NR, real( SIZEFIX_NR,kind=core_rknd),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iSIZEFIX_NC, real( SIZEFIX_NC,kind=core_rknd),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iSIZEFIX_NI, real( SIZEFIX_NI,kind=core_rknd),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iSIZEFIX_NS, real( SIZEFIX_NS,kind=core_rknd),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iSIZEFIX_NG, real( SIZEFIX_NG,kind=core_rknd),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNEGFIX_NR, real( NEGFIX_NR,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNEGFIX_NC, real( NEGFIX_NC,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNEGFIX_NI, real( NEGFIX_NI,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNEGFIX_NS, real( NEGFIX_NS,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNEGFIX_NG, real( NEGFIX_NG,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNIM_MORR_CL, real( NIM_MORR_CL,kind=core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iQC_INST, real( QC_INST,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iQR_INST, real( QR_INST,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iQI_INST, real( QI_INST,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iQS_INST, real( QS_INST,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iQG_INST, real( QG_INST,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNC_INST, real( NC_INST,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNR_INST, real( NR_INST,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNI_INST, real( NI_INST,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNS_INST, real( NS_INST,kind=core_rknd ),microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNG_INST, real( NG_INST,kind=core_rknd ),microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iPCC, real( PCC, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNNUCCC, real( NNUCCC, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPSACWS, real( NPSACWS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPRA, real( NPRA, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPRC, real( NPRC, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPSACWI, real( NPSACWI, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPSACWG, real( NPSACWG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNPRAI, real( NPRAI, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNMULTS, real( NMULTS, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNMULTG, real( NMULTG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNMULTR, real( NMULTR, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNMULTRG, real( NMULTRG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNNUCCD, real( NNUCCD, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNSUBI, real( NSUBI, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNGMLTG, real( NGMLTG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNSUBG, real( NSUBG, kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNACT, real( NACT,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iSIZEFIX_NR, real( SIZEFIX_NR,kind=core_rknd), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iSIZEFIX_NC, real( SIZEFIX_NC,kind=core_rknd), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iSIZEFIX_NI, real( SIZEFIX_NI,kind=core_rknd), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iSIZEFIX_NS, real( SIZEFIX_NS,kind=core_rknd), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iSIZEFIX_NG, real( SIZEFIX_NG,kind=core_rknd), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNEGFIX_NR, real( NEGFIX_NR,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNEGFIX_NC, real( NEGFIX_NC,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNEGFIX_NI, real( NEGFIX_NI,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNEGFIX_NS, real( NEGFIX_NS,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNEGFIX_NG, real( NEGFIX_NG,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNIM_MORR_CL, real( NIM_MORR_CL,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iQC_INST, real( QC_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iQR_INST, real( QR_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iQI_INST, real( QI_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iQS_INST, real( QS_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iQG_INST, real( QG_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNC_INST, real( NC_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNR_INST, real( NR_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNI_INST, real( NI_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNS_INST, real( NS_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNG_INST, real( NG_INST,kind=core_rknd ), &
+                            microphys_stats_zt )
 
-    call microphys_put_var( stats_metadata%iT_in_K_mc, real( T_in_K_mc, kind=core_rknd ),microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iT_in_K_mc, real( T_in_K_mc, kind=core_rknd ), &
+                            microphys_stats_zt )
 
     ! --- Number concentrations ---
     ! No budgets for sedimentation are output
     ! Effective radii of hydrometeor species
-    call microphys_put_var( stats_metadata%ieff_rad_cloud, real( effc(:), kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%ieff_rad_ice, real( effi(:), kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%ieff_rad_snow, real( effs(:), kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%ieff_rad_rain, real( effr(:), kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( stats_metadata%ieff_rad_graupel, real( effg(:), kind=core_rknd ), microphys_stats_zt )
+    call microphys_put_var( stats_metadata%ieff_rad_cloud, real( effc(:), kind = core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%ieff_rad_ice, real( effi(:), kind = core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%ieff_rad_snow, real( effs(:), kind = core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%ieff_rad_rain, real( effr(:), kind = core_rknd ), &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%ieff_rad_graupel, real( effg(:), kind=core_rknd ), &
+                            microphys_stats_zt )
 
       ! Snow and Rain rates at the bottom of the domain, in mm/day
     call microphys_put_var( stats_metadata%iprecip_rate_sfc, &

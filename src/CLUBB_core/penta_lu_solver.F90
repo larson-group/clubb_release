@@ -40,18 +40,29 @@ module penta_lu_solvers
   !   Multiplying the second row of L by U now we get
   !     
   !     lower_1(2)*1                               = lhs(1,2)   =>  lower_1(2)  = lhs(1,2)
-  !     lower_1(2)*upper_1(1)+l_diag(2)*1          = lhs(0,2)   =>  l_diag(2)   = lhs(0,2) - lower_1(2)*upper_1(1)
-  !     lower_1(2)*upper_2(1)+l_diag(2)*upper_1(2) = lhs(-1,2)  =>  upper_1(2)  = ( lhs(-1,2)-lower_1(2)*upper_2(1) )
-  !                                                                               / l_diag(2)
-  !     l_diag(2)*upper_2(2)                       = lhs(-2,2)  =>  upper_2(2)  = lhs(-2,2) / l_diag(2)
+  !     lower_1(2)*upper_1(1)+l_diag(2)*1          = lhs(0,2)   =>  l_diag(2)   
+  !                                                                 = lhs(0,2) 
+  !                                                                   - lower_1(2)*upper_1(1)
+  !     lower_1(2)*upper_2(1)+l_diag(2)*upper_1(2) = lhs(-1,2)  =>  upper_1(2)  
+  !                                                                 = ( lhs(-1,2)
+  !                                                                   - lower_1(2)*upper_2(1) )
+  !                                                                   / l_diag(2)
+  !     l_diag(2)*upper_2(2)                       = lhs(-2,2)  =>  upper_2(2)  = 
+  !                                                                             lhs(-2,2) 
+  !                                                                             / l_diag(2)
   !
   !   Now that we're passed the k=1 and k=2 steps, each following step uses all the bands,
   !   allowing us to write the general step
   !     
   !     l_2(k)*1                                    = lhs(2,k)   =>  l_2(k)     = lhs(2,k)
-  !     l_2(k)*upper_1(k-2)+lower_1(k)*1            = lhs(1,k)   =>  lower_1(k) = lhs(1,k) - l_2(k)*upper_1(k-2)
-  !     l_2(k)*upper_2(k-2)+lower_1(k)*upper_1(k-1) = lhs( 0,k)  =>  l_diag(k)  = lhs(0,k) - l_2(k)*upper_2(k-2)
-  !                    +l_diag(k)*1                                               + lower_1(k)*upper_1(k-1) 
+  !     l_2(k)*upper_1(k-2)+lower_1(k)*1            = lhs(1,k)   =>  lower_1(k) 
+  !                                                                  = lhs(1,k) 
+  !                                                                    - l_2(k)*upper_1(k-2)
+  !     l_2(k)*upper_2(k-2)+lower_1(k)*upper_1(k-1) = lhs( 0,k)  =>  l_diag(k)  = lhs(0,k) 
+  !                    +l_diag(k)*1                                               - l_2(k)
+  !                                                                               *upper_2(k-2)
+  !                                                                               + lower_1(k)
+  !                                                                               *upper_1(k-1)
   !                    
   !     lower_1(k)*upper_2(k-1)
   !     + l_diag(k)*upper_1(k) = lhs(-1,k)  =>  upper_1(k) = ( lhs(-1,k) - lower_1(k)*upper_2(k-1) )
@@ -128,7 +139,7 @@ module penta_lu_solvers
       lower_1,          & ! First L band
       lower_2             ! Second L band
 
-    integer :: i, k, j    ! Loop variables
+    integer :: i, k    ! Loop variables
 
     ! ----------------------- Begin Code -----------------------
        

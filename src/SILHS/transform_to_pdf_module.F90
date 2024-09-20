@@ -65,7 +65,8 @@ module transform_to_pdf_module
       mu1, & ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 1st component [units vary]
       mu2    ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 2nd component [units vary]
 
-    real( kind = core_rknd ),intent(in),dimension(ngrdcol,num_samples,nzt,pdf_dim+d_uniform_extra)::&
+    real( kind = core_rknd ), intent(in), &
+    dimension(ngrdcol,num_samples,nzt,pdf_dim+d_uniform_extra)::&
       X_u_all_levs ! Sample drawn from uniform distribution from a particular grid level
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,num_samples,nzt) :: &

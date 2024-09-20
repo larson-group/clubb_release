@@ -103,8 +103,6 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
       dummy_soln
 
-    integer :: i
-
     ! ----------------------- Begin Code -----------------------
 
     if ( present(rcond) ) then
@@ -220,8 +218,6 @@ module matrix_solver_wrapper
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
       dummy_soln
-
-    integer :: i
 
     ! ----------------------- Begin Code -----------------------
 
@@ -435,8 +431,6 @@ module matrix_solver_wrapper
     real( kind = core_rknd ), dimension(ngrdcol,ndim) :: &
       dummy_soln
 
-    integer :: i
-
     ! ----------------------- Begin Code -----------------------
 
     if ( present(rcond) ) then
@@ -542,8 +536,6 @@ module matrix_solver_wrapper
 
     real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs) :: &
       dummy_soln
-
-    integer :: i
 
     ! ----------------------- Begin Code -----------------------
 

@@ -971,7 +971,8 @@ module microphys_init_cleanup
        do ivar = hm_metadata%iiPDF_Ncn+1, pdf_dim, 1
           ! Hydrometeor sigma_hm_i^2/mu_hm_i^2
           sigma2_on_mu2_ip_cloud(ivar) &
-          = clubb_params(iomicron) * hm_metadata%hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar,hm_metadata))
+          = clubb_params(iomicron) &
+            * hm_metadata%hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar,hm_metadata))
           sigma2_on_mu2_ip_below(ivar) = sigma2_on_mu2_ip_cloud(ivar)
           ! Hydrometeor sigma_hm_i_n
           sigma_x_n_cloud(ivar) = stdev_L2N( sigma2_on_mu2_ip_cloud(ivar) )

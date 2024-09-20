@@ -412,7 +412,8 @@ module stats_zm_module
       case ('invrs_tau_xp2_zm')
         stats_metadata%iinvrs_tau_xp2_zm = k
 
-        call stat_assign( var_index=stats_metadata%iinvrs_tau_xp2_zm, var_name="invrs_tau_xp2_zm", &
+        call stat_assign( var_index=stats_metadata%iinvrs_tau_xp2_zm, &
+             var_name="invrs_tau_xp2_zm", &
              var_description="invrs tau xp2 on momentum levels [s-1]", &
              var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
@@ -420,7 +421,8 @@ module stats_zm_module
       case ('invrs_tau_wp2_zm')
         stats_metadata%iinvrs_tau_wp2_zm = k
 
-        call stat_assign( var_index=stats_metadata%iinvrs_tau_wp2_zm, var_name="invrs_tau_wp2_zm", &
+        call stat_assign( var_index=stats_metadata%iinvrs_tau_wp2_zm, &
+             var_name="invrs_tau_wp2_zm", &
              var_description="invrs tau wp2 on momentum levels [s-1]", &
              var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
@@ -428,7 +430,8 @@ module stats_zm_module
       case ('invrs_tau_wpxp_zm')
         stats_metadata%iinvrs_tau_wpxp_zm = k
 
-        call stat_assign( var_index=stats_metadata%iinvrs_tau_wpxp_zm, var_name="invrs_tau_wpxp_zm", &
+        call stat_assign( var_index=stats_metadata%iinvrs_tau_wpxp_zm, &
+             var_name="invrs_tau_wpxp_zm", &
              var_description="invrs tau wpxp on momentum levels [s-1]", &
              var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
@@ -436,7 +439,8 @@ module stats_zm_module
       case ('invrs_tau_wp3_zm')
         stats_metadata%iinvrs_tau_wp3_zm = k
 
-        call stat_assign( var_index=stats_metadata%iinvrs_tau_wp3_zm, var_name="invrs_tau_wp3_zm", &
+        call stat_assign( var_index=stats_metadata%iinvrs_tau_wp3_zm, &
+             var_name="invrs_tau_wp3_zm", &
              var_description="invrs tau wp3 on momentum levels [s-1]", &
              var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
@@ -444,7 +448,8 @@ module stats_zm_module
       case ('invrs_tau_no_N2_zm')
         stats_metadata%iinvrs_tau_no_N2_zm = k
 
-        call stat_assign( var_index=stats_metadata%iinvrs_tau_no_N2_zm, var_name="invrs_tau_no_N2_zm", &
+        call stat_assign( var_index=stats_metadata%iinvrs_tau_no_N2_zm, &
+             var_name="invrs_tau_no_N2_zm", &
              var_description="invrs tau_no_N2 on momentum levels [s-1]", &
              var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
@@ -452,7 +457,8 @@ module stats_zm_module
       case ('invrs_tau_bkgnd')
         stats_metadata%iinvrs_tau_bkgnd = k
 
-        call stat_assign( var_index=stats_metadata%iinvrs_tau_bkgnd, var_name="invrs_tau_bkgnd", &
+        call stat_assign( var_index=stats_metadata%iinvrs_tau_bkgnd, &
+             var_name="invrs_tau_bkgnd", &
              var_description="invrs tau of bkgnd on momentum levels [s-1]", &
              var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
@@ -2068,7 +2074,8 @@ module stats_zm_module
 
       case ('ice_supersat_frac_zm')
         stats_metadata%iice_supersat_frac_zm = k
-        call stat_assign( var_index=stats_metadata%iice_supersat_frac_zm, var_name="ice_supersat_frac_zm", &
+        call stat_assign( var_index=stats_metadata%iice_supersat_frac_zm, &
+             var_name="ice_supersat_frac_zm", &
              var_description="ice_supersat_frac_zm, Ice cloud fraction", &
              var_units="count", l_silhs=.false., &
              grid_kind=stats_zm )
@@ -2192,7 +2199,8 @@ module stats_zm_module
 
       case ( 'bv_freq_sqd' )
         stats_metadata%ibrunt_vaisala_freq_sqd = k
-        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd, var_name="bv_freq_sqd", &
+        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd, &
+             var_name="bv_freq_sqd", &
              var_description="Brunt-Vaisala frequency squared", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
@@ -2200,7 +2208,8 @@ module stats_zm_module
 
       case ( 'bv_freq_sqd_splat' )
         stats_metadata%ibrunt_vaisala_freq_sqd_splat = k
-        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_splat, var_name="bv_freq_sqd_splat", &
+        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_splat, &
+             var_name="bv_freq_sqd_splat", &
              var_description="Brunt-Vaisala freq. squared for splatting", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
@@ -2208,7 +2217,8 @@ module stats_zm_module
 
       case ( 'bv_freq_sqd_mixed' )
         stats_metadata%ibrunt_vaisala_freq_sqd_mixed = k
-        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_mixed, var_name="bv_freq_sqd_mixed", &
+        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_mixed, &
+             var_name="bv_freq_sqd_mixed", &
              var_description="Interpolated Brunt-Vaisala freq. squared between moist and dry air", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
@@ -2216,7 +2226,8 @@ module stats_zm_module
 
       case ( 'bv_freq_sqd_moist' )
         stats_metadata%ibrunt_vaisala_freq_sqd_moist = k
-        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_moist, var_name="bv_freq_sqd_moist", &
+        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_moist, &
+             var_name="bv_freq_sqd_moist", &
              var_description="Brunt-Vaisala freq. squared in moist air", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
@@ -2224,7 +2235,8 @@ module stats_zm_module
 
       case ( 'bv_freq_sqd_dry' )
         stats_metadata%ibrunt_vaisala_freq_sqd_dry = k
-        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_dry, var_name="bv_freq_sqd_dry", &
+        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_dry, &
+             var_name="bv_freq_sqd_dry", &
              var_description="Brunt-Vaisala freq. squared in dry air", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
@@ -2232,7 +2244,8 @@ module stats_zm_module
 
       case ( 'bv_freq_sqd_smth' )
         stats_metadata%ibrunt_vaisala_freq_sqd_smth = k
-        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_smth, var_name="bv_freq_sqd_smth", &
+        call stat_assign( var_index=stats_metadata%ibrunt_vaisala_freq_sqd_smth, &
+             var_name="bv_freq_sqd_smth", &
              var_description="Smoothed Brunt-Vaisala freq. squared", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
@@ -2240,7 +2253,8 @@ module stats_zm_module
 
       case ( 'bv_freq_out_cloud' )
         stats_metadata%ibrunt_freq_out_cloud = k
-        call stat_assign( var_index=stats_metadata%ibrunt_freq_out_cloud, var_name="bv_freq_out_cloud", &
+        call stat_assign( var_index=stats_metadata%ibrunt_freq_out_cloud, &
+             var_name="bv_freq_out_cloud", &
              var_description="Out-of-cloud part of Brunt-Vaisala freq.", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
@@ -2284,7 +2298,8 @@ module stats_zm_module
 
       case ( 'wp3_on_wp2_cfl_num' )
         stats_metadata%iwp3_on_wp2_cfl_num = k
-        call stat_assign( var_index=stats_metadata%iwp3_on_wp2_cfl_num, var_name="wp3_on_wp2_cfl_num", &
+        call stat_assign( var_index=stats_metadata%iwp3_on_wp2_cfl_num, &
+             var_name="wp3_on_wp2_cfl_num", &
              var_description="w'^3_on_w'^2 CFL number", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
@@ -2312,7 +2327,8 @@ module stats_zm_module
 
       case ( 'stability_correction' )
         stats_metadata%istability_correction = k
-        call stat_assign( var_index=stats_metadata%istability_correction, var_name="stability_correction", &
+        call stat_assign( var_index=stats_metadata%istability_correction, &
+             var_name="stability_correction", &
              var_description="stability_correction, Stability applied to "&
              // "diffusion of rtm and thlm", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
@@ -2366,7 +2382,8 @@ module stats_zm_module
           write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%isclrprtp(sclr) = k
-          call stat_assign( var_index=stats_metadata%isclrprtp(sclr), var_name="sclr"//trim(sclr_idx)//"prtp", &
+          call stat_assign( var_index=stats_metadata%isclrprtp(sclr), &
+            var_name="sclr"//trim(sclr_idx)//"prtp", &
             var_description="scalar("//trim(sclr_idx)//")'rt'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
@@ -2377,7 +2394,8 @@ module stats_zm_module
           write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%isclrp2(sclr) = k
-          call stat_assign( var_index=stats_metadata%isclrp2(sclr), var_name="sclr"//trim(sclr_idx)//"p2", &
+          call stat_assign( var_index=stats_metadata%isclrp2(sclr), &
+            var_name="sclr"//trim(sclr_idx)//"p2", &
             var_description="scalar("//trim(sclr_idx)//")'^2'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
@@ -2388,7 +2406,8 @@ module stats_zm_module
           write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%isclrpthvp(sclr) = k
-          call stat_assign( var_index=stats_metadata%isclrpthvp(sclr), var_name="sclr"//trim(sclr_idx)//"pthvp", &
+          call stat_assign( var_index=stats_metadata%isclrpthvp(sclr), &
+            var_name="sclr"//trim(sclr_idx)//"pthvp", &
             var_description="scalar("//trim(sclr_idx)//")'th_v'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
@@ -2399,7 +2418,8 @@ module stats_zm_module
           write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%isclrpthlp(sclr) = k
-          call stat_assign( var_index=stats_metadata%isclrpthlp(sclr), var_name="sclr"//trim(sclr_idx)//"pthlp", &
+          call stat_assign( var_index=stats_metadata%isclrpthlp(sclr), &
+            var_name="sclr"//trim(sclr_idx)//"pthlp", &
             var_description="scalar("//trim(sclr_idx)//")'th_l'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
@@ -2410,7 +2430,8 @@ module stats_zm_module
           write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%isclrprcp(sclr) = k
-          call stat_assign( var_index=stats_metadata%isclrprcp(sclr), var_name="sclr"//trim(sclr_idx)//"prcp", &
+          call stat_assign( var_index=stats_metadata%isclrprcp(sclr), &
+            var_name="sclr"//trim(sclr_idx)//"prcp", &
             var_description="scalar("//trim(sclr_idx)//")'rc'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
@@ -2421,7 +2442,8 @@ module stats_zm_module
           write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%iwpsclrp(sclr) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrp(sclr), var_name="wpsclr"//trim(sclr_idx)//"p", &
+          call stat_assign( var_index=stats_metadata%iwpsclrp(sclr), &
+            var_name="wpsclr"//trim(sclr_idx)//"p", &
             var_description="'w'scalar("//trim(sclr_idx)//")", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
@@ -2432,7 +2454,8 @@ module stats_zm_module
           write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%iwpsclrp2(sclr) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrp2(sclr), var_name="wpsclr"//trim(sclr_idx)//"p2", &
+          call stat_assign( var_index=stats_metadata%iwpsclrp2(sclr), &
+            var_name="wpsclr"//trim(sclr_idx)//"p2", &
             var_description="'w'scalar("//trim(sclr_idx)//")'^2'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
@@ -2443,7 +2466,8 @@ module stats_zm_module
           write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%iwp2sclrp(sclr) = k
-          call stat_assign( var_index=stats_metadata%iwp2sclrp(sclr), var_name="wp2sclr"//trim(sclr_idx)//"p", &
+          call stat_assign( var_index=stats_metadata%iwp2sclrp(sclr), &
+            var_name="wp2sclr"//trim(sclr_idx)//"p", &
             var_description="'w'^2 scalar("//trim(sclr_idx)//")", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
@@ -2454,7 +2478,8 @@ module stats_zm_module
           write( sclr_idx, * ) sclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%iwpsclrprtp(sclr) = k
-          call stat_assign( var_index=stats_metadata%iwpsclrprtp(sclr), var_name="wpsclr"//trim(sclr_idx)//"prtp", &
+          call stat_assign( var_index=stats_metadata%iwpsclrprtp(sclr), &
+            var_name="wpsclr"//trim(sclr_idx)//"prtp", &
             var_description="'w' scalar("//trim(sclr_idx)//")'rt'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1
@@ -2477,7 +2502,8 @@ module stats_zm_module
           write( sclr_idx, * ) edsclr
           sclr_idx = adjustl(sclr_idx)
           stats_metadata%iwpedsclrp(edsclr) = k
-          call stat_assign( var_index=stats_metadata%iwpedsclrp(edsclr), var_name="wpedsclr"//trim(sclr_idx)//"p", &
+          call stat_assign( var_index=stats_metadata%iwpedsclrp(edsclr), &
+            var_name="wpedsclr"//trim(sclr_idx)//"p", &
             var_description="eddy scalar("//trim(sclr_idx)//")'w'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1

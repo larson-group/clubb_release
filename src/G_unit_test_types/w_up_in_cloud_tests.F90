@@ -20,9 +20,6 @@ contains
     !   satisfy some given boundary cases where an exact solution is known.
     ! References:
     !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd
         
     use grid_class, only: &
         grid ! Type

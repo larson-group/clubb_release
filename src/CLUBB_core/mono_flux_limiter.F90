@@ -1152,12 +1152,6 @@ module mono_flux_limiter
 
     implicit none
 
-    ! Constant parameters
-    integer, parameter :: & 
-      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
-
     !---------------------------- Input Variables ----------------------------
     integer, intent(in) :: &
       nzt, &
@@ -1183,8 +1177,6 @@ module mono_flux_limiter
     !---------------------------- Local Variable ----------------------------
     character(len=10) :: &
       solve_type_str ! solve_type as a string for debug output purposes
-
-    integer :: i
 
     !---------------------------- Begin Code ----------------------------
 

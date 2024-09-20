@@ -5,8 +5,9 @@ module parameters_tunable
  
   ! Description:
   !   This module contains tunable model parameters.  The purpose of the module is to make it
-  !   easier for the clubb_tuner code to use the clubb_params vector without "knowing" any information
-  !   about the individual parameters contained in the vector itself.  It makes it easier to add
+  !   easier for the clubb_tuner code to use the clubb_params vector without "knowing" any 
+  !   information about the individual parameters contained in the vector itself.
+  !   It makes it easier to add
   !   new parameters to be tuned for, but does not make the CLUBB_core code itself any simpler.
   !   The parameters within the vector do not need to be the same variables used in the rest of
   !   CLUBB_core (see for e.g. nu1_vert_res_dep or lmin_coef).

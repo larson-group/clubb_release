@@ -42,8 +42,7 @@ module mixed_moment_PDF_integrals
         zt2zm    ! Procedure(s)
 
     use constants_clubb, only: &
-        zero,    & ! Constant(s)
-        w_tol,   &
+        w_tol,   & ! Constant(s)
         rt_tol,  &
         thl_tol
 

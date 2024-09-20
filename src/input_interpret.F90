@@ -176,7 +176,8 @@ module input_interpret
            ! based on potential temperature, exner, and rtm.
            do k = 1,nlevels
               rcm(1,k) = &
-                max( rtm(1,k) - sat_mixrat_liq( p_in_Pa(k), theta(1,k)*exner(1,k), saturation_formula ), &
+                max( rtm(1,k) &
+                     - sat_mixrat_liq( p_in_Pa(k), theta(1,k)*exner(1,k), saturation_formula ), &
                      zero_threshold )
            enddo
 
@@ -198,7 +199,8 @@ module input_interpret
            ! an iterative method involving theta_l, total water mixing ratio,
            ! pressure, and exner.
            do k =1, nlevels, 1
-              rcm(1,k) = rcm_sat_adj( thlm(1,k), rtm(1,k), p_in_Pa(k), exner(1,k), saturation_formula )
+              rcm(1,k) = rcm_sat_adj( thlm(1,k), rtm(1,k), p_in_Pa(k), exner(1,k), &
+                                      saturation_formula )
            enddo
 
            ! Calculate theta from theta_l and cloud water mixing ratio, such

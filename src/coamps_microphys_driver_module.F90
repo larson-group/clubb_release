@@ -929,7 +929,8 @@ module coamps_microphys_driver_module
 ! Addition by Adam Smith, 25 April 2008
 ! Adding calculation for snow particle number concentration
         do k=1, kk
-          call stat_update_var_pt( stats_metadata%iNsm, k, real(Nsm(k), kind = core_rknd) ,stats_zt )
+          call stat_update_var_pt( stats_metadata%iNsm, k, real(Nsm(k), kind = core_rknd) , &
+                                   stats_zt )
         end do
 
       end if

@@ -149,7 +149,7 @@ module clip_explicit
     real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) :: &
       wpsclrp_chnge   ! Net change in w'sclr' due to clipping [{units vary}]
 
-    integer :: sclr, i  ! scalar array index.
+    integer :: sclr  ! scalar array index.
 
     ! --------------------- Begin Code ---------------------
 
@@ -405,7 +405,7 @@ module clip_explicit
         call clip_covar( nzm, ngrdcol, clip_vpwp, l_first_clip_ts, & ! intent(in)
                          l_last_clip_ts, dt, wp2, wp2,             & ! intent(in)
                          l_predict_upwp_vpwp,                      & ! intent(in)
-                         stats_metadata,                           & ! intent(in)                       stats_metadata,                              & ! intent(in)
+                         stats_metadata,                           & ! intent(in)
                          stats_zm,                                 & ! intent(inout)
                          vpwp_pert, vpwp_chnge )                     ! intent(inout)
       endif ! l_linearize_pbl_winds
@@ -1221,7 +1221,8 @@ module clip_explicit
       end do
       !$acc end parallel loop
 
-      H_zagl(:,:) = smooth_heaviside_peskin(nzt, ngrdcol, zagl_thresh(:,:), 0.6_core_rknd) 
+      H_zagl(:,:) = smooth_heaviside_peskin( nzt, ngrdcol, zagl_thresh(:,:), &
+                                             0.6_core_rknd ) 
 
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzt

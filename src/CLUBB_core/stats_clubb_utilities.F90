@@ -722,18 +722,19 @@ module stats_clubb_utilities
     if ( stats_metadata%l_grads ) then
 
       ! Open GrADS file
-      call open_grads( iunit, fdir, fname,  &  ! intent(in)
-                       1, stats_zt%kk, nlat, nlon, stats_zt%z, & ! intent(in) 
-                       day, month, year, lat_vals, lon_vals, &  ! intent(in)
-                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & !intent(in) 
-                       stats_metadata, stats_zt%num_output_fields, & ! intent(in)
+      call open_grads( iunit, fdir, fname,  &  ! In
+                       1, stats_zt%kk, nlat, nlon, stats_zt%z, & ! In 
+                       day, month, year, lat_vals, lon_vals, &  ! In
+                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                       stats_metadata, stats_zt%num_output_fields, & ! In
                        stats_zt%file ) ! intent(inout)
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt%kk, stats_zt%z, &  ! In
-                        day, month, year, lat_vals, lon_vals, &  ! In
-                        time_current, stats_metadata%stats_tout, stats_zt%num_output_fields, &  ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt%kk, stats_zt%z, & ! In
+                        day, month, year, lat_vals, lon_vals, & ! In
+                        time_current, stats_metadata%stats_tout, & ! In
+                        stats_zt%num_output_fields, & ! In
                         stats_zt%file ) ! InOut
 
       ! Finalize the variable definitions
@@ -827,18 +828,19 @@ module stats_clubb_utilities
       if ( stats_metadata%l_grads ) then
 
         ! Open GrADS file
-        call open_grads( iunit, fdir, fname,  & ! intent(in)
-                         1, stats_lh_zt%kk, nlat, nlon, stats_lh_zt%z, & ! intent(in)
-                         day, month, year, lat_vals, lon_vals, &  ! intent(in)
-                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & !intent(in) 
-                         stats_metadata, stats_lh_zt%num_output_fields, & ! intent(in)
-                         stats_lh_zt%file ) ! intent(inout)
+        call open_grads( iunit, fdir, fname,  & ! In
+                         1, stats_lh_zt%kk, nlat, nlon, stats_lh_zt%z, & ! In
+                         day, month, year, lat_vals, lon_vals, &  ! In
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                         stats_metadata, stats_lh_zt%num_output_fields, & ! In
+                         stats_lh_zt%file ) ! In/Out
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_zt%kk, &  ! In
                           stats_lh_zt%z, day, month, year, lat_vals, lon_vals, &  ! In
-                          time_current, stats_metadata%stats_tout, stats_lh_zt%num_output_fields, &  ! In
+                          time_current, stats_metadata%stats_tout, & ! In
+                          stats_lh_zt%num_output_fields, & ! In
                           stats_lh_zt%file ) ! InOut
 
         ! Finalize the variable definitions
@@ -909,18 +911,19 @@ module stats_clubb_utilities
       if ( stats_metadata%l_grads ) then
 
         ! Open GrADS file
-        call open_grads( iunit, fdir, fname,  & ! intent(in)
-                         1, stats_lh_sfc%kk, nlat, nlon, stats_lh_sfc%z, & ! intent(in) 
-                         day, month, year, lat_vals, lon_vals, &  ! intent(in)
-                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & !intent(in) 
-                         stats_metadata, stats_lh_sfc%num_output_fields, & ! intent(in)
+        call open_grads( iunit, fdir, fname,  & ! In
+                         1, stats_lh_sfc%kk, nlat, nlon, stats_lh_sfc%z, & ! In 
+                         day, month, year, lat_vals, lon_vals, &  ! In
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                         stats_metadata, stats_lh_sfc%num_output_fields, & ! In
                          stats_lh_sfc%file ) ! intent(inout)
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_sfc%kk, &  ! In
                           stats_lh_sfc%z, day, month, year, lat_vals, lon_vals, &  ! In
-                          time_current, stats_metadata%stats_tout, stats_lh_sfc%num_output_fields, &  ! In
+                          time_current, stats_metadata%stats_tout, & ! In
+                          stats_lh_sfc%num_output_fields, & ! In
                           stats_lh_sfc%file ) ! InOut
 
         ! Finalize the variable definitions
@@ -1146,18 +1149,19 @@ module stats_clubb_utilities
     if ( stats_metadata%l_grads ) then
 
       ! Open GrADS files
-      call open_grads( iunit, fdir, fname,  & ! intent(in)
-                       1, stats_zm%kk, nlat, nlon, stats_zm%z, & ! intent(in)
-                       day, month, year, lat_vals, lon_vals, & ! intent(in)
-                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & !intent(in) 
-                       stats_metadata, stats_zm%num_output_fields, & ! intent(in)
+      call open_grads( iunit, fdir, fname,  & ! In
+                       1, stats_zm%kk, nlat, nlon, stats_zm%z, & ! In
+                       day, month, year, lat_vals, lon_vals, & ! In
+                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                       stats_metadata, stats_zm%num_output_fields, & ! In
                        stats_zm%file ) ! intent(inout)
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm%kk, stats_zm%z, &  ! In
-                        day, month, year, lat_vals, lon_vals, &  ! In
-                        time_current, stats_metadata%stats_tout, stats_zm%num_output_fields, &  ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm%kk, stats_zm%z, & ! In
+                        day, month, year, lat_vals, lon_vals, & ! In
+                        time_current, stats_metadata%stats_tout, & ! In
+                        stats_zm%num_output_fields, & ! In
                         stats_zm%file ) ! InOut
       
       ! Finalize the variable definitions
@@ -1229,12 +1233,12 @@ module stats_clubb_utilities
       if ( stats_metadata%l_grads ) then
 
         ! Open GrADS files
-        call open_grads( iunit, fdir, fname,  & ! intent(in)
-                         1, stats_rad_zt%kk, nlat, nlon, stats_rad_zt%z, & ! intent(in)
+        call open_grads( iunit, fdir, fname,  & ! In
+                         1, stats_rad_zt%kk, nlat, nlon, stats_rad_zt%z, & ! In
                          day, month, year, lat_vals, lon_vals, & 
-                         time_current+real(stats_metadata%stats_tout, kind=time_precision), & !intent(in) 
-                         stats_metadata, stats_rad_zt%num_output_fields, & ! intent(in)
-                         stats_rad_zt%file ) ! intent(inout)
+                         time_current+real(stats_metadata%stats_tout, kind=time_precision), & ! In 
+                         stats_metadata, stats_rad_zt%num_output_fields, & ! In
+                         stats_rad_zt%file ) ! In/Out
 
       else ! Open NetCDF file
 #ifdef NETCDF
@@ -1313,12 +1317,12 @@ module stats_clubb_utilities
       if ( stats_metadata%l_grads ) then
 
         ! Open GrADS files
-        call open_grads( iunit, fdir, fname,  & ! intent(in)
-                         1, stats_rad_zm%kk, nlat, nlon, stats_rad_zm%z, & ! intent(in)
+        call open_grads( iunit, fdir, fname,  & ! In
+                         1, stats_rad_zm%kk, nlat, nlon, stats_rad_zm%z, & ! In
                          day, month, year, lat_vals, lon_vals, & 
-                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & !intent(in) 
-                         stats_metadata, stats_rad_zm%num_output_fields, & ! intent(in)
-                         stats_rad_zm%file ) ! intent(inout)
+                         time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                         stats_metadata, stats_rad_zm%num_output_fields, & ! In
+                         stats_rad_zm%file ) ! In/Out
 
       else ! Open NetCDF file
 #ifdef NETCDF
@@ -1402,18 +1406,19 @@ module stats_clubb_utilities
     if ( stats_metadata%l_grads ) then
 
       ! Open GrADS files
-      call open_grads( iunit, fdir, fname,  & ! intent(in)
-                       1, stats_sfc%kk, nlat, nlon, stats_sfc%z, & ! intent(in)
-                       day, month, year, lat_vals, lon_vals, & ! intent(in)
-                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & !intent(in) 
-                       stats_metadata, stats_sfc%num_output_fields, & ! intent(in)
-                       stats_sfc%file ) ! intent(inout)
+      call open_grads( iunit, fdir, fname,  & ! In
+                       1, stats_sfc%kk, nlat, nlon, stats_sfc%z, & ! In
+                       day, month, year, lat_vals, lon_vals, & ! In
+                       time_current+real(stats_metadata%stats_tout,kind=time_precision), & ! In 
+                       stats_metadata, stats_sfc%num_output_fields, & ! In
+                       stats_sfc%file ) ! In/Out
 
     else ! Open NetCDF files
 #ifdef NETCDF
-      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_sfc%kk, stats_sfc%z, &  ! In
-                        day, month, year, lat_vals, lon_vals, &  ! In
-                        time_current, stats_metadata%stats_tout, stats_sfc%num_output_fields, &  ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_sfc%kk, stats_sfc%z, & ! In
+                        day, month, year, lat_vals, lon_vals, & ! In
+                        time_current, stats_metadata%stats_tout, & ! In
+                        stats_sfc%num_output_fields, & ! In
                         stats_sfc%file ) ! InOut
 
       ! Finalize the variable definitions
@@ -1827,28 +1832,38 @@ module stats_clubb_utilities
                      invrs_dzm, zt, dzm, dzt, dt, &
                      um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
-                     wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
+                     wp2, wp3, rtp2, rtp3, thlp2, thlp3, &
+                     rtpthlp, &
                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt, &
-                     wm_zt, wm_zm, rcm, wprcp, rc_coef, rc_coef_zm, &
-                     rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac, &
+                     wm_zt, wm_zm, rcm, wprcp, rc_coef, &
+                     rc_coef_zm, &
+                     rcm_zm, rtm_zm, thlm_zm, cloud_frac, &
+                     ice_supersat_frac, &
                      cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
                      cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
-                     thvm, ug, vg, Lscale, wpthlp2, wp2thlp, wprtp2, wp2rtp, &
+                     thvm, ug, vg, Lscale, wpthlp2, wp2thlp, &
+                     wprtp2, wp2rtp, &
                      Lscale_up, Lscale_down, tau_zt, Kh_zt, wp2rcp, &
-                     wprtpthlp, sigma_sqd_w_zt, rsat, wp2_zt, thlp2_zt, &
-                     wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, &
+                     wprtpthlp, sigma_sqd_w_zt, rsat, wp2_zt, &
+                     thlp2_zt, &
+                     wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, &
+                     up2_zt, &
                      vp2_zt, upwp_zt, vpwp_zt, wpup2, wpvp2, & 
                      wp2up2, wp2vp2, wp4, &
                      tau_zm, Kh_zm, thlprcp, &
                      rtprcp, rcp2, em, a3_coef, a3_coef_zt, &
                      wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
-                     w_up_in_cloud, w_down_in_cloud, cloudy_updraft_frac, &
-                     cloudy_downdraft_frac, pdf_params, pdf_params_zm, &
-                     sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
-                     wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp, &
-                     wpsclrpthlp, wpedsclrp, edsclrm, edsclrm_forcing, &
+                     w_up_in_cloud, w_down_in_cloud, &
+                     cloudy_updraft_frac, cloudy_downdraft_frac, &
+                     pdf_params, pdf_params_zm, &
+                     sclrm, sclrp2, &
+                     sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
+                     wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, &
+                     wpsclrprtp, &
+                     wpsclrpthlp, wpedsclrp, edsclrm, &
+                     edsclrm_forcing, &
                      saturation_formula, &
                      stats_metadata, &
                      stats_zt, stats_zm, stats_sfc )
@@ -2077,7 +2092,8 @@ module stats_clubb_utilities
     ! Local Variables
 
     integer :: sclr, edsclr, k
-    integer :: grid_level = 1  ! grid level for stats where there is only one sensible level (eg timeseries)
+    integer :: grid_level = 1  ! grid level for stats where there is only one sensible level 
+                               ! (eg timeseries)
 
     real( kind = core_rknd ), dimension(nzt) :: &
       T_in_K,        &  ! Absolute temperature         [K]
@@ -2201,127 +2217,127 @@ module stats_clubb_utilities
                               stats_zt ) ! intent(inout)
       end if
 
-      call stat_update_var( stats_metadata%imixt_frac, pdf_params%mixt_frac(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%imixt_frac, pdf_params%mixt_frac(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iw_1, pdf_params%w_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%iw_1, pdf_params%w_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iw_2, pdf_params%w_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%iw_2, pdf_params%w_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_w_1, pdf_params%varnce_w_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ivarnce_w_1, pdf_params%varnce_w_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_w_2, pdf_params%varnce_w_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ivarnce_w_2, pdf_params%varnce_w_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithl_1, pdf_params%thl_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ithl_1, pdf_params%thl_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithl_2, pdf_params%thl_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ithl_2, pdf_params%thl_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_thl_1, pdf_params%varnce_thl_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ivarnce_thl_1, pdf_params%varnce_thl_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_thl_2, pdf_params%varnce_thl_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ivarnce_thl_2, pdf_params%varnce_thl_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irt_1, pdf_params%rt_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%irt_1, pdf_params%rt_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irt_2, pdf_params%rt_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%irt_2, pdf_params%rt_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_rt_1, pdf_params%varnce_rt_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ivarnce_rt_1, pdf_params%varnce_rt_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_rt_2, pdf_params%varnce_rt_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ivarnce_rt_2, pdf_params%varnce_rt_2(1,:), & ! In
                             stats_zt ) ! intent(inout )
-      call stat_update_var( stats_metadata%irc_1, pdf_params%rc_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%irc_1, pdf_params%rc_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irc_2, pdf_params%rc_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%irc_2, pdf_params%rc_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irsatl_1, pdf_params%rsatl_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%irsatl_1, pdf_params%rsatl_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irsatl_2, pdf_params%rsatl_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%irsatl_2, pdf_params%rsatl_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icloud_frac_1, pdf_params%cloud_frac_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icloud_frac_1, pdf_params%cloud_frac_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icloud_frac_2, pdf_params%cloud_frac_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icloud_frac_2, pdf_params%cloud_frac_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ichi_1, pdf_params%chi_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ichi_1, pdf_params%chi_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ichi_2, pdf_params%chi_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%ichi_2, pdf_params%chi_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%istdev_chi_1, pdf_params%stdev_chi_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%istdev_chi_1, pdf_params%stdev_chi_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%istdev_chi_2, pdf_params%stdev_chi_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%istdev_chi_2, pdf_params%stdev_chi_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%istdev_eta_1, pdf_params%stdev_eta_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%istdev_eta_1, pdf_params%stdev_eta_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%istdev_eta_2, pdf_params%stdev_eta_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%istdev_eta_2, pdf_params%stdev_eta_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icovar_chi_eta_1, pdf_params%covar_chi_eta_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icovar_chi_eta_1, pdf_params%covar_chi_eta_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icovar_chi_eta_2, pdf_params%covar_chi_eta_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icovar_chi_eta_2, pdf_params%covar_chi_eta_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_chi_1, pdf_params%corr_w_chi_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_w_chi_1, pdf_params%corr_w_chi_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_chi_2, pdf_params%corr_w_chi_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_w_chi_2, pdf_params%corr_w_chi_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_eta_1, pdf_params%corr_w_eta_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_w_eta_1, pdf_params%corr_w_eta_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_eta_2, pdf_params%corr_w_eta_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_w_eta_2, pdf_params%corr_w_eta_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_chi_eta_1, pdf_params%corr_chi_eta_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_chi_eta_1, pdf_params%corr_chi_eta_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_chi_eta_2, pdf_params%corr_chi_eta_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_chi_eta_2, pdf_params%corr_chi_eta_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_rt_1, pdf_params%corr_w_rt_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_w_rt_1, pdf_params%corr_w_rt_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_rt_2, pdf_params%corr_w_rt_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_w_rt_2, pdf_params%corr_w_rt_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_thl_1, pdf_params%corr_w_thl_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_w_thl_1, pdf_params%corr_w_thl_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_w_thl_2, pdf_params%corr_w_thl_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_w_thl_2, pdf_params%corr_w_thl_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_rt_thl_1, pdf_params%corr_rt_thl_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_rt_thl_1, pdf_params%corr_rt_thl_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icorr_rt_thl_2, pdf_params%corr_rt_thl_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icorr_rt_thl_2, pdf_params%corr_rt_thl_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icrt_1, pdf_params%crt_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icrt_1, pdf_params%crt_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icrt_2, pdf_params%crt_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icrt_2, pdf_params%crt_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icthl_1, pdf_params%cthl_1(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icthl_1, pdf_params%cthl_1(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%icthl_2, pdf_params%cthl_2(1,:), & ! intent(in)
+      call stat_update_var( stats_metadata%icthl_2, pdf_params%cthl_2(1,:), & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwp2_zt, wp2_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%iwp2_zt, wp2_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithlp2_zt, thlp2_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%ithlp2_zt, thlp2_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithlp3, thlp3, & ! intent(in)
+      call stat_update_var( stats_metadata%ithlp3, thlp3, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwpthlp_zt, wpthlp_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%iwpthlp_zt, wpthlp_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwprtp_zt, wprtp_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%iwprtp_zt, wprtp_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irtp2_zt, rtp2_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%irtp2_zt, rtp2_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irtp3, rtp3, & ! intent(in)
+      call stat_update_var( stats_metadata%irtp3, rtp3, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%irtpthlp_zt, rtpthlp_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%irtpthlp_zt, rtpthlp_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iup2_zt, up2_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%iup2_zt, up2_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivp2_zt, vp2_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%ivp2_zt, vp2_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iupwp_zt, upwp_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%iupwp_zt, upwp_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivpwp_zt, vpwp_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%ivpwp_zt, vpwp_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ia3_coef_zt, a3_coef_zt, & ! intent(in)
+      call stat_update_var( stats_metadata%ia3_coef_zt, a3_coef_zt, & ! In
                             stats_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwp3_on_wp2_zt, wp3_on_wp2_zt, & ! intent(in)
-                            stats_zt ) ! intent(inout)
+      call stat_update_var( stats_metadata%iwp3_on_wp2_zt, wp3_on_wp2_zt, & ! In
+                            stats_zt ) ! In/Out
 
       if ( stats_metadata%ichi > 0 ) then
         ! Determine 's' from Mellor (1977) (extended liquid water)
         chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
                     + (1.0_core_rknd-pdf_params%mixt_frac(1,:)) * pdf_params%chi_2(1,:)
-        call stat_update_var( stats_metadata%ichi, chi, & ! intent(in)
-                             stats_zt ) ! intent(inout)
+        call stat_update_var( stats_metadata%ichi, chi, & ! In
+                             stats_zt ) ! In/Out
       end if 
 
       ! Calculate variance of chi
@@ -2329,25 +2345,25 @@ module stats_clubb_utilities
         chip2 = compute_variance_binormal( chi, pdf_params%chi_1(1,:), pdf_params%chi_2(1,:), &
                                          pdf_params%stdev_chi_1(1,:), pdf_params%stdev_chi_2(1,:), &
                                          pdf_params%mixt_frac(1,:) )
-        call stat_update_var( stats_metadata%ichip2, chip2, & ! intent(in)
-                              stats_zt ) ! intent(inout)
+        call stat_update_var( stats_metadata%ichip2, chip2, & ! In
+                              stats_zt ) ! In/Out
       end if
 
       if ( sclr_dim > 0 ) then
         do sclr=1, sclr_dim
-          call stat_update_var( stats_metadata%isclrm(sclr), sclrm(:,sclr), & ! intent(in)
-                                stats_zt ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrm_f(sclr), sclrm_forcing(:,sclr),  & ! intent(in)
-                                stats_zt ) ! intent(inout)
+          call stat_update_var( stats_metadata%isclrm(sclr), sclrm(:,sclr), & ! In
+                                stats_zt ) ! In/Out
+          call stat_update_var( stats_metadata%isclrm_f(sclr), sclrm_forcing(:,sclr),  & ! In
+                                stats_zt ) ! In/Out
         end do
       end if
 
       if ( edsclr_dim > 0 ) then
         do edsclr = 1, edsclr_dim
-          call stat_update_var( stats_metadata%iedsclrm(edsclr), edsclrm(:,edsclr), & ! intent(in)
-                                stats_zt ) ! intent(inout)
-          call stat_update_var( stats_metadata%iedsclrm_f(edsclr), edsclrm_forcing(:,edsclr), & ! intent(in)
-                                stats_zt ) ! intent(inout)
+          call stat_update_var( stats_metadata%iedsclrm(edsclr), edsclrm(:,edsclr), & ! In
+                                stats_zt ) ! In/Out
+          call stat_update_var( stats_metadata%iedsclrm_f(edsclr), edsclrm_forcing(:,edsclr), & ! In
+                                stats_zt ) ! In/Out
         end do
       end if
 
@@ -2360,127 +2376,127 @@ module stats_clubb_utilities
         endwhere
 
         call stat_update_var( stats_metadata%ircm_in_cloud, rcm_in_cloud, & ! intent(in)
-                              stats_zt ) ! intent(inout)
+                              stats_zt ) ! In/Out
       end if
 
       ! stats_zm variables
 
-      call stat_update_var( stats_metadata%iwp2, wp2, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwp3_zm, wp3_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%irtp2, rtp2, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithlp2, thlp2, & ! intent(in)
-                            stats_zm ) ! intent(inout) 
-      call stat_update_var( stats_metadata%irtpthlp, rtpthlp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwprtp, wprtp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwpthlp, wpthlp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwp2up2, wp2up2, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwp2vp2, wp2vp2, &  ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwp4, wp4, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwpthvp, wpthvp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%irtpthvp, rtpthvp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithlpthvp, thlpthvp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%itau_zm, tau_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iKh_zm, Kh_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwprcp, wprcp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%irc_coef_zm, rc_coef_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithlprcp, thlprcp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%irtprcp, rtprcp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ircp2, rcp2, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iupwp, upwp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivpwp, vpwp, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivp2, vp2, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iup2, up2, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%irho_zm, rho_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout) 
-      call stat_update_var( stats_metadata%isigma_sqd_w, sigma_sqd_w, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%irho_ds_zm, rho_ds_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithv_ds_zm, thv_ds_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iem, em, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iSkw_velocity, Skw_velocity, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ia3_coef, a3_coef, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwp3_on_wp2, wp3_on_wp2, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iwp3_on_wp2_cfl_num, wp3_on_wp2 * dt / dzm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
+      call stat_update_var( stats_metadata%iwp2, wp2, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwp3_zm, wp3_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%irtp2, rtp2, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ithlp2, thlp2, & ! In
+                            stats_zm ) ! In/Out 
+      call stat_update_var( stats_metadata%irtpthlp, rtpthlp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwprtp, wprtp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwpthlp, wpthlp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwp2up2, wp2up2, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwp2vp2, wp2vp2, &  ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwp4, wp4, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwpthvp, wpthvp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%irtpthvp, rtpthvp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ithlpthvp, thlpthvp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%itau_zm, tau_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iKh_zm, Kh_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwprcp, wprcp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%irc_coef_zm, rc_coef_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ithlprcp, thlprcp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%irtprcp, rtprcp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ircp2, rcp2, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iupwp, upwp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ivpwp, vpwp, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ivp2, vp2, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iup2, up2, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%irho_zm, rho_zm, & ! In
+                            stats_zm ) ! In/Out 
+      call stat_update_var( stats_metadata%isigma_sqd_w, sigma_sqd_w, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%irho_ds_zm, rho_ds_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ithv_ds_zm, thv_ds_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iem, em, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iSkw_velocity, Skw_velocity, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ia3_coef, a3_coef, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwp3_on_wp2, wp3_on_wp2, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iwp3_on_wp2_cfl_num, wp3_on_wp2 * dt / dzm, & ! In
+                            stats_zm ) ! In/Out
 
-      call stat_update_var( stats_metadata%icloud_frac_zm, cloud_frac_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iice_supersat_frac_zm, ice_supersat_frac_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ircm_zm, rcm_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%irtm_zm, rtm_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ithlm_zm, thlm_zm, & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iw_1_zm, pdf_params_zm%w_1(1,:), & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%iw_2_zm, pdf_params_zm%w_2(1,:), & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_w_1_zm, pdf_params_zm%varnce_w_1(1,:), & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%ivarnce_w_2_zm, pdf_params_zm%varnce_w_2(1,:), & ! intent(in)
-                            stats_zm ) ! intent(inout)
-      call stat_update_var( stats_metadata%imixt_frac_zm, pdf_params_zm%mixt_frac(1,:), & ! intent(in)
-                            stats_zm ) ! intent(inout)
+      call stat_update_var( stats_metadata%icloud_frac_zm, cloud_frac_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iice_supersat_frac_zm, ice_supersat_frac_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ircm_zm, rcm_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%irtm_zm, rtm_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ithlm_zm, thlm_zm, & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iw_1_zm, pdf_params_zm%w_1(1,:), & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%iw_2_zm, pdf_params_zm%w_2(1,:), & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ivarnce_w_1_zm, pdf_params_zm%varnce_w_1(1,:), & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%ivarnce_w_2_zm, pdf_params_zm%varnce_w_2(1,:), & ! In
+                            stats_zm ) ! In/Out
+      call stat_update_var( stats_metadata%imixt_frac_zm, pdf_params_zm%mixt_frac(1,:), & ! In
+                            stats_zm ) ! In/Out
 
       if ( sclr_dim > 0 ) then
         do sclr=1, sclr_dim
-          call stat_update_var( stats_metadata%isclrp2(sclr), sclrp2(:,sclr), & ! intent(in)
-                                stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrprtp(sclr), sclrprtp(:,sclr), & ! intent(in)
-                                stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrpthvp(sclr), sclrpthvp(:,sclr), & ! intent(in)
-                                stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrpthlp(sclr), sclrpthlp(:,sclr), & ! intent(in)
-                                 stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%isclrprcp(sclr), sclrprcp(:,sclr), & ! intent(in)
-                                stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwpsclrp(sclr), wpsclrp(:,sclr), & ! intent(in)
-                               stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwp2sclrp(sclr), wp2sclrp(:,sclr), & ! intent(in)
-                                stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwpsclrp2(sclr), wpsclrp2(:,sclr), & ! intent(in)
-                                stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwpsclrprtp(sclr), wpsclrprtp(:,sclr), & ! intent(in)
-                                stats_zm ) ! intent(inout)
-          call stat_update_var( stats_metadata%iwpsclrpthlp(sclr), wpsclrpthlp(:,sclr), & ! intent(in)
-                                stats_zm ) ! intent(inout)
+          call stat_update_var( stats_metadata%isclrp2(sclr), sclrp2(:,sclr), & ! In
+                                stats_zm ) ! In/Out
+          call stat_update_var( stats_metadata%isclrprtp(sclr), sclrprtp(:,sclr), & ! In
+                                stats_zm ) ! In/Out
+          call stat_update_var( stats_metadata%isclrpthvp(sclr), sclrpthvp(:,sclr), & ! In
+                                stats_zm ) ! In/Out
+          call stat_update_var( stats_metadata%isclrpthlp(sclr), sclrpthlp(:,sclr), & ! In
+                                 stats_zm ) ! In/Out
+          call stat_update_var( stats_metadata%isclrprcp(sclr), sclrprcp(:,sclr), & ! In
+                                stats_zm ) ! In/Out
+          call stat_update_var( stats_metadata%iwpsclrp(sclr), wpsclrp(:,sclr), & ! In
+                               stats_zm ) ! In/Out
+          call stat_update_var( stats_metadata%iwp2sclrp(sclr), wp2sclrp(:,sclr), & ! In
+                                stats_zm ) ! In/Out
+          call stat_update_var( stats_metadata%iwpsclrp2(sclr), wpsclrp2(:,sclr), & ! In
+                                stats_zm ) ! In/Out
+          call stat_update_var( stats_metadata%iwpsclrprtp(sclr), wpsclrprtp(:,sclr), & ! In
+                                stats_zm ) ! In/Out
+          call stat_update_var( stats_metadata%iwpsclrpthlp(sclr), wpsclrpthlp(:,sclr), & ! In
+                                stats_zm ) ! In/Out
         end do
       end if
       if ( edsclr_dim > 0 ) then
         do edsclr = 1, edsclr_dim
-          call stat_update_var( stats_metadata%iwpedsclrp(edsclr), wpedsclrp(:,edsclr), & ! intent(in)
-                                stats_zm ) ! intent(inout)
+          call stat_update_var( stats_metadata%iwpedsclrp(edsclr), wpedsclrp(:,edsclr), & ! In
+                                stats_zm ) ! In/Out
         end do
       end if
 
@@ -2499,8 +2515,9 @@ module stats_clubb_utilities
       ! stats_sfc variables
 
       ! Cloud cover
-      call stat_update_var_pt( stats_metadata%icc, grid_level, maxval( cloud_frac(1:nzt) ), & ! intent(in)
-                               stats_sfc ) ! intent(inout)
+      call stat_update_var_pt( stats_metadata%icc, grid_level, & ! intent(in)
+                               maxval( cloud_frac(1:nzt) ),    & ! intent(in)
+                               stats_sfc )                       ! intent(inout)
 
       ! Cloud base
       if ( stats_metadata%iz_cloud_base > 0 ) then
@@ -2514,8 +2531,9 @@ module stats_clubb_utilities
 
           ! Set the cloud base to the height of the lowest thermodynamic 
           ! grid level above the surface.
-          call stat_update_var_pt( stats_metadata%iz_cloud_base, grid_level, zt(1), & ! intent(in)
-                                   stats_sfc ) ! intent(inout)
+          call stat_update_var_pt( stats_metadata%iz_cloud_base, grid_level, & ! intent(in)
+                                   zt(1),                                    & ! intent(in)
+                                   stats_sfc )                                 ! intent(inout)
 
         elseif ( k > 1 .and. k < nzt ) then
 
@@ -2530,7 +2548,8 @@ module stats_clubb_utilities
 
           ! Set the cloud base output to -10m, if it's clear. 
           ! Known magic number
-          call stat_update_var_pt( stats_metadata%iz_cloud_base, grid_level, -10.0_core_rknd , & ! intent(in)
+          call stat_update_var_pt( stats_metadata%iz_cloud_base, grid_level, & ! intent(in)
+                                   -10.0_core_rknd , & ! intent(in)
                                    stats_sfc ) ! intent(inout)
  
         end if
@@ -2545,8 +2564,9 @@ module stats_clubb_utilities
                ( nzt, rho_ds_zt(1:nzt), &
                  rcm(1:nzt), dzt(1:nzt) )
 
-        call stat_update_var_pt( stats_metadata%ilwp, grid_level, xtmp, & ! intent(in)
-                                 stats_sfc ) ! intent(inout)
+        call stat_update_var_pt( stats_metadata%ilwp, grid_level, & ! intent(in)
+                                 xtmp,                            & ! intent(in)
+                                 stats_sfc )                        ! intent(inout)
 
       end if
 
@@ -2558,8 +2578,9 @@ module stats_clubb_utilities
                ( nzt, rho_ds_zt(1:nzt), &
                  ( rtm(1:nzt) - rcm(1:nzt) ), dzt(1:nzt) )
 
-        call stat_update_var_pt( stats_metadata%ivwp, grid_level, xtmp, & ! intent(in)
-                                 stats_sfc ) ! intent(inout)
+        call stat_update_var_pt( stats_metadata%ivwp, grid_level, & ! intent(in)
+                                 xtmp,                            & ! intent(in)
+                                 stats_sfc )                        ! intent(inout)
 
       end if
 
@@ -2640,33 +2661,36 @@ module stats_clubb_utilities
           xtmp = sum(abs(rtm(2 : nzt) - rtm(1 : nzt-1)) / abs(rtm(nzt) - rtm(1)))
         end if
         
-        call stat_update_var_pt( stats_metadata%itot_vartn_normlzd_rtm, grid_level, xtmp, & ! intent(in)
+        call stat_update_var_pt( stats_metadata%itot_vartn_normlzd_rtm, grid_level, & ! intent(in)
+                                 xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
       end if
      
       if (stats_metadata%itot_vartn_normlzd_thlm > 0) then
         if (abs(thlm(nzt) - thlm(1)) < eps) then
-          write(fstderr, *) "Warning: tot_vartn_normlzd_thlm tried to divide by zero denominator ", &
-                            "(surface level value was equal to top level value)"
+          write(fstderr, *) "Warning: tot_vartn_normlzd_thlm tried to divide by zero ", &
+                            "denominator (surface level value was equal to top level value)"
           xtmp = -999_core_rknd  ! workaround to signify zero denominator 
         else
           xtmp = sum(abs(thlm(2 : nzt) - thlm(1 : nzt-1)) / abs(thlm(nzt) - thlm(1)))
         end if
         
-        call stat_update_var_pt( stats_metadata%itot_vartn_normlzd_thlm, grid_level, xtmp, & ! intent(in)
+        call stat_update_var_pt( stats_metadata%itot_vartn_normlzd_thlm, grid_level, & ! intent(in)
+                                 xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
       end if
      
       if (stats_metadata%itot_vartn_normlzd_wprtp > 0) then
         if (abs(wprtp(nzm) - wprtp(1)) < eps) then
-          write(fstderr, *) "Warning: tot_vartn_normlzd_wprtp tried to divide by zero denominator ", &
-                            "(surface level value was equal to top level value)"
+          write(fstderr, *) "Warning: tot_vartn_normlzd_wprtp tried to divide by zero ", &
+                            "denominator (surface level value was equal to top level value)"
           xtmp = -999_core_rknd  ! workaround to signify zero denominator 
         else
           xtmp = sum(abs(wprtp(2 : nzm) - wprtp(1 : nzm-1)) / abs(wprtp(nzm) - wprtp(1)))
         end if
         
-        call stat_update_var_pt( stats_metadata%itot_vartn_normlzd_wprtp, grid_level, xtmp, & ! intent(in)
+        call stat_update_var_pt( stats_metadata%itot_vartn_normlzd_wprtp, grid_level, & ! intent(in)
+                                 xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
       end if
     end if ! stats_metadata%l_stats_samp
@@ -2792,7 +2816,8 @@ module stats_clubb_utilities
                ( gr%nzt, rho_ds_zt, &
                  hydromet(:,hm_metadata%iirs), gr%dzt(1,:) )
 
-        call stat_update_var_pt( stats_metadata%iswp, grid_level, xtmp, & ! intent(in)
+        call stat_update_var_pt( stats_metadata%iswp, grid_level, & ! intent(in)
+                                 xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
 
       end if ! stats_metadata%iswp > 0 .and. iirs > 0
@@ -2805,7 +2830,8 @@ module stats_clubb_utilities
                ( gr%nzt, rho_ds_zt, &
                  hydromet(:,hm_metadata%iiri), gr%dzt(1,:) )
 
-        call stat_update_var_pt( stats_metadata%iiwp, grid_level, xtmp, & ! intent(in)
+        call stat_update_var_pt( stats_metadata%iiwp, grid_level, & ! intent(in)
+                                 xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
 
       end if
@@ -2818,7 +2844,8 @@ module stats_clubb_utilities
                ( gr%nzt, rho_ds_zt, &
                  hydromet(:,hm_metadata%iirr), gr%dzt(1,:) )
 
-        call stat_update_var_pt( stats_metadata%irwp, grid_level, xtmp, & ! intent(in)
+        call stat_update_var_pt( stats_metadata%irwp, grid_level, & ! intent(in)
+                                 xtmp, & ! intent(in)
                                  stats_sfc ) ! intent(inout)
  
       end if ! stats_metadata%irwp > 0 .and. stats_metadata%irrm > 0
@@ -2901,83 +2928,83 @@ module stats_clubb_utilities
 
     if ( stats_metadata%l_stats_samp ) then
 
-      call stat_update_var( stats_metadata%ilh_thlm_mc, lh_thlm_mc, & ! intent(in)
-                            stats_lh_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ilh_rcm_mc, lh_rcm_mc, & ! intent(in)
-                            stats_lh_zt ) ! intent(inout)
-      call stat_update_var( stats_metadata%ilh_rvm_mc, lh_rvm_mc, & ! intent(in)
-                            stats_lh_zt ) ! intent(inout)
+      call stat_update_var( stats_metadata%ilh_thlm_mc, lh_thlm_mc, & ! In
+                            stats_lh_zt ) ! In/Out
+      call stat_update_var( stats_metadata%ilh_rcm_mc, lh_rcm_mc, & ! In
+                            stats_lh_zt ) ! In/Out
+      call stat_update_var( stats_metadata%ilh_rvm_mc, lh_rvm_mc, & ! In
+                            stats_lh_zt ) ! In/Out
 
-      call stat_update_var( stats_metadata%ilh_Ncm_mc, lh_Ncm_mc, & ! intent(in)
-                            stats_lh_zt ) ! intent(inout)
+      call stat_update_var( stats_metadata%ilh_Ncm_mc, lh_Ncm_mc, & ! In
+                            stats_lh_zt ) ! In/Out
 
       if ( hm_metadata%iirr > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rrm_mc, lh_hydromet_mc(:,hm_metadata%iirr), & ! intent(in)
-                              stats_lh_zt ) ! intent(inout)
+        call stat_update_var( stats_metadata%ilh_rrm_mc, lh_hydromet_mc(:,hm_metadata%iirr), & ! In
+                              stats_lh_zt ) ! In/Out
       end if
 
       if ( hm_metadata%iirs > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rsm_mc,              & ! intent(in)
-                              lh_hydromet_mc(:,hm_metadata%iirs),  & ! intent(in)
-                              stats_lh_zt )                             ! intent(inout)
+        call stat_update_var( stats_metadata%ilh_rsm_mc,              & ! In
+                              lh_hydromet_mc(:,hm_metadata%iirs),  & ! In
+                              stats_lh_zt )                             ! In/Out
       end if 
 
       if ( hm_metadata%iiri > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rim_mc,              & ! intent(in)
-                              lh_hydromet_mc(:,hm_metadata%iiri),  & ! intent(in)
-                              stats_lh_zt )                             ! intent(inout)
+        call stat_update_var( stats_metadata%ilh_rim_mc,              & ! In
+                              lh_hydromet_mc(:,hm_metadata%iiri),  & ! In
+                              stats_lh_zt )                             ! In/Out
       end if
 
       if ( hm_metadata%iirg > 0 ) then
-        call stat_update_var( stats_metadata%ilh_rgm_mc,              & ! intent(in)
-                              lh_hydromet_mc(:,hm_metadata%iirg),  & ! intent(in)
-                              stats_lh_zt )                             ! intent(inout)
+        call stat_update_var( stats_metadata%ilh_rgm_mc,              & ! In
+                              lh_hydromet_mc(:,hm_metadata%iirg),  & ! In
+                              stats_lh_zt )                             ! In/Out
       end if
 
       if ( hm_metadata%iiNi > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nim_mc,              & ! intent(in)
-                              lh_hydromet_mc(:,hm_metadata%iiNi),  & ! intent(in)
-                              stats_lh_zt )                             ! intent(inout)
+        call stat_update_var( stats_metadata%ilh_Nim_mc,              & ! In
+                              lh_hydromet_mc(:,hm_metadata%iiNi),  & ! In
+                              stats_lh_zt )                             ! In/Out
       end if
 
       if ( hm_metadata%iiNr > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nrm_mc,              & ! intent(in)
-                              lh_hydromet_mc(:,hm_metadata%iiNr),  & ! intent(in)
-                              stats_lh_zt )                             ! intent(inout)
+        call stat_update_var( stats_metadata%ilh_Nrm_mc,              & ! In
+                              lh_hydromet_mc(:,hm_metadata%iiNr),  & ! In
+                              stats_lh_zt )                             ! In/Out
       end if
 
       if ( hm_metadata%iiNs > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Nsm_mc,              & ! intent(in)
-                              lh_hydromet_mc(:,hm_metadata%iiNs),  & ! intent(in)
-                              stats_lh_zt )                             ! intent(inout)
+        call stat_update_var( stats_metadata%ilh_Nsm_mc,              & ! In
+                              lh_hydromet_mc(:,hm_metadata%iiNs),  & ! In
+                              stats_lh_zt )                             ! In/Out
       end if
 
       if ( hm_metadata%iiNg > 0 ) then
-        call stat_update_var( stats_metadata%ilh_Ngm_mc,              & ! intent(in)
-                              lh_hydromet_mc(:,hm_metadata%iiNg),  & ! intent(in)
-                              stats_lh_zt )                             ! intent(inout)
+        call stat_update_var( stats_metadata%ilh_Ngm_mc,              & ! In
+                              lh_hydromet_mc(:,hm_metadata%iiNg),  & ! In
+                              stats_lh_zt )                             ! In/Out
       end if 
 
-      call stat_update_var( stats_metadata%iAKm, AKm, & ! intent(in)
-                            stats_lh_zt )               ! intent(inout)
+      call stat_update_var( stats_metadata%iAKm, AKm, & ! In
+                            stats_lh_zt )               ! In/Out
 
-      call stat_update_var( stats_metadata%ilh_AKm, lh_AKm, & ! intent(in)
-                            stats_lh_zt)                      ! intent(inout)
+      call stat_update_var( stats_metadata%ilh_AKm, lh_AKm, & ! In
+                            stats_lh_zt)                      ! In/Out
 
-      call stat_update_var( stats_metadata%ilh_rcm_avg, lh_rcm_avg, & ! intent(in)
-                            stats_lh_zt )                             ! intent(inout)
+      call stat_update_var( stats_metadata%ilh_rcm_avg, lh_rcm_avg, & ! In
+                            stats_lh_zt )                             ! In/Out
 
-      call stat_update_var( stats_metadata%iAKstd, AKstd, & ! intent(in)
-                            stats_lh_zt )                   ! intent(inout)
+      call stat_update_var( stats_metadata%iAKstd, AKstd, & ! In
+                            stats_lh_zt )                   ! In/Out
 
-      call stat_update_var( stats_metadata%iAKstd_cld, AKstd_cld, & ! intent(in)
-                            stats_lh_zt )                       ! intent(inout)
+      call stat_update_var( stats_metadata%iAKstd_cld, AKstd_cld, & ! In
+                            stats_lh_zt )                       ! In/Out
 
-      call stat_update_var( stats_metadata%iAKm_rcm, AKm_rcm, & ! intent(in)
-                            stats_lh_zt)                        ! intent(inout)
+      call stat_update_var( stats_metadata%iAKm_rcm, AKm_rcm, & ! In
+                            stats_lh_zt)                        ! In/Out
 
-      call stat_update_var( stats_metadata%iAKm_rcc, AKm_rcc, & ! intent(in)
-                            stats_lh_zt )                       ! intent(inout)
+      call stat_update_var( stats_metadata%iAKm_rcc, AKm_rcc, & ! In
+                            stats_lh_zt )                       ! In/Out
 
     end if ! stats_metadata%l_stats_samp
 

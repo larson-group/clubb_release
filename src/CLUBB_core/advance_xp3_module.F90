@@ -121,7 +121,7 @@ module advance_xp3_module
       sclrp3    ! <sclr'^3> (thermodynamic levels)    [(sclr units)^3]
 
     ! --------------------- Local Variable ---------------------
-    integer :: i, k, sclr    ! Loop index
+    integer :: sclr    ! Loop index
 
 
     ! Advance <rt'^3> one model timestep or calculate <rt'^3> using a
@@ -157,7 +157,7 @@ module advance_xp3_module
                                    invrs_rho_ds_zt,                                      & ! In
                                    invrs_tau_zt, tau_max_zt,                             & ! In 
                                    sclr_tol(sclr), l_lmm_stepping,                       & ! In
-                                   stats_metadata,                                       & ! Intent(in)
+                                   stats_metadata,                                       & ! In
                                    stats_zt,                                             & ! In/Out
                                    sclrp3(:,:,sclr) )                                      ! In/Out
     end do ! sclr = 1, sclr_dim
@@ -463,16 +463,16 @@ module advance_xp3_module
 
     if ( stats_metadata%l_stats_samp ) then
       do i = 1, ngrdcol
-        call stat_update_var( ixp3_tp, term_tp(i,:),  & ! intent(in)
-                              stats_zt(i) )             ! intent(inout)
-        call stat_update_var( ixp3_ac, term_ac(i,:),  & ! intent(in)
-                              stats_zt(i) )             ! intent(inout)
-        call stat_update_var( ixp3_dp, -(C_xp3_dissipation * invrs_tau_zt(i,:))*xp3(i,:), & ! intent(in)
-                              stats_zt(i) ) ! intent(inout)
+        call stat_update_var( ixp3_tp, term_tp(i,:),  & ! In
+                              stats_zt(i) )             ! In/Out
+        call stat_update_var( ixp3_ac, term_ac(i,:),  & ! In
+                              stats_zt(i) )             ! In/Out
+        call stat_update_var( ixp3_dp, -(C_xp3_dissipation * invrs_tau_zt(i,:))*xp3(i,:), & ! In
+                              stats_zt(i) ) ! In/Out
 
         if ( l_predict_xp3 ) then
-          call stat_end_update( nzt, ixp3_bt, xp3(i,:) / dt, & ! Intent(in)
-                                stats_zt(i) )                 ! Intent(inout)
+          call stat_end_update( nzt, ixp3_bt, xp3(i,:) / dt, & ! In
+                                stats_zt(i) )                  ! In/Out
         end if ! l_predict_xp3
       end do
     end if ! stats_metadata%l_stats_samp

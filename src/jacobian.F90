@@ -279,8 +279,10 @@ program jacobian
 
   ! Obtain number of vertical levels from the generated GrADS files
 
-  nzt = stat_file_num_vertical_levels( "thlm", "../output/"//trim( stats_metadata%fname_zt )//".ctl" )
-  nzm = stat_file_num_vertical_levels( "thlm", "../output/"//trim( stats_metadata%fname_zm )//".ctl" )
+  nzt = stat_file_num_vertical_levels( "thlm", &
+                                       "../output/"//trim( stats_metadata%fname_zt )//".ctl" )
+  nzm = stat_file_num_vertical_levels( "thlm", &
+                                       "../output/"//trim( stats_metadata%fname_zm )//".ctl" )
 
   ! Initialize the structures holding the variables
 

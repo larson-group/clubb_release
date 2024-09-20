@@ -363,22 +363,32 @@ module KK_microphys_module
                               hydromet_mc, hydromet_vel )
 
     !!! Output values for statistics
-    call microphys_put_var( stats_metadata%irrm_evap, KK_evap_tndcy, microphys_stats_zt )
-    call microphys_put_var( stats_metadata%irrm_auto, KK_auto_tndcy, microphys_stats_zt )
-    call microphys_put_var( stats_metadata%irrm_accr, KK_accr_tndcy, microphys_stats_zt )
-    call microphys_put_var( stats_metadata%im_vol_rad_rain, KK_mean_vol_rad, microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNrm_evap, KK_Nrm_evap_tndcy, microphys_stats_zt )
-    call microphys_put_var( stats_metadata%iNrm_auto, KK_Nrm_auto_tndcy, microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_evap, KK_evap_tndcy, &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_auto, KK_auto_tndcy, &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_accr, KK_accr_tndcy, &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%im_vol_rad_rain, KK_mean_vol_rad, &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNrm_evap, KK_Nrm_evap_tndcy, &
+                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%iNrm_auto, KK_Nrm_auto_tndcy, &
+                            microphys_stats_zt )
     if ( l_src_adj_enabled ) then
-      call microphys_put_var( stats_metadata%irrm_src_adj, adj_terms%rrm_src_adj, microphys_stats_zt )
-      call microphys_put_var( stats_metadata%iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_zt )
+      call microphys_put_var( stats_metadata%irrm_src_adj, adj_terms%rrm_src_adj, &
+                              microphys_stats_zt )
+      call microphys_put_var( stats_metadata%iNrm_src_adj, adj_terms%Nrm_src_adj, &
+                              microphys_stats_zt )
     end if
     if ( l_evap_adj_enabled ) then
-      call microphys_put_var( stats_metadata%irrm_evap_adj, adj_terms%rrm_evap_adj, microphys_stats_zt )
-      call microphys_put_var( stats_metadata%iNrm_evap_adj, adj_terms%Nrm_evap_adj, microphys_stats_zt )
+      call microphys_put_var( stats_metadata%irrm_evap_adj, adj_terms%rrm_evap_adj, &
+                              microphys_stats_zt )
+      call microphys_put_var( stats_metadata%iNrm_evap_adj, adj_terms%Nrm_evap_adj, &
+                              microphys_stats_zt )
     end if
-    call microphys_put_var( stats_metadata%irrm_mc_nonadj, KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, &
-                            microphys_stats_zt )
+    call microphys_put_var( stats_metadata%irrm_mc_nonadj, &
+                            KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, microphys_stats_zt )
 
     return
 
@@ -1051,8 +1061,8 @@ module KK_microphys_module
        end if
 
        if ( stats_metadata%irrm_mc_nonadj > 0 ) then
-         call stat_update_var( stats_metadata%irrm_mc_nonadj, KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, &
-                               stats_zt )
+         call stat_update_var( stats_metadata%irrm_mc_nonadj, &
+                               KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, stats_zt )
        end if
 
     endif ! stats_metadata%l_stats_samp
@@ -1632,7 +1642,8 @@ module KK_microphys_module
 
        ! Rain drop mean volume radius.
        if ( stats_metadata%im_vol_rad_rain > 0 ) then
-          call stat_update_var_pt( stats_metadata%im_vol_rad_rain, level, KK_mean_vol_rad, stats_zt )
+          call stat_update_var_pt( stats_metadata%im_vol_rad_rain, level, KK_mean_vol_rad, &
+                                   stats_zt )
        endif
 
        ! Mean rain drop concentration microphysics tendencies.

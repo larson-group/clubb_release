@@ -16,9 +16,9 @@ module stats_lh_sfc_module
   contains
 
 !-----------------------------------------------------------------------
-  subroutine stats_init_lh_sfc( vars_lh_sfc,                    & ! intent(in)
-                                l_error,                        & ! intent(inout)
-                                stats_metadata, stats_lh_sfc )    ! intent(inout)
+  subroutine stats_init_lh_sfc( vars_lh_sfc,                    & ! In
+                                l_error,                        & ! In/Out
+                                stats_metadata, stats_lh_sfc )    ! In/Out
 
 ! Description:
 !   Initializes array indices for stats_lh_sfc
@@ -72,53 +72,57 @@ module stats_lh_sfc_module
 
       case ( 'lh_morr_snow_rate' )
         stats_metadata%ilh_morr_snow_rate = k
-        call stat_assign( var_index=stats_metadata%ilh_morr_snow_rate, var_name="lh_morr_snow_rate", & !intent(in)
+        call stat_assign( var_index=stats_metadata%ilh_morr_snow_rate, & ! In
+             var_name="lh_morr_snow_rate", & ! In
              var_description="Snow+Ice+Graupel fallout rate from Morrison scheme [mm/day]", & ! In
-             var_units="mm/day", l_silhs=.true., & ! intent(in)
-             grid_kind=stats_lh_sfc ) ! intent(inout)
+             var_units="mm/day", l_silhs=.true., & ! In
+             grid_kind=stats_lh_sfc ) ! In/Out
         k = k + 1
 
       case ( 'lh_vwp' )
         stats_metadata%ilh_vwp = k
-        call stat_assign( var_index=stats_metadata%ilh_vwp, var_name="lh_vwp", & ! intent(in)
-             var_description="Vapor water path [kg/m^2]", var_units="kg/m^2", & ! intent(in)
-             l_silhs=.true., & ! intent(in)
-             grid_kind=stats_lh_sfc ) ! intent(inout)
+        call stat_assign( var_index=stats_metadata%ilh_vwp, & ! In
+             var_name="lh_vwp", & ! In
+             var_description="Vapor water path [kg/m^2]", var_units="kg/m^2", & ! In
+             l_silhs=.true., & ! In
+             grid_kind=stats_lh_sfc ) ! In/Out
         k = k + 1
 
       case ( 'lh_lwp' )
         stats_metadata%ilh_lwp = k
-        call stat_assign( var_index=stats_metadata%ilh_lwp, var_name="lh_lwp", & ! intent(in)
-             var_description="Liquid water path [kg/m^2]", var_units="kg/m^2", & ! intent(in)
-             l_silhs=.true., & ! intent(in)
-             grid_kind=stats_lh_sfc ) ! intent(inout)
+        call stat_assign( var_index=stats_metadata%ilh_lwp, & ! In
+             var_name="lh_lwp", & ! In
+             var_description="Liquid water path [kg/m^2]", var_units="kg/m^2", & ! In
+             l_silhs=.true., & ! In
+             grid_kind=stats_lh_sfc ) ! In/Out
         k = k + 1
 
       case ( 'k_lh_start' )
         stats_metadata%ik_lh_start = k
-        call stat_assign( var_index=stats_metadata%ik_lh_start, var_name="k_lh_start", & ! intent(in)
+        call stat_assign( var_index=stats_metadata%ik_lh_start, & ! In
+             var_name="k_lh_start", & ! In
              var_description="Index of height level for SILHS sampling preferentially within &
                              &cloud [integer]", var_units="integer", l_silhs=.true., & 
-             grid_kind=stats_lh_sfc ) ! intent(inout)
+             grid_kind=stats_lh_sfc ) ! In/Out
         k = k + 1
 
       case ( 'lh_sample_weights_sum' )
         stats_metadata%ilh_sample_weights_sum = k
-        call stat_assign( var_index=stats_metadata%ilh_sample_weights_sum, & ! intent(in)
-             var_name="lh_sample_weights_sum", & ! intent(in)
-             var_description="Sum of the sample point weights [-]", var_units="-", & ! intent(in)
-             l_silhs=.true., & ! intent(in)
-             grid_kind=stats_lh_sfc ) ! intent(inout)
+        call stat_assign( var_index=stats_metadata%ilh_sample_weights_sum, & ! In
+             var_name="lh_sample_weights_sum", & ! In
+             var_description="Sum of the sample point weights [-]", var_units="-", & ! In
+             l_silhs=.true., & ! In
+             grid_kind=stats_lh_sfc ) ! In/Out
         k = k + 1
         
       case ( 'lh_sample_weights_avg' )
         stats_metadata%ilh_sample_weights_avg = k
-        call stat_assign( var_index=stats_metadata%ilh_sample_weights_avg, & ! intent(in)
-             var_name="lh_sample_weights_avg", & ! intent(in)
-             var_description="Average of the sample point weights [-]", &  ! intent(in)
-             var_units="-", & ! intent(in)
-             l_silhs=.true., &  ! intent(in)
-             grid_kind=stats_lh_sfc ) ! intent(inout)
+        call stat_assign( var_index=stats_metadata%ilh_sample_weights_avg, & ! In
+             var_name="lh_sample_weights_avg", & ! In
+             var_description="Average of the sample point weights [-]", &  ! In
+             var_units="-", & ! In
+             l_silhs=.true., &  ! In
+             grid_kind=stats_lh_sfc ) ! In/Out
         k = k + 1
 
       case default

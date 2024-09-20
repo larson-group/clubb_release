@@ -225,7 +225,8 @@ module pdf_closure_module
 
 #ifdef  GFDL
     ! critial relative humidity for nucleation
-    real( kind = core_rknd ), dimension(ngrdcol, nz, min(1,sclr_dim), 2 ), intent(in) ::  & ! h1g, 2010-06-15
+    real( kind = core_rknd ), dimension(ngrdcol, nz, min(1,sclr_dim), 2 ), & ! h1g, 2010-06-15
+       intent(in) ::  & ! h1g, 2010-06-15
        RH_crit     ! critical relative humidity for droplet and ice nucleation
 ! ---> h1g, 2012-06-14
     logical, intent(in)                 ::  do_liquid_only_in_clubb
@@ -568,8 +569,8 @@ module pdf_closure_module
     elseif ( iiPDF_type == iiPDF_3D_Luhar ) then ! use 3D Luhar
       do i = 1, ngrdcol
         call Luhar_3D_pdf_driver( nz, &
-                           wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:),                             & ! In
-                           Skw(i,:), Skrt(i,:), Skthl(i,:), wprtp(i,:), wpthlp(i,:),                             & ! In
+                           wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:), & ! In
+                           Skw(i,:), Skrt(i,:), Skthl(i,:), wprtp(i,:), wpthlp(i,:),      & ! In
                            pdf_params%w_1(i,:), pdf_params%w_2(i,:),                    & ! Out
                            pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                  & ! Out
                            pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                & ! Out
@@ -579,7 +580,8 @@ module pdf_closure_module
                            pdf_params%mixt_frac(i,:) )                                    ! Out
       end do
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
-      call new_pdf_driver( nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2, Skw, & ! In
+      call new_pdf_driver( nz, ngrdcol, wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
+                           Skw,                                               & ! In
                            wprtp, wpthlp, rtpthlp,                            & ! In
                            clubb_params,                                      & ! In
                            Skrt, Skthl,                                       & ! In/Out
@@ -596,8 +598,8 @@ module pdf_closure_module
     elseif ( iiPDF_type == iiPDF_TSDADG ) then
       do i = 1, ngrdcol
         call tsdadg_pdf_driver( nz, &
-                          wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:),                                & ! In
-                          Skw(i,:), Skrt(i,:), Skthl(i,:), wprtp(i,:), wpthlp(i,:),                                & ! In
+                          wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:), thlp2(i,:),  & ! In
+                          Skw(i,:), Skrt(i,:), Skthl(i,:), wprtp(i,:), wpthlp(i,:),       & ! In
                           pdf_params%w_1(i,:), pdf_params%w_2(i,:),                       & ! Out
                           pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                     & ! Out
                           pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                   & ! Out
@@ -608,15 +610,15 @@ module pdf_closure_module
       end do
     elseif ( iiPDF_type == iiPDF_LY93 ) then ! use LY93
       do i = 1, ngrdcol
-        call LY93_driver( nz, wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:),                          & ! In
-                          thlp2(i,:), Skw(i,:), Skrt(i,:), Skthl(i,:),                           & ! In
+        call LY93_driver( nz, wm(i,:), rtm(i,:), thlm(i,:), wp2(i,:), rtp2(i,:),       & ! In
+                          thlp2(i,:), Skw(i,:), Skrt(i,:), Skthl(i,:),                 & ! In
                           pdf_params%w_1(i,:), pdf_params%w_2(i,:),                    & ! Out
                           pdf_params%rt_1(i,:), pdf_params%rt_2(i,:),                  & ! Out
                           pdf_params%thl_1(i,:), pdf_params%thl_2(i,:),                & ! Out
                           pdf_params%varnce_w_1(i,:), pdf_params%varnce_w_2(i,:),      & ! Out
                           pdf_params%varnce_rt_1(i,:), pdf_params%varnce_rt_2(i,:),    & ! Out
                           pdf_params%varnce_thl_1(i,:), pdf_params%varnce_thl_2(i,:),  & ! Out
-                          pdf_params%mixt_frac(i,:) )                               ! Out
+                          pdf_params%mixt_frac(i,:) )                                    ! Out
       end do
     elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
       call new_hybrid_pdf_driver( nz, ngrdcol, sclr_dim,                          & ! In
@@ -964,7 +966,8 @@ module pdf_closure_module
                     + sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) * (RH_crit(i, :, 1, 1) -one ) &
                       * ( t2_combined -tl1(i,:))/(t2_combined - t3_combined)
         elsewhere
-          pdf_params%rsatl_1(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) * RH_crit(i, :, 1, 1)
+          pdf_params%rsatl_1(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl1(i,:) ) &
+                                    * RH_crit(i, :, 1, 1)
         endwhere
 
         where ( tl2(i,:) > t1_combined )
@@ -979,7 +982,8 @@ module pdf_closure_module
                     + sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) )* (RH_crit(i, :, 1, 2) -one) &
                       * ( t2_combined -tl2(i,:))/(t2_combined - t3_combined)
         elsewhere
-          pdf_params%rsatl_2(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) ) * RH_crit(i, :, 1, 2)
+          pdf_params%rsatl_2(i,:) = sat_mixrat_ice( nz, p_in_Pa(i,:), tl2(i,:) ) &
+                                    * RH_crit(i, :, 1, 2)
         endwhere
         
       end do
@@ -1002,7 +1006,8 @@ module pdf_closure_module
 
 #else
     rsatl_1 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl1, saturation_formula  )
-    rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2, saturation_formula  ) ! h1g, 2010-06-16 end mod
+    rsatl_2 = sat_mixrat_liq( nz, ngrdcol, p_in_Pa, tl2, &
+                              saturation_formula  ) ! h1g, 2010-06-16 end mod
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -1108,8 +1113,8 @@ module pdf_closure_module
       do i = 1, ngrdcol
         cloud_frac(i,k) = pdf_params%mixt_frac(i,k) * pdf_params%cloud_frac_1(i,k) &
                      + ( one - pdf_params%mixt_frac(i,k) ) * pdf_params%cloud_frac_2(i,k)
-        rcm(i,k) = pdf_params%mixt_frac(i,k) * pdf_params%rc_1(i,k) + ( one - pdf_params%mixt_frac(i,k) ) &
-                                                                 * pdf_params%rc_2(i,k)
+        rcm(i,k) = pdf_params%mixt_frac(i,k) * pdf_params%rc_1(i,k) &
+                   + ( one - pdf_params%mixt_frac(i,k) ) * pdf_params%rc_2(i,k)
         rcm(i,k) = max( zero_threshold, rcm(i,k) )
       end do
     end do
@@ -1283,19 +1288,22 @@ module pdf_closure_module
           do i = 1, ngrdcol
             
             sclrprcp(i,k,sclr) &
-            = pdf_params%mixt_frac(i,k) * ( ( sclr1(i,k,sclr) - sclrm(i,k,sclr) ) * pdf_params%rc_1(i,k) ) &
+            = pdf_params%mixt_frac(i,k) * ( ( sclr1(i,k,sclr) - sclrm(i,k,sclr) ) &
+                                            * pdf_params%rc_1(i,k) ) &
               + ( one - pdf_params%mixt_frac(i,k) ) * ( ( sclr2(i,k,sclr) - sclrm(i,k,sclr) ) &
                                                         * pdf_params%rc_2(i,k) ) &
               + pdf_params%mixt_frac(i,k) * corr_sclr_rt_1(i,k,sclr) * pdf_params%crt_1(i,k) &
                 * sqrt( varnce_sclr1(i,k,sclr) * pdf_params%varnce_rt_1(i,k) ) &
                 * pdf_params%cloud_frac_1(i,k) &
-              + ( one - pdf_params%mixt_frac(i,k) ) * corr_sclr_rt_2(i,k,sclr) * pdf_params%crt_2(i,k) &
+              + ( one - pdf_params%mixt_frac(i,k) ) * corr_sclr_rt_2(i,k,sclr) &
+                * pdf_params%crt_2(i,k) &
                 * sqrt( varnce_sclr2(i,k,sclr) * pdf_params%varnce_rt_2(i,k) ) &
                 * pdf_params%cloud_frac_2(i,k) & 
               - pdf_params%mixt_frac(i,k) * corr_sclr_thl_1(i,k,sclr) * pdf_params%cthl_1(i,k) &
                 * sqrt( varnce_sclr1(i,k,sclr) * pdf_params%varnce_thl_1(i,k) ) &
                 * pdf_params%cloud_frac_1(i,k) & 
-              - ( one - pdf_params%mixt_frac(i,k) ) * corr_sclr_thl_2(i,k,sclr) * pdf_params%cthl_2(i,k) &
+              - ( one - pdf_params%mixt_frac(i,k) ) * corr_sclr_thl_2(i,k,sclr) &
+                * pdf_params%cthl_2(i,k) &
                 * sqrt( varnce_sclr2(i,k,sclr) * pdf_params%varnce_thl_2(i,k) ) &
                 * pdf_params%cloud_frac_2(i,k)
 

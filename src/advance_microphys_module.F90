@@ -941,27 +941,32 @@ module advance_microphys_module
           if ( stats_metadata%ihydrometp2(i) > 0 ) then
 
              ! Covariance of vertical velocity and the hydrometeor.
-             call stat_update_var( stats_metadata%ihydrometp2(i), hydrometp2(:,i), stats_zm )
+             call stat_update_var( stats_metadata%ihydrometp2(i), &
+                                   hydrometp2(:,i), stats_zm )
 
           endif
 
           if ( stats_metadata%iwphydrometp(i) > 0 ) then
 
              ! Covariance of vertical velocity and the hydrometeor.
-             call stat_update_var( stats_metadata%iwphydrometp(i), wphydrometp(:,i), stats_zm )
+             call stat_update_var( stats_metadata%iwphydrometp(i), &
+                                   wphydrometp(:,i), stats_zm )
 
           endif
 
-          if ( trim( hm_metadata%hydromet_list(i) ) == "rrm" .and. stats_metadata%iVrrprrp > 0 ) then
+          if ( trim( hm_metadata%hydromet_list(i) ) == "rrm" .and. &
+                     stats_metadata%iVrrprrp > 0 ) then
 
              ! Covariance of sedimentation velocity of r_r and r_r.
-             call stat_update_var( stats_metadata%iVrrprrp, hydromet_vel_covar(:,hm_metadata%iirr), &
-                                   stats_zm )
+             call stat_update_var( stats_metadata%iVrrprrp, &
+                                   hydromet_vel_covar(:,hm_metadata%iirr), stats_zm )
 
-          elseif ( trim( hm_metadata%hydromet_list(i) ) == "Nrm" .and. stats_metadata%iVNrpNrp > 0 ) then
+          elseif ( trim( hm_metadata%hydromet_list(i) ) == "Nrm" .and. &
+                   stats_metadata%iVNrpNrp > 0 ) then
 
              ! Covariance of sedimentation velocity of N_r and N_r.
-             call stat_update_var( stats_metadata%iVNrpNrp, hydromet_vel_covar(:,hm_metadata%iiNr), stats_zm )
+             call stat_update_var( stats_metadata%iVNrpNrp, &
+                                   hydromet_vel_covar(:,hm_metadata%iiNr), stats_zm )
 
           endif
 
@@ -1162,7 +1167,8 @@ module advance_microphys_module
     if ( stats_metadata%l_stats_samp ) then
 
        ! Update explicit contributions to cloud droplet concentration.
-       call stat_update_var( stats_metadata%iNcm_mc, Ncm_mc, stats_zt )
+       call stat_update_var( stats_metadata%iNcm_mc, &
+                             Ncm_mc, stats_zt )
 
        ! Save prior value of Ncm for determining total time tendency.
        do k = 1, gr%nzt, 1
@@ -1351,7 +1357,8 @@ module advance_microphys_module
        if ( stats_metadata%iwpNcp > 0 ) then
 
           ! Covariance of vertical velocity and N_c.
-          call stat_update_var( stats_metadata%iwpNcp, wpNcp, stats_zm )
+          call stat_update_var( stats_metadata%iwpNcp, &
+                                wpNcp, stats_zm )
 
        endif
 

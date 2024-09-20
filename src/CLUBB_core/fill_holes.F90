@@ -140,8 +140,9 @@ module fill_holes
       return
     end if
 
-    !$acc enter data create( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
-    !$acc                    numer_integral_global, field_avg_global, mass_fraction_global )
+    !$acc enter data create( invrs_denom_integral, field_clipped, denom_integral_global, &
+    !$acc                    rho_ds_dz, numer_integral_global, field_avg_global, &
+    !$acc                    mass_fraction_global )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -159,7 +160,8 @@ module fill_holes
       do k = lower_hf_level+num_hf_draw_points, upper_hf_level-num_hf_draw_points
 
         ! This loop and division could be written more compactly as
-        !   invrs_denom_integral(i,k) = one / sum(rho_ds_dz(i,k-num_hf_draw_points:k+num_hf_draw_points))
+        ! invrs_denom_integral(i,k) = one / sum(
+        !                                    rho_ds_dz(i,k-num_hf_draw_points:k+num_hf_draw_points))
         ! but has been manually written in loop form to improve performance 
         ! when using OpenMP target offloading
         ! See: https://github.com/larson-group/clubb/issues/1138#issuecomment-1974918151
@@ -233,7 +235,8 @@ module fill_holes
 
     l_field_below_threshold = .false.
 
-    !$acc parallel loop gang vector collapse(2) default(present) reduction(.or.:l_field_below_threshold)
+    !$acc parallel loop gang vector collapse(2) default(present) &
+    !$acc reduction(.or.:l_field_below_threshold)
     do k = 1, nz
       do i = 1, ngrdcol
         if ( field(i,k) < threshold ) then
@@ -245,8 +248,9 @@ module fill_holes
 
     ! If all field values are above the threshold, no further hole filling is required
     if ( .not. l_field_below_threshold ) then
-      !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, rho_ds_dz, &
-      !$acc                   numer_integral_global, field_avg_global, mass_fraction_global )
+      !$acc exit data delete( invrs_denom_integral, field_clipped, denom_integral_global, &
+      !$acc                   rho_ds_dz, numer_integral_global, field_avg_global, &
+      !$acc                   mass_fraction_global )
       return
     end if
 
@@ -688,8 +692,7 @@ module fill_holes
         Lv,              &
         Ls,              &
         Cp,              &
-        fstderr,         &
-        num_hf_draw_points
+        fstderr
 
     use corr_varnce_module, only: &
         hm_metadata_type

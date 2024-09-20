@@ -171,7 +171,8 @@ module numerical_check
     call check_nan( rtprcp, "rtprcp", proc_name ) ! intent(in)
     call check_nan( thlprcp, "thlprcp", proc_name ) ! intent(in)
     if ( stats_metadata%ircp2 >  0 ) call check_nan( rcp2, "rcp2", proc_name ) ! intent(in)
-    if ( stats_metadata%iwprtpthlp > 0 ) call check_nan( wprtpthlp, "wprtpthlp", proc_name ) ! intnet(in)
+    if ( stats_metadata%iwprtpthlp > 0 ) &
+         call check_nan( wprtpthlp, "wprtpthlp", proc_name ) ! intnet(in)
     call check_nan( crt_1, "crt_1", proc_name ) ! intent(in)
     call check_nan( crt_2, "crt_2", proc_name ) ! intent(in)
     call check_nan( cthl_1, "cthl_1", proc_name ) ! intent(in)
@@ -287,8 +288,10 @@ module numerical_check
                rtp2, thlp2, rtpthlp,                                        & ! intent(in)
 !              rcm,                                                         &
                prefix,                                                      & ! intent(in)
-               wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,          & ! intent(in)
-               sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing ) ! intent(in)
+               wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp,                  & ! intent(in)
+               sclrp2,                                                      & ! intent(in)
+               sclrprtp, sclrpthlp, sclrm_forcing, edsclrm,                 & ! intent(in)
+               edsclrm_forcing )                                              ! intent(in)
 
 !
 ! Description:

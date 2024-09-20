@@ -290,7 +290,8 @@ module simple_rad_module
          end if
       end if
 
-      z_i = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(k), rtm(k-1), gr%zt(1,k), gr%zt(1,k-1) )
+      z_i = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(k), rtm(k-1), gr%zt(1,k), &
+                                        gr%zt(1,k-1) )
 
       ! Compute the Heaviside step function for z - z_i.
       do k = 1, gr%nzm, 1

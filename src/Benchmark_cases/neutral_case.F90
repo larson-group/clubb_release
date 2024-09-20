@@ -33,7 +33,7 @@ module neutral_case
 
     use sfc_flux, only: compute_momentum_flux
 
-    use constants_clubb, only: grav ! Variable(s)
+    !use constants_clubb, only: grav ! Variable(s)
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
@@ -78,7 +78,7 @@ module neutral_case
     wprtp_sfc  = 0.0_core_rknd 
 
     ! Heat flux in units of (m2/s3) (needed by diag_ustar)
-    !bflx = grav/thlm_sfc * wpthlp_sfc
+    !bflx = grav/thlm_sfc * wpthlp_sfc ! grav variable is commented out
 
     ! Compute ustar
     ustar = 0.5_core_rknd !diag_ustar( z, bflx, ubar, z0 )

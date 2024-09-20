@@ -118,7 +118,9 @@ contains
     result_cmp(1, 2) = -eps
     result_cmp(1, 3) = zero
     result_cmp(1, 4) = zero
-    result = smooth_min(4, 1, input, zero, min_max_smth_mag) ! Order of nz and ngrdcol is opposite to order of indexing! This is very unintuitive!
+    result = smooth_min(4, 1, input, zero, min_max_smth_mag) ! Order of nz and ngrdcol is 
+                                                             ! opposite to order of indexing! 
+                                                             ! This is very unintuitive!
     print *, "Input: ", input
     print *, "(Simple) min:"
     print *, "Expected outcome: ", result_cmp
@@ -171,8 +173,8 @@ contains
     print *, "True outcome:     ", result, NEW_LINE('A'), NEW_LINE('A')
     total_mismatches = total_mismatches + COUNT(abs(result - result_cmp) >= eps)
     
-    ! Case 3: Make sure that on a large number of arbitrarily chosen points with small min_max_smth_mag,
-    !         smooth_min < min and smooth_max > max
+    ! Case 3: Make sure that on a large number of arbitrarily chosen points with small
+    !         min_max_smth_mag, smooth_min < min and smooth_max > max
     print *, "Testing smooth min and max with min_max_smth_mag=1e-7, ", &
              "input_var1 = equidistant grid on [-1, 1), input_var2 = 0", &
              NEW_LINE('A')

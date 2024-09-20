@@ -96,7 +96,8 @@ module fire
   ustar = 0.3_core_rknd
 
   wpthlp_sfc = compute_wpthlp_sfc ( Cz, ubar, thlm_sfc, T_sfc, exner_sfc )
-  wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc, saturation_formula ) )
+  wprtp_sfc = compute_wprtp_sfc( Cz, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc, &
+                                                                    saturation_formula ) )
 
   return
   end subroutine fire_sfclyr

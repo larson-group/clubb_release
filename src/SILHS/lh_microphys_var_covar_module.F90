@@ -52,7 +52,7 @@ module lh_microphys_var_covar_module
       compute_sample_covariance
 
     use constants_clubb, only: &
-      zero, one, two    ! Constant(s)
+      one, two    ! Constant(s)
 
     use pdf_parameter_module, only: &
       pdf_parameter

@@ -339,7 +339,8 @@ module advance_helper_module
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
-        stability_correction(i,k) = one + min( lambda0_stability(i,k) * brunt_vaisala_freq_sqd(i,k) &
+        stability_correction(i,k) = one + min( lambda0_stability(i,k) &
+                                               * brunt_vaisala_freq_sqd(i,k) &
                                                * Lscale_zm(i,k)**2 / em(i,k), three )
       end do
     end do
@@ -581,10 +582,8 @@ module advance_helper_module
         end do
         !$acc end parallel loop
 
-        brunt_vaisala_freq_clipped = smooth_min( nzm, ngrdcol, &
-                                                 brunt_vaisala_freq_sqd_mixed, &
-                                                 tmp_calc, &
-                                                 1.0e-4_core_rknd * min_max_smth_mag)
+        brunt_vaisala_freq_clipped = smooth_min( nzm, ngrdcol, brunt_vaisala_freq_sqd_mixed, &
+                                                 tmp_calc, 1.0e-4_core_rknd * min_max_smth_mag)
 
         brunt_vaisala_freq_sqd_smth = zm2zt2zm( nzm, nzt, ngrdcol, gr, brunt_vaisala_freq_clipped )
 
@@ -623,9 +622,11 @@ module advance_helper_module
 !===============================================================================
   subroutine compute_Cx_fnc_Richardson( nzm, nzt, ngrdcol, gr, &
                                         Lscale_zm, ddzt_umvm_sqd, rho_ds_zm, &
-                                        brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
+                                        brunt_vaisala_freq_sqd, &
+                                        brunt_vaisala_freq_sqd_mixed, &
                                         clubb_params, &
-                                        l_use_shear_Richardson, l_modify_limiters_for_cnvg_test, &
+                                        l_use_shear_Richardson, &
+                                        l_modify_limiters_for_cnvg_test, &
                                         stats_metadata, &
                                         stats_zm, &
                                         Cx_fnc_Richardson )
@@ -648,8 +649,7 @@ module advance_helper_module
 
     use constants_clubb, only: &
         one, &
-        zero, &
-        zero_threshold
+        zero
 
     use interpolation, only: &
         linear_interp_factor ! Procedure
@@ -659,8 +659,7 @@ module advance_helper_module
         iCx_min,             &
         iCx_max,             &
         iRichardson_num_min, &
-        iRichardson_num_max, &
-        ibv_efold
+        iRichardson_num_max
 
     use stats_variables, only: &
         stats_metadata_type
@@ -798,8 +797,7 @@ module advance_helper_module
       end do
 
       fnc_Richardson_clipped = smooth_min( nzm, ngrdcol, one, &
-                                           fnc_Richardson, &
-                                           min_max_smth_mag )
+                                           fnc_Richardson, min_max_smth_mag )
 
       fnc_Richardson_smooth = smooth_max( nzm, ngrdcol, zero, &
                                           fnc_Richardson_clipped, &
@@ -1741,9 +1739,6 @@ module advance_helper_module
     real( kind = core_rknd ) :: &
       output_var          ! Same unit as input_var1 and input_var2
 
-    !----------------------------- Local Variables -----------------------------
-    integer :: i, k
-
     !----------------------------- Begin Code -----------------------------
 
     output_var = one_half * ( (input_var1+input_var2) + &
@@ -1752,7 +1747,8 @@ module advance_helper_module
 
   end function smooth_max_scalars
 
-  function smooth_heaviside_peskin( nz, ngrdcol, input, smth_range ) &
+  function smooth_heaviside_peskin( nz, ngrdcol, input, &
+                                    smth_range ) &
     result( smth_output )
     
   ! Description:

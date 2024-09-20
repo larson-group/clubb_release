@@ -134,7 +134,8 @@ module cloud_feedback
          ((log(standard_flux_alt/z0))/(log(lowest_level/z0)))
  
   if ( sfctype == 1 ) then
-    wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, T_sfc, saturation_formula ) )
+    wprtp_sfc = compute_wprtp_sfc( Cq, ubar, rtm_sfc, sat_mixrat_liq( p_sfc, &
+                                                                      T_sfc, saturation_formula ) )
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, & 
                                      T_sfc, exner_sfc )
   else

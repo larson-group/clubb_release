@@ -459,7 +459,8 @@ module saturation
 
           ! Goff Gratch equation, uncertain below -70 C
         
-          esat(i,k) = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K_clipped-1._core_rknd)+ &
+          esat(i,k) = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K_clipped &
+                                                          -1._core_rknd)+ &
                5.02808_core_rknd*log10(373.16_core_rknd/T_in_K_clipped)- &
                1.3816e-7_core_rknd*(10._core_rknd**(11.344_core_rknd &
                  *(1._core_rknd-T_in_K_clipped/373.16_core_rknd))-1._core_rknd)+ &
@@ -851,9 +852,6 @@ module saturation
   !   Formula from Emanuel 1994, 4.4.15
   !-------------------------------------------------------------------------
 
-    use constants_clubb, only: & 
-        ep ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -878,8 +876,6 @@ module saturation
 
     real( kind = core_rknd ), dimension(1,1) ::  & 
       sat_mixrat_ice_col
-
-    integer :: i, k  ! Loop indices
 
     ! ------------------------ Begin Code ------------------------
 
@@ -1328,7 +1324,8 @@ module saturation
 ! <--- h1g, 2010-06-16
 
 !-------------------------------------------------------------------------
-  function rcm_sat_adj( thlm, rtm, p_in_Pa, exner, saturation_formula ) result ( rcm )
+  function rcm_sat_adj( thlm, rtm, p_in_Pa, exner, &
+                        saturation_formula ) result ( rcm )
 
     ! Description:
     !
@@ -1374,8 +1371,7 @@ module saturation
 
     ! Local Variable(s)
     real( kind = core_rknd ) :: &
-      theta, answer, too_low, too_high, & ! [K]
-      rsat
+      theta, answer, too_low, too_high ! [K]
 
     integer :: iteration
 
@@ -1388,8 +1384,10 @@ module saturation
 
     do iteration = 1, itermax, 1
 
-      answer = theta - (Lv/(Cp*exner)) &
-                       *(MAX( rtm - sat_mixrat_liq(p_in_Pa,theta*exner, saturation_formula), zero_threshold ))
+      answer = theta &
+               - (Lv/(Cp*exner)) &
+               * (MAX( rtm &
+                       - sat_mixrat_liq(p_in_Pa,theta*exner, saturation_formula), zero_threshold ))
 
       if ( ABS(answer - thlm) <= tolerance ) then
         exit

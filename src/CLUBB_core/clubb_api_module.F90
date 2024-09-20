@@ -888,7 +888,8 @@ contains
       hydromet_col           ! Array of hydrometeors                [units vary]
 
     real( kind = core_rknd ), dimension(1,gr%nzm) :: &
-      radf_col          ! Buoyancy production at cloud top due to longwave radiative cooling [m^2/s^3]
+      radf_col          ! Buoyancy production at cloud top due to 
+                        ! longwave radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM 
     real( kind = core_rknd ), dimension(1) :: & 
@@ -1065,8 +1066,6 @@ contains
     logical, intent(in)                 ::  do_liquid_only_in_clubb
 #endif
 
-    integer :: i
-
     !------------------------- Begin Code -------------------------
 
     fcor_col(1) = fcor
@@ -1214,20 +1213,28 @@ contains
     !$acc              nu_vert_res_dep%nu1, nu_vert_res_dep%nu8, nu_vert_res_dep%nu10, &
     !$acc              nu_vert_res_dep%nu6, &
     !$acc              sclr_idx, clubb_params_col, &
-    !$acc              fcor_col, sfc_elevation_col, thlm_forcing_col, rtm_forcing_col, um_forcing_col, &
-    !$acc              vm_forcing_col, wprtp_forcing_col, wpthlp_forcing_col, rtp2_forcing_col, thlp2_forcing_col, &
-    !$acc              rtpthlp_forcing_col, wm_zm_col, wm_zt_col, rho_zm_col, rho_col, rho_ds_zm_col, rho_ds_zt_col, &
-    !$acc              invrs_rho_ds_zm_col, invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, rfrzm_col, &
+    !$acc              fcor_col, sfc_elevation_col, thlm_forcing_col, rtm_forcing_col, &
+    !$acc              um_forcing_col, &
+    !$acc              vm_forcing_col, wprtp_forcing_col, wpthlp_forcing_col, rtp2_forcing_col, &
+    !$acc              thlp2_forcing_col, &
+    !$acc              rtpthlp_forcing_col, wm_zm_col, wm_zt_col, rho_zm_col, rho_col, &
+    !$acc              rho_ds_zm_col, rho_ds_zt_col, &
+    !$acc              invrs_rho_ds_zm_col, invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, &
+    !$acc              rfrzm_col, &
     !$acc              radf_col, wpthlp_sfc_col, &
     !$acc              wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, p_sfc_col, & 
-    !$acc              upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, um_ref_col, &
+    !$acc              upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, &
+    !$acc              um_ref_col, &
     !$acc              vm_ref_col, ug_col, vg_col, host_dx_col, host_dy_col, &
     !$acc              pdf_params, pdf_params_zm ) &
-    !$acc        copy( um_col, upwp_col, vm_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, rtm_col, wprtp_col, thlm_col, wpthlp_col, rtp2_col, &
+    !$acc        copy( um_col, upwp_col, vm_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &
+    !$acc              rtm_col, wprtp_col, thlm_col, wpthlp_col, rtp2_col, &
     !$acc              rtp3_col, thlp2_col, thlp3_col, rtpthlp_col, wp2_col, wp3_col, &
     !$acc              p_in_Pa_col, exner_col, rcm_col, cloud_frac_col, wpthvp_col, wp2thvp_col, &
-    !$acc              rtpthvp_col, thlpthvp_col, wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, rc_coef_zm_col, &
-    !$acc              wp4_col, wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, ice_supersat_frac_col, um_pert_col, &
+    !$acc              rtpthvp_col, thlpthvp_col, wp2rtp_col, wp2thlp_col, uprcp_col, vprcp_col, &
+    !$acc              rc_coef_zm_col, &
+    !$acc              wp4_col, wpup2_col, wpvp2_col, wp2up2_col, wp2vp2_col, &
+    !$acc              ice_supersat_frac_col, um_pert_col, &
     !$acc              vm_pert_col, upwp_pert_col, vpwp_pert_col, &
     !$acc              pdf_params%w_1, pdf_params%w_2, &
     !$acc              pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
@@ -1275,14 +1282,17 @@ contains
     !$acc              pdf_params_zm%cloud_frac_1, pdf_params_zm%cloud_frac_2,  &
     !$acc              pdf_params_zm%mixt_frac, pdf_params_zm%ice_supersat_frac_1, &
     !$acc              pdf_params_zm%ice_supersat_frac_2 ) &
-    !$acc     copyout( rcm_in_layer_col, cloud_cover_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, &
-    !$acc              cloudy_updraft_frac_col, cloudy_downdraft_frac_col, invrs_tau_zm_col, Kh_zt_col, &
+    !$acc     copyout( rcm_in_layer_col, cloud_cover_col, wprcp_col, w_up_in_cloud_col, &
+    !$acc              w_down_in_cloud_col, &
+    !$acc              cloudy_updraft_frac_col, cloudy_downdraft_frac_col, invrs_tau_zm_col, &
+    !$acc              Kh_zt_col, &
     !$acc              Kh_zm_col, &
     !$acc              thlprcp_col )
 
     !$acc data if( sclr_dim > 0 ) &
     !$acc      copyin( sclr_tol, sclrm_forcing_col, wpsclrp_sfc_col ) &
-    !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, sclrpthlp_col, sclrpthvp_col )
+    !$acc        copy( sclrm_col, wpsclrp_col, sclrp2_col, sclrp3_col, sclrprtp_col, &
+    !$acc              sclrpthlp_col, sclrpthvp_col )
 
     !$acc data if( edsclr_dim > 0 ) &
     !$acc      copyin( wpedsclrp_sfc_col, edsclrm_forcing_col ) &
@@ -3836,10 +3846,10 @@ contains
     wpthlp_mc_col(1,:) = wpthlp_mc
     rtpthlp_mc_col(1,:) = rtpthlp_mc
       
-    call update_xp2_mc( gr, nzm, nzt, 1, dt, cloud_frac_col, rcm_col, rvm_col, thlm_col, & ! intent(in)
-                        wm_col, exner_col, rrm_evap_col, pdf_params,        & ! intent(in)
-                        rtp2_mc_col, thlp2_mc_col, wprtp_mc_col, wpthlp_mc_col,    & ! intent(inout)
-                        rtpthlp_mc_col ) ! intent(inout)
+    call update_xp2_mc( gr, nzm, nzt, 1, dt, cloud_frac_col, rcm_col, rvm_col, thlm_col, & ! In
+                        wm_col, exner_col, rrm_evap_col, pdf_params,        & ! In
+                        rtp2_mc_col, thlp2_mc_col, wprtp_mc_col, wpthlp_mc_col,    & ! In/Out
+                        rtpthlp_mc_col ) ! In/Out
                         
     rtp2_mc = rtp2_mc_col(1,:)
     thlp2_mc = thlp2_mc_col(1,:)

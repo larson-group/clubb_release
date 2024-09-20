@@ -99,7 +99,8 @@ module Skx_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nz
         do i = 1, ngrdcol
-          Skx(i,k) = min( max( Skx(i,k), -clubb_params(i,iSkw_max_mag) ), clubb_params(i,iSkw_max_mag) )
+          Skx(i,k) = min( max( Skx(i,k), -clubb_params(i,iSkw_max_mag) ), &
+                          clubb_params(i,iSkw_max_mag) )
         end do
       end do
       !$acc end parallel loop
