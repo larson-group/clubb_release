@@ -454,7 +454,7 @@ module advance_windm_edsclrm_module
 
       ! Decompose and back substitute for um and vm
       nrhs = 2
-      call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs,                         & ! intent(in)
+      call windm_edsclrm_solve( nzt, ngrdcol, nrhs,                             & ! intent(in)
                                 stats_metadata%iwindm_matrix_condt_num,         & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
@@ -539,8 +539,8 @@ module advance_windm_edsclrm_module
         ! Thus this code is potentially unsafe when implemented in a host model, 
         ! which is indicated by l_implemented = T
         if ( l_implemented ) then
-          write(fstderr,*) "l_sponge_damping = T and l_implemented = T &
-                            -- this is likely unsafe and considered fatal"
+          write(fstderr,*) "l_sponge_damping = T and l_implemented = T ", &
+                            "-- this is likely unsafe and considered fatal"
           err_code = clubb_fatal_error
           return
         end if
@@ -832,7 +832,7 @@ module advance_windm_edsclrm_module
       
       ! Decompose and back substitute for um and vm
       nrhs = 2
-      call windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs,                         & ! intent(in)
+      call windm_edsclrm_solve( nzt, ngrdcol, nrhs,                             & ! intent(in)
                                 stats_metadata%iwindm_matrix_condt_num,         & ! intent(in)
                                 tridiag_solve_method,                           & ! intent(in)
                                 stats_metadata,                                 & ! intent(in)
@@ -1053,7 +1053,7 @@ module advance_windm_edsclrm_module
                               lhs )                                     ! intent(out)
                                     
       ! Decompose and back substitute for all eddy-scalar variables
-      call windm_edsclrm_solve( nzt, ngrdcol, gr, edsclr_dim,    & ! intent(in)
+      call windm_edsclrm_solve( nzt, ngrdcol, edsclr_dim,        & ! intent(in)
                                 0,                               & ! intent(in)
                                 tridiag_solve_method,            & ! intent(in)
                                 stats_metadata,                  & ! intent(in)
@@ -1180,7 +1180,7 @@ module advance_windm_edsclrm_module
   end subroutine advance_windm_edsclrm
 
   !=============================================================================
-  subroutine windm_edsclrm_solve( nzt, ngrdcol, gr, nrhs, &
+  subroutine windm_edsclrm_solve( nzt, ngrdcol, nrhs, &
                                   ixm_matrix_condt_num, &
                                   tridiag_solve_method, &
                                   stats_metadata, &
@@ -1683,9 +1683,6 @@ module advance_windm_edsclrm_module
     integer, intent(in) :: &
       nzt, &
       ngrdcol
-    
-    type (grid), target, intent(in) :: &
-      gr
 
     integer, intent(in) :: &
       nrhs ! Number of right-hand side (explicit) vectors & Number of solution vectors.

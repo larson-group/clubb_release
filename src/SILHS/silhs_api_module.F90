@@ -596,7 +596,7 @@ contains
     X_mixt_comp_all_levs_col(1,:,:) = X_mixt_comp_all_levs
     X_nl_all_levs_col(1,:,:,:)      = X_nl_all_levs
 
-    call clip_transform_silhs_output( gr, nzt, 1, num_samples,                 & ! In
+    call clip_transform_silhs_output( nzt, 1, num_samples,                 & ! In
                                       pdf_dim, hydromet_dim, hm_metadata,  & ! In
                                       X_mixt_comp_all_levs_col,               & ! In
                                       X_nl_all_levs_col,                      & ! In
@@ -670,7 +670,7 @@ contains
       lh_rv_clipped,  & ! rv generated from silhs sample points
       lh_Nc_clipped     ! Nc generated from silhs sample points
 
-    call clip_transform_silhs_output( gr, nzt, ngrdcol, num_samples,           & ! In
+    call clip_transform_silhs_output( nzt, ngrdcol, num_samples,           & ! In
                                       pdf_dim, hydromet_dim, hm_metadata,  & ! In
                                       X_mixt_comp_all_levs,                   & ! In
                                       X_nl_all_levs,                          & ! In

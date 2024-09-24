@@ -726,7 +726,7 @@ module advance_xp2_xpyp_module
       ! Explicit contributions to up2
       call xp2_xpyp_uv_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_up2, dt, & ! In
                             wp2, wpthvp, & ! In
-                            C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
+                            invrs_tau_C4_zm, invrs_tau_C14_zm, & ! In
                             um, vm, upwp, vpwp, up2, vp2, & ! In
                             thv_ds_zm, clubb_params(:,iC4), clubb_params(:,iC_uu_shr), & ! In
                             clubb_params(:,iC_uu_buoy), clubb_params(:,iC14), lhs_splat_wp2, & ! In
@@ -769,7 +769,7 @@ module advance_xp2_xpyp_module
       ! Explicit contributions to vp2
       call xp2_xpyp_uv_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_vp2, dt, & ! In
                             wp2, wpthvp, & ! In
-                            C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
+                            invrs_tau_C4_zm, invrs_tau_C14_zm, & ! In
                             vm, um, vpwp, upwp, vp2, up2, & ! In
                             thv_ds_zm, clubb_params(:,iC4), clubb_params(:,iC_uu_shr), & ! In
                             clubb_params(:,iC_uu_buoy), clubb_params(:,iC14), lhs_splat_wp2, & ! In
@@ -816,7 +816,7 @@ module advance_xp2_xpyp_module
       ! Explicit contributions to up2
       call xp2_xpyp_uv_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_up2, dt, & ! In
                             wp2, wpthvp, & ! In
-                            C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
+                            invrs_tau_C4_zm, invrs_tau_C14_zm, & ! In
                             um, vm, upwp, vpwp, up2, vp2, & ! In
                             thv_ds_zm, clubb_params(:,iC4), clubb_params(:,iC_uu_shr), & ! In
                             clubb_params(:,iC_uu_buoy), clubb_params(:,iC14), lhs_splat_wp2, & ! In
@@ -829,7 +829,7 @@ module advance_xp2_xpyp_module
       ! Explicit contributions to vp2
       call xp2_xpyp_uv_rhs( nzm, nzt, ngrdcol, gr, xp2_xpyp_vp2, dt, & ! In
                             wp2, wpthvp, & ! In
-                            C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
+                            invrs_tau_C4_zm, invrs_tau_C14_zm, & ! In
                             vm, um, vpwp, upwp, vp2, up2, & ! In
                             thv_ds_zm, clubb_params(:,iC4), clubb_params(:,iC_uu_shr), & ! In
                             clubb_params(:,iC_uu_buoy), clubb_params(:,iC14), lhs_splat_wp2, & ! In
@@ -2996,7 +2996,7 @@ module advance_xp2_xpyp_module
   !==================================================================================
   subroutine xp2_xpyp_uv_rhs( nzm, nzt, ngrdcol, gr, solve_type, dt, & ! In
                               wp2, wpthvp, & ! In
-                              C4_1d, invrs_tau_C4_zm, C14_1d, invrs_tau_C14_zm, & ! In
+                              invrs_tau_C4_zm, invrs_tau_C14_zm, & ! In
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
                               thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, lhs_splat_wp2, & ! In
                               lhs_ta, rhs_ta, & ! In
@@ -3078,8 +3078,6 @@ module advance_xp2_xpyp_module
       rhs_ta,           & ! RHS turbulent advection terms
       wp2,              & ! w'^2 (momentum levels)                      [m^2/s^2]
       wpthvp,           & ! w'th_v' (momentum levels)                     [K m/s]
-      C4_1d,            & ! C4 in a 1-d array                                 [-]
-      C14_1d,           & ! C14 in a 1-d array                                [-]
       invrs_tau_C4_zm,  & ! Inverse time-scale for C4 terms on mom. levels  [1/s]
       invrs_tau_C14_zm, & ! Inverse time-scale for C14 terms on mom. levels [1/s]
       wpxap,            & ! w'x_a' (momentum levels)                    [m^2/s^2]

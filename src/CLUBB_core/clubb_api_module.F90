@@ -3552,9 +3552,9 @@ contains
                                      stats_lh_zt, stats_lh_sfc, &
                                      stats_rad_zt, stats_rad_zm &
 #ifdef NETCDF
-                                     , l_uv_nudge, &
-                                     l_tke_aniso, &
-                                     l_standard_term_ta &
+                                     , l_uv_nudge, & ! Unused
+                                     l_tke_aniso, & ! Unused
+                                     l_standard_term_ta & ! Unused
 #endif
                                       )
 
@@ -3591,16 +3591,11 @@ contains
                             ! advance_xp2_xpyp_module.F90.
 #endif
 
-    call stats_end_timestep( clubb_params, stats_metadata,      & ! intent(in)
+    call stats_end_timestep( stats_metadata,      & ! intent(in)
                              stats_zt, stats_zm, stats_sfc,     & ! intent(inout)
                              stats_lh_zt, stats_lh_sfc,         & ! intent(inout)
                              stats_rad_zt, stats_rad_zm         & ! intent(inout)
-#ifdef NETCDF
-                             , l_uv_nudge,                      & ! Intent(in)
-                             l_tke_aniso,                       & ! Intent(in)
-                             l_standard_term_ta                 & ! Intent(in)
-#endif
-                              )
+                           )
 
     if ( err_code == clubb_fatal_error ) error stop
 

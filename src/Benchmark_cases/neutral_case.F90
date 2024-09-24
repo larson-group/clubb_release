@@ -68,7 +68,7 @@ module neutral_case
 !---- Begin code
 
     ! Compute heat and moisture fluxes --- turn off heat flux after 3000 s
-    if (time.gt.80880_time_precision) then
+    if (time > 80880_time_precision) then
       wpthlp_sfc = 0.0_core_rknd
     else
       wpthlp_sfc = 0.05_core_rknd 

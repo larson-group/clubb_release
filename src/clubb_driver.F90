@@ -2551,7 +2551,7 @@ module clubb_driver
                rfrzm, radf, wphydrometp, &                                          ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
-               clubb_params(1,:), nu_vert_res_dep, lmin, &                          ! Intent(in)
+               clubb_params(1,:), &                                                 ! Intent(in)
                clubb_config_flags, &                                                ! Intent(in)
                stats_metadata, &                                                    ! Intent(in)
                stats_zt, stats_zm, stats_sfc, &                                     ! intent(inout)
@@ -2890,16 +2890,11 @@ module clubb_driver
                                        stats_metadata )
 
       ! End statistics timestep
-      call stats_end_timestep( clubb_params(1,:), stats_metadata,        & ! intent(in)
+      call stats_end_timestep( stats_metadata,        & ! intent(in)
                                stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
                                stats_rad_zt, stats_rad_zm     & ! intent(inout)
-#ifdef NETCDF
-                               , clubb_config_flags%l_uv_nudge, &
-                               clubb_config_flags%l_tke_aniso, &
-                               clubb_config_flags%l_standard_term_ta &
-#endif
-                                )
+                             )
 
       ! Set Time
       ! Advance time here, not in advance_clubb_core,
@@ -6573,7 +6568,7 @@ module clubb_driver
 #endif
     wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
-    clubb_params, nu_vert_res_dep, lmin, &                  ! intent(in)
+    clubb_params, &                                         ! intent(in)
     clubb_config_flags, &                                   ! intent(in)
     stats_metadata, &                                       ! intent(in)
     stats_zt, stats_zm, stats_sfc, &                        ! intent(inout)
@@ -6691,7 +6686,21 @@ module clubb_driver
         advance_clubb_core_api
 
 #ifdef NETCDF
-    use netcdf
+    use netcdf, only: &
+        nf90_create, &
+        nf90_def_dim, &
+        nf90_def_var, &
+        nf90_put_att, &
+        nf90_put_var, &
+        nf90_close, &
+        nf90_open, &
+        NF90_CLOBBER, &
+        NF90_UNLIMITED, &
+        NF90_DOUBLE, &
+        NF90_FLOAT, &
+        NF90_WRITE
+        
+        
 
     use output_netcdf, only: &
         format_date
@@ -6837,12 +6846,6 @@ module clubb_driver
     real( kind = core_rknd ), intent(in) :: &
       host_dx,  & ! East-West horizontal grid spacing     [m]
       host_dy     ! North-South horizontal grid spacing   [m]
-
-    type(nu_vertical_res_dep), intent(in) :: &
-      nu_vert_res_dep    ! Vertical resolution dependent nu values
-
-    real( kind = core_rknd ), intent(in) :: &
-      lmin    ! Min. value for the length scale    [m]
 
     type( clubb_config_flags_type ), intent(in) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags

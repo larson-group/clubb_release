@@ -1180,13 +1180,11 @@ module advance_xm_wpxp_module
   end subroutine advance_xm_wpxp
 
   !======================================================================================
-  subroutine xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt, wpxp, wm_zt, C7_Skw_fnc, & ! In
-                          wpxp_upper_lim, wpxp_lower_lim,                         & ! In
+  subroutine xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt,                          & ! In
                           l_implemented, lhs_diff_zm, lhs_diff_zt,                & ! In
                           lhs_ma_zm, lhs_ma_zt, lhs_ta_wpxp, lhs_ta_xm,           & ! In
                           lhs_tp, lhs_pr1, lhs_ac_pr2,                            & ! In
                           l_diffuse_rtm_and_thlm,                                 & ! In
-                          stats_metadata,                                         & ! In
                           lhs )                                                     ! Out
 
     ! Description:
@@ -1264,9 +1262,6 @@ module advance_xm_wpxp_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
-    use stats_variables, only: &
-        stats_metadata_type
-
     implicit none
 
     !------------------- Input Variables -------------------
@@ -1277,15 +1272,6 @@ module advance_xm_wpxp_module
     
     real( kind = core_rknd ), intent(in) ::  & 
       dt    ! Timestep                                  [s]
-
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: & 
-      wpxp,                   & ! w'x' (momentum levs) at timestep (t) [un vary]
-      C7_Skw_fnc,             & ! C_7 parameter with Sk_w applied            [-]
-      wpxp_upper_lim,         & ! Keeps corrs. from becoming > 1       [un vary]
-      wpxp_lower_lim            ! Keeps corrs. from becoming < -1      [un vary]
-
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: & 
-      wm_zt                     ! w wind component on thermo. levels       [m/s]
 
     logical, intent(in) ::  & 
       l_implemented, & ! Flag for CLUBB being implemented in a larger model.
@@ -1309,9 +1295,6 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: & 
       lhs_ac_pr2, & ! Accumulation of w'x' and w'x' pressure term 2
       lhs_pr1       ! Pressure term 1 for w'x'
-
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
 
     !------------------- Output Variable -------------------
     real( kind = core_rknd ), intent(out), dimension(nsup+nsub+1,ngrdcol,2*nzm-1) ::  & 
@@ -2972,13 +2955,11 @@ module advance_xm_wpxp_module
     ! used, l_explicit_turbulent_adv_wpxp is enabled.
         
     ! Create the lhs once
-    call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt, zeros_vector, wm_zt, C7_Skw_fnc, & ! In
-                      zeros_vector, zeros_vector,                                     & ! In
+    call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt,                                  & ! In
                       l_implemented, lhs_diff_zm, lhs_diff_zt,                        & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wpxp, lhs_ta_xm,                   & ! In
                       lhs_tp, lhs_pr1_wprtp, lhs_ac_pr2,                              & ! In
                       l_diffuse_rtm_and_thlm,                                         & ! In
-                      stats_metadata,                                                 & ! In
                       lhs )                                                             ! Out
 
     ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -3376,13 +3357,11 @@ module advance_xm_wpxp_module
     if ( stats_metadata%l_stats_samp .and. stats_metadata%ithlm_matrix_condt_num &
                                            + stats_metadata%irtm_matrix_condt_num > 0 ) then
        call xm_wpxp_solve( nzm, ngrdcol, nrhs, & ! Intent(in)
-                           old_solution,       & ! Intent(in)
                            penta_solve_method, & ! Intent(in)
                            lhs, rhs,           & ! Intent(inout)
                            solution, rcond )     ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs,  & ! Intent(in)
-                          old_solution,        & ! Intent(in)
                           penta_solve_method,  & ! Intent(in)
                           lhs, rhs,            & ! Intent(inout)
                           solution )             ! Intent(out)
@@ -3958,14 +3937,6 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(ngrdcol,nzm,sclr_dim) :: & 
       wpsclrp_forcing    ! <w'sclr'> forcing (momentum levels)  [m/s{un vary}]
 
-    ! Variables used for clipping of w'x' due to correlation
-    ! of w with x, such that:
-    ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ];
-    ! -1 <= corr_(w,x) <= 1.
-    real( kind = core_rknd ), dimension(ngrdcol,nzm) :: & 
-      wpxp_upper_lim, & ! Keeps correlations from becoming greater than 1.
-      wpxp_lower_lim    ! Keeps correlations from becoming less than -1.
-
     ! Constant parameters as a function of Skw.
 
     real( kind = core_rknd ), dimension(ngrdcol) :: rcond
@@ -3976,13 +3947,11 @@ module advance_xm_wpxp_module
 
     ! Compute the implicit portion of the r_t and w'r_t' equations.
     ! Build the left-hand side matrix.                 
-    call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt, wprtp, wm_zt, C7_Skw_fnc, & ! In
-                      wpxp_upper_lim, wpxp_lower_lim,                          & ! In
+    call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt,                           & ! In
                       l_implemented, lhs_diff_zm, lhs_diff_zt,                 & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wprtp, lhs_ta_xm,           & ! In
                       lhs_tp, lhs_pr1_wprtp, lhs_ac_pr2,                       & ! In
                       l_diffuse_rtm_and_thlm,                                  & ! In
-                      stats_metadata,                                          & ! In
                       lhs )                                                      ! Out
 
     ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -4013,13 +3982,11 @@ module advance_xm_wpxp_module
     ! Solve r_t / w'r_t'
     if ( stats_metadata%l_stats_samp .and. stats_metadata%irtm_matrix_condt_num > 0 ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, & ! Intent(in)
-                          old_solution,       & ! Intent(in)
                           penta_solve_method, & ! Intent(in)
                           lhs, rhs,           & ! Intent(inout)
                           solution, rcond )     ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, & ! Intent(in)
-                          old_solution,       & ! Intent(in)
                           penta_solve_method, & ! Intent(in)
                           lhs, rhs,           & ! Intent(inout)
                           solution )            ! Intent(out)
@@ -4089,13 +4056,11 @@ module advance_xm_wpxp_module
       
     ! Compute the implicit portion of the th_l and w'th_l' equations.
     ! Build the left-hand side matrix.
-    call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt, wpthlp, wm_zt, C7_Skw_fnc, & ! In
-                      wpxp_upper_lim, wpxp_lower_lim,                           & ! In
+    call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt,                            & ! In
                       l_implemented, lhs_diff_zm, lhs_diff_zt,                  & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wpthlp, lhs_ta_xm,           & ! In
                       lhs_tp, lhs_pr1_wpthlp, lhs_ac_pr2,                       & ! In
                       l_diffuse_rtm_and_thlm,                                   & ! In
-                      stats_metadata,                                           & ! In
                       lhs )                                                       ! Out
 
     ! Compute the explicit portion of the th_l and w'th_l' equations.
@@ -4126,13 +4091,11 @@ module advance_xm_wpxp_module
     ! Solve for th_l / w'th_l'
     if ( stats_metadata%l_stats_samp .and. stats_metadata%ithlm_matrix_condt_num > 0 ) then
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, & ! Intent(in)
-                          old_solution,       & ! Intent(in)
                           penta_solve_method, & ! Intent(in)
                           lhs, rhs,           & ! Intent(inout)
                           solution, rcond )     ! Intent(out)
     else
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, & ! Intent(in)
-                          old_solution,       & ! Intent(in)
                           penta_solve_method, & ! Intent(in)
                           lhs, rhs,           & ! Intent(inout)
                           solution )            ! Intent(out)
@@ -4218,13 +4181,11 @@ module advance_xm_wpxp_module
       
       ! Compute the implicit portion of the sclr and w'sclr' equations.
       ! Build the left-hand side matrix.
-      call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt, wpsclrp(:,:,sclr), wm_zt, C7_Skw_fnc, & ! In
-                        wpxp_upper_lim, wpxp_lower_lim,                                      & ! In
+      call xm_wpxp_lhs( nzm, nzt, ngrdcol, l_iter, dt,                                       & ! In
                         l_implemented, lhs_diff_zm, lhs_diff_zt,                             & ! In
                         lhs_ma_zm, lhs_ma_zt, lhs_ta_wpsclrp(:,:,:,sclr), lhs_ta_xm,         & ! In
                         lhs_tp, lhs_pr1_wpsclrp, lhs_ac_pr2,                                 & ! In
                         l_diffuse_rtm_and_thlm,                                              & ! In
-                        stats_metadata,                                                      & ! In
                         lhs )                                                                  ! Out
 
       ! Compute the explicit portion of the sclrm and w'sclr' equations.
@@ -4255,7 +4216,6 @@ module advance_xm_wpxp_module
 
       ! Solve for sclrm / w'sclr'
       call xm_wpxp_solve( nzm, ngrdcol, nrhs, & ! Intent(in)
-                          old_solution,       & ! Intent(in)
                           penta_solve_method, & ! Intent(in)
                           lhs, rhs,           & ! Intent(inout)
                           solution )            ! Intent(out)
@@ -4329,7 +4289,6 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   subroutine xm_wpxp_solve( nzm, ngrdcol, nrhs, &
-                            old_solution, & 
                             penta_solve_method, & 
                             lhs, rhs, &
                             solution, rcond )
@@ -4368,9 +4327,6 @@ module advance_xm_wpxp_module
     integer, intent(in) :: &
       nrhs ! Number of rhs vectors
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,2*nzm-1,nrhs) ::  &
-      old_solution ! Old solution, used as an initial guess in the bicgstab method
-
     integer, intent(in) :: &
       penta_solve_method ! Method to solve then penta-diagonal system
 
@@ -4391,9 +4347,8 @@ module advance_xm_wpxp_module
     !------------------------- Begin Code -------------------------
 
     ! Solve the system 
-    call band_solve( "xm_wpxp", penta_solve_method,       & ! Intent(in) 
-                      ngrdcol, nsup, nsub, 2*nzm-1, nrhs, & ! Intent(in) 
-                      old_solution,                       & ! Intent(in)
+    call band_solve(  "xm_wpxp", penta_solve_method,      & ! Intent(in)
+                      ngrdcol, nsup, nsub, 2*nzm-1, nrhs, & ! Intent(in)
                       lhs, rhs,                           & ! Intent(inout)
                       solution, rcond )                     ! Intent(out)
 

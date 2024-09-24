@@ -627,8 +627,6 @@ module advance_helper_module
                                         clubb_params, &
                                         l_use_shear_Richardson, &
                                         l_modify_limiters_for_cnvg_test, &
-                                        stats_metadata, &
-                                        stats_zm, &
                                         Cx_fnc_Richardson )
 
   ! Description:
@@ -660,9 +658,6 @@ module advance_helper_module
         iCx_max,             &
         iRichardson_num_min, &
         iRichardson_num_max
-
-    use stats_variables, only: &
-        stats_metadata_type
 
     use stats_type_utilities, only: &
         stat_update_var      ! Procedure
@@ -714,13 +709,6 @@ module advance_helper_module
     ! (reduce threshold on limiters for sqrt_Ri_zm in mixing_length.F90)
     logical, intent(in) :: &
       l_modify_limiters_for_cnvg_test
-
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
-
-    !------------------------------ InOut Variable ------------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
-      stats_zm
 
     !------------------------------ Output Variable ------------------------------
     real( kind = core_rknd), dimension(ngrdcol,nzm), intent(out) :: &

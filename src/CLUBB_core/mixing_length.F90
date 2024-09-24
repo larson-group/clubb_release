@@ -18,7 +18,6 @@ module mixing_length
                                     exner, thv_ds, mu, lmin, &
                                     saturation_formula, &
                                     l_implemented, &
-                                    stats_metadata, &
                                     Lscale, Lscale_up, Lscale_down )
 
     ! Description:
@@ -139,9 +138,6 @@ module mixing_length
 
     use saturation, only:  &
         sat_mixrat_liq ! Procedure(s)
-        
-    use stats_variables, only: & 
-        stats_metadata_type
 
     implicit none
 
@@ -190,9 +186,6 @@ module mixing_length
       Lscale,    & ! Mixing length      [m]
       Lscale_up, & ! Mixing length up   [m]
       Lscale_down  ! Mixing length down [m]
-
-    type (stats_metadata_type), intent(in) :: &
-      stats_metadata
 
     !--------------------------------- Local Variables ---------------------------------
 
@@ -1084,7 +1077,6 @@ module mixing_length
                                   exner, thv_ds_zt, mu_pert_1, lmin,        & ! In 
                                   saturation_formula,                       & ! In
                                   l_implemented,                            & ! In
-                                  stats_metadata,                           & ! In
                                   Lscale_pert_1, Lscale_up, Lscale_down )     ! Out
 
       !$acc parallel loop gang vector collapse(2) default(present)
@@ -1116,7 +1108,6 @@ module mixing_length
                                   exner, thv_ds_zt, mu_pert_2, lmin,        & ! In 
                                   saturation_formula,                       & ! In
                                   l_implemented,                            & ! In
-                                  stats_metadata,                           & ! In
                                   Lscale_pert_2, Lscale_up, Lscale_down )     ! Out
 
     else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
@@ -1188,7 +1179,6 @@ module mixing_length
                                   exner, thv_ds_zt, mu_pert_pos_rt, lmin,        & ! In 
                                   saturation_formula,                            & ! In
                                   l_implemented,                                 & ! In
-                                  stats_metadata,                                & ! In
                                   Lscale_pert_1, Lscale_up, Lscale_down )          ! Out
 
       call compute_mixing_length( nzm, nzt, ngrdcol, gr, thvm, thlm_pert_neg_rt, & ! In
@@ -1196,7 +1186,6 @@ module mixing_length
                                   exner, thv_ds_zt, mu_pert_neg_rt, lmin,        & ! In 
                                   saturation_formula,                            & ! In
                                   l_implemented,                                 & ! In
-                                  stats_metadata,                                & ! In
                                   Lscale_pert_2, Lscale_up, Lscale_down )          ! Out
 
     else
@@ -1236,7 +1225,6 @@ module mixing_length
                                 exner, thv_ds_zt, newmu, lmin,     & ! In 
                                 saturation_formula,                & ! In
                                 l_implemented,                     & ! In
-                                stats_metadata,                    & ! In
                                 Lscale, Lscale_up, Lscale_down )     ! Out
 
     if ( l_avg_Lscale ) then

@@ -989,7 +989,7 @@ module clip_explicit
   end subroutine clip_variance
 
   !=============================================================================
-  subroutine clip_skewness( nzm, nzt, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
+  subroutine clip_skewness( nzt, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
                             Skw_max_mag, wp2_zt,                & ! intent(in)
                             l_use_wp3_lim_with_smth_Heaviside,  & ! intent(in)
                             stats_metadata,                     & ! intent(in)
@@ -1054,7 +1054,6 @@ module clip_explicit
 
     ! ----------------------- Input Variables -----------------------
     integer, intent(in) :: &
-      nzm, &
       nzt, &
       ngrdcol
 

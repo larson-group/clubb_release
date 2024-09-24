@@ -23,6 +23,8 @@ module matrix_solver_wrapper
 
   implicit none
   
+  private
+  
   public :: band_solve, &
             tridiag_solve
 
@@ -47,7 +49,6 @@ module matrix_solver_wrapper
   subroutine band_solve_single_rhs_multiple_lhs( &
                 solve_name, penta_solve_method, & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim,      & ! Intent(in)
-                old_soln,                       & ! Intent(in)
                 lhs, rhs,                       & ! Intent(inout)
                 soln, rcond )                     ! Intent(out)
 
@@ -72,9 +73,6 @@ module matrix_solver_wrapper
       nsup,     & ! Number of superdiagonals
       nsub,     & ! Number of subdiagonals
       ndim        ! The order of the LHS Matrix, i.e. the # of linear equations
-
-    real( kind = core_rknd ), dimension(ngrdcol,ndim), intent(in) ::  & 
-      old_soln ! Old soln, used as an initial guess in the bicgstab method
 
     real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) ::  & 
       lhs ! Left hand side
@@ -115,10 +113,10 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       ! Using dummy_soln, since we only want this routine for diagnostics
-      call lapack_band_solvex( "xm_wpxp", nsup, nsub, & ! Intent(in) 
-                               ndim, 1, ngrdcol,      & ! Intent(in) 
-                               lhs_copy, rhs_copy,    & ! Intent(inout)
-                               dummy_soln, rcond )      ! Intent(out)
+      call lapack_band_solvex( solve_name, nsup, nsub, & ! Intent(in)
+                               ndim, 1, ngrdcol,       & ! Intent(in)
+                               lhs_copy, rhs_copy,     & ! Intent(inout)
+                               dummy_soln, rcond )       ! Intent(out)
 
       !$acc update device( rcond )
 
@@ -130,10 +128,10 @@ module matrix_solver_wrapper
       !$acc update host( lhs, rhs )
 
       ! Perform LU decomp and solve system (LAPACK)
-      call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
-                              ndim, 1, ngrdcol,       & ! Intent(in) 
-                              lhs, rhs,               & ! Intent(inout)
-                              soln )                    ! Intent(out)
+      call lapack_band_solve( solve_name, nsup, nsub,  & ! Intent(in)
+                              ndim, 1, ngrdcol,        & ! Intent(in)
+                              lhs, rhs,                & ! Intent(inout)
+                              soln )                     ! Intent(out)
 
       !$acc update device( soln )
 
@@ -162,7 +160,6 @@ module matrix_solver_wrapper
   subroutine band_solve_multiple_rhs_lhs( &
                 solve_name, penta_solve_method,   & ! Intent(in)
                 ngrdcol, nsup, nsub, ndim, nrhs,  & ! Intent(in)
-                old_soln,                         & ! Intent(in)
                 lhs, rhs,                         & ! Intent(inout)
                 soln, rcond )                       ! Intent(out)
 
@@ -188,9 +185,6 @@ module matrix_solver_wrapper
       nsub,     & ! Number of subdiagonals
       ndim,     & ! The order of the LHS Matrix, i.e. the # of linear equations
       nrhs        ! Number of RHS's to back substitute for
-
-    real( kind = core_rknd ), dimension(ngrdcol,ndim,nrhs), intent(in) ::  & 
-      old_soln ! Old soln, used as an initial guess in the bicgstab method
 
     real( kind = core_rknd ), dimension(nsup+nsub+1,ngrdcol,ndim), intent(inout) ::  & 
       lhs ! Left hand side
@@ -231,10 +225,10 @@ module matrix_solver_wrapper
 
       ! Perform LU decomp and solve system (LAPACK with diagnostics)
       ! Using dummy_soln, since we only want this routine for diagnostics
-      call lapack_band_solvex( "xm_wpxp", nsup, nsub, & ! Intent(in) 
-                               ndim, nrhs, ngrdcol,   & ! Intent(in) 
-                               lhs_copy, rhs_copy,    & ! Intent(inout)
-                               dummy_soln, rcond )      ! Intent(out)
+      call lapack_band_solvex( solve_name, nsup, nsub, & ! Intent(in)
+                               ndim, nrhs, ngrdcol,    & ! Intent(in)
+                               lhs_copy, rhs_copy,     & ! Intent(inout)
+                               dummy_soln, rcond )       ! Intent(out)
 
       !$acc update device( rcond )
 
@@ -246,10 +240,10 @@ module matrix_solver_wrapper
       !$acc update host( lhs, rhs )
 
       ! Perform LU decomp and solve system (LAPACK)
-      call lapack_band_solve( "xm_wpxp", nsup, nsub,  & ! Intent(in) 
-                              ndim, nrhs, ngrdcol,    & ! Intent(in) 
-                              lhs, rhs,               & ! Intent(inout)
-                              soln )                    ! Intent(out)
+      call lapack_band_solve( solve_name, nsup, nsub,  & ! Intent(in)
+                              ndim, nrhs, ngrdcol,     & ! Intent(in)
+                              lhs, rhs,                & ! Intent(inout)
+                              soln )                     ! Intent(out)
 
       !$acc update device( soln )
 

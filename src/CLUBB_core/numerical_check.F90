@@ -844,7 +844,7 @@ module numerical_check
   end function invalid_model_arrays
 
 !------------------------------------------------------------------------
-  logical function is_nan_sclr( xarg )
+  pure logical function is_nan_sclr( xarg )
 
 ! Description:
 !   Checks if a given scalar real is a NaN, +inf or -inf.
@@ -884,7 +884,7 @@ module numerical_check
 !------------------------------------------------------------------------
 
 !------------------------------------------------------------------------
-  logical function is_nan_2d( x2d )
+  pure logical function is_nan_2d( x2d )
 
 ! Description:
 !   Checks if a given real vector is a NaN, +inf or -inf.

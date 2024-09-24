@@ -83,8 +83,8 @@ contains
 
     implicit none
     
-    !----------- Output Variables -----------
-    integer, intent(out) :: &
+    !----------- Input/Output Variables -----------
+    integer, intent(inout) :: &
       total_mismatches
     
     !----------- Local Variables -----------

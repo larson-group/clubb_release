@@ -1592,16 +1592,11 @@ module stats_clubb_utilities
   end subroutine stats_begin_timestep
 
   !-----------------------------------------------------------------------
-  subroutine stats_end_timestep( clubb_params, stats_metadata,  & ! intent(in)
+  subroutine stats_end_timestep( stats_metadata,  & ! intent(in)
                                  stats_zt, stats_zm, stats_sfc, & ! intent(inout)
                                  stats_lh_zt, stats_lh_sfc,     & ! intent(inout)
                                  stats_rad_zt, stats_rad_zm     & ! intent(inout)
-#ifdef NETCDF
-                                 , l_uv_nudge, &
-                                 l_tke_aniso, &
-                                 l_standard_term_ta &
-#endif
-                                  )
+                               )
 
     ! Description: 
     !   Called when the stats timestep has ended. This subroutine
@@ -1611,9 +1606,6 @@ module stats_clubb_utilities
     ! References:
     !   None
     !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd    ! Variable(s)
 
     use constants_clubb, only: &
         fstderr ! Constant(s)
@@ -1628,9 +1620,6 @@ module stats_clubb_utilities
         clubb_i, & ! Variable(s)
         clubb_j
 
-    use parameter_indices, only: &
-        nparams    ! Variable(s)
-
 #ifdef NETCDF
     use output_netcdf, only: & 
         write_netcdf ! Procedure(s)
@@ -1643,9 +1632,6 @@ module stats_clubb_utilities
     use stats_type, only: stats ! Type
 
     implicit none
-
-    real( kind = core_rknd ), dimension(nparams), intent(in) :: &
-      clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
 
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
@@ -1661,18 +1647,6 @@ module stats_clubb_utilities
 
     ! External
     intrinsic :: floor
-
-#ifdef NETCDF
-    ! Input Variables
-    logical, intent(in) :: &
-      l_uv_nudge,         & ! For wind speed nudging.
-      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
-                            ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
-      l_standard_term_ta    ! Use the standard discretization for the turbulent advection terms.
-                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
-                            ! derivative in advance_wp2_wp3_module.F90 and in
-                            ! advance_xp2_xpyp_module.F90.
-#endif
 
     ! Local Variables
 

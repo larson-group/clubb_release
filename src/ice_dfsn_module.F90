@@ -270,8 +270,11 @@ module ice_dfsn_module
            * (1.0_core_rknd/k_u_coef) * ( rho(k)**q_expn ) & 
            * ( (mass_ice_cryst(k)/a_coef)**((1.0_core_rknd-n_expn)/b_expn) ) & 
            * (1.0_core_rknd/gr%invrs_dzm(1,k-1))
-        mass_ice_cryst(k-1) = mass_ice_cryst(k)  & 
-                                     + dmass_ice_cryst(k)
+        
+        if (k > 1) then
+          mass_ice_cryst(k-1) = mass_ice_cryst(k)  & 
+                                       + dmass_ice_cryst(k)
+        end if
 
         ! Diameter of ice crystal in meters.
         diam(k) = (mass_ice_cryst(k)/a_coef)**(1._core_rknd/b_expn)
@@ -282,8 +285,10 @@ module ice_dfsn_module
                           * (rho(k)**(-q_expn))
 
       else   ! There's no liquid and/or ice present; assume no ice growth
-
-        mass_ice_cryst(k-1) = mass_ice_cryst(k)
+        
+        if (k > 1) then
+          mass_ice_cryst(k-1) = mass_ice_cryst(k)
+        end if
         rcm_icedfsn(k) = 0.0_core_rknd
         diam(k)        = 0.0_core_rknd  ! Set zero to remind that we don't grow ice
         u_T_cm(k)      = 0.0_core_rknd  ! Set zero to remind that we don't grow ice

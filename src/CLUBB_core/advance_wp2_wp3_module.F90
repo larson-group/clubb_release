@@ -847,7 +847,7 @@ module advance_wp2_wp3_module
                                 rhs_bp1_pr2_wp3 )           ! intent(out)
 
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_rhs( nzt, ngrdcol, gr,                          & ! intent(in)
+    call wp3_term_pr1_rhs( nzt, ngrdcol,                              & ! intent(in)
                            clubb_params(:,iC8), clubb_params(:,iC8b), & ! intent(in)
                            invrs_tau_wp3_zt, Skw_zt, wp3,             & ! intent(in)
                            l_damp_wp3_Skw_squared,                    & ! intent(in)
@@ -1025,7 +1025,7 @@ module advance_wp2_wp3_module
                      wp3_term_ta_lhs_result,                      & ! intent(in)
                      wm_zm, wm_zt,                                & ! intent(in)
                      sfc_elevation, C11_Skw_fnc,                  & ! intent(in)
-                     rho_ds_zm, rho_ds_zt,                        & ! intent(in)
+                     rho_ds_zm,                                   & ! intent(in)
                      wprtp, wpthlp, rtp2, thlp2,                  & ! intent(in)
                      clubb_params,                                & ! intent(in)
                      penta_solve_method,                          & ! intent(in)
@@ -1216,7 +1216,7 @@ module advance_wp2_wp3_module
                          wp3_term_ta_lhs_result, &
                          wm_zm, wm_zt, &
                          sfc_elevation, C11_Skw_fnc, &
-                         rho_ds_zm, rho_ds_zt, &
+                         rho_ds_zm, &
                          wprtp, wpthlp, rtp2, thlp2, &
                          clubb_params, &
                          penta_solve_method, &
@@ -1357,8 +1357,8 @@ module advance_wp2_wp3_module
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) ::  & 
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
-      C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
-      rho_ds_zt          ! Dry, static density on thermo. levels     [kg/m^3]
+      C11_Skw_fnc        ! C_11 parameter with Sk_w applied          [-]
+
 
     real( kind = core_rknd ), dimension(ngrdcol,nparams), intent(in) :: &
       clubb_params    ! Array of CLUBB's tunable parameters    [units vary]
@@ -1452,9 +1452,8 @@ module advance_wp2_wp3_module
 
       ! Solve the system and return condition number
       ! Note: When using lapack this can change the answer slightly
-      call band_solve( "wp2_wp3", penta_solve_method, & ! intent(in)
+      call band_solve(  "wp2_wp3", penta_solve_method, & ! intent(in)
                         ngrdcol, 2, 2, 2*nzm-1,       & ! intent(in)
-                        old_solut,                    & ! Intent(in)
                         lhs, rhs,                     & ! intent(inout)
                         solut, rcond )                  ! intent(out)
 
@@ -1471,7 +1470,6 @@ module advance_wp2_wp3_module
       ! Solve the system 
       call band_solve( "wp2_wp3", penta_solve_method, & ! intent(in)
                        ngrdcol, 2, 2, 2*nzm-1,        & ! intent(in)
-                       old_solut,                     & ! Intent(in)
                        lhs, rhs,                      & ! intent(inout)
                        solut )                          ! intent(out)
 
@@ -1853,7 +1851,7 @@ module advance_wp2_wp3_module
     wp2_zt(:,:) = zm2zt( nzm, nzt, ngrdcol, gr, wp2, w_tol_sqd )   ! Positive definite quantity
 
     ! Clip w'^3 by limiting skewness.
-    call clip_skewness( nzm, nzt, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
+    call clip_skewness( nzt, ngrdcol, gr, dt, sfc_elevation, & ! intent(in)
                         clubb_params(:,iSkw_max_mag), wp2_zt, & ! intent(in)
                         l_use_wp3_lim_with_smth_Heaviside,    & ! intent(in)
                         stats_metadata,                       & ! intent(in)
@@ -5452,7 +5450,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr_dfsn_rhs
 
   !=============================================================================
-  subroutine wp3_term_pr1_rhs( nzt, ngrdcol, gr, &
+  subroutine wp3_term_pr1_rhs( nzt, ngrdcol, &
                                C8, C8b, &
                                invrs_tau_wp3_zt, Skw_zt, wp3, &
                                l_damp_wp3_Skw_squared, &
@@ -5514,8 +5512,6 @@ module advance_wp2_wp3_module
     integer, intent(in) :: &
       nzt, &
       ngrdcol
-
-    type (grid), target, intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C8,  & ! Model parameter C_8                        [-]

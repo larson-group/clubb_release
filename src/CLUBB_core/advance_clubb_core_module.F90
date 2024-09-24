@@ -1885,8 +1885,6 @@ module advance_clubb_core_module
                                       clubb_params,                                       & ! In
                                       clubb_config_flags%l_use_shear_Richardson,          & ! In
                                       clubb_config_flags%l_modify_limiters_for_cnvg_test, & ! In
-                                      stats_metadata,                                     & ! In
-                                      stats_zm,                                           & ! In/Out
                                       Cx_fnc_Richardson )                                   ! Out
     else
       !$acc parallel loop gang vector collapse(2) default(present)

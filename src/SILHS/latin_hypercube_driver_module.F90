@@ -1009,7 +1009,7 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine clip_transform_silhs_output( gr, nzt, ngrdcol, num_samples,           & ! In
+  subroutine clip_transform_silhs_output( nzt, ngrdcol, num_samples,           & ! In
                                           pdf_dim, hydromet_dim, hm_metadata,  & ! In
                                           X_mixt_comp_all_levs,                   & ! In
                                           X_nl_all_levs,                          & ! Inout
@@ -1069,8 +1069,6 @@ module latin_hypercube_driver_module
 
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
-
-    type (grid), target, intent(in) :: gr
 
     integer, dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
