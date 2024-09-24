@@ -7,24 +7,17 @@
 
 def main():
 
-    import dash
-    #import dash_core_components as dcc
-    #import dash_html_components as html
-    import plotly.express as px
-    import pandas as pd
 
     import numpy as np
-    import pdb
-    import sklearn
-    import plotly.figure_factory as ff
-    #from plotly.figure_factory import create_quiver
-    #from itertools import chain
 
-    from set_up_dashboard_inputs import setUpInputs, setUpPreliminaries, \
-                                        setupDefaultMetricValsCol
-    from  create_figs import createFigs
+    from set_up_dashboard_inputs \
+        import setUpInputs, \
+               setUpPreliminaries, \
+               setupDefaultMetricValsCol
 
-    #print("New run --------------------------------------")
+    from create_figs import createFigs
+
+
 
     print("Set up inputs . . .")
 
@@ -43,9 +36,7 @@ def main():
     = \
         setUpInputs()
 
-    #pdb.set_trace()
-
-    # Number of metrics
+    # Number of regional metrics
     numMetrics = len(metricsNames)
 
     print("Set up preliminaries . . .")
@@ -65,20 +56,14 @@ def main():
                            defaultNcFilename
                           )
 
-    #print("Orig defaultBiasesCol=", defaultBiasesCol)
-    #print("metricsNames=", metricsNames)
-    #print("obsMetricValsCol=", obsMetricValsCol)
-
     # Construct numMetrics x numParams matrix of second derivatives, d2metrics/dparams2.
-    # The derivatives are normalized by observed metric values and max param values.
+    #     The derivatives are normalized by observed metric values and max param values.
+    # Also construct a linear sensitivity matrix, dmetrics/dparams.
     normlzdCurvMatrix, normlzdSensMatrixPoly, normlzdConstMatrix, \
     normlzdOrdDparamsMin, normlzdOrdDparamsMax = \
         constructNormlzdCurvMatrix(metricsNames, paramsNames, transformedParamsNames, \
                                    metricsWeights, obsMetricValsCol, normMetricValsCol, magParamValsRow, \
                                    sensNcFilenames, sensNcFilenamesExt, defaultNcFilename)
-
-    #print("normlzdSensMatrixPoly=", normlzdSensMatrixPoly)
-    #print("normlzdCurvMatrix=", normlzdCurvMatrix)
 
     # In order to weight certain metrics, multiply each row of normlzdSensMatrixPoly
     # by metricsWeights
@@ -92,28 +77,18 @@ def main():
                                    metricsWeights, obsMetricValsCol, normMetricValsCol, magPrescribedParamValsRow, \
                                    prescribedSensNcFilenames, prescribedSensNcFilenamesExt, defaultNcFilename)
 
-    #print("normlzdPrecribedSensMatrixPoly=", normlzdPrescribedSensMatrixPoly)
-    #print("normlzdPrecribedCurvMatrix=", normlzdPrescribedCurvMatrix)
-
     # This is the prescribed correction to the metrics that appears on the left-hand side of the Taylor equation.
     #   It is not a bias from the obs.  It is a correction to the simulated default metric values
     #   based on prescribed param values.
     normlzdPrescribedBiasesCol = \
          fwdFnc( dnormlzdPrescribedParams, normlzdPrescribedSensMatrixPoly, normlzdPrescribedCurvMatrix, numMetrics )
 
-    #print("normlzdPrecribedBiasesCol=", normlzdPrescribedBiasesCol)
-
     prescribedBiasesCol = normlzdPrescribedBiasesCol * np.abs(normMetricValsCol)
 
-    #print("precribedBiasesCol=", prescribedBiasesCol)
-
     # defaultBiasesCol + prescribedBiasesCol = -fwdFnc_tuned_params  (see objFnc).
-    # This lumps the prescribed-parameter adjustment into defaultBiasesCol
+    #     This lumps the prescribed-parameter adjustment into defaultBiasesCol.
+    # Is it clearer to separate them out???
     defaultBiasesCol = defaultBiasesCol + prescribedBiasesCol
-
-    #print("Orig+Prescribed defaultBiasesCol=", defaultBiasesCol)
-
-    #pdb.set_trace()
 
     print("Optimizing parameter values . . . ")
 
@@ -122,9 +97,8 @@ def main():
     dnormlzdParamsSolnLin, paramsSolnLin, \
     defaultBiasesApproxNonlin2x, \
     defaultBiasesApproxNonlinNoCurv, defaultBiasesApproxNonlin2xCurv = \
-        solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
+        solveUsingNonlin(metricsNames,
                          metricsWeights, normMetricValsCol, magParamValsRow,
-                         sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
                          defaultParamValsOrigRow,
                          normlzdSensMatrixPoly, defaultBiasesCol,
                          #normlzdSensMatrixPoly, defaultBiasesCol-prescribedBiasesCol,
@@ -133,12 +107,13 @@ def main():
                          beVerbose=False)
 
     print("Tuned parameter values (paramsSolnNonlin)")
-    for idx in range(0,len(paramsNames)): print("{:33s} {:7.7g}".format( paramsNames[idx], paramsSolnNonlin[idx][0] ) )
+    for idx in range(0,len(paramsNames)): \
+        print("{:33s} {:7.7g}".format(paramsNames[idx], paramsSolnNonlin[idx][0] ) )
 
     normlzdLinplusSensMatrixPoly = normlzdSemiLinMatrixFnc(
                                         dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly, 
                                         normlzdCurvMatrix, numMetrics)
-    normlzdWeightedLinplusSensMatrixPoly = np.diag(np.transpose(metricsWeights)[0]) @ normlzdLinplusSensMatrixPoly
+    #normlzdWeightedLinplusSensMatrixPoly = np.diag(np.transpose(metricsWeights)[0]) @ normlzdLinplusSensMatrixPoly
 
 
 
@@ -151,9 +126,8 @@ def main():
                      normlzdCurvMatrix,
                      beVerbose=False)
 
-    defaultBiasesApproxElasticCheck = ( normlzdWeightedSensMatrixPoly @ dnormlzdParamsSolnElastic ) \
-                            * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
-
+    #defaultBiasesApproxElasticCheck = ( normlzdWeightedSensMatrixPoly @ dnormlzdParamsSolnElastic ) \
+    #                        * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
     #print("defaultBiasesApproxElastic = ", defaultBiasesApproxElastic)
     #print("defaultBiasesApproxElasticCheck = ", defaultBiasesApproxElasticCheck)
 
@@ -180,7 +154,7 @@ def main():
     # Check whether the minimizer actually reduces chisqd
     # Initial value of chisqd, which assumes parameter perturbations are zero
     normlzdDefaultBiasesCol = defaultBiasesCol/np.abs(normMetricValsCol)
-    normlzdWeightedDefaultBiasesCol = metricsWeights * normlzdDefaultBiasesCol
+    #normlzdWeightedDefaultBiasesCol = metricsWeights * normlzdDefaultBiasesCol
     chisqdZero = objFnc(np.zeros_like(defaultParamValsOrigRow), \
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, metricsWeights, \
                         normlzdCurvMatrix, reglrCoef, numMetrics)
@@ -189,8 +163,6 @@ def main():
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, metricsWeights, \
                         normlzdCurvMatrix, reglrCoef, numMetrics)
 
-    #print("chisqdZero =", chisqdZero)
-    #print("chisqdMin =", chisqdMin)
     print("chisqdMinRatio =", chisqdMin/chisqdZero)
 
     chisqdUnweightedZero = objFnc(np.zeros_like(defaultParamValsOrigRow), \
@@ -201,8 +173,6 @@ def main():
                         normlzdSensMatrixPoly, normlzdDefaultBiasesCol, np.ones_like(metricsWeights), \
                         normlzdCurvMatrix, reglrCoef, numMetrics)
 
-    #print("chisqdUnweightedZero =", chisqdUnweightedZero)
-    #print("chisqdUnweightedMin =", chisqdUnweightedMin)
     print("chisqdUnweightedMinRatio =", chisqdUnweightedMin/chisqdUnweightedZero)
 
     # Set up a column vector of metric values from the global simulation based on optimized
@@ -220,16 +190,12 @@ def main():
                         normlzdSensMatrixPoly, normlzdLinSolnBiasesCol, metricsWeights, \
                         normlzdCurvMatrix, reglrCoef, numMetrics)
 
-    #print("chisqdZero =", chisqdZero)
-    #print("chisqdMin =", chisqdMin)
     print("chisqdLinSolnMinRatio =", chisqdLinSolnMin/chisqdZero)
 
     chisqdUnweightedLinSolnMin = objFnc(np.zeros_like(defaultParamValsOrigRow), \
                         normlzdSensMatrixPoly, normlzdLinSolnBiasesCol, np.ones_like(metricsWeights), \
                         normlzdCurvMatrix, reglrCoef, numMetrics)
 
-    #print("chisqdUnweightedZero =", chisqdUnweightedZero)
-    #print("chisqdUnweightedMin =", chisqdUnweightedMin)
     print("chisqdUnweightedLinSolnMinRatio =", chisqdUnweightedLinSolnMin/chisqdUnweightedZero)
     print("-----------------------------------------------------")
 
@@ -239,8 +205,6 @@ def main():
     #
     ##############################################
 
-
-    #print("Creating plots . . .")
 
     createFigs(metricsNames,
                paramsNames, transformedParamsNames, paramsScales,
@@ -301,9 +265,8 @@ def objFnc(dnormlzdParams, normlzdSensMatrix, normlzdDefaultBiasesCol, metricsWe
 
     return chisqd
 
-def solveUsingNonlin(metricsNames, paramsNames, transformedParamsNames,
+def solveUsingNonlin(metricsNames,
                      metricsWeights, normMetricValsCol, magParamValsRow,
-                     sensNcFilenames, sensNcFilenamesExt, defaultNcFilename,
                      defaultParamValsOrigRow,
                      normlzdSensMatrix, defaultBiasesCol,
                      normlzdCurvMatrix,

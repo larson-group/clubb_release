@@ -150,9 +150,9 @@ def setUpInputs():
         ['clubb_altitude_threshold', 0.001, \
          folder_name + '20_Regional.nc',
          folder_name + '21_Regional.nc'], \
-        #['clubb_c_invrs_tau_sfc', 1.0, \
-        # folder_name + '6_Regional.nc',
-        # folder_name + '7_Regional.nc'], \
+        ['clubb_c_invrs_tau_sfc', 1.0, \
+         folder_name + '6_Regional.nc',
+         folder_name + '7_Regional.nc'], \
         ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, \
          folder_name + '8_Regional.nc', \
          folder_name + '9_Regional.nc'], \
@@ -433,12 +433,34 @@ def setUpInputs():
     #    print("metricGlobalAvg not equal to metricGlobalVal")
     print("metricGlobalAvg =", metricGlobalAvg)
     print("metricGlobalVal =", metricGlobalVal)
+    print("defaultMetricValsCol printed as array = ")
+    defaultMetricValsReshaped = defaultMetricValsCol.reshape((9,18))
+    #defaultMetricValsRolled = np.roll(defaultMetricValsReshaped, -9, axis=1)
+    np.set_printoptions( linewidth=500 )
+    print(np.around(defaultMetricValsReshaped,2))
+    #print(np.around(defaultMetricValsRolled,2))
 
     obsMetricValsDict = setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231211_20x20regs/" + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/20231208runs_30x30/" + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict(folder_name + "OBS.nc")
     #obsMetricValsDict = setUp_x_ObsMetricValsDict("Regional_files/stephens_20240131/btune_regional_files/b1850.075plus_Regional.nc")
+
+    obsMetricValsCol = setUpObsCol(obsMetricValsDict, metricsNames)
+    obsGlobalAvg = np.dot(metricsWeights.T, obsMetricValsCol)
+    #obsGlobalAvg = np.mean(obsMetricValsCol)
+    print("obsGlobalAvg =", obsGlobalAvg)
+
+    obsMetricValsReshaped = obsMetricValsCol.reshape((9,18))
+    biasMat = defaultMetricValsReshaped - obsMetricValsReshaped
+    print("biasMat =")
+    print(np.around(biasMat,2))
+
+    mse = np.sum(metricsWeights*(defaultMetricValsCol - obsMetricValsCol)**2) \
+               / np.sum(metricsWeights)
+
+    rmse = np.sqrt(mse)
+    print("rmse =", rmse)
 
     return (metricsNames, metricsWeights, metricsNorms, \
             obsMetricValsDict, \
