@@ -754,7 +754,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
        stability_correction,         & ! Stability correction factor
        invrs_tau_N2_zm,              & ! Inverse tau with static stability correction applied [1/s]
-       invrs_tau_C6_zm,              & ! Inverse tau values used for C6 (pr1) term in wpxp [1/s]
+       invrs_tau_C6sclrflx_zm,       & ! Inverse tau values used for C6 (pr1) term in wpxp [1/s]
+       invrs_tau_C6momflx_zm,        &
        invrs_tau_C1_zm,              & ! Inverse tau values used for C1 (dp1) term in wp2 [1/s]
        invrs_tau_xp2_zm,             & ! Inverse tau values used for advance_xp2_wpxp [s^-1]
        invrs_tau_N2_iso,             & ! Inverse tau values used for C4 when 
@@ -847,8 +848,8 @@ module advance_clubb_core_module
     !$acc              mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
     !$acc              thlm_zm, rcm_zm, thlm1000, thlm700, &
     !$acc              rcm_supersat_adj, stability_correction, invrs_tau_N2_zm, &
-    !$acc              invrs_tau_C6_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, invrs_tau_N2_iso, &
-    !$acc              invrs_tau_C4_zm, invrs_tau_C14_zm, invrs_tau_wp2_zm, invrs_tau_wpxp_zm, &
+    !$acc              invrs_tau_C6sclrflx_zm, invrs_tau_C6momflx_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, &
+    !$acc              invrs_tau_N2_iso, invrs_tau_C4_zm, invrs_tau_C14_zm, invrs_tau_wp2_zm, invrs_tau_wpxp_zm, &
     !$acc              invrs_tau_wp3_zm, invrs_tau_no_N2_zm, invrs_tau_bkgnd, invrs_tau_shear, &
     !$acc              invrs_tau_sfc, invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
     !$acc              brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
@@ -1633,7 +1634,8 @@ module advance_clubb_core_module
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_N2_zm(i,k) = invrs_tau_zm(i,k) * stability_correction(i,k)
-          invrs_tau_C6_zm(i,k) = invrs_tau_N2_zm(i,k)
+          invrs_tau_C6sclrflx_zm(i,k) = invrs_tau_N2_zm(i,k)
+          invrs_tau_C6momflx_zm(i,k) = invrs_tau_N2_zm(i,k)
           invrs_tau_C1_zm(i,k) = invrs_tau_N2_zm(i,k)
         end do
       end do
@@ -1643,7 +1645,8 @@ module advance_clubb_core_module
       do k = 1, nz
         do i = 1, ngrdcol
           invrs_tau_N2_zm(i,k) = unused_var
-          invrs_tau_C6_zm(i,k) = invrs_tau_wpxp_zm(i,k)
+          invrs_tau_C6sclrflx_zm(i,k) = invrs_tau_wpxp_zm(i,k)
+          invrs_tau_C6momflx_zm(i,k) = invrs_tau_wpxp_zm(i,k)
           invrs_tau_C1_zm(i,k) = invrs_tau_wp2_zm(i,k)
         end do
       end do
@@ -1776,7 +1779,8 @@ module advance_clubb_core_module
       call advance_xm_wpxp( nz, ngrdcol, sclr_dim, sclr_tol, gr, dt_advance,      & ! intent(in)  
                             sigma_sqd_w, wm_zm, wm_zt, wp2,                       & ! intent(in)
                             Lscale_zm, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm,   & ! intent(in)
-                            invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, & ! intent(in)
+                            invrs_tau_C6sclrflx_zm, invrs_tau_C6momflx_zm,        & ! intent(in) 
+                            tau_max_zm, Skw_zm, wp2rtp, rtpthvp,                  & ! intent(in)
                             rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp,         & ! intent(in)
                             thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref,     & ! intent(in)
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,                & ! intent(in)
@@ -2759,8 +2763,8 @@ module advance_clubb_core_module
     !$acc                   sqrt_em_zt, xp3_coef_fnc, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
     !$acc                   mixt_frac_zm, rcp2_zt, cloud_frac_zm, ice_supersat_frac_zm, rtm_zm, &
     !$acc                   thlm_zm, rcm_zm, thlm1000, thlm700, &
-    !$acc                   rcm_supersat_adj, stability_correction, invrs_tau_N2_zm, &
-    !$acc                   invrs_tau_C6_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, invrs_tau_N2_iso, &
+    !$acc                   rcm_supersat_adj, stability_correction, invrs_tau_N2_zm, invrs_tau_C6sclrflx_zm, &
+    !$acc                   invrs_tau_C6momflx_zm, invrs_tau_C1_zm, invrs_tau_xp2_zm, invrs_tau_N2_iso, &
     !$acc                   invrs_tau_C4_zm, invrs_tau_C14_zm, invrs_tau_wp2_zm, invrs_tau_wpxp_zm, &
     !$acc                   invrs_tau_wp3_zm, invrs_tau_no_N2_zm, invrs_tau_bkgnd, invrs_tau_shear, &
     !$acc                   invrs_tau_sfc, invrs_tau_zt, invrs_tau_wp3_zt, Cx_fnc_Richardson, &
