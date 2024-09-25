@@ -194,7 +194,7 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
     
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     type (sclr_idx_type), intent(in) :: &
@@ -293,7 +293,7 @@ module advance_xp2_xpyp_module
       stats_metadata
 
     !------------------------------ Input/Output Variables ------------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -1517,7 +1517,7 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     type (sclr_idx_type), intent(in) :: &
@@ -1573,7 +1573,7 @@ module advance_xp2_xpyp_module
 
     ! -------- In/Out Variables --------
 
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm, &
       stats_sfc
     
@@ -1929,7 +1929,7 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     type (sclr_idx_type), intent(in) :: &
@@ -1998,7 +1998,7 @@ module advance_xp2_xpyp_module
 
     !------------------------ In/Out Variables ------------------------
     
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm, &
       stats_sfc
 
@@ -2726,7 +2726,7 @@ module advance_xp2_xpyp_module
       stats_metadata
 
     ! ---------------------- Input/Ouput variables ----------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_sfc
       
     real( kind = core_rknd ), dimension(ngrdcol,nzm,nrhs), intent(inout) :: & 
@@ -2888,7 +2888,7 @@ module advance_xp2_xpyp_module
       stats_metadata
 
     !----------------------- InOut variables -----------------------
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zm
 
     !----------------------- Local Variables -----------------------
@@ -3060,7 +3060,7 @@ module advance_xp2_xpyp_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     integer, intent(in) :: solve_type
       
@@ -3105,7 +3105,7 @@ module advance_xp2_xpyp_module
       stats_metadata
 
     !------------------- InOut Variables -------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
     !------------------- Output Variables -------------------
@@ -3405,7 +3405,7 @@ module advance_xp2_xpyp_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     integer, intent(in) :: solve_type
 
@@ -3443,7 +3443,7 @@ module advance_xp2_xpyp_module
       stats_metadata
 
     !------------------- InOut Variables -------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
     !------------------- Output Variables -------------------
@@ -3808,7 +3808,7 @@ module advance_xp2_xpyp_module
       ngrdcol,  & ! Number of grid columns
       sclr_dim    ! Number of passive scalars
     
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
         
     type(implicit_coefs_terms), intent(in) :: &
@@ -3878,7 +3878,7 @@ module advance_xp2_xpyp_module
           stats_metadata
 
     !------------------- Inout Variables -------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
 
     !------------------- Output Variables -------------------
@@ -5951,7 +5951,7 @@ module advance_xp2_xpyp_module
       nzm, &
       ngrdcol
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
     
     integer, intent(in) :: & 
@@ -5970,7 +5970,7 @@ module advance_xp2_xpyp_module
       stats_metadata
 
     !------------------- Input/Output variables ------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm
       
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) ::  & 
@@ -6066,7 +6066,7 @@ module advance_xp2_xpyp_module
       nzt,      & ! Thermodynamic points in the Vertical        [-]
       ngrdcol
 
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 

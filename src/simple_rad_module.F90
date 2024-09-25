@@ -217,7 +217,7 @@ module simple_rad_module
       ls_div = 3.75e-6_core_rknd
 
     ! Input Variables
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: & 
       rho,    & ! Density on thermodynamic grid  [kg/m^3] 
@@ -231,7 +231,7 @@ module simple_rad_module
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_sfc
     
     ! Output Variables
@@ -351,7 +351,7 @@ module simple_rad_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nzt) :: & 
@@ -403,7 +403,7 @@ module simple_rad_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input Variables
     real(kind=time_precision), intent(in) :: &
@@ -555,7 +555,7 @@ module simple_rad_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Constant parameters
     ! Toggle for centered/forward differencing (in interpolations)

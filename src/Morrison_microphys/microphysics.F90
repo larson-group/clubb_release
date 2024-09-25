@@ -41,7 +41,7 @@ logical :: isallocatedMICRO = .false.
 integer :: nmicro_fields ! total number of prognostic water vars
 
 #ifdef CLUBB
-real, allocatable, target, dimension(:,:,:,:) :: micro_field  ! holds mphys quantities
+real, allocatable, dimension(:,:,:,:) :: micro_field  ! holds mphys quantities
 #else
 real, allocatable, dimension(:,:,:,:) :: micro_field  ! holds mphys quantities
 #endif
@@ -63,7 +63,7 @@ integer, parameter :: index_cloud_ice = -1 ! historical variable (don't change)
 real, allocatable, dimension(:,:,:) :: fluxbmk, fluxtmk !surface/top fluxes
 real, allocatable, dimension(:,:,:) :: reffc, reffi
 #ifdef CLUBB
-real, allocatable, target, dimension(:,:,:) :: cloudliq
+real, allocatable, dimension(:,:,:) :: cloudliq
 #else
 real, allocatable, dimension(:,:,:) :: cloudliq
 #endif
@@ -894,7 +894,7 @@ use clubb_silhs_vars, only: &
 implicit none 
 
 #ifdef CLUBB
-type(grid), target, intent(in) :: gr
+type(grid), intent(in) :: gr
 
 #endif /* CLUBB */
 

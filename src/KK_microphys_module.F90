@@ -110,7 +110,7 @@ module KK_microphys_module
       num_stats_sfc = 0           ! No sfc variables sampled in this routine
 
     ! Input Variables
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) :: &
@@ -502,7 +502,7 @@ module KK_microphys_module
       l_clip_positive_sed = .true.  ! Clip positive Vrr and VNr terms to zero
 
     !-------------------------- Input Variables --------------------------
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) :: &
@@ -555,7 +555,7 @@ module KK_microphys_module
       stats_metadata
 
     !-------------------------- InOut Variables --------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm
 
@@ -1536,7 +1536,7 @@ module KK_microphys_module
       stats_metadata
 
     !--------------------------- InOut ---------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt
 
     !--------------------------- Local Variables ---------------------------
@@ -1619,7 +1619,7 @@ module KK_microphys_module
       stats_metadata
 
     !------------------------- InOut Variables -------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt
 
     !------------------------- Begin Code -------------------------

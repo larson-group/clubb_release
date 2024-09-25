@@ -166,7 +166,7 @@ module setup_clubb_pdf_params
       ngrdcol,      & ! Number of grid columns
       hydromet_dim    ! Number of hydrometeor species
       
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]
@@ -223,7 +223,7 @@ module setup_clubb_pdf_params
       stats_metadata
 
     !------------------------ Input/Output Variables ------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -3783,7 +3783,7 @@ module setup_clubb_pdf_params
       stats_metadata
 
     !--------------------------- InOut Variable ---------------------------
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt
 
     !--------------------------- Local Variable ---------------------------
@@ -4342,7 +4342,7 @@ module setup_clubb_pdf_params
       stats_metadata
 
     !------------------------ InOut Variables ------------------------
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt
 
     !------------------------ Local Variables ------------------------

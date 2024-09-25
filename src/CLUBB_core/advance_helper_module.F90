@@ -254,7 +254,7 @@ module advance_helper_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       thlm,              & ! th_l (thermo. levels)                     [K]
@@ -411,7 +411,7 @@ module advance_helper_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       thlm,              &  ! th_l (thermo. levels)              [K]
@@ -687,7 +687,7 @@ module advance_helper_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       brunt_vaisala_freq_sqd, &         ! Brunt-Vaisala frequency squared, N^2  [1/s^2]
@@ -935,7 +935,7 @@ module advance_helper_module
       ngrdcol, &
       smth_type
       
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       var_profile, &      ! Profile on momentum levels
@@ -1106,7 +1106,7 @@ module advance_helper_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
@@ -1187,7 +1187,7 @@ module advance_helper_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
@@ -1829,7 +1829,7 @@ module advance_helper_module
     implicit none
 
     ! ----------------------- Input variables -----------------------
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
       
     real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
       Km_zm    ! Eddy diff. (k momentum level)                 [m^2/s]
@@ -1879,7 +1879,7 @@ module advance_helper_module
       nzt, &
       ngrdcol
       
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
       
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       Km_zm    ! Eddy diff. (k momentum level)                 [m^2/s]

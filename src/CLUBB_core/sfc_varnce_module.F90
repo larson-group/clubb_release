@@ -153,7 +153,7 @@ module sfc_varnce_module
       stats_metadata
 
     !-------------------------- InOut Variables --------------------------
-    type (stats), target, intent(inout), dimension(ngrdcol) :: &
+    type (stats), intent(inout), dimension(ngrdcol) :: &
       stats_zm
 
     !-------------------------- Output Variables --------------------------

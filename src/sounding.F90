@@ -88,7 +88,7 @@ module sounding
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     integer, intent(in) :: iunit ! File unit to use for namelist
@@ -856,7 +856,7 @@ module sounding
 
     implicit none
 
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     ! External
     intrinsic :: trim

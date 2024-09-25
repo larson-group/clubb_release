@@ -175,7 +175,7 @@ module pdf_parameter_tests
 
     implicit none
 
-    type (grid), target, intent(inout) :: gr
+    type (grid), intent(inout) :: gr
 
     ! Input Variable
     integer, intent(in) :: &

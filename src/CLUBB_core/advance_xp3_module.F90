@@ -73,7 +73,7 @@ module advance_xp3_module
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
     
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
   
     real( kind = core_rknd ), intent(in) :: &
@@ -110,7 +110,7 @@ module advance_xp3_module
       stats_metadata
 
     ! --------------------- Input/Output Variables ---------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
       
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
@@ -308,7 +308,7 @@ module advance_xp3_module
       nzt, &
       ngrdcol
     
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
   
     integer, intent(in) :: &
       solve_type    ! Flag for solving for rtp3, thlp3, or sclrp3
@@ -338,7 +338,7 @@ module advance_xp3_module
       stats_metadata
 
     ! ----------------------- Input/Output Variable -----------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
       
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &

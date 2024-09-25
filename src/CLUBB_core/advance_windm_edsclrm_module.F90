@@ -125,7 +125,7 @@ module advance_windm_edsclrm_module
       ngrdcol, &
       edsclr_dim
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
   
     real( kind = core_rknd ), intent(in) ::  &
@@ -188,7 +188,7 @@ module advance_windm_edsclrm_module
       stats_metadata
 
     ! ------------------------ Input/Output Variables ------------------------
-    type (stats), dimension(ngrdcol), target, intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -1697,7 +1697,7 @@ module advance_windm_edsclrm_module
       stats_metadata
 
     ! ------------------------ Inout variables ------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_sfc
       
     real( kind = core_rknd ), dimension(3,ngrdcol,nzt), intent(inout) :: &
@@ -1812,7 +1812,7 @@ module advance_windm_edsclrm_module
       stats_metadata
 
     !---------------------- InOut variables ----------------------
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt
 
     !---------------------- Local variables ----------------------
@@ -1980,7 +1980,7 @@ module advance_windm_edsclrm_module
       stats_metadata
       
     ! -------------------------- InOut Variables --------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
 
     ! -------------------------- Output Variables --------------------------
@@ -2146,7 +2146,7 @@ module advance_windm_edsclrm_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), intent(in) :: & 
       dt                 ! Model timestep                             [s]
@@ -2274,7 +2274,7 @@ module advance_windm_edsclrm_module
       nzt, &
       ngrdcol
     
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
     
     integer, intent(in) :: &
@@ -2304,7 +2304,7 @@ module advance_windm_edsclrm_module
       stats_metadata
 
     !------------------- Inout Variable -------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
 
     !------------------- Output Variable -------------------

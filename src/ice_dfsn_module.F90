@@ -96,7 +96,7 @@ module ice_dfsn_module
     real(kind = core_rknd), parameter :: N_i = 2000._core_rknd
 
     !---------------------- Input variables ----------------------
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in)::  & 
@@ -116,7 +116,7 @@ module ice_dfsn_module
       stats_metadata
 
     !---------------------- InOut variables ----------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt
 
     !---------------------- Output variables ----------------------

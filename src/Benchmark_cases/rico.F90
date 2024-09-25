@@ -55,7 +55,7 @@ module rico
   type (sclr_idx_type), intent(in) :: &
     sclr_idx
 
-  type (grid), target, intent(in) :: &
+  type (grid), intent(in) :: &
     gr
 
   real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &

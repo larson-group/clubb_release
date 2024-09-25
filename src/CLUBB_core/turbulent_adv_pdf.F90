@@ -344,7 +344,7 @@ module turbulent_adv_pdf
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       coef_wpxpyp_implicit,   & ! Coef. of <x'y'> in <w'x'y'>; t-levs  [m/s]
@@ -521,7 +521,7 @@ module turbulent_adv_pdf
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
         coef_wpxpyp_implicit        ! Coef. of <x'y'> in <w'x'y'>; t-lev [m/s]
@@ -866,7 +866,7 @@ module turbulent_adv_pdf
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       term_wpxpyp_explicit, & ! RHS: <w'x'y'> eq; t-levs      [m/s(x un)(y un)]
@@ -1003,7 +1003,7 @@ module turbulent_adv_pdf
       nzt, &
       ngrdcol
     
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       term_wpxpyp_explicit_zm,      & ! RHS: <w'x'y'> eq; m-lev(k)   [m/s(x un)(y un)]

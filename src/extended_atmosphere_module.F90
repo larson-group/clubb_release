@@ -77,13 +77,13 @@ module extended_atmosphere_module
     total_atmos_dim     ! Total Atmosphere Size (grid + buffer + extended atmosphere)
 !$omp threadprivate(extended_atmos_dim, total_atmos_dim)
 
-  real( kind = core_rknd ), public, target, allocatable, dimension(:) :: &
+  real( kind = core_rknd ), public, allocatable, dimension(:) :: &
     complete_alt, &     ! Altitude of complete atmosphere in meters
     complete_momentum   ! Altitude of complete momentum grid in meters
 !$omp threadprivate(complete_alt, complete_momentum)
 
   ! Extended Atmosphere variables
-  real( kind = core_rknd ), public, target, allocatable, dimension(:) :: &
+  real( kind = core_rknd ), public, allocatable, dimension(:) :: &
     extended_alt, &         ! Altitude, increases with array index    [m]
     extended_T_in_K, &      ! Temperature in degrees Kelvin
     extended_sp_hmdty, &    ! Specific Humidity ( Water Vapor / Density )

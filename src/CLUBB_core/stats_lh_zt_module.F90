@@ -43,7 +43,7 @@ module stats_lh_zt_module
 
     implicit none
 
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_lh_zt
 
     ! External

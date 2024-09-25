@@ -300,7 +300,7 @@ module grid_class
       nzmax, &  ! Number of vertical levels in grid      [#]
       ngrdcol
 
-    type(grid), target, intent(inout) :: gr
+    type(grid), intent(inout) :: gr
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       sfc_elevation  ! Elevation of ground level    [m AMSL]
@@ -566,7 +566,7 @@ module grid_class
 
     implicit none
   
-    type(grid), target, intent(inout) :: gr
+    type(grid), intent(inout) :: gr
 
     ! Local Variable(s)
     integer :: ierr
@@ -624,7 +624,7 @@ module grid_class
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(inout) :: gr
+    type (grid), intent(inout) :: gr
 
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
@@ -1193,7 +1193,7 @@ module grid_class
     implicit none
 
     !---------------------------- Input Variables ----------------------------
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
@@ -1239,7 +1239,7 @@ module grid_class
     implicit none
 
     !---------------------------- Input Variables ----------------------------
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
@@ -1300,7 +1300,7 @@ module grid_class
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
@@ -1351,7 +1351,7 @@ module grid_class
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     !---------------------------- Input Variables ----------------------------
     real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: &
@@ -1399,7 +1399,7 @@ module grid_class
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     !---------------------------- Input Variables ----------------------------
     real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: &
@@ -1461,7 +1461,7 @@ module grid_class
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
@@ -1522,7 +1522,7 @@ module grid_class
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! ------------------------------ Input Variable ------------------------------
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
@@ -1626,7 +1626,7 @@ module grid_class
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       azt    ! Variable on thermodynamic grid levels    [units vary]
@@ -1684,7 +1684,7 @@ module grid_class
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       azm    ! Variable on momentum grid levels    [units vary]
@@ -1746,7 +1746,7 @@ module grid_class
       nzt, &
       ngrdcol
     
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
       azt
@@ -2020,7 +2020,7 @@ module grid_class
       ngrdcol
     
     ! Input/Output Variable
-    type (grid), target, intent(inout) :: gr
+    type (grid), intent(inout) :: gr
 
     integer :: i, k
 
@@ -2096,7 +2096,7 @@ module grid_class
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! ------------------------------ Input Variable ------------------------------
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
@@ -2173,7 +2173,7 @@ module grid_class
       nzt, &
       ngrdcol
     
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       azm
@@ -2357,7 +2357,7 @@ module grid_class
       ngrdcol
     
     ! Input/Output Variable
-    type (grid), target, intent(inout) :: gr
+    type (grid), intent(inout) :: gr
 
     integer :: i, k
 
@@ -2404,7 +2404,7 @@ module grid_class
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input Variable
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
@@ -2452,7 +2452,7 @@ module grid_class
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input Variable
     real( kind = core_rknd ), intent(in), dimension(gr%nzm) :: &
@@ -2502,7 +2502,7 @@ module grid_class
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input Variable
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzt) :: &
@@ -2563,7 +2563,7 @@ module grid_class
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input Variable
     real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &

@@ -186,7 +186,7 @@ module stats_clubb_utilities
     type (stats_metadata_type), intent(inout) :: &
       stats_metadata
 
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc, &
@@ -1636,7 +1636,7 @@ module stats_clubb_utilities
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc, &
@@ -2058,7 +2058,7 @@ module stats_clubb_utilities
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -2708,7 +2708,7 @@ module stats_clubb_utilities
 
     implicit none
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &
@@ -2720,7 +2720,7 @@ module stats_clubb_utilities
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt, &
       stats_sfc
 
@@ -2864,7 +2864,7 @@ module stats_clubb_utilities
     implicit none
 
     !----------------------- Input Variables -----------------------
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &
@@ -2895,7 +2895,7 @@ module stats_clubb_utilities
       stats_metadata
 
     !----------------------- InOut Variables -----------------------
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_lh_zt
 
     !----------------------- Begin Code -----------------------
@@ -3008,7 +3008,7 @@ module stats_clubb_utilities
 
     implicit none
 
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc, &

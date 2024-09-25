@@ -118,7 +118,7 @@ module clip_explicit
       stats_metadata
 
     ! --------------------- Input/Output Variables ---------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: &
@@ -514,7 +514,7 @@ module clip_explicit
       stats_metadata
 
     ! -------------------------- InOut Variables --------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(inout) :: & 
@@ -722,7 +722,7 @@ module clip_explicit
 
     implicit none
 
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zm
 
     !------------------------- Input Variables -------------------------
@@ -911,7 +911,7 @@ module clip_explicit
       stats_metadata
 
     ! -------------------- InOut Variables --------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
     ! -------------------- Output Variable --------------------
@@ -1057,7 +1057,7 @@ module clip_explicit
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
   
     real( kind = core_rknd ), intent(in) :: & 
       dt               ! Model timestep; used here for STATS        [s]
@@ -1079,7 +1079,7 @@ module clip_explicit
       stats_metadata
 
     ! ----------------------- Input/Output Variables -----------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
       
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(inout) :: &
@@ -1147,7 +1147,7 @@ module clip_explicit
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       sfc_elevation,  & ! Elevation of ground level                  [m AMSL]

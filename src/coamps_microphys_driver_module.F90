@@ -158,7 +158,7 @@ module coamps_microphys_driver_module
       wtm   = 1.0  ! Weighting array for mass point (never used)
 
 ! Input Variables
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     character(len=*), intent(in) :: runtype
 
@@ -198,7 +198,7 @@ module coamps_microphys_driver_module
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt 
 
     real(kind = core_rknd), dimension(gr%nzt), intent(inout) :: & 

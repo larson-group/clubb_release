@@ -583,7 +583,7 @@ contains
     implicit none
 
     !--------------------------- Input Variables ---------------------------
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     logical, intent(in) ::  &
       l_implemented    ! True if CLUBB is being run within a large-scale host model,
@@ -708,7 +708,7 @@ contains
       stats_metadata
 
     !--------------------------- Input/Output Variables ---------------------------
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -1548,7 +1548,7 @@ contains
       nzt, &
       ngrdcol   ! Number of grid columns
 
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
       !!! Input Variables
@@ -1674,7 +1674,7 @@ contains
       stats_metadata
 
     !------------------------ Input/Output Variables ------------------------
-    type(stats), target, intent(inout), dimension(ngrdcol) :: &
+    type(stats), intent(inout), dimension(ngrdcol) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -1992,7 +1992,7 @@ contains
 
     implicit none
 
-    type(grid), target, intent(inout) :: gr
+    type(grid), intent(inout) :: gr
     call cleanup_clubb_core( gr ) ! intent(inout)
 
   end subroutine cleanup_clubb_core_api
@@ -2174,7 +2174,7 @@ contains
 
     ! Input Variables
    
-    type(grid), target, intent(inout) :: gr
+    type(grid), intent(inout) :: gr
 
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
@@ -2265,7 +2265,7 @@ contains
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(inout) :: gr
+    type (grid), intent(inout) :: gr
 
     ! Flag to see if CLUBB is running on it's own,
     ! or if it's implemented as part of a host model.
@@ -2332,7 +2332,7 @@ contains
     integer, intent(in) ::  & 
       nzmax  ! Number of vertical levels in grid      [#]
 
-    type(grid), target, intent(inout) :: gr
+    type(grid), intent(inout) :: gr
 
     real( kind = core_rknd ), intent(in) ::  &
       sfc_elevation  ! Elevation of ground level    [m AMSL]
@@ -2399,7 +2399,7 @@ contains
       nzmax,  & ! Number of vertical levels in grid      [#]
       ngrdcol   ! Number of grid columns                 [#]
       
-    type (grid), target, intent(inout) :: gr
+    type (grid), intent(inout) :: gr
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) ::  &
       sfc_elevation  ! Elevation of ground level    [m AMSL]
@@ -2613,7 +2613,7 @@ contains
       clubb_params  ! Tuneable model parameters      [-]
 
     ! Grid definition
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     ! If CLUBB is running on its own, this option determines
@@ -2673,7 +2673,7 @@ contains
     ! Input Variables
 
     ! Grid definition
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &
@@ -2732,7 +2732,7 @@ contains
     ! Input Variables
 
     ! Grid definition
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     ! If CLUBB is running on it's own, this option determines
@@ -2792,7 +2792,7 @@ contains
     ! Input Variables
 
     ! Grid definition
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &
@@ -3169,7 +3169,7 @@ contains
     implicit none
 
     !----------------------- Input Variables -----------------------
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     integer, intent(in) :: &
       nzm,          & ! Number of model momentum vertical grid levels
@@ -3233,7 +3233,7 @@ contains
       stats_metadata
 
     !----------------------- Input/Output Variables -----------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -3424,7 +3424,7 @@ contains
       ngrdcol,      & ! Number of grid columns
       hydromet_dim    ! Number of hydrometeor species
       
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]
@@ -3485,7 +3485,7 @@ contains
     real( kind = core_rknd ), dimension(ngrdcol,nzm,hydromet_dim), intent(inout) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
-    type(stats), target, dimension(ngrdcol), intent(inout) :: &
+    type(stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -3571,7 +3571,7 @@ contains
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc, &
@@ -3615,7 +3615,7 @@ contains
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc, &
@@ -3730,7 +3730,7 @@ contains
       nzt,     & ! Thermodynamic points in the Vertical        [-]
       ngrdcol
 
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
@@ -3783,7 +3783,7 @@ contains
       nzm, & ! Momentum points in the Vertical        [-]
       nzt    ! Thermodynamic points in the Vertical
 
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
@@ -3982,7 +3982,7 @@ contains
 
     implicit none
 
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     ! Input Variable(s)
     integer, intent(in) :: &

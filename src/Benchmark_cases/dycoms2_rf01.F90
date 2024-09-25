@@ -39,7 +39,7 @@ module dycoms2_rf01
     implicit none
 
     !--------------------- Input Variables ---------------------
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &

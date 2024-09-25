@@ -193,7 +193,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: &
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
       
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) :: &
@@ -343,7 +343,7 @@ module advance_xm_wpxp_module
       stats_metadata
 
     ! -------------------- Input/Output Variables --------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -1488,7 +1488,7 @@ module advance_xm_wpxp_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,nzm) :: &
       stability_correction,   & ! Stability correction factor
@@ -1753,7 +1753,7 @@ module advance_xm_wpxp_module
       stats_metadata
 
     !------------------- InOut Variables -------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm
 
@@ -2062,7 +2062,7 @@ module advance_xm_wpxp_module
       ngrdcol, &
       sclr_dim
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -2109,7 +2109,7 @@ module advance_xm_wpxp_module
       stats_metadata         
 
     !------------------- Inout Variables -------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
       
     !------------------- Output Variables -------------------
@@ -2682,7 +2682,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
     
     real( kind = core_rknd ), intent(in) ::  & 
@@ -2865,7 +2865,7 @@ module advance_xm_wpxp_module
       upwp_pert, & ! perturbed <u'w'> [m^2/s^2]
       vpwp_pert    ! perturbed <v'w'> [m^2/s^2]
  
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -3774,7 +3774,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) :: & 
       sclr_tol          ! Threshold(s) on the passive scalars  [units vary]
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
     
     real( kind = core_rknd ), intent(in) ::  & 
@@ -3903,7 +3903,7 @@ module advance_xm_wpxp_module
 
     ! ------------------- Input/Output Variables -------------------
 
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -4455,7 +4455,7 @@ module advance_xm_wpxp_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     logical :: &
       l_first_clip_ts, &
@@ -4564,7 +4564,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), intent(inout), dimension(ngrdcol,nzm) :: & 
       wpxp      ! The flux of x     [units vary m/s]
 
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -5149,7 +5149,7 @@ module advance_xm_wpxp_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -5251,7 +5251,7 @@ module advance_xm_wpxp_module
       nzm, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -5898,7 +5898,7 @@ module advance_xm_wpxp_module
       nzm, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input variables
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
@@ -5971,7 +5971,7 @@ module advance_xm_wpxp_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       ypwp,        & ! momentum flux component, either upwp or vpwp  [m^2/s^2]

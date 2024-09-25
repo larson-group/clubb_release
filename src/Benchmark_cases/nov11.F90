@@ -51,7 +51,7 @@ module nov11
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input variables
     real(kind=time_precision), intent(in) :: & 

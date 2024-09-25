@@ -274,7 +274,7 @@ module diffusion
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  & 
       K_zm,            & ! Coef. of eddy diffusivity at momentum levels   [m^2/s]
@@ -781,7 +781,7 @@ module diffusion
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  &
       K_zm,           &  

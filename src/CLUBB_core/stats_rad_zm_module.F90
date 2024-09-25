@@ -42,7 +42,7 @@ module stats_rad_zm_module
     character(len= * ), dimension(nvarmax_rad_zm), intent(in) :: vars_rad_zm
 
     !--------------------- InOut Variables ---------------------      
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_rad_zm
 
     type (stats_metadata_type), intent(inout) :: &

@@ -130,7 +130,7 @@ contains
     intrinsic :: exp, log
 
     ! Input Variables
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: & 
@@ -149,7 +149,7 @@ contains
           stats_metadata
 
     ! Input/Output Variables
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm
 

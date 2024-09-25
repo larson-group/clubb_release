@@ -152,7 +152,7 @@ module mixing_length
       nzt, &
       ngrdcol  
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) ::  &
@@ -934,7 +934,7 @@ module mixing_length
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     logical, intent(in) ::  &
@@ -978,7 +978,7 @@ module mixing_length
       stats_metadata
 
     !--------------------------------- InOut Variables ---------------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt
 
     !--------------------------------- Output Variables ---------------------------------
@@ -1357,7 +1357,7 @@ module mixing_length
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
@@ -1394,7 +1394,7 @@ module mixing_length
                                     ! to compute invrs_tau_wpxp_zm
 
     !--------------------------- Input/Output Variables ---------------------------
-    type (stats), target, intent(inout), dimension(ngrdcol) :: &
+    type (stats), intent(inout), dimension(ngrdcol) :: &
       stats_zm
 
     !--------------------------------- Output Variables ---------------------------------

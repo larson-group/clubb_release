@@ -112,7 +112,7 @@ module advance_microphys_module
     implicit none
 
     !---------------------- Input Variables ----------------------
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) ::  & 
@@ -172,7 +172,7 @@ module advance_microphys_module
           stats_metadata
 
     !---------------------- Input/Output Variables ----------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -595,7 +595,7 @@ module advance_microphys_module
     implicit none
 
     !---------------------------- Input Variables ----------------------------
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) ::  & 
@@ -643,7 +643,7 @@ module advance_microphys_module
       stats_metadata
 
     !---------------------------- Input/Output Variables ----------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm
 
@@ -1060,7 +1060,7 @@ module advance_microphys_module
     implicit none
 
     !------------------------------- Input Variables -------------------------------
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) ::  & 
@@ -1097,7 +1097,7 @@ module advance_microphys_module
       stats_metadata
 
     !------------------------------- InOut Variables -------------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm
 
@@ -1425,10 +1425,10 @@ module advance_microphys_module
     implicit none
 
     !------------------------ Input Variables ------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     character(len=*), intent(in) :: &
       solve_type  ! Description of which hydrometeor is being solved for.
@@ -1670,7 +1670,7 @@ module advance_microphys_module
     implicit none
 
     !------------------------------ Input Variables ------------------------------
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -2024,7 +2024,7 @@ module advance_microphys_module
       km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
     !-------------------------- Input Variables --------------------------
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     character(len=*), intent(in) :: &
@@ -2055,7 +2055,7 @@ module advance_microphys_module
       stats_metadata
 
     !-------------------------- Input Variables --------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt
 
     !-------------------------- Output Variable --------------------------
@@ -2432,7 +2432,7 @@ module advance_microphys_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -2694,7 +2694,7 @@ module advance_microphys_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -2900,7 +2900,7 @@ module advance_microphys_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -3222,7 +3222,7 @@ module advance_microphys_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -3359,7 +3359,7 @@ module advance_microphys_module
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     integer, intent(in) :: &
       hydromet_dim
@@ -3590,7 +3590,7 @@ module advance_microphys_module
     implicit none
 
     ! Input Variables
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) ::  & 

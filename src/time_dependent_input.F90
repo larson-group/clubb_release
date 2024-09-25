@@ -32,7 +32,7 @@ module time_dependent_input
   integer, parameter :: nCols = 10 ! Number of columns in the input file
 
   ! Module variables used to describe 
-  real( kind = core_rknd ), public, target, allocatable, dimension(:) :: &
+  real( kind = core_rknd ), public, allocatable, dimension(:) :: &
     time_sfc_given, &                                  ! the surface over time.
     latent_ht_given, &
     sens_ht_given, &
@@ -540,7 +540,7 @@ module time_dependent_input
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real(kind=time_precision), intent(in) :: &

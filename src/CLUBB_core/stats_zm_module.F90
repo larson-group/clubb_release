@@ -67,7 +67,7 @@ module stats_zm_module
     type (stats_metadata_type), intent(inout) :: &
       stats_metadata
 
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zm
 
     logical, intent(inout) :: l_error

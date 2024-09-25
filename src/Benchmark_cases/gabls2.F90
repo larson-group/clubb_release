@@ -54,7 +54,7 @@ module gabls2
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real(kind=time_precision), intent(in) :: & 
       time,        & ! Current length of timestep      [s]

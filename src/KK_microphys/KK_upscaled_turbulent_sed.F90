@@ -82,7 +82,7 @@ module KK_upscaled_turbulent_sed
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt
 
     ! Input Variables

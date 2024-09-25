@@ -108,7 +108,7 @@ module KK_upscaled_covariances
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt
 
     ! Input Variables

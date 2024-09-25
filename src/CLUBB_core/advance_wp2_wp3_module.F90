@@ -196,7 +196,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
     
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
   
     real( kind = core_rknd ), intent(in) ::  & 
@@ -301,7 +301,7 @@ module advance_wp2_wp3_module
       stats_metadata
 
     ! --------------------------- Input/Output ---------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -1304,7 +1304,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
       
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
   
     real( kind = core_rknd ), intent(in) ::  & 
@@ -1380,7 +1380,7 @@ module advance_wp2_wp3_module
       stats_metadata
 
     ! ----------------------- Input/Output Variables -----------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -2361,7 +2361,7 @@ module advance_wp2_wp3_module
       stats_metadata
 
     ! --------------------- intent(inout) Variable ---------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm
 
@@ -3052,7 +3052,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
       rho_ds_zt          ! Dry, static density at thermodynamic levels  [kg/m^3]
@@ -3181,7 +3181,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: & 
       wm_zt   ! w wind component at thermodynamic levels    [m/s]
@@ -3690,7 +3690,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: & 
       C_uu_shr,  & ! Model parameter                            [-]
@@ -3910,7 +3910,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
     
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
@@ -4079,7 +4079,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       coef_wp4_implicit, & ! <w'^4>=coef_wp4_implicit*<w'^2>^2; m-levs [-]
@@ -4263,7 +4263,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) ::  & 
       wp2,             & ! w'^2                                     [m^2/s^2]
@@ -4685,7 +4685,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
@@ -4822,7 +4822,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: & 
       C11_Skw_fnc     ! C_11 parameter with Sk_w applied       [-]
@@ -5072,7 +5072,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
       wp4,             & ! <w'^4>                                   [m^4/s^4]
@@ -5250,7 +5250,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
@@ -5378,7 +5378,7 @@ module advance_wp2_wp3_module
       nzt, &
       ngrdcol
     
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       C_wp3_pr_dfsn      ! Model parameter C_wp3_pr_dfsn              [-]

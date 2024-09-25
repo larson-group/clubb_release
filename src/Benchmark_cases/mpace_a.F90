@@ -103,7 +103,7 @@ module mpace_a
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real(kind=time_precision), intent(in) ::  & 

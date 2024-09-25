@@ -123,7 +123,7 @@ module soil_vegetation
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_sfc
 
     ! Output variable

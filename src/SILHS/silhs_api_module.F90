@@ -246,7 +246,7 @@ contains
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
     
@@ -386,7 +386,7 @@ contains
       hm_metadata
 
     ! InOut Variables
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
 
@@ -556,7 +556,7 @@ contains
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     integer, dimension(num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
@@ -651,7 +651,7 @@ contains
     type (hm_metadata_type), intent(in) :: &
       hm_metadata
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     integer, dimension(ngrdcol,num_samples,nzt), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)

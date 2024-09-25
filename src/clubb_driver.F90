@@ -26,7 +26,7 @@ module clubb_driver
 
   ! Variables that contains all the statistics
 
-  type (stats), target, public, save :: stats_zt,      & ! stats_zt grid
+  type (stats), public, save :: stats_zt,      & ! stats_zt grid
                                         stats_zm,      & ! stats_zm grid
                                         stats_lh_zt,   & ! stats_lh_zt grid
                                         stats_lh_sfc,  & ! stats_lh_sfc grid
@@ -3219,7 +3219,7 @@ module clubb_driver
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     intrinsic :: min, max, trim, sqrt, size
 
@@ -3918,7 +3918,7 @@ module clubb_driver
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     character(len=*), intent(in) :: &
       alt_type,   & ! Type of altitude sounding (altitude or pressure)
@@ -4411,7 +4411,7 @@ module clubb_driver
       stats_metadata
       
     ! Output Variables
-    type(grid), target, intent(inout) :: &
+    type(grid), intent(inout) :: &
       gr
 
     !----- Begin Code -----
@@ -4574,7 +4574,7 @@ module clubb_driver
     implicit none
 
     ! Input Variables
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     integer, intent(in) :: iunit
 
@@ -5101,7 +5101,7 @@ module clubb_driver
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real(kind=core_rknd), intent(in) :: & 
       dt         ! Model timestep         [s]
@@ -5726,7 +5726,7 @@ module clubb_driver
 
     implicit none
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &
@@ -5944,7 +5944,7 @@ module clubb_driver
     intrinsic :: trim
 
     ! Input Variables
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real(kind=time_precision), intent(in) :: &
@@ -6407,7 +6407,7 @@ module clubb_driver
     implicit none
 
     ! Input Variables
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &
@@ -6718,7 +6718,7 @@ module clubb_driver
     character(len=100) :: &
       multicol_nc_file
 
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     integer, intent(in) :: &
       nzmax
@@ -6854,7 +6854,7 @@ module clubb_driver
       stats_metadata
 
     ! ------------------------- Input/Output Variables -------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc

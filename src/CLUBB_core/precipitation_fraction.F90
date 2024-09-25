@@ -105,7 +105,7 @@ module precipitation_fraction
       stats_metadata
 
     !------------------------- Inout Variables -------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_sfc
 
     !------------------------- Output Variables -------------------------

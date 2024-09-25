@@ -80,7 +80,7 @@ contains
 #include "microphys_interface.inc"
 
     ! Input Variables
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) :: &
@@ -140,7 +140,7 @@ contains
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc, &

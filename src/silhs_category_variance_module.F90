@@ -89,7 +89,7 @@ module silhs_category_variance_module
       stats_metadata
 
     !--------------------------- InOut Variables ---------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_lh_zt
 
     !--------------------------- Local Variables ---------------------------
@@ -225,7 +225,7 @@ module silhs_category_variance_module
       stats_metadata
 
     ! ---------------------- InOut Variables ----------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_lh_zt
 
     !---------------------- Local Variables ----------------------

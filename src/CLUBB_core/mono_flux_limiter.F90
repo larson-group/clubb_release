@@ -333,7 +333,7 @@ module mono_flux_limiter
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
   
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
@@ -378,7 +378,7 @@ module mono_flux_limiter
       stats_metadata
 
     !----------------------- Input/Output Variables -----------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm
       
@@ -1270,7 +1270,7 @@ module mono_flux_limiter
       nzt, &
       ngrdcol
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
    
     real( kind = core_rknd ), intent(in) ::  &
       dt ! Model timestep length                       [s]
@@ -1286,7 +1286,7 @@ module mono_flux_limiter
       stats_metadata
 
     !------------------------- Inout Variables -------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
     !------------------------- Output Variables -------------------------
@@ -1802,7 +1802,7 @@ module mono_flux_limiter
         stats_metadata
 
     !------------------------- Inout Variables -------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zm
 
     !------------------------- Output Variables -------------------------

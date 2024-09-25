@@ -27,7 +27,7 @@ contains
     implicit none
     
     ! Input var
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Output var
     integer :: w_up_in_cloud_tests_driver ! Returns the output of the test
@@ -107,7 +107,7 @@ return
     implicit none
     
     !----------- Input Variables -----------
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
     
     !----------- Local Variables -----------
     real( kind = core_rknd ), dimension(gr%nzt) :: result

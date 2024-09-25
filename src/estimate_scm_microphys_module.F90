@@ -107,7 +107,7 @@ module estimate_scm_microphys_module
       l_latin_hypercube = .true. ! We are the Latin hypercube!
 
     ! Input Variables
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: &
       dt ! Model timestep       [s]
@@ -164,7 +164,7 @@ module estimate_scm_microphys_module
       stats_metadata
 
     ! InOut Variables
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc, &
@@ -510,7 +510,7 @@ module estimate_scm_microphys_module
       stats_metadata
 
     !--------------------------- InOut Variables ---------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_lh_zt
 
     !--------------------------- Begin Code ---------------------------
@@ -612,7 +612,7 @@ module estimate_scm_microphys_module
 
     implicit none
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_lh_zt
 
     ! Local Constants

@@ -32,7 +32,7 @@ interface
 
     ! Input Variables
 
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 

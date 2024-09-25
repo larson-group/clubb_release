@@ -53,7 +53,7 @@ module bomex
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in), dimension(gr%nzt) :: &

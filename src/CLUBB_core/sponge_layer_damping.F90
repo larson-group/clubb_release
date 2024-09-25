@@ -437,7 +437,7 @@ module sponge_layer_damping
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input Variable(s)
     integer, intent(in) :: &

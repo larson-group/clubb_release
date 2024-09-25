@@ -163,7 +163,7 @@ module latin_hypercube_driver_module
       stats_metadata
 
     ! ---------------- InOut Variables ----------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
     
@@ -2019,7 +2019,7 @@ module latin_hypercube_driver_module
     implicit none
 
     !-------------------------- Input Variables --------------------------
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     integer, intent(in) :: &
       pdf_dim,        & ! Number of variables to sample
@@ -2050,7 +2050,7 @@ module latin_hypercube_driver_module
       stats_metadata
 
     !-------------------------- InOut Variables --------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
 
@@ -2542,7 +2542,7 @@ module latin_hypercube_driver_module
       stats_metadata
 
     !------------------------------- InOut Variables -------------------------------
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_lh_zt, &
       stats_lh_sfc
 

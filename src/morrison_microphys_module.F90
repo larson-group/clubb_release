@@ -93,7 +93,7 @@ module morrison_microphys_module
       w_thresh = 0.1_core_rknd ! Minimum value w for latin hypercube [m/s]
 
     ! Input Variables
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
@@ -1140,7 +1140,7 @@ module morrison_microphys_module
     integer, intent(in) :: &
       nzt ! Points in the Vertical        [-]
 
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &

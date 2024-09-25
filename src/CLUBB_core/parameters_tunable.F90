@@ -403,7 +403,7 @@ module parameters_tunable
     ! Input Variables
 
     ! Grid definition
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &
@@ -758,7 +758,7 @@ module parameters_tunable
     ! Input Variables
 
     ! Grid definition
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &

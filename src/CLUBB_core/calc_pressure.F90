@@ -73,7 +73,7 @@ module calc_pressure
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nzt), intent(in) :: &

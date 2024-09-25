@@ -80,7 +80,7 @@ module mixed_moment_PDF_integrals
 
 
     !------------------------ Input Variables ------------------------
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     integer, intent(in) :: &
       nzt,         & ! Number of model thermodynamic vertical grid levels
@@ -117,7 +117,7 @@ module mixed_moment_PDF_integrals
     type (stats_metadata_type), intent(in) :: &
       stats_metadata
 
-    type(stats), target, intent(inout) :: &
+    type(stats), intent(inout) :: &
       stats_zt, &
       stats_zm 
 

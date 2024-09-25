@@ -372,7 +372,7 @@ module advance_clubb_core_module
       nzt, &   ! Number of thermodynamic vertical levels
       ngrdcol  ! Number of grid columns
 
-    type (grid), target, intent(in) :: gr
+    type (grid), intent(in) :: gr
 
     logical, intent(in) ::  &
       l_implemented    ! True if CLUBB is being run within a large-scale host model,
@@ -502,7 +502,7 @@ module advance_clubb_core_module
       stats_metadata
 
     !--------------------------- Input/Output Variables ---------------------------
-    type (stats), target, intent(inout), dimension(ngrdcol) :: &
+    type (stats), intent(inout), dimension(ngrdcol) :: &
       stats_zt, &
       stats_zm, &
       stats_sfc
@@ -3085,7 +3085,7 @@ module advance_clubb_core_module
     implicit none
 
     !------------------------------- Input Variables -------------------------------
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &
@@ -3207,7 +3207,7 @@ module advance_clubb_core_module
       stats_metadata
 
     !------------------------------- InOut Variables -------------------------------
-    type (stats), target, dimension(ngrdcol), intent(inout) :: &
+    type (stats), dimension(ngrdcol), intent(inout) :: &
       stats_zt, &
       stats_zm
 
@@ -4766,7 +4766,7 @@ module advance_clubb_core_module
 
       implicit none
 
-      type(grid), target, intent(inout) :: gr
+      type(grid), intent(inout) :: gr
 
       !----- Begin Code -----
 
@@ -4833,7 +4833,7 @@ module advance_clubb_core_module
         ngrdcol, &
         sclr_dim
 
-      type (grid), target, intent(in) :: &
+      type (grid), intent(in) :: &
         gr
 
       logical, intent(in) :: &
@@ -5030,7 +5030,7 @@ module advance_clubb_core_module
         nzt, &
         ngrdcol
 
-      type (grid), target, intent(in) :: gr
+      type (grid), intent(in) :: gr
     
       real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
         wpthvp_zt,   & ! Buoyancy flux (on thermo. grid)  [(K m)/s]
@@ -5084,7 +5084,7 @@ module advance_clubb_core_module
         nzt, &
         ngrdcol
 
-      type (grid), target, intent(in) :: gr
+      type (grid), intent(in) :: gr
       
       real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
         variable_zt    ! Variable on the zt grid
@@ -5142,7 +5142,7 @@ module advance_clubb_core_module
         nzt, &
         ngrdcol
 
-      type (grid), target, intent(in) :: gr
+      type (grid), intent(in) :: gr
       
       real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
         variable_zm    ! Variable on the zm grid
@@ -5227,7 +5227,7 @@ module advance_clubb_core_module
         ngrdcol,  & ! Number of grid columns
         nzt         ! Number of thermodynamic vertical levels
 
-      type (grid), target, intent(in) :: gr
+      type (grid), intent(in) :: gr
 
       real( kind = core_rknd ), dimension(ngrdcol,nzt), intent(in) :: &
         cloud_frac, & ! Cloud fraction             [-]

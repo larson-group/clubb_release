@@ -53,7 +53,7 @@ module dycoms2_rf02
     type (sclr_idx_type), intent(in) :: &
       sclr_idx
 
-    type(grid), target, intent(in) :: &
+    type(grid), intent(in) :: &
       gr
 
     !--------------------- InOut Variables ---------------------

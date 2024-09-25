@@ -67,7 +67,7 @@ module gfdl_activation
       core_rknd ! Variable(s)
     implicit none
 
-    type(grid), target, intent(in) :: gr
+    type(grid), intent(in) :: gr
 
     intrinsic :: real
     ! ---> h1g, 2010-08-24, dumping Nact

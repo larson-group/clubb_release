@@ -713,7 +713,7 @@ module fill_holes
     implicit none
 
     !----------------------- Input Variables -----------------------
-    type (grid), target, intent(in) :: &
+    type (grid), intent(in) :: &
       gr
 
     integer, intent(in) :: &
@@ -741,7 +741,7 @@ module fill_holes
       stats_metadata
 
     !----------------------- Input/Output Variables -----------------------
-    type (stats), target, intent(inout) :: &
+    type (stats), intent(inout) :: &
       stats_zt
 
     real( kind = core_rknd ), dimension(nzt,hydromet_dim), intent(inout) :: &
