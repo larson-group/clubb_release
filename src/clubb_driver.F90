@@ -585,10 +585,6 @@ module clubb_driver
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       rfrzm    ! Total ice-phase water mixing ratio        [kg/kg]
 
-    real( kind = core_rknd ), allocatable, dimension(:) :: &
-      radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
-               ! This is currently set to zero for CLUBB standalone
-
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       wp2_zt ! w'^2 on thermo. grid                                  [m^2/s^2]
     
@@ -1924,12 +1920,6 @@ module clubb_driver
       edsclrm_forcing(1:gr%nzt,edsclr) = zero
     end do
 
-    ! Allocate a correctly-sized array for radf and zero it
-    allocate( radf(gr%nzm) )
-
-    ! Zero all elements of radf
-    radf(1:gr%nzm) = 0.0_core_rknd
-
     allocate( wp2hmp(gr%nzt,hydromet_dim), rtphmp_zt(gr%nzt,hydromet_dim), &
               thlphmp_zt(gr%nzt,hydromet_dim) )
 
@@ -2497,7 +2487,7 @@ module clubb_driver
                rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt(1,:), &                        ! Intent(in) 
                hydromet, hm_metadata%l_mix_rat_hm, &                                ! Intent(in)
-               rfrzm, radf, wphydrometp, &                                          ! Intent(in)
+               rfrzm, wphydrometp, &                                                ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
                clubb_params(1,:), nu_vert_res_dep, lmin, &                          ! Intent(in)
@@ -2548,7 +2538,7 @@ module clubb_driver
                rho_ds_zm, rho_ds_zt(1,:), invrs_rho_ds_zm, &                        ! Intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt(1,:), &                        ! Intent(in) 
                hydromet, hm_metadata%l_mix_rat_hm, &                                ! Intent(in)
-               rfrzm, radf, wphydrometp, &                                          ! Intent(in)
+               rfrzm, wphydrometp, &                                                ! Intent(in)
                wp2hmp, rtphmp_zt, thlphmp_zt, &                                     ! Intent(in)
                dummy_dx, dummy_dy, &                                                ! Intent(in)
                clubb_params(1,:), &                                                 ! Intent(in)
@@ -3112,7 +3102,7 @@ module clubb_driver
                 thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
                 hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc )
 
-    deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, &
+    deallocate( rcm_zm, radht_zm, X_nl_all_levs, &
                 lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
                 lh_rv_clipped, lh_Nc_clipped, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
@@ -6562,7 +6552,7 @@ module clubb_driver
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
     hydromet, l_mix_rat_hm, &                               ! intent(in)
-    rfrzm, radf, &                                          ! intent(in)
+    rfrzm, &                                                ! intent(in)
 #ifdef CLUBBND_CAM
     varmu, &                                                ! intent(in)
 #endif
@@ -6792,9 +6782,6 @@ module clubb_driver
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
-      radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
-
 #ifdef CLUBBND_CAM 
     real( kind = core_rknd ), intent(in) :: & 
       varmu 
@@ -7018,9 +7005,6 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(ngrdcol,gr%nzt,hydromet_dim) :: &
       hydromet_col           ! Collection of hydrometeors                [units vary]
-
-    real( kind = core_rknd ), dimension(ngrdcol,gr%nzm) :: &
-      radf_col          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM 
     real( kind = core_rknd ), dimension(ngrdcol) :: & 
@@ -7489,8 +7473,7 @@ module clubb_driver
       rfrzm_col(i,:) = rfrzm
       
       hydromet_col(i,:,:) = hydromet
-      
-      radf_col(i,:) = radf
+
 #ifdef CLUBBND_CAM
       varmu_col(i) = varmu
 #endif
@@ -7568,7 +7551,7 @@ module clubb_driver
       rho_ds_zm_col, rho_ds_zt_col, invrs_rho_ds_zm_col,                        & ! intent(in)
       invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col,                        & ! intent(in)
       hydromet_col, l_mix_rat_hm,                                               & ! intent(in)
-      rfrzm_col, radf_col,                                                      & ! intent(in)
+      rfrzm_col,                                                                & ! intent(in)
 #ifdef CLUBBND_CAM
       varmu_col,                                                                & ! intent(in)
 #endif

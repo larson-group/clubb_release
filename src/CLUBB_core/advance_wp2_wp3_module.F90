@@ -62,7 +62,7 @@ module advance_wp2_wp3_module
                               up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm,   & ! intent(in)
                               invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,     & ! intent(in)
                               Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! intent(in)
-                              invrs_rho_ds_zt, radf, thv_ds_zm,              & ! intent(in)
+                              invrs_rho_ds_zt, thv_ds_zm,                    & ! intent(in)
                               thv_ds_zt, mixt_frac, Cx_fnc_Richardson,       & ! intent(in)
                               lhs_splat_wp2, lhs_splat_wp3,                  & ! intent(in)
                               pdf_implicit_coefs_terms,                      & ! intent(in)
@@ -225,7 +225,6 @@ module advance_wp2_wp3_module
       Skw_zm,            & ! Skewness of w on momentum levels          [-]
       rho_ds_zm,         & ! Dry, static density on momentum levels    [kg/m^3]
       invrs_rho_ds_zm,   & ! Inv. dry, static density @ momentum levs. [m^3/kg]
-      radf,              & ! Buoyancy production at the CL top         [m^2/s^3]
       thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
       wprtp,             & ! Flux of total water mixing ratio          [m/s kg/kg]
       wpthlp,            & ! Flux of liquid water potential temp.      [m/s K]
@@ -917,7 +916,7 @@ module advance_wp2_wp3_module
                    rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3,                    & ! intent(in)
                    wp2, wp3, wpup2, wpvp2,                                          & ! intent(in)
                    wpthvp, wp2thvp, up2, vp2,                                       & ! intent(in)
-                   C11_Skw_fnc, radf, thv_ds_zm, thv_ds_zt,                         & ! intent(in)
+                   C11_Skw_fnc, thv_ds_zm, thv_ds_zt,                               & ! intent(in)
                    lhs_splat_wp2, lhs_splat_wp3,                                    & ! intent(in)
                    clubb_params,                                                    & ! intent(in)
                    iiPDF_type,                                                      & ! intent(in)
@@ -1118,7 +1117,7 @@ module advance_wp2_wp3_module
         !$acc              up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm, &
         !$acc              invrs_tau_wp3_zt, Skw_zm, Skw_zt, mixt_frac, a3_coef, &
         !$acc              a3_coef_zt, wp3_on_wp2, invrs_tau_C1_zm, rho_ds_zm, rho_ds_zt, &
-        !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &
+        !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
         !$acc              Cx_fnc_Richardson, lhs_splat_wp2, lhs_splat_wp3, wprtp, &
         !$acc              wpthlp, rtp2, thlp2, wp2_zt, wp3_zm, wp2_old, wp2, &
         !$acc              wp3_old, wp3 )
@@ -1162,7 +1161,6 @@ module advance_wp2_wp3_module
         write(fstderr,*) "rho_ds_zt = ", rho_ds_zt, new_line('c')
         write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm, new_line('c')
         write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt, new_line('c')
-        write(fstderr,*) "radf = ", radf, new_line('c')
         write(fstderr,*) "thv_ds_zm = ", thv_ds_zm, new_line('c')
         write(fstderr,*) "thv_ds_zt = ", thv_ds_zt, new_line('c')
         write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
@@ -2213,7 +2211,7 @@ module advance_wp2_wp3_module
                        rhs_ta_wp3, rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, &
                        wp2, wp3, wpup2, wpvp2, &
                        wpthvp, wp2thvp, up2, vp2,  &
-                       C11_Skw_fnc, radf, thv_ds_zm, thv_ds_zt, &
+                       C11_Skw_fnc, thv_ds_zm, thv_ds_zt, &
                        lhs_splat_wp2, lhs_splat_wp3, &
                        clubb_params, &
                        iiPDF_type, & 
@@ -2330,7 +2328,6 @@ module advance_wp2_wp3_module
       wpthvp,            & ! w'th_v' (momentum levels)                 [K m/s]
       up2,               & ! u'^2 (momentum levels)                    [m^2/s^2]
       vp2,               & ! v'^2 (momentum levels)                    [m^2/s^2]
-      radf,              & ! Buoyancy production at the CL top         [m^2/s^3]
       thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
       lhs_splat_wp2        ! LHS coefficient of wp2 splatting term     [1/s]
 
@@ -2396,7 +2393,7 @@ module advance_wp2_wp3_module
     !$acc              rhs_pr1_wp3, rhs_bp_pr2_wp2, rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, &
     !$acc              rhs_pr3_wp2, rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, &
     !$acc              rhs_pr_dfsn_wp3, wp2, wp3, wpup2, wpvp2, wpthvp, wp2thvp, &
-    !$acc              up2, vp2, C11_Skw_fnc, radf, thv_ds_zm, thv_ds_zt, &
+    !$acc              up2, vp2, C11_Skw_fnc, thv_ds_zm, thv_ds_zt, &
     !$acc              lhs_splat_wp2, lhs_splat_wp3 ) &
     !$acc    copyout( rhs )
 
@@ -2562,9 +2559,6 @@ module advance_wp2_wp3_module
 
         ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
         rhs(i,k_wp2) = rhs(i,k_wp2) + rhs_bp_pr2_wp2(i,k)
-
-        ! RHS buoyancy production at CL top due to LW radiative cooling
-        rhs(i,k_wp2) = rhs(i,k_wp2) + radf(i,k) 
 
         ! RHS pressure term 3 (pr3).
         rhs(i,k_wp2) = rhs(i,k_wp2) + rhs_pr3_wp2(i,k)

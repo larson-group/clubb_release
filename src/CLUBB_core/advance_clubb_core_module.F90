@@ -123,14 +123,13 @@ module advance_clubb_core_module
   !#######################################################################
   !#######################################################################
   ! If you change the argument list of advance_clubb_core you also have to
-  ! change the calls to this function in the host models CAM, WRF, SAM
-  ! and GFDL.
+  ! change the calls to this function in the host models CAM, WRF and SAM.
   !#######################################################################
   !#######################################################################
   subroutine advance_clubb_core( gr, nzm, nzt, ngrdcol, &           ! intent(in)
                l_implemented, dt, fcor, sfc_elevation,            & ! intent(in)
                hydromet_dim,                                      & ! intent(in)
-               sclr_dim, sclr_tol, edsclr_dim, sclr_idx,      & ! intent(in)
+               sclr_dim, sclr_tol, edsclr_dim, sclr_idx,      &     ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! intent(in)
                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! intent(in)
@@ -143,7 +142,7 @@ module advance_clubb_core_module
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! intent(in)
                hydromet, l_mix_rat_hm, &                            ! intent(in)
-               rfrzm, radf, &                                       ! intent(in)
+               rfrzm, &                                             ! intent(in)
 #ifdef CLUBBND_CAM
                varmu, &                                             ! intent(in)
 #endif
@@ -430,9 +429,6 @@ module advance_clubb_core_module
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-      radf          ! Buoyancy production at cloud top due to longwave radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: &
@@ -2109,7 +2105,7 @@ module advance_clubb_core_module
                             up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_C4_zm,          & ! intent(in)
                             invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,            & ! intent(in)
                             Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,        & ! intent(in)
-                            invrs_rho_ds_zt, radf, thv_ds_zm,                     & ! intent(in)
+                            invrs_rho_ds_zt, thv_ds_zm,                           & ! intent(in)
                             thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson,   & ! intent(in)
                             lhs_splat_wp2, lhs_splat_wp3,                         & ! intent(in)
                             pdf_implicit_coefs_terms,                             & ! intent(in)

@@ -508,7 +508,7 @@ contains
   subroutine advance_clubb_core_api_single_col( gr, &       ! intent(in)
     l_implemented, dt, fcor, sfc_elevation, &               ! intent(in)
     hydromet_dim, &                                         ! intent(in)
-    sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &         ! intent(in)
+    sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &             ! intent(in)
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
     sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
     wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
@@ -521,7 +521,7 @@ contains
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
     hydromet, l_mix_rat_hm, &                               ! intent(in)
-    rfrzm, radf, &                                          ! intent(in)
+    rfrzm, &                                                ! intent(in)
 #ifdef CLUBBND_CAM
     varmu, &                                                ! intent(in)
 #endif
@@ -636,9 +636,6 @@ contains
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
-
-    real( kind = core_rknd ), dimension(gr%nzm), intent(in) :: &
-      radf          ! Buoyancy production at cloud top due to longwave radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM
     real( kind = core_rknd ), intent(in) :: &
@@ -887,10 +884,6 @@ contains
     real( kind = core_rknd ), dimension(1,gr%nzt,hydromet_dim) :: &
       hydromet_col           ! Array of hydrometeors                [units vary]
 
-    real( kind = core_rknd ), dimension(1,gr%nzm) :: &
-      radf_col          ! Buoyancy production at cloud top due to 
-                        ! longwave radiative cooling [m^2/s^3]
-
 #ifdef CLUBBND_CAM 
     real( kind = core_rknd ), dimension(1) :: & 
       varmu_col 
@@ -1117,8 +1110,7 @@ contains
     rfrzm_col(1,:) = rfrzm
     
     hydromet_col(1,:,:) = hydromet
-    
-    radf_col(1,:) = radf
+
 #ifdef CLUBBND_CAM
     varmu_col(1) = varmu
 #endif
@@ -1221,7 +1213,7 @@ contains
     !$acc              rho_ds_zm_col, rho_ds_zt_col, &
     !$acc              invrs_rho_ds_zm_col, invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, &
     !$acc              rfrzm_col, &
-    !$acc              radf_col, wpthlp_sfc_col, &
+    !$acc              wpthlp_sfc_col, &
     !$acc              wprtp_sfc_col, upwp_sfc_col, vpwp_sfc_col, p_sfc_col, & 
     !$acc              upwp_sfc_pert_col, vpwp_sfc_pert_col, rtm_ref_col, thlm_ref_col, &
     !$acc              um_ref_col, &
@@ -1317,7 +1309,7 @@ contains
     call advance_clubb_core( gr, gr%nzm, gr%nzt, 1,             &             ! intent(in)
       l_implemented, dt, fcor_col, sfc_elevation_col,            &            ! intent(in)
       hydromet_dim, &                                                         ! intent(in)
-      sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                         ! intent(in)
+      sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &                             ! intent(in)
       thlm_forcing_col, rtm_forcing_col, um_forcing_col, vm_forcing_col, &    ! intent(in)
       sclrm_forcing_col, edsclrm_forcing_col, wprtp_forcing_col, &            ! intent(in)
       wpthlp_forcing_col, rtp2_forcing_col, thlp2_forcing_col, &              ! intent(in)
@@ -1330,14 +1322,14 @@ contains
       rho_ds_zm_col, rho_ds_zt_col, invrs_rho_ds_zm_col, &                    ! intent(in)
       invrs_rho_ds_zt_col, thv_ds_zm_col, thv_ds_zt_col, &                    ! intent(in)
       hydromet_col, l_mix_rat_hm, &                                           ! intent(in)
-      rfrzm_col, radf_col, &                                                  ! intent(in)
+      rfrzm_col, &                                                            ! intent(in)
 #ifdef CLUBBND_CAM
       varmu_col, &
 #endif
-      wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &                 ! intent(in)
-      host_dx_col, host_dy_col, &                                             ! intent(in)
+      wphydrometp_col, wp2hmp_col, rtphmp_zt_col, thlphmp_zt_col, &               ! intent(in)
+      host_dx_col, host_dy_col, &                                                 ! intent(in)
       clubb_params_col, nu_vert_res_dep, lmin, &                                  ! intent(in)
-      clubb_config_flags, &                                                   ! intent(in)
+      clubb_config_flags, &                                                       ! intent(in)
       stats_metadata, &           ! intent(in)
       stats_zt_col, stats_zm_col, stats_sfc_col, &                                ! intent(inout)
       um_col, vm_col, upwp_col, vpwp_col, up2_col, vp2_col, up3_col, vp3_col, &   ! intent(inout)
@@ -1365,7 +1357,7 @@ contains
 #ifdef CLUBB_CAM
                qclvar_col, &                                                      ! intent(out)
 #endif
-      thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, & ! intent(out)
+      thlprcp_col, wprcp_col, w_up_in_cloud_col, w_down_in_cloud_col, &           ! intent(out)
       cloudy_updraft_frac_col, cloudy_downdraft_frac_col, &                       ! intent(out)
       rcm_in_layer_col, cloud_cover_col, invrs_tau_zm_col, &                      ! intent(out)
       err_code_api )                                                              ! intent(out)
@@ -1477,7 +1469,7 @@ contains
   subroutine advance_clubb_core_api_multi_col( gr, nzm, nzt, ngrdcol, &  ! intent(in)
     l_implemented, dt, fcor, sfc_elevation,            &    ! intent(in)
     hydromet_dim, &                                         ! intent(in)
-    sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &         ! intent(in)
+    sclr_dim, sclr_tol, edsclr_dim, sclr_idx, &             ! intent(in)
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
     sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
     wpthlp_forcing, rtp2_forcing, thlp2_forcing, &          ! intent(in)
@@ -1490,7 +1482,7 @@ contains
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
     hydromet, l_mix_rat_hm, &                               ! intent(in)
-    rfrzm, radf, &                                          ! intent(in)
+    rfrzm, &                                                ! intent(in)
 #ifdef CLUBBND_CAM
     varmu, &                                                ! intent(in)
 #endif
@@ -1602,9 +1594,6 @@ contains
 
     logical, dimension(hydromet_dim), intent(in) :: &
       l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
-
-    real( kind = core_rknd ), dimension(ngrdcol,nzm), intent(in) :: &
-      radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol) :: & 
@@ -1820,7 +1809,7 @@ contains
     !$acc              vm_forcing, wprtp_forcing, wpthlp_forcing, rtp2_forcing, thlp2_forcing, &
     !$acc              rtpthlp_forcing, wm_zm, wm_zt, rho_zm, rho, rho_ds_zm, rho_ds_zt, &
     !$acc              invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, rfrzm, &
-    !$acc              radf, wpthlp_sfc, &
+    !$acc              wpthlp_sfc, &
     !$acc              wprtp_sfc, upwp_sfc, vpwp_sfc, p_sfc, & 
     !$acc              upwp_sfc_pert, vpwp_sfc_pert, rtm_ref, thlm_ref, um_ref, &
     !$acc              vm_ref, ug, vg, host_dx, host_dy, &
@@ -1922,7 +1911,7 @@ contains
       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
       invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &                ! intent(in) 
       hydromet, l_mix_rat_hm,&                                ! intent(in)
-      rfrzm, radf, &                                          ! intent(in)
+      rfrzm, &                                                ! intent(in)
 #ifdef CLUBBND_CAM
       varmu, &
 #endif
