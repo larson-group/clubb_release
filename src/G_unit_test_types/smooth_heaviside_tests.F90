@@ -35,6 +35,8 @@ contains
     print *, " "
     print *, "Performing 'Smooth Heaviside Peskin' tests"
     print *, " "
+
+    total_mismatches = 0
     
     call smooth_heaviside_setup_tests(total_mismatches)
     
