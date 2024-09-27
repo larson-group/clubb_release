@@ -110,21 +110,6 @@ def main():
     for idx in range(0,len(paramsNames)): \
         print("{:33s} {:7.7g}".format(paramsNames[idx], paramsSolnNonlin[idx][0] ) )
 
-    normlzdLinplusSensMatrixPoly = normlzdSemiLinMatrixFnc(
-                                        dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly, 
-                                        normlzdCurvMatrix, numMetrics)
-    #normlzdWeightedLinplusSensMatrixPoly = np.diag(np.transpose(metricsWeights)[0]) @ normlzdLinplusSensMatrixPoly
-
-
-
-    # Find best-fit params by use of the Elastic Net algorithm
-    defaultBiasesApproxElastic, defaultBiasesApproxElasticNonlin, \
-    dnormlzdParamsSolnElastic, paramsSolnElastic = \
-        findParamsUsingElastic(normlzdSensMatrixPoly, normlzdWeightedSensMatrixPoly,
-                     defaultBiasesCol, normMetricValsCol, metricsWeights,
-                     magParamValsRow, defaultParamValsOrigRow,
-                     normlzdCurvMatrix,
-                     beVerbose=False)
 
     #defaultBiasesApproxElasticCheck = ( normlzdWeightedSensMatrixPoly @ dnormlzdParamsSolnElastic ) \
     #                        * np.reciprocal(metricsWeights) * np.abs(normMetricValsCol)
@@ -205,6 +190,20 @@ def main():
     #
     ##############################################
 
+    # Find best-fit params by use of the Elastic Net algorithm
+    defaultBiasesApproxElastic, defaultBiasesApproxElasticNonlin, \
+    dnormlzdParamsSolnElastic, paramsSolnElastic = \
+        findParamsUsingElastic(normlzdSensMatrixPoly, normlzdWeightedSensMatrixPoly,
+                     defaultBiasesCol, normMetricValsCol, metricsWeights,
+                     magParamValsRow, defaultParamValsOrigRow,
+                     normlzdCurvMatrix,
+                     beVerbose=False)
+
+    normlzdLinplusSensMatrixPoly = normlzdSemiLinMatrixFnc(
+                                        dnormlzdParamsSolnNonlin, normlzdSensMatrixPoly,
+                                        normlzdCurvMatrix, numMetrics)
+    #normlzdWeightedLinplusSensMatrixPoly = np.diag(np.transpose(metricsWeights)[0]) \
+    #                                          @ normlzdLinplusSensMatrixPoly
 
     createFigs(metricsNames,
                paramsNames, transformedParamsNames, paramsScales,

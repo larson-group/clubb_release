@@ -338,9 +338,14 @@ def createFigs(metricsNames,
     if plot_projectionMatrixFig:
         # Create figure that plots color-coded projection matrix plus bias column.
         XT_dot_X_Linplus_inv = np.linalg.inv( XT_dot_X_Linplus )
-        #projectionMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
-        #print("Sum of leverages = ", projectionMatrix.trace())
-        #print("Number of parameters =", len(paramsNames))
+        fullProjectionMatrix = normlzdLinplusSensMatrixPoly @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPoly.T
+        print("Leverages")
+        np.set_printoptions(linewidth=200)
+        print(np.diag(fullProjectionMatrix))
+        print("Sum of leverages = ", fullProjectionMatrix.trace())
+        print("Number of parameters =", len(paramsNames))
+        print("A large leverage is > 3p/n, which = ",
+              3*len(paramsNames)/len(metricsNames))
         #projectionMatrixFig = createMatrixPlusColFig( matrix = projectionMatrix,
         #                 matIndexLabel = metricsNames,
         #                 matColLabel = metricsNames,
@@ -351,9 +356,15 @@ def createFigs(metricsNames,
         #                 plotTitle='Projection matrix',
         #                 reversedYAxis = 'reversed',
         #                 eqnAdd = False)
-        projectionMatrixMasked = normlzdLinplusSensMatrixPolyMetricsMasked @ XT_dot_X_Linplus_inv @ normlzdLinplusSensMatrixPolyMetricsMasked.T
+        linplusProjectionMatrixMasked = normlzdLinplusSensMatrixPolyMetricsMasked \
+                                        @ XT_dot_X_Linplus_inv \
+                                        @ normlzdLinplusSensMatrixPolyMetricsMasked.T
+        print("Masked leverages = ", np.diag(linplusProjectionMatrixMasked))
         #print("projectionMatrix rows=", np.linalg.norm( projectionMatrix, axis=1))
-        projectionMatrixFig = createMatrixPlusColFig( matrix = projectionMatrixMasked,
+
+        matrixDictKeyString = "linplusProjectionMatrixMasked"
+        matrixDict={matrixDictKeyString:linplusProjectionMatrixMasked}
+        projectionMatrixFig = createMatrixPlusColFig( matrix = matrixDict[matrixDictKeyString],
                          matIndexLabel = metricsNamesMasked,
                          matColLabel = metricsNamesMasked,
                          colVector = -np.around(normlzdDefaultBiasesColMasked, decimals=2),
@@ -361,14 +372,20 @@ def createFigs(metricsNames,
                          colVectColLabel = ['-Normalized Biases'],
                          plotHeight=700, plotWidth=1000,
                          cellText=True,
-                         plotTitle='Excerpt of projection matrix',
+                         plotTitle='Excerpt of projection matrix, '+matrixDictKeyString,
                          reversedYAxis = 'reversed',
                          eqnAdd = False)
 
     if plot_paramsCorrArrayFig:
+        matrixDictKeyString = "normlzdLinplusSensMatrixPoly"
+        matrixDict={matrixDictKeyString:normlzdLinplusSensMatrixPoly}
         paramsCorrArrayFig = \
-        createParamsCorrArrayFig(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol,
-                                 paramsNames)
+        createParamsCorrArrayFig(matrix=matrixDict[matrixDictKeyString],
+                                 biasesCol=normlzdDefaultBiasesCol,
+                                 paramsNames=paramsNames,
+                                 plotTitle='cos(angle) among parameters<br>\
+                                           (i.e., X^T*X using columns of sens matrix)<br>'\
+                                           +matrixDictKeyString)
 
     if plot_dpMin2PtFig:
         print("Creating dpMin2PtFig . . .")
@@ -1159,11 +1176,13 @@ def createParamsErrorBarsFig(paramsAbbrv, defaultParamValsOrigRow, paramsScales,
 
     return paramsErrorBarsFig
 
-def createParamsCorrArrayFig(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol,
-                             paramsNames):
+def createParamsCorrArrayFig(matrix,
+                             biasesCol,
+                             paramsNames,
+                             plotTitle):
 
     # Create color-coded matrix that displays correlations among parameter vectors
-    normlzdSensMatrixConcatBiases = np.hstack((normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesCol))
+    normlzdSensMatrixConcatBiases = np.hstack((matrix, biasesCol))
     #normlzdSensMatrixConcatBiases = np.hstack((normlzdWeightedLinplusSensMatrixPoly, -1*normlzdWeightedDefaultBiasesCol))
     cosAnglesMatrix = calcMatrixAngles( normlzdSensMatrixConcatBiases.T )
     roundedCosAnglesMatrix = np.around(cosAnglesMatrix, decimals=2)
@@ -1181,7 +1200,7 @@ def createParamsCorrArrayFig(normlzdLinplusSensMatrixPoly, normlzdDefaultBiasesC
                    )
     paramsCorrArrayFig.update_xaxes(side="bottom")
     paramsCorrArrayFig.update_layout(
-    title_text='cos(angle) among parameters (i.e., columns of sens matrix)',
+    title_text=plotTitle,
     title_x=0.5,
     width=800,
     height=700,

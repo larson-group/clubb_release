@@ -436,7 +436,7 @@ def setUpInputs():
     print("defaultMetricValsCol printed as array = ")
     defaultMetricValsReshaped = defaultMetricValsCol.reshape((9,18))
     #defaultMetricValsRolled = np.roll(defaultMetricValsReshaped, -9, axis=1)
-    np.set_printoptions( linewidth=500 )
+    np.set_printoptions( linewidth=200 )
     print(np.around(defaultMetricValsReshaped,2))
     #print(np.around(defaultMetricValsRolled,2))
 
