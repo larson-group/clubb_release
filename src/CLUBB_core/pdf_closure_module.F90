@@ -71,10 +71,6 @@ module pdf_closure_module
                           uprcp, vprcp,                               &
                           w_up_in_cloud, w_down_in_cloud,             &
                           cloudy_updraft_frac, cloudy_downdraft_frac, &
-                          F_w, F_rt, F_thl,                           &
-                          min_F_w, max_F_w,                           &
-                          min_F_rt, max_F_rt,                         &
-                          min_F_thl, max_F_thl,                       &
                           wpsclrprtp, wpsclrp2, sclrpthvp,            &
                           wpsclrpthlp, sclrprcp, wp2sclrp,            &
                           rc_coef                                     )
@@ -302,20 +298,6 @@ module pdf_closure_module
       uprcp,              & ! u' r_c'               [(m kg)/(s kg)]
       vprcp                 ! v' r_c'               [(m kg)/(s kg)]
 
-    ! Parameters output only for recording statistics (new PDF).
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      F_w,   & ! Parameter for the spread of the PDF component means of w    [-]
-      F_rt,  & ! Parameter for the spread of the PDF component means of rt   [-]
-      F_thl    ! Parameter for the spread of the PDF component means of thl  [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
-      min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
-      max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
-      min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
-      max_F_rt,  & ! Maximum allowable value of parameter F_rt     [-]
-      min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
-      max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
-
     ! Output (passive scalar variables)
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,sclr_dim) ::  & 
       sclrpthvp, & 
@@ -497,21 +479,6 @@ module pdf_closure_module
 
     end if
 
-    ! Initialize to 0 to prevent a runtime error
-    do k = 1, nz
-      do i = 1, ngrdcol
-        F_w(i,k) = zero
-        F_rt(i,k) = zero
-        F_thl(i,k) = zero
-        min_F_w(i,k) = zero
-        max_F_w(i,k) = zero
-        min_F_rt(i,k) = zero
-        max_F_rt(i,k) = zero
-        min_F_thl(i,k) = zero
-        max_F_thl(i,k) = zero
-      end do
-    end do
-
     ! To avoid recomputing
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
@@ -592,9 +559,7 @@ module pdf_closure_module
                            pdf_params%varnce_rt_1, pdf_params%varnce_rt_2,    & ! Out
                            pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,  & ! Out
                            pdf_params%mixt_frac,                              & ! Out
-                           pdf_implicit_coefs_terms,                          & ! Out
-                           F_w, F_rt, F_thl, min_F_w, max_F_w,                & ! Out
-                           min_F_rt, max_F_rt, min_F_thl, max_F_thl )           ! Out
+                           pdf_implicit_coefs_terms )                           ! Out
     elseif ( iiPDF_type == iiPDF_TSDADG ) then
       do i = 1, ngrdcol
         call tsdadg_pdf_driver( nz, &
@@ -644,20 +609,8 @@ module pdf_closure_module
                                   varnce_v_1, varnce_v_2,                         & ! Out
                                   sclr1, sclr2,                                   & ! Out
                                   varnce_sclr1, varnce_sclr2,                     & ! Out
-                                  pdf_params%mixt_frac,                           & ! Out
-                                  pdf_implicit_coefs_terms,                       & ! Out
-                                  F_w, min_F_w, max_F_w )                           ! Out
-      
-      ! The calculation of skewness of rt, thl, u, v, and scalars is hard-wired
-      ! for use with the ADG1 code, which contains the variable sigma_sqd_w.
-      ! In order to use an equivalent expression for these skewnesses using the
-      ! new hybrid PDF (without doing more recoding), set the value of
-      ! sigma_sqd_w to 1 - F_w.
-      do k = 1, nz
-        do i = 1, ngrdcol
-          sigma_sqd_w(i,k) = one - F_w(i,k)
-        end do
-      end do
+                                  pdf_params%mixt_frac, sigma_sqd_w,              & ! Out
+                                  pdf_implicit_coefs_terms )                        ! Out
 
     end if ! iiPDF_type
     

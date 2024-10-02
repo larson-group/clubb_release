@@ -213,20 +213,10 @@ module pdf_parameter_tests
 
     real( kind = core_rknd ), dimension(nz) :: &
       F_w,    & ! Parameter for the spread of the PDF component means of w   [-]
-      zeta_w, & ! Parameter for the PDF component variances of w             [-]
-      F_rt,   & ! Parameter for the spread of the PDF component means of rt  [-]
-      F_thl     ! Parameter for the spread of the PDF component means of thl [-]
+      zeta_w    ! Parameter for the PDF component variances of w             [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
-      max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
-      min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
-      max_F_rt,  & ! Maximum allowable value of parameter F_rt     [-]
-      min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
-      max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      sgn_wp2     ! Sign of the variance of w (overall); always positive [-]
+      sgn_wp2   ! Sign of the variance of w (overall); always positive [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
       mu_rt_1,         & ! Mean of rt (1st PDF component)            [kg/kg]
@@ -1569,9 +1559,7 @@ module pdf_parameter_tests
                                sigma_w_2_sqd(1,:), sigma_rt_1_sqd,            & ! Out
                                sigma_rt_2_sqd, sigma_thl_1_sqd,          & ! Out
                                sigma_thl_2_sqd, mixt_frac(1,:),               & ! Out
-                               pdf_implicit_coefs_terms,                 & ! Out
-                               F_w, F_rt, F_thl, min_F_w, max_F_w,       & ! Out
-                               min_F_rt, max_F_rt, min_F_thl, max_F_thl  ) ! Out
+                               pdf_implicit_coefs_terms  ) ! Out
 
           ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
           ! to be clipped in new_pdf_driver.
@@ -1613,9 +1601,8 @@ module pdf_parameter_tests
                                       sigma_v_1_sqd, sigma_v_2_sqd,       &! Out
                                       mu_sclr_1, mu_sclr_2,               &! Out
                                       sigma_sclr_1_sqd, sigma_sclr_2_sqd, &! Out
-                                      mixt_frac(1,:),                          &! Out
-                                      pdf_implicit_coefs_terms,           &! Out
-                                      F_w, min_F_w, max_F_w               )! Out
+                                      mixt_frac(1,:), sigma_sqd_w(1,:),   &! Out
+                                      pdf_implicit_coefs_terms            )! Out
 
           ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
           ! to be clipped in new_pdf_driver.

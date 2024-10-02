@@ -35,9 +35,7 @@ module new_pdf_main
                              sigma_rt_1_sqd, sigma_rt_2_sqd,            & ! Out
                              sigma_thl_1_sqd, sigma_thl_2_sqd,          & ! Out
                              mixt_frac,                                 & ! Out
-                             pdf_implicit_coefs_terms,                  & ! Out
-                             F_w, F_rt, F_thl, min_F_w, max_F_w,        & ! Out
-                             min_F_rt, max_F_rt, min_F_thl, max_F_thl )   ! Out
+                             pdf_implicit_coefs_terms )                   ! Out
                              
 
     ! Description:
@@ -132,13 +130,16 @@ module new_pdf_main
     type(implicit_coefs_terms), intent(inout) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
+    ! Local Variables
+
     ! Output only for recording statistics.
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    ! Output functionality deprecated, see https://github.com/larson-group/clubb/issues/1176
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       F_w,   & ! Parameter for the spread of the PDF component means of w    [-]
       F_rt,  & ! Parameter for the spread of the PDF component means of rt   [-]
       F_thl    ! Parameter for the spread of the PDF component means of thl  [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
       max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
       min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
@@ -146,7 +147,6 @@ module new_pdf_main
       min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
       max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
 
-    ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
       sigma_w_1,   & ! Standard deviation of w (1st PDF component)      [m/s]
       sigma_w_2,   & ! Standard deviation of w (2nd PDF component)      [m/s]

@@ -3509,86 +3509,86 @@ module stats_zt_module
                           var_units="kg/kg/K", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case('F_w')
-        stats_metadata%iF_w = k
+      ! case('F_w')
+      !   stats_metadata%iF_w = k
 
-        call stat_assign( var_index=stats_metadata%iF_w, var_name="F_w", &
-                          var_description="F_w, Parameter for the spread of the" &
-                          // " PDF component means of w (new PDF)", &
-                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
+      !   call stat_assign( var_index=stats_metadata%iF_w, var_name="F_w", &
+      !                     var_description="F_w, Parameter for the spread of the" &
+      !                     // " PDF component means of w (new PDF)", &
+      !                     var_units="-", l_silhs=.false., grid_kind=stats_zt )
+      !   k = k + 1
 
-      case('F_rt')
-        stats_metadata%iF_rt = k
+      ! case('F_rt')
+      !   stats_metadata%iF_rt = k
 
-        call stat_assign( var_index=stats_metadata%iF_rt, var_name="F_rt", &
-                          var_description="F_rt, Parameter for the spread of the" &
-                          // " PDF component means of rt (new PDF)", &
-                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
+      !   call stat_assign( var_index=stats_metadata%iF_rt, var_name="F_rt", &
+      !                     var_description="F_rt, Parameter for the spread of the" &
+      !                     // " PDF component means of rt (new PDF)", &
+      !                     var_units="-", l_silhs=.false., grid_kind=stats_zt )
+      !   k = k + 1
 
-      case('F_thl')
-        stats_metadata%iF_thl = k
+      ! case('F_thl')
+      !   stats_metadata%iF_thl = k
 
-        call stat_assign( var_index=stats_metadata%iF_thl, var_name="F_thl", &
-                          var_description="F_thl, Parameter for the spread of the" &
-                          // " PDF component means of thl (new PDF)", &
-                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
+      !   call stat_assign( var_index=stats_metadata%iF_thl, var_name="F_thl", &
+      !                     var_description="F_thl, Parameter for the spread of the" &
+      !                     // " PDF component means of thl (new PDF)", &
+      !                     var_units="-", l_silhs=.false., grid_kind=stats_zt )
+      !   k = k + 1
 
-      case('min_F_w')
-        stats_metadata%imin_F_w = k
+      ! case('min_F_w')
+      !   stats_metadata%imin_F_w = k
 
-        call stat_assign( var_index=stats_metadata%imin_F_w, var_name="min_F_w", &
-                          var_description="min_F_w, Minimum allowable value of the" &
-                          // " parameter F_w (new PDF)", &
-                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
+      !   call stat_assign( var_index=stats_metadata%imin_F_w, var_name="min_F_w", &
+      !                     var_description="min_F_w, Minimum allowable value of the" &
+      !                     // " parameter F_w (new PDF)", &
+      !                     var_units="-", l_silhs=.false., grid_kind=stats_zt )
+      !   k = k + 1
 
-      case('max_F_w')
-        stats_metadata%imax_F_w = k
+      ! case('max_F_w')
+      !   stats_metadata%imax_F_w = k
 
-        call stat_assign( var_index=stats_metadata%imax_F_w, var_name="max_F_w", &
-                          var_description="max_F_w, Maximum allowable value of the" &
-                          // " parameter F_w (new PDF)", &
-                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
+      !   call stat_assign( var_index=stats_metadata%imax_F_w, var_name="max_F_w", &
+      !                     var_description="max_F_w, Maximum allowable value of the" &
+      !                     // " parameter F_w (new PDF)", &
+      !                     var_units="-", l_silhs=.false., grid_kind=stats_zt )
+      !   k = k + 1
 
-      case('min_F_rt')
-        stats_metadata%imin_F_rt = k
+      ! case('min_F_rt')
+      !   stats_metadata%imin_F_rt = k
 
-        call stat_assign( var_index=stats_metadata%imin_F_rt, var_name="min_F_rt", &
-                          var_description="min_F_rt, Minimum allowable value of the" &
-                          // " parameter F_rt (new PDF)", &
-                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
+      !   call stat_assign( var_index=stats_metadata%imin_F_rt, var_name="min_F_rt", &
+      !                     var_description="min_F_rt, Minimum allowable value of the" &
+      !                     // " parameter F_rt (new PDF)", &
+      !                     var_units="-", l_silhs=.false., grid_kind=stats_zt )
+      !   k = k + 1
 
-      case('max_F_rt')
-        stats_metadata%imax_F_rt = k
+      ! case('max_F_rt')
+      !   stats_metadata%imax_F_rt = k
 
-        call stat_assign( var_index=stats_metadata%imax_F_rt, var_name="max_F_rt", &
-                          var_description="max_F_rt, Maximum allowable value of the" &
-                          // " parameter F_rt (new PDF)", &
-                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
+      !   call stat_assign( var_index=stats_metadata%imax_F_rt, var_name="max_F_rt", &
+      !                     var_description="max_F_rt, Maximum allowable value of the" &
+      !                     // " parameter F_rt (new PDF)", &
+      !                     var_units="-", l_silhs=.false., grid_kind=stats_zt )
+      !   k = k + 1
 
-      case('min_F_thl')
-        stats_metadata%imin_F_thl = k
+      ! case('min_F_thl')
+      !   stats_metadata%imin_F_thl = k
 
-        call stat_assign( var_index=stats_metadata%imin_F_thl, var_name="min_F_thl", &
-                          var_description="min_F_thl, Minimum allowable value of the" &
-                          // " parameter F_thl (new PDF)", &
-                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
+      !   call stat_assign( var_index=stats_metadata%imin_F_thl, var_name="min_F_thl", &
+      !                     var_description="min_F_thl, Minimum allowable value of the" &
+      !                     // " parameter F_thl (new PDF)", &
+      !                     var_units="-", l_silhs=.false., grid_kind=stats_zt )
+      !   k = k + 1
 
-      case('max_F_thl')
-        stats_metadata%imax_F_thl = k
+      ! case('max_F_thl')
+      !   stats_metadata%imax_F_thl = k
 
-        call stat_assign( var_index=stats_metadata%imax_F_thl, var_name="max_F_thl", &
-                          var_description="max_F_thl, Maximum allowable value of the" &
-                          // " parameter F_thl (new PDF)", &
-                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
+      !   call stat_assign( var_index=stats_metadata%imax_F_thl, var_name="max_F_thl", &
+      !                     var_description="max_F_thl, Maximum allowable value of the" &
+      !                     // " parameter F_thl (new PDF)", &
+      !                     var_units="-", l_silhs=.false., grid_kind=stats_zt )
+      !   k = k + 1
 
       case ( 'coef_wprtp2_implicit' )
         stats_metadata%icoef_wprtp2_implicit = k

@@ -72,8 +72,6 @@ vars_zt =
 'corr_w_eta_1', 'corr_w_eta_2', 'corr_chi_eta_1', 'corr_chi_eta_2',
 'corr_w_rt_1', 'corr_w_rt_2', 'corr_w_thl_1', 'corr_w_thl_2',
 'corr_rt_thl_1', 'corr_rt_thl_2', 'crt_1', 'crt_2', 'cthl_1', 'cthl_2',
-'F_w', 'F_rt', 'F_thl', 'min_F_w', 'max_F_w',
-'min_F_rt', 'max_F_rt', 'min_F_thl', 'max_F_thl',
 'coef_wprtp2_implicit', 'term_wprtp2_explicit',
 'coef_wpthlp2_implicit', 'term_wpthlp2_explicit',
 'coef_wprtpthlp_implicit', 'term_wprtpthlp_explicit',

@@ -570,16 +570,16 @@ module stats_variables
        icthl_1 = 0, &
        icthl_2 = 0
 
-    integer :: &
-      iF_w = 0, &
-      iF_rt = 0, &
-      iF_thl = 0, &
-      imin_F_w = 0, &
-      imax_F_w = 0, &
-      imin_F_rt = 0, &
-      imax_F_rt = 0, &
-      imin_F_thl = 0, &
-      imax_F_thl = 0
+    ! integer :: &
+    !   iF_w = 0, &
+    !   iF_rt = 0, &
+    !   iF_thl = 0, &
+    !   imin_F_w = 0, &
+    !   imax_F_w = 0, &
+    !   imin_F_rt = 0, &
+    !   imax_F_rt = 0, &
+    !   imin_F_thl = 0, &
+    !   imax_F_thl = 0
 
 
     integer :: &
