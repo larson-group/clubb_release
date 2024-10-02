@@ -3140,7 +3140,8 @@ module advance_xp2_xpyp_module
       rhs_term_tp
 
     real( kind = core_rknd ), dimension(ngrdcol) :: & 
-      zeros_vector
+      C4_zeros, &
+      C14_zeros
 
     !----------------------------- Begin Code ----------------------------------
 
@@ -3238,8 +3239,6 @@ module advance_xp2_xpyp_module
     !$acc end parallel loop
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( rhs_ta, lhs_ta, xap2, xbp2, wp2, invrs_tau_C14_zm, invrs_tau_C4_zm, &
-      !$acc              rhs_pr2, lhs_splat_wp2, rhs_term_tp, lhs_dp1_C14, lhs_dp1_C4 )
 
       ! Statistics: explicit contributions for up2 or vp2.
 
@@ -3247,15 +3246,25 @@ module advance_xp2_xpyp_module
       ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
       ! subtracts the value sent in, reverse the sign on term_ta_ADG1_rhs.
 
-      zeros_vector = zero
+      C14_zeros = zero
+      C4_zeros = zero
 
-      call term_pr1( nzm, ngrdcol, C4, zeros_vector, xbp2, &
+      !$acc data copyin( C14_zeros, C4_zeros ) &
+      !$acc     copyout( stats_pr1, stats_pr2 )
+
+      call term_pr1( nzm, ngrdcol, C4, C14_zeros, xbp2, &
                      wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, &
                      stats_pr1 )
 
-      call term_pr1( nzm, ngrdcol, zeros_vector, C14, xbp2, &
+      call term_pr1( nzm, ngrdcol, C4_zeros, C14, xbp2, &
                      wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, &
                      stats_pr2 )
+
+      !$acc end data
+
+
+      !$acc update host( rhs_ta, lhs_ta, xap2, xbp2, wp2, invrs_tau_C14_zm, invrs_tau_C4_zm, &
+      !$acc              rhs_pr2, lhs_splat_wp2, rhs_term_tp, lhs_dp1_C14, lhs_dp1_C4 )
 
       do k = 2, nzm-1
         do i = 1, ngrdcol
@@ -3617,11 +3626,11 @@ module advance_xp2_xpyp_module
 
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( rhs_ta, lhs_ta, xapxbp, Cn, invrs_tau_zm, xam, rhs_term_tp, &
-      !$acc              xbm, wpxbp, wpxap, xpyp_forcing, rhs_term_dp1, lhs_term_dp1 )
-
       xm_zeros = zero
       wpxp_zeros = zero
+
+      !$acc data copyin( xm_zeros, wpxp_zeros ) &
+      !$acc      copyout( stats_tp1, stats_tp2 )
 
       ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
       !        the xam inputs and the wpxbp input to function term_tp.
@@ -3634,6 +3643,11 @@ module advance_xp2_xpyp_module
       call term_tp_rhs( nzm, nzt, ngrdcol, xam, xm_zeros,  & 
                         wpxbp, wpxp_zeros, gr%invrs_dzm, &
                         stats_tp2 )
+
+      !$acc end data
+
+      !$acc update host( rhs_ta, lhs_ta, xapxbp, Cn, invrs_tau_zm, xam, rhs_term_tp, &
+      !$acc              xbm, wpxbp, wpxap, xpyp_forcing, rhs_term_dp1, lhs_term_dp1 )
 
       do k = 2, nzm-1
         do i = 1, ngrdcol
@@ -5451,9 +5465,6 @@ module advance_xp2_xpyp_module
 
     !------------------------ Begin Code ------------------------
 
-    !$acc data copyin( xam, xbm, wpxbp, wpxap, invrs_dzm ) &
-    !$acc     copyout( rhs )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nzm-1
       do i = 1, ngrdcol
@@ -5462,8 +5473,6 @@ module advance_xp2_xpyp_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -5546,9 +5555,6 @@ module advance_xp2_xpyp_module
 
     !--------------------------- Begin Code ---------------------------
     
-    !$acc data copyin( Cn, invrs_tau_zm ) &
-    !$acc     copyout( lhs ) 
-
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       ! Zero boundary
@@ -5565,8 +5571,6 @@ module advance_xp2_xpyp_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -5640,9 +5644,6 @@ module advance_xp2_xpyp_module
 
     !--------------------------- Begin Code ---------------------------
 
-    !$acc data copyin( Cn, invrs_tau_zm ) &
-    !$acc     copyout( rhs ) 
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
       do i = 1, ngrdcol
@@ -5650,8 +5651,6 @@ module advance_xp2_xpyp_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -5773,9 +5772,6 @@ module advance_xp2_xpyp_module
 
     !------------------------- Begin Code -------------------------
 
-    !$acc data copyin( xbp2, wp2, invrs_tau_C4_zm, invrs_tau_C14_zm, C4, C14 ) &
-    !$acc      copyout( rhs )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nzm-1
       do i = 1, ngrdcol
@@ -5785,8 +5781,6 @@ module advance_xp2_xpyp_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 

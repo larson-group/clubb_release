@@ -443,6 +443,7 @@ module clubb_driver
       thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
       rcm,      & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+      wp3_zm,   & ! w'^3 (momentum levels)                    [m^3/s^3]
       delta_zm
     
     real( kind = core_rknd ), dimension(:), allocatable :: &
@@ -1629,6 +1630,7 @@ module clubb_driver
     allocate( cloudy_downdraft_frac(1:gr%nzt) )
     allocate( wp2(1:gr%nzm) )       ! w'^2
     allocate( wp3(1,1:gr%nzt) )       ! w'^3
+    allocate( wp3_zm(1,1:gr%nzm) )       ! w'^3
     allocate( rtp2(1:gr%nzm) )      ! rt'^2
     allocate( thlp2(1:gr%nzm) )     ! thl'^2
     allocate( rtpthlp(1:gr%nzm) )   ! rt'thlp'
@@ -2780,10 +2782,15 @@ module clubb_driver
       time_microphys_scheme = time_microphys_scheme + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for advance_microphys
 
+      wp3_zm(1,:) = zt2zm( gr, wp3(1,:) )
+
       ! Calculate Skw_zm for use in advance_microphys.
-      call Skx_func( gr%nzm, 1, wp2, zt2zm( gr, wp3(1,:) ), &
+      !$acc data copyin( wp2, wp3_zm, clubb_params ) &
+      !$acc      copyout( Skw_zm )
+      call Skx_func( gr%nzm, 1, wp2, wp3_zm, &
                      w_tol, clubb_params, &
                      Skw_zm )
+      !$acc end data
       
       ! This field is smoothed by interpolating to thermodynamic levels and then
       ! interpolating back to momentum levels.
@@ -2979,6 +2986,7 @@ module clubb_driver
     deallocate( cloudy_downdraft_frac )
     deallocate( wp2 )       ! w'^2
     deallocate( wp3 )       ! w'^3
+    deallocate( wp3_zm )    ! w'^3
     deallocate( rtp2 )      ! rt'^2
     deallocate( thlp2 )     ! thl'^2
     deallocate( rtpthlp )   ! rt'thlp'

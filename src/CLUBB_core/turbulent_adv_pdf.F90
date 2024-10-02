@@ -368,12 +368,6 @@ module turbulent_adv_pdf
 
     ! ------------------------------ Begin Code ------------------------------
 
-    !$acc data copyin( gr, gr%weights_zm2zt, gr%invrs_dzm, gr%invrs_dzt, &
-    !$acc              coef_wpxpyp_implicit, rho_ds_zt, invrs_rho_ds_zm, &
-    !$acc              sgn_turbulent_vel, coef_wpxpyp_implicit_zm, rho_ds_zm ) &
-    !$acc      copyout( lhs_ta )
-
-
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
@@ -472,8 +466,6 @@ module turbulent_adv_pdf
     end do
     !$acc end parallel loop
 
-    !$acc end data
-
     return
 
   end subroutine xpyp_term_ta_pdf_lhs
@@ -540,10 +532,6 @@ module turbulent_adv_pdf
 
     !---------------- Begin Code -------------------
 
-    !$acc data copyin( gr, gr%invrs_dzm, &
-    !$acc              coef_wpxpyp_implicit, invrs_rho_ds_zm, rho_ds_zm ) &
-    !$acc      copyout( lhs_ta )
-
     ! Set lower boundary array to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do i = 1, ngrdcol
@@ -585,8 +573,6 @@ module turbulent_adv_pdf
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -890,12 +876,6 @@ module turbulent_adv_pdf
 
     ! ----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( gr, gr%invrs_dzm, gr%invrs_dzt, &
-    !$acc              term_wpxpyp_explicit, rho_ds_zt, invrs_rho_ds_zm, &
-    !$acc              sgn_turbulent_vel, term_wpxpyp_explicit_zm, rho_ds_zm ) &
-    !$acc      copyout( rhs_ta )
-
-
     ! Set lower boundary value to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -959,8 +939,6 @@ module turbulent_adv_pdf
     end do
     !$acc end parallel loop
 
-    !$acc end data 
-
     return
 
   end subroutine xpyp_term_ta_pdf_rhs
@@ -1023,11 +1001,6 @@ module turbulent_adv_pdf
 
     !---------------- Begin Code -------------------
 
-    !$acc data copyin( gr, gr%invrs_dzm, &
-    !$acc              term_wpxpyp_explicit_zm, invrs_rho_ds_zm, &
-    !$acc              sgn_turbulent_vel, rho_ds_zm ) &
-    !$acc      copyout( rhs_ta )
-
     ! Set lower boundary value to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -1058,8 +1031,6 @@ module turbulent_adv_pdf
       rhs_ta(i,nzm) = 0.0_core_rknd
     end do
     !$acc end parallel loop
-
-    !$acc end data 
 
     return
 

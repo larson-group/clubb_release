@@ -137,9 +137,6 @@ module T_in_K_module
 
     ! ---- Begin Code ----
 
-    !$acc data copyin( thlm, exner, rcm ) &
-    !$acc     copyout( T_in_K )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -147,8 +144,6 @@ module T_in_K_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
   end function thlm2T_in_K_2D

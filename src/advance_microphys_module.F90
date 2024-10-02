@@ -1842,9 +1842,13 @@ module advance_microphys_module
     rho_ds_zm_col(i,:) = rho_ds_zm
     nu_col(i) = nu
 
+    !$acc data copyin( gr, gr%invrs_dzm, gr%invrs_dzt, Kh_zm, Kh_zt, nu_col, &
+    !$acc              invrs_rho_ds_zt_col, rho_ds_zm_col ) &
+    !$acc       copyout( lhs_ta )
     call diffusion_zt_lhs( gr%nzm, gr%nzt, i, gr, Kh_zm, Kh_zt, nu_col, &
                            invrs_rho_ds_zt_col, rho_ds_zm_col, &
                            lhs_ta )
+    !$acc end data
 
     do k = 1, gr%nzt, 1
        lhs_ta(:,i,k) = one_half * lhs_ta(:,i,k)
@@ -1868,10 +1872,13 @@ module advance_microphys_module
     wm_zt_col(i,:) = wm_zt
 
     ! LHS mean advection term.
-    call term_ma_zt_lhs( gr%nzm, gr%nzt, 1, wm_zt_col(1,:), gr%weights_zt2zm, & ! intent(in)
+    !$acc data copyin( gr, gr%weights_zt2zm, gr%invrs_dzt, gr%invrs_dzm, wm_zt_col ) &
+    !$acc      copyout( lhs_ma )
+    call term_ma_zt_lhs( gr%nzm, gr%nzt, 1, wm_zt_col, gr%weights_zt2zm, & ! intent(in)
                          gr%invrs_dzt, gr%invrs_dzm,    & ! intent(in)
                          l_upwind_xm_ma, &
                          lhs_ma(:,:) )
+    !$acc end data
 
     ! Setup LHS Matrix
     do k = 1, gr%nzt, 1
@@ -2151,9 +2158,13 @@ module advance_microphys_module
     rho_ds_zm_col(i,:) = rho_ds_zm
     nu_col(i) = nu
 
+    !$acc data copyin( gr, gr%invrs_dzm, gr%invrs_dzt, Kh_zm, Kh_zt, nu_col, &
+    !$acc              invrs_rho_ds_zt_col, rho_ds_zm_col ) &
+    !$acc       copyout( lhs_ta )
     call diffusion_zt_lhs( gr%nzm, gr%nzt, i, gr, Kh_zm, Kh_zt, nu_col, &
                            invrs_rho_ds_zt_col, rho_ds_zm_col, &
                            lhs_ta )
+    !$acc end data
 
     do k = 1, gr%nzt, 1
        lhs_ta(:,k) = one_half * lhs_ta(:,k)

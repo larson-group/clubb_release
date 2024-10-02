@@ -1645,9 +1645,7 @@ module grid_class
 
     ! ------------------------------ Begin Code ------------------------------
 
-    !$acc data copyin( azt ) &
-    !$acc     copyout( zt2zm2zt ) &
-    !$acc      create( azt_zm )
+    !$acc data create( azt_zm )
 
     ! Interpolate azt to momentum levels 
     azt_zm = zt2zm( nzm, nzt, ngrdcol, gr, azt )
@@ -1703,9 +1701,7 @@ module grid_class
 
     ! ------------------------------ Begin Code ------------------------------
 
-    !$acc data copyin( azm ) &
-    !$acc     copyout( zm2zt2zm ) &
-    !$acc      create( azm_zt )
+    !$acc data create( azm_zt )
 
     ! Interpolate azt to termodynamic levels 
     azm_zt = zm2zt( nzm, nzt, ngrdcol, gr, azm )
@@ -2416,9 +2412,6 @@ module grid_class
 
     ! Local Variable
     integer :: i, k  ! Grid level loop index
-    
-    !$acc data copyin( gr, gr%invrs_dzt, azm ) &
-    !$acc     copyout( gradzm_2D )
 
     ! Loop over all thermodynamic grid levels.
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -2428,8 +2421,6 @@ module grid_class
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -2471,8 +2462,11 @@ module grid_class
       gradzm_1D_col    ! Vertical derivative of azm (t-levs.)   [units vary / m]
 
     azm_col(1,:) = azm
-    
+
+    !$acc data copyin( gr, gr%invrs_dzt, azm_col ) &
+    !$acc      copyout( gradzm_1D_col )
     gradzm_1D_col = gradzm_2D(gr%nzm, gr%nzt, 1, gr, azm_col)
+    !$acc end data
       
     gradzm_1D = gradzm_1D_col(1,:)
 
@@ -2515,9 +2509,6 @@ module grid_class
     ! Local Variable
     integer :: i, k  ! Grid level loop index
 
-    !$acc data copyin( gr, gr%invrs_dzm, azt ) &
-    !$acc     copyout( gradzt_2D )
-
     ! Loop over all interior momentum levels.
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nzm-1
@@ -2539,8 +2530,6 @@ module grid_class
       gradzt_2D(i,nzm) = gradzt_2D(i,nzm-1)
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -2582,7 +2571,10 @@ module grid_class
 
     azt_col(1,:) = azt
     
+    !$acc data copyin( gr, gr%invrs_dzm, azt_col ) &
+    !$acc      copyout( gradzt_1D_col )
     gradzt_1D_col = gradzt_2D(gr%nzm, gr%nzt, 1, gr, azt_col)
+    !$acc end data
     
     gradzt_1D = gradzt_1D_col(1,:)
 

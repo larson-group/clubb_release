@@ -307,10 +307,7 @@ module diffusion
 
     !------------------------ Begin code ------------------------
 
-    !$acc data copyin( gr, gr%invrs_dzm, gr%invrs_dzt, &
-    !$acc              K_zm, K_zt, rho_ds_zm, invrs_rho_ds_zt, nu ) &
-    !$acc     copyout( lhs ) &
-    !$acc      create( lhs_upwind, drhoKdz_zt, K_zm_nu, rho_K_zm_nu, ddzm_rho_K_zm_nu )
+    !$acc data create( lhs_upwind, drhoKdz_zt, K_zm_nu, rho_K_zm_nu, ddzm_rho_K_zm_nu )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
@@ -813,10 +810,7 @@ module diffusion
 
     !------------Begin code------------------------------
 
-    !$acc data copyin( gr, gr%invrs_dzt, gr%invrs_dzm, &
-    !$acc              K_zm, K_zt, rho_ds_zt, invrs_rho_ds_zm, nu ) &
-    !$acc     copyout( lhs ) &
-    !$acc      create( lhs_upwind, drhoKdz_zm, rho_K_zt_nu, ddzt_rho_K_zt_nu )
+    !$acc data create( lhs_upwind, drhoKdz_zm, rho_K_zt_nu, ddzt_rho_K_zt_nu )
     
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt

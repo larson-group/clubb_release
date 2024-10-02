@@ -470,12 +470,7 @@ module advance_helper_module
 
     !---------------------------- Begin Code ----------------------------
 
-    !$acc data copyin( gr, gr%zt, &
-    !$acc              thlm, exner, rtm, rcm, p_in_Pa, thvm, ice_supersat_frac, bv_efold ) &
-    !$acc      copyout( brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, &
-    !$acc               brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, &
-    !$acc               brunt_vaisala_freq_sqd_smth ) &
-    !$acc       create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
+    !$acc data create( T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
     !$acc               ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm, ice_supersat_frac_zm, &
     !$acc               brunt_vaisala_freq_clipped )
 
@@ -1282,9 +1277,6 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var2 ) &
-    !$acc     copyout( output_var )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1293,8 +1285,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -1342,9 +1332,6 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1 ) &
-    !$acc     copyout( output_var )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1353,8 +1340,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -1402,9 +1387,6 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1, input_var2 ) &
-    !$acc     copyout( output_var )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1413,8 +1395,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -1501,9 +1481,6 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var2 ) &
-    !$acc     copyout( output_var )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1512,8 +1489,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -1561,9 +1536,6 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1 ) &
-    !$acc     copyout( output_var )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1572,8 +1544,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -1620,17 +1590,12 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1 ) &
-    !$acc     copyout( output_var )
-
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       output_var(i) = one_half * ( ( input_var1(i) + input_var2 ) + &
                                 sqrt(( input_var1(i) - input_var2 )**2 + smth_coef**2) )
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -1678,9 +1643,6 @@ module advance_helper_module
 
     !----------------------------- Begin Code -----------------------------
 
-    !$acc data copyin( input_var1, input_var2 ) &
-    !$acc     copyout( output_var )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1689,8 +1651,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -1779,9 +1739,6 @@ module advance_helper_module
 
     !------------------------- Begin Code -------------------------
 
-    !$acc data copyin( input ) &
-    !$acc     copyout( smth_output )
-
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nz
       do i = 1, ngrdcol
@@ -1802,8 +1759,6 @@ module advance_helper_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -1895,9 +1850,6 @@ module advance_helper_module
 
     ! ----------------------- Begin Code -----------------------
 
-    !$acc data copyin( gr, gr%invrs_dzm, Km_zm, xm ) &
-    !$acc     copyout( xpwp )
-
     ! Solve for x'w' at all intermediate model levels.
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 2, nzm-1
@@ -1906,8 +1858,6 @@ module advance_helper_module
        end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 

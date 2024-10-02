@@ -114,9 +114,7 @@ module tridiag_lu_solvers
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper, lower_diag_invrs ) &
-    !$acc      copyin( rhs, lhs ) &
-    !$acc      copyout( soln )
+    !$acc data create( upper, lower_diag_invrs )
     
     !$acc kernels
     
@@ -181,9 +179,7 @@ module tridiag_lu_solvers
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper, lower_diag_invrs ) &
-    !$acc      copyin( rhs, lhs ) &
-    !$acc      copyout( soln )
+    !$acc data create( upper, lower_diag_invrs )
     
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -269,9 +265,7 @@ module tridiag_lu_solvers
 
     ! ----------------------- Begin Code -----------------------
        
-    !$acc data create( upper, lower_diag_invrs ) &
-    !$acc      copyin( rhs, lhs ) &
-    !$acc      copyout( soln )
+    !$acc data create( upper, lower_diag_invrs )
 
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol

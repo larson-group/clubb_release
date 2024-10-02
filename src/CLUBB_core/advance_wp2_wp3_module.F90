@@ -1410,10 +1410,12 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
       lhs_wp3_ac_term,  & ! w'^3 term ac, used for stats
       lhs_wp3_pr2_term, & ! w'^3 term pr2, used for stats
-      zero_vector
+      C11_Skw_fnc_zeros, &
+      C11_Skw_fnc_plus_one
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
-      zero_vector_ngrdcol
+      C_uu_shr_zeros, &
+      C_uu_shr_plus_one
 
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3, i
@@ -1537,22 +1539,39 @@ module advance_wp2_wp3_module
       !$acc              wp3, lhs_ma_zm, lhs_pr1_wp2, lhs_pr1_wp3, lhs_diff_zt, &
       !$acc              wp3_term_ta_lhs_result, lhs_adv_tp_wp3, lhs_pr_tp_wp3, &
       !$acc              wp3_pr3_lhs, lhs_ma_zt, C11_Skw_fnc, wm_zm, clubb_params )
-      
-      zero_vector = zero
-      zero_vector_ngrdcol = zero
+
+      C_uu_shr_zeros        = zero
+      C_uu_shr_plus_one     = clubb_params(:,iC_uu_shr) + one
+      C11_Skw_fnc_zeros     = zero
+      C11_Skw_fnc_plus_one  = C11_Skw_fnc + one
+
+      !$acc data copyin( C_uu_shr_zeros, C_uu_shr_plus_one, C11_Skw_fnc_zeros, C11_Skw_fnc_plus_one ) &
+      !$acc      copyout( lhs_wp2_ac_term, lhs_wp2_pr2_term, lhs_wp3_ac_term, lhs_wp3_pr2_term )
       
       ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
       !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
-      call wp2_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr,      & ! intent(in)
-                                 zero_vector_ngrdcol, wm_zt, & ! intent(in)
-                                 lhs_wp2_ac_term  )            ! intent(out)
+      call wp2_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, & ! intent(in)
+                                 C_uu_shr_zeros, wm_zt, & ! intent(in)
+                                 lhs_wp2_ac_term  )       ! intent(out)
       
       ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
       !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
-      call wp2_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr,                  & ! intent(in)
-                                 (one+clubb_params(:,iC_uu_shr)), wm_zt, & ! intent(in)
-                                 lhs_wp2_pr2_term )                        ! intent(out)
+      call wp2_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr,     & ! intent(in)
+                                 C_uu_shr_plus_one, wm_zt,  & ! intent(in)
+                                 lhs_wp2_pr2_term )           ! intent(out)
+      
+      ! Note:  To find the contribution of w'^3 term ac, substitute 0 for the
+      !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
+      call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, C11_Skw_fnc_zeros, wm_zm, & ! intent(in)
+                                 lhs_wp3_ac_term )                                  ! intent(out)
+      
+      ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
+      !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
+      call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, C11_Skw_fnc_plus_one, wm_zm,  & ! intent(in)
+                                 lhs_wp3_pr2_term )                                     ! intent(out)
     
+      !$acc end data
+
       do i = 1, ngrdcol
 
         ! Finalize implicit contributions for wp2
@@ -1628,16 +1647,6 @@ module advance_wp2_wp3_module
       end do
 
       ! Finalize implicit contributions for wp3
-      
-      ! Note:  To find the contribution of w'^3 term ac, substitute 0 for the
-      !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
-      call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, zero_vector, wm_zm,  & ! intent(in)
-                                 lhs_wp3_ac_term )                             ! intent(out)
-      
-      ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
-      !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
-      call wp3_terms_ac_pr2_lhs( nzm, nzt, ngrdcol, gr, (one+C11_Skw_fnc), wm_zm,  & ! intent(in)
-                                 lhs_wp3_pr2_term )                                  ! intent(out)
 
       do i = 1, ngrdcol
         do k = 2, nzt-1, 1
@@ -1967,12 +1976,6 @@ module advance_wp2_wp3_module
 
     ! ----------------------- Begin Code -----------------------
 
-    !$acc data copyin( wp3_term_ta_lhs_result, lhs_diff_zm, lhs_diff_zt, &
-    !$acc              lhs_ma_zm, lhs_ma_zt, lhs_ta_wp2, lhs_tp_wp3, &
-    !$acc              lhs_ac_pr2_wp2, lhs_ac_pr2_wp3, lhs_dp1_wp2, &
-    !$acc              lhs_pr1_wp3, lhs_pr1_wp2, lhs_splat_wp2, lhs_splat_wp3 ) &
-    !$acc     copyout( lhs )
-
     ! Calculate invrs_dt
     invrs_dt = 1.0_core_rknd / dt
 
@@ -2194,7 +2197,6 @@ module advance_wp2_wp3_module
 
     endif
 
-    !$acc end data
 
     return
 
@@ -2379,23 +2381,14 @@ module advance_wp2_wp3_module
       invrs_dt        ! Inverse of dt, 1/dt, used for computational efficiency
 
     real( kind = core_rknd ), dimension(ngrdcol,nzt) :: &
-      zero_vector    ! Vector of 0s
+      C11_Skw_fnc_zeros, &
+      C11_Skw_fnc_plus_one
 
     real( kind = core_rknd ), dimension(ngrdcol) :: &
-      zero_vector_ngrdcol    ! Vector of 0s
+      C_uu_buoy_zeros, &
+      C_uu_buoy_plus_one
 
     ! --------------------- Begin Code ---------------------
-
-    !$acc data copyin( wp3_term_ta_lhs_result, lhs_diff_zm, lhs_diff_zt, &
-    !$acc              lhs_diff_zm_crank, lhs_diff_zt_crank, lhs_tp_wp3, &
-    !$acc              lhs_adv_tp_wp3, lhs_pr_tp_wp3, lhs_ta_wp3, lhs_dp1_wp2, &
-    !$acc              rhs_dp1_wp2, lhs_pr1_wp2, rhs_pr1_wp2, lhs_pr1_wp3, &
-    !$acc              rhs_pr1_wp3, rhs_bp_pr2_wp2, rhs_pr_dfsn_wp2, rhs_bp1_pr2_wp3, &
-    !$acc              rhs_pr3_wp2, rhs_pr3_wp3, rhs_ta_wp3, rhs_pr_turb_wp3, &
-    !$acc              rhs_pr_dfsn_wp3, wp2, wp3, wpup2, wpvp2, wpthvp, wp2thvp, &
-    !$acc              up2, vp2, C11_Skw_fnc, thv_ds_zm, thv_ds_zt, &
-    !$acc              lhs_splat_wp2, lhs_splat_wp3 ) &
-    !$acc    copyout( rhs )
 
     ! Calculate invers_dt
     invrs_dt = 1.0_core_rknd / dt
@@ -2668,50 +2661,57 @@ module advance_wp2_wp3_module
     ! --------- Statistics output ---------
     if ( stats_metadata%l_stats_samp ) then
 
-      !$acc update host( thv_ds_zm, wpthvp, thv_ds_zt, wp2thvp, &
-      !$acc              wp2, lhs_diff_zm_crank, up2, vp2, lhs_diff_zm, &
+      !$acc update host( wp2, lhs_diff_zm_crank, up2, vp2, lhs_diff_zm, &
       !$acc              rhs_pr_dfsn_wp2, lhs_splat_wp2, rhs_pr1_wp2, &
       !$acc              lhs_pr1_wp2, rhs_dp1_wp2, lhs_dp1_wp2, rhs_pr3_wp2, &
       !$acc              rhs_ta_wp3, wp3_term_ta_lhs_result, wp3, lhs_ta_wp3, &
       !$acc              lhs_adv_tp_wp3, lhs_pr_tp_wp3, rhs_pr3_wp3, rhs_pr1_wp3, &
       !$acc              lhs_pr1_wp3, lhs_splat_wp3, lhs_diff_zt, wpup2, wpvp2, &
-      !$acc              rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, clubb_params )
+      !$acc              rhs_pr_turb_wp3, rhs_pr_dfsn_wp3, clubb_params, C11_Skw_fnc )
 
-      zero_vector = zero
-      zero_vector_ngrdcol = zero
+      C_uu_buoy_zeros       = zero
+      C_uu_buoy_plus_one    = clubb_params(:,iC_uu_buoy) + one
+      C11_Skw_fnc_zeros     = zero
+      C11_Skw_fnc_plus_one  = C11_Skw_fnc + one
+
+      !$acc data copyin( C_uu_buoy_zeros, C_uu_buoy_plus_one, C11_Skw_fnc_zeros, C11_Skw_fnc_plus_one ) &
+      !$acc      copyout( rhs_bp_wp2, rhs_pr2_wp2, rhs_bp1_wp3, rhs_pr2_wp3 )
 
       ! w'^2 term bp is completely explicit; call stat_update_var_pt.
       ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
       !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-      call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, zero_vector_ngrdcol, & ! intent(in)
-                                 thv_ds_zm, wpthvp,                 & ! intent(in)
-                                 rhs_bp_wp2 )                         ! intent(out)
+      call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, C_uu_buoy_zeros,  & ! intent(in)
+                                 thv_ds_zm, wpthvp,              & ! intent(in)
+                                 rhs_bp_wp2 )                      ! intent(out)
 
       ! w'^2 term pr2 has both implicit and explicit components; call
       ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
       ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
       ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
       !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
-      call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, (one+clubb_params(:,iC_uu_buoy)), & ! intent(in)
-                                 thv_ds_zm, wpthvp,                              & ! intent(in)
-                                 rhs_pr2_wp2 )                                     ! intent(out)
+      call wp2_terms_bp_pr2_rhs( nzm, ngrdcol, C_uu_buoy_plus_one,  & ! intent(in)
+                                 thv_ds_zm, wpthvp,                 & ! intent(in)
+                                 rhs_pr2_wp2 )                        ! intent(out)
 
     
       ! w'^3 term bp is completely explicit; call stat_update_var_pt.
       ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
       !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
-      call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, zero_vector, & ! intent(in)
-                                  thv_ds_zt, wp2thvp,        & ! intent(in)
-                                  rhs_bp1_wp3 )                ! intent(out)
+      call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, C11_Skw_fnc_zeros,   & ! intent(in)
+                                  thv_ds_zt, wp2thvp,                & ! intent(in)
+                                  rhs_bp1_wp3 )                        ! intent(out)
+
 
       ! w'^3 term pr2 has both implicit and explicit components; call
       ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
       ! subtracts the value sent in, reverse the sign on wp3_terms_bp1_pr2_rhs.
       ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
       !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
-      call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, ( one + C11_Skw_fnc ), & ! intent(in) 
-                                  thv_ds_zt, wp2thvp,                  & ! intent(in)
-                                  rhs_pr2_wp3 )                          ! intent(out)
+      call wp3_terms_bp1_pr2_rhs( nzt, ngrdcol, C11_Skw_fnc_plus_one,   & ! intent(in) 
+                                  thv_ds_zt, wp2thvp,                   & ! intent(in)
+                                  rhs_pr2_wp3 )                           ! intent(out)
+
+      !$acc end data
 
       do i = 1, ngrdcol
         do k = 2, nzm-1
@@ -2968,7 +2968,6 @@ module advance_wp2_wp3_module
 
     endif
 
-    !$acc end data
 
     return
 
@@ -3063,9 +3062,6 @@ module advance_wp2_wp3_module
     
     ! ------------------------ Begin Code ------------------------
 
-    !$acc data copyin( gr, invrs_rho_ds_zm, gr%invrs_dzm, rho_ds_zt )  &
-    !$acc     copyout( lhs_ta_wp2 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, ngrdcol
@@ -3092,7 +3088,6 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc end data
 
     return
 
@@ -3192,9 +3187,6 @@ module advance_wp2_wp3_module
 
     ! ------------------------ Begin Code ------------------------
 
-    !$acc data copyin( gr, gr%invrs_dzm, wm_zt, C_uu_shr )  &
-    !$acc     copyout( lhs_ac_pr2_wp2 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -3215,7 +3207,6 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc end data
     return
 
   end subroutine wp2_terms_ac_pr2_lhs
@@ -3286,9 +3277,6 @@ module advance_wp2_wp3_module
     
     ! ------------------ Begin Code ------------------
 
-    !$acc data copyin( C1_Skw_fnc, invrs_tau1m ) &
-    !$acc     copyout( lhs_dp1_wp2 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -3308,7 +3296,6 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc end data
 
     return
 
@@ -3386,9 +3373,6 @@ module advance_wp2_wp3_module
     
     ! --------------------- Begin Code ---------------------
 
-    !$acc data copyin( invrs_tau_C4_zm ) &
-    !$acc     copyout( lhs_pr1_wp2 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -3409,7 +3393,6 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc end data
 
     return
 
@@ -3481,9 +3464,6 @@ module advance_wp2_wp3_module
 
     ! ------------------ Begin Code ------------------
 
-    !$acc data copyin( thv_ds_zm, wpthvp, C_uu_buoy ) &
-    !$acc     copyout( rhs_bp_pr2_wp2 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -3502,8 +3482,6 @@ module advance_wp2_wp3_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -3584,9 +3562,6 @@ module advance_wp2_wp3_module
     
     ! -------------------- Begin Code  --------------------
 
-    !$acc data copyin( C1_Skw_fnc, invrs_tau1m, up2,  vp2 ) &
-    !$acc     copyout( rhs_dp1_wp2 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -3615,7 +3590,6 @@ module advance_wp2_wp3_module
       !$acc end parallel loop
     endif ! l_damp_wp2_using_em
 
-    !$acc end data
 
     return
 
@@ -3709,10 +3683,6 @@ module advance_wp2_wp3_module
     
     ! ---------------------Begin Code ---------------------
 
-    !$acc data copyin( gr, gr%invrs_dzm, &
-    !$acc              thv_ds_zm, wpthvp, upwp,  um, vpwp, vm, C_uu_shr, C_uu_buoy ) &
-    !$acc     copyout( rhs_pr3_wp2 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -3758,7 +3728,6 @@ module advance_wp2_wp3_module
     end do 
     !$acc end parallel loop
 
-    !$acc end data
 
     return
 
@@ -3830,9 +3799,6 @@ module advance_wp2_wp3_module
 
     ! ------------------------ Begin Code ------------------------
 
-    !$acc data copyin( up2, vp2, invrs_tau_C4_zm, C4 ) &
-    !$acc     copyout( rhs_pr1_wp2 )
-    
     ! Set lower bounadry to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -3850,8 +3816,6 @@ module advance_wp2_wp3_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -3931,10 +3895,7 @@ module advance_wp2_wp3_module
 
     ! ---------------------- Begin Code ----------------------
 
-    !$acc data copyin( gr, invrs_rho_ds_zm, gr%invrs_dzm, &
-    !$acc              rho_ds_zt, wpup2, wpvp2, wp3, C_wp2_pr_dfsn ) &
-    !$acc              copyout(rhs_pr_dfsn_wp2 ) &
-    !$acc      create( wpuip2 )
+    !$acc data create( wpuip2 )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzt
@@ -4092,10 +4053,6 @@ module advance_wp2_wp3_module
 
     ! ------------------------ Begin Code ------------------------
 
-    !$acc data copyin( gr, gr%invrs_dzt, invrs_rho_ds_zt, rho_ds_zm, &
-    !$acc              coef_wp4_implicit, wp2 ) &
-    !$acc              copyout(lhs_ta_wp3 )
-
     ! Set term at lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -4124,8 +4081,6 @@ module advance_wp2_wp3_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -4292,12 +4247,6 @@ module advance_wp2_wp3_module
     integer :: k, i
 
     ! ---------------------- Begin Code ----------------------
-
-    !$acc data copyin( gr, gr%invrs_dzt, gr%weights_zt2zm, wp2, &
-    !$acc              a1_coef, a1_coef_zt, a3_coef, a3_coef_zt, &
-    !$acc              wp3_on_wp2, rho_ds_zm, rho_ds_zt, &
-    !$acc              invrs_rho_ds_zt ) &
-    !$acc     copyout( lhs_ta_wp3 )
 
     ! Set lower boundary to 0
     !$acc parallel loop gang vector collapse(2) default(present)
@@ -4581,7 +4530,6 @@ module advance_wp2_wp3_module
 
     endif ! l_standard_term_ta
 
-    !$acc end data
 
     return
 
@@ -4701,10 +4649,6 @@ module advance_wp2_wp3_module
 
     ! -------------------- Begin Code --------------------
 
-    !$acc data copyin( gr, invrs_rho_ds_zt, &
-    !$acc              gr%invrs_dzt, rho_ds_zm, wp2 ) &
-    !$acc     copyout( lhs_tp_wp3 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do k = 1, ngrdcol
@@ -4736,7 +4680,6 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc end data
 
     return
 
@@ -4833,9 +4776,6 @@ module advance_wp2_wp3_module
 
     ! ------------------------ Begin Code ------------------------
 
-    !$acc data copyin( gr, gr%invrs_dzt, C11_Skw_fnc, gr%invrs_dzt, wm_zm)  &
-    !$acc     copyout( lhs_ac_pr2_wp3 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -4859,7 +4799,6 @@ module advance_wp2_wp3_module
     end do
     !$acc end parallel loop
 
-    !$acc end data
 
     return
 
@@ -4954,9 +4893,6 @@ module advance_wp2_wp3_module
 
     ! ---------------------- Begin Code ----------------------
 
-    !$acc data copyin( invrs_tau_wp3_zt, Skw_zt, C8, C8b ) &
-    !$acc     copyout( lhs_pr1_wp3 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -4991,8 +4927,6 @@ module advance_wp2_wp3_module
       !$acc end parallel loop
        
     end if ! l_damp_wp3_Skw_squared
-
-    !$acc end data
 
     return
 
@@ -5084,9 +5018,6 @@ module advance_wp2_wp3_module
     
     ! ---------------------- Begin Code ----------------------
 
-    !$acc data copyin( wp4, rho_ds_zm, invrs_rho_ds_zt, gr, gr%invrs_dzt ) &
-    !$acc     copyout( rhs_ta_wp3 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -5106,8 +5037,6 @@ module advance_wp2_wp3_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -5173,9 +5102,6 @@ module advance_wp2_wp3_module
 
     ! -------------------- Begin Code --------------------
 
-    !$acc data copyin( C11_Skw_fnc, thv_ds_zt, wp2thvp ) &
-    !$acc     copyout( rhs_bp1_pr2_wp3 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -5195,8 +5121,6 @@ module advance_wp2_wp3_module
       end do
     end do
     !$acc end parallel loop
-
-    !$acc end data
 
     return
 
@@ -5277,11 +5201,6 @@ module advance_wp2_wp3_module
     
     ! --------------------- Begin Code ---------------------
 
-    !$acc data copyin( Kh_zt, wpthvp, dum_dz, dvm_dz, upwp, vpwp, &
-    !$acc              thv_ds_zt, rho_ds_zm, invrs_rho_ds_zt, invrs_rho_ds_zt, &
-    !$acc              wp2, em, gr, gr%invrs_dzt ) &
-    !$acc     copyout( rhs_pr_turb_wp3 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -5319,8 +5238,6 @@ module advance_wp2_wp3_module
       !$acc end parallel loop
 
     endif
-
-    !$acc end data
 
     return
 
@@ -5402,11 +5319,7 @@ module advance_wp2_wp3_module
 
     ! ---------------------- Begin Code ----------------------
 
-    !$acc data copyin( invrs_rho_ds_zt, rho_ds_zm, wp2up2, wp2vp2, &
-    !$acc              wp4, up2, vp2, wp2, &
-    !$acc              gr, gr%invrs_dzt ) &
-    !$acc     copyout( rhs_pr_dfsn_wp3 ) &
-    !$acc      create( wp2uip2, wp2_uip2 )
+    !$acc data create( wp2uip2, wp2_uip2 )
 
     !$acc parallel loop gang vector collapse(2) default(present)
     do k = 1, nzm
@@ -5528,9 +5441,6 @@ module advance_wp2_wp3_module
 
     ! --------------------- Begin Code ---------------------
 
-    !$acc data copyin( invrs_tau_wp3_zt, Skw_zt, wp3 ) &
-    !$acc     copyout( rhs_pr1_wp3 )
-
     ! Set lower boundary to 0
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -5561,8 +5471,6 @@ module advance_wp2_wp3_module
       end do 
       !$acc end parallel loop
     endif ! l_damp_wp3_Skw_squared
-
-    !$acc end data
 
     return
 
