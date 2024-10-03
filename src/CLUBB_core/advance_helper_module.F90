@@ -711,7 +711,7 @@ module advance_helper_module
 
     !------------------------------ Local Variables ------------------------------
     real( kind = core_rknd ), dimension(ngrdcol,nzm) :: &
-      Ri_zm, &
+      Ri_zm_Cx, &
       fnc_Richardson, &
       fnc_Richardson_clipped, &
       fnc_Richardson_smooth, &
@@ -734,7 +734,7 @@ module advance_helper_module
 
     !------------------------------ Begin Code ------------------------------
 
-    !$acc enter data create( Cx_fnc_interp, Ri_zm, &
+    !$acc enter data create( Cx_fnc_interp, Ri_zm_Cx, &
     !$acc                    Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                    fnc_Richardson_clipped, fnc_Richardson_smooth )
 
@@ -743,7 +743,7 @@ module advance_helper_module
     if ( l_use_shear_Richardson ) then
 
       call calc_Ri_zm(nzm, ngrdcol, brunt_vaisala_freq_sqd_mixed, ddzt_umvm_sqd, &
-                      1.0e-7_core_rknd, 1.0e-7_core_rknd, Ri_zm )
+                      1.0e-7_core_rknd, 1.0e-7_core_rknd, Ri_zm_Cx )
 
     else
       ! Note1: We kind of want this calculation to be done in calc_Ri_zm, as well.
@@ -753,7 +753,7 @@ module advance_helper_module
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
-          Ri_zm(i,k) = brunt_vaisala_freq_sqd(i,k) * invrs_num_div_thresh
+          Ri_zm_Cx(i,k) = brunt_vaisala_freq_sqd(i,k) * invrs_num_div_thresh
         end do
       end do
       !$acc end parallel loop
@@ -774,7 +774,7 @@ module advance_helper_module
 
           invrs_min_max_diff = one / ( Richardson_num_max - Richardson_num_min )
 
-          fnc_Richardson(i,k) = ( Ri_zm(i,k) - clubb_params(i,iRichardson_num_min) ) &
+          fnc_Richardson(i,k) = ( Ri_zm_Cx(i,k) - clubb_params(i,iRichardson_num_min) ) &
                                 * invrs_min_max_diff
         end do
       end do
@@ -813,8 +813,8 @@ module advance_helper_module
 
           invrs_min_max_diff = one / ( Richardson_num_max - Richardson_num_min )
 
-          Cx_fnc_Richardson(i,k) = ( max(min(Richardson_num_max, Ri_zm(i,k)), Richardson_num_min) &
-                                     - Richardson_num_min )  &
+          Cx_fnc_Richardson(i,k) = ( max( min( Richardson_num_max, Ri_zm_Cx(i,k) ), &
+                                     Richardson_num_min) - Richardson_num_min )  &
                                    * invrs_min_max_diff * ( Cx_max - Cx_min ) + Cx_min
         end do
       end do
@@ -846,7 +846,7 @@ module advance_helper_module
     end do
     !$acc end parallel loop
 
-    !$acc exit data delete( Cx_fnc_interp, Ri_zm, &
+    !$acc exit data delete( Cx_fnc_interp, Ri_zm_Cx, &
     !$acc                   Cx_fnc_Richardson_avg, fnc_Richardson, &
     !$acc                   fnc_Richardson_clipped, fnc_Richardson_smooth )
 

@@ -1830,15 +1830,11 @@ module mixing_length
 
     if ( l_smooth_min_max ) then
 
-      Ri_zm_smooth = smooth_max( nzm, ngrdcol, &
-                                 Ri_zm, zero, &
-                                 12.0_core_rknd * min_max_smth_mag )
-
       !$acc parallel loop gang vector collapse(2) default(present)
       do k = 1, nzm
         do i = 1, ngrdcol
           tmp_calc(i,k) = clubb_params(i,iC_invrs_tau_wpxp_Ri) * &
-                          Ri_zm_smooth(i,k)**clubb_params(i,iwpxp_Ri_exp)
+                          Ri_zm(i,k)**clubb_params(i,iwpxp_Ri_exp)
         end do
       end do
       !$acc end parallel loop
