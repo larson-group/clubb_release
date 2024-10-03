@@ -639,7 +639,7 @@ module mono_flux_limiter
     end do
     !$acc end parallel loop
 
-    !$acc parallel loop gang vector collapse(2) default(present)
+    !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
       do k = 1, nzm-2, 1
  
