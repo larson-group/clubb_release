@@ -1,0 +1,34 @@
+pipeline {
+  agent any
+  stages {
+    stage('Run test_monoflux_limiter_GPU.py') {
+      steps {
+        // This dir{} block is used to run the enclosed commands in a specific directory, in this case run_scripts
+        dir('run_scripts') {
+          sh '''source /etc/profile.d/larson-group.sh
+                module load nvhpc netcdf-fortran
+                python test_monoflux_limiter_GPU.py'''
+        }
+      }
+    }
+  }
+  post {
+    always {
+      // Certain logical functions like IF statements or TRY-CATCH blocks can only operate while in a script{} block
+      script {
+      // This cleans out the test workspace so the next run has a fresh start
+      // However this only occurs when the test is named clubb_error_handling_gfortran_test
+      // This is to prevent the branch and copy tests from deleting thier workspaces so they are available for debugging
+      if ( "${env.JOB_NAME}" == "clubb_monoflux_CPU_vs_GPU_diff" )
+      	cleanWs(cleanWhenSuccess: true, cleanWhenFailure: true)
+      }
+    }
+    failure {
+      script {
+      if ( "${env.JOB_NAME}" ==	"clubb_monoflux_CPU_vs_GPU_diff" )
+        // This command handles the email on failure feature of the jenkins test. This line is the same on every jenkins test.
+      	emailext(to: 'messnermet@uwm.edu', subject: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has Failed", attachLog: true, body: "${env.JOB_NAME} build ${env.BUILD_NUMBER} has failed. See the attached build log and the build results (${env.BUILD_URL}) for help troubleshooting.")
+      }
+    }
+  }
+}

@@ -692,6 +692,9 @@ module mono_flux_limiter
     end do
     !$acc end parallel loop
 
+    ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc compare( wpxp ) 
+    ! MONOFLUX TEST COMMENT DO NOT REMOVE if( any(wpxp_net_adjust /= 0.0) ) write(fstderr,*) "MONOFLUX: wpxp adjusted "
+
     ! Boundary conditions
     !$acc parallel loop gang vector default(present)
     do i = 1, ngrdcol
@@ -892,6 +895,9 @@ module mono_flux_limiter
         endif ! spike at domain top
       end do
       !$acc end parallel loop
+
+      ! MONOFLUX TEST COMMENT DO NOT REMOVE !$acc compare( xm )
+      ! MONOFLUX TEST COMMENT DO NOT REMOVE write(fstderr,*) "MONOFLUX: xm adjusted"
 
     end if
 
